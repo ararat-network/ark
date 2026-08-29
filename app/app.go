@@ -1,12 +1,26 @@
 package app
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
+	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
+	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
+	gmpkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/keeper"
+	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"
+	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
+	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
+	ratelimitkeeper "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/keeper"
+	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
+
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	clienthelpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/depinject"
@@ -22,11 +36,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
-	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -37,33 +50,27 @@ import (
 	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
-	protocolpoolkeeper "github.com/cosmos/cosmos-sdk/x/protocolpool/keeper"
 	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"
-	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
-	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
-	ratelimitkeeper "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/keeper"
-	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
-
-	"ark/app/params"
-	marketkeeper "ark/x/market/keeper"
-	oraclekeeper "ark/x/oracle/keeper"
-	treasurykeeper "ark/x/treasury/keeper"
+	"github.com/ararat-network/ark/abci/lanes"
+	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
+	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
+	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
+	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
+	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
+	reservekeeper "github.com/ararat-network/ark/x/reserve/keeper"
+	securitykeeper "github.com/ararat-network/ark/x/security/keeper"
+	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 )
 
 const (
-	// Name is the binary, environment variable, and home directory prefix.
+	// Name is the binary and home directory prefix; the environment variable
+	// prefix is its uppercase.
 	Name = "ark"
 	// AppName is the BaseApp runtime name.
 	AppName = "ArkApp"
-	// AccountAddressPrefix is the prefix for accounts addresses.
-	AccountAddressPrefix = "ark"
-	// ChainCoinType is the coin type of the chain.
-	ChainCoinType = params.CoinType
 )
 
 // DefaultNodeHome default home directories for the application daemon
@@ -79,12 +86,13 @@ var (
 // capabilities aren't needed for testing.
 type ArkApp struct {
 	*runtime.App
+
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
 	txConfig          client.TxConfig
 	interfaceRegistry codectypes.InterfaceRegistry
 
-	// essential keepers
+	// keepers injected from AppConfig, in injection order
 	AccountKeeper         authkeeper.AccountKeeper
 	BankKeeper            bankkeeper.BaseKeeper
 	StakingKeeper         *stakingkeeper.Keeper
@@ -92,35 +100,42 @@ type ArkApp struct {
 	DistrKeeper           distrkeeper.Keeper
 	GovKeeper             *govkeeper.Keeper
 	UpgradeKeeper         *upgradekeeper.Keeper
+	AuthzKeeper           authzkeeper.Keeper
+	FeeGrantKeeper        feegrantkeeper.Keeper
 	EvidenceKeeper        evidencekeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
 	MarketKeeper          *marketkeeper.Keeper
 	TreasuryKeeper        *treasurykeeper.Keeper
+	ClaimsKeeper          *claimskeeper.Keeper
+	ReserveKeeper         *reservekeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper
-	IBCKeeper             *ibckeeper.Keeper
-	TransferKeeper        *transferkeeper.Keeper
-	RateLimitKeeper       *ratelimitkeeper.Keeper
-	PacketForwardKeeper   *packetforwardkeeper.Keeper
-	ICAControllerKeeper   *icacontrollerkeeper.Keeper
-	ICAHostKeeper         *icahostkeeper.Keeper
+	AssetKeeper           *assetkeeper.Keeper
+	SecurityKeeper        *securitykeeper.Keeper
 
-	// supplementary keepers
-	FeeGrantKeeper     feegrantkeeper.Keeper
-	AuthzKeeper        authzkeeper.Keeper
-	ProtocolPoolKeeper protocolpoolkeeper.Keeper
+	// keepers wired by hand after Build (ibc-go and wasmd ship no depinject
+	// modules), in setup order
+	IBCKeeper           *ibckeeper.Keeper
+	TransferKeeper      *transferkeeper.Keeper
+	RateLimitKeeper     *ratelimitkeeper.Keeper
+	PacketForwardKeeper *packetforwardkeeper.Keeper
+	ICAControllerKeeper *icacontrollerkeeper.Keeper
+	ICAHostKeeper       *icahostkeeper.Keeper
+	WasmKeeper          wasmkeeper.Keeper
+	WasmClientKeeper    ibcwasmkeeper.Keeper
+	GMPKeeper           *gmpkeeper.Keeper
 
 	// simulation manager
 	sm *module.SimulationManager
 
-	// app-owned oracle ABCI and client lifecycle.
-	oracleRuntime *oracleRuntime
-	closeOnce     sync.Once
-	closeErr      error
+	// app-owned price-feed client; the start command runs it.
+	priceFeedClient *pricefeedclient.Client
+	closeOnce       sync.Once
+	closeErr        error
 }
 
 func init() {
 	var err error
-	clienthelpers.EnvPrefix = Name
+	clienthelpers.EnvPrefix = strings.ToUpper(Name)
 	DefaultNodeHome, err = clienthelpers.GetNodeHomeDirectory("." + Name)
 	if err != nil {
 		panic(err)
@@ -166,85 +181,139 @@ func NewArkApp(
 		&app.FeeGrantKeeper,
 		&app.EvidenceKeeper,
 		&app.ConsensusParamsKeeper,
-		&app.ProtocolPoolKeeper,
 		&app.MarketKeeper,
 		&app.TreasuryKeeper,
+		&app.ClaimsKeeper,
+		&app.ReserveKeeper,
 		&app.OracleKeeper,
+		&app.AssetKeeper,
+		&app.SecurityKeeper,
 	); err != nil {
 		panic(err)
 	}
 
-	// Below we could construct and set an application specific mempool and
-	// ABCI 1.0 PrepareProposal and ProcessProposal handlers. These defaults are
-	// already set in the SDK's BaseApp, this shows an example of how to override
-	// them.
-	//
-	// Example:
-	//
-	// app.App = appBuilder.Build(...)
-	// nonceMempool := mempool.NewSenderNonceMempool()
-	// abciPropHandler := NewDefaultProposalHandler(nonceMempool, app.App.BaseApp)
-	//
-	// app.App.BaseApp.SetMempool(nonceMempool)
-	// app.App.BaseApp.SetPrepareProposal(abciPropHandler.PrepareProposalHandler())
-	// app.App.BaseApp.SetProcessProposal(abciPropHandler.ProcessProposalHandler())
-	//
-	// Alternatively, you can construct BaseApp options, append those to
-	// baseAppOptions and pass them to the appBuilder.
-	//
-	// Example:
-	//
-	// prepareOpt = func(app *baseapp.BaseApp) {
-	// 	abciPropHandler := baseapp.NewDefaultProposalHandler(nonceMempool, app)
-	// 	app.SetPrepareProposal(abciPropHandler.PrepareProposalHandler())
-	// }
-	// baseAppOptions = append(baseAppOptions, prepareOpt)
+	// The feed-removal guard set is wiring-owned and holds exactly the foreign
+	// consumers that exist: x/asset answers for a live asset's claim on its own
+	// feed, and x/reserve for a credited eligibility entry or an open position
+	// whose return attribution the feed's removal would strand. The
+	// protocol reference is x/oracle's own state and needs no guard. A basket
+	// guard joins here with its spec.
+	app.OracleKeeper.SetFeedReferentGuards(app.AssetKeeper, app.ReserveKeeper)
 
+	// Both reference-unit executors exist from this line on, so a reference
+	// re-point executes atomically — Market's base pool and Treasury's tax cap
+	// re-denominate inside the same MsgSetReferenceDenom transaction — instead of
+	// failing atomically as it did while either executor was missing.
+	app.OracleKeeper.SetReferenceDenomConsumers(app.MarketKeeper, app.TreasuryKeeper)
+
+	// The capital contract runs both ways, and only this direction is wired by
+	// hand: Treasury injects the Reserve to read recognised capital, so the
+	// Reserve cannot inject Treasury to read the requirement it is measured
+	// against. Only a surplus burn takes this read.
+	app.ReserveKeeper.SetTreasuryCapitalReader(app.TreasuryKeeper)
+
+	// No EnableBlockGasMeter: comet's max_gas gate and the per-tx meters already
+	// bound a block, and the meter is mutually exclusive with block-stm execution.
 	baseAppOptions = append(
 		baseAppOptions,
-		baseapp.EnableBlockGasMeter(),
 		baseapp.SetOptimisticExecution(),
 	)
 
+	// Committee and governance transactions are proposed ahead of all other
+	// traffic; app/mempool.go owns both the privileged message set and the
+	// app.toml sizing this reads. This option lands after the server defaults
+	// and supersedes their mempool choice. The cap carries the SDK's tri-state:
+	// positive bounds the pool, zero leaves it unbounded, negative installs
+	// nothing so the server defaults' NoOpMempool survives. That last case has
+	// to install nothing rather than a negative-cap lane pool, because the SDK
+	// proposal handler's FIFO fallback tests for the NoOpMempool concrete type
+	// and not for emptiness: a lane pool that accepts nothing would propose
+	// empty blocks forever.
+	if maxTxs := mempoolMaxTxs(appOpts); maxTxs >= 0 {
+		baseAppOptions = append(
+			baseAppOptions,
+			baseapp.SetMempool(lanes.NewMempool(maxTxs, priorityLaneSet())),
+		)
+	}
+
 	app.App = appBuilder.Build(db, baseAppOptions...)
-	if err := app.setupIBC(); err != nil {
+	// Keepers, then the contract runtime, then the routes: Wasm needs the IBC
+	// channel keepers, and the IBC routers need Wasm's contract handlers.
+	if err := app.setupIBCKeepers(); err != nil {
 		panic(err)
 	}
-	oracleRuntime, err := newOracleRuntime(app, appOpts, logger)
+	wasmNodeConfig, wasmTxCounterStore, err := app.setupWasm(appOpts)
 	if err != nil {
 		panic(err)
 	}
-	app.oracleRuntime = oracleRuntime
+	if err := app.setupGMP(); err != nil {
+		panic(err)
+	}
+	if err := app.setupWasmLightClient(appOpts); err != nil {
+		panic(err)
+	}
+	if err := app.setupIBCRoutes(); err != nil {
+		panic(err)
+	}
+	if err := app.setupOracleABCI(logger, appOpts); err != nil {
+		panic(err)
+	}
 
-	// register streaming services
+	// Streaming must follow the hand-wired RegisterStores calls above:
+	// kvStoreKeys reads the runtime's key list, so registering earlier would
+	// silently hide the IBC, Wasm, GMP, and 08-wasm stores from listeners.
 	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
 		panic(err)
 	}
 
-	/****  Module Options ****/
+	// set custom ante handler
+	app.setAnteHandler(app.txConfig, wasmNodeConfig, wasmTxCounterStore)
 
-	// add test gRPC service for testing gRPC queries in isolation
-	testdata_pulsar.RegisterQueryServer(app.GRPCQueryRouter(), testdata_pulsar.QueryImpl{})
+	// Seed the upgrade version map at InitChain so the first upgrade migrates
+	// the manually registered modules rather than re-running their InitGenesis.
+	// Must precede Load, which installs the default InitChainer when none is set.
+	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+		if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
+			return nil, err
+		}
+		return app.InitChainer(ctx, req)
+	})
 
-	// create the simulation manager and define the order of the modules for deterministic simulations
-	//
-	// NOTE: this is not required apps that don't use the simulator for fuzz testing
-	// transactions
+	if err := app.setupUpgrades(); err != nil {
+		panic(err)
+	}
+
+	// Load runs the registered store loader and then seals the baseapp: every
+	// baseapp registration above is now fixed, and none can follow.
+	if err := app.Load(loadLatest); err != nil {
+		panic(err)
+	}
+	// Re-warm the pinned-code caches over the loaded store: the pin lists live
+	// in state, but both VM caches are per-process, so a restart that skips
+	// this silently demotes every pinned code to the slow path.
+	if loadLatest {
+		ctx := app.NewContext(true)
+		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
+			panic(fmt.Errorf("initialise pinned Wasm codes: %w", err))
+		}
+		if err := app.WasmClientKeeper.InitializePinnedCodes(ctx); err != nil {
+			panic(fmt.Errorf("initialise pinned 08-wasm codes: %w", err))
+		}
+	}
+
+	// The simulation manager gathers every module that opts into simulation,
+	// in sorted-name order so runs are seed-deterministic. It must be built
+	// after the hand-wired RegisterModules calls above, or those modules'
+	// store decoders silently drop out of simulation runs. Auth is overridden
+	// because the depinject-built module carries no account generator, and the
+	// simulator needs RandomGenesisAccounts to seed each run.
 	overrideModules := map[string]module.AppModuleSimulation{
 		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, nil),
 	}
 	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
-
 	app.sm.RegisterStoreDecoders()
 
-	// set custom ante handler
-	app.setAnteHandler(app.txConfig)
-
-	if err := app.Load(loadLatest); err != nil {
-		panic(err)
-	}
-
-	// At startup, after all modules have been registered, check that all prot
+	// At startup, after all modules have been registered, check that all proto
 	// annotations are correct.
 	protoFiles, err := proto.MergedRegistry()
 	if err != nil {
@@ -257,61 +326,33 @@ func NewArkApp(
 		fmt.Fprintln(os.Stderr, err.Error())
 	}
 
-	app.oracleRuntime.start()
-
 	return app
 }
 
-// setAnteHandler sets custom ante handlers.
-// "x/auth/tx" pre-defined ante handler have been disabled in app_config.
-func (app *ArkApp) setAnteHandler(txConfig client.TxConfig) {
-	anteHandler, err := ante.NewAnteHandler(
-		ante.HandlerOptions{
-			AccountKeeper:   app.AccountKeeper,
-			BankKeeper:      app.BankKeeper,
-			SignModeHandler: txConfig.SignModeHandler(),
-			FeegrantKeeper:  app.FeeGrantKeeper,
-			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
-			TxFeeChecker:    app.treasuryFeeChecker,
-		},
-	)
-	if err != nil {
-		panic(err)
+// RunPriceFeed runs the node-side price-feed client until ctx is cancelled. It
+// is blocking and single-use; the start command owns the goroutine and the
+// context, so only a running node carries the client. Cancellation is the
+// clean exit and reports nil.
+func (app *ArkApp) RunPriceFeed(ctx context.Context) error {
+	err := app.priceFeedClient.Run(ctx)
+	if errors.Is(err, context.Canceled) {
+		return nil
 	}
-
-	// Set the AnteHandler for the app
-	app.SetAnteHandler(app.routeStabilityTax(app.withIBCAnte(anteHandler)))
+	return err
 }
 
-// LegacyAmino returns ArkApp's amino codec.
-//
-// NOTE: This is solely to be used for testing purposes as it may be desirable
-// for modules to register their own custom testing types.
-func (app *ArkApp) LegacyAmino() *codec.LegacyAmino {
-	return app.legacyAmino
-}
+// Close closes the embedded app. It is safe to call multiple times as
+// required by servertypes.Application. The price-feed client needs no closing
+// here: the start command's errgroup cancels it before app cleanup runs.
+func (app *ArkApp) Close() error {
+	app.closeOnce.Do(func() {
+		app.closeErr = app.App.Close()
+	})
 
-// AppCodec returns ArkApp's app codec.
-//
-// NOTE: This is solely to be used for testing purposes as it may be desirable
-// for modules to register their own custom testing types.
-func (app *ArkApp) AppCodec() codec.Codec {
-	return app.appCodec
-}
-
-// InterfaceRegistry returns ArkApp's InterfaceRegistry.
-func (app *ArkApp) InterfaceRegistry() codectypes.InterfaceRegistry {
-	return app.interfaceRegistry
-}
-
-// TxConfig returns ArkApp's TxConfig
-func (app *ArkApp) TxConfig() client.TxConfig {
-	return app.txConfig
+	return app.closeErr
 }
 
 // GetKey returns the KVStoreKey for the provided store key.
-//
-// NOTE: This is solely to be used for testing purposes.
 func (app *ArkApp) GetKey(storeKey string) *storetypes.KVStoreKey {
 	sk := app.UnsafeFindStoreKey(storeKey)
 	kvStoreKey, ok := sk.(*storetypes.KVStoreKey)
@@ -332,11 +373,6 @@ func (app *ArkApp) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 	return keys
 }
 
-// SimulationManager implements the ArkApp interface
-func (app *ArkApp) SimulationManager() *module.SimulationManager {
-	return app.sm
-}
-
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
 func (app *ArkApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
@@ -347,31 +383,26 @@ func (app *ArkApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APICon
 	}
 }
 
-// GetMaccPerms returns a copy of the module account permissions
-//
-// NOTE: This is solely to be used for testing purposes.
-func GetMaccPerms() map[string][]string {
-	dup := make(map[string][]string)
-	for _, perms := range moduleAccPerms {
-		dup[perms.Account] = perms.Permissions
-	}
+// The accessors below exist for tests only; production code receives these
+// objects through depinject.
 
-	return dup
+// LegacyAmino returns the amino codec the test helpers hand to client contexts.
+func (app *ArkApp) LegacyAmino() *codec.LegacyAmino {
+	return app.legacyAmino
 }
 
-// BlockedAddresses returns all the app's blocked account addresses.
-func BlockedAddresses() map[string]bool {
-	result := make(map[string]bool)
+// AppCodec returns the application codec; it also serves the IBC-Go testing
+// application interface next to the Get* accessors in ibc.go.
+func (app *ArkApp) AppCodec() codec.Codec {
+	return app.appCodec
+}
 
-	if len(blockAccAddrs) > 0 {
-		for _, addr := range blockAccAddrs {
-			result[addr] = true
-		}
-	} else {
-		for addr := range GetMaccPerms() {
-			result[addr] = true
-		}
-	}
+// InterfaceRegistry returns the codec's interface registry.
+func (app *ArkApp) InterfaceRegistry() codectypes.InterfaceRegistry {
+	return app.interfaceRegistry
+}
 
-	return result
+// SimulationManager returns the manager the simulation harness drives.
+func (app *ArkApp) SimulationManager() *module.SimulationManager {
+	return app.sm
 }

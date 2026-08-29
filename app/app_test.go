@@ -10,14 +10,12 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/core/address"
-	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log/v2"
 
@@ -29,52 +27,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
-	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
-	"github.com/cosmos/cosmos-sdk/x/authz"
-	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
-	"github.com/cosmos/cosmos-sdk/x/bank"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	"github.com/cosmos/cosmos-sdk/x/epochs"
-	epochstypes "github.com/cosmos/cosmos-sdk/x/epochs/types"
-	"github.com/cosmos/cosmos-sdk/x/evidence"
-	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
-	"github.com/cosmos/cosmos-sdk/x/feegrant"
-	feegrantmodule "github.com/cosmos/cosmos-sdk/x/feegrant/module"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	"github.com/cosmos/cosmos-sdk/x/gov"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/protocolpool"
-	protocolpooltypes "github.com/cosmos/cosmos-sdk/x/protocolpool/types"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/cosmos/cosmos-sdk/x/upgrade"
-	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	ica "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	packetforward "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware"
-	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
-	ratelimiting "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting"
-	ratelimittypes "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/types"
-	"github.com/cosmos/ibc-go/v11/modules/apps/transfer"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	ibc "github.com/cosmos/ibc-go/v11/modules/core"
-	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-
-	market "ark/x/market/module"
-	markettypes "ark/x/market/types"
-	oracle "ark/x/oracle/module"
-	oracletypes "ark/x/oracle/types"
-	treasury "ark/x/treasury/module"
-	treasurytypes "ark/x/treasury/types"
+	"github.com/ararat-network/ark/app/params"
+	chain "github.com/ararat-network/ark/pkg/chain"
+	markettypes "github.com/ararat-network/ark/x/market/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestAppConstructs(t *testing.T) {
@@ -85,7 +44,7 @@ func TestAppConstructs(t *testing.T) {
 	require.NotNil(t, arkApp.BaseApp)
 	require.NotNil(t, arkApp.LegacyAmino())
 	require.NotNil(t, arkApp.AppCodec())
-	require.NotNil(t, arkApp.TxConfig())
+	require.NotNil(t, arkApp.GetTxConfig())
 	require.NotNil(t, arkApp.InterfaceRegistry())
 	require.NotNil(t, arkApp.MsgServiceRouter())
 	require.NotNil(t, arkApp.GRPCQueryRouter())
@@ -112,7 +71,12 @@ func TestAppInitChainWithDefaultGenesis(t *testing.T) {
 	require.NotNil(t, Setup(t, false))
 }
 
-func TestAppEnforcesBlockGasLimit(t *testing.T) {
+// TestAppDoesNotMeterBlockGas pins the deliberate absence of
+// baseapp.EnableBlockGasMeter: ten txs each declaring the entire MaxGas budget
+// all execute, because the app applies no cumulative bound at DeliverTx. Comet's
+// proposal-level max_gas gate and the per-tx meters are the only limits, and
+// re-adding the meter would foreclose block-stm — see docs/BLOCK_EXECUTION.md.
+func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	const chainID = "ark-block-gas-test"
 
 	privVal := mock.NewPV()
@@ -166,7 +130,7 @@ func TestAppEnforcesBlockGasLimit(t *testing.T) {
 		)
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(int64(i+1))),
-			arkApp.TxConfig(),
+			arkApp.GetTxConfig(),
 			[]sdk.Msg{msg},
 			nil,
 			200_000,
@@ -176,7 +140,7 @@ func TestAppEnforcesBlockGasLimit(t *testing.T) {
 			senderPrivKey,
 		)
 		require.NoError(t, err)
-		txs[i], err = arkApp.TxConfig().TxEncoder()(tx)
+		txs[i], err = arkApp.GetTxConfig().TxEncoder()(tx)
 		require.NoError(t, err)
 	}
 
@@ -187,15 +151,89 @@ func TestAppEnforcesBlockGasLimit(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, response.TxResults, len(txs))
-	require.Zero(t, response.TxResults[0].Code, response.TxResults[0].Log)
-	require.Condition(t, func() bool {
-		for _, result := range response.TxResults {
-			if result.Code != 0 && strings.Contains(result.Log, "block gas meter") {
-				return true
-			}
-		}
-		return false
-	}, "expected cumulative block gas exhaustion")
+	for i, result := range response.TxResults {
+		require.Zero(t, result.Code, "tx %d: %s", i, result.Log)
+		require.NotContains(t, result.Log, "block gas meter", "tx %d", i)
+	}
+}
+
+// TestPrepOracleForZeroHeightGenesisReanchorsState pins that zero-height export
+// leaves no old-chain block height behind in oracle state. Both accounting
+// anchors and every scheduled feed transition are heights, and the exported
+// genesis restarts at zero: carried over, the anchors would park reward
+// settlement and attendance jailing until the new chain replayed the whole old
+// one, and a stale transition would stay pending for that entire span while
+// blocking the opposite direction and counting against MaxFeeds.
+//
+// It drives the oracle helper rather than prepForZeroHeightGenesis as a whole,
+// because that function's fee-distribution prologue panics with "no validator
+// commission to withdraw" against a freshly initialised app — a pre-existing
+// property of the zero-height path, unrelated to oracle state.
+func TestPrepOracleForZeroHeightGenesisReanchorsState(t *testing.T) {
+	arkApp := NewArkappWithCustomOptions(t, false, SetupOptions{
+		Logger:  log.NewTestLogger(t),
+		DB:      dbm.NewMemDB(),
+		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	})
+
+	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
+	require.NoError(t, err)
+	_, err = arkApp.Commit()
+	require.NoError(t, err)
+
+	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: arkApp.LastBlockHeight()})
+
+	// State as a long-running chain would hold it: windows opened at heights
+	// deep into the old chain, and one feed transition still in flight.
+	accounting, err := arkApp.OracleKeeper.Accounting.Get(ctx)
+	require.NoError(t, err)
+	accounting.RewardWindowStartHeight = 998_401
+	accounting.AttendanceWindowStartHeight = 998_401
+	require.NoError(t, arkApp.OracleKeeper.Accounting.Set(ctx, accounting))
+
+	feeds, err := arkApp.OracleKeeper.Feeds.Get(ctx)
+	require.NoError(t, err)
+	feeds.Transitions = []oracletypes.FeedTransition{{
+		Denom:                "agold",
+		Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
+		ActivationVoteHeight: 1_000_002,
+	}}
+	require.NoError(t, feeds.Validate())
+	require.NoError(t, arkApp.OracleKeeper.Feeds.Set(ctx, feeds))
+
+	arkApp.prepOracleForZeroHeightGenesis(ctx)
+
+	reanchored, err := arkApp.OracleKeeper.Accounting.Get(ctx)
+	require.NoError(t, err)
+	require.Zero(t, reanchored.RewardWindowStartHeight, "reward window must re-anchor at genesis")
+	require.Zero(t, reanchored.AttendanceWindowStartHeight, "attendance window must re-anchor at genesis")
+	// The windows themselves are policy, not position, so they carry over.
+	require.Equal(t, accounting.RewardWindow, reanchored.RewardWindow)
+	require.Equal(t, accounting.AttendanceWindow, reanchored.AttendanceWindow)
+
+	promoted, err := arkApp.OracleKeeper.Feeds.Get(ctx)
+	require.NoError(t, err)
+	require.Empty(t, promoted.Transitions, "stale transitions must not survive zero-height export")
+	// Dropping the transition must not disturb the active set it had not
+	// joined yet.
+	require.Equal(t, feeds.Denoms, promoted.Denoms)
+
+	// The re-anchored state is importable, and settles on the new chain rather
+	// than waiting on an old-chain height.
+	exported, err := arkApp.OracleKeeper.ExportGenesis(ctx)
+	require.NoError(t, err)
+	require.NoError(t, exported.Validate())
+
+	settlesAt := int64(exported.Accounting.RewardWindow) - 1
+	require.True(
+		t,
+		chain.IsPeriodLastBlockFrom(
+			ctx.WithBlockHeight(settlesAt),
+			exported.Accounting.RewardWindowStartHeight,
+			exported.Accounting.RewardWindow,
+		),
+		"reward window must settle at height %d on the restarted chain", settlesAt,
+	)
 }
 
 func TestAppExportLatestState(t *testing.T) {
@@ -217,7 +255,7 @@ func TestAppExportLatestState(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, exported.AppState)
 
-	var state GenesisState
+	var state map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(exported.AppState, &state))
 }
 
@@ -259,177 +297,6 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 	app2 := NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
-}
-
-func TestRunMigrations(t *testing.T) {
-	db := dbm.NewMemDB()
-	logger := log.NewTestLogger(t)
-	app := NewArkApp(logger.With("instance", "arkapp"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
-
-	// Create a new baseapp and configurator for the purpose of this test.
-	bApp := baseapp.NewBaseApp(app.Name(), logger.With("instance", "baseapp"), db, app.TxConfig().TxDecoder())
-	bApp.SetInterfaceRegistry(app.InterfaceRegistry())
-	app.BaseApp = bApp
-	configurator := module.NewConfigurator(app.appCodec, bApp.MsgServiceRouter(), app.GRPCQueryRouter())
-
-	// We register all modules on the Configurator, except x/bank. x/bank will
-	// serve as the test subject on which we run the migration tests.
-	//
-	// The loop below is the same as calling `RegisterServices` on
-	// ModuleManager, except that we skip x/bank.
-	for name, mod := range app.ModuleManager.Modules {
-		if name == banktypes.ModuleName {
-			continue
-		}
-
-		if mod, ok := mod.(module.HasServices); ok {
-			mod.RegisterServices(configurator)
-		}
-
-		if mod, ok := mod.(appmodule.HasServices); ok {
-			err := mod.RegisterServices(configurator)
-			require.NoError(t, err)
-		}
-
-		require.NoError(t, configurator.Error())
-	}
-
-	// Initialise the chain
-	_, err := app.InitChain(&abci.RequestInitChain{})
-	require.NoError(t, err)
-	_, err = app.Commit()
-	require.NoError(t, err)
-
-	testCases := []struct {
-		name         string
-		moduleName   string
-		fromVersion  uint64
-		toVersion    uint64
-		expRegErr    bool // errors while registering migration
-		expRegErrMsg string
-		expRunErr    bool // errors while running migration
-		expRunErrMsg string
-		expCalled    int
-	}{
-		{
-			"cannot register migration for version 0",
-			"bank", 0, 1,
-			true, "module migration versions should start at 1: invalid version", false, "", 0,
-		},
-		{
-			"throws error on RunMigrations if no migration registered for bank",
-			"", 1, 2,
-			false, "", true, "no migrations found for module bank: not found", 0,
-		},
-		{
-			"can register 1->2 migration handler for x/bank, cannot run migration",
-			"bank", 1, 2,
-			false, "", true, "no migration found for module bank from version 2 to version 3: not found", 0,
-		},
-		{
-			"can register 2->3 migration handler for x/bank, can run migration",
-			"bank", 2, bank.AppModule{}.ConsensusVersion(),
-			false, "", false, "", int(bank.AppModule{}.ConsensusVersion() - 2), // minus 2 because 1-2 is run in the previous test case.
-		},
-		{
-			"cannot register migration handler for same module & fromVersion",
-			"bank", 1, 2,
-			true, "another migration for module bank and version 1 already exists: internal logic error", false, "", 0,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(tt *testing.T) {
-			var err error
-
-			// Since it's very hard to test actual in-place store migrations in
-			// tests (due to the difficulty of maintaining multiple versions of a
-			// module), we're just testing here that the migration logic is
-			// called.
-			called := 0
-
-			if tc.moduleName != "" {
-				for i := tc.fromVersion; i < tc.toVersion; i++ {
-					// Register migration for module from version `fromVersion` to `fromVersion+1`.
-					tt.Logf("Registering migration for %q v%d", tc.moduleName, i)
-					err = configurator.RegisterMigration(tc.moduleName, i, func(sdk.Context) error {
-						called++
-
-						return nil
-					})
-
-					if tc.expRegErr {
-						require.EqualError(tt, err, tc.expRegErrMsg)
-
-						return
-					}
-					require.NoError(tt, err, "registering migration")
-				}
-			}
-
-			// Run migrations only for bank. That's why we put the initial
-			// version for bank as 1, and for all other modules, we put as
-			// their latest ConsensusVersion.
-			_, err = app.ModuleManager.RunMigrations(
-				app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()}), configurator,
-				module.VersionMap{
-					banktypes.ModuleName:          1,
-					authtypes.ModuleName:          auth.AppModule{}.ConsensusVersion(),
-					authz.ModuleName:              authzmodule.AppModule{}.ConsensusVersion(),
-					stakingtypes.ModuleName:       staking.AppModule{}.ConsensusVersion(),
-					distrtypes.ModuleName:         distribution.AppModule{}.ConsensusVersion(),
-					slashingtypes.ModuleName:      slashing.AppModule{}.ConsensusVersion(),
-					govtypes.ModuleName:           gov.AppModule{}.ConsensusVersion(),
-					upgradetypes.ModuleName:       upgrade.AppModule{}.ConsensusVersion(),
-					vestingtypes.ModuleName:       vesting.AppModule{}.ConsensusVersion(),
-					feegrant.ModuleName:           feegrantmodule.AppModule{}.ConsensusVersion(),
-					evidencetypes.ModuleName:      evidence.AppModule{}.ConsensusVersion(),
-					genutiltypes.ModuleName:       genutil.AppModule{}.ConsensusVersion(),
-					epochstypes.ModuleName:        epochs.AppModule{}.ConsensusVersion(),
-					protocolpooltypes.ModuleName:  protocolpool.AppModule{}.ConsensusVersion(),
-					markettypes.ModuleName:        market.AppModule{}.ConsensusVersion(),
-					oracletypes.ModuleName:        oracle.AppModule{}.ConsensusVersion(),
-					treasurytypes.ModuleName:      treasury.AppModule{}.ConsensusVersion(),
-					ibcexported.ModuleName:        ibc.AppModule{}.ConsensusVersion(),
-					ibctransfertypes.ModuleName:   transfer.AppModule{}.ConsensusVersion(),
-					ratelimittypes.ModuleName:     ratelimiting.AppModule{}.ConsensusVersion(),
-					packetforwardtypes.ModuleName: packetforward.AppModule{}.ConsensusVersion(),
-					icatypes.ModuleName:           ica.AppModule{}.ConsensusVersion(),
-				},
-			)
-			if tc.expRunErr {
-				require.EqualError(tt, err, tc.expRunErrMsg, "running migration")
-			} else {
-				require.NoError(tt, err, "running migration")
-				// Make sure bank's migration is called.
-				require.Equal(tt, tc.expCalled, called)
-			}
-		})
-	}
-}
-
-func TestInitGenesisOnMigration(t *testing.T) {
-	db := dbm.NewMemDB()
-	app := NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
-	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
-	versionMap := app.ModuleManager.GetVersionMap()
-
-	// Create a mock module. This module will serve as the new module we're
-	// adding during a migration.
-	mockCtrl := gomock.NewController(t)
-	t.Cleanup(mockCtrl.Finish)
-	mockModule := mock.NewMockAppModuleWithAllExtensions(mockCtrl)
-	mockDefaultGenesis := json.RawMessage(`{"key": "value"}`)
-	mockModule.EXPECT().DefaultGenesis(gomock.Eq(app.appCodec)).Times(1).Return(mockDefaultGenesis)
-	mockModule.EXPECT().InitGenesis(gomock.Eq(ctx), gomock.Eq(app.appCodec), gomock.Eq(mockDefaultGenesis)).Times(1)
-	mockModule.EXPECT().ConsensusVersion().Times(1).Return(uint64(0))
-
-	app.ModuleManager.Modules["mock"] = mockModule
-
-	// Run migrations only for "mock" module. We exclude it from
-	// the VersionMap to simulate upgrading with a new module.
-	_, err := app.ModuleManager.RunMigrations(ctx, app.Configurator(), versionMap)
-	require.NoError(t, err)
 }
 
 func TestUpgradeStateOnGenesis(t *testing.T) {
@@ -478,6 +345,45 @@ func (c customAddressCodec) StringToBytes(text string) ([]byte, error) {
 
 func (c customAddressCodec) BytesToString(bz []byte) (string, error) {
 	return string(bz), nil
+}
+
+// TestAddressCodecsAgreeWithSDKConfig pins that the codecs depinject derives
+// from the auth prefix encode every address class exactly as the sealed
+// sdk.Config does. config.go seals the params prefixes; the runtime derives
+// the validator and consensus prefixes from the auth one. The two are wired
+// independently, so only this keeps them from drifting.
+func TestAddressCodecsAgreeWithSDKConfig(t *testing.T) {
+	var (
+		addrCodec address.Codec
+		valCodec  runtime.ValidatorAddressCodec
+		consCodec runtime.ConsensusAddressCodec
+	)
+	require.NoError(t, depinject.Inject(
+		depinject.Configs(AppConfig, depinject.Supply(log.NewNopLogger())),
+		&addrCodec, &valCodec, &consCodec,
+	))
+
+	bz := make([]byte, 20)
+	for i := range bz {
+		bz[i] = byte(i)
+	}
+	for _, tc := range []struct {
+		name  string
+		codec address.Codec
+		want  string
+		hrp   string
+	}{
+		{"account", addrCodec, sdk.AccAddress(bz).String(), params.Bech32PrefixAccAddr},
+		{"validator", valCodec, sdk.ValAddress(bz).String(), params.Bech32PrefixValAddr},
+		{"consensus", consCodec, sdk.ConsAddress(bz).String(), params.Bech32PrefixConsAddr},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.codec.BytesToString(bz)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+			require.True(t, strings.HasPrefix(got, tc.hrp+"1"), got)
+		})
+	}
 }
 
 func TestAddressCodecFactory(t *testing.T) {
