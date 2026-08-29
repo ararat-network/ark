@@ -31,9 +31,90 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 		types.DefaultMonetaryPolicy(),
 		types.DefaultExposureState(),
 		false,
+		types.DefaultMinBaseGasPrice,
+		nil,
 	)
 	factors[0].Denom = "mutated"
 	require.Equal(t, chain.USDBaseDenom, genesis.ConversionFactors[0].Denom)
+}
+
+// TestGenesisBaseGasPriceValidation pins the controller's genesis invariant:
+// the live price is a state no run of the controller could not have produced,
+// so it must sit inside [MinBaseGasPrice, MaxBaseGasPrice].
+func TestGenesisBaseGasPriceValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(*types.GenesisState)
+		expectErr string
+	}{
+		{name: "default is valid", mutate: func(*types.GenesisState) {}},
+		{
+			name:      "unset price",
+			mutate:    func(gs *types.GenesisState) { gs.BaseGasPrice = math.LegacyDec{} },
+			expectErr: "base gas price must be set",
+		},
+		{
+			name:      "price below the floor",
+			mutate:    func(gs *types.GenesisState) { gs.BaseGasPrice = math.LegacyMustNewDecFromStr("0.05") },
+			expectErr: "base gas price must be between the floor",
+		},
+		{
+			name:      "price above the domain cap",
+			mutate:    func(gs *types.GenesisState) { gs.BaseGasPrice = types.MaxBaseGasPrice.Add(math.LegacyOneDec()) },
+			expectErr: "base gas price must be between the floor",
+		},
+		{
+			// An export mid-congestion carries an elevated price.
+			name: "price above the floor",
+			mutate: func(gs *types.GenesisState) {
+				gs.BaseGasPrice = types.DefaultMinBaseGasPrice.MulInt64(7)
+			},
+		},
+		{
+			// Unset is legitimate: the NOAH cross has never been derivable.
+			name: "derived noah cross",
+			mutate: func(gs *types.GenesisState) {
+				gs.NoahConversionFactor = &types.ConversionFactor{
+					Denom:  chain.NoahBaseDenom,
+					Factor: math.LegacyMustNewDecFromStr("0.25"),
+				}
+			},
+		},
+		{
+			name: "noah cross under another denom",
+			mutate: func(gs *types.GenesisState) {
+				gs.NoahConversionFactor = &types.ConversionFactor{
+					Denom:  chain.USDBaseDenom,
+					Factor: math.LegacyOneDec(),
+				}
+			},
+			expectErr: "noah conversion factor must be denominated in",
+		},
+		{
+			name: "non-positive noah cross",
+			mutate: func(gs *types.GenesisState) {
+				gs.NoahConversionFactor = &types.ConversionFactor{
+					Denom:  chain.NoahBaseDenom,
+					Factor: math.LegacyZeroDec(),
+				}
+			},
+			expectErr: "noah conversion factor must be positive",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			genesis := types.DefaultGenesisState()
+			tc.mutate(genesis)
+
+			err := genesis.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
 }
 
 func TestGenesisConversionFactorValidation(t *testing.T) {

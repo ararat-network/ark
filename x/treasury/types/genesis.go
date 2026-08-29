@@ -18,6 +18,8 @@ func NewGenesisState(
 	monetaryPolicy MonetaryPolicy,
 	exposureState ExposureState,
 	exposureUpdatePending bool,
+	baseGasPrice math.LegacyDec,
+	noahConversionFactor *ConversionFactor,
 ) *GenesisState {
 	return &GenesisState{
 		Params:                 params,
@@ -27,6 +29,8 @@ func NewGenesisState(
 		MonetaryPolicy:         monetaryPolicy,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
+		BaseGasPrice:           baseGasPrice,
+		NoahConversionFactor:   noahConversionFactor,
 	}
 }
 
@@ -40,6 +44,8 @@ func DefaultGenesisState() *GenesisState {
 		DefaultMonetaryPolicy(),
 		DefaultExposureState(),
 		false,
+		DefaultMinBaseGasPrice,
+		nil,
 	)
 }
 
@@ -129,6 +135,40 @@ func (gs GenesisState) Validate() error {
 	}
 	if err := gs.ExposureState.Validate(); err != nil {
 		return err
+	}
+
+	if gs.BaseGasPrice.IsNil() {
+		return errors.New("base gas price must be set")
+	}
+	if !gs.BaseGasPrice.IsInValidRange() {
+		return errors.New("base gas price is not representable")
+	}
+	// The cross-field bounds are the controller's own invariant: the update
+	// clamps every write into [MinBaseGasPrice, MaxBaseGasPrice], so a genesis
+	// outside that band is a state no run of the controller could have
+	// produced.
+	if gs.BaseGasPrice.LT(gs.Params.MinBaseGasPrice) || gs.BaseGasPrice.GT(MaxBaseGasPrice) {
+		return fmt.Errorf(
+			"base gas price must be between the floor %s and %s: %s",
+			gs.Params.MinBaseGasPrice,
+			MaxBaseGasPrice,
+			gs.BaseGasPrice,
+		)
+	}
+
+	// Unset is legitimate — the cross has never been derivable — but a set one
+	// must be NOAH's, and positive on the member factors' terms.
+	if gs.NoahConversionFactor != nil {
+		if gs.NoahConversionFactor.Denom != chain.NoahBaseDenom {
+			return fmt.Errorf(
+				"noah conversion factor must be denominated in %s: %s",
+				chain.NoahBaseDenom,
+				gs.NoahConversionFactor.Denom,
+			)
+		}
+		if gs.NoahConversionFactor.Factor.IsNil() || !gs.NoahConversionFactor.Factor.IsPositive() {
+			return errors.New("noah conversion factor must be positive")
+		}
 	}
 
 	return nil

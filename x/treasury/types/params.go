@@ -6,14 +6,12 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
 const (
-	DefaultReferenceTaxCapDenom = chain.SDRBaseDenom
-	DefaultRewardFundingWindow  = chain.BlocksPerWeek
+	DefaultReferenceDenom      = chain.SDRBaseDenom
+	DefaultRewardFundingWindow = chain.BlocksPerWeek
 
 	// DefaultExposureRefreshPeriodBlocks recomputes the multiplier hourly. The
 	// cadence is a judgement about the fastest stress worth tracking: a
@@ -38,22 +36,23 @@ const (
 	MaxExposureRefreshPeriodBlocks = chain.BlocksPerYear
 )
 
-// MaxExposureMultiplierCap bounds both the multiplier ceiling and the per-update
-// step. It is a domain cap with orders of magnitude of headroom rather than a
-// projection over live state: the composite is folded and applied inside block
-// hooks, where a checked arithmetic error and a panic are the same outcome — the
-// block fails — so the defence has to be refusing the value at the write, where
-// a human is in the loop. A million is far past any defensible setting.
-var MaxExposureMultiplierCap = math.LegacyNewDec(1_000_000)
-
-// Per-block EWMA retentions. Both are expressed as a retention rather than a
-// half-life because the fold applies them directly, and deriving one from the
-// other on chain would need a logarithm LegacyDec does not have.
 var (
+	// MaxExposureMultiplierCap bounds both the multiplier ceiling and the
+	// per-update step. It is a domain cap with orders of magnitude of headroom
+	// rather than a projection over live state: the composite is folded and
+	// applied inside block hooks, where a checked arithmetic error and a panic
+	// are the same outcome — the block fails — so the defence has to be
+	// refusing the value at the write, where a human is in the loop. A million
+	// is far past any defensible setting.
+	MaxExposureMultiplierCap = math.LegacyNewDec(1_000_000)
+
 	// DefaultExposureVolatilityDecay retains variance with a half-life of about
 	// 13,863 blocks — roughly a day. Volatility is a regime rather than an
 	// event, and a day's memory outlasts a single bad hour without carrying a
-	// month-old panic into today's target.
+	// month-old panic into today's target. It and DefaultExposureFlowDecay are
+	// per-block EWMA retentions rather than half-lives because the fold applies
+	// them directly, and deriving one from the other on chain would need a
+	// logarithm LegacyDec does not have.
 	DefaultExposureVolatilityDecay = math.LegacyMustNewDecFromStr("0.99995")
 	// DefaultExposureFlowDecay retains flow pressure with a half-life of about
 	// 602 blocks — roughly an hour. Flow is the fastest of the three signals and
@@ -71,6 +70,38 @@ var (
 	// least twelve sustained hours, which no single period of any input can
 	// force.
 	DefaultExposureMultiplierMaxStep = math.LegacyMustNewDecFromStr("0.25")
+
+	// DefaultBaseFeeTargetUtilisation opens the base-fee controller's rails
+	// (dynamic fees, phase 2a). It holds price at half-full blocks —
+	// EIP-1559's choice: symmetric headroom for demand in both directions.
+	DefaultBaseFeeTargetUtilisation = math.LegacyMustNewDecFromStr("0.5")
+	// DefaultBaseFeeAdjustmentRate moves the price at most 2.5% per block.
+	// Sustained full blocks double it in about 28 blocks and sustained empty
+	// ones halve it symmetrically — deliberately slow, per the launch plan of
+	// observing before tightening.
+	DefaultBaseFeeAdjustmentRate = math.LegacyMustNewDecFromStr("0.025")
+
+	// DefaultMinBaseGasPrice is the resting price of gas in reference base
+	// units per gas unit. The reference is atto-scaled (10^18 per SDR), and
+	// 10^11 is Terra Classic's posted SDR gas price — 0.1018 usdr per gas at
+	// six decimals — carried to eighteen: a 200k-gas transfer rests at 0.02
+	// SDR, the fee band Terra ran in production. Governance tunes from here
+	// after observation.
+	DefaultMinBaseGasPrice = math.LegacyNewDec(100_000_000_000)
+
+	// MaxBaseGasPrice bounds the governance floor and is the saturation
+	// ceiling the controller clamps the live price to. A clamp rather than an
+	// error because the update runs in EndBlock, where a checked arithmetic
+	// failure and a panic are the same outcome — congestion past representable
+	// range holds here instead of failing a block. One whole reference unit
+	// per gas unit — ten million times the resting price, an hour of
+	// sustained full blocks at the default rate — is saturation in every
+	// practical sense, and a uint64 of gas at this ceiling still sits some
+	// twenty orders of magnitude inside the Dec domain, which is what keeps
+	// the requirement arithmetic's overflow backstops unreachable.
+	MaxBaseGasPrice = math.LegacyNewDec(1_000_000_000_000_000_000)
+	// MaxBaseFeeAdjustmentRate caps the per-block move at a doubling.
+	MaxBaseFeeAdjustmentRate = math.LegacyOneDec()
 )
 
 // DefaultParams returns the safe launch defaults for Treasury.
@@ -81,26 +112,33 @@ var (
 // unbounded, and governance opts into either a real ceiling or none.
 func DefaultParams() Params {
 	return Params{
-		ReferenceTaxCap:             sdk.NewCoin(DefaultReferenceTaxCapDenom, math.OneInt()),
+		ReferenceDenom:              DefaultReferenceDenom,
+		ReferenceTaxCap:             math.OneInt(),
 		RewardFundingWindow:         DefaultRewardFundingWindow,
 		VolatilityDecay:             DefaultExposureVolatilityDecay,
 		FlowDecay:                   DefaultExposureFlowDecay,
 		MultiplierCap:               DefaultExposureMultiplierCap,
 		MultiplierMaxStep:           DefaultExposureMultiplierMaxStep,
 		ExposureRefreshPeriodBlocks: DefaultExposureRefreshPeriodBlocks,
+		BaseFeeTargetUtilisation:    DefaultBaseFeeTargetUtilisation,
+		BaseFeeAdjustmentRate:       DefaultBaseFeeAdjustmentRate,
+		MinBaseGasPrice:             DefaultMinBaseGasPrice,
 	}
 }
 
 // Validate performs context-free validation of Treasury parameters.
-// ReferenceTaxCap.Denom's identity with the protocol reference is validated by
-// the keeper, and the indicator weights the exposure machinery below sizes live
+// ReferenceDenom's identity with the protocol reference is validated by the
+// keeper, and the indicator weights the exposure machinery below sizes live
 // on MonetaryPolicy, which validates them.
 func (p Params) Validate() error {
-	if err := p.ReferenceTaxCap.Validate(); err != nil {
-		return fmt.Errorf("treasury parameter ReferenceTaxCap is invalid: %w", err)
+	if err := chain.ValidatePricedDenom(p.ReferenceDenom); err != nil {
+		return fmt.Errorf("treasury parameter ReferenceDenom is invalid: %w", err)
 	}
-	if err := chain.ValidatePricedDenom(p.ReferenceTaxCap.Denom); err != nil {
-		return fmt.Errorf("treasury parameter ReferenceTaxCap denom is invalid: %w", err)
+	if p.ReferenceTaxCap.IsNil() {
+		return errors.New("treasury parameter ReferenceTaxCap must be set")
+	}
+	if p.ReferenceTaxCap.IsNegative() {
+		return fmt.Errorf("treasury parameter ReferenceTaxCap must not be negative: %s", p.ReferenceTaxCap)
 	}
 	if p.RewardFundingWindow == 0 || p.RewardFundingWindow > MaxRewardFundingWindow {
 		return fmt.Errorf(
@@ -176,6 +214,51 @@ func (p Params) Validate() error {
 			"treasury parameter ExposureRefreshPeriodBlocks must be between one and %d: %d",
 			MaxExposureRefreshPeriodBlocks,
 			p.ExposureRefreshPeriodBlocks,
+		)
+	}
+
+	if p.BaseFeeTargetUtilisation.IsNil() {
+		return errors.New("treasury parameter BaseFeeTargetUtilisation must be set")
+	}
+	if !p.BaseFeeTargetUtilisation.IsInValidRange() {
+		return errors.New("treasury parameter BaseFeeTargetUtilisation is not representable")
+	}
+	// Strictly positive: the update divides by the target, and a zero target
+	// is a division the write must refuse rather than the block hook.
+	if !p.BaseFeeTargetUtilisation.IsPositive() || p.BaseFeeTargetUtilisation.GT(math.LegacyOneDec()) {
+		return fmt.Errorf(
+			"treasury parameter BaseFeeTargetUtilisation must be above zero and at most one: %s",
+			p.BaseFeeTargetUtilisation,
+		)
+	}
+
+	if p.BaseFeeAdjustmentRate.IsNil() {
+		return errors.New("treasury parameter BaseFeeAdjustmentRate must be set")
+	}
+	if !p.BaseFeeAdjustmentRate.IsInValidRange() {
+		return errors.New("treasury parameter BaseFeeAdjustmentRate is not representable")
+	}
+	// Zero is legitimate: it disables the controller and holds the price at
+	// the floor.
+	if p.BaseFeeAdjustmentRate.IsNegative() || p.BaseFeeAdjustmentRate.GT(MaxBaseFeeAdjustmentRate) {
+		return fmt.Errorf(
+			"treasury parameter BaseFeeAdjustmentRate must be at least zero and at most %s: %s",
+			MaxBaseFeeAdjustmentRate,
+			p.BaseFeeAdjustmentRate,
+		)
+	}
+
+	if p.MinBaseGasPrice.IsNil() {
+		return errors.New("treasury parameter MinBaseGasPrice must be set")
+	}
+	if !p.MinBaseGasPrice.IsInValidRange() {
+		return errors.New("treasury parameter MinBaseGasPrice is not representable")
+	}
+	if !p.MinBaseGasPrice.IsPositive() || p.MinBaseGasPrice.GT(MaxBaseGasPrice) {
+		return fmt.Errorf(
+			"treasury parameter MinBaseGasPrice must be above zero and at most %s: %s",
+			MaxBaseGasPrice,
+			p.MinBaseGasPrice,
 		)
 	}
 

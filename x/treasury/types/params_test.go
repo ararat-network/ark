@@ -7,8 +7,6 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
@@ -44,28 +42,73 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardFundingWindow must be between one and",
 		},
 		{
-			name:      "reference cap denom must be canonical micro denom",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "USDR" },
-			expectErr: "ReferenceTaxCap denom is invalid",
+			name:      "reference denom must be canonical micro denom",
+			mutate:    func(p *types.Params) { p.ReferenceDenom = "USDR" },
+			expectErr: "ReferenceDenom is invalid",
 		},
 		{
-			name:      "reference cap denom cannot be ibc path",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Denom = "afoo/bar" },
-			expectErr: "ReferenceTaxCap denom is invalid",
+			name:      "reference denom cannot be ibc path",
+			mutate:    func(p *types.Params) { p.ReferenceDenom = "afoo/bar" },
+			expectErr: "ReferenceDenom is invalid",
 		},
 		{
 			name:      "reference cap must be set",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap = sdk.Coin{} },
-			expectErr: "ReferenceTaxCap is invalid",
+			mutate:    func(p *types.Params) { p.ReferenceTaxCap = math.Int{} },
+			expectErr: "ReferenceTaxCap must be set",
 		},
 		{
 			name:      "reference cap cannot be negative",
-			mutate:    func(p *types.Params) { p.ReferenceTaxCap.Amount = math.NewInt(-1) },
-			expectErr: "ReferenceTaxCap is invalid",
+			mutate:    func(p *types.Params) { p.ReferenceTaxCap = math.NewInt(-1) },
+			expectErr: "ReferenceTaxCap must not be negative",
 		},
 		{
 			name:   "zero reference cap is uncapped",
-			mutate: func(p *types.Params) { p.ReferenceTaxCap.Amount = math.ZeroInt() },
+			mutate: func(p *types.Params) { p.ReferenceTaxCap = math.ZeroInt() },
+		},
+		{
+			name:      "zero base-fee target",
+			mutate:    func(p *types.Params) { p.BaseFeeTargetUtilisation = math.LegacyZeroDec() },
+			expectErr: "BaseFeeTargetUtilisation must be above zero and at most one",
+		},
+		{
+			// The boundary-valid target: price rises only on literally full
+			// blocks.
+			name:   "full base-fee target",
+			mutate: func(p *types.Params) { p.BaseFeeTargetUtilisation = math.LegacyOneDec() },
+		},
+		{
+			name:      "base-fee target above one",
+			mutate:    func(p *types.Params) { p.BaseFeeTargetUtilisation = math.LegacyMustNewDecFromStr("1.5") },
+			expectErr: "BaseFeeTargetUtilisation must be above zero and at most one",
+		},
+		{
+			// Legitimate: zero disables the controller and holds the floor.
+			name:   "zero adjustment rate",
+			mutate: func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyZeroDec() },
+		},
+		{
+			name:      "negative adjustment rate",
+			mutate:    func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyMustNewDecFromStr("-0.1") },
+			expectErr: "BaseFeeAdjustmentRate must be at least zero and at most",
+		},
+		{
+			name:      "adjustment rate above the domain cap",
+			mutate:    func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyNewDec(2) },
+			expectErr: "BaseFeeAdjustmentRate must be at least zero and at most",
+		},
+		{
+			name:      "zero base gas price floor",
+			mutate:    func(p *types.Params) { p.MinBaseGasPrice = math.LegacyZeroDec() },
+			expectErr: "MinBaseGasPrice must be above zero and at most",
+		},
+		{
+			name:   "floor at the domain cap",
+			mutate: func(p *types.Params) { p.MinBaseGasPrice = types.MaxBaseGasPrice },
+		},
+		{
+			name:      "floor above the domain cap",
+			mutate:    func(p *types.Params) { p.MinBaseGasPrice = types.MaxBaseGasPrice.Add(math.LegacyOneDec()) },
+			expectErr: "MinBaseGasPrice must be above zero and at most",
 		},
 	}
 
