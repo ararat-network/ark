@@ -5,13 +5,14 @@ const (
 	// and represented in a validator's vote extension.
 	MaxFeeds = 256
 
-	// MaxEncodedVoteRateBytes bounds one vote-extension rate encoding.
-	// LegacyDec marshals the raw integer price*10^18 as decimal text, so 40
-	// bytes admits every price below 10^22 while denying the 97-digit range
-	// headroom that state encodings must keep. Tiny prices encode shorter, so
-	// the bound needs no floor. Vote-extension capacity limits derive from
-	// this bound, so changing it changes consensus acceptance.
-	MaxEncodedVoteRateBytes = 40
+	// MaxEncodedVoteRateBytes bounds one vote-extension rate encoding: the
+	// minimal big-endian bytes of the raw price*10^18 magnitude. Sixteen
+	// bytes admits every raw value below 2^128 — prices to ~3.4*10^20 —
+	// matching the chain's other 2^128 domain caps while denying the range
+	// headroom the full LegacyDec encoding keeps. Vote-extension capacity
+	// limits derive from this bound, so changing it changes consensus
+	// acceptance.
+	MaxEncodedVoteRateBytes = 16
 
 	// InitialFeedVersion identifies the genesis feed epoch.
 	InitialFeedVersion uint64 = 1

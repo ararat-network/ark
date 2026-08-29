@@ -130,8 +130,9 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			// The failure domain of a sidecar rate is one denom, so one
 			// undecodable or oversized rate must not abort the whole report: it
 			// is dropped exactly like an omitted target and the remaining
-			// reports still submit. Non-positive rates stay untouched — they
-			// are carried as explicit abstentions.
+			// reports still submit. The sidecar omits unpriced targets and the
+			// compact encoding admits only positive rates, so omission is the
+			// only abstention.
 			if _, rateErr := abcioracle.DecodeVoteRate(rawRate); rateErr != nil {
 				droppedTargets = append(droppedTargets, denom)
 				continue

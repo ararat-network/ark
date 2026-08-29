@@ -3,6 +3,7 @@ package oracle_test
 import (
 	"encoding/binary"
 	"fmt"
+	"math/big"
 	"strings"
 	"testing"
 
@@ -30,12 +31,15 @@ var (
 
 func TestParseVoteExtension(t *testing.T) {
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	zeroRate := abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())
-	negativeRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(-1))
-	alternateRate := append([]byte{'+'}, validRate...)
-	// The widest permitted rate: MaxEncodedVoteRateBytes decimal digits of
-	// raw price*10^18.
-	maxSizeValue := math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21))
+	// A leading zero byte decodes to the same integer, so it is the compact
+	// encoding's alternate-representation attack.
+	paddedRate := append([]byte{0x00}, validRate...)
+	// The widest permitted rate: the largest raw value encoding to
+	// MaxEncodedVoteRateBytes big-endian bytes.
+	maxSizeValue := math.LegacyNewDecFromBigIntWithPrec(
+		new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
+		math.LegacyPrecision,
+	)
 	maxSizeRate := abcitestutil.MustEncodeRate(t, maxSizeValue)
 	require.Len(t, maxSizeRate, oracletypes.MaxEncodedVoteRateBytes)
 
@@ -65,28 +69,20 @@ func TestParseVoteExtension(t *testing.T) {
 			expected: map[string]math.LegacyDec{},
 		},
 		{
-			name: "zero rate",
+			name: "zero rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ausd": zeroRate},
+				Rates:         map[string][]byte{"ausd": {0x00}},
 				TargetVersion: oracletypes.InitialFeedVersion,
 			},
-			expected: map[string]math.LegacyDec{"ausd": math.LegacyZeroDec()},
+			expectedErr: "invalid oracle vote extension rate",
 		},
 		{
-			name: "negative rate",
+			name: "padded alternate representation",
 			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ausd": negativeRate},
+				Rates:         map[string][]byte{"ausd": paddedRate},
 				TargetVersion: oracletypes.InitialFeedVersion,
 			},
-			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(-1)},
-		},
-		{
-			name: "alternate integer representation",
-			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ausd": alternateRate},
-				TargetVersion: oracletypes.InitialFeedVersion,
-			},
-			expected: map[string]math.LegacyDec{"ausd": math.LegacyNewDec(100)},
+			expectedErr: "invalid oracle vote extension rate",
 		},
 		{
 			name: "nil rate bytes",
@@ -100,14 +96,6 @@ func TestParseVoteExtension(t *testing.T) {
 			name: "empty rate bytes",
 			voteExt: vetypes.OracleVoteExtension{
 				Rates:         map[string][]byte{"ausd": {}},
-				TargetVersion: oracletypes.InitialFeedVersion,
-			},
-			expectedErr: "invalid oracle vote extension rate",
-		},
-		{
-			name: "malformed rate bytes",
-			voteExt: vetypes.OracleVoteExtension{
-				Rates:         map[string][]byte{"ausd": []byte("not-a-rate")},
 				TargetVersion: oracletypes.InitialFeedVersion,
 			},
 			expectedErr: "invalid oracle vote extension rate",
@@ -187,12 +175,13 @@ func TestValidateVoteExtension(t *testing.T) {
 			targets: targets,
 		},
 		{
-			name: "zero rate remains decodable for aggregation",
+			name: "zero rate is unrepresentable",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"ausd": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())},
+				Rates:         map[string][]byte{"ausd": {}},
 			},
-			targets: targets,
+			targets:     targets,
+			expectedErr: "invalid oracle vote extension rate",
 		},
 		{
 			name: "empty report",
@@ -205,7 +194,7 @@ func TestValidateVoteExtension(t *testing.T) {
 			name: "malformed rate",
 			voteExtension: vetypes.OracleVoteExtension{
 				TargetVersion: targets.Version,
-				Rates:         map[string][]byte{"ausd": []byte("not-a-rate")},
+				Rates:         map[string][]byte{"ausd": {0x00, 0x01}},
 			},
 			targets:     targets,
 			expectedErr: "invalid oracle vote extension rate",
@@ -217,7 +206,10 @@ func TestValidateVoteExtension(t *testing.T) {
 				Rates: map[string][]byte{
 					"ausd": abcitestutil.MustEncodeRate(
 						t,
-						math.LegacyMustNewDecFromStr("1"+strings.Repeat("0", 21)),
+						math.LegacyNewDecFromBigIntWithPrec(
+							new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
+							math.LegacyPrecision,
+						),
 					),
 				},
 			},
@@ -292,7 +284,7 @@ func TestValidateVoteExtension(t *testing.T) {
 						require.False(t, found)
 						continue
 					}
-					expected, decodeErr := arkencoding.DecodeLegacyDec(rawRate)
+					expected, decodeErr := arkencoding.DecodeCompactLegacyDec(rawRate)
 					require.NoError(t, decodeErr)
 					actual, found := indexedRates[targetIndex]
 					require.True(t, found)
@@ -479,7 +471,7 @@ func makeRateMap(tb testing.TB, count int) map[string][]byte {
 
 	rates := make(map[string][]byte, count)
 	for i := range count {
-		encoded, err := arkencoding.EncodeLegacyDec(math.LegacyNewDec(int64(i + 1)))
+		encoded, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
 		require.NoError(tb, err)
 		rates[fmt.Sprintf("a%03d", i)] = encoded
 	}

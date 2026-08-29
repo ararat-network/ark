@@ -2,8 +2,8 @@ package oracle_test
 
 import (
 	"context"
+	"math/big"
 	"slices"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -483,7 +483,10 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 			// permitted target report. The overflow arm stays covered by
 			// the ballot-level cross-rate tests.
 			"aaaa": math.LegacySmallestDec(),
-			"azzz": math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 21)),
+			"azzz": math.LegacyNewDecFromBigIntWithPrec(
+				new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
+				math.LegacyPrecision,
+			),
 		}),
 	}
 	voteTargets := []string{"aaaa", "azzz"}

@@ -42,17 +42,23 @@ func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.
 func MustEncodeRate(t *testing.T, rate math.LegacyDec) []byte {
 	t.Helper()
 
-	encodedRate, err := arkencoding.EncodeLegacyDec(rate)
+	encodedRate, err := arkencoding.EncodeCompactLegacyDec(rate)
 	require.NoError(t, err)
 
 	return encodedRate
 }
 
+// NewOracleVoteExtension builds the extension a conforming validator would
+// submit for rates: non-positive rates are omitted, matching the production
+// builder, because the compact encoding has no abstention form.
 func NewOracleVoteExtension(t *testing.T, rates map[string]math.LegacyDec) vetypes.OracleVoteExtension {
 	t.Helper()
 
 	encodedRates := make(map[string][]byte, len(rates))
 	for denom, rate := range rates {
+		if !rate.IsPositive() {
+			continue
+		}
 		encodedRates[denom] = MustEncodeRate(t, rate)
 	}
 

@@ -31,8 +31,8 @@ type Vote struct {
 	Validator cometabci.Validator
 
 	// Rates contains validated domain rates keyed by canonical target index.
-	// Non-positive values are retained as abstentions: they never enter ballots
-	// and do not count as participation. It is nil when the validator was
+	// Decoded rates are strictly positive; abstention is omission, so an
+	// unpriced target is simply absent. It is nil when the validator was
 	// absent or submitted an invalid payload.
 	Rates []VoteRate
 
@@ -45,8 +45,8 @@ type Vote struct {
 
 // DecodeVoteRate decodes one vote-extension rate under the oracle's vote-rate
 // size policy. Vote extensions carry prices, so a much shorter encoding than
-// the state-level LegacyDec bound is accepted; the tighter bound is what keeps
-// the derived vote-extension capacity limits small.
+// the full LegacyDec range is accepted; the tighter bound is what keeps the
+// derived vote-extension capacity limits small.
 func DecodeVoteRate(bz []byte) (math.LegacyDec, error) {
 	if len(bz) > oracletypes.MaxEncodedVoteRateBytes {
 		return math.LegacyDec{}, fmt.Errorf(
@@ -56,7 +56,7 @@ func DecodeVoteRate(bz []byte) (math.LegacyDec, error) {
 		)
 	}
 
-	return arkencoding.DecodeLegacyDec(bz)
+	return arkencoding.DecodeCompactLegacyDec(bz)
 }
 
 // ParseVoteExtension converts transport rate bytes into domain rates.

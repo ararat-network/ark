@@ -21,7 +21,6 @@ import (
 	"github.com/ararat-network/ark/abci/preblock"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	"github.com/ararat-network/ark/abci/voteextension"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -43,8 +42,9 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 			},
 		},
 	}
+	// The sidecar has no price yet for the feed being added, so the builder
+	// omits it: an abstention on that feed alone.
 	oracleClient := staticPriceFeedClient{prices: map[string][]byte{
-		"akrw": abcitestutil.MustEncodeRate(t, math.LegacyZeroDec()),
 		"ausd": abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100)),
 	}}
 	logger := log.NewTestLogger(t)
@@ -76,10 +76,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	newVoteExtension, err := codec.DecodeVoteExtension(newResponse.VoteExtension)
 	require.NoError(t, err)
 	require.Equal(t, oracletypes.InitialFeedVersion+1, newVoteExtension.TargetVersion)
-	require.Equal(t, []string{"akrw", "ausd"}, sortedKeys(newVoteExtension.Rates))
-	krwRate, err := arkencoding.DecodeLegacyDec(newVoteExtension.Rates["akrw"])
-	require.NoError(t, err)
-	require.True(t, krwRate.IsZero())
+	require.Equal(t, []string{"ausd"}, sortedKeys(newVoteExtension.Rates))
 
 	preBlocker := preblock.NewHandler(keeper).WrappedPreBlocker(managerWith())
 	validator := sdk.ConsAddress("validator")
@@ -97,8 +94,8 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	require.Empty(t, keeper.feeds.Transitions)
 
 	// FinalizeBlock A+1 aggregates the already-produced extension for A against
-	// the new epoch. The newly added feed is carried as an explicit zero, which
-	// is an abstention on that feed alone.
+	// the new epoch. The newly added feed is absent from the report, which is
+	// an abstention on that feed alone.
 	newRequest := finalizeRequest(t, activationVoteHeight+1, validator, newResponse.VoteExtension)
 	_, err = preBlocker(
 		abcitestutil.NewSDKContext(activationVoteHeight+1, 1, sdk.ExecModeFinalize).
@@ -106,9 +103,9 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 		newRequest,
 	)
 	require.NoError(t, err)
-	// Both blocks function (the sole validator participates), and the explicit
-	// zero on the just-activated feed is an abstention that does not affect
-	// attendance while ausd is still priced.
+	// Both blocks function (the sole validator participates), and the omitted
+	// just-activated feed is an abstention that does not affect attendance
+	// while ausd is still priced.
 	require.Equal(t, []bool{true, true}, keeper.attended)
 }
 

@@ -94,7 +94,7 @@ func TestExtendVoteHandler(t *testing.T) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
 					Return(&api.PricesResponse{
-						Prices: map[string][]byte{"ausd": []byte("invalid")},
+						Prices: map[string][]byte{"ausd": {0x00, 0x01}},
 					}, nil)
 			},
 			expectedExtension: encodedUnavailableVoteExt,
@@ -181,8 +181,6 @@ func TestExtendVoteHandler(t *testing.T) {
 
 func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 	validRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(100))
-	zeroRate := abcitestutil.MustEncodeRate(t, math.LegacyZeroDec())
-	negativeRate := abcitestutil.MustEncodeRate(t, math.LegacyNewDec(-1))
 	// One byte past the vote-rate size bound: decodable as a LegacyDec but
 	// oversized for a vote extension.
 	oversizedRate := abcitestutil.MustEncodeRate(
@@ -203,7 +201,7 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 		{
 			name: "undecodable rate is dropped without aborting the report",
 			prices: map[string][]byte{
-				"ajpy": []byte("invalid"),
+				"ajpy": {0x00, 0x01},
 				"ausd": validRate,
 			},
 			expectedRates: map[string][]byte{"ausd": validRate},
@@ -217,25 +215,17 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 			expectedRates: map[string][]byte{"ausd": validRate},
 		},
 		{
-			name: "zero rate is carried as an explicit abstention",
+			name: "empty rate bytes are dropped without aborting the report",
 			prices: map[string][]byte{
-				"ajpy": zeroRate,
+				"ajpy": {},
 				"ausd": validRate,
 			},
-			expectedRates: map[string][]byte{"ajpy": zeroRate, "ausd": validRate},
-		},
-		{
-			name: "negative rate is carried as an explicit abstention",
-			prices: map[string][]byte{
-				"ajpy": negativeRate,
-				"ausd": validRate,
-			},
-			expectedRates: map[string][]byte{"ajpy": negativeRate, "ausd": validRate},
+			expectedRates: map[string][]byte{"ausd": validRate},
 		},
 		{
 			name: "dropping every rate still submits an empty report",
 			prices: map[string][]byte{
-				"ajpy": []byte("invalid"),
+				"ajpy": {0x00, 0x01},
 			},
 			expectedRates: map[string][]byte{},
 		},
