@@ -153,10 +153,10 @@ func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string
 			err,
 		)
 	}
-	if err := k.treasuryReferenceKeeper.RebaseTaxCap(ctx, from, to, rates); err != nil {
+	if err := k.treasuryReferenceKeeper.RebaseReferenceState(ctx, from, to, rates); err != nil {
 		return sdkerrors.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
-			"rebasing Treasury tax cap from %s to %s: %v",
+			"rebasing Treasury reference state from %s to %s: %v",
 			from,
 			to,
 			err,

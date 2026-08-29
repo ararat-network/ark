@@ -41,10 +41,10 @@ type MarketReferenceDenomKeeper interface {
 	RebaseBasePool(ctx context.Context, from string, to string, rates RateSet) error
 }
 
-// TreasuryReferenceDenomKeeper re-expresses Treasury state held in reference
-// units, the reference tax cap amount, when the protocol reference moves. It
-// receives the same handed rates as Market's executor and runs in the same
-// transaction as the reference change; its error fails the whole action.
+// TreasuryReferenceDenomKeeper re-expresses every Treasury figure quoted in
+// reference units when the protocol reference moves. It receives the same
+// handed rates as Market's executor and runs in the same transaction as the
+// reference change; its error fails the whole action.
 type TreasuryReferenceDenomKeeper interface {
-	RebaseTaxCap(ctx context.Context, from string, to string, rates RateSet) error
+	RebaseReferenceState(ctx context.Context, from string, to string, rates RateSet) error
 }

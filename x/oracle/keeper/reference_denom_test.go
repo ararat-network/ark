@@ -158,7 +158,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRebasesConsumers() {
 		RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 	s.treasuryReferenceDenom.EXPECT().
-		RebaseTaxCap(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{}))
@@ -228,7 +228,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing(
 		RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 	s.treasuryReferenceDenom.EXPECT().
-		RebaseTaxCap(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, supplied))
@@ -329,7 +329,8 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenom() {
 }
 
 // TestMsgSetReferenceDenomOutgoingRateValidation covers the two spellings of "no
-// override" and the one value that cannot mean anything.
+// override" and the two refusals: a rate that cannot mean anything, and one
+// past the domain cap.
 //
 // An unset decimal round-trips through amino JSON as zero, so absent and zero
 // have to resolve identically — otherwise a proposal would convert at a
@@ -353,6 +354,19 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 	})
 	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
 	s.Require().ErrorContains(err, "outgoing reference denom rate must be positive")
+	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+
+	// Past the domain cap is refused at the same write: the rate joins the
+	// handed set the consumers' rescale arithmetic reads, so the cap is the
+	// human-in-the-loop defence and the checked multiply behind it stays a
+	// backstop.
+	_, err = s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
+		Authority:      authority,
+		ReferenceDenom: chain.USDBaseDenom,
+		OutgoingRate:   types.MaxOutgoingReferenceRate.Add(math.LegacyOneDec()),
+	})
+	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
+	s.Require().ErrorContains(err, "at most")
 	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
 
 	// Zero reads as absent, so this prices the outgoing denomination and fails

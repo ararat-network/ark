@@ -84,10 +84,11 @@ func (m msgServer) SetReferenceDenom(ctx context.Context, msg *types.MsgSetRefer
 	if !outgoingRate.IsNil() && outgoingRate.IsZero() {
 		outgoingRate = math.LegacyDec{}
 	}
-	if !outgoingRate.IsNil() && !outgoingRate.IsPositive() {
+	if !outgoingRate.IsNil() && (!outgoingRate.IsPositive() || outgoingRate.GT(types.MaxOutgoingReferenceRate)) {
 		return nil, sdkerrors.Wrapf(
 			errortypes.ErrInvalidRequest,
-			"outgoing reference denom rate must be positive, is %s",
+			"outgoing reference denom rate must be positive and at most %s, is %s",
+			types.MaxOutgoingReferenceRate,
 			outgoingRate,
 		)
 	}

@@ -291,16 +291,16 @@ func (m *MockTreasuryReferenceDenomKeeper) EXPECT() *MockTreasuryReferenceDenomK
 	return m.recorder
 }
 
-// RebaseTaxCap mocks base method.
-func (m *MockTreasuryReferenceDenomKeeper) RebaseTaxCap(ctx context.Context, from, to string, rates types.RateSet) error {
+// RebaseReferenceState mocks base method.
+func (m *MockTreasuryReferenceDenomKeeper) RebaseReferenceState(ctx context.Context, from, to string, rates types.RateSet) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RebaseTaxCap", ctx, from, to, rates)
+	ret := m.ctrl.Call(m, "RebaseReferenceState", ctx, from, to, rates)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RebaseTaxCap indicates an expected call of RebaseTaxCap.
-func (mr *MockTreasuryReferenceDenomKeeperMockRecorder) RebaseTaxCap(ctx, from, to, rates any) *gomock.Call {
+// RebaseReferenceState indicates an expected call of RebaseReferenceState.
+func (mr *MockTreasuryReferenceDenomKeeperMockRecorder) RebaseReferenceState(ctx, from, to, rates any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseTaxCap", reflect.TypeOf((*MockTreasuryReferenceDenomKeeper)(nil).RebaseTaxCap), ctx, from, to, rates)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseReferenceState", reflect.TypeOf((*MockTreasuryReferenceDenomKeeper)(nil).RebaseReferenceState), ctx, from, to, rates)
 }

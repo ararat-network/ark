@@ -42,6 +42,13 @@ const (
 	MaxAllowedExchangeRateAge = 7 * 24 * time.Hour
 )
 
+// MaxOutgoingReferenceRate caps the governance-supplied rate a reference
+// re-point converts the outgoing unit at. A domain cap with orders of
+// magnitude of headroom rather than a projection: the rate joins the handed
+// set the consumers' rescale multiplications read, and a trillion base units
+// per NOAH base unit is far past any defensible quote.
+var MaxOutgoingReferenceRate = math.LegacyNewDec(1_000_000_000_000)
+
 // Default parameter values
 var (
 	MinVoteThreshold     = math.LegacyNewDecWithPrec(50, 2)                     // 50%
