@@ -144,14 +144,21 @@ var (
 				// before distribution consumes the previous block's fees. A module
 				// added ahead of it must not touch that window.
 				BeginBlockers: []string{
-					treasurytypes.ModuleName,
+					// The SDK spine leads and keeps upstream's one documented
+					// invariant: slashing after distr, so nothing is left in the
+					// validator fee pool when it runs.
 					distrtypes.ModuleName,
 					slashingtypes.ModuleName,
 					evidencetypes.ModuleName,
 					stakingtypes.ModuleName,
+					// The tail carries no ordering intent. Treasury's factor and
+					// exposure refreshes read PreBlock-applied rates; it led while
+					// reward funding lived here and had to beat Distribution's
+					// sweep, but that job moved to the EndBlocker.
 					ibcexported.ModuleName,
 					ratelimittypes.ModuleName,
 					authz.ModuleName,
+					treasurytypes.ModuleName,
 				},
 				// NOTE: market leads because its EndBlocker executes the block's
 				// conversion settlement through Treasury before any other EndBlock
@@ -169,6 +176,13 @@ var (
 					// ordering intent.
 					banktypes.ModuleName,
 					govtypes.ModuleName,
+					// Treasury settles the reward-funding window — minting any
+					// top-up into the fee collector for the next block's
+					// allocation — and runs the base-fee update. After gov, so
+					// a fee-param change enacted this block applies at the same
+					// settlement; after market, whose must-lead rule the fund
+					// moves would otherwise break.
+					treasurytypes.ModuleName,
 					// Oracle jails ahead of staking so an attendance jail is in
 					// this block's validator-set update rather than the next
 					// block's. It stays after gov so a live attendance-ratio
