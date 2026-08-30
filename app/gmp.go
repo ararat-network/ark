@@ -28,7 +28,7 @@ func GMPModuleBasics() module.BasicManager {
 // keeper refuses any message whose signer is not that account before routing it.
 //
 // It runs after setupWasm and before setupIBCRoutes, because it takes the same
-// Treasury-aware router the contract runtime does and its route joins the v2
+// policy router the contract runtime does and its route joins the v2
 // router the latter builds.
 func (app *ArkApp) setupGMP() error {
 	gmpKey := storetypes.NewKVStoreKey(gmptypes.StoreKey)
@@ -43,7 +43,7 @@ func (app *ArkApp) setupGMP() error {
 		// The same router contracts dispatch through, so a derived account pays
 		// execution-generated tax on exactly the terms a contract does (D48).
 		// The outer fee payer and any feegrant sponsor neither.
-		app.treasuryMessageRouter(),
+		app.executionPolicyRouter(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 

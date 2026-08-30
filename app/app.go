@@ -55,6 +55,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
 	"github.com/ararat-network/ark/abci/lanes"
+	"github.com/ararat-network/ark/app/ante"
 	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
 	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
@@ -267,7 +268,19 @@ func NewArkApp(
 	}
 
 	// set custom ante handler
-	app.setAnteHandler(app.txConfig, wasmNodeConfig, wasmTxCounterStore)
+	app.SetAnteHandler(ante.NewAnteHandler(
+		app.appCodec,
+		app.txConfig,
+		app.AccountKeeper,
+		app.BankKeeper,
+		app.FeeGrantKeeper,
+		app.StakingKeeper,
+		app.TreasuryKeeper,
+		app.IBCKeeper,
+		app.WasmKeeper.GetGasRegister(),
+		wasmNodeConfig,
+		wasmTxCounterStore,
+	))
 
 	// Seed the upgrade version map at InitChain so the first upgrade migrates
 	// the manually registered modules rather than re-running their InitGenesis.

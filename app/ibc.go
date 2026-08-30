@@ -130,11 +130,11 @@ func (app *ArkApp) setupIBCKeepers() error {
 		runtime.NewKVStoreService(icaHostKey),
 		app.IBCKeeper.ChannelKeeper,
 		app.AccountKeeper,
-		// The Treasury-aware router, so an interchain account pays stability
+		// The policy router, so an interchain account pays stability
 		// tax as a contract does. The launch allowlist is empty, but a raw
 		// router would let one governance vote on AllowMessages reopen
 		// untaxed sends.
-		app.treasuryMessageRouter(),
+		app.executionPolicyRouter(),
 		app.GRPCQueryRouter(),
 		authority,
 	)
@@ -155,7 +155,7 @@ func (app *ArkApp) setupIBCRoutes() error {
 	// Delivering a callback moves no funds, so the calculator extracts nothing
 	// from it and it is not a taxable transfer; whatever the woken contract then
 	// dispatches is an ordinary execution-generated message and is charged by
-	// the Treasury-aware router the Wasm keeper already holds (D42, D47).
+	// the policy router the Wasm keeper already holds (D42, D47).
 	wasmIBCHandler := wasm.NewIBCHandler(
 		app.WasmKeeper,
 		app.IBCKeeper.ChannelKeeper,
