@@ -75,10 +75,10 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// checked against live rates either — a kept factor is anchored to the rate
 	// it was last derived under.
 	//
-	// Every factor denomination must name a registry member, because the factor
-	// set is the tax base: a factor is the one thing that makes a denomination
-	// taxable, so one naming a never-member would have the chain collect tax it
-	// can never settle. Such coins verdict UNRECOGNISED, and settlement defers what
+	// Every factor denomination but NOAH's must name a registry member, because
+	// the factor set minus the numeraire is the tax base: a factor is the one
+	// thing that makes a denomination taxable, so one naming a never-member
+	// would have the chain collect tax it can never settle. Such coins verdict UNRECOGNISED, and settlement defers what
 	// it cannot price rather than moving it, so they would accumulate in the
 	// collector permanently.
 	//
@@ -87,6 +87,11 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// a lifecycle status, not a loss of membership, and registry rows are never
 	// deleted, so a kept cap still names a member here.
 	for _, factor := range factors {
+		// The numeraire's entry is fee-pricing state, excluded from the tax
+		// base in GetTaxCap, and deliberately never a registry member.
+		if factor.Denom == chain.NoahBaseDenom {
+			continue
+		}
 		member, err := k.assetKeeper.HasAsset(ctx, factor.Denom)
 		if err != nil {
 			return fmt.Errorf("checking the asset registry for %s: %w", factor.Denom, err)
@@ -183,14 +188,6 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("setting base gas price: %w", err)
 	}
 
-	// Absent stays absent: the NOAH cross has no seed, so a genesis without
-	// one imports a chain on which NOAH has never been derivable.
-	if data.NoahConversionFactor != nil {
-		if err := k.NoahConversionFactor.Set(ctx, *data.NoahConversionFactor); err != nil {
-			return fmt.Errorf("setting the NOAH conversion factor: %w", err)
-		}
-	}
-
 	return nil
 }
 
@@ -235,15 +232,6 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		return nil, fmt.Errorf("getting base gas price: %w", err)
 	}
 
-	var noahFactor *types.ConversionFactor
-	stored, err := k.NoahConversionFactor.Get(ctx)
-	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, fmt.Errorf("getting the NOAH conversion factor: %w", err)
-	}
-	if err == nil {
-		noahFactor = &stored
-	}
-
 	return &types.GenesisState{
 		Params:                 params,
 		ConversionFactors:      factors,
@@ -253,6 +241,5 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 		BaseGasPrice:           baseGasPrice,
-		NoahConversionFactor:   noahFactor,
 	}, nil
 }

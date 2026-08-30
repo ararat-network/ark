@@ -10,7 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/treasury/types"
@@ -237,20 +236,14 @@ func convertGasPrice(price, unit math.LegacyDec) math.LegacyDec {
 // gasFactor resolves one denomination's gas-pricing cross — denom units per
 // reference unit — and the height it was derived at: identity for the
 // reference itself, at height zero because an identity cross cannot go
-// stale; the item for NOAH; the member table for everything else.
+// stale; the factor table for everything else, NOAH included.
 // collections.ErrNotFound is the refusal verdict: a denomination with no
 // cross is not an accepted fee denom.
 func (k Keeper) gasFactor(ctx context.Context, reference, denom string) (math.LegacyDec, uint64, error) {
-	var entry types.ConversionFactor
-	var err error
-	switch denom {
-	case reference:
+	if denom == reference {
 		return math.LegacyOneDec(), 0, nil
-	case chain.NoahBaseDenom:
-		entry, err = k.NoahConversionFactor.Get(ctx)
-	default:
-		entry, err = k.ConversionFactors.Get(ctx, denom)
 	}
+	entry, err := k.ConversionFactors.Get(ctx, denom)
 	if err != nil {
 		return math.LegacyDec{}, 0, err
 	}

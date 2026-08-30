@@ -20,7 +20,6 @@ var (
 	ExposureStateKey          = collections.NewPrefix(6)
 	ExposureRefreshPendingKey = collections.NewPrefix(7)
 	BaseGasPriceKey           = collections.NewPrefix(8)
-	NoahConversionFactorKey   = collections.NewPrefix(9)
 )
 
 // FundAccountNames returns the custody accounts Treasury itself operates.

@@ -321,6 +321,33 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 	s.Require().True(tax.IsZero())
 }
 
+// TestComputeTaxNeverTaxesNoah pins GetTaxCap's exclusion where it matters:
+// NOAH's factor sits in the same table as the members' for fee pricing, and
+// the numeraire still moves untaxed beside a taxed member.
+func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	policy := types.DefaultMonetaryPolicy()
+	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:  chain.USDBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, types.ConversionFactor{
+		Denom:  chain.NoahBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
+
+	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(
+			sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
+			sdk.NewInt64Coin(chain.USDBaseDenom, 1_000),
+		)},
+	})
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
+}
+
 func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	policy := types.DefaultMonetaryPolicy()

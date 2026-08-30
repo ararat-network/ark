@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	chain "github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -114,9 +115,15 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 // reference whose product truncates below one floors at one rather than
 // producing the zero that would read as uncapped, which would lift the
 // ceiling a small reference cap was asking to tighten. A missing entry
-// returns collections.ErrNotFound: the factor set is the tax base, and
-// absence means untaxed to the callers that own that judgement.
+// returns collections.ErrNotFound: the factor set minus the numeraire is the
+// tax base, and absence means untaxed to the callers that own that judgement.
 func (k Keeper) GetTaxCap(ctx context.Context, denom string) (math.Int, error) {
+	// NOAH's entry is fee-pricing state, never tax base: the numeraire is not
+	// taxed, and this accessor is where that exclusion lives, so it hands the
+	// callers the same verdict absence would.
+	if denom == chain.NoahBaseDenom {
+		return math.Int{}, collections.ErrNotFound
+	}
 	entry, err := k.ConversionFactors.Get(ctx, denom)
 	if err != nil {
 		return math.Int{}, err

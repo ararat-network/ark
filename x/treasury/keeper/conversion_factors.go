@@ -98,18 +98,18 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	}
 
 	// The numeraire's own cross — NOAH units per reference unit — derives in
-	// the same pass but lives beside the table, because table presence is the
-	// tax base and NOAH is never taxed. It also has no arrival seed: a member
-	// is minted against its own feed and must be taxable the block it
-	// arrives, while nothing forces gas to be paid in NOAH, so before the
-	// first servable reference rate the cross simply does not exist and the
-	// fee-denom gate refuses NOAH rather than mispricing it.
+	// the same pass into the same table; GetTaxCap excludes it from the tax
+	// base by denomination. It has no arrival seed: a member is minted
+	// against its own feed and must be taxable the block it arrives, while
+	// nothing forces gas to be paid in NOAH, so before the first servable
+	// reference rate the entry simply does not exist and the fee-denom gate
+	// refuses NOAH rather than mispricing it.
 	converted, err := rates.Convert(one, chain.NoahBaseDenom)
 	if err != nil && !isUnusableRateInput(err) {
 		return fmt.Errorf("deriving the NOAH conversion factor: %w", err)
 	}
 	if err == nil && converted.Amount.IsPositive() {
-		stored, err := k.NoahConversionFactor.Get(ctx)
+		stored, err := k.ConversionFactors.Get(ctx, chain.NoahBaseDenom)
 		if err != nil && !errors.Is(err, collections.ErrNotFound) {
 			return fmt.Errorf("getting the NOAH conversion factor: %w", err)
 		}
@@ -119,7 +119,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 				Factor:        converted.Amount,
 				DerivedHeight: height,
 			}
-			if err := k.NoahConversionFactor.Set(ctx, entry); err != nil {
+			if err := k.ConversionFactors.Set(ctx, chain.NoahBaseDenom, entry); err != nil {
 				return fmt.Errorf("setting the NOAH conversion factor: %w", err)
 			}
 			changed = append(changed, entry)
@@ -206,38 +206,12 @@ func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to st
 		}
 	}
 
-	// The NOAH cross is reference-relative like every member's and rescales
-	// on the same terms; one that has never derived has nothing to re-express.
-	stored, err := k.NoahConversionFactor.Get(ctx)
-	switch {
-	case err == nil:
-		factor, err := decimal.Mul(stored.Factor, cross.Amount)
-		if err != nil || !factor.IsPositive() {
-			k.Logger(ctx).Warn(
-				"holding conversion factor across reference move",
-				"from", from,
-				"to", to,
-				"denom", chain.NoahBaseDenom,
-				"error", err,
-			)
-			break
-		}
-		stored.Factor = factor
-		stored.DerivedHeight = height
-		if err := k.NoahConversionFactor.Set(ctx, stored); err != nil {
-			return fmt.Errorf("rescaling the NOAH conversion factor: %w", err)
-		}
-		rescaled = append(rescaled, stored)
-	case !errors.Is(err, collections.ErrNotFound):
-		return fmt.Errorf("getting the NOAH conversion factor: %w", err)
-	}
-
 	if len(rescaled) == 0 {
 		return nil
 	}
 	// The rescale reports through the table's one stream, written entries
-	// only and NOAH last, exactly as refresh does: refresh emits on change
-	// only, and next block it re-derives to the values written here — so a
+	// only in table order, as refresh does: refresh emits on change only,
+	// and next block it re-derives to the values written here — so a
 	// consumer missing this write would hold old-unit factors forever.
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventConversionFactorsRefreshed{
 		ConversionFactors: rescaled,

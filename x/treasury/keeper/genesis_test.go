@@ -30,7 +30,11 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap = math.ZeroInt()
+	// The NOAH cross rides in the table and survives export on the same
+	// keep-last-value terms as the member factors, exempt from the registry
+	// membership rule the member entry beside it is held to.
 	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyMustNewDecFromStr("0.25"), DerivedHeight: 5},
 		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
 	}
 	// An export taken while an exposure update was owed carries the raised
@@ -49,13 +53,6 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 		Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
 		LastRefreshHeight:  7,
 	}
-	// A derived NOAH cross survives export on keep-last-value terms, like the
-	// member factors it lives beside.
-	genesis.NoahConversionFactor = &types.ConversionFactor{
-		Denom:         chain.NoahBaseDenom,
-		Factor:        math.LegacyMustNewDecFromStr("0.25"),
-		DerivedHeight: 5,
-	}
 	s.setAssets(chain.SDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
 		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
@@ -73,7 +70,6 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
 	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
 	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
-	s.Require().Equal(genesis.NoahConversionFactor, exported.NoahConversionFactor)
 }
 
 // TestInitGenesisSeedsFactorsAtOne pins the launch path: a genesis shipping

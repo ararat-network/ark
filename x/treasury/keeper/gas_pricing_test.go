@@ -151,10 +151,10 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeeCeilsInTheReferenceDenom() {
 }
 
 // TestGetRequiredGasFeePricesEveryAcceptedSource pins the one requirement
-// seam over its three factor sources: identity for the reference, the table
-// for a member, the item for NOAH — and refusal by absence for everything
-// else, NOAH before derivation included. The returned factor is the cross
-// the requirement priced with, which the ante's tip normalisation divides by.
+// seam over its two factor sources: identity for the reference, the table
+// for everything else, NOAH included — and refusal by absence otherwise,
+// NOAH before derivation included. The returned factor is the cross the
+// requirement priced with, which the ante's tip normalisation divides by.
 func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 	_, _, err := s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
@@ -164,7 +164,7 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 		Factor:        math.LegacyNewDec(2),
 		DerivedHeight: 5,
 	}))
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, types.ConversionFactor{
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, types.ConversionFactor{
 		Denom:         chain.NoahBaseDenom,
 		Factor:        math.LegacyMustNewDecFromStr("0.25"),
 		DerivedHeight: 6,

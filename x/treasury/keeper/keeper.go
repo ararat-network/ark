@@ -42,12 +42,13 @@ type Keeper struct {
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]
-	// ConversionFactors holds each taxable denomination's cross rate from the
-	// protocol reference, refreshed every block the oracle can serve it and
-	// kept at its last derived value when it cannot. Entry presence is the tax
-	// base, and the per-denomination cap is GetTaxCap's derived read — nothing
-	// stores a resolved cap. Membership drift needs no flag: the registry is
-	// ground truth, re-read every block, and every block is the retry.
+	// ConversionFactors holds every derived cross rate from the protocol
+	// reference — each member's and, once first derivable, NOAH's — refreshed
+	// every block the oracle can serve it and kept at its last derived value
+	// when it cannot. The tax base is every entry except NOAH's: GetTaxCap
+	// owns that exclusion, and nothing stores a resolved cap. Membership
+	// drift needs no flag: the registry is ground truth, re-read every block,
+	// and every block is the retry.
 	ConversionFactors collections.Map[string, types.ConversionFactor]
 	RewardFunding     collections.Item[types.RewardFundingState]
 	MonetaryMandate   collections.Item[types.MonetaryMandate]
@@ -67,12 +68,6 @@ type Keeper struct {
 	// units per gas unit: the fee gate reads it at ante, the EndBlock update
 	// rewrites it from the block's gas tally.
 	BaseGasPrice collections.Item[math.LegacyDec]
-	// NoahConversionFactor is the numeraire's cross from the protocol
-	// reference — NOAH units per reference unit — held beside the member
-	// table rather than in it, because table presence is the tax base and
-	// NOAH is never taxed. Absent until first derivable: NOAH has no arrival
-	// seed, so the fee-denom gate refuses it until a real cross exists.
-	NoahConversionFactor collections.Item[types.ConversionFactor]
 }
 
 // NewKeeper creates a Treasury keeper.
@@ -176,12 +171,6 @@ func NewKeeper(
 			types.BaseGasPriceKey,
 			"base_gas_price",
 			sdk.LegacyDecValue,
-		),
-		NoahConversionFactor: collections.NewItem(
-			sb,
-			types.NoahConversionFactorKey,
-			"noah_conversion_factor",
-			codec.CollValue[types.ConversionFactor](cdc),
 		),
 	}
 

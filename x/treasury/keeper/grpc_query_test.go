@@ -134,6 +134,10 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 		Denom:  chain.USDBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.NoahBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 	server := keeper.NewQueryServerImpl(s.keeper)
 	tests := []struct {
 		name     string
@@ -149,6 +153,12 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 		{
 			name:     "not found",
 			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.SDRBaseDenom},
+			wantCode: codes.NotFound,
+		},
+		{
+			// The numeraire's entry never derives a cap: NOAH is not tax base.
+			name:     "noah excluded despite its entry",
+			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.NoahBaseDenom},
 			wantCode: codes.NotFound,
 		},
 		{
@@ -194,6 +204,12 @@ func (s *KeeperTestSuite) TestQueryTaxCaps() {
 		Denom:  chain.KRWBaseDenom,
 		Factor: math.LegacyNewDec(2),
 	}))
+	// NOAH's entry rides in the table for fee pricing and must not surface
+	// here: the cap map is the tax base.
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.NoahBaseDenom,
+		Factor: math.LegacyOneDec(),
+	}))
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).TaxCaps(
 		s.ctx,
@@ -230,15 +246,23 @@ func (s *KeeperTestSuite) TestQueryConversionFactor() {
 func (s *KeeperTestSuite) TestQueryConversionFactors() {
 	usd := treasurytypes.ConversionFactor{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3}
 	krw := treasurytypes.ConversionFactor{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(2), DerivedHeight: 5}
+	// The numeraire's cross lists like any entry — the factor table is the
+	// pricing surface, and only the tax reads exclude NOAH.
+	noah := treasurytypes.ConversionFactor{
+		Denom:         chain.NoahBaseDenom,
+		Factor:        math.LegacyMustNewDecFromStr("0.25"),
+		DerivedHeight: 6,
+	}
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, usd.Denom, usd))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, krw.Denom, krw))
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, noah.Denom, noah))
 
 	response, err := keeper.NewQueryServerImpl(s.keeper).ConversionFactors(
 		s.ctx,
 		&treasurytypes.QueryConversionFactorsRequest{},
 	)
 	s.Require().NoError(err)
-	s.Require().Equal([]treasurytypes.ConversionFactor{krw, usd}, response.ConversionFactors)
+	s.Require().Equal([]treasurytypes.ConversionFactor{krw, noah, usd}, response.ConversionFactors)
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTax() {
@@ -573,7 +597,7 @@ func (s *KeeperTestSuite) TestQueryFundStatusReportsScaledTargetsAndMultiplier()
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), response.RedemptionBufferNetTarget)
 }
 
-// TestQueryGasPrice pins the single-row read over all three factor sources
+// TestQueryGasPrice pins the single-row read over both factor sources
 // and the refusal for a denomination with no cross.
 func (s *KeeperTestSuite) TestQueryGasPrice() {
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
@@ -581,7 +605,7 @@ func (s *KeeperTestSuite) TestQueryGasPrice() {
 		Factor:        math.LegacyNewDec(2),
 		DerivedHeight: 5,
 	}))
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, treasurytypes.ConversionFactor{
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, treasurytypes.ConversionFactor{
 		Denom:         chain.NoahBaseDenom,
 		Factor:        math.LegacyMustNewDecFromStr("0.25"),
 		DerivedHeight: 6,
@@ -615,8 +639,10 @@ func (s *KeeperTestSuite) TestQueryGasPrice() {
 	s.Require().ErrorContains(err, "not an accepted fee denomination")
 }
 
-// TestQueryGasPricesSheet pins the sheet's contract: reference first, members
-// in denomination order without duplicating a member reference, NOAH last.
+// TestQueryGasPricesSheet pins the sheet's shape: the reference row in its
+// own field — the base price at the identity factor, never a list entry even
+// as a member — and every other accepted denomination, NOAH among them, in
+// denomination order.
 func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.SDRBaseDenom, treasurytypes.ConversionFactor{
 		Denom:  chain.SDRBaseDenom,
@@ -627,7 +653,7 @@ func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
 		Factor:        math.LegacyNewDec(4),
 		DerivedHeight: 3,
 	}))
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, treasurytypes.ConversionFactor{
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, treasurytypes.ConversionFactor{
 		Denom:         chain.NoahBaseDenom,
 		Factor:        math.LegacyMustNewDecFromStr("0.25"),
 		DerivedHeight: 6,
@@ -636,8 +662,11 @@ func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
 
 	response, err := server.GasPrices(s.ctx, &treasurytypes.QueryGasPricesRequest{})
 	s.Require().NoError(err)
+	s.Require().Equal(
+		treasurytypes.GasPrice{Denom: chain.SDRBaseDenom, GasPrice: testMinBaseGasPrice},
+		response.ReferenceGasPrice,
+	)
 	s.Require().Equal([]treasurytypes.GasPrice{
-		{Denom: chain.SDRBaseDenom, GasPrice: testMinBaseGasPrice},
 		{Denom: chain.KRWBaseDenom, GasPrice: math.LegacyMustNewDecFromStr("0.4"), DerivedHeight: 3},
 		{Denom: chain.NoahBaseDenom, GasPrice: math.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
 	}, response.GasPrices)

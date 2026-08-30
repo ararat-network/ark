@@ -32,7 +32,6 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 		types.DefaultExposureState(),
 		false,
 		types.DefaultMinBaseGasPrice,
-		nil,
 	)
 	factors[0].Denom = "mutated"
 	require.Equal(t, chain.USDBaseDenom, genesis.ConversionFactors[0].Denom)
@@ -69,36 +68,6 @@ func TestGenesisBaseGasPriceValidation(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {
 				gs.BaseGasPrice = types.DefaultMinBaseGasPrice.MulInt64(7)
 			},
-		},
-		{
-			// Unset is legitimate: the NOAH cross has never been derivable.
-			name: "derived noah cross",
-			mutate: func(gs *types.GenesisState) {
-				gs.NoahConversionFactor = &types.ConversionFactor{
-					Denom:  chain.NoahBaseDenom,
-					Factor: math.LegacyMustNewDecFromStr("0.25"),
-				}
-			},
-		},
-		{
-			name: "noah cross under another denom",
-			mutate: func(gs *types.GenesisState) {
-				gs.NoahConversionFactor = &types.ConversionFactor{
-					Denom:  chain.USDBaseDenom,
-					Factor: math.LegacyOneDec(),
-				}
-			},
-			expectErr: "noah conversion factor must be denominated in",
-		},
-		{
-			name: "non-positive noah cross",
-			mutate: func(gs *types.GenesisState) {
-				gs.NoahConversionFactor = &types.ConversionFactor{
-					Denom:  chain.NoahBaseDenom,
-					Factor: math.LegacyZeroDec(),
-				}
-			},
-			expectErr: "noah conversion factor must be positive",
 		},
 	}
 
@@ -157,6 +126,26 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 					factor(chain.USDBaseDenom, "1"),
 				}
 			},
+		},
+		{
+			// The numeraire's cross rides in the table exempt from the
+			// priced-denom rule, which rejects NOAH by name; absence stays
+			// legitimate — the cross has simply never been derivable.
+			name: "noah cross in the table is valid",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.KRWBaseDenom, "1"),
+					factor(chain.NoahBaseDenom, "0.25"),
+					factor(chain.USDBaseDenom, "1"),
+				}
+			},
+		},
+		{
+			name: "non-positive noah cross is refused",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.NoahBaseDenom, "0")}
+			},
+			expectErr: "must be positive",
 		},
 		{
 			name: "unsorted factors",

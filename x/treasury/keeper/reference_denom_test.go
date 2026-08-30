@@ -26,8 +26,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	capBefore, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(900), capBefore)
-	// The NOAH cross is reference-relative too and rescales with the table.
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, types.ConversionFactor{
+	// The NOAH cross is reference-relative too and rescales in the table.
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, types.ConversionFactor{
 		Denom:  chain.NoahBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
@@ -61,7 +61,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	capAfter, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(900), capAfter)
-	noahCross, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	noahCross, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.5"), noahCross.Factor)
 	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
@@ -180,7 +180,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 		Denom:  chain.EURBaseDenom,
 		Factor: math.LegacyNewDec(2),
 	}))
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, types.ConversionFactor{
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, types.ConversionFactor{
 		Denom:  chain.NoahBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
@@ -202,7 +202,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 	moved, err := s.keeper.ConversionFactors.Get(s.ctx, chain.EURBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyNewDec(2).Mul(cross), moved.Factor)
-	noah, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	noah, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(cross, noah.Factor)
 }
@@ -221,7 +221,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 		Denom:  chain.EURBaseDenom,
 		Factor: math.LegacyNewDec(2),
 	}))
-	s.Require().NoError(s.keeper.NoahConversionFactor.Set(s.ctx, types.ConversionFactor{
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.NoahBaseDenom, types.ConversionFactor{
 		Denom:  chain.NoahBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
@@ -242,7 +242,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 	moved, err := s.keeper.ConversionFactors.Get(s.ctx, chain.EURBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyNewDec(2).Mul(cross), moved.Factor)
-	noah, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	noah, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(cross, noah.Factor)
 }

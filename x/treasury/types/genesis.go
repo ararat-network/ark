@@ -19,7 +19,6 @@ func NewGenesisState(
 	exposureState ExposureState,
 	exposureUpdatePending bool,
 	baseGasPrice math.LegacyDec,
-	noahConversionFactor *ConversionFactor,
 ) *GenesisState {
 	return &GenesisState{
 		Params:                 params,
@@ -30,7 +29,6 @@ func NewGenesisState(
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 		BaseGasPrice:           baseGasPrice,
-		NoahConversionFactor:   noahConversionFactor,
 	}
 }
 
@@ -45,7 +43,6 @@ func DefaultGenesisState() *GenesisState {
 		DefaultExposureState(),
 		false,
 		DefaultMinBaseGasPrice,
-		nil,
 	)
 }
 
@@ -71,8 +68,13 @@ func (gs GenesisState) Validate() error {
 	}
 
 	for i, factor := range gs.ConversionFactors {
-		if err := chain.ValidatePricedDenom(factor.Denom); err != nil {
-			return fmt.Errorf("conversion factor denom %q is invalid: %w", factor.Denom, err)
+		// The numeraire's cross is the one entry that is not a priced denom:
+		// NOAH carries no feed, so it is matched exactly rather than
+		// validated. Absent means never derivable yet — NOAH has no seed.
+		if factor.Denom != chain.NoahBaseDenom {
+			if err := chain.ValidatePricedDenom(factor.Denom); err != nil {
+				return fmt.Errorf("conversion factor denom %q is invalid: %w", factor.Denom, err)
+			}
 		}
 		// Strictly positive: the derived cap floors at one base unit, so a
 		// zero factor could only ever have been written by a bug, and a
@@ -154,21 +156,6 @@ func (gs GenesisState) Validate() error {
 			MaxBaseGasPrice,
 			gs.BaseGasPrice,
 		)
-	}
-
-	// Unset is legitimate — the cross has never been derivable — but a set one
-	// must be NOAH's, and positive on the member factors' terms.
-	if gs.NoahConversionFactor != nil {
-		if gs.NoahConversionFactor.Denom != chain.NoahBaseDenom {
-			return fmt.Errorf(
-				"noah conversion factor must be denominated in %s: %s",
-				chain.NoahBaseDenom,
-				gs.NoahConversionFactor.Denom,
-			)
-		}
-		if gs.NoahConversionFactor.Factor.IsNil() || !gs.NoahConversionFactor.Factor.IsPositive() {
-			return errors.New("noah conversion factor must be positive")
-		}
 	}
 
 	return nil

@@ -427,10 +427,18 @@ message QueryGasPriceResponse {
 // QueryGasPricesRequest is the request type for Query/GasPrices.
 message QueryGasPricesRequest {}
 
-// QueryGasPricesResponse is the complete price sheet: the reference
-// denomination first, members in denomination order, NOAH last.
+// QueryGasPricesResponse is the complete price sheet.
 message QueryGasPricesResponse {
+  // gas_prices lists every accepted non-reference denomination in
+  // denomination order — NOAH among them. Presentation order only; the
+  // reference is the dedicated field below, never a list entry.
   repeated GasPrice gas_prices = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // reference_gas_price is the reference row — the base gas price at the
+  // identity factor. Always present: the reference prices unconditionally.
+  GasPrice reference_gas_price = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

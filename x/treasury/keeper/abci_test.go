@@ -343,16 +343,16 @@ func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
 }
 
 // TestBeginBlockerDerivesNoahCrossWithoutSeeding pins the numeraire's
-// difference from the members: no servable reference rate means no cross —
+// difference from the members: no servable reference rate means no entry —
 // NOAH is refused as a fee denom rather than seeded, because nothing forces
-// gas to be paid in it — and the first real rate creates the cross beside
-// the table, never in it.
+// gas to be paid in it — and the first real rate creates the entry in the
+// table, excluded from the tax base by GetTaxCap alone.
 func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 	s.setBlockHeight(1)
 	s.setAssets(chain.USDBaseDenom)
 
 	s.Require().NoError(s.beginBlock())
-	_, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 
 	// One NOAH is four SDR here, so one reference unit is a quarter NOAH.
@@ -361,17 +361,17 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 		chain.USDBaseDenom: math.LegacyNewDec(2),
 	})
 	s.Require().NoError(s.beginBlock())
-	cross, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	cross, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), cross.Factor)
-	// Never in the table: the tax base is untouched.
-	_, err = s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
+	// In the table, yet never tax base: the exclusion is GetTaxCap's.
+	_, err = s.keeper.GetTaxCap(s.ctx, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 
 	// A dark reference keeps the cross, like any member through an outage.
 	s.setRates(oracletypes.RateSet{})
 	s.Require().NoError(s.beginBlock())
-	kept, err := s.keeper.NoahConversionFactor.Get(s.ctx)
+	kept, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), kept.Factor)
 }
