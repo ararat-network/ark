@@ -38,12 +38,17 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: go
+          # Every external reference is pinned. Queries are code that runs in
+          # CI, and the cosmos-sdk pack is third-party and last published in
+          # December 2023, so an unpinned reference is a dependency that can
+          # change without a pull request. The query tag tracks the CLI the
+          # action ships; bump both together.
           queries: >-
             +security-and-quality,
-            github/codeql/go/ql/src/experimental/CWE-369/DivideByZero.ql@main,
-            github/codeql/go/ql/src/experimental/Unsafe/WrongUsageOfUnsafe.ql@main,
-            github/codeql/go/ql/src/experimental/InconsistentCode/DeferInLoop.ql@main
-          packs: +crypto-com/cosmos-sdk-codeql
+            github/codeql/go/ql/src/experimental/CWE-369/DivideByZero.ql@codeql-cli/v2.26.4,
+            github/codeql/go/ql/src/experimental/Unsafe/WrongUsageOfUnsafe.ql@codeql-cli/v2.26.4,
+            github/codeql/go/ql/src/experimental/InconsistentCode/DeferInLoop.ql@codeql-cli/v2.26.4
+          packs: +crypto-com/cosmos-sdk-codeql@0.0.8
 
       - uses: github/codeql-action/autobuild@v3
 
