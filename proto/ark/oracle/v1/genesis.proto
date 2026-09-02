@@ -56,9 +56,11 @@ message Accounting {
   uint64 attendance_window_start_height = 5;
 }
 
-// ExchangeRate - struct to store interpreted exchange rates data to store
+// ExchangeRate is one stored consensus rate: NOAH per one unit of denom.
 message ExchangeRate {
+  // denom is the feed key the rate prices.
   string denom = 1;
+  // rate is NOAH per one unit of denom.
   string rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

@@ -522,9 +522,8 @@ type MsgOpenSettlement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// redemption_rate is the positive number of units of the settled asset
-	// redeemed per one NOAH, the same NOAH-quoted orientation as oracle
-	// exchange rates.
+	// redemption_rate is the positive number of NOAH paid per one unit of the
+	// settled asset, the same orientation as oracle exchange rates.
 	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
 	// earliest_closing_height commits to holders that redemption stays open at
 	// least until that height. It is the only height governance states: the plan

@@ -30,7 +30,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // EventExchangeRateUpdate is emitted after an Oracle exchange rate is stored.
 type EventExchangeRateUpdate struct {
-	Denom        string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
+	// exchange_rate is NOAH per one unit of denom.
 	ExchangeRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=exchange_rate,json=exchangeRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"exchange_rate"`
 }
 

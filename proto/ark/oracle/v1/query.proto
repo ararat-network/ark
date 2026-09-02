@@ -3,7 +3,6 @@ package ark.oracle.v1;
 
 import "amino/amino.proto";
 import "ark/oracle/v1/oracle.proto";
-import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
@@ -78,8 +77,19 @@ message QueryExchangeRateRequest {
 // QueryExchangeRateResponse is response type for the
 // Query/ExchangeRate RPC method.
 message QueryExchangeRateResponse {
-  // exchange_rate defines the exchange rate of noah denominated in various ark
+  // exchange_rate is the stored rate of the queried denomination, NOAH per
+  // one unit.
   string exchange_rate = 1 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // units_per_noah is the same rate read the other way round — units of the
+  // denomination one NOAH buys — derived for reading, never stored or
+  // consumed by the chain. Zero when the reciprocal is below Dec precision,
+  // which only a rate near the store bound produces.
+  string units_per_noah = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -91,13 +101,34 @@ message QueryExchangeRateResponse {
 // method.
 message QueryExchangeRatesRequest {}
 
+// ExchangeRateReading is one fresh rate in both readings: the stored figure
+// and its reciprocal, on one line, so a reader never has to invert by eye.
+message ExchangeRateReading {
+  // denom is the feed key the rate prices.
+  string denom = 1;
+  // exchange_rate is the stored rate, NOAH per one unit of denom.
+  string exchange_rate = 2 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // units_per_noah is the reciprocal, derived for reading exactly as in
+  // QueryExchangeRateResponse.
+  string units_per_noah = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
 // QueryExchangeRatesResponse is response type for the
 // Query/ExchangeRates RPC method.
 message QueryExchangeRatesResponse {
-  // exchange_rates defines a list of the exchange rate for all whitelisted
-  // denoms.
-  repeated cosmos.base.v1beta1.DecCoin exchange_rates = 1 [
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.DecCoins",
+  // exchange_rates lists every fresh rate in denomination order, each in
+  // both readings.
+  repeated ExchangeRateReading exchange_rates = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

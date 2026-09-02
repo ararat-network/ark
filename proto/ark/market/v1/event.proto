@@ -85,9 +85,9 @@ message EventSettle {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // redemption_rate is the plan rate the redemption executed at, in units of
-  // the settled asset per one NOAH — the same NOAH-quoted orientation as
-  // oracle exchange rates.
+  // redemption_rate is the plan rate the redemption executed at, in NOAH per
+  // one unit of the settled asset — the same orientation as oracle exchange
+  // rates.
   string redemption_rate = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

@@ -27,7 +27,8 @@ message PricesRequest {}
 // PricesResponse defines the response type for the Prices method.
 message PricesResponse {
   // Prices maps a feed denom to the minimal big-endian encoding of its
-  // strictly positive raw price*10^18. Unpriced feeds are omitted.
+  // strictly positive raw price*10^18, where the price is NOAH per one unit
+  // of the feed's denomination. Unpriced feeds are omitted.
   map<string, bytes> prices = 1 [(gogoproto.nullable) = false];
 
   // Timestamp defines the timestamp of the prices.

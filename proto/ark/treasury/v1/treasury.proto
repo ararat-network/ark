@@ -121,8 +121,9 @@ message Params {
 // per-block series, the inputs of the last applied update, and the multiplier
 // every target consumer reads.
 message ExposureState {
-  // last_reference_price is the previous block's protocol reference rate, held
-  // to form the next return. Zero means no sample has been taken yet, so the
+  // last_reference_price is the previous block's protocol reference rate — NOAH
+  // per one reference unit — held to form the next return. It is a price, so a
+  // reference move re-expresses it by the reciprocal of a quantity's factor. Zero means no sample has been taken yet, so the
   // next one records a price and produces no return.
   string last_reference_price = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",

@@ -329,7 +329,7 @@ type MsgSetReferenceDenom struct {
 	// reference_denom keys the feed the reference unit is priced from.
 	ReferenceDenom string `protobuf:"bytes,2,opt,name=reference_denom,json=referenceDenom,proto3" json:"reference_denom,omitempty"`
 	// outgoing_rate overrides the rate the outgoing reference denom is converted
-	// out of, in units of that denomination per one NOAH — the same orientation
+	// out of, in NOAH per one unit of that denomination — the same orientation
 	// as every oracle rate. Absent means price the outgoing denomination like any
 	// other, under the ordinary freshness rule, which is the ordinary path for
 	// adopting a better reference while both feeds are healthy.

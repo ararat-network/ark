@@ -3560,8 +3560,8 @@ const (
 	// PRICE_SOURCE_NUMERAIRE is NOAH itself: one by definition rather than by
 	// observation.
 	PriceSource_PRICE_SOURCE_NUMERAIRE PriceSource = 1
-	// PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — asset
-	// units per one NOAH, the same value ark.oracle.v1 Query/ExchangeRate
+	// PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — NOAH
+	// per one asset unit, the same value ark.oracle.v1 Query/ExchangeRate
 	// returns.
 	PriceSource_PRICE_SOURCE_ORACLE PriceSource = 2
 	// PRICE_SOURCE_SETTLEMENT is the redemption rate of a settlement plan: a
@@ -3863,9 +3863,8 @@ type SettlementPlan struct {
 
 	// denom identifies the asset accepted for settlement.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	// redemption_rate is the positive number of units of the settled asset
-	// redeemed per one NOAH, the same NOAH-quoted orientation as oracle
-	// exchange rates.
+	// redemption_rate is the positive number of NOAH paid per one unit of the
+	// settled asset, the same orientation as oracle exchange rates.
 	RedemptionRate string `protobuf:"bytes,2,opt,name=redemption_rate,json=redemptionRate,proto3" json:"redemption_rate,omitempty"`
 	// activation_height is the first block height at which redemption is
 	// permitted. It is derived when the plan opens, as

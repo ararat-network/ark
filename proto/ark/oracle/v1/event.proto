@@ -12,6 +12,7 @@ option go_package = "github.com/ararat-network/ark/x/oracle/types";
 // EventExchangeRateUpdate is emitted after an Oracle exchange rate is stored.
 message EventExchangeRateUpdate {
   string denom = 1;
+  // exchange_rate is NOAH per one unit of denom.
   string exchange_rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

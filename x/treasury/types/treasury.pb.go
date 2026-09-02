@@ -131,8 +131,9 @@ func (m *Params) GetExposureRefreshPeriodBlocks() uint64 {
 // per-block series, the inputs of the last applied update, and the multiplier
 // every target consumer reads.
 type ExposureState struct {
-	// last_reference_price is the previous block's protocol reference rate, held
-	// to form the next return. Zero means no sample has been taken yet, so the
+	// last_reference_price is the previous block's protocol reference rate — NOAH
+	// per one reference unit — held to form the next return. It is a price, so a
+	// reference move re-expresses it by the reciprocal of a quantity's factor. Zero means no sample has been taken yet, so the
 	// next one records a price and produces no return.
 	LastReferencePrice cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=last_reference_price,json=lastReferencePrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"last_reference_price"`
 	// volatility_variance is the EWMA of squared per-block returns. Each sample

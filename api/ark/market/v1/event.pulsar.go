@@ -4042,9 +4042,9 @@ type EventSettle struct {
 	// redeemed_amount is the NOAH paid to the trader, whole entitlement
 	// regardless of how much of it the shared buffer covered.
 	RedeemedAmount string `protobuf:"bytes,4,opt,name=redeemed_amount,json=redeemedAmount,proto3" json:"redeemed_amount,omitempty"`
-	// redemption_rate is the plan rate the redemption executed at, in units of
-	// the settled asset per one NOAH — the same NOAH-quoted orientation as
-	// oracle exchange rates.
+	// redemption_rate is the plan rate the redemption executed at, in NOAH per
+	// one unit of the settled asset — the same orientation as oracle exchange
+	// rates.
 	RedemptionRate string `protobuf:"bytes,5,opt,name=redemption_rate,json=redemptionRate,proto3" json:"redemption_rate,omitempty"`
 }
 

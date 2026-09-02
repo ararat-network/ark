@@ -24,7 +24,8 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // OracleVoteExtension defines the vote extension structure for oracle prices.
 type OracleVoteExtension struct {
-	// rates maps a valid oracle denom to its reported exchange rate.
+	// rates maps a valid oracle denom to its reported exchange rate, NOAH per
+	// one unit of the denom.
 	//
 	// Each value is the minimal big-endian encoding of the strictly positive
 	// raw value price*10^18: never empty, never a leading zero byte. An

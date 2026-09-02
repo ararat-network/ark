@@ -3449,14 +3449,16 @@ func (x *Accounting) GetAttendanceWindowStartHeight() uint64 {
 	return 0
 }
 
-// ExchangeRate - struct to store interpreted exchange rates data to store
+// ExchangeRate is one stored consensus rate: NOAH per one unit of denom.
 type ExchangeRate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// denom is the feed key the rate prices.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	Rate  string `protobuf:"bytes,2,opt,name=rate,proto3" json:"rate,omitempty"`
+	// rate is NOAH per one unit of denom.
+	Rate string `protobuf:"bytes,2,opt,name=rate,proto3" json:"rate,omitempty"`
 	// BlockTimestamp tracks the block time associated with this price update.
 	// We include block timestamp alongside the price to ensure that smart
 	// contracts and applications are not utilizing stale oracle prices

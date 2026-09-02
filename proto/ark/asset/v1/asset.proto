@@ -45,8 +45,8 @@ enum PriceSource {
   // PRICE_SOURCE_NUMERAIRE is NOAH itself: one by definition rather than by
   // observation.
   PRICE_SOURCE_NUMERAIRE = 1;
-  // PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — asset
-  // units per one NOAH, the same value ark.oracle.v1 Query/ExchangeRate
+  // PRICE_SOURCE_ORACLE is a fresh Oracle rate for a priced-live asset — NOAH
+  // per one asset unit, the same value ark.oracle.v1 Query/ExchangeRate
   // returns.
   PRICE_SOURCE_ORACLE = 2;
   // PRICE_SOURCE_SETTLEMENT is the redemption rate of a settlement plan: a
@@ -143,9 +143,8 @@ message Asset {
 message SettlementPlan {
   // denom identifies the asset accepted for settlement.
   string denom = 1;
-  // redemption_rate is the positive number of units of the settled asset
-  // redeemed per one NOAH, the same NOAH-quoted orientation as oracle
-  // exchange rates.
+  // redemption_rate is the positive number of NOAH paid per one unit of the
+  // settled asset, the same orientation as oracle exchange rates.
   string redemption_rate = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

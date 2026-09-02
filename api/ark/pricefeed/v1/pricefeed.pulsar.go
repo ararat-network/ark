@@ -2000,7 +2000,8 @@ type PricesResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Prices maps a feed denom to the minimal big-endian encoding of its
-	// strictly positive raw price*10^18. Unpriced feeds are omitted.
+	// strictly positive raw price*10^18, where the price is NOAH per one unit
+	// of the feed's denomination. Unpriced feeds are omitted.
 	Prices map[string][]byte `protobuf:"bytes,1,rep,name=prices,proto3" json:"prices,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Timestamp defines the timestamp of the prices.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
