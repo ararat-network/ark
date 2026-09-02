@@ -127,24 +127,24 @@ func TestAggregateOracleVotesChoosesReferenceWithBestOverlapCoverage(t *testing.
 		newTestVote([]byte{2}, 20, map[string]math.LegacyDec{
 			"ausd": math.LegacyNewDec(100),
 			"akrw": math.LegacyNewDec(1000),
-			"asdr": math.LegacyNewDec(2),
+			"axdr": math.LegacyNewDec(2),
 		}),
 		newTestVote([]byte{3}, 30, map[string]math.LegacyDec{
 			"akrw": math.LegacyNewDec(900),
-			"asdr": math.LegacyNewDec(3),
+			"axdr": math.LegacyNewDec(3),
 		}),
 		newTestVote([]byte{4}, 10, map[string]math.LegacyDec{}),
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := []string{"ausd", "akrw", "asdr"}
+	voteTargets := []string{"ausd", "akrw", "axdr"}
 
 	_, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
 	require.NoError(t, err)
 	require.NotContains(t, prices, "ausd")
 	require.True(t, math.LegacyNewDec(900).Equal(prices["akrw"]))
-	require.True(t, math.LegacyNewDec(3).Equal(prices["asdr"]))
+	require.True(t, math.LegacyNewDec(3).Equal(prices["axdr"]))
 }
 
 func TestAggregateOracleVotesSkipsCrossRateDenomBelowOverlapQuorum(t *testing.T) {
@@ -221,18 +221,18 @@ func TestAggregateOracleVotesRecordsEveryTargetAbstentionAsEligibleOnly(t *testi
 	votes := []testVote{
 		newTestVote(honestVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyNewDec(1000),
-			"asdr": math.LegacyNewDec(2),
+			"axdr": math.LegacyNewDec(2),
 			"ausd": math.LegacyNewDec(100),
 		}),
 		newTestVote(abstainingVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyZeroDec(),
-			"asdr": math.LegacyNewDec(-1),
+			"axdr": math.LegacyNewDec(-1),
 			"ausd": math.LegacyZeroDec(),
 		}),
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := []string{"akrw", "asdr", "ausd"}
+	voteTargets := []string{"akrw", "axdr", "ausd"}
 
 	keeper, _, err := processVoteExtensions(t, votes, params, voteTargets)
 
@@ -250,18 +250,18 @@ func TestAggregateOracleVotesCountsPartialAbstentionAsAttended(t *testing.T) {
 	votes := []testVote{
 		newTestVote(honestVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyNewDec(1000),
-			"asdr": math.LegacyNewDec(2),
+			"axdr": math.LegacyNewDec(2),
 			"ausd": math.LegacyNewDec(100),
 		}),
 		newTestVote(abstainingVoter, 10, map[string]math.LegacyDec{
 			"akrw": math.LegacyZeroDec(),
-			"asdr": math.LegacyNewDec(-1),
+			"axdr": math.LegacyNewDec(-1),
 			"ausd": math.LegacyNewDec(100),
 		}),
 	}
 	params := oracletypes.DefaultParams()
 	params.VoteThreshold = math.LegacyNewDecWithPrec(50, 2)
-	voteTargets := []string{"akrw", "asdr", "ausd"}
+	voteTargets := []string{"akrw", "axdr", "ausd"}
 
 	keeper, prices, err := processVoteExtensions(t, votes, params, voteTargets)
 
