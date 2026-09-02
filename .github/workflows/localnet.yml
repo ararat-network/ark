@@ -1,0 +1,59 @@
+# Builds the image from the working tree, runs the four-validator localnet
+# with its price-feed sidecars, and asserts liveness plus the emergency
+# submission runbook against it.
+name: Localnet
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: localnet-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  localnet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Version stamps
+        id: stamps
+        run: |
+          echo "version=$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ark/arkd
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: contrib/images/arkd-env/Dockerfile
+          load: true
+          tags: ark/arkd
+          build-args: |
+            VERSION=${{ steps.stamps.outputs.version }}
+            COMMIT=${{ steps.stamps.outputs.commit }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - run: make localnet-init
+      - run: make localnet-up
+      - run: make localnet-liveness
+      - run: make localnet-runbook
+
+      - name: Container logs
+        if: failure()
+        run: docker compose -f contrib/localnet/docker-compose.yml logs --tail 200
+
+      - name: Stop
+        if: always()
+        run: make localnet-stop

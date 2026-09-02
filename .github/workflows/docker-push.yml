@@ -1,0 +1,80 @@
+# Publishes the ark/arkd image to ghcr on every release, nightly when main
+# moved, and on demand. Tags are the release tag, the branch name, or
+# `nightly`; there is never a `latest`, so nobody pulls a moving target.
+name: Publish Docker image
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # git describe needs the tags.
+          fetch-depth: 0
+
+      - name: Count commits since the last nightly
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            count=$(git log --oneline --since '24 hours ago' | wc -l | tr -d ' ')
+          else
+            count=1
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Version stamps
+        id: stamps
+        if: steps.changes.outputs.count > 0
+        run: |
+          echo "version=$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.changes.outputs.count > 0
+
+      - uses: docker/login-action@v3
+        if: steps.changes.outputs.count > 0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        if: steps.changes.outputs.count > 0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
+
+      - uses: docker/build-push-action@v6
+        if: steps.changes.outputs.count > 0
+        with:
+          context: .
+          file: contrib/images/arkd-env/Dockerfile
+          # amd64 only: an emulated arm64 build of the chain takes most of an
+          # hour. Add a native arm64 runner and a manifest merge when needed.
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.stamps.outputs.version }}
+            COMMIT=${{ steps.stamps.outputs.commit }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
