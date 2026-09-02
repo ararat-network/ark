@@ -45,6 +45,38 @@ in this testnet.
 
 Now you have a small testnet that you can use to try out changes to the Cosmos SDK or CometBFT!
 
+## Local network with Docker
+
+`make localnet-start` builds the `ark/arkd` image from the working tree, generates four validator
+homes under `.testnets/`, and starts four `arkd` nodes each paired with its own `pricefeed` sidecar.
+Node 0 serves RPC on `localhost:26657`, REST on `localhost:1317`, and Prometheus metrics on
+`localhost:9464/metrics`; later nodes offset each port by one. `make localnet-liveness` waits until
+blocks and an oracle exchange rate appear, and `make localnet-stop` tears everything down.
+`VALIDATORS=1 make localnet-start` runs a single validator with one sidecar instead.
+`make localnet-runbook` rehearses the emergency submission runbook against the four-validator
+localnet: offline multisig ceremony, dark-carrier submission, leak and inclusion checks.
+`make upgrade-rehearsal` runs a coordinated upgrade on one host node under cosmovisor, from a binary
+built at `OLD_REF` (default `HEAD`) to the working tree. See [contrib/README.md](contrib/README.md)
+for the layout.
+
+## Recommended node environment
+
+Set a fixed SDK config scope in the environment of every long-running `arkd` process
+(systemd unit, container env, or shell profile):
+
+```text
+COSMOS_SDK_CONFIG_SCOPE=arkd
+```
+
+The value is arbitrary; it only needs to be non-empty and constant for the process's
+lifetime. Without it, cosmos-sdk v0.54's `GetConfig` rebuilds its config-registry key on
+every call, which syscalls `os.Hostname` on every Bech32 address parse (measured at
+~9µs per transaction in the ante path alone), and a mid-run hostname change — a DHCP
+rename, a cloud instance rename — lands the process on a fresh, unsealed config with
+the wrong address prefixes. Pinning the scope removes both. The setting is per-process,
+harmless to set host-wide, and freely reversible; drop it once the SDK caches the
+fallback key upstream.
+
 NOTE: Sometimes creating the network through the `collect-gentxs` will fail, and validators will start
 in a funny state (and then panic). If this happens, you can try to create and start the network first
 with a single validator and then add additional validators using a `create-validator` transaction.

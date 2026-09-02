@@ -1,0 +1,7 @@
+.git
+.github
+.testnets
+build
+arkd
+**/*.test
+.DS_Store

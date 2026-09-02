@@ -1,8 +1,7 @@
 #!/bin/sh
 
-# How to run manually:
-# docker build --pull --rm -f "contrib/devtools/Dockerfile" -t cosmossdk-proto:latest "contrib/devtools"
-# docker run --rm -v $(pwd):/workspace --workdir /workspace cosmossdk-proto sh ./scripts/protocgen.sh
+# Run from the repo root inside the proto-builder image the Makefile pins:
+#   make proto-gen
 
 echo "Formatting protobuf files"
 buf format -w proto
@@ -35,4 +34,4 @@ if [ -d "github.com" ]; then
   rm -rf github.com
 fi
 
-./scripts/protocgen-pulsar.sh
+./proto/scripts/protocgen-pulsar.sh
