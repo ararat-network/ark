@@ -31,7 +31,7 @@ jobs:
       # runs the same binary as the working tree. A linter that gains a check
       # on its own turns an unrelated pull request red.
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.13.2
 
       - run: make lint
 

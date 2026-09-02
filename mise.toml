@@ -1,0 +1,10 @@
+# Pins the toolchain the repository is built and linted with, so a shell,
+# CI, and the container agree. CI resolves Go from go.mod rather than this
+# file; keep the two in step.
+#
+# golangci-lint is pinned because its release binaries are compiled against
+# a specific Go, and one built against an older major panics parsing newer
+# sources. 2.13.2 is built with go1.27.
+[tools]
+go = "1.27.1"
+golangci-lint = "2.13.2"

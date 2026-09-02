@@ -2,7 +2,7 @@
 # `make -C contrib/images arkd-env` (or `make localnet-build-env`), which
 # passes the version stamps so .git can stay out of the build context.
 
-FROM golang:1.25-alpine AS builder
+FROM golang:1.27-alpine AS builder
 WORKDIR /work
 # eudev-dev supplies the static libudev the ledger tag's HID library links.
 RUN apk add --no-cache build-base git file linux-headers eudev-dev

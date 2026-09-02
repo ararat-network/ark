@@ -1,37 +1,27 @@
 module github.com/ararat-network/ark
 
-go 1.25.14
+go 1.27.1
 
 require (
 	cosmossdk.io/api v1.0.0
 	cosmossdk.io/client/v2 v2.11.0
+	cosmossdk.io/collections v1.4.0
 	cosmossdk.io/core v1.1.0
 	cosmossdk.io/depinject v1.2.1
-	cosmossdk.io/math v1.5.3
-	cosmossdk.io/tools/confix v0.1.2
-	github.com/cometbft/cometbft v0.39.3
-	github.com/cosmos/cosmos-db v1.1.3
-	github.com/cosmos/cosmos-sdk v0.54.3
-	github.com/cosmos/gogoproto v1.7.2
-	github.com/spf13/cast v1.10.0
-	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/spf13/viper v1.21.0
-	github.com/stretchr/testify v1.11.1
-	go.uber.org/mock v0.6.0
-	google.golang.org/protobuf v1.36.11
-)
-
-require (
-	cosmossdk.io/collections v1.4.0
 	cosmossdk.io/errors v1.1.0
 	cosmossdk.io/log/v2 v2.1.0
+	cosmossdk.io/math v1.5.3
+	cosmossdk.io/tools/confix v0.1.2
 	github.com/CosmWasm/wasmd v0.70.3
 	github.com/CosmWasm/wasmvm/v3 v3.0.7
 	github.com/coder/websocket v1.8.15
+	github.com/cometbft/cometbft v0.39.3
+	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
+	github.com/cosmos/cosmos-sdk v0.54.3
 	github.com/cosmos/cosmos-sdk/store/v2 v2.0.0
 	github.com/cosmos/gogogateway v1.2.0
+	github.com/cosmos/gogoproto v1.7.2
 	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11 v11.1.0
 	github.com/cosmos/ibc-go/v11 v11.2.0
 	github.com/golang/protobuf v1.5.4
@@ -39,16 +29,21 @@ require (
 	github.com/hashicorp/go-metrics v0.5.4
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
+	github.com/spf13/cast v1.10.0
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/viper v1.21.0
+	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.65.0
 	go.opentelemetry.io/otel/metric v1.44.0
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
-	golang.org/x/net v0.56.0
+	go.uber.org/mock v0.6.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/time v0.15.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478
 	google.golang.org/grpc v1.82.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -288,6 +283,7 @@ require (
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/supranational/blst v0.3.16 // indirect
@@ -342,6 +338,7 @@ require (
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260625142307-59b4966ccb57 // indirect
