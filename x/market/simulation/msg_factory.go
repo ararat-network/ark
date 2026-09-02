@@ -13,6 +13,8 @@ import (
 
 // MsgSwapFactory generates random MsgSwap transactions by picking a denom pair and a funded sender.
 func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
+	querier := keeper.NewQueryServerImpl(k)
+
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwap) {
 		r := testData.Rand()
 
@@ -31,6 +33,11 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 			return nil, nil
 		}
 
+		quotable(ctx, querier, reporter, offerCoin, askDenom)
+		if reporter.IsSkipped() {
+			return nil, nil
+		}
+
 		return []simsx.SimAccount{sender}, &types.MsgSwap{
 			Trader:         sender.AddressBech32,
 			OfferCoin:      sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
@@ -42,6 +49,8 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 
 // MsgSwapSendFactory generates random MsgSwapSend transactions, picking a denom pair, funded sender, and distinct receiver.
 func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSend] {
+	querier := keeper.NewQueryServerImpl(k)
+
 	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwapSend) {
 		r := testData.Rand()
 
@@ -66,6 +75,11 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 		}
 
 		offerCoin := sender.LiquidBalance().RandSubsetCoin(reporter, offerDenom)
+		if reporter.IsSkipped() {
+			return nil, nil
+		}
+
+		quotable(ctx, querier, reporter, offerCoin, askDenom)
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
@@ -114,6 +128,28 @@ func MsgUpdatePolicyFactory() simsx.SimMsgFactoryFn[*types.MsgUpdatePolicy] {
 }
 
 // randomDenomPairX picks a random offer/ask denom pair from available exchange rates.
+// quotable skips the operation unless the chain would price this swap now. The
+// registry says a denomination is priceable; it does not say the Oracle holds a
+// rate fresh enough to price it this block. A simulation casts no vote
+// extensions, so its genesis rates never refresh and every one of them ages out
+// of a run long enough to reach the staleness window — past which a generated
+// swap only ever fails.
+func quotable(
+	ctx context.Context,
+	querier types.QueryServer,
+	reporter simsx.SimulationReporter,
+	offerCoin sdk.Coin,
+	askDenom string,
+) {
+	_, err := querier.Swap(ctx, &types.QuerySwapRequest{
+		OfferCoin: offerCoin.String(),
+		AskDenom:  askDenom,
+	})
+	if err != nil {
+		reporter.Skip(err.Error())
+	}
+}
+
 func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.SimulationReporter, k *keeper.Keeper) (offerDenom, askDenom string) {
 	activeDenoms, err := k.GetActiveDenoms(ctx)
 	if err != nil {
