@@ -95,6 +95,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "Query active Treasury reward-funding accounting",
 					Example:   fmt.Sprintf("%s query treasury reward-funding", version.AppName),
 				},
+				{
+					RpcMethod: "ExposureStatus",
+					Use:       "exposure-status",
+					Short:     "Query the risk state behind the fund-target multiplier",
+					Example:   fmt.Sprintf("%s query treasury exposure-status", version.AppName),
+				},
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
