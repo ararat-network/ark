@@ -92,7 +92,7 @@ func (s *KeeperTestSuite) TestCommitteeReverseReturn() {
 		setup()
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 4)
-		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")}
+		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)}
 		s.stubRates(rates)
 
 		positionID := s.deploy(committee, destination, 400, 4, 0)
@@ -109,7 +109,7 @@ func (s *KeeperTestSuite) TestCommitteeReverseReturn() {
 		s.Require().Equal(noahCoin(80), booked.Returned)
 
 		// A re-priced reversal would leave 40 anoah of phantom recovery.
-		rates[chain.USDBaseDenom] = math.LegacyMustNewDecFromStr("0.1")
+		rates[chain.USDBaseDenom] = math.LegacyNewDec(10)
 
 		_, err = s.msgServer.CommitteeReverseReturn(s.ctx, &types.MsgCommitteeReverseReturn{
 			Committee: committee, ExpectedTerm: 1, PositionId: positionID,

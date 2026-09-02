@@ -148,10 +148,11 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 
 // valueMovement prices one proven coin movement in anoah at this block's
 // rate, refusing rather than guessing when no usable rate exists. NOAH is par;
-// everything else converts through the rate set, which quotes units per one
-// NOAH, so valuing in NOAH divides. The quotient is checked because a small
-// enough rate leaves representable range, which must be an error rather than a
-// panic.
+// everything else converts through the rate set, which quotes NOAH per one
+// unit, so valuing in NOAH multiplies. The product is checked rather than
+// trusted: the store bounds a rate at MaxExchangeRate and a movement is a bank
+// balance, so overflow is unreachable, and the check is the backstop that
+// says so.
 func (k Keeper) valueMovement(ctx context.Context, coin sdk.Coin) (math.Int, error) {
 	if coin.Denom == chain.NoahBaseDenom {
 		return coin.Amount, nil

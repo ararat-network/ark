@@ -21,7 +21,7 @@ const rateAgeOutOfRange = "max rate age must be greater than zero and at most"
 // creditDenom is the asset every credit case is written against.
 const creditDenom = "axdr"
 
-// rateSet quotes creditDenom in units per one NOAH, the orientation every
+// rateSet quotes creditDenom in NOAH per one unit, the orientation every
 // oracle rate carries, and carries the NOAH identity with it.
 func rateSet(rate string) oracletypes.RateSet {
 	return oracletypes.NewRateSetFrom(map[string]math.LegacyDec{
@@ -340,20 +340,20 @@ func TestRawCredit(t *testing.T) {
 	require.Equal(t, math.LegacyMustNewDecFromStr("3.33333333333333333"), credit)
 
 	// The orientation, pinned as arithmetic rather than as prose: an oracle rate
-	// quotes its asset per one NOAH, so an asset trading at two per NOAH is
-	// worth half its quantity in NOAH — the credit falls as the rate rises.
-	t.Run("rate above one shrinks the credit", func(t *testing.T) {
+	// quotes NOAH per one unit of its asset, so an asset worth two NOAH apiece
+	// is worth twice its quantity in NOAH — the credit rises with the rate.
+	t.Run("rate above one grows the credit", func(t *testing.T) {
 		entry := types.EligibilityEntry{
 			Denom:         creditDenom,
 			HaircutFactor: math.LegacyOneDec(),
 		}
 		credit, err := entry.RawCredit(rateSet("2"), math.NewInt(100))
 		require.NoError(t, err)
-		require.Equal(t, math.LegacyNewDec(50), credit)
+		require.Equal(t, math.LegacyNewDec(200), credit)
 
 		credit, err = entry.RawCredit(rateSet("0.5"), math.NewInt(100))
 		require.NoError(t, err)
-		require.Equal(t, math.LegacyNewDec(200), credit)
+		require.Equal(t, math.LegacyNewDec(50), credit)
 	})
 
 	t.Run("no quantity", func(t *testing.T) {
@@ -374,12 +374,13 @@ func TestRawCredit(t *testing.T) {
 	})
 }
 
-// TestRawCreditRefusesAnUnusableRate pins the boundary the fold owns. An absent
-// or zero rate is not answered here — it is an error, deliberately, because
-// this function converts and neither can be converted through. The recognition
-// fold gates on a present, positive rate and answers both with zero credit,
-// which is where the degrade-to-zero policy belongs.
-func TestRawCreditRefusesAnUnusableRate(t *testing.T) {
+// TestRawCreditRefusesAnAbsentRate pins the boundary the fold owns. An absent
+// rate is not answered here — it is an error, deliberately, because this
+// function converts and nothing can be converted through a rate it was never
+// given. A zero rate credits nothing: valuing in NOAH multiplies, so a unit
+// worth no NOAH is worth exactly that, which is also the verdict the
+// recognition fold gives a dark feed before it ever reaches this function.
+func TestRawCreditRefusesAnAbsentRate(t *testing.T) {
 	entry := types.EligibilityEntry{
 		Denom:         creditDenom,
 		HaircutFactor: math.LegacyOneDec(),
@@ -388,8 +389,9 @@ func TestRawCreditRefusesAnUnusableRate(t *testing.T) {
 	_, err := entry.RawCredit(oracletypes.NewRateSet(), math.NewInt(10))
 	require.ErrorIs(t, err, oracletypes.ErrUnknownDenom)
 
-	_, err = entry.RawCredit(rateSet("0"), math.NewInt(10))
-	require.ErrorIs(t, err, oracletypes.ErrConversionOutOfRange)
+	credit, err := entry.RawCredit(rateSet("0"), math.NewInt(10))
+	require.NoError(t, err)
+	require.True(t, credit.IsZero())
 }
 
 // TestRawCreditRefusesAnAbsurdAttestation pins where a clerical error is
@@ -403,11 +405,11 @@ func TestRawCreditRefusesAnAbsurdAttestation(t *testing.T) {
 	}
 
 	// A quantity alone cannot overflow — math.Int stops just where LegacyDec
-	// does — so it takes a quantity near that ceiling divided by a rate below
-	// one, which is what a mis-keyed attestation looks like against an asset
-	// worth more than a NOAH apiece.
+	// does — so it takes a quantity near that ceiling multiplied by a rate
+	// above one, which is what a mis-keyed attestation looks like against an
+	// asset worth more than a NOAH apiece.
 	absurd := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
-	_, err := entry.RawCredit(rateSet("0.01"), absurd)
+	_, err := entry.RawCredit(rateSet("100"), absurd)
 	require.ErrorIs(t, err, oracletypes.ErrConversionOutOfRange)
 	require.ErrorContains(t, err, "axdr")
 }

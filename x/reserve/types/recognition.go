@@ -98,9 +98,11 @@ func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
 // RawCredit values gross base units of the entry's asset in anoah at the
 // set's rate and applies the haircut, deliberately un-clipped: it is one
 // asset's input to SolveRecognition, which owns the cap. The haircut lands
-// before the conversion, so the single division falls on a quantity whose
-// bounds are whole base units. The caller owes a rate that is present and
-// positive; a missing or zero rate is an error here.
+// before the conversion, so the single multiplication falls on a quantity
+// whose bounds are whole base units, against a rate the store bounds at
+// MaxExchangeRate — which is what keeps the product representable for every
+// attestation Position.Validate admits. The caller owes a present rate: a
+// missing one is an error here, and a zero one credits nothing.
 func (entry EligibilityEntry) RawCredit(rates oracletypes.RateSet, gross math.Int) (math.LegacyDec, error) {
 	if gross.IsNil() || !gross.IsPositive() || !entry.HaircutFactor.IsPositive() {
 		return math.LegacyZeroDec(), nil

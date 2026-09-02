@@ -324,12 +324,12 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 	s.attest(testAsset, 50)
 	s.deploy(committee, destination, 400, 30, 0)
 	s.setPolicy(eligibility(testAsset, "0.5", "0.1"))
-	s.stubRates(oracletypes.RateSet{testAsset: math.LegacyNewDec(2)})
+	s.stubRates(oracletypes.RateSet{testAsset: math.LegacyNewDecWithPrec(5, 1)})
 
-	// An oracle rate quotes its asset in units per one NOAH, so two of this
-	// asset are worth one NOAH and the gross quantity is divided by the rate,
-	// not multiplied: credit = 0.5 × (50 + 30 attested across two positions)
-	// ÷ 2 = 20 on top of par.
+	// An oracle rate quotes NOAH per one unit of its asset, so one of this
+	// asset is worth half a NOAH and the haircut quantity is multiplied by the
+	// rate: credit = 0.5 × (50 + 30 attested across two positions) × 0.5 = 20
+	// on top of par.
 	s.Require().Equal(math.NewInt(1_020), s.recognised())
 
 	response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
@@ -341,7 +341,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 		Eligible:            true,
 		AttestedQuantity:    math.NewInt(80),
 		ImpairedQuantity:    math.ZeroInt(),
-		Rate:                math.LegacyNewDec(2),
+		Rate:                math.LegacyNewDecWithPrec(5, 1),
 		HaircutFactor:       math.LegacyMustNewDecFromStr("0.5"),
 		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.1"),
 		// A tenth of the solved certificate of 1_020: the ceiling the credit
@@ -364,9 +364,9 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
 		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", time.Hour),
 	)
-	rates := oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("0.5")}
+	rates := oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)}
 
-	// Fresh, both credit: two hundred anoah each at two XDR to the NOAH.
+	// Fresh, both credit: two hundred anoah each at two NOAH to the XDR.
 	s.stubRatesAtAge(rates, 0)
 	s.Require().Equal(math.NewInt(1_000+200+200), s.recognised())
 
@@ -399,12 +399,12 @@ func (s *KeeperTestSuite) TestRecognitionDegradesToZeroNeverToStale() {
 		eligibility(xdrExternal, "1", "0.4"),
 		eligibility(usdExternal, "1", "0.4"),
 	)
-	// Both rates sit below one, which is the ordinary case for an asset worth
-	// more than a NOAH apiece: quoted per one NOAH, two XDR to the NOAH reads
-	// as 0.5, and the hundred held is worth two hundred.
+	// Both rates sit above one, which is the ordinary case for an asset worth
+	// more than a NOAH apiece: quoted in NOAH per unit, two NOAH to the XDR
+	// reads as 2, and the hundred held is worth two hundred.
 	rates := oracletypes.RateSet{
-		chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("0.5"),
-		chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.25"),
+		chain.XDRBaseDenom: math.LegacyNewDec(2),
+		chain.USDBaseDenom: math.LegacyNewDec(4),
 	}
 	s.stubRates(rates)
 
@@ -596,10 +596,12 @@ func (s *KeeperTestSuite) TestRecognitionLeversOnlyTheProvableBase() {
 func (s *KeeperTestSuite) TestRecognitionSurvivesTheLargestAdmissibleAttestation() {
 	s.SetupTest()
 	// Both amplifiers at once: two positions in one denomination, each at the
-	// cap, so the fold sums them; and the smallest positive rate a LegacyDec
-	// can carry, which is what turns a quantity into its largest credit — the
-	// conversion divides by the rate. Either step overflowed before the cap.
-	s.stubRates(oracletypes.RateSet{testFeed: math.LegacyNewDecWithPrec(1, 18)})
+	// cap, so the fold sums them; and the largest rate the Oracle store can
+	// hold, which is what turns a quantity into its largest credit — the
+	// conversion multiplies by the rate. The two caps are chosen together:
+	// 2^128 base units times a rate below 2^128 stays inside LegacyDec's
+	// 2^256 whole-number ceiling.
+	s.stubRates(oracletypes.RateSet{testFeed: oracletypes.MaxExchangeRate})
 	s.setPolicy(eligibility(testAsset, "1", "0.5"))
 	s.attestQuantity(testAsset, types.MaxAttestedQuantity)
 	s.attestQuantity(testAsset, types.MaxAttestedQuantity)

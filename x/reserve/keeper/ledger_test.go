@@ -280,7 +280,7 @@ func (s *KeeperTestSuite) TestCommitteeDeploy() {
 		s.fundReserve(150)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 10)
-		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")})
+		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)})
 
 		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 			gomock.Any(),
@@ -298,9 +298,9 @@ func (s *KeeperTestSuite) TestCommitteeDeploy() {
 		s.Require().NoError(err)
 
 		// Cost basis is the anoah valuation, not the coin, so Realised stays
-		// comparable with a NOAH-funded position. The rate is quoted in asset
-		// units per one NOAH, so a twentieth of a unit to the NOAH values the
-		// four deployed units at eighty anoah.
+		// comparable with a NOAH-funded position. The rate is quoted in NOAH
+		// per one asset unit, so twenty NOAH to the unit values the four
+		// deployed units at eighty anoah.
 		position, err := s.keeper.OpenPositions.Get(s.ctx, resp.PositionId)
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(80), position.Deployed)
@@ -324,7 +324,7 @@ func (s *KeeperTestSuite) TestCommitteeDeploy() {
 		s.fundReserve(5_000)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 10)
-		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")})
+		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)})
 		positionID := s.deploy(committee, destination, 1_000, 10, 0)
 
 		// The whole envelope is gone; unwinding must still be possible, or the
@@ -350,7 +350,7 @@ func (s *KeeperTestSuite) TestCommitteeDeploy() {
 		s.setBlockHeight(20)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 3)
-		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")})
+		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)})
 
 		_, err := s.msgServer.CommitteeDeploy(s.ctx, &types.MsgCommitteeDeploy{
 			Committee: committee, ExpectedTerm: 1, Destination: destination,
@@ -388,7 +388,7 @@ func (s *KeeperTestSuite) TestCommitteeDeploy() {
 		s.fundReserve(400)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 10)
-		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")})
+		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)})
 
 		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 			gomock.Any(),
@@ -667,7 +667,7 @@ func (s *KeeperTestSuite) TestReturnAttributionValuation() {
 		s.fundReserve(1_000)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 4)
-		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")})
+		s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)})
 		positionID := s.deploy(committee, destination, 400, 4, 0)
 
 		// The position holds external custody; the return arrives as paper, which
@@ -700,7 +700,7 @@ func (s *KeeperTestSuite) TestReturnAttributionValuation() {
 		s.fundReserveAsset(chain.USDBaseDenom, 4)
 		// stubRates registers one AnyTimes expectation closing over this map, so
 		// the feed is moved by mutating it rather than by re-stubbing.
-		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")}
+		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)}
 		s.stubRates(rates)
 		positionID := s.deploy(committee, destination, 400, 4, 0)
 		delete(rates, chain.USDBaseDenom)
@@ -731,14 +731,13 @@ func (s *KeeperTestSuite) TestReturnAttributionValuation() {
 		s.fundReserve(1_000)
 		s.registerAsset(chain.USDBaseDenom)
 		s.fundReserveAsset(chain.USDBaseDenom, 4)
-		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.05")}
+		rates := oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(20)}
 		s.stubRates(rates)
 		positionID := s.deploy(committee, destination, 400, 4, 0)
-		// The feed collapses: forty units to the NOAH makes the four returned
-		// units a tenth of an anoah, which truncates to zero. Dust now comes
-		// from a rate far above one, the opposite end from where a rate quoted
-		// the other way round would have put it.
-		rates[chain.USDBaseDenom] = math.LegacyNewDec(40)
+		// The feed collapses: a tenth of a NOAH per unit makes the four returned
+		// units four tenths of an anoah, which truncates to zero. Dust comes
+		// from a rate below one — a unit worth less than an anoah.
+		rates[chain.USDBaseDenom] = math.LegacyNewDecWithPrec(1, 1)
 
 		_, err := s.msgServer.CommitteeAttributeReturn(s.ctx, &types.MsgCommitteeAttributeReturn{
 			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
