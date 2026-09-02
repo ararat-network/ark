@@ -152,7 +152,7 @@ func (s *KeeperTestSuite) TestQueryTaxCap() {
 		},
 		{
 			name:     "not found",
-			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.SDRBaseDenom},
+			request:  &treasurytypes.QueryTaxCapRequest{Denom: chain.XDRBaseDenom},
 			wantCode: codes.NotFound,
 		},
 		{
@@ -612,10 +612,10 @@ func (s *KeeperTestSuite) TestQueryGasPrice() {
 	}))
 	server := keeper.NewQueryServerImpl(s.keeper)
 
-	reference, err := server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.SDRBaseDenom})
+	reference, err := server.GasPrice(s.ctx, &treasurytypes.QueryGasPriceRequest{Denom: chain.XDRBaseDenom})
 	s.Require().NoError(err)
 	s.Require().Equal(treasurytypes.GasPrice{
-		Denom:    chain.SDRBaseDenom,
+		Denom:    chain.XDRBaseDenom,
 		GasPrice: testMinBaseGasPrice,
 	}, reference.GasPrice)
 
@@ -644,8 +644,8 @@ func (s *KeeperTestSuite) TestQueryGasPrice() {
 // as a member — and every other accepted denomination, NOAH among them, in
 // denomination order.
 func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
-	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.SDRBaseDenom, treasurytypes.ConversionFactor{
-		Denom:  chain.SDRBaseDenom,
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.XDRBaseDenom, treasurytypes.ConversionFactor{
+		Denom:  chain.XDRBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, treasurytypes.ConversionFactor{
@@ -663,7 +663,7 @@ func (s *KeeperTestSuite) TestQueryGasPricesSheet() {
 	response, err := server.GasPrices(s.ctx, &treasurytypes.QueryGasPricesRequest{})
 	s.Require().NoError(err)
 	s.Require().Equal(
-		treasurytypes.GasPrice{Denom: chain.SDRBaseDenom, GasPrice: testMinBaseGasPrice},
+		treasurytypes.GasPrice{Denom: chain.XDRBaseDenom, GasPrice: testMinBaseGasPrice},
 		response.ReferenceGasPrice,
 	)
 	s.Require().Equal([]treasurytypes.GasPrice{

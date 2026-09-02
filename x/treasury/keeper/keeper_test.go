@@ -197,8 +197,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.lastRates = oracletypes.NewRateSet()
 	s.ratesErr = nil
 	s.rateCaptures = nil
-	s.reference = chain.SDRBaseDenom
-	for _, denom := range []string{chain.KRWBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom} {
+	s.reference = chain.XDRBaseDenom
+	for _, denom := range []string{chain.KRWBaseDenom, chain.XDRBaseDenom, chain.USDBaseDenom} {
 		s.seedAsset(denom, assettypes.AssetStatus_ASSET_STATUS_ACTIVE)
 	}
 	s.assetKeeper.EXPECT().

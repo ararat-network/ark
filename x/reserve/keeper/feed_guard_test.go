@@ -65,7 +65,7 @@ func (s *KeeperTestSuite) TestFeedReferents() {
 	s.Run("an unlisted, unheld denom claims nothing", func() {
 		s.SetupTest()
 
-		referents, err := s.keeper.FeedReferents(s.ctx, chain.SDRBaseDenom)
+		referents, err := s.keeper.FeedReferents(s.ctx, chain.XDRBaseDenom)
 		s.Require().NoError(err)
 		s.Require().Empty(referents)
 	})
@@ -159,7 +159,7 @@ func (s *KeeperTestSuite) TestFeedReferents() {
 		s.deploy(committee, destination, 400, 4, 0)
 		s.setPolicy(eligibility(testAsset, "0.5", "0.01"))
 
-		referents, err := s.keeper.FeedReferents(s.ctx, chain.SDRBaseDenom)
+		referents, err := s.keeper.FeedReferents(s.ctx, chain.XDRBaseDenom)
 		s.Require().NoError(err)
 		s.Require().Empty(referents)
 	})

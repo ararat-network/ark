@@ -264,9 +264,9 @@ func (s *KeeperTestSuite) TestQueryReferenceDenom() {
 		{
 			name: "configured reference returned",
 			setup: func() {
-				s.Require().NoError(s.keeper.ReferenceDenom.Set(s.ctx, chain.SDRBaseDenom))
+				s.Require().NoError(s.keeper.ReferenceDenom.Set(s.ctx, chain.XDRBaseDenom))
 			},
-			expect: chain.SDRBaseDenom,
+			expect: chain.XDRBaseDenom,
 		},
 	}
 

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DefaultReferenceDenom      = chain.SDRBaseDenom
+	DefaultReferenceDenom      = chain.XDRBaseDenom
 	DefaultRewardFundingWindow = chain.BlocksPerWeek
 
 	// DefaultExposureRefreshPeriodBlocks recomputes the multiplier hourly. The
@@ -82,11 +82,11 @@ var (
 	DefaultBaseFeeAdjustmentRate = math.LegacyMustNewDecFromStr("0.025")
 
 	// DefaultMinBaseGasPrice is the resting price of gas in reference base
-	// units per gas unit. The reference is atto-scaled (10^18 per SDR), and
-	// 10^11 is Terra Classic's posted SDR gas price — 0.1018 usdr per gas at
-	// six decimals — carried to eighteen: a 200k-gas transfer rests at 0.02
-	// SDR, the fee band Terra ran in production. Governance tunes from here
-	// after observation.
+	// units per gas unit. The reference is atto-scaled (10^18 per XDR), and
+	// 10^11 is Terra Classic's posted gas price in the same unit — 0.1018 usdr
+	// per gas at six decimals — carried to eighteen: a 200k-gas transfer rests
+	// at 0.02 XDR, the fee band Terra ran in production. Governance tunes from
+	// here after observation.
 	DefaultMinBaseGasPrice = math.LegacyNewDec(100_000_000_000)
 
 	// MaxBaseGasPrice bounds the governance floor and is the saturation

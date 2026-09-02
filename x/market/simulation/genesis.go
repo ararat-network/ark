@@ -27,7 +27,7 @@ const (
 func GenBasePool(r *rand.Rand) sdk.DecCoin {
 	wholeUnits := int64(50_000_000 + r.Intn(10_000))
 	amount := math.LegacyNewDecFromInt(chain.NativeBaseAmount(wholeUnits))
-	return sdk.NewDecCoinFromDec(chain.SDRBaseDenom, amount)
+	return sdk.NewDecCoinFromDec(chain.XDRBaseDenom, amount)
 }
 
 // GenPoolRecoveryPeriod randomised PoolRecoveryPeriod, inside the domain the

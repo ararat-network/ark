@@ -27,9 +27,9 @@ const (
 
 var (
 	DefaultBasePool = sdk.NewDecCoin(
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.NativeBaseAmount(1_000_000),
-	) // 1,000,000 SDR = 1,000,000,000,000,000,000,000,000 asdr
+	) // 1,000,000 XDR = 1,000,000,000,000,000,000,000,000 axdr
 	DefaultMinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
 )
 

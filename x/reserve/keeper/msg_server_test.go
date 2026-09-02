@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestFundBufferRejectsInvalidCoins() {
 			amount:  sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
 			minimum: noahCoin(0),
 		},
-		{name: "wrong amount denom", amount: sdk.NewInt64Coin("asdr", 1), minimum: noahCoin(0)},
+		{name: "wrong amount denom", amount: sdk.NewInt64Coin("axdr", 1), minimum: noahCoin(0)},
 		{
 			name:    "malformed amount denom",
 			amount:  sdk.Coin{Denom: "!", Amount: math.OneInt()},
@@ -116,7 +116,7 @@ func (s *KeeperTestSuite) TestFundBufferRejectsInvalidCoins() {
 			amount:  noahCoin(1),
 			minimum: sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)},
 		},
-		{name: "wrong minimum denom", amount: noahCoin(1), minimum: sdk.NewInt64Coin("asdr", 1)},
+		{name: "wrong minimum denom", amount: noahCoin(1), minimum: sdk.NewInt64Coin("axdr", 1)},
 	}
 
 	for _, tc := range tests {

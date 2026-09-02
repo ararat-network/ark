@@ -21,7 +21,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "swap [offer-coin] [ask-denom]",
 					Short:     "Query a swap quote",
 					Long:      "Simulate a swap and return the estimated output coin and swap fee. Quotes use current oracle and pool state and may change before execution.",
-					Example:   fmt.Sprintf("%s query market swap 5000000000000000000anoah asdr", version.AppName),
+					Example:   fmt.Sprintf("%s query market swap 5000000000000000000anoah axdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},

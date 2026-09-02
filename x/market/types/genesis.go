@@ -28,17 +28,15 @@ func NewGenesisState(
 
 // DefaultGenesisState returns raw genesis raw message for testing.
 //
-// The seeded override preserves the rate structure Oracle's per-denom list
-// carried before Market owned it: everything at the 0.25% default except MNT
-// at eight times that, which is Terra's original default-plus-override
-// factoring rather than the flattened list Ark's port inherited.
+// The launch set carries no override. Terra's factoring seeded one for MNT at
+// eight times the default, an illiquidity premium; every asset Ark launches
+// with is a top-15 currency, so the default rate covers all of them and the
+// override map stays a governance tool rather than a launch value.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
-		ArkPoolDelta: math.LegacyZeroDec(),
-		Params:       DefaultParams(),
-		TobinTaxOverrides: []TobinTaxOverride{
-			{Denom: chain.MNTBaseDenom, TobinTax: DefaultTobinTax.MulInt64(8)},
-		},
+		ArkPoolDelta:      math.LegacyZeroDec(),
+		Params:            DefaultParams(),
+		TobinTaxOverrides: []TobinTaxOverride{},
 		ConversionPolicy:  DefaultConversionPolicy(),
 		ConversionMandate: DefaultConversionMandate(),
 	}

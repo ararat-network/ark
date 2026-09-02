@@ -295,7 +295,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(10))
-	s.setAssets(chain.SDRBaseDenom)
+	s.setAssets(chain.XDRBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},

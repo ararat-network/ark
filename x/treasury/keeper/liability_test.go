@@ -341,18 +341,18 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			name: "a stale member is disclosed beside the surviving lists",
 			seed: func() {
 				s.setAssets(chain.KRWBaseDenom)
-				s.seedAsset(chain.SDRBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
+				s.seedAsset(chain.XDRBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 				s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF)
 			},
 			supplies: map[string]int64{
 				chain.KRWBaseDenom: 100,
-				chain.SDRBaseDenom: 40,
+				chain.XDRBaseDenom: 40,
 				chain.USDBaseDenom: 60,
 			},
 			expectRates: func() {
 				s.setRates(oracletypes.RateSet{})
 			},
-			wantUntrusted:   []sdk.Coin{sdk.NewInt64Coin(chain.SDRBaseDenom, 40)},
+			wantUntrusted:   []sdk.Coin{sdk.NewInt64Coin(chain.XDRBaseDenom, 40)},
 			wantWrittenOff:  []types.WrittenOffExposure{writeOff(chain.USDBaseDenom, 60)},
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 100)},
 		},

@@ -20,7 +20,7 @@ import (
 func positionFixture(positionID, entryID uint64) (types.Position, types.AccountingEntry) {
 	position := types.Position{
 		PositionId:     positionID,
-		Quantity:       sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(50)),
+		Quantity:       sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(50)),
 		Deployed:       chain.NoahCoin(math.NewInt(100)),
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: "custodian-alpha",
@@ -266,7 +266,7 @@ func attributedGenesis(t *testing.T) *types.GenesisState {
 		Kind:           types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION,
 		Quantity:       position.Quantity,
 		MovedNoahValue: chain.NoahCoin(math.NewInt(attributedRecovery)),
-		MovedCoin:      sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(25)),
+		MovedCoin:      sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(25)),
 		Reference:      "tx-0x02",
 		RecordedBy:     testAddress(1),
 		Height:         8,
@@ -360,7 +360,7 @@ func TestGenesisFoldsReversalsOutOfTheRecovery(t *testing.T) {
 
 	t.Run("a reversal restating the moved coin is refused", func(t *testing.T) {
 		genesisState := withReversal(attributedGenesis(t))
-		genesisState.Ledger[len(genesisState.Ledger)-1].MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(24))
+		genesisState.Ledger[len(genesisState.Ledger)-1].MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(24))
 
 		require.ErrorContains(t, genesisState.Validate(), "verbatim")
 	})

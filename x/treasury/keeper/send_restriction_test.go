@@ -48,8 +48,8 @@ func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidFundDeposits() {
 		{name: "unset amount", amount: sdk.Coins{{Denom: chain.NoahBaseDenom}}},
 		{name: "zero", amount: sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 0)}},
 		{name: "negative", amount: sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}},
-		{name: "non noah", amount: sdk.NewCoins(sdk.NewInt64Coin("asdr", 1))},
-		{name: "mixed", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin("asdr", 1))},
+		{name: "non noah", amount: sdk.NewCoins(sdk.NewInt64Coin("axdr", 1))},
+		{name: "mixed", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin("axdr", 1))},
 	}
 
 	for _, fundName := range types.FundAccountNames() {
@@ -72,7 +72,7 @@ func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidFundDeposits() {
 // stays guarded; there is no second list to keep in step.
 func (s *KeeperTestSuite) TestSendRestrictionGuardsEveryDeclaredFund() {
 	s.SetupTest()
-	nonNoah := sdk.NewCoins(sdk.NewInt64Coin("asdr", 1))
+	nonNoah := sdk.NewCoins(sdk.NewInt64Coin("axdr", 1))
 
 	for _, fundName := range types.FundAccountNames() {
 		fundAddress := authtypes.NewModuleAddress(fundName)
@@ -103,7 +103,7 @@ func (s *KeeperTestSuite) TestSendRestrictionUsesRewrittenRecipient() {
 		s.ctx,
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
-		sdk.NewCoins(sdk.NewInt64Coin("asdr", 1)),
+		sdk.NewCoins(sdk.NewInt64Coin("axdr", 1)),
 	)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
 	s.Require().Nil(got)

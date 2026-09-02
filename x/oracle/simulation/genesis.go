@@ -165,7 +165,7 @@ func RandomisedGenState(simState *module.SimulationState) {
 		[]types.AttendanceRecord{},
 		types.NewAccounting(params),
 		types.DefaultFeeds(),
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	)
 
 	bz, err := json.MarshalIndent(&oracleGenesis.Params, "", " ")

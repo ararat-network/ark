@@ -93,11 +93,11 @@ func (s *KeeperTestSuite) recordExpansionForTest(offer sdk.Coin, output sdk.Coin
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
 	s.oracleKeeper.EXPECT().GetRateSet(
-		s.ctx, offer.Denom, chain.SDRBaseDenom, output.Denom,
+		s.ctx, offer.Denom, chain.XDRBaseDenom, output.Denom,
 	).Return(rates, nil)
 	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 		s.ctx, trader, types.ModuleName, sdk.NewCoins(offer),

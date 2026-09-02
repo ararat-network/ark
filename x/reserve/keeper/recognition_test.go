@@ -21,13 +21,13 @@ import (
 // own.
 const testRateAge = time.Hour
 
-// sdrExternal and usdExternal are external symbols on the SDR and USD series.
+// xdrExternal and usdExternal are external symbols on the XDR and USD series.
 // They spell out
 // the partition the tests exercise: the series is what the Oracle prices and
 // what an Ark-issued asset would be named after, the external symbol is what
 // the Reserve lists and holds.
 const (
-	sdrExternal = chain.SDRBaseDenom + "-x"
+	xdrExternal = chain.XDRBaseDenom + "-x"
 	usdExternal = chain.USDBaseDenom + "-x"
 )
 
@@ -159,10 +159,10 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 	s.Run("replaces the set whole", func() {
 		s.SetupTest()
 		s.setPolicy(
-			eligibility(sdrExternal, "1", "0.1"),
+			eligibility(xdrExternal, "1", "0.1"),
 			eligibility(testAsset, "0.5", "0.2"),
 		)
-		s.Require().Equal([]string{testAsset, sdrExternal}, s.policyDenoms())
+		s.Require().Equal([]string{testAsset, xdrExternal}, s.policyDenoms())
 
 		s.setPolicy(eligibility(usdExternal, "1", "0.3"))
 		s.Require().Equal([]string{usdExternal}, s.policyDenoms())
@@ -174,7 +174,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 	s.Run("emits the stored order rather than the proposal order", func() {
 		s.SetupTest()
 		s.setPolicy(
-			eligibility(sdrExternal, "1", "0.1"),
+			eligibility(xdrExternal, "1", "0.1"),
 			eligibility(testAsset, "0.5", "0.2"),
 		)
 
@@ -189,7 +189,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 				}
 			}
 		}
-		s.Require().Equal(`["abill-x","asdr-x"]`, denoms)
+		s.Require().Equal(`["abill-x","axdr-x"]`, denoms)
 	})
 
 	s.Run("rejects duplicate entries", func() {
@@ -221,7 +221,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 		_, err := s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
 			Authority: s.authority,
 			Entries: []types.EligibilityEntry{
-				eligibility(sdrExternal, "1", "0.6"),
+				eligibility(xdrExternal, "1", "0.6"),
 				eligibility(testAsset, "1", "0.4"),
 			},
 		})
@@ -358,15 +358,15 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	s.SetupTest()
 	s.fundReserve(1_000)
-	s.attest(chain.SDRBaseDenom+"-patient", 100)
-	s.attest(chain.SDRBaseDenom+"-strict", 100)
+	s.attest(chain.XDRBaseDenom+"-patient", 100)
+	s.attest(chain.XDRBaseDenom+"-strict", 100)
 	s.setPolicy(
-		agedEligibility(chain.SDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
-		agedEligibility(chain.SDRBaseDenom+"-strict", "1", "0.4", time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", time.Hour),
 	)
-	rates := oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyMustNewDecFromStr("0.5")}
+	rates := oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("0.5")}
 
-	// Fresh, both credit: two hundred anoah each at two SDR to the NOAH.
+	// Fresh, both credit: two hundred anoah each at two XDR to the NOAH.
 	s.stubRatesAtAge(rates, 0)
 	s.Require().Equal(math.NewInt(1_000+200+200), s.recognised())
 
@@ -374,11 +374,11 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	// series backs one entry and refuses the other in the same block.
 	s.SetupTest()
 	s.fundReserve(1_000)
-	s.attest(chain.SDRBaseDenom+"-patient", 100)
-	s.attest(chain.SDRBaseDenom+"-strict", 100)
+	s.attest(chain.XDRBaseDenom+"-patient", 100)
+	s.attest(chain.XDRBaseDenom+"-strict", 100)
 	s.setPolicy(
-		agedEligibility(chain.SDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
-		agedEligibility(chain.SDRBaseDenom+"-strict", "1", "0.4", time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", time.Hour),
 	)
 	s.stubRatesAtAge(rates, 2*time.Hour)
 	s.Require().Equal(math.NewInt(1_000+200+0), s.recognised())
@@ -393,17 +393,17 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 func (s *KeeperTestSuite) TestRecognitionDegradesToZeroNeverToStale() {
 	s.SetupTest()
 	s.fundReserve(1_000)
-	s.attest(sdrExternal, 100)
+	s.attest(xdrExternal, 100)
 	s.attest(usdExternal, 100)
 	s.setPolicy(
-		eligibility(sdrExternal, "1", "0.4"),
+		eligibility(xdrExternal, "1", "0.4"),
 		eligibility(usdExternal, "1", "0.4"),
 	)
 	// Both rates sit below one, which is the ordinary case for an asset worth
-	// more than a NOAH apiece: quoted per one NOAH, two SDR to the NOAH reads
+	// more than a NOAH apiece: quoted per one NOAH, two XDR to the NOAH reads
 	// as 0.5, and the hundred held is worth two hundred.
 	rates := oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyMustNewDecFromStr("0.5"),
+		chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("0.5"),
 		chain.USDBaseDenom: math.LegacyMustNewDecFromStr("0.25"),
 	}
 	s.stubRates(rates)
@@ -417,16 +417,22 @@ func (s *KeeperTestSuite) TestRecognitionDegradesToZeroNeverToStale() {
 
 	response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
 	s.Require().NoError(err)
+	// Rows come back keyed by denomination, so they are addressed by name here
+	// rather than by position: the order is a consequence of the spelling.
 	s.Require().Len(response.Assets, 2)
-	s.Require().True(response.Assets[0].Rate.IsPositive())
-	s.Require().Equal(noahCoin(200), response.Assets[0].Credit)
+	byDenom := make(map[string]types.AssetRecognition, len(response.Assets))
+	for _, asset := range response.Assets {
+		byDenom[asset.Denom] = asset
+	}
+	s.Require().True(byDenom[xdrExternal].Rate.IsPositive())
+	s.Require().Equal(noahCoin(200), byDenom[xdrExternal].Credit)
 	// A dark feed leaves the rate at zero, which is the whole record of why
 	// this row earns nothing: there is no other source it could have used.
-	s.Require().Equal(math.LegacyZeroDec(), response.Assets[1].Rate)
-	s.Require().Equal(noahCoin(0), response.Assets[1].Credit)
+	s.Require().Equal(math.LegacyZeroDec(), byDenom[usdExternal].Rate)
+	s.Require().Equal(noahCoin(0), byDenom[usdExternal].Credit)
 
 	// Both dark: the fund falls back to its NOAH balance alone.
-	delete(rates, chain.SDRBaseDenom)
+	delete(rates, chain.XDRBaseDenom)
 	s.Require().Equal(math.NewInt(1_000), s.recognised())
 }
 
@@ -464,13 +470,13 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 	policy := func() {
 		s.setPolicy(
 			eligibility(usdExternal, "1", "0.3"),
-			eligibility(sdrExternal, "1", "0.2"),
+			eligibility(xdrExternal, "1", "0.2"),
 		)
 	}
 	rates := func() {
 		s.stubRates(oracletypes.RateSet{
 			chain.USDBaseDenom: math.LegacyOneDec(),
-			chain.SDRBaseDenom: math.LegacyOneDec(),
+			chain.XDRBaseDenom: math.LegacyOneDec(),
 		})
 	}
 	row := func(response *types.QueryRecognisedCapitalResponse, denom string) types.AssetRecognition {
@@ -487,7 +493,7 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 		s.SetupTest()
 		s.fundReserve(5_000_000)
 		s.attest(usdExternal, 4_000_000)
-		s.attest(sdrExternal, 3_000_000)
+		s.attest(xdrExternal, 3_000_000)
 		policy()
 		rates()
 
@@ -498,15 +504,15 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(3_000_000), row(response, usdExternal).Credit)
 		s.Require().Equal(noahCoin(3_000_000), row(response, usdExternal).EffectiveCap)
-		s.Require().Equal(noahCoin(2_000_000), row(response, sdrExternal).Credit)
-		s.Require().Equal(noahCoin(2_000_000), row(response, sdrExternal).EffectiveCap)
+		s.Require().Equal(noahCoin(2_000_000), row(response, xdrExternal).Credit)
+		s.Require().Equal(noahCoin(2_000_000), row(response, xdrExternal).EffectiveCap)
 	})
 
 	s.Run("moves an unbreached asset to the unclipped side", func() {
 		s.SetupTest()
 		s.fundReserve(5_000_000)
 		s.attest(usdExternal, 4_000_000)
-		s.attest(sdrExternal, 1_000_000)
+		s.attest(xdrExternal, 1_000_000)
 		policy()
 		rates()
 
@@ -517,8 +523,8 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 		response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
 		s.Require().NoError(err)
 		s.Require().Equal(noahCoin(2_571_428), row(response, usdExternal).Credit)
-		s.Require().Equal(noahCoin(1_000_000), row(response, sdrExternal).Credit)
-		s.Require().Equal(noahCoin(1_714_285), row(response, sdrExternal).EffectiveCap)
+		s.Require().Equal(noahCoin(1_000_000), row(response, xdrExternal).Credit)
+		s.Require().Equal(noahCoin(1_714_285), row(response, xdrExternal).EffectiveCap)
 	})
 }
 
@@ -531,14 +537,14 @@ func (s *KeeperTestSuite) TestRecognitionCouplesCeilingsConservatively() {
 	s.SetupTest()
 	s.fundReserve(1_000)
 	s.attest(usdExternal, 10_000)
-	s.attest(sdrExternal, 10_000)
+	s.attest(xdrExternal, 10_000)
 	s.setPolicy(
 		eligibility(usdExternal, "1", "0.3"),
-		eligibility(sdrExternal, "1", "0.2"),
+		eligibility(xdrExternal, "1", "0.2"),
 	)
 	rates := oracletypes.RateSet{
 		chain.USDBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 	}
 	s.stubRates(rates)
 
@@ -654,9 +660,9 @@ func (s *KeeperTestSuite) TestRecognitionExcludesImpairedAndClosedPositions() {
 func (s *KeeperTestSuite) TestRecognitionTruncatesFractionalCredit() {
 	s.SetupTest()
 	s.fundReserve(1_000)
-	s.attest(sdrExternal, 10)
-	s.setPolicy(eligibility(sdrExternal, "0.333333333333333333", "0.9"))
-	s.stubRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
+	s.attest(xdrExternal, 10)
+	s.setPolicy(eligibility(xdrExternal, "0.333333333333333333", "0.9"))
+	s.stubRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 
 	// 10 × 0.333... = 3.33... truncates to 3: recognition rounds against
 	// itself.
@@ -709,21 +715,21 @@ func (s *KeeperTestSuite) TestRecognitionPolicyQueryReturnsStoredEntries() {
 	s.Require().Empty(response.Entries)
 
 	s.setPolicy(
-		eligibility(sdrExternal, "1", "0.1"),
+		eligibility(xdrExternal, "1", "0.1"),
 		eligibility(testAsset, "0.5", "0.2"),
 	)
 	response, err = s.queryServer.RecognitionPolicy(s.ctx, &types.QueryRecognitionPolicyRequest{})
 	s.Require().NoError(err)
 	s.Require().Equal([]types.EligibilityEntry{
 		eligibility(testAsset, "0.5", "0.2"),
-		eligibility(sdrExternal, "1", "0.1"),
+		eligibility(xdrExternal, "1", "0.1"),
 	}, response.Entries)
 }
 
 func (s *KeeperTestSuite) TestGenesisRecognitionPolicyValidation() {
 	valid := []types.EligibilityEntry{
 		eligibility(testAsset, "0.5", "0.2"),
-		eligibility(sdrExternal, "1", "0.1"),
+		eligibility(xdrExternal, "1", "0.1"),
 	}
 
 	tests := []struct {

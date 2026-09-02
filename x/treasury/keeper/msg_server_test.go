@@ -121,7 +121,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.OneInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
 		Factor: math.LegacyNewDec(2),
@@ -153,7 +153,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 
 func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax() {
 	s.setConversionFactors(types.ConversionFactor{
-		Denom:  chain.SDRBaseDenom,
+		Denom:  chain.XDRBaseDenom,
 		Factor: math.LegacyOneDec(),
 	})
 
@@ -167,7 +167,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax
 	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(candidate.Equal(stored))
-	cap, err := s.keeper.GetTaxCap(s.ctx, chain.SDRBaseDenom)
+	cap, err := s.keeper.GetTaxCap(s.ctx, chain.XDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(cap.IsZero())
 }
@@ -424,7 +424,7 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = math.NewInt(100)
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
 		Params:    params,

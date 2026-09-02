@@ -250,8 +250,8 @@ func (s *KeeperTestSuite) TestRemoveTobinTaxOverride() {
 			// lifecycle write Market state. Cleanup must therefore stay possible
 			// for a denomination no live asset is listed under.
 			name:     "removes a retired asset's leftover entry",
-			denom:    chain.MNTBaseDenom,
-			statuses: map[string]assettypes.AssetStatus{chain.MNTBaseDenom: assettypes.AssetStatus_ASSET_STATUS_RETIRED},
+			denom:    chain.MXNBaseDenom,
+			statuses: map[string]assettypes.AssetStatus{chain.MXNBaseDenom: assettypes.AssetStatus_ASSET_STATUS_RETIRED},
 			seed:     math.LegacyNewDecWithPrec(2, 2),
 		},
 	}
@@ -288,13 +288,13 @@ func (s *KeeperTestSuite) TestGetTobinTaxOverrides() {
 	// the sparse map back in key order, not in the order governance wrote it.
 	s.seedTobinTaxOverride(chain.USDBaseDenom, math.LegacyNewDecWithPrec(1, 2))
 	s.seedTobinTaxOverride(chain.CNYBaseDenom, math.LegacyZeroDec())
-	s.seedTobinTaxOverride(chain.MNTBaseDenom, math.LegacyNewDecWithPrec(2, 2))
+	s.seedTobinTaxOverride(chain.MXNBaseDenom, math.LegacyNewDecWithPrec(2, 2))
 
 	overrides, err := s.keeper.GetTobinTaxOverrides(s.ctx)
 	s.Require().NoError(err)
 	expected := []types.TobinTaxOverride{
 		{Denom: chain.CNYBaseDenom, TobinTax: math.LegacyZeroDec()},
-		{Denom: chain.MNTBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+		{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
 		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 	}
 	s.Require().Len(overrides, len(expected))

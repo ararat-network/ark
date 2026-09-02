@@ -162,7 +162,7 @@ func (s *AccumulatorTestSuite) TestExpansionRejections() {
 		{
 			name:   "output the rate set cannot price",
 			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-			output: sdk.NewInt64Coin(chain.SDRBaseDenom, 990),
+			output: sdk.NewInt64Coin(chain.XDRBaseDenom, 990),
 		},
 		{
 			name:   "output outvalues the offer",

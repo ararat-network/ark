@@ -222,8 +222,8 @@ func (s *KeeperTestSuite) TestGetRateSet() {
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.SDRBaseDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.XDRBaseDenom,
 		Rate:           math.LegacyMustNewDecFromStr("1.7"),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
@@ -231,13 +231,13 @@ func (s *KeeperTestSuite) TestGetRateSet() {
 	rates, err := s.keeper.GetRateSet(
 		s.ctx,
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 	)
 	s.Require().NoError(err)
 	s.Require().Len(rates, 3)
 	s.Require().True(rates[chain.USDBaseDenom].Equal(math.LegacyOneDec()))
-	s.Require().True(rates[chain.SDRBaseDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
+	s.Require().True(rates[chain.XDRBaseDenom].Equal(math.LegacyMustNewDecFromStr("1.7")))
 	s.Require().True(rates[chain.NoahBaseDenom].Equal(math.LegacyOneDec()))
 }
 
@@ -259,18 +259,18 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 		Rate:           math.LegacyMustNewDecFromStr("1.3"),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.SDRBaseDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.XDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
 	}))
 
-	// asdr is stale and akrw was never priced: both are omitted rather than
+	// axdr is stale and akrw was never priced: both are omitted rather than
 	// failing the set, while the fresh rate and the NOAH identity survive.
 	rates, err := s.keeper.GetAvailableRateSet(
 		s.ctx,
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.KRWBaseDenom,
 	)
 	s.Require().NoError(err)
@@ -293,8 +293,8 @@ func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	params.MaxExchangeRateAge = time.Minute
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.SDRBaseDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.XDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Hour),
 	}))
@@ -303,35 +303,35 @@ func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 		// The series is derived from the requested name — its prefix for an
 		// external symbol, itself for a bare feed key — so a request cannot
 		// route a name to any series but its own.
-		{Denom: "asdr-patient", MaxAge: 26 * time.Hour},
-		{Denom: "asdr-strict", MaxAge: time.Hour},
-		{Denom: chain.SDRBaseDenom, MaxAge: 26 * time.Hour},
+		{Denom: "axdr-patient", MaxAge: 26 * time.Hour},
+		{Denom: "axdr-strict", MaxAge: time.Hour},
+		{Denom: chain.XDRBaseDenom, MaxAge: 26 * time.Hour},
 		// A feed never priced is omitted rather than zero: a judged read is
 		// not licence to invent a rate where none was stored.
 		{Denom: "ausd-x", MaxAge: 26 * time.Hour},
 		// A non-positive window admits nothing rather than erroring: this read
 		// sits behind arithmetic that settles every block.
-		{Denom: "asdr-zero2", MaxAge: 0},
+		{Denom: "axdr-zero2", MaxAge: 0},
 	})
 	s.Require().NoError(err)
 	s.Require().Equal(types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		"asdr-patient":      math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		"axdr-patient":      math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 	}, rates)
 
 	// Requested denominations must be unique, or two verdicts would silently
 	// collapse into one.
 	_, err = s.keeper.GetRateSetWithin(s.ctx, []types.RateRequest{
-		{Denom: "asdr-x", MaxAge: time.Hour},
-		{Denom: "asdr-x", MaxAge: 26 * time.Hour},
+		{Denom: "axdr-x", MaxAge: time.Hour},
+		{Denom: "axdr-x", MaxAge: 26 * time.Hour},
 	})
 	s.Require().ErrorContains(err, "duplicate rate request")
 
-	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
+	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.XDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(types.RateSet{chain.NoahBaseDenom: math.LegacyOneDec()}, available)
-	_, err = s.keeper.GetExchangeRate(s.ctx, chain.SDRBaseDenom)
+	_, err = s.keeper.GetExchangeRate(s.ctx, chain.XDRBaseDenom)
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 
@@ -350,8 +350,8 @@ func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence()
 		Rate:           math.LegacyMustNewDecFromStr("1.3"),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
-	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.SDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.SDRBaseDenom,
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
+		Denom:          chain.XDRBaseDenom,
 		Rate:           math.LegacyOneDec(),
 		BlockTimestamp: oracleTestBlockTime.Add(-24 * time.Hour),
 	}))
@@ -359,22 +359,22 @@ func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence()
 	rates, err := s.keeper.GetLastKnownRateSet(
 		s.ctx,
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.KRWBaseDenom,
 	)
 	s.Require().NoError(err)
-	// asdr is a day stale and comes back anyway; akrw was never priced and does
-	// not. The same call through GetAvailableRateSet omits asdr, which is what
+	// axdr is a day stale and comes back anyway; akrw was never priced and does
+	// not. The same call through GetAvailableRateSet omits axdr, which is what
 	// makes the two reads answer different questions.
 	s.Require().Equal(types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("1.3"),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 	}, rates)
 
-	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.SDRBaseDenom)
+	available, err := s.keeper.GetAvailableRateSet(s.ctx, chain.XDRBaseDenom)
 	s.Require().NoError(err)
-	s.Require().NotContains(available, chain.SDRBaseDenom)
+	s.Require().NotContains(available, chain.XDRBaseDenom)
 }
 
 func (s *KeeperTestSuite) TestGetRateSetRejectsElapsedTimeStaleness() {

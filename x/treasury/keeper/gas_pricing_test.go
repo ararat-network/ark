@@ -143,11 +143,11 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeeCeilsInTheReferenceDenom() {
 	params, price := s.gasPricing()
 
 	// 15 gas at 0.1/gas is 1.5, which ceils to 2.
-	required, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 15, chain.SDRBaseDenom)
+	required, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 15, chain.XDRBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.SDRBaseDenom, 2), required)
+	s.Require().Equal(sdk.NewInt64Coin(chain.XDRBaseDenom, 2), required)
 
-	required, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 0, chain.SDRBaseDenom)
+	required, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 0, chain.XDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(required.IsZero())
 }
@@ -184,9 +184,9 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 		DerivedHeight: 6,
 	}))
 
-	reference, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.SDRBaseDenom)
+	reference, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.XDRBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.SDRBaseDenom, 20_000), reference)
+	s.Require().Equal(sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000), reference)
 	s.Require().Equal(math.LegacyOneDec(), factor)
 
 	member, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.USDBaseDenom)

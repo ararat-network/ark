@@ -37,29 +37,29 @@ func (s *KeeperTestSuite) TestGetReferenceDenomDefaultsEmpty() {
 func (s *KeeperTestSuite) TestSetReferenceDenomFirstConfigurationSkipsRebase() {
 	// First configuration has no outgoing reference denom to rebase away from, so no
 	// executor expectations are registered and any call would fail the test.
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 // TestSetReferenceDenomAcceptsAnyActiveFeed pins what the reference actually names:
 // a feed. Both consumers only ever read a rate, so no asset registry is
 // consulted — a reference unit need not be a listed asset anywhere.
 func (s *KeeperTestSuite) TestSetReferenceDenomAcceptsAnyActiveFeed() {
-	s.seedFeeds(chain.SDRBaseDenom, chain.USDBaseDenom, feedGold)
+	s.seedFeeds(chain.XDRBaseDenom, chain.USDBaseDenom, feedGold)
 
 	tests := []struct {
 		name  string
 		denom string
 	}{
 		// The launch reference denom: the configuration the chain ships with.
-		{name: "launch reference denom feed", denom: chain.SDRBaseDenom},
+		{name: "launch reference denom feed", denom: chain.XDRBaseDenom},
 		{name: "stablecoin feed", denom: chain.USDBaseDenom},
 		{name: "feed with no listed asset", denom: feedGold},
 	}
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			s.seedFeeds(chain.SDRBaseDenom, chain.USDBaseDenom, feedGold)
+			s.seedFeeds(chain.XDRBaseDenom, chain.USDBaseDenom, feedGold)
 
 			// Each case configures the reference from nothing, so no rebase
 			// runs and any executor call would fail the test.
@@ -93,7 +93,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomRejectsIneligibleDenoms() {
 		},
 		{
 			name:          "malformed denom",
-			denom:         "ASDR",
+			denom:         "AXDR",
 			expectMessage: "must be an Ark-native base denom",
 		},
 		// An Adding feed has no rate yet, and a Removing feed was already
@@ -102,7 +102,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomRejectsIneligibleDenoms() {
 		{
 			name: "feed being added",
 			setup: func() {
-				s.seedFeeds(chain.SDRBaseDenom)
+				s.seedFeeds(chain.XDRBaseDenom)
 				s.Require().NoError(s.scheduleAdd(feedSilver))
 			},
 			denom:         feedSilver,
@@ -111,7 +111,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomRejectsIneligibleDenoms() {
 		{
 			name: "feed being removed",
 			setup: func() {
-				s.seedFeeds(chain.SDRBaseDenom, feedGold)
+				s.seedFeeds(chain.XDRBaseDenom, feedGold)
 				s.Require().NoError(s.scheduleRemove(feedGold))
 			},
 			denom:         feedGold,
@@ -140,25 +140,25 @@ func (s *KeeperTestSuite) TestSetReferenceDenomRejectsIneligibleDenoms() {
 // sides of the pair are priced once here through a single freshness-checked
 // read, and both executors receive the identical merged set.
 func (s *KeeperTestSuite) TestSetReferenceDenomChangeRebasesConsumers() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	incoming := math.LegacyNewDec(2)
 	outgoing := math.LegacyNewDecWithPrec(15, 1)
 	s.seedReferenceDenomRates(map[string]math.LegacyDec{
 		chain.USDBaseDenom: incoming,
-		chain.SDRBaseDenom: outgoing,
+		chain.XDRBaseDenom: outgoing,
 	})
 	handed := types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  incoming,
-		chain.SDRBaseDenom:  outgoing,
+		chain.XDRBaseDenom:  outgoing,
 	}
 
 	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 	s.treasuryReferenceDenom.EXPECT().
-		RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{}))
@@ -171,16 +171,16 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRebasesConsumers() {
 // all, so an unpriced incoming rate fails the whole action before any executor
 // runs. The strict executor mocks registering no expectations is the assertion.
 func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresFreshIncomingRate() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	// Only the outgoing side is priced, so the incoming denomination fails.
 	s.seedReferenceDenomRates(map[string]math.LegacyDec{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
 
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
 	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 // TestSetReferenceDenomChangeRequiresPriceableOutgoingRate pins the other half: an
@@ -188,7 +188,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresFreshIncomingRate()
 // valued — fails the action rather than converting consumer state at whatever
 // the store last held. Supplying a rate is the escape, covered below.
 func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresPriceableOutgoingRate() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	// The outgoing denomination is part of the priced set, so it never having
 	// been valued is the whole action's failure.
@@ -199,7 +199,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresPriceableOutgoingRa
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
 	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
 	s.Require().ErrorContains(err, "pricing reference denom move")
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 // TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing is the escape from the
@@ -208,7 +208,7 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresPriceableOutgoingRa
 // on a feed the chain cannot read. The outgoing denomination is deliberately
 // left unpriced here — the move succeeding anyway is the assertion.
 func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	incoming := math.LegacyNewDec(2)
 	supplied := math.LegacyNewDecWithPrec(15, 1)
@@ -218,17 +218,17 @@ func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing(
 	handed := types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  incoming,
-		chain.SDRBaseDenom:  supplied,
+		chain.XDRBaseDenom:  supplied,
 	}
 
 	// Both executors must receive the supplied rate and the same set: a rebase
 	// converting Market and Treasury at different rates would leave the two
 	// disagreeing about the unit.
 	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 	s.treasuryReferenceDenom.EXPECT().
-		RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, handed).
+		RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, supplied))
@@ -240,47 +240,47 @@ func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing(
 // rebase: consumer state is already denominated in it, so running the
 // executors would re-denominate it a second time.
 func (s *KeeperTestSuite) TestSetReferenceDenomUnchangedDenomSkipsRebase() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	// No executor expectations are registered, so a rebase would fail here.
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 func (s *KeeperTestSuite) TestSetReferenceDenomChangeWithoutExecutorsFails() {
 	s.keeper.SetReferenceDenomConsumers(nil, nil)
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
 	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 func (s *KeeperTestSuite) TestSetReferenceDenomExecutorErrorFailsAtomically() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	s.seedReferenceDenomRates(map[string]math.LegacyDec{
 		chain.USDBaseDenom: math.LegacyNewDec(2),
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
 	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, gomock.Any()).
+		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, gomock.Any()).
 		Return(errors.New("pool rebase failed"))
 
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
 	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 // TestFeedReferentsPinTheProtocolReferenceDenom covers oracle's own claim, which is
 // independent of any consumer: both consumers price against the unit
 // continuously, so the feed cannot leave while it is named.
 func (s *KeeperTestSuite) TestFeedReferentsPinTheProtocolReferenceDenom() {
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	resp, err := s.queryClient.FeedReferents(s.ctx, &types.QueryFeedReferentsRequest{
-		Denom: chain.SDRBaseDenom,
+		Denom: chain.XDRBaseDenom,
 	})
 	s.Require().NoError(err)
 	s.Require().Equal(
@@ -295,8 +295,8 @@ func (s *KeeperTestSuite) TestFeedReferentsPinTheProtocolReferenceDenom() {
 // An unnamed feed is unpinned by the reference denom: the claim tracks the one
 // denomination, not the registry it lives in.
 func (s *KeeperTestSuite) TestFeedReferentsLeaveUnnamedFeedsUnpinned() {
-	s.seedFeeds(chain.SDRBaseDenom, chain.USDBaseDenom)
-	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.SDRBaseDenom, math.LegacyDec{}))
+	s.seedFeeds(chain.XDRBaseDenom, chain.USDBaseDenom)
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	resp, err := s.queryClient.FeedReferents(s.ctx, &types.QueryFeedReferentsRequest{
 		Denom: chain.USDBaseDenom,
@@ -316,16 +316,16 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenom() {
 
 	_, err := s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
 		Authority:      sdk.AccAddress("not-gov").String(),
-		ReferenceDenom: chain.SDRBaseDenom,
+		ReferenceDenom: chain.XDRBaseDenom,
 	})
 	s.Require().Error(err)
 
 	_, err = s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
 		Authority:      authority,
-		ReferenceDenom: chain.SDRBaseDenom,
+		ReferenceDenom: chain.XDRBaseDenom,
 	})
 	s.Require().NoError(err)
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
 // TestMsgSetReferenceDenomOutgoingRateValidation covers the two spellings of "no
@@ -341,7 +341,7 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 
 	_, err := s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
 		Authority:      authority,
-		ReferenceDenom: chain.SDRBaseDenom,
+		ReferenceDenom: chain.XDRBaseDenom,
 	})
 	s.Require().NoError(err)
 
@@ -354,7 +354,7 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 	})
 	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
 	s.Require().ErrorContains(err, "outgoing reference denom rate must be positive")
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 
 	// Past the domain cap is refused at the same write: the rate joins the
 	// handed set the consumers' rescale arithmetic reads, so the cap is the
@@ -367,7 +367,7 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 	})
 	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
 	s.Require().ErrorContains(err, "at most")
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 
 	// Zero reads as absent, so this prices the outgoing denomination and fails
 	// there rather than on validation — the same way an omitted field would.
@@ -382,5 +382,5 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 		OutgoingRate:   math.LegacyZeroDec(),
 	})
 	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
-	s.requireStoredReferenceDenom(chain.SDRBaseDenom)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }

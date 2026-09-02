@@ -43,7 +43,7 @@ func TestRandomisedGenState(t *testing.T) {
 	var marketGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &marketGenesis)
 
-	require.Equal(t, chain.SDRBaseDenom, marketGenesis.ConversionPolicy.BasePool.Denom)
+	require.Equal(t, chain.XDRBaseDenom, marketGenesis.ConversionPolicy.BasePool.Denom)
 	require.True(
 		t,
 		marketGenesis.ConversionPolicy.BasePool.Amount.GTE(

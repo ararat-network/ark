@@ -19,7 +19,7 @@ func (s *KeeperTestSuite) seedOraclePricedFixture() {
 		chain.GBPBaseDenom: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
 		chain.JPYBaseDenom: types.AssetStatus_ASSET_STATUS_SUSPENDED,
 		chain.KRWBaseDenom: types.AssetStatus_ASSET_STATUS_RETIRED,
-		chain.MNTBaseDenom: types.AssetStatus_ASSET_STATUS_ACTIVE,
+		chain.MXNBaseDenom: types.AssetStatus_ASSET_STATUS_ACTIVE,
 		chain.USDBaseDenom: types.AssetStatus_ASSET_STATUS_ACTIVE,
 	}
 	for _, asset := range types.DefaultGenesisState().Assets {
@@ -36,7 +36,7 @@ func (s *KeeperTestSuite) TestOraclePricedDenoms() {
 	s.Require().Equal([]string{
 		chain.EURBaseDenom,
 		chain.GBPBaseDenom,
-		chain.MNTBaseDenom,
+		chain.MXNBaseDenom,
 		chain.USDBaseDenom,
 	}, denoms)
 }

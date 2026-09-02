@@ -23,10 +23,10 @@ func TestDefaultGenesisState(t *testing.T) {
 	require.NoError(t, genesis.Validate())
 }
 
-// TestDefaultNoahConversionFactorIsTheBootstrapPriceInSDR pins the seed to
-// its derivation, so moving either the stated dollar price or the SDR cross
+// TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR pins the seed to
+// its derivation, so moving either the stated dollar price or the XDR cross
 // is a deliberate edit here too.
-func TestDefaultNoahConversionFactorIsTheBootstrapPriceInSDR(t *testing.T) {
+func TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR(t *testing.T) {
 	require.Equal(t, "1", chain.BootstrapNoahUSDPrice)
 	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), types.DefaultNoahConversionFactor)
 }
@@ -111,7 +111,7 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ConversionFactors = []types.ConversionFactor{
 					factor(chain.NoahBaseDenom, "1"),
-					factor(chain.SDRBaseDenom, "1"),
+					factor(chain.XDRBaseDenom, "1"),
 				}
 			},
 		},
@@ -123,7 +123,7 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ConversionFactors = []types.ConversionFactor{
 					factor(chain.NoahBaseDenom, "1"),
-					factor(chain.SDRBaseDenom, "0.000001"),
+					factor(chain.XDRBaseDenom, "0.000001"),
 				}
 			},
 		},
@@ -132,7 +132,7 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ConversionFactors = []types.ConversionFactor{
 					factor(chain.NoahBaseDenom, "1"),
-					factor(chain.SDRBaseDenom, "0"),
+					factor(chain.XDRBaseDenom, "0"),
 				}
 			},
 			expectErr: "must be positive",
@@ -171,7 +171,7 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 		{
 			name: "missing noah cross is refused",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "1")}
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.XDRBaseDenom, "1")}
 			},
 			expectErr: "must include the NOAH cross",
 		},

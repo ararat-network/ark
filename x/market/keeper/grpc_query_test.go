@@ -111,7 +111,7 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSet{
 			"ausd":             math.LegacyOneDec(),
-			chain.SDRBaseDenom: math.LegacyOneDec(),
+			chain.XDRBaseDenom: math.LegacyOneDec(),
 			"akrw":             math.LegacyOneDec(),
 		}, nil)
 	// The subject is representability, so both legs are overridden to zero and
@@ -134,7 +134,7 @@ func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentab
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSet{
 			"ausd":             math.LegacyOneDec(),
-			chain.SDRBaseDenom: math.LegacyNewDec(2),
+			chain.XDRBaseDenom: math.LegacyNewDec(2),
 			"akrw":             math.LegacyOneDec(),
 		}, nil)
 	// Zero on both legs keeps the assertion about the conversion route rather
@@ -280,7 +280,7 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 		},
 		{
 			name:       "zero override is honoured, not read as absent",
-			denom:      chain.MNTBaseDenom,
+			denom:      chain.MXNBaseDenom,
 			override:   ptr(math.LegacyZeroDec()),
 			expectRate: math.LegacyZeroDec(),
 		},
@@ -341,7 +341,7 @@ func (s *KeeperTestSuite) TestQueryTobinTaxOverrides() {
 	// Seeded out of order, so the response order can only come from the walk.
 	seeded := []types.TobinTaxOverride{
 		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
-		{Denom: chain.MNTBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+		{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
 		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(3, 2)},
 	}
 	for _, override := range seeded {
@@ -354,7 +354,7 @@ func (s *KeeperTestSuite) TestQueryTobinTaxOverrides() {
 	s.Require().NoError(err)
 	s.Require().Equal([]types.TobinTaxOverride{
 		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(3, 2)},
-		{Denom: chain.MNTBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+		{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
 		{Denom: chain.USDBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
 	}, res.TobinTaxOverrides)
 }
@@ -370,7 +370,7 @@ func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate 
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSet{
 			"ausd":             offerRate,
-			chain.SDRBaseDenom: math.LegacyOneDec(),
+			chain.XDRBaseDenom: math.LegacyOneDec(),
 			"akrw":             askRate,
 		}, nil)
 	s.seedTobinTaxOverride("ausd", tobinTax)
@@ -379,7 +379,7 @@ func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate 
 
 func (s *KeeperTestSuite) TestQueryConversionPolicy() {
 	resized := types.DefaultConversionPolicy()
-	resized.BasePool = sdrBasePool(math.LegacyNewDec(777))
+	resized.BasePool = xdrBasePool(math.LegacyNewDec(777))
 	resized.PoolRecoveryPeriod = 99
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, resized))
 

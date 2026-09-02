@@ -19,9 +19,9 @@ func TestDefaultGenesisState(t *testing.T) {
 	require.NoError(t, genesis.Validate())
 	// The protocol reference is a feed, not a listed asset, so the registry
 	// carries no entry for the reference denomination.
-	require.Len(t, genesis.Assets, 7)
+	require.Len(t, genesis.Assets, 10)
 	for _, asset := range genesis.Assets {
-		require.NotEqual(t, chain.SDRBaseDenom, asset.Denom)
+		require.NotEqual(t, chain.XDRBaseDenom, asset.Denom)
 	}
 	for _, asset := range genesis.Assets {
 		require.Equal(t, assettypes.AssetStatus_ASSET_STATUS_ACTIVE, asset.Status)

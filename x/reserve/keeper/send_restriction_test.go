@@ -45,10 +45,10 @@ func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidDeposits() {
 		{name: "unset amount", amount: sdk.Coins{{Denom: chain.NoahBaseDenom}}},
 		{name: "zero", amount: sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 0)}},
 		{name: "negative", amount: sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}},
-		{name: "unlisted", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1))},
+		{name: "unlisted", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1))},
 		{name: "mixed noah and unlisted", amount: sdk.NewCoins(
 			sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-			sdk.NewInt64Coin(chain.SDRBaseDenom, 1),
+			sdk.NewInt64Coin(chain.XDRBaseDenom, 1),
 		)},
 	}
 
@@ -69,19 +69,19 @@ func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidDeposits() {
 func (s *KeeperTestSuite) TestSendRestrictionRefusesExternalSymbols() {
 	s.SetupTest()
 	reserve := authtypes.NewModuleAddress(types.StrategicReserveName)
-	deposit := sdk.NewCoins(sdk.NewInt64Coin(sdrExternal, 5))
+	deposit := sdk.NewCoins(sdk.NewInt64Coin(xdrExternal, 5))
 
 	_, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, reserve, deposit)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
 
-	s.setPolicy(eligibility(sdrExternal, "0.5", "0.1"))
+	s.setPolicy(eligibility(xdrExternal, "0.5", "0.1"))
 	_, err = s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, reserve, deposit)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
 
 	// An external symbol beside an admissible coin fails the whole set.
 	mixed := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-		sdk.NewInt64Coin(sdrExternal, 5),
+		sdk.NewInt64Coin(xdrExternal, 5),
 	)
 	_, err = s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, reserve, mixed)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
@@ -94,12 +94,12 @@ func (s *KeeperTestSuite) TestSendRestrictionRefusesExternalSymbols() {
 func (s *KeeperTestSuite) TestSendRestrictionAdmitsRegistryMembers() {
 	s.SetupTest()
 	reserve := authtypes.NewModuleAddress(types.StrategicReserveName)
-	s.registerAsset(chain.SDRBaseDenom)
+	s.registerAsset(chain.XDRBaseDenom)
 	s.registerAsset(chain.USDBaseDenom)
 
 	for _, amount := range []sdk.Coins{
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1), sdk.NewInt64Coin(chain.USDBaseDenom, 2)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1), sdk.NewInt64Coin(chain.USDBaseDenom, 2)),
 	} {
 		got, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, reserve, amount)
 		s.Require().NoError(err)
@@ -114,13 +114,13 @@ func (s *KeeperTestSuite) TestSendRestrictionSubsumesTaxCollectorExemption() {
 	s.SetupTest()
 	collector := authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName)
 	reserve := authtypes.NewModuleAddress(types.StrategicReserveName)
-	s.registerAsset(chain.SDRBaseDenom)
+	s.registerAsset(chain.XDRBaseDenom)
 
 	got, err := s.keeper.SendRestriction(
 		s.ctx,
 		collector,
 		reserve,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 	)
 	s.Require().NoError(err)
 	s.Require().Equal(reserve, got)
@@ -148,7 +148,7 @@ func (s *KeeperTestSuite) TestSendRestrictionRefusesUnregisteredBareDenoms() {
 		s.ctx,
 		sdk.AccAddress{1},
 		reserve,
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 	)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
 	s.Require().Nil(got)
@@ -171,7 +171,7 @@ func (s *KeeperTestSuite) TestSendRestrictionUsesRewrittenRecipient() {
 		s.ctx,
 		sdk.AccAddress{1},
 		sdk.AccAddress{2},
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 	)
 	s.Require().ErrorIs(err, errortypes.ErrInvalidCoins)
 	s.Require().Nil(got)

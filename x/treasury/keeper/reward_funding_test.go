@@ -209,19 +209,19 @@ func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesScarceSubsidyByShortfa
 func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRoundsToOracle() {
 	funding := rewardFunding(0, 2, 3, 0)
 	stabilityTax := sdk.NewCoins(
-		sdk.NewInt64Coin(chain.SDRBaseDenom, 3),
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 3),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 	)
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.setRates(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 		chain.KRWBaseDenom: math.LegacyOneDec(),
 	})
 	s.expectSubsidyBalance(10)
 	s.expectTaxAllocation(
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 		sdk.NewCoins(
-			sdk.NewInt64Coin(chain.SDRBaseDenom, 2),
+			sdk.NewInt64Coin(chain.XDRBaseDenom, 2),
 			sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 		),
 	)
@@ -232,7 +232,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 
 	s.Require().NoError(s.runRewardFundingSettlement(
 		funding,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.KRWBaseDenom,
 	))
 }
@@ -244,22 +244,22 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesPricedTaxAndDefersStaleMember() {
 	funding := rewardFunding(0, 2, 1, 0)
 	stabilityTax := sdk.NewCoins(
-		sdk.NewInt64Coin(chain.SDRBaseDenom, 3),
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 3),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 	)
 	s.expectStabilityTaxBalance(stabilityTax)
 	// akrw is a member the Oracle cannot price this block, so it is omitted
 	// from the available set and its tax defers.
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 	s.expectSubsidyBalance(10)
 	s.expectTaxAllocation(
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 2)),
-		sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 2)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 	)
 
 	s.Require().NoError(s.runRewardFundingSettlement(
 		funding,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.KRWBaseDenom,
 	))
 	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
@@ -322,9 +322,9 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersSuspendedTax() {
 	funding := rewardFunding(1, 0, 0, 0)
 	s.setRewardFunding(funding)
 	s.setAssets()
-	s.seedAsset(chain.SDRBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
+	s.seedAsset(chain.XDRBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
+	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectUnconfiguredRewardValuation()
 
@@ -408,13 +408,13 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero()
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 5),
-		sdk.NewInt64Coin(chain.SDRBaseDenom, 4),
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 4),
 	)
 	s.expectValidatorFees(validatorFees)
 	s.setRates(oracletypes.RateSet{})
 
 	s.Require().NoError(s.advanceRewardFunding(
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	))
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
@@ -430,13 +430,13 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingCountsUnderflowingFeeDustAsZero
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 5),
-		sdk.NewInt64Coin(chain.SDRBaseDenom, 1),
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 1),
 	)
 	s.expectValidatorFees(validatorFees)
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(10).Power(19)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(10).Power(19)})
 
 	s.Require().NoError(s.advanceRewardFunding(
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	))
 	funding, err := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(err)
@@ -453,12 +453,12 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingFailsBlockWhenFeeValueAggregate
 	max := maxRepresentableInt()
 	validatorFees := sdk.NewCoins(
 		sdk.NewCoin(chain.NoahBaseDenom, max),
-		sdk.NewCoin(chain.SDRBaseDenom, max),
+		sdk.NewCoin(chain.XDRBaseDenom, max),
 	)
 	s.expectValidatorFees(validatorFees)
-	s.expectNoahAndSDRRewardValuation()
+	s.expectNoahAndXDRRewardValuation()
 
-	err := s.advanceRewardFunding(chain.SDRBaseDenom)
+	err := s.advanceRewardFunding(chain.XDRBaseDenom)
 	s.Require().ErrorContains(err, "valuing validator fees")
 	s.Require().ErrorIs(err, decimal.ErrOutOfRange)
 }
@@ -485,7 +485,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingFailsBlockWhenCrossBlockSumOver
 // skipped.
 func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTopsUp() {
 	funding := rewardFunding(0, 1, 1, 0)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
+	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.setRates(oracletypes.RateSet{})
 	s.expectSubsidyBalance(20)
@@ -500,7 +500,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTop
 
 	s.Require().NoError(s.runRewardFundingSettlement(
 		funding,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	))
 	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
 		Deferred: stabilityTax,
@@ -521,26 +521,26 @@ func (s *KeeperTestSuite) TestSettleRewardFundingFailsBlockWhenTaxValueAggregate
 	funding := rewardFunding(0, 1, 1, 0)
 	stabilityTax := sdk.NewCoins(
 		sdk.NewCoin(chain.NoahBaseDenom, max),
-		sdk.NewCoin(chain.SDRBaseDenom, max),
+		sdk.NewCoin(chain.XDRBaseDenom, max),
 	)
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahAndSDRRewardValuation()
+	s.expectNoahAndXDRRewardValuation()
 
-	err := s.runRewardFundingSettlement(funding, chain.SDRBaseDenom)
+	err := s.runRewardFundingSettlement(funding, chain.XDRBaseDenom)
 	s.Require().ErrorContains(err, "valuing stability tax")
 	s.Require().ErrorIs(err, decimal.ErrOutOfRange)
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingSendsTaxToOracleWhenTargetsAreDisabled() {
 	funding := rewardFunding(0, 0, 0, 0)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
+	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahAndSDRRewardValuation()
+	s.expectNoahAndXDRRewardValuation()
 	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
 
 	s.Require().NoError(s.runRewardFundingSettlement(
 		funding,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	))
 }
 
@@ -549,9 +549,9 @@ func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
 	s.setBlockHeight(2)
 	s.setRewardFunding(initial)
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 4))
+	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
 	s.expectStabilityTaxBalance(stabilityTax)
-	s.expectNoahAndSDRRewardValuation()
+	s.expectNoahAndXDRRewardValuation()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.StabilityTaxCollectorName, oracletypes.ModuleName, stabilityTax,
 	).Return(errors.New("bank failure"))
@@ -645,8 +645,8 @@ func (s *KeeperTestSuite) expectUnconfiguredRewardValuation() {
 	s.setRates(oracletypes.RateSet{})
 }
 
-func (s *KeeperTestSuite) expectNoahAndSDRRewardValuation() {
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
+func (s *KeeperTestSuite) expectNoahAndXDRRewardValuation() {
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 }
 
 func maxRepresentableInt() math.Int {

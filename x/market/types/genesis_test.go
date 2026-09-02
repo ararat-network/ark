@@ -32,13 +32,9 @@ func TestValidateGenesisState(t *testing.T) {
 			mutate: func(gs *types.GenesisState) {},
 		},
 		{
-			name: "default genesis carries the MNT override",
+			name: "default genesis carries no override",
 			mutate: func(gs *types.GenesisState) {
-				require.Len(t, gs.TobinTaxOverrides, 1)
-				require.Equal(t, chain.MNTBaseDenom, gs.TobinTaxOverrides[0].Denom)
-				require.True(t,
-					types.DefaultTobinTax.MulInt64(8).Equal(gs.TobinTaxOverrides[0].TobinTax),
-				)
+				require.Empty(t, gs.TobinTaxOverrides)
 			},
 		},
 		{

@@ -1207,14 +1207,14 @@ func (s *KeeperTestSuite) TestCommitteeCorrectPosition() {
 		_, err := s.msgServer.CommitteeCorrectPosition(s.ctx, &types.MsgCommitteeCorrectPosition{
 			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
 			Corrects:  entryID,
-			Quantity:  sdk.NewInt64Coin(sdrExternal, 4),
+			Quantity:  sdk.NewInt64Coin(xdrExternal, 4),
 			Reference: "booked-to-the-wrong-instrument",
 		})
 		s.Require().NoError(err)
 
 		position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
 		s.Require().NoError(err)
-		s.Require().Equal(sdk.NewInt64Coin(sdrExternal, 4), position.Quantity)
+		s.Require().Equal(sdk.NewInt64Coin(xdrExternal, 4), position.Quantity)
 	})
 
 	// A closed position is history that should still read true. Recognition
@@ -1318,7 +1318,7 @@ func (s *KeeperTestSuite) TestGenesisRoundTripRederivesAggregates() {
 	s.Require().NoError(err)
 
 	s.setPolicy(
-		eligibility(sdrExternal, "1", "0.5"),
+		eligibility(xdrExternal, "1", "0.5"),
 		eligibility(testAsset, "0.5", "0.2"),
 	)
 
@@ -1332,7 +1332,7 @@ func (s *KeeperTestSuite) TestGenesisRoundTripRederivesAggregates() {
 	// genesis validation demands.
 	s.Require().Equal([]types.EligibilityEntry{
 		eligibility(testAsset, "0.5", "0.2"),
-		eligibility(sdrExternal, "1", "0.5"),
+		eligibility(xdrExternal, "1", "0.5"),
 	}, exported.RecognitionPolicy)
 
 	// A tampered position no longer agrees with the ledger it folds. This is

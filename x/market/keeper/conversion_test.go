@@ -50,12 +50,12 @@ func livePool() math.LegacyDec {
 // times launch and walk it back, but never below the rate governance set.
 func capacityCorridor() (types.ConversionPolicy, types.ConversionPolicy) {
 	minimum := types.ConversionPolicy{
-		BasePool:           sdrBasePool(livePool().QuoInt64(2)),
+		BasePool:           xdrBasePool(livePool().QuoInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod / 4,
 		MinStabilitySpread: types.DefaultMinStabilitySpread,
 	}
 	maximum := types.ConversionPolicy{
-		BasePool:           sdrBasePool(livePool().MulInt64(2)),
+		BasePool:           xdrBasePool(livePool().MulInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod,
 		MinStabilitySpread: types.DefaultMinStabilitySpread.MulInt64(4),
 	}
@@ -68,7 +68,7 @@ func capacityCorridor() (types.ConversionPolicy, types.ConversionPolicy) {
 func (s *KeeperTestSuite) seedLiveConversionMandate() types.ConversionMandate {
 	s.setCapacityHeight(capacityActivation)
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(livePool())
+	current.BasePool = xdrBasePool(livePool())
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
@@ -95,11 +95,11 @@ func (s *KeeperTestSuite) setCapacityHeight(height int64) {
 }
 
 // oracleRateSetForRebase is the pair x/asset hands in when it re-points the
-// reference: one SDR buys two USD, so the pool's depth doubles in the new unit.
+// reference: one XDR buys two USD, so the pool's depth doubles in the new unit.
 func oracleRateSetForRebase() oracletypes.RateSet {
 	return oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
 	}
 }
@@ -111,7 +111,7 @@ func oracleRateSetForRebase() oracletypes.RateSet {
 // in the same message.
 func candidateInsideCorridor() types.ConversionPolicy {
 	return types.ConversionPolicy{
-		BasePool:           sdrBasePool(livePool().MulInt64(2)),
+		BasePool:           xdrBasePool(livePool().MulInt64(2)),
 		PoolRecoveryPeriod: types.DefaultPoolRecoveryPeriod / 4,
 		MinStabilitySpread: types.DefaultMinStabilitySpread.MulInt64(2),
 	}
@@ -205,14 +205,14 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 					msg.MaximumPolicy.BasePool.Amount,
 				)
 			},
-			expectErr: "conversion bounds are denominated in ausd, not the live base pool asdr",
+			expectErr: "conversion bounds are denominated in ausd, not the live base pool axdr",
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			current := types.DefaultConversionPolicy()
-			current.BasePool = sdrBasePool(livePool())
+			current.BasePool = xdrBasePool(livePool())
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 			before, err := s.keeper.ConversionMandate.Get(s.ctx)
 			s.Require().NoError(err)
@@ -265,7 +265,7 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracleRateSetForRebase(),
 	))
@@ -275,7 +275,7 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 	// The export is exactly the stranded shape: pool in the new unit, corridor
 	// still in the old one.
 	s.Require().Equal(chain.USDBaseDenom, exported.ConversionPolicy.BasePool.Denom)
-	s.Require().Equal(chain.SDRBaseDenom, exported.ConversionMandate.MinimumPolicy.BasePool.Denom)
+	s.Require().Equal(chain.XDRBaseDenom, exported.ConversionMandate.MinimumPolicy.BasePool.Denom)
 
 	s.Require().NoError(exported.Validate())
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
@@ -294,7 +294,7 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracleRateSetForRebase(),
 	))
@@ -344,11 +344,11 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 // always diverges them, or it reports a revival as a loss.
 func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	appointment := s.seedLiveConversionMandate()
-	s.Require().Equal(chain.SDRBaseDenom, appointment.MinimumPolicy.BasePool.Denom)
+	s.Require().Equal(chain.XDRBaseDenom, appointment.MinimumPolicy.BasePool.Denom)
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracleRateSetForRebase(),
 	))
@@ -362,18 +362,18 @@ func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		oracleRateSetForRebase(),
 	))
 
 	revived, err := s.keeper.ConversionMandate.Get(s.ctx)
 	s.Require().NoError(err)
-	sdrPool, err := s.keeper.ConversionPolicy.Get(s.ctx)
+	xdrPool, err := s.keeper.ConversionPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	// The appointment was never rewritten, so it is the one governance made.
 	s.Require().Equal(appointment, revived)
-	s.Require().True(revived.IsActive(sdrPool, capacityActivation))
-	s.Require().True(livePool().Equal(sdrPool.BasePool.Amount))
+	s.Require().True(revived.IsActive(xdrPool, capacityActivation))
+	s.Require().True(livePool().Equal(xdrPool.BasePool.Amount))
 
 	// Usable is not a claim about the query alone: the committee can act again.
 	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
@@ -392,7 +392,7 @@ func (s *KeeperTestSuite) TestSetMandateRejectsClosedWindow() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	minimum, maximum := capacityCorridor()
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(livePool())
+	current.BasePool = xdrBasePool(livePool())
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	before, err := s.keeper.ConversionMandate.Get(s.ctx)
 	s.Require().NoError(err)
@@ -447,14 +447,14 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRescalesDelta() {
 	for _, test := range tests {
 		s.Run(test.name, func() {
 			current := types.DefaultConversionPolicy()
-			current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+			current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, test.oldDelta))
 
 			// The recovery period rides along with the depth change to show both
 			// dials are applied as submitted, not just carried over.
 			updated := current
-			updated.BasePool = sdrBasePool(math.LegacyNewDec(200))
+			updated.BasePool = xdrBasePool(math.LegacyNewDec(200))
 			updated.PoolRecoveryPeriod++
 			_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 				Authority: authority,
@@ -481,7 +481,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRescalesDelta() {
 func (s *KeeperTestSuite) TestMsgUpdatePolicyPeriodOnlyChangeLeavesDelta() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+	current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	oldDelta := math.LegacyNewDec(25)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
@@ -524,14 +524,14 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsInvalidCandidates() {
 		{
 			name:      "zero base pool",
 			authority: authority,
-			mutate:    func(p *types.ConversionPolicy) { p.BasePool = sdrBasePool(math.LegacyZeroDec()) },
+			mutate:    func(p *types.ConversionPolicy) { p.BasePool = xdrBasePool(math.LegacyZeroDec()) },
 			expectErr: "base pool must be positive",
 		},
 		{
 			name:      "negative base pool",
 			authority: authority,
 			mutate: func(p *types.ConversionPolicy) {
-				p.BasePool = sdk.DecCoin{Denom: chain.SDRBaseDenom, Amount: math.LegacyNewDec(-1)}
+				p.BasePool = sdk.DecCoin{Denom: chain.XDRBaseDenom, Amount: math.LegacyNewDec(-1)}
 			},
 			expectErr: "invalid base pool",
 		},
@@ -546,7 +546,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsInvalidCandidates() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			before := types.DefaultConversionPolicy()
-			before.BasePool = sdrBasePool(math.LegacyNewDec(100))
+			before.BasePool = xdrBasePool(math.LegacyNewDec(100))
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, before))
 			submitted := before
 			tc.mutate(&submitted)
@@ -597,7 +597,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsBasePoolDenomChange() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			current := types.DefaultConversionPolicy()
-			current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+			current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 			oldDelta := math.LegacyNewDec(25)
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
@@ -629,12 +629,12 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsBasePoolDenomChange() {
 func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsNonPositiveEffectivePool() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	before := types.DefaultConversionPolicy()
-	before.BasePool = sdrBasePool(math.LegacyNewDec(100))
+	before.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, before))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(-200)))
 
 	submitted := before
-	submitted.BasePool = sdrBasePool(math.LegacyNewDec(200))
+	submitted.BasePool = xdrBasePool(math.LegacyNewDec(200))
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: authority,
 		Policy:    submitted,
@@ -706,7 +706,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyAppliesInsideCorridor() {
 	s.Require().NoError(err)
 	s.Require().Equal(candidate, stored)
 	s.requirePoolUpdateEvent(
-		sdrBasePool(livePool()),
+		xdrBasePool(livePool()),
 		candidate.BasePool,
 		math.LegacyZeroDec(),
 		math.LegacyZeroDec(),
@@ -780,7 +780,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: capacityCommittee(),
 			policy: types.ConversionPolicy{
-				BasePool:           sdrBasePool(maximum.BasePool.Amount.MulInt64(2)),
+				BasePool:           xdrBasePool(maximum.BasePool.Amount.MulInt64(2)),
 				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
 				MinStabilitySpread: minimum.MinStabilitySpread,
 			},
@@ -826,7 +826,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: capacityCommittee(),
 			policy: types.ConversionPolicy{
-				BasePool:           sdrBasePool(math.LegacyZeroDec()),
+				BasePool:           xdrBasePool(math.LegacyZeroDec()),
 				PoolRecoveryPeriod: minimum.PoolRecoveryPeriod,
 				MinStabilitySpread: minimum.MinStabilitySpread,
 			},
@@ -873,7 +873,7 @@ func (s *KeeperTestSuite) TestGovernanceCapacityPathIgnoresCorridor() {
 	appointment := s.seedLiveConversionMandate()
 	_, maximum := capacityCorridor()
 	beyondCorridor := types.ConversionPolicy{
-		BasePool:           sdrBasePool(maximum.BasePool.Amount.MulInt64(10)),
+		BasePool:           xdrBasePool(maximum.BasePool.Amount.MulInt64(10)),
 		PoolRecoveryPeriod: maximum.PoolRecoveryPeriod,
 		MinStabilitySpread: maximum.MinStabilitySpread,
 	}
@@ -907,7 +907,7 @@ func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracleRateSetForRebase(),
 	))
@@ -963,7 +963,7 @@ func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 func (s *KeeperTestSuite) TestMsgUpdateParamsLeavesCapacityAlone() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	resized := types.DefaultConversionPolicy()
-	resized.BasePool = sdrBasePool(math.LegacyNewDec(999))
+	resized.BasePool = xdrBasePool(math.LegacyNewDec(999))
 	resized.PoolRecoveryPeriod = 7
 	resized.MinStabilitySpread = math.LegacyNewDecWithPrec(5, 2)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, resized))
@@ -994,7 +994,7 @@ func tobinCapForTest() math.LegacyDec {
 func (s *KeeperTestSuite) seedLiveTobinMandate(tobinCap math.LegacyDec) types.ConversionMandate {
 	s.setCapacityHeight(capacityActivation)
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(livePool())
+	current.BasePool = xdrBasePool(livePool())
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 
@@ -1312,7 +1312,7 @@ func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 
 	s.Require().NoError(s.keeper.RebaseBasePool(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracleRateSetForRebase(),
 	))
@@ -1347,7 +1347,7 @@ func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 func (s *KeeperTestSuite) TestSetConversionMandateRejectsEmptyTobinBand() {
 	s.setCapacityHeight(capacityActivation)
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(livePool())
+	current.BasePool = xdrBasePool(livePool())
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 

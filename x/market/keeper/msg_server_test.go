@@ -261,7 +261,7 @@ func (s *KeeperTestSuite) TestMsgSwapSendOmittedMinimumReceiveAcceptsMarketExecu
 
 func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 	capacity := types.DefaultConversionPolicy()
-	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
 	// No Treasury call appears in either case: a conversion records its own
@@ -316,13 +316,13 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			trader := sdk.AccAddress([]byte("trader_______________"))
 			rates := oracletypes.RateSet{
 				"ausd":              math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyOneDec(),
+				chain.XDRBaseDenom:  math.LegacyOneDec(),
 				chain.NoahBaseDenom: math.LegacyOneDec(),
 			}
 			s.oracleKeeper.EXPECT().GetRateSet(
 				s.ctx,
 				tc.offerCoin.Denom,
-				chain.SDRBaseDenom,
+				chain.XDRBaseDenom,
 				tc.askDenom,
 			).Return(rates, nil).Times(1)
 
@@ -365,18 +365,18 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 // so every conversion between the two denominations rounds.
 func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual() {
 	capacity := types.DefaultConversionPolicy()
-	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	offer := sdk.NewInt64Coin(chain.NoahBaseDenom, 101)
 	rates := oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("1.37"),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}
 	s.oracleKeeper.EXPECT().GetRateSet(
-		s.ctx, chain.NoahBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom,
+		s.ctx, chain.NoahBaseDenom, chain.XDRBaseDenom, chain.USDBaseDenom,
 	).Return(rates, nil)
 	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 		s.ctx, trader, types.ModuleName, sdk.NewCoins(offer),
@@ -435,7 +435,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 	}
 	nativeRates := oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}
 
@@ -524,7 +524,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 				s.oracleKeeper.EXPECT().GetRateSet(
 					s.ctx,
 					chain.NoahBaseDenom,
-					chain.SDRBaseDenom,
+					chain.XDRBaseDenom,
 					chain.USDBaseDenom,
 				).Return(nativeRates, nil)
 				gomock.InOrder(
@@ -547,7 +547,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 				s.oracleKeeper.EXPECT().GetRateSet(
 					s.ctx,
 					chain.USDBaseDenom,
-					chain.SDRBaseDenom,
+					chain.XDRBaseDenom,
 					chain.NoahBaseDenom,
 				).Return(nativeRates, nil)
 				gomock.InOrder(
@@ -569,7 +569,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 		s.Run(test.name, func() {
 			capacity := types.DefaultConversionPolicy()
 			if test.offerCoin.Denom == chain.NoahBaseDenom || test.askDenom == chain.NoahBaseDenom {
-				capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+				capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 			}
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
@@ -785,8 +785,8 @@ func maxLegacyDecForKeeperTest() math.LegacyDec {
 	return math.LegacyNewDecFromBigIntWithPrec(raw, math.LegacyPrecision)
 }
 
-func sdrBasePool(amount math.LegacyDec) sdk.DecCoin {
-	return sdk.NewDecCoinFromDec(chain.SDRBaseDenom, amount)
+func xdrBasePool(amount math.LegacyDec) sdk.DecCoin {
+	return sdk.NewDecCoinFromDec(chain.XDRBaseDenom, amount)
 }
 
 func (s *KeeperTestSuite) requirePoolUpdateEvent(

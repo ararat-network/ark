@@ -20,7 +20,7 @@ import (
 func validPosition() types.Position {
 	return types.Position{
 		PositionId:     1,
-		Quantity:       sdk.NewCoin(chain.SDRBaseDenom+"-x", math.NewInt(50)),
+		Quantity:       sdk.NewCoin(chain.XDRBaseDenom+"-x", math.NewInt(50)),
 		Deployed:       chain.NoahCoin(math.NewInt(100)),
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: "custodian-alpha",
@@ -42,7 +42,7 @@ func validEntry(kind types.EntryKind) types.AccountingEntry {
 		EntryId:        2,
 		PositionId:     1,
 		Kind:           kind,
-		Quantity:       sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(50)),
+		Quantity:       sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(50)),
 		MovedNoahValue: chain.NoahCoin(math.ZeroInt()),
 		MovedCoin:      chain.NoahCoin(math.ZeroInt()),
 		Reference:      "tx-0x01",
@@ -57,7 +57,7 @@ func validEntry(kind types.EntryKind) types.AccountingEntry {
 		entry.MovedNoahValue = chain.NoahCoin(math.NewInt(100))
 	case types.EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION:
 		// An in-kind inflow: the legs differ, which is why both are stored.
-		entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(25))
+		entry.MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(25))
 		entry.MovedNoahValue = chain.NoahCoin(math.NewInt(60))
 	case types.EntryKind_ENTRY_KIND_CORRECTION:
 		entry.Corrects = 1
@@ -68,7 +68,7 @@ func validEntry(kind types.EntryKind) types.AccountingEntry {
 		// Carries the reversed attribution's movement verbatim, so it is
 		// shaped like the return above.
 		entry.Corrects = 1
-		entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(25))
+		entry.MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(25))
 		entry.MovedNoahValue = chain.NoahCoin(math.NewInt(60))
 		entry.Term = 0
 	}
@@ -354,7 +354,7 @@ func TestAccountingEntryValidateMovement(t *testing.T) {
 	// The zero-booked-value case a dark feed produces must survive reversal.
 	t.Run("a reversal may carry a zero booked value", func(t *testing.T) {
 		entry := validEntry(types.EntryKind_ENTRY_KIND_RETURN_REVERSAL)
-		entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(100))
+		entry.MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(100))
 		entry.MovedNoahValue = chain.NoahCoin(math.ZeroInt())
 		require.NoError(t, entry.Validate())
 	})
@@ -362,7 +362,7 @@ func TestAccountingEntryValidateMovement(t *testing.T) {
 	t.Run("a judgment kind may not carry a moved coin", func(t *testing.T) {
 		for _, kind := range judgmentKinds {
 			entry := validEntry(kind)
-			entry.MovedCoin = sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(5))
+			entry.MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(5))
 			require.ErrorContains(t, entry.Validate(), "may carry a movement", kind.String())
 		}
 	})

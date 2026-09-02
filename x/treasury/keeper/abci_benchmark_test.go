@@ -160,7 +160,7 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	if err := oracleKeeper.Params.Set(ctx, oracletypes.DefaultParams()); err != nil {
 		b.Fatal(err)
 	}
-	if err := oracleKeeper.ReferenceDenom.Set(ctx, chain.SDRBaseDenom); err != nil {
+	if err := oracleKeeper.ReferenceDenom.Set(ctx, chain.XDRBaseDenom); err != nil {
 		b.Fatal(err)
 	}
 

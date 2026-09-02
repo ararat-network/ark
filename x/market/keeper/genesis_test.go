@@ -13,10 +13,17 @@ import (
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
 	genesis := types.DefaultGenesisState()
+	// The launch set carries no override, so the round trip seeds its own. What
+	// is under test is that genesis carries overrides across export and import,
+	// not that the launch values happen to hold one.
+	genesis.TobinTaxOverrides = []types.TobinTaxOverride{
+		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+		{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+	}
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
 	s.oracleKeeper.EXPECT().GetReferenceDenom(s.ctx).
-		Return(chain.SDRBaseDenom, nil)
+		Return(chain.XDRBaseDenom, nil)
 	err := s.keeper.InitGenesis(s.ctx, genesis)
 	s.Require().NoError(err)
 
@@ -32,7 +39,7 @@ func (s *KeeperTestSuite) TestInitExportGenesis() {
 
 	// Overrides are governance judgment that cannot be re-derived, so genesis is
 	// the only thing carrying them across an export and import cycle.
-	s.Require().NotEmpty(genesis.TobinTaxOverrides)
+	s.Require().Len(genesis.TobinTaxOverrides, 2)
 	for _, override := range genesis.TobinTaxOverrides {
 		stored, getErr := s.keeper.TobinTaxOverrides.Get(s.ctx, override.Denom)
 		s.Require().NoError(getErr)
@@ -79,8 +86,8 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 		{
 			name:          "base pool disagrees with the reference",
 			basePoolDenom: chain.USDBaseDenom,
-			reference:     chain.SDRBaseDenom,
-			expectErr:     "base pool denom ausd must be the protocol reference asdr",
+			reference:     chain.XDRBaseDenom,
+			expectErr:     "base pool denom ausd must be the protocol reference axdr",
 		},
 		{
 			// An empty reference means no launch has configured one, so there is

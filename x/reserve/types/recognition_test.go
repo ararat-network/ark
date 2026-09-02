@@ -19,7 +19,7 @@ import (
 const rateAgeOutOfRange = "max rate age must be greater than zero and at most"
 
 // creditDenom is the asset every credit case is written against.
-const creditDenom = "asdr"
+const creditDenom = "axdr"
 
 // rateSet quotes creditDenom in units per one NOAH, the orientation every
 // oracle rate carries, and carries the NOAH identity with it.
@@ -409,5 +409,5 @@ func TestRawCreditRefusesAnAbsurdAttestation(t *testing.T) {
 	absurd := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
 	_, err := entry.RawCredit(rateSet("0.01"), absurd)
 	require.ErrorIs(t, err, oracletypes.ErrConversionOutOfRange)
-	require.ErrorContains(t, err, "asdr")
+	require.ErrorContains(t, err, "axdr")
 }

@@ -52,7 +52,7 @@ func DefaultGenesisState() *GenesisState {
 		[]AttendanceRecord{},
 		NewAccounting(params),
 		DefaultFeeds(),
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 	)
 }
 
@@ -61,15 +61,22 @@ func DefaultGenesisState() *GenesisState {
 // their denominations keeps rate-store keys stable. This list was derived from
 // the oracle Tobin-tax parameter until that parameter was deleted; membership
 // itself has lived behind the asset registry since the feed decoupling.
+//
+// XDR is the one feed with no asset behind it: nothing is issued in it, but the
+// Treasury tax cap and the conversion pool are denominated in it, so the
+// reference needs a live feed the registry never asks for.
 var DefaultFeedDenoms = []string{
+	chain.AUDBaseDenom,
+	chain.CADBaseDenom,
 	chain.CNYBaseDenom,
 	chain.EURBaseDenom,
 	chain.GBPBaseDenom,
 	chain.JPYBaseDenom,
 	chain.KRWBaseDenom,
-	chain.MNTBaseDenom,
-	chain.SDRBaseDenom,
+	chain.MXNBaseDenom,
+	chain.SGDBaseDenom,
 	chain.USDBaseDenom,
+	chain.XDRBaseDenom,
 }
 
 // DefaultFeeds seeds the launch feed set.

@@ -230,7 +230,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 					GetAllBalances(s.ctx, sdk.AccAddress{1}).
 					Return(sdk.NewCoins(
 						sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(400)),
-						sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(200)),
+						sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(200)),
 					))
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
@@ -239,7 +239,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 					validator1,
 					sdk.NewDecCoinsFromCoins(
 						sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(10)),
-						sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(5)),
+						sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(5)),
 					),
 				).Return(nil)
 				s.distrKeeper.EXPECT().AllocateTokensToValidator(
@@ -247,7 +247,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 					validator2,
 					sdk.NewDecCoinsFromCoins(
 						sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(30)),
-						sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(15)),
+						sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(15)),
 					),
 				).Return(nil)
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -256,7 +256,7 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 					"distribution",
 					sdk.NewCoins(
 						sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(40)),
-						sdk.NewCoin(chain.SDRBaseDenom, math.NewInt(20)),
+						sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(20)),
 					),
 				).Return(nil)
 			},
@@ -265,14 +265,14 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 					Validator: valAddr1.String(),
 					Rewards: sdk.NewCoins(
 						sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
-						sdk.NewInt64Coin(chain.SDRBaseDenom, 5),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 5),
 					),
 				},
 				&types.EventOracleReward{
 					Validator: valAddr2.String(),
 					Rewards: sdk.NewCoins(
 						sdk.NewInt64Coin(chain.NoahBaseDenom, 30),
-						sdk.NewInt64Coin(chain.SDRBaseDenom, 15),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 15),
 					),
 				},
 			},

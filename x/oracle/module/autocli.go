@@ -117,7 +117,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod:   "SetReferenceDenom",
 					Use:         "set-reference-denom-proposal [reference-denom]",
 					Short:       "Submit a proposal to re-point the protocol reference denomination",
-					Example:     fmt.Sprintf("%s tx oracle set-reference-denom-proposal asdr", version.AppName),
+					Example:     fmt.Sprintf("%s tx oracle set-reference-denom-proposal axdr", version.AppName),
 					GovProposal: true,
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "reference_denom"},

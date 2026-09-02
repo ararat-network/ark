@@ -33,7 +33,7 @@ func TestValidateConversionPolicy(t *testing.T) {
 		{
 			name: "nil base pool amount with valid denom",
 			mutate: func(policy *types.ConversionPolicy) {
-				policy.BasePool = sdk.DecCoin{Denom: chain.SDRBaseDenom}
+				policy.BasePool = sdk.DecCoin{Denom: chain.XDRBaseDenom}
 			},
 			expectErr: "base pool amount must be set",
 		},
@@ -42,7 +42,7 @@ func TestValidateConversionPolicy(t *testing.T) {
 			// makes the constant product degenerate.
 			name: "zero base pool",
 			mutate: func(policy *types.ConversionPolicy) {
-				policy.BasePool = sdk.NewDecCoin(chain.SDRBaseDenom, math.ZeroInt())
+				policy.BasePool = sdk.NewDecCoin(chain.XDRBaseDenom, math.ZeroInt())
 			},
 			expectErr: "base pool must be positive",
 		},
@@ -50,7 +50,7 @@ func TestValidateConversionPolicy(t *testing.T) {
 			name: "negative base pool",
 			mutate: func(policy *types.ConversionPolicy) {
 				policy.BasePool = sdk.DecCoin{
-					Denom:  chain.SDRBaseDenom,
+					Denom:  chain.XDRBaseDenom,
 					Amount: math.LegacyNewDec(-1),
 				}
 			},
@@ -66,7 +66,7 @@ func TestValidateConversionPolicy(t *testing.T) {
 		{
 			name: "base pool square is out of range",
 			mutate: func(policy *types.ConversionPolicy) {
-				policy.BasePool = sdk.NewDecCoinFromDec(chain.SDRBaseDenom, maxLegacyDec())
+				policy.BasePool = sdk.NewDecCoinFromDec(chain.XDRBaseDenom, maxLegacyDec())
 			},
 			expectErr: "base pool square must be representable",
 		},
@@ -152,7 +152,7 @@ func TestValidateConversionPolicy(t *testing.T) {
 
 func TestDefaultConversionPolicyValues(t *testing.T) {
 	policy := types.DefaultConversionPolicy()
-	require.Equal(t, chain.SDRBaseDenom, policy.BasePool.Denom)
+	require.Equal(t, chain.XDRBaseDenom, policy.BasePool.Denom)
 	require.True(
 		t,
 		math.LegacyNewDecFromInt(chain.NativeBaseAmount(1_000_000)).Equal(policy.BasePool.Amount),
@@ -196,7 +196,7 @@ func TestConversionPolicyIsZero(t *testing.T) {
 		},
 		{
 			name:   "depth only",
-			policy: types.ConversionPolicy{BasePool: sdk.NewDecCoin(chain.SDRBaseDenom, math.OneInt())},
+			policy: types.ConversionPolicy{BasePool: sdk.NewDecCoin(chain.XDRBaseDenom, math.OneInt())},
 		},
 		{
 			name:   "recovery period only",

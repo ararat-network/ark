@@ -32,21 +32,21 @@ func NewGenesisState(
 	}
 }
 
-// defaultUSDPerSDR converts the dollar-stated placeholder into the table's
+// defaultUSDPerXDR converts the dollar-stated placeholder into the table's
 // unit. The IMF cross was 1.3709 on 2026-09-02, rounded up because the factor
-// sizes a fee requirement. SDR drifts a percent or two a year against the
+// sizes a fee requirement. XDR drifts a percent or two a year against the
 // dollar, and the seed governs gas only until the first reference rate, so
 // the snapshot needs no upkeep.
-var defaultUSDPerSDR = math.LegacyMustNewDecFromStr("1.371")
+var defaultUSDPerXDR = math.LegacyMustNewDecFromStr("1.371")
 
 // DefaultNoahConversionFactor seeds the numeraire's cross, NOAH base units
 // per reference base unit, so gas is payable in NOAH from the first block.
 // Nothing else is: a member factor needs a rate to exist, and the reference
-// is a unit of account nobody holds. It is chain.BootstrapNoahUSDPrice in SDR
+// is a unit of account nobody holds. It is chain.BootstrapNoahUSDPrice in XDR
 // terms, so the gas seed and the oracle's first NOAH price agree; a launch
 // genesis overrides it with the opening price, and the first reference rate
 // re-derives it. Rounded up for the same reason as the cross.
-var DefaultNoahConversionFactor = defaultUSDPerSDR.QuoRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahUSDPrice))
+var DefaultNoahConversionFactor = defaultUSDPerXDR.QuoRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahUSDPrice))
 
 // DefaultGenesisState returns the safe, unconfigured Treasury genesis state:
 // default policy, the NOAH cross seeded, member factors left to derivation.

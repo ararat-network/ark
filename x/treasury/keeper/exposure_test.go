@@ -68,7 +68,7 @@ func (s *KeeperTestSuite) settleEmpty() {
 // price with nothing to compare against is not a zero return, which would
 // record calm the chain never observed.
 func (s *KeeperTestSuite) TestExposureFirstSampleRecordsPriceWithoutReturn() {
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 
 	s.settleEmpty()
 
@@ -84,12 +84,12 @@ func (s *KeeperTestSuite) TestExposureFoldsSquaredReturnIntoVariance() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyMustNewDecFromStr("0.5")
 	})
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 
 	// Three over two is a return of one half; squared, one quarter; folded at
 	// half retention over a zero series, one eighth.
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(3)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(3)})
 	s.settleEmpty()
 
 	state := s.getExposureState()
@@ -104,10 +104,10 @@ func (s *KeeperTestSuite) TestExposureClampsReturnSample() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyZeroDec()
 	})
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyOneDec()})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 	s.settleEmpty()
 
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(100)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(100)})
 	s.settleEmpty()
 
 	// A zero decay makes the series the latest sample alone, so the clamp is
@@ -122,7 +122,7 @@ func (s *KeeperTestSuite) TestExposureSkipsSampleWithoutReferenceRate() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyZeroDec()
 	})
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 
 	// The feed goes dark. Nothing is folded and the anchor holds.
@@ -132,7 +132,7 @@ func (s *KeeperTestSuite) TestExposureSkipsSampleWithoutReferenceRate() {
 	s.Require().True(s.getExposureState().VolatilityVariance.IsZero())
 
 	// It returns unchanged, so the resumed return is zero rather than a jump.
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 	s.Require().True(s.getExposureState().VolatilityVariance.IsZero())
 }
@@ -146,7 +146,7 @@ func (s *KeeperTestSuite) TestExposureFoldsNetRedemptionFlow() {
 	})
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	})
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -174,7 +174,7 @@ func (s *KeeperTestSuite) TestExposureIdleBlockDecaysFlow() {
 	})
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
-		chain.SDRBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyOneDec(),
 	})
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -289,17 +289,17 @@ func (s *KeeperTestSuite) TestExposureUpdateSkippedOnOffCadenceBlock() {
 // change: without the rescale the next block would read a new-unit price
 // against an old-unit anchor and record the cross rate as a market move.
 func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
-	s.setRates(oracletypes.RateSet{chain.SDRBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().LastReferencePrice)
 
-	// One SDR is two USD, so an anchor of two SDR per NOAH is four USD per NOAH.
+	// One XDR is two USD, so an anchor of two XDR per NOAH is four USD per NOAH.
 	s.Require().NoError(s.keeper.RebaseReferenceState(
 		s.ctx,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
 		oracletypes.RateSet{
-			chain.SDRBaseDenom: math.LegacyOneDec(),
+			chain.XDRBaseDenom: math.LegacyOneDec(),
 			chain.USDBaseDenom: math.LegacyNewDec(2),
 		},
 	))

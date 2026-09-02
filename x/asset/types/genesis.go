@@ -9,12 +9,15 @@ import (
 // DefaultGenesisState returns the launch asset registry.
 func DefaultGenesisState() *GenesisState {
 	denoms := []string{
+		chain.AUDBaseDenom,
+		chain.CADBaseDenom,
 		chain.CNYBaseDenom,
 		chain.EURBaseDenom,
 		chain.GBPBaseDenom,
 		chain.JPYBaseDenom,
 		chain.KRWBaseDenom,
-		chain.MNTBaseDenom,
+		chain.MXNBaseDenom,
+		chain.SGDBaseDenom,
 		chain.USDBaseDenom,
 	}
 	assets := make([]Asset, len(denoms))

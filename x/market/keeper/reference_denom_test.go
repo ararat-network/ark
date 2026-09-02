@@ -15,7 +15,7 @@ import (
 
 func (s *KeeperTestSuite) TestRebaseBasePool() {
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+	current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	oldDelta := math.LegacyNewDec(25)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
@@ -25,11 +25,11 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 	// absent GetRateSet expectation asserts exactly that.
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
 	}
 
-	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	// The depth is a claim about how much conversion the protocol absorbs before
 	// the spread widens, expressed in reference units, so it is carried across at
@@ -51,7 +51,7 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 
 func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 	current := types.DefaultConversionPolicy()
-	current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+	current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	oldDelta := math.LegacyNewDec(25)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
@@ -60,7 +60,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 	// A reference that lands on the unit the pool is already in has nothing to
 	// carry across, so the handed rates are never consulted — the nil set
 	// asserts that — and neither the depth nor the delta is rewritten.
-	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.SDRBaseDenom, chain.SDRBaseDenom, nil))
+	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
 
 	storedCapacity, err := s.keeper.ConversionPolicy.Get(s.ctx)
 	s.Require().NoError(err)
@@ -95,12 +95,12 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			from:      chain.USDBaseDenom,
 			to:        chain.KRWBaseDenom,
 			rates:     nil,
-			expectErr: "base pool is denominated in asdr, not ausd",
+			expectErr: "base pool is denominated in axdr, not ausd",
 			errorIs:   errortypes.ErrInvalidRequest,
 		},
 		{
 			name: "outgoing reference is missing from the handed set",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
@@ -111,11 +111,11 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 		},
 		{
 			name: "destination has no price in the handed set",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyOneDec(),
+				chain.XDRBaseDenom:  math.LegacyOneDec(),
 			},
 			expectErr: oracletypes.ErrUnknownDenom.Error(),
 			errorIs:   types.ErrNoEffectivePrice,
@@ -125,11 +125,11 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			// reporting it as one would tell governance to configure a feed that
 			// already exists.
 			name: "conversion through the handed set overflows",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyOneDec(),
+				chain.XDRBaseDenom:  math.LegacyOneDec(),
 				// Near the LegacyDec ceiling (~1.16e77), so scaling the 100-unit
 				// pool by it is unrepresentable and the multiply inside Convert
 				// fails before any state is touched.
@@ -144,11 +144,11 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			// a pool that truncates to nothing is caught by the effective-pool
 			// guard on the candidate, not by the conversion.
 			name: "rebased depth truncates to zero",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyNewDec(1_000),
+				chain.XDRBaseDenom:  math.LegacyNewDec(1_000),
 				chain.USDBaseDenom:  math.LegacySmallestDec(),
 			},
 			expectErr:  "invalid effective pools after rebasing to ausd",
@@ -160,11 +160,11 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			// deep to ever swap against: the effective-pool guard runs on the
 			// candidate before anything is written.
 			name: "rebased depth fails effective-pool validation",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyOneDec(),
+				chain.XDRBaseDenom:  math.LegacyOneDec(),
 				// Representable after conversion, but the constant product the
 				// swap math needs squares it out of range.
 				chain.USDBaseDenom: math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 59)),
@@ -178,7 +178,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
 			current := types.DefaultConversionPolicy()
-			current.BasePool = sdrBasePool(math.LegacyNewDec(100))
+			current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 			oldDelta := math.LegacyNewDec(25)
 			s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, current))
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))

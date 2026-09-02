@@ -36,10 +36,10 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	// oracle here — the strict mock carries that assertion.
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -47,13 +47,13 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	expected.ReferenceDenom = chain.USDBaseDenom
 	expected.ReferenceTaxCap = math.NewInt(200)
 	// The base-fee floor and live price are reference-quoted too, so both
-	// re-quote through the same cross — one SDR is two USD here.
+	// re-quote through the same cross — one XDR is two USD here.
 	expected.MinBaseGasPrice = math.LegacyMustNewDecFromStr("0.2")
 	s.Require().Equal(expected, stored)
 	price, err := s.keeper.BaseGasPrice.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.2"), price)
-	// One SDR is half a USD at these rates, so the factor halves while the
+	// One XDR is half a USD at these rates, so the factor halves while the
 	// derived cap survives the unit change untouched.
 	rescaled, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
@@ -65,7 +65,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.5"), noahCross.Factor)
 	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
-		OldCap: sdk.NewInt64Coin(chain.SDRBaseDenom, 100),
+		OldCap: sdk.NewInt64Coin(chain.XDRBaseDenom, 100),
 		NewCap: sdk.NewInt64Coin(chain.USDBaseDenom, 200),
 	})
 	// The re-quote and the rescale report through the states' own streams —
@@ -91,7 +91,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateToTheSameDenomIsANoOp() {
 
 	// Landing on the unit the cap is already in has nothing to carry across:
 	// no conversion — the nil set asserts that — no write, no event.
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.SDRBaseDenom, nil))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -113,11 +113,11 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 	}))
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
 	}
 
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	// The factor rescales through the cross like any member's — the zero cap
 	// exempts only the cap's own amount from conversion.
@@ -130,7 +130,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 	s.Require().Equal(chain.USDBaseDenom, stored.ReferenceDenom)
 	s.Require().Equal(math.ZeroInt(), stored.ReferenceTaxCap)
 	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
-		OldCap: sdk.NewInt64Coin(chain.SDRBaseDenom, 0),
+		OldCap: sdk.NewInt64Coin(chain.XDRBaseDenom, 0),
 		NewCap: sdk.NewInt64Coin(chain.USDBaseDenom, 0),
 	})
 }
@@ -146,18 +146,18 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() 
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyNewDec(1_000),
+		chain.XDRBaseDenom:  math.LegacyNewDec(1_000),
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
 
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(chain.USDBaseDenom, stored.ReferenceDenom)
 	s.Require().Equal(math.OneInt(), stored.ReferenceTaxCap)
 	s.requireTypedEvent(&types.EventReferenceTaxCapRebased{
-		OldCap: sdk.NewInt64Coin(chain.SDRBaseDenom, 100),
+		OldCap: sdk.NewInt64Coin(chain.XDRBaseDenom, 100),
 		NewCap: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 	})
 }
@@ -188,10 +188,10 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 	cross := math.LegacyNewDec(10).Power(18)
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  cross,
+		chain.XDRBaseDenom:  cross,
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -231,10 +231,10 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 	cross := math.LegacySmallestDec()
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.SDRBaseDenom:  cross,
+		chain.XDRBaseDenom:  cross,
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.SDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	held, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
@@ -266,16 +266,16 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFailuresPreserveState() {
 			from:      chain.USDBaseDenom,
 			to:        chain.KRWBaseDenom,
 			rates:     nil,
-			expectErr: "treasury reference denom is asdr, not ausd",
+			expectErr: "treasury reference denom is axdr, not ausd",
 			errorIs:   errortypes.ErrInvalidRequest,
 		},
 		{
 			name: "destination has no rate in the handed set",
-			from: chain.SDRBaseDenom,
+			from: chain.XDRBaseDenom,
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.SDRBaseDenom:  math.LegacyOneDec(),
+				chain.XDRBaseDenom:  math.LegacyOneDec(),
 			},
 			expectErr: oracletypes.ErrUnknownDenom.Error(),
 			errorIs:   oracletypes.ErrUnknownDenom,

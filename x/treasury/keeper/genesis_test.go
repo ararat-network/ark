@@ -35,7 +35,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	// membership rule the member entry beside it is held to.
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.NoahBaseDenom, Factor: math.LegacyMustNewDecFromStr("0.25"), DerivedHeight: 5},
-		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
+		{Denom: chain.XDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
 	}
 	// An export taken while an exposure update was owed carries the raised
 	// flag, and the import must keep the work owed rather than forgive it.
@@ -53,7 +53,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 		Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
 		LastRefreshHeight:  7,
 	}
-	s.setAssets(chain.SDRBaseDenom)
+	s.setAssets(chain.XDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
 		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
 		types.RedemptionBufferName:        sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
@@ -81,11 +81,11 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap = math.NewInt(100)
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
+	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.GetTaxCap(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), cap)
@@ -94,7 +94,7 @@ func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	// The zero sentinel keeps its meaning through the same seeds.
 	genesis.Params.ReferenceTaxCap = math.ZeroInt()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, genesis.Params))
-	for _, denom := range []string{chain.SDRBaseDenom, chain.USDBaseDenom} {
+	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
 		cap, err := s.keeper.GetTaxCap(s.ctx, denom)
 		s.Require().NoError(err)
 		s.Require().True(cap.IsZero())
@@ -114,12 +114,12 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 		{
 			name:      "reference not configured",
 			reference: "",
-			wantErr:   "treasury reference denom asdr requires a configured protocol reference",
+			wantErr:   "treasury reference denom axdr requires a configured protocol reference",
 		},
 		{
 			name:      "reference names another feed",
 			reference: chain.USDBaseDenom,
-			wantErr:   "treasury reference denom asdr must be the protocol reference ausd",
+			wantErr:   "treasury reference denom axdr must be the protocol reference ausd",
 		},
 	}
 
@@ -139,16 +139,16 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 // must remain importable, arriving with the member untaxed exactly as it was
 // on the exporting chain; the next block's pass covers it either way.
 func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
-	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
+	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec()},
-		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec()},
+		{Denom: chain.XDRBaseDenom, Factor: math.LegacyOneDec()},
 	}
 	s.expectGenesisFundBalances(nil)
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
-	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.SDRBaseDenom)
+	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.XDRBaseDenom)
 	s.Require().NoError(err)
 	_, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().Error(err)
@@ -191,7 +191,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	krwCap, err := s.keeper.GetTaxCap(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(33), krwCap)
-	_, err = s.keeper.GetTaxCap(s.ctx, chain.SDRBaseDenom)
+	_, err = s.keeper.GetTaxCap(s.ctx, chain.XDRBaseDenom)
 	s.Require().Error(err)
 }
 
@@ -268,7 +268,7 @@ func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 
 func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 	genesis := types.DefaultGenesisState()
-	s.setAssets(chain.SDRBaseDenom)
+	s.setAssets(chain.XDRBaseDenom)
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.SubsidyPoolName).
 		Return(authtypes.NewEmptyModuleAccount(types.SubsidyPoolName))
 	s.bankKeeper.EXPECT().GetAllBalances(s.ctx, gomock.Any()).Return(

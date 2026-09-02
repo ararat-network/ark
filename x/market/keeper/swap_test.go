@@ -102,7 +102,7 @@ func (s *KeeperTestSuite) TestSwapQuoteEligibility() {
 	rates := oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
 		chain.KRWBaseDenom:  math.LegacyNewDec(1300),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -213,11 +213,11 @@ func (s *KeeperTestSuite) TestSwapQuoteNeverGatesNoah() {
 	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.NoahBaseDenom,
 	).Return(oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
@@ -253,11 +253,11 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyOneDec(),
-			chain.SDRBaseDenom:  math.LegacyOneDec(),
+			chain.XDRBaseDenom:  math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	capacity := types.DefaultConversionPolicy()
-	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 	capacity.MinStabilitySpread = math.LegacyNewDecWithPrec(2, 2) // 2%
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
@@ -308,11 +308,11 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 	// With small offers into the default large pool (1e12), CP spread ≈ 0.
 	// The minimum stability spread (2%) should always be the floor.
-	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.XDRBaseDenom, chain.NoahBaseDenom).
 		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyOneDec(),
-			chain.SDRBaseDenom:  math.LegacyOneDec(),
+			chain.XDRBaseDenom:  math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	minSpread := math.LegacyNewDecWithPrec(2, 2) // 2%
@@ -334,11 +334,11 @@ func (s *KeeperTestSuite) TestSwapQuote_NegativeRawSpreadUsesMinimumSpread() {
 	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		"ausd",
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.NoahBaseDenom,
 	).Return(oracletypes.RateSet{
 		"ausd":              math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(
@@ -363,18 +363,18 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 	s.Require().NoError(err)
 
 	capacity := types.DefaultConversionPolicy()
-	capacity.BasePool = sdrBasePool(basePool)
+	capacity.BasePool = xdrBasePool(basePool)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, arkPoolDelta))
 
 	s.oracleKeeper.EXPECT().GetRateSet(
 		gomock.Any(),
 		chain.USDBaseDenom,
-		chain.SDRBaseDenom,
+		chain.XDRBaseDenom,
 		chain.NoahBaseDenom,
 	).Return(oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
-		chain.SDRBaseDenom:  math.LegacySmallestDec(),
+		chain.XDRBaseDenom:  math.LegacySmallestDec(),
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
@@ -408,13 +408,13 @@ func (s *KeeperTestSuite) TestSwapQuoteRefusesSwapsThatRoundToZero() {
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(oracletypes.RateSet{
 			chain.USDBaseDenom:  math.LegacyOneDec(),
-			chain.SDRBaseDenom:  math.LegacySmallestDec(),
+			chain.XDRBaseDenom:  math.LegacySmallestDec(),
 			chain.NoahBaseDenom: math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	basePool := math.LegacyMustNewDecFromStr("1000000000000")
 	capacity := types.DefaultConversionPolicy()
-	capacity.BasePool = sdrBasePool(basePool)
+	capacity.BasePool = xdrBasePool(basePool)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, basePool))
 
@@ -449,11 +449,11 @@ func (s *KeeperTestSuite) TestSwapQuoteRefusesSwapsThatRoundToZero() {
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_PoolImbalanceIncreasesSpread() {
-	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.SDRBaseDenom, chain.NoahBaseDenom).
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), "ausd", chain.XDRBaseDenom, chain.NoahBaseDenom).
 		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
 			chain.NoahBaseDenom: math.LegacyNewDecWithPrec(5, 1),
-			chain.SDRBaseDenom:  math.LegacyNewDecWithPrec(17, 1),
+			chain.XDRBaseDenom:  math.LegacyNewDecWithPrec(17, 1),
 		}, nil).AnyTimes()
 
 	offerCoin := sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1))
