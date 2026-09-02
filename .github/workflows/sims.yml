@@ -1,0 +1,42 @@
+# Application simulations. These run nightly rather than per pull request:
+# each drives tens of thousands of blocks and takes minutes, and a failure
+# is a property violation worth investigating rather than a merge blocker.
+name: Sims
+
+on:
+  schedule:
+    # 03:00 UTC daily.
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sims-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # Determinism first: it is the one whose failure invalidates the
+          # others' results rather than standing on its own.
+          - test-sim-nondeterminism
+          - test-sim
+          - test-sim-import-export
+          - test-sim-after-import
+          - test-sim-fuzz
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - run: make ${{ matrix.target }}

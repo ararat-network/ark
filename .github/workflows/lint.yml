@@ -1,0 +1,44 @@
+# Go and protobuf linting. Both jobs run the same Makefile targets a
+# developer runs, against the checked-in .golangci.yml and buf config, so a
+# green run here means `make lint` and `make proto-lint` are green locally.
+name: Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Installed at a pinned version rather than taken from an action, so CI
+      # runs the same binary as the working tree. A linter that gains a check
+      # on its own turns an unrelated pull request red.
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+
+      - run: make lint
+
+  proto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: make proto-lint
