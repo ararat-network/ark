@@ -501,6 +501,86 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(extremeVoter)])
 }
 
+// TestAggregateOracleVotesOmitsDerivedPriceAboveStoreBound pins the one way
+// a price can leave the bound every report is held to: the cross rate rounds
+// at eighteen decimals, and dividing the reference median by a cross that
+// rounded down lands above the largest report that produced it. Here a target
+// reported exactly at MaxExchangeRate against a reference of 1500 gives a
+// cross of ~4.4e-18, rounded to 4e-18, and a derived price of 3.75e20 —
+// above the bound, so the target is omitted rather than stored.
+func TestAggregateOracleVotesOmitsDerivedPriceAboveStoreBound(t *testing.T) {
+	votes := []testVote{
+		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(1500),
+			"azzz": oracletypes.MaxExchangeRate,
+		}),
+		newTestVote([]byte{2}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(1500),
+			"azzz": oracletypes.MaxExchangeRate,
+		}),
+	}
+	voteTargets := []string{"aaaa", "azzz"}
+
+	keeper, prices, err := processVoteExtensions(t, votes, oracletypes.DefaultParams(), voteTargets)
+
+	require.NoError(t, err)
+	require.True(t, math.LegacyNewDec(1500).Equal(prices["aaaa"]))
+	_, priced := prices["azzz"]
+	require.False(t, priced)
+	// Only the reference target scores.
+	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[consKey([]byte{1})]))
+	require.True(t, math.NewInt(1).Equal(keeper.scoreWeights[consKey([]byte{2})]))
+}
+
+// TestAggregateOracleVotesIsOrientationInvariant documents executably that
+// the tally lands in the store's own orientation whichever way reports are
+// quoted: the cross-rate derivation is a ratio, so feeding every report's
+// reciprocal publishes every price's reciprocal.
+func TestAggregateOracleVotesIsOrientationInvariant(t *testing.T) {
+	forward := []testVote{
+		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(2),
+			"azzz": math.LegacyNewDec(4),
+		}),
+		newTestVote([]byte{2}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(8),
+			"azzz": math.LegacyNewDec(2),
+		}),
+		newTestVote([]byte{3}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDec(4),
+			"azzz": math.LegacyNewDec(4),
+		}),
+	}
+	reciprocal := []testVote{
+		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDecWithPrec(5, 1),
+			"azzz": math.LegacyNewDecWithPrec(25, 2),
+		}),
+		newTestVote([]byte{2}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDecWithPrec(125, 3),
+			"azzz": math.LegacyNewDecWithPrec(5, 1),
+		}),
+		newTestVote([]byte{3}, 1, map[string]math.LegacyDec{
+			"aaaa": math.LegacyNewDecWithPrec(25, 2),
+			"azzz": math.LegacyNewDecWithPrec(25, 2),
+		}),
+	}
+	voteTargets := []string{"aaaa", "azzz"}
+
+	_, forwardPrices, err := processVoteExtensions(t, forward, oracletypes.DefaultParams(), voteTargets)
+	require.NoError(t, err)
+	_, reciprocalPrices, err := processVoteExtensions(t, reciprocal, oracletypes.DefaultParams(), voteTargets)
+	require.NoError(t, err)
+
+	// Median aaaa is 4; per-validator crosses are 0.5, 4, and 1, so azzz is
+	// 4 / 1 = 4. Every value here is a power of two, so the reciprocals are
+	// exact and the comparison is equality rather than tolerance.
+	for _, denom := range voteTargets {
+		require.True(t, math.LegacyNewDec(4).Equal(forwardPrices[denom]), denom)
+		require.True(t, math.LegacyOneDec().Quo(forwardPrices[denom]).Equal(reciprocalPrices[denom]), denom)
+	}
+}
+
 func TestProcessVoteExtensionsUsesDeterministicWriteOrder(t *testing.T) {
 	votes := []testVote{
 		newTestVote([]byte{3}, 1, map[string]math.LegacyDec{

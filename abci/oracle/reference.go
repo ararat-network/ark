@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/decimal"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type referenceScore struct {
@@ -86,8 +87,13 @@ func selectReference(passing []int, ballots []ballot, thresholdPower int64) []pr
 		}
 
 		median := crossTally.weightedMedian()
+		// A derived price is held to the bound a direct report is held to.
+		// The reference median is itself a report, so it is inside the bound
+		// already; the quotient can leave it, and a price the store's
+		// consumers cannot multiply by is omitted like one they cannot
+		// represent.
 		price, err := decimal.Quo(referenceMedian, median)
-		if err != nil || !price.IsPositive() {
+		if err != nil || !price.IsPositive() || price.GT(oracletypes.MaxExchangeRate) {
 			continue
 		}
 		tallies = append(tallies, pricedTally{

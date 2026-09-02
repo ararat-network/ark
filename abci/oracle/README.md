@@ -142,7 +142,9 @@ target price = reference median / median(reference vote / target vote)
 ```
 
 The final division uses the same checked `LegacyDec` semantics. A target is omitted when its final price is
-unrepresentable or non-positive.
+unrepresentable, non-positive, or above `MaxExchangeRate` — the magnitude a direct report is held to by its
+encoding. The reference median is itself a report, so only the quotient can leave that bound, and a price the
+store's consumers cannot multiply a capped quantity by is omitted like one they cannot represent.
 
 ### Accuracy Scoring
 
