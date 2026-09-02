@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Actions are pinned by major tag, so these bumps are small and are the ones
+  # that keep a workflow from breaking on a deprecated runner image.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+
+  # Weekly rather than daily: a chain's dependency bumps need the full suite
+  # and the simulations behind them, and a queue of open bumps competing for
+  # that is worse than a smaller batch.
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies

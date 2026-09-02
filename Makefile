@@ -81,6 +81,18 @@ format:
 	@golangci-lint fmt
 
 ###############################################################################
+###                                Security                                 ###
+###############################################################################
+
+# govulncheck reports only vulnerabilities on reachable call paths, so its
+# findings are ones this code can actually hit rather than every advisory
+# touching a module in go.mod. It is not a merge gate: some findings have no
+# fixed version upstream, and a permanently red gate stops being read.
+vulncheck:
+	@GOBIN=$(CURDIR)/build go install golang.org/x/vuln/cmd/govulncheck@latest
+	@$(CURDIR)/build/govulncheck ./...
+
+###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
 
@@ -172,5 +184,6 @@ upgrade-rehearsal:
 
 .PHONY: build install clean test test-race test-cover \
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
-	lint lint-fix format proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
+	lint lint-fix format vulncheck \
+	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
 	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook upgrade-rehearsal

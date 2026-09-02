@@ -1,0 +1,51 @@
+# Static analysis. The query selection is deliberately wider than the default:
+# CWE-369 divide-by-zero is pulled in because a division that faults inside a
+# Begin- or EndBlocker halts the chain, and the cosmos-sdk pack carries checks
+# for SDK-specific hazards a generic Go scanner has no concept of, such as
+# non-deterministic map iteration reaching consensus state.
+name: CodeQL
+
+on:
+  pull_request:
+    paths: ["**.go"]
+  push:
+    branches: [main]
+    paths: ["**.go"]
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      # Required to publish findings into the repository's Security tab.
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          queries: >-
+            +security-and-quality,
+            github/codeql/go/ql/src/experimental/CWE-369/DivideByZero.ql@main,
+            github/codeql/go/ql/src/experimental/Unsafe/WrongUsageOfUnsafe.ql@main,
+            github/codeql/go/ql/src/experimental/InconsistentCode/DeferInLoop.ql@main
+          packs: +crypto-com/cosmos-sdk-codeql
+
+      - uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
