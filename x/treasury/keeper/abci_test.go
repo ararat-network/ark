@@ -81,9 +81,10 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
+	// One XDR is one NOAH and one USD is half a NOAH, so one XDR is two USD.
 	s.setRates(oracletypes.RateSet{
 		chain.XDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyNewDec(2),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 	})
 
 	s.Require().NoError(s.beginBlock())
@@ -112,14 +113,14 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	// A moved rate re-derives the one factor it moved.
 	s.setRates(oracletypes.RateSet{
 		chain.XDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyNewDec(3),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 	})
 	s.Require().NoError(s.beginBlock())
 	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(3_000_000), usdCap)
+	s.Require().Equal(math.NewInt(4_000_000), usdCap)
 	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
-		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(3), DerivedHeight: 1},
+		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(4), DerivedHeight: 1},
 	}})
 }
 
@@ -159,7 +160,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 
 	// The feed returns and the very next block re-derives.
 	s.setRates(oracletypes.RateSet{
-		chain.KRWBaseDenom: math.LegacyNewDec(2),
+		chain.KRWBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
 	s.Require().NoError(s.beginBlock())
@@ -242,8 +243,8 @@ func (s *KeeperTestSuite) TestBeginBlockerCapturesReferenceWhenNotAMember() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
-		chain.KRWBaseDenom: math.LegacyNewDec(4),
-		chain.USDBaseDenom: math.LegacyNewDec(2),
+		chain.KRWBaseDenom: math.LegacyNewDecWithPrec(25, 2),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
 
@@ -274,8 +275,8 @@ func (s *KeeperTestSuite) TestBeginBlockerStoresLopsidedFactorDerivingUncapped()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{
-		chain.XDRBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom: math.LegacyNewDec(10).Power(72),
+		chain.XDRBaseDenom: math.LegacyNewDec(10).Power(72),
+		chain.USDBaseDenom: math.LegacyOneDec(),
 	})
 
 	s.Require().NoError(s.beginBlock())
@@ -300,8 +301,8 @@ func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	// One base unit of reference converts to half a unit at this rate pair.
 	s.setRates(oracletypes.RateSet{
-		chain.XDRBaseDenom: math.LegacyNewDec(2),
-		chain.USDBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyNewDec(2),
 	})
 
 	s.Require().NoError(s.beginBlock())
@@ -355,10 +356,10 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 
-	// One NOAH is four XDR here, so one reference unit is a quarter NOAH.
+	// One XDR is a quarter NOAH here, and the cross is that rate itself.
 	s.setRates(oracletypes.RateSet{
-		chain.XDRBaseDenom: math.LegacyNewDec(4),
-		chain.USDBaseDenom: math.LegacyNewDec(2),
+		chain.XDRBaseDenom: math.LegacyNewDecWithPrec(25, 2),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 	})
 	s.Require().NoError(s.beginBlock())
 	cross, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)

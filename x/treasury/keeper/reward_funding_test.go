@@ -352,7 +352,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 	s.expectStabilityTaxBalance(stabilityTax)
 	s.expectUnconfiguredRewardValuation()
 	s.expectSubsidyBalance(10)
-	// The plan redeems half a unit per NOAH, so four units value at eight NOAH:
+	// The plan redeems two NOAH per unit, so four units value at eight NOAH:
 	// enough to cover the Oracle target and five of the validator target, which
 	// splits the balance evenly and leaves one NOAH of validator shortfall.
 	s.expectTaxAllocation(
@@ -422,18 +422,18 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero()
 	s.Require().Equal(math.NewInt(5), funding.ValidatorFeeValue)
 }
 
-// TestUpdateRewardFundingCountsUnderflowingFeeDustAsZero pins measurement
-// semantics for a priced member: dust whose NOAH value truncates below Dec
-// precision counts as zero, exactly like an unpriced member, rather than
+// TestUpdateRewardFundingCountsSubUnitFeeDustAsZero pins measurement
+// semantics for a priced member: dust whose NOAH value truncates below one
+// base unit counts as zero, exactly like an unpriced member, rather than
 // failing the valuation of every other denomination carried with it.
-func (s *KeeperTestSuite) TestUpdateRewardFundingCountsUnderflowingFeeDustAsZero() {
+func (s *KeeperTestSuite) TestUpdateRewardFundingCountsSubUnitFeeDustAsZero() {
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 5),
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 1),
 	)
 	s.expectValidatorFees(validatorFees)
-	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(10).Power(19)})
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacySmallestDec()})
 
 	s.Require().NoError(s.advanceRewardFunding(
 		chain.XDRBaseDenom,

@@ -40,13 +40,16 @@ func NewGenesisState(
 var defaultUSDPerXDR = math.LegacyMustNewDecFromStr("1.371")
 
 // DefaultNoahConversionFactor seeds the numeraire's cross, NOAH base units
-// per reference base unit, so gas is payable in NOAH from the first block.
+// per reference base unit — the orientation every oracle rate carries, so the
+// first reference rate replaces it verbatim — so gas is payable in NOAH from
+// the first block.
 // Nothing else is: a member factor needs a rate to exist, and the reference
-// is a unit of account nobody holds. It is chain.BootstrapNoahUSDPrice in XDR
-// terms, so the gas seed and the oracle's first NOAH price agree; a launch
-// genesis overrides it with the opening price, and the first reference rate
-// re-derives it. Rounded up for the same reason as the cross.
-var DefaultNoahConversionFactor = defaultUSDPerXDR.QuoRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahUSDPrice))
+// is a unit of account nobody holds. It is chain.BootstrapNoahPerUSD in XDR
+// terms — dollars per XDR times NOAH per dollar — so the gas seed and the
+// oracle's first NOAH price agree; a launch genesis overrides it with the
+// opening price, and the first reference rate re-derives it. Rounded up for
+// the same reason as the cross.
+var DefaultNoahConversionFactor = defaultUSDPerXDR.MulRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerUSD))
 
 // DefaultGenesisState returns the safe, unconfigured Treasury genesis state:
 // default policy, the NOAH cross seeded, member factors left to derivation.

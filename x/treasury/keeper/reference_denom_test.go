@@ -34,10 +34,11 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 
 	// x/asset reads the pair once and hands it in; Treasury never reads the
 	// oracle here — the strict mock carries that assertion.
+	// One XDR is one NOAH and one USD is half a NOAH, so one XDR is two USD.
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyNewDec(2),
+		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
 	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
@@ -53,7 +54,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	price, err := s.keeper.BaseGasPrice.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.2"), price)
-	// One XDR is half a USD at these rates, so the factor halves while the
+	// One USD is half an XDR at these rates, so the factor halves while the
 	// derived cap survives the unit change untouched.
 	rescaled, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
@@ -114,7 +115,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyNewDec(2),
+		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
 
 	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
@@ -144,10 +145,12 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() 
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
+	// One USD is a thousand NOAH and one XDR is one, so the cap of a hundred
+	// XDR is a tenth of a USD.
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.XDRBaseDenom:  math.LegacyNewDec(1_000),
-		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyNewDec(1_000),
 	}
 
 	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
@@ -188,8 +191,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 	cross := math.LegacyNewDec(10).Power(18)
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.XDRBaseDenom:  cross,
-		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
+		chain.USDBaseDenom:  cross,
 	}
 	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
@@ -231,8 +234,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 	cross := math.LegacySmallestDec()
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.XDRBaseDenom:  cross,
-		chain.USDBaseDenom:  math.LegacyOneDec(),
+		chain.XDRBaseDenom:  math.LegacyOneDec(),
+		chain.USDBaseDenom:  cross,
 	}
 	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 

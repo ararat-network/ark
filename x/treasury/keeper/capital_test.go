@@ -158,8 +158,9 @@ func (s *KeeperTestSuite) TestFundTransferBoundsDropNeverPricedSupply() {
 // also exercising the ungated plan read.
 func usdSettlementPlan() assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
-		Denom:                 chain.USDBaseDenom,
-		RedemptionRate:        math.LegacyNewDecWithPrec(5, 1),
+		Denom: chain.USDBaseDenom,
+		// Two NOAH per unit of settled ausd.
+		RedemptionRate:        math.LegacyNewDec(2),
 		OpenedHeight:          1,
 		ActivationHeight:      1_000,
 		EarliestClosingHeight: 1100,

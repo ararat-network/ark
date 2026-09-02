@@ -293,7 +293,9 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	s.settleEmpty()
 	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().LastReferencePrice)
 
-	// One XDR is two USD, so an anchor of two XDR per NOAH is four USD per NOAH.
+	// One USD is two XDR, so an anchor of two NOAH per XDR is four NOAH per USD
+	// — the anchor is a price, and moves by the reciprocal of what a quantity
+	// of XDR would.
 	s.Require().NoError(s.keeper.RebaseReferenceState(
 		s.ctx,
 		chain.XDRBaseDenom,
@@ -309,4 +311,35 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	// The dimensionless series are untouched by a change of unit.
 	s.Require().Equal(math.LegacyOneDec(), state.Multiplier)
 	s.Require().True(state.VolatilityVariance.IsZero())
+}
+
+// TestExposureRebasedAnchorRecordsNoReturnWithoutAMove pins the rebase from
+// the sampler's side: an anchor equal to the live reference price,
+// re-expressed in the new unit, meets that unit's live price next block and
+// records no return. A rebase by the wrong factor would record the square of
+// the cross as a market move here.
+func (s *KeeperTestSuite) TestExposureRebasedAnchorRecordsNoReturnWithoutAMove() {
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
+	s.settleEmpty()
+	s.Require().Equal(math.LegacyOneDec(), s.getExposureState().LastReferencePrice)
+
+	// One USD is two NOAH and one XDR is one, so an anchor of one NOAH per
+	// XDR is two NOAH per USD.
+	s.Require().NoError(s.keeper.RebaseReferenceState(
+		s.ctx,
+		chain.XDRBaseDenom,
+		chain.USDBaseDenom,
+		oracletypes.RateSet{
+			chain.XDRBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom: math.LegacyNewDec(2),
+		},
+	))
+	s.reference = chain.USDBaseDenom
+	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().LastReferencePrice)
+
+	// The market has not moved: the live NOAH price of a USD is the two the
+	// anchor now states.
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(2)})
+	s.settleEmpty()
+	s.Require().True(s.getExposureState().VolatilityVariance.IsZero())
 }

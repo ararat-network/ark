@@ -212,11 +212,11 @@ func (s *KeeperTestSuite) TestSettleConversionsParksWholeBlockOnIncompleteValuat
 // quoted.
 func (s *KeeperTestSuite) TestSettleConversionsDrawsCoverageAgainstPreBurnBasis() {
 	s.setAssets(chain.USDBaseDenom)
-	// 75 ausd at two per NOAH is 37.5 of post-burn liability; the block retired
-	// 12.5, so the pre-burn basis is 50.
+	// 75 ausd at half a NOAH each is 37.5 of post-burn liability; the block
+	// retired 12.5, so the pre-burn basis is 50.
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 75))
-	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDec(2)})
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1)})
 	s.expectBufferBalances(40)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,

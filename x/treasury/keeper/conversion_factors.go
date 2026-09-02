@@ -97,8 +97,9 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 		}
 	}
 
-	// The numeraire's own cross — NOAH units per reference unit — derives in
-	// the same pass into the same table; GetTaxCap excludes it from the tax
+	// The numeraire's own cross — NOAH units per reference unit, which is the
+	// reference rate itself in the store's orientation — derives in the same
+	// pass into the same table; GetTaxCap excludes it from the tax
 	// base by denomination. It has no arrival seed: a member is minted
 	// against its own feed and must be taxable the block it arrives, while
 	// nothing forces gas to be paid in NOAH, so before the first servable
@@ -156,6 +157,8 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 // next block; dark ones stay priced in the old unit until their feed
 // returns, which the derived cap inherits.
 func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
+	// A per-reference figure rebases like the exposure anchor, not like a
+	// quantity: the new unit is the offer (D76).
 	cross, err := rates.Convert(sdk.NewDecCoin(to, math.OneInt()), from)
 	if err != nil {
 		k.Logger(ctx).Warn(

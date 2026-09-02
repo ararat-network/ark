@@ -134,12 +134,13 @@ func (s *KeeperTestSuite) TestLiabilityRecognizesSettlementPricedSupply() {
 	s.requireLiabilityValuation(math.LegacyNewDec(200), true)
 }
 
-// TestLiabilityCountsUnderflowingDustSupplyAsZero pins measurement semantics
-// for the priced partition: an outstanding supply whose NOAH value truncates
-// below Dec precision counts as zero instead of marking the whole aggregate
-// unavailable. One hyperinflated denomination's dust must not disable
-// settlement chain-wide.
-func (s *KeeperTestSuite) TestLiabilityCountsUnderflowingDustSupplyAsZero() {
+// TestLiabilityCountsDustSupplyAtItsWorth pins measurement semantics for the
+// priced partition: a hyperinflated member's supply is counted at exactly what
+// it is worth, however little. Valuing in NOAH multiplies, so a whole-unit
+// supply at the smallest representable rate cannot underflow — the aggregate
+// carries the dust rather than dropping it or marking itself unavailable, and
+// one hyperinflated denomination cannot disable settlement chain-wide.
+func (s *KeeperTestSuite) TestLiabilityCountsDustSupplyAtItsWorth() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100)).Times(1)
@@ -147,10 +148,10 @@ func (s *KeeperTestSuite) TestLiabilityCountsUnderflowingDustSupplyAsZero() {
 		Return(sdk.NewInt64Coin(chain.KRWBaseDenom, 1)).Times(1)
 	s.setRates(oracletypes.RateSet{
 		chain.USDBaseDenom: math.LegacyOneDec(),
-		chain.KRWBaseDenom: math.LegacyNewDec(10).Power(19),
+		chain.KRWBaseDenom: math.LegacySmallestDec(),
 	})
 
-	s.requireLiabilityValuation(math.LegacyNewDec(100), true)
+	s.requireLiabilityValuation(math.LegacyNewDec(100).Add(math.LegacySmallestDec()), true)
 }
 
 // TestLiabilityFailsOnUnrepresentableConversion pins arithmetic out of range as
@@ -168,10 +169,10 @@ func (s *KeeperTestSuite) TestLiabilityFailsOnUnrepresentableConversion() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewCoin(chain.USDBaseDenom, math.NewIntWithDecimal(1, 60))).Times(1)
-	// At 1e-18 ausd per NOAH, 1e60 base units value to 1e78 NOAH — beyond
+	// At 1e18 NOAH per ausd, 1e60 base units value to 1e78 NOAH — beyond
 	// LegacyDec range.
 	s.setRates(oracletypes.RateSet{
-		chain.USDBaseDenom: math.LegacyNewDecWithPrec(1, 18),
+		chain.USDBaseDenom: math.LegacyNewDec(10).Power(18),
 	})
 
 	_, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
@@ -249,7 +250,7 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			supplies: map[string]int64{chain.KRWBaseDenom: 100, chain.USDBaseDenom: 100},
 			expectRates: func() {
 				s.setRates(oracletypes.RateSet{
-					chain.KRWBaseDenom: math.LegacyNewDec(2),
+					chain.KRWBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 					chain.USDBaseDenom: math.LegacyOneDec(),
 				})
 			},
@@ -324,7 +325,7 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 				s.plans[chain.KRWBaseDenom] = assettypes.SettlementPlan{
 					Denom:                 chain.KRWBaseDenom,
-					RedemptionRate:        math.LegacyNewDecWithPrec(5, 1),
+					RedemptionRate:        math.LegacyNewDec(2),
 					OpenedHeight:          1,
 					ActivationHeight:      1_000,
 					EarliestClosingHeight: 1100,
@@ -385,7 +386,7 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			expectRates: func() {
 				s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 				s.setLastKnownRates(oracletypes.RateSet{
-					chain.KRWBaseDenom: math.LegacyNewDecWithPrec(5, 1),
+					chain.KRWBaseDenom: math.LegacyNewDec(2),
 				})
 			},
 			wantPriced:      "100",

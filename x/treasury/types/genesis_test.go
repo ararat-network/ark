@@ -27,7 +27,7 @@ func TestDefaultGenesisState(t *testing.T) {
 // its derivation, so moving either the stated dollar price or the XDR cross
 // is a deliberate edit here too.
 func TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR(t *testing.T) {
-	require.Equal(t, "1", chain.BootstrapNoahUSDPrice)
+	require.Equal(t, "1", chain.BootstrapNoahPerUSD)
 	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), types.DefaultNoahConversionFactor)
 }
 

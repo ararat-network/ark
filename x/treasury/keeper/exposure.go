@@ -473,6 +473,14 @@ func (k Keeper) exposureAdjusted(ctx context.Context, basis math.LegacyDec) (mat
 // itself, which is exactly the kind of discontinuity the sample clamp exists to
 // blunt and should never be asked to absorb.
 //
+// The anchor is a price — NOAH per one unit of the outgoing reference — not a
+// quantity of that unit, so it moves by the reciprocal of the factor a
+// quantity moves by: p × rate[to] / rate[from] (D76). Convert computes exactly
+// that when its arguments are given in the opposite order to this function's,
+// which is why they are reversed below rather than by mistake. The reversal is
+// the whole operation, and straightening it out would record the square of the
+// cross rate as a market move.
+//
 // The three other stored figures need no adjustment: variance and the
 // multiplier are dimensionless, and flow pressure is NOAH-valued, which no
 // reference move touches.
@@ -488,7 +496,7 @@ func (k Keeper) rescaleReferencePrice(ctx context.Context, from, to string, rate
 		return nil
 	}
 
-	converted, err := rates.Convert(sdk.NewDecCoinFromDec(from, state.LastReferencePrice), to)
+	rebased, err := rates.Convert(sdk.NewDecCoinFromDec(to, state.LastReferencePrice), from)
 	if err != nil {
 		// The anchor is dropped rather than the transition failed: a reference
 		// move is governance re-pointing the unit every rate is quoted in, and
@@ -504,7 +512,7 @@ func (k Keeper) rescaleReferencePrice(ctx context.Context, from, to string, rate
 		)
 		state.LastReferencePrice = math.LegacyZeroDec()
 	} else {
-		state.LastReferencePrice = converted.Amount
+		state.LastReferencePrice = rebased.Amount
 	}
 
 	if err := k.ExposureState.Set(ctx, state); err != nil {
