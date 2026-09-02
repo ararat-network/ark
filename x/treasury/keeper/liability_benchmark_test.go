@@ -163,6 +163,7 @@ func BenchmarkLiabilityValuation(b *testing.B) {
 		b.Run(fmt.Sprintf("denoms_%d/settle_redemption", denomCount), func(b *testing.B) {
 			fix := newLiabilityBenchFixture(b, denomCount)
 			totals := markettypes.ConversionTotals{
+				GrossOffer:        math.ZeroInt(),
 				EligiblePrincipal: math.ZeroInt(),
 				RedemptionOutput:  math.NewInt(500),
 				RedeemedValue:     math.LegacyNewDec(1000),
@@ -180,6 +181,7 @@ func BenchmarkLiabilityValuation(b *testing.B) {
 		b.Run(fmt.Sprintf("denoms_%d/settle_expansion", denomCount), func(b *testing.B) {
 			fix := newLiabilityBenchFixture(b, denomCount)
 			totals := markettypes.ConversionTotals{
+				GrossOffer:        math.NewInt(500),
 				EligiblePrincipal: math.NewInt(500),
 				RedemptionOutput:  math.ZeroInt(),
 				RedeemedValue:     math.LegacyZeroDec(),

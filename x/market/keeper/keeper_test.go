@@ -144,14 +144,16 @@ func (m conversionTotalsMatcher) Matches(actual any) bool {
 		return false
 	}
 
-	return totals.EligiblePrincipal.Equal(m.expected.EligiblePrincipal) &&
+	return totals.GrossOffer.Equal(m.expected.GrossOffer) &&
+		totals.EligiblePrincipal.Equal(m.expected.EligiblePrincipal) &&
 		totals.RedemptionOutput.Equal(m.expected.RedemptionOutput) &&
 		totals.RedeemedValue.Equal(m.expected.RedeemedValue)
 }
 
 func (m conversionTotalsMatcher) String() string {
 	return fmt.Sprintf(
-		"conversion totals {principal %s, output %s, redeemed %s}",
+		"conversion totals {gross %s, principal %s, output %s, redeemed %s}",
+		m.expected.GrossOffer,
 		m.expected.EligiblePrincipal,
 		m.expected.RedemptionOutput,
 		m.expected.RedeemedValue,

@@ -338,19 +338,19 @@ func (k Keeper) settleSwap(
 		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
-	// An expansion keeps its principal in module custody for the block's
-	// settlement and burns only the spread, which owes nothing to Treasury
-	// state. A redemption burns the offer outright and mints the whole quoted
-	// output; the Buffer's share of it is burned back at settlement, so the
-	// trader is paid the same either way and no conversion waits on a valuation.
+	// An expansion keeps its whole offer in module custody for the block's
+	// settlement: spread and principal alike go down the waterfall (D6), so
+	// nothing burns here. A redemption burns the offer outright and mints the
+	// whole quoted output; the Buffer's share of it is burned back at
+	// settlement, so the trader is paid the same either way and no conversion
+	// waits on a valuation.
 	burned := offerCoin
 	minted := quote.swapCoin
 	if offerCoin.Denom == chain.NoahBaseDenom {
-		spread, err := k.recordExpansion(ctx, offerCoin, quote.swapCoin, quote.rates)
-		if err != nil {
+		if err := k.recordExpansion(ctx, offerCoin, quote.swapCoin, quote.rates); err != nil {
 			return sdkerrors.Wrapf(err, "recording expansion of offer %s into output %s", offerCoin, quote.swapCoin)
 		}
-		burned = spread
+		burned = chain.NoahCoin(math.ZeroInt())
 	} else if quote.swapCoin.Denom == chain.NoahBaseDenom {
 		// The redeemed supply is valued at the rate this swap quoted, as the
 		// settlement-plan path values its own at the plan's committed rate. What

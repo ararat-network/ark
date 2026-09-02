@@ -55,6 +55,7 @@ func (s *KeeperTestSuite) getExposureState() types.ExposureState {
 // drive one round of sampling.
 func (s *KeeperTestSuite) settleEmpty() {
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),
@@ -154,6 +155,7 @@ func (s *KeeperTestSuite) TestExposureFoldsNetRedemptionFlow() {
 
 	// Thirty redeemed against ten expanded is twenty of net pressure.
 	_, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(10),
 		EligiblePrincipal: math.NewInt(10),
 		RedemptionOutput:  math.NewInt(30),
 		RedeemedValue:     math.LegacyNewDec(30),
@@ -182,6 +184,7 @@ func (s *KeeperTestSuite) TestExposureIdleBlockDecaysFlow() {
 	s.expectBufferBalances(0)
 
 	_, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.NewInt(40),
 		RedeemedValue:     math.LegacyNewDec(40),

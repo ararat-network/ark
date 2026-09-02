@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"errors"
 	"math/big"
 	"strings"
@@ -265,8 +266,8 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 
 	// No Treasury call appears in either case: a conversion records its own
 	// facts and settles at the end of the block. A redemption therefore mints
-	// its whole quoted output, and an expansion burns only its spread, holding
-	// the principal for settlement to place.
+	// its whole quoted output, and an expansion burns nothing, holding its
+	// whole offer for settlement to place (D6).
 	tests := []struct {
 		name           string
 		offerCoin      sdk.Coin
@@ -286,6 +287,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			expectedBurn:  sdk.NewInt64Coin("ausd", 100),
 			expectedMint:  sdk.NewInt64Coin(chain.NoahBaseDenom, 80),
 			expectedTotals: types.ConversionTotals{
+				GrossOffer:        math.ZeroInt(),
 				EligiblePrincipal: math.ZeroInt(),
 				RedemptionOutput:  math.NewInt(80),
 				RedeemedValue:     math.LegacyNewDec(100),
@@ -297,9 +299,10 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			askDenom:      "ausd",
 			expectedSwap:  sdk.NewInt64Coin("ausd", 80),
 			expectedDelta: math.LegacyNewDec(-80),
-			expectedBurn:  sdk.NewInt64Coin(chain.NoahBaseDenom, 20),
+			expectedBurn:  chain.NoahCoin(math.ZeroInt()),
 			expectedMint:  sdk.NewInt64Coin("ausd", 80),
 			expectedTotals: types.ConversionTotals{
+				GrossOffer:        math.NewInt(100),
 				EligiblePrincipal: math.NewInt(80),
 				RedemptionOutput:  math.ZeroInt(),
 				RedeemedValue:     math.LegacyZeroDec(),
@@ -323,12 +326,17 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 				tc.askDenom,
 			).Return(rates, nil).Times(1)
 
-			gomock.InOrder(
+			calls := []any{
 				s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(s.ctx, trader, types.ModuleName, sdk.NewCoins(tc.offerCoin)).Return(nil),
-				s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedBurn)).Return(nil),
+			}
+			if tc.expectedBurn.IsPositive() {
+				calls = append(calls, s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedBurn)).Return(nil))
+			}
+			calls = append(calls,
 				s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, sdk.NewCoins(tc.expectedMint)).Return(nil),
 				s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(s.ctx, types.ModuleName, trader, sdk.NewCoins(tc.expectedSwap)).Return(nil),
 			)
+			gomock.InOrder(calls...)
 
 			res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
 				Trader:         trader.String(),
@@ -345,6 +353,75 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			s.requireSettledTotals(tc.expectedTotals)
 		})
 	}
+}
+
+// TestMsgSwapExpansionFeeReconcilesWithRecordedResidual pins that the fee the
+// trader is told about and the residual settlement places are the same money.
+// The quote applies the spread to the frictionless gross, so the offer less the
+// NOAH value of the output equals the fee's NOAH value to within the one base
+// unit eligible principal truncates. A quote that priced its output from the
+// pool directly would leave conservation intact and silently understate the
+// disclosed fee, which is what this catches. The rate is deliberately not one,
+// so every conversion between the two denominations rounds.
+func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual() {
+	capacity := types.DefaultConversionPolicy()
+	capacity.BasePool = sdrBasePool(math.LegacyNewDec(400))
+	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
+
+	trader := sdk.AccAddress([]byte("trader_______________"))
+	offer := sdk.NewInt64Coin(chain.NoahBaseDenom, 101)
+	rates := oracletypes.RateSet{
+		chain.USDBaseDenom:  math.LegacyMustNewDecFromStr("1.37"),
+		chain.SDRBaseDenom:  math.LegacyOneDec(),
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+	}
+	s.oracleKeeper.EXPECT().GetRateSet(
+		s.ctx, chain.NoahBaseDenom, chain.SDRBaseDenom, chain.USDBaseDenom,
+	).Return(rates, nil)
+	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
+		s.ctx, trader, types.ModuleName, sdk.NewCoins(offer),
+	).Return(nil)
+	s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, gomock.Any()).Return(nil)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
+		s.ctx, types.ModuleName, trader, gomock.Any(),
+	).Return(nil)
+
+	res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+		Trader:         trader.String(),
+		OfferCoin:      offer,
+		AskDenom:       chain.USDBaseDenom,
+		MinimumReceive: sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+	})
+	s.Require().NoError(err)
+
+	var totals types.ConversionTotals
+	s.treasuryKeeper.EXPECT().
+		SettleConversions(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, recorded types.ConversionTotals) (math.Int, error) {
+			totals = recorded
+			return math.ZeroInt(), nil
+		})
+	s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+	s.endBlock()
+
+	// The whole offer was recorded, and the principal is the output's NOAH
+	// value truncated — which the fixture makes an actual truncation.
+	outputValue, err := rates.Convert(sdk.NewDecCoinFromCoin(res.SwapCoin), chain.NoahBaseDenom)
+	s.Require().NoError(err)
+	s.Require().False(outputValue.Amount.IsInteger(), "the fixture must make eligible principal truncate")
+	s.Require().Equal(offer.Amount, totals.GrossOffer)
+	s.Require().Equal(outputValue.Amount.TruncateInt(), totals.EligiblePrincipal)
+
+	// The residual settlement places is the disclosed fee, within one base unit.
+	residual := math.LegacyNewDecFromInt(totals.GrossOffer.Sub(totals.EligiblePrincipal))
+	feeValue, err := rates.Convert(res.SwapFee, chain.NoahBaseDenom)
+	s.Require().NoError(err)
+	difference := residual.Sub(feeValue.Amount)
+	s.Require().True(
+		difference.Abs().LT(math.LegacyOneDec()),
+		"residual %s and fee value %s differ by %s, more than one base unit",
+		residual, feeValue.Amount, difference,
+	)
 }
 
 func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
@@ -437,10 +514,10 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			},
 		},
 		{
-			// The expansion burns only its spread now, so this is the burn that
-			// can fail inside the conversion; the principal it retains is
+			// An expansion burns nothing inside the conversion (D6), so the
+			// output mint is what can fail there; the offer it retains is
 			// Treasury's to place at settlement.
-			name:      "expansion spread burn",
+			name:      "expansion output mint",
 			offerCoin: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 			askDenom:  chain.USDBaseDenom,
 			setup: func() {
@@ -454,8 +531,8 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 					s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 						s.ctx, trader, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 					).Return(nil),
-					s.bankKeeper.EXPECT().BurnCoins(
-						s.ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 20)),
+					s.bankKeeper.EXPECT().MintCoins(
+						s.ctx, types.ModuleName, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 80)),
 					).Return(injectedErr),
 				)
 			},

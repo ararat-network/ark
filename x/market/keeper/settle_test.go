@@ -74,6 +74,7 @@ func (s *KeeperTestSuite) TestSettle() {
 			// oracle expectation is registered anywhere in this test, which is
 			// what asserts a suspended asset's market price never reaches it.
 			s.requireSettledTotals(types.ConversionTotals{
+				GrossOffer:        math.ZeroInt(),
 				EligiblePrincipal: math.ZeroInt(),
 				RedemptionOutput:  entitlement.Amount,
 				RedeemedValue:     math.LegacyNewDecFromInt(entitlement.Amount),

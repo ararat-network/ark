@@ -20,18 +20,19 @@ import (
 // simply a block that has not seen that kind of conversion yet.
 //
 // Every total is already in NOAH, and holds only what settlement decides. The
-// gross offer is absent because the spread it implies is quote arithmetic the
-// caller has already burned; the supply behind a redemption is absent because
-// settlement divides by what was redeemed and credits what was minted, and no
-// denomination answers either question.
+// supply behind a redemption is absent because settlement divides by what was
+// redeemed and credits what was minted, and no denomination answers either
+// question.
 var (
 	eligiblePrincipalKey = []byte{0x01}
 	redemptionOutputKey  = []byte{0x02}
 	redeemedValueKey     = []byte{0x03}
+	grossOfferKey        = []byte{0x04}
 )
 
-// recordExpansion books one expansion and returns the NOAH spread the caller
-// must burn: the offer less what the stable supply it minted is worth.
+// recordExpansion books one expansion: the gross NOAH offer the waterfall
+// places (D6), and the NOAH value of the stable supply it minted, which is
+// what liability grew by and what the flow indicator reads.
 //
 // Preconditions the swap path has already established, and this does not
 // restate: the offer is NOAH because settleSwap's branch tested it, the offer is
@@ -41,41 +42,33 @@ var (
 //
 // The valuation happens here, at the rate this conversion quoted, so the
 // truncation lands once per conversion exactly as per-conversion settlement
-// produced it. The spread returns to the caller rather than deferring because
-// nothing decides it — it is quote arithmetic owing nothing to liability, fund
-// state, or valuation completeness.
-//
-// Only the principal accumulates, because only the principal is undecided.
-// Deferring the spread with it would move a figure to block granularity for no
-// reason and lose the subtraction that bounds this one.
-func (k Keeper) recordExpansion(
-	ctx context.Context,
-	offer sdk.Coin,
-	output sdk.Coin,
-	rates oracletypes.RateSet,
-) (sdk.Coin, error) {
+// produced it.
+func (k Keeper) recordExpansion(ctx context.Context, offer sdk.Coin, output sdk.Coin, rates oracletypes.RateSet) error {
 	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(output), chain.NoahBaseDenom)
 	if err != nil {
-		return sdk.Coin{}, fmt.Errorf("valuing stable output: %w", err)
+		return fmt.Errorf("valuing stable output: %w", err)
 	}
 	eligible := converted.Amount.TruncateInt()
 	// The bound no caller can have established, because it is a fact about the
 	// rate rather than about the coins: an output worth more than the offer that
-	// bought it yields no spread to burn, and would record principal the
-	// conversion never took custody of. It is refused before anything is
-	// recorded, so a bad quote fails its own transaction.
+	// bought it would record principal the conversion never took custody of. It
+	// is refused before anything is recorded, so a bad quote fails its own
+	// transaction.
 	if eligible.GT(offer.Amount) {
-		return sdk.Coin{}, fmt.Errorf(
+		return fmt.Errorf(
 			"stable output value %s exceeds gross offer %s",
 			chain.NoahCoin(eligible),
 			offer,
 		)
 	}
+	if err := k.addInt(ctx, grossOfferKey, offer.Amount); err != nil {
+		return fmt.Errorf("accumulating gross offer: %w", err)
+	}
 	if err := k.addInt(ctx, eligiblePrincipalKey, eligible); err != nil {
-		return sdk.Coin{}, fmt.Errorf("accumulating eligible principal: %w", err)
+		return fmt.Errorf("accumulating eligible principal: %w", err)
 	}
 
-	return chain.NoahCoin(offer.Amount.Sub(eligible)), nil
+	return nil
 }
 
 // recordRedemption accumulates one redemption: the NOAH value of the stable
@@ -109,6 +102,10 @@ func (k Keeper) recordRedemption(ctx context.Context, redeemedValue math.LegacyD
 
 // conversionTotals reads the block's recorded flow back.
 func (k Keeper) conversionTotals(ctx context.Context) (types.ConversionTotals, error) {
+	grossOffer, err := k.readInt(ctx, grossOfferKey)
+	if err != nil {
+		return types.ConversionTotals{}, fmt.Errorf("reading gross offer: %w", err)
+	}
 	eligiblePrincipal, err := k.readInt(ctx, eligiblePrincipalKey)
 	if err != nil {
 		return types.ConversionTotals{}, fmt.Errorf("reading eligible principal: %w", err)
@@ -123,6 +120,7 @@ func (k Keeper) conversionTotals(ctx context.Context) (types.ConversionTotals, e
 	}
 
 	return types.ConversionTotals{
+		GrossOffer:        grossOffer,
 		EligiblePrincipal: eligiblePrincipal,
 		RedemptionOutput:  redemptionOutput,
 		RedeemedValue:     redeemedValue,

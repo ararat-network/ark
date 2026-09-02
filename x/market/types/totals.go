@@ -12,20 +12,21 @@ import (
 // owns what they are worth against the block's liability, which is the one
 // thing no conversion can tell it.
 //
-// Only what settlement actually decides is carried. The spread is absent
-// because nothing decides it: it is quote arithmetic owing nothing to
-// liability, fund state, or valuation completeness, so Market burns it in the
-// conversion that charged it and what arrives here is already net of it. Every
-// value is priced at the rate its own conversion quoted, so nothing here needs
-// a rate set to interpret and settlement performs no conversion at all.
+// Only what settlement actually decides is carried. Every value is priced at
+// the rate its own conversion quoted, so nothing here needs a rate set to
+// interpret and settlement performs no conversion at all.
 //
 // Every field is an aggregate over the block, so a zero is ordinary: a block
 // may hold only expansions, only redemptions, or neither.
 type ConversionTotals struct {
+	// GrossOffer is the NOAH this block's expansions took in, spread included.
+	// It is what the waterfall places (D6): principal and premium alike go to
+	// fund targets first, and only the overflow burns.
+	GrossOffer math.Int
 	// EligiblePrincipal is the NOAH value of the stable supply this block's
 	// expansions minted, truncated per conversion at that conversion's own
-	// quoted rate and net of the spread already burned. It is exactly what the
-	// waterfall has to place.
+	// quoted rate. It is what liability grew by, which is what the flow
+	// indicator reads; the difference from GrossOffer is the spread and dust.
 	EligiblePrincipal math.Int
 	// RedemptionOutput is the NOAH minted across both redemption paths.
 	RedemptionOutput math.Int
@@ -42,7 +43,8 @@ type ConversionTotals struct {
 // EndBlocker's licence to skip settlement — and with it the block's only
 // liability valuation.
 func (t ConversionTotals) IsZero() bool {
-	return t.EligiblePrincipal.IsZero() &&
+	return t.GrossOffer.IsZero() &&
+		t.EligiblePrincipal.IsZero() &&
 		t.RedemptionOutput.IsZero() &&
 		t.RedeemedValue.IsZero()
 }
@@ -52,15 +54,26 @@ func (t ConversionTotals) IsZero() bool {
 // path already made: those refuse a bad conversion as it happens, and this
 // catches an aggregate that disagrees with the parts it was built from.
 func (t ConversionTotals) Validate() error {
-	if t.EligiblePrincipal.IsNil() ||
+	if t.GrossOffer.IsNil() ||
+		t.EligiblePrincipal.IsNil() ||
 		t.RedemptionOutput.IsNil() ||
 		t.RedeemedValue.IsNil() {
 		return fmt.Errorf("conversion totals are incomplete")
 	}
-	if t.EligiblePrincipal.IsNegative() ||
+	if t.GrossOffer.IsNegative() ||
+		t.EligiblePrincipal.IsNegative() ||
 		t.RedemptionOutput.IsNegative() ||
 		t.RedeemedValue.IsNegative() {
 		return fmt.Errorf("conversion totals cannot be negative")
+	}
+	// The stable an expansion minted is worth no more than the NOAH that bought
+	// it: the per-conversion refusal, restated over the block.
+	if t.EligiblePrincipal.GT(t.GrossOffer) {
+		return fmt.Errorf(
+			"eligible principal %s exceeds the gross offer %s",
+			t.EligiblePrincipal,
+			t.GrossOffer,
+		)
 	}
 	// Redemption output cannot outvalue the liability it retired. This is the
 	// bound that keeps the coverage draw inside the Buffer: the draw is a

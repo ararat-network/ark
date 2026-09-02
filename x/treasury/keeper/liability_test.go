@@ -84,6 +84,7 @@ func (s *KeeperTestSuite) TestLiabilityFeedOutageLeavesCoverageUnchanged() {
 		// The block retired 20 of the ausd float, so the post-burn scan sees 80
 		// and the pre-burn basis it reconstructs is 200.
 		drawn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+			GrossOffer:        math.ZeroInt(),
 			EligiblePrincipal: math.ZeroInt(),
 			RedemptionOutput:  math.NewInt(20),
 			RedeemedValue:     math.LegacyNewDec(20),
@@ -174,6 +175,7 @@ func (s *KeeperTestSuite) TestLiabilityFailsOnUnrepresentableConversion() {
 	})
 
 	_, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(1),
 		EligiblePrincipal: math.NewInt(1),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),
@@ -205,6 +207,7 @@ func (s *KeeperTestSuite) TestLiabilityExcludesUnpricedMemberFromClaimable() {
 	// outstanding plus that 10. Coverage 50/100 of a 10-NOAH output pays 5;
 	// with akrw priced the denominator would have been 200 and the draw 2.
 	drawn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.NewInt(10),
 		RedeemedValue:     math.LegacyNewDec(10),

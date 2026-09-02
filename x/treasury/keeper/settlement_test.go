@@ -16,10 +16,17 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// expansionTotals is a block that only expanded: principal already net of the
-// spread its conversions burned.
+// expansionTotals is a block that only expanded and charged no spread, so the
+// gross offer is the principal.
 func expansionTotals(eligible int64) markettypes.ConversionTotals {
+	return expansionTotalsWithSpread(eligible, eligible)
+}
+
+// expansionTotalsWithSpread is a block that only expanded: gross is what the
+// waterfall places, eligible what liability grew by.
+func expansionTotalsWithSpread(gross, eligible int64) markettypes.ConversionTotals {
 	return markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(gross),
 		EligiblePrincipal: math.NewInt(eligible),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),
@@ -29,6 +36,7 @@ func expansionTotals(eligible int64) markettypes.ConversionTotals {
 // redemptionTotals is a block that only redeemed.
 func redemptionTotals(output int64, redeemedValue string) markettypes.ConversionTotals {
 	return markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.NewInt(output),
 		RedeemedValue:     math.LegacyMustNewDecFromStr(redeemedValue),
@@ -59,6 +67,7 @@ func (s *KeeperTestSuite) TestSettleConversionsIdleBlockValuesNothing() {
 	s.setAssets(chain.USDBaseDenom)
 
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),
@@ -77,6 +86,7 @@ func (s *KeeperTestSuite) TestSettleConversionsRejectsIncoherentTotals() {
 		{
 			name: "output exceeds the liability it retired",
 			totals: markettypes.ConversionTotals{
+				GrossOffer:        math.ZeroInt(),
 				EligiblePrincipal: math.ZeroInt(),
 				RedemptionOutput:  math.NewInt(11),
 				RedeemedValue:     math.LegacyNewDec(10),
@@ -94,11 +104,22 @@ func (s *KeeperTestSuite) TestSettleConversionsRejectsIncoherentTotals() {
 		{
 			name: "negative principal",
 			totals: markettypes.ConversionTotals{
+				GrossOffer:        math.NewInt(-1),
 				EligiblePrincipal: math.NewInt(-1),
 				RedemptionOutput:  math.ZeroInt(),
 				RedeemedValue:     math.LegacyZeroDec(),
 			},
 			wantErr: "cannot be negative",
+		},
+		{
+			name: "eligible principal exceeds the gross offer",
+			totals: markettypes.ConversionTotals{
+				GrossOffer:        math.NewInt(9),
+				EligiblePrincipal: math.NewInt(10),
+				RedemptionOutput:  math.ZeroInt(),
+				RedeemedValue:     math.LegacyZeroDec(),
+			},
+			wantErr: "exceeds the gross offer",
 		},
 	}
 
@@ -259,6 +280,7 @@ func (s *KeeperTestSuite) TestSettleConversionsCreditsBufferBeforeDrawingIt() {
 	).Return(nil)
 
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(40),
 		EligiblePrincipal: math.NewInt(40),
 		RedemptionOutput:  math.NewInt(20),
 		RedeemedValue:     math.LegacyNewDec(20),
@@ -361,6 +383,7 @@ func (s *KeeperTestSuite) TestSettleConversionsLeavesDrawUnscaledByExposure() {
 	).Return(nil)
 
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.NewInt(20),
 		RedeemedValue:     math.LegacyNewDec(20),
@@ -405,6 +428,7 @@ func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
 	).Return(nil)
 
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(100),
 		EligiblePrincipal: math.NewInt(100),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),
@@ -418,6 +442,39 @@ func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
 		StrategicReserveCredit: math.NewInt(10),
 		InsuranceCredit:        math.NewInt(4),
 		OverflowBurn:           math.NewInt(66),
+	})
+}
+
+// TestSettleConversionsPlacesSpreadWithPrincipal covers D6 as amended: the
+// gross offer goes down the waterfall, so the spread fills a gap the principal
+// alone would have left, and only what overflows every target burns.
+func (s *KeeperTestSuite) TestSettleConversionsPlacesSpreadWithPrincipal() {
+	policy := types.DefaultMonetaryPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
+	policy.InsuranceTargetRatio = math.LegacyZeroDec()
+	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	// Liability 100 gives a Buffer target of 50 against a balance of 10: a gap
+	// of 40 that 38 of principal cannot fill and 42 of gross offer can.
+	s.expectBufferBalances(10)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, types.RedemptionBufferName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 40)),
+	).Return(nil)
+
+	burn, err := s.keeper.SettleConversions(s.ctx, expansionTotalsWithSpread(42, 38))
+	s.Require().NoError(err)
+	s.Require().Equal(math.NewInt(2), burn)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                  chain.NoahBaseDenom,
+		RedemptionBufferCredit: math.NewInt(40),
+		StrategicReserveCredit: math.ZeroInt(),
+		InsuranceCredit:        math.ZeroInt(),
+		OverflowBurn:           math.NewInt(2),
 	})
 }
 
@@ -442,6 +499,7 @@ func (s *KeeperTestSuite) TestSettleConversionsRetainsMoreUnderExposure() {
 	).Return(nil)
 
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.NewInt(50),
 		EligiblePrincipal: math.NewInt(50),
 		RedemptionOutput:  math.ZeroInt(),
 		RedeemedValue:     math.LegacyZeroDec(),

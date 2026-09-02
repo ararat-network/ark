@@ -219,6 +219,7 @@ func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 6)),
 	).Return(nil)
 	burn, err := s.keeper.SettleConversions(s.ctx, markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
 		EligiblePrincipal: math.ZeroInt(),
 		RedemptionOutput:  math.NewInt(40),
 		RedeemedValue:     math.LegacyNewDec(40),

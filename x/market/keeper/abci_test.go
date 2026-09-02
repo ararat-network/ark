@@ -86,8 +86,9 @@ func (s *KeeperTestSuite) TestEndBlockerPropagatesSettlementFailure() {
 }
 
 // recordExpansionForTest books one expansion through the ordinary swap path so
-// the accumulators hold a block's worth of flow. The spread burn is stubbed
-// because it is the conversion's own business, not the EndBlocker's.
+// the accumulators hold a block's worth of flow. No burn is stubbed: an
+// expansion burns nothing inside the conversion (D6), and the bank mock fails
+// on any unexpected call.
 func (s *KeeperTestSuite) recordExpansionForTest(offer sdk.Coin, output sdk.Coin) {
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	rates := oracletypes.RateSet{
@@ -101,7 +102,6 @@ func (s *KeeperTestSuite) recordExpansionForTest(offer sdk.Coin, output sdk.Coin
 	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(
 		s.ctx, trader, types.ModuleName, sdk.NewCoins(offer),
 	).Return(nil)
-	s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, gomock.Any()).Return(nil)
 	s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, gomock.Any()).Return(nil)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 		s.ctx, types.ModuleName, trader, gomock.Any(),

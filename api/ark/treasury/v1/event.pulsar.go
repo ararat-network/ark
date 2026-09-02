@@ -6396,9 +6396,9 @@ func (x *EventLiabilityIncomplete) GetUntrustedSuspendedSupply() []*v1beta1.Coin
 // valuation through EventLiabilityIncomplete before it allocates, so the same
 // block already says whether these credits were sized against targets at all.
 //
-// The spread is deliberately absent. It owes nothing to liability, fund state,
-// or valuation completeness, so each conversion burns its own as it charges it
-// and never defers; Market's swap event discloses it in the output
+// The credits and the overflow burn sum to the block's gross expansion offer,
+// spread and dust included: nothing burns in the conversion itself (D6), and
+// Market's swap event discloses each conversion's spread in the output
 // denomination.
 type EventExpansionAllocated struct {
 	state         protoimpl.MessageState

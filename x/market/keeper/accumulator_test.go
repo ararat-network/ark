@@ -90,63 +90,59 @@ func expansionRates() oracletypes.RateSet {
 	}
 }
 
-// TestExpansionAccumulates covers what the waterfall is handed: principal
-// already net of the spread its conversion burned, so the block total is
-// exactly what settlement has to place.
+// TestExpansionAccumulates covers what the waterfall is handed: the gross
+// offer, spread included, beside the principal liability grew by, so the block
+// total is exactly what settlement has to place and the flow indicator reads.
 func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
-	spread, err := s.keeper.recordExpansion(
+	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
 		expansionRates(),
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 10), spread)
-
-	spread, err = s.keeper.recordExpansion(
+	))
+	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 500),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 495),
 		expansionRates(),
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 5), spread)
+	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
 	s.Require().NoError(err)
 	s.Require().NoError(totals.Validate())
 	s.Require().False(totals.IsZero())
+	s.Require().Equal(math.NewInt(1_500), totals.GrossOffer)
 	s.Require().Equal(math.NewInt(1_485), totals.EligiblePrincipal)
 	s.Require().True(totals.RedemptionOutput.IsZero())
 }
 
-// TestExpansionRecordsNothingForASpreadOnlyConversion covers the conversion
-// whose stable output valued below one base unit: the whole offer is spread, so
-// it leaves no principal and cannot on its own oblige the EndBlocker to value
-// liability.
-func (s *AccumulatorTestSuite) TestExpansionRecordsNothingForASpreadOnlyConversion() {
+// TestExpansionRecordsASpreadOnlyConversion covers the conversion whose stable
+// output valued below one base unit: the whole offer is spread, so it leaves no
+// principal but still obliges the EndBlocker to place it (D6).
+func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 	rates := expansionRates()
 	rates[chain.USDBaseDenom] = math.LegacyNewDec(2)
 
-	spread, err := s.keeper.recordExpansion(
+	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
 		rates,
-	)
-	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), spread)
+	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(totals.IsZero())
+	s.Require().NoError(totals.Validate())
+	s.Require().False(totals.IsZero())
+	s.Require().Equal(math.OneInt(), totals.GrossOffer)
+	s.Require().True(totals.EligiblePrincipal.IsZero())
 }
 
 // TestExpansionRejections covers what a conversion is still refused for once the
 // swap path's own guarantees are taken as given. The last is the one that
 // matters to settlement: an output worth more than the offer that bought it
-// yields no spread to burn, and is refused where it happens rather than
-// surviving into a block total.
+// would record principal never taken into custody, and is refused where it
+// happens rather than surviving into a block total.
 func (s *AccumulatorTestSuite) TestExpansionRejections() {
 	testCases := []struct {
 		name   string
@@ -177,8 +173,7 @@ func (s *AccumulatorTestSuite) TestExpansionRejections() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			_, err := s.keeper.recordExpansion(s.ctx, tc.offer, tc.output, expansionRates())
-			s.Require().Error(err)
+			s.Require().Error(s.keeper.recordExpansion(s.ctx, tc.offer, tc.output, expansionRates()))
 
 			totals, err := s.keeper.conversionTotals(s.ctx)
 			s.Require().NoError(err)
@@ -247,13 +242,12 @@ func (s *AccumulatorTestSuite) TestAccumulatorOverflowIsRefused() {
 // clearing entirely: the accumulators are transient, so a new block starts from
 // nothing without anyone deleting a key.
 func (s *AccumulatorTestSuite) TestTotalsResetWithTheBlock() {
-	_, err := s.keeper.recordExpansion(
+	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
 		expansionRates(),
-	)
-	s.Require().NoError(err)
+	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
 	s.Require().NoError(err)

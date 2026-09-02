@@ -54,8 +54,8 @@ func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.Conver
 	}
 
 	burn := math.ZeroInt()
-	if totals.EligiblePrincipal.IsPositive() {
-		overflow, err := k.allocateExpansionPrincipal(ctx, totals.EligiblePrincipal, partition)
+	if totals.GrossOffer.IsPositive() {
+		overflow, err := k.allocateExpansionPrincipal(ctx, totals.GrossOffer, partition)
 		if err != nil {
 			return math.Int{}, err
 		}
@@ -75,16 +75,17 @@ func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.Conver
 	return burn, nil
 }
 
-// allocateExpansionPrincipal places the block's expansion principal down the
-// fund waterfall and returns what overflowed every funded target.
-func (k Keeper) allocateExpansionPrincipal(ctx context.Context, principal math.Int, partition liabilityPartition) (math.Int, error) {
+// allocateExpansionPrincipal places the block's gross expansion offer —
+// principal and spread alike (D6) — down the fund waterfall and returns what
+// overflowed every funded target.
+func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, partition liabilityPartition) (math.Int, error) {
 	// An incomplete aggregate cannot answer what capital a fund is owed, so the
-	// whole block's principal parks in the Reserve. That stays revisable — the
+	// whole block's offer parks in the Reserve. That stays revisable — the
 	// Reserve's Buffer commitment is authority-gated and reads only its own
 	// balance (§6.4) — where principal committed to the Buffer is not, and
 	// principal burned is less so.
 	bufferCredit := math.ZeroInt()
-	reserveCredit := principal
+	reserveCredit := offer
 	insuranceCredit := math.ZeroInt()
 	overflowBurn := math.ZeroInt()
 	if partition.complete {
@@ -121,7 +122,7 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, principal math.I
 		}
 		targets := policy.FundTargets(basis)
 
-		remaining := principal
+		remaining := offer
 		bufferCredit = math.MinInt(remaining, shortfall(targets.Buffer, bufferBalance))
 		remaining = remaining.Sub(bufferCredit)
 		reserveCredit = math.MinInt(remaining, shortfall(targets.Reserve, reserveBalance))

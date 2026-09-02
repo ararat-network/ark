@@ -89,6 +89,7 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		// bound holds identically at a multiplier of one and of four.
 		suite.setFuzzMultiplier(multiplierMilli)
 		drawn, err := suite.keeper.SettleConversions(suite.ctx, markettypes.ConversionTotals{
+			GrossOffer:        math.ZeroInt(),
 			EligiblePrincipal: math.ZeroInt(),
 			RedemptionOutput:  math.NewInt(output),
 			RedeemedValue:     math.LegacyNewDec(redeemed),
