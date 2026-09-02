@@ -77,7 +77,7 @@ func isPricedDenom(denom string) bool {
 }
 
 // ValidatePricedDenom validates denom as a canonical Ark-native denomination
-// the protocol prices against NOAH.
+// the protocol prices in NOAH.
 //
 // This is the one denomination rule the chain has, because everything that
 // validates a denomination is validating something that must be able to carry

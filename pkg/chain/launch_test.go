@@ -10,8 +10,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-func TestBootstrapNoahUSDPriceIsAPositiveDecimal(t *testing.T) {
-	price, err := math.LegacyNewDecFromStr(chain.BootstrapNoahUSDPrice)
+func TestBootstrapNoahPerUSDIsAPositiveDecimal(t *testing.T) {
+	price, err := math.LegacyNewDecFromStr(chain.BootstrapNoahPerUSD)
 	require.NoError(t, err)
 	require.True(t, price.IsPositive())
 }
