@@ -42,12 +42,17 @@ var DefaultAPIConfig = api.Config{
 }
 
 // DefaultMarkets defines the built-in CurrencyBeacon fiat pair mappings.
+//
+// USD/XDR is absent by design: CurrencyBeacon's supported list carries no XDR,
+// so the reference prices through the other two fiat providers.
 var DefaultMarkets = types.Markets{
 	{Pair: "USD/KRW", Symbol: "USD/KRW"},
-	{Pair: "USD/SDR", Symbol: "USD/XDR"},
 	{Pair: "USD/CNY", Symbol: "USD/CNY"},
 	{Pair: "USD/JPY", Symbol: "USD/JPY"},
 	{Pair: "USD/EUR", Symbol: "USD/EUR"},
 	{Pair: "USD/GBP", Symbol: "USD/GBP"},
-	{Pair: "USD/MNT", Symbol: "USD/MNT"},
+	{Pair: "USD/CAD", Symbol: "USD/CAD"},
+	{Pair: "USD/AUD", Symbol: "USD/AUD"},
+	{Pair: "USD/SGD", Symbol: "USD/SGD"},
+	{Pair: "USD/MXN", Symbol: "USD/MXN"},
 }

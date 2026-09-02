@@ -148,7 +148,7 @@ func TestDefaultMarketsCreateOneUSDRequest(t *testing.T) {
 	parsed, err := url.Parse(gotURL)
 	require.NoError(t, err)
 	require.False(t, parsed.Query().Has("base"))
-	require.Equal(t, "KRW,XDR,CNY,JPY,EUR,GBP,MNT", parsed.Query().Get("symbols"))
+	require.Equal(t, "KRW,XDR,CNY,JPY,EUR,GBP,CAD,AUD,SGD,MXN", parsed.Query().Get("symbols"))
 }
 
 func TestParseResponse(t *testing.T) {
@@ -180,13 +180,13 @@ func TestParseResponse(t *testing.T) {
 		},
 		{
 			name:    "marks missing batch member as no response",
-			tickers: []types.Ticker{"USD/KRW", "USD/MNT"},
+			tickers: []types.Ticker{"USD/KRW", "USD/MXN"},
 			body:    `{"timestamp":1774650000,"base":"USD","rates":{"KRW":1355.25}}`,
 			wantResolved: map[types.Ticker]string{
 				"USD/KRW": "1355.25",
 			},
 			wantErrors: map[types.Ticker]types.ErrorCode{
-				"USD/MNT": types.ErrorNoResponse,
+				"USD/MXN": types.ErrorNoResponse,
 			},
 		},
 		{

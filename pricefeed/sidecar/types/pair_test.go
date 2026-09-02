@@ -240,9 +240,9 @@ func TestPairDenom(t *testing.T) {
 			want: "ausd",
 		},
 		{
-			name: "preserves terra sdr feed denom spelling",
-			pair: "USDT/SDR",
-			want: "asdr",
+			name: "projects the reference quote to its feed denom",
+			pair: "USDT/XDR",
+			want: "axdr",
 		},
 	}
 

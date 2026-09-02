@@ -74,8 +74,8 @@ var DefaultResolver = resolver.Config{
 		chain.KRWBaseDenom: {
 			{Name: "noah-usd-krw", Pairs: []sidecartypes.Pair{noahUSD, "USD/KRW"}},
 		},
-		chain.SDRBaseDenom: {
-			{Name: "noah-usd-sdr", Pairs: []sidecartypes.Pair{noahUSD, "USD/SDR"}},
+		chain.XDRBaseDenom: {
+			{Name: "noah-usd-xdr", Pairs: []sidecartypes.Pair{noahUSD, "USD/XDR"}},
 		},
 		chain.CNYBaseDenom: {
 			{Name: "noah-usd-cny", Pairs: []sidecartypes.Pair{noahUSD, "USD/CNY"}},
@@ -89,8 +89,17 @@ var DefaultResolver = resolver.Config{
 		chain.GBPBaseDenom: {
 			{Name: "noah-usd-gbp", Pairs: []sidecartypes.Pair{noahUSD, "USD/GBP"}},
 		},
-		chain.MNTBaseDenom: {
-			{Name: "noah-usd-mnt", Pairs: []sidecartypes.Pair{noahUSD, "USD/MNT"}},
+		chain.CADBaseDenom: {
+			{Name: "noah-usd-cad", Pairs: []sidecartypes.Pair{noahUSD, "USD/CAD"}},
+		},
+		chain.AUDBaseDenom: {
+			{Name: "noah-usd-aud", Pairs: []sidecartypes.Pair{noahUSD, "USD/AUD"}},
+		},
+		chain.SGDBaseDenom: {
+			{Name: "noah-usd-sgd", Pairs: []sidecartypes.Pair{noahUSD, "USD/SGD"}},
+		},
+		chain.MXNBaseDenom: {
+			{Name: "noah-usd-mxn", Pairs: []sidecartypes.Pair{noahUSD, "USD/MXN"}},
 		},
 	},
 }
@@ -109,12 +118,15 @@ func Default() runtime.Config {
 		FallbackFeeds: []string{
 			chain.USDBaseDenom,
 			chain.KRWBaseDenom,
-			chain.SDRBaseDenom,
+			chain.XDRBaseDenom,
 			chain.CNYBaseDenom,
 			chain.JPYBaseDenom,
 			chain.EURBaseDenom,
 			chain.GBPBaseDenom,
-			chain.MNTBaseDenom,
+			chain.CADBaseDenom,
+			chain.AUDBaseDenom,
+			chain.SGDBaseDenom,
+			chain.MXNBaseDenom,
 		},
 	}
 }

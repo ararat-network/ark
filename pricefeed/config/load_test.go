@@ -60,9 +60,9 @@ func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 			Name:  "noah-usd-krw",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/KRW"},
 		},
-		chain.SDRBaseDenom: {
-			Name:  "noah-usd-sdr",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SDR"},
+		chain.XDRBaseDenom: {
+			Name:  "noah-usd-xdr",
+			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/XDR"},
 		},
 		chain.CNYBaseDenom: {
 			Name:  "noah-usd-cny",
@@ -80,9 +80,21 @@ func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 			Name:  "noah-usd-gbp",
 			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/GBP"},
 		},
-		chain.MNTBaseDenom: {
-			Name:  "noah-usd-mnt",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MNT"},
+		chain.CADBaseDenom: {
+			Name:  "noah-usd-cad",
+			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CAD"},
+		},
+		chain.AUDBaseDenom: {
+			Name:  "noah-usd-aud",
+			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/AUD"},
+		},
+		chain.SGDBaseDenom: {
+			Name:  "noah-usd-sgd",
+			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SGD"},
+		},
+		chain.MXNBaseDenom: {
+			Name:  "noah-usd-mxn",
+			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MXN"},
 		},
 	}
 
@@ -97,12 +109,15 @@ func TestDefaultFrankfurterMarketsSupplyFiatRouteLegs(t *testing.T) {
 	markets := Default().Providers[frankfurter.Name].Markets
 	expected := map[sidecartypes.Pair]providertypes.Ticker{
 		"USD/KRW": "USD/KRW",
-		"USD/SDR": "USD/XDR",
+		"USD/XDR": "USD/XDR",
 		"USD/CNY": "USD/CNY",
 		"USD/JPY": "USD/JPY",
 		"USD/EUR": "USD/EUR",
 		"USD/GBP": "USD/GBP",
-		"USD/MNT": "USD/MNT",
+		"USD/CAD": "USD/CAD",
+		"USD/AUD": "USD/AUD",
+		"USD/SGD": "USD/SGD",
+		"USD/MXN": "USD/MXN",
 	}
 
 	require.Len(t, markets, len(expected))

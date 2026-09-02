@@ -165,7 +165,7 @@ func TestDefaultMarketsCreateOneUSDRequest(t *testing.T) {
 	parsed, err := url.Parse(gotURL)
 	require.NoError(t, err)
 	require.Equal(t, "USD", parsed.Query().Get("base"))
-	require.Equal(t, "KRW,XDR,CNY,JPY,EUR,GBP,MNT", parsed.Query().Get("quotes"))
+	require.Equal(t, "KRW,XDR,CNY,JPY,EUR,GBP,CAD,AUD,SGD,MXN", parsed.Query().Get("quotes"))
 }
 
 func TestParseResponse(t *testing.T) {
