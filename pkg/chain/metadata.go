@@ -40,11 +40,11 @@ func NoahMetadata() banktypes.Metadata {
 // a description that classified would misdescribe assets forever with no
 // message able to correct it.
 //
-// Terra Classic derived the same three fields, but its symbol rule dropped the
-// last letter of the currency code before appending the chain initial — usd
-// became UST and krw became KRT, the tickers it shipped. That formula encoded
-// those strings rather than a principle, and under a different initial it
-// degrades: it would make ausd into USA. The suffix is appended whole here.
+// The symbol carries the brand as a lowercase prefix in the crvUSD form rather
+// than Terra's chain-initial suffix: every USD-plus-one-letter ticker is taken,
+// and USDA alone has three live issuers. The name keeps Terra's marketing form,
+// TerraUSD to ArkUSD; it is the string explorers and the chain registry will
+// carry, so it is the brand and nothing else.
 func NativeAssetMetadata(denom string) banktypes.Metadata {
 	display := denom[1:]
 
@@ -57,6 +57,6 @@ func NativeAssetMetadata(denom string) banktypes.Metadata {
 		Base:    denom,
 		Display: display,
 		Name:    fmt.Sprintf("Ark%s", strings.ToUpper(display)),
-		Symbol:  fmt.Sprintf("%sA", strings.ToUpper(display)),
+		Symbol:  fmt.Sprintf("ark%s", strings.ToUpper(display)),
 	}
 }

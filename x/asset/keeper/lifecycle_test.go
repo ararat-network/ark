@@ -140,7 +140,7 @@ func (s *KeeperTestSuite) TestRegisterAssetDerivesMetadata() {
 	s.Require().Equal(derived, stored.Metadata)
 	s.Require().Equal("gold", stored.Metadata.Display)
 	s.Require().Equal("ArkGOLD", stored.Metadata.Name)
-	s.Require().Equal("GOLDA", stored.Metadata.Symbol)
+	s.Require().Equal("arkGOLD", stored.Metadata.Symbol)
 }
 
 // TestFinaliseRetirementRefusesActiveAsset pins the absence of a shortcut for a
