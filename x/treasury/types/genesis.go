@@ -32,11 +32,28 @@ func NewGenesisState(
 	}
 }
 
-// DefaultGenesisState returns the safe, unconfigured Treasury genesis state.
+// defaultUSDPerSDR converts the dollar-stated placeholder into the table's
+// unit. The IMF cross was 1.3709 on 2026-09-02, rounded up because the factor
+// sizes a fee requirement. SDR drifts a percent or two a year against the
+// dollar, and the seed governs gas only until the first reference rate, so
+// the snapshot needs no upkeep.
+var defaultUSDPerSDR = math.LegacyMustNewDecFromStr("1.371")
+
+// DefaultNoahConversionFactor seeds the numeraire's cross, NOAH base units
+// per reference base unit, so gas is payable in NOAH from the first block.
+// Nothing else is: a member factor needs a rate to exist, and the reference
+// is a unit of account nobody holds. It is chain.BootstrapNoahUSDPrice in SDR
+// terms, so the gas seed and the oracle's first NOAH price agree; a launch
+// genesis overrides it with the opening price, and the first reference rate
+// re-derives it. Rounded up for the same reason as the cross.
+var DefaultNoahConversionFactor = defaultUSDPerSDR.QuoRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahUSDPrice))
+
+// DefaultGenesisState returns the safe, unconfigured Treasury genesis state:
+// default policy, the NOAH cross seeded, member factors left to derivation.
 func DefaultGenesisState() *GenesisState {
 	return NewGenesisState(
 		DefaultParams(),
-		[]ConversionFactor{},
+		[]ConversionFactor{{Denom: chain.NoahBaseDenom, Factor: DefaultNoahConversionFactor}},
 		DefaultRewardFundingState(),
 		DefaultMonetaryMandate(),
 		DefaultMonetaryPolicy(),
@@ -67,14 +84,15 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 
+	hasNoah := false
 	for i, factor := range gs.ConversionFactors {
 		// The numeraire's cross is the one entry that is not a priced denom:
 		// NOAH carries no feed, so it is matched exactly rather than
-		// validated. Absent means never derivable yet — NOAH has no seed.
-		if factor.Denom != chain.NoahBaseDenom {
-			if err := chain.ValidatePricedDenom(factor.Denom); err != nil {
-				return fmt.Errorf("conversion factor denom %q is invalid: %w", factor.Denom, err)
-			}
+		// validated.
+		if factor.Denom == chain.NoahBaseDenom {
+			hasNoah = true
+		} else if err := chain.ValidatePricedDenom(factor.Denom); err != nil {
+			return fmt.Errorf("conversion factor denom %q is invalid: %w", factor.Denom, err)
 		}
 		// Strictly positive: the derived cap floors at one base unit, so a
 		// zero factor could only ever have been written by a bug, and a
@@ -88,6 +106,13 @@ func (gs GenesisState) Validate() error {
 		if i > 0 && factor.Denom <= gs.ConversionFactors[i-1].Denom {
 			return fmt.Errorf("genesis conversion factors must be sorted by unique denom")
 		}
+	}
+	// Mandatory, unlike every member entry: before the first reference rate
+	// NOAH is the only denomination anyone holds that the fee gate could
+	// accept, and the gate prices from this table alone. Without the cross a
+	// chain launches unable to pay for the proposal that would fix it.
+	if !hasNoah {
+		return fmt.Errorf("conversion factors must include the NOAH cross %s", chain.NoahBaseDenom)
 	}
 
 	if gs.RewardFunding.ValidatorTarget.IsNil() {

@@ -142,6 +142,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	s.setAssets(chain.SDRBaseDenom, chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
 	genesis.ConversionFactors = []types.ConversionFactor{
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec()},
 		{Denom: chain.SDRBaseDenom, Factor: math.LegacyOneDec()},
 	}
 	s.expectGenesisFundBalances(nil)
@@ -178,6 +179,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	genesis.Params.ReferenceTaxCap = math.NewInt(3)
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(11)},
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec()},
 		{Denom: chain.USDBaseDenom, Factor: math.LegacyNewDec(7)},
 	}
 	s.expectGenesisFundBalances(nil)
@@ -204,6 +206,7 @@ func (s *KeeperTestSuite) TestInitGenesisRefusesFactorsForNonMembers() {
 	genesis := types.DefaultGenesisState()
 	genesis.ConversionFactors = []types.ConversionFactor{
 		{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(11)},
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyOneDec()},
 	}
 
 	s.Require().ErrorContains(

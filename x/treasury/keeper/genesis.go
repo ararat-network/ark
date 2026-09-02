@@ -52,7 +52,15 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 
 	factors := append([]types.ConversionFactor(nil), data.ConversionFactors...)
-	if len(factors) == 0 {
+	// Validate guarantees the NOAH cross is present, so "no factors" means no
+	// member factors: the cross prices gas and is not a member.
+	memberFactors := 0
+	for _, factor := range factors {
+		if factor.Denom != chain.NoahBaseDenom {
+			memberFactors++
+		}
+	}
+	if memberFactors == 0 {
 		denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 		if err != nil {
 			return fmt.Errorf("getting oracle-priced denominations: %w", err)

@@ -15,10 +15,20 @@ func TestDefaultGenesisState(t *testing.T) {
 	genesis := types.DefaultGenesisState()
 	require.Equal(t, types.DefaultParams(), genesis.Params)
 	require.True(t, types.DefaultMonetaryPolicy().Equal(genesis.MonetaryPolicy))
-	require.Empty(t, genesis.ConversionFactors)
+	require.Equal(t, []types.ConversionFactor{
+		{Denom: chain.NoahBaseDenom, Factor: types.DefaultNoahConversionFactor},
+	}, genesis.ConversionFactors)
 	require.Equal(t, types.DefaultRewardFundingState(), genesis.RewardFunding)
 	require.Equal(t, types.DefaultMonetaryMandate(), genesis.MonetaryMandate)
 	require.NoError(t, genesis.Validate())
+}
+
+// TestDefaultNoahConversionFactorIsTheBootstrapPriceInSDR pins the seed to
+// its derivation, so moving either the stated dollar price or the SDR cross
+// is a deliberate edit here too.
+func TestDefaultNoahConversionFactorIsTheBootstrapPriceInSDR(t *testing.T) {
+	require.Equal(t, "1", chain.BootstrapNoahUSDPrice)
+	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), types.DefaultNoahConversionFactor)
 }
 
 func TestNewGenesisStateCopiesSlices(t *testing.T) {
@@ -99,7 +109,10 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 		{
 			name: "positive factor is valid",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "1")}
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.NoahBaseDenom, "1"),
+					factor(chain.SDRBaseDenom, "1"),
+				}
 			},
 		},
 		// A factor that disagrees with live rates is the expected shape of a
@@ -108,13 +121,19 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 		{
 			name: "sub-unit factor is valid",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "0.000001")}
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.NoahBaseDenom, "1"),
+					factor(chain.SDRBaseDenom, "0.000001"),
+				}
 			},
 		},
 		{
 			name: "zero factor is refused",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "0")}
+				genesis.ConversionFactors = []types.ConversionFactor{
+					factor(chain.NoahBaseDenom, "1"),
+					factor(chain.SDRBaseDenom, "0"),
+				}
 			},
 			expectErr: "must be positive",
 		},
@@ -123,15 +142,15 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ConversionFactors = []types.ConversionFactor{
 					factor(chain.KRWBaseDenom, "1"),
+					factor(chain.NoahBaseDenom, "1"),
 					factor(chain.USDBaseDenom, "1"),
 				}
 			},
 		},
 		{
 			// The numeraire's cross rides in the table exempt from the
-			// priced-denom rule, which rejects NOAH by name; absence stays
-			// legitimate — the cross has simply never been derivable.
-			name: "noah cross in the table is valid",
+			// priced-denom rule, which rejects NOAH by name.
+			name: "noah cross beside members is valid",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ConversionFactors = []types.ConversionFactor{
 					factor(chain.KRWBaseDenom, "1"),
@@ -146,6 +165,22 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.NoahBaseDenom, "0")}
 			},
 			expectErr: "must be positive",
+		},
+		// The cross is the one mandatory entry: it is what lets a launch pay
+		// gas before any rate exists.
+		{
+			name: "missing noah cross is refused",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ConversionFactors = []types.ConversionFactor{factor(chain.SDRBaseDenom, "1")}
+			},
+			expectErr: "must include the NOAH cross",
+		},
+		{
+			name: "empty table is refused",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ConversionFactors = nil
+			},
+			expectErr: "must include the NOAH cross",
 		},
 		{
 			name: "unsorted factors",

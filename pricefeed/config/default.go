@@ -63,7 +63,7 @@ var DefaultResolver = resolver.Config{
 	BootstrapPrices: []resolver.BootstrapPrice{
 		{
 			Pair:       noahUSD,
-			Price:      "1",
+			Price:      chain.BootstrapNoahUSDPrice,
 			ValidUntil: "2027-10-29T00:00:00Z",
 		},
 	},

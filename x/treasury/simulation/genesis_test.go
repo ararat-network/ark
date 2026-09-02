@@ -62,7 +62,10 @@ func TestRandomisedGenState(t *testing.T) {
 	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.IsNegative())
 	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.GT(math.LegacyOneDec()))
 
-	require.Empty(t, treasuryGenesis.ConversionFactors)
+	// Only the NOAH seed the default carries; member factors derive at runtime.
+	require.Equal(t, []types.ConversionFactor{
+		{Denom: chain.NoahBaseDenom, Factor: types.DefaultNoahConversionFactor},
+	}, treasuryGenesis.ConversionFactors)
 }
 
 func TestRandomisedMonetaryPolicyDeterministic(t *testing.T) {

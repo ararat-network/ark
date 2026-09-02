@@ -54,7 +54,13 @@ func (k Keeper) TallyBlockGas(ctx context.Context, gasLimit uint64) error {
 // tip normalisation divides by the same cross the gate multiplied by. A
 // denomination with no gas factor returns collections.ErrNotFound: not an
 // accepted fee denom.
-func (k Keeper) GetRequiredGasFee(ctx context.Context, params types.Params, price math.LegacyDec, gasLimit uint64, denom string) (sdk.Coin, math.LegacyDec, error) {
+func (k Keeper) GetRequiredGasFee(
+	ctx context.Context,
+	params types.Params,
+	price math.LegacyDec,
+	gasLimit uint64,
+	denom string,
+) (sdk.Coin, math.LegacyDec, error) {
 	factor, _, err := k.gasFactor(ctx, params.ReferenceDenom, denom)
 	if err != nil {
 		return sdk.Coin{}, math.LegacyDec{}, err
