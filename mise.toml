@@ -1,10 +1,20 @@
-# Pins the toolchain the repository is built and linted with, so a shell,
-# CI, and the container agree. CI resolves Go from go.mod rather than this
-# file; keep the two in step.
+# The single declaration of the toolchain this repository is built, linted,
+# and scanned with. CI installs from this file via jdx/mise-action, so a
+# shell and a workflow run the same binaries.
 #
-# golangci-lint is pinned because its release binaries are compiled against
+# go is also declared in go.mod, where the directive is the module's minimum
+# rather than a pin; keep the two in step. Workflows that need only Go read
+# go.mod directly.
+#
+# golangci-lint and govulncheck are pinned because both are compiled against
 # a specific Go, and one built against an older major panics parsing newer
-# sources. 2.13.2 is built with go1.27.
+# sources. Both of these are built with go1.27.
 [tools]
 go = "1.27.1"
 golangci-lint = "2.13.2"
+# The registry entry, aqua:golang/vuln/govulncheck, is a go_install package
+# that mise's aqua backend cannot install -- it errors and points here. That
+# suits this tool anyway: building from source compiles it against the Go
+# pinned above, and a scanner built against an older major cannot parse
+# newer sources.
+"go:golang.org/x/vuln/cmd/govulncheck" = "1.7.0"

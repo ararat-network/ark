@@ -88,9 +88,11 @@ format:
 # findings are ones this code can actually hit rather than every advisory
 # touching a module in go.mod. It is not a merge gate: some findings have no
 # fixed version upstream, and a permanently red gate stops being read.
+#
+# The binary comes from the pinned toolchain, like golangci-lint above: an
+# unpinned scanner can turn the nightly red on its own release.
 vulncheck:
-	@GOBIN=$(CURDIR)/build go install golang.org/x/vuln/cmd/govulncheck@latest
-	@$(CURDIR)/build/govulncheck ./...
+	@govulncheck ./...
 
 ###############################################################################
 ###                                Protobuf                                 ###

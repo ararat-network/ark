@@ -24,9 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
+      # Pinned by commit, like the CodeQL references: an action is code that
+      # runs in CI. Tool versions come from mise.toml, so this workflow names
+      # none of them and cannot drift from a developer's shell.
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
 
       - run: make vulncheck
