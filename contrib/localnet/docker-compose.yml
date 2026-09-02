@@ -1,0 +1,96 @@
+# Four validators, each paired with its own price-feed sidecar. Homes come
+# from `make localnet-init`, which bakes the 192.168.10.x peer addresses into
+# every node's persistent_peers, so the static IPs below are load-bearing.
+# node1..3 and their sidecars carry the "multi" profile: without it only node0
+# starts, which is the single-validator shape `VALIDATORS=1` generates.
+name: ark-localnet
+
+x-arkd: &arkd
+  image: ark/arkd
+  volumes:
+    - ../../.testnets:/data
+
+x-pricefeed: &pricefeed
+  image: ark/arkd
+  entrypoint: ["pricefeed"]
+  volumes:
+    - ../../.testnets:/data
+
+services:
+  node0:
+    <<: *arkd
+    container_name: ark-node0
+    environment: [ID=0]
+    ports: ["26656-26657:26656-26657", "1317:1317", "9090:9090", "9464:9464"]
+    networks: {localnet: {ipv4_address: 192.168.10.2}}
+  node1:
+    <<: *arkd
+    container_name: ark-node1
+    profiles: [multi]
+    environment: [ID=1]
+    ports: ["26666-26667:26656-26657", "1318:1317", "9091:9090", "9465:9464"]
+    networks: {localnet: {ipv4_address: 192.168.10.3}}
+  node2:
+    <<: *arkd
+    container_name: ark-node2
+    profiles: [multi]
+    environment: [ID=2]
+    ports: ["26676-26677:26656-26657", "1319:1317", "9092:9090", "9466:9464"]
+    networks: {localnet: {ipv4_address: 192.168.10.4}}
+  # node3 is the dark carrier: init.sh sets `broadcast = false` in its mempool
+  # config, so it relays nothing it receives over RPC. See contrib/README.md.
+  node3:
+    <<: *arkd
+    container_name: ark-node3
+    profiles: [multi]
+    environment: [ID=3]
+    ports: ["26686-26687:26656-26657", "1320:1317", "9093:9090", "9467:9464"]
+    networks: {localnet: {ipv4_address: 192.168.10.5}}
+
+  pricefeed0:
+    <<: *pricefeed
+    container_name: ark-pricefeed0
+    command: ["start", "--config", "/data/node0/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    networks: {localnet: {ipv4_address: 192.168.10.12}}
+  pricefeed1:
+    <<: *pricefeed
+    container_name: ark-pricefeed1
+    profiles: [multi]
+    command: ["start", "--config", "/data/node1/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    networks: {localnet: {ipv4_address: 192.168.10.13}}
+  pricefeed2:
+    <<: *pricefeed
+    container_name: ark-pricefeed2
+    profiles: [multi]
+    command: ["start", "--config", "/data/node2/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    networks: {localnet: {ipv4_address: 192.168.10.14}}
+  pricefeed3:
+    <<: *pricefeed
+    container_name: ark-pricefeed3
+    profiles: [multi]
+    command: ["start", "--config", "/data/node3/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    networks: {localnet: {ipv4_address: 192.168.10.15}}
+
+  # State-sync client behind the "statesync" profile: a non-validator that
+  # bootstraps from node0's snapshots instead of replaying from genesis.
+  # statesync.sh builds its home and trust anchor at start. Needs the
+  # four-validator shape, since the light client wants two RPC servers.
+  sync0:
+    image: ark/arkd
+    container_name: ark-sync0
+    profiles: [statesync]
+    depends_on: [node0]
+    entrypoint: ["sh", "/statesync.sh"]
+    volumes:
+      - ../../.testnets:/data
+      - ./statesync.sh:/statesync.sh:ro
+    ports: ["26696-26697:26656-26657"]
+    networks: {localnet: {ipv4_address: 192.168.10.22}}
+
+networks:
+  localnet:
+    # Fixed so `make localnet-runbook` can join it by name.
+    name: ark-localnet
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24

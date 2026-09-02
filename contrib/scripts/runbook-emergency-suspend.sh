@@ -1,0 +1,173 @@
+#!/bin/sh
+# Drives docs/EMERGENCY_SUBMISSION_RUNBOOK.md against the Compose localnet and
+# asserts its rehearsal checklist: offline 3-of-4 multisig ceremony, dry-run
+# and broadcast through the dark carrier, no leak to public mempools,
+# top-of-block inclusion in a carrier-proposed block with
+# EventEmergencySuspended, sub-floor fee rejected at CheckTx.
+#
+# Runs inside ark/arkd on the localnet network via `make localnet-runbook`.
+# Each term allows one suspension per asset, so a rerun picks the next
+# ACTIVE asset unless DENOM is set.
+set -eu
+
+DATA=${DATA:-/data}
+CHAIN_ID=${CHAIN_ID:-localark}
+VALIDATORS=${VALIDATORS:-4}
+[ "$VALIDATORS" -ge 2 ] || { echo "the runbook needs a carrier and at least one public node; VALIDATORS=$VALIDATORS" >&2; exit 2; }
+# The last validator is the dark carrier init.sh configured; the rest are the
+# public nodes whose mempools must never see the transaction.
+CARRIER=${CARRIER:-node$((VALIDATORS - 1))}
+PUBLIC_NODES=${PUBLIC_NODES:-$(i=0; while [ "$i" -lt $((VALIDATORS - 1)) ]; do printf 'node%d ' "$i"; i=$((i + 1)); done)}
+DENOM=${DENOM:-}
+GAS=${GAS:-500000}
+INCLUSION_POLLS=${INCLUSION_POLLS:-60}
+# NumInjectedTxs in abci/types: the oracle commit the proposer injects at
+# index 0, so the committee transaction lands at index 1.
+INJECTED_TXS=1
+
+CARRIER_RPC="tcp://$CARRIER:26657"
+KEYRING="--keyring-backend test --home $DATA/committee"
+WORK="$DATA/committee/ceremony-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$WORK"
+
+fail() { echo "FAIL: $*" >&2; exit 1; }
+step() { echo; echo "== $*"; }
+q() { arkd query "$@" --node "$CARRIER_RPC" --output json; }
+
+tx_hash_of() {
+  # sha256 of a base64 transaction, upper-case hex as arkd prints it.
+  printf '%s' "$1" | base64 -d | sha256sum | cut -d' ' -f1 | tr 'a-f' 'A-F'
+}
+
+step "mandate and asset"
+committee=$(arkd keys show committee -a $KEYRING)
+mandate=$(q asset emergency-mandate)
+term=$(printf '%s' "$mandate" | jq -r '.mandate.envelope.term')
+[ "$(printf '%s' "$mandate" | jq -r '.active')" = "true" ] || fail "mandate is not active: $mandate"
+[ "$(printf '%s' "$mandate" | jq -r '.mandate.envelope.committee')" = "$committee" ] \
+  || fail "mandate committee is not the localnet committee $committee"
+if [ -z "$DENOM" ]; then
+  DENOM=$(q asset assets | jq -r '[.priced_assets[].asset | select(.status == "ASSET_STATUS_ACTIVE")][0].denom // empty')
+  [ -n "$DENOM" ] || fail "no ACTIVE asset left to suspend"
+fi
+echo "committee=$committee term=$term denom=$DENOM"
+
+# proto3 JSON omits zero fields, so a fresh account has no sequence key.
+info=$(q auth account-info "$committee")
+account_number=$(printf '%s' "$info" | jq -r '.info.account_number // "0"')
+sequence=$(printf '%s' "$info" | jq -r '.info.sequence // "0"')
+
+# The fee floor is the larger of the carrier's node-local minimum-gas-prices
+# and the chain's live base fee for NOAH from the Treasury gas-price sheet,
+# both in anoah per gas. Integer parts plus one over-approximate the decimal
+# prices, and the real fee carries a 10% margin because the controller can
+# move the base fee between the query and CheckTx.
+node_floor=$(sed -n 's/^minimum-gas-prices = "\([0-9]*\)[.0-9]*anoah"/\1/p' "$DATA/$CARRIER/arkd/config/app.toml")
+chain_price=$(q treasury gas-price anoah | jq -r '.gas_price.gas_price')
+chain_floor=$(( ${chain_price%%.*} + 1 ))
+floor=$chain_floor
+[ "${node_floor:-0}" -le "$floor" ] || floor=$(( node_floor + 1 ))
+fees="$(( floor * GAS * 11 / 10 ))anoah"
+subfloor_fees="$(( floor * GAS / 2 ))anoah"
+echo "account_number=$account_number sequence=$sequence floor=${floor}anoah/gas (node ${node_floor:-0}, chain $chain_price) fees=$fees"
+
+# ceremony <fees> <out>: unsigned tx, three offline member signatures, assembly.
+ceremony() {
+  arkd tx asset emergency-suspend-asset "$DENOM" "$term" \
+    --from committee --fees "$1" --gas "$GAS" --chain-id "$CHAIN_ID" \
+    --generate-only $KEYRING > "$WORK/unsigned.json"
+  sigs=""
+  for member in member0 member1 member2; do
+    arkd tx sign "$WORK/unsigned.json" --multisig committee --from "$member" \
+      --sign-mode amino-json --offline --account-number "$account_number" --sequence "$sequence" \
+      --chain-id "$CHAIN_ID" $KEYRING --output-document "$WORK/$member.sig.json"
+    sigs="$sigs $WORK/$member.sig.json"
+  done
+  # shellcheck disable=SC2086
+  arkd tx multi-sign "$WORK/unsigned.json" committee $sigs \
+    --offline --account-number "$account_number" --sequence "$sequence" \
+    --chain-id "$CHAIN_ID" $KEYRING --output-document "$2"
+}
+
+broadcast() {
+  arkd tx broadcast "$1" --broadcast-mode sync --node "$CARRIER_RPC" --output json 2>&1 || true
+}
+
+step "sub-floor fee is rejected at CheckTx"
+ceremony "$subfloor_fees" "$WORK/subfloor.json"
+resp=$(broadcast "$WORK/subfloor.json")
+code=$(printf '%s' "$resp" | jq -r '.code // empty' 2>/dev/null || true)
+[ -n "$code" ] && [ "$code" != "0" ] || fail "sub-floor transaction was not rejected: $resp"
+echo "rejected with code $code"
+
+step "signing ceremony"
+ceremony "$fees" "$WORK/signed.json"
+echo "assembled $WORK/signed.json"
+
+step "preflight against the carrier"
+# Not the runbook's `--dry-run`: that mode cannot open the keyring, so the
+# client simulates with a single-key placeholder that the chain rejects once
+# the committee account carries its multisig key. `tx simulate --gas auto`
+# is the form that reads the multisig key and builds a K-signature
+# placeholder. Simulation runs through the carrier's RPC and leaks nothing.
+estimate=$(arkd tx simulate "$WORK/unsigned.json" --from committee --gas auto \
+  --chain-id "$CHAIN_ID" --node "$CARRIER_RPC" $KEYRING --output json 2>/dev/null \
+  | jq -r '.gas_info.gas_used // empty')
+[ -n "$estimate" ] || fail "simulation against the carrier failed"
+[ "$estimate" -le "$GAS" ] || fail "gas estimate $estimate exceeds gas limit $GAS"
+echo "simulated gas $estimate within limit $GAS"
+
+step "broadcast to the carrier"
+resp=$(broadcast "$WORK/signed.json")
+code=$(printf '%s' "$resp" | jq -r '.code // empty' 2>/dev/null || true)
+txhash=$(printf '%s' "$resp" | jq -r '.txhash // empty' 2>/dev/null || true)
+[ "$code" = "0" ] && [ -n "$txhash" ] || fail "CheckTx did not accept the transaction: $resp"
+echo "accepted txhash=$txhash"
+
+step "not visible on public mempools"
+for node in $PUBLIC_NODES; do
+  for b64 in $(curl -sf "http://$node:26657/unconfirmed_txs" | jq -r '.result.txs[]? // empty'); do
+    [ "$(tx_hash_of "$b64")" != "$txhash" ] || fail "transaction leaked to $node's mempool"
+  done
+  echo "$node: absent"
+done
+
+step "inclusion"
+polls=0
+while ! result=$(q tx "$txhash" 2>/dev/null); do
+  polls=$((polls + 1))
+  [ "$polls" -lt "$INCLUSION_POLLS" ] || fail "not included after $INCLUSION_POLLS polls"
+  sleep 1
+done
+[ "$(printf '%s' "$result" | jq -r '.code')" = "0" ] || fail "transaction failed: $(printf '%s' "$result" | jq -r '.raw_log')"
+height=$(printf '%s' "$result" | jq -r '.height')
+gas_used=$(printf '%s' "$result" | jq -r '.gas_used')
+[ "$gas_used" -le "$GAS" ] || fail "delivery used $gas_used gas, above the limit $GAS"
+printf '%s' "$result" | jq -e --arg denom "$DENOM" \
+  '.events[] | select(.type == "ark.asset.v1.EventEmergencySuspended") | .attributes[] | select(.key == "denom" and (.value | fromjson? // .) == $denom)' \
+  > /dev/null || fail "EventEmergencySuspended for $DENOM missing from the result"
+echo "included at height $height with EventEmergencySuspended, gas used $gas_used"
+
+step "top of block, proposed by the carrier"
+block=$(curl -sf "http://$CARRIER:26657/block?height=$height")
+index=0
+found=""
+for b64 in $(printf '%s' "$block" | jq -r '.result.block.data.txs[]'); do
+  if [ "$(tx_hash_of "$b64")" = "$txhash" ]; then found=$index; break; fi
+  index=$((index + 1))
+done
+[ -n "$found" ] || fail "transaction not found in block $height"
+[ "$found" -eq "$INJECTED_TXS" ] || fail "transaction at index $found, expected $INJECTED_TXS (after the injected oracle commit)"
+proposer=$(printf '%s' "$block" | jq -r '.result.block.header.proposer_address')
+carrier_address=$(jq -r '.address' "$DATA/$CARRIER/arkd/config/priv_validator_key.json")
+[ "$proposer" = "$carrier_address" ] || fail "block $height proposed by $proposer, not the carrier $carrier_address"
+echo "index $found in block $height, proposed by $CARRIER"
+
+step "asset suspended"
+status=$(q asset asset "$DENOM" | jq -r '.priced_asset.asset.status')
+[ "$status" = "ASSET_STATUS_SUSPENDED" ] || fail "$DENOM status is $status"
+echo "$DENOM is ASSET_STATUS_SUSPENDED"
+
+echo
+echo "runbook rehearsal passed: $DENOM suspended under term $term via $CARRIER at height $height"
+echo "ceremony files: $WORK"
