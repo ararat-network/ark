@@ -158,7 +158,7 @@ func TestStabilityTaxStrictWhenGrantExcludesTaxDenom(t *testing.T) {
 
 	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
 	require.NoError(t, arkApp.FeeGrantKeeper.GrantAllowance(ctx, granter, tx.payer, &feegrant.BasicAllowance{
-		SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 1_000_000)),
+		SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000)),
 	}))
 	tx.granter = granter
 

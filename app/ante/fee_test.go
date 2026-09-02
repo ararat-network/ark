@@ -51,10 +51,10 @@ func TestBaseFeeCheckerEnforcesTheConsensusFloor(t *testing.T) {
 	arkApp, ctx, _ := setupTreasuryAnteTest(t)
 	checker := ante.NewBaseFeeChecker(arkApp.TreasuryKeeper)
 
-	// Default launch price: 0.1 asdr per gas unit, so 200k gas requires
-	// 20,000 asdr.
+	// Default launch price: 0.1 axdr per gas unit, so 200k gas requires
+	// 20,000 axdr.
 	gas := uint64(200_000)
-	required := sdk.NewInt64Coin(chain.SDRBaseDenom, 20_000)
+	required := sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000)
 
 	_, _, err := checker(ctx, treasuryFeeTx{gas: gas})
 	require.ErrorContains(t, err, "base fee requires "+required.String())
@@ -81,10 +81,10 @@ func TestBaseFeeCheckerEnforcesTheConsensusFloor(t *testing.T) {
 	require.Equal(t, sdk.NewCoins(required), fee)
 	require.Zero(t, priority)
 
-	// 400,000asdr over 200,000 gas ranks two: the requirement is not
+	// 400,000axdr over 200,000 gas ranks two: the requirement is not
 	// subtracted, so a transaction ranks by what it pays, not by what it
 	// pays above the floor — which would rank this one.
-	paying := sdk.NewCoins(sdk.NewInt64Coin(chain.SDRBaseDenom, 400_000))
+	paying := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 400_000))
 	_, priority, err = checker(ctx, treasuryFeeTx{gas: gas, fee: paying})
 	require.NoError(t, err)
 	require.Equal(t, int64(2), priority)
@@ -132,7 +132,7 @@ func TestBaseFeeCheckerAcceptsAnyCoveringDenom(t *testing.T) {
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Remove(ctx, chain.KRWBaseDenom))
 	checker := ante.NewBaseFeeChecker(arkApp.TreasuryKeeper)
 	gas := uint64(200_000)
-	// At the 0.1 base price: 20,000asdr, 40,000ausd, or 10,000anoah.
+	// At the 0.1 base price: 20,000axdr, 40,000ausd, or 10,000anoah.
 
 	// An unpriced denomination cannot satisfy the gate, and the refusal
 	// quotes the reference requirement.
@@ -140,7 +140,7 @@ func TestBaseFeeCheckerAcceptsAnyCoveringDenom(t *testing.T) {
 		gas: gas,
 		fee: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 1_000_000_000)),
 	})
-	require.ErrorContains(t, err, "base fee requires 20000asdr")
+	require.ErrorContains(t, err, "base fee requires 20000axdr")
 
 	// Any single covering denomination admits the transaction, junk coins
 	// beside it notwithstanding.

@@ -61,7 +61,7 @@ func newBenchFixture(b *testing.B) *benchFixture {
 	// Enough for one pass of fee plus tax; every iteration replays against the
 	// same base state through a fresh cache.
 	fundAccount(b, arkApp, ctx, addr, sdk.NewCoins(
-		sdk.NewInt64Coin(chain.SDRBaseDenom, 1_000_000_000_000_000_000),
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 	))
 
