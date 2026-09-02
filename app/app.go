@@ -415,6 +415,13 @@ func (app *ArkApp) InterfaceRegistry() codectypes.InterfaceRegistry {
 	return app.interfaceRegistry
 }
 
+// TxConfig returns the transaction encoding configuration. The simulation
+// harness asks for it under this name; the IBC-Go testing interface asks for
+// the same object as GetTxConfig, in ibc.go.
+func (app *ArkApp) TxConfig() client.TxConfig {
+	return app.txConfig
+}
+
 // SimulationManager returns the manager the simulation harness drives.
 func (app *ArkApp) SimulationManager() *module.SimulationManager {
 	return app.sm
