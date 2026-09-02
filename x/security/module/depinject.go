@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
 	modulev1 "github.com/ararat-network/ark/api/ark/security/module/v1"
 	"github.com/ararat-network/ark/x/security/keeper"
@@ -39,7 +38,7 @@ type ModuleInputs struct {
 	MsgServiceRouter baseapp.MessageRouter
 
 	AccountKeeper types.AccountKeeper
-	UpgradeKeeper *upgradekeeper.Keeper
+	UpgradeKeeper types.UpgradeKeeper
 }
 
 type ModuleOutputs struct {
