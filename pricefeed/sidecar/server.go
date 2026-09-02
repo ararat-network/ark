@@ -11,8 +11,6 @@ import (
 
 	gateway "github.com/cosmos/gogogateway"
 	gatewayruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -65,8 +63,15 @@ func newServer(service api.PriceFeedServer, logger log.Logger, address string) (
 	)
 	router := http.NewServeMux()
 	router.HandleFunc("/", s.routeRequest)
+	// The sidecar multiplexes gRPC and the gateway on one cleartext port, so
+	// the server has to speak HTTP/2 without TLS. x/net's h2c wrapper is
+	// deprecated in favour of this field, which net/http serves natively.
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
 	s.httpSrv = &http.Server{
-		Handler:           h2c.NewHandler(router, &http2.Server{}),
+		Handler:           router,
+		Protocols:         protocols,
 		ReadHeaderTimeout: DefaultServerReadHeaderTimeout,
 	}
 	return s, nil
