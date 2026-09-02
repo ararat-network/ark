@@ -58,14 +58,6 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("read Wasm node config: %w", err)
 	}
 
-	// Contracts read through an accept list that is empty at launch, and write
-	// through one advisory tax query. Both live in app/wasm_query.go.
-	accepted, err := acceptedQueries(app.interfaceRegistry)
-	if err != nil {
-		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("building the Wasm query accept list: %w", err)
-	}
-	encoders := wasmkeeper.DefaultEncoders(app.interfaceRegistry, app.TransferKeeper)
-
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	app.WasmKeeper = wasmkeeper.NewKeeper(
 		app.appCodec,
@@ -90,7 +82,11 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		wasmtypes.VMConfig{},
 		wasmkeeper.BuiltInCapabilities(),
 		authority,
-		wasmkeeper.WithQueryHandlerDecorator(app.wasmQueryDecorator(encoders, accepted)),
+		// Contracts read through a hand-written accept list that is empty at
+		// launch (app/wasm_query.go). No custom querier: the tax estimate D43
+		// asks for is Treasury's ComputeTax query, listed there like any other
+		// path (D74).
+		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
 	)
 
 	if err := app.RegisterModules(wasm.NewAppModule(
