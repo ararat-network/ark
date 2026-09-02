@@ -46,24 +46,18 @@ func (k Keeper) TallyBlockGas(ctx context.Context, gasLimit uint64) error {
 }
 
 // GetRequiredGasFee derives the fee the gate requires for one declared gas
-// limit in one denomination: ceil(BaseGasPrice × gasLimit × factor). It
-// rounds up because it sizes a requirement, and this is the one place the
-// requirement arithmetic lives — every consumer prices through it. The
-// factor it priced with rides along so the ante's tip normalisation divides
-// by the same cross the gate multiplied by. A denomination with no gas
-// factor returns collections.ErrNotFound: not an accepted fee denom.
-func (k Keeper) GetRequiredGasFee(ctx context.Context, gasLimit uint64, denom string) (sdk.Coin, math.LegacyDec, error) {
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return sdk.Coin{}, math.LegacyDec{}, fmt.Errorf("getting params: %w", err)
-	}
+// limit in one denomination: ceil(price × gasLimit × factor). It rounds up
+// because it sizes a requirement, and this is the one place the requirement
+// arithmetic lives — every consumer prices through it. The caller supplies
+// params and the live base price, so one read of each prices every
+// denomination in a fee. The factor it priced with rides along so the ante's
+// tip normalisation divides by the same cross the gate multiplied by. A
+// denomination with no gas factor returns collections.ErrNotFound: not an
+// accepted fee denom.
+func (k Keeper) GetRequiredGasFee(ctx context.Context, params types.Params, price math.LegacyDec, gasLimit uint64, denom string) (sdk.Coin, math.LegacyDec, error) {
 	factor, _, err := k.gasFactor(ctx, params.ReferenceDenom, denom)
 	if err != nil {
 		return sdk.Coin{}, math.LegacyDec{}, err
-	}
-	price, err := k.BaseGasPrice.Get(ctx)
-	if err != nil {
-		return sdk.Coin{}, math.LegacyDec{}, fmt.Errorf("getting base gas price: %w", err)
 	}
 	product, err := decimal.Mul(price, math.LegacyNewDecFromInt(math.NewIntFromUint64(gasLimit)))
 	if err != nil {

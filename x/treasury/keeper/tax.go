@@ -47,6 +47,11 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 		return sdk.NewCoins(), nil
 	}
 
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting params: %w", err)
+	}
+
 	// The tax base is the cap set: a denomination is taxed exactly when
 	// Treasury holds a cap for it. Caps are derived from oracle-priced
 	// membership and then kept, so lifecycle status governs what a cap is
@@ -61,7 +66,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 			cap, loaded := caps[principal.Denom]
 			if !loaded {
 				var err error
-				cap, err = k.GetTaxCap(ctx, principal.Denom)
+				cap, err = k.taxCap(ctx, params, principal.Denom)
 				if errors.Is(err, collections.ErrNotFound) {
 					// No factor has ever been derived for this denomination:
 					// it is outside the registry, or a member whose first
@@ -118,6 +123,19 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 // returns collections.ErrNotFound: the factor set minus the numeraire is the
 // tax base, and absence means untaxed to the callers that own that judgement.
 func (k Keeper) GetTaxCap(ctx context.Context, denom string) (math.Int, error) {
+	if denom == chain.NoahBaseDenom {
+		return math.Int{}, collections.ErrNotFound
+	}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("getting params: %w", err)
+	}
+	return k.taxCap(ctx, params, denom)
+}
+
+// taxCap is GetTaxCap with the params read hoisted to the caller, so a
+// transaction prices every cap through one read.
+func (k Keeper) taxCap(ctx context.Context, params types.Params, denom string) (math.Int, error) {
 	// NOAH's entry is fee-pricing state, never tax base: the numeraire is not
 	// taxed, and this accessor is where that exclusion lives, so it hands the
 	// callers the same verdict absence would.
@@ -127,10 +145,6 @@ func (k Keeper) GetTaxCap(ctx context.Context, denom string) (math.Int, error) {
 	entry, err := k.ConversionFactors.Get(ctx, denom)
 	if err != nil {
 		return math.Int{}, err
-	}
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return math.Int{}, fmt.Errorf("getting params: %w", err)
 	}
 	return deriveTaxCap(params, entry), nil
 }

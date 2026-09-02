@@ -140,14 +140,26 @@ func (s *KeeperTestSuite) TestTallyBlockGasSaturates() {
 // rounding direction and unit: it sizes a payment floor, so it rounds up,
 // in the reference denom.
 func (s *KeeperTestSuite) TestGetRequiredGasFeeCeilsInTheReferenceDenom() {
+	params, price := s.gasPricing()
+
 	// 15 gas at 0.1/gas is 1.5, which ceils to 2.
-	required, _, err := s.keeper.GetRequiredGasFee(s.ctx, 15, chain.SDRBaseDenom)
+	required, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 15, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewInt64Coin(chain.SDRBaseDenom, 2), required)
 
-	required, _, err = s.keeper.GetRequiredGasFee(s.ctx, 0, chain.SDRBaseDenom)
+	required, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 0, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(required.IsZero())
+}
+
+// gasPricing reads the two inputs GetRequiredGasFee's callers thread through.
+func (s *KeeperTestSuite) gasPricing() (types.Params, math.LegacyDec) {
+	s.T().Helper()
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	price, err := s.keeper.BaseGasPrice.Get(s.ctx)
+	s.Require().NoError(err)
+	return params, price
 }
 
 // TestGetRequiredGasFeePricesEveryAcceptedSource pins the one requirement
@@ -156,7 +168,9 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeeCeilsInTheReferenceDenom() {
 // NOAH before derivation included. The returned factor is the cross the
 // requirement priced with, which the ante's tip normalisation divides by.
 func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
-	_, _, err := s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.NoahBaseDenom)
+	params, price := s.gasPricing()
+
+	_, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
@@ -170,21 +184,21 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 		DerivedHeight: 6,
 	}))
 
-	reference, factor, err := s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.SDRBaseDenom)
+	reference, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.SDRBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewInt64Coin(chain.SDRBaseDenom, 20_000), reference)
 	s.Require().Equal(math.LegacyOneDec(), factor)
 
-	member, factor, err := s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.USDBaseDenom)
+	member, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewInt64Coin(chain.USDBaseDenom, 40_000), member)
 	s.Require().Equal(math.LegacyNewDec(2), factor)
 
-	noah, factor, err := s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.NoahBaseDenom)
+	noah, factor, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 5_000), noah)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), factor)
 
-	_, _, err = s.keeper.GetRequiredGasFee(s.ctx, 200_000, chain.KRWBaseDenom)
+	_, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.KRWBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 }
