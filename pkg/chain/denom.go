@@ -11,12 +11,17 @@ const (
 	NoahBaseDenom = "anoah"
 	USDBaseDenom  = "ausd"
 	KRWBaseDenom  = "akrw"
-	SDRBaseDenom  = "asdr"
-	CNYBaseDenom  = "acny"
-	JPYBaseDenom  = "ajpy"
-	EURBaseDenom  = "aeur"
-	GBPBaseDenom  = "agbp"
-	MNTBaseDenom  = "amnt"
+	// XDRBaseDenom is the IMF Special Drawing Right under its ISO 4217 code.
+	// It is the protocol reference: the one denom with a feed and no asset.
+	XDRBaseDenom = "axdr"
+	CNYBaseDenom = "acny"
+	JPYBaseDenom = "ajpy"
+	EURBaseDenom = "aeur"
+	GBPBaseDenom = "agbp"
+	CADBaseDenom = "acad"
+	AUDBaseDenom = "aaud"
+	SGDBaseDenom = "asgd"
+	MXNBaseDenom = "amxn"
 
 	NativeDisplayExponent = 18
 )
