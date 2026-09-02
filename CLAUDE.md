@@ -119,6 +119,11 @@ These are consensus rules, not style. All three were violated in reviewed code b
   blocks will still fit" — only when the domain genuinely cannot be bounded, and treat needing one as a signal that
   something in the state design is compounding: a projection has to be re-proved by every future writer of every
   input it reads, and its verdict moves with live state, so the same value can be valid today and invalid next month.
+- **Oracle rates are NOAH per unit.** A rate is NOAH per one unit of its denomination, so valuing in NOAH
+  multiplies and `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a *price* of the
+  reference unit (the exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the
+  two units passed in the opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity
+  by it stay representable. (D75–D77, `docs/superpowers/specs/2026-09-02-rate-orientation-flip-design.md`.)
 
 The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
 outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The

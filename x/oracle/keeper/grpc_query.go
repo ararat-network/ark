@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/decimal"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -57,17 +58,46 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 		}
 	}
 
-	return &types.QueryExchangeRateResponse{ExchangeRate: exchangeRate}, nil
+	return &types.QueryExchangeRateResponse{
+		ExchangeRate: exchangeRate,
+		UnitsPerNoah: unitsPerNoah(exchangeRate),
+	}, nil
 }
 
-// ExchangeRates queries all exchange rates.
+// ExchangeRates queries every fresh exchange rate, in denomination order and
+// in both readings.
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
 	exchangeRates, err := q.k.GetExchangeRates(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting oracle exchange rates: %v", err)
 	}
 
-	return &types.QueryExchangeRatesResponse{ExchangeRates: exchangeRates}, nil
+	readings := make([]types.ExchangeRateReading, 0, len(exchangeRates))
+	for _, exchangeRate := range exchangeRates {
+		readings = append(readings, types.ExchangeRateReading{
+			Denom:        exchangeRate.Denom,
+			ExchangeRate: exchangeRate.Amount,
+			UnitsPerNoah: unitsPerNoah(exchangeRate.Amount),
+		})
+	}
+
+	return &types.QueryExchangeRatesResponse{ExchangeRates: readings}, nil
+}
+
+// unitsPerNoah is the stored rate read the other way round, derived for the
+// query alone: the chain never consumes it, so nothing here is state or
+// policy. A reciprocal below Dec precision — only a rate near MaxExchangeRate
+// produces one — reads as zero rather than failing a query that answered the
+// stored figure correctly.
+func unitsPerNoah(rate math.LegacyDec) math.LegacyDec {
+	if rate.IsNil() || !rate.IsPositive() {
+		return math.LegacyZeroDec()
+	}
+	reciprocal, err := decimal.Quo(math.LegacyOneDec(), rate)
+	if err != nil {
+		return math.LegacyZeroDec()
+	}
+	return reciprocal
 }
 
 // Feeds queries the active feed set and any scheduled transitions.

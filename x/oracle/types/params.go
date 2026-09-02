@@ -43,10 +43,13 @@ const (
 )
 
 // MaxOutgoingReferenceRate caps the governance-supplied rate a reference
-// re-point converts the outgoing unit at. A domain cap with orders of
-// magnitude of headroom rather than a projection: the rate joins the handed
-// set the consumers' rescale multiplications read, and a trillion base units
-// per NOAH base unit is far past any defensible quote.
+// re-point converts the outgoing unit at, NOAH per one unit of that
+// denomination. A domain cap with orders of magnitude of headroom rather than
+// a projection: the rate joins the handed set the consumers' rescale
+// multiplications read, and a trillion NOAH per unit of the outgoing
+// reference is eight orders past Terra's bottom. The other side needs no cap:
+// a rate is unrepresentable below one attonoah per unit, and a reference
+// worth 10^18 NOAH is not a quote governance will state.
 var MaxOutgoingReferenceRate = math.LegacyNewDec(1_000_000_000_000)
 
 // Default parameter values

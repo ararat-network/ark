@@ -112,6 +112,9 @@ func (gs GenesisState) Validate() error {
 		if !er.Rate.IsPositive() {
 			return fmt.Errorf("exchange rate for %s must be positive: %s", er.Denom, er.Rate)
 		}
+		if er.Rate.GT(MaxExchangeRate) {
+			return fmt.Errorf("exchange rate for %s exceeds %s: %s", er.Denom, MaxExchangeRate, er.Rate)
+		}
 		if i > 0 && er.Denom <= gs.ExchangeRates[i-1].Denom {
 			return errors.New("genesis exchange rates must be sorted by unique denom")
 		}

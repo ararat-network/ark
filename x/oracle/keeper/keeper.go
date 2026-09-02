@@ -170,7 +170,8 @@ func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 	return params, nil
 }
 
-// GetExchangeRate returns the consensus Noah exchange rate for a denom.
+// GetExchangeRate returns a denom's fresh consensus rate, NOAH per one unit;
+// the numeraire answers one by definition.
 func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyDec, error) {
 	if denom == chain.NoahBaseDenom {
 		return math.LegacyOneDec(), nil
@@ -207,7 +208,8 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 	return exchangeRates, nil
 }
 
-// SetExchangeRateWithEvent stores an exchange rate and emits an update event.
+// SetExchangeRateWithEvent stores an exchange rate — NOAH per one unit of the
+// denomination — and emits an update event.
 func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types.ExchangeRate) error {
 	// Rates are keyed by the denomination the feed prices, which may run ahead
 	// of that denomination being listed as an asset. The numeraire is excluded
@@ -223,6 +225,18 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	}
 	if !exchangeRate.Rate.IsPositive() {
 		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
+	}
+	// Unreachable from the tally, which holds direct reports to this bound by
+	// their encoding and derived prices to it by name; kept as the backstop
+	// behind the folds that multiply by what is stored here.
+	if exchangeRate.Rate.GT(types.MaxExchangeRate) {
+		return sdkerrors.Wrapf(
+			types.ErrInvalidExchangeRate,
+			"%s rate %s exceeds %s",
+			exchangeRate.Denom,
+			exchangeRate.Rate,
+			types.MaxExchangeRate,
+		)
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

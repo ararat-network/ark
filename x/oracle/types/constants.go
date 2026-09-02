@@ -1,5 +1,11 @@
 package types
 
+import (
+	"math/big"
+
+	"cosmossdk.io/math"
+)
+
 const (
 	// MaxFeeds bounds the number of price feeds accepted by the oracle module
 	// and represented in a validator's vote extension.
@@ -20,4 +26,16 @@ const (
 	// FeedActivationDelayBlocks leaves one fully committed height between
 	// scheduling a feed transition and using it in ExtendVote.
 	FeedActivationDelayBlocks int64 = 2
+)
+
+// MaxExchangeRate is the largest rate the store holds, NOAH per one unit: the
+// magnitude MaxEncodedVoteRateBytes admits a direct report, held against
+// derived prices at the tally as well. Rates are what the halt-class folds
+// multiply a 2^128-capped quantity by — Reserve recognition, Treasury
+// liability — and a quantity at that cap times a rate at this one is ~10^59,
+// sixteen orders inside LegacyDec's ~10^77 ceiling, so those products stay
+// representable by construction rather than by the shape of a vote.
+var MaxExchangeRate = math.LegacyNewDecFromBigIntWithPrec(
+	new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*MaxEncodedVoteRateBytes), big.NewInt(1)),
+	math.LegacyPrecision,
 )

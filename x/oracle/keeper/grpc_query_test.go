@@ -8,8 +8,6 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	chain "github.com/ararat-network/ark/pkg/chain"
 	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
 	"github.com/ararat-network/ark/x/oracle/types"
@@ -28,6 +26,7 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 		req       *types.QueryExchangeRateRequest
 		code      codes.Code
 		expect    math.LegacyDec
+		expectPer math.LegacyDec
 		expectErr bool
 	}{
 		{
@@ -37,21 +36,40 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			expectErr: true,
 		},
 		{
-			name:   "noah denom returns one",
-			req:    &types.QueryExchangeRateRequest{Denom: chain.NoahBaseDenom},
-			expect: math.LegacyOneDec(),
+			name:      "noah denom returns one",
+			req:       &types.QueryExchangeRateRequest{Denom: chain.NoahBaseDenom},
+			expect:    math.LegacyOneDec(),
+			expectPer: math.LegacyOneDec(),
 		},
 		{
-			name: "stored denom returned",
+			// Four NOAH per unit reads back as a quarter of a unit per NOAH:
+			// the second reading is the reciprocal, pinned with an exact one.
+			name: "stored denom returned in both readings",
 			setup: func() {
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
 					Denom:          chain.USDBaseDenom,
-					Rate:           math.LegacyNewDec(7),
+					Rate:           math.LegacyNewDec(4),
 					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 				}))
 			},
-			req:    &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
-			expect: math.LegacyNewDec(7),
+			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
+			expect:    math.LegacyNewDec(4),
+			expectPer: math.LegacyNewDecWithPrec(25, 2),
+		},
+		{
+			// The reciprocal of a rate at the store bound sits below Dec
+			// precision, and the query answers zero for it rather than failing.
+			name: "rate at the store bound reads zero units per noah",
+			setup: func() {
+				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+					Denom:          chain.USDBaseDenom,
+					Rate:           types.MaxExchangeRate,
+					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+				}))
+			},
+			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
+			expect:    types.MaxExchangeRate,
+			expectPer: math.LegacyZeroDec(),
 		},
 		{
 			name: "stale denom maps to failed precondition",
@@ -93,15 +111,23 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 
 			s.Require().NoError(err)
 			s.Require().True(tc.expect.Equal(resp.ExchangeRate), "expected %s, got %s", tc.expect, resp.ExchangeRate)
+			s.Require().True(tc.expectPer.Equal(resp.UnitsPerNoah), "expected %s per NOAH, got %s", tc.expectPer, resp.UnitsPerNoah)
 		})
 	}
 }
 
+// TestQueryExchangeRates pins the list shape: one entry per fresh rate, in
+// denomination order, each carrying the stored figure and its reciprocal on
+// the same line. A stale rate is absent, not present with a note.
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
-	expected := sdk.DecCoins{sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec())}
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
 		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyOneDec(),
+		Rate:           math.LegacyNewDecWithPrec(5, 1),
+		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+	}))
+	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.EURBaseDenom, types.ExchangeRate{
+		Denom:          chain.EURBaseDenom,
+		Rate:           math.LegacyNewDec(8),
 		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.KRWBaseDenom, types.ExchangeRate{
@@ -116,7 +142,18 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 
 	resp, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(expected, resp.ExchangeRates)
+
+	expected := []types.ExchangeRateReading{
+		{Denom: chain.EURBaseDenom, ExchangeRate: math.LegacyNewDec(8), UnitsPerNoah: math.LegacyNewDecWithPrec(125, 3)},
+		{Denom: chain.USDBaseDenom, ExchangeRate: math.LegacyNewDecWithPrec(5, 1), UnitsPerNoah: math.LegacyNewDec(2)},
+	}
+	s.Require().Len(resp.ExchangeRates, len(expected))
+	for i, want := range expected {
+		got := resp.ExchangeRates[i]
+		s.Require().Equal(want.Denom, got.Denom)
+		s.Require().True(want.ExchangeRate.Equal(got.ExchangeRate), "%s: expected %s, got %s", want.Denom, want.ExchangeRate, got.ExchangeRate)
+		s.Require().True(want.UnitsPerNoah.Equal(got.UnitsPerNoah), "%s: expected %s per NOAH, got %s", want.Denom, want.UnitsPerNoah, got.UnitsPerNoah)
+	}
 }
 
 func (s *KeeperTestSuite) TestQueryFeeds() {

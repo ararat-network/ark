@@ -15,12 +15,14 @@ import (
 )
 
 // RateSet is an in-memory set of oracle rates used for one conversion flow.
+// Each rate is NOAH per one unit of its denomination, so a unit's NOAH value
+// is a multiplication and the numeraire's own rate is one.
 type RateSet map[string]math.LegacyDec
 
 // NewRateSet returns a rate set carrying the NOAH identity and nothing else.
 // Every rate set carries it: NOAH is the numeraire every oracle rate is quoted
-// against, so a set without it cannot convert to or from the unit every
-// conversion routes through, and the rate is one by definition rather than by
+// in, so a set without it cannot convert to or from the unit every conversion
+// routes through, and the rate is one by definition rather than by
 // observation.
 func NewRateSet() RateSet {
 	return NewRateSetFrom(nil)
@@ -115,30 +117,34 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, askDenom)
 	}
 
-	convertedAmount := offerCoin.Amount
-	if !isOne(askRate) {
+	// Value the offer in NOAH first: the offer rate is NOAH per one offer
+	// unit, so the product is the offer's NOAH value, and a conversion into
+	// NOAH ends there with no division at all. The ask leg then divides that
+	// value by NOAH per one ask unit. Multiplying first leaves the one
+	// rounding on the quotient.
+	noahValue := offerCoin.Amount
+	if !isOne(offerRate) {
 		var err error
-		convertedAmount, err = decimal.Mul(offerCoin.Amount, askRate)
+		noahValue, err = decimal.Mul(offerCoin.Amount, offerRate)
 		if err != nil {
 			return sdk.DecCoin{}, sdkerrors.Wrapf(
 				ErrConversionOutOfRange,
-				"multiplying %s amount by %s rate: %v",
+				"multiplying %s amount by its rate: %v",
 				offerCoin.Denom,
-				askDenom,
 				err,
 			)
 		}
 	}
 
-	amount := convertedAmount
-	if !isOne(offerRate) {
+	amount := noahValue
+	if !isOne(askRate) {
 		var err error
-		amount, err = decimal.Quo(convertedAmount, offerRate)
+		amount, err = decimal.Quo(noahValue, askRate)
 		if err != nil {
 			return sdk.DecCoin{}, sdkerrors.Wrapf(
 				ErrConversionOutOfRange,
-				"dividing converted amount by %s rate: %v",
-				offerCoin.Denom,
+				"dividing NOAH value by %s rate: %v",
+				askDenom,
 				err,
 			)
 		}

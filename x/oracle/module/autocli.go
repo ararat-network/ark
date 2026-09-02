@@ -19,13 +19,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "ExchangeRates",
 					Use:       "exchange-rates",
-					Short:     "Query all current oracle exchange rates",
+					Short:     "Query every fresh oracle rate in both readings: NOAH per unit, and units per NOAH",
 					Example:   fmt.Sprintf("%s query oracle exchange-rates", version.AppName),
 				},
 				{
 					RpcMethod: "ExchangeRate",
 					Use:       "exchange-rate [denom]",
-					Short:     "Query the current oracle exchange rate for a denom",
+					Short:     "Query a denom's oracle rate in both readings: NOAH per unit, and units per NOAH",
 					Example:   fmt.Sprintf("%s query oracle exchange-rate akrw", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},

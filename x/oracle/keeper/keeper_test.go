@@ -423,6 +423,16 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 				BlockTimestamp: oracleTestBlockTime,
 			},
 		},
+		{
+			// Representable, but past the bound the tally holds every price
+			// to: the backstop behind the folds that multiply by the store.
+			name: "rate exceeds the store bound",
+			exchangeRate: types.ExchangeRate{
+				Denom:          chain.USDBaseDenom,
+				Rate:           types.MaxExchangeRate.Add(math.LegacySmallestDec()),
+				BlockTimestamp: oracleTestBlockTime,
+			},
+		},
 	}
 
 	for _, tc := range tests {

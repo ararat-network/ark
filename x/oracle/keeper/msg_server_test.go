@@ -13,6 +13,30 @@ import (
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
+// TestSetReferenceDenomBoundsTheOutgoingRate pins MaxOutgoingReferenceRate's
+// domain claim: a trillion NOAH per unit of the outgoing reference is the most
+// governance may state, and a rate past it is refused before anything is
+// read. First configuration has nothing to rebase, so the bound is the only
+// thing the rate meets here.
+func (s *KeeperTestSuite) TestSetReferenceDenomBoundsTheOutgoingRate() {
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+
+	_, err := s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
+		Authority:      authority,
+		ReferenceDenom: chain.XDRBaseDenom,
+		OutgoingRate:   types.MaxOutgoingReferenceRate.Add(math.LegacySmallestDec()),
+	})
+	s.Require().ErrorContains(err, "at most")
+
+	_, err = s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
+		Authority:      authority,
+		ReferenceDenom: chain.XDRBaseDenom,
+		OutgoingRate:   types.MaxOutgoingReferenceRate,
+	})
+	s.Require().NoError(err)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
+}
+
 func (s *KeeperTestSuite) TestUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 

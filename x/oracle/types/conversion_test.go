@@ -15,10 +15,12 @@ import (
 )
 
 func TestRateSetConvert(t *testing.T) {
+	// NOAH per unit: one USD is two NOAH and one KRW is two thousandths of a
+	// NOAH, so one USD is a thousand KRW.
 	rates := types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDec(2),
-		chain.KRWBaseDenom:  math.LegacyNewDec(1300),
+		chain.KRWBaseDenom:  math.LegacyNewDecWithPrec(2, 3),
 	}
 
 	tests := []struct {
@@ -32,18 +34,18 @@ func TestRateSetConvert(t *testing.T) {
 			name:      "converts through captured rates",
 			offerCoin: sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyNewDec(2)),
 			askDenom:  chain.KRWBaseDenom,
-			expected:  sdk.NewDecCoinFromDec(chain.KRWBaseDenom, math.LegacyNewDec(1300)),
+			expected:  sdk.NewDecCoinFromDec(chain.KRWBaseDenom, math.LegacyNewDec(2000)),
 		},
 		{
 			name: "equal exponents preserve the display price in base units",
 			offerCoin: sdk.NewDecCoinFromDec(
 				chain.NoahBaseDenom,
-				math.LegacyNewDecFromInt(chain.NativeBaseAmount(1)),
+				math.LegacyNewDecFromInt(chain.NativeBaseAmount(2)),
 			),
 			askDenom: chain.USDBaseDenom,
 			expected: sdk.NewDecCoinFromDec(
 				chain.USDBaseDenom,
-				math.LegacyNewDecFromInt(chain.NativeBaseAmount(2)),
+				math.LegacyNewDecFromInt(chain.NativeBaseAmount(1)),
 			),
 		},
 		{
@@ -81,6 +83,29 @@ func TestRateSetConvert(t *testing.T) {
 	}
 }
 
+// TestRateSetConvertOrientationIsNoahPerUnit pins the orientation in plain
+// numbers, in both directions, so a reciprocal cannot pass: a rate is NOAH per
+// one unit of its denomination, and valuing in NOAH multiplies.
+func TestRateSetConvertOrientationIsNoahPerUnit(t *testing.T) {
+	rates := types.NewRateSetFrom(map[string]math.LegacyDec{
+		chain.USDBaseDenom: math.LegacyNewDec(20),
+	})
+
+	toNoah, err := rates.Convert(
+		sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyOneDec()),
+		chain.NoahBaseDenom,
+	)
+	require.NoError(t, err)
+	require.True(t, math.LegacyNewDec(20).Equal(toNoah.Amount))
+
+	fromNoah, err := rates.Convert(
+		sdk.NewDecCoinFromDec(chain.NoahBaseDenom, math.LegacyNewDec(20)),
+		chain.USDBaseDenom,
+	)
+	require.NoError(t, err)
+	require.True(t, math.LegacyOneDec().Equal(fromNoah.Amount))
+}
+
 func TestRateSetConvertLargeRepresentableAmount(t *testing.T) {
 	largeAmount := new(big.Int).Lsh(big.NewInt(1), 200)
 	offerCoin := sdk.NewDecCoinFromCoin(sdk.NewCoin("ausd", math.NewIntFromBigInt(largeAmount)))
@@ -101,14 +126,14 @@ func TestRateSetConvertLargeRepresentableAmount(t *testing.T) {
 func TestRateSetConvertUnderflowTruncatesToZero(t *testing.T) {
 	rates := types.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
-		// One base unit of a denomination this hyperinflated is worth less
-		// than Dec precision can carry.
+		// One USD is ten quintillion NOAH: a numeraire this hyperinflated makes
+		// one of its base units worth less USD than Dec precision can carry.
 		"ausd": math.LegacyNewDec(10).Power(19),
 	}
 
-	actual, err := rates.Convert(sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()), chain.NoahBaseDenom)
+	actual, err := rates.Convert(sdk.NewDecCoinFromDec(chain.NoahBaseDenom, math.LegacyOneDec()), "ausd")
 	require.NoError(t, err)
-	require.Equal(t, chain.NoahBaseDenom, actual.Denom)
+	require.Equal(t, "ausd", actual.Denom)
 	require.True(t, actual.Amount.IsZero())
 }
 
@@ -183,15 +208,15 @@ func TestRateSetConvertUnitRateSkipMatchesApplied(t *testing.T) {
 			t.Run(amountName+"/"+rateName+"/ask leg is one", func(t *testing.T) {
 				actual, err := set.Convert(sdk.NewDecCoinFromDec("ausd", amount), chain.NoahBaseDenom)
 				require.NoError(t, err)
-				// The arithmetic the skip stands in for: multiply by the ask
-				// rate of one, then divide by the offer rate.
-				require.True(t, amount.Mul(one).Quo(rate).Equal(actual.Amount))
+				// The arithmetic the skip stands in for: multiply by the offer
+				// rate, then divide by the ask rate of one.
+				require.True(t, amount.Mul(rate).Quo(one).Equal(actual.Amount))
 			})
 
 			t.Run(amountName+"/"+rateName+"/offer leg is one", func(t *testing.T) {
 				actual, err := set.Convert(sdk.NewDecCoinFromDec(chain.NoahBaseDenom, amount), "ausd")
 				require.NoError(t, err)
-				require.True(t, amount.Mul(rate).Quo(one).Equal(actual.Amount))
+				require.True(t, amount.Mul(one).Quo(rate).Equal(actual.Amount))
 			})
 		}
 	}
@@ -253,10 +278,10 @@ func TestRateSetConvertRangeErrors(t *testing.T) {
 			askDenom:  "akrw",
 		},
 		{
-			name: "offer rate is zero",
+			name: "ask rate is zero",
 			rates: types.RateSet{
-				"ausd": math.LegacyZeroDec(),
-				"akrw": math.LegacyOneDec(),
+				"ausd": math.LegacyOneDec(),
+				"akrw": math.LegacyZeroDec(),
 			},
 			offerCoin: sdk.NewDecCoinFromDec("ausd", math.LegacyOneDec()),
 			askDenom:  "akrw",
@@ -282,8 +307,8 @@ func TestRateSetConvertRangeErrors(t *testing.T) {
 		{
 			name: "quotient overflows",
 			rates: types.RateSet{
-				"ausd": math.LegacySmallestDec(),
-				"akrw": math.LegacyOneDec(),
+				"ausd": math.LegacyOneDec(),
+				"akrw": math.LegacySmallestDec(),
 			},
 			offerCoin: sdk.NewDecCoinFromDec("ausd", max),
 			askDenom:  "akrw",

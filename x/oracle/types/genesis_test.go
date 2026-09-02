@@ -102,6 +102,23 @@ func TestValidateGenesis(t *testing.T) {
 			expectErr: "exchange rate for ausd must be representable",
 		},
 		{
+			name: "exchange rate exceeds the store bound",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = []types.ExchangeRate{
+					{Denom: "ausd", Rate: types.MaxExchangeRate.Add(math.LegacySmallestDec())},
+				}
+			},
+			expectErr: "exchange rate for ausd exceeds",
+		},
+		{
+			name: "exchange rate at the store bound is valid",
+			mutate: func(gs *types.GenesisState) {
+				gs.ExchangeRates = []types.ExchangeRate{
+					{Denom: "ausd", Rate: types.MaxExchangeRate},
+				}
+			},
+		},
+		{
 			name: "sorted exchange rates are valid",
 			mutate: func(gs *types.GenesisState) {
 				gs.ExchangeRates = []types.ExchangeRate{
