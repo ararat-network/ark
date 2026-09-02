@@ -17,8 +17,9 @@ import (
 // what settlement records about routing rather than rounding.
 func settlementPlan(denom string) assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
-		Denom:                 denom,
-		RedemptionRate:        math.LegacyNewDec(2),
+		Denom: denom,
+		// Half a NOAH per unit of settled paper.
+		RedemptionRate:        math.LegacyNewDecWithPrec(5, 1),
 		OpenedHeight:          1,
 		ActivationHeight:      2,
 		EarliestClosingHeight: 102,

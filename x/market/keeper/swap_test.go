@@ -25,10 +25,11 @@ func (s *KeeperTestSuite) TestSwapQuote_RecursiveSwap() {
 }
 
 func (s *KeeperTestSuite) TestSwapQuote_StableToStable_TobinSpread() {
+	// One USD is 1300 NOAH and one KRW is one, so one USD is 1300 KRW.
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), chain.USDBaseDenom, chain.KRWBaseDenom).
 		Return(oracletypes.RateSet{
-			chain.USDBaseDenom: math.LegacyOneDec(),
-			chain.KRWBaseDenom: math.LegacyNewDec(1300),
+			chain.USDBaseDenom: math.LegacyNewDec(1300),
+			chain.KRWBaseDenom: math.LegacyOneDec(),
 		}, nil).AnyTimes()
 
 	offerCoin := sdk.NewCoin(chain.USDBaseDenom, math.NewInt(1_000_000))

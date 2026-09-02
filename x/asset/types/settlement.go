@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/collections"
 
 	chain "github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Validate checks a settlement plan's denomination, redemption rate, and
@@ -24,6 +25,17 @@ func (p SettlementPlan) Validate() error {
 		return fmt.Errorf(
 			"settlement redemption rate must be positive: %s",
 			p.RedemptionRate,
+		)
+	}
+	// Held to the store bound like every rate a quantity is multiplied by:
+	// the plan sits beside oracle rates in the registry's rate sets, and a
+	// 2^128-capped supply times a rate past MaxExchangeRate leaves the Dec
+	// domain in the folds that value it.
+	if p.RedemptionRate.GT(oracletypes.MaxExchangeRate) {
+		return fmt.Errorf(
+			"settlement redemption rate %s exceeds %s",
+			p.RedemptionRate,
+			oracletypes.MaxExchangeRate,
 		)
 	}
 	if p.ActivationHeight <= 0 {

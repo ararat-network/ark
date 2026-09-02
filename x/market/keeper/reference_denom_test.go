@@ -22,11 +22,12 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 
 	// x/asset reads the rate pair once for both reference consumers and hands
 	// the set in, so Market converts without an oracle read of its own. The
-	// absent GetRateSet expectation asserts exactly that.
+	// absent GetRateSet expectation asserts exactly that. One XDR is one NOAH
+	// and one USD is half a NOAH, so one XDR is two USD.
 	rates := oracletypes.RateSet{
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyNewDec(2),
+		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
 
 	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
@@ -129,11 +130,11 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.XDRBaseDenom:  math.LegacyOneDec(),
-				// Near the LegacyDec ceiling (~1.16e77), so scaling the 100-unit
-				// pool by it is unrepresentable and the multiply inside Convert
+				// Near the LegacyDec ceiling (~1.16e77), so valuing the 100-unit
+				// pool in NOAH is unrepresentable and the multiply inside Convert
 				// fails before any state is touched.
-				chain.USDBaseDenom: math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 76)),
+				chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 76)),
+				chain.USDBaseDenom: math.LegacyOneDec(),
 			},
 			expectErr:  oracletypes.ErrConversionOutOfRange.Error(),
 			errorIs:    oracletypes.ErrConversionOutOfRange,
@@ -148,8 +149,8 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.XDRBaseDenom:  math.LegacyNewDec(1_000),
-				chain.USDBaseDenom:  math.LegacySmallestDec(),
+				chain.XDRBaseDenom:  math.LegacySmallestDec(),
+				chain.USDBaseDenom:  math.LegacyNewDec(1_000),
 			},
 			expectErr:  "invalid effective pools after rebasing to ausd",
 			errorIs:    errortypes.ErrInvalidRequest,
@@ -164,10 +165,10 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			to:   chain.USDBaseDenom,
 			rates: oracletypes.RateSet{
 				chain.NoahBaseDenom: math.LegacyOneDec(),
-				chain.XDRBaseDenom:  math.LegacyOneDec(),
 				// Representable after conversion, but the constant product the
 				// swap math needs squares it out of range.
-				chain.USDBaseDenom: math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 59)),
+				chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1" + strings.Repeat("0", 59)),
+				chain.USDBaseDenom: math.LegacyOneDec(),
 			},
 			expectErr:  "invalid effective pools after rebasing to ausd",
 			errorIs:    errortypes.ErrInvalidRequest,

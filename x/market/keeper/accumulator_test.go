@@ -121,7 +121,8 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 // principal but still obliges the EndBlocker to place it (D6).
 func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 	rates := expansionRates()
-	rates[chain.USDBaseDenom] = math.LegacyNewDec(2)
+	// Half a NOAH per unit: the one unit of output values below one anoah.
+	rates[chain.USDBaseDenom] = math.LegacyNewDecWithPrec(5, 1)
 
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,

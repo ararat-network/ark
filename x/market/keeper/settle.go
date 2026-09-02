@@ -63,7 +63,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// accounting settlement-priced rather than a fiction.
 	//
 	// The plan rate needs no adjustment to serve as a rate set: it is quoted in
-	// units per one NOAH like every oracle rate, so it drops in beside the
+	// NOAH per one unit like every oracle rate, so it drops in beside the
 	// numeraire carried at one.
 	planRates := oracletypes.NewRateSet()
 	planRates[plan.Denom] = plan.RedemptionRate

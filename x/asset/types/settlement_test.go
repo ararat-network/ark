@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestSettlementPlanValidate(t *testing.T) {
@@ -64,6 +65,19 @@ func TestSettlementPlanValidate(t *testing.T) {
 				)
 			},
 			expectErr: "redemption rate is out of range",
+		},
+		{
+			name: "redemption rate at the store bound",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.RedemptionRate = oracletypes.MaxExchangeRate
+			},
+		},
+		{
+			name: "redemption rate above the store bound",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.RedemptionRate = oracletypes.MaxExchangeRate.Add(math.LegacySmallestDec())
+			},
+			expectErr: "exceeds",
 		},
 		{
 			name: "zero activation height",

@@ -430,8 +430,8 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 	stableOffer := sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)
 	stableOutput := sdk.NewInt64Coin(chain.KRWBaseDenom, 1_296_750_000)
 	stableRates := oracletypes.RateSet{
-		chain.USDBaseDenom: math.LegacyOneDec(),
-		chain.KRWBaseDenom: math.LegacyNewDec(1300),
+		chain.USDBaseDenom: math.LegacyNewDec(1300),
+		chain.KRWBaseDenom: math.LegacyOneDec(),
 	}
 	nativeRates := oracletypes.RateSet{
 		chain.USDBaseDenom:  math.LegacyOneDec(),
@@ -593,8 +593,8 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSet{
-			"ausd": math.LegacyOneDec(),
-			"akrw": math.LegacyNewDec(1300),
+			"ausd": math.LegacyNewDec(1300),
+			"akrw": math.LegacyOneDec(),
 		}, nil)
 
 	beforeDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
@@ -757,9 +757,10 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 }
 
 func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
+	// One USD is 1300 NOAH and one KRW is one, so one USD is 1300 KRW.
 	s.expectStableToStableQuote(oracletypes.RateSet{
-		"ausd": math.LegacyOneDec(),
-		"akrw": math.LegacyNewDec(1300),
+		"ausd": math.LegacyNewDec(1300),
+		"akrw": math.LegacyOneDec(),
 	})
 
 	gomock.InOrder(

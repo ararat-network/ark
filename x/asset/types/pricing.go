@@ -40,13 +40,13 @@ func NumeraireVerdict() PricedAsset {
 // Source back off it. The two must move together.
 //
 // A settlement plan prices suspended supply because it is a standing commitment
-// to convert the asset to NOAH at its stored rate, quoted in the same
-// units-per-NOAH orientation as every Oracle rate: the protocol stands behind
-// that number in the only sense valuation needs. Activation height is
-// deliberately not consulted — a commitment values the coin whether or not
-// redemption has opened, and reading it would make consumers disagree for the
-// length of the activation delay. Whether redemption is *open* is an
-// action-eligibility question each consumer answers for itself.
+// to convert the asset to NOAH at its stored rate, quoted in NOAH per one unit
+// like every Oracle rate: the protocol stands behind that number in the only
+// sense valuation needs. Activation height is deliberately not consulted — a
+// commitment values the coin whether or not redemption has opened, and reading
+// it would make consumers disagree for the length of the activation delay.
+// Whether redemption is *open* is an action-eligibility question each consumer
+// answers for itself.
 //
 // plan is nil when the asset has none; it is meaningful only for suspended
 // supply, because a plan exists only while its asset is suspended.
