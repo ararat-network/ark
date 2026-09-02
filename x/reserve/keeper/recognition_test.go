@@ -2,11 +2,11 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.uber.org/mock/gomock"
 
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -103,10 +103,10 @@ func (s *KeeperTestSuite) stubRatesAtAge(rates oracletypes.RateSet, age time.Dur
 			for _, denom := range denoms {
 				rate, known := mirrored(denom)
 				if !known {
-					return nil, fmt.Errorf(
-						"getting exchange rate for denom %s: %w",
-						denom,
+					return nil, errorsmod.Wrapf(
 						oracletypes.ErrUnknownDenom,
+						"getting exchange rate for denom %s",
+						denom,
 					)
 				}
 				answer[denom] = rate
