@@ -203,6 +203,14 @@ string field_name = N [
 - Run tests: `go test ./x/{module}/...` for a single module, or `go test ./...` for all
 - Run with verbose output: `go test -v ./x/{module}/...`
 
+## Export & Relaunch
+
+- `arkd export` is a continuation export: heights stay absolute and the genesis starts at the next height, so every
+  height-anchored record (mandate windows, claim schedules, settlement plans, oracle windows) resumes as is. A relaunch
+  takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
+  simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that
+  lost more than a third of its power.
+
 ## Testing Conventions
 
 - Types tests (`x/*/types/`): plain functions, not test suites. Test suites are for keeper tests only.

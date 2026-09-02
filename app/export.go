@@ -2,35 +2,40 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
-	"cosmossdk.io/math"
-
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
-	oracletypes "ark/x/oracle/types"
 )
 
-// ExportAppStateAndValidators exports the state of the application for a genesis
-// file.
+// ExportAppStateAndValidators exports the state of the application for a
+// genesis file. The export continues the chain: heights stay absolute and the
+// genesis starts at the next height, so every height-anchored record — mandate
+// windows, claim schedules, settlement plans, oracle windows — resumes where
+// it was.
+//
+// Zero-height export is refused. It would re-express every stored height for
+// a chain restarting at one, which CometBFT has not required since genesis
+// gained an initial height, and a partial re-expression imports cleanly while
+// silently reopening windows the old chain had closed.
 func (app *ArkApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs, modulesToExport []string) (servertypes.ExportedApp, error) {
+	if forZeroHeight {
+		return servertypes.ExportedApp{}, errors.New(
+			"zero-height export is not supported: export at a height and relaunch from the exported initial height",
+		)
+	}
+
 	// as if they could withdraw from the start of the next block
 	ctx := app.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
 
-	// We export at last height + 1, because that's the height at which
-	// CometBFT will start InitChain.
-	height := app.LastBlockHeight() + 1
-	if forZeroHeight {
-		height = 0
-		app.prepForZeroHeightGenesis(ctx, jailAllowedAddrs)
+	if len(jailAllowedAddrs) > 0 {
+		if err := app.trimValidators(ctx, jailAllowedAddrs); err != nil {
+			return servertypes.ExportedApp{}, err
+		}
 	}
 
 	genState, err := app.ModuleManager.ExportGenesisForModules(ctx, app.appCodec, modulesToExport)
@@ -44,241 +49,67 @@ func (app *ArkApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAd
 	}
 
 	validators, err := staking.WriteValidators(ctx, app.StakingKeeper)
+	if err != nil {
+		return servertypes.ExportedApp{}, err
+	}
+	// Unreachable from a live chain, which always has a bonded set, and from
+	// trimming, which refuses an allow list naming no validator. Kept because
+	// a genesis with no validators fails at the relaunch's InitChain, far from
+	// the operator who could fix it.
+	if len(validators) == 0 {
+		return servertypes.ExportedApp{}, errors.New("exported validator set is empty")
+	}
+
+	// We export at last height + 1, because that's the height at which
+	// CometBFT will start InitChain.
 	return servertypes.ExportedApp{
 		AppState:        appState,
 		Validators:      validators,
-		Height:          height,
+		Height:          app.LastBlockHeight() + 1,
 		ConsensusParams: app.GetConsensusParams(ctx),
-	}, err
+	}, nil
 }
 
-// prepare for fresh start at zero height
-// NOTE: zero height genesis is a temporary feature which will be deprecated
-//
-//	in favour of export at a block height
-func (app *ArkApp) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []string) {
-	applyAllowedAddrs := len(jailAllowedAddrs) > 0
-
-	// check if there is a allowed address list
-
-	allowedAddrsMap := make(map[string]bool)
-
-	for _, addr := range jailAllowedAddrs {
-		_, err := sdk.ValAddressFromBech32(addr)
+// trimValidators jails every validator off the allow list and applies the
+// resulting set change, so a relaunch seats only the validators committed to
+// it. This is the one relaunch problem no in-place fork can solve: producing
+// the block that would run the fork needs the two-thirds that are missing.
+// Jailing is not slashing — nothing sets a jailed-until time, so a trimmed
+// validator that returns unjails at once, and its delegations stay in place.
+// An entry naming no validator is refused rather than ignored, because a typo
+// there would jail the validator it meant to keep.
+func (app *ArkApp) trimValidators(ctx sdk.Context, allowedAddrs []string) error {
+	allowed := make(map[string]struct{}, len(allowedAddrs))
+	for _, addr := range allowedAddrs {
+		operator, err := sdk.ValAddressFromBech32(addr)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("parsing allowed validator %q: %w", addr, err)
 		}
-		allowedAddrsMap[addr] = true
+		if _, err := app.StakingKeeper.GetValidator(ctx, operator); err != nil {
+			return fmt.Errorf("allowed validator %s: %w", addr, err)
+		}
+		allowed[operator.String()] = struct{}{}
 	}
 
-	/* Handle fee distribution state. */
-
-	// withdraw all validator commission
-	err := app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		valBz, err := app.StakingKeeper.ValidatorAddressCodec().StringToBytes(val.GetOperator())
-		if err != nil {
-			panic(err)
-		}
-		_, err = app.DistrKeeper.WithdrawValidatorCommission(ctx, valBz)
-		if err != nil {
-			panic(err)
-		}
-		return false
-	})
+	validators, err := app.StakingKeeper.GetAllValidators(ctx)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("listing validators: %w", err)
 	}
-
-	// withdraw all delegator rewards
-	dels, err := app.StakingKeeper.GetAllDelegations(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, delegation := range dels {
-		valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
+	for _, validator := range validators {
+		if _, keep := allowed[validator.GetOperator()]; keep || validator.IsJailed() {
+			continue
+		}
+		consAddr, err := validator.GetConsAddr()
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("resolving consensus address of %s: %w", validator.GetOperator(), err)
 		}
-
-		delAddr := sdk.MustAccAddressFromBech32(delegation.DelegatorAddress)
-
-		_, err = app.DistrKeeper.WithdrawDelegationRewards(ctx, delAddr, valAddr)
-		if err != nil {
-			panic(err)
+		if err := app.StakingKeeper.Jail(ctx, consAddr); err != nil {
+			return fmt.Errorf("jailing %s: %w", validator.GetOperator(), err)
 		}
 	}
-
-	// clear validator slash events
-	app.DistrKeeper.DeleteAllValidatorSlashEvents(ctx)
-
-	// clear validator historical rewards
-	app.DistrKeeper.DeleteAllValidatorHistoricalRewards(ctx)
-
-	// set context height to zero
-	height := ctx.BlockHeight()
-	ctx = ctx.WithBlockHeight(0)
-
-	// reinitialize all validators
-	err = app.StakingKeeper.IterateValidators(ctx, func(_ int64, val stakingtypes.ValidatorI) (stop bool) {
-		valBz, err := app.StakingKeeper.ValidatorAddressCodec().StringToBytes(val.GetOperator())
-		if err != nil {
-			panic(err)
-		}
-		// donate any unwithdrawn outstanding reward fraction tokens to the community pool
-		scraps, err := app.DistrKeeper.GetValidatorOutstandingRewardsCoins(ctx, valBz)
-		if err != nil {
-			panic(err)
-		}
-		feePool, err := app.DistrKeeper.FeePool.Get(ctx)
-		if err != nil {
-			panic(err)
-		}
-		feePool.CommunityPool = feePool.CommunityPool.Add(scraps...)
-		if err := app.DistrKeeper.FeePool.Set(ctx, feePool); err != nil {
-			panic(err)
-		}
-
-		if err := app.DistrKeeper.Hooks().AfterValidatorCreated(ctx, valBz); err != nil {
-			panic(err)
-		}
-		return false
-	})
-
-	// reinitialize all delegations
-	for _, del := range dels {
-		valAddr, err := sdk.ValAddressFromBech32(del.ValidatorAddress)
-		if err != nil {
-			panic(err)
-		}
-		delAddr := sdk.MustAccAddressFromBech32(del.DelegatorAddress)
-
-		if err := app.DistrKeeper.Hooks().BeforeDelegationCreated(ctx, delAddr, valAddr); err != nil {
-			// never called as BeforeDelegationCreated always returns nil
-			panic(fmt.Errorf("error while incrementing period: %w", err))
-		}
-
-		if err := app.DistrKeeper.Hooks().AfterDelegationModified(ctx, delAddr, valAddr); err != nil {
-			// never called as AfterDelegationModified always returns nil
-			panic(fmt.Errorf("error while creating a new delegation period record: %w", err))
-		}
+	if _, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx); err != nil {
+		return fmt.Errorf("applying trimmed validator set: %w", err)
 	}
 
-	// reset context height
-	ctx = ctx.WithBlockHeight(height)
-
-	/* Handle staking state. */
-
-	// iterate through redelegations, reset creation height
-	err = app.StakingKeeper.IterateRedelegations(ctx, func(_ int64, red stakingtypes.Redelegation) (stop bool) {
-		for i := range red.Entries {
-			red.Entries[i].CreationHeight = 0
-		}
-		err = app.StakingKeeper.SetRedelegation(ctx, red)
-		if err != nil {
-			panic(err)
-		}
-		return false
-	})
-	if err != nil {
-		panic(fmt.Errorf("error while iterating redelegations: %w", err))
-	}
-
-	// iterate through unbonding delegations, reset creation height
-	err = app.StakingKeeper.IterateUnbondingDelegations(ctx, func(_ int64, ubd stakingtypes.UnbondingDelegation) (stop bool) {
-		for i := range ubd.Entries {
-			ubd.Entries[i].CreationHeight = 0
-		}
-		err = app.StakingKeeper.SetUnbondingDelegation(ctx, ubd)
-		if err != nil {
-			panic(err)
-		}
-		return false
-	})
-	if err != nil {
-		panic(fmt.Errorf("error while iterating unbonding delegations: %w", err))
-	}
-
-	// Iterate through validators by power descending, reset bond heights, and
-	// update bond intra-tx counters.
-	store := ctx.KVStore(app.GetKey(stakingtypes.StoreKey))
-	iter := storetypes.KVStoreReversePrefixIterator(store, stakingtypes.ValidatorsKey)
-
-	// Closure to ensure iterator doesn't leak.
-	func() {
-		defer iter.Close()
-		for ; iter.Valid(); iter.Next() {
-			addr := sdk.ValAddress(stakingtypes.AddressFromValidatorsKey(iter.Key()))
-			validator, err := app.StakingKeeper.GetValidator(ctx, addr)
-			if err != nil {
-				panic("expected validator, not found")
-			}
-
-			validator.UnbondingHeight = 0
-			if applyAllowedAddrs && !allowedAddrsMap[addr.String()] {
-				validator.Jailed = true
-			}
-
-			if err = app.StakingKeeper.SetValidator(ctx, validator); err != nil {
-				panic(err)
-			}
-
-		}
-	}()
-
-	_, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	/* Handle slashing state. */
-
-	// reset start height on signing infos
-	err = app.SlashingKeeper.IterateValidatorSigningInfos(
-		ctx,
-		func(addr sdk.ConsAddress, info slashingtypes.ValidatorSigningInfo) (stop bool) {
-			info.StartHeight = 0
-			err = app.SlashingKeeper.SetValidatorSigningInfo(ctx, addr, info)
-			if err != nil {
-				panic(err)
-			}
-			return false
-		},
-	)
-	if err != nil {
-		panic(fmt.Errorf("error while iterating validator signing info: %w", err))
-	}
-
-	/* Handle oracle state. */
-
-	// Clear all prices
-	if err := app.OracleKeeper.ExchangeRate.Walk(ctx, nil, func(denom string, _ oracletypes.ExchangeRate) (bool, error) {
-		if err := app.OracleKeeper.ExchangeRate.Remove(ctx, denom); err != nil {
-			return false, err
-		}
-		return false, nil
-	}); err != nil {
-		panic(fmt.Errorf("error while clearing exchange rates: %w", err))
-	}
-
-	if err := app.OracleKeeper.RewardWeight.Walk(ctx, nil, func(operator sdk.ValAddress, _ math.Int) (bool, error) {
-		if err := app.OracleKeeper.RewardWeight.Set(ctx, operator, math.ZeroInt()); err != nil {
-			return false, err
-		}
-		return false, nil
-	}); err != nil {
-		panic(fmt.Errorf("error while resetting reward weights: %w", err))
-	}
-
-	// Clear attendance records so the next attendance window starts fresh.
-	if err := app.OracleKeeper.Attendance.Clear(ctx, nil); err != nil {
-		panic(fmt.Errorf("error while clearing attendance records: %w", err))
-	}
-
-	/* Handle market state. */
-
-	// clear all market pools
-	if err := app.MarketKeeper.ArkPoolDelta.Set(ctx, math.LegacyZeroDec()); err != nil {
-		panic(fmt.Errorf("error while resetting ark pool delta: %w", err))
-	}
+	return nil
 }
