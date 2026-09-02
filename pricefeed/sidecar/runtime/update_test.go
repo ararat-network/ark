@@ -64,7 +64,7 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 	})
 	cfg.UpdateInterval = 5 * time.Millisecond
 	newCfg := cfg
-	newCfg.Resolver = testResolverConfig("akrw", "noah-krw", "NOAH/USD", "USD/KRW")
+	newCfg.Resolver = testResolverConfig("akrw", "krw-noah", "KRW/USD", "USD/NOAH")
 
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", markets)
@@ -93,7 +93,7 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 				close(firstStarted)
 			case 2:
 				require.Equal(t, []providertypes.Ticker{"NOAHUSD", "USDKRW"}, tickers)
-				results["USDKRW"] = providertypes.NewResult(big.NewFloat(1000), time.Now().UTC())
+				results["USDKRW"] = providertypes.NewResult(big.NewFloat(1024), time.Now().UTC())
 				close(restarted)
 			default:
 				t.Fatalf("unexpected provider run %d", run)
@@ -124,14 +124,16 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 		snapshot := oracle.GetPriceSnapshot()
 		usd := snapshot.Prices["ausd"]
 		_, hasKRW := snapshot.Prices["akrw"]
-		return usd != nil && usd.Cmp(big.NewFloat(2)) == 0 && !hasKRW
+		return usd != nil && usd.Cmp(big.NewFloat(0.5)) == 0 && !hasKRW
 	}, time.Second, time.Millisecond)
 
 	require.NoError(t, oracle.Update(newCfg))
 	requireProviderStarted(t, restarted)
 	require.Eventually(t, func() bool {
+		// The venue quotes 2 USD per NOAH and 1024 KRW per USD; the legs
+		// normalise to 0.5 and 2^-10 and multiply to 2^-11 NOAH per KRW.
 		price := oracle.GetPriceSnapshot().Prices["akrw"]
-		return price != nil && price.Cmp(big.NewFloat(2000)) == 0
+		return price != nil && price.Cmp(big.NewFloat(0.00048828125)) == 0
 	}, time.Second, time.Millisecond)
 
 	cancel()
@@ -155,7 +157,7 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 
 	err = oracle.Update(newCfg)
 
-	require.ErrorContains(t, err, "resolver denom \"akrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"NOAH/KRW\"")
+	require.ErrorContains(t, err, "resolver denom \"akrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"KRW/NOAH\"")
 }
 
 func TestUpdateConfigUpdatesFeedsClientConfig(t *testing.T) {

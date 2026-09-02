@@ -66,7 +66,7 @@ func TestFromDenom(t *testing.T) {
 		{
 			name:  "converts canonical feed denom",
 			denom: "ausd",
-			want:  "NOAH/USD",
+			want:  "USD/NOAH",
 		},
 		{
 			name:    "rejects uppercase feed denom",
@@ -235,13 +235,13 @@ func TestPairDenom(t *testing.T) {
 		want string
 	}{
 		{
-			name: "projects quote to native base denom",
-			pair: "USDT/USD",
+			name: "projects the base to its feed denom",
+			pair: "USD/NOAH",
 			want: "ausd",
 		},
 		{
-			name: "projects the reference quote to its feed denom",
-			pair: "USDT/XDR",
+			name: "projects the reference unit to its feed denom",
+			pair: "XDR/NOAH",
 			want: "axdr",
 		},
 	}

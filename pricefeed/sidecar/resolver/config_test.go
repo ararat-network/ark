@@ -22,8 +22,8 @@ func TestConfigMarketPairs(t *testing.T) {
 			cfg:   resolver.Config{},
 			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
-				"NOAH/USD": {},
 				"USD/NOAH": {},
+				"NOAH/USD": {},
 			},
 		},
 		{
@@ -33,8 +33,8 @@ func TestConfigMarketPairs(t *testing.T) {
 			},
 			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
-				"NOAH/USD": {},
 				"USD/NOAH": {},
+				"NOAH/USD": {},
 			},
 		},
 		{
@@ -43,18 +43,18 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"akrw": {
 						{
-							Name:  "noah-krw",
-							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
+							Name:  "krw-noah",
+							Pairs: []types.Pair{"KRW/USD", "USD/NOAH"},
 						},
 					},
 				},
 			},
 			feeds: []string{"akrw"},
 			want: map[types.Pair]struct{}{
-				"NOAH/USD": {},
 				"USD/NOAH": {},
-				"USD/KRW":  {},
+				"NOAH/USD": {},
 				"KRW/USD":  {},
+				"USD/KRW":  {},
 			},
 		},
 		{
@@ -63,16 +63,16 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"ausd": {
 						{
-							Name:  "noah-usd",
-							Pairs: []types.Pair{"NOAH/USD", "USD/NOAH", "NOAH/USD"},
+							Name:  "usd-noah",
+							Pairs: []types.Pair{"USD/NOAH", "NOAH/USD", "USD/NOAH"},
 						},
 					},
 				},
 			},
 			feeds: []string{"ausd"},
 			want: map[types.Pair]struct{}{
-				"NOAH/USD": {},
 				"USD/NOAH": {},
+				"NOAH/USD": {},
 			},
 		},
 		{
@@ -81,18 +81,18 @@ func TestConfigMarketPairs(t *testing.T) {
 				Routes: map[string][]resolver.Route{
 					"akrw": {
 						{
-							Name:  "noah-krw",
-							Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
+							Name:  "krw-noah",
+							Pairs: []types.Pair{"KRW/USD", "USD/NOAH"},
 						},
 					},
 				},
 			},
 			feeds: []string{"ausd", "akrw"},
 			want: map[types.Pair]struct{}{
-				"NOAH/USD": {},
 				"USD/NOAH": {},
-				"USD/KRW":  {},
+				"NOAH/USD": {},
 				"KRW/USD":  {},
+				"USD/KRW":  {},
 			},
 		},
 	}
@@ -128,7 +128,7 @@ func TestConfigValidateRejectsNonCanonicalDenomWithEmptyRoutes(t *testing.T) {
 
 func TestConfigValidateBootstrapPrices(t *testing.T) {
 	valid := resolver.BootstrapPrice{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "0.25",
 		ValidUntil: "2030-01-01T00:00:00Z",
 	}
@@ -144,7 +144,7 @@ func TestConfigValidateBootstrapPrices(t *testing.T) {
 		{
 			name: "invalid pair",
 			bootstrap: []resolver.BootstrapPrice{{
-				Pair:       "noah/usd",
+				Pair:       "usd/noah",
 				Price:      valid.Price,
 				ValidUntil: valid.ValidUntil,
 			}},
@@ -157,7 +157,7 @@ func TestConfigValidateBootstrapPrices(t *testing.T) {
 				Price:      "not-a-price",
 				ValidUntil: valid.ValidUntil,
 			}},
-			expectErr: "bootstrap price for NOAH/USD is invalid",
+			expectErr: "bootstrap price for USD/NOAH is invalid",
 		},
 		{
 			name: "non-positive price",
@@ -166,7 +166,7 @@ func TestConfigValidateBootstrapPrices(t *testing.T) {
 				Price:      "0",
 				ValidUntil: valid.ValidUntil,
 			}},
-			expectErr: "bootstrap price for NOAH/USD must be positive",
+			expectErr: "bootstrap price for USD/NOAH must be positive",
 		},
 		{
 			name: "invalid expiry",
@@ -175,7 +175,7 @@ func TestConfigValidateBootstrapPrices(t *testing.T) {
 				Price:      valid.Price,
 				ValidUntil: "tomorrow",
 			}},
-			expectErr: "bootstrap price for NOAH/USD validUntil",
+			expectErr: "bootstrap price for USD/NOAH validUntil",
 		},
 		{
 			name:      "duplicate pair",
@@ -202,7 +202,7 @@ func TestConfigValidateBootstrapPrices(t *testing.T) {
 func TestConfigCloneCopiesBootstrapPrices(t *testing.T) {
 	cfg := resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
-			Pair:       "NOAH/USD",
+			Pair:       "USD/NOAH",
 			Price:      "0.25",
 			ValidUntil: time.Date(2030, time.January, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
 		}},
@@ -219,8 +219,8 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 		Routes: map[string][]resolver.Route{
 			"akrw": {
 				{
-					Name:  "noah-usd",
-					Pairs: []types.Pair{"NOAH/USD"},
+					Name:  "usd-noah",
+					Pairs: []types.Pair{"USD/NOAH"},
 				},
 			},
 		},
@@ -228,7 +228,7 @@ func TestConfigValidateRejectsRouteOutputMismatch(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, `resolver denom "akrw" route "noah-usd" resolves to "NOAH/USD", want "NOAH/KRW"`)
+	require.ErrorContains(t, err, `resolver denom "akrw" route "usd-noah" resolves to "USD/NOAH", want "KRW/NOAH"`)
 }
 
 func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
@@ -237,7 +237,7 @@ func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
 			"akrw": {
 				{
 					Name:  "bad-path",
-					Pairs: []types.Pair{"NOAH/USD", "EUR/KRW"},
+					Pairs: []types.Pair{"KRW/EUR", "USD/NOAH"},
 				},
 			},
 		},
@@ -245,5 +245,5 @@ func TestConfigValidateRejectsDisconnectedRoute(t *testing.T) {
 
 	err := cfg.Validate()
 
-	require.ErrorContains(t, err, `resolver denom "akrw" route "bad-path" is invalid: pair "EUR/KRW" does not connect after "USD"`)
+	require.ErrorContains(t, err, `resolver denom "akrw" route "bad-path" is invalid: pair "USD/NOAH" does not connect after "EUR"`)
 }

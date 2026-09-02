@@ -116,7 +116,7 @@ func benchmarkResolverInput(
 	if bootstrapLeg {
 		cfg.BootstrapPrices = []resolver.BootstrapPrice{
 			{
-				Pair:       "NOAH/USD",
+				Pair:       "USD/NOAH",
 				Price:      "1",
 				ValidUntil: now.Add(time.Hour).Format(time.RFC3339),
 			},
@@ -131,18 +131,18 @@ func benchmarkResolverInput(
 		feeds[i] = denom
 
 		if bootstrapLeg {
-			pair := types.Pair("USD/" + quote)
+			pair := types.Pair(quote + "/USD")
 			pairs[i] = pair
 			cfg.Routes[denom] = []resolver.Route{
 				{
-					Name:  "noah-usd-" + quote,
-					Pairs: []types.Pair{"NOAH/USD", pair},
+					Name:  quote + "-usd-noah",
+					Pairs: []types.Pair{pair, "USD/NOAH"},
 				},
 			}
 			continue
 		}
 
-		pairs[i] = types.Pair("NOAH/" + quote)
+		pairs[i] = types.Pair(quote + "/NOAH")
 	}
 
 	providerPrices := make(map[string]types.Prices, providerCount)

@@ -26,11 +26,11 @@ func TestRecordOracleMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	metrics.RecordOracleTick(context.Background())
-	metrics.RecordProviderPrice(context.Background(), "kraken", "NOAH/USD", 1.23)
-	metrics.RecordAggregatePrice(context.Background(), "NOAH/USD", 1.25)
-	metrics.RecordPairSampleCount(context.Background(), "NOAH/USD", 2)
-	metrics.RecordResolvedSourceCount(context.Background(), "NOAH/KRW", 3)
-	metrics.RecordRoutePrice(context.Background(), "NOAH/KRW", "noah-usd-krw", 2000)
+	metrics.RecordProviderPrice(context.Background(), "kraken", "USD/NOAH", 1.23)
+	metrics.RecordAggregatePrice(context.Background(), "USD/NOAH", 1.25)
+	metrics.RecordPairSampleCount(context.Background(), "USD/NOAH", 2)
+	metrics.RecordResolvedSourceCount(context.Background(), "KRW/NOAH", 3)
+	metrics.RecordRoutePrice(context.Background(), "KRW/NOAH", "krw-usd-noah", 2000)
 	metrics.RecordMissingPrices(context.Background(), []string{"akrw"})
 
 	families, err := registry.Gather()
@@ -42,28 +42,28 @@ func TestRecordOracleMetrics(t *testing.T) {
 	providerPrices := metricFamily(t, families, "ark_pricefeed_provider_price")
 	require.Equal(t, float64(1.23), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "kraken",
-		"pair":     "noah/usd",
+		"pair":     "usd/noah",
 	}))
 
 	aggregatePrices := metricFamily(t, families, "ark_pricefeed_aggregate_price")
 	require.Equal(t, float64(1.25), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "noah/usd",
+		"pair": "usd/noah",
 	}))
 
 	pairSampleCounts := metricFamily(t, families, "ark_pricefeed_pair_sample_count")
 	require.Equal(t, float64(2), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "noah/usd",
+		"pair": "usd/noah",
 	}))
 
 	resolvedSourceCounts := metricFamily(t, families, "ark_pricefeed_resolved_source_count")
 	require.Equal(t, float64(3), gaugeValue(t, resolvedSourceCounts, map[string]string{
-		"pair": "noah/krw",
+		"pair": "krw/noah",
 	}))
 
 	routePrices := metricFamily(t, families, "ark_pricefeed_route_price")
 	routePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "noah/krw",
-		"route": "noah-usd-krw",
+		"pair":  "krw/noah",
+		"route": "krw-usd-noah",
 	})
 	require.Equal(t, float64(2000), routePrice.GetGauge().GetValue())
 	requireNoLabel(t, routePrice, "denom")

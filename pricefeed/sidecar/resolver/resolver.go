@@ -14,7 +14,7 @@ import (
 // builds provider medians for the required route pairs after normalising
 // reciprocal observations, then uses active bootstrap prices only for route
 // pairs without provider samples. It resolves only requested feeds. Configured
-// routes are averaged; missing or empty routes use the direct NOAH/QUOTE path.
+// routes are averaged; missing or empty routes use the direct UNIT/NOAH path.
 func ResolvePrices(
 	ctx context.Context,
 	cfg Config,
@@ -101,8 +101,9 @@ func (c Config) bootstrapPrice(pair types.Pair, now time.Time) (*big.Float, bool
 }
 
 // providerSamples returns at most one price per provider normalised to pair's
-// orientation. A direct observation takes precedence when a provider exposes
-// both orientations.
+// orientation. It is where a venue's quote meets the leg's: a NOAH/USD
+// observation serves a USD/NOAH leg here. A direct observation takes
+// precedence when a provider exposes both orientations.
 func providerSamples(providerPrices map[string]types.Prices, pair types.Pair) []*big.Float {
 	samples := make([]*big.Float, 0, len(providerPrices))
 	for _, prices := range providerPrices {

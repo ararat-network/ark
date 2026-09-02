@@ -47,14 +47,18 @@ func TestParsePriceBoundsLegacyDecMagnitude(t *testing.T) {
 	}
 }
 
+// TestPricesByFeedProjectsPairPricesToFeeds pins that a resolved UNIT/NOAH
+// price is the published price: the projection re-keys and copies, and turns
+// nothing over.
 func TestPricesByFeedProjectsPairPricesToFeeds(t *testing.T) {
 	prices := Prices{
-		"USDT/USD": big.NewFloat(1.23),
-		"USDT/KRW": big.NewFloat(1300),
-		"USDT/JPY": big.NewFloat(160),
+		"USD/NOAH": big.NewFloat(1.23),
+		"KRW/NOAH": big.NewFloat(1300),
+		"JPY/NOAH": big.NewFloat(160),
+		"EUR/NOAH": nil,
 	}
 
-	got := PricesByFeed(prices, []string{"ausd", "akrw"})
+	got := PricesByFeed(prices, []string{"ausd", "akrw", "aeur"})
 
 	if len(got) != 2 {
 		t.Fatalf("PricesByFeed() len = %d, want 2", len(got))
@@ -68,12 +72,15 @@ func TestPricesByFeedProjectsPairPricesToFeeds(t *testing.T) {
 	if _, ok := got["ajpy"]; ok {
 		t.Fatal("PricesByFeed() included non-target ajpy")
 	}
+	if _, ok := got["aeur"]; ok {
+		t.Fatal("PricesByFeed() published a nil pair price")
+	}
 }
 
 func TestPricesByFeedEmptyFeedsProjectsNothing(t *testing.T) {
 	prices := Prices{
-		"USDT/USD": big.NewFloat(1.23),
-		"NOAH/KRW": big.NewFloat(1300),
+		"USD/NOAH": big.NewFloat(1.23),
+		"KRW/NOAH": big.NewFloat(1300),
 	}
 
 	if got := PricesByFeed(prices, nil); len(got) != 0 {
@@ -86,7 +93,7 @@ func TestPricesByFeedEmptyFeedsProjectsNothing(t *testing.T) {
 
 func TestPricesByFeedReturnsDeepCopy(t *testing.T) {
 	prices := Prices{
-		"USDT/USD": big.NewFloat(1.23),
+		"USD/NOAH": big.NewFloat(1.23),
 	}
 
 	got := PricesByFeed(prices, []string{"ausd"})
@@ -95,5 +102,8 @@ func TestPricesByFeedReturnsDeepCopy(t *testing.T) {
 	got = PricesByFeed(prices, []string{"ausd"})
 	if got["ausd"].Cmp(big.NewFloat(1.23)) != 0 {
 		t.Fatalf("PricesByFeed() = %s, want 1.23", got["ausd"].Text('f', -1))
+	}
+	if prices["USD/NOAH"].Cmp(big.NewFloat(1.23)) != 0 {
+		t.Fatalf("PricesByFeed() mutated its input: %s", prices["USD/NOAH"].Text('f', -1))
 	}
 }

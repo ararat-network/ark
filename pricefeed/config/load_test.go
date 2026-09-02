@@ -25,7 +25,7 @@ func TestLoadDecodesDurationStrings(t *testing.T) {
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.Equal(t, []string{"ausd"}, cfg.FallbackFeeds)
 	require.Equal(t, []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "0.25",
 		ValidUntil: "2030-01-01T00:00:00Z",
 	}}, cfg.Resolver.BootstrapPrices)
@@ -41,7 +41,7 @@ func TestDefaultIsValid(t *testing.T) {
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
 	require.Equal(t, []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "1",
 		ValidUntil: "2027-10-29T00:00:00Z",
 	}}, cfg.Resolver.BootstrapPrices)
@@ -54,47 +54,47 @@ func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 	expectedRoutes := map[string]resolver.Route{
 		chain.USDBaseDenom: {
 			Name:  "direct",
-			Pairs: []sidecartypes.Pair{"NOAH/USD"},
+			Pairs: []sidecartypes.Pair{"USD/NOAH"},
 		},
 		chain.KRWBaseDenom: {
-			Name:  "noah-usd-krw",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/KRW"},
+			Name:  "krw-usd-noah",
+			Pairs: []sidecartypes.Pair{"KRW/USD", "USD/NOAH"},
 		},
 		chain.XDRBaseDenom: {
-			Name:  "noah-usd-xdr",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/XDR"},
+			Name:  "xdr-usd-noah",
+			Pairs: []sidecartypes.Pair{"XDR/USD", "USD/NOAH"},
 		},
 		chain.CNYBaseDenom: {
-			Name:  "noah-usd-cny",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CNY"},
+			Name:  "cny-usd-noah",
+			Pairs: []sidecartypes.Pair{"CNY/USD", "USD/NOAH"},
 		},
 		chain.JPYBaseDenom: {
-			Name:  "noah-usd-jpy",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/JPY"},
+			Name:  "jpy-usd-noah",
+			Pairs: []sidecartypes.Pair{"JPY/USD", "USD/NOAH"},
 		},
 		chain.EURBaseDenom: {
-			Name:  "noah-usd-eur",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/EUR"},
+			Name:  "eur-usd-noah",
+			Pairs: []sidecartypes.Pair{"EUR/USD", "USD/NOAH"},
 		},
 		chain.GBPBaseDenom: {
-			Name:  "noah-usd-gbp",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/GBP"},
+			Name:  "gbp-usd-noah",
+			Pairs: []sidecartypes.Pair{"GBP/USD", "USD/NOAH"},
 		},
 		chain.CADBaseDenom: {
-			Name:  "noah-usd-cad",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/CAD"},
+			Name:  "cad-usd-noah",
+			Pairs: []sidecartypes.Pair{"CAD/USD", "USD/NOAH"},
 		},
 		chain.AUDBaseDenom: {
-			Name:  "noah-usd-aud",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/AUD"},
+			Name:  "aud-usd-noah",
+			Pairs: []sidecartypes.Pair{"AUD/USD", "USD/NOAH"},
 		},
 		chain.SGDBaseDenom: {
-			Name:  "noah-usd-sgd",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/SGD"},
+			Name:  "sgd-usd-noah",
+			Pairs: []sidecartypes.Pair{"SGD/USD", "USD/NOAH"},
 		},
 		chain.MXNBaseDenom: {
-			Name:  "noah-usd-mxn",
-			Pairs: []sidecartypes.Pair{"NOAH/USD", "USD/MXN"},
+			Name:  "mxn-usd-noah",
+			Pairs: []sidecartypes.Pair{"MXN/USD", "USD/NOAH"},
 		},
 	}
 
@@ -105,27 +105,30 @@ func TestDefaultResolverRoutesFiatDenomsThroughUSD(t *testing.T) {
 	}
 }
 
+// TestDefaultFrankfurterMarketsSupplyFiatRouteLegs pins where venue
+// orientation stops: every default fiat route opens with a UNIT/USD leg,
+// Frankfurter quotes the dollar as base, so the leg is served by the
+// USD/UNIT market and the resolver normalises each sample.
 func TestDefaultFrankfurterMarketsSupplyFiatRouteLegs(t *testing.T) {
-	markets := Default().Providers[frankfurter.Name].Markets
-	expected := map[sidecartypes.Pair]providertypes.Ticker{
-		"USD/KRW": "USD/KRW",
-		"USD/XDR": "USD/XDR",
-		"USD/CNY": "USD/CNY",
-		"USD/JPY": "USD/JPY",
-		"USD/EUR": "USD/EUR",
-		"USD/GBP": "USD/GBP",
-		"USD/CAD": "USD/CAD",
-		"USD/AUD": "USD/AUD",
-		"USD/SGD": "USD/SGD",
-		"USD/MXN": "USD/MXN",
-	}
+	cfg := Default()
+	markets := cfg.Providers[frankfurter.Name].Markets
 
-	require.Len(t, markets, len(expected))
-	for pair, wantTicker := range expected {
-		ticker, ok := markets.PairToTicker(pair)
-		require.True(t, ok, "missing default Frankfurter market for %s", pair)
-		require.Equal(t, wantTicker, ticker)
+	legs := 0
+	for denom, routes := range cfg.Resolver.Routes {
+		if denom == chain.USDBaseDenom {
+			continue
+		}
+		require.Len(t, routes, 1, "default route for %s", denom)
+		leg := routes[0].Pairs[0]
+		require.Equal(t, "USD", leg.Quote(), "default route for %s must open on a UNIT/USD leg", denom)
+
+		market := leg.Inverse()
+		ticker, ok := markets.PairToTicker(market)
+		require.True(t, ok, "missing default Frankfurter market for %s", market)
+		require.Equal(t, providertypes.Ticker(market.String()), ticker)
+		legs++
 	}
+	require.Len(t, markets, legs)
 }
 
 func TestLoadRejectsEmptyPath(t *testing.T) {
@@ -170,7 +173,7 @@ const validConfigJSON = `{
   },
   "resolver": {
     "bootstrapPrices": [{
-      "pair": "NOAH/USD",
+      "pair": "USD/NOAH",
       "price": "0.25",
       "validUntil": "2030-01-01T00:00:00Z"
     }]

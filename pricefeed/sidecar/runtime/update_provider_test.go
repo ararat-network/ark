@@ -86,7 +86,7 @@ func TestUpdateConfigDoesNotMutateRuntimeStateWhenProviderPlanFails(t *testing.T
 	newCfg.Providers = map[string]providers.Config{
 		"unknown": newProviderCfg,
 	}
-	newCfg.Resolver = testResolverConfig("akrw", "noah-krw", "NOAH/USD", "USD/KRW")
+	newCfg.Resolver = testResolverConfig("akrw", "krw-noah", "KRW/USD", "USD/NOAH")
 	newCfg.Client.Interval = 10 * time.Millisecond
 	newCfg.FallbackFeeds = []string{"ausd"}
 
@@ -161,7 +161,7 @@ func TestUpdateConfigAppliesBootstrapPriceWithoutRebuildingProvider(t *testing.T
 
 	newCfg := cfg
 	newCfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "0.25",
 		ValidUntil: "2030-01-01T00:00:00Z",
 	}}

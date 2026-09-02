@@ -31,7 +31,7 @@ func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 		DoAndReturn(func(ctx context.Context, _ []providertypes.Ticker, responseCh chan<- providertypes.Response) error {
 			responseCh <- providertypes.NewResponse(
 				map[providertypes.Ticker]providertypes.Result{
-					"NOAHUSD": providertypes.NewResult(big.NewFloat(1.25), now),
+					"NOAHUSD": providertypes.NewResult(big.NewFloat(0.25), now),
 					"NOAHKRW": providertypes.NewResult(big.NewFloat(2.50), now.Add(-2*time.Minute)),
 				},
 				nil,
@@ -51,7 +51,10 @@ func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
 		prices := snapshot.Prices
-		if prices["ausd"] == nil || prices["ausd"].Cmp(big.NewFloat(1.25)) != 0 {
+		// The venue quotes a quarter dollar per NOAH; the USD/NOAH leg
+		// normalises it to four NOAH per dollar, which is what the feed
+		// publishes.
+		if prices["ausd"] == nil || prices["ausd"].Cmp(big.NewFloat(4)) != 0 {
 			return false
 		}
 		if _, ok := prices["akrw"]; ok {
@@ -74,7 +77,7 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 		mockProvider mockProvider
 		price        *big.Float
 	}{
-		{mockProvider: longLived, price: big.NewFloat(1.25)},
+		{mockProvider: longLived, price: big.NewFloat(0.25)},
 		{mockProvider: shortLived, price: big.NewFloat(9.25)},
 	} {
 		testProvider.mockProvider.fetcher.EXPECT().
@@ -114,7 +117,8 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
 		price := snapshot.Prices["ausd"]
-		return !snapshot.Timestamp.IsZero() && price != nil && price.Cmp(big.NewFloat(1.25)) == 0
+		return !snapshot.Timestamp.IsZero() && price != nil &&
+			price.Cmp(big.NewFloat(4)) == 0
 	}, time.Second, time.Millisecond)
 
 	cancel()
@@ -131,7 +135,7 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 	cfg.UpdateInterval = 5 * time.Millisecond
 	cfg.FallbackFeeds = []string{"ausd"}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "0.25",
 		ValidUntil: time.Now().UTC().Add(time.Hour).Format(time.RFC3339),
 	}}
@@ -149,7 +153,8 @@ func TestRunUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T) {
 	require.Eventually(t, func() bool {
 		snapshot := oracle.GetPriceSnapshot()
 		price := snapshot.Prices["ausd"]
-		return !snapshot.Timestamp.IsZero() && price != nil && price.Cmp(big.NewFloat(0.25)) == 0
+		return !snapshot.Timestamp.IsZero() && price != nil &&
+			price.Cmp(big.NewFloat(0.25)) == 0
 	}, time.Second, time.Millisecond)
 
 	cancel()
@@ -252,7 +257,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 	requireSignal(t, feedsStarted, "price tick did not start")
 
 	newCfg := cfg
-	newCfg.Resolver = testResolverConfig("ausd", "direct", "NOAH/USD")
+	newCfg.Resolver = testResolverConfig("ausd", "direct", "USD/NOAH")
 
 	updateErrCh := make(chan error, 1)
 	go func() {

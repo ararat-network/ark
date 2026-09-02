@@ -26,8 +26,9 @@ const (
 	// DefaultClientInterval is the default feed polling cadence.
 	DefaultClientInterval = 5 * time.Second
 
-	// noahUSD is the hub pair every default route quotes through.
-	noahUSD = "NOAH/USD"
+	// usdNOAH is the hub leg every default route ends on: NOAH per one
+	// dollar, the orientation the chain stores.
+	usdNOAH = "USD/NOAH"
 )
 
 // DefaultProviders defines the provider templates used by Default.
@@ -62,44 +63,44 @@ var DefaultProviders = map[string]providers.Config{
 var DefaultResolver = resolver.Config{
 	BootstrapPrices: []resolver.BootstrapPrice{
 		{
-			Pair:       noahUSD,
-			Price:      chain.BootstrapNoahUSDPrice,
+			Pair:       usdNOAH,
+			Price:      chain.BootstrapNoahPerUSD,
 			ValidUntil: "2027-10-29T00:00:00Z",
 		},
 	},
 	Routes: map[string][]resolver.Route{
 		chain.USDBaseDenom: {
-			{Name: "direct", Pairs: []sidecartypes.Pair{noahUSD}},
+			{Name: "direct", Pairs: []sidecartypes.Pair{usdNOAH}},
 		},
 		chain.KRWBaseDenom: {
-			{Name: "noah-usd-krw", Pairs: []sidecartypes.Pair{noahUSD, "USD/KRW"}},
+			{Name: "krw-usd-noah", Pairs: []sidecartypes.Pair{"KRW/USD", usdNOAH}},
 		},
 		chain.XDRBaseDenom: {
-			{Name: "noah-usd-xdr", Pairs: []sidecartypes.Pair{noahUSD, "USD/XDR"}},
+			{Name: "xdr-usd-noah", Pairs: []sidecartypes.Pair{"XDR/USD", usdNOAH}},
 		},
 		chain.CNYBaseDenom: {
-			{Name: "noah-usd-cny", Pairs: []sidecartypes.Pair{noahUSD, "USD/CNY"}},
+			{Name: "cny-usd-noah", Pairs: []sidecartypes.Pair{"CNY/USD", usdNOAH}},
 		},
 		chain.JPYBaseDenom: {
-			{Name: "noah-usd-jpy", Pairs: []sidecartypes.Pair{noahUSD, "USD/JPY"}},
+			{Name: "jpy-usd-noah", Pairs: []sidecartypes.Pair{"JPY/USD", usdNOAH}},
 		},
 		chain.EURBaseDenom: {
-			{Name: "noah-usd-eur", Pairs: []sidecartypes.Pair{noahUSD, "USD/EUR"}},
+			{Name: "eur-usd-noah", Pairs: []sidecartypes.Pair{"EUR/USD", usdNOAH}},
 		},
 		chain.GBPBaseDenom: {
-			{Name: "noah-usd-gbp", Pairs: []sidecartypes.Pair{noahUSD, "USD/GBP"}},
+			{Name: "gbp-usd-noah", Pairs: []sidecartypes.Pair{"GBP/USD", usdNOAH}},
 		},
 		chain.CADBaseDenom: {
-			{Name: "noah-usd-cad", Pairs: []sidecartypes.Pair{noahUSD, "USD/CAD"}},
+			{Name: "cad-usd-noah", Pairs: []sidecartypes.Pair{"CAD/USD", usdNOAH}},
 		},
 		chain.AUDBaseDenom: {
-			{Name: "noah-usd-aud", Pairs: []sidecartypes.Pair{noahUSD, "USD/AUD"}},
+			{Name: "aud-usd-noah", Pairs: []sidecartypes.Pair{"AUD/USD", usdNOAH}},
 		},
 		chain.SGDBaseDenom: {
-			{Name: "noah-usd-sgd", Pairs: []sidecartypes.Pair{noahUSD, "USD/SGD"}},
+			{Name: "sgd-usd-noah", Pairs: []sidecartypes.Pair{"SGD/USD", usdNOAH}},
 		},
 		chain.MXNBaseDenom: {
-			{Name: "noah-usd-mxn", Pairs: []sidecartypes.Pair{noahUSD, "USD/MXN"}},
+			{Name: "mxn-usd-noah", Pairs: []sidecartypes.Pair{"MXN/USD", usdNOAH}},
 		},
 	},
 }

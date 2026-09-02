@@ -152,7 +152,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 						close(started)
 						responseCh <- providertypes.NewResponse(
 							map[providertypes.Ticker]providertypes.Result{
-								"NOAHUSD": providertypes.NewResult(big.NewFloat(1.25), time.Now().UTC()),
+								"NOAHUSD": providertypes.NewResult(big.NewFloat(0.25), time.Now().UTC()),
 							},
 							nil,
 						)
@@ -188,7 +188,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 				}
 			},
 			wantPrices: map[string]*big.Float{
-				"ausd": big.NewFloat(1.25),
+				"ausd": big.NewFloat(4),
 			},
 			wantAbsent: []string{"akrw", "aeur"},
 		},

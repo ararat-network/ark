@@ -13,7 +13,7 @@ import (
 // feed pair prices.
 type Config struct {
 	// Routes maps feed denoms to alternate resolution paths. Missing or
-	// empty entries use the canonical direct NOAH/QUOTE route.
+	// empty entries use the direct UNIT/NOAH route.
 	Routes map[string][]Route `json:"routes"`
 
 	// BootstrapPrices supplies temporary route-leg prices when no provider has
@@ -22,7 +22,11 @@ type Config struct {
 	BootstrapPrices []BootstrapPrice `json:"bootstrapPrices"`
 }
 
-// Route is one named path from NOAH to a feed quote denom.
+// Route is one named path from a feed's unit to NOAH. Its legs multiply to
+// NOAH per one unit, the orientation the chain stores, so the resolved price
+// is the published price. Venues quote whichever way they quote: a leg is
+// satisfied by a provider observation in either orientation, normalised per
+// sample by the resolver.
 type Route struct {
 	// Name identifies this path in per-route metrics.
 	Name string `json:"name"`
@@ -32,9 +36,9 @@ type Route struct {
 	Pairs []types.Pair `json:"pairs"`
 }
 
-// BootstrapPrice is an expiring, last-resort price for one canonical route
-// pair. Price is a decimal string so operator configuration does not lose
-// precision through float decoding.
+// BootstrapPrice is an expiring, last-resort price for one route leg, stated
+// in the leg's orientation. Price is a decimal string so operator
+// configuration does not lose precision through float decoding.
 type BootstrapPrice struct {
 	Pair       types.Pair `json:"pair"`
 	Price      string     `json:"price"`
@@ -66,7 +70,7 @@ func (c Config) Clone() Config {
 
 // MarketPairs returns provider market pairs required to resolve the active feed set,
 // including inverse pairs that can satisfy the same steps. Feeds without
-// configured routes use the default direct NOAH/QUOTE path.
+// configured routes use the default direct UNIT/NOAH path.
 func (c Config) MarketPairs(feeds []string) map[types.Pair]struct{} {
 	pairs := make(map[types.Pair]struct{})
 	for _, denom := range feeds {
@@ -86,7 +90,7 @@ func (c Config) MarketPairs(feeds []string) map[types.Pair]struct{} {
 }
 
 // RoutesForDenom returns the output pair and effective routes for denom. Missing
-// or empty configured routes fall back to the direct NOAH/QUOTE path.
+// or empty configured routes fall back to the direct UNIT/NOAH path.
 func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
 	output, err := types.FromDenom(denom)
 	if err != nil {
@@ -107,7 +111,7 @@ func (c Config) RoutesForDenom(denom string) (types.Pair, []Route, bool) {
 // Validate checks bootstrap prices and resolver routes at config-update time. A
 // nil or empty Routes map uses default direct routes for active feeds. A feed
 // present in Routes with an empty route list also uses the default direct route.
-// Non-empty routes must define valid paths to their canonical NOAH/QUOTE outputs.
+// Non-empty routes must define valid paths to their UNIT/NOAH outputs.
 func (c Config) Validate() error {
 	bootstrapPairs := make(map[types.Pair]struct{}, len(c.BootstrapPrices))
 	for _, bootstrap := range c.BootstrapPrices {
@@ -175,7 +179,7 @@ func (c Config) Validate() error {
 }
 
 // validateRouteOutput ensures a route's ordered path resolves to the requested
-// denom's canonical NOAH/QUOTE pair.
+// denom's UNIT/NOAH output pair.
 func validateRouteOutput(denom string, route Route) error {
 	expected, err := types.FromDenom(denom)
 	if err != nil {

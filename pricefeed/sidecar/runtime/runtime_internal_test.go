@@ -113,10 +113,10 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 
 	cfg := testRuntimeLoggerConfig()
 	cfg.Resolver.Routes = map[string][]resolver.Route{
-		"ausd": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/USD"}}},
+		"ausd": {{Name: "direct", Pairs: []oracletypes.Pair{"USD/NOAH"}}},
 	}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "0.25",
 		ValidUntil: "2030-01-01T00:00:00Z",
 	}}
@@ -135,11 +135,11 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	cfg.FallbackFeeds[0] = "akrw"
 	constructionProviderCfg := cfg.Providers["logger-test"]
 	constructionProviderCfg.Markets[0].Symbol = "MUTATED"
-	cfg.Resolver.Routes["ausd"][0].Pairs[0] = "NOAH/KRW"
+	cfg.Resolver.Routes["ausd"][0].Pairs[0] = "KRW/NOAH"
 	cfg.Resolver.BootstrapPrices[0].Price = "99"
 	require.Equal(t, []string{"ausd"}, oracle.feeds)
 	require.Equal(t, providertypes.Ticker("NOAHUSD"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("NOAH/USD"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
+	require.Equal(t, oracletypes.Pair("USD/NOAH"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
 	require.Equal(t, "0.25", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 
 	nextCfg := testRuntimeLoggerConfig()
@@ -148,10 +148,10 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	nextCfg.Providers["logger-test"] = nextProviderCfg
 	nextCfg.FallbackFeeds = []string{"akrw"}
 	nextCfg.Resolver.Routes = map[string][]resolver.Route{
-		"akrw": {{Name: "direct", Pairs: []oracletypes.Pair{"NOAH/KRW"}}},
+		"akrw": {{Name: "direct", Pairs: []oracletypes.Pair{"KRW/NOAH"}}},
 	}
 	nextCfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
-		Pair:       "NOAH/KRW",
+		Pair:       "KRW/NOAH",
 		Price:      "250",
 		ValidUntil: "2030-01-01T00:00:00Z",
 	}}
@@ -160,12 +160,12 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	nextCfg.FallbackFeeds[0] = "ausd"
 	nextProviderCfg = nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets[0].Symbol = "MUTATED"
-	nextCfg.Resolver.Routes["akrw"][0].Pairs[0] = "NOAH/USD"
+	nextCfg.Resolver.Routes["akrw"][0].Pairs[0] = "USD/NOAH"
 	nextCfg.Resolver.BootstrapPrices[0].Price = "99"
 	require.Equal(t, []string{"akrw"}, oracle.feeds)
 	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, provider.GetTickers())
 	require.Equal(t, providertypes.Ticker("NOAHKRW"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("NOAH/KRW"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
+	require.Equal(t, oracletypes.Pair("KRW/NOAH"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
 	require.Equal(t, "250", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 }
 

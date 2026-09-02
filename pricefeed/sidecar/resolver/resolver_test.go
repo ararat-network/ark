@@ -30,11 +30,11 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 
 	resolved := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD": mustBigFloat(t, "1.20"),
-			"NOAH/KRW": mustBigFloat(t, "0.10"),
+			"USD/NOAH": mustBigFloat(t, "1.20"),
+			"KRW/NOAH": mustBigFloat(t, "0.10"),
 		},
 		"coinbase": {
-			"NOAH/USD": mustBigFloat(t, "1.40"),
+			"USD/NOAH": mustBigFloat(t, "1.40"),
 		},
 	}, []string{"ausd", "akrw"}, time.Now().UTC())
 
@@ -44,11 +44,11 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	providerPrices := metricFamily(t, families, "ark_pricefeed_provider_price")
 	require.Equal(t, float64(1.20), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "binance",
-		"pair":     "noah/usd",
+		"pair":     "usd/noah",
 	}))
 	require.Equal(t, float64(1.40), gaugeValue(t, providerPrices, map[string]string{
 		"provider": "coinbase",
-		"pair":     "noah/usd",
+		"pair":     "usd/noah",
 	}))
 
 	families, err = registry.Gather()
@@ -56,42 +56,42 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 
 	pairSampleCounts := metricFamily(t, families, "ark_pricefeed_pair_sample_count")
 	require.Equal(t, float64(2), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "noah/usd",
+		"pair": "usd/noah",
 	}))
 	require.Equal(t, float64(1), gaugeValue(t, pairSampleCounts, map[string]string{
-		"pair": "noah/krw",
+		"pair": "krw/noah",
 	}))
 
 	aggregatePrices := metricFamily(t, families, "ark_pricefeed_aggregate_price")
 	require.Equal(t, float64(1.30), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "noah/usd",
+		"pair": "usd/noah",
 	}))
 	require.Equal(t, float64(0.10), gaugeValue(t, aggregatePrices, map[string]string{
-		"pair": "noah/krw",
+		"pair": "krw/noah",
 	}))
 
-	require.Contains(t, resolved, types.Pair("NOAH/USD"))
+	require.Contains(t, resolved, types.Pair("USD/NOAH"))
 
 	routedCfg := resolver.Config{
 		Routes: map[string][]resolver.Route{
 			"akrw": {
 				{
-					Name:  "noah-usd-krw",
-					Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
+					Name:  "krw-usd-noah",
+					Pairs: []types.Pair{"KRW/USD", "USD/NOAH"},
 				},
 				{
-					Name:  "noah-usdt-krw",
-					Pairs: []types.Pair{"NOAH/USDT", "USDT/KRW"},
+					Name:  "krw-usdt-noah",
+					Pairs: []types.Pair{"KRW/USDT", "USDT/NOAH"},
 				},
 			},
 		},
 	}
 	resolver.ResolvePrices(context.Background(), routedCfg, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD":  mustBigFloat(t, "2"),
-			"USD/KRW":   mustBigFloat(t, "1000"),
-			"NOAH/USDT": mustBigFloat(t, "2"),
-			"USDT/KRW":  mustBigFloat(t, "1100"),
+			"USD/NOAH":  mustBigFloat(t, "2"),
+			"KRW/USD":   mustBigFloat(t, "1000"),
+			"USDT/NOAH": mustBigFloat(t, "2"),
+			"KRW/USDT":  mustBigFloat(t, "1100"),
 		},
 	}, []string{"akrw"}, time.Now().UTC())
 
@@ -100,29 +100,29 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 
 	resolvedSourceCounts := metricFamily(t, families, "ark_pricefeed_resolved_source_count")
 	require.Equal(t, float64(2), gaugeValue(t, resolvedSourceCounts, map[string]string{
-		"pair": "noah/krw",
+		"pair": "krw/noah",
 	}))
 
 	routePrices := metricFamily(t, families, "ark_pricefeed_route_price")
-	noahUSDRoutePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "noah/krw",
-		"route": "noah-usd-krw",
+	usdRoutePrice := matchingMetric(t, routePrices, map[string]string{
+		"pair":  "krw/noah",
+		"route": "krw-usd-noah",
 	})
-	require.Equal(t, float64(2000), noahUSDRoutePrice.GetGauge().GetValue())
-	requireNoLabel(t, noahUSDRoutePrice, "denom")
-	noahUSDTRoutePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "noah/krw",
-		"route": "noah-usdt-krw",
+	require.Equal(t, float64(2000), usdRoutePrice.GetGauge().GetValue())
+	requireNoLabel(t, usdRoutePrice, "denom")
+	usdtRoutePrice := matchingMetric(t, routePrices, map[string]string{
+		"pair":  "krw/noah",
+		"route": "krw-usdt-noah",
 	})
-	require.Equal(t, float64(2200), noahUSDTRoutePrice.GetGauge().GetValue())
-	requireNoLabel(t, noahUSDTRoutePrice, "denom")
+	require.Equal(t, float64(2200), usdtRoutePrice.GetGauge().GetValue())
+	requireNoLabel(t, usdtRoutePrice, "denom")
 
 	require.Nil(t, findMetricFamily(families, "ark_pricefeed_route_premium"))
 
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
 	resolver.ResolvePrices(context.Background(), resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
-			Pair:       "NOAH/USD",
+			Pair:       "USD/NOAH",
 			Price:      "0.25",
 			ValidUntil: now.Add(time.Hour).Format(time.RFC3339),
 		}},
@@ -132,7 +132,7 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	require.NoError(t, err)
 	bootstrapPriceUses := metricFamily(t, families, "ark_pricefeed_bootstrap_price_uses_total")
 	require.Equal(t, float64(1), matchingMetric(t, bootstrapPriceUses, map[string]string{
-		"pair": "noah/usd",
+		"pair": "usd/noah",
 	}).GetCounter().GetValue())
 }
 
@@ -141,46 +141,46 @@ func TestResolvePricesAveragesConfiguredRoutePricesForFeed(t *testing.T) {
 		Routes: map[string][]resolver.Route{
 			"akrw": {
 				{
-					Name:  "noah-usd-krw",
-					Pairs: []types.Pair{"NOAH/USD", "USD/KRW"},
+					Name:  "krw-usd-noah",
+					Pairs: []types.Pair{"KRW/USD", "USD/NOAH"},
 				},
 				{
-					Name:  "noah-usdt-krw",
-					Pairs: []types.Pair{"NOAH/USDT", "USDT/KRW"},
+					Name:  "krw-usdt-noah",
+					Pairs: []types.Pair{"KRW/USDT", "USDT/NOAH"},
 				},
 				{
-					Name:  "noah-eur-krw",
-					Pairs: []types.Pair{"NOAH/EUR", "EUR/KRW"},
+					Name:  "krw-eur-noah",
+					Pairs: []types.Pair{"KRW/EUR", "EUR/NOAH"},
 				},
 			},
 		},
 	}
 	prices := resolver.ResolvePrices(context.Background(), cfg, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD":   mustBigFloat(t, "2"),
-			"USD/KRW":    mustBigFloat(t, "1000"),
-			"NOAH/USDT":  mustBigFloat(t, "2"),
-			"USDT/KRW":   mustBigFloat(t, "1100"),
-			"NOAH/EUR":   mustBigFloat(t, "2"),
-			"EUR/KRW":    mustBigFloat(t, "1800"),
-			"UNUSED/USD": mustBigFloat(t, "999"),
+			"USD/NOAH":   mustBigFloat(t, "2"),
+			"KRW/USD":    mustBigFloat(t, "1000"),
+			"USDT/NOAH":  mustBigFloat(t, "2"),
+			"KRW/USDT":   mustBigFloat(t, "1100"),
+			"EUR/NOAH":   mustBigFloat(t, "2"),
+			"KRW/EUR":    mustBigFloat(t, "1800"),
+			"USD/UNUSED": mustBigFloat(t, "999"),
 		},
 	}, []string{"akrw"}, time.Now().UTC())
 	require.Len(t, prices, 1)
-	requireBigFloatEqual(t, "2600", prices[types.Pair("NOAH/KRW")])
+	requireBigFloatEqual(t, "2600", prices[types.Pair("KRW/NOAH")])
 }
 
 func TestResolvePricesFallsBackToRequestedDirectPairs(t *testing.T) {
-	cfg := testResolverConfig("akrw", "noah-usd-krw", "NOAH/USD", "USD/KRW")
+	cfg := testResolverConfig("akrw", "krw-usd-noah", "KRW/USD", "USD/NOAH")
 	prices := resolver.ResolvePrices(context.Background(), cfg, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD": mustBigFloat(t, "2"),
-			"USD/KRW":  mustBigFloat(t, "1000"),
+			"USD/NOAH": mustBigFloat(t, "2"),
+			"KRW/USD":  mustBigFloat(t, "1000"),
 		},
 	}, []string{"ausd", "akrw"}, time.Now().UTC())
 	require.Len(t, prices, 2)
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
-	requireBigFloatEqual(t, "2000", prices[types.Pair("NOAH/KRW")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
+	requireBigFloatEqual(t, "2000", prices[types.Pair("KRW/NOAH")])
 }
 
 func TestResolvePricesUsesDefaultDirectPathForEmptyRoutes(t *testing.T) {
@@ -191,82 +191,82 @@ func TestResolvePricesUsesDefaultDirectPathForEmptyRoutes(t *testing.T) {
 	}
 	prices := resolver.ResolvePrices(context.Background(), cfg, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD": mustBigFloat(t, "2"),
+			"USD/NOAH": mustBigFloat(t, "2"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 	require.Len(t, prices, 1)
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesUsesInverseStepPrice(t *testing.T) {
-	cfg := testResolverConfig("akrw", "noah-usd-krw", "NOAH/USD", "USD/KRW")
+	cfg := testResolverConfig("akrw", "krw-usd-noah", "KRW/USD", "USD/NOAH")
 	prices := resolver.ResolvePrices(context.Background(), cfg, map[string]types.Prices{
 		"binance": {
-			"NOAH/USD": mustBigFloat(t, "3"),
-			"KRW/USD":  mustBigFloat(t, "0.5"),
+			"USD/NOAH": mustBigFloat(t, "3"),
+			"USD/KRW":  mustBigFloat(t, "0.5"),
 		},
 	}, []string{"akrw"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "6", prices[types.Pair("NOAH/KRW")])
+	requireBigFloatEqual(t, "6", prices[types.Pair("KRW/NOAH")])
 }
 
 func TestResolvePricesAggregatesDirectAndInverseProviders(t *testing.T) {
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"direct": {
-			"NOAH/USD": mustBigFloat(t, "1"),
+			"USD/NOAH": mustBigFloat(t, "1"),
 		},
 		"inverse-one": {
-			"USD/NOAH": mustBigFloat(t, "0.5"),
+			"NOAH/USD": mustBigFloat(t, "0.5"),
 		},
 		"inverse-two": {
-			"USD/NOAH": mustBigFloat(t, "0.25"),
+			"NOAH/USD": mustBigFloat(t, "0.25"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesCountsProviderOnceWhenBothOrientationsExist(t *testing.T) {
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"both": {
-			"NOAH/USD": mustBigFloat(t, "1"),
-			"USD/NOAH": mustBigFloat(t, "0.25"),
+			"USD/NOAH": mustBigFloat(t, "1"),
+			"NOAH/USD": mustBigFloat(t, "0.25"),
 		},
 		"direct": {
-			"NOAH/USD": mustBigFloat(t, "3"),
+			"USD/NOAH": mustBigFloat(t, "3"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesDoesNotRetainProviderSnapshots(t *testing.T) {
 	resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"first": {
-			"NOAH/USD": mustBigFloat(t, "1"),
+			"USD/NOAH": mustBigFloat(t, "1"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"second": {
-			"NOAH/USD": mustBigFloat(t, "5"),
+			"USD/NOAH": mustBigFloat(t, "5"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "5", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "5", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesIgnoresInfinitePrices(t *testing.T) {
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"invalid": {
-			"NOAH/USD": new(big.Float).SetInf(false),
+			"USD/NOAH": new(big.Float).SetInf(false),
 		},
 		"valid": {
-			"NOAH/USD": mustBigFloat(t, "2"),
+			"USD/NOAH": mustBigFloat(t, "2"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesIgnoresPricesOutsideLegacyDecRange(t *testing.T) {
@@ -274,25 +274,25 @@ func TestResolvePricesIgnoresPricesOutsideLegacyDecRange(t *testing.T) {
 	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"invalid": {
-			"NOAH/USD": tooLarge,
+			"USD/NOAH": tooLarge,
 		},
 		"valid": {
-			"NOAH/USD": mustBigFloat(t, "2"),
+			"USD/NOAH": mustBigFloat(t, "2"),
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesPreservesInputPrecision(t *testing.T) {
 	price := mustBigFloat(t, "1234.123456789123456789")
 	prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"provider": {
-			"NOAH/USD": price,
+			"USD/NOAH": price,
 		},
 	}, []string{"ausd"}, time.Now().UTC())
 
-	resolved := prices[types.Pair("NOAH/USD")]
+	resolved := prices[types.Pair("USD/NOAH")]
 	require.NotNil(t, resolved)
 	require.Equal(t, price.Prec(), resolved.Prec())
 	require.Zero(t, price.Cmp(resolved))
@@ -302,7 +302,7 @@ func TestResolvePricesUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
 	cfg := resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
-			Pair:       "NOAH/USD",
+			Pair:       "USD/NOAH",
 			Price:      "0.25",
 			ValidUntil: now.Add(time.Hour).Format(time.RFC3339),
 		}},
@@ -310,14 +310,14 @@ func TestResolvePricesUsesBootstrapPriceWhenProviderSampleIsMissing(t *testing.T
 
 	prices := resolver.ResolvePrices(context.Background(), cfg, nil, []string{"ausd"}, now)
 
-	requireBigFloatEqual(t, "0.25", prices[types.Pair("NOAH/USD")])
+	requireBigFloatEqual(t, "0.25", prices[types.Pair("USD/NOAH")])
 }
 
 func TestResolvePricesProviderSampleOverridesBootstrapPrice(t *testing.T) {
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
 	cfg := resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
-			Pair:       "NOAH/USD",
+			Pair:       "USD/NOAH",
 			Price:      "10",
 			ValidUntil: now.Add(time.Hour).Format(time.RFC3339),
 		}},
@@ -329,13 +329,13 @@ func TestResolvePricesProviderSampleOverridesBootstrapPrice(t *testing.T) {
 		{
 			name: "direct provider sample",
 			prices: types.Prices{
-				"NOAH/USD": mustBigFloat(t, "2"),
+				"USD/NOAH": mustBigFloat(t, "2"),
 			},
 		},
 		{
 			name: "inverse provider sample",
 			prices: types.Prices{
-				"USD/NOAH": mustBigFloat(t, "0.5"),
+				"NOAH/USD": mustBigFloat(t, "0.5"),
 			},
 		},
 	}
@@ -350,7 +350,7 @@ func TestResolvePricesProviderSampleOverridesBootstrapPrice(t *testing.T) {
 				now,
 			)
 
-			requireBigFloatEqual(t, "2", prices[types.Pair("NOAH/USD")])
+			requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
 		})
 	}
 }
@@ -359,7 +359,7 @@ func TestResolvePricesIgnoresExpiredBootstrapPrice(t *testing.T) {
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
 	cfg := resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
-			Pair:       "NOAH/USD",
+			Pair:       "USD/NOAH",
 			Price:      "0.25",
 			ValidUntil: now.Format(time.RFC3339),
 		}},
@@ -372,9 +372,9 @@ func TestResolvePricesIgnoresExpiredBootstrapPrice(t *testing.T) {
 
 func TestResolvePricesUsesBootstrapPriceAsRouteLeg(t *testing.T) {
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
-	cfg := testResolverConfig("akrw", "noah-usd-krw", "NOAH/USD", "USD/KRW")
+	cfg := testResolverConfig("akrw", "krw-usd-noah", "KRW/USD", "USD/NOAH")
 	cfg.BootstrapPrices = []resolver.BootstrapPrice{{
-		Pair:       "NOAH/USD",
+		Pair:       "USD/NOAH",
 		Price:      "2",
 		ValidUntil: now.Add(time.Hour).Format(time.RFC3339),
 	}}
@@ -384,14 +384,14 @@ func TestResolvePricesUsesBootstrapPriceAsRouteLeg(t *testing.T) {
 		cfg,
 		map[string]types.Prices{
 			"frankfurter": {
-				"USD/KRW": mustBigFloat(t, "1000"),
+				"KRW/USD": mustBigFloat(t, "1000"),
 			},
 		},
 		[]string{"akrw"},
 		now,
 	)
 
-	requireBigFloatEqual(t, "2000", prices[types.Pair("NOAH/KRW")])
+	requireBigFloatEqual(t, "2000", prices[types.Pair("KRW/NOAH")])
 }
 
 func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
@@ -399,7 +399,7 @@ func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
 		Routes: map[string][]resolver.Route{
 			"akrw": {
 				{
-					Pairs: []types.Pair{"NOAH/USD"},
+					Pairs: []types.Pair{"USD/NOAH"},
 				},
 			},
 		},

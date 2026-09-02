@@ -57,8 +57,8 @@ func TestPrices(t *testing.T) {
 	version.Version = "v1.2.3"
 
 	oracle := newTestOracle(t, oracletypes.Prices{
-		"NOAH/USD": mustBigFloat(t, "123.456"),
-		"NOAH/KRW": mustBigFloat(t, "42.25"),
+		"NOAH/USD": mustBigFloat(t, "8"),
+		"NOAH/KRW": mustBigFloat(t, "0.5"),
 	})
 	startTestRuntime(t, oracle)
 
@@ -66,8 +66,10 @@ func TestPrices(t *testing.T) {
 
 	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
-	require.Equal(t, math.LegacyMustNewDecFromStr("123.456"), decodePrice(t, response.Prices["ausd"]))
-	require.Equal(t, math.LegacyMustNewDecFromStr("42.25"), decodePrice(t, response.Prices["akrw"]))
+	// The venue quotes the unit per one NOAH; each UNIT/NOAH leg normalises
+	// its sample, and the feed publishes NOAH per unit.
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.125"), decodePrice(t, response.Prices["ausd"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("2"), decodePrice(t, response.Prices["akrw"]))
 }
 
 func TestPricesOmitsMissingFeeds(t *testing.T) {
@@ -90,8 +92,8 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 		t,
 		cfg,
 		newServerTestFetcher(oracletypes.Prices{
-			"NOAH/USD": mustBigFloat(t, "1.25"),
-			"NOAH/KRW": mustBigFloat(t, "1300"),
+			"NOAH/USD": mustBigFloat(t, "0.25"),
+			"NOAH/KRW": mustBigFloat(t, "0.0625"),
 		}),
 		client,
 		ProcessConfig{ServerAddress: "127.0.0.1:0"},
@@ -105,8 +107,8 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, initial.Timestamp, response.Timestamp)
-	require.Equal(t, math.LegacyMustNewDecFromStr("1.25"), decodePrice(t, response.Prices["ausd"]))
-	require.Equal(t, math.LegacyMustNewDecFromStr("1300"), decodePrice(t, response.Prices["akrw"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("4"), decodePrice(t, response.Prices["ausd"]))
+	require.Equal(t, math.LegacyMustNewDecFromStr("16"), decodePrice(t, response.Prices["akrw"]))
 	client.release()
 }
 

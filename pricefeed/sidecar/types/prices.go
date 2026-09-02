@@ -9,7 +9,9 @@ import (
 // Prices is the oracle-internal price map keyed by canonical BASE/QUOTE pairs.
 type Prices map[Pair]*big.Float
 
-// FeedPrices is the public/API-facing price map keyed by feed denom.
+// FeedPrices is the public/API-facing price map keyed by feed denom. Each
+// value is NOAH per one unit of the feed's denomination, the orientation the
+// chain stores.
 type FeedPrices map[string]*big.Float
 
 // PricePrecisionBits is the precision used for provider prices and resolver
@@ -43,9 +45,12 @@ type PriceSnapshot struct {
 	Timestamp time.Time
 }
 
-// PricesByFeed projects internal pair prices to public feed prices. Only pairs
-// whose denom is in feeds are projected, so an empty feed set — the chain's
-// authoritative signal that nothing is priced — projects nothing.
+// PricesByFeed re-keys resolved UNIT/NOAH pair prices by feed denom. A
+// resolved price is already NOAH per one unit, so the projection copies it.
+// Only pairs whose denom is in feeds are projected, so an empty feed set —
+// the chain's authoritative signal that nothing is priced — projects nothing.
+// The resolver never emits a nil price; the skip is the backstop, since there
+// is nothing to copy.
 func PricesByFeed(prices Prices, feeds []string) FeedPrices {
 	active := make(map[string]struct{}, len(feeds))
 	for _, denom := range feeds {

@@ -8,7 +8,11 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// Pair identifies an oracle price pair in canonical BASE/QUOTE form.
+// Pair identifies an oracle price pair in canonical BASE/QUOTE form: its price
+// is QUOTE units per one BASE, the way venues quote. A feed's output pair is
+// UNIT/NOAH, so a resolved price is NOAH per one unit of the feed's
+// denomination — the orientation the chain stores — with nothing to invert
+// after resolution.
 type Pair string
 
 // NewPair returns a canonical pair from base and quote components.
@@ -24,14 +28,14 @@ func NewPair(base, quote string) (Pair, error) {
 	return pair, nil
 }
 
-// FromDenom converts a canonical a-prefixed feed denom into its corresponding
-// NOAH/QUOTE pair.
+// FromDenom converts a canonical a-prefixed feed denom into its output pair,
+// UNIT/NOAH.
 func FromDenom(denom string) (Pair, error) {
 	if err := chain.ValidatePricedDenom(denom); err != nil {
 		return "", err
 	}
 
-	return NewPair("NOAH", strings.ToUpper(denom[1:]))
+	return NewPair(strings.ToUpper(denom[1:]), "NOAH")
 }
 
 // ParsePair parses raw into a canonical BASE/QUOTE pair.
@@ -98,9 +102,9 @@ func (p Pair) Quote() string {
 	return quote
 }
 
-// Denom returns the public feed denom represented by the pair quote.
+// Denom returns the feed denom of the unit the pair prices, its base.
 func (p Pair) Denom() string {
-	return "a" + strings.ToLower(p.Quote())
+	return "a" + strings.ToLower(p.Base())
 }
 
 // Inverse returns the reciprocal pair. Callers should only use this on
