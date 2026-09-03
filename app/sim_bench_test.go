@@ -43,9 +43,12 @@ func BenchmarkFullAppSimulation(b *testing.B) {
 	}()
 
 	appOptions := viper.New()
-	appOptions.SetDefault(flags.FlagHome, DefaultNodeHome)
+	// The simulation's own directory, not DefaultNodeHome: the Wasm VM locks
+	// its cache exclusively, so a shared home stops two apps coexisting and
+	// would put that cache in the developer's real ~/.arkd.
+	appOptions.SetDefault(flags.FlagHome, dir)
 
-	app := NewArkApp(logger, db, nil, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(AppChainID))
+	app := NewArkApp(logger, db, true, appOptions, interBlockCacheOpt(), baseapp.SetChainID(AppChainID))
 
 	// run randomized simulation
 	simParams, _, simErr := simulation.SimulateFromSeedX(

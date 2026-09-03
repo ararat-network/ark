@@ -6,12 +6,13 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"flag"
-	"io"
 	"math/rand"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +21,10 @@ import (
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/codec"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/store/v2"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -36,6 +39,9 @@ import (
 	simcli "github.com/cosmos/cosmos-sdk/x/simulation/client/cli"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/ararat-network/ark/app/ante"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const AppChainID = "ark-simapp"
@@ -48,7 +54,20 @@ func init() {
 	flag.BoolVar(&FlagEnableStreamingValue, "EnableStreaming", false, "Enable streaming service")
 }
 
+// TestMain switches off the two consensus rules the simulation cannot satisfy,
+// for every entry point in this file.
+//
+// The harness draws each transaction's fee uniformly from the sender's
+// spendable balance, so it cannot be told what a transaction owes and
+// eventually offers nothing at all; and it picks governance voters at random,
+// so it cannot be told to stake them. Neither is a figure genesis can tune —
+// the fee requirement ceils to at least one base unit under every valid
+// parameter, and an unstaked voter is refused by construction. The Hub turns
+// off its own fee market and vote floor here for the same reasons.
 func TestMain(m *testing.M) {
+	ante.SetBaseFeeGate(false)
+	ante.SetMinVoterStake(math.LegacyZeroDec())
+
 	telemetry.TestingMain(m, nil)
 }
 
@@ -88,15 +107,22 @@ func TestAppImportExport(t *testing.T) {
 		tb.Log("importing genesis...\n")
 		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
 		newApp := newTestInstance.App
-		var genesisState GenesisState
+		var genesisState map[string]json.RawMessage
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
-		ctxB := newApp.NewContextLegacy(true, cmtproto.Header{Height: app.LastBlockHeight()})
+		ctxB := newApp.NewContextLegacy(true, cmtproto.Header{
+			Height: app.LastBlockHeight(),
+			Time:   exportedRateTime(tb, newApp.appCodec, genesisState),
+		})
 		_, err = newApp.ModuleManager.InitGenesis(ctxB, newApp.appCodec, genesisState)
 		if IsEmptyValidatorSetErr(err) {
 			tb.Skip("Skipping simulation as all validators have been unbonded")
 			return
 		}
 		require.NoError(tb, err)
+		// InitGenesis is only part of what InitChain does: the runtime's
+		// InitChainer also stamps the module version map, and the store
+		// comparison below covers it.
+		require.NoError(tb, newApp.UpgradeKeeper.SetModuleVersionMap(ctxB, newApp.ModuleManager.GetVersionMap()))
 		err = newApp.StoreConsensusParams(ctxB, exported.ConsensusParams)
 		require.NoError(tb, err)
 
@@ -112,6 +138,11 @@ func TestAppImportExport(t *testing.T) {
 			authzkeeper.StoreKey:   {authzkeeper.GrantQueuePrefix},
 			feegrant.StoreKey:      {feegrant.FeeAllowanceQueueKeyPrefix},
 			slashingtypes.StoreKey: {slashingtypes.ValidatorMissedBlockBitmapKeyPrefix},
+			// The per-block transaction counter CountTXDecorator stamps, which
+			// contract address derivation reads. It is block scratch, not
+			// genesis state: a chain that ran blocks holds the last one's
+			// count, and a chain freshly imported from its export holds none.
+			wasmtypes.StoreKey: {wasmtypes.TXCounterPrefix},
 		}
 		AssertEqualStores(tb, app, newApp, app.SimulationManager().StoreDecoders, skipPrefixes)
 	})
@@ -133,9 +164,12 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		tb.Log("importing genesis...\n")
 		newTestInstance := sims.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
 		newApp := newTestInstance.App
+		var genesisState map[string]json.RawMessage
+		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
 		_, err = newApp.InitChain(&abci.RequestInitChain{
 			AppStateBytes: exported.AppState,
 			ChainId:       sims.SimAppChainID,
+			Time:          exportedRateTime(tb, newApp.appCodec, genesisState),
 		})
 		if IsEmptyValidatorSetErr(err) {
 			tb.Skip("Skipping simulation as all validators have been unbonded")
@@ -150,7 +184,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 			newApp.BaseApp,
 			newStateFactory.AppStateFn,
 			simtypes.RandomAccounts,
-			simtestutil.BuildSimulationOperations(newApp, newApp.AppCodec(), newTestInstance.Cfg, newApp.TxConfig()),
+			simtestutil.BuildSimulationOperations(newApp, newApp.AppCodec(), newTestInstance.Cfg, newApp.GetTxConfig()),
 			newStateFactory.BlockedAddr,
 			newTestInstance.Cfg,
 			newStateFactory.Codec,
@@ -162,6 +196,33 @@ func TestAppSimulationAfterImport(t *testing.T) {
 
 func IsEmptyValidatorSetErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "validator set is empty after InitGenesis")
+}
+
+// exportedRateTime is the newest rate timestamp the exported state carries,
+// which is the block the export was taken at as closely as the state records
+// it.
+//
+// The SDK's import tests leave the genesis block time at its zero value, which
+// no SDK module reads. Ark's Oracle does: it refuses a genesis rate stamped
+// after the genesis block time, and every exported rate is stamped with the
+// simulated time it was applied at. So the import has to be told when the
+// state it is importing came from.
+func exportedRateTime(tb testing.TB, cdc codec.Codec, genesisState map[string]json.RawMessage) time.Time {
+	tb.Helper()
+
+	raw, ok := genesisState[oracletypes.ModuleName]
+	require.True(tb, ok, "exported state carries no oracle genesis")
+
+	var oracleGenesis oracletypes.GenesisState
+	cdc.MustUnmarshalJSON(raw, &oracleGenesis)
+
+	latest := time.Unix(0, 0).UTC()
+	for _, rate := range oracleGenesis.ExchangeRates {
+		if rate.BlockTimestamp.After(latest) {
+			latest = rate.BlockTimestamp
+		}
+	}
+	return latest
 }
 
 func TestAppStateDeterminism(t *testing.T) {
@@ -182,7 +243,7 @@ func TestAppStateDeterminism(t *testing.T) {
 		}
 	}
 	// overwrite default app config
-	interBlockCachingAppFactory := func(logger log.Logger, db dbm.DB, traceStore io.Writer, loadLatest bool, appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp)) *ArkApp {
+	interBlockCachingAppFactory := func(logger log.Logger, db dbm.DB, loadLatest bool, appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp)) *ArkApp {
 		if FlagEnableStreamingValue {
 			m := map[string]any{
 				"streaming.abci.keys":             []string{"*"},
@@ -197,7 +258,7 @@ func TestAppStateDeterminism(t *testing.T) {
 				return others.Get(k)
 			})
 		}
-		return NewArkApp(logger, db, nil, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
+		return NewArkApp(logger, db, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
 	}
 	var mx sync.Mutex
 	appHashResults := make(map[int64][][]byte)

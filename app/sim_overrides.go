@@ -1,0 +1,108 @@
+package app
+
+import (
+	"context"
+
+	"cosmossdk.io/math"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
+)
+
+// authSimModule narrows upstream's auth parameter proposal to the ranges
+// upstream itself generates at genesis.
+//
+// The SDK is inconsistent about these five fields: its genesis generator draws
+// each from a realistic band, while its proposal generator draws every one from
+// [1, 1000). A drawn value far outside the genesis band does not merely stress
+// the chain, it makes ordinary unrelated transactions undeliverable — a memo
+// limit of 9 characters refuses transactions the simulator itself composes, and
+// a per-byte cost in the hundreds prices wasmd's fixed ~257KB code upload out of
+// the fixed 10M gas every simulated transaction is signed with. One undelivered
+// transaction fails the run, so the suite becomes sensitive to where each module
+// sits in the shared random stream, and adding or reweighting any operation
+// anywhere re-rolls it.
+//
+// Taking the genesis bands is not a narrowing of coverage so much as a choice
+// between two of upstream's own answers: these are the values it calls
+// realistic for the very same parameters.
+type authSimModule struct {
+	auth.AppModule
+}
+
+// ProposalMsgsX replaces the upstream registration rather than adding to it:
+// the registry is keyed by message type, so one MsgUpdateParams factory wins.
+func (m authSimModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
+	reg.Add(weights.Get("msg_update_params", 100), authParamsFactory())
+}
+
+func authParamsFactory() simsx.SimMsgFactoryFn[*authtypes.MsgUpdateParams] {
+	return func(
+		_ context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *authtypes.MsgUpdateParams) {
+		r := testData.Rand()
+		params := authtypes.DefaultParams()
+		params.MaxMemoCharacters = r.Uint64InRange(100, 200)
+		params.TxSigLimit = r.Uint64InRange(5, 12)
+		params.TxSizeCostPerByte = r.Uint64InRange(5, 15)
+		params.SigVerifyCostED25519 = r.Uint64InRange(500, 1000)
+		params.SigVerifyCostSecp256k1 = r.Uint64InRange(500, 1000)
+
+		return nil, &authtypes.MsgUpdateParams{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Params:    params,
+		}
+	}
+}
+
+// simulatedFundBalance is what each protocol fund holds at genesis in a
+// simulation. It is generous next to the mandate allowances drawn beside it, so
+// a run exercises the guards rather than exhausting the balance immediately.
+const simulatedFundBalance = int64(1_000_000_000_000_000)
+
+// bankSimModule seeds the protocol funds that hold custody balances.
+//
+// Nothing else can put them there. The Reserve and Insurance module accounts
+// are funded on a live chain by settlement and by governance transfers, and in
+// a simulation neither arises: the transfer messages draw from the very balance
+// they would establish, so the funding path is circular and every message that
+// spends from a fund skips for the whole run. Seeding the balances is what lets
+// the Reserve deploy, and a deployment is what opens the positions the rest of
+// the committee surface acts on.
+//
+// Supply moves with the balances because bank's genesis states both, and its
+// invariant holds them equal.
+type bankSimModule struct {
+	bank.AppModule
+
+	cdc codec.Codec
+}
+
+func (m bankSimModule) GenerateGenesisState(simState *module.SimulationState) {
+	m.AppModule.GenerateGenesisState(simState)
+
+	var bankGenesis banktypes.GenesisState
+	m.cdc.MustUnmarshalJSON(simState.GenState[banktypes.ModuleName], &bankGenesis)
+
+	seeded := sdk.NewCoins(sdk.NewCoin(simState.BondDenom, math.NewInt(simulatedFundBalance)))
+	for _, fund := range []string{reservetypes.StrategicReserveName, claimstypes.InsuranceName} {
+		bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
+			Address: authtypes.NewModuleAddress(fund).String(),
+			Coins:   seeded,
+		})
+		bankGenesis.Supply = bankGenesis.Supply.Add(seeded...)
+	}
+
+	simState.GenState[banktypes.ModuleName] = m.cdc.MustMarshalJSON(&bankGenesis)
+}
