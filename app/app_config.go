@@ -102,7 +102,7 @@ var (
 		// The strategic Reserve is the one fund account that may burn.
 		{Account: reservetypes.StrategicReserveName, Permissions: []string{authtypes.Burner}},
 		{Account: claimstypes.InsuranceName},
-		{Account: treasurytypes.StabilityTaxCollectorName},
+		{Account: treasurytypes.TransferTaxCollectorName},
 		{Account: oracletypes.ModuleName},
 	}
 
@@ -116,7 +116,7 @@ var (
 		ibctransfertypes.ModuleName,
 		icatypes.ModuleName,
 		wasmtypes.ModuleName,
-		treasurytypes.StabilityTaxCollectorName,
+		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
 		// We allow the following module accounts to receive funds:
 		// govtypes.ModuleName,

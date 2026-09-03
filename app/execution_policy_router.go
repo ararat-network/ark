@@ -43,7 +43,7 @@ func (app *ArkApp) executionPolicyRouter() executionPolicyRouter {
 
 // executionPolicyRouter is the execution-path twin of the ante chain: it
 // applies the message policies ante applies to signed transactions — the
-// gov-vote stake floor, the MultiSend fan-out guard, and the stability tax —
+// gov-vote stake floor, the MultiSend fan-out guard, and the transfer tax —
 // to messages a contract, derived account, or interchain account dispatches.
 //
 // It wraps the router rather than Wasmd's messenger so it sees the SDK message
@@ -98,7 +98,7 @@ func (r executionPolicyRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
 	tax, err := r.treasury.ComputeTax(ctx, []sdk.Msg{msg})
 	if err != nil {
-		return fmt.Errorf("computing execution-generated stability tax: %w", err)
+		return fmt.Errorf("computing execution-generated transfer tax: %w", err)
 	}
 	if tax.IsZero() {
 		return nil
@@ -123,7 +123,7 @@ func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
 	return r.bank.SendCoinsFromAccountToModule(
 		ctx,
 		sdk.AccAddress(signers[0]),
-		treasurytypes.StabilityTaxCollectorName,
+		treasurytypes.TransferTaxCollectorName,
 		tax,
 	)
 }

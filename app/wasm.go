@@ -72,7 +72,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		app.IBCKeeper.ChannelKeeperV2,
 		app.TransferKeeper,
 		// Every message a contract dispatches clears the execution policy
-		// gate — vote floor, MultiSend guard, stability tax — on the way
+		// gate — vote floor, MultiSend guard, transfer tax — on the way
 		// through (D41, D42). Signed top-level messages take BaseApp's own
 		// router and stay ante-owned.
 		app.executionPolicyRouter(),

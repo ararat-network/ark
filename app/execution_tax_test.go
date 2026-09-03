@@ -7,7 +7,9 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
 	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
+	channeltypesv2 "github.com/cosmos/ibc-go/v11/modules/core/04-channel/v2/types"
 	"github.com/stretchr/testify/require"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -21,6 +23,7 @@ import (
 
 	"github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
+	treasurytestutil "github.com/ararat-network/ark/x/treasury/testutil"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -45,7 +48,7 @@ func (s *stubRouter) Handler(sdk.Msg) baseapp.MsgServiceHandler {
 	}
 }
 
-// A contract pays stability tax on what it dispatches, on top of the principal
+// A contract pays transfer tax on what it dispatches, on top of the principal
 // that message moves (D41), and the tax lands in the collector.
 func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 	arkApp, ctx, contract := setupExecutionTaxFixture(t)
@@ -70,7 +73,7 @@ func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 
 	// Ten percent of the dispatched principal, taken from the contract and
 	// nowhere else.
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.StabilityTaxCollectorName)
+	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
 	require.Equal(t,
 		math.NewInt(100),
 		arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
@@ -78,6 +81,49 @@ func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 		math.NewInt(9_900),
 		arkApp.BankKeeper.GetBalance(ctx, contract, chain.USDBaseDenom).Amount,
 		"the contract pays tax in addition to the principal it is about to move")
+}
+
+// Wasmd copies a contract's chosen source port into the v2 send message it
+// dispatches, so a contract shipping stablecoins through the raw v2 path pays
+// the same tax as one dispatching MsgTransfer.
+func TestExecutionGeneratedTaxChargesTheContractForV2SendPacket(t *testing.T) {
+	arkApp, ctx, contract := setupExecutionTaxFixture(t)
+
+	inner := &stubRouter{}
+	router := executionPolicyRouter{
+		inner:    inner,
+		treasury: arkApp.TreasuryKeeper,
+		bank:     arkApp.BankKeeper,
+		cdc:      arkApp.AppCodec(),
+	}
+
+	data := ibctransfertypes.NewFungibleTokenPacketData(
+		chain.USDBaseDenom, "1000", contract.String(), "receiver", "")
+	msg := &channeltypesv2.MsgSendPacket{
+		SourceClient:     "07-tendermint-0",
+		TimeoutTimestamp: 1,
+		Payloads: []channeltypesv2.Payload{{
+			SourcePort:      ibctransfertypes.PortID,
+			DestinationPort: ibctransfertypes.PortID,
+			Version:         ibctransfertypes.V1,
+			Encoding:        ibctransfertypes.EncodingJSON,
+			Value:           data.GetBytes(),
+		}},
+		Signer: contract.String(),
+	}
+
+	_, err := router.Handler(msg)(ctx, msg)
+	require.NoError(t, err)
+	require.True(t, inner.called, "the underlying handler must still run")
+
+	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
+	require.Equal(t,
+		math.NewInt(100),
+		arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
+	require.Equal(t,
+		math.NewInt(9_900),
+		arkApp.BankKeeper.GetBalance(ctx, contract, chain.USDBaseDenom).Amount,
+		"the contract pays tax in addition to the principal the packet escrows")
 }
 
 // A failure below the wrapper takes the tax with it. Wasmd dispatches inside a
@@ -128,7 +174,7 @@ func TestExecutionGeneratedTaxSkipsUntaxableMessages(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, inner.called)
 
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.StabilityTaxCollectorName)
+	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
 	require.True(t, arkApp.BankKeeper.GetAllBalances(ctx, collector).IsZero())
 }
 
@@ -150,16 +196,17 @@ type nilRouter struct{}
 
 func (nilRouter) Handler(sdk.Msg) baseapp.MsgServiceHandler { return nil }
 
-// taxedStandIn sets a ten percent stability tax with a cap on the taxed
+// taxedStandIn sets a ten percent transfer tax with a cap on the taxed
 // denomination, then funds a named account to spend under it. Each caller names
 // its own stand-in and funds it for the remainder that caller asserts.
 func taxedStandIn(t *testing.T, arkApp *ArkApp, ctx sdk.Context, name string, funded int64) sdk.AccAddress {
 	t.Helper()
 
-	policy := treasurytypes.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
-	setDerivedTaxCap(t, arkApp, ctx, chain.USDBaseDenom, math.NewInt(10_000))
+	params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
+	require.NoError(t, err)
+	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	require.NoError(t, arkApp.TreasuryKeeper.Params.Set(ctx, params))
+	treasurytestutil.SetDerivedTaxCap(t, arkApp.TreasuryKeeper, ctx, chain.USDBaseDenom, math.NewInt(10_000))
 
 	account := authtypes.NewModuleAddress(name)
 	funds := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, funded))
@@ -181,7 +228,7 @@ func setupExecutionTaxFixture(t *testing.T) (*ArkApp, sdk.Context, sdk.AccAddres
 }
 
 // The ICA host dispatches through the policy router, so an interchain
-// account pays stability tax exactly as a contract does. The launch allowlist
+// account pays transfer tax exactly as a contract does. The launch allowlist
 // is empty, but the tax must not depend on it staying that way: this drives a
 // packet through the host under allow-all params and watches the send pay.
 func TestInterchainAccountPaysExecutionTax(t *testing.T) {
@@ -236,7 +283,7 @@ func TestInterchainAccountPaysExecutionTax(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.StabilityTaxCollectorName)
+	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
 	require.Equal(t, math.NewInt(1_000), arkApp.BankKeeper.GetBalance(ctx, recipient, chain.USDBaseDenom).Amount)
 	require.Equal(t, math.NewInt(100), arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
 	require.Equal(t, math.NewInt(900), arkApp.BankKeeper.GetBalance(ctx, ica, chain.USDBaseDenom).Amount)
@@ -267,7 +314,7 @@ func TestGMPDerivedAccountPaysExecutionTax(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, inner.called)
 
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.StabilityTaxCollectorName)
+	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
 	require.Equal(t, math.NewInt(100), arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
 	require.Equal(t, math.NewInt(9_900), arkApp.BankKeeper.GetBalance(ctx, derived, chain.USDBaseDenom).Amount)
 }
