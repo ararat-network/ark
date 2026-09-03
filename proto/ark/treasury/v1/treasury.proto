@@ -115,6 +115,17 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // transfer_tax_rate is the share of every taxable stable transfer charged
+  // to the fee payer, in [0, 1]. Zero disables the tax without touching the
+  // cap map (D44). Governance-owned rather than a committee lever because
+  // D78 makes it part of the fee every wallet signs: a raise refuses every
+  // in-flight transfer, so it moves only behind a voting period (D80).
+  string transfer_tax_rate = 12 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // ExposureState is the running risk estimate behind the multiplier: two
@@ -187,37 +198,31 @@ message ExposureState {
 // EconomicPolicy is the complete set of reversible Treasury levers delegated
 // to the economic-policy committee.
 message EconomicPolicy {
-  string transfer_tax_rate = 1 [
-    (cosmos_proto.scalar) = "cosmos.Dec",
-    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  string validator_block_reward_target = 2 [
+  string validator_block_reward_target = 1 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string oracle_block_reward_target = 3 [
+  string oracle_block_reward_target = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string redemption_buffer_target_ratio = 4 [
+  string redemption_buffer_target_ratio = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string strategic_reserve_target_ratio = 5 [
+  string strategic_reserve_target_ratio = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string insurance_target_ratio = 6 [
+  string insurance_target_ratio = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -239,7 +244,7 @@ message EconomicPolicy {
   // liability_ratio_weight scales net liability over circulating NOAH: the
   // dilution term, and the one indicator that states directly how reflexive a
   // redemption is.
-  string liability_ratio_weight = 7 [
+  string liability_ratio_weight = 8 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -247,14 +252,14 @@ message EconomicPolicy {
   ];
   // volatility_weight scales annualised realised volatility of the protocol
   // reference rate.
-  string volatility_weight = 8 [
+  string volatility_weight = 9 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
   // flow_weight scales redemption flow pressure as a share of net liability.
-  string flow_weight = 9 [
+  string flow_weight = 10 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
