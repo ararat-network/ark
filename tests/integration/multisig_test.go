@@ -1,4 +1,4 @@
-package app
+package integration
 
 import (
 	"context"
@@ -25,10 +25,14 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"ark/pkg/chain"
-	"ark/pkg/mandate"
-	treasurytypes "ark/x/treasury/types"
+	"github.com/ararat-network/ark/app"
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
+	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 const treasuryMultisigChainID = "ark-treasury-multisig-test"
@@ -62,7 +66,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 	}{
 		{
 			name:      "two of three member signatures succeed",
-			feeAmount: 1_000,
+			feeAmount: 200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -71,14 +75,14 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		},
 		{
 			name:      "one member signature is insufficient",
-			feeAmount: 1_000,
+			feeAmount: 200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 			},
 		},
 		{
 			name:      "signature from a non-member fails",
-			feeAmount: 1_000,
+			feeAmount: 200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 1, privateKey: wrongSigner},
@@ -87,7 +91,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		{
 			name:                 "nonexistent committee account fails",
 			omitCommitteeAccount: true,
-			feeAmount:            1_000,
+			feeAmount:            200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -96,7 +100,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		{
 			name:           "wrong sequence fails",
 			sequenceOffset: 1,
-			feeAmount:      1_000,
+			feeAmount:      200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -104,7 +108,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		},
 		{
 			name:      "fee above committee balance fails",
-			feeAmount: 20_000_000_000,
+			feeAmount: 9_000_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -118,27 +122,26 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				t,
 				committeePubKey,
 				!test.omitCommitteeAccount,
-				func(genesis *treasurytypes.GenesisState, committee string) {
-					genesis.ClaimsMandate = treasurytypes.ClaimsMandate{
+				func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, committee string) {
+					genesis.ClaimsMandate = claimstypes.ClaimsMandate{
 						Envelope: mandate.Envelope{
 							Term:             1,
 							Committee:        committee,
 							ActivationHeight: 1,
 							ExpiryHeight:     1_000_000,
 						},
-						CommitteeClaimLimit: math.NewInt(100),
+						CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 					}
 				},
 			)
 			sequence += test.sequenceOffset
 			const claimID uint64 = 1
-			msg := &treasurytypes.MsgCommitteeSubmitClaim{
-				Committee:         committee.String(),
-				ExpectedTerm:      1,
-				IncidentReference: "incident-1",
-				Recipient:         sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()).String(),
-				Amount:            sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
-				EvidenceReference: "evidence-1",
+			msg := &claimstypes.MsgCommitteeSubmitClaim{
+				Committee:    committee.String(),
+				ExpectedTerm: 1,
+				Reference:    "incident-1",
+				Recipient:    sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()).String(),
+				Amount:       sdk.NewInt64Coin(chain.NoahBaseDenom, 10),
 			}
 
 			txBytes := buildTreasuryMultisigTx(
@@ -171,10 +174,10 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				ChainID: treasuryMultisigChainID,
 				Height:  1,
 			})
-			hasClaim, err := arkApp.TreasuryKeeper.Claims.Has(ctx, claimID)
+			hasClaim, err := arkApp.ClaimsKeeper.Claims.Has(ctx, claimID)
 			require.NoError(t, err)
 			require.Equal(t, test.wantClaim, hasClaim)
-			nextClaimID, err := arkApp.TreasuryKeeper.NextClaimID.Peek(ctx)
+			nextClaimID, err := arkApp.ClaimsKeeper.NextClaimID.Peek(ctx)
 			require.NoError(t, err)
 			if !test.wantClaim {
 				require.Equal(t, uint64(1), nextClaimID)
@@ -182,18 +185,21 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 			}
 			require.Equal(t, uint64(2), nextClaimID)
 
-			claim, err := arkApp.TreasuryKeeper.Claims.Get(ctx, claimID)
+			claim, err := arkApp.ClaimsKeeper.Claims.Get(ctx, claimID)
 			require.NoError(t, err)
 			require.Equal(t, committee.String(), claim.Submitter)
 			require.Equal(
 				t,
-				treasurytypes.ClaimStatus_CLAIM_STATUS_PENDING,
+				claimstypes.ClaimStatus_CLAIM_STATUS_PENDING,
 				claim.Status,
 			)
 		})
 	}
 }
 
+// The threshold matrix is the claims test's above. What only this adds is that
+// MsgCommitteeUpdatePolicy carries an amino name a legacy multisig can sign
+// against, and that a policy inside the mandate's corridor lands.
 func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 	members := []cryptotypes.PrivKey{
 		secp256k1.GenPrivKey(),
@@ -207,111 +213,91 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 	committeePubKey := kmultisig.NewLegacyAminoPubKey(2, memberPubKeys)
 	committee := sdk.AccAddress(committeePubKey.Address())
 
-	tests := []struct {
-		name       string
-		signatures []treasuryMultisigMemberSignature
-		wantPolicy bool
-	}{
-		{
-			name: "two of three member signatures update policy",
-			signatures: []treasuryMultisigMemberSignature{
-				{memberIndex: 0, privateKey: members[0]},
-				{memberIndex: 2, privateKey: members[2]},
-			},
-			wantPolicy: true,
-		},
-		{
-			name: "one member signature cannot update policy",
-			signatures: []treasuryMultisigMemberSignature{
-				{memberIndex: 0, privateKey: members[0]},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			arkApp, accountNumber, sequence, nextValidatorsHash := setupTreasuryMultisigApp(
-				t,
-				committeePubKey,
-				true,
-				func(genesis *treasurytypes.GenesisState, committee string) {
-					minimum := treasurytypes.DefaultMonetaryPolicy()
-					maximum := treasurytypes.MonetaryPolicy{
-						StabilityTaxRate:            math.LegacyMustNewDecFromStr("0.1"),
-						ValidatorBlockRewardTarget:  math.NewInt(10),
-						OracleBlockRewardTarget:     math.NewInt(10),
-						RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
-						StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
-						InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
-					}
-					genesis.MonetaryMandate = treasurytypes.MonetaryMandate{
-						Envelope: mandate.Envelope{
-							Term:             1,
-							Committee:        committee,
-							ActivationHeight: 1,
-							ExpiryHeight:     100,
-						},
-						MinimumPolicy: minimum,
-						MaximumPolicy: maximum,
-					}
+	arkApp, accountNumber, sequence, nextValidatorsHash := setupTreasuryMultisigApp(
+		t,
+		committeePubKey,
+		true,
+		func(genesis *treasurytypes.GenesisState, _ *claimstypes.GenesisState, committee string) {
+			minimum := treasurytypes.DefaultMonetaryPolicy()
+			maximum := treasurytypes.MonetaryPolicy{
+				StabilityTaxRate:            math.LegacyMustNewDecFromStr("0.1"),
+				ValidatorBlockRewardTarget:  math.NewInt(10),
+				OracleBlockRewardTarget:     math.NewInt(10),
+				RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
+				StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
+				InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
+				LiabilityRatioWeight:        math.LegacyOneDec(),
+				VolatilityWeight:            math.LegacyOneDec(),
+				FlowWeight:                  math.LegacyOneDec(),
+			}
+			genesis.MonetaryMandate = treasurytypes.MonetaryMandate{
+				Envelope: mandate.Envelope{
+					Term:             1,
+					Committee:        committee,
+					ActivationHeight: 1,
+					ExpiryHeight:     100,
 				},
-			)
-			policy := treasurytypes.MonetaryPolicy{
-				StabilityTaxRate:            math.LegacyZeroDec(),
-				ValidatorBlockRewardTarget:  math.NewInt(5),
-				OracleBlockRewardTarget:     math.NewInt(5),
-				RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
-				StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
-				InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.25"),
+				MinimumPolicy: minimum,
+				MaximumPolicy: maximum,
 			}
-			msg := &treasurytypes.MsgCommitteeUpdateMonetaryPolicy{
-				Committee:    committee.String(),
-				ExpectedTerm: 1,
-				Policy:       policy,
-			}
-			txBytes := buildTreasuryMultisigTx(
-				t,
-				arkApp,
-				msg,
-				committeePubKey,
-				accountNumber,
-				sequence,
-				1_000,
-				test.signatures,
-			)
-			response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
-				Height:             1,
-				Hash:               arkApp.LastCommitID().Hash,
-				NextValidatorsHash: nextValidatorsHash,
-				Txs:                [][]byte{txBytes},
-			})
-			require.NoError(t, err)
-			require.Len(t, response.TxResults, 1)
-			if test.wantPolicy {
-				require.Zero(t, response.TxResults[0].Code, response.TxResults[0].Log)
-			} else {
-				require.NotZero(t, response.TxResults[0].Code)
-			}
-			_, err = arkApp.Commit()
-			require.NoError(t, err)
-
-			ctx := arkApp.NewContextLegacy(true, cmtproto.Header{ChainID: treasuryMultisigChainID, Height: 1})
-			storedPolicy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
-			require.NoError(t, err)
-			require.Equal(t, test.wantPolicy, policy.Equal(storedPolicy))
-		})
+		},
+	)
+	policy := treasurytypes.MonetaryPolicy{
+		StabilityTaxRate:            math.LegacyZeroDec(),
+		ValidatorBlockRewardTarget:  math.NewInt(5),
+		OracleBlockRewardTarget:     math.NewInt(5),
+		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
+		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
+		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.25"),
+		LiabilityRatioWeight:        math.LegacyMustNewDecFromStr("0.5"),
+		VolatilityWeight:            math.LegacyZeroDec(),
+		FlowWeight:                  math.LegacyZeroDec(),
 	}
+	msg := &treasurytypes.MsgCommitteeUpdatePolicy{
+		Committee:    committee.String(),
+		ExpectedTerm: 1,
+		Policy:       policy,
+	}
+	txBytes := buildTreasuryMultisigTx(
+		t,
+		arkApp,
+		msg,
+		committeePubKey,
+		accountNumber,
+		sequence,
+		200_000_000_000_000_000,
+		[]treasuryMultisigMemberSignature{
+			{memberIndex: 0, privateKey: members[0]},
+			{memberIndex: 2, privateKey: members[2]},
+		},
+	)
+	response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height:             1,
+		Hash:               arkApp.LastCommitID().Hash,
+		NextValidatorsHash: nextValidatorsHash,
+		Txs:                [][]byte{txBytes},
+	})
+	require.NoError(t, err)
+	require.Len(t, response.TxResults, 1)
+	require.Zero(t, response.TxResults[0].Code, response.TxResults[0].Log)
+	_, err = arkApp.Commit()
+	require.NoError(t, err)
+
+	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{ChainID: treasuryMultisigChainID, Height: 1})
+	storedPolicy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, policy.Equal(storedPolicy))
 }
 
 func setupTreasuryMultisigApp(
 	t *testing.T,
 	committeePubKey *kmultisig.LegacyAminoPubKey,
 	includeCommitteeAccount bool,
-	configureTreasury func(*treasurytypes.GenesisState, string),
-) (*ArkApp, uint64, uint64, []byte) {
+	configureGenesis func(*treasurytypes.GenesisState, *claimstypes.GenesisState, string),
+) (*app.ArkApp, uint64, uint64, []byte) {
 	t.Helper()
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -331,7 +317,7 @@ func setupTreasuryMultisigApp(
 			),
 		},
 		{
-			Address: authtypes.NewModuleAddress(treasurytypes.InsuranceName).String(),
+			Address: authtypes.NewModuleAddress(claimstypes.InsuranceName).String(),
 			Coins:   sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000)),
 		},
 	}
@@ -342,6 +328,9 @@ func setupTreasuryMultisigApp(
 			Address: committee.String(),
 			Coins: sdk.NewCoins(
 				sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(10_000_000_000)),
+				// The fee gate prices gas in the reference denom, so fees are
+				// paid — and the over-balance case starved — in axdr.
+				sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(1_000_000_000_000_000_000)),
 			),
 		})
 	}
@@ -359,8 +348,10 @@ func setupTreasuryMultisigApp(
 	require.NoError(t, err)
 
 	treasuryGenesis := treasurytypes.DefaultGenesisState()
-	configureTreasury(treasuryGenesis, committee.String())
+	claimsGenesis := claimstypes.DefaultGenesisState()
+	configureGenesis(treasuryGenesis, claimsGenesis, committee.String())
 	genesisState[treasurytypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(treasuryGenesis)
+	genesisState[claimstypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(claimsGenesis)
 
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)
@@ -386,7 +377,7 @@ func setupTreasuryMultisigApp(
 
 func buildTreasuryMultisigTx(
 	t *testing.T,
-	arkApp *ArkApp,
+	arkApp *app.ArkApp,
 	msg sdk.Msg,
 	committeePubKey *kmultisig.LegacyAminoPubKey,
 	accountNumber,
@@ -396,9 +387,9 @@ func buildTreasuryMultisigTx(
 ) []byte {
 	t.Helper()
 
-	txBuilder := arkApp.TxConfig().NewTxBuilder()
+	txBuilder := arkApp.GetTxConfig().NewTxBuilder()
 	require.NoError(t, txBuilder.SetMsgs(msg))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, feeAmount)))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, feeAmount)))
 	txBuilder.SetGasLimit(2_000_000)
 
 	emptyMultisignature := cryptomultisig.NewMultisig(len(committeePubKey.GetPubKeys()))
@@ -416,7 +407,7 @@ func buildTreasuryMultisigTx(
 	}
 	signBytes, err := authsigning.GetSignBytesAdapter(
 		context.Background(),
-		arkApp.TxConfig().SignModeHandler(),
+		arkApp.GetTxConfig().SignModeHandler(),
 		signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		signerData,
 		txBuilder.GetTx(),
@@ -445,7 +436,54 @@ func buildTreasuryMultisigTx(
 		Sequence: sequence,
 	}))
 
-	txBytes, err := arkApp.TxConfig().TxEncoder()(txBuilder.GetTx())
+	txBytes, err := arkApp.GetTxConfig().TxEncoder()(txBuilder.GetTx())
 	require.NoError(t, err)
 	return txBytes
+}
+
+// TestClaimsCommitteeShapeRecordsRegisteredMultisig proves the appointment
+// path reaches a real account: a genuine 2-of-3 whose key is registered on
+// chain is recorded as one, rather than as the keyless shape an address with
+// no registered key would produce.
+func TestClaimsCommitteeShapeRecordsRegisteredMultisig(t *testing.T) {
+	memberPubKeys := make([]cryptotypes.PubKey, 3)
+	for i := range memberPubKeys {
+		memberPubKeys[i] = secp256k1.GenPrivKey().PubKey()
+	}
+	committeePubKey := kmultisig.NewLegacyAminoPubKey(2, memberPubKeys)
+	committee := sdk.AccAddress(committeePubKey.Address())
+
+	arkApp, _, _, _ := setupTreasuryMultisigApp(
+		t,
+		committeePubKey,
+		true,
+		func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, _ string) {
+			genesis.ClaimsMandate = claimstypes.DefaultClaimsMandate()
+		},
+	)
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
+		ChainID: treasuryMultisigChainID,
+		Height:  1,
+	})
+
+	_, err := claimskeeper.NewMsgServerImpl(arkApp.ClaimsKeeper).SetClaimsMandate(
+		ctx,
+		&claimstypes.MsgSetClaimsMandate{
+			Authority:           authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			Committee:           committee.String(),
+			ActivationHeight:    1,
+			ExpiryHeight:        chain.BlocksPerYear,
+			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(1_000)),
+		},
+	)
+	require.NoError(t, err)
+
+	stored, err := arkApp.ClaimsKeeper.ClaimsMandate.Get(ctx)
+	require.NoError(t, err)
+	require.Equal(t, mandate.CommitteeShape{
+		AccountType: "cosmos.auth.v1beta1.BaseAccount",
+		KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG,
+		Threshold:   2,
+		MemberCount: 3,
+	}, stored.CommitteeShape)
 }
