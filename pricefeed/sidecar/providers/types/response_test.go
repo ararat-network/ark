@@ -58,3 +58,23 @@ func TestResultStringHandlesNilPrice(t *testing.T) {
 	require.Contains(t, result.String(), "price: <nil>")
 	require.Contains(t, result.String(), "unchanged: true")
 }
+
+func TestNewResultRecordsLastObserved(t *testing.T) {
+	observed := time.Unix(10, 0).UTC()
+
+	result := NewResult(big.NewFloat(2), observed)
+
+	require.True(t, result.Timestamp.Equal(observed))
+	require.True(t, result.LastObserved.Equal(observed))
+	require.False(t, result.Unchanged)
+}
+
+// An unchanged result carries no observation of its own: the LastObserved it
+// leaves zero is the current result's to keep.
+func TestNewUnchangedResultLeavesLastObservedZero(t *testing.T) {
+	result := NewUnchangedResult(time.Unix(20, 0).UTC())
+
+	require.True(t, result.Unchanged)
+	require.Nil(t, result.Price)
+	require.True(t, result.LastObserved.IsZero())
+}

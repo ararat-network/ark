@@ -60,6 +60,16 @@ func TestConfigEqualComparesIdentityTypeAndTransportConfig(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "different max unchanged age only",
+			a:    testAPIProviderConfig("unknown", markets),
+			b: func() Config {
+				cfg := testAPIProviderConfig("unknown", markets)
+				cfg.MaxUnchangedAge = cfg.MaxPriceAge
+				return cfg
+			}(),
+			want: true,
+		},
+		{
 			name: "matching websocket config",
 			a:    testWebSocketProviderConfig("unknown", markets),
 			b:    testWebSocketProviderConfig("unknown", markets),
@@ -113,6 +123,41 @@ func TestConfigValidateRejectsNonPositiveMaxPriceAge(t *testing.T) {
 			err := cfg.Validate()
 
 			require.ErrorContains(t, err, "provider max price age must be greater than 0")
+		})
+	}
+}
+
+// Zero disables extension; anything set must reach MaxPriceAge, or the bound
+// would shrink MaxPriceAge for every price rather than extend it for unchanged
+// ones.
+func TestConfigValidateBoundsMaxUnchangedAge(t *testing.T) {
+	testCases := []struct {
+		name            string
+		maxUnchangedAge time.Duration
+		wantErr         string
+	}{
+		{name: "zero disables", maxUnchangedAge: 0},
+		{name: "equal to max price age", maxUnchangedAge: time.Minute},
+		{name: "above max price age", maxUnchangedAge: 2 * time.Minute},
+		{
+			name:            "below max price age",
+			maxUnchangedAge: time.Minute - time.Second,
+			wantErr:         "provider max unchanged age must be zero or at least max price age",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := testAPIProviderConfig("unknown", types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}})
+			cfg.MaxUnchangedAge = tc.maxUnchangedAge
+
+			err := cfg.Validate()
+
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
 }

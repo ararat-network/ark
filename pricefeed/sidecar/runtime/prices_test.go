@@ -16,6 +16,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
+	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
@@ -119,6 +120,80 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 		price := snapshot.Prices["ausd"]
 		return !snapshot.Timestamp.IsZero() && price != nil &&
 			price.Cmp(big.NewFloat(4)) == 0
+	}, time.Second, time.Millisecond)
+
+	cancel()
+	requireOracleStopped(t, errCh)
+}
+
+// TestRunBoundsUnchangedResultsByLastObservation drives the same sequence
+// through three providers -- a real price thirty seconds ago, then an unchanged
+// refresh now -- under a ten-second MaxPriceAge. The refresh satisfies
+// MaxPriceAge for all three; only MaxUnchangedAge separates them. The snapshot
+// equalling the extended provider's price alone is a positive assertion that
+// zero cannot extend and that a set bound is enforced.
+func TestRunBoundsUnchangedResultsByLastObservation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	markets := testMarkets()
+	observedAt := time.Now().UTC().Add(-30 * time.Second)
+	testProviders := []struct {
+		name            string
+		price           *big.Float
+		maxUnchangedAge time.Duration
+	}{
+		{name: "extended", price: big.NewFloat(0.5), maxUnchangedAge: time.Minute},
+		{name: "unextended", price: big.NewFloat(0.1), maxUnchangedAge: 0},
+		{name: "bounded", price: big.NewFloat(0.2), maxUnchangedAge: 20 * time.Second},
+	}
+
+	providerCfgs := make(map[string]providers.Config, len(testProviders))
+	initial := make([]*base.Provider, 0, len(testProviders))
+	for _, testProvider := range testProviders {
+		mock := newMockProvider(t, ctrl, testProvider.name, markets)
+		mock.fetcher.EXPECT().
+			Run(gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, _ []providertypes.Ticker, responseCh chan<- providertypes.Response) error {
+				responseCh <- providertypes.NewResponse(
+					map[providertypes.Ticker]providertypes.Result{
+						"NOAHUSD": providertypes.NewResult(testProvider.price, observedAt),
+					},
+					nil,
+				)
+				responseCh <- providertypes.NewResponse(
+					map[providertypes.Ticker]providertypes.Result{
+						"NOAHUSD": providertypes.NewUnchangedResult(time.Now().UTC()),
+					},
+					nil,
+				)
+				<-ctx.Done()
+				return ctx.Err()
+			})
+
+		cfg := testUnknownAPIProviderConfig(testProvider.name, markets)
+		cfg.MaxPriceAge = 10 * time.Second
+		cfg.MaxUnchangedAge = testProvider.maxUnchangedAge
+		providerCfgs[cfg.Name] = cfg
+		initial = append(initial, mock.provider)
+	}
+
+	cfg := testOracleConfig(providerCfgs)
+	cfg.UpdateInterval = 5 * time.Millisecond
+	cfg.FallbackFeeds = []string{"ausd"}
+
+	oracle, err := runtime.NewRuntime(
+		cfg,
+		withInitialProviders(initial...),
+		runtime.WithChainStateClient(newPassthroughChainStateClient(t, ctrl)),
+	)
+	require.NoError(t, err)
+
+	errCh, cancel := startOracle(t, oracle)
+	defer cancel()
+	require.Eventually(t, func() bool {
+		snapshot := oracle.GetPriceSnapshot()
+		price := snapshot.Prices["ausd"]
+		return !snapshot.Timestamp.IsZero() && price != nil &&
+			price.Cmp(big.NewFloat(2)) == 0
 	}, time.Second, time.Millisecond)
 
 	cancel()

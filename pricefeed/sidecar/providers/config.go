@@ -23,6 +23,11 @@ type Config struct {
 	Markets types.Markets `json:"markets"`
 	// MaxPriceAge is the maximum age of a cached price accepted from this provider.
 	MaxPriceAge time.Duration `json:"maxPriceAge"`
+	// MaxUnchangedAge bounds how long unchanged results may keep a price
+	// alive, measured from the last real observation. Zero means they
+	// cannot: a heartbeat certifies the connection, not the subscription,
+	// so extending on one is opt-in per venue.
+	MaxUnchangedAge time.Duration `json:"maxUnchangedAge"`
 
 	// API configures an HTTP API provider when TransportType is base.API.
 	API api.Config `json:"api"`
@@ -41,6 +46,11 @@ func (c *Config) Validate() error {
 	}
 	if c.MaxPriceAge <= 0 {
 		return errors.New("provider max price age must be greater than 0")
+	}
+	// Below MaxPriceAge the bound would silently shrink MaxPriceAge for every
+	// price, since LastObserved never trails Timestamp by less than zero.
+	if c.MaxUnchangedAge != 0 && c.MaxUnchangedAge < c.MaxPriceAge {
+		return errors.New("provider max unchanged age must be zero or at least max price age")
 	}
 
 	if err := c.Markets.Validate(); err != nil {
@@ -71,8 +81,9 @@ func (c *Config) Validate() error {
 
 // Equal reports whether two configs can use the same runtime provider.
 //
-// Markets and MaxPriceAge are intentionally excluded because both are runtime
-// policy changes that do not require rebuilding the provider transport.
+// Markets, MaxPriceAge, and MaxUnchangedAge are intentionally excluded because
+// all three are runtime policy changes that do not require rebuilding the
+// provider transport.
 func (c Config) Equal(other Config) bool {
 	if c.Name != other.Name || c.TransportType != other.TransportType {
 		return false

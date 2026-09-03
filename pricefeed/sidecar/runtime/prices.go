@@ -24,20 +24,23 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	r.mut.RLock()
 	feeds := append([]string(nil), r.feeds...)
 	resolverCfg := r.cfg.Resolver
-	maxPriceAges := make(map[string]time.Duration, len(r.cfg.Providers))
+	freshness := make(map[string]providerFreshness, len(r.cfg.Providers))
 	for name, providerCfg := range r.cfg.Providers {
-		maxPriceAges[name] = providerCfg.MaxPriceAge
+		freshness[name] = providerFreshness{
+			maxPriceAge:     providerCfg.MaxPriceAge,
+			maxUnchangedAge: providerCfg.MaxUnchangedAge,
+		}
 	}
 	r.mut.RUnlock()
 
 	now := time.Now().UTC()
-	providerPrices := make(map[string]types.Prices, len(maxPriceAges))
-	for name, maxPriceAge := range maxPriceAges {
+	providerPrices := make(map[string]types.Prices, len(freshness))
+	for name, window := range freshness {
 		managed, ok := r.providers[name]
 		if !ok {
 			continue
 		}
-		providerPrices[name] = r.freshProviderPrices(managed.provider, now, maxPriceAge)
+		providerPrices[name] = r.freshProviderPrices(managed.provider, now, window)
 	}
 	r.logger.Debug("collected cached provider prices")
 
@@ -50,10 +53,19 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 
 // freshProviderPrices returns one provider's cached prices that are fresh enough
 // for the current aggregation tick.
+// providerFreshness is one provider's two freshness windows. maxPriceAge
+// bounds the age of the last message about a pair; maxUnchangedAge bounds
+// how far an unchanged refresh may carry a price past its last real
+// observation, and zero means not at all.
+type providerFreshness struct {
+	maxPriceAge     time.Duration
+	maxUnchangedAge time.Duration
+}
+
 func (r *Runtime) freshProviderPrices(
 	provider *base.Provider,
 	now time.Time,
-	maxPriceAge time.Duration,
+	window providerFreshness,
 ) types.Prices {
 	name := provider.Name()
 	transport := provider.Type()
@@ -77,13 +89,32 @@ func (r *Runtime) freshProviderPrices(
 	freshPrices := make(types.Prices)
 	for pair, result := range prices {
 		age := now.Sub(result.Timestamp)
-		if age > maxPriceAge {
+		if age > window.maxPriceAge {
 			r.logger.Debug(
 				"skipping price",
 				"provider", name,
 				"transport", transport,
 				"pair", pair,
 				"age", age,
+			)
+
+			continue
+		}
+		// An unchanged refresh moved Timestamp but not LastObserved; this is
+		// the bound on how far the two may drift.
+		observedAge := now.Sub(result.LastObserved)
+		limit := window.maxUnchangedAge
+		if limit == 0 {
+			limit = window.maxPriceAge
+		}
+		if observedAge > limit {
+			r.logger.Debug(
+				"skipping price past its unchanged bound",
+				"provider", name,
+				"transport", transport,
+				"pair", pair,
+				"observed_age", observedAge,
+				"limit", limit,
 			)
 
 			continue

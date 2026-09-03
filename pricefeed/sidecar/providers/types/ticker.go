@@ -3,7 +3,6 @@ package types
 import (
 	"strings"
 	"sync"
-	"time"
 )
 
 // Ticker identifies a provider-specific market symbol.
@@ -46,17 +45,4 @@ func (t *Tickers) Lookup(raw string) (Ticker, bool) {
 
 	ticker, ok := t.cache[Ticker(raw).Key()]
 	return ticker, ok
-}
-
-// UnchangedResponse returns an unchanged result for every registered ticker.
-func (t *Tickers) UnchangedResponse() Response {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	resolved := make(map[Ticker]Result)
-	for _, ticker := range t.cache {
-		resolved[ticker] = NewUnchangedResult(time.Now().UTC())
-	}
-
-	return NewResponse(resolved, nil)
 }

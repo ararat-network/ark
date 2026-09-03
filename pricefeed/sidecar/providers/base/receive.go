@@ -130,6 +130,8 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 			"updated_timestamp", result.Timestamp.String(),
 		)
 
+		// Timestamp moves; LastObserved does not. The heartbeat says the
+		// price still holds, not that it was seen again.
 		current.Timestamp = result.Timestamp
 		p.prices[pair] = current
 	} else {

@@ -108,8 +108,39 @@ func TestProviderRefreshesTimestampForUnchangedResult(t *testing.T) {
 		price, ok := prices[oracletypes.Pair("ATOM/USD")]
 		return ok &&
 			price.Timestamp.Equal(updatedTime) &&
+			price.LastObserved.Equal(currentTime) &&
 			!price.Unchanged &&
 			price.Price.Cmp(big.NewFloat(2)) == 0
+	})
+}
+
+// TestProviderResetsLastObservedOnRealResult pins the other half of the
+// bookkeeping: a real price after an unchanged refresh moves both timestamps,
+// so the bound measures from the newest observation rather than the first.
+func TestProviderResetsLastObservedOnRealResult(t *testing.T) {
+	fetcher := newMockFetcher(t)
+	provider := newProvider(t, testMarkets(), fetcher)
+	firstTime := time.Unix(10, 0).UTC()
+	unchangedTime := time.Unix(20, 0).UTC()
+	secondTime := time.Unix(30, 0).UTC()
+
+	seedProviderResponses(t, provider, fetcher, []types.Ticker{"ATOMUSD"}, []types.Response{
+		types.NewResponse(map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewResult(big.NewFloat(2), firstTime),
+		}, nil),
+		types.NewResponse(map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewUnchangedResult(unchangedTime),
+		}, nil),
+		types.NewResponse(map[types.Ticker]types.Result{
+			"ATOMUSD": types.NewResult(big.NewFloat(3), secondTime),
+		}, nil),
+	}, func() bool {
+		prices := provider.GetPrices()
+		price, ok := prices[oracletypes.Pair("ATOM/USD")]
+		return ok &&
+			price.Timestamp.Equal(secondTime) &&
+			price.LastObserved.Equal(secondTime) &&
+			price.Price.Cmp(big.NewFloat(3)) == 0
 	})
 }
 

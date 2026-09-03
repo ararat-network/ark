@@ -61,8 +61,13 @@ func (r Response) String() string {
 type Result struct {
 	// Price is the reported ticker price. It is nil when Unchanged is true.
 	Price *big.Float
-	// Timestamp is when the result was observed.
+	// Timestamp is when the result was observed, or for an unchanged result,
+	// when the provider last confirmed the price still held.
 	Timestamp time.Time
+	// LastObserved is when the price itself was last reported. An unchanged
+	// result refreshes Timestamp and leaves this alone, which is what lets
+	// freshness bound how long a heartbeat may carry a price.
+	LastObserved time.Time
 	// Unchanged indicates that the previously reported price remains valid.
 	Unchanged bool
 }
@@ -70,8 +75,9 @@ type Result struct {
 // NewResult returns a result containing a reported price.
 func NewResult(price *big.Float, timestamp time.Time) Result {
 	return Result{
-		Price:     price,
-		Timestamp: timestamp,
+		Price:        price,
+		Timestamp:    timestamp,
+		LastObserved: timestamp,
 	}
 }
 
@@ -91,9 +97,10 @@ func (r Result) String() string {
 	}
 
 	return fmt.Sprintf(
-		"(price: %s, timestamp: %s, unchanged: %t)",
+		"(price: %s, timestamp: %s, last observed: %s, unchanged: %t)",
 		price,
 		r.Timestamp.String(),
+		r.LastObserved.String(),
 		r.Unchanged,
 	)
 }

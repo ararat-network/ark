@@ -37,19 +37,3 @@ func TestTickersAddReplacesMatchingKey(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, Ticker("atomusd"), ticker)
 }
-
-func TestTickersUnchangedResponse(t *testing.T) {
-	tickers := NewTickers("ATOMUSD", "BTCUSD")
-
-	response := tickers.UnchangedResponse()
-
-	require.Empty(t, response.Unresolved)
-	require.Len(t, response.Resolved, 2)
-	for _, ticker := range []Ticker{"ATOMUSD", "BTCUSD"} {
-		result, ok := response.Resolved[ticker]
-		require.True(t, ok)
-		require.True(t, result.Unchanged)
-		require.Nil(t, result.Price)
-		require.False(t, result.Timestamp.IsZero())
-	}
-}
