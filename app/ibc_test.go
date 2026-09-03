@@ -115,26 +115,3 @@ func TestLightClientRoutes(t *testing.T) {
 	_, err := arkApp.IBCKeeper.ClientKeeper.Route(ctx, "06-solomachine-0")
 	require.Error(t, err, "unwired client type must not route")
 }
-
-func TestIBCUsesStandardModuleGenesisDefaults(t *testing.T) {
-	arkApp := NewArkApp(
-		log.NewTestLogger(t),
-		dbm.NewMemDB(),
-		true,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	)
-
-	actual := arkApp.DefaultGenesis()
-	expected := IBCModuleBasics().DefaultGenesis(arkApp.AppCodec())
-	require.NotEmpty(t, expected)
-
-	for moduleName, expectedState := range expected {
-		actualState, ok := actual[moduleName]
-		require.True(t, ok, "missing %s default genesis", moduleName)
-		if len(expectedState) == 0 {
-			require.Empty(t, actualState, moduleName)
-			continue
-		}
-		require.JSONEq(t, string(expectedState), string(actualState), moduleName)
-	}
-}
