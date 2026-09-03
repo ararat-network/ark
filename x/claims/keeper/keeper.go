@@ -171,3 +171,8 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
+
+// InsuranceBalance returns the Insurance fund's NOAH balance.
+func (k Keeper) InsuranceBalance(ctx context.Context) math.Int {
+	return k.balance(ctx)
+}

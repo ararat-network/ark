@@ -37,6 +37,11 @@ func TestRandomisedGenState(t *testing.T) {
 		GenState:     make(map[string]json.RawMessage),
 	}
 
+	accountAddresses := make([]string, 0, len(simState.Accounts))
+	for _, account := range simState.Accounts {
+		accountAddresses = append(accountAddresses, account.Address.String())
+	}
+
 	simulation.RandomisedGenState(&simState)
 
 	var claimsGenesis types.GenesisState
@@ -49,11 +54,13 @@ func TestRandomisedGenState(t *testing.T) {
 		types.DefaultClaimCancellationPeriodBlocks,
 	)
 
-	// Simulation never appoints a committee, and seeds no claim: every claim
-	// carries an Insurance reservation that must be backed by a Bank balance
-	// the generator does not control. Both are what make the generated genesis
-	// launchable as produced.
-	require.True(t, claimsGenesis.ClaimsMandate.IsDisabled())
+	// The committee is appointed from the run's own accounts so the simulation
+	// can sign for it. No claim is seeded: every claim carries an Insurance
+	// reservation that must be backed by a Bank balance the generator does not
+	// control, which is what keeps the generated genesis launchable as produced.
+	require.False(t, claimsGenesis.ClaimsMandate.IsDisabled())
+	require.Contains(t, accountAddresses, claimsGenesis.ClaimsMandate.Committee)
+	require.True(t, claimsGenesis.ClaimsMandate.CommitteeClaimLimit.IsPositive())
 	require.Empty(t, claimsGenesis.Claims)
 	require.True(t, claimsGenesis.ClaimsAllowanceUsed.IsZero())
 	require.True(t, claimsGenesis.InsuranceReserved.IsZero())
