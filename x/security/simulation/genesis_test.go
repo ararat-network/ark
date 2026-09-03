@@ -71,24 +71,21 @@ func TestGenSecurityMandateAppointments(t *testing.T) {
 		accounts = append(accounts, account.Address.String())
 	}
 
-	var appointed int
+	// Every run appoints: a run without a committee exercises none of the
+	// committee surface, and the disabled shape is round-tripped by the keeper
+	// genesis tests rather than by chance here.
 	for range 500 {
 		mandate := simulation.GenSecurityMandate(r, accounts)
-		require.NoError(t, mandate.Validate())
-		if mandate.IsDisabled() {
-			continue
-		}
 
-		appointed++
+		require.NoError(t, mandate.Validate())
+		require.False(t, mandate.IsDisabled())
 		require.Contains(t, accounts, mandate.Committee)
 		require.Positive(t, mandate.ActivationHeight)
 		require.Greater(t, mandate.ExpiryHeight, mandate.ActivationHeight)
 	}
 
-	// Both branches must be reachable: an appointment that never happens leaves
-	// genesis import, export, and the store decoder seeing only the empty case.
-	require.Positive(t, appointed)
-	require.Less(t, appointed, 500)
+	// Without accounts there is nobody to appoint, which is the empty case.
+	require.True(t, simulation.GenSecurityMandate(r, nil).IsDisabled())
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {

@@ -9,26 +9,27 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/security/types"
 )
 
 // Simulation parameter constants
 const securityMandateKey = "security_mandate"
 
-// GenSecurityMandate randomises the committee appointment, disabled most of
-// the time as at launch. The enabled minority exists so genesis import, export,
-// and the store decoder see a populated appointment; the committee itself never
-// acts in simulation.
+// GenSecurityMandate appoints the committee from the run's own accounts, so
+// the simulation holds the key that signs for it, and opens the window at the
+// first block for longer than any run lasts. Both are deliberate: an
+// appointment the run cannot sign for, or one whose window opens after the run
+// ends, leaves the committee surface unexercised.
 func GenSecurityMandate(r *rand.Rand, accounts []string) types.SecurityMandate {
-	if len(accounts) == 0 || r.Intn(10) != 0 {
+	if len(accounts) == 0 {
 		return types.DefaultSecurityMandate()
 	}
 
-	activationHeight := uint64(1 + r.Intn(1000))
-	appointment := types.NewDisabledSecurityMandate(uint64(1 + r.Intn(5)))
+	appointment := types.NewDisabledSecurityMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = activationHeight
-	appointment.ExpiryHeight = activationHeight + uint64(1+r.Intn(100000))
+	appointment.ActivationHeight = 1
+	appointment.ExpiryHeight = chain.BlocksPerYear
 
 	return appointment
 }
