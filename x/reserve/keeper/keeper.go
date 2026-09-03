@@ -160,3 +160,8 @@ func (k *Keeper) SetTreasuryCapitalReader(reader types.TreasuryCapitalReader) {
 func (k Keeper) balance(ctx context.Context) math.Int {
 	return k.bankKeeper.GetBalance(ctx, k.reserveAddress, chain.NoahBaseDenom).Amount
 }
+
+// ReserveBalance returns the Reserve's NOAH balance.
+func (k Keeper) ReserveBalance(ctx context.Context) math.Int {
+	return k.balance(ctx)
+}
