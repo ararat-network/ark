@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
 	"cosmossdk.io/core/appmodule"
@@ -17,7 +16,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	marketcli "github.com/ararat-network/ark/x/market/client/cli"
 	"github.com/ararat-network/ark/x/market/keeper"
 	"github.com/ararat-network/ark/x/market/types"
 )
@@ -50,11 +48,6 @@ func (am AppModule) IsAppModule() {}
 
 // Name returns the market module's name.
 func (AppModule) Name() string { return types.ModuleName }
-
-// GetTxCmd returns the custom market transaction commands.
-func (AppModule) GetTxCmd() *cobra.Command {
-	return marketcli.GetTxCmd()
-}
 
 // RegisterLegacyAminoCodec registers the market module's types for the given codec.
 func (am AppModule) RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {

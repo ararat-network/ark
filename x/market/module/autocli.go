@@ -90,7 +90,16 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "SwapSend",
-					Skip:      true,
+					Use:       "swap-send [offer-coin] [ask-denom] [to-address] [minimum-receive]",
+					Short:     "Atomically swap currencies and send the output to another address",
+					Long:      "Swap the offer coin to the ask denomination at the oracle's effective exchange rate and send the output to to-address. Supply minimum-receive to fail the swap unless it returns at least that much; omit it to accept market execution.",
+					Example:   fmt.Sprintf(`%s tx market swap-send "1000000000000000000akrw" "ausd" "ark1..." "740000000000000ausd"`, version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "offer_coin"},
+						{ProtoField: "ask_denom"},
+						{ProtoField: "to_address"},
+						{ProtoField: "minimum_receive", Optional: true},
+					},
 				},
 				{
 					RpcMethod: "Settle",
@@ -165,7 +174,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 			},
-			EnhanceCustomCommand: true,
 		},
 	}
 }
