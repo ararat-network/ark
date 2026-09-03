@@ -40,6 +40,40 @@ func TestExposureStateValidate(t *testing.T) {
 	}{
 		{name: defaultValidCase, mutate: func(*types.ExposureState) {}},
 		{
+			// A nil Dec panics on comparison, so the unset guard ahead of every
+			// range check is the gate. Each field is asserted separately because
+			// four of them are guarded through a list: one left out of it is the
+			// live risk, and a shared branch would hide that.
+			name:      "unset reference price",
+			mutate:    func(s *types.ExposureState) { s.LastReferencePrice = math.LegacyDec{} },
+			expectErr: "LastReferencePrice must be set",
+		},
+		{
+			name:      "unset flow pressure",
+			mutate:    func(s *types.ExposureState) { s.FlowPressure = math.LegacyDec{} },
+			expectErr: "FlowPressure must be set",
+		},
+		{
+			name:      "unset liability ratio",
+			mutate:    func(s *types.ExposureState) { s.LiabilityRatio = math.LegacyDec{} },
+			expectErr: "LiabilityRatio must be set",
+		},
+		{
+			name:      "unset flow ratio",
+			mutate:    func(s *types.ExposureState) { s.FlowRatio = math.LegacyDec{} },
+			expectErr: "FlowRatio must be set",
+		},
+		{
+			name:      "unset variance",
+			mutate:    func(s *types.ExposureState) { s.VolatilityVariance = math.LegacyDec{} },
+			expectErr: "VolatilityVariance must be set",
+		},
+		{
+			name:      "unset multiplier",
+			mutate:    func(s *types.ExposureState) { s.Multiplier = math.LegacyDec{} },
+			expectErr: "Multiplier must be set",
+		},
+		{
 			name:      "negative variance",
 			mutate:    func(s *types.ExposureState) { s.VolatilityVariance = math.LegacyNewDec(-1) },
 			expectErr: "VolatilityVariance must be between zero and one",

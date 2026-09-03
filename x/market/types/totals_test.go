@@ -67,6 +67,13 @@ func TestConversionTotalsValidate(t *testing.T) {
 			expectErr: "incomplete",
 		},
 		{
+			name: "unset redemption output",
+			mutate: func(totals *types.ConversionTotals) {
+				totals.RedemptionOutput = math.Int{}
+			},
+			expectErr: "incomplete",
+		},
+		{
 			name: "unset redeemed value",
 			mutate: func(totals *types.ConversionTotals) {
 				totals.RedeemedValue = math.LegacyDec{}

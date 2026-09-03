@@ -7,7 +7,6 @@ import (
 
 	"cosmossdk.io/math"
 
-	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -66,6 +65,13 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) { p.ReferenceTaxCap = math.ZeroInt() },
 		},
 		{
+			// A nil Dec panics on comparison, so the unset guard ahead of every
+			// range check is the gate, not a formality.
+			name:      "unset base-fee target",
+			mutate:    func(p *types.Params) { p.BaseFeeTargetUtilisation = math.LegacyDec{} },
+			expectErr: "BaseFeeTargetUtilisation must be set",
+		},
+		{
 			name:      "zero base-fee target",
 			mutate:    func(p *types.Params) { p.BaseFeeTargetUtilisation = math.LegacyZeroDec() },
 			expectErr: "BaseFeeTargetUtilisation must be above zero and at most one",
@@ -82,6 +88,11 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "BaseFeeTargetUtilisation must be above zero and at most one",
 		},
 		{
+			name:      "unset adjustment rate",
+			mutate:    func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyDec{} },
+			expectErr: "BaseFeeAdjustmentRate must be set",
+		},
+		{
 			// Legitimate: zero disables the controller and holds the floor.
 			name:   "zero adjustment rate",
 			mutate: func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyZeroDec() },
@@ -95,6 +106,11 @@ func TestParamsValidate(t *testing.T) {
 			name:      "adjustment rate above the domain cap",
 			mutate:    func(p *types.Params) { p.BaseFeeAdjustmentRate = math.LegacyNewDec(2) },
 			expectErr: "BaseFeeAdjustmentRate must be at least zero and at most",
+		},
+		{
+			name:      "unset base gas price floor",
+			mutate:    func(p *types.Params) { p.MinBaseGasPrice = math.LegacyDec{} },
+			expectErr: "MinBaseGasPrice must be set",
 		},
 		{
 			name:      "zero base gas price floor",
@@ -138,6 +154,19 @@ func TestExposureMachineryValidate(t *testing.T) {
 	}{
 		{name: defaultValidCase, mutate: func(*types.Params) {}},
 		{
+			// A nil Dec panics on comparison, so the unset guard ahead of the
+			// range checks is the gate. Both decays are asserted because that
+			// guard reads a list: a field left out of it is the live risk.
+			name:      "unset volatility decay",
+			mutate:    func(p *types.Params) { p.VolatilityDecay = math.LegacyDec{} },
+			expectErr: "ExposureVolatilityDecay must be set",
+		},
+		{
+			name:      "unset flow decay",
+			mutate:    func(p *types.Params) { p.FlowDecay = math.LegacyDec{} },
+			expectErr: "ExposureFlowDecay must be set",
+		},
+		{
 			// Legitimate: the series becomes the latest sample alone.
 			name:   "zero decay",
 			mutate: func(p *types.Params) { p.VolatilityDecay = math.LegacyZeroDec() },
@@ -158,6 +187,11 @@ func TestExposureMachineryValidate(t *testing.T) {
 			name:      "negative decay",
 			mutate:    func(p *types.Params) { p.FlowDecay = math.LegacyMustNewDecFromStr("-0.5") },
 			expectErr: "ExposureFlowDecay must be at least zero and below one",
+		},
+		{
+			name:      "unset multiplier cap",
+			mutate:    func(p *types.Params) { p.MultiplierCap = math.LegacyDec{} },
+			expectErr: "ExposureMultiplierCap must be set",
 		},
 		{
 			// The boundary-valid cap: scaling by exactly one is the unscaled
@@ -186,6 +220,11 @@ func TestExposureMachineryValidate(t *testing.T) {
 			expectErr: "ExposureMultiplierCap must be between one and",
 		},
 		{
+			name:      "unset step",
+			mutate:    func(p *types.Params) { p.MultiplierMaxStep = math.LegacyDec{} },
+			expectErr: "ExposureMultiplierMaxStep must be set",
+		},
+		{
 			// A zero step admits no movement, which freezes the multiplier and
 			// makes every weight dead configuration.
 			name:      "zero step",
@@ -211,11 +250,11 @@ func TestExposureMachineryValidate(t *testing.T) {
 		},
 		{
 			name:   "refresh period at the domain cap",
-			mutate: func(p *types.Params) { p.ExposureRefreshPeriodBlocks = chain.BlocksPerYear },
+			mutate: func(p *types.Params) { p.ExposureRefreshPeriodBlocks = types.MaxExposureRefreshPeriodBlocks },
 		},
 		{
 			name:      "refresh period above the domain cap",
-			mutate:    func(p *types.Params) { p.ExposureRefreshPeriodBlocks = chain.BlocksPerYear + 1 },
+			mutate:    func(p *types.Params) { p.ExposureRefreshPeriodBlocks = types.MaxExposureRefreshPeriodBlocks + 1 },
 			expectErr: "ExposureRefreshPeriodBlocks must be between one and",
 		},
 	}

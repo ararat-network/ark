@@ -71,6 +71,19 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: "never priced",
 		},
 		{
+			// A nil Dec panics on comparison, so the unset guard is the gate:
+			// RawCredit reads HaircutFactor without one of its own, trusting
+			// that every stored entry came through here.
+			name:    "unset haircut",
+			mutate:  func(e *types.EligibilityEntry) { e.HaircutFactor = math.LegacyDec{} },
+			wantErr: "haircut factor must be greater than zero and at most one",
+		},
+		{
+			name:    "unset cap ratio",
+			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyDec{} },
+			wantErr: "recognition cap ratio must be greater than zero and at most one",
+		},
+		{
 			// An entry granting no credit is indistinguishable from no entry at
 			// all — it admits nothing, since custody admission never reads this
 			// policy, and folds to zero exactly as an unlisted denomination
