@@ -44,9 +44,8 @@ func (k Keeper) HasAsset(ctx context.Context, denom string) (bool, error) {
 	return registered, nil
 }
 
-// ListAssets returns every registered asset in key order. Treasury's liability
-// partition is a fold over this list; it never stores a membership set of its
-// own.
+// ListAssets returns every registered asset in key order. The lifecycle queries
+// are folds over it; nothing stores a membership set of its own.
 func (k Keeper) ListAssets(ctx context.Context) ([]types.Asset, error) {
 	assets := []types.Asset{}
 	if err := k.Assets.Walk(ctx, nil, func(_ string, asset types.Asset) (bool, error) {
@@ -103,4 +102,9 @@ func (k Keeper) advanceAsset(ctx context.Context, before types.Asset, after type
 	}
 
 	return nil
+}
+
+// AssetSupply returns the outstanding supply of a denomination.
+func (k Keeper) AssetSupply(ctx context.Context, denom string) sdk.Coin {
+	return k.bankKeeper.GetSupply(ctx, denom)
 }
