@@ -33,7 +33,7 @@ message Params {
   // The exposure multiplier's machinery (D72): the instrument that measures
   // risk, the cadence it runs on, and the rails bounding how far and how fast
   // the response may move. The three indicator weights it serves are
-  // MonetaryPolicy, because those are stance and these are not — a decay
+  // EconomicPolicy, because those are stance and these are not — a decay
   // defines what the series means and a series folded under one memory is not
   // recoverable by restoring the old value, while the cap and the step are the
   // bounds a delegated weight is safe inside, so handing them to the same
@@ -184,10 +184,10 @@ message ExposureState {
   uint64 last_refresh_height = 7 [(amino.dont_omitempty) = true];
 }
 
-// MonetaryPolicy is the complete set of reversible Treasury levers delegated
-// to the monetary-policy committee.
-message MonetaryPolicy {
-  string stability_tax_rate = 1 [
+// EconomicPolicy is the complete set of reversible Treasury levers delegated
+// to the economic-policy committee.
+message EconomicPolicy {
+  string transfer_tax_rate = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -262,22 +262,22 @@ message MonetaryPolicy {
   ];
 }
 
-// MonetaryMandate stores one governance-created, bounded committee
+// EconomicMandate stores one governance-created, bounded committee
 // appointment. An empty committee identifies a disabled mandate; term still
 // increases on replacement so previously prepared committee transactions
 // cannot become valid again.
-message MonetaryMandate {
+message EconomicMandate {
   // envelope carries the shared term, committee, and half-open height window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryPolicy minimum_policy = 2 [
+  EconomicPolicy minimum_policy = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryPolicy maximum_policy = 3 [
+  EconomicPolicy maximum_policy = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

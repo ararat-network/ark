@@ -71,8 +71,8 @@ var (
 	fd_GenesisState_params                   protoreflect.FieldDescriptor
 	fd_GenesisState_conversion_factors       protoreflect.FieldDescriptor
 	fd_GenesisState_reward_funding           protoreflect.FieldDescriptor
-	fd_GenesisState_monetary_mandate         protoreflect.FieldDescriptor
-	fd_GenesisState_monetary_policy          protoreflect.FieldDescriptor
+	fd_GenesisState_economic_mandate         protoreflect.FieldDescriptor
+	fd_GenesisState_economic_policy          protoreflect.FieldDescriptor
 	fd_GenesisState_exposure_state           protoreflect.FieldDescriptor
 	fd_GenesisState_exposure_refresh_pending protoreflect.FieldDescriptor
 	fd_GenesisState_base_gas_price           protoreflect.FieldDescriptor
@@ -84,8 +84,8 @@ func init() {
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_conversion_factors = md_GenesisState.Fields().ByName("conversion_factors")
 	fd_GenesisState_reward_funding = md_GenesisState.Fields().ByName("reward_funding")
-	fd_GenesisState_monetary_mandate = md_GenesisState.Fields().ByName("monetary_mandate")
-	fd_GenesisState_monetary_policy = md_GenesisState.Fields().ByName("monetary_policy")
+	fd_GenesisState_economic_mandate = md_GenesisState.Fields().ByName("economic_mandate")
+	fd_GenesisState_economic_policy = md_GenesisState.Fields().ByName("economic_policy")
 	fd_GenesisState_exposure_state = md_GenesisState.Fields().ByName("exposure_state")
 	fd_GenesisState_exposure_refresh_pending = md_GenesisState.Fields().ByName("exposure_refresh_pending")
 	fd_GenesisState_base_gas_price = md_GenesisState.Fields().ByName("base_gas_price")
@@ -174,15 +174,15 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if x.MonetaryMandate != nil {
-		value := protoreflect.ValueOfMessage(x.MonetaryMandate.ProtoReflect())
-		if !f(fd_GenesisState_monetary_mandate, value) {
+	if x.EconomicMandate != nil {
+		value := protoreflect.ValueOfMessage(x.EconomicMandate.ProtoReflect())
+		if !f(fd_GenesisState_economic_mandate, value) {
 			return
 		}
 	}
-	if x.MonetaryPolicy != nil {
-		value := protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
-		if !f(fd_GenesisState_monetary_policy, value) {
+	if x.EconomicPolicy != nil {
+		value := protoreflect.ValueOfMessage(x.EconomicPolicy.ProtoReflect())
+		if !f(fd_GenesisState_economic_policy, value) {
 			return
 		}
 	}
@@ -225,10 +225,10 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return len(x.ConversionFactors) != 0
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		return x.RewardFunding != nil
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		return x.MonetaryMandate != nil
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		return x.MonetaryPolicy != nil
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		return x.EconomicMandate != nil
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		return x.EconomicPolicy != nil
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		return x.ExposureState != nil
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -257,10 +257,10 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.ConversionFactors = nil
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = nil
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		x.MonetaryMandate = nil
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		x.MonetaryPolicy = nil
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		x.EconomicMandate = nil
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		x.EconomicPolicy = nil
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		x.ExposureState = nil
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -295,11 +295,11 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		value := x.RewardFunding
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		value := x.MonetaryMandate
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		value := x.EconomicMandate
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		value := x.MonetaryPolicy
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		value := x.EconomicPolicy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		value := x.ExposureState
@@ -338,10 +338,10 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.ConversionFactors = *clv.list
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		x.RewardFunding = value.Message().Interface().(*RewardFundingState)
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		x.MonetaryMandate = value.Message().Interface().(*MonetaryMandate)
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		x.MonetaryPolicy = value.Message().Interface().(*MonetaryPolicy)
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		x.EconomicMandate = value.Message().Interface().(*EconomicMandate)
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		x.EconomicPolicy = value.Message().Interface().(*EconomicPolicy)
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		x.ExposureState = value.Message().Interface().(*ExposureState)
 	case "ark.treasury.v1.GenesisState.exposure_refresh_pending":
@@ -384,16 +384,16 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.RewardFunding = new(RewardFundingState)
 		}
 		return protoreflect.ValueOfMessage(x.RewardFunding.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		if x.MonetaryMandate == nil {
-			x.MonetaryMandate = new(MonetaryMandate)
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		if x.EconomicMandate == nil {
+			x.EconomicMandate = new(EconomicMandate)
 		}
-		return protoreflect.ValueOfMessage(x.MonetaryMandate.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		if x.MonetaryPolicy == nil {
-			x.MonetaryPolicy = new(MonetaryPolicy)
+		return protoreflect.ValueOfMessage(x.EconomicMandate.ProtoReflect())
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		if x.EconomicPolicy == nil {
+			x.EconomicPolicy = new(EconomicPolicy)
 		}
-		return protoreflect.ValueOfMessage(x.MonetaryPolicy.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.EconomicPolicy.ProtoReflect())
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		if x.ExposureState == nil {
 			x.ExposureState = new(ExposureState)
@@ -425,11 +425,11 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.treasury.v1.GenesisState.reward_funding":
 		m := new(RewardFundingState)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_mandate":
-		m := new(MonetaryMandate)
+	case "ark.treasury.v1.GenesisState.economic_mandate":
+		m := new(EconomicMandate)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.GenesisState.monetary_policy":
-		m := new(MonetaryPolicy)
+	case "ark.treasury.v1.GenesisState.economic_policy":
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.treasury.v1.GenesisState.exposure_state":
 		m := new(ExposureState)
@@ -521,12 +521,12 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.RewardFunding)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.MonetaryMandate != nil {
-			l = options.Size(x.MonetaryMandate)
+		if x.EconomicMandate != nil {
+			l = options.Size(x.EconomicMandate)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.MonetaryPolicy != nil {
-			l = options.Size(x.MonetaryPolicy)
+		if x.EconomicPolicy != nil {
+			l = options.Size(x.EconomicPolicy)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.ExposureState != nil {
@@ -600,8 +600,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x32
 		}
-		if x.MonetaryPolicy != nil {
-			encoded, err := options.Marshal(x.MonetaryPolicy)
+		if x.EconomicPolicy != nil {
+			encoded, err := options.Marshal(x.EconomicPolicy)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -614,8 +614,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x2a
 		}
-		if x.MonetaryMandate != nil {
-			encoded, err := options.Marshal(x.MonetaryMandate)
+		if x.EconomicMandate != nil {
+			encoded, err := options.Marshal(x.EconomicMandate)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -829,7 +829,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryMandate", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EconomicMandate", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -856,16 +856,16 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.MonetaryMandate == nil {
-					x.MonetaryMandate = &MonetaryMandate{}
+				if x.EconomicMandate == nil {
+					x.EconomicMandate = &EconomicMandate{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MonetaryMandate); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EconomicMandate); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
 			case 5:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MonetaryPolicy", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EconomicPolicy", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -892,10 +892,10 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.MonetaryPolicy == nil {
-					x.MonetaryPolicy = &MonetaryPolicy{}
+				if x.EconomicPolicy == nil {
+					x.EconomicPolicy = &EconomicPolicy{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MonetaryPolicy); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EconomicPolicy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1046,8 +1046,8 @@ type GenesisState struct {
 	// the tax base excludes NOAH by denomination, never by table absence.
 	ConversionFactors []*ConversionFactor `protobuf:"bytes,2,rep,name=conversion_factors,json=conversionFactors,proto3" json:"conversion_factors,omitempty"`
 	RewardFunding     *RewardFundingState `protobuf:"bytes,3,opt,name=reward_funding,json=rewardFunding,proto3" json:"reward_funding,omitempty"`
-	MonetaryMandate   *MonetaryMandate    `protobuf:"bytes,4,opt,name=monetary_mandate,json=monetaryMandate,proto3" json:"monetary_mandate,omitempty"`
-	MonetaryPolicy    *MonetaryPolicy     `protobuf:"bytes,5,opt,name=monetary_policy,json=monetaryPolicy,proto3" json:"monetary_policy,omitempty"`
+	EconomicMandate   *EconomicMandate    `protobuf:"bytes,4,opt,name=economic_mandate,json=economicMandate,proto3" json:"economic_mandate,omitempty"`
+	EconomicPolicy    *EconomicPolicy     `protobuf:"bytes,5,opt,name=economic_policy,json=economicPolicy,proto3" json:"economic_policy,omitempty"`
 	// exposure_state carries the multiplier and the two sampled series across an
 	// export. The series are the only history behind the multiplier, so dropping
 	// them would restart every EWMA from zero and hand the new chain a
@@ -1105,16 +1105,16 @@ func (x *GenesisState) GetRewardFunding() *RewardFundingState {
 	return nil
 }
 
-func (x *GenesisState) GetMonetaryMandate() *MonetaryMandate {
+func (x *GenesisState) GetEconomicMandate() *EconomicMandate {
 	if x != nil {
-		return x.MonetaryMandate
+		return x.EconomicMandate
 	}
 	return nil
 }
 
-func (x *GenesisState) GetMonetaryPolicy() *MonetaryPolicy {
+func (x *GenesisState) GetEconomicPolicy() *EconomicPolicy {
 	if x != nil {
-		return x.MonetaryPolicy
+		return x.EconomicPolicy
 	}
 	return nil
 }
@@ -1168,17 +1168,17 @@ var file_ark_treasury_v1_genesis_proto_rawDesc = []byte{
 	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46,
 	0x75, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x53, 0x74, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f,
 	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x72, 0x65, 0x77, 0x61, 0x72, 0x64, 0x46, 0x75,
-	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
-	0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x12, 0x56, 0x0a, 0x10, 0x65, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69,
+	0x63, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
 	0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
-	0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6d, 0x6f,
-	0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x53, 0x0a,
-	0x0f, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
+	0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x65, 0x63,
+	0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x53, 0x0a,
+	0x0f, 0x65, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79,
 	0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
-	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72,
-	0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69,
+	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69,
+	0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0e, 0x65, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69,
 	0x63, 0x79, 0x12, 0x50, 0x0a, 0x0e, 0x65, 0x78, 0x70, 0x6f, 0x73, 0x75, 0x72, 0x65, 0x5f, 0x73,
 	0x74, 0x61, 0x74, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x78, 0x70,
@@ -1227,16 +1227,16 @@ var file_ark_treasury_v1_genesis_proto_goTypes = []interface{}{
 	(*Params)(nil),             // 1: ark.treasury.v1.Params
 	(*ConversionFactor)(nil),   // 2: ark.treasury.v1.ConversionFactor
 	(*RewardFundingState)(nil), // 3: ark.treasury.v1.RewardFundingState
-	(*MonetaryMandate)(nil),    // 4: ark.treasury.v1.MonetaryMandate
-	(*MonetaryPolicy)(nil),     // 5: ark.treasury.v1.MonetaryPolicy
+	(*EconomicMandate)(nil),    // 4: ark.treasury.v1.EconomicMandate
+	(*EconomicPolicy)(nil),     // 5: ark.treasury.v1.EconomicPolicy
 	(*ExposureState)(nil),      // 6: ark.treasury.v1.ExposureState
 }
 var file_ark_treasury_v1_genesis_proto_depIdxs = []int32{
 	1, // 0: ark.treasury.v1.GenesisState.params:type_name -> ark.treasury.v1.Params
 	2, // 1: ark.treasury.v1.GenesisState.conversion_factors:type_name -> ark.treasury.v1.ConversionFactor
 	3, // 2: ark.treasury.v1.GenesisState.reward_funding:type_name -> ark.treasury.v1.RewardFundingState
-	4, // 3: ark.treasury.v1.GenesisState.monetary_mandate:type_name -> ark.treasury.v1.MonetaryMandate
-	5, // 4: ark.treasury.v1.GenesisState.monetary_policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	4, // 3: ark.treasury.v1.GenesisState.economic_mandate:type_name -> ark.treasury.v1.EconomicMandate
+	5, // 4: ark.treasury.v1.GenesisState.economic_policy:type_name -> ark.treasury.v1.EconomicPolicy
 	6, // 5: ark.treasury.v1.GenesisState.exposure_state:type_name -> ark.treasury.v1.ExposureState
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type

@@ -20,17 +20,17 @@ service Query {
     option (google.api.http).get = "/ark/treasury/v1/params";
   }
 
-  // MonetaryPolicy queries the current reversible Treasury policy.
-  rpc MonetaryPolicy(QueryMonetaryPolicyRequest) returns (QueryMonetaryPolicyResponse) {
+  // EconomicPolicy queries the current reversible Treasury policy.
+  rpc EconomicPolicy(QueryEconomicPolicyRequest) returns (QueryEconomicPolicyResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/monetary_policy";
+    option (google.api.http).get = "/ark/treasury/v1/economic_policy";
   }
 
-  // MonetaryMandate queries the governed committee appointment and its
+  // EconomicMandate queries the governed committee appointment and its
   // current effective status.
-  rpc MonetaryMandate(QueryMonetaryMandateRequest) returns (QueryMonetaryMandateResponse) {
+  rpc EconomicMandate(QueryEconomicMandateRequest) returns (QueryEconomicMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/treasury/v1/monetary_mandate";
+    option (google.api.http).get = "/ark/treasury/v1/economic_mandate";
   }
 
   // TaxCap queries the derived tax cap for one denomination.
@@ -74,7 +74,7 @@ service Query {
     option (google.api.http).get = "/ark/treasury/v1/gas_prices";
   }
 
-  // ComputeTax computes the ante-visible stability tax for SDK messages.
+  // ComputeTax computes the ante-visible transfer tax for SDK messages.
   rpc ComputeTax(QueryComputeTaxRequest) returns (QueryComputeTaxResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http) = {
@@ -113,25 +113,25 @@ message QueryParamsResponse {
   ];
 }
 
-// QueryMonetaryPolicyRequest is the request for the current monetary policy.
-message QueryMonetaryPolicyRequest {}
+// QueryEconomicPolicyRequest is the request for the current economic policy.
+message QueryEconomicPolicyRequest {}
 
-// QueryMonetaryPolicyResponse returns the current reversible Treasury policy.
-message QueryMonetaryPolicyResponse {
-  MonetaryPolicy policy = 1 [
+// QueryEconomicPolicyResponse returns the current reversible Treasury policy.
+message QueryEconomicPolicyResponse {
+  EconomicPolicy policy = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 }
 
-// QueryMonetaryMandateRequest is the request for the governed
-// monetary-policy committee appointment.
-message QueryMonetaryMandateRequest {}
+// QueryEconomicMandateRequest is the request for the governed
+// economic-policy committee appointment.
+message QueryEconomicMandateRequest {}
 
-// QueryMonetaryMandateResponse returns the stored mandate and whether it
+// QueryEconomicMandateResponse returns the stored mandate and whether it
 // is usable at the current height.
-message QueryMonetaryMandateResponse {
-  MonetaryMandate mandate = 1 [
+message QueryEconomicMandateResponse {
+  EconomicMandate mandate = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

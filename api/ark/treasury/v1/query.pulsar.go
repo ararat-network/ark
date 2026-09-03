@@ -811,23 +811,23 @@ func (x *fastReflection_QueryParamsResponse) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_QueryMonetaryPolicyRequest protoreflect.MessageDescriptor
+	md_QueryEconomicPolicyRequest protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_query_proto_init()
-	md_QueryMonetaryPolicyRequest = File_ark_treasury_v1_query_proto.Messages().ByName("QueryMonetaryPolicyRequest")
+	md_QueryEconomicPolicyRequest = File_ark_treasury_v1_query_proto.Messages().ByName("QueryEconomicPolicyRequest")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMonetaryPolicyRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryEconomicPolicyRequest)(nil)
 
-type fastReflection_QueryMonetaryPolicyRequest QueryMonetaryPolicyRequest
+type fastReflection_QueryEconomicPolicyRequest QueryEconomicPolicyRequest
 
-func (x *QueryMonetaryPolicyRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryPolicyRequest)(x)
+func (x *QueryEconomicPolicyRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryEconomicPolicyRequest)(x)
 }
 
-func (x *QueryMonetaryPolicyRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryEconomicPolicyRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_query_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -839,43 +839,43 @@ func (x *QueryMonetaryPolicyRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMonetaryPolicyRequest_messageType fastReflection_QueryMonetaryPolicyRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMonetaryPolicyRequest_messageType{}
+var _fastReflection_QueryEconomicPolicyRequest_messageType fastReflection_QueryEconomicPolicyRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryEconomicPolicyRequest_messageType{}
 
-type fastReflection_QueryMonetaryPolicyRequest_messageType struct{}
+type fastReflection_QueryEconomicPolicyRequest_messageType struct{}
 
-func (x fastReflection_QueryMonetaryPolicyRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryPolicyRequest)(nil)
+func (x fastReflection_QueryEconomicPolicyRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryEconomicPolicyRequest)(nil)
 }
-func (x fastReflection_QueryMonetaryPolicyRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryPolicyRequest)
+func (x fastReflection_QueryEconomicPolicyRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicPolicyRequest)
 }
-func (x fastReflection_QueryMonetaryPolicyRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryPolicyRequest
+func (x fastReflection_QueryEconomicPolicyRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicPolicyRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryPolicyRequest
+func (x *fastReflection_QueryEconomicPolicyRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicPolicyRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMonetaryPolicyRequest_messageType
+func (x *fastReflection_QueryEconomicPolicyRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryEconomicPolicyRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMonetaryPolicyRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryPolicyRequest)
+func (x *fastReflection_QueryEconomicPolicyRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicPolicyRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryMonetaryPolicyRequest)(x)
+func (x *fastReflection_QueryEconomicPolicyRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryEconomicPolicyRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -883,7 +883,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Interface() protoreflect.Pro
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryEconomicPolicyRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -897,13 +897,13 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Range(f func(protoreflect.Fi
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryEconomicPolicyRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -913,13 +913,13 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Has(fd protoreflect.FieldDes
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryEconomicPolicyRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -929,13 +929,13 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Clear(fd protoreflect.FieldD
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -949,13 +949,13 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Get(descriptor protoreflect.
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryEconomicPolicyRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -969,36 +969,36 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) Set(fd protoreflect.FieldDes
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMonetaryPolicyRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMonetaryPolicyRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryEconomicPolicyRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryMonetaryPolicyRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryEconomicPolicyRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1006,7 +1006,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) WhichOneof(d protoreflect.On
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMonetaryPolicyRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryEconomicPolicyRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1017,7 +1017,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) GetUnknown() protoreflect.Ra
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryEconomicPolicyRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1029,7 +1029,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) SetUnknown(fields protorefle
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMonetaryPolicyRequest) IsValid() bool {
+func (x *fastReflection_QueryEconomicPolicyRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -1039,9 +1039,9 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMonetaryPolicyRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryEconomicPolicyRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMonetaryPolicyRequest)
+		x := input.Message.Interface().(*QueryEconomicPolicyRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1063,7 +1063,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) ProtoMethods() *protoiface.M
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryPolicyRequest)
+		x := input.Message.Interface().(*QueryEconomicPolicyRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1093,7 +1093,7 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) ProtoMethods() *protoiface.M
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryPolicyRequest)
+		x := input.Message.Interface().(*QueryEconomicPolicyRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1125,10 +1125,10 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) ProtoMethods() *protoiface.M
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryPolicyRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicPolicyRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryPolicyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicPolicyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -1167,25 +1167,25 @@ func (x *fastReflection_QueryMonetaryPolicyRequest) ProtoMethods() *protoiface.M
 }
 
 var (
-	md_QueryMonetaryPolicyResponse        protoreflect.MessageDescriptor
-	fd_QueryMonetaryPolicyResponse_policy protoreflect.FieldDescriptor
+	md_QueryEconomicPolicyResponse        protoreflect.MessageDescriptor
+	fd_QueryEconomicPolicyResponse_policy protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_query_proto_init()
-	md_QueryMonetaryPolicyResponse = File_ark_treasury_v1_query_proto.Messages().ByName("QueryMonetaryPolicyResponse")
-	fd_QueryMonetaryPolicyResponse_policy = md_QueryMonetaryPolicyResponse.Fields().ByName("policy")
+	md_QueryEconomicPolicyResponse = File_ark_treasury_v1_query_proto.Messages().ByName("QueryEconomicPolicyResponse")
+	fd_QueryEconomicPolicyResponse_policy = md_QueryEconomicPolicyResponse.Fields().ByName("policy")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMonetaryPolicyResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryEconomicPolicyResponse)(nil)
 
-type fastReflection_QueryMonetaryPolicyResponse QueryMonetaryPolicyResponse
+type fastReflection_QueryEconomicPolicyResponse QueryEconomicPolicyResponse
 
-func (x *QueryMonetaryPolicyResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryPolicyResponse)(x)
+func (x *QueryEconomicPolicyResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryEconomicPolicyResponse)(x)
 }
 
-func (x *QueryMonetaryPolicyResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryEconomicPolicyResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_query_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1197,43 +1197,43 @@ func (x *QueryMonetaryPolicyResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMonetaryPolicyResponse_messageType fastReflection_QueryMonetaryPolicyResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMonetaryPolicyResponse_messageType{}
+var _fastReflection_QueryEconomicPolicyResponse_messageType fastReflection_QueryEconomicPolicyResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryEconomicPolicyResponse_messageType{}
 
-type fastReflection_QueryMonetaryPolicyResponse_messageType struct{}
+type fastReflection_QueryEconomicPolicyResponse_messageType struct{}
 
-func (x fastReflection_QueryMonetaryPolicyResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryPolicyResponse)(nil)
+func (x fastReflection_QueryEconomicPolicyResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryEconomicPolicyResponse)(nil)
 }
-func (x fastReflection_QueryMonetaryPolicyResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryPolicyResponse)
+func (x fastReflection_QueryEconomicPolicyResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicPolicyResponse)
 }
-func (x fastReflection_QueryMonetaryPolicyResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryPolicyResponse
+func (x fastReflection_QueryEconomicPolicyResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicPolicyResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryPolicyResponse
+func (x *fastReflection_QueryEconomicPolicyResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicPolicyResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMonetaryPolicyResponse_messageType
+func (x *fastReflection_QueryEconomicPolicyResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryEconomicPolicyResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMonetaryPolicyResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryPolicyResponse)
+func (x *fastReflection_QueryEconomicPolicyResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicPolicyResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryMonetaryPolicyResponse)(x)
+func (x *fastReflection_QueryEconomicPolicyResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryEconomicPolicyResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1241,10 +1241,10 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Interface() protoreflect.Pr
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryEconomicPolicyResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Policy != nil {
 		value := protoreflect.ValueOfMessage(x.Policy.ProtoReflect())
-		if !f(fd_QueryMonetaryPolicyResponse_policy, value) {
+		if !f(fd_QueryEconomicPolicyResponse_policy, value) {
 			return
 		}
 	}
@@ -1261,15 +1261,15 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Range(f func(protoreflect.F
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryEconomicPolicyResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
 		return x.Policy != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1279,15 +1279,15 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Has(fd protoreflect.FieldDe
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryEconomicPolicyResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
 		x.Policy = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1297,16 +1297,16 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Clear(fd protoreflect.Field
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
 		value := x.Policy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1320,15 +1320,15 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Get(descriptor protoreflect
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryEconomicPolicyResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
-		x.Policy = value.Message().Interface().(*MonetaryPolicy)
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
+		x.Policy = value.Message().Interface().(*EconomicPolicy)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1342,44 +1342,44 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) Set(fd protoreflect.FieldDe
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
 		if x.Policy == nil {
-			x.Policy = new(MonetaryPolicy)
+			x.Policy = new(EconomicPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.Policy.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMonetaryPolicyResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicPolicyResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryPolicyResponse.policy":
-		m := new(MonetaryPolicy)
+	case "ark.treasury.v1.QueryEconomicPolicyResponse.policy":
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryPolicyResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicPolicyResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryPolicyResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicPolicyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMonetaryPolicyResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryEconomicPolicyResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryMonetaryPolicyResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryEconomicPolicyResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1387,7 +1387,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) WhichOneof(d protoreflect.O
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMonetaryPolicyResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryEconomicPolicyResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1398,7 +1398,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) GetUnknown() protoreflect.R
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryPolicyResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryEconomicPolicyResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1410,7 +1410,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) SetUnknown(fields protorefl
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMonetaryPolicyResponse) IsValid() bool {
+func (x *fastReflection_QueryEconomicPolicyResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -1420,9 +1420,9 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryEconomicPolicyResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMonetaryPolicyResponse)
+		x := input.Message.Interface().(*QueryEconomicPolicyResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1448,7 +1448,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryPolicyResponse)
+		x := input.Message.Interface().(*QueryEconomicPolicyResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1492,7 +1492,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryPolicyResponse)
+		x := input.Message.Interface().(*QueryEconomicPolicyResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1524,10 +1524,10 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryPolicyResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicPolicyResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryPolicyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicPolicyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1560,7 +1560,7 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Policy == nil {
-					x.Policy = &MonetaryPolicy{}
+					x.Policy = &EconomicPolicy{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Policy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1602,23 +1602,23 @@ func (x *fastReflection_QueryMonetaryPolicyResponse) ProtoMethods() *protoiface.
 }
 
 var (
-	md_QueryMonetaryMandateRequest protoreflect.MessageDescriptor
+	md_QueryEconomicMandateRequest protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_query_proto_init()
-	md_QueryMonetaryMandateRequest = File_ark_treasury_v1_query_proto.Messages().ByName("QueryMonetaryMandateRequest")
+	md_QueryEconomicMandateRequest = File_ark_treasury_v1_query_proto.Messages().ByName("QueryEconomicMandateRequest")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMonetaryMandateRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryEconomicMandateRequest)(nil)
 
-type fastReflection_QueryMonetaryMandateRequest QueryMonetaryMandateRequest
+type fastReflection_QueryEconomicMandateRequest QueryEconomicMandateRequest
 
-func (x *QueryMonetaryMandateRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryMandateRequest)(x)
+func (x *QueryEconomicMandateRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryEconomicMandateRequest)(x)
 }
 
-func (x *QueryMonetaryMandateRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryEconomicMandateRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_query_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1630,43 +1630,43 @@ func (x *QueryMonetaryMandateRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMonetaryMandateRequest_messageType fastReflection_QueryMonetaryMandateRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMonetaryMandateRequest_messageType{}
+var _fastReflection_QueryEconomicMandateRequest_messageType fastReflection_QueryEconomicMandateRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryEconomicMandateRequest_messageType{}
 
-type fastReflection_QueryMonetaryMandateRequest_messageType struct{}
+type fastReflection_QueryEconomicMandateRequest_messageType struct{}
 
-func (x fastReflection_QueryMonetaryMandateRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryMandateRequest)(nil)
+func (x fastReflection_QueryEconomicMandateRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryEconomicMandateRequest)(nil)
 }
-func (x fastReflection_QueryMonetaryMandateRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryMandateRequest)
+func (x fastReflection_QueryEconomicMandateRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicMandateRequest)
 }
-func (x fastReflection_QueryMonetaryMandateRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryMandateRequest
+func (x fastReflection_QueryEconomicMandateRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicMandateRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMonetaryMandateRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryMandateRequest
+func (x *fastReflection_QueryEconomicMandateRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicMandateRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMonetaryMandateRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMonetaryMandateRequest_messageType
+func (x *fastReflection_QueryEconomicMandateRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryEconomicMandateRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMonetaryMandateRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryMandateRequest)
+func (x *fastReflection_QueryEconomicMandateRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicMandateRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMonetaryMandateRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryMonetaryMandateRequest)(x)
+func (x *fastReflection_QueryEconomicMandateRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryEconomicMandateRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1674,7 +1674,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Interface() protoreflect.Pr
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMonetaryMandateRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryEconomicMandateRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -1688,13 +1688,13 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Range(f func(protoreflect.F
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMonetaryMandateRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryEconomicMandateRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1704,13 +1704,13 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Has(fd protoreflect.FieldDe
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryEconomicMandateRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1720,13 +1720,13 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Clear(fd protoreflect.Field
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMonetaryMandateRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1740,13 +1740,13 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Get(descriptor protoreflect
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryEconomicMandateRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1760,36 +1760,36 @@ func (x *fastReflection_QueryMonetaryMandateRequest) Set(fd protoreflect.FieldDe
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMonetaryMandateRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateRequest"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMonetaryMandateRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryEconomicMandateRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryMonetaryMandateRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryEconomicMandateRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1797,7 +1797,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) WhichOneof(d protoreflect.O
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMonetaryMandateRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryEconomicMandateRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1808,7 +1808,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) GetUnknown() protoreflect.R
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryEconomicMandateRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1820,7 +1820,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) SetUnknown(fields protorefl
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMonetaryMandateRequest) IsValid() bool {
+func (x *fastReflection_QueryEconomicMandateRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -1830,9 +1830,9 @@ func (x *fastReflection_QueryMonetaryMandateRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMonetaryMandateRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryEconomicMandateRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMonetaryMandateRequest)
+		x := input.Message.Interface().(*QueryEconomicMandateRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1854,7 +1854,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) ProtoMethods() *protoiface.
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryMandateRequest)
+		x := input.Message.Interface().(*QueryEconomicMandateRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1884,7 +1884,7 @@ func (x *fastReflection_QueryMonetaryMandateRequest) ProtoMethods() *protoiface.
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryMandateRequest)
+		x := input.Message.Interface().(*QueryEconomicMandateRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1916,10 +1916,10 @@ func (x *fastReflection_QueryMonetaryMandateRequest) ProtoMethods() *protoiface.
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryMandateRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicMandateRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryMandateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicMandateRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -1958,27 +1958,27 @@ func (x *fastReflection_QueryMonetaryMandateRequest) ProtoMethods() *protoiface.
 }
 
 var (
-	md_QueryMonetaryMandateResponse         protoreflect.MessageDescriptor
-	fd_QueryMonetaryMandateResponse_mandate protoreflect.FieldDescriptor
-	fd_QueryMonetaryMandateResponse_active  protoreflect.FieldDescriptor
+	md_QueryEconomicMandateResponse         protoreflect.MessageDescriptor
+	fd_QueryEconomicMandateResponse_mandate protoreflect.FieldDescriptor
+	fd_QueryEconomicMandateResponse_active  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_query_proto_init()
-	md_QueryMonetaryMandateResponse = File_ark_treasury_v1_query_proto.Messages().ByName("QueryMonetaryMandateResponse")
-	fd_QueryMonetaryMandateResponse_mandate = md_QueryMonetaryMandateResponse.Fields().ByName("mandate")
-	fd_QueryMonetaryMandateResponse_active = md_QueryMonetaryMandateResponse.Fields().ByName("active")
+	md_QueryEconomicMandateResponse = File_ark_treasury_v1_query_proto.Messages().ByName("QueryEconomicMandateResponse")
+	fd_QueryEconomicMandateResponse_mandate = md_QueryEconomicMandateResponse.Fields().ByName("mandate")
+	fd_QueryEconomicMandateResponse_active = md_QueryEconomicMandateResponse.Fields().ByName("active")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryMonetaryMandateResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryEconomicMandateResponse)(nil)
 
-type fastReflection_QueryMonetaryMandateResponse QueryMonetaryMandateResponse
+type fastReflection_QueryEconomicMandateResponse QueryEconomicMandateResponse
 
-func (x *QueryMonetaryMandateResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryMandateResponse)(x)
+func (x *QueryEconomicMandateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryEconomicMandateResponse)(x)
 }
 
-func (x *QueryMonetaryMandateResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryEconomicMandateResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1990,43 +1990,43 @@ func (x *QueryMonetaryMandateResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryMonetaryMandateResponse_messageType fastReflection_QueryMonetaryMandateResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryMonetaryMandateResponse_messageType{}
+var _fastReflection_QueryEconomicMandateResponse_messageType fastReflection_QueryEconomicMandateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryEconomicMandateResponse_messageType{}
 
-type fastReflection_QueryMonetaryMandateResponse_messageType struct{}
+type fastReflection_QueryEconomicMandateResponse_messageType struct{}
 
-func (x fastReflection_QueryMonetaryMandateResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryMonetaryMandateResponse)(nil)
+func (x fastReflection_QueryEconomicMandateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryEconomicMandateResponse)(nil)
 }
-func (x fastReflection_QueryMonetaryMandateResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryMandateResponse)
+func (x fastReflection_QueryEconomicMandateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicMandateResponse)
 }
-func (x fastReflection_QueryMonetaryMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryMandateResponse
+func (x fastReflection_QueryEconomicMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicMandateResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryMonetaryMandateResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryMonetaryMandateResponse
+func (x *fastReflection_QueryEconomicMandateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryEconomicMandateResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryMonetaryMandateResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryMonetaryMandateResponse_messageType
+func (x *fastReflection_QueryEconomicMandateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryEconomicMandateResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryMonetaryMandateResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryMonetaryMandateResponse)
+func (x *fastReflection_QueryEconomicMandateResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryEconomicMandateResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryMonetaryMandateResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryMonetaryMandateResponse)(x)
+func (x *fastReflection_QueryEconomicMandateResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryEconomicMandateResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2034,16 +2034,16 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Interface() protoreflect.P
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryMonetaryMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryEconomicMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Mandate != nil {
 		value := protoreflect.ValueOfMessage(x.Mandate.ProtoReflect())
-		if !f(fd_QueryMonetaryMandateResponse_mandate, value) {
+		if !f(fd_QueryEconomicMandateResponse_mandate, value) {
 			return
 		}
 	}
 	if x.Active != false {
 		value := protoreflect.ValueOfBool(x.Active)
-		if !f(fd_QueryMonetaryMandateResponse_active, value) {
+		if !f(fd_QueryEconomicMandateResponse_active, value) {
 			return
 		}
 	}
@@ -2060,17 +2060,17 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Range(f func(protoreflect.
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryMonetaryMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryEconomicMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
 		return x.Mandate != nil
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
 		return x.Active != false
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2080,17 +2080,17 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Has(fd protoreflect.FieldD
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryEconomicMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
 		x.Mandate = nil
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
 		x.Active = false
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2100,19 +2100,19 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Clear(fd protoreflect.Fiel
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryMonetaryMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
 		value := x.Mandate
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
 		value := x.Active
 		return protoreflect.ValueOfBool(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2126,17 +2126,17 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Get(descriptor protoreflec
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryEconomicMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
-		x.Mandate = value.Message().Interface().(*MonetaryMandate)
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
+		x.Mandate = value.Message().Interface().(*EconomicMandate)
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
 		x.Active = value.Bool()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2150,48 +2150,48 @@ func (x *fastReflection_QueryMonetaryMandateResponse) Set(fd protoreflect.FieldD
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
 		if x.Mandate == nil {
-			x.Mandate = new(MonetaryMandate)
+			x.Mandate = new(EconomicMandate)
 		}
 		return protoreflect.ValueOfMessage(x.Mandate.ProtoReflect())
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
-		panic(fmt.Errorf("field active of message ark.treasury.v1.QueryMonetaryMandateResponse is not mutable"))
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
+		panic(fmt.Errorf("field active of message ark.treasury.v1.QueryEconomicMandateResponse is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryMonetaryMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryEconomicMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.mandate":
-		m := new(MonetaryMandate)
+	case "ark.treasury.v1.QueryEconomicMandateResponse.mandate":
+		m := new(EconomicMandate)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.QueryMonetaryMandateResponse.active":
+	case "ark.treasury.v1.QueryEconomicMandateResponse.active":
 		return protoreflect.ValueOfBool(false)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.QueryEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.QueryMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.QueryEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryMonetaryMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryEconomicMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryMonetaryMandateResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.QueryEconomicMandateResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2199,7 +2199,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) WhichOneof(d protoreflect.
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryMonetaryMandateResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryEconomicMandateResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2210,7 +2210,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) GetUnknown() protoreflect.
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryMonetaryMandateResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryEconomicMandateResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2222,7 +2222,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) SetUnknown(fields protoref
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryMonetaryMandateResponse) IsValid() bool {
+func (x *fastReflection_QueryEconomicMandateResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2232,9 +2232,9 @@ func (x *fastReflection_QueryMonetaryMandateResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryMonetaryMandateResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryEconomicMandateResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryMonetaryMandateResponse)
+		x := input.Message.Interface().(*QueryEconomicMandateResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2263,7 +2263,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) ProtoMethods() *protoiface
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryMandateResponse)
+		x := input.Message.Interface().(*QueryEconomicMandateResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2317,7 +2317,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) ProtoMethods() *protoiface
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryMonetaryMandateResponse)
+		x := input.Message.Interface().(*QueryEconomicMandateResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2349,10 +2349,10 @@ func (x *fastReflection_QueryMonetaryMandateResponse) ProtoMethods() *protoiface
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryMandateResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicMandateResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryMonetaryMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryEconomicMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2385,7 +2385,7 @@ func (x *fastReflection_QueryMonetaryMandateResponse) ProtoMethods() *protoiface
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Mandate == nil {
-					x.Mandate = &MonetaryMandate{}
+					x.Mandate = &EconomicMandate{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Mandate); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -12993,15 +12993,15 @@ func (x *QueryParamsResponse) GetParams() *Params {
 	return nil
 }
 
-// QueryMonetaryPolicyRequest is the request for the current monetary policy.
-type QueryMonetaryPolicyRequest struct {
+// QueryEconomicPolicyRequest is the request for the current economic policy.
+type QueryEconomicPolicyRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *QueryMonetaryPolicyRequest) Reset() {
-	*x = QueryMonetaryPolicyRequest{}
+func (x *QueryEconomicPolicyRequest) Reset() {
+	*x = QueryEconomicPolicyRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_query_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -13009,28 +13009,28 @@ func (x *QueryMonetaryPolicyRequest) Reset() {
 	}
 }
 
-func (x *QueryMonetaryPolicyRequest) String() string {
+func (x *QueryEconomicPolicyRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMonetaryPolicyRequest) ProtoMessage() {}
+func (*QueryEconomicPolicyRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryMonetaryPolicyRequest.ProtoReflect.Descriptor instead.
-func (*QueryMonetaryPolicyRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryEconomicPolicyRequest.ProtoReflect.Descriptor instead.
+func (*QueryEconomicPolicyRequest) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{2}
 }
 
-// QueryMonetaryPolicyResponse returns the current reversible Treasury policy.
-type QueryMonetaryPolicyResponse struct {
+// QueryEconomicPolicyResponse returns the current reversible Treasury policy.
+type QueryEconomicPolicyResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Policy *MonetaryPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	Policy *EconomicPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
 }
 
-func (x *QueryMonetaryPolicyResponse) Reset() {
-	*x = QueryMonetaryPolicyResponse{}
+func (x *QueryEconomicPolicyResponse) Reset() {
+	*x = QueryEconomicPolicyResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_query_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -13038,34 +13038,34 @@ func (x *QueryMonetaryPolicyResponse) Reset() {
 	}
 }
 
-func (x *QueryMonetaryPolicyResponse) String() string {
+func (x *QueryEconomicPolicyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMonetaryPolicyResponse) ProtoMessage() {}
+func (*QueryEconomicPolicyResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryMonetaryPolicyResponse.ProtoReflect.Descriptor instead.
-func (*QueryMonetaryPolicyResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryEconomicPolicyResponse.ProtoReflect.Descriptor instead.
+func (*QueryEconomicPolicyResponse) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueryMonetaryPolicyResponse) GetPolicy() *MonetaryPolicy {
+func (x *QueryEconomicPolicyResponse) GetPolicy() *EconomicPolicy {
 	if x != nil {
 		return x.Policy
 	}
 	return nil
 }
 
-// QueryMonetaryMandateRequest is the request for the governed
-// monetary-policy committee appointment.
-type QueryMonetaryMandateRequest struct {
+// QueryEconomicMandateRequest is the request for the governed
+// economic-policy committee appointment.
+type QueryEconomicMandateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *QueryMonetaryMandateRequest) Reset() {
-	*x = QueryMonetaryMandateRequest{}
+func (x *QueryEconomicMandateRequest) Reset() {
+	*x = QueryEconomicMandateRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_query_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -13073,30 +13073,30 @@ func (x *QueryMonetaryMandateRequest) Reset() {
 	}
 }
 
-func (x *QueryMonetaryMandateRequest) String() string {
+func (x *QueryEconomicMandateRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMonetaryMandateRequest) ProtoMessage() {}
+func (*QueryEconomicMandateRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryMonetaryMandateRequest.ProtoReflect.Descriptor instead.
-func (*QueryMonetaryMandateRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryEconomicMandateRequest.ProtoReflect.Descriptor instead.
+func (*QueryEconomicMandateRequest) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{4}
 }
 
-// QueryMonetaryMandateResponse returns the stored mandate and whether it
+// QueryEconomicMandateResponse returns the stored mandate and whether it
 // is usable at the current height.
-type QueryMonetaryMandateResponse struct {
+type QueryEconomicMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Mandate *MonetaryMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
+	Mandate *EconomicMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
 	Active  bool             `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 }
 
-func (x *QueryMonetaryMandateResponse) Reset() {
-	*x = QueryMonetaryMandateResponse{}
+func (x *QueryEconomicMandateResponse) Reset() {
+	*x = QueryEconomicMandateResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -13104,25 +13104,25 @@ func (x *QueryMonetaryMandateResponse) Reset() {
 	}
 }
 
-func (x *QueryMonetaryMandateResponse) String() string {
+func (x *QueryEconomicMandateResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryMonetaryMandateResponse) ProtoMessage() {}
+func (*QueryEconomicMandateResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryMonetaryMandateResponse.ProtoReflect.Descriptor instead.
-func (*QueryMonetaryMandateResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryEconomicMandateResponse.ProtoReflect.Descriptor instead.
+func (*QueryEconomicMandateResponse) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_query_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryMonetaryMandateResponse) GetMandate() *MonetaryMandate {
+func (x *QueryEconomicMandateResponse) GetMandate() *EconomicMandate {
 	if x != nil {
 		return x.Mandate
 	}
 	return nil
 }
 
-func (x *QueryMonetaryMandateResponse) GetActive() bool {
+func (x *QueryEconomicMandateResponse) GetActive() bool {
 	if x != nil {
 		return x.Active
 	}
@@ -14092,21 +14092,21 @@ var file_ark_treasury_v1_query_proto_rawDesc = []byte{
 	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61,
 	0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09,
 	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x22, 0x1c, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61,
-	0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
-	0x61, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
+	0x73, 0x22, 0x1c, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
+	0x61, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
 	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42,
 	0x0a, 0x06, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42,
+	0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42,
 	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x22, 0x1d, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74,
-	0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x22, 0x84, 0x01, 0x0a, 0x1c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74,
-	0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x63, 0x79, 0x22, 0x1d, 0x0a, 0x1b, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f,
+	0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x22, 0x84, 0x01, 0x0a, 0x1c, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f,
+	0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x12, 0x45, 0x0a, 0x07, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75,
-	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61,
 	0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
 	0x52, 0x07, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x1d, 0x0a, 0x06, 0x61, 0x63, 0x74,
 	0x69, 0x76, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
@@ -14348,26 +14348,26 @@ var file_ark_treasury_v1_query_proto_rawDesc = []byte{
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x24, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
 	0xe4, 0x93, 0x02, 0x19, 0x12, 0x17, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73,
 	0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x9a, 0x01,
-	0x0a, 0x0e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
+	0x0a, 0x0e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79,
 	0x12, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
+	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
 	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c,
 	0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0,
 	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x6d, 0x6f, 0x6e, 0x65, 0x74,
-	0x61, 0x72, 0x79, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x9e, 0x01, 0x0a, 0x0f, 0x4d,
-	0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x2c,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x63, 0x6f, 0x6e, 0x6f,
+	0x6d, 0x69, 0x63, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x9e, 0x01, 0x0a, 0x0f, 0x45,
+	0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x2c,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61,
 	0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x61,
 	0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64,
+	0x75, 0x65, 0x72, 0x79, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64,
 	0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7, 0xb0,
 	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x74,
-	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x6d, 0x6f, 0x6e, 0x65, 0x74,
-	0x61, 0x72, 0x79, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x83, 0x01, 0x0a, 0x06,
+	0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x2f, 0x65, 0x63, 0x6f, 0x6e, 0x6f,
+	0x6d, 0x69, 0x63, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x83, 0x01, 0x0a, 0x06,
 	0x54, 0x61, 0x78, 0x43, 0x61, 0x70, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65,
 	0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x61,
 	0x78, 0x43, 0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72,
@@ -14491,10 +14491,10 @@ var file_ark_treasury_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 26
 var file_ark_treasury_v1_query_proto_goTypes = []interface{}{
 	(*QueryParamsRequest)(nil),             // 0: ark.treasury.v1.QueryParamsRequest
 	(*QueryParamsResponse)(nil),            // 1: ark.treasury.v1.QueryParamsResponse
-	(*QueryMonetaryPolicyRequest)(nil),     // 2: ark.treasury.v1.QueryMonetaryPolicyRequest
-	(*QueryMonetaryPolicyResponse)(nil),    // 3: ark.treasury.v1.QueryMonetaryPolicyResponse
-	(*QueryMonetaryMandateRequest)(nil),    // 4: ark.treasury.v1.QueryMonetaryMandateRequest
-	(*QueryMonetaryMandateResponse)(nil),   // 5: ark.treasury.v1.QueryMonetaryMandateResponse
+	(*QueryEconomicPolicyRequest)(nil),     // 2: ark.treasury.v1.QueryEconomicPolicyRequest
+	(*QueryEconomicPolicyResponse)(nil),    // 3: ark.treasury.v1.QueryEconomicPolicyResponse
+	(*QueryEconomicMandateRequest)(nil),    // 4: ark.treasury.v1.QueryEconomicMandateRequest
+	(*QueryEconomicMandateResponse)(nil),   // 5: ark.treasury.v1.QueryEconomicMandateResponse
 	(*QueryTaxCapRequest)(nil),             // 6: ark.treasury.v1.QueryTaxCapRequest
 	(*QueryTaxCapResponse)(nil),            // 7: ark.treasury.v1.QueryTaxCapResponse
 	(*QueryConversionFactorRequest)(nil),   // 8: ark.treasury.v1.QueryConversionFactorRequest
@@ -14516,8 +14516,8 @@ var file_ark_treasury_v1_query_proto_goTypes = []interface{}{
 	(*QueryExposureStatusRequest)(nil),     // 24: ark.treasury.v1.QueryExposureStatusRequest
 	(*QueryExposureStatusResponse)(nil),    // 25: ark.treasury.v1.QueryExposureStatusResponse
 	(*Params)(nil),                         // 26: ark.treasury.v1.Params
-	(*MonetaryPolicy)(nil),                 // 27: ark.treasury.v1.MonetaryPolicy
-	(*MonetaryMandate)(nil),                // 28: ark.treasury.v1.MonetaryMandate
+	(*EconomicPolicy)(nil),                 // 27: ark.treasury.v1.EconomicPolicy
+	(*EconomicMandate)(nil),                // 28: ark.treasury.v1.EconomicMandate
 	(*ConversionFactor)(nil),               // 29: ark.treasury.v1.ConversionFactor
 	(*TaxCap)(nil),                         // 30: ark.treasury.v1.TaxCap
 	(*anypb.Any)(nil),                      // 31: google.protobuf.Any
@@ -14530,8 +14530,8 @@ var file_ark_treasury_v1_query_proto_goTypes = []interface{}{
 }
 var file_ark_treasury_v1_query_proto_depIdxs = []int32{
 	26, // 0: ark.treasury.v1.QueryParamsResponse.params:type_name -> ark.treasury.v1.Params
-	27, // 1: ark.treasury.v1.QueryMonetaryPolicyResponse.policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	28, // 2: ark.treasury.v1.QueryMonetaryMandateResponse.mandate:type_name -> ark.treasury.v1.MonetaryMandate
+	27, // 1: ark.treasury.v1.QueryEconomicPolicyResponse.policy:type_name -> ark.treasury.v1.EconomicPolicy
+	28, // 2: ark.treasury.v1.QueryEconomicMandateResponse.mandate:type_name -> ark.treasury.v1.EconomicMandate
 	29, // 3: ark.treasury.v1.QueryConversionFactorResponse.conversion_factor:type_name -> ark.treasury.v1.ConversionFactor
 	29, // 4: ark.treasury.v1.QueryConversionFactorsResponse.conversion_factors:type_name -> ark.treasury.v1.ConversionFactor
 	30, // 5: ark.treasury.v1.QueryTaxCapsResponse.tax_caps:type_name -> ark.treasury.v1.TaxCap
@@ -14563,8 +14563,8 @@ var file_ark_treasury_v1_query_proto_depIdxs = []int32{
 	36, // 31: ark.treasury.v1.QueryGasPricesResponse.reference_gas_price:type_name -> ark.treasury.v1.GasPrice
 	37, // 32: ark.treasury.v1.QueryExposureStatusResponse.exposure_state:type_name -> ark.treasury.v1.ExposureState
 	0,  // 33: ark.treasury.v1.Query.Params:input_type -> ark.treasury.v1.QueryParamsRequest
-	2,  // 34: ark.treasury.v1.Query.MonetaryPolicy:input_type -> ark.treasury.v1.QueryMonetaryPolicyRequest
-	4,  // 35: ark.treasury.v1.Query.MonetaryMandate:input_type -> ark.treasury.v1.QueryMonetaryMandateRequest
+	2,  // 34: ark.treasury.v1.Query.EconomicPolicy:input_type -> ark.treasury.v1.QueryEconomicPolicyRequest
+	4,  // 35: ark.treasury.v1.Query.EconomicMandate:input_type -> ark.treasury.v1.QueryEconomicMandateRequest
 	6,  // 36: ark.treasury.v1.Query.TaxCap:input_type -> ark.treasury.v1.QueryTaxCapRequest
 	12, // 37: ark.treasury.v1.Query.TaxCaps:input_type -> ark.treasury.v1.QueryTaxCapsRequest
 	8,  // 38: ark.treasury.v1.Query.ConversionFactor:input_type -> ark.treasury.v1.QueryConversionFactorRequest
@@ -14576,8 +14576,8 @@ var file_ark_treasury_v1_query_proto_depIdxs = []int32{
 	18, // 44: ark.treasury.v1.Query.RewardFunding:input_type -> ark.treasury.v1.QueryRewardFundingRequest
 	24, // 45: ark.treasury.v1.Query.ExposureStatus:input_type -> ark.treasury.v1.QueryExposureStatusRequest
 	1,  // 46: ark.treasury.v1.Query.Params:output_type -> ark.treasury.v1.QueryParamsResponse
-	3,  // 47: ark.treasury.v1.Query.MonetaryPolicy:output_type -> ark.treasury.v1.QueryMonetaryPolicyResponse
-	5,  // 48: ark.treasury.v1.Query.MonetaryMandate:output_type -> ark.treasury.v1.QueryMonetaryMandateResponse
+	3,  // 47: ark.treasury.v1.Query.EconomicPolicy:output_type -> ark.treasury.v1.QueryEconomicPolicyResponse
+	5,  // 48: ark.treasury.v1.Query.EconomicMandate:output_type -> ark.treasury.v1.QueryEconomicMandateResponse
 	7,  // 49: ark.treasury.v1.Query.TaxCap:output_type -> ark.treasury.v1.QueryTaxCapResponse
 	13, // 50: ark.treasury.v1.Query.TaxCaps:output_type -> ark.treasury.v1.QueryTaxCapsResponse
 	9,  // 51: ark.treasury.v1.Query.ConversionFactor:output_type -> ark.treasury.v1.QueryConversionFactorResponse
@@ -14627,7 +14627,7 @@ func file_ark_treasury_v1_query_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_query_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMonetaryPolicyRequest); i {
+			switch v := v.(*QueryEconomicPolicyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -14639,7 +14639,7 @@ func file_ark_treasury_v1_query_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_query_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMonetaryPolicyResponse); i {
+			switch v := v.(*QueryEconomicPolicyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -14651,7 +14651,7 @@ func file_ark_treasury_v1_query_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_query_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMonetaryMandateRequest); i {
+			switch v := v.(*QueryEconomicMandateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -14663,7 +14663,7 @@ func file_ark_treasury_v1_query_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryMonetaryMandateResponse); i {
+			switch v := v.(*QueryEconomicMandateResponse); i {
 			case 0:
 				return &v.state
 			case 1:

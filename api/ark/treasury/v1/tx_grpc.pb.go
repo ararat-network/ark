@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Msg_UpdateParams_FullMethodName          = "/ark.treasury.v1.Msg/UpdateParams"
-	Msg_SetMonetaryMandate_FullMethodName    = "/ark.treasury.v1.Msg/SetMonetaryMandate"
+	Msg_SetEconomicMandate_FullMethodName    = "/ark.treasury.v1.Msg/SetEconomicMandate"
 	Msg_UpdatePolicy_FullMethodName          = "/ark.treasury.v1.Msg/UpdatePolicy"
 	Msg_CommitteeUpdatePolicy_FullMethodName = "/ark.treasury.v1.Msg/CommitteeUpdatePolicy"
 )
@@ -33,14 +33,14 @@ const (
 type MsgClient interface {
 	// UpdateParams updates governance-owned structural Treasury parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
-	// SetMonetaryMandate appoints, replaces, or disables the bounded
-	// monetary-policy committee.
-	SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error)
+	// SetEconomicMandate appoints, replaces, or disables the bounded
+	// economic-policy committee.
+	SetEconomicMandate(ctx context.Context, in *MsgSetEconomicMandate, opts ...grpc.CallOption) (*MsgSetEconomicMandateResponse, error)
 	// UpdatePolicy applies one complete reversible policy candidate as
 	// the governance authority, unbounded by the committee mandate.
 	UpdatePolicy(ctx context.Context, in *MsgUpdatePolicy, opts ...grpc.CallOption) (*MsgUpdatePolicyResponse, error)
 	// CommitteeUpdatePolicy applies one complete reversible policy
-	// candidate as the monetary-policy committee, inside its mandate bounds.
+	// candidate as the economic-policy committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
 }
 
@@ -62,10 +62,10 @@ func (c *msgClient) UpdateParams(ctx context.Context, in *MsgUpdateParams, opts 
 	return out, nil
 }
 
-func (c *msgClient) SetMonetaryMandate(ctx context.Context, in *MsgSetMonetaryMandate, opts ...grpc.CallOption) (*MsgSetMonetaryMandateResponse, error) {
+func (c *msgClient) SetEconomicMandate(ctx context.Context, in *MsgSetEconomicMandate, opts ...grpc.CallOption) (*MsgSetEconomicMandateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgSetMonetaryMandateResponse)
-	err := c.cc.Invoke(ctx, Msg_SetMonetaryMandate_FullMethodName, in, out, cOpts...)
+	out := new(MsgSetEconomicMandateResponse)
+	err := c.cc.Invoke(ctx, Msg_SetEconomicMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,14 +100,14 @@ func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeU
 type MsgServer interface {
 	// UpdateParams updates governance-owned structural Treasury parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
-	// SetMonetaryMandate appoints, replaces, or disables the bounded
-	// monetary-policy committee.
-	SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error)
+	// SetEconomicMandate appoints, replaces, or disables the bounded
+	// economic-policy committee.
+	SetEconomicMandate(context.Context, *MsgSetEconomicMandate) (*MsgSetEconomicMandateResponse, error)
 	// UpdatePolicy applies one complete reversible policy candidate as
 	// the governance authority, unbounded by the committee mandate.
 	UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error)
 	// CommitteeUpdatePolicy applies one complete reversible policy
-	// candidate as the monetary-policy committee, inside its mandate bounds.
+	// candidate as the economic-policy committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
@@ -122,8 +122,8 @@ type UnimplementedMsgServer struct{}
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateParams not implemented")
 }
-func (UnimplementedMsgServer) SetMonetaryMandate(context.Context, *MsgSetMonetaryMandate) (*MsgSetMonetaryMandateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SetMonetaryMandate not implemented")
+func (UnimplementedMsgServer) SetEconomicMandate(context.Context, *MsgSetEconomicMandate) (*MsgSetEconomicMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetEconomicMandate not implemented")
 }
 func (UnimplementedMsgServer) UpdatePolicy(context.Context, *MsgUpdatePolicy) (*MsgUpdatePolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePolicy not implemented")
@@ -170,20 +170,20 @@ func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_SetMonetaryMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgSetMonetaryMandate)
+func _Msg_SetEconomicMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetEconomicMandate)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).SetMonetaryMandate(ctx, in)
+		return srv.(MsgServer).SetEconomicMandate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_SetMonetaryMandate_FullMethodName,
+		FullMethod: Msg_SetEconomicMandate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).SetMonetaryMandate(ctx, req.(*MsgSetMonetaryMandate))
+		return srv.(MsgServer).SetEconomicMandate(ctx, req.(*MsgSetEconomicMandate))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -236,8 +236,8 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_UpdateParams_Handler,
 		},
 		{
-			MethodName: "SetMonetaryMandate",
-			Handler:    _Msg_SetMonetaryMandate_Handler,
+			MethodName: "SetEconomicMandate",
+			Handler:    _Msg_SetEconomicMandate_Handler,
 		},
 		{
 			MethodName: "UpdatePolicy",

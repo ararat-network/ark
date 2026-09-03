@@ -15,14 +15,14 @@ service Msg {
 
   // UpdateParams updates governance-owned structural Treasury parameters.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
-  // SetMonetaryMandate appoints, replaces, or disables the bounded
-  // monetary-policy committee.
-  rpc SetMonetaryMandate(MsgSetMonetaryMandate) returns (MsgSetMonetaryMandateResponse) {}
+  // SetEconomicMandate appoints, replaces, or disables the bounded
+  // economic-policy committee.
+  rpc SetEconomicMandate(MsgSetEconomicMandate) returns (MsgSetEconomicMandateResponse) {}
   // UpdatePolicy applies one complete reversible policy candidate as
   // the governance authority, unbounded by the committee mandate.
   rpc UpdatePolicy(MsgUpdatePolicy) returns (MsgUpdatePolicyResponse) {}
   // CommitteeUpdatePolicy applies one complete reversible policy
-  // candidate as the monetary-policy committee, inside its mandate bounds.
+  // candidate as the economic-policy committee, inside its mandate bounds.
   rpc CommitteeUpdatePolicy(MsgCommitteeUpdatePolicy) returns (MsgCommitteeUpdatePolicyResponse) {}
 }
 
@@ -41,30 +41,30 @@ message MsgUpdateParams {
 // MsgUpdateParamsResponse is the Msg/UpdateParams response type.
 message MsgUpdateParamsResponse {}
 
-// MsgSetMonetaryMandate is the governance request for a complete
-// monetary-policy committee replacement. An empty committee disables the
+// MsgSetEconomicMandate is the governance request for a complete
+// economic-policy committee replacement. An empty committee disables the
 // mandate; Treasury derives the next term on chain.
-message MsgSetMonetaryMandate {
+message MsgSetEconomicMandate {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/treasury/MsgSetMonetaryMandate";
+  option (amino.name) = "ark/treasury/MsgSetEconomicMandate";
 
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 activation_height = 3 [(amino.dont_omitempty) = true];
   uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
-  MonetaryPolicy minimum_policy = 5 [
+  EconomicPolicy minimum_policy = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryPolicy maximum_policy = 6 [
+  EconomicPolicy maximum_policy = 6 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 }
 
-// MsgSetMonetaryMandateResponse is the response for a committee
+// MsgSetEconomicMandateResponse is the response for a committee
 // appointment, replacement, or disablement.
-message MsgSetMonetaryMandateResponse {}
+message MsgSetEconomicMandateResponse {}
 
 // MsgUpdatePolicy is a governance-signed policy update. Governance
 // applies any structurally valid candidate, so it carries no expected term:
@@ -74,14 +74,14 @@ message MsgUpdatePolicy {
   option (amino.name) = "ark/treasury/MsgUpdatePolicy";
 
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  MonetaryPolicy policy = 2 [
+  EconomicPolicy policy = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 }
 
 // MsgUpdatePolicyResponse is the response for one governance
-// monetary-policy update.
+// economic-policy update.
 message MsgUpdatePolicyResponse {}
 
 // MsgCommitteeUpdatePolicy is an exact committee-signed policy update.
@@ -96,12 +96,12 @@ message MsgCommitteeUpdatePolicy {
 
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
-  MonetaryPolicy policy = 3 [
+  EconomicPolicy policy = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 }
 
 // MsgCommitteeUpdatePolicyResponse is the response for one committee
-// monetary-policy update.
+// economic-policy update.
 message MsgCommitteeUpdatePolicyResponse {}

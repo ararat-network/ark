@@ -20,8 +20,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Query_Params_FullMethodName            = "/ark.treasury.v1.Query/Params"
-	Query_MonetaryPolicy_FullMethodName    = "/ark.treasury.v1.Query/MonetaryPolicy"
-	Query_MonetaryMandate_FullMethodName   = "/ark.treasury.v1.Query/MonetaryMandate"
+	Query_EconomicPolicy_FullMethodName    = "/ark.treasury.v1.Query/EconomicPolicy"
+	Query_EconomicMandate_FullMethodName   = "/ark.treasury.v1.Query/EconomicMandate"
 	Query_TaxCap_FullMethodName            = "/ark.treasury.v1.Query/TaxCap"
 	Query_TaxCaps_FullMethodName           = "/ark.treasury.v1.Query/TaxCaps"
 	Query_ConversionFactor_FullMethodName  = "/ark.treasury.v1.Query/ConversionFactor"
@@ -42,11 +42,11 @@ const (
 type QueryClient interface {
 	// Params queries the treasury parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// MonetaryPolicy queries the current reversible Treasury policy.
-	MonetaryPolicy(ctx context.Context, in *QueryMonetaryPolicyRequest, opts ...grpc.CallOption) (*QueryMonetaryPolicyResponse, error)
-	// MonetaryMandate queries the governed committee appointment and its
+	// EconomicPolicy queries the current reversible Treasury policy.
+	EconomicPolicy(ctx context.Context, in *QueryEconomicPolicyRequest, opts ...grpc.CallOption) (*QueryEconomicPolicyResponse, error)
+	// EconomicMandate queries the governed committee appointment and its
 	// current effective status.
-	MonetaryMandate(ctx context.Context, in *QueryMonetaryMandateRequest, opts ...grpc.CallOption) (*QueryMonetaryMandateResponse, error)
+	EconomicMandate(ctx context.Context, in *QueryEconomicMandateRequest, opts ...grpc.CallOption) (*QueryEconomicMandateResponse, error)
 	// TaxCap queries the derived tax cap for one denomination.
 	TaxCap(ctx context.Context, in *QueryTaxCapRequest, opts ...grpc.CallOption) (*QueryTaxCapResponse, error)
 	// TaxCaps queries all derived denomination tax caps.
@@ -64,7 +64,7 @@ type QueryClient interface {
 	// GasPrices queries the complete fee-denomination price sheet — the posted
 	// gas-price list, on chain and consensus.
 	GasPrices(ctx context.Context, in *QueryGasPricesRequest, opts ...grpc.CallOption) (*QueryGasPricesResponse, error)
-	// ComputeTax computes the ante-visible stability tax for SDK messages.
+	// ComputeTax computes the ante-visible transfer tax for SDK messages.
 	ComputeTax(ctx context.Context, in *QueryComputeTaxRequest, opts ...grpc.CallOption) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
 	FundStatus(ctx context.Context, in *QueryFundStatusRequest, opts ...grpc.CallOption) (*QueryFundStatusResponse, error)
@@ -92,20 +92,20 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
-func (c *queryClient) MonetaryPolicy(ctx context.Context, in *QueryMonetaryPolicyRequest, opts ...grpc.CallOption) (*QueryMonetaryPolicyResponse, error) {
+func (c *queryClient) EconomicPolicy(ctx context.Context, in *QueryEconomicPolicyRequest, opts ...grpc.CallOption) (*QueryEconomicPolicyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryMonetaryPolicyResponse)
-	err := c.cc.Invoke(ctx, Query_MonetaryPolicy_FullMethodName, in, out, cOpts...)
+	out := new(QueryEconomicPolicyResponse)
+	err := c.cc.Invoke(ctx, Query_EconomicPolicy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) MonetaryMandate(ctx context.Context, in *QueryMonetaryMandateRequest, opts ...grpc.CallOption) (*QueryMonetaryMandateResponse, error) {
+func (c *queryClient) EconomicMandate(ctx context.Context, in *QueryEconomicMandateRequest, opts ...grpc.CallOption) (*QueryEconomicMandateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryMonetaryMandateResponse)
-	err := c.cc.Invoke(ctx, Query_MonetaryMandate_FullMethodName, in, out, cOpts...)
+	out := new(QueryEconomicMandateResponse)
+	err := c.cc.Invoke(ctx, Query_EconomicMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,11 +220,11 @@ func (c *queryClient) ExposureStatus(ctx context.Context, in *QueryExposureStatu
 type QueryServer interface {
 	// Params queries the treasury parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// MonetaryPolicy queries the current reversible Treasury policy.
-	MonetaryPolicy(context.Context, *QueryMonetaryPolicyRequest) (*QueryMonetaryPolicyResponse, error)
-	// MonetaryMandate queries the governed committee appointment and its
+	// EconomicPolicy queries the current reversible Treasury policy.
+	EconomicPolicy(context.Context, *QueryEconomicPolicyRequest) (*QueryEconomicPolicyResponse, error)
+	// EconomicMandate queries the governed committee appointment and its
 	// current effective status.
-	MonetaryMandate(context.Context, *QueryMonetaryMandateRequest) (*QueryMonetaryMandateResponse, error)
+	EconomicMandate(context.Context, *QueryEconomicMandateRequest) (*QueryEconomicMandateResponse, error)
 	// TaxCap queries the derived tax cap for one denomination.
 	TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error)
 	// TaxCaps queries all derived denomination tax caps.
@@ -242,7 +242,7 @@ type QueryServer interface {
 	// GasPrices queries the complete fee-denomination price sheet — the posted
 	// gas-price list, on chain and consensus.
 	GasPrices(context.Context, *QueryGasPricesRequest) (*QueryGasPricesResponse, error)
-	// ComputeTax computes the ante-visible stability tax for SDK messages.
+	// ComputeTax computes the ante-visible transfer tax for SDK messages.
 	ComputeTax(context.Context, *QueryComputeTaxRequest) (*QueryComputeTaxResponse, error)
 	// FundStatus queries Treasury fund balances, liabilities, and targets.
 	FundStatus(context.Context, *QueryFundStatusRequest) (*QueryFundStatusResponse, error)
@@ -263,11 +263,11 @@ type UnimplementedQueryServer struct{}
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
 }
-func (UnimplementedQueryServer) MonetaryPolicy(context.Context, *QueryMonetaryPolicyRequest) (*QueryMonetaryPolicyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method MonetaryPolicy not implemented")
+func (UnimplementedQueryServer) EconomicPolicy(context.Context, *QueryEconomicPolicyRequest) (*QueryEconomicPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EconomicPolicy not implemented")
 }
-func (UnimplementedQueryServer) MonetaryMandate(context.Context, *QueryMonetaryMandateRequest) (*QueryMonetaryMandateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method MonetaryMandate not implemented")
+func (UnimplementedQueryServer) EconomicMandate(context.Context, *QueryEconomicMandateRequest) (*QueryEconomicMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EconomicMandate not implemented")
 }
 func (UnimplementedQueryServer) TaxCap(context.Context, *QueryTaxCapRequest) (*QueryTaxCapResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TaxCap not implemented")
@@ -338,38 +338,38 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_MonetaryPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryMonetaryPolicyRequest)
+func _Query_EconomicPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryEconomicPolicyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).MonetaryPolicy(ctx, in)
+		return srv.(QueryServer).EconomicPolicy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_MonetaryPolicy_FullMethodName,
+		FullMethod: Query_EconomicPolicy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).MonetaryPolicy(ctx, req.(*QueryMonetaryPolicyRequest))
+		return srv.(QueryServer).EconomicPolicy(ctx, req.(*QueryEconomicPolicyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_MonetaryMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryMonetaryMandateRequest)
+func _Query_EconomicMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryEconomicMandateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).MonetaryMandate(ctx, in)
+		return srv.(QueryServer).EconomicMandate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_MonetaryMandate_FullMethodName,
+		FullMethod: Query_EconomicMandate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).MonetaryMandate(ctx, req.(*QueryMonetaryMandateRequest))
+		return srv.(QueryServer).EconomicMandate(ctx, req.(*QueryEconomicMandateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -566,12 +566,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Params_Handler,
 		},
 		{
-			MethodName: "MonetaryPolicy",
-			Handler:    _Query_MonetaryPolicy_Handler,
+			MethodName: "EconomicPolicy",
+			Handler:    _Query_EconomicPolicy_Handler,
 		},
 		{
-			MethodName: "MonetaryMandate",
-			Handler:    _Query_MonetaryMandate_Handler,
+			MethodName: "EconomicMandate",
+			Handler:    _Query_EconomicMandate_Handler,
 		},
 		{
 			MethodName: "TaxCap",

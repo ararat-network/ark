@@ -24,11 +24,11 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryMandate monetary_mandate = 4 [
+  EconomicMandate economic_mandate = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  MonetaryPolicy monetary_policy = 5 [
+  EconomicPolicy economic_policy = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

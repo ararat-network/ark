@@ -872,35 +872,35 @@ func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_MsgSetMonetaryMandate                   protoreflect.MessageDescriptor
-	fd_MsgSetMonetaryMandate_authority         protoreflect.FieldDescriptor
-	fd_MsgSetMonetaryMandate_committee         protoreflect.FieldDescriptor
-	fd_MsgSetMonetaryMandate_activation_height protoreflect.FieldDescriptor
-	fd_MsgSetMonetaryMandate_expiry_height     protoreflect.FieldDescriptor
-	fd_MsgSetMonetaryMandate_minimum_policy    protoreflect.FieldDescriptor
-	fd_MsgSetMonetaryMandate_maximum_policy    protoreflect.FieldDescriptor
+	md_MsgSetEconomicMandate                   protoreflect.MessageDescriptor
+	fd_MsgSetEconomicMandate_authority         protoreflect.FieldDescriptor
+	fd_MsgSetEconomicMandate_committee         protoreflect.FieldDescriptor
+	fd_MsgSetEconomicMandate_activation_height protoreflect.FieldDescriptor
+	fd_MsgSetEconomicMandate_expiry_height     protoreflect.FieldDescriptor
+	fd_MsgSetEconomicMandate_minimum_policy    protoreflect.FieldDescriptor
+	fd_MsgSetEconomicMandate_maximum_policy    protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_tx_proto_init()
-	md_MsgSetMonetaryMandate = File_ark_treasury_v1_tx_proto.Messages().ByName("MsgSetMonetaryMandate")
-	fd_MsgSetMonetaryMandate_authority = md_MsgSetMonetaryMandate.Fields().ByName("authority")
-	fd_MsgSetMonetaryMandate_committee = md_MsgSetMonetaryMandate.Fields().ByName("committee")
-	fd_MsgSetMonetaryMandate_activation_height = md_MsgSetMonetaryMandate.Fields().ByName("activation_height")
-	fd_MsgSetMonetaryMandate_expiry_height = md_MsgSetMonetaryMandate.Fields().ByName("expiry_height")
-	fd_MsgSetMonetaryMandate_minimum_policy = md_MsgSetMonetaryMandate.Fields().ByName("minimum_policy")
-	fd_MsgSetMonetaryMandate_maximum_policy = md_MsgSetMonetaryMandate.Fields().ByName("maximum_policy")
+	md_MsgSetEconomicMandate = File_ark_treasury_v1_tx_proto.Messages().ByName("MsgSetEconomicMandate")
+	fd_MsgSetEconomicMandate_authority = md_MsgSetEconomicMandate.Fields().ByName("authority")
+	fd_MsgSetEconomicMandate_committee = md_MsgSetEconomicMandate.Fields().ByName("committee")
+	fd_MsgSetEconomicMandate_activation_height = md_MsgSetEconomicMandate.Fields().ByName("activation_height")
+	fd_MsgSetEconomicMandate_expiry_height = md_MsgSetEconomicMandate.Fields().ByName("expiry_height")
+	fd_MsgSetEconomicMandate_minimum_policy = md_MsgSetEconomicMandate.Fields().ByName("minimum_policy")
+	fd_MsgSetEconomicMandate_maximum_policy = md_MsgSetEconomicMandate.Fields().ByName("maximum_policy")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSetMonetaryMandate)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSetEconomicMandate)(nil)
 
-type fastReflection_MsgSetMonetaryMandate MsgSetMonetaryMandate
+type fastReflection_MsgSetEconomicMandate MsgSetEconomicMandate
 
-func (x *MsgSetMonetaryMandate) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSetMonetaryMandate)(x)
+func (x *MsgSetEconomicMandate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetEconomicMandate)(x)
 }
 
-func (x *MsgSetMonetaryMandate) slowProtoReflect() protoreflect.Message {
+func (x *MsgSetEconomicMandate) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_tx_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -912,43 +912,43 @@ func (x *MsgSetMonetaryMandate) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSetMonetaryMandate_messageType fastReflection_MsgSetMonetaryMandate_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSetMonetaryMandate_messageType{}
+var _fastReflection_MsgSetEconomicMandate_messageType fastReflection_MsgSetEconomicMandate_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetEconomicMandate_messageType{}
 
-type fastReflection_MsgSetMonetaryMandate_messageType struct{}
+type fastReflection_MsgSetEconomicMandate_messageType struct{}
 
-func (x fastReflection_MsgSetMonetaryMandate_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSetMonetaryMandate)(nil)
+func (x fastReflection_MsgSetEconomicMandate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetEconomicMandate)(nil)
 }
-func (x fastReflection_MsgSetMonetaryMandate_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSetMonetaryMandate)
+func (x fastReflection_MsgSetEconomicMandate_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEconomicMandate)
 }
-func (x fastReflection_MsgSetMonetaryMandate_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetMonetaryMandate
+func (x fastReflection_MsgSetEconomicMandate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEconomicMandate
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSetMonetaryMandate) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetMonetaryMandate
+func (x *fastReflection_MsgSetEconomicMandate) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEconomicMandate
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSetMonetaryMandate) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSetMonetaryMandate_messageType
+func (x *fastReflection_MsgSetEconomicMandate) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetEconomicMandate_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSetMonetaryMandate) New() protoreflect.Message {
-	return new(fastReflection_MsgSetMonetaryMandate)
+func (x *fastReflection_MsgSetEconomicMandate) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEconomicMandate)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSetMonetaryMandate) Interface() protoreflect.ProtoMessage {
-	return (*MsgSetMonetaryMandate)(x)
+func (x *fastReflection_MsgSetEconomicMandate) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetEconomicMandate)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -956,40 +956,40 @@ func (x *fastReflection_MsgSetMonetaryMandate) Interface() protoreflect.ProtoMes
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSetMonetaryMandate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSetEconomicMandate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Authority != "" {
 		value := protoreflect.ValueOfString(x.Authority)
-		if !f(fd_MsgSetMonetaryMandate_authority, value) {
+		if !f(fd_MsgSetEconomicMandate_authority, value) {
 			return
 		}
 	}
 	if x.Committee != "" {
 		value := protoreflect.ValueOfString(x.Committee)
-		if !f(fd_MsgSetMonetaryMandate_committee, value) {
+		if !f(fd_MsgSetEconomicMandate_committee, value) {
 			return
 		}
 	}
 	if x.ActivationHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ActivationHeight)
-		if !f(fd_MsgSetMonetaryMandate_activation_height, value) {
+		if !f(fd_MsgSetEconomicMandate_activation_height, value) {
 			return
 		}
 	}
 	if x.ExpiryHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
-		if !f(fd_MsgSetMonetaryMandate_expiry_height, value) {
+		if !f(fd_MsgSetEconomicMandate_expiry_height, value) {
 			return
 		}
 	}
 	if x.MinimumPolicy != nil {
 		value := protoreflect.ValueOfMessage(x.MinimumPolicy.ProtoReflect())
-		if !f(fd_MsgSetMonetaryMandate_minimum_policy, value) {
+		if !f(fd_MsgSetEconomicMandate_minimum_policy, value) {
 			return
 		}
 	}
 	if x.MaximumPolicy != nil {
 		value := protoreflect.ValueOfMessage(x.MaximumPolicy.ProtoReflect())
-		if !f(fd_MsgSetMonetaryMandate_maximum_policy, value) {
+		if !f(fd_MsgSetEconomicMandate_maximum_policy, value) {
 			return
 		}
 	}
@@ -1006,25 +1006,25 @@ func (x *fastReflection_MsgSetMonetaryMandate) Range(f func(protoreflect.FieldDe
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSetMonetaryMandate) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSetEconomicMandate) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
 		return x.Authority != ""
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
 		return x.Committee != ""
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
 		return x.ActivationHeight != uint64(0)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
 		return x.ExpiryHeight != uint64(0)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
 		return x.MinimumPolicy != nil
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
 		return x.MaximumPolicy != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1034,25 +1034,25 @@ func (x *fastReflection_MsgSetMonetaryMandate) Has(fd protoreflect.FieldDescript
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandate) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSetEconomicMandate) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
 		x.Authority = ""
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
 		x.Committee = ""
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
 		x.ActivationHeight = uint64(0)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
 		x.ExpiryHeight = uint64(0)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
 		x.MinimumPolicy = nil
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
 		x.MaximumPolicy = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1062,31 +1062,31 @@ func (x *fastReflection_MsgSetMonetaryMandate) Clear(fd protoreflect.FieldDescri
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSetMonetaryMandate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
 		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
 		value := x.ActivationHeight
 		return protoreflect.ValueOfUint64(value)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
 		value := x.ExpiryHeight
 		return protoreflect.ValueOfUint64(value)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
 		value := x.MinimumPolicy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
 		value := x.MaximumPolicy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1100,25 +1100,25 @@ func (x *fastReflection_MsgSetMonetaryMandate) Get(descriptor protoreflect.Field
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSetEconomicMandate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
 		x.Committee = value.Interface().(string)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
 		x.ActivationHeight = value.Uint()
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
 		x.ExpiryHeight = value.Uint()
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
-		x.MinimumPolicy = value.Message().Interface().(*MonetaryPolicy)
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
-		x.MaximumPolicy = value.Message().Interface().(*MonetaryPolicy)
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
+		x.MinimumPolicy = value.Message().Interface().(*EconomicPolicy)
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
+		x.MaximumPolicy = value.Message().Interface().(*EconomicPolicy)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1132,68 +1132,68 @@ func (x *fastReflection_MsgSetMonetaryMandate) Set(fd protoreflect.FieldDescript
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
 		if x.MinimumPolicy == nil {
-			x.MinimumPolicy = new(MonetaryPolicy)
+			x.MinimumPolicy = new(EconomicPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.MinimumPolicy.ProtoReflect())
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
 		if x.MaximumPolicy == nil {
-			x.MaximumPolicy = new(MonetaryPolicy)
+			x.MaximumPolicy = new(EconomicPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.MaximumPolicy.ProtoReflect())
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
-		panic(fmt.Errorf("field authority of message ark.treasury.v1.MsgSetMonetaryMandate is not mutable"))
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
-		panic(fmt.Errorf("field committee of message ark.treasury.v1.MsgSetMonetaryMandate is not mutable"))
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.treasury.v1.MsgSetMonetaryMandate is not mutable"))
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
-		panic(fmt.Errorf("field expiry_height of message ark.treasury.v1.MsgSetMonetaryMandate is not mutable"))
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
+		panic(fmt.Errorf("field authority of message ark.treasury.v1.MsgSetEconomicMandate is not mutable"))
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
+		panic(fmt.Errorf("field committee of message ark.treasury.v1.MsgSetEconomicMandate is not mutable"))
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
+		panic(fmt.Errorf("field activation_height of message ark.treasury.v1.MsgSetEconomicMandate is not mutable"))
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
+		panic(fmt.Errorf("field expiry_height of message ark.treasury.v1.MsgSetEconomicMandate is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSetMonetaryMandate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.treasury.v1.MsgSetMonetaryMandate.authority":
+	case "ark.treasury.v1.MsgSetEconomicMandate.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.MsgSetMonetaryMandate.committee":
+	case "ark.treasury.v1.MsgSetEconomicMandate.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.treasury.v1.MsgSetMonetaryMandate.activation_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.activation_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.treasury.v1.MsgSetMonetaryMandate.expiry_height":
+	case "ark.treasury.v1.MsgSetEconomicMandate.expiry_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy":
-		m := new(MonetaryPolicy)
+	case "ark.treasury.v1.MsgSetEconomicMandate.minimum_policy":
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy":
-		m := new(MonetaryPolicy)
+	case "ark.treasury.v1.MsgSetEconomicMandate.maximum_policy":
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandate"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandate"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandate does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandate does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSetMonetaryMandate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSetEconomicMandate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.MsgSetMonetaryMandate", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.MsgSetEconomicMandate", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1201,7 +1201,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) WhichOneof(d protoreflect.OneofDe
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSetMonetaryMandate) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSetEconomicMandate) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1212,7 +1212,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) GetUnknown() protoreflect.RawFiel
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandate) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSetEconomicMandate) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1224,7 +1224,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) SetUnknown(fields protoreflect.Ra
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSetMonetaryMandate) IsValid() bool {
+func (x *fastReflection_MsgSetEconomicMandate) IsValid() bool {
 	return x != nil
 }
 
@@ -1234,9 +1234,9 @@ func (x *fastReflection_MsgSetMonetaryMandate) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSetEconomicMandate) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSetMonetaryMandate)
+		x := input.Message.Interface().(*MsgSetEconomicMandate)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1280,7 +1280,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetMonetaryMandate)
+		x := input.Message.Interface().(*MsgSetEconomicMandate)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1362,7 +1362,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetMonetaryMandate)
+		x := input.Message.Interface().(*MsgSetEconomicMandate)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1394,10 +1394,10 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetMonetaryMandate: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEconomicMandate: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetMonetaryMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEconomicMandate: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1532,7 +1532,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.MinimumPolicy == nil {
-					x.MinimumPolicy = &MonetaryPolicy{}
+					x.MinimumPolicy = &EconomicPolicy{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MinimumPolicy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1568,7 +1568,7 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.MaximumPolicy == nil {
-					x.MaximumPolicy = &MonetaryPolicy{}
+					x.MaximumPolicy = &EconomicPolicy{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MaximumPolicy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1610,23 +1610,23 @@ func (x *fastReflection_MsgSetMonetaryMandate) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_MsgSetMonetaryMandateResponse protoreflect.MessageDescriptor
+	md_MsgSetEconomicMandateResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_treasury_v1_tx_proto_init()
-	md_MsgSetMonetaryMandateResponse = File_ark_treasury_v1_tx_proto.Messages().ByName("MsgSetMonetaryMandateResponse")
+	md_MsgSetEconomicMandateResponse = File_ark_treasury_v1_tx_proto.Messages().ByName("MsgSetEconomicMandateResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSetMonetaryMandateResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSetEconomicMandateResponse)(nil)
 
-type fastReflection_MsgSetMonetaryMandateResponse MsgSetMonetaryMandateResponse
+type fastReflection_MsgSetEconomicMandateResponse MsgSetEconomicMandateResponse
 
-func (x *MsgSetMonetaryMandateResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSetMonetaryMandateResponse)(x)
+func (x *MsgSetEconomicMandateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetEconomicMandateResponse)(x)
 }
 
-func (x *MsgSetMonetaryMandateResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgSetEconomicMandateResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_treasury_v1_tx_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1638,43 +1638,43 @@ func (x *MsgSetMonetaryMandateResponse) slowProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSetMonetaryMandateResponse_messageType fastReflection_MsgSetMonetaryMandateResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSetMonetaryMandateResponse_messageType{}
+var _fastReflection_MsgSetEconomicMandateResponse_messageType fastReflection_MsgSetEconomicMandateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetEconomicMandateResponse_messageType{}
 
-type fastReflection_MsgSetMonetaryMandateResponse_messageType struct{}
+type fastReflection_MsgSetEconomicMandateResponse_messageType struct{}
 
-func (x fastReflection_MsgSetMonetaryMandateResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSetMonetaryMandateResponse)(nil)
+func (x fastReflection_MsgSetEconomicMandateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetEconomicMandateResponse)(nil)
 }
-func (x fastReflection_MsgSetMonetaryMandateResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSetMonetaryMandateResponse)
+func (x fastReflection_MsgSetEconomicMandateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEconomicMandateResponse)
 }
-func (x fastReflection_MsgSetMonetaryMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetMonetaryMandateResponse
+func (x fastReflection_MsgSetEconomicMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEconomicMandateResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSetMonetaryMandateResponse
+func (x *fastReflection_MsgSetEconomicMandateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetEconomicMandateResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSetMonetaryMandateResponse_messageType
+func (x *fastReflection_MsgSetEconomicMandateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetEconomicMandateResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgSetMonetaryMandateResponse)
+func (x *fastReflection_MsgSetEconomicMandateResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSetEconomicMandateResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgSetMonetaryMandateResponse)(x)
+func (x *fastReflection_MsgSetEconomicMandateResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetEconomicMandateResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1682,7 +1682,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Interface() protoreflect.
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -1696,13 +1696,13 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Range(f func(protoreflect
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1712,13 +1712,13 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Has(fd protoreflect.Field
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1728,13 +1728,13 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Clear(fd protoreflect.Fie
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1748,13 +1748,13 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Get(descriptor protorefle
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1768,36 +1768,36 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) Set(fd protoreflect.Field
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSetEconomicMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetMonetaryMandateResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgSetEconomicMandateResponse"))
 		}
-		panic(fmt.Errorf("message ark.treasury.v1.MsgSetMonetaryMandateResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.treasury.v1.MsgSetEconomicMandateResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSetEconomicMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.MsgSetMonetaryMandateResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.treasury.v1.MsgSetEconomicMandateResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1805,7 +1805,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) WhichOneof(d protoreflect
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSetEconomicMandateResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1816,7 +1816,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) GetUnknown() protoreflect
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSetEconomicMandateResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1828,7 +1828,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) SetUnknown(fields protore
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) IsValid() bool {
+func (x *fastReflection_MsgSetEconomicMandateResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -1838,9 +1838,9 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSetMonetaryMandateResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSetEconomicMandateResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSetMonetaryMandateResponse)
+		x := input.Message.Interface().(*MsgSetEconomicMandateResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1862,7 +1862,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) ProtoMethods() *protoifac
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetMonetaryMandateResponse)
+		x := input.Message.Interface().(*MsgSetEconomicMandateResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1892,7 +1892,7 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) ProtoMethods() *protoifac
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSetMonetaryMandateResponse)
+		x := input.Message.Interface().(*MsgSetEconomicMandateResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1924,10 +1924,10 @@ func (x *fastReflection_MsgSetMonetaryMandateResponse) ProtoMethods() *protoifac
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetMonetaryMandateResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEconomicMandateResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetMonetaryMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetEconomicMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -2139,7 +2139,7 @@ func (x *fastReflection_MsgUpdatePolicy) Set(fd protoreflect.FieldDescriptor, va
 	case "ark.treasury.v1.MsgUpdatePolicy.authority":
 		x.Authority = value.Interface().(string)
 	case "ark.treasury.v1.MsgUpdatePolicy.policy":
-		x.Policy = value.Message().Interface().(*MonetaryPolicy)
+		x.Policy = value.Message().Interface().(*EconomicPolicy)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgUpdatePolicy"))
@@ -2162,7 +2162,7 @@ func (x *fastReflection_MsgUpdatePolicy) Mutable(fd protoreflect.FieldDescriptor
 	switch fd.FullName() {
 	case "ark.treasury.v1.MsgUpdatePolicy.policy":
 		if x.Policy == nil {
-			x.Policy = new(MonetaryPolicy)
+			x.Policy = new(EconomicPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.Policy.ProtoReflect())
 	case "ark.treasury.v1.MsgUpdatePolicy.authority":
@@ -2183,7 +2183,7 @@ func (x *fastReflection_MsgUpdatePolicy) NewField(fd protoreflect.FieldDescripto
 	case "ark.treasury.v1.MsgUpdatePolicy.authority":
 		return protoreflect.ValueOfString("")
 	case "ark.treasury.v1.MsgUpdatePolicy.policy":
-		m := new(MonetaryPolicy)
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -2423,7 +2423,7 @@ func (x *fastReflection_MsgUpdatePolicy) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Policy == nil {
-					x.Policy = &MonetaryPolicy{}
+					x.Policy = &EconomicPolicy{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Policy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -3011,7 +3011,7 @@ func (x *fastReflection_MsgCommitteeUpdatePolicy) Set(fd protoreflect.FieldDescr
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.expected_term":
 		x.ExpectedTerm = value.Uint()
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.policy":
-		x.Policy = value.Message().Interface().(*MonetaryPolicy)
+		x.Policy = value.Message().Interface().(*EconomicPolicy)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.treasury.v1.MsgCommitteeUpdatePolicy"))
@@ -3034,7 +3034,7 @@ func (x *fastReflection_MsgCommitteeUpdatePolicy) Mutable(fd protoreflect.FieldD
 	switch fd.FullName() {
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.policy":
 		if x.Policy == nil {
-			x.Policy = new(MonetaryPolicy)
+			x.Policy = new(EconomicPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.Policy.ProtoReflect())
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.committee":
@@ -3059,7 +3059,7 @@ func (x *fastReflection_MsgCommitteeUpdatePolicy) NewField(fd protoreflect.Field
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.expected_term":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.treasury.v1.MsgCommitteeUpdatePolicy.policy":
-		m := new(MonetaryPolicy)
+		m := new(EconomicPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -3326,7 +3326,7 @@ func (x *fastReflection_MsgCommitteeUpdatePolicy) ProtoMethods() *protoiface.Met
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Policy == nil {
-					x.Policy = &MonetaryPolicy{}
+					x.Policy = &EconomicPolicy{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Policy); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -3807,10 +3807,10 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgSetMonetaryMandate is the governance request for a complete
-// monetary-policy committee replacement. An empty committee disables the
+// MsgSetEconomicMandate is the governance request for a complete
+// economic-policy committee replacement. An empty committee disables the
 // mandate; Treasury derives the next term on chain.
-type MsgSetMonetaryMandate struct {
+type MsgSetEconomicMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -3819,12 +3819,12 @@ type MsgSetMonetaryMandate struct {
 	Committee        string          `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
 	ActivationHeight uint64          `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
 	ExpiryHeight     uint64          `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
-	MinimumPolicy    *MonetaryPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
-	MaximumPolicy    *MonetaryPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
+	MinimumPolicy    *EconomicPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
+	MaximumPolicy    *EconomicPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
 }
 
-func (x *MsgSetMonetaryMandate) Reset() {
-	*x = MsgSetMonetaryMandate{}
+func (x *MsgSetEconomicMandate) Reset() {
+	*x = MsgSetEconomicMandate{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_tx_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3832,69 +3832,69 @@ func (x *MsgSetMonetaryMandate) Reset() {
 	}
 }
 
-func (x *MsgSetMonetaryMandate) String() string {
+func (x *MsgSetEconomicMandate) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSetMonetaryMandate) ProtoMessage() {}
+func (*MsgSetEconomicMandate) ProtoMessage() {}
 
-// Deprecated: Use MsgSetMonetaryMandate.ProtoReflect.Descriptor instead.
-func (*MsgSetMonetaryMandate) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSetEconomicMandate.ProtoReflect.Descriptor instead.
+func (*MsgSetEconomicMandate) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_tx_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *MsgSetMonetaryMandate) GetAuthority() string {
+func (x *MsgSetEconomicMandate) GetAuthority() string {
 	if x != nil {
 		return x.Authority
 	}
 	return ""
 }
 
-func (x *MsgSetMonetaryMandate) GetCommittee() string {
+func (x *MsgSetEconomicMandate) GetCommittee() string {
 	if x != nil {
 		return x.Committee
 	}
 	return ""
 }
 
-func (x *MsgSetMonetaryMandate) GetActivationHeight() uint64 {
+func (x *MsgSetEconomicMandate) GetActivationHeight() uint64 {
 	if x != nil {
 		return x.ActivationHeight
 	}
 	return 0
 }
 
-func (x *MsgSetMonetaryMandate) GetExpiryHeight() uint64 {
+func (x *MsgSetEconomicMandate) GetExpiryHeight() uint64 {
 	if x != nil {
 		return x.ExpiryHeight
 	}
 	return 0
 }
 
-func (x *MsgSetMonetaryMandate) GetMinimumPolicy() *MonetaryPolicy {
+func (x *MsgSetEconomicMandate) GetMinimumPolicy() *EconomicPolicy {
 	if x != nil {
 		return x.MinimumPolicy
 	}
 	return nil
 }
 
-func (x *MsgSetMonetaryMandate) GetMaximumPolicy() *MonetaryPolicy {
+func (x *MsgSetEconomicMandate) GetMaximumPolicy() *EconomicPolicy {
 	if x != nil {
 		return x.MaximumPolicy
 	}
 	return nil
 }
 
-// MsgSetMonetaryMandateResponse is the response for a committee
+// MsgSetEconomicMandateResponse is the response for a committee
 // appointment, replacement, or disablement.
-type MsgSetMonetaryMandateResponse struct {
+type MsgSetEconomicMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgSetMonetaryMandateResponse) Reset() {
-	*x = MsgSetMonetaryMandateResponse{}
+func (x *MsgSetEconomicMandateResponse) Reset() {
+	*x = MsgSetEconomicMandateResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_treasury_v1_tx_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3902,14 +3902,14 @@ func (x *MsgSetMonetaryMandateResponse) Reset() {
 	}
 }
 
-func (x *MsgSetMonetaryMandateResponse) String() string {
+func (x *MsgSetEconomicMandateResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSetMonetaryMandateResponse) ProtoMessage() {}
+func (*MsgSetEconomicMandateResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgSetMonetaryMandateResponse.ProtoReflect.Descriptor instead.
-func (*MsgSetMonetaryMandateResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSetEconomicMandateResponse.ProtoReflect.Descriptor instead.
+func (*MsgSetEconomicMandateResponse) Descriptor() ([]byte, []int) {
 	return file_ark_treasury_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
@@ -3922,7 +3922,7 @@ type MsgUpdatePolicy struct {
 	unknownFields protoimpl.UnknownFields
 
 	Authority string          `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Policy    *MonetaryPolicy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
+	Policy    *EconomicPolicy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
 }
 
 func (x *MsgUpdatePolicy) Reset() {
@@ -3952,7 +3952,7 @@ func (x *MsgUpdatePolicy) GetAuthority() string {
 	return ""
 }
 
-func (x *MsgUpdatePolicy) GetPolicy() *MonetaryPolicy {
+func (x *MsgUpdatePolicy) GetPolicy() *EconomicPolicy {
 	if x != nil {
 		return x.Policy
 	}
@@ -3960,7 +3960,7 @@ func (x *MsgUpdatePolicy) GetPolicy() *MonetaryPolicy {
 }
 
 // MsgUpdatePolicyResponse is the response for one governance
-// monetary-policy update.
+// economic-policy update.
 type MsgUpdatePolicyResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3997,7 +3997,7 @@ type MsgCommitteeUpdatePolicy struct {
 
 	Committee    string          `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
 	ExpectedTerm uint64          `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
-	Policy       *MonetaryPolicy `protobuf:"bytes,3,opt,name=policy,proto3" json:"policy,omitempty"`
+	Policy       *EconomicPolicy `protobuf:"bytes,3,opt,name=policy,proto3" json:"policy,omitempty"`
 }
 
 func (x *MsgCommitteeUpdatePolicy) Reset() {
@@ -4034,7 +4034,7 @@ func (x *MsgCommitteeUpdatePolicy) GetExpectedTerm() uint64 {
 	return 0
 }
 
-func (x *MsgCommitteeUpdatePolicy) GetPolicy() *MonetaryPolicy {
+func (x *MsgCommitteeUpdatePolicy) GetPolicy() *EconomicPolicy {
 	if x != nil {
 		return x.Policy
 	}
@@ -4042,7 +4042,7 @@ func (x *MsgCommitteeUpdatePolicy) GetPolicy() *MonetaryPolicy {
 }
 
 // MsgCommitteeUpdatePolicyResponse is the response for one committee
-// monetary-policy update.
+// economic-policy update.
 type MsgCommitteeUpdatePolicyResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4096,7 +4096,7 @@ var file_ark_treasury_v1_tx_proto_rawDesc = []byte{
 	0x79, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
 	0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61,
 	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc4, 0x03, 0x0a,
-	0x15, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d,
+	0x15, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d,
 	0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
 	0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
@@ -4113,19 +4113,19 @@ var file_ark_treasury_v1_tx_proto_rawDesc = []byte{
 	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75,
 	0x6d, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42,
+	0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42,
 	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d, 0x69, 0x6e, 0x69,
 	0x6d, 0x75, 0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x61, 0x78,
 	0x69, 0x6d, 0x75, 0x6d, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x06, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69,
+	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69,
 	0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6d,
 	0x61, 0x78, 0x69, 0x6d, 0x75, 0x6d, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x3a, 0x35, 0x82, 0xe7,
 	0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a,
 	0x22, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2f, 0x4d, 0x73,
-	0x67, 0x53, 0x65, 0x74, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64,
-	0x61, 0x74, 0x65, 0x22, 0x1f, 0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4d, 0x6f, 0x6e,
-	0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x67, 0x53, 0x65, 0x74, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64,
+	0x61, 0x74, 0x65, 0x22, 0x1f, 0x0a, 0x1d, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x63, 0x6f,
+	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbe, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61,
 	0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68,
 	0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
@@ -4133,7 +4133,7 @@ var file_ark_treasury_v1_tx_proto_rawDesc = []byte{
 	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
 	0x12, 0x42, 0x0a, 0x06, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69, 0x63,
+	0x76, 0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69, 0x63,
 	0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x6f,
 	0x6c, 0x69, 0x63, 0x79, 0x3a, 0x2f, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
 	0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72, 0x65,
@@ -4150,7 +4150,7 @@ var file_ark_treasury_v1_tx_proto_rawDesc = []byte{
 	0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72,
 	0x6d, 0x12, 0x42, 0x0a, 0x06, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x50, 0x6f, 0x6c, 0x69,
+	0x2e, 0x76, 0x31, 0x2e, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x50, 0x6f, 0x6c, 0x69,
 	0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70,
 	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x3a, 0x38, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d,
 	0x69, 0x74, 0x74, 0x65, 0x65, 0x8a, 0xe7, 0xb0, 0x2a, 0x25, 0x61, 0x72, 0x6b, 0x2f, 0x74, 0x72,
@@ -4165,12 +4165,12 @@ var file_ark_treasury_v1_tx_proto_rawDesc = []byte{
 	0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e,
 	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6e, 0x0a, 0x12, 0x53, 0x65, 0x74,
-	0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
+	0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
 	0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
 	0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x74, 0x72,
 	0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
-	0x4d, 0x6f, 0x6e, 0x65, 0x74, 0x61, 0x72, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52,
+	0x45, 0x63, 0x6f, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5c, 0x0a, 0x0c, 0x55, 0x70, 0x64,
 	0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
 	0x74, 0x72, 0x65, 0x61, 0x73, 0x75, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55,
@@ -4216,27 +4216,27 @@ var file_ark_treasury_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_ark_treasury_v1_tx_proto_goTypes = []interface{}{
 	(*MsgUpdateParams)(nil),                  // 0: ark.treasury.v1.MsgUpdateParams
 	(*MsgUpdateParamsResponse)(nil),          // 1: ark.treasury.v1.MsgUpdateParamsResponse
-	(*MsgSetMonetaryMandate)(nil),            // 2: ark.treasury.v1.MsgSetMonetaryMandate
-	(*MsgSetMonetaryMandateResponse)(nil),    // 3: ark.treasury.v1.MsgSetMonetaryMandateResponse
+	(*MsgSetEconomicMandate)(nil),            // 2: ark.treasury.v1.MsgSetEconomicMandate
+	(*MsgSetEconomicMandateResponse)(nil),    // 3: ark.treasury.v1.MsgSetEconomicMandateResponse
 	(*MsgUpdatePolicy)(nil),                  // 4: ark.treasury.v1.MsgUpdatePolicy
 	(*MsgUpdatePolicyResponse)(nil),          // 5: ark.treasury.v1.MsgUpdatePolicyResponse
 	(*MsgCommitteeUpdatePolicy)(nil),         // 6: ark.treasury.v1.MsgCommitteeUpdatePolicy
 	(*MsgCommitteeUpdatePolicyResponse)(nil), // 7: ark.treasury.v1.MsgCommitteeUpdatePolicyResponse
 	(*Params)(nil),                           // 8: ark.treasury.v1.Params
-	(*MonetaryPolicy)(nil),                   // 9: ark.treasury.v1.MonetaryPolicy
+	(*EconomicPolicy)(nil),                   // 9: ark.treasury.v1.EconomicPolicy
 }
 var file_ark_treasury_v1_tx_proto_depIdxs = []int32{
 	8, // 0: ark.treasury.v1.MsgUpdateParams.params:type_name -> ark.treasury.v1.Params
-	9, // 1: ark.treasury.v1.MsgSetMonetaryMandate.minimum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	9, // 2: ark.treasury.v1.MsgSetMonetaryMandate.maximum_policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	9, // 3: ark.treasury.v1.MsgUpdatePolicy.policy:type_name -> ark.treasury.v1.MonetaryPolicy
-	9, // 4: ark.treasury.v1.MsgCommitteeUpdatePolicy.policy:type_name -> ark.treasury.v1.MonetaryPolicy
+	9, // 1: ark.treasury.v1.MsgSetEconomicMandate.minimum_policy:type_name -> ark.treasury.v1.EconomicPolicy
+	9, // 2: ark.treasury.v1.MsgSetEconomicMandate.maximum_policy:type_name -> ark.treasury.v1.EconomicPolicy
+	9, // 3: ark.treasury.v1.MsgUpdatePolicy.policy:type_name -> ark.treasury.v1.EconomicPolicy
+	9, // 4: ark.treasury.v1.MsgCommitteeUpdatePolicy.policy:type_name -> ark.treasury.v1.EconomicPolicy
 	0, // 5: ark.treasury.v1.Msg.UpdateParams:input_type -> ark.treasury.v1.MsgUpdateParams
-	2, // 6: ark.treasury.v1.Msg.SetMonetaryMandate:input_type -> ark.treasury.v1.MsgSetMonetaryMandate
+	2, // 6: ark.treasury.v1.Msg.SetEconomicMandate:input_type -> ark.treasury.v1.MsgSetEconomicMandate
 	4, // 7: ark.treasury.v1.Msg.UpdatePolicy:input_type -> ark.treasury.v1.MsgUpdatePolicy
 	6, // 8: ark.treasury.v1.Msg.CommitteeUpdatePolicy:input_type -> ark.treasury.v1.MsgCommitteeUpdatePolicy
 	1, // 9: ark.treasury.v1.Msg.UpdateParams:output_type -> ark.treasury.v1.MsgUpdateParamsResponse
-	3, // 10: ark.treasury.v1.Msg.SetMonetaryMandate:output_type -> ark.treasury.v1.MsgSetMonetaryMandateResponse
+	3, // 10: ark.treasury.v1.Msg.SetEconomicMandate:output_type -> ark.treasury.v1.MsgSetEconomicMandateResponse
 	5, // 11: ark.treasury.v1.Msg.UpdatePolicy:output_type -> ark.treasury.v1.MsgUpdatePolicyResponse
 	7, // 12: ark.treasury.v1.Msg.CommitteeUpdatePolicy:output_type -> ark.treasury.v1.MsgCommitteeUpdatePolicyResponse
 	9, // [9:13] is the sub-list for method output_type
@@ -4278,7 +4278,7 @@ func file_ark_treasury_v1_tx_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetMonetaryMandate); i {
+			switch v := v.(*MsgSetEconomicMandate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -4290,7 +4290,7 @@ func file_ark_treasury_v1_tx_proto_init() {
 			}
 		}
 		file_ark_treasury_v1_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetMonetaryMandateResponse); i {
+			switch v := v.(*MsgSetEconomicMandateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
