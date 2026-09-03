@@ -13,6 +13,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ararat-network/ark/app/ante"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -57,7 +58,7 @@ func TestFeeDecoratorEnforcesTheConsensusFloor(t *testing.T) {
 	// 20,000 axdr.
 	tx.gas = 200_000
 	required := sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000)
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000)))
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000)))
 
 	tx.fee = nil
 	r := runFeeOnCache(t, arkApp, ctx, tx, false)
@@ -105,7 +106,7 @@ func TestFeeDecoratorHoldsTheFeeToTheDeclaredTax(t *testing.T) {
 	// The fixture send owes 10ausd. 200k gas at the 0.1 price needs 20,000
 	// of the reference, or of ausd at its identity factor.
 	tx.gas = 200_000
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000),
 	))
@@ -258,7 +259,7 @@ func TestFeeDecoratorSkipsTheGateWithoutRefusing(t *testing.T) {
 
 			// A covering fee is charged what execution charges: the
 			// requirement, 100,000 at the 0.1 price, and the tax.
-			fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)))
+			apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)))
 			tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200_010))
 			r = runFeeOnCache(t, arkApp, ctx, tx, mode.simulate)
 			require.NoError(t, r.err)
@@ -298,7 +299,7 @@ func TestFeeDecoratorAcceptsAnyCoveringDenom(t *testing.T) {
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Remove(ctx, chain.KRWBaseDenom))
 	tx.msgs = nil
 	tx.gas = 200_000
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 1_000_000_000),
@@ -353,7 +354,7 @@ func TestFeeDecoratorRanksOnlyTheNoahTip(t *testing.T) {
 	// 200k gas at the 0.1 price: 20,000ausd at identity or 10,000anoah at
 	// factor 0.5. The fixture send owes 10ausd.
 	tx.gas = 200_000
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000),
 	))
@@ -445,7 +446,7 @@ func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 	// 200k gas at the 0.1 price is 20,000 at identity. The fixture send owes
 	// 10ausd.
 	tx.gas = 200_000
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 1_000_000),
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000),

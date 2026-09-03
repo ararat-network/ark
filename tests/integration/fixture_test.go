@@ -11,23 +11,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
-	cmtsecp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	sdksecp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 
 	"github.com/ararat-network/ark/abci/codec"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	arkencoding "github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -53,11 +48,10 @@ const goldDenom = "agold"
 // drives full blocks through it, injecting the vote extension the validator
 // would have produced for the previous height.
 type activationFixture struct {
-	t            *testing.T
-	app          *app.ArkApp
-	chainID      string
-	validatorKey cmtsecp256k1.PrivKey
-	validatorSet *cmttypes.ValidatorSet
+	t          *testing.T
+	app        *app.ArkApp
+	chainID    string
+	validators apptestutil.Validators
 	// trader holds a funded NOAH balance, which is what lets a test acquire
 	// asset balances the only way the chain allows: by converting.
 	trader    sdk.AccAddress
@@ -75,19 +69,11 @@ func newActivationFixture(t *testing.T) *activationFixture {
 
 	const chainID = "ark-asset-activation-test"
 
-	validatorKey := cmtsecp256k1.GenPrivKey()
-	validatorSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{
-		cmttypes.NewValidator(validatorKey.PubKey(), 1),
-	})
-	accountKey := sdksecp256k1.GenPrivKey()
-	account := authtypes.NewBaseAccount(accountKey.PubKey().Address().Bytes(), accountKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: account.GetAddress().String(),
-		Coins: sdk.NewCoins(sdk.NewCoin(
-			sdk.DefaultBondDenom,
-			chain.NativeBaseAmount(1_000_000),
-		)),
-	}
+	validators := apptestutil.NewValidators(t, 1)
+	funder := apptestutil.NewFunder(t, sdk.NewCoins(sdk.NewCoin(
+		sdk.DefaultBondDenom,
+		chain.NativeBaseAmount(1_000_000),
+	)))
 
 	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
@@ -103,29 +89,12 @@ func newActivationFixture(t *testing.T) *activationFixture {
 	genesisState, err := simtestutil.GenesisStateWithValSet(
 		arkApp.AppCodec(),
 		arkApp.DefaultGenesis(),
-		validatorSet,
-		[]authtypes.GenesisAccount{account},
-		balance,
+		validators.Set,
+		funder.Accounts(),
+		funder.Balance,
 	)
 	require.NoError(t, err)
-
-	// Blocks carry the previous commit, so the validator needs signing info
-	// before slashing sees it.
-	consensusAddress := sdk.ConsAddress(validatorKey.PubKey().Address())
-	var slashingGenesis slashingtypes.GenesisState
-	arkApp.AppCodec().MustUnmarshalJSON(genesisState[slashingtypes.ModuleName], &slashingGenesis)
-	slashingGenesis.SigningInfos = []slashingtypes.SigningInfo{{
-		Address: consensusAddress.String(),
-		ValidatorSigningInfo: slashingtypes.NewValidatorSigningInfo(
-			consensusAddress,
-			1,
-			0,
-			time.Unix(0, 0).UTC(),
-			false,
-			0,
-		),
-	}}
-	genesisState[slashingtypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&slashingGenesis)
+	apptestutil.SeedSigningInfos(t, arkApp.AppCodec(), genesisState, validators.ConsAddresses(), 1)
 
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)
@@ -147,13 +116,12 @@ func newActivationFixture(t *testing.T) *activationFixture {
 	require.NoError(t, err)
 
 	fixture := &activationFixture{
-		t:            t,
-		app:          arkApp,
-		chainID:      chainID,
-		validatorKey: validatorKey,
-		validatorSet: validatorSet,
-		trader:       account.GetAddress(),
-		blockTime:    genesisTime,
+		t:          t,
+		app:        arkApp,
+		chainID:    chainID,
+		validators: validators,
+		trader:     funder.Address(),
+		blockTime:  genesisTime,
 	}
 	// Height 1 carries no vote extensions: they are only available once a
 	// previous commit exists. Height 2 is the first block whose preblock
@@ -207,7 +175,7 @@ func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 	)
 	if voteHeight > 0 {
 		validator := cometabci.Validator{
-			Address: f.validatorKey.PubKey().Address(),
+			Address: f.validators.Keys[0].PubKey().Address(),
 			Power:   1,
 		}
 		lastCommit = cometabci.CommitInfo{
@@ -236,7 +204,7 @@ func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 		Time:               f.blockTime,
 		Txs:                txs,
 		DecidedLastCommit:  lastCommit,
-		NextValidatorsHash: f.validatorSet.Hash(),
+		NextValidatorsHash: f.validators.Set.Hash(),
 	})
 	require.NoError(f.t, err)
 	f.blockEvents = res.Events

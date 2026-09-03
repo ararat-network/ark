@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"testing"
@@ -24,12 +24,15 @@ import (
 	"cosmossdk.io/log/v2"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
-var _ ibctesting.TestingApp = (*ArkApp)(nil)
+var _ ibctesting.TestingApp = (*app.ArkApp)(nil)
 
 func TestIBCWiring(t *testing.T) {
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -103,7 +106,7 @@ func TestIBCWiring(t *testing.T) {
 // resolve, and an unwired client type is refused. Route reads the allowed
 // clients param, so this runs over applied genesis rather than a bare app.
 func TestLightClientRoutes(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContext(true)
 
 	for _, clientID := range []string{"07-tendermint-0", "08-wasm-0"} {

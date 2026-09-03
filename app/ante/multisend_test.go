@@ -16,6 +16,7 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // guardAddr derives a distinct valid address per output without generating a
@@ -47,7 +48,7 @@ func multiSend(from sdk.AccAddress, n int) *banktypes.MsgMultiSend {
 
 func setupMultiSendTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress) {
 	t.Helper()
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 	return arkApp, ctx, guardAddr(1 << 16)
 }

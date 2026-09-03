@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"encoding/json"
@@ -16,7 +16,6 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/depinject"
@@ -25,7 +24,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/runtime"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -38,7 +36,9 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/params"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -47,7 +47,7 @@ import (
 
 func TestAppConstructs(t *testing.T) {
 	db := dbm.NewMemDB()
-	arkApp := NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	arkApp := app.NewArkApp(log.NewTestLogger(t), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 
 	require.NotNil(t, arkApp)
 	require.NotNil(t, arkApp.BaseApp)
@@ -84,28 +84,19 @@ func TestAppConstructs(t *testing.T) {
 func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	const chainID = "ark-block-gas-test"
 
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(pubKey, 1)})
-
-	senderPrivKey := secp256k1.GenPrivKey()
-	sender := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: sender.GetAddress().String(),
-		Coins: sdk.NewCoins(
-			sdk.NewCoin(
-				sdk.DefaultBondDenom,
-				sdk.DefaultPowerReduction.MulRaw(1_000),
-			),
-			// The fee gate prices gas in the reference denom, at the
-			// atto-scaled launch floor: 0.02 XDR per 200k-gas transaction,
-			// ten transactions funded with headroom.
-			sdk.NewInt64Coin(chain.XDRBaseDenom, 300_000_000_000_000_000),
+	validators := apptestutil.NewValidators(t, 1)
+	funder := apptestutil.NewFunder(t, sdk.NewCoins(
+		sdk.NewCoin(
+			sdk.DefaultBondDenom,
+			sdk.DefaultPowerReduction.MulRaw(1_000),
 		),
-	}
+		// The fee gate prices gas in the reference denom, at the atto-scaled
+		// launch floor: 0.02 XDR per 200k-gas transaction, ten transactions
+		// funded with headroom.
+		sdk.NewInt64Coin(chain.XDRBaseDenom, 300_000_000_000_000_000),
+	))
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -115,9 +106,9 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	genesisState, err := simtestutil.GenesisStateWithValSet(
 		arkApp.AppCodec(),
 		arkApp.DefaultGenesis(),
-		valSet,
-		[]authtypes.GenesisAccount{sender},
-		balance,
+		validators.Set,
+		funder.Accounts(),
+		funder.Balance,
 	)
 	require.NoError(t, err)
 	stateBytes, err := json.Marshal(genesisState)
@@ -135,7 +126,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	txs := make([][]byte, 10)
 	for i := range txs {
 		msg := banktypes.NewMsgSend(
-			sender.GetAddress(),
+			funder.Address(),
 			recipient,
 			sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1)),
 		)
@@ -148,7 +139,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 			chainID,
 			[]uint64{0},
 			[]uint64{uint64(i)},
-			senderPrivKey,
+			funder.Key,
 		)
 		require.NoError(t, err)
 		txs[i], err = arkApp.GetTxConfig().TxEncoder()(tx)
@@ -157,7 +148,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 
 	response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height:             1,
-		NextValidatorsHash: valSet.Hash(),
+		NextValidatorsHash: validators.Set.Hash(),
 		Txs:                txs,
 	})
 	require.NoError(t, err)
@@ -171,62 +162,62 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 	db := dbm.NewMemDB()
 	logger := log.NewTestLogger(t)
-	app := NewArkappWithCustomOptions(t, false, SetupOptions{
+	arkApp := apptestutil.NewArkappWithCustomOptions(t, false, apptestutil.SetupOptions{
 		Logger:  logger.With("instance", "first"),
 		DB:      db,
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
 	})
 
-	// BlockedAddresses returns a map of addresses in app v1 and a map of modules name in app di.
-	for acc := range BlockedAddresses() {
+	// app.BlockedAddresses returns a map of addresses in app v1 and a map of modules name in app di.
+	for acc := range app.BlockedAddresses() {
 		var addr sdk.AccAddress
 		if modAddr, err := sdk.AccAddressFromBech32(acc); err == nil {
 			addr = modAddr
 		} else {
-			addr = app.AccountKeeper.GetModuleAddress(acc)
+			addr = arkApp.AccountKeeper.GetModuleAddress(acc)
 		}
 
 		require.True(
 			t,
-			app.BankKeeper.BlockedAddr(addr),
+			arkApp.BankKeeper.BlockedAddr(addr),
 			fmt.Sprintf("ensure that blocked addresses are properly set in bank keeper: %s should be blocked", acc),
 		)
 	}
 
 	// finalise block so we have CheckTx state set
-	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
+	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: 1,
 	})
 	require.NoError(t, err)
 
-	_, err = app.Commit()
+	_, err = arkApp.Commit()
 	require.NoError(t, err)
 
 	// Making a new app object with the db, so that initchain hasn't been called
-	app2 := NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
+	app2 := app.NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
 	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
 }
 
 func TestUpgradeStateOnGenesis(t *testing.T) {
 	db := dbm.NewMemDB()
-	app := NewArkappWithCustomOptions(t, false, SetupOptions{
+	arkApp := apptestutil.NewArkappWithCustomOptions(t, false, apptestutil.SetupOptions{
 		Logger:  log.NewTestLogger(t),
 		DB:      db,
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
 	})
 
 	// make sure the upgrade keeper has version map in state
-	ctx := app.NewContext(false)
-	vm, err := app.UpgradeKeeper.GetModuleVersionMap(ctx)
+	ctx := arkApp.NewContext(false)
+	vm, err := arkApp.UpgradeKeeper.GetModuleVersionMap(ctx)
 	require.NoError(t, err)
-	for v, i := range app.ModuleManager.Modules {
+	for v, i := range arkApp.ModuleManager.Modules {
 		if i, ok := i.(module.HasConsensusVersion); ok {
 			require.Equal(t, vm[v], i.ConsensusVersion())
 		}
 	}
 
-	require.NotNil(t, app.UpgradeKeeper.GetVersionSetter())
+	require.NotNil(t, arkApp.UpgradeKeeper.GetVersionSetter())
 }
 
 func TestProtoAnnotations(t *testing.T) {
@@ -248,7 +239,7 @@ func TestAddressCodecsAgreeWithSDKConfig(t *testing.T) {
 		consCodec runtime.ConsensusAddressCodec
 	)
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
 		&addrCodec, &valCodec, &consCodec,
 	))
 
@@ -285,13 +276,13 @@ func TestNativeUnitConfiguration(t *testing.T) {
 // default backend, so an unset version.Name would silently file Ark keys under
 // "cosmos" and a later rename would leave them unreachable.
 func TestKeyringServiceName(t *testing.T) {
-	require.Equal(t, Name, version.Name)
-	require.Equal(t, Name, sdk.KeyringServiceName())
-	require.Equal(t, Name+"d", version.AppName)
+	require.Equal(t, app.Name, version.Name)
+	require.Equal(t, app.Name, sdk.KeyringServiceName())
+	require.Equal(t, app.Name+"d", version.AppName)
 }
 
 func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
-	permissions := GetMaccPerms()
+	permissions := app.GetMaccPerms()
 	fundAddresses := make(map[string]struct{}, len(treasurytypes.FundAccountNames()))
 	for _, moduleName := range treasurytypes.FundAccountNames() {
 		perms, ok := permissions[moduleName]
@@ -332,7 +323,7 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		"IBC transfer must retain voucher mint and burn permissions",
 	)
 
-	blocked := BlockedAddresses()
+	blocked := app.BlockedAddresses()
 	for _, moduleName := range append([]string{govtypes.ModuleName}, treasurytypes.FundAccountNames()...) {
 		require.False(t, blocked[moduleName], "%s must remain reachable", moduleName)
 	}
@@ -350,7 +341,7 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		require.True(t, blocked[moduleName], "%s must remain blocked", moduleName)
 	}
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,

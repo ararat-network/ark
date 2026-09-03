@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"encoding/json"
@@ -31,6 +31,8 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -50,15 +52,15 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 		cdc    codec.Codec
 	)
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
 		&basics,
 		&cdc,
 	))
 
 	for _, manual := range []module.BasicManager{
-		IBCModuleBasics(),
-		WasmModuleBasics(),
-		GMPModuleBasics(),
+		app.IBCModuleBasics(),
+		app.WasmModuleBasics(),
+		app.GMPModuleBasics(),
 	} {
 		for name, basic := range manual {
 			basics[name] = basic
@@ -77,7 +79,7 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 // module's own basic — is invisible to whichever callers do not run that code,
 // and the genesis they emit differs from the one every test asserts against.
 func TestCLIAndAppGenesisAgree(t *testing.T) {
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -110,7 +112,7 @@ func TestCLIAndAppGenesisAgree(t *testing.T) {
 // defaults any more: launch values live in app/genesis/genesis.json, pinned by
 // the launch test.
 func TestDefaultGenesisSetsGovDeposits(t *testing.T) {
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -142,7 +144,7 @@ func TestDefaultGenesisSetsGovDeposits(t *testing.T) {
 // already imported. A wrong order fails InitChain loudly rather than silently;
 // the pin is so the failure names the wiring instead of a genesis file.
 func TestInitGenesisFollowsRegistryDependencies(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderInitGenesis
 
 	requireOrderBefore(t, order, oracletypes.ModuleName, assettypes.ModuleName)
@@ -180,7 +182,7 @@ func TestLaunchGenesisIsValid(t *testing.T) {
 	basics, cdc := cliBasicManager(t)
 	var txConfig client.TxConfig
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
 		&txConfig,
 	))
 
@@ -233,7 +235,7 @@ func TestLaunchGenesisBoots(t *testing.T) {
 		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, chain.NativeBaseAmount(100_000_000))),
 	}
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,

@@ -17,8 +17,8 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
-	markettypes "github.com/ararat-network/ark/x/market/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -126,19 +126,9 @@ func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
 	return nil
 }
 
-// fundAccount mints through the market module, the one module account with
-// the permission, and hands the coins to addr.
-func fundAccount(tb testing.TB, arkApp *app.ArkApp, ctx sdk.Context, addr sdk.AccAddress, coins sdk.Coins) {
-	tb.Helper()
-	require.NoError(tb, arkApp.BankKeeper.MintCoins(ctx, markettypes.ModuleName, coins))
-	require.NoError(tb, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-		ctx, markettypes.ModuleName, addr, coins,
-	))
-}
-
 func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeTx) {
 	t.Helper()
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
 	params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
 	require.NoError(t, err)
@@ -159,7 +149,7 @@ func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeT
 	// base unit at this gas limit, four of which the ceiling never charges —
 	// and five to spare.
 	payer := sdk.AccAddress(bytes.Repeat([]byte{1}, 20))
-	fundAccount(t, arkApp, ctx, payer, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
+	apptestutil.FundAccount(t, arkApp, ctx, payer, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
 
 	msg := &banktypes.MsgSend{
 		FromAddress: payer.String(),

@@ -12,6 +12,7 @@ import (
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
@@ -73,7 +74,7 @@ func TestFeeDecoratorRefusesAnUnknownPayer(t *testing.T) {
 func TestFeeDecoratorAcceptsTransfersOfUncappedDenom(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Remove(ctx, chain.USDBaseDenom))
-	fundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)))
+	apptestutil.FundAccount(t, arkApp, ctx, tx.payer, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)))
 	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1))
 
 	r := runFeeOnCache(t, arkApp, ctx, tx, false)
@@ -105,7 +106,7 @@ func TestFeeDecoratorChargesVestingAccountFunding(t *testing.T) {
 func TestFeeDecoratorChargesGranterWhenSet(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
-	fundAccount(t, arkApp, ctx, granter, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
+	apptestutil.FundAccount(t, arkApp, ctx, granter, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
 	require.NoError(t, arkApp.FeeGrantKeeper.GrantAllowance(ctx, granter, tx.payer, &feegrant.BasicAllowance{
 		SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
 	}))

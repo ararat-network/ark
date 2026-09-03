@@ -20,6 +20,7 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
@@ -56,7 +57,7 @@ func fundVoter(tb testing.TB, arkApp *app.ArkApp, ctx sdk.Context, to sdk.AccAdd
 // stake floor, and one with no stake at all.
 func setupGovVoteTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress, sdk.AccAddress) {
 	t.Helper()
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 
 	validators, err := arkApp.StakingKeeper.GetAllValidators(ctx)

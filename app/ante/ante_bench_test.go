@@ -21,6 +21,7 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
@@ -38,7 +39,7 @@ type benchFixture struct {
 
 func newBenchFixture(b *testing.B) *benchFixture {
 	b.Helper()
-	arkApp := app.Setup(b, false)
+	arkApp := apptestutil.Setup(b, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1}).
 		WithExecMode(sdk.ExecModeFinalize)
 
@@ -57,7 +58,7 @@ func newBenchFixture(b *testing.B) *benchFixture {
 
 	// Enough for one pass of fee plus tax; every iteration replays against the
 	// same base state through a fresh cache.
-	fundAccount(b, arkApp, ctx, addr, sdk.NewCoins(
+	apptestutil.FundAccount(b, arkApp, ctx, addr, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 	))

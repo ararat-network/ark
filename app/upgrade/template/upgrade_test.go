@@ -9,7 +9,7 @@ import (
 
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
-	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/app/upgrade/template"
 )
 
@@ -18,7 +18,7 @@ import (
 // the binary ships. With no migrations registered above it, the map comes
 // back unchanged.
 func TestBuildRunsMigrations(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 
 	u := template.Build(arkApp.ModuleManager, arkApp.Configurator())

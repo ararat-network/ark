@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"encoding/json"
@@ -11,23 +11,18 @@ import (
 
 	cometabci "github.com/cometbft/cometbft/abci/types"
 	cometproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	abcicodec "github.com/ararat-network/ark/abci/codec"
 	abcioracle "github.com/ararat-network/ark/abci/oracle"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
 	arkencoding "github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -38,8 +33,8 @@ const oracleBenchmarkValidatorCount = 100
 var oracleBenchmarkPrices map[string]math.LegacyDec
 
 type oracleBenchmarkFixture struct {
-	app        *ArkApp
-	valSet     *cmttypes.ValidatorSet
+	app        *app.ArkApp
+	validators apptestutil.Validators
 	consAddrs  []sdk.ConsAddress
 	valAddrs   []sdk.ValAddress
 	funder     sdk.AccAddress
@@ -340,7 +335,7 @@ func benchmarkOracleFinalizeAndCommit(b *testing.B, withOracle bool) {
 			Height:             height,
 			Time:               time.Unix(height, 0).UTC(),
 			Hash:               fixture.app.LastCommitID().Hash,
-			NextValidatorsHash: fixture.valSet.Hash(),
+			NextValidatorsHash: fixture.validators.Set.Hash(),
 			DecidedLastCommit:  commitInfo,
 			Txs:                txs,
 		})
@@ -361,27 +356,15 @@ func newOracleBenchmarkFixture(
 ) oracleBenchmarkFixture {
 	tb.Helper()
 
-	validators := make([]*cmttypes.Validator, validatorCount)
-	consAddrs := make([]sdk.ConsAddress, validatorCount)
-	for i := range validators {
-		privVal := mock.NewPV()
-		pubKey, err := privVal.GetPubKey()
-		if err != nil {
-			tb.Fatal(err)
-		}
-		validators[i] = cmttypes.NewValidator(pubKey, 1)
-		consAddrs[i] = sdk.ConsAddress(validators[i].Address)
-	}
-	valSet := cmttypes.NewValidatorSet(validators)
+	validators := apptestutil.NewValidators(tb, validatorCount)
+	consAddrs := validators.ConsAddresses()
 
-	funderKey := secp256k1.GenPrivKey()
-	funder := authtypes.NewBaseAccount(funderKey.PubKey().Address().Bytes(), funderKey.PubKey(), 0, 0)
 	rewardPool := benchmarkRewardPool(rewardDenomCount)
-	genesisBalance := rewardPool.Add(
+	funder := apptestutil.NewFunder(tb, rewardPool.Add(
 		sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000_000_000_000_000)),
-	)
+	))
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewNopLogger(),
 		dbm.NewMemDB(),
 		true,
@@ -390,48 +373,15 @@ func newOracleBenchmarkFixture(
 	genesisState, err := simtestutil.GenesisStateWithValSet(
 		arkApp.AppCodec(),
 		arkApp.DefaultGenesis(),
-		valSet,
-		[]authtypes.GenesisAccount{funder},
-		banktypes.Balance{Address: funder.GetAddress().String(), Coins: genesisBalance},
+		validators.Set,
+		funder.Accounts(),
+		funder.Balance,
 	)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	// GenesisStateWithValSet accounts for every validator in total supply but
-	// seeds only one bond amount in the bonded pool. Correct the pool balance for
-	// this multi-validator benchmark fixture before InitChain validates supply.
-	var bankGenesis banktypes.GenesisState
-	arkApp.AppCodec().MustUnmarshalJSON(genesisState[banktypes.ModuleName], &bankGenesis)
-	bondedPoolAddress := authtypes.NewModuleAddress(stakingtypes.BondedPoolName).String()
-	for i := range bankGenesis.Balances {
-		if bankGenesis.Balances[i].Address != bondedPoolAddress {
-			continue
-		}
-		bankGenesis.Balances[i].Coins = sdk.NewCoins(sdk.NewCoin(
-			sdk.DefaultBondDenom,
-			sdk.DefaultPowerReduction.MulRaw(int64(validatorCount)),
-		))
-		break
-	}
-	genesisState[banktypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&bankGenesis)
-
-	var slashingGenesis slashingtypes.GenesisState
-	arkApp.AppCodec().MustUnmarshalJSON(genesisState[slashingtypes.ModuleName], &slashingGenesis)
-	slashingGenesis.SigningInfos = make([]slashingtypes.SigningInfo, len(consAddrs))
-	for i, consAddr := range consAddrs {
-		slashingGenesis.SigningInfos[i] = slashingtypes.SigningInfo{
-			Address: consAddr.String(),
-			ValidatorSigningInfo: slashingtypes.NewValidatorSigningInfo(
-				consAddr,
-				1,
-				0,
-				time.Unix(0, 0).UTC(),
-				false,
-				0,
-			),
-		}
-	}
-	genesisState[slashingtypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&slashingGenesis)
+	apptestutil.CorrectBondedPool(tb, arkApp.AppCodec(), genesisState, validatorCount)
+	apptestutil.SeedSigningInfos(tb, arkApp.AppCodec(), genesisState, consAddrs, 1)
 	stateBytes, err := json.Marshal(genesisState)
 	if err != nil {
 		tb.Fatal(err)
@@ -451,7 +401,7 @@ func newOracleBenchmarkFixture(
 	if _, err := arkApp.FinalizeBlock(&cometabci.RequestFinalizeBlock{
 		Height:             1,
 		Time:               time.Unix(1, 0).UTC(),
-		NextValidatorsHash: valSet.Hash(),
+		NextValidatorsHash: validators.Set.Hash(),
 	}); err != nil {
 		tb.Fatal(err)
 	}
@@ -480,10 +430,10 @@ func newOracleBenchmarkFixture(
 
 	return oracleBenchmarkFixture{
 		app:        arkApp,
-		valSet:     valSet,
+		validators: validators,
 		consAddrs:  consAddrs,
 		valAddrs:   valAddrs,
-		funder:     funder.GetAddress(),
+		funder:     funder.Address(),
 		rewardPool: rewardPool,
 	}
 }

@@ -15,7 +15,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
@@ -472,7 +472,7 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 // change of unit: quotes identical, the pool gap carried across, and the new
 // unit surviving export.
 func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewNextBlockContext(cmtproto.Header{
 		Height: arkApp.LastBlockHeight() + 1,
 		Time:   time.Unix(1_800_000_000, 0),
@@ -546,17 +546,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 
 	trader := treasuryGovernanceVoter(t, arkApp, ctx)
 	noahOffer := sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(noahOffer),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-		ctx,
-		markettypes.ModuleName,
-		trader,
-		sdk.NewCoins(noahOffer),
-	))
+	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(noahOffer))
 
 	response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
 		Trader:         trader.String(),

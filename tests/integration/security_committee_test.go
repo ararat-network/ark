@@ -14,6 +14,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	securitykeeper "github.com/ararat-network/ark/x/security/keeper"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
 )
@@ -35,7 +36,7 @@ type securityFixture struct {
 func newSecurityFixture(t *testing.T) *securityFixture {
 	t.Helper()
 
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 
 	f := &securityFixture{

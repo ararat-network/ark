@@ -21,6 +21,7 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
@@ -33,7 +34,7 @@ import (
 )
 
 func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Now(),
@@ -73,17 +74,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)),
 	))
 	initialStableSupply := math.NewInt(1_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-		ctx,
-		markettypes.ModuleName,
-		trader,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)),
-	))
+	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, initialStableSupply)))
 	// The mint above stands in for supply that existed before this block. It
 	// bypasses Market and needs no priming: settlement folds the registry at the
 	// end of the block, so it counts this supply the same way it counts what the
@@ -140,7 +131,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 }
 
 func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 	goCtx := ctx
 	bankMsgServer := bankkeeper.NewMsgServerImpl(arkApp.BankKeeper)
@@ -287,7 +278,7 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 // module's own settlement transfer, which would fail EndBlock and halt the
 // chain.
 func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 2})
 
 	require.NoError(t, arkApp.AssetKeeper.Assets.Set(ctx, chain.USDBaseDenom, assettypes.Asset{
@@ -297,13 +288,7 @@ func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
 		Version:  3,
 	}))
 	taxCoins := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4))
-	require.NoError(t, arkApp.BankKeeper.MintCoins(ctx, markettypes.ModuleName, taxCoins))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx,
-		markettypes.ModuleName,
-		treasurytypes.TransferTaxCollectorName,
-		taxCoins,
-	))
+	apptestutil.FundModule(t, arkApp, ctx, treasurytypes.TransferTaxCollectorName, taxCoins)
 
 	funding := treasurytypes.DefaultRewardFundingState()
 	funding.BlocksRemaining = 1
@@ -327,7 +312,7 @@ func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
 }
 
 func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 	voter := treasuryGovernanceVoter(t, arkApp, ctx)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
@@ -608,7 +593,7 @@ func executeTreasuryProposal(
 // every other treasury and app test's expectations are only valid while it
 // holds.
 func TestTreasuryLaunchesWithExposureModelInert(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Now(),

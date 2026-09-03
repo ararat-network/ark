@@ -15,7 +15,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
@@ -42,7 +42,7 @@ const goldExternal = goldDenom + "-x"
 // committee's bounded message and governance's unbounded one against the same
 // state, one stopping at the target line and the other not.
 func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Unix(1_800_000_000, 0),
@@ -80,17 +80,13 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	// The Reserve holds far more than either gap, so what stops a transfer is
 	// the destination's target and never the source running dry.
 	reserveSeed := math.NewInt(500_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
+	apptestutil.FundModule(
+		t,
+		arkApp,
 		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, reserveSeed)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx,
-		markettypes.ModuleName,
 		reservetypes.StrategicReserveName,
 		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, reserveSeed)),
-	))
+	)
 
 	_, err = msgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
 		Authority:           authority,
@@ -297,10 +293,7 @@ func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 		reserveSeed := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000)))
 		// Market is the only account that may mint NOAH, so seeding goes through
 		// it exactly as real expansion principal would.
-		require.NoError(t, f.app.BankKeeper.MintCoins(ctx, markettypes.ModuleName, reserveSeed))
-		require.NoError(t, f.app.BankKeeper.SendCoinsFromModuleToModule(
-			ctx, markettypes.ModuleName, reservetypes.StrategicReserveName, reserveSeed,
-		))
+		apptestutil.FundModule(t, f.app, ctx, reservetypes.StrategicReserveName, reserveSeed)
 		_, err := reserveMsgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
 			Authority:           authority,
 			Committee:           committee,
@@ -388,7 +381,7 @@ func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 // denomination is both recognisable and convertible. What can be shared is the
 // rate, and the rate is what the orientation is a fact about.
 func TestReserveAndMarketValueARateIdentically(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Unix(1_800_000_000, 0),
@@ -444,13 +437,7 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	// valuation, and a clipped credit would measure the solve instead.
 	base := math.NewInt(1_000_000_000)
 	seed := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, base))
-	require.NoError(t, arkApp.BankKeeper.MintCoins(ctx, markettypes.ModuleName, seed))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx,
-		markettypes.ModuleName,
-		reservetypes.StrategicReserveName,
-		seed,
-	))
+	apptestutil.FundModule(t, arkApp, ctx, reservetypes.StrategicReserveName, seed)
 	// The external holding is attested, as every external holding is (D59):
 	// custody the chain cannot see, carried as an open position's quantity and
 	// priced by the fold through the series the symbol derives. No bank coin is

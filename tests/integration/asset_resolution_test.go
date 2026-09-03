@@ -13,6 +13,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
@@ -166,17 +167,13 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 		half := noahFor(acquired.Amount).QuoInt64(2).TruncateInt()
 		require.True(t, half.IsPositive())
-		require.NoError(t, f.app.BankKeeper.MintCoins(
+		apptestutil.FundModule(
+			t,
+			f.app,
 			ctx,
-			markettypes.ModuleName,
-			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, half)),
-		))
-		require.NoError(t, f.app.BankKeeper.SendCoinsFromModuleToModule(
-			ctx,
-			markettypes.ModuleName,
 			treasurytypes.RedemptionBufferName,
 			sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, half)),
-		))
+		)
 	})
 
 	redeemed := acquired.Amount.QuoRaw(2)

@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"fmt"
@@ -20,6 +20,9 @@ import (
 	queryv1 "cosmossdk.io/api/cosmos/query/v1"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // arkModuleQuerySafePaths is every Ark query the protos declare safe to serve
@@ -112,7 +115,7 @@ func arkPathsOnly(paths []string) []string {
 	return ark
 }
 
-func moduleQuerySafe(arkApp *ArkApp, path string) (*icahosttypes.MsgModuleQuerySafeResponse, error) {
+func moduleQuerySafe(arkApp *app.ArkApp, path string) (*icahosttypes.MsgModuleQuerySafeResponse, error) {
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
 	return icahostkeeper.NewMsgServerImpl(arkApp.ICAHostKeeper).ModuleQuerySafe(ctx, &icahosttypes.MsgModuleQuerySafe{
 		Signer:   authtypes.NewModuleAddress("interchain-account").String(),
@@ -135,14 +138,14 @@ func TestFeedReferentsStaysOutOfReach(t *testing.T) {
 	const path = "/ark.oracle.v1.Query/FeedReferents"
 	require.NotContains(t, moduleQuerySafePaths(), path)
 
-	_, err := moduleQuerySafe(Setup(t, false), path)
+	_, err := moduleQuerySafe(apptestutil.Setup(t, false), path)
 	require.ErrorContains(t, err, "not module query safe")
 }
 
 // The ICA host serves the annotated set with no list of Ark's own in between:
 // an annotated path answers through MsgModuleQuerySafe as it stands.
 func TestInterchainAccountReachesAnnotatedQueries(t *testing.T) {
-	response, err := moduleQuerySafe(Setup(t, false), "/ark.treasury.v1.Query/Params")
+	response, err := moduleQuerySafe(apptestutil.Setup(t, false), "/ark.treasury.v1.Query/Params")
 	require.NoError(t, err)
 	require.Len(t, response.Responses, 1)
 	require.NotEmpty(t, response.Responses[0])
@@ -151,7 +154,7 @@ func TestInterchainAccountReachesAnnotatedQueries(t *testing.T) {
 // Every annotated path must route, or the ICA host would fail it at call time
 // with a routing error rather than serve it.
 func TestModuleQuerySafePathsRoute(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 
 	for _, path := range arkPathsOnly(moduleQuerySafePaths()) {
 		t.Run(path, func(t *testing.T) {
@@ -168,7 +171,7 @@ func TestModuleQuerySafePathsRoute(t *testing.T) {
 // paths where ordering matters most, and it cannot see a query reading
 // node-local state, which is the same on repeat by definition.
 func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
 
 	for _, path := range arkPathsOnly(moduleQuerySafePaths()) {

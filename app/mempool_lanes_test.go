@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"math/rand"
@@ -22,6 +22,8 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	"github.com/ararat-network/ark/abci/lanes"
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // TestLaneMempoolOrdersCommitteeAndGovernanceFirst proves the wired mempool
@@ -29,7 +31,7 @@ import (
 // lane, using real signed transactions. Block assembly from this order is the
 // SDK default proposal handler's covered behaviour.
 func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 
 	mp, ok := arkApp.Mempool().(*mempool.PriorityNonceMempool[lanes.Priority])
 	require.True(t, ok, "BaseApp must be wired with the lane mempool")
@@ -93,7 +95,7 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 // FIFO transactions for that type alone — a zero-capacity lane pool would
 // propose empty blocks.
 func TestMempoolSizingFollowsAppConfig(t *testing.T) {
-	newApp := func(t *testing.T, maxTxs any) *ArkApp {
+	newApp := func(t *testing.T, maxTxs any) *app.ArkApp {
 		t.Helper()
 		appOptions := make(simtestutil.AppOptionsMap, 0)
 		// Per-subtest home: the Wasm VM locks its cache directory exclusively.
@@ -101,7 +103,7 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 		if maxTxs != nil {
 			appOptions[server.FlagMempoolMaxTxs] = maxTxs
 		}
-		return NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, appOptions)
+		return app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, appOptions)
 	}
 
 	t.Run("absent key keeps the lanes on", func(t *testing.T) {
@@ -125,9 +127,9 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 // registered message surface in both directions: no phantom entries after a
 // rename, and no committee message shipping without a lane decision.
 func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 
-	priority := priorityLaneSet().URLs()
+	priority := app.PriorityLaneSet().URLs()
 	registered := arkApp.InterfaceRegistry().ListImplementations(sdk.MsgInterfaceProtoName)
 	registeredSet := make(map[string]struct{}, len(registered))
 	for _, url := range registered {

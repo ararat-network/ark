@@ -15,7 +15,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
@@ -374,7 +374,7 @@ func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *te
 func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase3AIntegrationResult {
 	t.Helper()
 
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Unix(1_800_000_000, 0),
@@ -401,31 +401,11 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	}
 
 	stableSupply := math.NewInt(1_000_000_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-		ctx,
-		markettypes.ModuleName,
-		trader,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)),
-	))
+	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)))
 
 	if !valuationComplete {
 		missingRateSupply := sdk.NewInt64Coin(chain.KRWBaseDenom, 1)
-		require.NoError(t, arkApp.BankKeeper.MintCoins(
-			ctx,
-			markettypes.ModuleName,
-			sdk.NewCoins(missingRateSupply),
-		))
-		require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-			ctx,
-			markettypes.ModuleName,
-			trader,
-			sdk.NewCoins(missingRateSupply),
-		))
+		apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(missingRateSupply))
 	}
 
 	// The mints above stand in for supply that existed before this block. They
@@ -435,17 +415,13 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	// that fold is also what excludes the rateless KRW dust from the claimable
 	// aggregate and marks the valuation incomplete.
 	bufferSeed := math.NewInt(250_000_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
+	apptestutil.FundModule(
+		t,
+		arkApp,
 		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferSeed)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx,
-		markettypes.ModuleName,
 		treasurytypes.RedemptionBufferName,
 		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, bufferSeed)),
-	))
+	)
 
 	bufferAddress := authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName)
 	bufferBefore := arkApp.BankKeeper.GetBalance(ctx, bufferAddress, chain.NoahBaseDenom).Amount

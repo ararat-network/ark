@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"testing"
@@ -15,6 +15,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -24,10 +26,10 @@ import (
 // annotation is a claim listing does not restate; both are required. Vacuous
 // while the list is empty, and the first check the activation gate runs.
 func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	annotated := moduleQuerySafePaths()
 
-	for path, response := range acceptedQueries() {
+	for path, response := range app.AcceptedQueries() {
 		t.Run(path, func(t *testing.T) {
 			require.Contains(t, annotated, path, "a listed path must be annotated module_query_safe")
 			require.NotNil(t, arkApp.GRPCQueryRouter().Route(path), "path must route")
@@ -39,9 +41,9 @@ func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
 // With the list empty, a read is refused by path on both transports: the check
 // that contracts cannot reach chain state before the activation gate.
 func TestQueriesAreRefusedWhileUnlisted(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
-	plugins := arkApp.wasmQueryPlugins(acceptedQueries())
+	plugins := arkApp.WasmQueryPlugins(app.AcceptedQueries())
 
 	const path = "/ark.treasury.v1.Query/ComputeTax"
 
@@ -60,7 +62,7 @@ func TestComputeTaxThroughTheAcceptListMatchesTheCharge(t *testing.T) {
 	arkApp, ctx, contract := setupExecutionTaxFixture(t)
 
 	const path = "/ark.treasury.v1.Query/ComputeTax"
-	plugins := arkApp.wasmQueryPlugins(wasmkeeper.AcceptedQueries{
+	plugins := arkApp.WasmQueryPlugins(wasmkeeper.AcceptedQueries{
 		path: func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },
 	})
 

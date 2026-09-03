@@ -1,4 +1,4 @@
-package app
+package app_test
 
 // Module ordering is app wiring rather than anything the keepers can enforce:
 // a reordering compiles, passes every module's tests, and changes the
@@ -16,6 +16,7 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -44,7 +45,7 @@ func requireOrderBefore(t *testing.T, order []string, first, second string) {
 // is why it is pinned here: a reordering compiles, passes every module's tests,
 // and changes the economics on every node at once.
 func TestMarketSettlesBeforeEveryOtherEndBlocker(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderEndBlockers
 
 	marketAt := slices.Index(order, markettypes.ModuleName)
@@ -72,7 +73,7 @@ func TestMarketSettlesBeforeEveryOtherEndBlocker(t *testing.T) {
 // reward-funding window now advances in the EndBlocker, where the collector
 // holds the block's own fees.
 func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	requireOrderBefore(
 		t,
 		arkApp.ModuleManager.OrderBeginBlockers,
@@ -88,7 +89,7 @@ func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
 // more block. Gov stays ahead of Oracle so a live attendance-ratio change
 // applies at the same settlement.
 func TestOracleJailsBeforeStakingEmitsValidatorUpdates(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderEndBlockers
 
 	requireOrderBefore(t, order, govtypes.ModuleName, oracletypes.ModuleName)

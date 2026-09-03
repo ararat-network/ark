@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"testing"
@@ -7,10 +7,12 @@ import (
 	gmptypes "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 	"github.com/stretchr/testify/require"
+
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 func TestGMPWiring(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 
 	require.NotNil(t, arkApp.GMPKeeper)
 	require.Contains(t, arkApp.ModuleManager.Modules, gmptypes.ModuleName)
@@ -42,10 +44,10 @@ func TestGMPWiring(t *testing.T) {
 // contract is. This pins that they are the same construction rather than two
 // that happen to agree today.
 func TestGMPSharesTheExecutionPolicyRouter(t *testing.T) {
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 
-	router := arkApp.executionPolicyRouter()
-	require.Equal(t, arkApp.MsgServiceRouter(), router.inner)
-	require.Equal(t, arkApp.TreasuryKeeper, router.treasury)
-	require.Equal(t, arkApp.appCodec, router.cdc)
+	router := arkApp.ExecutionPolicyRouter()
+	require.Equal(t, arkApp.MsgServiceRouter(), router.Inner())
+	require.Equal(t, arkApp.TreasuryKeeper, router.Treasury())
+	require.Equal(t, arkApp.AppCodec(), router.Cdc())
 }

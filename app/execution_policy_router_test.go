@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"encoding/binary"
@@ -16,6 +16,8 @@ import (
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
@@ -26,7 +28,7 @@ import (
 // fundVoter moves bond-denom coins from the genesis delegator — the one
 // funded account on a Setup chain, reached through the validator's delegation
 // record since Setup does not export it — to a fresh voter.
-func fundVoter(t *testing.T, arkApp *ArkApp, ctx sdk.Context, to sdk.AccAddress, amount math.Int) {
+func fundVoter(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, to sdk.AccAddress, amount math.Int) {
 	t.Helper()
 	validators, err := arkApp.StakingKeeper.GetAllValidators(ctx)
 	require.NoError(t, err)
@@ -51,9 +53,9 @@ func fundVoter(t *testing.T, arkApp *ArkApp, ctx sdk.Context, to sdk.AccAddress,
 
 // setupRouterSeamTest returns a chain with two voters: one delegated past the
 // stake floor, and one with no stake at all.
-func setupRouterSeamTest(t *testing.T) (*ArkApp, sdk.Context, sdk.AccAddress, sdk.AccAddress) {
+func setupRouterSeamTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress, sdk.AccAddress) {
 	t.Helper()
-	arkApp := Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
 
 	validators, err := arkApp.StakingKeeper.GetAllValidators(ctx)
@@ -108,7 +110,7 @@ func multiSend(from sdk.AccAddress, n int) *banktypes.MsgMultiSend {
 // same floor before any tax or execution.
 func TestTreasuryRouterEnforcesVoteStakeFloor(t *testing.T) {
 	arkApp, ctx, rich, poor := setupRouterSeamTest(t)
-	router := arkApp.executionPolicyRouter()
+	router := arkApp.ExecutionPolicyRouter()
 
 	poorVote := vote(poor)
 	handler := router.Handler(poorVote)
@@ -129,7 +131,7 @@ func TestTreasuryRouterEnforcesVoteStakeFloor(t *testing.T) {
 // same cap before any tax or execution.
 func TestTreasuryRouterEnforcesMultiSendGuard(t *testing.T) {
 	arkApp, ctx, _, _ := setupRouterSeamTest(t)
-	router := arkApp.executionPolicyRouter()
+	router := arkApp.ExecutionPolicyRouter()
 	from := guardAddr(1 << 16)
 
 	// One past the ante package's maxMultiSendOutputs cap of 500.

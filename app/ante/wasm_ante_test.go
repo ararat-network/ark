@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // wasmTxCounterStore rebuilds the counter's store service from the registered
@@ -31,7 +32,7 @@ func wasmTxCounterStore(t *testing.T, arkApp *app.ArkApp) corestoretypes.KVStore
 // caller supplies. It is the reason the ante chain is spelled out by hand, so
 // this pins that the store backing it is actually wired and counts.
 func TestWasmTxCounterIsWired(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	counterStore := wasmTxCounterStore(t, arkApp)
 
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 7})
@@ -63,7 +64,7 @@ func TestWasmTxCounterIsWired(t *testing.T) {
 // Simulation gets no counter, so a simulated instantiation cannot be mistaken
 // for a real one at a real position.
 func TestWasmTxCounterSkipsSimulation(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 7})
 
 	_, err := wasmkeeper.NewCountTXDecorator(wasmTxCounterStore(t, arkApp)).AnteHandle(

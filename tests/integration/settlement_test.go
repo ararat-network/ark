@@ -14,6 +14,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
@@ -47,7 +48,7 @@ type settlementLedger struct {
 // walking the conversions in order would have — which is the claim that makes
 // deferring settlement safe rather than merely cheaper.
 func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Unix(1_800_000_000, 0),
@@ -81,30 +82,10 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 	require.NoError(t, arkApp.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
 	stableSupply := math.NewInt(500_000_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-		ctx,
-		markettypes.ModuleName,
-		trader,
-		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)),
-	))
+	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, stableSupply)))
 
 	bufferSeed := math.NewInt(1_000_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx,
-		markettypes.ModuleName,
-		sdk.NewCoins(chain.NoahCoin(bufferSeed)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx,
-		markettypes.ModuleName,
-		treasurytypes.RedemptionBufferName,
-		sdk.NewCoins(chain.NoahCoin(bufferSeed)),
-	))
+	apptestutil.FundModule(t, arkApp, ctx, treasurytypes.RedemptionBufferName, sdk.NewCoins(chain.NoahCoin(bufferSeed)))
 
 	bufferAddress := authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName)
 	reserveAddress := authtypes.NewModuleAddress(reservetypes.StrategicReserveName)
@@ -272,7 +253,7 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 // share healthy exits receive rather than closing the exit during the contagion
 // the Buffer exists for.
 func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) {
-	arkApp := app.Setup(t, false)
+	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 		Height: arkApp.LastBlockHeight(),
 		Time:   time.Unix(1_800_000_000, 0),
@@ -303,20 +284,11 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 		{chain.KRWBaseDenom, 50_000_000_000},
 	} {
 		coins := sdk.NewCoins(sdk.NewInt64Coin(seed.denom, seed.amount))
-		require.NoError(t, arkApp.BankKeeper.MintCoins(ctx, markettypes.ModuleName, coins))
-		require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-			ctx, markettypes.ModuleName, trader, coins,
-		))
+		apptestutil.FundAccount(t, arkApp, ctx, trader, coins)
 	}
 
 	bufferSeed := math.NewInt(500_000_000_000)
-	require.NoError(t, arkApp.BankKeeper.MintCoins(
-		ctx, markettypes.ModuleName, sdk.NewCoins(chain.NoahCoin(bufferSeed)),
-	))
-	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
-		ctx, markettypes.ModuleName, treasurytypes.RedemptionBufferName,
-		sdk.NewCoins(chain.NoahCoin(bufferSeed)),
-	))
+	apptestutil.FundModule(t, arkApp, ctx, treasurytypes.RedemptionBufferName, sdk.NewCoins(chain.NoahCoin(bufferSeed)))
 
 	bufferAddress := authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName)
 	reserveAddress := authtypes.NewModuleAddress(reservetypes.StrategicReserveName)
@@ -410,7 +382,7 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			arkApp := app.Setup(t, false)
+			arkApp := apptestutil.Setup(t, false)
 			ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
 				Height: arkApp.LastBlockHeight(),
 				Time:   time.Unix(1_800_000_000, 0),
@@ -432,17 +404,7 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				}))
 			}
 
-			require.NoError(t, arkApp.BankKeeper.MintCoins(
-				ctx,
-				markettypes.ModuleName,
-				sdk.NewCoins(test.offerCoin),
-			))
-			require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
-				ctx,
-				markettypes.ModuleName,
-				trader,
-				sdk.NewCoins(test.offerCoin),
-			))
+			apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(test.offerCoin))
 			// The mint above stands in for supply that existed before this
 			// block. It bypasses Market and needs no priming: the block's
 			// valuation is folded at settlement, from final state.

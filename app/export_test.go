@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"encoding/json"
@@ -6,39 +6,29 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cmttypes "github.com/cometbft/cometbft/types"
-
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	"github.com/ararat-network/ark/app"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // exportFixture is a committed chain with validatorCount equal-power
 // validators, ready to export.
 type exportFixture struct {
-	app        *ArkApp
-	validators []*cmttypes.Validator
+	app        *app.ArkApp
+	validators apptestutil.Validators
 }
 
 func newExportFixture(t *testing.T, validatorCount int) exportFixture {
 	t.Helper()
 
-	validators := make([]*cmttypes.Validator, validatorCount)
-	for i := range validators {
-		pubKey, err := mock.NewPV().GetPubKey()
-		require.NoError(t, err)
-		validators[i] = cmttypes.NewValidator(pubKey, 1)
-	}
-	funderKey := secp256k1.GenPrivKey()
-	funder := authtypes.NewBaseAccount(funderKey.PubKey().Address().Bytes(), funderKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: funder.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(1_000))),
-	}
-	arkApp := SetupWithGenesisValSet(t, cmttypes.NewValidatorSet(validators), []authtypes.GenesisAccount{funder}, balance)
+	validators := apptestutil.NewValidators(t, validatorCount)
+	funder := apptestutil.NewFunder(t, sdk.NewCoins(sdk.NewCoin(
+		sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(1_000),
+	)))
+	arkApp := apptestutil.SetupWithGenesisValSet(t, validators, funder.Accounts(), funder.Balance)
 	_, err := arkApp.Commit()
 	require.NoError(t, err)
 
@@ -48,7 +38,7 @@ func newExportFixture(t *testing.T, validatorCount int) exportFixture {
 // operator returns the operator address the genesis builder derives for a
 // validator: its consensus address bytes under the operator prefix.
 func (f exportFixture) operator(i int) string {
-	return sdk.ValAddress(f.validators[i].Address).String()
+	return sdk.ValAddress(f.validators.Validator(i).Address).String()
 }
 
 // TestExportRefusesZeroHeight pins that the zero-height flag is refused rather
@@ -85,7 +75,7 @@ func TestExportTrimsValidatorsToAllowList(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, exported.Validators, 1)
-	require.Equal(t, fixture.validators[0].Address, exported.Validators[0].Address)
+	require.Equal(t, fixture.validators.Validator(0).Address, exported.Validators[0].Address)
 
 	var appState map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(exported.AppState, &appState))

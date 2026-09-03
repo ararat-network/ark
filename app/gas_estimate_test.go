@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -21,18 +20,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
-	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
+	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
 	appclient "github.com/ararat-network/ark/app/client"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -63,25 +62,16 @@ import (
 func TestGasEstimateMatchesExecution(t *testing.T) {
 	const chainID = "ark-gas-estimate-test"
 
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(pubKey, 1)})
-
-	senderPrivKey := secp256k1.GenPrivKey()
-	sender := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
+	validators := apptestutil.NewValidators(t, 1)
 	// 999 rather than a round thousand: a balance one fee away from a digit
 	// boundary would make the message's balance read a byte shorter in
 	// execution than in a fee-less simulation.
-	balance := banktypes.Balance{
-		Address: sender.GetAddress().String(),
-		Coins: sdk.NewCoins(
-			sdk.NewCoin(sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(999)),
-			sdk.NewInt64Coin(chain.USDBaseDenom, 10_000_000),
-		),
-	}
+	funder := apptestutil.NewFunder(t, sdk.NewCoins(
+		sdk.NewCoin(sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(999)),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10_000_000),
+	))
 
-	arkApp := NewArkApp(
+	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
 		dbm.NewMemDB(),
 		true,
@@ -89,7 +79,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		baseapp.SetChainID(chainID),
 	)
 	genesisState, err := simtestutil.GenesisStateWithValSet(
-		arkApp.AppCodec(), arkApp.DefaultGenesis(), valSet, []authtypes.GenesisAccount{sender}, balance,
+		arkApp.AppCodec(), arkApp.DefaultGenesis(), validators.Set, funder.Accounts(), funder.Balance,
 	)
 	require.NoError(t, err)
 	// The default params tax nothing. A rate, and a cap above the default
@@ -114,7 +104,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		height++
 		res, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
 			Height:             height,
-			NextValidatorsHash: valSet.Hash(),
+			NextValidatorsHash: validators.Set.Hash(),
 			Txs:                [][]byte{txBytes},
 		})
 		require.NoError(t, err)
@@ -126,7 +116,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	// deliverEmpty commits a block carrying no transactions.
 	deliverEmpty := func() {
 		height++
-		_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, NextValidatorsHash: valSet.Hash()})
+		_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, NextValidatorsHash: validators.Set.Hash()})
 		require.NoError(t, err)
 		_, err = arkApp.Commit()
 		require.NoError(t, err)
@@ -142,7 +132,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		signMode, err := authsigning.APISignModeToInternal(txConfig.SignModeHandler().DefaultMode())
 		require.NoError(t, err)
 		sig := signing.SignatureV2{
-			PubKey:   senderPrivKey.PubKey(),
+			PubKey:   funder.Key.PubKey(),
 			Data:     &signing.SingleSignatureData{SignMode: signMode},
 			Sequence: sequence,
 		}
@@ -155,15 +145,15 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		signBytes, err := authsigning.GetSignBytesAdapter(
 			context.Background(), txConfig.SignModeHandler(), signMode,
 			authsigning.SignerData{
-				Address:  sender.GetAddress().String(),
+				Address:  funder.Address().String(),
 				ChainID:  chainID,
 				Sequence: sequence,
-				PubKey:   senderPrivKey.PubKey(),
+				PubKey:   funder.Key.PubKey(),
 			},
 			builder.GetTx(),
 		)
 		require.NoError(t, err)
-		raw, err := senderPrivKey.Sign(signBytes)
+		raw, err := funder.Key.Sign(signBytes)
 		require.NoError(t, err)
 		sig.Data.(*signing.SingleSignatureData).Signature = raw
 		require.NoError(t, builder.SetSignatures(sig))
@@ -230,14 +220,14 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		// One store write and no tax — the cheapest transaction the chain
 		// has, so the imports' fixed shortfall is the largest fraction of
 		// its estimate and it sets the multiplier.
-		{"set withdraw address", distrtypes.NewMsgSetWithdrawAddress(sender.GetAddress(), recipient)},
+		{"set withdraw address", distrtypes.NewMsgSetWithdrawAddress(funder.Address(), recipient)},
 		// NOAH is the numeraire and owes no tax: the imports alone.
-		{"untaxed noah send", banktypes.NewMsgSend(sender.GetAddress(), recipient,
+		{"untaxed noah send", banktypes.NewMsgSend(funder.Address(), recipient,
 			sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1)))},
 		// A taxed send adds the tax pricing and charge, which simulation
 		// meters as execution does, so the gap stays the gate's. Its fee
 		// carries the tax.
-		{"taxed usd send", banktypes.NewMsgSend(sender.GetAddress(), recipient,
+		{"taxed usd send", banktypes.NewMsgSend(funder.Address(), recipient,
 			sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)))},
 	} {
 		// An empty block first. The first one carries simulation and
