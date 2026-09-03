@@ -43,24 +43,24 @@ func TestRandomisedGenState(t *testing.T) {
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &treasuryGenesis)
 
 	require.NoError(t, treasuryGenesis.Validate())
-	require.True(t, treasuryGenesis.MonetaryPolicy.StabilityTaxRate.IsZero())
+	require.True(t, treasuryGenesis.EconomicPolicy.TransferTaxRate.IsZero())
 	require.Equal(t, math.OneInt(), treasuryGenesis.Params.ReferenceTaxCap)
-	require.False(t, treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.IsNegative())
-	require.False(t, treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.IsNegative())
+	require.False(t, treasuryGenesis.EconomicPolicy.ValidatorBlockRewardTarget.IsNegative())
+	require.False(t, treasuryGenesis.EconomicPolicy.OracleBlockRewardTarget.IsNegative())
 	require.True(
 		t,
-		treasuryGenesis.MonetaryPolicy.ValidatorBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
+		treasuryGenesis.EconomicPolicy.ValidatorBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
 	)
 	require.True(
 		t,
-		treasuryGenesis.MonetaryPolicy.OracleBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
+		treasuryGenesis.EconomicPolicy.OracleBlockRewardTarget.LTE(chain.NativeBaseAmount(1)),
 	)
-	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.IsNegative())
-	require.False(t, treasuryGenesis.MonetaryPolicy.RedemptionBufferTargetRatio.GT(math.LegacyOneDec()))
-	require.False(t, treasuryGenesis.MonetaryPolicy.StrategicReserveTargetRatio.IsNegative())
-	require.False(t, treasuryGenesis.MonetaryPolicy.StrategicReserveTargetRatio.GT(math.LegacyOneDec()))
-	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.IsNegative())
-	require.False(t, treasuryGenesis.MonetaryPolicy.InsuranceTargetRatio.GT(math.LegacyOneDec()))
+	require.False(t, treasuryGenesis.EconomicPolicy.RedemptionBufferTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.EconomicPolicy.RedemptionBufferTargetRatio.GT(math.LegacyOneDec()))
+	require.False(t, treasuryGenesis.EconomicPolicy.StrategicReserveTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.EconomicPolicy.StrategicReserveTargetRatio.GT(math.LegacyOneDec()))
+	require.False(t, treasuryGenesis.EconomicPolicy.InsuranceTargetRatio.IsNegative())
+	require.False(t, treasuryGenesis.EconomicPolicy.InsuranceTargetRatio.GT(math.LegacyOneDec()))
 
 	// Only the NOAH seed the default carries; member factors derive at runtime.
 	require.Equal(t, []types.ConversionFactor{
@@ -68,9 +68,9 @@ func TestRandomisedGenState(t *testing.T) {
 	}, treasuryGenesis.ConversionFactors)
 }
 
-func TestRandomisedMonetaryPolicyDeterministic(t *testing.T) {
-	first := simulation.RandomisedMonetaryPolicy(rand.New(rand.NewSource(1)))
-	second := simulation.RandomisedMonetaryPolicy(rand.New(rand.NewSource(1)))
+func TestRandomisedEconomicPolicyDeterministic(t *testing.T) {
+	first := simulation.RandomisedEconomicPolicy(rand.New(rand.NewSource(1)))
+	second := simulation.RandomisedEconomicPolicy(rand.New(rand.NewSource(1)))
 
 	require.True(t, first.Equal(second))
 	require.NoError(t, first.Validate())

@@ -19,11 +19,20 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 // integration tests rather than random single-key signing.
 func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
+	reg.Add(weights.Get("msg_set_economic_mandate", 50), simulation.MsgSetEconomicMandateFactory())
+	reg.Add(weights.Get("msg_update_policy", 100), simulation.MsgUpdatePolicyFactory())
 }
 
 // RegisterStoreDecoder registers a decoder for treasury module's types
 func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
+}
+
+// WeightedOperationsX registers the Treasury committee surface. A committee
+// message is a signed transaction rather than a governance proposal, so it
+// registers here rather than in ProposalMsgsX.
+func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
+	reg.Add(weights.Get("msg_committee_update_policy", 50), simulation.MsgCommitteeUpdatePolicyFactory(am.k))
 }
 
 func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
