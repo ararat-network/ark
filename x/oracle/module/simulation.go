@@ -17,6 +17,9 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 // ProposalMsgsX returns msgs used for governance proposals for simulations.
 func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory(am.k))
+	reg.Add(weights.Get("msg_add_feed", 50), simulation.MsgAddFeedFactory(am.k))
+	reg.Add(weights.Get("msg_remove_feed", 30), simulation.MsgRemoveFeedFactory(am.k))
+	reg.Add(weights.Get("msg_set_reference_denom", 20), simulation.MsgSetReferenceDenomFactory(am.k))
 }
 
 // RegisterStoreDecoder registers a decoder for the oracle module's types

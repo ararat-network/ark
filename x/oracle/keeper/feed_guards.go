@@ -119,3 +119,9 @@ func (k Keeper) requireFeedUnreferenced(ctx context.Context, denom string) error
 		strings.Join(claims, "; "),
 	)
 }
+
+// FeedReferents returns every standing claim on a feed. A feed with none may
+// be removed; one with any may not, which is what RemoveFeed enforces.
+func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error) {
+	return k.feedReferents(ctx, denom)
+}
