@@ -38,6 +38,11 @@ func TestRandomisedGenState(t *testing.T) {
 		GenState:     make(map[string]json.RawMessage),
 	}
 
+	accountAddresses := make([]string, 0, len(simState.Accounts))
+	for _, account := range simState.Accounts {
+		accountAddresses = append(accountAddresses, account.Address.String())
+	}
+
 	simulation.RandomisedGenState(&simState)
 
 	var marketGenesis types.GenesisState
@@ -59,9 +64,15 @@ func TestRandomisedGenState(t *testing.T) {
 	require.True(t, marketGenesis.ConversionPolicy.PoolRecoveryPeriod > 0)
 	require.True(t, marketGenesis.ConversionPolicy.MinStabilitySpread.GT(math.LegacyZeroDec()))
 	require.True(t, marketGenesis.ArkPoolDelta.IsZero())
-	// Simulation never appoints a committee, and the generated genesis must be
-	// launchable as produced.
-	require.True(t, marketGenesis.ConversionMandate.IsDisabled())
+	// The committee is appointed from the run's own accounts so the simulation
+	// can sign for it, over a corridor wide enough to move policy within, and
+	// the generated genesis must still be launchable as produced.
+	require.False(t, marketGenesis.ConversionMandate.IsDisabled())
+	require.Contains(t, accountAddresses, marketGenesis.ConversionMandate.Committee)
+	require.True(t, marketGenesis.ConversionMandate.MaxTobinTax.IsPositive())
+	require.True(t, marketGenesis.ConversionMandate.MaximumPolicy.BasePool.Amount.GT(
+		marketGenesis.ConversionMandate.MinimumPolicy.BasePool.Amount,
+	))
 	require.NoError(t, marketGenesis.Validate())
 }
 

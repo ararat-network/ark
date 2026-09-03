@@ -134,10 +134,10 @@ func (k Keeper) ReplenishPools(ctx context.Context) error {
 	return nil
 }
 
-// GetActiveDenoms returns the convertible denominations for market simulation.
-// It reads the asset registry rather than the rate store: a rate exists for
-// every active feed, including feeds whose asset is suspended or not yet
-// listed, and simulation should only offer swaps a real trader could make.
+// GetActiveDenoms returns the denominations a holder may convert out of. It
+// reads the asset registry rather than the rate store: a rate exists for every
+// active feed, including feeds whose asset is suspended or not yet listed, and
+// only a registered, oracle-priced asset can be converted.
 func (k Keeper) GetActiveDenoms(ctx context.Context) ([]string, error) {
 	return k.assetKeeper.OraclePricedDenoms(ctx)
 }

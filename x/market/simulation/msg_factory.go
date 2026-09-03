@@ -3,6 +3,8 @@ package simulation
 import (
 	"context"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -167,4 +169,112 @@ func randomDenomPairX(ctx context.Context, r *simsx.XRand, reporter simsx.Simula
 		return chain.NoahBaseDenom, activeDenoms[idx]
 	}
 	return activeDenoms[idx-len(activeDenoms)], chain.NoahBaseDenom
+}
+
+// MsgSetTobinTaxOverrideFactory prices one denomination's conversion spread
+// away from the policy default. The denomination comes from the registry
+// because the handler resolves it there.
+func MsgSetTobinTaxOverrideFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSetTobinTaxOverride] {
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgSetTobinTaxOverride) {
+		denoms, err := k.GetActiveDenoms(ctx)
+		if err != nil {
+			reporter.Skip(err.Error())
+
+			return nil, nil
+		}
+		if len(denoms) == 0 {
+			reporter.Skip("no registered denomination to override")
+
+			return nil, nil
+		}
+
+		r := testData.Rand()
+
+		return nil, &types.MsgSetTobinTaxOverride{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:     denoms[r.Intn(len(denoms))],
+			// A Tobin tax sits in [0, 1); a hundredth keeps it well inside.
+			TobinTax: math.LegacyNewDecWithPrec(int64(r.IntInRange(0, 100)), 2),
+		}
+	}
+}
+
+// MsgRemoveTobinTaxOverrideFactory withdraws a standing override. Only a
+// denomination carrying one qualifies: the handler refuses a removal that
+// names nothing.
+func MsgRemoveTobinTaxOverrideFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgRemoveTobinTaxOverride] {
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgRemoveTobinTaxOverride) {
+		var denoms []string
+		if err := k.TobinTaxOverrides.Walk(ctx, nil, func(denom string, _ math.LegacyDec) (bool, error) {
+			denoms = append(denoms, denom)
+
+			return false, nil
+		}); err != nil {
+			reporter.Skip("iterating tobin tax overrides: " + err.Error())
+
+			return nil, nil
+		}
+		if len(denoms) == 0 {
+			reporter.Skip("no standing tobin tax override to remove")
+
+			return nil, nil
+		}
+
+		return nil, &types.MsgRemoveTobinTaxOverride{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:     denoms[testData.Rand().Intn(len(denoms))],
+		}
+	}
+}
+
+// MsgSetConversionMandateFactory appoints the conversion committee and states
+// the corridor it may move policy within. The bounds are set identical for the
+// reason the economic mandate gives: a corridor's width is the committee's
+// freedom, which only the committee messages exercise.
+func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConversionMandate] {
+	return func(
+		_ context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgSetConversionMandate) {
+		authority := testData.ModuleAccountAddress(reporter, "gov")
+		committee := testData.AnyAccount(reporter)
+		if reporter.IsSkipped() {
+			return nil, nil
+		}
+		// The handler refuses a committee that is the authority itself, and an
+		// account drawn at random could be it.
+		if committee.AddressBech32 == authority {
+			reporter.Skip("drawn committee is the Market authority")
+
+			return nil, nil
+		}
+
+		r := testData.Rand()
+		activation := r.Uint64InRange(1, 1_000)
+		bounds := types.ConversionPolicy{
+			BasePool:           GenBasePool(r.Rand),
+			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
+			MinStabilitySpread: GenMinSpread(r.Rand),
+		}
+
+		return nil, &types.MsgSetConversionMandate{
+			Authority:        authority,
+			Committee:        committee.AddressBech32,
+			ActivationHeight: activation,
+			// Validation demands activation strictly precede expiry.
+			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
+			MinimumPolicy: bounds,
+			MaximumPolicy: bounds,
+			MaxTobinTax:   math.LegacyNewDecWithPrec(int64(r.IntInRange(0, 100)), 2),
+		}
+	}
 }

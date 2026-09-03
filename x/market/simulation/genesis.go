@@ -43,6 +43,36 @@ func GenMinSpread(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(1, 2).Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
 }
 
+// GenConversionMandate appoints the conversion committee from the run's own
+// accounts and opens the window at the first block for longer than any run
+// lasts, so the committee surface is signable for the whole run. The corridor
+// spans the drawn policy rather than pinning it, and the Tobin cap is positive,
+// which leaves the committee somewhere to move.
+func GenConversionMandate(r *rand.Rand, accounts []string, policy types.ConversionPolicy) types.ConversionMandate {
+	if len(accounts) == 0 {
+		return types.DefaultConversionMandate()
+	}
+
+	// Only the base pool widens. The recovery period is drawn near its domain
+	// cap, so doubling it would leave the corridor invalid rather than wide.
+	minimum := policy
+	maximum := policy
+	maximum.BasePool = sdk.NewDecCoinFromDec(
+		policy.BasePool.Denom,
+		policy.BasePool.Amount.MulInt64(2),
+	)
+
+	appointment := types.NewDisabledConversionMandate(1)
+	appointment.Committee = accounts[r.Intn(len(accounts))]
+	appointment.ActivationHeight = 1
+	appointment.ExpiryHeight = chain.BlocksPerYear
+	appointment.MinimumPolicy = minimum
+	appointment.MaximumPolicy = maximum
+	appointment.MaxTobinTax = math.LegacyNewDecWithPrec(50, 2)
+
+	return appointment
+}
+
 // RandomisedGenState generates a random GenesisState for the market module
 func RandomisedGenState(simState *module.SimulationState) {
 	var basePool sdk.DecCoin
@@ -69,6 +99,11 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { minStabilitySpread = GenMinSpread(r) },
 	)
 
+	accounts := make([]string, 0, len(simState.Accounts))
+	for _, account := range simState.Accounts {
+		accounts = append(accounts, account.Address.String())
+	}
+
 	marketGenesis := types.NewGenesisState(
 		types.Params{
 			DefaultTobinTax: types.DefaultTobinTax,
@@ -80,9 +115,11 @@ func RandomisedGenState(simState *module.SimulationState) {
 			PoolRecoveryPeriod: poolRecoveryPeriod,
 			MinStabilitySpread: minStabilitySpread,
 		},
-		// Simulation never appoints a committee: the conversion fast path is a
-		// governance act, not a randomised one.
-		types.DefaultConversionMandate(),
+		GenConversionMandate(simState.Rand, accounts, types.ConversionPolicy{
+			BasePool:           basePool,
+			PoolRecoveryPeriod: poolRecoveryPeriod,
+			MinStabilitySpread: minStabilitySpread,
+		}),
 	)
 
 	bz, err := json.MarshalIndent(marketGenesis, "", " ")
