@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 
-	"ark/app"
+	"github.com/ararat-network/ark/app"
 )
 
 type IntegrationTestSuite struct {
@@ -20,8 +20,13 @@ type IntegrationTestSuite struct {
 func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
+	cfg := network.DefaultConfig(app.NewTestNetworkFixture)
+	// The default two-second commit timeout is what this suite costs; nothing
+	// it asserts is a function of wall-clock block time.
+	cfg.TimeoutCommit = 200 * time.Millisecond
+
 	var err error
-	s.network, err = network.New(s.T(), s.T().TempDir(), network.DefaultConfig(app.NewTestNetworkFixture))
+	s.network, err = network.New(s.T(), s.T().TempDir(), cfg)
 	s.Require().NoError(err)
 
 	h, err := s.network.WaitForHeight(1)

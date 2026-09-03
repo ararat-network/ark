@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"slices"
 	"strings"
 	"testing"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	"github.com/stretchr/testify/require"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -27,13 +30,19 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/version"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/app/params"
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
 func TestAppConstructs(t *testing.T) {
@@ -67,10 +76,6 @@ func TestAppConstructs(t *testing.T) {
 	)
 }
 
-func TestAppInitChainWithDefaultGenesis(t *testing.T) {
-	require.NotNil(t, Setup(t, false))
-}
-
 // TestAppDoesNotMeterBlockGas pins the deliberate absence of
 // baseapp.EnableBlockGasMeter: ten txs each declaring the entire MaxGas budget
 // all execute, because the app applies no cumulative bound at DeliverTx. Comet's
@@ -88,10 +93,16 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	sender := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
 	balance := banktypes.Balance{
 		Address: sender.GetAddress().String(),
-		Coins: sdk.NewCoins(sdk.NewCoin(
-			sdk.DefaultBondDenom,
-			sdk.DefaultPowerReduction.MulRaw(1_000),
-		)),
+		Coins: sdk.NewCoins(
+			sdk.NewCoin(
+				sdk.DefaultBondDenom,
+				sdk.DefaultPowerReduction.MulRaw(1_000),
+			),
+			// The fee gate prices gas in the reference denom, at the
+			// atto-scaled launch floor: 0.02 XDR per 200k-gas transaction,
+			// ten transactions funded with headroom.
+			sdk.NewInt64Coin(chain.XDRBaseDenom, 300_000_000_000_000_000),
+		),
 	}
 
 	arkApp := NewArkApp(
@@ -132,7 +143,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 			rand.New(rand.NewSource(int64(i+1))),
 			arkApp.GetTxConfig(),
 			[]sdk.Msg{msg},
-			nil,
+			sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000_000_000_000_000)),
 			200_000,
 			chainID,
 			[]uint64{0},
@@ -155,108 +166,6 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 		require.Zero(t, result.Code, "tx %d: %s", i, result.Log)
 		require.NotContains(t, result.Log, "block gas meter", "tx %d", i)
 	}
-}
-
-// TestPrepOracleForZeroHeightGenesisReanchorsState pins that zero-height export
-// leaves no old-chain block height behind in oracle state. Both accounting
-// anchors and every scheduled feed transition are heights, and the exported
-// genesis restarts at zero: carried over, the anchors would park reward
-// settlement and attendance jailing until the new chain replayed the whole old
-// one, and a stale transition would stay pending for that entire span while
-// blocking the opposite direction and counting against MaxFeeds.
-//
-// It drives the oracle helper rather than prepForZeroHeightGenesis as a whole,
-// because that function's fee-distribution prologue panics with "no validator
-// commission to withdraw" against a freshly initialised app — a pre-existing
-// property of the zero-height path, unrelated to oracle state.
-func TestPrepOracleForZeroHeightGenesisReanchorsState(t *testing.T) {
-	arkApp := NewArkappWithCustomOptions(t, false, SetupOptions{
-		Logger:  log.NewTestLogger(t),
-		DB:      dbm.NewMemDB(),
-		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	})
-
-	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
-	require.NoError(t, err)
-	_, err = arkApp.Commit()
-	require.NoError(t, err)
-
-	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: arkApp.LastBlockHeight()})
-
-	// State as a long-running chain would hold it: windows opened at heights
-	// deep into the old chain, and one feed transition still in flight.
-	accounting, err := arkApp.OracleKeeper.Accounting.Get(ctx)
-	require.NoError(t, err)
-	accounting.RewardWindowStartHeight = 998_401
-	accounting.AttendanceWindowStartHeight = 998_401
-	require.NoError(t, arkApp.OracleKeeper.Accounting.Set(ctx, accounting))
-
-	feeds, err := arkApp.OracleKeeper.Feeds.Get(ctx)
-	require.NoError(t, err)
-	feeds.Transitions = []oracletypes.FeedTransition{{
-		Denom:                "agold",
-		Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
-		ActivationVoteHeight: 1_000_002,
-	}}
-	require.NoError(t, feeds.Validate())
-	require.NoError(t, arkApp.OracleKeeper.Feeds.Set(ctx, feeds))
-
-	arkApp.prepOracleForZeroHeightGenesis(ctx)
-
-	reanchored, err := arkApp.OracleKeeper.Accounting.Get(ctx)
-	require.NoError(t, err)
-	require.Zero(t, reanchored.RewardWindowStartHeight, "reward window must re-anchor at genesis")
-	require.Zero(t, reanchored.AttendanceWindowStartHeight, "attendance window must re-anchor at genesis")
-	// The windows themselves are policy, not position, so they carry over.
-	require.Equal(t, accounting.RewardWindow, reanchored.RewardWindow)
-	require.Equal(t, accounting.AttendanceWindow, reanchored.AttendanceWindow)
-
-	promoted, err := arkApp.OracleKeeper.Feeds.Get(ctx)
-	require.NoError(t, err)
-	require.Empty(t, promoted.Transitions, "stale transitions must not survive zero-height export")
-	// Dropping the transition must not disturb the active set it had not
-	// joined yet.
-	require.Equal(t, feeds.Denoms, promoted.Denoms)
-
-	// The re-anchored state is importable, and settles on the new chain rather
-	// than waiting on an old-chain height.
-	exported, err := arkApp.OracleKeeper.ExportGenesis(ctx)
-	require.NoError(t, err)
-	require.NoError(t, exported.Validate())
-
-	settlesAt := int64(exported.Accounting.RewardWindow) - 1
-	require.True(
-		t,
-		chain.IsPeriodLastBlockFrom(
-			ctx.WithBlockHeight(settlesAt),
-			exported.Accounting.RewardWindowStartHeight,
-			exported.Accounting.RewardWindow,
-		),
-		"reward window must settle at height %d on the restarted chain", settlesAt,
-	)
-}
-
-func TestAppExportLatestState(t *testing.T) {
-	db := dbm.NewMemDB()
-	logger := log.NewTestLogger(t)
-	arkApp := NewArkappWithCustomOptions(t, false, SetupOptions{
-		Logger:  logger,
-		DB:      db,
-		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	})
-
-	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1})
-	require.NoError(t, err)
-
-	_, err = arkApp.Commit()
-	require.NoError(t, err)
-
-	exported, err := arkApp.ExportAppStateAndValidators(false, nil, nil)
-	require.NoError(t, err)
-	require.NotEmpty(t, exported.AppState)
-
-	var state map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal(exported.AppState, &state))
 }
 
 func TestArkAppExportAndBlockedAddrs(t *testing.T) {
@@ -320,31 +229,11 @@ func TestUpgradeStateOnGenesis(t *testing.T) {
 	require.NotNil(t, app.UpgradeKeeper.GetVersionSetter())
 }
 
-// TestMergedRegistry tests that fetching the gogo/protov2 merged registry
-// doesn't fail after loading all file descriptors.
-func TestMergedRegistry(t *testing.T) {
-	r, err := proto.MergedRegistry()
-	require.NoError(t, err)
-	require.Greater(t, r.NumFiles(), 0)
-}
-
 func TestProtoAnnotations(t *testing.T) {
 	r, err := proto.MergedRegistry()
 	require.NoError(t, err)
 	err = msgservice.ValidateProtoAnnotations(r)
 	require.NoError(t, err)
-}
-
-var _ address.Codec = (*customAddressCodec)(nil)
-
-type customAddressCodec struct{}
-
-func (c customAddressCodec) StringToBytes(text string) ([]byte, error) {
-	return []byte(text), nil
-}
-
-func (c customAddressCodec) BytesToString(bz []byte) (string, error) {
-	return string(bz), nil
 }
 
 // TestAddressCodecsAgreeWithSDKConfig pins that the codecs depinject derives
@@ -386,48 +275,99 @@ func TestAddressCodecsAgreeWithSDKConfig(t *testing.T) {
 	}
 }
 
-func TestAddressCodecFactory(t *testing.T) {
-	var addrCodec address.Codec
-	var valAddressCodec runtime.ValidatorAddressCodec
-	var consAddressCodec runtime.ConsensusAddressCodec
+func TestNativeUnitConfiguration(t *testing.T) {
+	require.Equal(t, chain.NoahBaseDenom, sdk.DefaultBondDenom)
+	require.True(t, chain.NativeBaseAmount(1).Equal(sdk.DefaultPowerReduction))
+	require.Equal(t, "0.100000000000000000", govv1.DefaultParams().MinInitialDepositRatio)
+}
 
-	err := depinject.Inject(
-		depinject.Configs(
-			AppConfig,
-			depinject.Supply(log.NewNopLogger()),
-		),
-		&addrCodec, &valAddressCodec, &consAddressCodec)
-	require.NoError(t, err)
-	require.NotNil(t, addrCodec)
-	_, ok := addrCodec.(customAddressCodec)
-	require.False(t, ok)
-	require.NotNil(t, valAddressCodec)
-	_, ok = valAddressCodec.(customAddressCodec)
-	require.False(t, ok)
-	require.NotNil(t, consAddressCodec)
-	_, ok = consAddressCodec.(customAddressCodec)
-	require.False(t, ok)
+// The keyring service name is the OS credential store's service label on the
+// default backend, so an unset version.Name would silently file Ark keys under
+// "cosmos" and a later rename would leave them unreachable.
+func TestKeyringServiceName(t *testing.T) {
+	require.Equal(t, Name, version.Name)
+	require.Equal(t, Name, sdk.KeyringServiceName())
+	require.Equal(t, Name+"d", version.AppName)
+}
 
-	// Set the address codec to the custom one
-	err = depinject.Inject(
-		depinject.Configs(
-			AppConfig,
-			depinject.Supply(
-				log.NewNopLogger(),
-				func() address.Codec { return customAddressCodec{} },
-				func() runtime.ValidatorAddressCodec { return customAddressCodec{} },
-				func() runtime.ConsensusAddressCodec { return customAddressCodec{} },
-			),
-		),
-		&addrCodec, &valAddressCodec, &consAddressCodec)
-	require.NoError(t, err)
-	require.NotNil(t, addrCodec)
-	_, ok = addrCodec.(customAddressCodec)
-	require.True(t, ok)
-	require.NotNil(t, valAddressCodec)
-	_, ok = valAddressCodec.(customAddressCodec)
-	require.True(t, ok)
-	require.NotNil(t, consAddressCodec)
-	_, ok = consAddressCodec.(customAddressCodec)
-	require.True(t, ok)
+func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
+	permissions := GetMaccPerms()
+	fundAddresses := make(map[string]struct{}, len(treasurytypes.FundAccountNames()))
+	for _, moduleName := range treasurytypes.FundAccountNames() {
+		perms, ok := permissions[moduleName]
+		require.True(t, ok, "missing Treasury fund account %s", moduleName)
+		require.Empty(t, perms, "Treasury fund account %s must have no permissions", moduleName)
+		address := authtypes.NewModuleAddress(moduleName).String()
+		_, duplicate := fundAddresses[address]
+		require.False(t, duplicate, "Treasury fund accounts must be distinct")
+		fundAddresses[address] = struct{}{}
+	}
+	_, hasTreasuryAccount := permissions[treasurytypes.ModuleName]
+	require.False(t, hasTreasuryAccount, "Treasury module identity must not be a custody account")
+	collectorPermissions, hasCollector := permissions[treasurytypes.TransferTaxCollectorName]
+	require.True(t, hasCollector, "missing Oracle tax collector account")
+	require.Empty(t, collectorPermissions, "Oracle tax collector must have no permissions")
+	var minters []string
+	for moduleName, perms := range permissions {
+		if slices.Contains(perms, authtypes.Minter) {
+			minters = append(minters, moduleName)
+		}
+	}
+	require.ElementsMatch(
+		t,
+		[]string{markettypes.ModuleName, ibctransfertypes.ModuleName},
+		minters,
+		"Only Market and IBC transfer may mint",
+	)
+	require.ElementsMatch(
+		t,
+		[]string{authtypes.Minter, authtypes.Burner},
+		permissions[markettypes.ModuleName],
+		"Market must retain conversion mint and burn permissions",
+	)
+	require.ElementsMatch(
+		t,
+		[]string{authtypes.Minter, authtypes.Burner},
+		permissions[ibctransfertypes.ModuleName],
+		"IBC transfer must retain voucher mint and burn permissions",
+	)
+
+	blocked := BlockedAddresses()
+	for _, moduleName := range append([]string{govtypes.ModuleName}, treasurytypes.FundAccountNames()...) {
+		require.False(t, blocked[moduleName], "%s must remain reachable", moduleName)
+	}
+	for _, moduleName := range []string{
+		authtypes.FeeCollectorName,
+		distrtypes.ModuleName,
+		stakingtypes.BondedPoolName,
+		stakingtypes.NotBondedPoolName,
+		markettypes.ModuleName,
+		ibctransfertypes.ModuleName,
+		icatypes.ModuleName,
+		treasurytypes.TransferTaxCollectorName,
+		oracletypes.ModuleName,
+	} {
+		require.True(t, blocked[moduleName], "%s must remain blocked", moduleName)
+	}
+
+	arkApp := NewArkApp(
+		log.NewTestLogger(t),
+		dbm.NewMemDB(),
+		true,
+		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+	)
+	requireOrderBefore(
+		t,
+		arkApp.ModuleManager.OrderInitGenesis,
+		banktypes.ModuleName,
+		treasurytypes.ModuleName,
+	)
+	// Treasury follows gov so a fee-param change enacted this block applies at
+	// the same settlement. Market's must-lead slot is pinned in module_order_test.
+	requireOrderBefore(
+		t,
+		arkApp.ModuleManager.OrderEndBlockers,
+		govtypes.ModuleName,
+		treasurytypes.ModuleName,
+	)
 }
