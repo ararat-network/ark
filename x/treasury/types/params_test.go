@@ -65,6 +65,25 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) { p.ReferenceTaxCap = math.ZeroInt() },
 		},
 		{
+			name:      "transfer tax rate must be set",
+			mutate:    func(p *types.Params) { p.TransferTaxRate = math.LegacyDec{} },
+			expectErr: "TransferTaxRate must be set",
+		},
+		{
+			name:      "negative transfer tax rate",
+			mutate:    func(p *types.Params) { p.TransferTaxRate = math.LegacyNewDec(-1) },
+			expectErr: "TransferTaxRate must be between zero and one",
+		},
+		{
+			name:      "transfer tax rate above one",
+			mutate:    func(p *types.Params) { p.TransferTaxRate = math.LegacyNewDecWithPrec(1001, 3) },
+			expectErr: "TransferTaxRate must be between zero and one",
+		},
+		{
+			name:   "transfer tax rate of one takes the whole input",
+			mutate: func(p *types.Params) { p.TransferTaxRate = math.LegacyOneDec() },
+		},
+		{
 			// A nil Dec panics on comparison, so the unset guard ahead of every
 			// range check is the gate, not a formality.
 			name:      "unset base-fee target",

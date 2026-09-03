@@ -34,7 +34,6 @@ var MaxExposureWeight = math.LegacyNewDec(1_000_000)
 // DefaultEconomicPolicy returns the disabled launch policy values.
 func DefaultEconomicPolicy() EconomicPolicy {
 	return EconomicPolicy{
-		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.ZeroInt(),
 		OracleBlockRewardTarget:     math.ZeroInt(),
 		RedemptionBufferTargetRatio: math.LegacyZeroDec(),
@@ -60,7 +59,6 @@ func (policy EconomicPolicy) Validate() error {
 		name  string
 		value math.LegacyDec
 	}{
-		{"TransferTaxRate", policy.TransferTaxRate},
 		{"RedemptionBufferTargetRatio", policy.RedemptionBufferTargetRatio},
 		{"StrategicReserveTargetRatio", policy.StrategicReserveTargetRatio},
 		{"InsuranceTargetRatio", policy.InsuranceTargetRatio},
@@ -165,8 +163,7 @@ func (policy EconomicPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTarge
 
 // Equal reports whether two economic policies contain identical values.
 func (policy EconomicPolicy) Equal(other EconomicPolicy) bool {
-	return policy.TransferTaxRate.Equal(other.TransferTaxRate) &&
-		policy.ValidatorBlockRewardTarget.Equal(other.ValidatorBlockRewardTarget) &&
+	return policy.ValidatorBlockRewardTarget.Equal(other.ValidatorBlockRewardTarget) &&
 		policy.OracleBlockRewardTarget.Equal(other.OracleBlockRewardTarget) &&
 		policy.RedemptionBufferTargetRatio.Equal(other.RedemptionBufferTargetRatio) &&
 		policy.StrategicReserveTargetRatio.Equal(other.StrategicReserveTargetRatio) &&
@@ -178,8 +175,7 @@ func (policy EconomicPolicy) Equal(other EconomicPolicy) bool {
 
 // IsZero reports whether every policy value is zero.
 func (policy EconomicPolicy) IsZero() bool {
-	return policy.TransferTaxRate.IsZero() &&
-		policy.ValidatorBlockRewardTarget.IsZero() &&
+	return policy.ValidatorBlockRewardTarget.IsZero() &&
 		policy.OracleBlockRewardTarget.IsZero() &&
 		policy.RedemptionBufferTargetRatio.IsZero() &&
 		policy.StrategicReserveTargetRatio.IsZero() &&

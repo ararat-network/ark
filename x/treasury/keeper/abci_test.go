@@ -129,10 +129,8 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 // mends the factor the block the feed returns — every block is the retry.
 func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 	s.setBlockHeight(1)
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	params := types.DefaultParams()
+	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setAssets(chain.KRWBaseDenom, chain.XDRBaseDenom)

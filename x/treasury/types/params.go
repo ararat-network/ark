@@ -114,6 +114,7 @@ func DefaultParams() Params {
 	return Params{
 		ReferenceDenom:              DefaultReferenceDenom,
 		ReferenceTaxCap:             math.OneInt(),
+		TransferTaxRate:             math.LegacyZeroDec(),
 		RewardFundingWindow:         DefaultRewardFundingWindow,
 		VolatilityDecay:             DefaultExposureVolatilityDecay,
 		FlowDecay:                   DefaultExposureFlowDecay,
@@ -139,6 +140,20 @@ func (p Params) Validate() error {
 	}
 	if p.ReferenceTaxCap.IsNegative() {
 		return fmt.Errorf("treasury parameter ReferenceTaxCap must not be negative: %s", p.ReferenceTaxCap)
+	}
+	if p.TransferTaxRate.IsNil() {
+		return errors.New("treasury parameter TransferTaxRate must be set")
+	}
+	if !p.TransferTaxRate.IsInValidRange() {
+		return errors.New("treasury parameter TransferTaxRate is not representable")
+	}
+	// A share of the transfer: zero disables the tax and one takes the whole
+	// input, so both ends are legitimate and anything past one is incoherent.
+	if p.TransferTaxRate.IsNegative() || p.TransferTaxRate.GT(math.LegacyOneDec()) {
+		return fmt.Errorf(
+			"treasury parameter TransferTaxRate must be between zero and one: %s",
+			p.TransferTaxRate,
+		)
 	}
 	if p.RewardFundingWindow == 0 || p.RewardFundingWindow > MaxRewardFundingWindow {
 		return fmt.Errorf(

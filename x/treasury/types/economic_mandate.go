@@ -77,12 +77,6 @@ func (mandate EconomicMandate) ValidatePolicy(policy EconomicPolicy) error {
 		maximum math.LegacyDec
 	}{
 		{
-			"transfer tax rate",
-			policy.TransferTaxRate,
-			minimum.TransferTaxRate,
-			maximum.TransferTaxRate,
-		},
-		{
 			"redemption Buffer target ratio",
 			policy.RedemptionBufferTargetRatio,
 			minimum.RedemptionBufferTargetRatio,

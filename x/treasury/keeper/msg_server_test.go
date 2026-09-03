@@ -151,20 +151,21 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	s.Require().True(usdCap.IsZero())
 }
 
-func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax() {
+func (s *KeeperTestSuite) TestMsgUpdateParamsDoesNotRebuildCapsWhenActivatingTax() {
 	s.setConversionFactors(types.ConversionFactor{
 		Denom:  chain.XDRBaseDenom,
 		Factor: math.LegacyOneDec(),
 	})
 
-	candidate := types.DefaultEconomicPolicy()
+	candidate, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
 	candidate.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
+	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: s.authority,
-		Policy:    candidate,
+		Params:    candidate,
 	})
 	s.Require().NoError(err)
-	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
+	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(candidate.Equal(stored))
 	cap, err := s.keeper.GetTaxCap(s.ctx, chain.XDRBaseDenom)
@@ -442,7 +443,6 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 func economicPolicyBounds() (types.EconomicPolicy, types.EconomicPolicy) {
 	minimum := types.DefaultEconomicPolicy()
 	maximum := types.EconomicPolicy{
-		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 		ValidatorBlockRewardTarget:  math.NewInt(10),
 		OracleBlockRewardTarget:     math.NewInt(10),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
@@ -457,7 +457,6 @@ func economicPolicyBounds() (types.EconomicPolicy, types.EconomicPolicy) {
 
 func committeePolicyCandidate() types.EconomicPolicy {
 	return types.EconomicPolicy{
-		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.NewInt(5),
 		OracleBlockRewardTarget:     math.NewInt(5),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),

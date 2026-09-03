@@ -31,16 +31,16 @@ func GenRewardTarget(r *rand.Rand) math.Int {
 	return math.NewInt(r.Int63n(maxSimulatedRewardTarget + 1))
 }
 
-// RandomisedParams returns valid governance-owned launch parameters.
+// RandomisedParams returns valid governance-owned launch parameters. The
+// transfer tax stays disabled; keeper InitGenesis seeds every member's cap at
+// the reference amount, so no exchange rates are needed regardless of the cap.
 func RandomisedParams(r *rand.Rand) types.Params {
 	params := types.DefaultParams()
 	params.RewardFundingWindow = uint64(r.Int63n(int64(types.DefaultRewardFundingWindow)) + 1)
 	return params
 }
 
-// RandomisedEconomicPolicy returns valid launch policy. Stability tax remains
-// disabled; keeper InitGenesis seeds every member's cap at the reference
-// amount, so no exchange rates are needed regardless of the cap.
+// RandomisedEconomicPolicy returns valid launch policy.
 func RandomisedEconomicPolicy(r *rand.Rand) types.EconomicPolicy {
 	policy := types.DefaultEconomicPolicy()
 	policy.ValidatorBlockRewardTarget = GenRewardTarget(r)

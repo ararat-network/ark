@@ -7,6 +7,7 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	channeltypesv2 "github.com/cosmos/ibc-go/v11/modules/core/04-channel/v2/types"
 
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
@@ -38,18 +39,12 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 		return sdk.NewCoins(), nil
 	}
 
-	policy, err := k.EconomicPolicy.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting economic policy: %w", err)
-	}
-
-	if policy.TransferTaxRate.IsZero() {
-		return sdk.NewCoins(), nil
-	}
-
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
+	}
+	if params.TransferTaxRate.IsZero() {
+		return sdk.NewCoins(), nil
 	}
 
 	// The tax base is the cap set: a denomination is taxed exactly when
@@ -84,7 +79,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 				continue
 			}
 
-			tax := policy.TransferTaxRate.MulInt(principal.Amount).TruncateInt()
+			tax := params.TransferTaxRate.MulInt(principal.Amount).TruncateInt()
 			if cap.IsPositive() && tax.GT(cap) {
 				tax = cap
 			}
@@ -297,6 +292,36 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 		// timeout, or refund is protocol continuation of this same transfer and
 		// is never re-presented here (D46).
 		return addCoins(sdk.Coins{typed.Token})
+	case *channeltypesv2.MsgSendPacket:
+		if typed == nil {
+			return fmt.Errorf("nil IBC v2 send packet message")
+		}
+		// The raw v2 send is MsgTransfer's second door onto the same outbound
+		// leg: the transfer app checks the payload sender against this signer
+		// and escrows through the same SendTransfer. The source port selects
+		// the app, so only transfer payloads carry principal — Wasm v2 ports
+		// and GMP move no coins. Decoding through the module's own decoder
+		// with the module's own arguments keeps the two verdicts identical, so
+		// whatever it escrows is what this prices. Each payload is its own
+		// input (D17), though ValidateBasic holds the count at one on both the
+		// tx and router paths today.
+		for i, payload := range typed.Payloads {
+			if payload.SourcePort != ibctransfertypes.PortID {
+				continue
+			}
+			data, err := ibctransfertypes.UnmarshalPacketData(payload.Value, payload.Version, payload.Encoding)
+			if err != nil {
+				return fmt.Errorf("decoding transfer payload %d: %w", i, err)
+			}
+			coin, err := data.Token.ToCoin()
+			if err != nil {
+				return fmt.Errorf("transfer payload %d token: %w", i, err)
+			}
+			if err := addCoins(sdk.Coins{coin}); err != nil {
+				return err
+			}
+		}
+		return nil
 	case *wasmtypes.MsgExecuteContract:
 		if typed == nil {
 			return fmt.Errorf("nil Wasm execute message")

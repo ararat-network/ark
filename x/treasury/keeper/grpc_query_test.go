@@ -293,9 +293,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxRejectsNilMessage() {
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
-	policy := treasurytypes.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.Coins{{Denom: "", Amount: math.OneInt()}},
 	})
@@ -313,9 +311,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
 // than an error, so a client cannot be told a transfer is impossible when the
 // chain would accept it.
 func (s *KeeperTestSuite) TestQueryComputeTaxAnswersZeroForMissingCap() {
-	policy := treasurytypes.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setAssets(chain.USDBaseDenom)
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
@@ -336,10 +332,8 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 		big.NewInt(1),
 	)
 	maxInt := math.NewIntFromBigInt(maxAmount)
-	policy := treasurytypes.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyOneDec()
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	maxParams := treasurytypes.DefaultParams()
+	maxParams.TransferTaxRate = math.LegacyOneDec()
 	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
@@ -359,7 +353,8 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
-	s.Require().NoError(s.keeper.EconomicPolicy.Remove(s.ctx))
+	// Params carry the rate, so they are the first read the calculator makes.
+	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	})

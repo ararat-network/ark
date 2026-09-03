@@ -100,11 +100,11 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	// The numeraire's own cross — NOAH units per reference unit, which is the
 	// reference rate itself in the store's orientation — derives in the same
 	// pass into the same table; GetTaxCap excludes it from the tax
-	// base by denomination. It has no arrival seed: a member is minted
-	// against its own feed and must be taxable the block it arrives, while
-	// nothing forces gas to be paid in NOAH, so before the first servable
-	// reference rate the entry simply does not exist and the fee-denom gate
-	// refuses NOAH rather than mispricing it.
+	// base by denomination. It needs no arrival seed like a member's: a
+	// member can be minted at any height and must be taxable that block,
+	// while genesis makes the NOAH cross mandatory, so until the first
+	// servable reference rate the fee gate prices NOAH from that seed —
+	// the one denomination a launching chain can pay with.
 	converted, err := rates.Convert(one, chain.NoahBaseDenom)
 	if err != nil && !isUnusableRateInput(err) {
 		return fmt.Errorf("deriving the NOAH conversion factor: %w", err)

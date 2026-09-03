@@ -44,7 +44,6 @@ func policyWithin(r *simsx.XRand, mandate types.EconomicMandate) types.EconomicP
 	minimum, maximum := mandate.MinimumPolicy, mandate.MaximumPolicy
 
 	return types.EconomicPolicy{
-		TransferTaxRate:             betweenDec(r, minimum.TransferTaxRate, maximum.TransferTaxRate),
 		ValidatorBlockRewardTarget:  betweenInt(r, minimum.ValidatorBlockRewardTarget, maximum.ValidatorBlockRewardTarget),
 		OracleBlockRewardTarget:     betweenInt(r, minimum.OracleBlockRewardTarget, maximum.OracleBlockRewardTarget),
 		RedemptionBufferTargetRatio: betweenDec(r, minimum.RedemptionBufferTargetRatio, maximum.RedemptionBufferTargetRatio),

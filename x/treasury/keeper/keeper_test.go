@@ -400,6 +400,15 @@ func (s *KeeperTestSuite) setDerivedTaxCap(denom string, amount math.Int) {
 	testutil.SetDerivedTaxCap(s.T(), s.keeper, s.ctx, denom, amount)
 }
 
+// setTransferTaxRate activates the tax at the given rate and leaves the rest
+// of the suite's params, its zero reference cap in particular, as they are.
+func (s *KeeperTestSuite) setTransferTaxRate(rate math.LegacyDec) {
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.TransferTaxRate = rate
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+}
+
 // beginBlock runs BeginBlocker. The indirection is the seam tests share: when
 // BeginBlocker grows a per-block concern the suite can absorb here, its call
 // sites stay untouched. The zero-supply fallback that used to live here went

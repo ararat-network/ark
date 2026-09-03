@@ -80,7 +80,6 @@ func TestEconomicMandateCandidateBounds(t *testing.T) {
 		name   string
 		mutate func(*types.EconomicPolicy)
 	}{
-		{name: "tax rate", mutate: func(p *types.EconomicPolicy) { p.TransferTaxRate = math.LegacyMustNewDecFromStr("0.11") }},
 		{name: "validator rewards", mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(11) }},
 		{name: "Oracle rewards", mutate: func(p *types.EconomicPolicy) { p.OracleBlockRewardTarget = math.NewInt(11) }},
 		{name: "Buffer ratio", mutate: func(p *types.EconomicPolicy) { p.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.51") }},
@@ -99,7 +98,6 @@ func TestEconomicMandateCandidateBounds(t *testing.T) {
 func validEconomicMandate() types.EconomicMandate {
 	minimum := types.DefaultEconomicPolicy()
 	maximum := types.EconomicPolicy{
-		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 		ValidatorBlockRewardTarget:  math.NewInt(10),
 		OracleBlockRewardTarget:     math.NewInt(10),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
@@ -123,7 +121,6 @@ func validEconomicMandate() types.EconomicMandate {
 
 func boundedCandidatePolicy() types.EconomicPolicy {
 	return types.EconomicPolicy{
-		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.05"),
 		ValidatorBlockRewardTarget:  math.NewInt(5),
 		OracleBlockRewardTarget:     math.NewInt(5),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),

@@ -43,7 +43,7 @@ func TestRandomisedGenState(t *testing.T) {
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &treasuryGenesis)
 
 	require.NoError(t, treasuryGenesis.Validate())
-	require.True(t, treasuryGenesis.EconomicPolicy.TransferTaxRate.IsZero())
+	require.True(t, treasuryGenesis.Params.TransferTaxRate.IsZero())
 	require.Equal(t, math.OneInt(), treasuryGenesis.Params.ReferenceTaxCap)
 	require.False(t, treasuryGenesis.EconomicPolicy.ValidatorBlockRewardTarget.IsNegative())
 	require.False(t, treasuryGenesis.EconomicPolicy.OracleBlockRewardTarget.IsNegative())

@@ -25,11 +25,6 @@ func TestEconomicPolicyValidate(t *testing.T) {
 				p.InsuranceTargetRatio = math.LegacyOneDec()
 			},
 		},
-		{name: "nil tax rate", mutate: func(p *types.EconomicPolicy) { p.TransferTaxRate = math.LegacyDec{} }, expectErr: "TransferTaxRate must be set"},
-		{name: "negative tax rate", mutate: func(p *types.EconomicPolicy) { p.TransferTaxRate = math.LegacyNewDec(-1) }, expectErr: "TransferTaxRate must be between zero and one"},
-		{name: "tax rate above one", mutate: func(p *types.EconomicPolicy) {
-			p.TransferTaxRate = math.LegacyNewDecWithPrec(1001, 3)
-		}, expectErr: "TransferTaxRate must be between zero and one"},
 		{name: "nil validator target", mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = math.Int{} }, expectErr: "ValidatorBlockRewardTarget must be set"},
 		{name: "negative validator target", mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be between zero and"},
 		{name: "nil Oracle target", mutate: func(p *types.EconomicPolicy) { p.OracleBlockRewardTarget = math.Int{} }, expectErr: "OracleBlockRewardTarget must be set"},

@@ -4,7 +4,9 @@ import (
 	"math/big"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
+	gmptypes "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	channeltypesv2 "github.com/cosmos/ibc-go/v11/modules/core/04-channel/v2/types"
 
 	"cosmossdk.io/math"
 
@@ -23,9 +25,7 @@ import (
 
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	msgs := []sdk.Msg{
@@ -40,9 +40,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	msgs := []sdk.Msg{
@@ -60,15 +58,41 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 60)), tax)
 }
 
+// transferPayload builds an ICS-20 payload the transfer module would accept,
+// in either encoding it supports, so the tax cases exercise the same decode
+// the escrow does.
+func transferPayload(encoding, denom, amount, sender string) channeltypesv2.Payload {
+	data := ibctransfertypes.NewFungibleTokenPacketData(denom, amount, sender, "receiver", "")
+	value := data.GetBytes()
+	if encoding == ibctransfertypes.EncodingProtobuf {
+		value = ibctransfertypes.ModuleCdc.MustMarshal(&data)
+	}
+	return channeltypesv2.Payload{
+		SourcePort:      ibctransfertypes.PortID,
+		DestinationPort: ibctransfertypes.PortID,
+		Version:         ibctransfertypes.V1,
+		Encoding:        encoding,
+		Value:           value,
+	}
+}
+
+// sendPacket wraps payloads in the v2 send message, signed by source.
+func sendPacket(signer string, payloads ...channeltypesv2.Payload) *channeltypesv2.MsgSendPacket {
+	return &channeltypesv2.MsgSendPacket{
+		SourceClient:     "07-tendermint-0",
+		TimeoutTimestamp: 1,
+		Payloads:         payloads,
+		Signer:           signer,
+	}
+}
+
 // The execution surfaces D41 assigns to the Wasm dispatcher — IBC sends,
 // execute funds, and instantiate funds — are taxed by this same calculator, and
 // the cap applies to each independently as it does to a Bank send.
 func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	contract := authtypes.NewModuleAddress("tax-contract").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	testCases := []struct {
@@ -80,6 +104,47 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 			name:     "IBC transfer taxes the outbound token",
 			msg:      &ibctransfertypes.MsgTransfer{Sender: source, Token: sdk.NewInt64Coin(chain.USDBaseDenom, 500)},
 			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			name: "IBC v2 send packet taxes the JSON-encoded outbound token",
+			msg: sendPacket(source, transferPayload(
+				ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "500", source)),
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			name: "IBC v2 send packet taxes the protobuf-encoded outbound token",
+			msg: sendPacket(source, transferPayload(
+				ibctransfertypes.EncodingProtobuf, chain.USDBaseDenom, "500", source)),
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+		},
+		{
+			name: "the cap binds a v2 send packet as it binds a transfer",
+			msg: sendPacket(source, transferPayload(
+				ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "100000", source)),
+			expected: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
+		},
+		{
+			// The source port selects the app that runs, so a payload bound
+			// for one that moves no coins is never decoded — these bytes are
+			// not ICS-20 and would fail if it were.
+			name: "a non-transfer v2 payload is untaxed and never decoded",
+			msg: sendPacket(source, channeltypesv2.Payload{
+				SourcePort:      gmptypes.PortID,
+				DestinationPort: gmptypes.PortID,
+				Version:         "gmp-1",
+				Encoding:        ibctransfertypes.EncodingProtobuf,
+				Value:           []byte("not ICS-20"),
+			}),
+			expected: sdk.NewCoins(),
+		},
+		{
+			// A voucher leaving carries its trace, so ToCoin hashes it to an
+			// ibc/ denomination that holds no cap: outside the tax base, as
+			// the same asset is under MsgTransfer.
+			name: "a traced foreign voucher is outside the tax base",
+			msg: sendPacket(source, transferPayload(
+				ibctransfertypes.EncodingJSON, "transfer/channel-0/uatom", "500", source)),
+			expected: sdk.NewCoins(),
 		},
 		{
 			name:     "execute funds are taxed",
@@ -129,9 +194,7 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	recipient := authtypes.NewModuleAddress("tax-recipient").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(100))
 	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(100))
 
@@ -214,9 +277,7 @@ func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	maxInt := math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)))
 	var typedNil *vestingtypes.MsgCreatePeriodicVestingAccount
@@ -261,14 +322,86 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
 	}
 }
 
+// Nesting is the path that skips any top-level check, so the v2 send is
+// priced there too.
+func (s *KeeperTestSuite) TestComputeTaxTaxesSendPacketNestedInAuthz() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
+	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
+
+	nested, err := codectypes.NewAnyWithValue(sendPacket(source, transferPayload(
+		ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "500", source)))
+	s.Require().NoError(err)
+
+	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{nested}}})
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)), tax)
+}
+
+// A transfer payload this cannot decode fails the transaction rather than
+// passing untaxed: the decode is the module's own, so anything refused here
+// would be refused at the escrow, and skipping would reopen the seam the case
+// closes.
+func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedSendPacket() {
+	source := authtypes.NewModuleAddress("tax-source").String()
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
+
+	var typedNil *channeltypesv2.MsgSendPacket
+
+	malformed := func(mutate func(*channeltypesv2.Payload)) sdk.Msg {
+		payload := transferPayload(ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "500", source)
+		mutate(&payload)
+		return sendPacket(source, payload)
+	}
+
+	testCases := []struct {
+		name   string
+		msg    sdk.Msg
+		errStr string
+	}{
+		{
+			name:   "typed nil send packet",
+			msg:    typedNil,
+			errStr: "nil IBC v2 send packet message",
+		},
+		{
+			name:   "undecodable payload value",
+			msg:    malformed(func(p *channeltypesv2.Payload) { p.Value = []byte("{") }),
+			errStr: "cannot unmarshal",
+		},
+		{
+			name:   "unsupported ICS-20 version",
+			msg:    malformed(func(p *channeltypesv2.Payload) { p.Version = "ics20-2" }),
+			errStr: "ics20-2",
+		},
+		{
+			name:   "unsupported encoding",
+			msg:    malformed(func(p *channeltypesv2.Payload) { p.Encoding = "application/x-nonsense" }),
+			errStr: "invalid encoding provided",
+		},
+		{
+			name: "non-positive amount",
+			msg: sendPacket(source, transferPayload(
+				ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "0", source)),
+			errStr: "amount must be strictly positive",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			s.Require().ErrorIs(err, types.ErrInvalidTaxMessage)
+			s.Require().ErrorContains(err, tc.errStr)
+		})
+	}
+}
+
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
 	recipientA := authtypes.NewModuleAddress("tax-recipient-a").String()
 	recipientB := authtypes.NewModuleAddress("tax-recipient-b").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
@@ -291,9 +424,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 // the tax on that transfer.
 func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(10))
 	s.setAssets(chain.XDRBaseDenom)
 
@@ -309,9 +440,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 // stalled refresh costs revenue instead of blocking transfers.
 func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setAssets(chain.USDBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
@@ -326,9 +455,7 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 // the numeraire still moves untaxed beside a taxed member.
 func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
 		Factor: math.LegacyOneDec(),
@@ -350,9 +477,7 @@ func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
 
 func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	// The suite baseline's zero reference derives the uncapped sentinel; the
 	// held factor is what keeps the denomination taxed at all.
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
@@ -384,9 +509,7 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsZeroWithoutOracleLookupWhenDisabl
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	badSwapSend := &markettypes.MsgSwapSend{
 		OfferCoin: sdk.Coin{Denom: "", Amount: math.OneInt()},
@@ -399,9 +522,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{
 		Msgs: []*codectypes.Any{{TypeUrl: "/ark.market.v1.MsgSwapSend"}},
@@ -410,9 +531,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	var send *banktypes.MsgSend
 	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
@@ -422,9 +541,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
 func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(1_000))
 
@@ -492,10 +609,8 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 		big.NewInt(1),
 	)
 	maxInt := math.NewIntFromBigInt(maxAmount)
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyOneDec()
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	maxParams := types.DefaultParams()
+	maxParams.TransferTaxRate = math.LegacyOneDec()
 	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
@@ -529,9 +644,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 
 	for _, status := range statuses {
 		s.Run(status.String(), func() {
-			policy := types.DefaultEconomicPolicy()
-			policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-			s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+			s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 			s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 			s.seedAsset(chain.USDBaseDenom, status)
 
@@ -550,9 +663,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 // of the tax base.
 func (s *KeeperTestSuite) TestComputeTaxSkipsUnregisteredDenomination() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultEconomicPolicy()
-	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin("aatom", 100))},
