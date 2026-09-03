@@ -12,9 +12,11 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/ararat-network/ark/app"
+	"github.com/ararat-network/ark/app/ante"
 	chain "github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
@@ -40,6 +42,12 @@ func (tx treasuryFeeTx) FeePayer() []byte { return tx.payer }
 
 func (tx treasuryFeeTx) FeeGranter() []byte { return tx.granter }
 
+// The two collectors the fee decorator pays.
+var (
+	feeCollector = authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+	taxCollector = authtypes.NewModuleAddress(treasurytypes.TransferTaxCollectorName)
+)
+
 // passThrough asserts the decorator reached its successor.
 func passThrough(t *testing.T, reached *bool) sdk.AnteHandler {
 	t.Helper()
@@ -47,6 +55,75 @@ func passThrough(t *testing.T, reached *bool) sdk.AnteHandler {
 		*reached = true
 		return ctx, nil
 	}
+}
+
+// feeDecorator is the production fee decorator over the app's keepers.
+func feeDecorator(arkApp *app.ArkApp) ante.FeeDecorator {
+	return ante.NewFeeDecorator(arkApp.AccountKeeper, arkApp.BankKeeper, arkApp.FeeGrantKeeper, arkApp.TreasuryKeeper)
+}
+
+// runFee runs the fee decorator over tx and returns the context it handed
+// on, zero when it refused.
+func runFee(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+	t.Helper()
+	var handed sdk.Context
+	_, err := feeDecorator(arkApp).AnteHandle(ctx, tx, simulate, func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
+		handed = ctx
+		return ctx, nil
+	})
+	return handed, err
+}
+
+// feeRun is one run of the fee decorator on a cache of the test context: the
+// context it handed on, the cache it wrote, and what reached each collector.
+type feeRun struct {
+	handed sdk.Context
+	cached sdk.Context
+	gas    string
+	tax    string
+	err    error
+}
+
+func runFeeOnCache(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) feeRun {
+	t.Helper()
+	cached, _ := ctx.CacheContext()
+	handed, err := runFee(t, arkApp, cached, tx, simulate)
+	return feeRun{
+		handed: handed,
+		cached: cached,
+		gas:    collected(arkApp, ctx, cached, feeCollector).String(),
+		tax:    collected(arkApp, ctx, cached, taxCollector).String(),
+		err:    err,
+	}
+}
+
+// usdBalance reads a balance in the fixture's taxed denomination.
+func usdBalance(arkApp *app.ArkApp, ctx sdk.Context, addr sdk.AccAddress) math.Int {
+	return arkApp.BankKeeper.GetBalance(ctx, addr, chain.USDBaseDenom).Amount
+}
+
+// collected is what addr holds on cached beyond what it holds on base: what
+// a run on the cache moved to it.
+func collected(arkApp *app.ArkApp, base, cached sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	return arkApp.BankKeeper.GetAllBalances(cached, addr).Sub(arkApp.BankKeeper.GetAllBalances(base, addr)...)
+}
+
+// txEvent returns the attributes of the tx event the fee decorator emitted
+// on ctx.
+func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
+	t.Helper()
+	for _, event := range ctx.EventManager().Events() {
+		if event.Type != sdk.EventTypeTx {
+			continue
+		}
+		attributes := make(map[string]string, len(event.Attributes))
+		for _, attribute := range event.Attributes {
+			attributes[attribute.Key] = attribute.Value
+		}
+		return attributes
+	}
+	t.Fatal("no tx event")
+	return nil
 }
 
 // fundAccount mints through the market module, the one module account with
@@ -69,17 +146,18 @@ func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeT
 	// The launch floor is atto-scaled; the fixture prices gas at a tenth of
 	// a base unit so fee arithmetic in tests reads in small integers.
 	params.MinBaseGasPrice = math.LegacyMustNewDecFromStr("0.1")
+	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	require.NoError(t, arkApp.TreasuryKeeper.Params.Set(ctx, params))
 	require.NoError(t, arkApp.TreasuryKeeper.BaseGasPrice.Set(ctx, params.MinBaseGasPrice))
-	policy := treasurytypes.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Set(ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
 		Factor: math.LegacyOneDec(),
 	}))
 
-	// The payer holds twice the tax the fixture transaction owes.
+	// The payer holds twenty: the fifteen the fixture fee declares — the ten
+	// the send owes in tax, and five for gas against a requirement of one
+	// base unit at this gas limit, four of which the ceiling never charges —
+	// and five to spare.
 	payer := sdk.AccAddress(bytes.Repeat([]byte{1}, 20))
 	fundAccount(t, arkApp, ctx, payer, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
 

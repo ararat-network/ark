@@ -47,11 +47,8 @@ func newBenchFixture(b *testing.B) *benchFixture {
 	params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
 	require.NoError(b, err)
 	params.ReferenceTaxCap = math.NewInt(1_000_000)
+	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	require.NoError(b, arkApp.TreasuryKeeper.Params.Set(ctx, params))
-	policy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
-	require.NoError(b, err)
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	require.NoError(b, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
 
 	priv := secp256k1.GenPrivKey()
 	addr := sdk.AccAddress(priv.PubKey().Address())

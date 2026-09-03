@@ -5,10 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"cosmossdk.io/math"
+
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/app/ante"
+	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // gasOf runs a step under a fresh meter and returns what it consumed.
@@ -19,25 +22,59 @@ func gasOf(t *testing.T, ctx sdk.Context, run func(sdk.Context) error) storetype
 	return metered.GasMeter().GasConsumed()
 }
 
-// TestStabilityTaxSimulationMatchesExecutionGas pins the estimate: the
-// collection takes no simulation branch, so it meters under simulation what
-// it meters in block execution. Each run gets its own discarded cache, so
-// the second does not read the balance the first wrote.
-func TestStabilityTaxSimulationMatchesExecutionGas(t *testing.T) {
+// TestFeeDecoratorSimulationMovesWhatExecutionMoves pins the estimate: a
+// declared fee is deducted under simulation exactly as in execution — the
+// tax set aside and charged, the base fee to the fee collector, the slack
+// left with the payer — and the gate's reads are made without being
+// enforced, so the balances agree and so does the gas. Each run gets its
+// own discarded cache.
+func TestFeeDecoratorSimulationMovesWhatExecutionMoves(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
-	decorator := ante.NewStabilityTaxDecorator(arkApp.TreasuryKeeper, arkApp.BankKeeper, arkApp.FeeGrantKeeper)
-	reached := false
-	run := func(simulate bool) storetypes.Gas {
-		return gasOf(t, ctx, func(ctx sdk.Context) error {
-			cached, _ := ctx.CacheContext()
-			_, err := decorator.AnteHandle(cached, tx, simulate, passThrough(t, &reached))
+	type outcome struct {
+		gas                storetypes.Gas
+		payer, fees, taxes math.Int
+	}
+	run := func(simulate bool) outcome {
+		cached, _ := ctx.CacheContext()
+		gas := gasOf(t, cached, func(ctx sdk.Context) error {
+			_, err := runFee(t, arkApp, ctx, tx, simulate)
+			return err
+		})
+		return outcome{
+			gas:   gas,
+			payer: usdBalance(arkApp, cached, tx.payer),
+			fees:  usdBalance(arkApp, cached, feeCollector),
+			taxes: usdBalance(arkApp, cached, taxCollector),
+		}
+	}
+
+	executed, simulated := run(false), run(true)
+	require.Equal(t, math.NewInt(9), executed.payer)
+	require.Equal(t, math.NewInt(10), executed.taxes)
+	require.Equal(t, executed.payer, simulated.payer)
+	require.Equal(t, executed.fees, simulated.fees)
+	require.Equal(t, executed.taxes, simulated.taxes)
+	require.Equal(t, executed.gas, simulated.gas)
+}
+
+// TestFeeDecoratorFeelessSimulationPaysForTheTransfer pins the stand-in: an
+// estimate without a fee moves no gas fee and consumes at least what the
+// paying transaction's transfer costs in its place, so the estimate never
+// runs short of the execution it sizes.
+func TestFeeDecoratorFeelessSimulationPaysForTheTransfer(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+	run := func(fee sdk.Coins, simulate bool) storetypes.Gas {
+		tx.fee = fee
+		cached, _ := ctx.CacheContext()
+		return gasOf(t, cached, func(ctx sdk.Context) error {
+			_, err := runFee(t, arkApp, ctx, tx, simulate)
 			return err
 		})
 	}
 
-	executed := run(false)
-	require.Positive(t, executed)
-	require.Equal(t, executed, run(true))
+	executed := run(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 15)), false)
+	feeless := run(nil, true)
+	require.GreaterOrEqual(t, feeless, executed)
 }
 
 // TestGasTallyDecoratorTalliesUnderSimulation pins the estimate side of the

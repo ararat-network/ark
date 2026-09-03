@@ -24,9 +24,22 @@ import (
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 )
 
-// NewAnteHandler assembles the ante chain. The runtime's pre-defined handler
-// is disabled in app_config (SkipAnteHandler), so this list is the whole
-// chain.
+// NewAnteHandler assembles the ante chain, in order. The runtime's pre-defined
+// handler is disabled in app_config (SkipAnteHandler), so this list is the
+// whole chain, and its order is consensus: it fixes the error code and the gas
+// burned for every transaction failing more than one check.
+//
+// The list is spelled out rather than taken from sdkante.NewAnteHandler because
+// the Wasm decorators have to sit immediately after context setup and the SDK's
+// constructor admits no insertion point. The SDK's own decorators keep the
+// relative order of its v0.54.3 default list; an upgrade adding one must be
+// mirrored here by hand.
+//
+// Ark's decorators follow one rule: a check that can refuse without moving a
+// balance goes before any charge, and the charges follow in the order money
+// moves — gas fee, then transfer tax, both inside FeeDecorator. A refused
+// transaction is then never charged first, and one failing both reports the
+// standard fee error wallets already handle.
 func NewAnteHandler(
 	cdc codec.Codec,
 	txConfig client.TxConfig,
@@ -40,50 +53,7 @@ func NewAnteHandler(
 	wasmNodeConfig wasmtypes.NodeConfig,
 	wasmTxCounterStore corestoretypes.KVStoreService,
 ) sdk.AnteHandler {
-	return sdk.ChainAnteDecorators(newAnteDecorators(
-		cdc,
-		txConfig,
-		accountKeeper,
-		bankKeeper,
-		feeGrantKeeper,
-		stakingKeeper,
-		treasuryKeeper,
-		ibcKeeper,
-		wasmGasRegister,
-		wasmNodeConfig,
-		wasmTxCounterStore,
-	)...)
-}
-
-// newAnteDecorators is the chain in order. It is a separate function so a test
-// can assert that order, which is consensus: it fixes the error code and the
-// gas burned for every transaction failing more than one check.
-//
-// The list is spelled out rather than taken from sdkante.NewAnteHandler because
-// the Wasm decorators have to sit immediately after context setup and the SDK's
-// constructor admits no insertion point. The SDK's own decorators keep the
-// relative order of its v0.54.3 default list; an upgrade adding one must be
-// mirrored here by hand.
-//
-// Ark's decorators follow one rule: a check that can refuse without moving a
-// balance goes before the fee is deducted, and a charge goes after it, in the
-// order money moves — gas fee, then transfer tax. A refused transaction is then
-// never charged first, and one failing both reports the standard fee error
-// wallets already handle.
-func newAnteDecorators(
-	cdc codec.Codec,
-	txConfig client.TxConfig,
-	accountKeeper authkeeper.AccountKeeper,
-	bankKeeper bankkeeper.BaseKeeper,
-	feeGrantKeeper feegrantkeeper.Keeper,
-	stakingKeeper *stakingkeeper.Keeper,
-	treasuryKeeper *treasurykeeper.Keeper,
-	ibcKeeper *ibckeeper.Keeper,
-	wasmGasRegister wasmtypes.GasRegister,
-	wasmNodeConfig wasmtypes.NodeConfig,
-	wasmTxCounterStore corestoretypes.KVStoreService,
-) []sdk.AnteDecorator {
-	return []sdk.AnteDecorator{
+	return sdk.ChainAnteDecorators(
 		// SetUpContext must be first: it installs the gas meter the decorators
 		// below spend against and the panic recovery that turns running out of
 		// gas into an error.
@@ -116,26 +86,21 @@ func newAnteDecorators(
 		NewGovVoteDecorator(cdc, stakingKeeper),
 		NewMultiSendDecorator(cdc),
 
-		// The gas-fee mechanism, both halves together. The fee checker prices
-		// gas against Treasury's consensus base fee rather than node-local min
-		// gas prices — a validity rule enforced in CheckTx and FinalizeBlock
-		// alike, so a proposer cannot include what every mempool would refuse.
-		// Node-local minimum-gas-prices should be zero. The tally is the
-		// controller's input: what cleared the gate reports its declared gas,
-		// and Treasury's EndBlocker prices the next block from the total.
-		sdkante.NewDeductFeeDecorator(
-			accountKeeper,
-			bankKeeper,
-			feeGrantKeeper,
-			baseFeeChecker(treasuryKeeper),
-		),
+		// The fee mechanism whole, fee.go's FeeDecorator in place of the SDK's.
+		// It prices the transfer tax, holds the declared fee to it — refused
+		// short, before anything is deducted, so a signer is never taxed past
+		// what they signed — settles the fee by denomination against
+		// Treasury's consensus base fee rather than node-local min gas prices,
+		// a validity rule enforced in CheckTx and FinalizeBlock alike so a
+		// proposer cannot include what every mempool would refuse, then
+		// deducts the base fee and the NOAH tip to the fee collector and
+		// charges the tax to the tax collector on the terms the policy router
+		// charges execution-generated messages. Node-local minimum-gas-prices
+		// should be zero. The tally is the controller's input: what cleared
+		// the gate reports its declared gas, and Treasury's EndBlocker prices
+		// the next block from the total.
+		NewFeeDecorator(accountKeeper, bankKeeper, feeGrantKeeper, treasuryKeeper),
 		NewGasTallyDecorator(treasuryKeeper),
-
-		// The transfer tax, charged straight to the collector on the terms the
-		// policy router charges execution-generated messages. The declared fee
-		// stays pure gas payment; a fee granter sponsors the tax as it sponsors
-		// gas, drawn through the allowance, all-or-nothing.
-		NewStabilityTaxDecorator(treasuryKeeper, bankKeeper, feeGrantKeeper),
 
 		// SetPubKey must precede every signature-verification decorator.
 		sdkante.NewSetPubKeyDecorator(accountKeeper),
@@ -147,5 +112,5 @@ func newAnteDecorators(
 		// Last, as it was when it wrapped the chain from outside: a redundant
 		// relay is only redundant once the transaction is otherwise valid.
 		ibcante.NewRedundantRelayDecorator(ibcKeeper),
-	}
+	)
 }

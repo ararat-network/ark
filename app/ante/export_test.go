@@ -4,7 +4,6 @@ package ante
 // without widening the package's real API.
 var (
 	GasPriority        = gasPriority
-	NewAnteDecorators  = newAnteDecorators
 	ValidateVoterStake = validateVoterStake
 )
 
