@@ -81,7 +81,13 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "ComputeTax",
-					Skip:      true,
+					Use:       "compute-tax",
+					Short:     "Compute the transfer tax the given messages owe, which their transaction's fee must cover",
+					Example: fmt.Sprintf(
+						`%s query treasury compute-tax --messages '{"@type":"/cosmos.bank.v1beta1.MsgSend",`+
+							`"from_address":"ark1...","to_address":"ark1...","amount":[{"denom":"axdr","amount":"1000"}]}'`,
+						version.AppName,
+					),
 				},
 				{
 					RpcMethod: "FundStatus",
