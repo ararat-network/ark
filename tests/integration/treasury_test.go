@@ -366,7 +366,6 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	}
 	minimumPolicy := treasurytypes.DefaultEconomicPolicy()
 	maximumPolicy := treasurytypes.EconomicPolicy{
-		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 		ValidatorBlockRewardTarget:  math.NewInt(10),
 		OracleBlockRewardTarget:     math.NewInt(10),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),

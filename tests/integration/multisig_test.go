@@ -220,7 +220,6 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 		func(genesis *treasurytypes.GenesisState, _ *claimstypes.GenesisState, committee string) {
 			minimum := treasurytypes.DefaultEconomicPolicy()
 			maximum := treasurytypes.EconomicPolicy{
-				TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 				ValidatorBlockRewardTarget:  math.NewInt(10),
 				OracleBlockRewardTarget:     math.NewInt(10),
 				RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
@@ -243,7 +242,6 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 		},
 	)
 	policy := treasurytypes.EconomicPolicy{
-		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.NewInt(5),
 		OracleBlockRewardTarget:     math.NewInt(5),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),

@@ -304,10 +304,10 @@ func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 
 		// Treasury taxes it, which is the whole point of joining the oracle-priced
 		// set: the new denomination is protocol-convertible money now.
-		policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
+		params, err := f.app.TreasuryKeeper.Params.Get(ctx)
 		require.NoError(t, err)
-		policy.TransferTaxRate = taxRate
-		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
+		params.TransferTaxRate = taxRate
+		require.NoError(t, f.app.TreasuryKeeper.Params.Set(ctx, params))
 		// The launch reference cap clamps tax to one base unit; lift the
 		// ceiling so the assertion reads the rate, not the clamp.
 		treasurytestutil.SetDerivedTaxCap(t, f.app.TreasuryKeeper, ctx, goldDenom, math.NewInt(1_000_000))

@@ -236,16 +236,13 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 	taxRate := math.LegacyNewDecWithPrec(1, 3)
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
-		require.NoError(t, err)
-		policy.TransferTaxRate = taxRate
-		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
-		// The launch reference cap clamps tax to one base unit. Uncap it so
-		// the assertions read the rate, not the clamp — through the params,
-		// which the per-block factor refresh leaves alone, where a fixture
-		// factor would be re-derived away next block.
+		// Activate the tax and lift the launch reference cap, which clamps tax
+		// to one base unit, so the assertions read the rate, not the clamp —
+		// through the params, which the per-block factor refresh leaves alone,
+		// where a fixture factor would be re-derived away next block.
 		params, err := f.app.TreasuryKeeper.Params.Get(ctx)
 		require.NoError(t, err)
+		params.TransferTaxRate = taxRate
 		params.ReferenceTaxCap = math.ZeroInt()
 		require.NoError(t, f.app.TreasuryKeeper.Params.Set(ctx, params))
 
@@ -331,11 +328,11 @@ func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 	// And the taxable set follows the caps, not the lifecycle: suspended
 	// supply still moves between holders, so the transfer still pays the
 	// transfer tax that ordinary money pays.
-	policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
+	params, err := f.app.TreasuryKeeper.Params.Get(ctx)
 	require.NoError(t, err)
-	policy.TransferTaxRate = math.LegacyNewDecWithPrec(1, 3)
+	params.TransferTaxRate = math.LegacyNewDecWithPrec(1, 3)
 	f.nextBlock(func(blockCtx sdk.Context) {
-		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(blockCtx, policy))
+		require.NoError(t, f.app.TreasuryKeeper.Params.Set(blockCtx, params))
 		// The launch reference cap clamps tax to one base unit; lift the
 		// ceiling so the assertion reads the rate, not the clamp.
 		treasurytestutil.SetDerivedTaxCap(t, f.app.TreasuryKeeper, blockCtx, chain.KRWBaseDenom, math.NewInt(1_000_000))
