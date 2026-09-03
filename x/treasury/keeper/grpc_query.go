@@ -40,29 +40,29 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 	return &types.QueryParamsResponse{Params: params}, nil
 }
 
-// MonetaryPolicy queries the current reversible Treasury policy.
-func (q queryServer) MonetaryPolicy(ctx context.Context, req *types.QueryMonetaryPolicyRequest) (*types.QueryMonetaryPolicyResponse, error) {
+// EconomicPolicy queries the current reversible Treasury policy.
+func (q queryServer) EconomicPolicy(ctx context.Context, req *types.QueryEconomicPolicyRequest) (*types.QueryEconomicPolicyResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	policy, err := q.k.MonetaryPolicy.Get(ctx)
+	policy, err := q.k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting monetary policy: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting economic policy: %v", err)
 	}
-	return &types.QueryMonetaryPolicyResponse{Policy: policy}, nil
+	return &types.QueryEconomicPolicyResponse{Policy: policy}, nil
 }
 
-// MonetaryMandate queries the governed committee appointment and its
+// EconomicMandate queries the governed committee appointment and its
 // current effective status.
-func (q queryServer) MonetaryMandate(ctx context.Context, req *types.QueryMonetaryMandateRequest) (*types.QueryMonetaryMandateResponse, error) {
+func (q queryServer) EconomicMandate(ctx context.Context, req *types.QueryEconomicMandateRequest) (*types.QueryEconomicMandateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	mandate, err := q.k.MonetaryMandate.Get(ctx)
+	mandate, err := q.k.EconomicMandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting monetary mandate: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting economic mandate: %v", err)
 	}
-	return &types.QueryMonetaryMandateResponse{
+	return &types.QueryEconomicMandateResponse{
 		Mandate: mandate,
 		Active:  mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
 	}, nil
@@ -201,7 +201,7 @@ func (q queryServer) GasPrices(ctx context.Context, req *types.QueryGasPricesReq
 	return &types.QueryGasPricesResponse{GasPrices: rows, ReferenceGasPrice: referenceRow}, nil
 }
 
-// ComputeTax computes the current stability tax for the supplied SDK messages.
+// ComputeTax computes the current transfer tax for the supplied SDK messages.
 func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxRequest) (*types.QueryComputeTaxResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -276,9 +276,9 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 	if partition.complete {
 		targetBasis, gapBasis = claimable, net
 	}
-	policy, err := q.k.MonetaryPolicy.Get(ctx)
+	policy, err := q.k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting monetary policy: %v", err)
+		return nil, status.Errorf(codes.Internal, "getting economic policy: %v", err)
 	}
 	// Each committee-operated fund reports its own recognised capital, per the
 	// contract on ClaimsKeeper; the Buffer has no operator, so Treasury reads it.

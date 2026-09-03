@@ -73,12 +73,12 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 	// Ratios chosen so the waterfall binds in stages: the Buffer gap absorbs
 	// part of the principal, the Reserve takes some of the rest, and Insurance
 	// is small enough that a remainder overflows into the burn.
-	policy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.02")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.01")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.005")
-	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
+	require.NoError(t, arkApp.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
 	stableSupply := math.NewInt(500_000_000_000)
 	require.NoError(t, arkApp.BankKeeper.MintCoins(

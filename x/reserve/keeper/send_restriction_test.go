@@ -108,11 +108,11 @@ func (s *KeeperTestSuite) TestSendRestrictionAdmitsRegistryMembers() {
 }
 
 // TestSendRestrictionSubsumesTaxCollectorExemption pins that settlement
-// routing of derecognized stability tax passes through the membership test: a
+// routing of derecognized transfer tax passes through the membership test: a
 // written-off or retired asset is still a registry member.
 func (s *KeeperTestSuite) TestSendRestrictionSubsumesTaxCollectorExemption() {
 	s.SetupTest()
-	collector := authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName)
+	collector := authtypes.NewModuleAddress(treasurytypes.TransferTaxCollectorName)
 	reserve := authtypes.NewModuleAddress(types.StrategicReserveName)
 	s.registerAsset(chain.XDRBaseDenom)
 

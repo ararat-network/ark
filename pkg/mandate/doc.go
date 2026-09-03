@@ -5,7 +5,7 @@
 // A mandate is one bounded, expiring delegation of a power governance already
 // holds. Governance appoints an exact account for a half-open height window;
 // the committee acts faster than a voting period allows; the appointment
-// expires on its own. Six mandates exist today — Treasury's monetary-policy
+// expires on its own. Six mandates exist today — Treasury's economic-policy
 // mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
 // Reserve's, and Security's — and the sections below are the convention a
 // seventh follows.

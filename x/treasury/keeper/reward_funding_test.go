@@ -21,10 +21,10 @@ import (
 
 func (s *KeeperTestSuite) TestUpdateRewardFundingAccruesBlock() {
 	s.setBlockHeight(2)
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.ValidatorBlockRewardTarget = math.NewInt(7)
 	policy.OracleBlockRewardTarget = math.NewInt(3)
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)))
 
 	s.Require().NoError(s.advanceRewardFunding())
@@ -71,7 +71,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDefersWindowChangeUntilNextWindow() {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.setBlockHeight(3)
 	s.expectValidatorFees(sdk.NewCoins())
-	s.expectStabilityTaxBalance(sdk.NewCoins())
+	s.expectTransferTaxBalance(sdk.NewCoins())
 
 	s.Require().NoError(s.endBlock())
 	s.requireDefaultRewardFunding()
@@ -91,7 +91,7 @@ func (s *KeeperTestSuite) TestBeginBlockerSettlesSingleBlockWindow() {
 	params.RewardFundingWindow = 1
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.expectValidatorFees(sdk.NewCoins())
-	s.expectStabilityTaxBalance(sdk.NewCoins())
+	s.expectTransferTaxBalance(sdk.NewCoins())
 
 	s.Require().NoError(s.endBlock())
 	s.requireDefaultRewardFunding()
@@ -99,9 +99,9 @@ func (s *KeeperTestSuite) TestBeginBlockerSettlesSingleBlockWindow() {
 
 func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 	s.setBlockHeight(2)
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.ValidatorBlockRewardTarget = math.NewInt(100)
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setRewardFunding(rewardFunding(2, 0, 0, 0))
 	s.expectValidatorFees(sdk.NewCoins())
 
@@ -109,7 +109,7 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 
 	s.setBlockHeight(3)
 	s.expectValidatorFees(sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 200)))
-	s.expectStabilityTaxBalance(sdk.NewCoins())
+	s.expectTransferTaxBalance(sdk.NewCoins())
 	s.expectSubsidyBalance(20)
 
 	s.Require().NoError(s.endBlock())
@@ -127,10 +127,10 @@ func (s *KeeperTestSuite) TestBeginBlockerNetsFeesAcrossWindow() {
 
 func (s *KeeperTestSuite) TestSettleRewardFundingSendsAllTaxToOracleWhenFeesCoverTarget() {
 	funding := rewardFunding(0, 7, 3, 7)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectSubsidyBalance(20)
-	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
+	s.expectTaxAllocation(sdk.NewCoins(), transferTax)
 
 	s.Require().NoError(s.runRewardFundingSettlement(funding))
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
@@ -146,8 +146,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingSendsAllTaxToOracleWhenFeesCove
 
 func (s *KeeperTestSuite) TestSettleRewardFundingProtectsOracleThenFundsValidatorGap() {
 	funding := rewardFunding(0, 7, 3, 2)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 8))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 8))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
@@ -159,8 +159,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingProtectsOracleThenFundsValidato
 
 func (s *KeeperTestSuite) TestSettleRewardFundingReturnsResidualTaxToOracle() {
 	funding := rewardFunding(0, 7, 3, 5)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectSubsidyBalance(20)
 	s.expectTaxAllocation(
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
@@ -172,10 +172,10 @@ func (s *KeeperTestSuite) TestSettleRewardFundingReturnsResidualTaxToOracle() {
 
 func (s *KeeperTestSuite) TestSettleRewardFundingPaysOnlyRemainingShortfalls() {
 	funding := rewardFunding(0, 7, 3, 5)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectSubsidyBalance(20)
-	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
+	s.expectTaxAllocation(sdk.NewCoins(), transferTax)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.SubsidyPoolName, authtypes.FeeCollectorName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
@@ -190,10 +190,10 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPaysOnlyRemainingShortfalls() {
 
 func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesScarceSubsidyByShortfall() {
 	funding := rewardFunding(0, 6, 6, 2)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectSubsidyBalance(3)
-	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
+	s.expectTaxAllocation(sdk.NewCoins(), transferTax)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.SubsidyPoolName, authtypes.FeeCollectorName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 2)),
@@ -208,11 +208,11 @@ func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesScarceSubsidyByShortfa
 
 func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRoundsToOracle() {
 	funding := rewardFunding(0, 2, 3, 0)
-	stabilityTax := sdk.NewCoins(
+	transferTax := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 3),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 	)
-	s.expectStabilityTaxBalance(stabilityTax)
+	s.expectTransferTaxBalance(transferTax)
 	s.setRates(oracletypes.RateSet{
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 		chain.KRWBaseDenom: math.LegacyOneDec(),
@@ -243,11 +243,11 @@ func (s *KeeperTestSuite) TestSettleRewardFundingConservesMultiDenomTaxAndRounds
 // them instead of reaching the Oracle unvalued.
 func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesPricedTaxAndDefersStaleMember() {
 	funding := rewardFunding(0, 2, 1, 0)
-	stabilityTax := sdk.NewCoins(
+	transferTax := sdk.NewCoins(
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 3),
 		sdk.NewInt64Coin(chain.KRWBaseDenom, 2),
 	)
-	s.expectStabilityTaxBalance(stabilityTax)
+	s.expectTransferTaxBalance(transferTax)
 	// akrw is a member the Oracle cannot price this block, so it is omitted
 	// from the available set and its tax defers.
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
@@ -262,7 +262,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingAllocatesPricedTaxAndDefersStal
 		chain.XDRBaseDenom,
 		chain.KRWBaseDenom,
 	))
-	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
+	s.requireTypedEvent(&types.EventUnpricedTransferTaxRouted{
 		Deferred: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 2)),
 	})
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
@@ -287,11 +287,11 @@ func (s *KeeperTestSuite) TestSettleRewardFundingMovesWrittenOffTaxToReserve() {
 	s.setAssets()
 	s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF)
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectUnconfiguredRewardValuation()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), types.StabilityTaxCollectorName, reservetypes.StrategicReserveName, stabilityTax,
+		gomock.Any(), types.TransferTaxCollectorName, reservetypes.StrategicReserveName, transferTax,
 	).Return(nil)
 	s.expectSubsidyBalance(10)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -300,8 +300,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingMovesWrittenOffTaxToReserve() {
 	).Return(nil)
 
 	s.Require().NoError(s.endBlock())
-	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
-		Moved: stabilityTax,
+	s.requireTypedEvent(&types.EventUnpricedTransferTaxRouted{
+		Moved: transferTax,
 	})
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.NoahBaseDenom,
@@ -324,13 +324,13 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersSuspendedTax() {
 	s.setAssets()
 	s.seedAsset(chain.XDRBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectUnconfiguredRewardValuation()
 
 	s.Require().NoError(s.endBlock())
-	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
-		Deferred: stabilityTax,
+	s.requireTypedEvent(&types.EventUnpricedTransferTaxRouted{
+		Deferred: transferTax,
 	})
 }
 
@@ -348,8 +348,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 	s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 	s.plans[chain.USDBaseDenom] = usdSettlementPlan()
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectUnconfiguredRewardValuation()
 	s.expectSubsidyBalance(10)
 	// The plan redeems two NOAH per unit, so four units value at eight NOAH:
@@ -365,7 +365,7 @@ func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 	).Return(nil)
 
 	s.Require().NoError(s.endBlock())
-	s.requireNoTypedEvent(&types.EventUnpricedStabilityTaxRouted{})
+	s.requireNoTypedEvent(&types.EventUnpricedTransferTaxRouted{})
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.NoahBaseDenom,
 		ValidatorTarget:  math.NewInt(5),
@@ -485,8 +485,8 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingFailsBlockWhenCrossBlockSumOver
 // skipped.
 func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTopsUp() {
 	funding := rewardFunding(0, 1, 1, 0)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.setRates(oracletypes.RateSet{})
 	s.expectSubsidyBalance(20)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
@@ -502,8 +502,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTop
 		funding,
 		chain.XDRBaseDenom,
 	))
-	s.requireTypedEvent(&types.EventUnpricedStabilityTaxRouted{
-		Deferred: stabilityTax,
+	s.requireTypedEvent(&types.EventUnpricedTransferTaxRouted{
+		Deferred: transferTax,
 	})
 	s.requireTypedEvent(&types.EventBlockRewardsToppedUp{
 		Denom:            chain.NoahBaseDenom,
@@ -519,24 +519,24 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTop
 func (s *KeeperTestSuite) TestSettleRewardFundingFailsBlockWhenTaxValueAggregateOverflows() {
 	max := maxRepresentableInt()
 	funding := rewardFunding(0, 1, 1, 0)
-	stabilityTax := sdk.NewCoins(
+	transferTax := sdk.NewCoins(
 		sdk.NewCoin(chain.NoahBaseDenom, max),
 		sdk.NewCoin(chain.XDRBaseDenom, max),
 	)
-	s.expectStabilityTaxBalance(stabilityTax)
+	s.expectTransferTaxBalance(transferTax)
 	s.expectNoahAndXDRRewardValuation()
 
 	err := s.runRewardFundingSettlement(funding, chain.XDRBaseDenom)
-	s.Require().ErrorContains(err, "valuing stability tax")
+	s.Require().ErrorContains(err, "valuing transfer tax")
 	s.Require().ErrorIs(err, decimal.ErrOutOfRange)
 }
 
 func (s *KeeperTestSuite) TestSettleRewardFundingSendsTaxToOracleWhenTargetsAreDisabled() {
 	funding := rewardFunding(0, 0, 0, 0)
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectNoahAndXDRRewardValuation()
-	s.expectTaxAllocation(sdk.NewCoins(), stabilityTax)
+	s.expectTaxAllocation(sdk.NewCoins(), transferTax)
 
 	s.Require().NoError(s.runRewardFundingSettlement(
 		funding,
@@ -549,15 +549,15 @@ func (s *KeeperTestSuite) TestBeginBlockerDoesNotClearAfterAllocationFailure() {
 	s.setBlockHeight(2)
 	s.setRewardFunding(initial)
 	s.expectValidatorFees(sdk.NewCoins())
-	stabilityTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
-	s.expectStabilityTaxBalance(stabilityTax)
+	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))
+	s.expectTransferTaxBalance(transferTax)
 	s.expectNoahAndXDRRewardValuation()
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-		gomock.Any(), types.StabilityTaxCollectorName, oracletypes.ModuleName, stabilityTax,
+		gomock.Any(), types.TransferTaxCollectorName, oracletypes.ModuleName, transferTax,
 	).Return(errors.New("bank failure"))
 
 	err := s.endBlock()
-	s.Require().ErrorContains(err, "allocating stability tax to Oracle")
+	s.Require().ErrorContains(err, "allocating transfer tax to Oracle")
 	funding, getErr := s.keeper.RewardFunding.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().Zero(funding.BlocksRemaining)
@@ -613,22 +613,22 @@ func (s *KeeperTestSuite) expectValidatorFees(fees sdk.Coins) {
 	).Return(fees)
 }
 
-func (s *KeeperTestSuite) expectStabilityTaxBalance(stabilityTax sdk.Coins) {
+func (s *KeeperTestSuite) expectTransferTaxBalance(transferTax sdk.Coins) {
 	s.bankKeeper.EXPECT().GetAllBalances(
 		gomock.Any(),
-		authtypes.NewModuleAddress(types.StabilityTaxCollectorName),
-	).Return(stabilityTax)
+		authtypes.NewModuleAddress(types.TransferTaxCollectorName),
+	).Return(transferTax)
 }
 
 func (s *KeeperTestSuite) expectTaxAllocation(validatorTax, oracleTax sdk.Coins) {
 	if !validatorTax.IsZero() {
 		s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-			gomock.Any(), types.StabilityTaxCollectorName, authtypes.FeeCollectorName, validatorTax,
+			gomock.Any(), types.TransferTaxCollectorName, authtypes.FeeCollectorName, validatorTax,
 		).Return(nil)
 	}
 	if !oracleTax.IsZero() {
 		s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
-			gomock.Any(), types.StabilityTaxCollectorName, oracletypes.ModuleName, oracleTax,
+			gomock.Any(), types.TransferTaxCollectorName, oracletypes.ModuleName, oracleTax,
 		).Return(nil)
 	}
 }

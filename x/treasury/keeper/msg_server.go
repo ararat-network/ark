@@ -55,20 +55,20 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	return &types.MsgUpdateParamsResponse{}, nil
 }
 
-// SetMonetaryMandate replaces or disables the bounded committee
+// SetEconomicMandate replaces or disables the bounded committee
 // appointment. Treasury derives a new term for every replacement.
-func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMonetaryMandate) (*types.MsgSetMonetaryMandateResponse, error) {
+func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEconomicMandate) (*types.MsgSetEconomicMandateResponse, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("nil set monetary mandate message")
+		return nil, fmt.Errorf("nil set economic mandate message")
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {
 		return nil, err
 	}
 
-	current, err := m.k.MonetaryMandate.Get(ctx)
+	current, err := m.k.EconomicMandate.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting monetary mandate: %w", err)
+		return nil, fmt.Errorf("getting economic mandate: %w", err)
 	}
 	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
 	if err != nil {
@@ -78,7 +78,7 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 	if !envelope.IsDisabled() {
 		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
 	}
-	updated := types.NewDisabledMonetaryMandate(envelope.Term)
+	updated := types.NewDisabledEconomicMandate(envelope.Term)
 	updated.Envelope = envelope
 	if msg.Committee != "" {
 		updated.MinimumPolicy = msg.MinimumPolicy
@@ -87,23 +87,23 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 			return nil, err
 		}
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
-			return nil, errors.New("monetary-policy committee must be distinct from Treasury authority")
+			return nil, errors.New("economic-policy committee must be distinct from Treasury authority")
 		}
 	}
 
-	if err := m.k.MonetaryMandate.Set(ctx, updated); err != nil {
-		return nil, fmt.Errorf("setting monetary mandate: %w", err)
+	if err := m.k.EconomicMandate.Set(ctx, updated); err != nil {
+		return nil, fmt.Errorf("setting economic mandate: %w", err)
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventMonetaryMandateSet{
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventEconomicMandateSet{
 		Term:             updated.Term,
 		Committee:        updated.Committee,
 		ActivationHeight: updated.ActivationHeight,
 		ExpiryHeight:     updated.ExpiryHeight,
 		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Treasury monetary mandate: %w", err)
+		return nil, fmt.Errorf("emitting Treasury economic mandate: %w", err)
 	}
-	return &types.MsgSetMonetaryMandateResponse{}, nil
+	return &types.MsgSetEconomicMandateResponse{}, nil
 }
 
 // UpdatePolicy applies one complete reversible policy update as the
@@ -111,7 +111,7 @@ func (m msgServer) SetMonetaryMandate(ctx context.Context, msg *types.MsgSetMone
 // window, or policy-bound check applies.
 func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy) (*types.MsgUpdatePolicyResponse, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("nil update monetary-policy message")
+		return nil, fmt.Errorf("nil update economic-policy message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -119,8 +119,8 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 	if err := msg.Policy.Validate(); err != nil {
 		return nil, err
 	}
-	if err := m.k.MonetaryPolicy.Set(ctx, msg.Policy); err != nil {
-		return nil, fmt.Errorf("setting monetary policy: %w", err)
+	if err := m.k.EconomicPolicy.Set(ctx, msg.Policy); err != nil {
+		return nil, fmt.Errorf("setting economic policy: %w", err)
 	}
 	return &types.MsgUpdatePolicyResponse{}, nil
 }
@@ -130,25 +130,25 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 // every field inside the mandate's bounds.
 func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgCommitteeUpdatePolicy) (*types.MsgCommitteeUpdatePolicyResponse, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("nil committee update monetary-policy message")
+		return nil, fmt.Errorf("nil committee update economic-policy message")
 	}
 	if err := msg.Policy.Validate(); err != nil {
 		return nil, err
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	mandate, err := m.k.MonetaryMandate.Get(ctx)
+	mandate, err := m.k.EconomicMandate.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting monetary mandate: %w", err)
+		return nil, fmt.Errorf("getting economic mandate: %w", err)
 	}
 	if err := mandate.Authorise(msg.Committee, msg.ExpectedTerm, uint64(sdkCtx.BlockHeight())); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.MonetaryMandateLabel, err)
+		return nil, fmt.Errorf("%s: %w", types.EconomicMandateLabel, err)
 	}
 	if err := mandate.ValidatePolicy(msg.Policy); err != nil {
 		return nil, err
 	}
-	if err := m.k.MonetaryPolicy.Set(ctx, msg.Policy); err != nil {
-		return nil, fmt.Errorf("setting monetary policy: %w", err)
+	if err := m.k.EconomicPolicy.Set(ctx, msg.Policy); err != nil {
+		return nil, fmt.Errorf("setting economic policy: %w", err)
 	}
 	return &types.MsgCommitteeUpdatePolicyResponse{}, nil
 }

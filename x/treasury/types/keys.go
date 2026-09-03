@@ -6,17 +6,17 @@ const (
 	ModuleName = "treasury"
 	StoreKey   = ModuleName
 
-	SubsidyPoolName           = "treasury_subsidy_pool"
-	RedemptionBufferName      = "treasury_redemption_buffer"
-	StabilityTaxCollectorName = "stability_tax_collector"
+	SubsidyPoolName          = "treasury_subsidy_pool"
+	RedemptionBufferName     = "treasury_redemption_buffer"
+	TransferTaxCollectorName = "transfer_tax_collector"
 )
 
 var (
 	ParamsKey                 = collections.NewPrefix(0)
 	ConversionFactorsKey      = collections.NewPrefix(1)
 	RewardFundingKey          = collections.NewPrefix(2)
-	MonetaryMandateKey        = collections.NewPrefix(3)
-	MonetaryPolicyKey         = collections.NewPrefix(4)
+	EconomicMandateKey        = collections.NewPrefix(3)
+	EconomicPolicyKey         = collections.NewPrefix(4)
 	ExposureStateKey          = collections.NewPrefix(6)
 	ExposureRefreshPendingKey = collections.NewPrefix(7)
 	BaseGasPriceKey           = collections.NewPrefix(8)

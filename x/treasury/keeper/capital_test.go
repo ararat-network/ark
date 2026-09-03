@@ -16,11 +16,11 @@ import (
 )
 
 func (s *KeeperTestSuite) TestCapitalReadsReportTargetGaps() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -84,11 +84,11 @@ func (s *KeeperTestSuite) TestBurnBoundRefusesIncompleteValuation() {
 // very aggregate, so gating the refill on completeness would leave the drain
 // running while the fast response went dark.
 func (s *KeeperTestSuite) TestFundTransferBoundsSizeOnIncompleteValuation() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 60)).AnyTimes()
@@ -130,9 +130,9 @@ func (s *KeeperTestSuite) TestFundTransferBoundsSizeOnIncompleteValuation() {
 // under-fills rather than over-fills, which is the safe way for a transfer
 // ceiling to be wrong.
 func (s *KeeperTestSuite) TestFundTransferBoundsDropNeverPricedSupply() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 60)).AnyTimes()
@@ -175,11 +175,11 @@ func usdSettlementPlan() assettypes.SettlementPlan {
 // back into circulation: a bound that loosened when its own subject parked
 // paper would be no bound at all.
 func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -239,11 +239,11 @@ func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 // supply, oracle rates, and settled flow — none of which the bounded committee
 // can set — so this does not loosen a bound on state its actor can reverse.
 func (s *KeeperTestSuite) TestCommitteeBoundsScaleWithExposure() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setMultiplier("2")
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})

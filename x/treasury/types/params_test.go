@@ -129,7 +129,7 @@ func TestParamsValidate(t *testing.T) {
 
 // TestExposureMachineryValidate covers the exposure half of Params: the decays,
 // the multiplier cap and step, and the refresh cadence. The indicator weights
-// these size live on MonetaryPolicy and are covered beside it.
+// these size live on EconomicPolicy and are covered beside it.
 func TestExposureMachineryValidate(t *testing.T) {
 	tests := []struct {
 		name      string

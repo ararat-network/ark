@@ -25,7 +25,7 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// ComputeTax calculates stability tax with the cap applied independently to
+// ComputeTax calculates transfer tax with the cap applied independently to
 // each message input.
 func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, error) {
 	var inputs []sdk.Coins
@@ -38,12 +38,12 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 		return sdk.NewCoins(), nil
 	}
 
-	policy, err := k.MonetaryPolicy.Get(ctx)
+	policy, err := k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting monetary policy: %w", err)
+		return nil, fmt.Errorf("getting economic policy: %w", err)
 	}
 
-	if policy.StabilityTaxRate.IsZero() {
+	if policy.TransferTaxRate.IsZero() {
 		return sdk.NewCoins(), nil
 	}
 
@@ -84,7 +84,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 				continue
 			}
 
-			tax := policy.StabilityTaxRate.MulInt(principal.Amount).TruncateInt()
+			tax := policy.TransferTaxRate.MulInt(principal.Amount).TruncateInt()
 			if cap.IsPositive() && tax.GT(cap) {
 				tax = cap
 			}
@@ -97,7 +97,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 				if err != nil {
 					return nil, errorsmod.Wrapf(
 						types.ErrTaxOutOfRange,
-						"summing stability tax for denom %s: %v",
+						"summing transfer tax for denom %s: %v",
 						principal.Denom,
 						err,
 					)

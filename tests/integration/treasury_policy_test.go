@@ -54,10 +54,10 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 	// is not.
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		policy, err := f.app.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+		policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
 		require.NoError(t, err)
 		policy.RedemptionBufferTargetRatio = math.LegacyNewDecWithPrec(1, 1)
-		require.NoError(t, f.app.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
+		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
 		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
 			Trader:         f.trader.String(),
@@ -236,10 +236,10 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 	taxRate := math.LegacyNewDecWithPrec(1, 3)
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		policy, err := f.app.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+		policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
 		require.NoError(t, err)
-		policy.StabilityTaxRate = taxRate
-		require.NoError(t, f.app.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
+		policy.TransferTaxRate = taxRate
+		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 		// The launch reference cap clamps tax to one base unit. Uncap it so
 		// the assertions read the rate, not the clamp — through the params,
 		// which the per-block factor refresh leaves alone, where a fixture
@@ -330,12 +330,12 @@ func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 
 	// And the taxable set follows the caps, not the lifecycle: suspended
 	// supply still moves between holders, so the transfer still pays the
-	// stability tax that ordinary money pays.
-	policy, err := f.app.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	// transfer tax that ordinary money pays.
+	policy, err := f.app.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
-	policy.StabilityTaxRate = math.LegacyNewDecWithPrec(1, 3)
+	policy.TransferTaxRate = math.LegacyNewDecWithPrec(1, 3)
 	f.nextBlock(func(blockCtx sdk.Context) {
-		require.NoError(t, f.app.TreasuryKeeper.MonetaryPolicy.Set(blockCtx, policy))
+		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(blockCtx, policy))
 		// The launch reference cap clamps tax to one base unit; lift the
 		// ceiling so the assertion reads the rate, not the clamp.
 		treasurytestutil.SetDerivedTaxCap(t, f.app.TreasuryKeeper, blockCtx, chain.KRWBaseDenom, math.NewInt(1_000_000))

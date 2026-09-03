@@ -14,12 +14,12 @@ import (
 func TestDefaultGenesisState(t *testing.T) {
 	genesis := types.DefaultGenesisState()
 	require.Equal(t, types.DefaultParams(), genesis.Params)
-	require.True(t, types.DefaultMonetaryPolicy().Equal(genesis.MonetaryPolicy))
+	require.True(t, types.DefaultEconomicPolicy().Equal(genesis.EconomicPolicy))
 	require.Equal(t, []types.ConversionFactor{
 		{Denom: chain.NoahBaseDenom, Factor: types.DefaultNoahConversionFactor},
 	}, genesis.ConversionFactors)
 	require.Equal(t, types.DefaultRewardFundingState(), genesis.RewardFunding)
-	require.Equal(t, types.DefaultMonetaryMandate(), genesis.MonetaryMandate)
+	require.Equal(t, types.DefaultEconomicMandate(), genesis.EconomicMandate)
 	require.NoError(t, genesis.Validate())
 }
 
@@ -37,8 +37,8 @@ func TestNewGenesisStateCopiesSlices(t *testing.T) {
 		types.DefaultParams(),
 		factors,
 		types.DefaultRewardFundingState(),
-		types.DefaultMonetaryMandate(),
-		types.DefaultMonetaryPolicy(),
+		types.DefaultEconomicMandate(),
+		types.DefaultEconomicPolicy(),
 		types.DefaultExposureState(),
 		false,
 		types.DefaultMinBaseGasPrice,

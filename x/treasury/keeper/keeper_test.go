@@ -179,8 +179,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		Return(authtypes.NewModuleAddress(reservetypes.StrategicReserveName)).
 		AnyTimes()
 	s.accountKeeper.EXPECT().
-		GetModuleAddress(types.StabilityTaxCollectorName).
-		Return(authtypes.NewModuleAddress(types.StabilityTaxCollectorName)).
+		GetModuleAddress(types.TransferTaxCollectorName).
+		Return(authtypes.NewModuleAddress(types.TransferTaxCollectorName)).
 		AnyTimes()
 	s.accountKeeper.EXPECT().
 		GetModuleAddress(authtypes.FeeCollectorName).
@@ -306,14 +306,14 @@ func (s *KeeperTestSuite) SetupTest() {
 	// The live price always exists on a real chain — InitGenesis writes it —
 	// so the suite keeps that invariant for everything that reads it.
 	s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, testMinBaseGasPrice))
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, types.DefaultMonetaryPolicy()))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, types.DefaultEconomicPolicy()))
 	s.Require().NoError(s.keeper.RewardFunding.Set(
 		s.ctx,
 		types.DefaultRewardFundingState(),
 	))
-	s.Require().NoError(s.keeper.MonetaryMandate.Set(
+	s.Require().NoError(s.keeper.EconomicMandate.Set(
 		s.ctx,
-		types.DefaultMonetaryMandate(),
+		types.DefaultEconomicMandate(),
 	))
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
@@ -394,18 +394,10 @@ func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-// setDerivedTaxCap gives one denomination a derived cap of exactly the given
-// amount: the reference amount pins to one base unit and the factor carries
-// the value, so several denominations hold distinct caps side by side.
+// setDerivedTaxCap binds testutil.SetDerivedTaxCap to the suite's keeper and
+// context, which is all its call sites need to name.
 func (s *KeeperTestSuite) setDerivedTaxCap(denom string, amount math.Int) {
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params.ReferenceTaxCap = math.OneInt()
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
-	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, denom, types.ConversionFactor{
-		Denom:  denom,
-		Factor: math.LegacyNewDecFromInt(amount),
-	}))
+	testutil.SetDerivedTaxCap(s.T(), s.keeper, s.ctx, denom, amount)
 }
 
 // beginBlock runs BeginBlocker. The indirection is the seam tests share: when

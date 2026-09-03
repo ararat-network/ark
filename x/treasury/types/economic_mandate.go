@@ -9,21 +9,21 @@ import (
 	"github.com/ararat-network/ark/pkg/mandate"
 )
 
-// MonetaryMandateLabel names the shared appointment envelope in
-// monetary-policy errors.
-const MonetaryMandateLabel = "monetary mandate"
+// EconomicMandateLabel names the shared appointment envelope in
+// economic-policy errors.
+const EconomicMandateLabel = "economic mandate"
 
-// DefaultMonetaryMandate returns the canonical disabled committee
+// DefaultEconomicMandate returns the canonical disabled committee
 // mandate. The term may increase later while the mandate remains disabled.
-func DefaultMonetaryMandate() MonetaryMandate {
-	return NewDisabledMonetaryMandate(0)
+func DefaultEconomicMandate() EconomicMandate {
+	return NewDisabledEconomicMandate(0)
 }
 
-// NewDisabledMonetaryMandate returns a canonical disabled mandate at the
+// NewDisabledEconomicMandate returns a canonical disabled mandate at the
 // supplied term.
-func NewDisabledMonetaryMandate(term uint64) MonetaryMandate {
-	policy := DefaultMonetaryPolicy()
-	return MonetaryMandate{
+func NewDisabledEconomicMandate(term uint64) EconomicMandate {
+	policy := DefaultEconomicPolicy()
+	return EconomicMandate{
 		Envelope:      mandate.Disabled(term),
 		MinimumPolicy: policy,
 		MaximumPolicy: policy,
@@ -32,27 +32,27 @@ func NewDisabledMonetaryMandate(term uint64) MonetaryMandate {
 
 // Validate validates either a disabled mandate or one complete bounded
 // committee appointment.
-func (mandate MonetaryMandate) Validate() error {
+func (mandate EconomicMandate) Validate() error {
 	if err := mandate.MinimumPolicy.Validate(); err != nil {
-		return fmt.Errorf("invalid monetary-policy minimum: %w", err)
+		return fmt.Errorf("invalid economic-policy minimum: %w", err)
 	}
 	if err := mandate.MaximumPolicy.Validate(); err != nil {
-		return fmt.Errorf("invalid monetary-policy maximum: %w", err)
+		return fmt.Errorf("invalid economic-policy maximum: %w", err)
 	}
 
 	if err := mandate.Envelope.Validate(); err != nil {
-		return fmt.Errorf("%s: %w", MonetaryMandateLabel, err)
+		return fmt.Errorf("%s: %w", EconomicMandateLabel, err)
 	}
 
 	if mandate.IsDisabled() {
 		if !mandate.MinimumPolicy.Equal(mandate.MaximumPolicy) || !mandate.MinimumPolicy.IsZero() {
-			return errors.New("disabled monetary mandate must use identical zero bounds")
+			return errors.New("disabled economic mandate must use identical zero bounds")
 		}
 		return nil
 	}
 
 	if err := mandate.ValidatePolicy(mandate.MinimumPolicy); err != nil {
-		return fmt.Errorf("invalid monetary-policy bounds: %w", err)
+		return fmt.Errorf("invalid economic-policy bounds: %w", err)
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func (mandate MonetaryMandate) Validate() error {
 // A lever missing from these tables is a lever the committee may set freely,
 // which is why adding one is a row rather than a block: the omission would be
 // invisible in a wall of near-identical conditionals.
-func (mandate MonetaryMandate) ValidatePolicy(policy MonetaryPolicy) error {
+func (mandate EconomicMandate) ValidatePolicy(policy EconomicPolicy) error {
 	minimum, maximum := mandate.MinimumPolicy, mandate.MaximumPolicy
 
 	for _, bound := range []struct {
@@ -77,10 +77,10 @@ func (mandate MonetaryMandate) ValidatePolicy(policy MonetaryPolicy) error {
 		maximum math.LegacyDec
 	}{
 		{
-			"stability tax rate",
-			policy.StabilityTaxRate,
-			minimum.StabilityTaxRate,
-			maximum.StabilityTaxRate,
+			"transfer tax rate",
+			policy.TransferTaxRate,
+			minimum.TransferTaxRate,
+			maximum.TransferTaxRate,
 		},
 		{
 			"redemption Buffer target ratio",

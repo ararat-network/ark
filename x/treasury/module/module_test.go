@@ -175,7 +175,7 @@ func TestAutoCLIOptionsCoverTreasuryServices(t *testing.T) {
 		rpcMethods(options.Tx.RpcCommandOptions),
 	)
 
-	// The monetary committee's one power is a policy move inside the corridor
+	// The economic committee's one power is a policy move inside the corridor
 	// governance appointed. Pinning the set as well as the Committee-prefix
 	// rule is what stops a second committee power shipping unnoticed.
 	var committee []string

@@ -21,7 +21,7 @@ const (
 	DefaultExposureRefreshPeriodBlocks = chain.BlocksPerHour
 
 	// MaxRewardFundingWindow bounds how many blocks one funding window accrues
-	// over. Together with MonetaryPolicy's MaxBlockRewardTarget it is what
+	// over. Together with EconomicPolicy's MaxBlockRewardTarget it is what
 	// makes the accrual safe by inspection: the two ceilings multiply to a
 	// whole-window total ninety-five bits under the Int limit, so no sequence
 	// of blocks can overflow the running targets. A window of 2^32 blocks is
@@ -108,7 +108,7 @@ var (
 //
 // The reference tax cap launches at one base unit — the tightest finite
 // ceiling — rather than zero, which is the explicit uncapped sentinel: an
-// unconfigured chain should clamp the stability tax to dust, not leave it
+// unconfigured chain should clamp the transfer tax to dust, not leave it
 // unbounded, and governance opts into either a real ceiling or none.
 func DefaultParams() Params {
 	return Params{
@@ -129,7 +129,7 @@ func DefaultParams() Params {
 // Validate performs context-free validation of Treasury parameters.
 // ReferenceDenom's identity with the protocol reference is validated by the
 // keeper, and the indicator weights the exposure machinery below sizes live
-// on MonetaryPolicy, which validates them.
+// on EconomicPolicy, which validates them.
 func (p Params) Validate() error {
 	if err := chain.ValidatePricedDenom(p.ReferenceDenom); err != nil {
 		return fmt.Errorf("treasury parameter ReferenceDenom is invalid: %w", err)

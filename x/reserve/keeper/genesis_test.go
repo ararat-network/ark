@@ -17,7 +17,7 @@ func (s *KeeperTestSuite) TestInitGenesisCustodyAdmission() {
 		s.Require().NoError(s.keeper.InitGenesis(s.ctx, types.DefaultGenesisState()))
 	})
 
-	// Settlement routes derecognized stability tax here and a deployment's
+	// Settlement routes derecognized transfer tax here and a deployment's
 	// acquired leg can be member paper, so an export taken after either carries
 	// member custody and must reimport.
 	s.Run("admits a registered member", func() {

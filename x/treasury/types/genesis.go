@@ -14,8 +14,8 @@ func NewGenesisState(
 	params Params,
 	conversionFactors []ConversionFactor,
 	rewardFunding RewardFundingState,
-	monetaryMandate MonetaryMandate,
-	monetaryPolicy MonetaryPolicy,
+	economicMandate EconomicMandate,
+	economicPolicy EconomicPolicy,
 	exposureState ExposureState,
 	exposureUpdatePending bool,
 	baseGasPrice math.LegacyDec,
@@ -24,8 +24,8 @@ func NewGenesisState(
 		Params:                 params,
 		ConversionFactors:      append([]ConversionFactor(nil), conversionFactors...),
 		RewardFunding:          rewardFunding,
-		MonetaryMandate:        monetaryMandate,
-		MonetaryPolicy:         monetaryPolicy,
+		EconomicMandate:        economicMandate,
+		EconomicPolicy:         economicPolicy,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 		BaseGasPrice:           baseGasPrice,
@@ -58,8 +58,8 @@ func DefaultGenesisState() *GenesisState {
 		DefaultParams(),
 		[]ConversionFactor{{Denom: chain.NoahBaseDenom, Factor: DefaultNoahConversionFactor}},
 		DefaultRewardFundingState(),
-		DefaultMonetaryMandate(),
-		DefaultMonetaryPolicy(),
+		DefaultEconomicMandate(),
+		DefaultEconomicPolicy(),
 		DefaultExposureState(),
 		false,
 		DefaultMinBaseGasPrice,
@@ -83,7 +83,7 @@ func (gs GenesisState) Validate() error {
 	if err := gs.Params.Validate(); err != nil {
 		return err
 	}
-	if err := gs.MonetaryPolicy.Validate(); err != nil {
+	if err := gs.EconomicPolicy.Validate(); err != nil {
 		return err
 	}
 
@@ -160,7 +160,7 @@ func (gs GenesisState) Validate() error {
 			return fmt.Errorf("%s must not exceed %s: %s", accrued.name, maxAccrued, accrued.value)
 		}
 	}
-	if err := gs.MonetaryMandate.Validate(); err != nil {
+	if err := gs.EconomicMandate.Validate(); err != nil {
 		return err
 	}
 	if err := gs.ExposureState.Validate(); err != nil {

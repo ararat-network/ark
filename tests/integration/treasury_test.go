@@ -301,7 +301,7 @@ func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
-		treasurytypes.StabilityTaxCollectorName,
+		treasurytypes.TransferTaxCollectorName,
 		taxCoins,
 	))
 
@@ -321,7 +321,7 @@ func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
 	)
 	require.True(t, arkApp.BankKeeper.GetBalance(
 		ctx,
-		authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName),
+		authtypes.NewModuleAddress(treasurytypes.TransferTaxCollectorName),
 		chain.USDBaseDenom,
 	).Amount.IsZero())
 }
@@ -332,7 +332,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	voter := treasuryGovernanceVoter(t, arkApp, ctx)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	claimsCommittee := sdk.AccAddress(bytes.Repeat([]byte{0x43}, 20))
-	monetaryCommittee := sdk.AccAddress(bytes.Repeat([]byte{0x46}, 20))
+	economicCommittee := sdk.AccAddress(bytes.Repeat([]byte{0x46}, 20))
 
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
@@ -364,18 +364,18 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		ExpiryHeight:        1_000_000,
 		CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 50),
 	}
-	minimumPolicy := treasurytypes.DefaultMonetaryPolicy()
-	maximumPolicy := treasurytypes.MonetaryPolicy{
-		StabilityTaxRate:            math.LegacyMustNewDecFromStr("0.1"),
+	minimumPolicy := treasurytypes.DefaultEconomicPolicy()
+	maximumPolicy := treasurytypes.EconomicPolicy{
+		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 		ValidatorBlockRewardTarget:  math.NewInt(10),
 		OracleBlockRewardTarget:     math.NewInt(10),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
 	}
-	monetaryMandateUpdate := &treasurytypes.MsgSetMonetaryMandate{
+	economicMandateUpdate := &treasurytypes.MsgSetEconomicMandate{
 		Authority:        authority,
-		Committee:        monetaryCommittee.String(),
+		Committee:        economicCommittee.String(),
 		ActivationHeight: 1,
 		ExpiryHeight:     1_000_000,
 		MinimumPolicy:    minimumPolicy,
@@ -388,12 +388,12 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		voter,
 		transfer,
 		claimsMandateUpdate,
-		monetaryMandateUpdate,
+		economicMandateUpdate,
 	)
 	require.Equal(t, govv1.StatusPassed, proposal.Status)
 	require.Equal(t, "/ark.reserve.v1.MsgFundBuffer", proposal.Messages[0].TypeUrl)
 	require.Equal(t, "/ark.claims.v1.MsgSetClaimsMandate", proposal.Messages[1].TypeUrl)
-	require.Equal(t, "/ark.treasury.v1.MsgSetMonetaryMandate", proposal.Messages[2].TypeUrl)
+	require.Equal(t, "/ark.treasury.v1.MsgSetEconomicMandate", proposal.Messages[2].TypeUrl)
 	require.Equal(
 		t,
 		math.NewInt(60),
@@ -414,10 +414,10 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.Equal(t, claimsCommittee.String(), storedClaimsMandate.Committee)
 	require.Equal(t, uint64(1), storedClaimsMandate.Term)
 	require.Equal(t, sdk.NewInt64Coin(chain.NoahBaseDenom, 50), storedClaimsMandate.CommitteeClaimLimit)
-	storedMonetaryMandate, err := arkApp.TreasuryKeeper.MonetaryMandate.Get(ctx)
+	storedEconomicMandate, err := arkApp.TreasuryKeeper.EconomicMandate.Get(ctx)
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), storedMonetaryMandate.Term)
-	require.Equal(t, monetaryCommittee.String(), storedMonetaryMandate.Committee)
+	require.Equal(t, uint64(1), storedEconomicMandate.Term)
+	require.Equal(t, economicCommittee.String(), storedEconomicMandate.Committee)
 
 	submission := &claimstypes.MsgCommitteeSubmitClaim{
 		Committee:    claimsCommittee.String(),
@@ -430,7 +430,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	pendingClaim, err := arkApp.ClaimsKeeper.Claims.Get(ctx, submissionResponse.ClaimId)
 	require.NoError(t, err)
-	governancePolicy := treasurytypes.DefaultMonetaryPolicy()
+	governancePolicy := treasurytypes.DefaultEconomicPolicy()
 	governancePolicy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.9")
 	ctx, cancelProposal := executeTreasuryProposal(t, arkApp, ctx, voter,
 		&treasurytypes.MsgUpdatePolicy{
@@ -444,9 +444,9 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.Equal(t, govv1.StatusPassed, cancelProposal.Status)
 	require.Equal(t, "/ark.treasury.v1.MsgUpdatePolicy", cancelProposal.Messages[0].TypeUrl)
 	require.Equal(t, "/ark.claims.v1.MsgCancelClaim", cancelProposal.Messages[1].TypeUrl)
-	storedMonetaryPolicy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	storedEconomicPolicy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
-	require.Equal(t, governancePolicy.InsuranceTargetRatio, storedMonetaryPolicy.InsuranceTargetRatio)
+	require.Equal(t, governancePolicy.InsuranceTargetRatio, storedEconomicPolicy.InsuranceTargetRatio)
 	cancelledClaim, err := arkApp.ClaimsKeeper.Claims.Get(ctx, pendingClaim.ClaimId)
 	require.NoError(t, err)
 	require.Equal(t, claimstypes.ClaimStatus_CLAIM_STATUS_CANCELLED, cancelledClaim.Status)
@@ -618,7 +618,7 @@ func TestTreasuryLaunchesWithExposureModelInert(t *testing.T) {
 	// The weights are committee-owned policy (D72 as amended); the machinery
 	// bounding them is governance Params. Both halves have to be right for the
 	// model to be inert, so both are asserted.
-	policy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
 	require.True(t, policy.LiabilityRatioWeight.IsZero(),
 		"launch policy must not weight the liability ratio")

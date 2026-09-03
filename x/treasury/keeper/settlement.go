@@ -89,9 +89,9 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, 
 	insuranceCredit := math.ZeroInt()
 	overflowBurn := math.ZeroInt()
 	if partition.complete {
-		policy, err := k.MonetaryPolicy.Get(ctx)
+		policy, err := k.EconomicPolicy.Get(ctx)
 		if err != nil {
-			return math.Int{}, fmt.Errorf("getting monetary policy: %w", err)
+			return math.Int{}, fmt.Errorf("getting economic policy: %w", err)
 		}
 		// Each committee-operated fund is asked what it is worth rather than read
 		// behind its back; the Buffer has no operator to ask, so its balance is

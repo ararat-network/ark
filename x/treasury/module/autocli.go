@@ -23,30 +23,30 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query treasury params", version.AppName),
 				},
 				{
-					RpcMethod: "MonetaryPolicy",
-					Use:       "monetary-policy",
-					Short:     "Query the current Treasury monetary policy",
-					Example:   fmt.Sprintf("%s query treasury monetary-policy", version.AppName),
+					RpcMethod: "EconomicPolicy",
+					Use:       "economic-policy",
+					Short:     "Query the current Treasury economic policy",
+					Example:   fmt.Sprintf("%s query treasury economic-policy", version.AppName),
 				},
 				{
 					RpcMethod: "TaxCap",
 					Use:       "tax-cap [denom]",
-					Short:     "Query the derived stability-tax cap for a denomination",
+					Short:     "Query the derived transfer-tax cap for a denomination",
 					Example:   fmt.Sprintf("%s query treasury tax-cap axdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "denom"},
 					},
 				},
 				{
-					RpcMethod: "MonetaryMandate",
-					Use:       "monetary-mandate",
-					Short:     "Query the governed monetary-policy committee mandate",
-					Example:   fmt.Sprintf("%s query treasury monetary-mandate", version.AppName),
+					RpcMethod: "EconomicMandate",
+					Use:       "economic-mandate",
+					Short:     "Query the governed economic-policy committee mandate",
+					Example:   fmt.Sprintf("%s query treasury economic-mandate", version.AppName),
 				},
 				{
 					RpcMethod: "TaxCaps",
 					Use:       "tax-caps",
-					Short:     "Query every derived stability-tax cap",
+					Short:     "Query every derived transfer-tax cap",
 					Example:   fmt.Sprintf("%s query treasury tax-caps", version.AppName),
 				},
 				{
@@ -116,9 +116,9 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
-					RpcMethod:   "SetMonetaryMandate",
-					Use:         "set-monetary-mandate-proposal",
-					Short:       "Submit a governance proposal to appoint, replace, or disable the monetary-policy committee",
+					RpcMethod:   "SetEconomicMandate",
+					Use:         "set-economic-mandate-proposal",
+					Short:       "Submit a governance proposal to appoint, replace, or disable the economic-policy committee",
 					GovProposal: true,
 				},
 				{
@@ -130,7 +130,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "CommitteeUpdatePolicy",
 					Use:       "committee-update-policy",
-					Short:     "Update reversible Treasury policy as the monetary-policy committee",
+					Short:     "Update reversible Treasury policy as the economic-policy committee",
 				},
 			},
 		},

@@ -200,7 +200,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 // The threshold matrix is the claims test's above. What only this adds is that
 // MsgCommitteeUpdatePolicy carries an amino name a legacy multisig can sign
 // against, and that a policy inside the mandate's corridor lands.
-func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
+func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 	members := []cryptotypes.PrivKey{
 		secp256k1.GenPrivKey(),
 		secp256k1.GenPrivKey(),
@@ -218,9 +218,9 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 		committeePubKey,
 		true,
 		func(genesis *treasurytypes.GenesisState, _ *claimstypes.GenesisState, committee string) {
-			minimum := treasurytypes.DefaultMonetaryPolicy()
-			maximum := treasurytypes.MonetaryPolicy{
-				StabilityTaxRate:            math.LegacyMustNewDecFromStr("0.1"),
+			minimum := treasurytypes.DefaultEconomicPolicy()
+			maximum := treasurytypes.EconomicPolicy{
+				TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 				ValidatorBlockRewardTarget:  math.NewInt(10),
 				OracleBlockRewardTarget:     math.NewInt(10),
 				RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
@@ -230,7 +230,7 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 				VolatilityWeight:            math.LegacyOneDec(),
 				FlowWeight:                  math.LegacyOneDec(),
 			}
-			genesis.MonetaryMandate = treasurytypes.MonetaryMandate{
+			genesis.EconomicMandate = treasurytypes.EconomicMandate{
 				Envelope: mandate.Envelope{
 					Term:             1,
 					Committee:        committee,
@@ -242,8 +242,8 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 			}
 		},
 	)
-	policy := treasurytypes.MonetaryPolicy{
-		StabilityTaxRate:            math.LegacyZeroDec(),
+	policy := treasurytypes.EconomicPolicy{
+		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.NewInt(5),
 		OracleBlockRewardTarget:     math.NewInt(5),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
@@ -284,7 +284,7 @@ func TestTreasuryMonetaryPolicyLegacyAminoMultisig(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{ChainID: treasuryMultisigChainID, Height: 1})
-	storedPolicy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	storedPolicy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
 	require.True(t, policy.Equal(storedPolicy))
 }

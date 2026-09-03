@@ -12,7 +12,7 @@ import (
 // governance transactions.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/treasury/MsgUpdateParams")
-	legacy.RegisterAminoMsg(cdc, &MsgSetMonetaryMandate{}, "ark/treasury/MsgSetMonetaryMandate")
+	legacy.RegisterAminoMsg(cdc, &MsgSetEconomicMandate{}, "ark/treasury/MsgSetEconomicMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/treasury/MsgUpdatePolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/treasury/MsgCommitteeUpdatePolicy")
 }
@@ -22,7 +22,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgUpdateParams{},
-		&MsgSetMonetaryMandate{},
+		&MsgSetEconomicMandate{},
 		&MsgUpdatePolicy{},
 		&MsgCommitteeUpdatePolicy{},
 	)

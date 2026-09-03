@@ -35,7 +35,7 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 	// The depth is a claim about how much conversion the protocol absorbs before
 	// the spread widens, expressed in reference units, so it is carried across at
 	// the current rate. The delta scales with it: a re-denomination changes the
-	// unit, not the monetary stance, so the effective pools keep their ratio.
+	// unit, not the economic stance, so the effective pools keep their ratio.
 	rebased := sdk.NewDecCoinFromDec(chain.USDBaseDenom, math.LegacyNewDec(200))
 	newDelta := math.LegacyNewDec(50)
 	expectedCapacity := current

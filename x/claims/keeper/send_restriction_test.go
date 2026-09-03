@@ -60,11 +60,11 @@ func (s *KeeperTestSuite) TestSendRestrictionRejectsInvalidDeposits() {
 }
 
 // TestSendRestrictionHasNoCollectorExemption pins the difference from
-// Treasury's restriction: the stability-tax collector may route non-NOAH
+// Treasury's restriction: the transfer-tax collector may route non-NOAH
 // residue into strategic Reserve, but nothing may route it into Insurance.
 func (s *KeeperTestSuite) TestSendRestrictionHasNoCollectorExemption() {
 	s.SetupTest()
-	collector := authtypes.NewModuleAddress("stability_tax_collector")
+	collector := authtypes.NewModuleAddress("transfer_tax_collector")
 	insurance := authtypes.NewModuleAddress(types.InsuranceName)
 
 	got, err := s.keeper.SendRestriction(

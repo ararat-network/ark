@@ -177,8 +177,8 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 		treasuryAccountKeeper.EXPECT().GetModuleAddress(moduleName).
 			Return(authtypes.NewModuleAddress(moduleName))
 	}
-	treasuryAccountKeeper.EXPECT().GetModuleAddress(treasurytypes.StabilityTaxCollectorName).
-		Return(authtypes.NewModuleAddress(treasurytypes.StabilityTaxCollectorName))
+	treasuryAccountKeeper.EXPECT().GetModuleAddress(treasurytypes.TransferTaxCollectorName).
+		Return(authtypes.NewModuleAddress(treasurytypes.TransferTaxCollectorName))
 	treasuryAccountKeeper.EXPECT().GetModuleAddress(reservetypes.StrategicReserveName).
 		Return(authtypes.NewModuleAddress(reservetypes.StrategicReserveName)).
 		AnyTimes()
@@ -215,7 +215,7 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	if err := keeper.Params.Set(ctx, treasurytypes.DefaultParams()); err != nil {
 		b.Fatal(err)
 	}
-	if err := keeper.MonetaryPolicy.Set(ctx, treasurytypes.DefaultMonetaryPolicy()); err != nil {
+	if err := keeper.EconomicPolicy.Set(ctx, treasurytypes.DefaultEconomicPolicy()); err != nil {
 		b.Fatal(err)
 	}
 	funding := treasurytypes.DefaultRewardFundingState()

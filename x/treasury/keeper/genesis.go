@@ -24,8 +24,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// The InitGenesis context carries no consensus params, so these can only
 	// compare against the fallback authority; the message path re-checks every
 	// later replacement against the effective authority.
-	if data.MonetaryMandate.Committee == k.authority {
-		return fmt.Errorf("monetary-policy committee must be distinct from Treasury authority")
+	if data.EconomicMandate.Committee == k.authority {
+		return fmt.Errorf("economic-policy committee must be distinct from Treasury authority")
 	}
 
 	// The reference tax cap and Market's base pool are the same unit by
@@ -141,9 +141,9 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// can be stated. Nothing at runtime can reach the account: it is a blocked
 	// address, which stops every user send and every IBC delivery, and the one
 	// inbound path is the ante handler routing tax out of the fee collector.
-	collector := k.accountKeeper.GetModuleAccount(ctx, types.StabilityTaxCollectorName)
+	collector := k.accountKeeper.GetModuleAccount(ctx, types.TransferTaxCollectorName)
 	if collector == nil {
-		return fmt.Errorf("%s module account has not been set", types.StabilityTaxCollectorName)
+		return fmt.Errorf("%s module account has not been set", types.TransferTaxCollectorName)
 	}
 	for _, balance := range k.bankKeeper.GetAllBalances(ctx, collector.GetAddress()) {
 		if balance.Denom == chain.NoahBaseDenom {
@@ -157,7 +157,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			return fmt.Errorf(
 				"%s account contains unsupported genesis denom %s: collected tax must be %s "+
 					"or an Ark-issued asset",
-				types.StabilityTaxCollectorName,
+				types.TransferTaxCollectorName,
 				balance.Denom,
 				chain.NoahBaseDenom,
 			)
@@ -167,8 +167,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.Params.Set(ctx, data.Params); err != nil {
 		return fmt.Errorf("setting params: %w", err)
 	}
-	if err := k.MonetaryPolicy.Set(ctx, data.MonetaryPolicy); err != nil {
-		return fmt.Errorf("setting monetary policy: %w", err)
+	if err := k.EconomicPolicy.Set(ctx, data.EconomicPolicy); err != nil {
+		return fmt.Errorf("setting economic policy: %w", err)
 	}
 	for _, factor := range factors {
 		if err := k.ConversionFactors.Set(ctx, factor.Denom, factor); err != nil {
@@ -178,8 +178,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.RewardFunding.Set(ctx, data.RewardFunding); err != nil {
 		return fmt.Errorf("setting reward funding state: %w", err)
 	}
-	if err := k.MonetaryMandate.Set(ctx, data.MonetaryMandate); err != nil {
-		return fmt.Errorf("setting monetary mandate: %w", err)
+	if err := k.EconomicMandate.Set(ctx, data.EconomicMandate); err != nil {
+		return fmt.Errorf("setting economic mandate: %w", err)
 	}
 	if err := k.ExposureState.Set(ctx, data.ExposureState); err != nil {
 		return fmt.Errorf("setting exposure state: %w", err)
@@ -206,17 +206,17 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
-	monetaryPolicy, err := k.MonetaryPolicy.Get(ctx)
+	economicPolicy, err := k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting monetary policy: %w", err)
+		return nil, fmt.Errorf("getting economic policy: %w", err)
 	}
 	rewardFunding, err := k.RewardFunding.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting reward funding state: %w", err)
 	}
-	monetaryMandate, err := k.MonetaryMandate.Get(ctx)
+	economicMandate, err := k.EconomicMandate.Get(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting monetary mandate: %w", err)
+		return nil, fmt.Errorf("getting economic mandate: %w", err)
 	}
 	exposureState, err := k.getExposureState(ctx)
 	if err != nil {
@@ -244,8 +244,8 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 		Params:                 params,
 		ConversionFactors:      factors,
 		RewardFunding:          rewardFunding,
-		MonetaryMandate:        monetaryMandate,
-		MonetaryPolicy:         monetaryPolicy,
+		EconomicMandate:        economicMandate,
+		EconomicPolicy:         economicPolicy,
 		ExposureState:          exposureState,
 		ExposureRefreshPending: exposureUpdatePending,
 		BaseGasPrice:           baseGasPrice,

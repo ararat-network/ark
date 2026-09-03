@@ -85,9 +85,9 @@ func (k Keeper) grossFundTargets(ctx context.Context, requireComplete bool) (typ
 	if err != nil {
 		return types.FundTargetSet{}, err
 	}
-	policy, err := k.MonetaryPolicy.Get(ctx)
+	policy, err := k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return types.FundTargetSet{}, fmt.Errorf("getting monetary policy: %w", err)
+		return types.FundTargetSet{}, fmt.Errorf("getting economic policy: %w", err)
 	}
 	// Committee bounds scale with the same multiplier the waterfall uses, and
 	// every direction it moves them is the conservative one: a higher Reserve

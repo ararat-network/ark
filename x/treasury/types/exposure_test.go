@@ -15,7 +15,7 @@ import (
 // governance machinery is populated, so the multiplier is one and every target
 // is unscaled.
 func TestExposureModelLaunchesInert(t *testing.T) {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	require.True(t, policy.LiabilityRatioWeight.IsZero())
 	require.True(t, policy.VolatilityWeight.IsZero())
 	require.True(t, policy.FlowWeight.IsZero())

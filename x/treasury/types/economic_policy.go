@@ -31,10 +31,10 @@ var MaxBlockRewardTarget = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1),
 // exists to keep the arithmetic provably in range, not to express a view.
 var MaxExposureWeight = math.LegacyNewDec(1_000_000)
 
-// DefaultMonetaryPolicy returns the disabled launch policy values.
-func DefaultMonetaryPolicy() MonetaryPolicy {
-	return MonetaryPolicy{
-		StabilityTaxRate:            math.LegacyZeroDec(),
+// DefaultEconomicPolicy returns the disabled launch policy values.
+func DefaultEconomicPolicy() EconomicPolicy {
+	return EconomicPolicy{
+		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.ZeroInt(),
 		OracleBlockRewardTarget:     math.ZeroInt(),
 		RedemptionBufferTargetRatio: math.LegacyZeroDec(),
@@ -55,12 +55,12 @@ func DefaultMonetaryPolicy() MonetaryPolicy {
 // weight is a multiplier on an indicator, unbounded in principle and capped
 // only to keep the composite representable. A new lever joins whichever table
 // states its bound, or brings a fourth.
-func (policy MonetaryPolicy) Validate() error {
+func (policy EconomicPolicy) Validate() error {
 	for _, share := range []struct {
 		name  string
 		value math.LegacyDec
 	}{
-		{"StabilityTaxRate", policy.StabilityTaxRate},
+		{"TransferTaxRate", policy.TransferTaxRate},
 		{"RedemptionBufferTargetRatio", policy.RedemptionBufferTargetRatio},
 		{"StrategicReserveTargetRatio", policy.StrategicReserveTargetRatio},
 		{"InsuranceTargetRatio", policy.InsuranceTargetRatio},
@@ -155,7 +155,7 @@ type FundTargetSet struct {
 // a committee act is sized against gross liability, since the committee can
 // re-issue the paper its own fund holds; what the next expansion fills is sized
 // against net, since no claim arrives from that paper (D67).
-func (policy MonetaryPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTargetSet {
+func (policy EconomicPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTargetSet {
 	return FundTargetSet{
 		Buffer:    policy.RedemptionBufferTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),
 		Reserve:   policy.StrategicReserveTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),
@@ -163,9 +163,9 @@ func (policy MonetaryPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTarge
 	}
 }
 
-// Equal reports whether two monetary policies contain identical values.
-func (policy MonetaryPolicy) Equal(other MonetaryPolicy) bool {
-	return policy.StabilityTaxRate.Equal(other.StabilityTaxRate) &&
+// Equal reports whether two economic policies contain identical values.
+func (policy EconomicPolicy) Equal(other EconomicPolicy) bool {
+	return policy.TransferTaxRate.Equal(other.TransferTaxRate) &&
 		policy.ValidatorBlockRewardTarget.Equal(other.ValidatorBlockRewardTarget) &&
 		policy.OracleBlockRewardTarget.Equal(other.OracleBlockRewardTarget) &&
 		policy.RedemptionBufferTargetRatio.Equal(other.RedemptionBufferTargetRatio) &&
@@ -177,8 +177,8 @@ func (policy MonetaryPolicy) Equal(other MonetaryPolicy) bool {
 }
 
 // IsZero reports whether every policy value is zero.
-func (policy MonetaryPolicy) IsZero() bool {
-	return policy.StabilityTaxRate.IsZero() &&
+func (policy EconomicPolicy) IsZero() bool {
+	return policy.TransferTaxRate.IsZero() &&
 		policy.ValidatorBlockRewardTarget.IsZero() &&
 		policy.OracleBlockRewardTarget.IsZero() &&
 		policy.RedemptionBufferTargetRatio.IsZero() &&

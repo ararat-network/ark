@@ -52,7 +52,7 @@ type TreasuryKeeper interface {
 	// It is called once, from Market's EndBlocker, after every conversion in the
 	// block has minted, burned, and paid its trader. Market never learns how
 	// Treasury split the principal between the funds, so settlement cannot
-	// branch on monetary policy; Treasury never learns which conversions
+	// branch on economic policy; Treasury never learns which conversions
 	// produced the totals, so allocation cannot favour one.
 	SettleConversions(ctx context.Context, totals ConversionTotals) (math.Int, error)
 }

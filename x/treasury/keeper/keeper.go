@@ -51,8 +51,8 @@ type Keeper struct {
 	// and every block is the retry.
 	ConversionFactors collections.Map[string, types.ConversionFactor]
 	RewardFunding     collections.Item[types.RewardFundingState]
-	MonetaryMandate   collections.Item[types.MonetaryMandate]
-	MonetaryPolicy    collections.Item[types.MonetaryPolicy]
+	EconomicMandate   collections.Item[types.EconomicMandate]
+	EconomicPolicy    collections.Item[types.EconomicPolicy]
 	// ExposureState holds the risk estimate behind the fund-target multiplier:
 	// two per-block series, the inputs of the last completed refresh, and the
 	// multiplier itself. Sampling writes it every block from settlement;
@@ -92,8 +92,8 @@ func NewKeeper(
 		}
 		fundAddresses[string(addr)] = struct{}{}
 	}
-	if addr := accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName); addr == nil {
-		panic(fmt.Sprintf("%s module account has not been set", types.StabilityTaxCollectorName))
+	if addr := accountKeeper.GetModuleAddress(types.TransferTaxCollectorName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.TransferTaxCollectorName))
 	}
 	// Not a Treasury account, but the liability fold reads its balances
 	// directly — the self-held netting is Treasury's own accounting (D66) — so
@@ -142,11 +142,11 @@ func NewKeeper(
 			"reward_funding",
 			codec.CollValue[types.RewardFundingState](cdc),
 		),
-		MonetaryMandate: collections.NewItem(
+		EconomicMandate: collections.NewItem(
 			sb,
-			types.MonetaryMandateKey,
-			"monetary_mandate",
-			codec.CollValue[types.MonetaryMandate](cdc),
+			types.EconomicMandateKey,
+			"economic_mandate",
+			codec.CollValue[types.EconomicMandate](cdc),
 		),
 		ExposureState: collections.NewItem(
 			sb,
@@ -160,11 +160,11 @@ func NewKeeper(
 			"exposure_refresh_pending",
 			collections.BoolValue,
 		),
-		MonetaryPolicy: collections.NewItem(
+		EconomicPolicy: collections.NewItem(
 			sb,
-			types.MonetaryPolicyKey,
-			"monetary_policy",
-			codec.CollValue[types.MonetaryPolicy](cdc),
+			types.EconomicPolicyKey,
+			"economic_policy",
+			codec.CollValue[types.EconomicPolicy](cdc),
 		),
 		BaseGasPrice: collections.NewItem(
 			sb,

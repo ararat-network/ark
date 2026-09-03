@@ -10,44 +10,44 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-func TestMonetaryPolicyValidate(t *testing.T) {
+func TestEconomicPolicyValidate(t *testing.T) {
 	tests := []struct {
 		name      string
-		mutate    func(*types.MonetaryPolicy)
+		mutate    func(*types.EconomicPolicy)
 		expectErr string
 	}{
-		{name: defaultValidCase, mutate: func(*types.MonetaryPolicy) {}},
+		{name: defaultValidCase, mutate: func(*types.EconomicPolicy) {}},
 		{
 			name: "independent ratios may sum above one",
-			mutate: func(p *types.MonetaryPolicy) {
+			mutate: func(p *types.EconomicPolicy) {
 				p.RedemptionBufferTargetRatio = math.LegacyOneDec()
 				p.StrategicReserveTargetRatio = math.LegacyOneDec()
 				p.InsuranceTargetRatio = math.LegacyOneDec()
 			},
 		},
-		{name: "nil tax rate", mutate: func(p *types.MonetaryPolicy) { p.StabilityTaxRate = math.LegacyDec{} }, expectErr: "StabilityTaxRate must be set"},
-		{name: "negative tax rate", mutate: func(p *types.MonetaryPolicy) { p.StabilityTaxRate = math.LegacyNewDec(-1) }, expectErr: "StabilityTaxRate must be between zero and one"},
-		{name: "tax rate above one", mutate: func(p *types.MonetaryPolicy) {
-			p.StabilityTaxRate = math.LegacyNewDecWithPrec(1001, 3)
-		}, expectErr: "StabilityTaxRate must be between zero and one"},
-		{name: "nil validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.Int{} }, expectErr: "ValidatorBlockRewardTarget must be set"},
-		{name: "negative validator target", mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be between zero and"},
-		{name: "nil Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.Int{} }, expectErr: "OracleBlockRewardTarget must be set"},
-		{name: "negative Oracle target", mutate: func(p *types.MonetaryPolicy) { p.OracleBlockRewardTarget = math.NewInt(-1) }, expectErr: "OracleBlockRewardTarget must be between zero and"},
+		{name: "nil tax rate", mutate: func(p *types.EconomicPolicy) { p.TransferTaxRate = math.LegacyDec{} }, expectErr: "TransferTaxRate must be set"},
+		{name: "negative tax rate", mutate: func(p *types.EconomicPolicy) { p.TransferTaxRate = math.LegacyNewDec(-1) }, expectErr: "TransferTaxRate must be between zero and one"},
+		{name: "tax rate above one", mutate: func(p *types.EconomicPolicy) {
+			p.TransferTaxRate = math.LegacyNewDecWithPrec(1001, 3)
+		}, expectErr: "TransferTaxRate must be between zero and one"},
+		{name: "nil validator target", mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = math.Int{} }, expectErr: "ValidatorBlockRewardTarget must be set"},
+		{name: "negative validator target", mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = math.NewInt(-1) }, expectErr: "ValidatorBlockRewardTarget must be between zero and"},
+		{name: "nil Oracle target", mutate: func(p *types.EconomicPolicy) { p.OracleBlockRewardTarget = math.Int{} }, expectErr: "OracleBlockRewardTarget must be set"},
+		{name: "negative Oracle target", mutate: func(p *types.EconomicPolicy) { p.OracleBlockRewardTarget = math.NewInt(-1) }, expectErr: "OracleBlockRewardTarget must be between zero and"},
 		{
 			name:   "validator target at the domain cap",
-			mutate: func(p *types.MonetaryPolicy) { p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget },
+			mutate: func(p *types.EconomicPolicy) { p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget },
 		},
 		{
 			name: "validator target above the domain cap",
-			mutate: func(p *types.MonetaryPolicy) {
+			mutate: func(p *types.EconomicPolicy) {
 				p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 			},
 			expectErr: "ValidatorBlockRewardTarget must be between zero and",
 		},
 		{
 			name: "Oracle target above the domain cap",
-			mutate: func(p *types.MonetaryPolicy) {
+			mutate: func(p *types.EconomicPolicy) {
 				p.OracleBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 			},
 			expectErr: "OracleBlockRewardTarget must be between zero and",
@@ -57,21 +57,21 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 			// headroom lives in the window multiplication rather than in
 			// forbidding the pair, which the test below proves.
 			name: "both targets at the domain cap",
-			mutate: func(p *types.MonetaryPolicy) {
+			mutate: func(p *types.EconomicPolicy) {
 				p.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
 				p.OracleBlockRewardTarget = types.MaxBlockRewardTarget
 			},
 		},
-		{name: "nil Buffer ratio", mutate: func(p *types.MonetaryPolicy) { p.RedemptionBufferTargetRatio = math.LegacyDec{} }, expectErr: "RedemptionBufferTargetRatio must be set"},
-		{name: "negative Reserve ratio", mutate: func(p *types.MonetaryPolicy) { p.StrategicReserveTargetRatio = math.LegacyNewDec(-1) }, expectErr: "StrategicReserveTargetRatio must be between zero and one"},
-		{name: "Insurance ratio above one", mutate: func(p *types.MonetaryPolicy) {
+		{name: "nil Buffer ratio", mutate: func(p *types.EconomicPolicy) { p.RedemptionBufferTargetRatio = math.LegacyDec{} }, expectErr: "RedemptionBufferTargetRatio must be set"},
+		{name: "negative Reserve ratio", mutate: func(p *types.EconomicPolicy) { p.StrategicReserveTargetRatio = math.LegacyNewDec(-1) }, expectErr: "StrategicReserveTargetRatio must be between zero and one"},
+		{name: "Insurance ratio above one", mutate: func(p *types.EconomicPolicy) {
 			p.InsuranceTargetRatio = math.LegacyNewDecWithPrec(1001, 3)
 		}, expectErr: "InsuranceTargetRatio must be between zero and one"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			policy := types.DefaultMonetaryPolicy()
+			policy := types.DefaultEconomicPolicy()
 			tc.mutate(&policy)
 			err := policy.Validate()
 			if tc.expectErr == "" {
@@ -90,32 +90,32 @@ func TestMonetaryPolicyValidate(t *testing.T) {
 func TestExposureWeightValidation(t *testing.T) {
 	tests := []struct {
 		name      string
-		mutate    func(*types.MonetaryPolicy)
+		mutate    func(*types.EconomicPolicy)
 		expectErr string
 	}{
-		{name: defaultValidCase, mutate: func(*types.MonetaryPolicy) {}},
+		{name: defaultValidCase, mutate: func(*types.EconomicPolicy) {}},
 		{
 			name:      "negative liability ratio weight",
-			mutate:    func(p *types.MonetaryPolicy) { p.LiabilityRatioWeight = math.LegacyNewDec(-1) },
+			mutate:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyNewDec(-1) },
 			expectErr: "LiabilityRatioWeight must be between zero and",
 		},
 		{
 			name:      "negative volatility weight",
-			mutate:    func(p *types.MonetaryPolicy) { p.VolatilityWeight = math.LegacyNewDec(-1) },
+			mutate:    func(p *types.EconomicPolicy) { p.VolatilityWeight = math.LegacyNewDec(-1) },
 			expectErr: "VolatilityWeight must be between zero and",
 		},
 		{
 			name:      "negative flow weight",
-			mutate:    func(p *types.MonetaryPolicy) { p.FlowWeight = math.LegacyNewDec(-1) },
+			mutate:    func(p *types.EconomicPolicy) { p.FlowWeight = math.LegacyNewDec(-1) },
 			expectErr: "FlowWeight must be between zero and",
 		},
 		{
 			name:   "weight at the domain cap",
-			mutate: func(p *types.MonetaryPolicy) { p.FlowWeight = types.MaxExposureWeight },
+			mutate: func(p *types.EconomicPolicy) { p.FlowWeight = types.MaxExposureWeight },
 		},
 		{
 			name: "weight above the domain cap",
-			mutate: func(p *types.MonetaryPolicy) {
+			mutate: func(p *types.EconomicPolicy) {
 				p.FlowWeight = types.MaxExposureWeight.Add(math.LegacyOneDec())
 			},
 			expectErr: "FlowWeight must be between zero and",
@@ -124,7 +124,7 @@ func TestExposureWeightValidation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			policy := types.DefaultMonetaryPolicy()
+			policy := types.DefaultEconomicPolicy()
 			test.mutate(&policy)
 
 			err := policy.Validate()
@@ -159,7 +159,7 @@ func TestRewardTargetCapsLeaveWindowHeadroom(t *testing.T) {
 // base unit becomes a whole one. Rounded down, a fund would report itself full
 // while sitting a base unit short of its own policy.
 func TestFundTargetsRoundUp(t *testing.T) {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyNewDecWithPrec(5, 1)
 	policy.StrategicReserveTargetRatio = math.LegacyNewDecWithPrec(25, 2)
 

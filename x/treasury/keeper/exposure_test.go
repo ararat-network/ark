@@ -18,12 +18,12 @@ import (
 
 // setExposureWeights installs the committee-owned indicator weights over the
 // disabled launch policy.
-func (s *KeeperTestSuite) setExposureWeights(mutate func(*types.MonetaryPolicy)) {
-	policy, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+func (s *KeeperTestSuite) setExposureWeights(mutate func(*types.EconomicPolicy)) {
+	policy, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	mutate(&policy)
 	s.Require().NoError(policy.Validate())
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 }
 
 // setExposureParams installs the governance-owned machinery over the launch
@@ -200,7 +200,7 @@ func (s *KeeperTestSuite) TestExposureIdleBlockDecaysFlow() {
 // pins the step limit: the composite asks for far more than a quarter, and one
 // period delivers exactly a quarter.
 func (s *KeeperTestSuite) TestExposureUpdateRaisesMultiplierByStep() {
-	s.setExposureWeights(func(p *types.MonetaryPolicy) {
+	s.setExposureWeights(func(p *types.EconomicPolicy) {
 		p.LiabilityRatioWeight = math.LegacyNewDec(10)
 	})
 	s.setExposureParams(func(p *types.Params) {
@@ -241,7 +241,7 @@ func (s *KeeperTestSuite) TestExposureUpdateRaisesMultiplierByStep() {
 // as a hold rather than a reading: a chain whose NOAH is entirely protocol-held
 // has no market capitalisation to measure leverage against.
 func (s *KeeperTestSuite) TestExposureUpdateHoldsWithoutCirculatingSupply() {
-	s.setExposureWeights(func(p *types.MonetaryPolicy) {
+	s.setExposureWeights(func(p *types.EconomicPolicy) {
 		p.LiabilityRatioWeight = math.LegacyNewDec(10)
 	})
 	s.setExposureParams(func(p *types.Params) {
@@ -271,7 +271,7 @@ func (s *KeeperTestSuite) TestExposureUpdateHoldsWithoutCirculatingSupply() {
 // block reads the owed flag and nothing else, which is what keeps the registry
 // fold off the per-block path.
 func (s *KeeperTestSuite) TestExposureUpdateSkippedOnOffCadenceBlock() {
-	s.setExposureWeights(func(p *types.MonetaryPolicy) {
+	s.setExposureWeights(func(p *types.EconomicPolicy) {
 		p.LiabilityRatioWeight = math.LegacyNewDec(10)
 	})
 	s.setExposureParams(func(p *types.Params) {

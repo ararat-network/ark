@@ -118,12 +118,12 @@ func (s *KeeperTestSuite) TestLiabilityFeedOutageLeavesCoverageUnchanged() {
 	s.requireLiabilityValuation(math.LegacyNewDec(200), false)
 }
 
-// TestLiabilityRecognizesSettlementPricedSupply proves the fold carries
+// TestLiabilityRecognisesSettlementPricedSupply proves the fold carries
 // suspended supply at its settlement plan's committed rate — including a plan
 // that has not reached its activation height, because the plan read is
 // deliberately ungated — so a suspended denomination leaves the valuation
 // complete without any oracle rate behind it.
-func (s *KeeperTestSuite) TestLiabilityRecognizesSettlementPricedSupply() {
+func (s *KeeperTestSuite) TestLiabilityRecognisesSettlementPricedSupply() {
 	s.setAssets()
 	s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 	s.plans[chain.USDBaseDenom] = usdSettlementPlan()
@@ -533,11 +533,11 @@ func (s *KeeperTestSuite) TestLiabilityNetsSelfHeldOnlyForCountedSupply() {
 // the policy ratios and the netting rule, so both are reported and each pair
 // differs by exactly that fund's ratio times the self-held liability.
 func (s *KeeperTestSuite) TestFundStatusReportsBothTargetBases() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).

@@ -249,9 +249,9 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 		return false, err
 	}
 
-	policy, err := k.MonetaryPolicy.Get(ctx)
+	policy, err := k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return false, fmt.Errorf("getting monetary policy: %w", err)
+		return false, fmt.Errorf("getting economic policy: %w", err)
 	}
 
 	circulating, err := k.circulatingNoah(ctx)
@@ -322,7 +322,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 }
 
 // composeMultiplier folds the three surcharges into one factor. The weights
-// arrive from MonetaryPolicy and the saturation ceiling from Params, which is
+// arrive from EconomicPolicy and the saturation ceiling from Params, which is
 // the split that makes the delegation safe: the committee sets how much each
 // measurement is worth, and governance alone sets how far the answer may go.
 //
@@ -340,7 +340,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 // this unreachable in practice: three weights bounded by MaxExposureWeight
 // against indicators bounded by supply, one, and the annualisation constant
 // cannot approach the Dec limit. It is kept as the loud backstop behind them.
-func composeMultiplier(policy types.MonetaryPolicy, ceiling math.LegacyDec, ratio, volatility, flow math.LegacyDec) math.LegacyDec {
+func composeMultiplier(policy types.EconomicPolicy, ceiling math.LegacyDec, ratio, volatility, flow math.LegacyDec) math.LegacyDec {
 	multiplier := math.LegacyOneDec()
 	for _, term := range []struct {
 		weight    math.LegacyDec
@@ -501,7 +501,7 @@ func (k Keeper) rescaleReferencePrice(ctx context.Context, from, to string, rate
 		// The anchor is dropped rather than the transition failed: a reference
 		// move is governance re-pointing the unit every rate is quoted in, and
 		// refusing it because one risk-model anchor could not be converted
-		// would let an observational series veto a monetary decision. The next
+		// would let an observational series veto an economic decision. The next
 		// block records a price in the new unit and the series resumes one
 		// sample later.
 		k.Logger(ctx).Warn(

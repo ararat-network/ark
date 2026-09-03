@@ -17,7 +17,7 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// taxSplit is how a closed window's priced stability tax divides between the
+// taxSplit is how a closed window's priced transfer tax divides between the
 // validator and Oracle legs, with what each leg earned organically once its
 // share is counted. Deriving it is kept separate from spending it so the
 // arithmetic that settles who is owed what for a whole window is reachable from
@@ -68,9 +68,9 @@ func (k Keeper) updateRewardFunding(ctx context.Context) (types.RewardFundingSta
 		}
 		funding.BlocksRemaining = params.RewardFundingWindow
 	}
-	policy, err := k.MonetaryPolicy.Get(ctx)
+	policy, err := k.EconomicPolicy.Get(ctx)
 	if err != nil {
-		return types.RewardFundingState{}, fmt.Errorf("getting monetary policy: %w", err)
+		return types.RewardFundingState{}, fmt.Errorf("getting economic policy: %w", err)
 	}
 
 	// The targets accumulate for a whole window, and the two ceilings on their
@@ -116,19 +116,19 @@ func (k Keeper) updateRewardFunding(ctx context.Context) (types.RewardFundingSta
 	return funding, nil
 }
 
-// settleRewardFunding closes a window: it gathers the collected stability tax,
+// settleRewardFunding closes a window: it gathers the collected transfer tax,
 // plans the split and any subsidy against the window's targets, and then moves
 // the value. Nothing is transferred before the whole plan is known.
 func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFundingState) error {
-	stabilityTax := k.bankKeeper.GetAllBalances(
+	transferTax := k.bankKeeper.GetAllBalances(
 		ctx,
-		k.accountKeeper.GetModuleAddress(types.StabilityTaxCollectorName),
+		k.accountKeeper.GetModuleAddress(types.TransferTaxCollectorName),
 	)
-	pricings, err := k.assetKeeper.Pricings(ctx, stabilityTax.Denoms()...)
+	pricings, err := k.assetKeeper.Pricings(ctx, transferTax.Denoms()...)
 	if err != nil {
-		return fmt.Errorf("pricing stability tax: %w", err)
+		return fmt.Errorf("pricing transfer tax: %w", err)
 	}
-	priced, err := k.routeUnpricedTax(ctx, stabilityTax, pricings)
+	priced, err := k.routeUnpricedTax(ctx, transferTax, pricings)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 	// With no targets to serve there is nothing to size a split against, so the
 	// tax goes to Oracle whole rather than being valued first.
 	if funding.ValidatorTarget.IsZero() && funding.OracleTarget.IsZero() {
-		return k.sendStabilityTax(ctx, sdk.NewCoins(), priced)
+		return k.sendTransferTax(ctx, sdk.NewCoins(), priced)
 	}
 
 	split, err := planTaxSplit(funding, priced, pricings)
@@ -175,7 +175,7 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 		validatorSubsidy = subsidyBalance.Sub(oracleSubsidy)
 	}
 
-	if err := k.sendStabilityTax(ctx, split.validatorTax, split.oracleTax); err != nil {
+	if err := k.sendTransferTax(ctx, split.validatorTax, split.oracleTax); err != nil {
 		return err
 	}
 	if validatorSubsidy.IsPositive() {
@@ -235,9 +235,9 @@ func (k Keeper) settleRewardFunding(ctx context.Context, funding types.RewardFun
 // collector, valued a step earlier by updateRewardFunding, has no such
 // invariant — fee denominations are unrestricted — so unrecognised verdicts
 // are ordinary there and valueRewards counts them at zero.
-func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pricings assettypes.AssetPricings) (sdk.Coins, error) {
+func (k Keeper) routeUnpricedTax(ctx context.Context, transferTax sdk.Coins, pricings assettypes.AssetPricings) (sdk.Coins, error) {
 	var priced, deferred, moved sdk.Coins
-	for _, coin := range stabilityTax {
+	for _, coin := range transferTax {
 		verdict := pricings[coin.Denom]
 		switch {
 		case verdict.IsPriced():
@@ -255,38 +255,38 @@ func (k Keeper) routeUnpricedTax(ctx context.Context, stabilityTax sdk.Coins, pr
 	if !moved.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
-			types.StabilityTaxCollectorName,
+			types.TransferTaxCollectorName,
 			reservetypes.StrategicReserveName,
 			moved,
 		); err != nil {
-			return nil, fmt.Errorf("moving written-off stability tax to the strategic reserve: %w", err)
+			return nil, fmt.Errorf("moving written-off transfer tax to the strategic reserve: %w", err)
 		}
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventUnpricedStabilityTaxRouted{
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventUnpricedTransferTaxRouted{
 		Moved:    moved,
 		Deferred: deferred,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Treasury unpriced stability tax event: %w", err)
+		return nil, fmt.Errorf("emitting Treasury unpriced transfer tax event: %w", err)
 	}
 	return priced, nil
 }
 
-// planTaxSplit decides how the priced stability tax divides between the
+// planTaxSplit decides how the priced transfer tax divides between the
 // validator and Oracle legs and what each leg therefore earned organically. It
 // reads no state and moves no value, so a window and a pot fully determine the
 // split. Subsidies are not its business: settlement sizes those against the
 // pool once this split is known sound.
 func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings assettypes.AssetPricings) (taxSplit, error) {
-	stabilityTaxValue, err := valueRewards(priced, pricings)
+	transferTaxValue, err := valueRewards(priced, pricings)
 	if err != nil {
-		return taxSplit{}, fmt.Errorf("valuing stability tax: %w", err)
+		return taxSplit{}, fmt.Errorf("valuing transfer tax: %w", err)
 	}
 
 	// The validator leg takes what its own gap still needs, capped at what the
 	// pot can spare once the Oracle target is served: the tax answers the Oracle
 	// target first, and subsidy covers whatever either leg is left short.
 	validatorGap := shortfall(funding.ValidatorTarget, funding.ValidatorFeeValue)
-	desiredValidatorTax := math.MinInt(shortfall(stabilityTaxValue, funding.OracleTarget), validatorGap)
+	desiredValidatorTax := math.MinInt(shortfall(transferTaxValue, funding.OracleTarget), validatorGap)
 
 	// That share comes out denomination by denomination, pro rata by value, so
 	// neither leg is handed a pot skewed towards one asset. A non-positive pot
@@ -295,7 +295,7 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	// reason the subsidy split's is: a balance times a target has no ceiling of
 	// its own, and this is reached from an EndBlocker.
 	validatorTax := make(sdk.Coins, 0, len(priced))
-	if desiredValidatorTax.IsPositive() && stabilityTaxValue.IsPositive() {
+	if desiredValidatorTax.IsPositive() && transferTaxValue.IsPositive() {
 		for _, coin := range priced {
 			if !pricings[coin.Denom].IsPriced() {
 				continue
@@ -304,14 +304,14 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 			if err != nil {
 				return taxSplit{}, fmt.Errorf("sizing the validator share of %s: %w", coin.Denom, err)
 			}
-			amount := scaled.Quo(stabilityTaxValue)
+			amount := scaled.Quo(transferTaxValue)
 			if amount.IsPositive() {
 				validatorTax = append(validatorTax, sdk.NewCoin(coin.Denom, amount))
 			}
 		}
 	}
 
-	// desiredValidatorTax cannot exceed stabilityTaxValue — a shortfall is
+	// desiredValidatorTax cannot exceed transferTaxValue — a shortfall is
 	// bounded by its own target, and the cap above only lowers it — so every
 	// pro-rata share is at most its own coin and this remainder stays
 	// non-negative. It is checked rather than assumed because that invariant
@@ -319,7 +319,7 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	oracleTax, hasNegative := priced.SafeSub(validatorTax...)
 	if hasNegative {
 		return taxSplit{}, fmt.Errorf(
-			"validator stability tax %s exceeds the priced pot %s",
+			"validator transfer tax %s exceeds the priced pot %s",
 			validatorTax,
 			priced,
 		)
@@ -330,11 +330,11 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	// remainder would absorb that rounding instead of carrying its own.
 	validatorTaxValue, err := valueRewards(validatorTax, pricings)
 	if err != nil {
-		return taxSplit{}, fmt.Errorf("valuing validator stability tax: %w", err)
+		return taxSplit{}, fmt.Errorf("valuing validator transfer tax: %w", err)
 	}
 	oracleOrganic, err := valueRewards(oracleTax, pricings)
 	if err != nil {
-		return taxSplit{}, fmt.Errorf("valuing Oracle stability tax: %w", err)
+		return taxSplit{}, fmt.Errorf("valuing Oracle transfer tax: %w", err)
 	}
 	validatorOrganic, err := funding.ValidatorFeeValue.SafeAdd(validatorTaxValue)
 	if err != nil {
@@ -349,26 +349,26 @@ func planTaxSplit(funding types.RewardFundingState, priced sdk.Coins, pricings a
 	}, nil
 }
 
-// sendStabilityTax pays each leg its settled share out of the collector.
-func (k Keeper) sendStabilityTax(ctx context.Context, validator, oracle sdk.Coins) error {
+// sendTransferTax pays each leg its settled share out of the collector.
+func (k Keeper) sendTransferTax(ctx context.Context, validator, oracle sdk.Coins) error {
 	if !validator.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
-			types.StabilityTaxCollectorName,
+			types.TransferTaxCollectorName,
 			authtypes.FeeCollectorName,
 			validator,
 		); err != nil {
-			return fmt.Errorf("allocating stability tax to validators: %w", err)
+			return fmt.Errorf("allocating transfer tax to validators: %w", err)
 		}
 	}
 	if !oracle.IsZero() {
 		if err := k.bankKeeper.SendCoinsFromModuleToModule(
 			ctx,
-			types.StabilityTaxCollectorName,
+			types.TransferTaxCollectorName,
 			oracletypes.ModuleName,
 			oracle,
 		); err != nil {
-			return fmt.Errorf("allocating stability tax to Oracle: %w", err)
+			return fmt.Errorf("allocating transfer tax to Oracle: %w", err)
 		}
 	}
 	return nil

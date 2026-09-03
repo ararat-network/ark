@@ -135,11 +135,11 @@ func (s *KeeperTestSuite) TestSettleConversionsRejectsIncoherentTotals() {
 // principal placed against one valuation: gaps bind in order and the remainder
 // burns.
 func (s *KeeperTestSuite) TestSettleConversionsWaterfallsPrincipalOnce() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
@@ -258,11 +258,11 @@ func (s *KeeperTestSuite) TestSettleConversionsCapsCoverageAtOne() {
 // against, which is what per-swap settlement did whenever an expansion happened
 // to precede a redemption.
 func (s *KeeperTestSuite) TestSettleConversionsCreditsBufferBeforeDrawingIt() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
@@ -400,11 +400,11 @@ func (s *KeeperTestSuite) TestSettleConversionsLeavesDrawUnscaledByExposure() {
 // move the proportions between them. Doubling it doubles all three gaps, which
 // is visible here as each fund taking exactly twice what it took unscaled.
 func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.1")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.05")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.02")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setMultiplier("2")
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -449,11 +449,11 @@ func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
 // gross offer goes down the waterfall, so the spread fills a gap the principal
 // alone would have left, and only what overflows every target burns.
 func (s *KeeperTestSuite) TestSettleConversionsPlacesSpreadWithPrincipal() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
@@ -482,11 +482,11 @@ func (s *KeeperTestSuite) TestSettleConversionsPlacesSpreadWithPrincipal() {
 // mechanism in one comparison: the same block, the same liability, and the same
 // principal, retained rather than burned because risk is elevated.
 func (s *KeeperTestSuite) TestSettleConversionsRetainsMoreUnderExposure() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.1")
 	policy.StrategicReserveTargetRatio = math.LegacyZeroDec()
 	policy.InsuranceTargetRatio = math.LegacyZeroDec()
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setMultiplier("3")
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).

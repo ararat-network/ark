@@ -71,11 +71,11 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	))
 	// The mint bypasses Market and needs no priming: every committee bound
 	// below folds the registry itself, at the moment it is asked.
-	policy, err := arkApp.TreasuryKeeper.MonetaryPolicy.Get(ctx)
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
 	require.NoError(t, err)
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.1")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.05")
-	require.NoError(t, arkApp.TreasuryKeeper.MonetaryPolicy.Set(ctx, policy))
+	require.NoError(t, arkApp.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
 	// The Reserve holds far more than either gap, so what stops a transfer is
 	// the destination's target and never the source running dry.

@@ -36,9 +36,9 @@ func (s *KeeperTestSuite) TestQueryNilRequests() {
 			},
 		},
 		{
-			name: "monetary policy",
+			name: "economic policy",
 			call: func() error {
-				_, err := server.MonetaryPolicy(s.ctx, nil)
+				_, err := server.EconomicPolicy(s.ctx, nil)
 				return err
 			},
 		},
@@ -50,9 +50,9 @@ func (s *KeeperTestSuite) TestQueryNilRequests() {
 			},
 		},
 		{
-			name: "monetary mandate",
+			name: "economic mandate",
 			call: func() error {
-				_, err := server.MonetaryMandate(s.ctx, nil)
+				_, err := server.EconomicMandate(s.ctx, nil)
 				return err
 			},
 		},
@@ -106,23 +106,23 @@ func (s *KeeperTestSuite) TestQueryParams() {
 	s.Require().Equal(treasurytypes.DefaultParams(), response.Params)
 }
 
-func (s *KeeperTestSuite) TestQueryMonetaryPolicy() {
-	response, err := keeper.NewQueryServerImpl(s.keeper).MonetaryPolicy(
+func (s *KeeperTestSuite) TestQueryEconomicPolicy() {
+	response, err := keeper.NewQueryServerImpl(s.keeper).EconomicPolicy(
 		s.ctx,
-		&treasurytypes.QueryMonetaryPolicyRequest{},
+		&treasurytypes.QueryEconomicPolicyRequest{},
 	)
 	s.Require().NoError(err)
-	s.Require().True(treasurytypes.DefaultMonetaryPolicy().Equal(response.Policy))
+	s.Require().True(treasurytypes.DefaultEconomicPolicy().Equal(response.Policy))
 }
 
-func (s *KeeperTestSuite) TestQueryMonetaryMandate() {
+func (s *KeeperTestSuite) TestQueryEconomicMandate() {
 	server := keeper.NewQueryServerImpl(s.keeper)
-	response, err := server.MonetaryMandate(
+	response, err := server.EconomicMandate(
 		s.ctx,
-		&treasurytypes.QueryMonetaryMandateRequest{},
+		&treasurytypes.QueryEconomicMandateRequest{},
 	)
 	s.Require().NoError(err)
-	s.Require().Equal(treasurytypes.DefaultMonetaryMandate(), response.Mandate)
+	s.Require().Equal(treasurytypes.DefaultEconomicMandate(), response.Mandate)
 	s.False(response.Active)
 }
 
@@ -293,9 +293,9 @@ func (s *KeeperTestSuite) TestQueryComputeTaxRejectsNilMessage() {
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
-	policy := treasurytypes.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := treasurytypes.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.Coins{{Denom: "", Amount: math.OneInt()}},
 	})
@@ -313,9 +313,9 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesInvalidTaxMessage() {
 // than an error, so a client cannot be told a transfer is impossible when the
 // chain would accept it.
 func (s *KeeperTestSuite) TestQueryComputeTaxAnswersZeroForMissingCap() {
-	policy := treasurytypes.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := treasurytypes.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
@@ -336,9 +336,9 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 		big.NewInt(1),
 	)
 	maxInt := math.NewIntFromBigInt(maxAmount)
-	policy := treasurytypes.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyOneDec()
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := treasurytypes.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyOneDec()
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	maxParams := treasurytypes.DefaultParams()
 	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
@@ -359,7 +359,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
-	s.Require().NoError(s.keeper.MonetaryPolicy.Remove(s.ctx))
+	s.Require().NoError(s.keeper.EconomicPolicy.Remove(s.ctx))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	})
@@ -412,12 +412,12 @@ func (s *KeeperTestSuite) TestQueryFundStatus() {
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 33), response.InsuranceBalance)
 }
 
-func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognizedLiability() {
-	policy := treasurytypes.DefaultMonetaryPolicy()
+func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognisedLiability() {
+	policy := treasurytypes.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).
 		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
@@ -460,9 +460,9 @@ func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplet
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			policy := treasurytypes.DefaultMonetaryPolicy()
+			policy := treasurytypes.DefaultEconomicPolicy()
 			policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
-			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+			s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 			s.setAssets(chain.USDBaseDenom)
 			s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 			s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.KRWBaseDenom).
@@ -562,11 +562,11 @@ func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 // ratio from what is on the wire. Without the field the response reads as a
 // contradiction — targets that are not their ratio times the liability shown.
 func (s *KeeperTestSuite) TestQueryFundStatusReportsScaledTargetsAndMultiplier() {
-	policy := treasurytypes.DefaultMonetaryPolicy()
+	policy := treasurytypes.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
 	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.25")
 	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.25")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setMultiplier("2")
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(s.ctx, chain.USDBaseDenom).

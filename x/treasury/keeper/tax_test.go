@@ -23,9 +23,9 @@ import (
 
 func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	msgs := []sdk.Msg{
@@ -40,9 +40,9 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	msgs := []sdk.Msg{
@@ -66,9 +66,9 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	contract := authtypes.NewModuleAddress("tax-contract").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	testCases := []struct {
@@ -129,9 +129,9 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	recipient := authtypes.NewModuleAddress("tax-recipient").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(100))
 	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(100))
 
@@ -214,9 +214,9 @@ func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 
 	maxInt := math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)))
 	var typedNil *vestingtypes.MsgCreatePeriodicVestingAccount
@@ -266,9 +266,9 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
 	recipientA := authtypes.NewModuleAddress("tax-recipient-a").String()
 	recipientB := authtypes.NewModuleAddress("tax-recipient-b").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
@@ -291,9 +291,9 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 // the tax on that transfer.
 func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(10))
 	s.setAssets(chain.XDRBaseDenom)
 
@@ -309,9 +309,9 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 // stalled refresh costs revenue instead of blocking transfers.
 func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setAssets(chain.USDBaseDenom)
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
@@ -326,9 +326,9 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 // the numeraire still moves untaxed beside a taxed member.
 func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
 		Denom:  chain.USDBaseDenom,
 		Factor: math.LegacyOneDec(),
@@ -350,9 +350,9 @@ func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
 
 func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	// The suite baseline's zero reference derives the uncapped sentinel; the
 	// held factor is what keeps the denomination taxed at all.
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
@@ -384,9 +384,9 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsZeroWithoutOracleLookupWhenDisabl
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 
 	badSwapSend := &markettypes.MsgSwapSend{
 		OfferCoin: sdk.Coin{Denom: "", Amount: math.OneInt()},
@@ -399,9 +399,9 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 
 	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{
 		Msgs: []*codectypes.Any{{TypeUrl: "/ark.market.v1.MsgSwapSend"}},
@@ -410,9 +410,9 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 
 	var send *banktypes.MsgSend
 	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
@@ -422,9 +422,9 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
 func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
 	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(1_000))
 
@@ -492,9 +492,9 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 		big.NewInt(1),
 	)
 	maxInt := math.NewIntFromBigInt(maxAmount)
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyOneDec()
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyOneDec()
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	maxParams := types.DefaultParams()
 	maxParams.ReferenceTaxCap = maxInt
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, maxParams))
@@ -529,9 +529,9 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 
 	for _, status := range statuses {
 		s.Run(status.String(), func() {
-			policy := types.DefaultMonetaryPolicy()
-			policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-			s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+			policy := types.DefaultEconomicPolicy()
+			policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+			s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 			s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 			s.seedAsset(chain.USDBaseDenom, status)
 
@@ -550,9 +550,9 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 // of the tax base.
 func (s *KeeperTestSuite) TestComputeTaxSkipsUnregisteredDenomination() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	policy := types.DefaultMonetaryPolicy()
-	policy.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	policy := types.DefaultEconomicPolicy()
+	policy.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 
 	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin("aatom", 100))},

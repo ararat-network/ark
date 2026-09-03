@@ -19,7 +19,7 @@ import (
 // the NOAH-only funds, and the collector, which is read under the weaker
 // member-or-NOAH rule.
 func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coins) {
-	accounts := append(types.FundAccountNames(), types.StabilityTaxCollectorName)
+	accounts := append(types.FundAccountNames(), types.TransferTaxCollectorName)
 	for _, moduleName := range accounts {
 		account := authtypes.NewEmptyModuleAccount(moduleName)
 		s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, moduleName).Return(account)
@@ -64,10 +64,10 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(genesis.Params, exported.Params)
-	s.Require().True(genesis.MonetaryPolicy.Equal(exported.MonetaryPolicy))
+	s.Require().True(genesis.EconomicPolicy.Equal(exported.EconomicPolicy))
 	s.Require().Equal(genesis.ConversionFactors, exported.ConversionFactors)
 	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
-	s.Require().Equal(genesis.MonetaryMandate, exported.MonetaryMandate)
+	s.Require().Equal(genesis.EconomicMandate, exported.EconomicMandate)
 	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
 	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
 }
@@ -228,7 +228,7 @@ func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 		s.setAssets(chain.USDBaseDenom)
 		genesis := types.DefaultGenesisState()
 		s.expectGenesisFundBalances(map[string]sdk.Coins{
-			types.StabilityTaxCollectorName: sdk.NewCoins(
+			types.TransferTaxCollectorName: sdk.NewCoins(
 				sdk.NewInt64Coin(chain.NoahBaseDenom, 3),
 				sdk.NewInt64Coin(chain.USDBaseDenom, 7),
 			),
@@ -245,7 +245,7 @@ func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 		s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF)
 		genesis := types.DefaultGenesisState()
 		s.expectGenesisFundBalances(map[string]sdk.Coins{
-			types.StabilityTaxCollectorName: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 5)),
+			types.TransferTaxCollectorName: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 5)),
 		})
 
 		s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
@@ -256,7 +256,7 @@ func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 		s.setAssets(chain.USDBaseDenom)
 		genesis := types.DefaultGenesisState()
 		s.expectGenesisFundBalances(map[string]sdk.Coins{
-			types.StabilityTaxCollectorName: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 5)),
+			types.TransferTaxCollectorName: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 5)),
 		})
 
 		s.Require().ErrorContains(
@@ -279,13 +279,13 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsNonNoahFundBalance() {
 	s.Require().ErrorContains(err, "unsupported genesis denom")
 }
 
-// TestInitGenesisRejectsAuthorityCommittee pins that the monetary committee
+// TestInitGenesisRejectsAuthorityCommittee pins that the economic committee
 // cannot be the Treasury authority; the equivalent Claims rule is asserted in
 // x/claims.
 func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
-	minimum, maximum := monetaryPolicyBounds()
+	minimum, maximum := economicPolicyBounds()
 	genesis := types.DefaultGenesisState()
-	genesis.MonetaryMandate = types.MonetaryMandate{
+	genesis.EconomicMandate = types.EconomicMandate{
 		Envelope: mandate.Envelope{
 			Term:             1,
 			Committee:        s.authority,

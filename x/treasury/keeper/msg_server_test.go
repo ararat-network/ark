@@ -24,7 +24,7 @@ var absentCommitteeShape = mandate.CommitteeShape{
 }
 
 func (s *KeeperTestSuite) TestMsgUpdateParams() {
-	policyBefore, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	policyBefore, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	// The reference cap matches the suite baseline so no rebuild fires: the
 	// window change is the whole update.
@@ -40,7 +40,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(params, stored)
-	policyAfter, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	policyAfter, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(policyBefore.Equal(policyAfter))
 }
@@ -93,10 +93,10 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
 // each field make the product safe without the projection, so the pair is now
 // simply admissible.
 func (s *KeeperTestSuite) TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy() {
-	policy := types.DefaultMonetaryPolicy()
+	policy := types.DefaultEconomicPolicy()
 	policy.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
 	policy.OracleBlockRewardTarget = types.MaxBlockRewardTarget
-	s.Require().NoError(s.keeper.MonetaryPolicy.Set(s.ctx, policy))
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 
 	candidate := types.DefaultParams()
@@ -157,14 +157,14 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax
 		Factor: math.LegacyOneDec(),
 	})
 
-	candidate := types.DefaultMonetaryPolicy()
-	candidate.StabilityTaxRate = math.LegacyMustNewDecFromStr("0.1")
+	candidate := types.DefaultEconomicPolicy()
+	candidate.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
 		Authority: s.authority,
 		Policy:    candidate,
 	})
 	s.Require().NoError(err)
-	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(candidate.Equal(stored))
 	cap, err := s.keeper.GetTaxCap(s.ctx, chain.XDRBaseDenom)
@@ -176,7 +176,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyDoesNotRebuildCapsWhenActivatingTax
 // It is a fact about the field, checked in the policy's own validation, so a
 // candidate is refused without reading params or the open funding window.
 func (s *KeeperTestSuite) TestMsgUpdatePolicyBoundsTheBlockRewardTargets() {
-	candidate := types.DefaultMonetaryPolicy()
+	candidate := types.DefaultEconomicPolicy()
 	candidate.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget.Add(math.OneInt())
 
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
@@ -184,9 +184,9 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyBoundsTheBlockRewardTargets() {
 		Policy:    candidate,
 	})
 	s.Require().ErrorContains(err, "ValidatorBlockRewardTarget must be between zero and")
-	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, getErr := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(getErr)
-	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
+	s.Require().True(types.DefaultEconomicPolicy().Equal(stored))
 }
 
 // TestMsgUpdatePolicyIgnoresTheOpenFundingWindow pins the property the swap to
@@ -204,7 +204,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyIgnoresTheOpenFundingWindow() {
 		OracleTarget:      types.MaxBlockRewardTarget,
 		ValidatorFeeValue: math.ZeroInt(),
 	})
-	candidate := types.DefaultMonetaryPolicy()
+	candidate := types.DefaultEconomicPolicy()
 	candidate.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
 
 	_, err := s.msgServer.UpdatePolicy(s.ctx, &types.MsgUpdatePolicy{
@@ -212,7 +212,7 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyIgnoresTheOpenFundingWindow() {
 		Policy:    candidate,
 	})
 	s.Require().NoError(err)
-	stored, getErr := s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, getErr := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(getErr)
 	s.Require().True(candidate.Equal(stored))
 }
@@ -225,12 +225,12 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsInvalidAuthority() {
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
 }
 
-func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
+func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 	s.setBlockHeight(10)
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
-	minimum, maximum := monetaryPolicyBounds()
+	minimum, maximum := economicPolicyBounds()
 
-	_, err := s.msgServer.SetMonetaryMandate(s.ctx, &types.MsgSetMonetaryMandate{
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
 		Authority:        s.authority,
 		Committee:        committee,
 		ActivationHeight: 10,
@@ -239,11 +239,11 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 		MaximumPolicy:    maximum,
 	})
 	s.Require().NoError(err)
-	mandate, err := s.keeper.MonetaryMandate.Get(s.ctx)
+	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(committee, mandate.Committee)
-	s.requireTypedEvent(&types.EventMonetaryMandateSet{
+	s.requireTypedEvent(&types.EventEconomicMandateSet{
 		Term:             1,
 		Committee:        committee,
 		ActivationHeight: 10,
@@ -258,7 +258,7 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 		Policy:       policy,
 	})
 	s.Require().NoError(err)
-	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.True(policy.Equal(stored))
 	storedParams, err := s.keeper.Params.Get(s.ctx)
@@ -295,21 +295,21 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 		Policy:    governanceOverride,
 	})
 	s.Require().NoError(err)
-	stored, err = s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, err = s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(governanceOverride.InsuranceTargetRatio, stored.InsuranceTargetRatio)
 
-	_, err = s.msgServer.SetMonetaryMandate(s.ctx, &types.MsgSetMonetaryMandate{
+	_, err = s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
 		Authority: s.authority,
 	})
 	s.Require().NoError(err)
-	disabled, err := s.keeper.MonetaryMandate.Get(s.ctx)
+	disabled, err := s.keeper.EconomicMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(uint64(2), disabled.Term)
 	s.Empty(disabled.Committee)
 	// A disabling is an appointment event too, carrying the empty committee and
 	// the advanced term.
-	s.requireTypedEvent(&types.EventMonetaryMandateSet{Term: 2})
+	s.requireTypedEvent(&types.EventEconomicMandateSet{Term: 2})
 
 	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
@@ -319,14 +319,14 @@ func (s *KeeperTestSuite) TestMonetaryMandateAndCommitteeUpdate() {
 	s.Require().ErrorContains(err, "not the exact appointed committee")
 }
 
-// TestMonetaryPolicyMessagesAreRoleDisjoint proves the split messages cannot be
+// TestEconomicPolicyMessagesAreRoleDisjoint proves the split messages cannot be
 // crossed: the governance message rejects the committee, and the committee
 // message rejects the governance authority even while its mandate is live.
-func (s *KeeperTestSuite) TestMonetaryPolicyMessagesAreRoleDisjoint() {
+func (s *KeeperTestSuite) TestEconomicPolicyMessagesAreRoleDisjoint() {
 	s.setBlockHeight(10)
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
-	minimum, maximum := monetaryPolicyBounds()
-	_, err := s.msgServer.SetMonetaryMandate(s.ctx, &types.MsgSetMonetaryMandate{
+	minimum, maximum := economicPolicyBounds()
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
 		Authority:        s.authority,
 		Committee:        committee,
 		ActivationHeight: 10,
@@ -335,7 +335,7 @@ func (s *KeeperTestSuite) TestMonetaryPolicyMessagesAreRoleDisjoint() {
 		MaximumPolicy:    maximum,
 	})
 	s.Require().NoError(err)
-	mandate, err := s.keeper.MonetaryMandate.Get(s.ctx)
+	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	policy := committeePolicyCandidate()
 
@@ -352,15 +352,15 @@ func (s *KeeperTestSuite) TestMonetaryPolicyMessagesAreRoleDisjoint() {
 	})
 	s.Require().ErrorContains(err, "not the exact appointed committee")
 
-	stored, err := s.keeper.MonetaryPolicy.Get(s.ctx)
+	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(types.DefaultMonetaryPolicy().Equal(stored))
+	s.Require().True(types.DefaultEconomicPolicy().Equal(stored))
 }
 
-func (s *KeeperTestSuite) TestMonetaryMandateAuthorityAndRoleSeparation() {
+func (s *KeeperTestSuite) TestEconomicMandateAuthorityAndRoleSeparation() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
-	minimum, maximum := monetaryPolicyBounds()
-	message := &types.MsgSetMonetaryMandate{
+	minimum, maximum := economicPolicyBounds()
+	message := &types.MsgSetEconomicMandate{
 		Authority:        "not-authority",
 		Committee:        committee,
 		ActivationHeight: 1,
@@ -368,30 +368,30 @@ func (s *KeeperTestSuite) TestMonetaryMandateAuthorityAndRoleSeparation() {
 		MinimumPolicy:    minimum,
 		MaximumPolicy:    maximum,
 	}
-	_, err := s.msgServer.SetMonetaryMandate(s.ctx, message)
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
 
 	message.Authority = s.authority
 	message.Committee = s.authority
-	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
+	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorContains(err, "distinct from Treasury authority")
 
 	message.Committee = committee
-	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
+	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().NoError(err)
 	// The other half of this property — that one address may hold both the
-	// monetary and Claims mandates, because the roles are separated from the
+	// economic and Claims mandates, because the roles are separated from the
 	// Treasury authority rather than from each other — now spans two modules
 	// and is asserted in app/claims_test.go.
 }
 
-func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeMonetaryRole() {
+func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
 	consensusAuthority := sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String()
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
 		Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
 	})
-	minimum, maximum := monetaryPolicyBounds()
-	message := &types.MsgSetMonetaryMandate{
+	minimum, maximum := economicPolicyBounds()
+	message := &types.MsgSetEconomicMandate{
 		Authority:        consensusAuthority,
 		Committee:        consensusAuthority,
 		ActivationHeight: 1,
@@ -399,20 +399,20 @@ func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeMonetaryRole() {
 		MinimumPolicy:    minimum,
 		MaximumPolicy:    maximum,
 	}
-	_, err := s.msgServer.SetMonetaryMandate(s.ctx, message)
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorContains(err, "distinct from Treasury authority")
 
 	// The fallback authority stays rejected as a committee even while a
 	// consensus-params authority overrides it.
 	message.Committee = s.authority
-	_, err = s.msgServer.SetMonetaryMandate(s.ctx, message)
+	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorContains(err, "distinct from Treasury authority")
 }
 
 func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
-	minimum, maximum := monetaryPolicyBounds()
-	_, err := s.msgServer.SetMonetaryMandate(s.ctx, &types.MsgSetMonetaryMandate{
+	minimum, maximum := economicPolicyBounds()
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
 		Authority:        s.authority,
 		Committee:        committee,
 		ActivationHeight: 1,
@@ -431,7 +431,7 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	})
 	s.Require().NoError(err)
 
-	mandate, err := s.keeper.MonetaryMandate.Get(s.ctx)
+	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(committee, mandate.Committee)
@@ -439,10 +439,10 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	s.True(maximum.Equal(mandate.MaximumPolicy))
 }
 
-func monetaryPolicyBounds() (types.MonetaryPolicy, types.MonetaryPolicy) {
-	minimum := types.DefaultMonetaryPolicy()
-	maximum := types.MonetaryPolicy{
-		StabilityTaxRate:            math.LegacyMustNewDecFromStr("0.1"),
+func economicPolicyBounds() (types.EconomicPolicy, types.EconomicPolicy) {
+	minimum := types.DefaultEconomicPolicy()
+	maximum := types.EconomicPolicy{
+		TransferTaxRate:             math.LegacyMustNewDecFromStr("0.1"),
 		ValidatorBlockRewardTarget:  math.NewInt(10),
 		OracleBlockRewardTarget:     math.NewInt(10),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.5"),
@@ -455,9 +455,9 @@ func monetaryPolicyBounds() (types.MonetaryPolicy, types.MonetaryPolicy) {
 	return minimum, maximum
 }
 
-func committeePolicyCandidate() types.MonetaryPolicy {
-	return types.MonetaryPolicy{
-		StabilityTaxRate:            math.LegacyZeroDec(),
+func committeePolicyCandidate() types.EconomicPolicy {
+	return types.EconomicPolicy{
+		TransferTaxRate:             math.LegacyZeroDec(),
 		ValidatorBlockRewardTarget:  math.NewInt(5),
 		OracleBlockRewardTarget:     math.NewInt(5),
 		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.25"),
