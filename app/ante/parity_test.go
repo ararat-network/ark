@@ -24,10 +24,10 @@ func gasOf(t *testing.T, ctx sdk.Context, run func(sdk.Context) error) storetype
 
 // TestFeeDecoratorSimulationMovesWhatExecutionMoves pins the estimate: a
 // declared fee is deducted under simulation exactly as in execution — the
-// tax set aside and charged, the base fee to the fee collector, the slack
-// left with the payer — and the gate's reads are made without being
-// enforced, so the balances agree and so does the gas. Each run gets its
-// own discarded cache.
+// tax set aside by the ante and charged by the post, the base fee to the fee
+// collector, the slack left with the payer — and the gate's reads are made
+// without being enforced, so the balances agree and so does the gas. Each
+// run gets its own discarded cache.
 func TestFeeDecoratorSimulationMovesWhatExecutionMoves(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	type outcome struct {

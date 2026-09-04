@@ -19,11 +19,11 @@ import (
 	chain "github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
-	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// AttributeKeyTransferTax names, on the SDK's tx event, the transfer tax a
-// transaction paid within its fee.
+// AttributeKeyTransferTax names, on the tx event TransferTaxDecorator emits
+// once the messages have succeeded, the transfer tax a transaction paid
+// within its fee.
 const AttributeKeyTransferTax = "transfer_tax"
 
 // AttributeKeyTip names, on the SDK's tx event, the NOAH a transaction paid
@@ -57,12 +57,19 @@ func SetBaseFeeGate(enabled bool) {
 	useBaseFeeGate = enabled
 }
 
-// FeeDecorator is the fee mechanism whole. It prices the transfer tax a
-// transaction's messages owe, holds the declared fee to it, settles the fee
-// by denomination against Treasury's consensus base fee, deducts the base
-// fee and the NOAH tip to the fee collector, and charges the tax to the tax
-// collector — in the order money moves, on the ante's cache branch, so a
-// refusal anywhere moves nothing. It replaces the SDK's DeductFeeDecorator,
+// FeeDecorator is the ante half of the fee mechanism. It prices the transfer
+// tax a transaction's messages owe, holds the declared fee to it, settles the
+// fee by denomination against Treasury's consensus base fee, and deducts the
+// base fee and the NOAH tip to the fee collector — on the ante's cache
+// branch, so a refusal anywhere moves nothing. The tax itself is charged by
+// TransferTaxDecorator after the messages, on their branch, so a transaction
+// that fails is never taxed (D82). What this decorator judges about the tax
+// is the declaration: whether the signed fee covers it. It prices the tax to
+// judge that, the settlement needs the same figure, since a stable leg's
+// slack above its tax is what pays the base fee, and it hands the figure on
+// through the context so the charge is the declaration's own number and the
+// tax is computed once. Affordability is the charge's own judgement, against
+// the balance the messages left. It replaces the SDK's DeductFeeDecorator,
 // whose deduction it mirrors — granter resolution, account check, collector
 // send, tx event — from x/auth/ante/fee.go at v0.54.3; an SDK upgrade
 // touching that file is re-diffed here by hand, as the decorator list
@@ -81,8 +88,8 @@ func SetBaseFeeGate(enabled bool) {
 // fee short of the tax is refused before anything is deducted (D78).
 //
 // Under simulation, and in the harness with the gate off, nothing is
-// refused on fee grounds: the tax is set aside and charged, the base fee
-// taken where a leg covers it, a NOAH leg charged as the tip it would be.
+// refused on fee grounds: the tax is set aside, the base fee taken where a
+// leg covers it, a NOAH leg charged as the tip it would be.
 // An estimate still carries what execution will cost: the settlement's
 // reads are made and not enforced, and a fee-less estimate consumes
 // SimulatedFeeTransferGas for the transfer it cannot make. Height zero
@@ -90,9 +97,11 @@ func SetBaseFeeGate(enabled bool) {
 // genesis defends nothing, since whoever can place a taxable message in a
 // gentx can write the balances directly.
 //
-// A fee granter bears base fee, tip, and tax together, through one draw on
-// the allowance, and strictly: a grant that will not cover the tax
-// denomination fails the transaction rather than falling back to the payer.
+// A fee granter bears base fee, tip, and tax together, each drawn on the
+// allowance as it is charged — base fee and tip here, the tax after the
+// messages — so the allowance records what left the granter and nothing
+// more. Strictness is unchanged: a grant that will not cover a charge fails
+// the transaction rather than falling back to the payer.
 //
 // Priority is the tip in reference units per gas unit, through the factor
 // NOAH is priced with: what a transaction chose to pay above the
@@ -148,7 +157,7 @@ func (d FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		}
 	}
 
-	if err := d.deduct(ctx, tx, feeTx, settled, tax); err != nil {
+	if err := d.deduct(ctx, tx, feeTx, settled); err != nil {
 		return ctx, err
 	}
 	if simulate && ctx.BlockHeight() != 0 && settled.gasFee.IsZero() {
@@ -156,7 +165,7 @@ func (d FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		// transfer in gas alone.
 		ctx.GasMeter().ConsumeGas(SimulatedFeeTransferGas, "simulated gas fee transfer")
 	}
-	return next(ctx.WithPriority(settled.priority), tx, simulate)
+	return next(withTransferTax(ctx, tax).WithPriority(settled.priority), tx, simulate)
 }
 
 // settlement is what the fee settles to: what reaches the fee collector —
@@ -319,27 +328,24 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 	return settled, nil
 }
 
-// deduct moves the money: the base fee and tip to the fee collector and the
-// tax to the tax collector, from the payer or from a granter through one
-// draw on the allowance for all three. It mirrors the SDK's checkDeductFee.
-// The SDK's DeductFees helper is not used because its recipient is a package
-// variable that only the SDK's own constructor sets.
-func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settled settlement, tax sdk.Coins) error {
+// deduct moves what the ante moves: the base fee and tip to the fee
+// collector, from the payer or from a granter through a draw on the
+// allowance. It mirrors the SDK's checkDeductFee. The SDK's DeductFees helper
+// is not used because its recipient is a package variable that only the
+// SDK's own constructor sets. The tax does not move here:
+// TransferTaxDecorator charges it once the messages have succeeded, and
+// refusing an unaffordable one is that charge's own job.
+func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settled settlement) error {
 	gasFee := settled.gasFee
 	if addr := d.accountKeeper.GetModuleAddress(authtypes.FeeCollectorName); addr == nil {
 		return fmt.Errorf("fee collector module account (%s) has not been set", authtypes.FeeCollectorName)
 	}
 
-	payer := sdk.AccAddress(feeTx.FeePayer())
-	deductFrom := payer
-	if granter := feeTx.FeeGranter(); granter != nil {
-		granterAddr := sdk.AccAddress(granter)
-		if !bytes.Equal(granterAddr, payer) {
-			if err := d.feegrantKeeper.UseGrantedFees(ctx, granterAddr, payer, gasFee.Add(tax...), tx.GetMsgs()); err != nil {
-				return errorsmod.Wrapf(err, "%s does not allow to pay fees for %s", granterAddr, payer)
-			}
+	deductFrom, payer, sponsored := chargedAccount(feeTx)
+	if sponsored {
+		if err := d.feegrantKeeper.UseGrantedFees(ctx, deductFrom, payer, gasFee, tx.GetMsgs()); err != nil {
+			return errorsmod.Wrapf(err, "%s does not allow to pay fees for %s", deductFrom, payer)
 		}
-		deductFrom = granterAddr
 	}
 	if d.accountKeeper.GetAccount(ctx, deductFrom) == nil {
 		return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFrom)
@@ -353,24 +359,32 @@ func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settle
 			return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err.Error())
 		}
 	}
-	if !tax.IsZero() {
-		if err := d.bankKeeper.SendCoinsFromAccountToModule(ctx, deductFrom, treasurytypes.TransferTaxCollectorName, tax); err != nil {
-			return errorsmod.Wrapf(err, "collecting transfer tax %s", tax)
-		}
-	}
 
+	// The fee named is what moved. The tax is named by the post event, since
+	// an ante event outlives a failed transaction, which pays no tax.
 	attributes := []sdk.Attribute{
-		sdk.NewAttribute(sdk.AttributeKeyFee, gasFee.Add(tax...).String()),
+		sdk.NewAttribute(sdk.AttributeKeyFee, gasFee.String()),
 		sdk.NewAttribute(sdk.AttributeKeyFeePayer, deductFrom.String()),
-	}
-	if !tax.IsZero() {
-		attributes = append(attributes, sdk.NewAttribute(AttributeKeyTransferTax, tax.String()))
 	}
 	if settled.tip.IsPositive() {
 		attributes = append(attributes, sdk.NewAttribute(AttributeKeyTip, sdk.NewCoin(chain.NoahBaseDenom, settled.tip).String()))
 	}
 	ctx.EventManager().EmitEvents(sdk.Events{sdk.NewEvent(sdk.EventTypeTx, attributes...)})
 	return nil
+}
+
+// chargedAccount resolves who a transaction's charges come from: the fee
+// payer, or the granter when one is named and is not the payer, in which
+// case each charge is also a draw on the granter's allowance. It mirrors the
+// SDK's checkDeductFee.
+func chargedAccount(feeTx sdk.FeeTx) (deductFrom, payer sdk.AccAddress, sponsored bool) {
+	payer = sdk.AccAddress(feeTx.FeePayer())
+	deductFrom = payer
+	if granter := feeTx.FeeGranter(); granter != nil {
+		deductFrom = sdk.AccAddress(granter)
+		sponsored = !bytes.Equal(deductFrom, payer)
+	}
+	return deductFrom, payer, sponsored
 }
 
 // besideTax qualifies a refusal with the tax the fee also had to carry, when

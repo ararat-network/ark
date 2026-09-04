@@ -283,6 +283,9 @@ func NewArkApp(
 		wasmNodeConfig,
 		wasmTxCounterStore,
 	))
+	// The post chain: the transfer tax, charged once a transaction's
+	// messages have succeeded and never otherwise (D82).
+	app.SetPostHandler(ante.NewPostHandler(app.BankKeeper, app.FeeGrantKeeper))
 
 	// Seed the upgrade version map at InitChain so the first upgrade migrates
 	// the manually registered modules rather than re-running their InitGenesis.

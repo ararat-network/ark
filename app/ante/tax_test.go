@@ -12,15 +12,18 @@ import (
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
+	"github.com/ararat-network/ark/app/ante"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
 )
 
 // TestFeeDecoratorChargesFeePayer pins the fixture: rate 0.1 on a 100 send
-// is ten, declared within the fee of fifteen. The tax reaches its collector,
-// the base fee of one the fee collector, the four of slack stay with the
-// payer, and the tx event names the charge, its payer, and the tax within
-// it.
+// is ten, declared within the fee of fifteen. The base fee of one reaches
+// the fee collector from the ante, the tax its collector from the post, the
+// four of slack stay with the payer, and each half names what it moved on
+// its own tx event: the ante the fee and its payer, never the tax, since an
+// ante event outlives a failed transaction, which pays none; the post the
+// tax and its payer.
 func TestFeeDecoratorChargesFeePayer(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 
@@ -30,10 +33,14 @@ func TestFeeDecoratorChargesFeePayer(t *testing.T) {
 	require.Equal(t, "10ausd", r.tax)
 	require.Equal(t, math.NewInt(9), usdBalance(arkApp, r.cached, tx.payer))
 
-	event := txEvent(t, r.handed)
-	require.Equal(t, "11ausd", event[sdk.AttributeKeyFee])
-	require.Equal(t, tx.payer.String(), event[sdk.AttributeKeyFeePayer])
-	require.Equal(t, "10ausd", event["transfer_tax"])
+	events := txEvents(r.handed)
+	require.Len(t, events, 2)
+	require.Equal(t, "1ausd", events[0][sdk.AttributeKeyFee])
+	require.Equal(t, tx.payer.String(), events[0][sdk.AttributeKeyFeePayer])
+	require.NotContains(t, events[0], ante.AttributeKeyTransferTax)
+	require.Equal(t, "10ausd", events[1][ante.AttributeKeyTransferTax])
+	require.Equal(t, tx.payer.String(), events[1][sdk.AttributeKeyFeePayer])
+	require.NotContains(t, events[1], sdk.AttributeKeyFee)
 }
 
 // TestFeeDecoratorRefusesAnUnfundedPayer pins that an estimate never
@@ -101,8 +108,10 @@ func TestFeeDecoratorChargesVestingAccountFunding(t *testing.T) {
 }
 
 // A granter sponsors the base fee and tax together — the charge, not the
-// ceiling: charged to the granter's account, decremented from the allowance
-// in one draw, with the payer untouched and named as such on the event.
+// ceiling — each drawn on the allowance as it is charged: the base fee by
+// the ante, the tax by the post once the messages have succeeded, so the
+// allowance records exactly what left the granter at every step. The payer
+// is untouched, and each event names the granter.
 func TestFeeDecoratorChargesGranterWhenSet(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
@@ -111,20 +120,30 @@ func TestFeeDecoratorChargesGranterWhenSet(t *testing.T) {
 		SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
 	}))
 	tx.granter = granter
+	spendLimit := func(ctx sdk.Context) sdk.Coins {
+		allowance, err := arkApp.FeeGrantKeeper.GetAllowance(ctx, granter, tx.payer)
+		require.NoError(t, err)
+		basic, ok := allowance.(*feegrant.BasicAllowance)
+		require.True(t, ok)
+		return basic.SpendLimit
+	}
 
-	r := runFeeOnCache(t, arkApp, ctx, tx, false)
+	r := runAnteOnCache(t, arkApp, ctx, tx)
 	require.NoError(t, r.err)
 	require.Equal(t, "1ausd", r.gas)
-	require.Equal(t, "10ausd", r.tax)
+	require.Empty(t, r.tax)
+	require.Equal(t, math.NewInt(19), usdBalance(arkApp, r.cached, granter))
+	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 19)), spendLimit(r.cached))
+
+	_, err := runTax(t, arkApp, r.handed, tx, false, true)
+	require.NoError(t, err)
+	require.Equal(t, "10ausd", collected(arkApp, ctx, r.cached, taxCollector).String())
 	require.Equal(t, math.NewInt(9), usdBalance(arkApp, r.cached, granter))
 	require.Equal(t, math.NewInt(20), usdBalance(arkApp, r.cached, tx.payer))
-	require.Equal(t, granter.String(), txEvent(t, r.handed)[sdk.AttributeKeyFeePayer])
-
-	allowance, err := arkApp.FeeGrantKeeper.GetAllowance(r.cached, granter, tx.payer)
-	require.NoError(t, err)
-	basic, ok := allowance.(*feegrant.BasicAllowance)
-	require.True(t, ok)
-	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 9)), basic.SpendLimit)
+	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 9)), spendLimit(r.cached))
+	for _, event := range txEvents(r.handed) {
+		require.Equal(t, granter.String(), event[sdk.AttributeKeyFeePayer])
+	}
 }
 
 // Strict semantics: a grant that cannot cover the tax denom fails the
@@ -142,6 +161,33 @@ func TestFeeDecoratorStrictWhenGrantExcludesTaxDenom(t *testing.T) {
 	require.Empty(t, r.gas)
 	require.Empty(t, r.tax)
 	require.Equal(t, math.NewInt(20), usdBalance(arkApp, r.cached, tx.payer))
+}
+
+// TestFeeDecoratorRefusesAGrantShortOfTheTax pins where a grant too small
+// for both charges fails: not in the ante, which draws only the base fee it
+// charges, but at the tax charge after the messages. The base fee stays
+// drawn and charged, as it does for any transaction whose messages fail;
+// nothing is taxed.
+func TestFeeDecoratorRefusesAGrantShortOfTheTax(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
+	apptestutil.FundAccount(t, arkApp, ctx, granter, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
+	require.NoError(t, arkApp.FeeGrantKeeper.GrantAllowance(ctx, granter, tx.payer, &feegrant.BasicAllowance{
+		SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 5)),
+	}))
+	tx.granter = granter
+
+	r := runFeeOnCache(t, arkApp, ctx, tx, false)
+	require.ErrorIs(t, r.err, feegrant.ErrFeeLimitExceeded)
+	require.ErrorContains(t, r.err, "does not allow to pay fees for")
+	require.Equal(t, "1ausd", r.gas)
+	require.Empty(t, r.tax)
+	require.Equal(t, math.NewInt(19), usdBalance(arkApp, r.cached, granter))
+	require.Equal(t, math.NewInt(20), usdBalance(arkApp, r.cached, tx.payer))
+
+	allowance, err := arkApp.FeeGrantKeeper.GetAllowance(r.cached, granter, tx.payer)
+	require.NoError(t, err)
+	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 4)), allowance.(*feegrant.BasicAllowance).SpendLimit)
 }
 
 func TestFeeDecoratorRefusesGranterWithoutAllowance(t *testing.T) {

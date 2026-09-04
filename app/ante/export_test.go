@@ -5,6 +5,7 @@ package ante
 var (
 	GasPriority        = gasPriority
 	ValidateVoterStake = validateVoterStake
+	WithTransferTax    = withTransferTax
 )
 
 const (

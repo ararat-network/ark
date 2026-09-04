@@ -62,9 +62,15 @@ func feeDecorator(arkApp *app.ArkApp) ante.FeeDecorator {
 	return ante.NewFeeDecorator(arkApp.AccountKeeper, arkApp.BankKeeper, arkApp.FeeGrantKeeper, arkApp.TreasuryKeeper)
 }
 
-// runFee runs the fee decorator over tx and returns the context it handed
-// on, zero when it refused.
-func runFee(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+// taxDecorator is the production transfer tax decorator over the app's
+// keepers.
+func taxDecorator(arkApp *app.ArkApp) ante.TransferTaxDecorator {
+	return ante.NewTransferTaxDecorator(arkApp.BankKeeper, arkApp.FeeGrantKeeper)
+}
+
+// runAnteFee runs the fee decorator alone over tx and returns the context it
+// handed on, zero when it refused.
+func runAnteFee(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
 	t.Helper()
 	var handed sdk.Context
 	_, err := feeDecorator(arkApp).AnteHandle(ctx, tx, simulate, func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) {
@@ -74,8 +80,38 @@ func runFee(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simula
 	return handed, err
 }
 
-// feeRun is one run of the fee decorator on a cache of the test context: the
-// context it handed on, the cache it wrote, and what reached each collector.
+// runTax runs the transfer tax decorator over tx as BaseApp runs it after
+// the messages, told whether they succeeded, and returns the context it
+// handed on, zero when it refused.
+func runTax(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate, success bool) (sdk.Context, error) {
+	t.Helper()
+	var handed sdk.Context
+	_, err := taxDecorator(arkApp).PostHandle(ctx, tx, simulate, success, func(ctx sdk.Context, _ sdk.Tx, _, _ bool) (sdk.Context, error) {
+		handed = ctx
+		return ctx, nil
+	})
+	return handed, err
+}
+
+// runFee runs the pair BaseApp runs around a transaction whose messages
+// succeed: the fee decorator, then, once it has admitted the transaction,
+// the transfer tax decorator on the context it handed on. It returns that
+// context, zero when the ante refused.
+func runFee(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+	t.Helper()
+	handed, err := runAnteFee(t, arkApp, ctx, tx, simulate)
+	if err != nil {
+		return handed, err
+	}
+	if _, err := runTax(t, arkApp, handed, tx, simulate, true); err != nil {
+		return handed, err
+	}
+	return handed, nil
+}
+
+// feeRun is one run of the fee mechanism on a cache of the test context:
+// the context the ante handed on, the cache the run wrote, and what reached
+// each collector.
 type feeRun struct {
 	handed sdk.Context
 	cached sdk.Context
@@ -84,10 +120,26 @@ type feeRun struct {
 	err    error
 }
 
+// runFeeOnCache runs the ante and post pair on a cache.
 func runFeeOnCache(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool) feeRun {
 	t.Helper()
+	return runOnCache(t, arkApp, ctx, tx, simulate, runFee)
+}
+
+// runAnteOnCache runs the fee decorator alone on a cache, in execution mode,
+// for tests that drive the post decorator by hand afterwards.
+func runAnteOnCache(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx) feeRun {
+	t.Helper()
+	return runOnCache(t, arkApp, ctx, tx, false, runAnteFee)
+}
+
+func runOnCache(
+	t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, tx sdk.Tx, simulate bool,
+	run func(*testing.T, *app.ArkApp, sdk.Context, sdk.Tx, bool) (sdk.Context, error),
+) feeRun {
+	t.Helper()
 	cached, _ := ctx.CacheContext()
-	handed, err := runFee(t, arkApp, cached, tx, simulate)
+	handed, err := run(t, arkApp, cached, tx, simulate)
 	return feeRun{
 		handed: handed,
 		cached: cached,
@@ -108,10 +160,10 @@ func collected(arkApp *app.ArkApp, base, cached sdk.Context, addr sdk.AccAddress
 	return arkApp.BankKeeper.GetAllBalances(cached, addr).Sub(arkApp.BankKeeper.GetAllBalances(base, addr)...)
 }
 
-// txEvent returns the attributes of the tx event the fee decorator emitted
-// on ctx.
-func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
-	t.Helper()
+// txEvents returns the attributes of every tx event on ctx, in order: the
+// fee decorator's, then the transfer tax decorator's when it charged.
+func txEvents(ctx sdk.Context) []map[string]string {
+	var events []map[string]string
 	for _, event := range ctx.EventManager().Events() {
 		if event.Type != sdk.EventTypeTx {
 			continue
@@ -120,10 +172,26 @@ func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
 		for _, attribute := range event.Attributes {
 			attributes[attribute.Key] = attribute.Value
 		}
-		return attributes
+		events = append(events, attributes)
 	}
-	t.Fatal("no tx event")
-	return nil
+	return events
+}
+
+// txEvent returns the attributes of the tx events on ctx, merged: the fee
+// and tip the ante named, and the tax the post named.
+func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
+	t.Helper()
+	events := txEvents(ctx)
+	if len(events) == 0 {
+		t.Fatal("no tx event")
+	}
+	merged := make(map[string]string)
+	for _, event := range events {
+		for key, value := range event {
+			merged[key] = value
+		}
+	}
+	return merged
 }
 
 func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeTx) {
