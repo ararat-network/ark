@@ -43,6 +43,12 @@ func SetBaseFeeGate(enabled bool) {
 	useBaseFeeGate = enabled
 }
 
+// BaseFeeGate reports the gate, so a harness that switches it off can
+// restore what it found.
+func BaseFeeGate() bool {
+	return useBaseFeeGate
+}
+
 // FeeDecorator prices the transfer tax a transaction's messages owe, holds
 // the declared fee to it, settles the fee by denomination against Treasury's
 // consensus base fee, and deducts the base fee and the NOAH tip to the fee
