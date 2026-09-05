@@ -232,10 +232,13 @@ func NewArkApp(
 	// proposal handler's FIFO fallback tests for the NoOpMempool concrete type
 	// and not for emptiness: a lane pool that accepts nothing would propose
 	// empty blocks forever.
+	// The lane set the mempool classifies with and the ante chain vouches
+	// with; one construction serves both.
+	privileges := app.Privileges()
 	if maxTxs := mempoolMaxTxs(appOpts); maxTxs >= 0 {
 		baseAppOptions = append(
 			baseAppOptions,
-			baseapp.SetMempool(lanes.NewMempool(maxTxs, priorityLaneSet())),
+			baseapp.SetMempool(lanes.NewMempool(maxTxs, privileges)),
 		)
 	}
 
@@ -278,6 +281,7 @@ func NewArkApp(
 		app.FeeGrantKeeper,
 		app.StakingKeeper,
 		app.TreasuryKeeper,
+		privileges,
 		app.IBCKeeper,
 		app.WasmKeeper.GetGasRegister(),
 		wasmNodeConfig,

@@ -129,7 +129,7 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
-	priority := app.PriorityLaneSet().URLs()
+	priority := arkApp.Privileges().URLs()
 	registered := arkApp.InterfaceRegistry().ListImplementations(sdk.MsgInterfaceProtoName)
 	registeredSet := make(map[string]struct{}, len(registered))
 	for _, url := range registered {

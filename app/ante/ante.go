@@ -22,6 +22,7 @@ import (
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
+	"github.com/ararat-network/ark/abci/lanes"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 )
 
@@ -50,6 +51,7 @@ func NewAnteHandler(
 	feeGrantKeeper feegrantkeeper.Keeper,
 	stakingKeeper *stakingkeeper.Keeper,
 	treasuryKeeper *treasurykeeper.Keeper,
+	privileges lanes.Set,
 	ibcKeeper *ibckeeper.Keeper,
 	wasmGasRegister wasmtypes.GasRegister,
 	wasmNodeConfig wasmtypes.NodeConfig,
@@ -80,12 +82,17 @@ func NewAnteHandler(
 		sdkante.NewValidateMemoDecorator(accountKeeper),
 		sdkante.NewConsumeGasForTxSizeDecorator(accountKeeper),
 
-		// Ark's message policy, before any charge because neither moves a
-		// balance: a stake floor on votes, a fan-out cap and quadratic gas
-		// surcharge on MultiSend. gov_vote.go and multisend.go own both,
-		// authz recursion included; the policy router applies the same two to
-		// execution-generated messages.
-		NewGovVoteDecorator(cdc, stakingKeeper),
+		// Ark's message policy, before any charge because none moves a
+		// balance. The privilege decorator vouches for every message the
+		// priority lane carries, through the lane set the mempool classifies
+		// with: the stake floor on votes, x/gov's own first refusals on
+		// proposals and deposits, and the mandate check on committee
+		// messages. MultiSend's fan-out cap and quadratic gas surcharge
+		// follow. Both walk authz; the policy router applies the vote floor
+		// and the MultiSend cap to execution-generated messages, whose
+		// committee messages reach the mandate check in their handlers
+		// without ever touching a lane.
+		NewPrivilegeDecorator(cdc, privileges),
 		NewMultiSendDecorator(cdc),
 
 		// The ante half of the fee mechanism, fee.go's FeeDecorator in place

@@ -83,6 +83,7 @@ func newBenchFixture(b *testing.B) *benchFixture {
 		arkApp.FeeGrantKeeper,
 		arkApp.StakingKeeper,
 		arkApp.TreasuryKeeper,
+		arkApp.Privileges(),
 		arkApp.IBCKeeper,
 		arkApp.WasmKeeper.GetGasRegister(),
 		wasmtypes.DefaultNodeConfig(),

@@ -157,7 +157,7 @@ func TestGovVoteStakeFloor(t *testing.T) {
 // for one who clears the floor.
 func TestGovVoteDecoratorSimulationMatchesExecution(t *testing.T) {
 	arkApp, ctx, rich, poor := setupGovVoteTest(t)
-	decorator := ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper)
+	decorator := ante.NewPrivilegeDecorator(arkApp.AppCodec(), arkApp.Privileges())
 	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
 
 	poorTx := treasuryFeeTx{msgs: []sdk.Msg{vote(poor)}}

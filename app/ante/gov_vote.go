@@ -48,25 +48,31 @@ func SetMinVoterStake(stake math.LegacyDec) {
 // Non-vote messages pass untouched.
 func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper.Keeper, msg sdk.Msg, depth int) error {
 	return walkAuthzExec(cdc, msg, depth, func(msg sdk.Msg) error {
-		var voter string
-		switch vote := msg.(type) {
-		case *govv1.MsgVote:
-			voter = vote.Voter
-		case *govv1.MsgVoteWeighted:
-			voter = vote.Voter
-		case *govv1beta1.MsgVote:
-			voter = vote.Voter
-		case *govv1beta1.MsgVoteWeighted:
-			voter = vote.Voter
-		default:
-			return nil
-		}
-		addr, err := sdk.AccAddressFromBech32(voter)
-		if err != nil {
-			return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
-		}
-		return validateVoterStake(ctx, staking, addr)
+		return vouchVote(ctx, staking, msg)
 	})
+}
+
+// vouchVote applies the stake floor to one vote message; any other message
+// passes untouched.
+func vouchVote(ctx sdk.Context, staking *stakingkeeper.Keeper, msg sdk.Msg) error {
+	var voter string
+	switch vote := msg.(type) {
+	case *govv1.MsgVote:
+		voter = vote.Voter
+	case *govv1.MsgVoteWeighted:
+		voter = vote.Voter
+	case *govv1beta1.MsgVote:
+		voter = vote.Voter
+	case *govv1beta1.MsgVoteWeighted:
+		voter = vote.Voter
+	default:
+		return nil
+	}
+	addr, err := sdk.AccAddressFromBech32(voter)
+	if err != nil {
+		return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
+	}
+	return validateVoterStake(ctx, staking, addr)
 }
 
 // validateVoterStake sums the voter's staked tokens across at most
@@ -112,27 +118,4 @@ func validateVoterStake(ctx sdk.Context, staking *stakingkeeper.Keeper, voter sd
 		)
 	}
 	return nil
-}
-
-// GovVoteDecorator applies the stake floor to signed transactions; the
-// policy router applies the same check to execution-generated messages.
-type GovVoteDecorator struct {
-	cdc     codec.Codec
-	staking *stakingkeeper.Keeper
-}
-
-func NewGovVoteDecorator(cdc codec.Codec, staking *stakingkeeper.Keeper) GovVoteDecorator {
-	return GovVoteDecorator{cdc: cdc, staking: staking}
-}
-
-// AnteHandle applies the floor in every mode, simulation included: the walk
-// is reads only, and an estimate that skipped it fell short of block
-// execution by exactly its gas.
-func (d GovVoteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
-	for _, msg := range tx.GetMsgs() {
-		if err := ValidateGovVoteMsg(ctx, d.cdc, d.staking, msg, 0); err != nil {
-			return ctx, err
-		}
-	}
-	return next(ctx, tx, simulate)
 }

@@ -7,7 +7,6 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	"github.com/ararat-network/ark/abci/lanes"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 )
 
@@ -39,9 +38,6 @@ func NewExecutionPolicyRouter(
 func (app *ArkApp) ExecutionPolicyRouter() ExecutionPolicyRouter {
 	return app.executionPolicyRouter()
 }
-
-// PriorityLaneSet returns the mempool lane set the app wires.
-func PriorityLaneSet() lanes.Set { return priorityLaneSet() }
 
 // AcceptedQueries returns the Wasm query allow list the app wires.
 func AcceptedQueries() wasmkeeper.AcceptedQueries { return acceptedQueries() }
