@@ -39,10 +39,9 @@ while [ "$i" -lt "$VALIDATORS" ]; do
     "$app"
 
   # Sidecar runtime config, polling this node for the feed registry.
-  cfg="$DATA/node$i/pricefeed/config.json"
+  cfg="$DATA/node$i/pricefeed/pricefeed.toml"
   pricefeed init --config "$cfg"
-  jq '.client.addresses = ["node'"$i"':9090"]' "$cfg" > "$cfg.tmp"
-  mv "$cfg.tmp" "$cfg"
+  sed -i '/^\[client\]/,/^\[/ s|^addresses = .*|addresses = ["node'"$i"':9090"]|' "$cfg"
 
   i=$((i + 1))
 done

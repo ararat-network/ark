@@ -50,25 +50,25 @@ services:
   pricefeed0:
     <<: *pricefeed
     container_name: ark-pricefeed0
-    command: ["start", "--config", "/data/node0/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    command: ["start", "--config", "/data/node0/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080"]
     networks: {localnet: {ipv4_address: 192.168.10.12}}
   pricefeed1:
     <<: *pricefeed
     container_name: ark-pricefeed1
     profiles: [multi]
-    command: ["start", "--config", "/data/node1/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    command: ["start", "--config", "/data/node1/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080"]
     networks: {localnet: {ipv4_address: 192.168.10.13}}
   pricefeed2:
     <<: *pricefeed
     container_name: ark-pricefeed2
     profiles: [multi]
-    command: ["start", "--config", "/data/node2/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    command: ["start", "--config", "/data/node2/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080"]
     networks: {localnet: {ipv4_address: 192.168.10.14}}
   pricefeed3:
     <<: *pricefeed
     container_name: ark-pricefeed3
     profiles: [multi]
-    command: ["start", "--config", "/data/node3/pricefeed/config.json", "--address", "0.0.0.0:8080"]
+    command: ["start", "--config", "/data/node3/pricefeed/pricefeed.toml", "--address", "0.0.0.0:8080"]
     networks: {localnet: {ipv4_address: 192.168.10.15}}
 
   # State-sync client behind the "statesync" profile: a non-validator that

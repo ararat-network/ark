@@ -62,11 +62,14 @@ for the layout.
 ## Price-feed sidecar
 
 `pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for
-prices, and the sidecar reads the feed registry back from the node's gRPC port. Both links are plaintext
-by default, which is fine only while both processes share a host, and each side warns at start when it
-would speak plaintext off loopback. For a sidecar on another machine, give each link a trust anchor. The
-rules the files follow are stated once, in `pkg/tlsconfig`; a certificate and key are re-read when they
-change on disk, so rotating them is a file swap, and a CA bundle is read once, so changing it is a restart.
+prices, and the sidecar reads the feed registry back from the node's gRPC port. `pricefeed init` writes
+its config, `pricefeed.toml`, under `~/.ark/pricefeed/`, a directory of its own rather than the node's
+`config/`, so the two processes need not share a user; `--config` points anywhere else. Both links are
+plaintext by default, which is fine only while both processes share a host, and each side warns at start
+when it would speak plaintext off loopback. For a sidecar on another machine, give each link a trust
+anchor. The rules the files follow are stated once, in `pkg/tlsconfig`; a certificate and key are re-read
+when they change on disk, so rotating them is a file swap, and a CA bundle is read once, so changing it
+is a restart.
 
 - **Node to sidecar.** Start the sidecar with `--tls-cert-file` and `--tls-key-file`, and add
   `--tls-client-ca-file` to admit only nodes that present a certificate signed by that CA. In the node's
@@ -74,16 +77,16 @@ change on disk, so rotating them is a file swap, and a CA bundle is read once, s
   `cert_file` and `key_file` when the sidecar requires a client certificate and `server_name` when the
   certificate carries neither the dialled host nor its IP.
 - **Sidecar to node.** The node's gRPC port does not terminate TLS, so put a TLS terminator in front of it
-  and point `client.tls.caFile` in the sidecar's `config.json` at the terminator's CA; `certFile`,
-  `keyFile`, and `serverName` sit beside it. `pricefeed validate` and `pricefeed prices` take the same
+  and point `ca_file` under `[client.tls]` in the sidecar's `pricefeed.toml` at the terminator's CA;
+  `cert_file`, `key_file`, and `server_name` sit beside it. `pricefeed validate` and `pricefeed prices` take the same
   files as `--tls-*` flags, and `validate` takes the chain link's as `--chain-tls-*`.
 
-`client.addresses` in the sidecar's `config.json` lists the chain nodes to query, in preference order and
-at most four — a local sentry first, a fallback behind it. The sidecar polls the first that answers and
-stays on it until it fails, then sweeps the rest in order under `client.timeout` each. There is no
-fail-back, so a flapping preferred node cannot bounce the sidecar between endpoints. All of them are
-dialled with the one `client.tls` block, and a failed sweep keeps the last known feed set rather than
-emptying it. The chain node that answers is the `address` label on
+`addresses` under `[client]` in the sidecar's `pricefeed.toml` lists the chain nodes to query, in
+preference order and at most four — a local sentry first, a fallback behind it. The sidecar polls the
+first that answers and stays on it until it fails, then sweeps the rest in order under `timeout` each.
+There is no fail-back, so a flapping preferred node cannot bounce the sidecar between endpoints. All of
+them are dialled with the one `[client.tls]` table, and a failed sweep keeps the last known feed set
+rather than emptying it. The chain node that answers is the `address` label on
 `ark_pricefeed_chainstate_refreshes_total`.
 
 The sidecar releases on its own cadence under `pricefeed/vX.Y.Z` tags: `make release-pricefeed` builds
