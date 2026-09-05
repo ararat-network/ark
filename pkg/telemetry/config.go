@@ -1,13 +1,8 @@
 package telemetry
 
 import (
-	"errors"
 	"fmt"
 	"net"
-
-	"github.com/spf13/cast"
-
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 )
 
 const (
@@ -34,12 +29,8 @@ enabled = {{ .Prometheus.Enabled }}
 address = "{{ .Prometheus.Address }}"
 `
 
-const (
-	flagPrometheusEnabled = "prometheus.enabled"
-	flagPrometheusAddress = "prometheus.address"
-)
-
-// PrometheusConfig is the [prometheus] section of app.toml.
+// PrometheusConfig is the [prometheus] section of app.toml; the tags are its
+// keys.
 type PrometheusConfig struct {
 	// Enabled serves the scrape endpoint.
 	Enabled bool `mapstructure:"enabled" toml:"enabled"`
@@ -59,34 +50,7 @@ func DefaultPrometheusConfig() PrometheusConfig {
 // Validate checks the address is a host:port pair a listener can bind.
 func (c PrometheusConfig) Validate() error {
 	if _, _, err := net.SplitHostPort(c.Address); err != nil {
-		return fmt.Errorf("poorly formatted app.toml (prometheus subsection): address must be host:port: %w", err)
+		return fmt.Errorf("address must be host:port: %w", err)
 	}
 	return nil
-}
-
-// ReadPrometheusConfig reads the section from the app options, falling back
-// to defaults for absent keys.
-func ReadPrometheusConfig(opts servertypes.AppOptions) (PrometheusConfig, error) {
-	cfg := DefaultPrometheusConfig()
-
-	if v := opts.Get(flagPrometheusEnabled); v != nil {
-		enabled, err := cast.ToBoolE(v)
-		if err != nil {
-			return cfg, fmt.Errorf("prometheus enabled must be a boolean: %w", err)
-		}
-		cfg.Enabled = enabled
-	}
-
-	if v := opts.Get(flagPrometheusAddress); v != nil {
-		address, err := cast.ToStringE(v)
-		if err != nil {
-			return cfg, errors.New("prometheus address must be a string")
-		}
-		cfg.Address = address
-	}
-
-	if err := cfg.Validate(); err != nil {
-		return cfg, err
-	}
-	return cfg, nil
 }

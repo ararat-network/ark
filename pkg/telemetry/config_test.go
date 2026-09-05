@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 )
 
 func TestPrometheusConfigValidate(t *testing.T) {
@@ -49,51 +47,6 @@ func TestPrometheusConfigValidate(t *testing.T) {
 				return
 			}
 			require.ErrorContains(t, err, tt.errorSubstr)
-		})
-	}
-}
-
-func TestReadPrometheusConfig(t *testing.T) {
-	tests := []struct {
-		name        string
-		opts        simtestutil.AppOptionsMap
-		expected    PrometheusConfig
-		errorSubstr string
-	}{
-		{
-			name:     "absent keys fall back to defaults",
-			opts:     simtestutil.AppOptionsMap{},
-			expected: DefaultPrometheusConfig(),
-		},
-		{
-			name: "enabled with address",
-			opts: simtestutil.AppOptionsMap{
-				flagPrometheusEnabled: "true",
-				flagPrometheusAddress: "0.0.0.0:9465",
-			},
-			expected: PrometheusConfig{Enabled: true, Address: "0.0.0.0:9465"},
-		},
-		{
-			name:        "malformed enabled",
-			opts:        simtestutil.AppOptionsMap{flagPrometheusEnabled: "sometimes"},
-			errorSubstr: "prometheus enabled must be a boolean",
-		},
-		{
-			name:        "malformed address",
-			opts:        simtestutil.AppOptionsMap{flagPrometheusAddress: "localhost"},
-			errorSubstr: "address must be host:port",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := ReadPrometheusConfig(tt.opts)
-			if tt.errorSubstr != "" {
-				require.ErrorContains(t, err, tt.errorSubstr)
-				return
-			}
-			require.NoError(t, err)
-			require.Equal(t, tt.expected, cfg)
 		})
 	}
 }
