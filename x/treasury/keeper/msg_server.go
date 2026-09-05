@@ -136,13 +136,9 @@ func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgComm
 		return nil, err
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	mandate, err := m.k.EconomicMandate.Get(ctx)
+	mandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
-		return nil, fmt.Errorf("getting economic mandate: %w", err)
-	}
-	if err := mandate.Authorise(msg.Committee, msg.ExpectedTerm, uint64(sdkCtx.BlockHeight())); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.EconomicMandateLabel, err)
+		return nil, err
 	}
 	if err := mandate.ValidatePolicy(msg.Policy); err != nil {
 		return nil, err

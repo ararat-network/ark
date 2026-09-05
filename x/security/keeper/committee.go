@@ -15,10 +15,12 @@ import (
 // out whose plan holds the upgrade slot, then dispatch the upstream message as
 // the chain authority.
 
-// authoriseCommittee runs the check every committee action shares: the exact
+// AuthoriseCommittee runs the check every committee action shares: the exact
 // signer, the exact term, and the active window. It returns the live mandate
-// so a caller can record the acting term.
-func (k Keeper) authoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.SecurityMandate, error) {
+// so a caller can record the acting term. Exported because the priority lane
+// vouches through it at CheckTx, so the lane refuses exactly what the
+// handlers refuse first.
+func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.SecurityMandate, error) {
 	securityMandate, err := k.Mandate.Get(ctx)
 	if err != nil {
 		return types.SecurityMandate{}, fmt.Errorf("getting security mandate: %w", err)

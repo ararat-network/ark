@@ -107,7 +107,7 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee schedule upgrade message")
 	}
-	securityMandate, err := m.k.authoriseCommittee(
+	securityMandate, err := m.k.AuthoriseCommittee(
 		ctx,
 		msg.Committee,
 		msg.ExpectedTerm,
@@ -176,7 +176,7 @@ func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCom
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee cancel upgrade message")
 	}
-	securityMandate, err := m.k.authoriseCommittee(
+	securityMandate, err := m.k.AuthoriseCommittee(
 		ctx,
 		msg.Committee,
 		msg.ExpectedTerm,
@@ -230,7 +230,7 @@ func (m msgServer) CommitteeRecoverClient(ctx context.Context, msg *types.MsgCom
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee recover client message")
 	}
-	securityMandate, err := m.k.authoriseCommittee(
+	securityMandate, err := m.k.AuthoriseCommittee(
 		ctx,
 		msg.Committee,
 		msg.ExpectedTerm,

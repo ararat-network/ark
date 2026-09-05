@@ -170,7 +170,7 @@ func (m msgServer) CommitteeDeploy(ctx context.Context, msg *types.MsgCommitteeD
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee deploy message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (m msgServer) CommitteeRecordUpdate(ctx context.Context, msg *types.MsgComm
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee record update message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (m msgServer) CommitteeAttributeReturn(ctx context.Context, msg *types.MsgC
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee attribute return message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (m msgServer) CommitteeMarkImpaired(ctx context.Context, msg *types.MsgComm
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee mark impaired message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +319,7 @@ func (m msgServer) CommitteeClearImpairment(ctx context.Context, msg *types.MsgC
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee clear impairment message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +343,7 @@ func (m msgServer) CommitteeClosePosition(ctx context.Context, msg *types.MsgCom
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee close position message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +422,7 @@ func (m msgServer) CommitteeBurnPaper(ctx context.Context, msg *types.MsgCommitt
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee burn paper message")
 	}
-	if _, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm); err != nil {
+	if _, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm); err != nil {
 		return nil, err
 	}
 	// As in BurnReserveAssets: Coins.Validate accepts the empty set.
@@ -448,7 +448,7 @@ func (m msgServer) CommitteeBurnSurplus(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee burn surplus message")
 	}
-	if _, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm); err != nil {
+	if _, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm); err != nil {
 		return nil, err
 	}
 	if err := chain.ValidateNoahCoin("burn amount", msg.Amount); err != nil {
@@ -558,7 +558,7 @@ func (m msgServer) CommitteeCorrectPosition(ctx context.Context, msg *types.MsgC
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee correct position message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}
@@ -606,7 +606,7 @@ func (m msgServer) CommitteeReverseReturn(ctx context.Context, msg *types.MsgCom
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee reverse return message")
 	}
-	reserveMandate, err := m.k.authoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	reserveMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
 		return nil, err
 	}

@@ -244,17 +244,9 @@ func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgComm
 		return nil, err
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	conversionMandate, err := m.k.ConversionMandate.Get(ctx)
+	conversionMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
-		return nil, fmt.Errorf("getting conversion mandate: %w", err)
-	}
-	if err := conversionMandate.Authorise(
-		msg.Committee,
-		msg.ExpectedTerm,
-		uint64(sdkCtx.BlockHeight()),
-	); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.ConversionMandateLabel, err)
+		return nil, err
 	}
 	if err := conversionMandate.ValidatePolicy(msg.Policy); err != nil {
 		return nil, err
@@ -273,17 +265,9 @@ func (m msgServer) CommitteeSetTobinTax(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee set tobin tax message")
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	conversionMandate, err := m.k.ConversionMandate.Get(ctx)
+	conversionMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
-		return nil, fmt.Errorf("getting conversion mandate: %w", err)
-	}
-	if err := conversionMandate.Authorise(
-		msg.Committee,
-		msg.ExpectedTerm,
-		uint64(sdkCtx.BlockHeight()),
-	); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.ConversionMandateLabel, err)
+		return nil, err
 	}
 
 	params, err := m.k.Params.Get(ctx)

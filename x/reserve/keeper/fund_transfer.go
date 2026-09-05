@@ -74,7 +74,7 @@ func (k *Keeper) committeeTransferToFund(
 	recipientModule string,
 	fundShortfall func(types.TreasuryCapitalReader, context.Context) (math.Int, error),
 ) (math.Int, error) {
-	reserveMandate, err := k.authoriseCommittee(ctx, committee, expectedTerm)
+	reserveMandate, err := k.AuthoriseCommittee(ctx, committee, expectedTerm)
 	if err != nil {
 		return math.Int{}, err
 	}

@@ -151,13 +151,9 @@ func (m msgServer) CommitteeSubmitClaim(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee submit claim message")
 	}
-	claimsMandate, err := m.k.ClaimsMandate.Get(ctx)
+	claimsMandate, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
-		return nil, fmt.Errorf("getting Claims mandate: %w", err)
-	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	if err := claimsMandate.Authorise(msg.Committee, msg.ExpectedTerm, uint64(sdkCtx.BlockHeight())); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.ClaimsMandateLabel, err)
+		return nil, err
 	}
 	claimID, err := m.k.submitClaim(ctx, claimSubmission{
 		Submitter:           msg.Committee,
@@ -197,13 +193,8 @@ func (m msgServer) CommitteeCancelClaim(ctx context.Context, msg *types.MsgCommi
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee cancel claim message")
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	claimsMandate, err := m.k.ClaimsMandate.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting Claims mandate: %w", err)
-	}
-	if err := claimsMandate.Authorise(msg.Committee, msg.ExpectedTerm, uint64(sdkCtx.BlockHeight())); err != nil {
-		return nil, fmt.Errorf("%s: %w", types.ClaimsMandateLabel, err)
+	if _, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm); err != nil {
+		return nil, err
 	}
 
 	if err := m.k.cancelClaim(ctx, types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE, msg.ClaimId); err != nil {

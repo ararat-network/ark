@@ -58,6 +58,23 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	return nil
 }
 
+// AuthoriseCommittee checks the signer against the live emergency mandate,
+// returning it for the caller's own constraints: the exact signer, the exact
+// term, and the active window. The suspension handler runs it first, and the
+// priority lane vouches through it at CheckTx, so the lane refuses exactly
+// what the handler refuses.
+func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.EmergencyMandate, error) {
+	emergencyMandate, err := k.EmergencyMandate.Get(ctx)
+	if err != nil {
+		return types.EmergencyMandate{}, fmt.Errorf("getting emergency mandate: %w", err)
+	}
+	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	if err := emergencyMandate.Authorise(committee, expectedTerm, height); err != nil {
+		return types.EmergencyMandate{}, errorsmod.Wrap(types.ErrEmergencyMandateInactive, err.Error())
+	}
+	return emergencyMandate, nil
+}
+
 // EmergencySuspendAsset applies SuspendAsset semantics under a live mandate,
 // checking the committee signer, the mandate window, the exact term, and the
 // one-suspension-per-asset-per-term bound. It is a pure status move: the
@@ -70,18 +87,11 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 // signalling committee-confirmed distress through a door it left open. Halting
 // is wind-down policy, and policy runs at governance speed.
 func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, denom string, expectedTerm uint64) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	emergencyMandate, err := k.EmergencyMandate.Get(ctx)
+	emergencyMandate, err := k.AuthoriseCommittee(ctx, committee, expectedTerm)
 	if err != nil {
-		return fmt.Errorf("getting emergency mandate: %w", err)
+		return err
 	}
-	if err := emergencyMandate.Authorise(
-		committee,
-		expectedTerm,
-		uint64(sdkCtx.BlockHeight()),
-	); err != nil {
-		return errorsmod.Wrap(types.ErrEmergencyMandateInactive, err.Error())
-	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Re-suspending an asset governance has already recovered within the same
 	// term is griefing, and requires governance: without this bound a committee
