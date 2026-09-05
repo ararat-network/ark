@@ -2,7 +2,9 @@
 # `make -C contrib/images arkd-env` (or `make localnet-build-env`), which
 # passes the version stamps so .git can stay out of the build context.
 
-FROM golang:1.27-alpine AS builder
+# Base images are pinned by digest; the tag beside each digest names what
+# the digest was resolved from. Dependabot bumps the pair together.
+FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS builder
 WORKDIR /work
 # eudev-dev supplies the static libudev the ledger tag's HID library links.
 RUN apk add --no-cache build-base git file linux-headers eudev-dev
@@ -36,7 +38,7 @@ RUN CGO_ENABLED=0 go build -trimpath -mod=readonly -tags netgo \
     -ldflags "-w -s -X github.com/cosmos/cosmos-sdk/version.Version=${VERSION} -X github.com/cosmos/cosmos-sdk/version.Commit=${COMMIT}" \
     -o build/pricefeed ./cmd/pricefeed
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
 RUN apk add --no-cache ca-certificates curl jq \
  && addgroup -g 1025 nonroot \
  && adduser -D -u 1025 -G nonroot nonroot

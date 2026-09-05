@@ -1,7 +1,8 @@
 version: 2
 updates:
-  # Actions are pinned by major tag, so these bumps are small and are the ones
-  # that keep a workflow from breaking on a deprecated runner image.
+  # Actions are pinned by commit with the version as a trailing comment, so a
+  # tag moving under a workflow cannot change what runs; these bumps move the
+  # commit and the comment together.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -18,5 +19,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+
+  # The localnet image pins its base images by digest, so this is what moves
+  # them when a patch release lands.
+  - package-ecosystem: docker
+    directory: "/contrib/images/arkd-env"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
     labels:
       - dependencies
