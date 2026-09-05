@@ -17,7 +17,9 @@ import (
 // setupOracleABCI builds the app-owned price-feed client and installs the
 // oracle protocol's ABCI hooks over it: the vote-extension handler polls the
 // client for prices under the configured timeout. The client owns its enabled
-// gate; the start command owns running it through RunPriceFeed.
+// gate; the start command owns running it through RunPriceFeed. The start
+// command validated [pricefeed] before the app existed; NewClient re-checks
+// it for the commands that build the app without starting it.
 func (app *ArkApp) setupOracleABCI(logger log.Logger, appOpts servertypes.AppOptions) error {
 	pricefeedCfg, err := pricefeedclient.ReadConfigFromAppOpts(appOpts)
 	if err != nil {

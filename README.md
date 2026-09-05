@@ -63,14 +63,16 @@ for the layout.
 
 `pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for
 prices, and the sidecar reads the feed registry back from the node's gRPC port. Both links are plaintext
-by default, which is fine only while both processes share a host. For a sidecar on another machine,
-give each link a trust anchor:
+by default, which is fine only while both processes share a host, and each side warns at start when it
+would speak plaintext off loopback. For a sidecar on another machine, give each link a trust anchor. The
+rules the files follow are stated once, in `pkg/tlsconfig`; a certificate and key are re-read when they
+change on disk, so rotating them is a file swap, and a CA bundle is read once, so changing it is a restart.
 
 - **Node to sidecar.** Start the sidecar with `--tls-cert-file` and `--tls-key-file`, and add
   `--tls-client-ca-file` to admit only nodes that present a certificate signed by that CA. In the node's
-  `app.toml`, set `tls_ca_file` under `[pricefeed]` to the CA the sidecar's certificate chains to, with
-  `tls_cert_file` and `tls_key_file` when the sidecar requires a client certificate and `tls_server_name`
-  when the address is an IP.
+  `app.toml`, set `ca_file` under `[pricefeed.tls]` to the CA the sidecar's certificate chains to, with
+  `cert_file` and `key_file` when the sidecar requires a client certificate and `server_name` when the
+  certificate carries neither the dialled host nor its IP.
 - **Sidecar to node.** The node's gRPC port does not terminate TLS, so put a TLS terminator in front of it
   and point `client.tls.caFile` in the sidecar's `config.json` at the terminator's CA; `certFile`,
   `keyFile`, and `serverName` sit beside it. `pricefeed validate` and `pricefeed prices` take the same

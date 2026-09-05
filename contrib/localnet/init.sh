@@ -35,13 +35,13 @@ while [ "$i" -lt "$VALIDATORS" ]; do
     -e '/^\[api\]/,/^\[/ s|^address = .*|address = "tcp://0.0.0.0:1317"|' \
     -e '/^\[grpc\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9090"|' \
     -e '/^\[pricefeed\]/,/^\[/ s|^enabled = .*|enabled = "true"|' \
-    -e '/^\[pricefeed\]/,/^\[/ s|^sidecar_address = .*|sidecar_address = "pricefeed'"$i"':8080"|' \
+    -e '/^\[pricefeed\]/,/^\[/ s|^sidecar_addresses = .*|sidecar_addresses = ["pricefeed'"$i"':8080"]|' \
     "$app"
 
   # Sidecar runtime config, polling this node for the feed registry.
   cfg="$DATA/node$i/pricefeed/config.json"
   pricefeed init --config "$cfg"
-  jq '.client.address = "node'"$i"':9090"' "$cfg" > "$cfg.tmp"
+  jq '.client.addresses = ["node'"$i"':9090"]' "$cfg" > "$cfg.tmp"
   mv "$cfg.tmp" "$cfg"
 
   i=$((i + 1))
