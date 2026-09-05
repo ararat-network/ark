@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -184,7 +184,7 @@ func (k Keeper) rescaleBaseFee(ctx context.Context, params types.Params, to stri
 		return math.LegacyDec{}, err
 	}
 	if !unit.Amount.IsPositive() {
-		return math.LegacyDec{}, sdkerrors.Wrapf(
+		return math.LegacyDec{}, errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"non-positive reference cross rate %s converting the base fee",
 			unit.Amount,

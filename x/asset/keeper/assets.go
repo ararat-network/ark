@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/collections"
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -20,7 +20,7 @@ func (k Keeper) GetAsset(ctx context.Context, denom string) (types.Asset, error)
 	asset, err := k.Assets.Get(ctx, denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return types.Asset{}, sdkerrors.Wrap(types.ErrAssetNotFound, denom)
+			return types.Asset{}, errorsmod.Wrap(types.ErrAssetNotFound, denom)
 		}
 		return types.Asset{}, fmt.Errorf("getting asset %s: %w", denom, err)
 	}
@@ -65,7 +65,7 @@ func (k Keeper) getAssetAtVersion(ctx context.Context, denom string, expectedVer
 		return types.Asset{}, err
 	}
 	if asset.Version != expectedVersion {
-		return types.Asset{}, sdkerrors.Wrapf(
+		return types.Asset{}, errorsmod.Wrapf(
 			types.ErrAssetVersionMismatch,
 			"asset %s has version %d, expected %d",
 			denom,

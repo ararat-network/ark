@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
 
@@ -218,19 +218,19 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 		return fmt.Errorf("invalid exchange rate feed: %w", err)
 	}
 	if exchangeRate.Rate.IsNil() {
-		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is unset", exchangeRate.Denom)
+		return errorsmod.Wrapf(types.ErrInvalidExchangeRate, "%s rate is unset", exchangeRate.Denom)
 	}
 	if !exchangeRate.Rate.IsInValidRange() {
-		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate is not representable", exchangeRate.Denom)
+		return errorsmod.Wrapf(types.ErrInvalidExchangeRate, "%s rate is not representable", exchangeRate.Denom)
 	}
 	if !exchangeRate.Rate.IsPositive() {
-		return sdkerrors.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
+		return errorsmod.Wrapf(types.ErrInvalidExchangeRate, "%s rate %s is not positive", exchangeRate.Denom, exchangeRate.Rate)
 	}
 	// Unreachable from the tally, which holds direct reports to this bound by
 	// their encoding and derived prices to it by name; kept as the backstop
 	// behind the folds that multiply by what is stored here.
 	if exchangeRate.Rate.GT(types.MaxExchangeRate) {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidExchangeRate,
 			"%s rate %s exceeds %s",
 			exchangeRate.Denom,
@@ -242,7 +242,7 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentTime := sdkCtx.BlockTime()
 	if exchangeRate.BlockTimestamp.After(currentTime) {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidExchangeRate,
 			"%s rate timestamp %s is after current block time %s",
 			exchangeRate.Denom,
@@ -268,12 +268,12 @@ func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime t
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
-			return math.LegacyZeroDec(), sdkerrors.Wrap(types.ErrUnknownDenom, denom)
+			return math.LegacyZeroDec(), errorsmod.Wrap(types.ErrUnknownDenom, denom)
 		}
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
 	if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
-		return math.LegacyZeroDec(), sdkerrors.Wrapf(
+		return math.LegacyZeroDec(), errorsmod.Wrapf(
 			types.ErrStaleExchangeRate,
 			"%s rate age exceeds maximum (updated %s, current %s)",
 			denom,

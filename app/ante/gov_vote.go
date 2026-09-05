@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
@@ -53,13 +53,13 @@ func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper
 	// transaction nested this deep cannot decode, so the check binds only
 	// for messages arriving off the tx path through the router.
 	if depth >= codectypes.MaxUnpackAnyRecursionDepth {
-		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "too many nested authz exec messages")
+		return errorsmod.Wrap(errortypes.ErrInvalidRequest, "too many nested authz exec messages")
 	}
 	if exec, ok := msg.(*authz.MsgExec); ok {
 		for _, wrapped := range exec.Msgs {
 			var inner sdk.Msg
 			if err := cdc.UnpackAny(wrapped, &inner); err != nil {
-				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "cannot unpack authz exec message")
+				return errorsmod.Wrap(errortypes.ErrInvalidRequest, "cannot unpack authz exec message")
 			}
 			if err := ValidateGovVoteMsg(ctx, cdc, staking, inner, depth+1); err != nil {
 				return err
@@ -83,7 +83,7 @@ func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper
 	}
 	addr, err := sdk.AccAddressFromBech32(voter)
 	if err != nil {
-		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, err.Error())
+		return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
 	}
 	return validateVoterStake(ctx, staking, addr)
 }
@@ -124,7 +124,7 @@ func validateVoterStake(ctx sdk.Context, staking *stakingkeeper.Keeper, voter sd
 	}
 	if !enough {
 		return errorsmod.Wrapf(
-			sdkerrors.ErrUnauthorized,
+			errortypes.ErrUnauthorized,
 			"voting requires at least %s staked, have %s",
 			minVoterStake,
 			staked,

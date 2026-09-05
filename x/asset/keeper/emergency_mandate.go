@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -80,7 +80,7 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 		expectedTerm,
 		uint64(sdkCtx.BlockHeight()),
 	); err != nil {
-		return sdkerrors.Wrap(types.ErrEmergencyMandateInactive, err.Error())
+		return errorsmod.Wrap(types.ErrEmergencyMandateInactive, err.Error())
 	}
 
 	// Re-suspending an asset governance has already recovered within the same
@@ -92,7 +92,7 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 		return fmt.Errorf("checking emergency suspension for asset %s: %w", denom, err)
 	}
 	if used {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrEmergencySuspensionConsumed,
 			"asset %s already suspended in term %d",
 			denom,

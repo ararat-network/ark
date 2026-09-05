@@ -10,7 +10,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ararat-network/ark/app/ante"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
@@ -118,7 +118,7 @@ func TestFeeDecoratorHoldsTheFeeToTheDeclaredTax(t *testing.T) {
 
 	t.Run("a fee short of the tax is refused whatever it offers for gas", func(t *testing.T) {
 		r := run(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 9), sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000)))
-		require.ErrorIs(t, r.err, sdkerrors.ErrInsufficientFee)
+		require.ErrorIs(t, r.err, errortypes.ErrInsufficientFee)
 		require.ErrorContains(t, r.err, "does not cover transfer tax 10ausd")
 		require.Empty(t, r.gas)
 		require.Empty(t, r.tax)
@@ -159,7 +159,7 @@ func TestFeeDecoratorHoldsTheFeeToTheDeclaredTax(t *testing.T) {
 
 	t.Run("the tax alone buys no gas", func(t *testing.T) {
 		r := run(sdk.NewCoins(tax))
-		require.ErrorIs(t, r.err, sdkerrors.ErrInsufficientFee)
+		require.ErrorIs(t, r.err, errortypes.ErrInsufficientFee)
 		require.ErrorContains(t, r.err,
 			"base fee requires 20000axdr or its equivalent in an accepted fee denomination in addition to transfer tax 10ausd, got 10ausd")
 		require.Empty(t, r.tax)

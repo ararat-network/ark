@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -43,7 +43,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, fmt.Errorf("getting current params: %w", err)
 	}
 	if msg.Params.ReferenceDenom != current.ReferenceDenom {
-		return nil, sdkerrors.Wrapf(
+		return nil, errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"reference denom is set by the protocol reference: re-point it with MsgSetReferenceDenom, not %s",
 			msg.Params.ReferenceDenom,

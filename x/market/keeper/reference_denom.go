@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +24,7 @@ func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rate
 		return fmt.Errorf("getting conversion policy: %w", err)
 	}
 	if capacity.BasePool.Denom != from {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"base pool is denominated in %s, not %s",
 			capacity.BasePool.Denom,
@@ -49,7 +49,7 @@ func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rate
 		return err
 	}
 	if _, err := types.NewEffectivePools(rebased.Amount, newDelta); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"invalid effective pools after rebasing to %s: %v",
 			to,
@@ -85,7 +85,7 @@ func rescaleArkPoolDelta(delta, oldDepth, newDepth math.LegacyDec) (math.LegacyD
 	}
 	scaled, err := decimal.Mul(delta, newDepth)
 	if err != nil {
-		return math.LegacyDec{}, sdkerrors.Wrapf(
+		return math.LegacyDec{}, errorsmod.Wrapf(
 			types.ErrArithmeticOutOfRange,
 			"rescaling ark pool delta: %v",
 			err,
@@ -93,7 +93,7 @@ func rescaleArkPoolDelta(delta, oldDepth, newDepth math.LegacyDec) (math.LegacyD
 	}
 	rescaled, err := decimal.Quo(scaled, oldDepth)
 	if err != nil {
-		return math.LegacyDec{}, sdkerrors.Wrapf(
+		return math.LegacyDec{}, errorsmod.Wrapf(
 			types.ErrArithmeticOutOfRange,
 			"rescaling ark pool delta: %v",
 			err,

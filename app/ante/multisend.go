@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -44,13 +44,13 @@ func ValidateMultiSendMsg(ctx sdk.Context, cdc codec.Codec, msg sdk.Msg, depth i
 	// transaction nested this deep cannot decode, so the check binds only
 	// for messages arriving off the tx path through the router.
 	if depth >= codectypes.MaxUnpackAnyRecursionDepth {
-		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "too many nested authz exec messages")
+		return errorsmod.Wrap(errortypes.ErrInvalidRequest, "too many nested authz exec messages")
 	}
 	if exec, ok := msg.(*authz.MsgExec); ok {
 		for _, wrapped := range exec.Msgs {
 			var inner sdk.Msg
 			if err := cdc.UnpackAny(wrapped, &inner); err != nil {
-				return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "cannot unpack authz exec message")
+				return errorsmod.Wrap(errortypes.ErrInvalidRequest, "cannot unpack authz exec message")
 			}
 			if err := ValidateMultiSendMsg(ctx, cdc, inner, depth+1); err != nil {
 				return err
@@ -66,7 +66,7 @@ func ValidateMultiSendMsg(ctx sdk.Context, cdc codec.Codec, msg sdk.Msg, depth i
 	n := uint64(len(send.Outputs))
 	if n > maxMultiSendOutputs {
 		return errorsmod.Wrapf(
-			sdkerrors.ErrInvalidRequest,
+			errortypes.ErrInvalidRequest,
 			"too many MultiSend outputs: max %d, got %d",
 			maxMultiSendOutputs, n,
 		)

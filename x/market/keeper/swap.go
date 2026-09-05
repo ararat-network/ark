@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -59,7 +59,7 @@ func (k Keeper) Swap(
 
 	quote, err := k.quoteSwap(ctx, offerCoin, askDenom)
 	if err != nil {
-		return sdk.Coin{}, sdk.DecCoin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, sdk.DecCoin{}, errorsmod.Wrapf(
 			err,
 			"computing swap from %s to %s",
 			offerCoin,
@@ -68,7 +68,7 @@ func (k Keeper) Swap(
 	}
 
 	if hasFloor && quote.swapCoin.Amount.LT(minimumReceive.Amount) {
-		return sdk.Coin{}, sdk.DecCoin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, sdk.DecCoin{}, errorsmod.Wrapf(
 			types.ErrMinimumReceiveNotMet,
 			"minimum %s, received %s",
 			minimumReceive,
@@ -97,13 +97,13 @@ func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) (bool, err
 		return false, nil
 	}
 	if err := minimumReceive.Validate(); err != nil {
-		return false, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid minimum receive: %v", err)
+		return false, errorsmod.Wrapf(errortypes.ErrInvalidCoins, "invalid minimum receive: %v", err)
 	}
 	if !minimumReceive.IsPositive() {
-		return false, sdkerrors.Wrap(errortypes.ErrInvalidCoins, minimumReceive.String())
+		return false, errorsmod.Wrap(errortypes.ErrInvalidCoins, minimumReceive.String())
 	}
 	if minimumReceive.Denom != askDenom {
-		return false, sdkerrors.Wrapf(
+		return false, errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"minimum receive denom %q does not match ask denom %q",
 			minimumReceive.Denom,
@@ -116,16 +116,16 @@ func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) (bool, err
 
 func (k Keeper) quoteSwap(ctx context.Context, offerCoin sdk.Coin, askDenom string) (swapQuote, error) {
 	if err := offerCoin.Validate(); err != nil {
-		return swapQuote{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
+		return swapQuote{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins, "invalid offer coin: %v", err)
 	}
 	if err := sdk.ValidateDenom(askDenom); err != nil {
-		return swapQuote{}, sdkerrors.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
+		return swapQuote{}, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "invalid ask denom %q: %v", askDenom, err)
 	}
 	if offerCoin.Amount.LTE(math.ZeroInt()) {
-		return swapQuote{}, sdkerrors.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
+		return swapQuote{}, errorsmod.Wrap(errortypes.ErrInvalidCoins, offerCoin.String())
 	}
 	if offerCoin.Denom == askDenom {
-		return swapQuote{}, sdkerrors.Wrap(types.ErrRecursiveSwap, askDenom)
+		return swapQuote{}, errorsmod.Wrap(types.ErrRecursiveSwap, askDenom)
 	}
 	// Eligibility precedes every rate read. A rate exists for any active feed,
 	// including one whose asset is suspended or not yet listed, so status is
@@ -211,7 +211,7 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 
 	pools, err := types.NewEffectivePools(capacity.BasePool.Amount, arkPoolDelta)
 	if err != nil {
-		return swapQuote{}, sdkerrors.Wrapf(
+		return swapQuote{}, errorsmod.Wrapf(
 			types.ErrArithmeticOutOfRange,
 			"constructing effective pools: %v",
 			err,
@@ -228,7 +228,7 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 	baseOfferAmount := baseOfferDecCoin.Amount
 	updatedOfferPool, err := decimal.Add(offerPool, baseOfferAmount)
 	if err != nil {
-		return swapQuote{}, sdkerrors.Wrapf(
+		return swapQuote{}, errorsmod.Wrapf(
 			types.ErrArithmeticOutOfRange,
 			"adding the offer amount to the effective pool: %v",
 			err,
@@ -260,7 +260,7 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 		}
 		updatedArkPoolDelta, err = decimal.Sub(updatedArkPoolDelta, askBaseCoin.Amount)
 		if err != nil {
-			return swapQuote{}, sdkerrors.Wrapf(
+			return swapQuote{}, errorsmod.Wrapf(
 				types.ErrArithmeticOutOfRange,
 				"subtracting the ask amount from the ark pool delta: %v",
 				err,
@@ -269,7 +269,7 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 	} else {
 		updatedArkPoolDelta, err = decimal.Add(updatedArkPoolDelta, baseOfferAmount)
 		if err != nil {
-			return swapQuote{}, sdkerrors.Wrapf(
+			return swapQuote{}, errorsmod.Wrapf(
 				types.ErrArithmeticOutOfRange,
 				"adding the offer amount to the ark pool delta: %v",
 				err,
@@ -277,7 +277,7 @@ func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, ask
 		}
 	}
 	if _, err := types.NewEffectivePools(capacity.BasePool.Amount, updatedArkPoolDelta); err != nil {
-		return swapQuote{}, sdkerrors.Wrapf(
+		return swapQuote{}, errorsmod.Wrapf(
 			types.ErrArithmeticOutOfRange,
 			"validating the updated effective pools: %v",
 			err,
@@ -324,7 +324,7 @@ func (k Keeper) settleSwap(
 	// without recomputing.
 	if !quote.updatedArkPoolDelta.IsNil() {
 		if err := k.ArkPoolDelta.Set(ctx, quote.updatedArkPoolDelta); err != nil {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				err,
 				"applying swap to pool for offer %s and receive %s",
 				offerCoin,
@@ -335,7 +335,7 @@ func (k Keeper) settleSwap(
 
 	offerCoins := sdk.NewCoins(offerCoin)
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, trader, types.ModuleName, offerCoins); err != nil {
-		return sdkerrors.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
+		return errorsmod.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
 	// An expansion keeps its whole offer in module custody for the block's
@@ -348,7 +348,7 @@ func (k Keeper) settleSwap(
 	minted := quote.swapCoin
 	if offerCoin.Denom == chain.NoahBaseDenom {
 		if err := k.recordExpansion(ctx, offerCoin, quote.swapCoin, quote.rates); err != nil {
-			return sdkerrors.Wrapf(err, "recording expansion of offer %s into output %s", offerCoin, quote.swapCoin)
+			return errorsmod.Wrapf(err, "recording expansion of offer %s into output %s", offerCoin, quote.swapCoin)
 		}
 		burned = chain.NoahCoin(math.ZeroInt())
 	} else if quote.swapCoin.Denom == chain.NoahBaseDenom {
@@ -358,27 +358,27 @@ func (k Keeper) settleSwap(
 		// caller holding that rate.
 		redeemed, err := quote.rates.Convert(sdk.NewDecCoinFromCoin(offerCoin), chain.NoahBaseDenom)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "valuing redeemed offer %s", offerCoin)
+			return errorsmod.Wrapf(err, "valuing redeemed offer %s", offerCoin)
 		}
 		if err := k.recordRedemption(ctx, redeemed.Amount, quote.swapCoin.Amount); err != nil {
-			return sdkerrors.Wrapf(err, "recording redemption of offer %s into output %s", offerCoin, quote.swapCoin)
+			return errorsmod.Wrapf(err, "recording redemption of offer %s into output %s", offerCoin, quote.swapCoin)
 		}
 	}
 
 	if !burned.IsZero() {
 		if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(burned)); err != nil {
-			return sdkerrors.Wrapf(err, "burning settlement coins %s from module", burned)
+			return errorsmod.Wrapf(err, "burning settlement coins %s from module", burned)
 		}
 	}
 	if !minted.IsZero() {
 		if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(minted)); err != nil {
-			return sdkerrors.Wrapf(err, "minting settlement coins %s in module", minted)
+			return errorsmod.Wrapf(err, "minting settlement coins %s in module", minted)
 		}
 	}
 
 	swapCoins := sdk.NewCoins(quote.swapCoin)
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiver, swapCoins); err != nil {
-		return sdkerrors.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
+		return errorsmod.Wrapf(err, "sending swap coins %s from module to receiver %s", swapCoins, receiver)
 	}
 
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventSwap{
@@ -399,7 +399,7 @@ func (k Keeper) settleSwap(
 
 func marketRateError(err error) error {
 	if errors.Is(err, oracletypes.ErrUnknownDenom) {
-		return sdkerrors.Wrap(types.ErrNoEffectivePrice, err.Error())
+		return errorsmod.Wrap(types.ErrNoEffectivePrice, err.Error())
 	}
 	return err
 }
@@ -429,7 +429,7 @@ func (k Keeper) requireConvertible(ctx context.Context, offerDenom, askDenom str
 			return err
 		}
 		if !offerAsset.IsOraclePriced() {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrIneligibleAsset,
 				"%s asset %s cannot be offered for conversion",
 				offerAsset.Status,
@@ -443,7 +443,7 @@ func (k Keeper) requireConvertible(ctx context.Context, offerDenom, askDenom str
 			return err
 		}
 		if askAsset.Status != assettypes.AssetStatus_ASSET_STATUS_ACTIVE {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrIneligibleAsset,
 				"%s asset %s cannot be produced by conversion",
 				askAsset.Status,

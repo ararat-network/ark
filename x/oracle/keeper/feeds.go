@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -55,7 +55,7 @@ func (k Keeper) ScheduleFeedTransition(ctx context.Context, denom string, direct
 
 		// A record is immutable once written, so the opposite direction has to
 		// wait for activation rather than amending or cancelling this one.
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrFeedTransitionPending,
 			"feed %s has a conflicting transition activating at vote height %d",
 			denom,

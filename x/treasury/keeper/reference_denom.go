@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -26,7 +26,7 @@ func (k Keeper) RebaseReferenceState(ctx context.Context, from string, to string
 		return fmt.Errorf("getting params: %w", err)
 	}
 	if params.ReferenceDenom != from {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"treasury reference denom is %s, not %s",
 			params.ReferenceDenom,

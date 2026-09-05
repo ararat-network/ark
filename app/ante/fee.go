@@ -12,7 +12,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -94,10 +94,10 @@ func NewFeeDecorator(
 func (d FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+		return ctx, errorsmod.Wrap(errortypes.ErrTxDecode, "Tx must be a FeeTx")
 	}
 	if !simulate && ctx.BlockHeight() > 0 && feeTx.GetGas() == 0 {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidGasLimit, "must provide positive gas")
+		return ctx, errorsmod.Wrap(errortypes.ErrInvalidGasLimit, "must provide positive gas")
 	}
 
 	var (
@@ -160,7 +160,7 @@ func (d FeeDecorator) settle(
 	// denomination, since AmountOf binary searches; fee is only ranged over.
 	byDenom := slices.Clone(fee).Sort()
 	if err := byDenom.Validate(); err != nil {
-		return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
+		return settlement{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins,
 			"invalid fee %s: %v", fee, err)
 	}
 
@@ -168,7 +168,7 @@ func (d FeeDecorator) settle(
 	if enforce {
 		for _, coin := range tax {
 			if byDenom.AmountOf(coin.Denom).LT(coin.Amount) {
-				return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee,
+				return settlement{}, errorsmod.Wrapf(errortypes.ErrInsufficientFee,
 					"fee %s does not cover transfer tax %s", fee, tax)
 			}
 		}
@@ -251,7 +251,7 @@ func (d FeeDecorator) settle(
 		if err != nil {
 			return settlement{}, err
 		}
-		return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInsufficientFee,
+		return settlement{}, errorsmod.Wrapf(errortypes.ErrInsufficientFee,
 			"base fee requires %s or its equivalent in an accepted fee denomination%s, got %s",
 			reference, besideTax(tax), fee)
 	}
@@ -262,7 +262,7 @@ func (d FeeDecorator) settle(
 		if !noahFactor.IsPositive() {
 			// Unreachable: every stored factor is written positive. Kept
 			// because the division below does not judge its divisor's sign.
-			return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
+			return settlement{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins,
 				"non-positive gas factor for %s", chain.NoahBaseDenom)
 		}
 		// The numerator is a declared fee amount, bounded only by the decoder
@@ -270,7 +270,7 @@ func (d FeeDecorator) settle(
 		// domain, where the stock Quo panics.
 		value, err := decimal.Quo(math.LegacyNewDecFromInt(tip), noahFactor)
 		if err != nil {
-			return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
+			return settlement{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins,
 				"ranking the %s tip: %v", chain.NoahBaseDenom, err)
 		}
 		settled.priority = gasPriority(value.TruncateInt(), gas)
@@ -295,15 +295,15 @@ func (d FeeDecorator) deduct(ctx sdk.Context, feeTx sdk.FeeTx, settled settlemen
 		}
 	}
 	if d.accountKeeper.GetAccount(ctx, deductFrom) == nil {
-		return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFrom)
+		return errortypes.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFrom)
 	}
 
 	if !gasFee.IsZero() {
 		if !gasFee.IsValid() {
-			return errorsmod.Wrapf(sdkerrors.ErrInsufficientFee, "invalid fee amount: %s", gasFee)
+			return errorsmod.Wrapf(errortypes.ErrInsufficientFee, "invalid fee amount: %s", gasFee)
 		}
 		if err := d.bankKeeper.SendCoinsFromAccountToModule(ctx, deductFrom, authtypes.FeeCollectorName, gasFee); err != nil {
-			return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s", err.Error())
+			return errorsmod.Wrapf(errortypes.ErrInsufficientFunds, "%s", err.Error())
 		}
 	}
 

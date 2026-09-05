@@ -9,7 +9,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
 	"github.com/ararat-network/ark/app/ante"
@@ -74,7 +74,7 @@ func TestTransferTaxDecoratorFailsADrainedPayer(t *testing.T) {
 	require.NoError(t, arkApp.BankKeeper.SendCoins(r.cached, tx.payer, elsewhere, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10))))
 
 	_, err := runTax(t, arkApp, r.handed, tx, false, true)
-	require.ErrorIs(t, err, sdkerrors.ErrInsufficientFunds)
+	require.ErrorIs(t, err, errortypes.ErrInsufficientFunds)
 	require.ErrorContains(t, err, "collecting transfer tax 10ausd")
 	require.Empty(t, collected(arkApp, ctx, r.cached, taxCollector))
 	require.Equal(t, "1ausd", collected(arkApp, ctx, r.cached, feeCollector).String())

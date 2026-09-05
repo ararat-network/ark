@@ -6,7 +6,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -86,7 +86,7 @@ func (d TransferTaxDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, s
 	}
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
-		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+		return ctx, errorsmod.Wrap(errortypes.ErrTxDecode, "Tx must be a FeeTx")
 	}
 	if addr := d.accountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName); addr == nil {
 		return ctx, fmt.Errorf("transfer tax collector module account (%s) has not been set", treasurytypes.TransferTaxCollectorName)

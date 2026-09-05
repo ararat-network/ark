@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -40,7 +40,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// a better route out (conversion, while the asset is still priceable) or
 	// none that governance has committed to.
 	if asset.Status != assettypes.AssetStatus_ASSET_STATUS_SUSPENDED {
-		return sdk.Coin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, errorsmod.Wrapf(
 			types.ErrIneligibleAsset,
 			"%s asset %s cannot be settled",
 			asset.Status,
@@ -53,7 +53,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		return sdk.Coin{}, err
 	}
 	if !found {
-		return sdk.Coin{}, sdkerrors.Wrap(types.ErrNoActiveSettlement, offerCoin.Denom)
+		return sdk.Coin{}, errorsmod.Wrap(types.ErrNoActiveSettlement, offerCoin.Denom)
 	}
 
 	// Treasury converts the redeemed asset through whatever rates it is handed,
@@ -76,14 +76,14 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		chain.NoahBaseDenom,
 	)
 	if err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(err, "quoting settlement redemption of %s", offerCoin)
+		return sdk.Coin{}, errorsmod.Wrapf(err, "quoting settlement redemption of %s", offerCoin)
 	}
 	// Truncation is the holder's cost, never the protocol's: a partial anoah
 	// cannot be paid, and rounding it up would mint NOAH the plan never
 	// committed to.
 	entitlement := chain.NoahCoin(entitlementDec.Amount.TruncateInt())
 	if !entitlement.IsPositive() {
-		return sdk.Coin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, errorsmod.Wrapf(
 			types.ErrZeroSwapCoin,
 			"settlement of %s at rate %s rounds to zero",
 			offerCoin,
@@ -98,7 +98,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		types.ModuleName,
 		offerCoins,
 	); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, errorsmod.Wrapf(
 			err,
 			"sending settlement offer %s from trader %s to module",
 			offerCoins,
@@ -110,7 +110,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	// appears in the oracle set, so this path values its own redemption rather
 	// than leaving it to settlement.
 	if err := k.recordRedemption(ctx, entitlementDec.Amount, entitlement.Amount); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, errorsmod.Wrapf(
 			err,
 			"recording settlement redemption of %s",
 			offerCoin,
@@ -118,14 +118,14 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 	}
 
 	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(err, "burning settled coins %s", offerCoin)
+		return sdk.Coin{}, errorsmod.Wrapf(err, "burning settled coins %s", offerCoin)
 	}
 	// The whole entitlement is minted here and the Buffer's share of it burned
 	// back at settlement, so the holder always receives the whole entitlement:
 	// the cost of an orderly failure lands as bounded NOAH dilution rather than
 	// as a haircut on the exit, and the exit never waits on a valuation.
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(entitlement)); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(err, "minting settlement coins %s", entitlement)
+		return sdk.Coin{}, errorsmod.Wrapf(err, "minting settlement coins %s", entitlement)
 	}
 
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
@@ -134,7 +134,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		trader,
 		sdk.NewCoins(entitlement),
 	); err != nil {
-		return sdk.Coin{}, sdkerrors.Wrapf(
+		return sdk.Coin{}, errorsmod.Wrapf(
 			err,
 			"sending settlement entitlement %s to trader %s",
 			entitlement,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -34,7 +34,7 @@ func (k Keeper) applyConversionPolicy(ctx context.Context, policy types.Conversi
 	// a denomination here would let Market re-anchor behind the reference's
 	// back and leave Treasury's cap expressed in a different unit.
 	if policy.BasePool.Denom != current.BasePool.Denom {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"base pool denom is set by the protocol reference: re-point it with MsgSetReferenceDenom, not %s",
 			policy.BasePool.Denom,
@@ -50,7 +50,7 @@ func (k Keeper) applyConversionPolicy(ctx context.Context, policy types.Conversi
 		return err
 	}
 	if _, err := types.NewEffectivePools(policy.BasePool.Amount, newDelta); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"invalid effective pools: %v",
 			err,

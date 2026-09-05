@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/collections"
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -73,7 +73,7 @@ func (k Keeper) OpenSettlement(
 	}
 	if asset.Status != types.AssetStatus_ASSET_STATUS_SUSPENDED &&
 		asset.Status != types.AssetStatus_ASSET_STATUS_WRITTEN_OFF {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot open settlement",
 			asset.Status,
@@ -83,7 +83,7 @@ func (k Keeper) OpenSettlement(
 
 	supply := k.bankKeeper.GetSupply(ctx, denom)
 	if !supply.IsPositive() {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s must have positive supply to open settlement",
 			denom,
@@ -92,7 +92,7 @@ func (k Keeper) OpenSettlement(
 	if _, found, err := k.GetSettlementPlan(ctx, denom); err != nil {
 		return err
 	} else if found {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s already has a settlement plan",
 			denom,
@@ -118,7 +118,7 @@ func (k Keeper) OpenSettlement(
 		OpenedHeight:          blockHeight,
 	}
 	if err := plan.Validate(); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"opening settlement for asset %s: %v",
 			denom,
@@ -167,7 +167,7 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 		return err
 	}
 	if asset.Status != types.AssetStatus_ASSET_STATUS_SUSPENDED {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot cancel settlement",
 			asset.Status,
@@ -180,12 +180,12 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 		return err
 	}
 	if !found {
-		return sdkerrors.Wrap(types.ErrSettlementPlanNotFound, denom)
+		return errorsmod.Wrap(types.ErrSettlementPlanNotFound, denom)
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	blockHeight := sdkCtx.BlockHeight()
 	if plan.IsActive(blockHeight) {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s settlement activated at height %d and can no longer be cancelled",
 			denom,
@@ -231,7 +231,7 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 		return err
 	}
 	if asset.Status != types.AssetStatus_ASSET_STATUS_SUSPENDED {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot write off",
 			asset.Status,
@@ -241,7 +241,7 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 
 	supply := k.bankKeeper.GetSupply(ctx, denom)
 	if !supply.IsPositive() {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s must have positive supply to write off",
 			denom,
@@ -259,7 +259,7 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 	// inside the correction window built for exactly that.
 	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if hasPlan && blockHeight < plan.EarliestClosingHeight {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s settlement is committed until height %d and cannot be written off at height %d",
 			denom,
@@ -341,7 +341,7 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 // built whole beforehand and only these paths write this collection.
 func (k Keeper) validateResolutionRecord(ctx context.Context, record types.ResolutionRecord) error {
 	if err := record.Validate(); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"recording %s resolution for asset %s: %v",
 			record.Kind,
@@ -360,7 +360,7 @@ func (k Keeper) validateResolutionRecord(ctx context.Context, record types.Resol
 		)
 	}
 	if exists {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s already has a resolution record at version %d",
 			record.Denom,

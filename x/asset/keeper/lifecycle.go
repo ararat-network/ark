@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,7 +39,7 @@ func (k Keeper) RegisterAsset(ctx context.Context, denom string) error {
 	// derivation strips the base-unit prefix, which only a valid denomination
 	// is guaranteed to carry.
 	if err := chain.ValidatePricedDenom(denom); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"invalid asset registration: %v",
 			err,
@@ -52,7 +52,7 @@ func (k Keeper) RegisterAsset(ctx context.Context, denom string) error {
 		Version:  1,
 	}
 	if err := asset.Validate(); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"invalid asset registration: %v",
 			err,
@@ -64,13 +64,13 @@ func (k Keeper) RegisterAsset(ctx context.Context, denom string) error {
 		return fmt.Errorf("checking registered asset %s: %w", asset.Denom, err)
 	}
 	if exists {
-		return sdkerrors.Wrap(types.ErrAssetAlreadyExists, asset.Denom)
+		return errorsmod.Wrap(types.ErrAssetAlreadyExists, asset.Denom)
 	}
 	// A registration starts an asset at zero by construction, not by
 	// assumption, and x/asset is the sole owner of the denomination's Bank
 	// metadata from registration onward.
 	if supply := k.bankKeeper.GetSupply(ctx, asset.Denom); !supply.IsZero() {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrAssetSupplyNotZero,
 			"asset %s has supply %s",
 			asset.Denom,
@@ -78,7 +78,7 @@ func (k Keeper) RegisterAsset(ctx context.Context, denom string) error {
 		)
 	}
 	if _, found := k.bankKeeper.GetDenomMetaData(ctx, asset.Denom); found {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrAssetAlreadyExists,
 			"denom %s already has Bank metadata",
 			asset.Denom,
@@ -114,7 +114,7 @@ func (k Keeper) HaltIssuance(ctx context.Context, denom string, expectedVersion 
 	}
 
 	if asset.Status != types.AssetStatus_ASSET_STATUS_ACTIVE {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot halt issuance",
 			asset.Status,
@@ -137,7 +137,7 @@ func (k Keeper) ResumeIssuance(ctx context.Context, denom string, expectedVersio
 		return err
 	}
 	if asset.Status != types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot resume issuance",
 			asset.Status,
@@ -186,7 +186,7 @@ func (k Keeper) RecoverAsset(ctx context.Context, denom string, expectedVersion 
 	}
 	if asset.Status != types.AssetStatus_ASSET_STATUS_SUSPENDED &&
 		asset.Status != types.AssetStatus_ASSET_STATUS_WRITTEN_OFF {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot recover",
 			asset.Status,
@@ -265,7 +265,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 	if asset.Status != types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED &&
 		asset.Status != types.AssetStatus_ASSET_STATUS_SUSPENDED &&
 		asset.Status != types.AssetStatus_ASSET_STATUS_WRITTEN_OFF {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot finalise retirement",
 			asset.Status,
@@ -273,7 +273,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 		)
 	}
 	if maxResidualSupply.IsNil() || maxResidualSupply.IsNegative() {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"asset %s maximum residual supply must be set and non-negative",
 			denom,
@@ -302,7 +302,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 		// governance may judge the remainder unredeemable and derecognize it
 		// explicitly within the bound it approved.
 		if supply.Amount.GT(maxResidualSupply) {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrAssetSupplyNotZero,
 				"asset %s supply %s exceeds approved residual bound %s",
 				denom,
@@ -314,7 +314,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 		// Holders here may have had no exit, so a remainder is not governance's
 		// to derecognize on this message; WriteOffAsset names it honestly.
 		if !supply.IsZero() {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrAssetSupplyNotZero,
 				"suspended asset %s has supply %s; write it off instead",
 				denom,
@@ -322,7 +322,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 			)
 		}
 		if !maxResidualSupply.IsZero() {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrInvalidAssetTransition,
 				"suspended asset %s cannot approve a residual; write it off instead",
 				denom,
@@ -335,7 +335,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 		// already disclosed that amount, which is why the bound must be zero —
 		// this message approves nothing and must not read as though it did.
 		if !maxResidualSupply.IsZero() {
-			return sdkerrors.Wrapf(
+			return errorsmod.Wrapf(
 				types.ErrInvalidAssetTransition,
 				"written-off asset %s already disclosed its residual; approve zero",
 				denom,
@@ -384,7 +384,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 func (k Keeper) suspendAsset(ctx context.Context, asset types.Asset) error {
 	if asset.Status != types.AssetStatus_ASSET_STATUS_ACTIVE &&
 		asset.Status != types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
 			"%s asset %s cannot suspend",
 			asset.Status,
@@ -429,7 +429,7 @@ func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 		return fmt.Errorf("getting feed phase for asset %s: %w", denom, err)
 	}
 	if phase != oracletypes.FeedPhaseActive {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrAssetNotPriceable,
 			"asset %s feed must be in phase Active",
 			denom,

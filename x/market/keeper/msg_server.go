@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
@@ -30,7 +30,7 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
 	swapCoin, swapFee, err := m.k.Swap(ctx, addr, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
@@ -48,11 +48,11 @@ func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwap
 func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types.MsgSwapSendResponse, error) {
 	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "from address is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "from address is invalid: %s", err)
 	}
 	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "to address is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "to address is invalid: %s", err)
 	}
 
 	swapCoin, swapFee, err := m.k.Swap(ctx, fromAddr, toAddr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
@@ -70,12 +70,12 @@ func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types
 func (m msgServer) Settle(ctx context.Context, msg *types.MsgSettle) (*types.MsgSettleResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
 	redeemed, err := m.k.Settle(ctx, addr, msg.OfferCoin)
 	if err != nil {
-		return nil, sdkerrors.Wrapf(err, "settling %s", msg.OfferCoin)
+		return nil, errorsmod.Wrapf(err, "settling %s", msg.OfferCoin)
 	}
 
 	return &types.MsgSettleResponse{RedeemedCoin: redeemed}, nil

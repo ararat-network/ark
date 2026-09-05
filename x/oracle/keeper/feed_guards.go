@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/ararat-network/ark/x/oracle/types"
 )
@@ -61,7 +61,7 @@ func (k Keeper) feedReferents(ctx context.Context, denom string) ([]types.FeedRe
 		return nil, err
 	}
 	if phase == types.FeedPhaseOff {
-		return nil, sdkerrors.Wrap(types.ErrFeedNotFound, denom)
+		return nil, errorsmod.Wrap(types.ErrFeedNotFound, denom)
 	}
 
 	var referents []types.FeedReferent
@@ -112,7 +112,7 @@ func (k Keeper) requireFeedUnreferenced(ctx context.Context, denom string) error
 		claims[i] = fmt.Sprintf("%s: %s", referent.Consumer, referent.Referent)
 	}
 
-	return sdkerrors.Wrapf(
+	return errorsmod.Wrapf(
 		types.ErrFeedReferenced,
 		"%s: %s",
 		denom,

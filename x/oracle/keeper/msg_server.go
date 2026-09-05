@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -85,7 +85,7 @@ func (m msgServer) SetReferenceDenom(ctx context.Context, msg *types.MsgSetRefer
 		outgoingRate = math.LegacyDec{}
 	}
 	if !outgoingRate.IsNil() && (!outgoingRate.IsPositive() || outgoingRate.GT(types.MaxOutgoingReferenceRate)) {
-		return nil, sdkerrors.Wrapf(
+		return nil, errorsmod.Wrapf(
 			errortypes.ErrInvalidRequest,
 			"outgoing reference denom rate must be positive and at most %s, is %s",
 			types.MaxOutgoingReferenceRate,

@@ -4,7 +4,7 @@ import (
 	"maps"
 	"time"
 
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -77,13 +77,13 @@ type RateRequest struct {
 // convertible whatever its shape.
 func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, error) {
 	if offerCoin.Amount.IsNil() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not set", offerCoin.Denom)
+		return sdk.DecCoin{}, errorsmod.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not set", offerCoin.Denom)
 	}
 	if offerCoin.Amount.IsNegative() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "negative offer amount: %s", offerCoin)
+		return sdk.DecCoin{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins, "negative offer amount: %s", offerCoin)
 	}
 	if !offerCoin.Amount.IsInValidRange() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not representable", offerCoin.Denom)
+		return sdk.DecCoin{}, errorsmod.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not representable", offerCoin.Denom)
 	}
 
 	// Membership in the set admits a denomination, and it is also what vouches
@@ -103,18 +103,18 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 	// that escapes the proof.
 	offerRate, ok := r[offerCoin.Denom]
 	if !ok {
-		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, offerCoin.Denom)
+		return sdk.DecCoin{}, errorsmod.Wrap(ErrUnknownDenom, offerCoin.Denom)
 	}
 	if offerCoin.Denom == askDenom {
 		return offerCoin, nil
 	}
 	if offerCoin.Amount.IsZero() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(errortypes.ErrInvalidCoins, "zero offer amount: %s", offerCoin)
+		return sdk.DecCoin{}, errorsmod.Wrapf(errortypes.ErrInvalidCoins, "zero offer amount: %s", offerCoin)
 	}
 
 	askRate, ok := r[askDenom]
 	if !ok {
-		return sdk.DecCoin{}, sdkerrors.Wrap(ErrUnknownDenom, askDenom)
+		return sdk.DecCoin{}, errorsmod.Wrap(ErrUnknownDenom, askDenom)
 	}
 
 	// Value the offer in NOAH first: the offer rate is NOAH per one offer
@@ -127,7 +127,7 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 		var err error
 		noahValue, err = decimal.Mul(offerCoin.Amount, offerRate)
 		if err != nil {
-			return sdk.DecCoin{}, sdkerrors.Wrapf(
+			return sdk.DecCoin{}, errorsmod.Wrapf(
 				ErrConversionOutOfRange,
 				"multiplying %s amount by its rate: %v",
 				offerCoin.Denom,
@@ -141,7 +141,7 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 		var err error
 		amount, err = decimal.Quo(noahValue, askRate)
 		if err != nil {
-			return sdk.DecCoin{}, sdkerrors.Wrapf(
+			return sdk.DecCoin{}, errorsmod.Wrapf(
 				ErrConversionOutOfRange,
 				"dividing NOAH value by %s rate: %v",
 				askDenom,
@@ -150,7 +150,7 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 		}
 	}
 	if amount.IsNegative() {
-		return sdk.DecCoin{}, sdkerrors.Wrapf(ErrConversionOutOfRange, "conversion of %s to %s is negative", offerCoin, askDenom)
+		return sdk.DecCoin{}, errorsmod.Wrapf(ErrConversionOutOfRange, "conversion of %s to %s is negative", offerCoin, askDenom)
 	}
 
 	return sdk.DecCoin{Denom: askDenom, Amount: amount}, nil

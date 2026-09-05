@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/collections"
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,13 +40,13 @@ func (k Keeper) SetReferenceDenom(ctx context.Context, referenceDenom string, ou
 	// Clearing a configured reference is rejected for the same reason an empty
 	// one cannot be set: consumers hold state denominated in it.
 	if referenceDenom == "" {
-		return sdkerrors.Wrap(types.ErrInvalidReferenceDenom, "reference denom must be set")
+		return errorsmod.Wrap(types.ErrInvalidReferenceDenom, "reference denom must be set")
 	}
 	// The reference denom names a feed, not necessarily a listed asset, so the
 	// identity rule is the feed-key rule and the numeraire is excluded for the
 	// same reason it has no feed.
 	if err := chain.ValidatePricedDenom(referenceDenom); err != nil {
-		return sdkerrors.Wrapf(types.ErrInvalidReferenceDenom, "reference denom %v", err)
+		return errorsmod.Wrapf(types.ErrInvalidReferenceDenom, "reference denom %v", err)
 	}
 	if err := k.requireFeedActive(ctx, referenceDenom); err != nil {
 		return err
@@ -86,7 +86,7 @@ func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 		return fmt.Errorf("getting feed phase for reference denom %s: %w", denom, err)
 	}
 	if phase != types.FeedPhaseActive {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrInvalidReferenceDenom,
 			"feed %s is not active and cannot serve as the protocol reference",
 			denom,
@@ -117,7 +117,7 @@ func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 // on rather than inherited.
 func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string, outgoingRate math.LegacyDec) error {
 	if k.marketReferenceKeeper == nil || k.treasuryReferenceKeeper == nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
 			"moving reference denom %s with no rebase executors wired",
 			from,
@@ -132,7 +132,7 @@ func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string
 	}
 	rates, err := k.GetRateSet(ctx, priced...)
 	if err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
 			"pricing reference denom move from %s to %s: %v",
 			from,
@@ -145,7 +145,7 @@ func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string
 	}
 
 	if err := k.marketReferenceKeeper.RebaseBasePool(ctx, from, to, rates); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
 			"rebasing Market base pool from %s to %s: %v",
 			from,
@@ -154,7 +154,7 @@ func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string
 		)
 	}
 	if err := k.treasuryReferenceKeeper.RebaseReferenceState(ctx, from, to, rates); err != nil {
-		return sdkerrors.Wrapf(
+		return errorsmod.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
 			"rebasing Treasury reference state from %s to %s: %v",
 			from,
