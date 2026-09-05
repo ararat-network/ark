@@ -19,7 +19,7 @@ import (
 // says which restriction stopped it.
 //
 // The rule is deliberately blunt because every launch fund is NOAH-denominated
-// (TREASURY_REDESIGN_PLAN.md §7.2). It stops being common the moment a fund
+// (ECONOMIC_DESIGN.md §7.3). It stops being common the moment a fund
 // gains a custody allowlist under §20.1, at which point that fund's module
 // widens its own restriction and stops calling this.
 func ValidateNoahOnlyDeposit(fundLabel string, amount sdk.Coins) error {

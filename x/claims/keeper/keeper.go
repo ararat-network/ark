@@ -124,7 +124,7 @@ func NewKeeper(
 // RecognisedCapital reports the Insurance capital available to cover new loss,
 // satisfying Treasury's expected ClaimsKeeper. Approved pending claims are
 // encumbered and cannot simultaneously cover another loss, so they are
-// excluded (TREASURY_REDESIGN_PLAN.md §7.2).
+// excluded (ECONOMIC_DESIGN.md §7.3).
 //
 // Treasury owns the requirement this answers against; this module owns only
 // what the fund is currently worth toward it.

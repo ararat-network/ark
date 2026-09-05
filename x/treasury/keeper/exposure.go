@@ -308,6 +308,8 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 		return false, fmt.Errorf("setting exposure state: %w", err)
 	}
 
+	// Emitted on every completed refresh, an unchanged multiplier included: the
+	// cadence is the liveness signal an indexer reads. No equality guard.
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventExposureRefreshed{
 		PreviousMultiplier:   previous,
 		Multiplier:           multiplier,
