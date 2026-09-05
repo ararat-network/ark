@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
-	otelmetric "go.opentelemetry.io/otel/sdk/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
 	clientmetrics "github.com/ararat-network/ark/pricefeed/client/metrics"
 )
@@ -26,7 +26,7 @@ func TestRecordOracleResponse(t *testing.T) {
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
 
-	provider := otelmetric.NewMeterProvider(otelmetric.WithReader(exporter))
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})

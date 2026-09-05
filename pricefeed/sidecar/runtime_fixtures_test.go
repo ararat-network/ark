@@ -20,14 +20,14 @@ import (
 	baseapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	runtimepkg "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 type serverTestFetcher struct {
 	pricesByTicker map[string]*big.Float
 }
 
-func newServerTestFetcher(prices oracletypes.Prices) *serverTestFetcher {
+func newServerTestFetcher(prices sidecartypes.Prices) *serverTestFetcher {
 	pricesByTicker := make(map[string]*big.Float, len(prices))
 	markets := newTestMarkets()
 	for pair, price := range prices {
@@ -132,7 +132,7 @@ func (c *blockingFeedsClient) release() {
 	})
 }
 
-func newTestOracle(t *testing.T, prices oracletypes.Prices) *Service {
+func newTestOracle(t *testing.T, prices sidecartypes.Prices) *Service {
 	t.Helper()
 
 	cfg := newTestRuntimeConfig()

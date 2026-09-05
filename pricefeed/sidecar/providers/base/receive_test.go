@@ -12,7 +12,7 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestProviderStoresResultAndGetPricesReturnsDeepCopy(t *testing.T) {
@@ -27,12 +27,12 @@ func TestProviderStoresResultAndGetPricesReturnsDeepCopy(t *testing.T) {
 	), 1)
 
 	prices := provider.GetPrices()
-	require.Equal(t, 0, prices[oracletypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
+	require.Equal(t, 0, prices[sidecartypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
 
-	prices[oracletypes.Pair("ATOM/USD")].Price.SetFloat64(99)
+	prices[sidecartypes.Pair("ATOM/USD")].Price.SetFloat64(99)
 
 	prices = provider.GetPrices()
-	require.Equal(t, 0, prices[oracletypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
+	require.Equal(t, 0, prices[sidecartypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
 }
 
 func TestProviderIgnoresOlderResults(t *testing.T) {
@@ -49,7 +49,7 @@ func TestProviderIgnoresOlderResults(t *testing.T) {
 		}, nil),
 	}, func() bool {
 		prices := provider.GetPrices()
-		price, ok := prices[oracletypes.Pair("ATOM/USD")]
+		price, ok := prices[sidecartypes.Pair("ATOM/USD")]
 		return ok && price.Timestamp.Equal(currentTime) && price.Price.Cmp(big.NewFloat(2)) == 0
 	})
 }
@@ -105,7 +105,7 @@ func TestProviderRefreshesTimestampForUnchangedResult(t *testing.T) {
 		}, nil),
 	}, func() bool {
 		prices := provider.GetPrices()
-		price, ok := prices[oracletypes.Pair("ATOM/USD")]
+		price, ok := prices[sidecartypes.Pair("ATOM/USD")]
 		return ok &&
 			price.Timestamp.Equal(updatedTime) &&
 			price.LastObserved.Equal(currentTime) &&
@@ -136,7 +136,7 @@ func TestProviderResetsLastObservedOnRealResult(t *testing.T) {
 		}, nil),
 	}, func() bool {
 		prices := provider.GetPrices()
-		price, ok := prices[oracletypes.Pair("ATOM/USD")]
+		price, ok := prices[sidecartypes.Pair("ATOM/USD")]
 		return ok &&
 			price.Timestamp.Equal(secondTime) &&
 			price.LastObserved.Equal(secondTime) &&

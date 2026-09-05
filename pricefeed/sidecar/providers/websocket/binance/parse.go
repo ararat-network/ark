@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // parsePriceUpdateMessage converts a Binance symbol and price string into a
@@ -21,7 +21,7 @@ func (h *Handler) parsePriceUpdateMessage(rawTicker string, price string) (types
 	}
 
 	// Convert the price to a big Float.
-	priceFloat, err := oracletypes.ParsePrice(price)
+	priceFloat, err := sidecartypes.ParsePrice(price)
 	if err != nil {
 		unresolved[ticker] = types.NewErrorWithCode(err, types.ErrorFailedToParsePrice)
 		return types.NewResponse(resolved, unresolved), nil

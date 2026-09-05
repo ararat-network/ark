@@ -16,7 +16,7 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -160,7 +160,7 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 						return ctx.Err()
 					})
 
-				feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+				feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 				expectFeedsLifecycle(feedsClient)
 				feedsClient.EXPECT().
 					Feeds().

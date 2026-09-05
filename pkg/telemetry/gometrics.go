@@ -7,7 +7,7 @@ import (
 
 	gometrics "github.com/hashicorp/go-metrics"
 	"go.opentelemetry.io/otel/attribute"
-	otelmetric "go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
@@ -16,7 +16,7 @@ const maxInstrumentNameLen = 255
 
 // histogramBoundaries are the buckets the SDK's own bridge uses, kept so the
 // exported series do not change with the sink.
-var histogramBoundaries = otelmetric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
+var histogramBoundaries = metric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
 
 // GoMetricsSink bridges the SDK's legacy go-metrics into an OTel meter the
 // way cosmos-sdk's "otel" sink does, with two differences: instrument names
@@ -28,7 +28,7 @@ var histogramBoundaries = otelmetric.WithExplicitBucketBoundaries(0.005, 0.01, 0
 // after sanitising records nowhere.
 type GoMetricsSink struct {
 	ctx        context.Context
-	meter      otelmetric.Meter
+	meter      metric.Meter
 	counters   sync.Map
 	gauges     sync.Map
 	histograms sync.Map
@@ -40,7 +40,7 @@ var (
 )
 
 // NewGoMetricsSink returns a sink recording into meter under ctx.
-func NewGoMetricsSink(ctx context.Context, meter otelmetric.Meter) *GoMetricsSink {
+func NewGoMetricsSink(ctx context.Context, meter metric.Meter) *GoMetricsSink {
 	return &GoMetricsSink{ctx: ctx, meter: meter}
 }
 
@@ -80,43 +80,43 @@ func instrumentName(key []string) string {
 	return SanitiseInstrumentName(strings.Join(key, "."))
 }
 
-func (s *GoMetricsSink) gauge(key []string) otelmetric.Float64Gauge {
+func (s *GoMetricsSink) gauge(key []string) metric.Float64Gauge {
 	name := instrumentName(key)
 	if entry, ok := s.gauges.Load(name); ok {
-		return entry.(otelmetric.Float64Gauge)
+		return entry.(metric.Float64Gauge)
 	}
 	inst, err := s.meter.Float64Gauge(name)
 	if err != nil || inst == nil {
 		inst = noop.Float64Gauge{}
 	}
 	entry, _ := s.gauges.LoadOrStore(name, inst)
-	return entry.(otelmetric.Float64Gauge)
+	return entry.(metric.Float64Gauge)
 }
 
-func (s *GoMetricsSink) counter(key []string) otelmetric.Float64Counter {
+func (s *GoMetricsSink) counter(key []string) metric.Float64Counter {
 	name := instrumentName(key)
 	if entry, ok := s.counters.Load(name); ok {
-		return entry.(otelmetric.Float64Counter)
+		return entry.(metric.Float64Counter)
 	}
 	inst, err := s.meter.Float64Counter(name)
 	if err != nil || inst == nil {
 		inst = noop.Float64Counter{}
 	}
 	entry, _ := s.counters.LoadOrStore(name, inst)
-	return entry.(otelmetric.Float64Counter)
+	return entry.(metric.Float64Counter)
 }
 
-func (s *GoMetricsSink) histogram(key []string) otelmetric.Float64Histogram {
+func (s *GoMetricsSink) histogram(key []string) metric.Float64Histogram {
 	name := instrumentName(key)
 	if entry, ok := s.histograms.Load(name); ok {
-		return entry.(otelmetric.Float64Histogram)
+		return entry.(metric.Float64Histogram)
 	}
 	inst, err := s.meter.Float64Histogram(name, histogramBoundaries)
 	if err != nil || inst == nil {
 		inst = noop.Float64Histogram{}
 	}
 	entry, _ := s.histograms.LoadOrStore(name, inst)
-	return entry.(otelmetric.Float64Histogram)
+	return entry.(metric.Float64Histogram)
 }
 
 // SetGauge implements gometrics.MetricSink.
@@ -164,10 +164,10 @@ func (s *GoMetricsSink) AddSampleWithLabels(key []string, val float32, labels []
 	s.histogram(key).Record(s.ctx, float64(val), attrs(labels))
 }
 
-func attrs(labels []gometrics.Label) otelmetric.MeasurementOption {
+func attrs(labels []gometrics.Label) metric.MeasurementOption {
 	kvs := make([]attribute.KeyValue, len(labels))
 	for i, l := range labels {
 		kvs[i] = attribute.String(l.Name, l.Value)
 	}
-	return otelmetric.WithAttributes(kvs...)
+	return metric.WithAttributes(kvs...)
 }

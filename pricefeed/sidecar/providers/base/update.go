@@ -2,7 +2,7 @@ package base
 
 import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // UpdateMarkets applies prevalidated market mappings. The runtime stops the
@@ -20,7 +20,7 @@ func (p *Provider) UpdateMarkets(markets types.Markets) {
 // unchanged pair/symbol mappings.
 func (p *Provider) setMarkets(markets types.Markets) {
 	nextMarkets := append(types.Markets(nil), markets...)
-	retained := make(map[oracletypes.Pair]types.Result, len(p.prices))
+	retained := make(map[sidecartypes.Pair]types.Result, len(p.prices))
 
 	for pair, result := range p.prices {
 		currentTicker, currentOK := p.markets.PairToTicker(pair)

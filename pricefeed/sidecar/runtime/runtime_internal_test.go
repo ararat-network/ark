@@ -18,7 +18,7 @@ import (
 	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestNewRuntimeBuildsConfigOwnedProviderSet(t *testing.T) {
@@ -79,8 +79,8 @@ func TestGetPriceSnapshotReturnsExactCommittedGeneration(t *testing.T) {
 	timestamp := time.Now().UTC()
 	oracle := &Runtime{
 		feeds: []string{"akrw"},
-		priceSnapshot: oracletypes.PriceSnapshot{
-			Prices: oracletypes.FeedPrices{
+		priceSnapshot: sidecartypes.PriceSnapshot{
+			Prices: sidecartypes.FeedPrices{
 				"ausd": big.NewFloat(1.25),
 			},
 			Timestamp: timestamp,
@@ -113,7 +113,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 
 	cfg := testRuntimeLoggerConfig()
 	cfg.Resolver.Routes = map[string][]resolver.Route{
-		"ausd": {{Name: "direct", Pairs: []oracletypes.Pair{"USD/NOAH"}}},
+		"ausd": {{Name: "direct", Pairs: []sidecartypes.Pair{"USD/NOAH"}}},
 	}
 	cfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "USD/NOAH",
@@ -139,7 +139,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	cfg.Resolver.BootstrapPrices[0].Price = "99"
 	require.Equal(t, []string{"ausd"}, oracle.feeds)
 	require.Equal(t, providertypes.Ticker("NOAHUSD"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("USD/NOAH"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
+	require.Equal(t, sidecartypes.Pair("USD/NOAH"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
 	require.Equal(t, "0.25", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 
 	nextCfg := testRuntimeLoggerConfig()
@@ -148,7 +148,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	nextCfg.Providers["logger-test"] = nextProviderCfg
 	nextCfg.FallbackFeeds = []string{"akrw"}
 	nextCfg.Resolver.Routes = map[string][]resolver.Route{
-		"akrw": {{Name: "direct", Pairs: []oracletypes.Pair{"KRW/NOAH"}}},
+		"akrw": {{Name: "direct", Pairs: []sidecartypes.Pair{"KRW/NOAH"}}},
 	}
 	nextCfg.Resolver.BootstrapPrices = []resolver.BootstrapPrice{{
 		Pair:       "KRW/NOAH",
@@ -165,7 +165,7 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	require.Equal(t, []string{"akrw"}, oracle.feeds)
 	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, provider.GetTickers())
 	require.Equal(t, providertypes.Ticker("NOAHKRW"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
-	require.Equal(t, oracletypes.Pair("KRW/NOAH"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
+	require.Equal(t, sidecartypes.Pair("KRW/NOAH"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
 	require.Equal(t, "250", oracle.cfg.Resolver.BootstrapPrices[0].Price)
 }
 

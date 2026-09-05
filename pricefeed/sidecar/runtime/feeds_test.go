@@ -10,7 +10,7 @@ import (
 
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestRunUsesFeedsWhenRefreshSucceeds(t *testing.T) {
@@ -18,7 +18,7 @@ func TestRunUsesFeedsWhenRefreshSucceeds(t *testing.T) {
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().
@@ -51,7 +51,7 @@ func TestRunUsesAuthoritativeEmptyFeeds(t *testing.T) {
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().
@@ -86,7 +86,7 @@ func TestRunDoesNotRestartProviderWhenFeedsAreUnchanged(t *testing.T) {
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRun(mp.fetcher, started)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().
@@ -126,7 +126,7 @@ func TestRunRestartsStoppedProviderWhenFeedsChangeMarkets(t *testing.T) {
 		[]providertypes.Ticker{"NOAHUSD"},
 		[]providertypes.Ticker{"NOAHKRW"},
 	)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().
@@ -158,7 +158,7 @@ func TestRunUsesFallbackFeedsWhenFeedsFailBeforeSuccess(t *testing.T) {
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().
@@ -191,7 +191,7 @@ func TestRunKeepsLastFeedsAfterRefreshFailure(t *testing.T) {
 	started := make(chan struct{})
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
 	expectFetcherRunAnyTimes(mp.fetcher, started)
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	calls := 0
 	callCh := make(chan int, 2)

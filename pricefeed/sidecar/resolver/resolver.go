@@ -6,7 +6,7 @@ import (
 	"slices"
 	"time"
 
-	oraclemetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
@@ -47,11 +47,11 @@ func ResolvePrices(
 						continue
 					}
 					medianPrices[pair] = bootstrapPrice
-					oraclemetrics.RecordBootstrapPriceUse(ctx, pair.String())
+					sidecarmetrics.RecordBootstrapPriceUse(ctx, pair.String())
 					continue
 				}
 				medianPrices[pair] = calculateMedian(samples)
-				oraclemetrics.RecordPairSampleCount(ctx, pair.String(), len(samples))
+				sidecarmetrics.RecordPairSampleCount(ctx, pair.String(), len(samples))
 			}
 
 			finalPrice, ok := resolveRoutePrice(medianPrices, route.Pairs)
@@ -60,7 +60,7 @@ func ResolvePrices(
 			}
 			routePrices[output] = append(routePrices[output], finalPrice)
 			floatPrice, _ := finalPrice.Float64()
-			oraclemetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
+			sidecarmetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
 		}
 	}
 
@@ -70,7 +70,7 @@ func ResolvePrices(
 			continue
 		}
 		finalPrices[pair] = calculateAverage(prices)
-		oraclemetrics.RecordResolvedSourceCount(ctx, pair.String(), len(prices))
+		sidecarmetrics.RecordResolvedSourceCount(ctx, pair.String(), len(prices))
 	}
 
 	return recordFinalPrices(ctx, finalPrices)
@@ -133,7 +133,7 @@ func recordProviderPrices(ctx context.Context, providerPrices map[string]types.P
 			}
 
 			floatPrice, _ := price.Float64()
-			oraclemetrics.RecordProviderPrice(ctx, provider, pair.String(), floatPrice)
+			sidecarmetrics.RecordProviderPrice(ctx, provider, pair.String(), floatPrice)
 		}
 	}
 }
@@ -172,7 +172,7 @@ func recordFinalPrices(ctx context.Context, prices types.Prices) types.Prices {
 		finalPrices[pair] = copied
 
 		floatPrice, _ := copied.Float64()
-		oraclemetrics.RecordAggregatePrice(ctx, pair.String(), floatPrice)
+		sidecarmetrics.RecordAggregatePrice(ctx, pair.String(), floatPrice)
 	}
 
 	return finalPrices

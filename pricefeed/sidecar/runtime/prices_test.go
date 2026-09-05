@@ -20,7 +20,7 @@ import (
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestRunFiltersStaleProviderPricesAndRecordsSyncTime(t *testing.T) {
@@ -295,7 +295,7 @@ func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {
 		}).
 		AnyTimes()
 
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsStarted := make(chan struct{})
 	allowFeeds := make(chan struct{})

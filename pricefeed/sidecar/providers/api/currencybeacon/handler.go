@@ -11,7 +11,7 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/internal/fiat"
 	api "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 var _ api.DataHandler = (*Handler)(nil)
@@ -79,7 +79,7 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 		if !ok {
 			continue
 		}
-		price, err := oracletypes.ParsePrice(rate.String())
+		price, err := sidecartypes.ParsePrice(rate.String())
 		if err != nil {
 			wErr := fmt.Errorf("failed to convert price %s to big.Float: %w", rate.String(), err)
 			unresolved[ticker] = types.NewErrorWithCode(wErr, types.ErrorFailedToParsePrice)

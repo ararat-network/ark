@@ -14,7 +14,7 @@ import (
 
 	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestVersion(t *testing.T) {
@@ -56,7 +56,7 @@ func TestPrices(t *testing.T) {
 	})
 	version.Version = "v1.2.3"
 
-	oracle := newTestOracle(t, oracletypes.Prices{
+	oracle := newTestOracle(t, sidecartypes.Prices{
 		"NOAH/USD": mustBigFloat(t, "8"),
 		"NOAH/KRW": mustBigFloat(t, "0.5"),
 	})
@@ -73,7 +73,7 @@ func TestPrices(t *testing.T) {
 }
 
 func TestPricesOmitsMissingFeeds(t *testing.T) {
-	oracle := newTestOracle(t, oracletypes.Prices{})
+	oracle := newTestOracle(t, sidecartypes.Prices{})
 	startTestRuntime(t, oracle)
 
 	response := requireOracleTick(t, oracle)
@@ -91,7 +91,7 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 	oracle := newTestOracleFromRuntime(
 		t,
 		cfg,
-		newServerTestFetcher(oracletypes.Prices{
+		newServerTestFetcher(sidecartypes.Prices{
 			"NOAH/USD": mustBigFloat(t, "0.25"),
 			"NOAH/KRW": mustBigFloat(t, "0.0625"),
 		}),
@@ -135,17 +135,17 @@ func TestPricesReturnsContextErrorBeforeSnapshotRead(t *testing.T) {
 func TestToReqPrices(t *testing.T) {
 	tests := []struct {
 		name   string
-		prices oracletypes.FeedPrices
+		prices sidecartypes.FeedPrices
 		want   map[string]math.LegacyDec
 	}{
 		{
 			name:   "empty prices",
-			prices: oracletypes.FeedPrices{},
+			prices: sidecartypes.FeedPrices{},
 			want:   map[string]math.LegacyDec{},
 		},
 		{
 			name: "multiple prices",
-			prices: oracletypes.FeedPrices{
+			prices: sidecartypes.FeedPrices{
 				"ausd": mustBigFloat(t, "123.456"),
 				"akrw": mustBigFloat(t, "42.25"),
 			},
@@ -172,7 +172,7 @@ func TestToReqPrices(t *testing.T) {
 }
 
 func TestToReqPricesRejectsNilPrice(t *testing.T) {
-	got, err := toReqPrices(oracletypes.FeedPrices{
+	got, err := toReqPrices(sidecartypes.FeedPrices{
 		"ausd": nil,
 	})
 
@@ -181,10 +181,10 @@ func TestToReqPricesRejectsNilPrice(t *testing.T) {
 }
 
 func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
-	tooLarge := new(big.Float).SetPrec(oracletypes.PricePrecisionBits)
+	tooLarge := new(big.Float).SetPrec(sidecartypes.PricePrecisionBits)
 	tooLarge.SetInt(new(big.Int).Lsh(big.NewInt(1), 256))
 
-	got, err := toReqPrices(oracletypes.FeedPrices{"ausd": tooLarge})
+	got, err := toReqPrices(sidecartypes.FeedPrices{"ausd": tooLarge})
 
 	require.Nil(t, got)
 	require.ErrorContains(t, err, "magnitude exceeds LegacyDec range")
@@ -193,7 +193,7 @@ func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
 func mustBigFloat(t *testing.T, value string) *big.Float {
 	t.Helper()
 
-	price, _, err := big.ParseFloat(value, 10, oracletypes.PricePrecisionBits, big.ToNearestEven)
+	price, _, err := big.ParseFloat(value, 10, sidecartypes.PricePrecisionBits, big.ToNearestEven)
 	require.NoError(t, err)
 	return price
 }

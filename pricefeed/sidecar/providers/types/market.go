@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Market maps an exchange-rate pair to the provider symbol used to fetch its price.
 type Market struct {
 	// Pair is the internal id for a pair, for example USD/KRW.
-	Pair oracletypes.Pair `json:"pair"`
+	Pair sidecartypes.Pair `json:"pair"`
 	// Symbol is the provider/API-facing market symbol, for example USDTUSD.
 	Symbol Ticker `json:"symbol"`
 }
@@ -20,7 +20,7 @@ type Markets []Market
 
 // TickerToPair returns the configured pair for ticker.
 // Ticker comparison is case-insensitive.
-func (m Markets) TickerToPair(ticker Ticker) (oracletypes.Pair, bool) {
+func (m Markets) TickerToPair(ticker Ticker) (sidecartypes.Pair, bool) {
 	for _, market := range m {
 		if ticker.Key() == market.Symbol.Key() {
 			return market.Pair, true
@@ -31,7 +31,7 @@ func (m Markets) TickerToPair(ticker Ticker) (oracletypes.Pair, bool) {
 }
 
 // PairToTicker returns the provider symbol configured for pair.
-func (m Markets) PairToTicker(pair oracletypes.Pair) (Ticker, bool) {
+func (m Markets) PairToTicker(pair sidecartypes.Pair) (Ticker, bool) {
 	for _, market := range m {
 		if pair == market.Pair {
 			return market.Symbol, true
@@ -77,7 +77,7 @@ func (m Markets) Equal(other Markets) bool {
 
 // FilterPairs returns markets whose pairs are in pairs. A nil set means no
 // filtering; a non-nil empty set returns no markets.
-func (m Markets) FilterPairs(pairs map[oracletypes.Pair]struct{}) Markets {
+func (m Markets) FilterPairs(pairs map[sidecartypes.Pair]struct{}) Markets {
 	if pairs == nil {
 		return append(Markets(nil), m...)
 	}
@@ -98,7 +98,7 @@ func (m Markets) Validate() error {
 		return errors.New("markets is empty")
 	}
 
-	pairs := make(map[oracletypes.Pair]struct{}, len(m))
+	pairs := make(map[sidecartypes.Pair]struct{}, len(m))
 	symbols := make(map[string]struct{}, len(m))
 	for _, market := range m {
 		if len(market.Pair) == 0 {

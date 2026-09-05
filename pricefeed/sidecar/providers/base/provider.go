@@ -12,7 +12,7 @@ import (
 
 	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 // Provider runs a fetcher over provider-specific tickers and exposes pair-keyed prices.
@@ -25,7 +25,7 @@ type Provider struct {
 
 	// mu guards markets and cached pair prices.
 	mu     sync.RWMutex
-	prices map[oracletypes.Pair]types.Result
+	prices map[sidecartypes.Pair]types.Result
 }
 
 // NewProvider returns a provider using fetcher for provider-specific price data.
@@ -42,7 +42,7 @@ func NewProvider(
 		name:          name,
 		transportType: transportType,
 		markets:       append(types.Markets{}, markets...),
-		prices:        make(map[oracletypes.Pair]types.Result),
+		prices:        make(map[sidecartypes.Pair]types.Result),
 	}
 
 	for _, opt := range opts {
@@ -123,11 +123,11 @@ func (p *Provider) Name() string {
 }
 
 // GetPrices returns a copy of the latest result for each configured pair.
-func (p *Provider) GetPrices() map[oracletypes.Pair]types.Result {
+func (p *Provider) GetPrices() map[sidecartypes.Pair]types.Result {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	cpy := make(map[oracletypes.Pair]types.Result, len(p.prices))
+	cpy := make(map[sidecartypes.Pair]types.Result, len(p.prices))
 	for pair, result := range p.prices {
 		if result.Price != nil {
 			result.Price = new(big.Float).Copy(result.Price)

@@ -14,7 +14,7 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestUpdateConfigAppliesUpdateIntervalWithoutRestart(t *testing.T) {
@@ -104,7 +104,7 @@ func TestUpdateConfigAppliesResolverConfigOnNextTick(t *testing.T) {
 		}).
 		Times(2)
 
-	feedsClient := oracletestutil.NewMockChainStateClient(ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
 	expectFeedsLifecycle(feedsClient)
 	feedsClient.EXPECT().
 		Feeds().

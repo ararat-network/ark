@@ -12,14 +12,14 @@ import (
 
 	"cosmossdk.io/log/v2"
 
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 )
 
 func TestRunReturnsChainStateClientError(t *testing.T) {
 	logs := new(bytes.Buffer)
 	runErr := errors.New("client failed")
 	ctrl := gomock.NewController(t)
-	client := oracletestutil.NewMockChainStateClient(ctrl)
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
 	client.EXPECT().Run(gomock.Any()).Return(runErr)
 	oracle := newClientLifecycleRuntime(client, log.NewLogger(logs, log.ColorOption(false)))
 
@@ -32,7 +32,7 @@ func TestRunReturnsChainStateClientError(t *testing.T) {
 
 func TestRunRejectsUnexpectedChainStateClientExit(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	client := oracletestutil.NewMockChainStateClient(ctrl)
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
 	client.EXPECT().Run(gomock.Any()).Return(nil)
 	oracle := newClientLifecycleRuntime(client, log.NewNopLogger())
 
@@ -45,7 +45,7 @@ func TestRunDoesNotLogIntentionalChainStateClientCancellation(t *testing.T) {
 	logs := new(bytes.Buffer)
 	started := make(chan struct{})
 	ctrl := gomock.NewController(t)
-	client := oracletestutil.NewMockChainStateClient(ctrl)
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
 	client.EXPECT().
 		Run(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) error {

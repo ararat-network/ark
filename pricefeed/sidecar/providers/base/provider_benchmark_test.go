@@ -7,7 +7,7 @@ import (
 	"time"
 
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func BenchmarkProviderGetPrices(b *testing.B) {
@@ -20,7 +20,7 @@ func BenchmarkProviderGetPrices(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 
-			var snapshot map[oracletypes.Pair]providertypes.Result
+			var snapshot map[sidecartypes.Pair]providertypes.Result
 			for i := 0; i < b.N; i++ {
 				snapshot = provider.GetPrices()
 			}
@@ -32,13 +32,13 @@ func BenchmarkProviderGetPrices(b *testing.B) {
 	}
 }
 
-func benchmarkProviderPrices(priceCount int) map[oracletypes.Pair]providertypes.Result {
-	prices := make(map[oracletypes.Pair]providertypes.Result, priceCount)
+func benchmarkProviderPrices(priceCount int) map[sidecartypes.Pair]providertypes.Result {
+	prices := make(map[sidecartypes.Pair]providertypes.Result, priceCount)
 	timestamp := time.Date(2026, time.July, 22, 0, 0, 0, 0, time.UTC)
 	for i := 0; i < priceCount; i++ {
-		pair := oracletypes.Pair(fmt.Sprintf("ASSET%03d/USD", i))
+		pair := sidecartypes.Pair(fmt.Sprintf("ASSET%03d/USD", i))
 		price := new(big.Float).
-			SetPrec(oracletypes.PricePrecisionBits).
+			SetPrec(sidecartypes.PricePrecisionBits).
 			SetFloat64(float64(i + 1))
 		prices[pair] = providertypes.NewResult(price, timestamp)
 	}

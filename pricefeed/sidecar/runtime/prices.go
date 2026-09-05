@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	oraclemetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
@@ -48,7 +48,7 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	prices := types.PricesByFeed(resolvedPrices, feeds)
 	r.recordMissingPrices(ctx, feeds, prices)
 	r.commitPriceSnapshot(prices, now)
-	oraclemetrics.RecordOracleTick(ctx)
+	sidecarmetrics.RecordOracleTick(ctx)
 }
 
 // freshProviderPrices returns one provider's cached prices that are fresh enough
@@ -162,7 +162,7 @@ func (r *Runtime) recordMissingPrices(ctx context.Context, feeds []string, price
 		)
 	}
 
-	oraclemetrics.RecordMissingPrices(ctx, missing)
+	sidecarmetrics.RecordMissingPrices(ctx, missing)
 }
 
 // commitPriceSnapshot stores a runtime-owned price snapshot from one aggregation

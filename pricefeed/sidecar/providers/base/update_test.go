@@ -13,7 +13,7 @@ import (
 	base "github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestGetTickersReturnsCopy(t *testing.T) {
@@ -44,14 +44,14 @@ func TestUpdateMarketsRetainsPricesForUnchangedMarketsAndPrunesRemovedMarkets(t 
 	require.Equal(t, []types.Ticker{"ATOMUSD"}, provider.GetTickers())
 	prices := provider.GetPrices()
 	require.Len(t, prices, 1)
-	require.Contains(t, prices, oracletypes.Pair("ATOM/USD"))
-	require.NotContains(t, prices, oracletypes.Pair("USDT/USD"))
-	require.Zero(t, prices[oracletypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
+	require.Contains(t, prices, sidecartypes.Pair("ATOM/USD"))
+	require.NotContains(t, prices, sidecartypes.Pair("USDT/USD"))
+	require.Zero(t, prices[sidecartypes.Pair("ATOM/USD")].Price.Cmp(big.NewFloat(12.34)))
 }
 
 func TestUpdateMarketsRetainsCaseOnlySymbolChangeAndAppliesNewerObservation(t *testing.T) {
 	fetcher := newMockFetcher(t)
-	pair := oracletypes.Pair("ATOM/USD")
+	pair := sidecartypes.Pair("ATOM/USD")
 	provider := newProvider(t, types.Markets{{Pair: pair, Symbol: "ATOMUSD"}}, fetcher)
 	oldTimestamp := time.Unix(10, 0).UTC()
 	newTimestamp := time.Unix(20, 0).UTC()
@@ -130,7 +130,7 @@ func TestMarketsValidateRejectsDuplicateSymbolsBeforeUpdate(t *testing.T) {
 
 	require.ErrorContains(t, err, `duplicate symbol "USDTUSD"`)
 	require.Equal(t, []types.Ticker{"USDTUSD"}, provider.GetTickers())
-	require.Contains(t, provider.GetPrices(), oracletypes.Pair("USDT/USD"))
+	require.Contains(t, provider.GetPrices(), sidecartypes.Pair("USDT/USD"))
 }
 
 func TestUpdateMarketsClearsCachedPricesForPairRemap(t *testing.T) {

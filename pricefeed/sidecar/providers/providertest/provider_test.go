@@ -14,7 +14,7 @@ import (
 	basetestutil "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/testutil"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/providertest"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
-	oracletypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
+	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
 func TestRunBuildsProviderAndCollectsPriceSnapshots(t *testing.T) {
@@ -33,7 +33,7 @@ func TestRunBuildsProviderAndCollectsPriceSnapshots(t *testing.T) {
 
 	for _, result := range results {
 		require.Len(t, result.Prices, 1)
-		require.Contains(t, result.Prices, oracletypes.Pair("BTC/USD"))
+		require.Contains(t, result.Prices, sidecartypes.Pair("BTC/USD"))
 	}
 }
 
@@ -83,7 +83,7 @@ func newTestProvider(
 
 	markets := make(types.Markets, 0, len(tickers))
 	for _, ticker := range tickers {
-		pair := oracletypes.Pair(string(ticker) + "/USD")
+		pair := sidecartypes.Pair(string(ticker) + "/USD")
 		if ticker == "BTCUSDT" {
 			pair = "BTC/USD"
 		}

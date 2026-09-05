@@ -21,7 +21,7 @@ import (
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	resolverpkg "github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
-	oracletestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
+	runtimetestutil "github.com/ararat-network/ark/pricefeed/sidecar/runtime/testutil"
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
@@ -61,11 +61,11 @@ type recordingChainStateClient struct {
 func newRecordingChainStateClient(
 	t *testing.T,
 	ctrl *gomock.Controller,
-) (*oracletestutil.MockChainStateClient, *recordingChainStateClient) {
+) (*runtimetestutil.MockChainStateClient, *recordingChainStateClient) {
 	t.Helper()
 
 	recorder := &recordingChainStateClient{started: make(chan struct{})}
-	client := oracletestutil.NewMockChainStateClient(ctrl)
+	client := runtimetestutil.NewMockChainStateClient(ctrl)
 	client.EXPECT().
 		Run(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) error {
@@ -90,14 +90,14 @@ func newRecordingChainStateClient(
 func newPassthroughChainStateClient(
 	t *testing.T,
 	ctrl *gomock.Controller,
-) *oracletestutil.MockChainStateClient {
+) *runtimetestutil.MockChainStateClient {
 	t.Helper()
 
 	client, _ := newRecordingChainStateClient(t, ctrl)
 	return client
 }
 
-func expectFeedsLifecycle(client *oracletestutil.MockChainStateClient) {
+func expectFeedsLifecycle(client *runtimetestutil.MockChainStateClient) {
 	client.EXPECT().
 		Run(gomock.Any()).
 		DoAndReturn(func(ctx context.Context) error {
