@@ -36,6 +36,8 @@ type claimFixture struct {
 	msgServer types.MsgServer
 	testData  *simsx.ChainDataSource
 	reporter  *simsx.BasicSimulationReporter
+	accounts  []simtypes.Account
+	rand      *rand.Rand
 }
 
 // newClaimFixture builds a real Claims keeper over mocks, with Insurance
@@ -84,13 +86,14 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 	require.NoError(t, k.NextClaimID.Set(ctx, 1))
 
 	r := rand.New(rand.NewSource(1))
+	accounts := simtypes.RandomAccounts(r, 2)
 	testData := simsx.NewChainDataSource(
 		ctx,
 		r,
 		accountKeeper,
 		nil,
 		addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
-		simtypes.RandomAccounts(r, 2)...,
+		accounts...,
 	)
 
 	return claimFixture{
@@ -99,6 +102,8 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 		msgServer: keeper.NewMsgServerImpl(k),
 		testData:  testData,
 		reporter:  simsx.NewBasicSimulationReporter(),
+		accounts:  accounts,
+		rand:      r,
 	}
 }
 

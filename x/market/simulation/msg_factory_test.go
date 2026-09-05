@@ -207,10 +207,13 @@ func requireNoahOnOneSide(t *testing.T, seed int64, offerDenom, askDenom string)
 const simDenom = chain.USDBaseDenom
 
 type marketFixture struct {
-	ctx      sdk.Context
-	keeper   *keeper.Keeper
-	testData *simsx.ChainDataSource
-	reporter simsx.SimulationReporter
+	ctx       sdk.Context
+	keeper    *keeper.Keeper
+	msgServer types.MsgServer
+	testData  *simsx.ChainDataSource
+	reporter  simsx.SimulationReporter
+	accounts  []simtypes.Account
+	rand      *rand.Rand
 }
 
 // marketConfig is what the options bend before the fixture is built.
@@ -277,7 +280,9 @@ func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixt
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, transientKey)
-	ctx := testCtx.Ctx
+	// Past the first block, so an appointment activating at height one is
+	// open the way a run's would be.
+	ctx := testCtx.Ctx.WithBlockHeight(10)
 
 	ctrl := gomock.NewController(t)
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
@@ -343,7 +348,15 @@ func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixt
 		accounts...,
 	)
 
-	return marketFixture{ctx: ctx, keeper: marketKeeper, testData: testData, reporter: simsx.NewBasicSimulationReporter()}
+	return marketFixture{
+		ctx:       ctx,
+		keeper:    marketKeeper,
+		msgServer: keeper.NewMsgServerImpl(marketKeeper),
+		testData:  testData,
+		reporter:  simsx.NewBasicSimulationReporter(),
+		accounts:  accounts,
+		rand:      r,
+	}
 }
 
 // simRates prices every denomination the fixture can name. Rates are NOAH per
