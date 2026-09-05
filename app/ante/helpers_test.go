@@ -11,6 +11,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -230,4 +231,12 @@ func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeT
 		gas:   1,
 		payer: payer,
 	}
+}
+
+// gasOf runs a step under a fresh meter and returns what it consumed.
+func gasOf(t *testing.T, ctx sdk.Context, run func(sdk.Context) error) storetypes.Gas {
+	t.Helper()
+	metered := ctx.WithGasMeter(storetypes.NewGasMeter(10_000_000))
+	require.NoError(t, run(metered))
+	return metered.GasMeter().GasConsumed()
 }

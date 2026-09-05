@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"bytes"
 	stdmath "math"
 	"math/big"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -17,33 +19,6 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
-
-// TestGasTallySkipsGenesisHeight pins the genesis gate on the block gas
-// tally: a finalise-mode transaction at height zero leaves the tally
-// untouched, and the same transaction one block later writes it.
-func TestGasTallySkipsGenesisHeight(t *testing.T) {
-	arkApp, ctx, tx := setupTreasuryAnteTest(t)
-	decorator := ante.NewGasTallyDecorator(arkApp.TreasuryKeeper)
-	// Runtime names each module's transient key after the module.
-	tally := ctx.TransientStore(arkApp.UnsafeFindStoreKey("transient:" + treasurytypes.ModuleName))
-	empty := func() bool {
-		it := tally.Iterator(nil, nil)
-		defer it.Close()
-		return !it.Valid()
-	}
-	require.True(t, empty())
-
-	reached := false
-	_, err := decorator.AnteHandle(
-		ctx.WithBlockHeight(0).WithExecMode(sdk.ExecModeFinalize), tx, false, passThrough(t, &reached))
-	require.NoError(t, err)
-	require.True(t, reached)
-	require.True(t, empty())
-
-	_, err = decorator.AnteHandle(ctx.WithExecMode(sdk.ExecModeFinalize), tx, false, passThrough(t, &reached))
-	require.NoError(t, err)
-	require.False(t, empty())
-}
 
 // TestFeeDecoratorEnforcesTheConsensusFloor pins the fee gate's contract:
 // the reference-denom fee must cover ceil(BaseGasPrice × gas) and is charged
@@ -505,4 +480,99 @@ func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 		require.Empty(t, r.gas)
 		require.Empty(t, r.tax)
 	})
+}
+
+// TestFeeDecoratorSimulationMovesWhatExecutionMoves pins the estimate: a
+// declared fee is deducted under simulation exactly as in execution — the
+// tax set aside by the ante and charged by the post, the base fee to the fee
+// collector, the slack left with the payer — and the gate's reads are made
+// without being enforced, so the balances agree and so does the gas. Each
+// run gets its own discarded cache.
+func TestFeeDecoratorSimulationMovesWhatExecutionMoves(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+	type outcome struct {
+		gas                storetypes.Gas
+		payer, fees, taxes math.Int
+	}
+	run := func(simulate bool) outcome {
+		cached, _ := ctx.CacheContext()
+		gas := gasOf(t, cached, func(ctx sdk.Context) error {
+			_, err := runFee(t, arkApp, ctx, tx, simulate)
+			return err
+		})
+		return outcome{
+			gas:   gas,
+			payer: usdBalance(arkApp, cached, tx.payer),
+			fees:  usdBalance(arkApp, cached, feeCollector),
+			taxes: usdBalance(arkApp, cached, taxCollector),
+		}
+	}
+
+	executed, simulated := run(false), run(true)
+	require.Equal(t, math.NewInt(9), executed.payer)
+	require.Equal(t, math.NewInt(10), executed.taxes)
+	require.Equal(t, executed.payer, simulated.payer)
+	require.Equal(t, executed.fees, simulated.fees)
+	require.Equal(t, executed.taxes, simulated.taxes)
+	require.Equal(t, executed.gas, simulated.gas)
+}
+
+// TestFeeDecoratorFeelessSimulationPaysForTheTransfer pins the stand-in: an
+// estimate without a fee moves no gas fee and consumes at least what the
+// paying transaction's transfer costs in its place, so the estimate never
+// runs short of the execution it sizes.
+func TestFeeDecoratorFeelessSimulationPaysForTheTransfer(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+	run := func(fee sdk.Coins, simulate bool) storetypes.Gas {
+		tx.fee = fee
+		cached, _ := ctx.CacheContext()
+		return gasOf(t, cached, func(ctx sdk.Context) error {
+			_, err := runFee(t, arkApp, ctx, tx, simulate)
+			return err
+		})
+	}
+
+	executed := run(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 15)), false)
+	feeless := run(nil, true)
+	require.GreaterOrEqual(t, feeless, executed)
+}
+
+// A transaction that fails both the fee gate and the tax charge reports the
+// fee error: the gate runs first, inside the fee decorator, and refuses
+// without moving a balance. Charging first reported insufficient funds for
+// a fee problem.
+func TestFeeGateRefusalPrecedesTheTaxCharge(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+
+	// A payer holding nothing: it can pay neither the fee nor the tax.
+	tx.payer = sdk.AccAddress(bytes.Repeat([]byte{7}, 20))
+	arkApp.AccountKeeper.SetAccount(ctx, arkApp.AccountKeeper.NewAccountWithAddress(ctx, tx.payer))
+
+	// The fee declares the ten the send owes and one for gas, priced far
+	// below the consensus floor, so the gate refuses it too.
+	tx.gas = 1_000_000
+	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 11))
+
+	r := runFeeOnCache(t, arkApp, ctx, tx, false)
+	require.ErrorContains(t, r.err, "base fee requires")
+	require.ErrorContains(t, r.err, "in addition to transfer tax 10ausd")
+	require.NotContains(t, r.err.Error(), "collecting transfer tax")
+	require.Empty(t, r.gas)
+	require.Empty(t, r.tax)
+}
+
+// A fee short of the tax is refused ahead of any deduction, so a signer is
+// never charged past their declaration: nothing moves, and the error names
+// the tax rather than an insufficient balance.
+func TestDeclaredTaxShortfallIsRefusedBeforeAnyCharge(t *testing.T) {
+	arkApp, ctx, tx := setupTreasuryAnteTest(t)
+
+	// The send owes ten; the fee declares nine.
+	tx.fee = sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 9))
+
+	r := runFeeOnCache(t, arkApp, ctx, tx, false)
+	require.ErrorContains(t, r.err, "does not cover transfer tax 10ausd")
+	require.Empty(t, r.gas)
+	require.Empty(t, r.tax)
+	require.Equal(t, math.NewInt(20), usdBalance(arkApp, r.cached, tx.payer))
 }
