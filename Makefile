@@ -179,6 +179,14 @@ localnet-runbook: localnet-check
 		-v $(CURDIR)/contrib/scripts/runbook-emergency-suspend.sh:/runbook.sh:ro \
 		--entrypoint sh $(localnetImage) /runbook.sh
 
+# Bring up the state-sync client and hold it to a snapshot restore. Needs the
+# four-validator shape: sync0's light client wants two RPC servers, and the
+# snapshots it restores from are node0's.
+localnet-statesync:
+	@$(if $(filter 4,$(VALIDATORS)),:,$(error localnet-statesync needs VALIDATORS=4, got $(VALIDATORS)))
+	$(localnetCompose) --profile statesync up -d sync0
+	@contrib/scripts/localnet-statesync.sh 120 2 http://localhost:26697
+
 # Coordinated upgrade on one host node under cosmovisor; see the script's
 # header for the knobs.
 upgrade-rehearsal:
@@ -188,4 +196,4 @@ upgrade-rehearsal:
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
-	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook upgrade-rehearsal
+	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook localnet-statesync upgrade-rehearsal

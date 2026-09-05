@@ -1,6 +1,7 @@
 # Builds the image from the working tree, runs the four-validator localnet
-# with its price-feed sidecars, and asserts liveness plus the emergency
-# submission runbook against it.
+# with its price-feed sidecars, and asserts liveness, the emergency submission
+# runbook, and a state-sync restore against it. State sync goes last: it needs
+# node0 past a snapshot height, which the earlier steps have already taken.
 name: Localnet
 
 on:
@@ -49,6 +50,7 @@ jobs:
       - run: make localnet-up
       - run: make localnet-liveness
       - run: make localnet-runbook
+      - run: make localnet-statesync
 
       - name: Container logs
         if: failure()
