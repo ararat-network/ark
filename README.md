@@ -59,6 +59,35 @@ localnet: offline multisig ceremony, dark-carrier submission, leak and inclusion
 built at `OLD_REF` (default `HEAD`) to the working tree. See [contrib/README.md](contrib/README.md)
 for the layout.
 
+## Price-feed sidecar
+
+`pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for
+prices, and the sidecar reads the feed registry back from the node's gRPC port. Both links are plaintext
+by default, which is fine only while both processes share a host. For a sidecar on another machine,
+give each link a trust anchor:
+
+- **Node to sidecar.** Start the sidecar with `--tls-cert-file` and `--tls-key-file`, and add
+  `--tls-client-ca-file` to admit only nodes that present a certificate signed by that CA. In the node's
+  `app.toml`, set `tls_ca_file` under `[pricefeed]` to the CA the sidecar's certificate chains to, with
+  `tls_cert_file` and `tls_key_file` when the sidecar requires a client certificate and `tls_server_name`
+  when the address is an IP.
+- **Sidecar to node.** The node's gRPC port does not terminate TLS, so put a TLS terminator in front of it
+  and point `client.tls.caFile` in the sidecar's `config.json` at the terminator's CA; `certFile`,
+  `keyFile`, and `serverName` sit beside it. `pricefeed validate` and `pricefeed prices` take the same
+  files as `--tls-*` flags, and `validate` takes the chain link's as `--chain-tls-*`.
+
+`client.addresses` in the sidecar's `config.json` lists the chain nodes to query, in preference order and
+at most four — a local sentry first, a fallback behind it. The sidecar polls the first that answers and
+stays on it until it fails, then sweeps the rest in order under `client.timeout` each. There is no
+fail-back, so a flapping preferred node cannot bounce the sidecar between endpoints. All of them are
+dialled with the one `client.tls` block, and a failed sweep keeps the last known feed set rather than
+emptying it. The chain node that answers is the `address` label on
+`ark_pricefeed_chainstate_refreshes_total`.
+
+The sidecar releases on its own cadence under `pricefeed/vX.Y.Z` tags: `make release-pricefeed` builds
+one from the tag on `HEAD`, and `make build-pricefeed` builds the binary from the working tree. The
+compatibility rule between node and sidecar is stated in `pricefeed/doc.go`.
+
 ## Recommended node environment
 
 Set a fixed SDK config scope in the environment of every long-running `arkd` process
@@ -76,6 +105,20 @@ rename, a cloud instance rename — lands the process on a fresh, unsealed confi
 the wrong address prefixes. Pinning the scope removes both. The setting is per-process,
 harmless to set host-wide, and freely reversible; drop it once the SDK caches the
 fallback key upstream.
+
+Run `arkd` under cosmovisor with binary downloads disabled:
+
+```text
+DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+```
+
+The security committee can schedule an upgrade without a governance vote, and an
+upgrade plan's `info` field names a binary. With downloads enabled, cosmovisor would
+install and run that binary at the upgrade height on every node that trusts it; with
+them disabled, the upgrade halts until you have placed a binary you built or verified
+yourself. The setting is what keeps the committee's power to *schedule* an upgrade from
+becoming the power to choose what your node runs. See the committee-upgrades section of
+`docs/EMERGENCY_SUBMISSION_RUNBOOK.md`.
 
 NOTE: Sometimes creating the network through the `collect-gentxs` will fail, and validators will start
 in a funny state (and then panic). If this happens, you can try to create and start the network first

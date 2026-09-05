@@ -49,7 +49,7 @@ x/security/     # Security committee over the standard-module emergency surface
 x/wasm/         # CosmWasm smart contract module (exported interfaces only; not wired)
 abci/           # Vote-extension, proposal, preblock oracle pipeline, and mempool lanes
 pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
-pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
+pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
 proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config
@@ -73,6 +73,9 @@ app/            # App wiring, depinject config
   size limits in `abci/codec`.
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
   `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- The node-to-sidecar compatibility rule lives in `pricefeed/doc.go`: additive changes only within
+  `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
+  through `pkg/tlsconfig`; the sidecar releases from `pricefeed/vX.Y.Z` tags via `.goreleaser.pricefeed.yml`.
 
 ## Cosmos SDK Conventions
 
@@ -147,6 +150,8 @@ Keep the backstop even when it is provably unreachable, and say so in a comment 
   deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
+- `docs/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
+  message type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation
 
