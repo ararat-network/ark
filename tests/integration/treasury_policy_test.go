@@ -264,7 +264,7 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 		// Still taxed: the halted denomination remains protocol-convertible
 		// money on the way out, so it keeps paying the premium.
 		sendAmount := math.NewInt(10_000)
-		tax, err := f.app.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{&banktypes.MsgSend{
+		tax, _, err := f.app.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{&banktypes.MsgSend{
 			FromAddress: f.trader.String(),
 			ToAddress:   f.trader.String(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(chain.KRWBaseDenom, sendAmount)),
@@ -337,7 +337,7 @@ func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 		// ceiling so the assertion reads the rate, not the clamp.
 		treasurytestutil.SetDerivedTaxCap(t, f.app.TreasuryKeeper, blockCtx, chain.KRWBaseDenom, math.NewInt(1_000_000))
 
-		tax, err := f.app.TreasuryKeeper.ComputeTax(blockCtx, []sdk.Msg{&banktypes.MsgSend{
+		tax, _, err := f.app.TreasuryKeeper.ComputeTax(blockCtx, []sdk.Msg{&banktypes.MsgSend{
 			FromAddress: f.trader.String(),
 			ToAddress:   f.trader.String(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(chain.KRWBaseDenom, math.NewInt(10_000))),

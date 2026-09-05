@@ -190,7 +190,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	// tip. The tax the message owes rides beside it, as the checker requires
 	// and the deduction leaves out.
 	feeFor := func(gas uint64, msg sdk.Msg) sdk.Coins {
-		tax, err := arkApp.TreasuryKeeper.ComputeTax(
+		tax, _, err := arkApp.TreasuryKeeper.ComputeTax(
 			arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID}), []sdk.Msg{msg})
 		require.NoError(t, err)
 		return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewIntFromUint64(gas).MulRaw(300_000_000_000))).Add(tax...)

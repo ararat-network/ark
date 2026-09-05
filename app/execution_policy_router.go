@@ -96,7 +96,7 @@ func (r executionPolicyRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 // collectTax charges the sending contract for one dispatched message, on top of
 // the principal that message already moves.
 func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
-	tax, err := r.treasury.ComputeTax(ctx, []sdk.Msg{msg})
+	tax, _, err := r.treasury.ComputeTax(ctx, []sdk.Msg{msg})
 	if err != nil {
 		return fmt.Errorf("computing execution-generated transfer tax: %w", err)
 	}

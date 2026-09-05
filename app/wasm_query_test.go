@@ -81,7 +81,7 @@ func TestComputeTaxThroughTheAcceptListMatchesTheCharge(t *testing.T) {
 	estimate, ok := response.(*treasurytypes.QueryComputeTaxResponse)
 	require.True(t, ok, "response must be Treasury's own type, got %T", response)
 
-	charged, err := arkApp.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{send})
+	charged, _, err := arkApp.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{send})
 	require.NoError(t, err)
 	require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), charged, "ten percent of the principal")
 	require.Equal(t, charged, estimate.Tax)

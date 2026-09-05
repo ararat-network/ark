@@ -313,7 +313,7 @@ func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 		treasurytestutil.SetDerivedTaxCap(t, f.app.TreasuryKeeper, ctx, goldDenom, math.NewInt(1_000_000))
 
 		sendAmount := math.NewInt(1_000_000)
-		tax, err := f.app.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{&banktypes.MsgSend{
+		tax, _, err := f.app.TreasuryKeeper.ComputeTax(ctx, []sdk.Msg{&banktypes.MsgSend{
 			FromAddress: f.trader.String(),
 			ToAddress:   f.trader.String(),
 			Amount:      sdk.NewCoins(sdk.NewCoin(goldDenom, sendAmount)),
