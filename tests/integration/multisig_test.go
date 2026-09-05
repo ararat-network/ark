@@ -37,6 +37,18 @@ import (
 
 const treasuryMultisigChainID = "ark-treasury-multisig-test"
 
+// What every transaction here declares, and what the committee holds to pay
+// it with. The default base gas price prices this gas limit at exactly
+// multisigFeeAmount, so the declared fee is the requirement rather than a
+// figure above it: the ante charges what gas costs, never the declaration, so
+// a case that must fail on funds starves the balance instead of overdeclaring.
+const (
+	multisigGasLimit            = 2_000_000
+	multisigFeeAmount           = 200_000_000_000_000_000
+	multisigCommitteeFeeBalance = 1_000_000_000_000_000_000
+	multisigStarvedFeeBalance   = 100_000_000_000_000_000
+)
+
 type treasuryMultisigMemberSignature struct {
 	memberIndex int
 	privateKey  cryptotypes.PrivKey
@@ -61,12 +73,16 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		signatures           []treasuryMultisigMemberSignature
 		omitCommitteeAccount bool
 		sequenceOffset       uint64
-		feeAmount            int64
-		wantClaim            bool
+		// committeeFeeBalance is what the committee holds in the fee
+		// denomination; zero funds it the default, several times the fee.
+		committeeFeeBalance int64
+		// wantLogContains pins why a rejected transaction was rejected, where
+		// the signatures alone would not say.
+		wantLogContains string
+		wantClaim       bool
 	}{
 		{
-			name:      "two of three member signatures succeed",
-			feeAmount: 200_000_000_000_000_000,
+			name: "two of three member signatures succeed",
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -74,15 +90,13 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 			wantClaim: true,
 		},
 		{
-			name:      "one member signature is insufficient",
-			feeAmount: 200_000_000_000_000_000,
+			name: "one member signature is insufficient",
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 			},
 		},
 		{
-			name:      "signature from a non-member fails",
-			feeAmount: 200_000_000_000_000_000,
+			name: "signature from a non-member fails",
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 1, privateKey: wrongSigner},
@@ -91,7 +105,6 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		{
 			name:                 "nonexistent committee account fails",
 			omitCommitteeAccount: true,
-			feeAmount:            200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -100,15 +113,17 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 		{
 			name:           "wrong sequence fails",
 			sequenceOffset: 1,
-			feeAmount:      200_000_000_000_000_000,
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
 			},
 		},
 		{
-			name:      "fee above committee balance fails",
-			feeAmount: 9_000_000_000_000_000_000,
+			// The committee holds less than the base fee its gas limit
+			// requires, so the deduction fails on funds.
+			name:                "base fee above committee balance fails",
+			committeeFeeBalance: multisigStarvedFeeBalance,
+			wantLogContains:     "insufficient funds",
 			signatures: []treasuryMultisigMemberSignature{
 				{memberIndex: 0, privateKey: members[0]},
 				{memberIndex: 2, privateKey: members[2]},
@@ -118,10 +133,15 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			committeeFeeBalance := int64(multisigCommitteeFeeBalance)
+			if test.committeeFeeBalance > 0 {
+				committeeFeeBalance = test.committeeFeeBalance
+			}
 			arkApp, accountNumber, sequence, nextValidatorsHash := setupTreasuryMultisigApp(
 				t,
 				committeePubKey,
 				!test.omitCommitteeAccount,
+				committeeFeeBalance,
 				func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, committee string) {
 					genesis.ClaimsMandate = claimstypes.ClaimsMandate{
 						Envelope: mandate.Envelope{
@@ -151,7 +171,6 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				committeePubKey,
 				accountNumber,
 				sequence,
-				test.feeAmount,
 				test.signatures,
 			)
 			response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
@@ -166,6 +185,9 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				require.Zero(t, response.TxResults[0].Code, response.TxResults[0].Log)
 			} else {
 				require.NotZero(t, response.TxResults[0].Code)
+				if test.wantLogContains != "" {
+					require.Contains(t, response.TxResults[0].Log, test.wantLogContains)
+				}
 			}
 			_, err = arkApp.Commit()
 			require.NoError(t, err)
@@ -217,6 +239,7 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 		t,
 		committeePubKey,
 		true,
+		multisigCommitteeFeeBalance,
 		func(genesis *treasurytypes.GenesisState, _ *claimstypes.GenesisState, committee string) {
 			minimum := treasurytypes.DefaultEconomicPolicy()
 			maximum := treasurytypes.EconomicPolicy{
@@ -263,7 +286,6 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 		committeePubKey,
 		accountNumber,
 		sequence,
-		200_000_000_000_000_000,
 		[]treasuryMultisigMemberSignature{
 			{memberIndex: 0, privateKey: members[0]},
 			{memberIndex: 2, privateKey: members[2]},
@@ -291,6 +313,7 @@ func setupTreasuryMultisigApp(
 	t *testing.T,
 	committeePubKey *kmultisig.LegacyAminoPubKey,
 	includeCommitteeAccount bool,
+	committeeFeeBalance int64,
 	configureGenesis func(*treasurytypes.GenesisState, *claimstypes.GenesisState, string),
 ) (*app.ArkApp, uint64, uint64, []byte) {
 	t.Helper()
@@ -327,8 +350,8 @@ func setupTreasuryMultisigApp(
 			Coins: sdk.NewCoins(
 				sdk.NewCoin(sdk.DefaultBondDenom, math.NewInt(10_000_000_000)),
 				// The fee gate prices gas in the reference denom, so fees are
-				// paid — and the over-balance case starved — in axdr.
-				sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(1_000_000_000_000_000_000)),
+				// paid — and the starved case funded short — in axdr.
+				sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(committeeFeeBalance)),
 			),
 		})
 	}
@@ -380,15 +403,14 @@ func buildTreasuryMultisigTx(
 	committeePubKey *kmultisig.LegacyAminoPubKey,
 	accountNumber,
 	sequence uint64,
-	feeAmount int64,
 	members []treasuryMultisigMemberSignature,
 ) []byte {
 	t.Helper()
 
 	txBuilder := arkApp.GetTxConfig().NewTxBuilder()
 	require.NoError(t, txBuilder.SetMsgs(msg))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, feeAmount)))
-	txBuilder.SetGasLimit(2_000_000)
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, multisigFeeAmount)))
+	txBuilder.SetGasLimit(multisigGasLimit)
 
 	emptyMultisignature := cryptomultisig.NewMultisig(len(committeePubKey.GetPubKeys()))
 	require.NoError(t, txBuilder.SetSignatures(signing.SignatureV2{
@@ -455,6 +477,7 @@ func TestClaimsCommitteeShapeRecordsRegisteredMultisig(t *testing.T) {
 		t,
 		committeePubKey,
 		true,
+		multisigCommitteeFeeBalance,
 		func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, _ string) {
 			genesis.ClaimsMandate = claimstypes.DefaultClaimsMandate()
 		},
