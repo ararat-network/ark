@@ -10,12 +10,12 @@
 package testutil
 
 import (
-	types "github.com/ararat-network/ark/x/asset/types"
-	types0 "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
+	types "github.com/ararat-network/ark/x/asset/types"
+	types0 "github.com/ararat-network/ark/x/oracle/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -188,20 +188,6 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 	return m.recorder
 }
 
-// BlockedAddr mocks base method.
-func (m *MockBankKeeper) BlockedAddr(addr types1.AccAddress) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BlockedAddr", addr)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// BlockedAddr indicates an expected call of BlockedAddr.
-func (mr *MockBankKeeperMockRecorder) BlockedAddr(addr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockedAddr", reflect.TypeOf((*MockBankKeeper)(nil).BlockedAddr), addr)
-}
-
 // GetAllBalances mocks base method.
 func (m *MockBankKeeper) GetAllBalances(ctx context.Context, addr types1.AccAddress) types1.Coins {
 	m.ctrl.T.Helper()
@@ -242,20 +228,6 @@ func (m *MockBankKeeper) GetSupply(ctx context.Context, denom string) types1.Coi
 func (mr *MockBankKeeperMockRecorder) GetSupply(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupply", reflect.TypeOf((*MockBankKeeper)(nil).GetSupply), ctx, denom)
-}
-
-// SendCoinsFromModuleToAccount mocks base method.
-func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types1.AccAddress, amt types1.Coins) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendCoinsFromModuleToAccount", ctx, senderModule, recipientAddr, amt)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendCoinsFromModuleToAccount indicates an expected call of SendCoinsFromModuleToAccount.
-func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToAccount", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToAccount), ctx, senderModule, recipientAddr, amt)
 }
 
 // SendCoinsFromModuleToModule mocks base method.
