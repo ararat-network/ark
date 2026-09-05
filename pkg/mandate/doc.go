@@ -96,6 +96,11 @@
 // module-specific bound is consulted; governance messages carry no term,
 // because no governance authorization depends on a mandate.
 //
+// The priority mempool lane carries committee messages ahead of other traffic,
+// and admits one at CheckTx only if the module vouches for it: [Vouch] over the
+// module's exported AuthoriseCommittee, the same envelope check its handler
+// runs first, so the lane refuses nothing the handler would accept.
+//
 // Expiry is lazy. There is no EndBlocker sweep and no stored active flag — a
 // mandate stops authorizing because [Envelope.IsActive] says so at the height
 // the action lands. Genesis therefore imports mandates verbatim, expired ones
