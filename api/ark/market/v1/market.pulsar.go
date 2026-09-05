@@ -2214,6 +2214,11 @@ type ConversionPolicy struct {
 	// min_stability_spread is the floor under the constant-product spread on
 	// every NOAH pair. It is dimensionless, so unlike depth it means the same
 	// thing before and after a reference re-point.
+	//
+	// It is also the transfer tax's floor. NOAH is untaxed and MsgSwap is
+	// exempt, so a tax rate above the floor a committee can reach — the
+	// corridor minimum, not this live value — is dodged by converting through
+	// NOAH (D81).
 	MinStabilitySpread string `protobuf:"bytes,3,opt,name=min_stability_spread,json=minStabilitySpread,proto3" json:"min_stability_spread,omitempty"`
 }
 

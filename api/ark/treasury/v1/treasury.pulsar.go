@@ -6050,6 +6050,9 @@ type Params struct {
 	// cap map (D44). Governance-owned rather than a committee lever because
 	// D78 makes it part of the fee every wallet signs: a raise refuses every
 	// in-flight transfer, so it moves only behind a voting period (D80).
+	//
+	// Held at or below the conversion spread floor a committee can reach, or
+	// converting through untaxed NOAH costs less than paying it (D81).
 	TransferTaxRate string `protobuf:"bytes,12,opt,name=transfer_tax_rate,json=transferTaxRate,proto3" json:"transfer_tax_rate,omitempty"`
 }
 
