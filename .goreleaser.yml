@@ -11,6 +11,12 @@ project_name: arkd
 #
 # CI may export CMT_VERSION (go list -m github.com/cometbft/cometbft)
 # to stamp the CometBFT version the way `make build` does.
+#
+# This config releases arkd alone, from vX.Y.Z tags. The price-feed sidecar
+# releases separately from pricefeed/vX.Y.Z tags through
+# .goreleaser.pricefeed.yml. Run this one with GORELEASER_CURRENT_TAG set to
+# the vX.Y.Z tag on HEAD, so a sidecar tag on the same commit is never the
+# one goreleaser picks.
 
 release:
   name_template: "{{ .Tag }}"
@@ -76,42 +82,12 @@ builds:
       - "-linkmode=external"
       - '-extldflags "-Wl,-z,muslsymversions -static"'
 
-  # The price-feed sidecar is pure Go: no cgo, static by default, and
-  # cross-compiles to every target from one host.
-  - id: pricefeed
-    main: ./cmd/pricefeed
-    binary: pricefeed
-    goos:
-      - linux
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    env:
-      - CGO_ENABLED=0
-    flags:
-      - -trimpath
-      - -mod=readonly
-    tags:
-      - netgo
-    ldflags:
-      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
-      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
-      - "-w"
-      - "-s"
-
 archives:
   - id: arkd
     ids:
       - arkd-amd64
       - arkd-arm64
     name_template: "arkd-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
-    files:
-      - README.md
-  - id: pricefeed
-    ids:
-      - pricefeed
-    name_template: "pricefeed-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - README.md
 

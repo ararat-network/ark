@@ -1,0 +1,61 @@
+version: 2
+
+project_name: pricefeed
+
+# The price-feed sidecar releases on its own cadence, under tags of the form
+# pricefeed/vX.Y.Z. Open-source goreleaser reads one tag per run and refuses
+# one that is not bare semver, so `make release-pricefeed` names the tag
+# through GORELEASER_CURRENT_TAG and passes --skip=validate, after checking
+# itself what that skip drops: a clean tree and a tag on HEAD. With the skip,
+# .Version is the raw tag, so every template here derives from .Tag instead.
+#
+# The sidecar is pure Go: no cgo, static by default, and cross-compiles to
+# every target from one host.
+
+release:
+  name_template: "{{ .Tag }}"
+
+before:
+  hooks:
+    - go mod verify
+
+builds:
+  - id: pricefeed
+    main: ./cmd/pricefeed
+    binary: pricefeed
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+      - -mod=readonly
+    tags:
+      - netgo
+    ldflags:
+      - '-X github.com/cosmos/cosmos-sdk/version.Version={{ trimprefix .Tag "pricefeed/" }}'
+      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
+      - "-w"
+      - "-s"
+
+archives:
+  - id: pricefeed
+    ids:
+      - pricefeed
+    name_template: 'pricefeed-{{ trimprefix .Tag "pricefeed/v" }}-{{ .Os }}-{{ .Arch }}'
+    files:
+      - README.md
+
+checksum:
+  name_template: 'SHA256SUMS-pricefeed-{{ trimprefix .Tag "pricefeed/v" }}.txt'
+  algorithm: sha256
+
+snapshot:
+  version_template: '{{ trimprefix .Tag "pricefeed/v" }}-snapshot-{{ .ShortCommit }}'
+
+changelog:
+  disable: true

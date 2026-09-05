@@ -12,6 +12,9 @@
 [tools]
 go = "1.27.1"
 golangci-lint = "2.13.2"
+# goreleaser reads one tag per run and its tag handling has shifted between
+# minors, so `make release-pricefeed` is pinned to what it was written against.
+goreleaser = "2.18.0"
 # The registry entry, aqua:golang/vuln/govulncheck, is a go_install package
 # that mise's aqua backend cannot install -- it errors and points here. That
 # suits this tool anyway: building from source compiles it against the Go

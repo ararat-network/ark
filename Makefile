@@ -2,7 +2,10 @@
 ###                                 Build                                   ###
 ###############################################################################
 
-VERSION := $(shell git describe --tags --always --dirty)
+# The chain tags vX.Y.Z and the sidecar pricefeed/vX.Y.Z, so each binary's
+# version describes its own tag line.
+VERSION := $(shell git describe --tags --match 'v[0-9]*' --always --dirty)
+PRICEFEED_VERSION := $(shell git describe --tags --match 'pricefeed/v[0-9]*' --always --dirty | sed 's|^pricefeed/||')
 COMMIT := $(shell git rev-parse HEAD)
 
 # Comma-separated go build tags; none by default.
@@ -19,14 +22,37 @@ ldflags += $(LDFLAGS)
 
 BUILD_FLAGS := -tags "$(BUILD_TAGS)" -mod=readonly -trimpath -ldflags '$(strip $(ldflags))'
 
+pricefeedLdflags = -X github.com/cosmos/cosmos-sdk/version.Version=$(PRICEFEED_VERSION) \
+	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
+
 build:
 	@go build $(BUILD_FLAGS) -o build/arkd ./cmd/arkd
+
+# The sidecar is pure Go; netgo keeps it free of the host resolver.
+build-pricefeed:
+	@CGO_ENABLED=0 go build -tags netgo -mod=readonly -trimpath \
+		-ldflags '$(strip $(pricefeedLdflags))' -o build/pricefeed ./cmd/pricefeed
 
 install:
 	@go install $(BUILD_FLAGS) ./cmd/arkd
 
 clean:
 	@rm -rf build/ coverage.out
+
+###############################################################################
+###                                Release                                 ###
+###############################################################################
+
+# The sidecar releases from the pricefeed/vX.Y.Z tag on HEAD. goreleaser
+# reads one tag per run and cannot parse the prefix as semver, so the target
+# names the tag and skips goreleaser's validation after doing that
+# validation itself: a tag on HEAD and a clean tree. arkd's own release runs
+# .goreleaser.yml inside the musl container, as its header says.
+release-pricefeed:
+	@tag=$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null); \
+	test -n "$$tag" || { echo "HEAD carries no pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
+	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
+	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=validate -f .goreleaser.pricefeed.yml
 
 ###############################################################################
 ###                                 Tests                                   ###
@@ -192,7 +218,7 @@ localnet-statesync:
 upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
-.PHONY: build install clean test test-race test-cover \
+.PHONY: build build-pricefeed install clean release-pricefeed test test-race test-cover \
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
