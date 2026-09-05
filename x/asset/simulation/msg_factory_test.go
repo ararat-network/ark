@@ -26,6 +26,7 @@ import (
 	"github.com/ararat-network/ark/x/asset/simulation"
 	"github.com/ararat-network/ark/x/asset/testutil"
 	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // govModuleAccounts is the only account source the governance factories need:
@@ -40,8 +41,11 @@ type assetFixture struct {
 	ctx      sdk.Context
 	keeper   *keeper.Keeper
 	bank     *testutil.MockBankKeeper
+	oracle   *testutil.MockOracleKeeper
 	testData *simsx.ChainDataSource
 	reporter *simsx.BasicSimulationReporter
+	accounts []simtypes.Account
+	rand     *rand.Rand
 }
 
 // newAssetFixture builds a real Asset keeper over mocks at height 10, so a
@@ -59,27 +63,48 @@ func newAssetFixture(t *testing.T) assetFixture {
 
 	ctrl := gomock.NewController(t)
 	bank := testutil.NewMockBankKeeper(ctrl)
+	// Every asset in the launch registry is priced, which is what the
+	// lifecycle demands of one being recovered.
+	oracle := testutil.NewMockOracleKeeper(ctrl)
+	oracle.EXPECT().FeedPhase(gomock.Any(), gomock.Any()).Return(oracletypes.FeedPhaseActive, nil).AnyTimes()
+	// An appointee the chain has never seen has no account yet, which is what
+	// a freshly drawn simulation address is.
+	accounts := testutil.NewMockAccountKeeper(ctrl)
+	accounts.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		testutil.NewMockAccountKeeper(ctrl),
+		accounts,
 		bank,
-		testutil.NewMockOracleKeeper(ctrl),
+		oracle,
 	)
 	require.NoError(t, k.Params.Set(ctx, types.DefaultParams()))
+	// Genesis always stores an appointment; the shipped one appoints nobody,
+	// which is the state the emergency surface is closed in.
+	require.NoError(t, k.EmergencyMandate.Set(ctx, types.DefaultEmergencyMandate()))
 
 	r := rand.New(rand.NewSource(1))
+	simAccounts := simtypes.RandomAccounts(r, 1)
 	testData := simsx.NewChainDataSource(
 		ctx,
 		r,
 		govModuleAccounts{},
 		nil,
 		addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
-		simtypes.RandomAccounts(r, 1)...,
+		simAccounts...,
 	)
 
-	return assetFixture{ctx: ctx, keeper: k, bank: bank, testData: testData, reporter: simsx.NewBasicSimulationReporter()}
+	return assetFixture{
+		ctx:      ctx,
+		keeper:   k,
+		bank:     bank,
+		oracle:   oracle,
+		testData: testData,
+		reporter: simsx.NewBasicSimulationReporter(),
+		accounts: simAccounts,
+		rand:     r,
+	}
 }
 
 // seed stores a launch asset in the given status carrying the given supply.
