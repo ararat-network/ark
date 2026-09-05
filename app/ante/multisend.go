@@ -4,10 +4,8 @@ import (
 	errorsmod "cosmossdk.io/errors"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -40,40 +38,23 @@ const (
 // are the one path around it, and need no guard: they already won a
 // governance vote. Non-MultiSend messages pass untouched.
 func ValidateMultiSendMsg(ctx sdk.Context, cdc codec.Codec, msg sdk.Msg, depth int) error {
-	// The decoder's unpack-depth cap is the recursion bound: a signed
-	// transaction nested this deep cannot decode, so the check binds only
-	// for messages arriving off the tx path through the router.
-	if depth >= codectypes.MaxUnpackAnyRecursionDepth {
-		return errorsmod.Wrap(errortypes.ErrInvalidRequest, "too many nested authz exec messages")
-	}
-	if exec, ok := msg.(*authz.MsgExec); ok {
-		for _, wrapped := range exec.Msgs {
-			var inner sdk.Msg
-			if err := cdc.UnpackAny(wrapped, &inner); err != nil {
-				return errorsmod.Wrap(errortypes.ErrInvalidRequest, "cannot unpack authz exec message")
-			}
-			if err := ValidateMultiSendMsg(ctx, cdc, inner, depth+1); err != nil {
-				return err
-			}
+	return walkAuthzExec(cdc, msg, depth, func(msg sdk.Msg) error {
+		send, ok := msg.(*banktypes.MsgMultiSend)
+		if !ok {
+			return nil
 		}
+		n := uint64(len(send.Outputs))
+		if n > maxMultiSendOutputs {
+			return errorsmod.Wrapf(
+				errortypes.ErrInvalidRequest,
+				"too many MultiSend outputs: max %d, got %d",
+				maxMultiSendOutputs, n,
+			)
+		}
+		// Cap first, so n² cannot overflow.
+		ctx.GasMeter().ConsumeGas(multiSendGasFactor*n*n, "MultiSend quadratic surcharge")
 		return nil
-	}
-
-	send, ok := msg.(*banktypes.MsgMultiSend)
-	if !ok {
-		return nil
-	}
-	n := uint64(len(send.Outputs))
-	if n > maxMultiSendOutputs {
-		return errorsmod.Wrapf(
-			errortypes.ErrInvalidRequest,
-			"too many MultiSend outputs: max %d, got %d",
-			maxMultiSendOutputs, n,
-		)
-	}
-	// Cap first, so n² cannot overflow.
-	ctx.GasMeter().ConsumeGas(multiSendGasFactor*n*n, "MultiSend quadratic surcharge")
-	return nil
+	})
 }
 
 // MultiSendDecorator applies the fan-out guard to signed transactions; the

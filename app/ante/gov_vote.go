@@ -5,10 +5,8 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/x/authz"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -49,43 +47,26 @@ func SetMinVoterStake(stake math.LegacyDec) {
 // path around it, and need no filter: they already won a governance vote.
 // Non-vote messages pass untouched.
 func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper.Keeper, msg sdk.Msg, depth int) error {
-	// The decoder's unpack-depth cap is the recursion bound: a signed
-	// transaction nested this deep cannot decode, so the check binds only
-	// for messages arriving off the tx path through the router.
-	if depth >= codectypes.MaxUnpackAnyRecursionDepth {
-		return errorsmod.Wrap(errortypes.ErrInvalidRequest, "too many nested authz exec messages")
-	}
-	if exec, ok := msg.(*authz.MsgExec); ok {
-		for _, wrapped := range exec.Msgs {
-			var inner sdk.Msg
-			if err := cdc.UnpackAny(wrapped, &inner); err != nil {
-				return errorsmod.Wrap(errortypes.ErrInvalidRequest, "cannot unpack authz exec message")
-			}
-			if err := ValidateGovVoteMsg(ctx, cdc, staking, inner, depth+1); err != nil {
-				return err
-			}
+	return walkAuthzExec(cdc, msg, depth, func(msg sdk.Msg) error {
+		var voter string
+		switch vote := msg.(type) {
+		case *govv1.MsgVote:
+			voter = vote.Voter
+		case *govv1.MsgVoteWeighted:
+			voter = vote.Voter
+		case *govv1beta1.MsgVote:
+			voter = vote.Voter
+		case *govv1beta1.MsgVoteWeighted:
+			voter = vote.Voter
+		default:
+			return nil
 		}
-		return nil
-	}
-
-	var voter string
-	switch vote := msg.(type) {
-	case *govv1.MsgVote:
-		voter = vote.Voter
-	case *govv1.MsgVoteWeighted:
-		voter = vote.Voter
-	case *govv1beta1.MsgVote:
-		voter = vote.Voter
-	case *govv1beta1.MsgVoteWeighted:
-		voter = vote.Voter
-	default:
-		return nil
-	}
-	addr, err := sdk.AccAddressFromBech32(voter)
-	if err != nil {
-		return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
-	}
-	return validateVoterStake(ctx, staking, addr)
+		addr, err := sdk.AccAddressFromBech32(voter)
+		if err != nil {
+			return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		}
+		return validateVoterStake(ctx, staking, addr)
+	})
 }
 
 // validateVoterStake sums the voter's staked tokens across at most
