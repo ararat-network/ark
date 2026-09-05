@@ -322,7 +322,9 @@ func (d FeeDecorator) deduct(ctx sdk.Context, feeTx sdk.FeeTx, settled settlemen
 
 // chargedAccount resolves who a transaction's charges come from: the fee
 // payer, or the granter when one is named and differs, in which case each
-// charge is also a draw on the granter's allowance.
+// charge is also a draw on the granter's allowance. app/client's payerOf
+// resolves the same account for the declaration; the two are a pair, and a
+// rule changed in one is wrong in the other.
 func chargedAccount(feeTx sdk.FeeTx) (deductFrom, payer sdk.AccAddress, sponsored bool) {
 	payer = sdk.AccAddress(feeTx.FeePayer())
 	deductFrom = payer

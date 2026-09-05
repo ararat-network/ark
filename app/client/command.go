@@ -1,3 +1,16 @@
+// Package client builds the fee arkd declares, so no command has to. A
+// transaction command is wrapped once at registration (PriceTransactions) and
+// runs unchanged; what is replaced for the length of that run is the TxConfig
+// it builds through, and the builders it hands out settle their own fee when
+// the transaction they built is first read.
+//
+// The two halves: command.go is the wrapping — flags, the substituted
+// TxConfig and builder, the account the fee is drawn on — and fees.go is what
+// a fee costs, which is the chain's own tax figure and gas priced off the
+// posted sheet against what the payer can spend.
+//
+// cmd/arkd is the only caller. It also takes DefaultGasAdjustment and
+// TipFlagUsage from here, which are the flag defaults the wrapping assumes.
 package client
 
 import (
@@ -142,7 +155,9 @@ func (p *pricer) price(tx authsigning.Tx) (sdk.Coins, error) {
 // payerOf is the account the fee is drawn on — the granter when there is
 // one, else the payer the transaction names or its first signer — and
 // whether that is the first signer, the account the messages draw on, so the
-// transfer counts against the same balance.
+// transfer counts against the same balance. app/ante's chargedAccount
+// resolves the same account for the charge; the two are a pair, and a rule
+// changed in one is wrong in the other.
 func payerOf(tx authsigning.Tx) (payer sdk.AccAddress, sends bool) {
 	if granter := tx.FeeGranter(); len(granter) > 0 {
 		return granter, false
