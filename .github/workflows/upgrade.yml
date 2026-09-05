@@ -1,0 +1,61 @@
+# Coordinated upgrade rehearsal: a single-node chain on the old binary under
+# cosmovisor, a software-upgrade proposal that passes, the halt at the upgrade
+# height, and cosmovisor switching to the new binary.
+#
+# The rehearsal needs a plan to rehearse. Until the first app/upgrade/v* package
+# lands there is none, and the job reports that rather than failing: the point
+# of adding it now is that the cosmovisor path starts being exercised on the
+# commit that introduces an upgrade, not on the one that remembers to wire CI.
+#
+# Nightly rather than per pull request: it builds two binaries and drives fifty
+# blocks through a real gov vote, which is minutes of wall clock.
+name: Upgrade
+
+on:
+  schedule:
+    # 04:00 UTC daily, after the sims.
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upgrade-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # The script builds the old binary from a git ref through a worktree.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Plan to rehearse
+        id: plan
+        run: |
+          name=$(ls -d app/upgrade/v* 2>/dev/null | sed 's|.*/||' | sort -V | tail -1)
+          if [ -z "$name" ]; then
+            echo "no app/upgrade/v* package yet; nothing to rehearse" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "rehearsing $name" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Rehearse
+        if: steps.plan.outputs.name != ''
+        run: make upgrade-rehearsal
+        env:
+          UPGRADE_NAME: ${{ steps.plan.outputs.name }}
+
+      - name: Node log
+        if: failure()
+        run: tail -200 build/upgrade-rehearsal/node.log || true
