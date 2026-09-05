@@ -32,9 +32,10 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
 	}
-	tax, err := s.keeper.ComputeTax(s.ctx, msgs)
+	tax, base, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_400)), base)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
@@ -53,7 +54,7 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 		// the conversion spread.
 		&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)},
 	}
-	tax, err := s.keeper.ComputeTax(s.ctx, msgs)
+	tax, _, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 60)), tax)
 }
@@ -180,7 +181,7 @@ func (s *KeeperTestSuite) TestComputeTaxCoversTransferAndContractFunds() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
 			s.Require().NoError(err)
 			s.Require().Equal(tc.expected, tax)
 		})
@@ -269,7 +270,7 @@ func (s *KeeperTestSuite) TestComputeTaxCoversVestingAccountFunding() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
 			s.Require().NoError(err)
 			s.Require().Equal(tc.expected, tax)
 		})
@@ -315,7 +316,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
 			s.Require().ErrorIs(err, types.ErrInvalidTaxMessage)
 			s.Require().ErrorContains(err, tc.errStr)
 		})
@@ -333,7 +334,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesSendPacketNestedInAuthz() {
 		ibctransfertypes.EncodingJSON, chain.USDBaseDenom, "500", source)))
 	s.Require().NoError(err)
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{nested}}})
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{nested}}})
 	s.Require().NoError(err)
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)), tax)
 }
@@ -389,7 +390,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedSendPacket() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
+			_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{tc.msg})
 			s.Require().ErrorIs(err, types.ErrInvalidTaxMessage)
 			s.Require().ErrorContains(err, tc.errStr)
 		})
@@ -404,7 +405,7 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
 		Inputs: []banktypes.Input{
 			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
 			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
@@ -428,7 +429,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDepartedDenomWithKeptCap() {
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(10))
 	s.setAssets(chain.XDRBaseDenom)
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 	})
 	s.Require().NoError(err)
@@ -443,7 +444,7 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsDenomWithoutTaxCap() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setAssets(chain.USDBaseDenom)
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 	})
 	s.Require().NoError(err)
@@ -465,7 +466,7 @@ func (s *KeeperTestSuite) TestComputeTaxNeverTaxesNoah() {
 		Factor: math.LegacyOneDec(),
 	}))
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(
 			sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
 			sdk.NewInt64Coin(chain.USDBaseDenom, 1_000),
@@ -485,7 +486,7 @@ func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 		Factor: math.LegacyOneDec(),
 	}))
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000))},
 	})
 	s.Require().NoError(err)
@@ -494,18 +495,21 @@ func (s *KeeperTestSuite) TestComputeTaxTreatsZeroReferenceAsUncapped() {
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedMessagesWhenDisabled() {
 	var send *banktypes.MsgSend
-	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
+	_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
 	s.Require().ErrorIs(err, types.ErrInvalidTaxMessage)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxReturnsZeroWithoutOracleLookupWhenDisabled() {
 	source := authtypes.NewModuleAddress("tax-source").String()
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
+	tax, base, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		FromAddress: source,
 		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)
 	s.Require().True(tax.IsZero())
+	// The base is reported at a zero rate too: what moves does not depend
+	// on whether it is taxed.
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), base)
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
@@ -517,14 +521,14 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
 	badAny, err := codectypes.NewAnyWithValue(badSwapSend)
 	s.Require().NoError(err)
 
-	_, err = s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{badAny}}})
+	_, _, err = s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{badAny}}})
 	s.Require().ErrorContains(err, "invalid taxable coins")
 }
 
 func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
-	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{
+	_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{
 		Msgs: []*codectypes.Any{{TypeUrl: "/ark.market.v1.MsgSwapSend"}},
 	}})
 	s.Require().ErrorContains(err, "not a sdk.MsgRequest")
@@ -534,7 +538,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	var send *banktypes.MsgSend
-	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
+	_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{send})
 	s.Require().ErrorContains(err, "nil bank send message")
 }
 
@@ -596,7 +600,7 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 
 	for _, test := range tests {
 		s.Run(test.name, func() {
-			tax, err := s.keeper.ComputeTax(s.ctx, test.msgs())
+			tax, _, err := s.keeper.ComputeTax(s.ctx, test.msgs())
 			s.Require().NoError(err)
 			s.Require().Equal(test.want, tax)
 		})
@@ -625,7 +629,7 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 		}
 	}
 
-	_, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{msg(), msg()})
+	_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{msg(), msg()})
 	s.Require().ErrorIs(err, types.ErrTaxOutOfRange)
 }
 
@@ -648,7 +652,7 @@ func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 			s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 			s.seedAsset(chain.USDBaseDenom, status)
 
-			tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+			tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 				&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 			})
 			s.Require().NoError(err)
@@ -665,7 +669,7 @@ func (s *KeeperTestSuite) TestComputeTaxSkipsUnregisteredDenomination() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{
 		&banktypes.MsgSend{FromAddress: source, Amount: sdk.NewCoins(sdk.NewInt64Coin("aatom", 100))},
 	})
 	s.Require().NoError(err)

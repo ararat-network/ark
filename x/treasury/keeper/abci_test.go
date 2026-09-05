@@ -150,7 +150,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 	// the cap that clamps — 10 would be owed at the rate, the derived cap of
 	// 7 binds. An oracle outage must not make a healthy denomination
 	// untransactable — nor tax-exempt.
-	tax, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
+	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 100)),
 	}})
 	s.Require().NoError(err)

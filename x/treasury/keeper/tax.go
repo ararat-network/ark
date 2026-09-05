@@ -26,27 +26,49 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// ComputeTax calculates transfer tax with the cap applied independently to
-// each message input.
-func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, error) {
+// ComputeTax prices the transfer tax the messages owe, the cap applied to
+// each input on its own, beside the principal it was computed over. Both are
+// summed per denomination; the base counts every input, taxed or not. Params
+// are read only when there is something to tax.
+func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (tax, base sdk.Coins, err error) {
+	inputs, err := taxInputs(msgs)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(inputs) == 0 {
+		return sdk.NewCoins(), sdk.NewCoins(), nil
+	}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("getting params: %w", err)
+	}
+	return k.taxOn(ctx, params, inputs)
+}
+
+// ComputeTaxWithParams is ComputeTax with the params read hoisted to the
+// caller: the ante prices the tax and settles the fee through one read.
+func (k Keeper) ComputeTaxWithParams(ctx context.Context, params types.Params, msgs []sdk.Msg) (tax, base sdk.Coins, err error) {
+	inputs, err := taxInputs(msgs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return k.taxOn(ctx, params, inputs)
+}
+
+// taxInputs walks msgs for the principal each moves.
+func taxInputs(msgs []sdk.Msg) ([]sdk.Coins, error) {
 	var inputs []sdk.Coins
 	for i, msg := range msgs {
 		if err := extractTaxInputs(msg, &inputs, 0); err != nil {
 			return nil, errorsmod.Wrapf(types.ErrInvalidTaxMessage, "message %d: %v", i, err)
 		}
 	}
-	if len(inputs) == 0 {
-		return sdk.NewCoins(), nil
-	}
+	return inputs, nil
+}
 
-	params, err := k.Params.Get(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting params: %w", err)
-	}
-	if params.TransferTaxRate.IsZero() {
-		return sdk.NewCoins(), nil
-	}
-
+// taxOn sums every input into the base and, at a positive rate, applies the
+// rate to each under its cap.
+func (k Keeper) taxOn(ctx context.Context, params types.Params, inputs []sdk.Coins) (tax, base sdk.Coins, err error) {
 	// The tax base is the cap set: a denomination is taxed exactly when
 	// Treasury holds a cap for it. Caps are derived from oracle-priced
 	// membership and then kept, so lifecycle status governs what a cap is
@@ -55,9 +77,16 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 	// between holders, and a transfer tax that exempted them would price
 	// distress below ordinary money.
 	caps := make(map[string]math.Int)
-	taxAmounts := make(map[string]math.Int)
+	taxTotals, baseTotals := coinTotals{}, coinTotals{}
 	for _, input := range inputs {
 		for _, principal := range input {
+			if err := baseTotals.add(principal); err != nil {
+				return nil, nil, errorsmod.Wrapf(types.ErrTaxOutOfRange, "summing principal for denom %s: %v", principal.Denom, err)
+			}
+			if params.TransferTaxRate.IsZero() {
+				continue
+			}
+
 			cap, loaded := caps[principal.Denom]
 			if !loaded {
 				var err error
@@ -71,7 +100,7 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 					// the miss for the rest of the transaction.
 					cap = math.Int{}
 				} else if err != nil {
-					return nil, fmt.Errorf("getting tax cap for denom %s: %w", principal.Denom, err)
+					return nil, nil, fmt.Errorf("getting tax cap for denom %s: %w", principal.Denom, err)
 				}
 				caps[principal.Denom] = cap
 			}
@@ -79,34 +108,43 @@ func (k Keeper) ComputeTax(ctx context.Context, msgs []sdk.Msg) (sdk.Coins, erro
 				continue
 			}
 
-			tax := params.TransferTaxRate.MulInt(principal.Amount).TruncateInt()
-			if cap.IsPositive() && tax.GT(cap) {
-				tax = cap
+			due := params.TransferTaxRate.MulInt(principal.Amount).TruncateInt()
+			if cap.IsPositive() && due.GT(cap) {
+				due = cap
 			}
-			if tax.IsPositive() {
-				current, found := taxAmounts[principal.Denom]
-				if !found {
-					current = math.ZeroInt()
-				}
-				tax, err = current.SafeAdd(tax)
-				if err != nil {
-					return nil, errorsmod.Wrapf(
-						types.ErrTaxOutOfRange,
-						"summing transfer tax for denom %s: %v",
-						principal.Denom,
-						err,
-					)
-				}
-				taxAmounts[principal.Denom] = tax
+			if !due.IsPositive() {
+				continue
+			}
+			if err := taxTotals.add(sdk.NewCoin(principal.Denom, due)); err != nil {
+				return nil, nil, errorsmod.Wrapf(types.ErrTaxOutOfRange, "summing transfer tax for denom %s: %v", principal.Denom, err)
 			}
 		}
 	}
+	return taxTotals.coins(), baseTotals.coins(), nil
+}
 
-	taxes := make([]sdk.Coin, 0, len(taxAmounts))
-	for denom, amount := range taxAmounts {
-		taxes = append(taxes, sdk.NewCoin(denom, amount))
+// coinTotals sums coins per denomination with checked addition.
+type coinTotals map[string]math.Int
+
+func (t coinTotals) add(coin sdk.Coin) error {
+	current, found := t[coin.Denom]
+	if !found {
+		current = math.ZeroInt()
 	}
-	return sdk.NewCoins(taxes...), nil
+	sum, err := current.SafeAdd(coin.Amount)
+	if err != nil {
+		return err
+	}
+	t[coin.Denom] = sum
+	return nil
+}
+
+func (t coinTotals) coins() sdk.Coins {
+	coins := make([]sdk.Coin, 0, len(t))
+	for denom, amount := range t {
+		coins = append(coins, sdk.NewCoin(denom, amount))
+	}
+	return sdk.NewCoins(coins...)
 }
 
 // GetTaxCap derives one denomination's tax cap from its stored conversion
@@ -252,28 +290,18 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 		}
 		// The whole schedule is funded at creation, so the periods sum to one
 		// input; presenting each period alone would apply the cap per period.
-		totals := make(map[string]math.Int)
+		totals := coinTotals{}
 		for _, period := range typed.VestingPeriods {
 			if err := period.Amount.Validate(); err != nil {
 				return fmt.Errorf("invalid taxable coins: %w", err)
 			}
 			for _, coin := range period.Amount {
-				current, found := totals[coin.Denom]
-				if !found {
-					current = math.ZeroInt()
-				}
-				sum, err := current.SafeAdd(coin.Amount)
-				if err != nil {
+				if err := totals.add(coin); err != nil {
 					return fmt.Errorf("summing vesting periods for denom %s: %w", coin.Denom, err)
 				}
-				totals[coin.Denom] = sum
 			}
 		}
-		total := make([]sdk.Coin, 0, len(totals))
-		for denom, amount := range totals {
-			total = append(total, sdk.NewCoin(denom, amount))
-		}
-		return addCoins(sdk.NewCoins(total...))
+		return addCoins(totals.coins())
 	case *markettypes.MsgSwapSend:
 		if typed == nil {
 			return fmt.Errorf("nil Market swap-send message")

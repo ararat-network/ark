@@ -217,7 +217,7 @@ func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxR
 		}
 	}
 
-	tax, err := q.k.ComputeTax(ctx, msgs)
+	tax, base, err := q.k.ComputeTax(ctx, msgs)
 	if err != nil {
 		code := codes.Internal
 		switch {
@@ -228,7 +228,7 @@ func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxR
 		}
 		return nil, status.Errorf(code, "computing treasury tax: %v", err)
 	}
-	return &types.QueryComputeTaxResponse{Tax: tax}, nil
+	return &types.QueryComputeTaxResponse{Tax: tax, TaxBase: base}, nil
 }
 
 // FundStatus queries live Treasury balances, the partitioned liability report,
