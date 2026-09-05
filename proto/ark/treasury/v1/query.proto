@@ -208,6 +208,15 @@ message QueryComputeTaxResponse {
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins"
   ];
+  // tax_base is the principal the tax was computed over, summed per
+  // denomination: what the messages move, as the calculator saw it. The tax
+  // is at most rate × tax_base, less where a cap bound an input.
+  repeated cosmos.base.v1beta1.Coin tax_base = 2 [
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
+  ];
 }
 
 // QueryFundStatusRequest is the request type for Query/FundStatus.
