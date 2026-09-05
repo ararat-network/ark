@@ -1,8 +1,9 @@
-# Ark Treasury and Monetary Policy Redesign Plan
+# Ark Treasury and Economic Policy Redesign Plan
 
-- Status: **Phases 1-3 reviewed; Phase 4 IBC foundation implemented, review pending**
-- Last updated: 2026-07-21
-- Target SDK: Cosmos SDK v0.54.3
+- Status: **Phases 1-4 reviewed; Phase 5 down to the genesis fill**
+- Last updated: 2026-09-06
+- Target SDK: Cosmos SDK v0.54.3, with CometBFT v0.39.3, Go 1.25.9, and ibc-go v11.2.0. A v0.55.0 move was built and
+  then reverted on 2026-08-11 to unblock the Wasm slice, whose dependency gate v0.55.0 fails (§16.3).
 - Launch state: **confirmed prelaunch / fresh genesis**
 
 This document is the implementation contract for rebuilding Ark's Treasury and the monetary flows around it. It is
@@ -11,9 +12,14 @@ and explicitly approved before work begins on the next phase.
 
 The reviewed `x/treasury` implementation is authoritative and must be carried forward. Its Treasury protobuf and
 generated API changes, required Phase 1 app account wiring, Oracle `anoah` identity quote support, and Phase 3 Market
-settlement and pool-unit transition implementation are also retained as recorded in Section 21.1. Existing Phase 4 ante
-and multi-denomination Oracle reward changes remain in the tree but are provisional and unreviewed until the Phase 4 gate. Implementers must
-not replace whole files with an older baseline or treat the current branch state as disposable.
+settlement and pool-unit transition implementation are also retained as recorded in Section 21.1, as is the Phase 4
+IBC, Wasm, ante, and multi-denomination Oracle reward implementation, which passed its review gate on 2026-09-06.
+Implementers must not replace whole files with an older baseline or treat the current branch state as disposable.
+
+Read `Treasury` in Phase 1-3 text as the module before the D54 and D55 extractions of 2026-08-05: Insurance custody,
+the Claims mandate, and the claim record now live in `x/claims`, and the strategic Reserve in `x/reserve`. Both answer
+Treasury through the one-way `RecognisedCapital` contract, and Treasury keeps liability valuation, the three target
+ratios, the expansion waterfall, tax, and reward funding.
 
 ## 1. Intended outcome
 
@@ -26,13 +32,13 @@ Ark will have no scheduled or routine NOAH issuance:
 - Keep each gross NOAH expansion offer in Market's transaction-local escrow. Treasury derives and executes the complete
   per-conversion fund-allocation waterfall from that escrow; a successful result is authoritative, and Market owns the
   resulting burn, stable mint, and receiver payment.
-- Make Market's single virtual pool denomination-bearing: launch it in `asdr`, then permit one atomic live unit change
-  to the future basket without changing which native stablecoins may be selected as outputs; `asdr` remains supported.
+- Make Market's single virtual pool denomination-bearing: launch it in `axdr`, then permit one atomic live unit change
+  to the future basket without changing which native stablecoins may be selected as outputs; `axdr` remains supported.
 - Fund validator and Oracle launch subsidies from an initially genesis-funded NOAH subsidy pool. Permissionless
   transfers of already-issued NOAH may extend it, but no automatic refill, conversion, or issuance path exists.
-- Fund Oracle rewards primarily from the fixed stability tax.
+- Fund Oracle rewards primarily from the fixed transfer tax.
 - Keep Treasury's root authority with governance, while allowing one governance-appointed threshold-multisig committee
-  to update only the bounded, reversible monetary-policy subset during a fixed height term. Governance may override a
+  to update only the bounded, reversible economic-policy subset during a fixed height term. Governance may override a
   committee policy directly or replace/disable the committee at any time.
 - Build a coverage-based Redemption Buffer, a separate strategic Reserve, and Insurance from existing genesis NOAH and
   Treasury-routed expansion principal initially escrowed by Market.
@@ -62,6 +68,11 @@ The proposed model retains a bounded endogenous conversion response:
 - Expansion can contract NOAH supply when post-allocation expansion principal is burned.
 - Every redemption can expand NOAH supply by the portion not funded by the Buffer's actual pre-trade liability coverage.
 - The coverage-based draw recycles NOAH retained during prior expansions without creating a first-come depletion cliff.
+- The response is block-granular (D33, amended 2026-08-08): every expansion in a block allocates under one fund-status
+  read and every redemption draws at one coverage ratio, settled once from Market's EndBlocker. No quote, payout, or
+  spread changes. What it removes is intra-block path dependence — no conversion settles ahead of another, so there is
+  no within-block ordering advantage to compete for — and the difference from per-conversion settlement is bounded by
+  one block's own flow.
 - The strategic Reserve is never an automatic Market funding source. Governance may commit a discrete amount of its
   existing `anoah` to the shared Redemption Buffer between settlements, but Market cannot request, size, or trigger the
   transfer and no redeemer receives a direct Reserve payment.
@@ -70,6 +81,12 @@ The proposed model retains a bounded endogenous conversion response:
 - No adaptive reward target/rate controller, tax-rate controller, price-reactive Buffer share, or automatic Reserve
   trigger amplifies these flows. The fixed-target reward-funding waterfall only allocates already-collected tax and
   already-issued subsidy NOAH within hard balance bounds.
+- The D72 exposure multiplier is a bounded target controller and leaves every claim above intact. It moves one number:
+  the liability basis the three fund targets are sized on, which decides how much expansion principal is retained
+  rather than overflow-burned, and how much capital a committee may move or destroy. It mints nothing, triggers no
+  trade, and changes no quote, spread, payout, or draw — the draw's coverage basis stays raw by D73 — so it cannot
+  amplify a flow. It is also bounded on both ends and slow on purpose: floored at one, so its inert state is exactly
+  today's sizing, capped by governance, and rate-limited per update so no single period can move it far.
 
 A governed Reserve-to-Buffer commitment is a manual reclassification of already-issued NOAH, not a controller:
 `Reserve -= amount`, `Buffer += amount`, and total supply, liabilities, quotes, spreads, and pool state do not change.
@@ -97,16 +114,16 @@ phase gate.
 | D1  | Remove `x/mint`; Ark has no scheduled staking-reward inflation.                                                                                                                                                                                                                                                                                                                                                 | Confirmed              |
 | D2  | Market remains the sole minter; its mint/burn authority is used only for conversion settlement.                                                                                                                                                                                                                                                                                                                 | Confirmed              |
 | D3  | Keep `BasePool`, `ArkPoolDelta`, and `PoolRecoveryPeriod` as virtual imbalance controls.                                                                                                                                                                                                                                                                                                                        | Confirmed              |
-| D4  | With complete valuation, fund the quoted NOAH output by the Buffer's actual pre-trade liability-coverage share capped at 100%; otherwise draw zero; mint the residual.                                                                                                                                                                                                                                          | Confirmed              |
+| D4  | Fund the quoted NOAH output by the Buffer's actual pre-trade coverage share of the claimable liability, capped at 100%; mint the residual. The claimable aggregate excludes supply that cannot currently redeem — a member without a fresh feed, suspended supply without an activated plan — because unredeemable and unvaluable coincide by construction, so the draw never switches off; `valuation_complete` records partial information for audit only. This supersedes the original zero-draw fallback, which retired the Buffer chain-wide during exactly the stress it exists to dampen. | Confirmed              |
 | D5  | Route eligible expansion principal to Buffer, strategic Reserve, Insurance, then burn the excess.                                                                                                                                                                                                                                                                                                               | Confirmed              |
-| D6  | Burn the NOAH value attributable to spread and integer dust; never route it to any fund.                                                                                                                                                                                                                                                                                                                        | Confirmed              |
+| D6  | Burn the NOAH value attributable to spread and integer dust; never route it to any fund. Amended 2026-09-02: spread and dust enter the expansion waterfall as principal does — fund targets first, overflow burned — and route to neither the subsidy pool nor the fee collector. The unconditional burn was inherited from Terra's pre-Columbus-5 fee burn rather than reasoned. The principle now is two circuits. Gas and transfer tax fund security, so validator income never depends on the money-supply cycle; conversions insure themselves, so spread — a premium against stale-oracle and adverse-selection risk — capitalises the funds that bear that risk, whose targets already scale with the volatility and flow indicators that widen it. With backing full this is the original burn; with backing short it is capital arriving as the requirement rises. The subsidy pool remains a bootstrap with no protocol inflow, so its countdown stays honest, and nothing is paid from the funds beyond target, so no constituency gains from a wider spread. Redemption spread is NOAH never issued and stays unissued.                                                                                                                                                                                                                                                                                                                        | Confirmed              |
 | D7  | Targets are passive routing thresholds and never trigger minting, trading, or automatic withdrawals.                                                                                                                                                                                                                                                                                                            | Confirmed              |
 | D8  | Initially value total native stablecoin supply as exposure and count only NOAH separately in each fund.                                                                                                                                                                                                                                                                                                         | Confirmed              |
 | D9  | Use a dedicated, balance-constrained, non-minting subsidy pool initially seeded at genesis.                                                                                                                                                                                                                                                                                                                     | Confirmed              |
 | D10 | Give validator and Oracle reward funding separate per-block NOAH-value targets, but aggregate the targets and eligible validator fees over one parameter-initialised Treasury settlement countdown before calculating shortfalls.                                                                                                                                                                               | Confirmed              |
-| D11 | Remove `oracle_tax_share`; accumulate stability tax for the same Treasury window, protect the aggregate Oracle reward target first, use tax above that floor for any aggregate validator target gap, and return every residual to Oracle.                                                                                                                                                                       | Confirmed              |
+| D11 | Remove `oracle_tax_share`; accumulate transfer tax for the same Treasury window, protect the aggregate Oracle reward target first, use tax above that floor for any aggregate validator target gap, and return every residual to Oracle.                                                                                                                                                                       | Confirmed              |
 | D12 | If the subsidy pool cannot cover both reward shortfalls, scale the shortfalls proportionally; rounding favours validators.                                                                                                                                                                                                                                                                                      | Confirmed              |
-| D13 | Set Cosmos distribution `community_tax` to zero in Ark's canonical launch genesis.                                                                                                                                                                                                                                                                                                                                | Confirmed              |
+| D13 | Zero Cosmos distribution `community_tax` in Ark's default genesis by overriding the distribution module basic.                                                                                                                                                                                                                                                                                                  | Confirmed              |
 | D14 | Keep protocol/community-pool residual accounting as an SDK concern; do not deliberately fund it from Treasury.                                                                                                                                                                                                                                                                                                  | Confirmed              |
 | D15 | Insurance is a Treasury-owned module account paid only through unique, recorded claim IDs under the bounded, governance-owned Claims Mandate.                                                                                                                                                                                                                                                                   | Confirmed              |
 | D16 | Ordinary redemption never debits strategic Reserve, and Reserve never directly pays redeemers, rewards, or claims; all arbitrary-recipient, conversion, investment, and external-asset deployment remains deferred.                                                                                                                                                                                             | Confirmed              |
@@ -114,43 +131,73 @@ phase gate.
 | D18 | Tax every enabled user-facing stable transfer surface through one calculator, not internal bank movements.                                                                                                                                                                                                                                                                                                      | Confirmed              |
 | D19 | Report Redemption Buffer, strategic Reserve, and Insurance separately; never present a combined backing ratio.                                                                                                                                                                                                                                                                                                  | Confirmed              |
 | D20 | Launch from a clean genesis; discard legacy state/wire compatibility and implement no migration path.                                                                                                                                                                                                                                                                                                           | Confirmed              |
-| D21 | Governance owns Treasury's complete denomination-bearing `reference_tax_cap` Coin in Params; launch it in `asdr` independently of Market's pool unit, and require no Treasury Params update when Market changes its pool denomination.                                                                                                                                                                           | Confirmed              |
-| D22 | Make Market `BasePool` a denomination-bearing `sdk.DecCoin`; launch it in `asdr` and change its amount or denomination live only through Market's `MsgUpdateParams`. Oracle support is a prerequisite for a new denomination; Treasury never drives or intermediates the Market transition.                                                                                                                      | Confirmed              |
+| D21 | Governance owns Treasury's complete denomination-bearing `reference_tax_cap` Coin in Params; launch it in `axdr` independently of Market's pool unit, and require no Treasury Params update when Market changes its pool denomination.                                                                                                                                                                           | Confirmed              |
+| D22 | Make Market `BasePool` a denomination-bearing `sdk.DecCoin`; launch it in `axdr` and change its amount or denomination live only through Market's `MsgUpdateParams`. Oracle support is a prerequisite for a new denomination; Treasury never drives or intermediates the Market transition.                                                                                                                      | Confirmed              |
 | D23 | Every applied `BasePool` amount or denomination change atomically rescales `ArkPoolDelta` to preserve `delta / BasePool.Amount`. On a denomination change, treat submitted `BasePool.Amount` as a non-binding audit expectation and apply the amount derived from one fresh deterministic Oracle conversion.                                                                                                   | Confirmed              |
 | D24 | Value Treasury liabilities and targets directly in NOAH equivalents; stable-to-stable pricing does not use Market's pool denom.                                                                                                                                                                                                                                                                                 | Confirmed              |
 | D25 | Permit irreversible, permissionless `anoah` transfers into the subsidy pool; reject other denoms and add no automatic refill mechanism.                                                                                                                                                                                                                                                                         | Confirmed              |
-| D26 | At launch, permit only positive `anoah` deposits to all four Treasury fund accounts; reject every mixed or non-NOAH transfer atomically.                                                                                                                                                                                                                                                                        | Confirmed              |
+| D26 | At launch, permit only positive `anoah` deposits to all four Treasury fund accounts; reject every mixed or non-NOAH transfer atomically. The single exception is Treasury's own settlement routing from `transfer_tax_collector` into `strategic_reserve`, which carries derecognized (written-off or retired) transfer tax into inert Reserve custody pending a separate governed disposal decision. | Confirmed              |
 | D27 | At launch, governance alone may irreversibly transfer a discrete `anoah` amount from strategic Reserve to the shared Redemption Buffer, subject to an execution-time minimum remaining Reserve balance; no target, price, Oracle, or Market trigger applies.                                                                                                                                                    | Confirmed              |
 | D28 | Required Reserve and Insurance capital is based on each fund's covered risk exposure, never the gross value of assets held; future external assets may reduce a gap only through explicit fund-specific, risk-adjusted recognition plus a separate liquid-capital requirement, and Ark-issued stablecoins always receive zero credit.                                                                           | Confirmed              |
 | D29 | Governance retains Reserve policy authority; any future fast execution uses a governance-created, typed, bounded, expiring mandate executed by a threshold multisig with a separate pause-only guardian, never a generic Reserve sender or Treasury parameter authority.                                                                                                                                        | Confirmed              |
-| D30 | Governance owns the Insurance Claims Mandate. The shared cancellation period is a Treasury parameter applying to both origins; committee submissions are bound to the active mandate window and exact term and consume a fixed gross term allowance, while governance submissions depend only on params and record no mandate term; governance may cancel any pending claim regardless of the current mandate, while the current committee may cancel only non-governance-submitted claims. | Confirmed              |
-| D31 | Monetary policy, Insurance claims, and future Reserve operations use distinct role addresses and typed authority domains even if human memberships overlap; no role receives Treasury's general authority.                                                                                                                                                                                                      | Confirmed              |
-| D32 | Claims use submit-then-pay with encumbered pending amounts; cancellation ends for every actor at the executable height, and no authority can claw back a paid claim or bypass held-balance, denomination, uniqueness, no-mint, no-borrow, or no-cross-fund invariants.                                                                                                                                          | Confirmed              |
-| D33 | Market escrows each gross expansion offer and owns conversion burn/mint/payout; Treasury derives and executes the complete per-conversion waterfall, returns an error if it cannot complete it, and otherwise returns the authoritative allocation Market uses to finish settlement.                                                                                                                                | Confirmed              |
+| D30 | Governance owns the Insurance Claims Mandate. The shared cancellation period is a module parameter applying to both origins (Treasury's when written; `x/claims` Params since D54); committee submissions are bound to the active mandate window and exact term and consume a fixed gross term allowance, while governance submissions depend only on params and record no mandate term; governance may cancel any pending claim regardless of the current mandate, while the current committee may cancel only non-governance-submitted claims. | Confirmed              |
+| D31 | Economic policy, Insurance claims, and future Reserve operations use distinct role addresses and typed authority domains even if human memberships overlap; no role receives Treasury's general authority.                                                                                                                                                                                                      | Confirmed              |
+| D32 | Claims use submit-then-pay with encumbered pending amounts; cancellation ends for every actor at the closing height, and no authority can claw back a paid claim or bypass held-balance, denomination, uniqueness, no-mint, no-borrow, or no-cross-fund invariants.                                                                                                                                          | Confirmed              |
+| D33 | Market escrows each gross expansion offer and owns conversion burn/mint/payout; Treasury derives and executes the complete per-conversion waterfall, returns an error if it cannot complete it, and otherwise returns the authoritative allocation Market uses to finish settlement. Amended 2026-08-08: the exchange happens once per block from Market's EndBlocker, not inside each conversion. Market escrows as before and still burns each conversion's spread in the conversion that charged it — the spread owes nothing to liability or fund state, so nothing about it defers — records the block's conversion facts in transient accumulators, mints each redemption's complete quoted output, and executes the burn settlement returns. Treasury values liability once against final state and derives and executes the complete waterfall and coverage draw over the block's totals. Every clause above survives at block granularity: Market owns custody, mint, and burn, Treasury owns valuation and allocation, and the return value is still how Market finishes settlement. What moved with the cadence is the failure class — a settlement error now fails the block rather than one transaction — and the deletion of every cached-valuation mechanism this decision's per-conversion timing required (D39, D68). Amended 2026-09-02: with D6 amended, Market no longer burns spread in the conversion. It escrows the gross offer whole, accumulates gross rather than eligible principal, and Treasury's settlement takes the block's gross total through the waterfall; the burn Market executes at settlement is the overflow alone. Spread and dust thereby share principal's fallback — an incomplete valuation parks the whole gross total in the Reserve — which is the all-or-nothing rule already settled.                                                                                                                                | Confirmed              |
 | D34 | Govern `reward_funding_window`, default it to one chain week, initialise `blocks_remaining` from it when an empty Treasury window records its first observation, and apply later parameter changes only after the active countdown settles.                                                                                                                                                                     | Confirmed              |
 | D35 | Keep `FundStatus` limited to fund stocks, liabilities, and targets; expose active reward-funding accounting through an independent direct-state query that remains available when fund valuation is unavailable.                                                                                                                                                                                                | Confirmed              |
-| D36 | Governance may appoint one exact threshold-multisig monetary-policy committee under a bounded, height-scoped, chain-termed mandate. The committee controls only the six reversible policy fields; governance may override policy and replace or disable the mandate at any time.                                                                                                                               | Confirmed              |
-| D37 | Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` and `claim_cancellation_period_blocks` in `Params`. Persist the six reversible economic levers once in `MonetaryPolicy`; Claims Mandate remains claims-only.                                                                                                                                                                          | Confirmed              |
-| D38 | Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window, and fixed gross committee claim limit; the shared cancellation period lives in Treasury `Params`; claims have no category or per-claim cap, and there is no guardian or governance-cancellation flag.                                                                                                                               | Confirmed              |
-| D39 | Derive aggregate liability lazily on the first settlement that needs it each block, cache only a complete transient snapshot, and advance it from every Market burn/mint; an incomplete valuation is not cached and may be retried by a later settlement.                                                                                                                                                       | Confirmed              |
+| D36 | Governance may appoint one exact threshold-multisig economic-policy committee under a bounded, height-scoped, chain-termed mandate. The committee controls only the nine reversible policy fields (widened from six on 2026-08-10 by the D72 amendment, which moved the three exposure weights here); governance may override policy and replace or disable the mandate at any time.                                                                                                                               | Confirmed              |
+| D37 | Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` in `Params` (`claim_cancellation_period_blocks`, once named here too, moved to `x/claims` Params by D54; `tax_cap_refresh_period_blocks` is no longer a field — caps derive per block from the conversion-factor table, §8.5). Persist the reversible economic levers once in `EconomicPolicy`; the boundary between the two messages is stance against machinery, not a field count — a lever stating how much of something the protocol wants, reversible and safe to clamp between a mandate's minimum and maximum, belongs to the committee, while the instrument that computes it, the cadence it runs on, and the rails bounding how far and how fast it may move stay with governance (amended 2026-08-10 alongside D72); Claims Mandate remains claims-only. Amended 2026-09-03 (D80): `transfer_tax_rate` is `Params`, not a committee lever — a stance quantity, but one that lives in the signed fee.                                                                                                                                                                          | Confirmed              |
+| D38 | Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window, and fixed gross committee claim limit; the shared cancellation period lives in Treasury `Params` (moved to `x/claims` Params by D54); claims have no category or per-claim cap, and there is no guardian or governance-cancellation flag.                                                                                                                               | Confirmed              |
+| D39 | Prime the claimable-liability snapshot in the preblocker each block (the first settlement scans lazily only when no snapshot exists), cache the claimable aggregate together with a completeness flag, and advance it from every Market burn/mint. The snapshot always carries a value: incompleteness is disclosure about excluded unclaimable supply, never an uncached state. Superseded 2026-08-08 by D33's block-granular settlement: with the valuation reduced to one consumer at one point after every write, there is nothing to cache. The snapshot, its codec and gas constant, the priming preblocker, and the supply-delta maintenance are deleted, and settlement scans canonical Bank and Oracle state once per block that converts — an idle block now values nothing, where priming scanned the registry every block. Only the completeness flag survives, unchanged in meaning and emitted at most once per block.                                     | Confirmed              |
 | D40 | Begin Phase 4 by fixing execution-time tax payer, exactly-once identity, rollback, and fee-sponsorship semantics; then implement IBC foundations before Wasm because contracts may dispatch IBC messages. Design the Treasury execution hook into both paths, but keep both transfer surfaces production-disabled until the complete tax and recipient-restriction activation gate passes.                                                                                  | Confirmed              |
 | D41 | Use call-path ownership for exactly-once tax assessment: ante owns signed top-level inputs, while the Wasm dispatcher owns only execution-generated Bank sends, IBC sends, execute funds, and instantiate funds. Add no persistent transfer IDs, context markers, global Bank tax hook, or implicit execution-time feegrant. The sending contract pays the tax in addition to the complete requested principal.                                                              | Confirmed              |
-| D42 | Send execution-generated tax directly to `stability_tax_collector` and execute its collection with the matching transfer in one Wasm submessage cache. Synchronous or caught failures roll both back; a successfully created IBC packet retains its tax through later acknowledgement, timeout, refund, or return bookkeeping, none of which is a new taxable transfer.                                                                                                          | Confirmed              |
-| D43 | Expose a read-only contract-facing tax query through Ark's Wasm bindings. Parse the proposed execution-generated message through the same message adapter and invoke Treasury's canonical calculator; duplicate no rate/cap math. The result is an advisory current-state estimate only: it reserves no funds, grants no authority, and never replaces execution-time recomputation.                                                                                              | Confirmed              |
-| D44 | Treat `MonetaryPolicy.stability_tax_rate` as the sole tax activation switch. An explicit zero reference or derived tax cap means uncapped taxation, while a missing configured-denomination cap remains an error. Keep the complete derived cap map populated independently of the rate, and never rebuild it from either policy-update message; reject any positive reference-cap conversion that truncates to the zero sentinel.                                       | Confirmed              |
-| D45 | Build Ark's hub foundation against `github.com/cosmos/ibc-go/v11`, targeting v11.2.0 subject to dependency-resolution and compile verification. Wire IBC Classic and IBC v2 core/ICS-20 routes, the 07-Tendermint light client, and the transfer module account with minter/burner permissions. Keep standard module genesis defaults in application code; Ark's canonical launch genesis must allow only `07-tendermint` and launch transfer with send and receive disabled. | Confirmed              |
-| D46 | Put governance-controlled rate limiting and packet forwarding in the IBC Classic transfer stack, and apply the v11 rate limiter to the IBC v2 transfer path. Configure reviewed per-denomination, per-channel/client limits before enabling production transfer. A packet-forwarded hop is protocol-generated continuation of the original transfer, not a new user-facing taxable input; acknowledgement, timeout, refund, and return bookkeeping likewise receive no second tax. | Confirmed              |
+| D42 | Send execution-generated tax directly to `transfer_tax_collector` and execute its collection with the matching transfer in one Wasm submessage cache. Synchronous or caught failures roll both back; a successfully created IBC packet retains its tax through later acknowledgement, timeout, refund, or return bookkeeping, none of which is a new taxable transfer.                                                                                                          | Confirmed              |
+| D43 | Give contracts a read-only tax estimate through Treasury's own `Query/ComputeTax`, admitted to the Wasm query accept list at the §16.6 gate rather than served by a custom querier (D74). A contract prices the proto form of the message it will dispatch, so the calculator and its rate/cap math are never duplicated; for the JSON-native `CosmosMsg` variants the contract builds that proto itself, and keeping it identical to what it returns is the author's responsibility. The result is an advisory current-state estimate only: it reserves no funds, grants no authority, and never replaces execution-time recomputation.                                                                                              | Confirmed              |
+| D44 | Treat `Params.transfer_tax_rate` as the sole tax activation switch (moved from `EconomicPolicy` by D80, 2026-09-03). An explicit zero reference or derived tax cap means uncapped taxation, while a missing configured-denomination cap remains an error. Keep the complete derived cap map populated independently of the rate, and never rebuild it from either policy-update message; reject any positive reference-cap conversion that truncates to the zero sentinel.                                       | Confirmed              |
+| D45 | Build Ark's hub foundation against `github.com/cosmos/ibc-go/v11`, targeting v11.2.0 subject to dependency-resolution and compile verification. Wire IBC Classic and IBC v2 core/ICS-20 routes, the 07-Tendermint light client, and the transfer module account with minter/burner permissions. Keep standard module genesis defaults in application code; Ark's canonical launch genesis must allow only `07-tendermint` and launch transfer with send and receive disabled. Amended 2026-09-06: the launch allowed-client list is empty, so no client, connection, channel, v2 counterparty, or packet of any kind can exist until governance admits `07-tendermint` by `MsgUpdateClientParams`; the transfer and ICA flags stay off as well, so that vote opens client creation and nothing more. | Confirmed              |
+| D46 | Put governance-controlled rate limiting and packet forwarding in the IBC Classic transfer stack, and apply the v11 rate limiter to the IBC v2 transfer path. Configure reviewed per-denomination, per-channel/client limits before enabling production transfer. A packet-forwarded hop is protocol-generated continuation of the original transfer, not a new user-facing taxable input; acknowledgement, timeout, refund, and return bookkeeping likewise receive no second tax. Amended 2026-09-03: the raw v2 `MsgSendPacket` is the same outbound leg as `MsgTransfer` and prices identically. The transfer app authenticates the payload sender against the message signer and escrows through the same `SendTransfer`, so the two are one taxable surface reached by two doors, and the source port is what decides whether a payload carries principal at all — Wasm v2 ports and GMP move no coins. The calculator decodes with the transfer module's own decoder and its own arguments, so a payload it escrows is one the tax prices and an undecodable transfer payload fails the transaction rather than passing untaxed. Acknowledgement, timeout, and refund remain untaxed on both paths. | Confirmed              |
 | D47 | Add IBC callbacks to both the Classic and v2 ICS-20 stacks when the Wasm keeper is wired. Callbacks are Ark's canonical transfer-and-call mechanism; add no separate IBC Hooks middleware. Callback-triggered execution uses the same Wasm/Treasury execution adapter, while acknowledgement, timeout, and callback delivery alone are not new taxable transfers.                                                                                                  | Confirmed              |
 | D48 | Add IBC v2 GMP together with the Wasm foundation and route its derived-account SDK-message execution through the same Treasury-aware router used by contract-generated messages. The derived GMP account pays any execution-generated tax in addition to principal; outer fee payers and feegrant do not sponsor it. Do not expose a partially integrated GMP route before its authorization, tax, rollback, and recipient-restriction tests pass.                 | Confirmed              |
 | D49 | Use upstream Wasmd `v0.70.x` and `wasmvm/v3`, subject to clean resolution and compile verification against Ark's SDK `v0.54.3` and IBC-Go `v11.2.0`; do not maintain a Wasmd fork or replacement-directive compatibility layer. Remove Ark's unused legacy `wasmvm` v1 parser/query interfaces when the real runtime is installed.                                                                                                                         | Confirmed              |
-| D50 | Consider 08-Wasm only with the Wasm foundation and only if its exact dependency and VM family integrates cleanly. If installed, keep it dormant at launch: the allowed-client list remains exactly `07-tendermint` and the launch genesis contains no Wasm-client checksums. `09-localhost` remains unavailable through that launch allowlist; add neither 06-Solo Machine nor the experimental attestations client.                                                   | Confirmed              |
+| D50 | Consider 08-Wasm only with the Wasm foundation and only if its exact dependency and VM family integrates cleanly. If installed, keep it dormant at launch: the allowed-client list admits no client type at launch (D45 as amended) and the launch genesis contains no Wasm-client checksums. `09-localhost` remains unavailable through that launch allowlist; add neither 06-Solo Machine nor the experimental attestations client.                                                   | Confirmed              |
 | D51 | Keep packet forwarding Classic-only until upstream provides reviewed v2 support; do not invent a v2 PFM adapter. Add no ICS-29 relayer-fee wiring because that application was removed from IBC-Go.                                                                                                                                                                                                                                                              | Confirmed              |
 | D52 | Retain standard user ICA controller and host support but launch both disabled and the host with an empty message allowlist. Defer a generic custom ICA authentication module; if contracts later need ICA control, prefer a narrowly scoped Wasm-to-ICA adapter with explicit authorization.                                                                                                                                                                       | Confirmed              |
 | D53 | Add neither ICS-721 NFT transfer nor a separate NFT module. Native Wasm IBC channels cover custom contract protocols, callbacks cover ICS-20 transfer-and-call, and GMP covers arbitrary remote SDK-message execution; revisit IBC Hooks only for a concrete requirement for Osmosis-compatible `wasm` memo or intermediary-address semantics.                                                                                                                       | Confirmed              |
-| P1  | Choose launch tax rate, reference cap Coin, three target ratios, subsidies, and genesis fund balances.                                                                                                                                                                                                                                                                                                          | Pending before launch  |
+| D54 | Extract Insurance claims from `x/treasury` into `x/claims`, which owns the Claims mandate, the claim record, the Insurance reservation, and the `claims_insurance` custody account. Treasury keeps liability valuation, all three fund target ratios, the expansion waterfall, tax, and reward funding, and reads Insurance through a one-way `ClaimsKeeper.RecognisedCapital` interface. The boundary is §7.2's own accounting contract: Treasury owns `required_capital`, the operating module owns `recognised_capital`, and per §20.1 held assets satisfy a requirement without defining it. Done pre-launch because the move carries five populated collections and is a real store migration afterwards. The future Reserve mandate (§20.2) lands as `x/reserve` on this same pattern, implementing the same interface, which also returns Treasury to one mandate per module — the convention `x/security`, `x/asset`, and `x/market` already follow. | Confirmed |
+| D55 | Extract the strategic Reserve from `x/treasury` into `x/reserve` on the D54 pattern, pre-launch, ahead of the mandate it will hold. The module owns the `strategic_reserve` custody account, the governance-only `MsgTransferReserveToBuffer`, and the send restriction over that account — including its one exempt pair, `transfer_tax_collector` to Reserve, which admits the derecognized transfer tax Treasury settlement routes there. It answers the same `RecognisedCapital` contract as `x/claims` — through Treasury's own `ReserveKeeper` interface, since depinject resolves module inputs by type and needs the two named apart — so Treasury sizes both committee-operated funds identically and holds one mandate. Migration cost is nil either way (the module has no collections, and the account rename to `strategic_reserve` is free pre-launch); the exemption is what argued for doing it now rather than inside the §20.2 mandate work. | Confirmed |
+| D56 | One-committee Reserve mandate. The §20.2 executor/guardian split collapses into a single Reserve committee appointed through `MsgSetReserveMandate` on the shared envelope pattern: chain-derived monotone term, half-open activation window, empty committee disables, replacement resets allowance usage. Mandate contents reduce to the term deployment allowance (consumed permanently — closing a position never restores it), the minimum liquid `anoah` floor (absolute and appointment-scoped; the liability-scaled liquid tranche is the Redemption Buffer, per the §7.2 amendment), and an exact destination list. There is no guardian and no pause state — governance replacing or disabling the mandate at proposal latency is the brake, exactly as for every other mandate on this chain — and no governance deployment message, because deployment needs an off-chain counterparty relationship only a committee operationally has. §20.3's per-transaction/rolling-window/lifetime caps, price/slippage/deadline constraints, adapter pins, and pause state are each deliberately omitted (accounting spec §2). Implemented 2026-08-05. | Confirmed |
+| D57 | Quantity ledger with read-time feed pricing. The Reserve records what is held, never what it is worth: an append-only journal (kinds DEPLOYMENT / QUANTITY_UPDATE / RETURN_ATTRIBUTION / IMPAIRMENT / CORRECTION / CLOSURE) carries proven coin movements and committee-attested quantities with bounded off-chain references, and valuation happens only at read time against the Oracle's available rates. Corrections restate — the journal keeps the error and the fix — and genesis re-derives every stored aggregate from the journal and requires equality. Return valuation is crystallised at attribution time by the keeper, so realised P&L at closure is arithmetic over proven legs, which is why closure needs no governance gate (narrowing §20.4's write-down rule). Supersedes the attested-valuation machinery of §20.3–20.4. Implemented 2026-08-05. | Confirmed |
+| D58 | Recognition policy as combined eligibility and custody allowlist. One governed list (`EligibilityEntry`: asset denomination, haircut factor in [0, 1], recognition cap ratio in [0, 1]), replaced whole by `MsgSetRecognitionPolicy` and enforced at two points: the Reserve send restriction admits a denomination only if listed — §20.1's "anoah plus custody allowlist" restriction change, arriving for exactly one fund — and `RecognisedCapital` credits `min(haircut × attested open unimpaired quantities × rate, cap_ratio × recognised_capital)` per listed asset on top of the par-counted balance, the self-reference solved per block in closed form (D64). The multiplication is the chain's one rate orientation: every oracle rate quotes NOAH per one unit of its asset (D75, flipped 2026-09-02; it was units per NOAH before, when this valuation divided), so valuing that asset in NOAH multiplies, and the conversion goes through `RateSet.Convert` like every other valuation on the chain rather than being re-derived here — it was re-derived once, as a multiplication, and published the reciprocal of every figure until 2026-08-08. Every rate comes from the Oracle, so a dark or stale feed zeroes exactly one asset's credit and recognition degrades to zero rather than to a frozen number, with no exception: there is no governance-supplied fallback price, and a slow-cadence feed is served by the per-denomination staleness window of D60 instead. §20.1's cross-fund concentration caps land as per-asset Reserve caps because Insurance stays NOAH-only (claims plan D4). The `RecognisedCapital` query decomposes every row — including attested-but-unlisted holdings — so each zero credit shows its reason. Implemented 2026-08-05; the cap became a share of recognised capital itself under D64 on 2026-08-06. Amended 2026-08-09: both factors are strictly positive and the custody-allowlist role is gone — admission stopped reading the policy under D70's narrowing, so a custody-only entry became indistinguishable from no entry while still occupying the policy and raising no feed-guard claim; refusing zero factors makes every stored entry a live claim and the guard total over the policy. Amended 2026-08-10: the on-chain balance leaves the credit formula and `AssetRecognition.onchain_quantity` is deleted. The term dated from the allowlist role, when a listed denomination could sit in the Reserve account; under D70 admission is NOAH-or-member and a listed name is an external symbol, so the two shapes are disjoint and the term was provably zero on every row that could earn. The field went with it rather than staying as a custody column: its only non-zero class is registry-member paper, which can never be recognised, is already published by Bank and by Treasury as self-held supply (D66), and — for paper bought back through a position — appeared in the same row twice, once attested and once held. Bank custody is therefore not a subject of the decomposition, and the fold no longer reads account balances at all. | Confirmed |
+| D59 | No adapter or evidence-upgrade machinery (`docs/DESIGN_NOTES.md` §6.2, Phase C) is planned. Evidence upgrades can verify only value that routes through chain-visible machinery — an IBC acknowledgement proves delivery over a channel, a contract read proves wasm state — and the Reserve's plausible asset universe is custodian-held off-chain instruments reached by wire transfer, which none of that can ever see. Manual committee attestation with bounded references is therefore the permanent evidence model, not an interim one; the same-chain case needs no adapter because a listed asset in the Reserve account is bank custody the recognition fold prices directly. The journal's append-only design keeps this reversible without migration: machine-authored entries could later land beside committee-authored ones if a chain-verifiable venue ever became real, but that requires its own spec and the §20 first-asset gate. Closes §20.4's adapter machinery beyond the D57 narrowing. | Confirmed |
+| D60 | Exchange-rate staleness is per denomination. Oracle `Params` carries `max_exchange_rate_age_overrides`, a sorted governed list replacing the default window for named denominations; every freshness check resolves its window through `GetMaxAge(denom)`. How long a rate stays meaningful is a property of the feed rather than of the consumer reading it — a slow-moving instrument priced against a daily published figure is not stale at an age that would make an FX rate dangerous to quote against — so the window lives beside the rate and every consumer inherits one answer per denomination. This is what let D58 delete its governance-supplied fallback price: "valuation is never stored" and "recognition degrades to zero, never to a stale number" both hold without exception, and the only way to price a slow feed is still an Oracle feed. Implemented 2026-08-05. Amended 2026-08-09 (D71): the override machinery is deleted — feed sharing under D70 splits cadence, a feed fact, from tolerance, consumer policy, and the premise held only while every feed had one consumer class; the default window survives as the conversion-grade read and the Reserve's tolerance moves to each eligibility entry. | Confirmed |
+| D61 | Reserve burn authority is split by what a burn can destroy. Governance (`MsgBurnReserveAssets`) may burn any Reserve custody including NOAH, under the same per-proposal stale-state floor as the Buffer commitment: a NOAH burn is the chain's only discretionary supply contraction and no committee on this chain moves supply, mirroring §20.3's "the mandate cannot mint". The committee may burn credit-zero, non-NOAH custody (`MsgCommitteeBurnResidue`) — unlisted, or listed with a zero haircut or cap — because destroying what the capital system already counts at nothing cannot reduce recognised capital, and that residue is in practice Ark-issued stablecoin whose destruction reduces consolidated liability. The committee may also burn NOAH surplus (`MsgCommitteeBurnSurplus`), bounded by the keeper at `min(recognised_capital - required_capital, balance - mandate floor)`: burning reduces recognised capital one for one, so the power exhausts itself exactly at the target line and cannot reach through it, leaving the committee timing rather than size. That burn refuses while valuation is incomplete, since the requirement is then unavailable — the same condition that parks principal in the Reserve freezes disposal out of it. Burns open no position and append no journal entry; the signed message and Bank's canonical burn event are the audit trail. `strategic_reserve` gains `Burner` and never `Minter`. Treasury additionally calls `RecordParkedPrincipal` on the incomplete-valuation branch so the fund books the lifetime principal no target sized — an accounting call only, since Treasury credits the fund through Bank as it does the other two and the Reserve interface exchanges numbers rather than transfer capability. Implemented 2026-08-05. | Confirmed |
+| D62 | Ark-issued denominations are enforced credit-ineligible, not merely declared so (D28), and no Reserve eligibility entry may name an asset-registry member at all. The entry was once legal in custody-only form because an in-kind return of Ark paper could not otherwise enter the account; D65 removed that necessity by admitting members through the send restriction on membership alone, so the entry itself is now the error and only its shape needed policing before. Checked against `AssetKeeper.HasAsset` in `MsgSetRecognitionPolicy` and in Reserve `InitGenesis`, which runs after `x/asset`. Membership is the test rather than lifecycle status, since a written-off or retired asset is still Ark-issued. The check sits at the write points only, so the per-block recognition fold takes no registry read; the accepted residual is that a denomination listed before it is ever registered keeps its credit until the next whole-for-whole policy replacement re-validates the set. Amended 2026-08-08. Amended again 2026-08-09 (D69): the check and its residual are deleted together — the external-symbol shape makes a member entry unrepresentable, so the invariant stops being a keeper concern at all. | Confirmed |
+| D63 | `x/reserve` registers as an Oracle feed-removal guard, joining `x/asset` in the wiring-owned guard set. It reports two claims, both derived from Reserve state at call time: a credited eligibility entry, because recognised capital counts what the fund holds valued through that feed, so removing the feed would shrink Reserve capital and change what a committee may burn with nothing in the proposal disclosing it; and an open position denominated in the feed's asset, because a return attributed while the feed is dark crystallises zero recovery into the journal permanently, overstating that position's realised loss forever. The first claim is about a recoverable number and exists to force sequencing — delist, then remove; the second is about an irreversible record. A closed position raises no claim. Implemented 2026-08-05. Amended 2026-08-09 (D70): both claims map through the prefix derivation — eligibility entries by a filtered pass over the policy's `F-` keys, open positions through their resolved feed; both rationales unchanged. Amended 2026-08-10: the entry claim drops its credit-granting test and every stored entry claims its series. Under D58's strict positivity the test is vacuous, and it is deleted rather than kept as a redundant filter because the two readings differ in direction — an entry crediting nothing, could one exist, would have its feed removed silently, where walking the whole policy blocks removal until governance delists it. The guard gates an act recoverable only at the cost of the activation delay and a re-warm, so it fails closed. | Confirmed |
+| D64 | Recognition caps are each asset's share of recognised capital itself: `EligibilityEntry.recognition_cap_ratio` in [0, 1) clips credit at `ratio × recognised_capital`, the self-reference resolved per block in closed form. The denominator was chosen against two alternatives. A flat `anoah` amount states a tolerance at one balance-sheet size and decays into a binding constraint or a vacuous one — and a binding cap reopens the gap at full value, the §7.2 acquisition/refill loop. A ratio of the capital requirement scales the ceiling with the size of the need rather than the fund's substance, so one corrupted attestation against an almost-empty fund could manufacture credit up to a share of a large target. Against the certificate itself, credit levers only the provable NOAH base: a lone corrupted input can never push the total past honest ÷ (1 − ratio), a fund holding no NOAH counts no asset at all, and the invariant is checkable against the answer — no clipped asset exceeds its ratio of the reported figure, and a clipped asset holds exactly it. Clipping one asset shrinks the total every other share is measured against (the shrinking-denominator effect), so the clipped set and the total are found together: sorting assets by `raw ÷ ratio` makes the clipped set a suffix, and the one consistent split gives `T = (base + Σ unclipped raw) ÷ (1 − Σ clipped ratios)` — exact cross-multiplied big-integer arithmetic, no iteration, no stored valuation, totality by `T ≤ base ÷ (1 − Σ ratios)` with no attested figure in the bound. Existence requires the policy-wide ratio sum strictly below one, enforced at the policy write and genesis import: at one the denominator dies and the caps admit everything. The couplings the self-reference introduces all point conservatively — a dark feed zeroes its own asset and tightens every neighbour's ceiling — and `RecognisedCapital(ctx)` stays a pure local read with the §7.2 split untouched: nothing is threaded from Treasury, and the surplus a committee may burn is monotone in the requirement again. The EVM warning against on-chain waterfall caps (float nondeterminism, gas-bounded recursion) does not govern a Cosmos keeper fold: the arithmetic is integer, the policy is governance-written rather than attacker-supplied, and the closed form replaces iteration — while the query still publishes each block's resolved `effective_cap` per asset, the absolute ceilings a debt-ceiling design would have governance push by hand. Implemented 2026-08-06. | Confirmed |
+| D65 | The Reserve's send restriction admits any asset-registry member by membership alone, alongside NOAH and eligibility-listed denominations. Ark paper is protocol liability wherever it sits, can never earn recognition credit (D28), and the Reserve is the one account with a committee able to retire it, so refusing it never protected the fund's figures and only pushed it somewhere the chain cannot see. This subsumes and deletes the transfer-tax-collector sender exemption — written-off and retired assets are still members — which strictly tightens the rule, since the collector loses its bypass for coins that are neither NOAH nor members. Accepted cost: anyone may push member dust into the account, bounded by registry size and burnable by the committee. Implemented 2026-08-08. Amended 2026-08-09 (D70): admission narrows to NOAH-or-member. The eligibility-listed clause never admitted anything a mint path could produce, and its external-shape successor lasted one review — both implied an on-chain external-custody lane that genesis and movement valuation refuse and D59 forecloses. In-kind return legs were always served by the surviving clauses: returns arrive as NOAH or members. | Confirmed |
+| D66 | Treasury's liability partition measures and discloses self-held supply: for every member the aggregate counts, the strategic Reserve's balance of it, valued through the same branch that counted it (fresh, settlement, or last known). Accrual happens inside each counted branch rather than over the registry, so the two sides of the subtraction can never price on different bases and `net = gross - self_held` is non-negative by construction. Reported by `FundStatus` as `self_held_supply`, `self_held_liability`, and `net_liability`. Implemented 2026-08-08. | Confirmed |
+| D67 | The claimable aggregate resolves to two bases, and one principle assigns every consumer: a flow serves claims that can arrive, and no claim can arrive from self-held paper; a bound serves discretion, and the discretion-holder can re-issue that paper, so bounds price it as if they already had. Flows take net — `calculateFundStatus` gaps and `DrawRedemptionBuffer` coverage. Bounds take gross — `targetBasis` and everything derived from it: `RequiredReserveCapital` (hence `BurnableSurplus`), `InsuranceShortfall`, `RedemptionBufferShortfall`. This finishes the exclusion the partition already performs for written-off and untrusted supply, reaching the last unclaimable supply it still counted. Implemented 2026-08-08. | Confirmed |
+| D68 | Mid-block coherence of the primed liability snapshot is maintained by asymmetric invalidation. Outbound crossings of the Reserve boundary by member coins drop the snapshot through the registry-cache invalidator Treasury already implements: every Reserve burn touching a member, and a `CommitteeDeploy` of member paper, which returns netted-out supply to circulation and would otherwise leave the block undersizing targets. Inbound crossings invalidate nothing — an inbound send can only make true net liability lower than the snapshot, which is staleness in the conservative direction, corrected at the next prime — so the send restriction stays a pure admission predicate with no cross-module side effects. This also fixes a standing violation of the hazard note in `PrimeLiabilitySnapshot`: a residue burn of an active member previously left the rest of the block sizing targets on pre-burn supply. Implemented 2026-08-08; superseded the same day by D33's block-granular settlement, which removes the snapshot this decision kept coherent. Both invalidator interfaces, their wiring, and every call site are deleted. The hazard the decision managed — a mid-block supply move that forgets to drop the snapshot, mis-allocating funds with no error — is now closed by construction rather than by each new writer remembering, which is the reason the change was made: the asymmetric rule below was correct, but it had to be re-derived by every future path that touches member supply. | Confirmed |
+| D69 | External holdings are named by external symbols — `<feed>-<tag>`, the prefix passing the priced-denom rule, the tag bounded lowercase alphanumeric — partitioning the namespace from Ark-issued assets by shape rather than by state. The registry side has been enforced since the priced shape existed (its charset never admitted a dash); the eligibility side requires the external shape at the types level, so policy ∩ registry = ∅ is a theorem about strings with no read, no ordering, and no cross-module cooperation to keep true. `validateExternalEligibility` is deleted rather than extended; the burn-residue credit refusal is kept as a provably unreachable backstop; the journal becomes permanently unambiguous about which instrument its history names — a property no write-time guard provides, because closed history raises no claim. An external symbol can never be protocol paper — not registrable by shape, and conversion mints registry members alone — while custody the chain does hold under such a name stays ordinary bank state the fold counts; an off-chain NOAH holding is unrepresentable via the prefix rule. Implemented 2026-08-09; see `docs/DESIGN_NOTES.md` §6.4. | Confirmed |
+| D70 | An external symbol's pricing feed derives from its prefix, unconditionally: `ExternalFeed(symbol)` is a pure function, never derive-if-exists, which would silently re-point every external symbol on a series the moment a twin feed activates. The derivation is many-to-one — several tags share one series with per-entry haircut, cap, and window, so multi-custodian holdings need no aliasing machinery and no duplicate feed, and a holding honestly priced on a different series is a different prefix. Listing requires the derived feed Active — exactly, not merely scheduled: an entry's haircut and window are judgments about how a series behaves, voted blind if it has never printed a rate, and a series scheduled for removal has already passed its guard — matching registration's rule and moving the Reserve's genesis ordering dependency from `x/asset` to `x/oracle`. The feed guard maps external symbols by a filtered pass over the contiguous `F-` policy keys and open positions through their resolved feed. Deployment's acquired leg and any denomination-changing correction pass external-or-current-member, closing the bare-issuable-name side door. The send restriction narrows to NOAH-or-member: the external-shape clause admitted a name class no mint path can produce, genesis refuses, and movement valuation cannot price — a door to an on-chain external-custody lane D59 forecloses — so a future module making such custody real widens admission, genesis, and valuation together in its own spec. Cap ratios sum per series family, and governance sizes the family rather than the row. Implemented 2026-08-09. Amended 2026-09-06: the refusal is permanent; on-chain custody of an external token will never be built. | Confirmed |
+| D71 | Staleness tolerance is entry policy, not feed state: `EligibilityEntry.max_rate_age` — required positive, capped at `MaxRecognitionRateAge` (30 days) — states how old the derived feed's rate may be and still back this entry's recognition credit, never inherited from the Oracle default, which answers for conversion-grade reads. The Oracle judges per request: `GetRateSetWithin` takes one request per entry — the entry's denomination and window — derives the series from the name itself, and answers under the name, so two tags on one series may state different windows and receive different verdicts, keyed apart rather than colliding on the shared feed, and no request can route a name to any series but its own. Nothing unjudged crosses the module boundary, and the window never enters Oracle state. D60's override machinery is deleted end to end — collection, `MsgAddFeed.max_age`, genesis field, events, query — while `Params.MaxExchangeRateAge` survives as the single default behind every gate-enforcing read, including `valueMovement`'s conversion-grade pricing of proven movements. `GetLastKnownRateSet` and its fence are untouched. Implemented 2026-08-09. | Confirmed |
+| D72 | Risk-scaled fund targets. Every target is sized on `m x` its existing liability basis — net for the expansion waterfall, gross for the bounds on committee acts — where `m` is a governance-parameterised multiplier over three indicators the chain already maintains: the liability ratio (net liability over circulating NOAH, the reflexivity term, which collapses to that quotient because liability is already valued in NOAH under D24), annualised realised volatility of the protocol reference rate, and an EMA of per-block net redemption flow. Samples fold in `SettleConversions`, which Market's EndBlocker calls every block with the flow facts already NOAH-valued in `ConversionTotals`; the multiplier itself recomputes on a governed period, step-limited and clamped to `[1, cap]`. The three indicator weights live in `EconomicPolicy` and the guardrails behind them in `Params`. An earlier draft put all eight fields in `Params` to avoid widening a threshold-multisig's mandate, which mistook D36's field count for its principle; the criterion that actually sorted the two messages is stance against machinery, and a weight stating how much extra capital a unit of leverage should demand is the same kind of lever as the target ratios it modifies — reversible within hours by zeroing it, and the most time-sensitive knob the module has, which is the committee's founding use case. What stays with governance is what makes the delegation safe: the decays define the measuring instrument and are not reversible in any useful sense, because a series folded under one memory is not recoverable by restoring the old value; the cap is the ceiling on how far the response may go; the step is the anti-gaming rate limiter, which a committee able to set it could raise to reach the cap in a single update; and the cadence follows D37. A committee at the maximum of its mandate can therefore move the multiplier no faster and no further than organic stress already can, so the delegation adds no blast radius. Weights inherit the mandate's minimum and maximum clamp for free, letting governance floor them above zero to deny the committee the power to switch the model off, or leave the floor at zero to grant it, per appointment. All three funds scale on one basis: the ratios are voted as a set and read as relative fund sizing, so scaling a subset would move those proportions without a vote, and the indicator applies to every fund sized against the same liability. The per-fund covered-risk basis of section 7.2 and D28 remains the later refinement; D8 already records the single shared basis as an initial simplification. Every weight defaults to zero, which pins `m` at one and reproduces current behaviour exactly. The liability aggregate plays three roles and only one is scaled: requirement bases read `m x L`, the redemption draw's payment denominator reads raw `L` (D73), and the multiplier's own liability-ratio input reads raw `L`, because a controller that fed its own output back into its input would compound. | Confirmed              |
+| D73 | The redemption draw is never scaled by `m`, in either direction. Dividing its basis rations the run's opening phase — the phase that decides whether a spiral ignites — to guard against an exhaustion that cannot happen: proportional coverage gives `B = B0 x (L/L0)`, so the Buffer depletes exactly in step with the liability it covers and reaches zero only when the last stablecoin is redeemed. Multiplying coverage fails the other way: it double-counts one signal in the payment path, since `m` has already raised coverage by raising the Buffer through the targets, and it front-loads finite inventory on a bet about run depth (`B = B0 x (L/L0)^m`), leaving a thinner Buffer after any partial episode and pinning coverage at one until depletion releases it mid-run. Both directions reintroduce the price-reactive Buffer share section 1.1 forecloses and D4 exists to prevent. The draw's risk response is mediated by capital instead: the scaled targets grow the Buffer before a run, and the `m`-widened Redemption Buffer shortfall widens the committee's Reserve-to-Buffer injection cap during one. | Confirmed              |
+| D74 | Contracts reach Ark's own modules through proto, not a hand-written JSON surface. Wasmd's custom **message** encoder goes unused: a contract calls Market with `CosmosMsg::Any` carrying `/ark.market.v1.MsgSwap` and proto bytes, and `x/market/wasm` and `x/wasm/exported` are deleted rather than ported to `wasmvm/v3`. The custom **querier** goes unused as well: D43's estimate is Treasury's `Query/ComputeTax`, reached through the accept list, so contracts hold one proto surface for reads and one for writes. The argument is one schema instead of two: a custom encoder mirrors each message as JSON on the Go side and again by hand in every contract, and nothing detects the drift — the same objection D43 raises against a second message model and CLAUDE.md raises against a second validation site, already visible in the dead binding's stale duplicate checks. Three things that looked like costs are not. The parser's `Trader = contractAddr` override is not protection: Wasmd rejects any dispatched message whose signers are not exactly the contract, so impersonation is closed either way. Tax does not differ: custom-encoded messages route through the same message handler the Treasury wrapper decorates. And no installed base breaks, because genesis is fresh (D20) and a Terra contract cannot port unmodified regardless — `anoah` renames the denomination, 18 decimals move the money math, and the type URLs are Ark's. What the JSON envelope preserved was its own shape, not compatibility. Ark also already made this choice twice: Classic shipped market, oracle, and treasury bindings and the port kept only market's, unwired and on `wasmvm` v1. Stargate/gRPC **queries** require an explicit accept list — Wasmd ships no permissive default — written by hand as Osmosis, Neutron, Juno, and Archway keep theirs, every entry additionally required to carry the `cosmos.query.v1.module_query_safe` annotation, which keeps contracts to deterministic reads; the ICA host derives its own allow list from that annotation inside ibc-go and cannot be pointed at the Wasm list, so the two surfaces are separate by construction. Messages need no such list; the signer check is the gate. A Rust bindings crate is deliberately **not** committed to here: authors can generate from Ark's published protos, and publishing later is additive. That asymmetry decides the whole entry — adding a custom encoder later breaks nothing, removing one later breaks every contract using it, so the reversible direction is the one to start in. | Confirmed |
+| D75 | Oracle rates are NOAH per one unit of the feed's denomination (`USD/NOAH`, not `NOAH/USD`); `RateSet.Convert` is `amount × rate[offer] / rate[ask]`, so valuing in NOAH multiplies. Settlement plan rates and the governance-supplied outgoing reference rate carry the same orientation. Every stored rate — settlement plan rates included, since a plan sits beside oracle rates in the registry's rate sets — is bounded at `MaxExchangeRate`, the magnitude a direct report is held to by `MaxEncodedVoteRateBytes`, and the tally omits a derived price above it, so the halt-class folds that multiply a 2^128-capped quantity by a rate stay inside the LegacyDec domain by construction. Flipped 2026-09-02; see `docs/DESIGN_NOTES.md` §1.4. | Confirmed |
+| D76 | Prices and quantities rebase differently. `RateSet.Convert` re-expresses a quantity (`q × rate[old] / rate[new]`); a stored price of the reference unit — the exposure anchor — moves by the reciprocal factor (`p × rate[new] / rate[old]`), which is the same `Convert` call with the two units passed in the opposite order, so the chain keeps one arithmetic path and reversed arguments at a price site are the operation rather than a bug. Every rebase site states which it holds: the Market base pool, the Treasury tax cap, the base gas price, and the conversion-factor table (via the one-unit cross) are quantities; the anchor is the one price. | Confirmed |
+| D77 | The sidecar resolves in the chain's orientation end to end: a feed's output pair is `UNIT/NOAH`, routes end at NOAH (`KRW/USD × USD/NOAH`), bootstrap prices are stated in leg orientation, and `PricesByFeed` re-keys a resolved price without inverting. Provider markets stay in the orientation their venue quotes; the resolver's per-sample normalisation (`providerSamples`) is the one place a venue quote meets a leg, so nothing after the provider cache inverts, and route averaging is an arithmetic mean of the published figure. First implemented 2026-09-02 with a single reciprocal at the feed boundary (`types.FeedPrice`); amended 2026-09-03. | Confirmed |
+| D78 | The signed fee declares the transfer tax. A transaction's fee is gas plus the exact tax its messages owe; the ante refuses a fee short of the tax before deducting anything and charges the tax only from what was declared, so a signer sees the whole charge in the fee they sign and is never taxed past it. The fee field carries the declaration because it is the one slot every wallet already builds and every sign mode renders, amino included; an extension option would not survive amino signing, and the ante rejects them. A wallet that omits the tax is refused with an error naming it, which forces every client to price the tax before signing — the deliberate cost. The direct charge to `transfer_tax_collector` and the deletion of the routing step stand; only the subtraction returns, and the gas remainder alone is deducted — by an Ark-owned fee decorator in place of the SDK's, so simulation deducts what execution deducts. Amended 2026-09-03. Amended again 2026-09-03 (D80): the fee is a ceiling and the tip rides NOAH; the subtraction that made excess into gas is gone, the declaration is unchanged. | Confirmed |
+| D79 | Rename `MonetaryPolicy` to `EconomicPolicy`, and the stability tax to the transfer tax. The committee's seven levers are three fiscal — the tax rate and the two block reward targets, which set what the protocol takes in and pays out — and four capital: the three fund target ratios and the D72 exposure weights, which set how much capital it holds against its liabilities and how fast it accumulates. None is strictly monetary. The committee cannot mint, quote, set spread, or move the pool, so it holds no rate or supply instrument; spread and pool depth are Market's, and the Reserve-to-Buffer commitment is a governance vote. `Economic` is the accurate umbrella over both halves, where `Fiscal` would misname the capital half and `Monetary` misnames the whole. The tax rename follows the same argument. Terra's stability tax funded validators through an adaptive controller holding unit mining rewards stable against the seigniorage cycle; §1 removed that controller, `x/mint`, and all seigniorage, and D11 gave the proceeds to the Oracle target first. What the tax does here is fund security and the price feed out of stablecoin usage, and compensate the dilution stakers still bear under §1.1. It moves no peg, quote, spread, or supply figure, so "stability" claimed a role it does not have, while "transfer" names the base D18 already taxes: every user-facing stable transfer surface. Bare `Tax` spellings stay — `TaxCap`, `ComputeTax`, `reference_tax_cap` — because inside Treasury the tax is the transfer tax and the Tobin tax belongs to Market and Oracle. Done now because it is free now: fresh genesis (D20) means the `transfer_tax_collector` account rename carries no migration, collection prefixes and proto field numbers are unchanged, and the cost after launch would be a store migration plus every client's message and query names. | Confirmed |
+| D80 | The signed fee is a ceiling, and the tip is NOAH. Every fee leg but NOAH is charged at most what the chain computes it owes — the exact transfer tax in that denomination, plus the base fee if it is the first leg in denomination order whose slack above the tax covers the requirement — and the rest never leaves the payer. The NOAH leg is charged whole: it pays the base fee when no stable leg did, and the remainder is the tip, ranked in reference units per gas through NOAH's factor. NOAH is the one denomination the tax is never owed in (`GetTaxCap` excludes the numeraire), so it is the second signed number the fee field lacked: the chain can always tell a tip from a padded tax, which one denomination split by subtraction could not, and a wallet pads a stable leg for rate drift at no cost. Under D78's subtraction one percent over on a tax the size of Terra's cap was half a gas fee, paid to validators. What it costs: priority needs NOAH, so a pure-stable payer gets base-fee inclusion in arrival order within its lane, which the base-fee ramp already guarantees; and a NOAH-paid gas fee has no free headroom, its pad being a tip bounded by the fee it pads rather than by a tax. A NOAH leg is refused while NOAH's factor is absent, as a NOAH gas fee already is. D78's declaration stands: a fee short of the tax is refused before anything moves. The single-denomination rule and the excess refusal go with the subtraction. This is not a refund: nothing is escrowed or returned, the gas limit is still charged whole at the base price, and the ante deducts less rather than handing anything back. Amended 2026-09-03. | Proposed |
+| D80 | Move `transfer_tax_rate` from `EconomicPolicy` to `Params`. The rate passes D37's test — a lever stating how much the protocol wants, reversible and safe to clamp — but D78 changed what kind of number it is. The rate is part of the fee every wallet signs, so a raise refuses every in-flight transfer until clients re-query, and a committee update lands the instant the message does; every other lever in the message moves protocol-internal allocation. Market's committee band over the Tobin tax is not a precedent: a swap carries the trader's own `minimum_receive`, so a Tobin raise only fails a swap that breaches a floor the user chose, where a transfer tax raise fails a transfer the chain itself refuses. Governance's voting period is the notice a raise needs and it already exists; the rate rejoins `reference_tax_cap`, so the one calculator D18 insists on has one owner and one proposal can activate rate and cap together; and the committee keeps the two reward targets without being able to raise the charge that funds them. The fast-cut argument for the committee is weaker than it looks: under D78 a cut never refuses an in-flight transaction, since the declared fee still covers the lower tax and the remainder is deducted as gas, so the only fast move worth having is in the safe direction and an expedited proposal covers it; a calculator fault is an upgrade, not a rate change. D79's classification stands — the rate is fiscal — only its holder changes. `EconomicPolicy` field 1 is reserved and the rate is `Params` field 12 under the same `[0, 1]` domain cap; the mandate bounds lose the field; `Query/Params` carries it and `Query/EconomicPolicy` does not; wallets are unaffected because they price through `ComputeTax`. | Confirmed |
+| D81 | Hold `transfer_tax_rate` at or below the conversion spread floor. NOAH carries no tax cap, so it is the one untaxed denomination (D44), and `market.MsgSwap` is exempt (§8.3), so `MsgSwap` stable→NOAH, `bank.MsgSend` NOAH, `MsgSwap` NOAH→stable delivers the same value to the same recipient for spread instead of tax. The cap neither softens the requirement nor changes its shape: with `tax = min(rate × A, cap)` against a spread cost of `floor × A`, the substitution pays exactly when `rate > floor`, at every principal — below the cap crossover both charges scale with the amount, and above it a capped tax meets an uncapped spread. The bound is on the corridor rather than the live floor, because a conversion committee may lower `min_stability_spread` to `ConversionMandate.minimum_policy`; that minimum is the number governance must stay under when it sets either side. Nothing enforces this in code — Market depends on Treasury, so Treasury cannot read the floor, and neither module's stateless `Validate` sees the other's state — so it is a governance-time constraint on P1's launch rate and on every conversion appointment. | Confirmed |
+| D82 | Charge the transfer tax after the messages, on success only. The ante prices the tax, holds the declared fee to it (D78), and deducts the gas fee and tip alone; a post decorator on the messages' branch charges the tax and draws the granter's allowance for it. Every judgement of whether the payer can afford the tax sits at the charge, none in the ante: the post decorator runs in CheckTx too, where the messages do not run, so it reads there what an ante check would have read and mempool admission is unchanged, while in a block it reads the balance the messages actually left. A transaction whose messages fail pays gas and no tax; a payer the messages leave short of the tax fails the transaction at the charge, gas kept, principal unmoved; an allowance records what left the granter and nothing more. Only the moment of the charge moves: the declaration, the ceiling and NOAH tip (D80), priority, and the direct charge to `transfer_tax_collector` stand. Not a refund — nothing is escrowed or returned, which is what the 2026-08-29 no-refunds finding foreclosed; the post chain returns for deferral, not settlement. Signed transactions thereby meet the terms D42 already set for a contract's dispatches, and the two seams agree. The ante hands the figure it held the declaration to on through the context, and the post charges that figure: the tax is computed once, the charge cannot exceed the declaration by construction, and a post chain finding no figure fails the transaction rather than passing a transfer untaxed. What it gains beyond fairness: a transfer whose tax the payer cannot afford until an earlier message in the same transaction has funded it now succeeds, where the ante charge this replaces refused it. What it costs: an IBC packet that later times out keeps its tax (D42, D46 unchanged); a doomed transaction pays gas for messages that then revert, rather than being refused before they run; and feegrant emits two use events per sponsored transaction. An ante affordability pre-check was written and removed: it bought no mempool protection the charge does not already give, refused transactions execution would have funded, and made a doomed transaction fail for free and stay valid to resubmit, since an ante refusal discards the sequence increment. Rationale in §8.6 and `docs/DESIGN_NOTES.md` §4.4. | Confirmed |
+| P1  | Choose launch tax rate, reference cap Coin, three target ratios, subsidies, genesis fund balances, and the D72 exposure weights (zero at launch keeps `m` at one and the targets unscaled).                                                                                                                                                                                                                                                                                                          | Pending before launch  |
 | P2  | Phase 3A found no recipient-output, fixed-price cycle, or split residual-mint amplification under coverage-based Buffer funding; add no residual-mint limiter.                                                                                                                                                                                                                                                    | Confirmed              |
 | P3  | Apply the deterministic live-derived pool amount without comparing the submitted expectation to a rejection threshold; retain the submitted expectation in the transaction and emit the old and applied pool state for audit.                                                                                                                                                                                    | Confirmed              |
-| P4  | Choose the launch monetary-policy committee and bounds, Claims committee multisig and appointment window, the shared cancellation-period Treasury param, fixed gross committee claim limit, and operational fee funding.                                                                                                                                                                                                           | Pending before launch  |
+| P4  | Choose the launch economic-policy committee and bounds, Claims committee multisig and appointment window, the shared cancellation-period Treasury param, fixed gross committee claim limit, and operational fee funding.                                                                                                                                                                                                           | Pending before launch  |
 
 Whenever a decision changes, update this table before changing code.
 
@@ -173,10 +220,20 @@ Treasury from the same Oracle rate snapshot used by Market and rounded down. Mar
 output, and execution-local quote rates; it never supplies a precomputed eligible amount. Only Treasury-derived expansion
 principal is eligible for the Redemption Buffer, strategic Reserve, and Insurance.
 
-### 3.4 Spread and dust burn
+**Amended 2026-08-08 (D33):** Market derives this figure and supplies it. The conversion already converts its output
+through its quote rates in order to charge the spread — eligible principal is what remains of the offer after that
+burn — so leaving the derivation with Treasury would mean re-converting at the same rates for the same answer, and
+settlement now runs once per block over summed principal, holding no individual conversion's rates at all. The
+definition, the rounding, and the bound are unchanged: the same truncated conversion of the final integer output,
+refused when it exceeds the gross offer. Only the arithmetic moved; every allocation decision made from the figure is
+still Treasury's.
 
-The difference between gross NOAH offered and eligible expansion principal. This amount is always burned. When fund
-targets are full, the unused portion of eligible principal is also burned.
+### 3.4 Spread and dust
+
+The difference between gross NOAH offered and eligible expansion principal: the spread the quote charged plus integer
+dust. Amended 2026-09-02 (D6): it enters the expansion waterfall with the principal — fund targets first, overflow
+burned — rather than burning unconditionally. When fund targets are full it burns exactly as before, together with the
+unused portion of eligible principal.
 
 ### 3.5 Subsidy pool
 
@@ -189,10 +246,12 @@ path.
 
 ### 3.6 Redemption Buffer
 
-A Treasury-owned operational module account containing liquid NOAH retained from earlier expansions. With complete
-aggregate valuation, each redemption receives the Buffer's actual pre-trade liability-coverage share of its quoted
-NOAH output; otherwise it uses the conservative zero-draw fallback. It is endogenous conversion inventory, not collateral, solvency capital, or a
-first-come redemption pool. Anyone may irreversibly deposit already-issued `anoah`. A deposit increases the inventory
+A Treasury-owned operational module account containing liquid NOAH retained from earlier expansions. Each redemption
+receives the Buffer's actual pre-trade coverage share of its quoted NOAH output, measured against the claimable
+liability — the supply that can currently redeem. Supply that cannot claim (a member whose feed is stale, suspended
+supply without an activated plan) is excluded from that denominator and disclosed, so a suspension elsewhere never
+switches the Buffer off for the healthy exits it exists to dampen. It is endogenous conversion inventory, not
+collateral, solvency capital, or a first-come redemption pool. Anyone may irreversibly deposit already-issued `anoah`. A deposit increases the inventory
 available to the same coverage formula and may reduce later residual minting, but never changes a conversion quote,
 spread, minimum receive, or redemption eligibility and creates no withdrawal or ownership claim.
 
@@ -206,9 +265,12 @@ Market cannot call it, and it never pays a redeemer directly. Once committed, th
 Buffer-to-Reserve clawback path.
 
 Anyone may irreversibly deposit already-issued `anoah`, but every mixed or non-NOAH transfer is rejected at launch. The
-Reserve's live `anoah` balance is both its complete launch custody and the balance counted toward its target. A deposit
-grants no authority, withdrawal, or special claim on a later Reserve-to-Buffer commitment. External custody and
-deployment are introduced only with the first separately approved external-asset policy described in Section 20.
+Reserve's live `anoah` balance is the balance counted toward its target. Beyond that balance, the Reserve may custody
+derecognized (written-off or retired) transfer tax routed from `transfer_tax_collector` at settlement; that residue
+earns no target credit, cannot move through the Reserve-to-Buffer commitment, and waits for a separate governed
+disposal decision. A deposit grants no authority, withdrawal, or special claim on a later Reserve-to-Buffer commitment.
+External custody and deployment are introduced only with the first separately approved external-asset policy described
+in Section 20.
 
 ### 3.8 Insurance
 
@@ -228,7 +290,7 @@ cancellation period even if the committee appointment has since changed or ended
 
 ### 3.9 Market pool denomination
 
-The denomination carried by Market's `BasePool` `sdk.DecCoin` is owned by Market. Ark launches with `asdr` as this
+The denomination carried by Market's `BasePool` `sdk.DecCoin` is owned by Market. Ark launches with `axdr` as this
 virtual-pool unit, but
 the later basket-pegged flagship may replace it while the chain is live. `ArkPoolDelta` is a signed decimal amount in
 the current `BasePool.Denom`; it must never exist without that unit being observable. The pool denomination is not
@@ -247,7 +309,7 @@ The submitted `BasePool.Amount` is a non-binding audit expectation in the candid
 uses one fresh immutable Oracle snapshot to derive and store the live-equivalent amount, emits both the submitted and
 applied values without comparing them to a rejection threshold, and rescales `ArkPoolDelta` by the same amount ratio. No
 transition object, second message, parallel pool, or persistent transition state is introduced. The transition changes
-no stablecoin's offer or output eligibility; `asdr` remains fully supported.
+no stablecoin's offer or output eligibility; `axdr` remains fully supported.
 
 A same-denomination depth change also rescales `ArkPoolDelta` by `new_base / old_base`. Both paths preserve the relative
 curve position instead of allowing a governance parameter update to create an implicit imbalance reset or immediate
@@ -258,15 +320,16 @@ repricing without conversion flow.
 | Component                 | Owns                                                                                                                                                                             | Must not own                                                               |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | Market                    | Quotes, spread, final integer output, denomination-labelled virtual-pool state, conversion escrow, conversion mint/burn, atomic swap settlement                                  | Tax policy, claims mandate, target or fund-allocation calculations         |
-| Treasury                  | Tax policy/routing, expansion-principal valuation and complete waterfall, fixed fund credits, subsidy pool, fund targets, Redemption Buffer, strategic Reserve, Insurance claims | Quotes, spread, pool state, gross conversion custody, conversion mint/burn |
+| Treasury                  | Tax policy/routing, expansion-principal valuation and complete waterfall, fixed fund credits, subsidy pool, fund targets (`required_capital`), Redemption Buffer                                           | Quotes, spread, pool state, gross conversion custody, conversion mint/burn, claim adjudication or payment, a fund operator's `recognised_capital` |
+| Claims (`x/claims`)       | Claims Mandate, immutable claim record, Insurance reservation and `claims_insurance` custody, Insurance `recognised_capital`                                                                               | Tax policy, fund targets, the expansion waterfall, liability valuation, strategic Reserve |
+| Reserve (`x/reserve`)     | `strategic_reserve` custody, the governed Reserve-to-Buffer commitment, the Reserve committee mandate, the accounting journal, the recognition policy (eligibility and custody allowlist), Reserve `recognised_capital` (D56–D58)                                                  | Tax policy, fund targets, the expansion waterfall, liability valuation, claims |
 | Oracle                    | Consensus prices, Tobin taxes, participation scores, Oracle reward allocation                                                                                                    | Fiscal allocation decisions, minting                                       |
 | Distribution              | Validator/delegator fee accounting and payouts                                                                                                                                   | Tax classification, Buffer, Reserve, Insurance                             |
 | App ante                  | Fee validation, feegrant semantics, transaction priority, invoking exact Treasury tax collection                                                                                 | Target-based allocation, a second tax formula, or persistent fiscal state  |
 | Governance                | Market Params, Treasury policy, Claims Mandate, Claims submission/cancellation, Reserve mandates, role rotation                                                                  | Routine operations or automatic price/revenue controllers                  |
 | Claims committee multisig | Off-chain adjudication and exact on-chain claim approval within the live Claims Mandate                                                                                          | Policy changes, direct custody, generic sends, Reserve use                 |
-| Reserve executor multisig | Future typed Reserve actions within a live governance mandate                                                                                                                    | Claims, parameters, generic sends, mandate changes                         |
-| Future Reserve guardian   | Immediate pause of an assigned future Reserve mandate                                                                                                                            | Claims, approval, payment, deployment, resume, widening, withdrawal        |
-| Asset emergency committee | Immediate issuance halt or suspension of a failing asset within a live Asset Emergency Mandate (see `docs/ASSET_MODULE_PLAN.md`)                                                 | Recovery, resumption, settlement, write-off, retirement, reference choice, mandate changes |
+| Reserve committee multisig | Deployment to mandate destinations within the live Reserve mandate, and the fund's bookkeeping: quantity updates, return attribution, impairment marking, position closure (D56–D57) | Claims, parameters, recognition policy, corrections, impairment clearing, generic sends, mandate changes |
+| Asset emergency committee | Immediate suspension of a failing asset within a live Asset Emergency Mandate (see `docs/ASSET_MODULE_PLAN.md`)                                                 | Recovery, resumption, settlement, write-off, retirement, reference choice, mandate changes |
 
 Treasury exposes narrow Market-facing settlement operations. Market remains the sole owner and writer of `BasePool` and
 `ArkPoolDelta`; Treasury exposes no Market-parameter operation, receives no Market keeper, and cannot initiate or
@@ -280,14 +343,14 @@ type TreasuryKeeper interface {
         grossOffer sdk.Coin,
         stableOutput sdk.Coin,
         quoteRates oracletypes.RateSet,
-    ) (treasurytypes.ExpansionAllocation, error)
+    ) (sdk.Coin, error)
 
     DrawRedemptionBuffer(
         ctx context.Context,
         redeemedStable sdk.Coin,
         noahOutput math.Int,
         quoteRates oracletypes.RateSet,
-    ) (treasurytypes.BufferDraw, error)
+    ) (math.Int, error)
 
     RecordSupplyChange(
         ctx context.Context,
@@ -298,24 +361,13 @@ type TreasuryKeeper interface {
 }
 ```
 
-`ExpansionAllocation` is a handwritten, execution-local Treasury type, not protobuf state:
-
-```go
-type ExpansionAllocation struct {
-    EligiblePrincipalNoah  math.Int
-    RedemptionBufferCredit math.Int
-    StrategicReserveCredit math.Int
-    InsuranceCredit        math.Int
-    SpreadAndDustBurn       math.Int
-    OverflowBurn            math.Int
-    TargetValuationComplete bool
-}
-
-func (a ExpansionAllocation) TotalBurn() math.Int
-```
-
-`TotalBurn` sums the two separately reported burn causes; it is not a second authoritative field. `RouteExpansion`
-constructs every allocation amount directly from the positive gross offer and a monotonically decreasing remainder.
+`RouteExpansion` returns `total_noah_burn` as an `anoah` coin and nothing else. The eligible principal, the three
+credits, the two burn causes, and the target-valuation completeness flag are all execution-local: they are constructed
+directly from the positive gross offer and a monotonically decreasing remainder, published through
+`EventExpansionAllocated`, and then discarded. Market owns burn, mint, and payout, never a decision about which fund was
+short, so returning the split would invite settlement to branch on Treasury policy. The returned total is exactly the
+residue left in the Market module account once the credits are sent, which is why burning it settles the escrow rather
+than acting on that policy.
 
 `RouteExpansion` requires positive `anoah` as `grossOffer`, a positive native stable `stableOutput`, and the rate map
 already used by Market's quote. Treasury may add missing liability rates to that map but never replaces an existing
@@ -325,15 +377,18 @@ Market module account to the Redemption Buffer, strategic Reserve, and Insurance
 Treasury subsidy-pool account, Treasury never burns, and Market cannot supply eligible principal, gaps, credits, burn
 amounts, module names, or destinations.
 
-After `RouteExpansion` returns, Market neither revalues the output nor recomputes targets or routing. It burns
-`TotalBurn()`, mints the final stable output, and pays the receiver. Any later settlement failure rolls back Treasury's
+After `RouteExpansion` returns, Market neither revalues the output nor recomputes targets or routing. It burns the
+returned coin, mints the final stable output, and pays the receiver. Any later settlement failure rolls back Treasury's
 preceding fund credits in the same transaction cache.
 
 `DrawRedemptionBuffer` accepts the execution-local rate map already used by Market for the quote, initializes the
 block-local aggregate-liability snapshot from unchanged Bank and Oracle state when necessary, calculates actual Buffer
 coverage against pre-burn liability, applies that capped coverage to the quoted NOAH output, and moves only that amount
-from the Buffer to Market. It returns the valuation inputs, exact payment, and conservative-fallback flag needed for
-audit events. It exposes no path to strategic Reserve or Insurance. The separately authorised Reserve-to-Buffer message
+from the Buffer to Market. It returns that payment alone. The liability figures behind the coverage share and the
+completeness flag stay execution-local, reaching observers through `EventRedemptionBufferDrawn` rather than the caller:
+Market owns burn, mint, and payout, never a decision about how the output was funded, and handing settlement a
+valuation-state flag would invite it to branch on exactly what the claimable denominator exists to stop gating.
+It exposes no path to strategic Reserve or Insurance. The separately authorised Reserve-to-Buffer message
 is not part of this Market-facing interface. Module names are fixed internally; Market callers never supply arbitrary
 source or destination accounts.
 
@@ -351,22 +406,33 @@ Target module-account configuration:
 | `market`                     | Conversion escrow and settlement              | `Minter`, `Burner` | Blocked           |
 | `treasury_subsidy_pool`      | Balance-constrained subsidy pool              | None               | `anoah` only      |
 | `treasury_redemption_buffer` | Coverage-based operational redemption inventory | None               | `anoah` only      |
-| `treasury_strategic_reserve` | Strategic/emergency Reserve                   | None               | `anoah` only      |
-| `treasury_insurance`         | Covered-loss Insurance                        | None               | `anoah` only      |
-| `stability_tax_collector`    | Current reward-funding-window stability tax   | None               | Blocked           |
+| `strategic_reserve` | Strategic/emergency Reserve                   | None               | `anoah` only      |
+| `claims_insurance`           | Covered-loss Insurance (owned by `x/claims`)  | None               | `anoah` only      |
+| `transfer_tax_collector`    | Current reward-funding-window transfer tax   | None               | Blocked           |
 | `oracle`                     | Oracle reward pool                            | None               | Blocked           |
 | `fee_collector`              | Validator reward funding before Distribution  | None               | Blocked           |
 
 Module-to-module transfers remain possible. The `BlockedModuleAccountsOverride` list in `app/app_config.go` replaces the
 SDK default blocked set, so every intended blocked account must be listed explicitly. Leave all four Treasury custody
-accounts out of that list so normal bank transfers can reach them. Market, Oracle, `stability_tax_collector`, and
+accounts out of that list so normal bank transfers can reach them. Market, Oracle, `transfer_tax_collector`, and
 `fee_collector` remain explicitly blocked.
 
-Treasury provides one recipient-aware bank `SendRestrictionFn`:
+Each module provides a recipient-aware bank `SendRestrictionFn` over its own accounts: Treasury over the subsidy pool
+and Redemption Buffer, `x/claims` over `claims_insurance`, `x/reserve` over `strategic_reserve`. Bank collects them into a module-keyed map, so every module
+providing one must also be named in bank's `RestrictionsOrder` or app construction fails on a length mismatch. The
+shared predicate lives in `pkg/chain.ValidateNoahOnlyDeposit`; per-fund custody allowlists (§20.1) are exactly why each
+module owns its own restriction rather than sharing one flat address set.
 
-- Transfers to any of `treasury_subsidy_pool`, `treasury_redemption_buffer`, `treasury_strategic_reserve`, or
-  `treasury_insurance` succeed only for a positive `sdk.Coins` value consisting solely of `anoah`; mixed or non-NOAH
+- Transfers to any of `treasury_subsidy_pool`, `treasury_redemption_buffer`, `strategic_reserve`, or
+  `claims_insurance` succeed only for a positive `sdk.Coins` value consisting solely of `anoah`; mixed or non-NOAH
   transfers fail atomically.
+- The single exception is the exact sender/recipient pair `transfer_tax_collector` to `strategic_reserve`.
+  It is enforced by `x/reserve`, which owns the recipient, even though the settlement flow that relies on it is
+  Treasury's. It
+  which passes through unchanged so settlement can route derecognized (written-off or retired) transfer tax into
+  Reserve custody. The collector is a blocked account whose outflows are Treasury settlement code alone, and every
+  consensus Reserve path reads only `anoah`, so the routed residue is inert custody: it earns no target credit, cannot
+  move through `MsgTransferReserveToBuffer`, and waits for a separate governed disposal decision.
 - Transfers to every other address pass through unchanged.
 
 Bank restrictions may rewrite a destination before returning it. Configure Treasury last in Bank's explicit
@@ -382,7 +448,7 @@ other enabled ingress that ultimately credits a fund through Bank.
 The restriction owns no state and performs no conversion or redirection. Deposits use ordinary irreversible bank rails,
 need no custom Treasury message or ledger, and are accepted even when a fund is at or above target. A deposit grants no
 refund, ownership, withdrawal, coverage, claim-priority, governance, or deployment right. A taxable native-stable
-deposit remains subject to the ordinary stability-tax rules for its user-facing transfer surface; the recipient does not
+deposit remains subject to the ordinary transfer-tax rules for its user-facing transfer surface; the recipient does not
 create an exemption.
 
 No launch asset registry is needed: all four fund accounts have one allowed custody denomination, and consensus target
@@ -396,6 +462,34 @@ calls to `MintCoins`.
 
 ### 6.1 NOAH to stablecoin expansion
 
+**Amended 2026-08-08 (D33): the exchange below happens once per block, not once per conversion.** The conversion keeps
+everything that does not depend on liability or fund state. Market escrows the gross offer, converts `stable_output`
+through `quote_rates`, truncates to `eligible_principal_noah`, refuses the conversion if that exceeds the offer, burns
+`gross_offer.Amount - eligible_principal_noah` as spread exactly as it does today, mints and pays `stable_output`, and
+adds the eligible principal to a transient block accumulator. `RouteExpansion` and `RecordSupplyChange` are gone from
+the path; no Treasury call remains in it. Market's EndBlocker hands the block's totals to `SettleConversions`, which
+performs the block's one liability valuation, runs the waterfall below against the summed eligible principal, executes
+the fund credits from Market's account, and returns the overflow burn Market executes.
+
+The calculation, the boundary branches, and every conservation identity below hold unchanged with
+`eligible_principal_noah` read as the block's sum. Only `total_noah_burn` splits across two moments — its spread half
+burned in the conversion that charged it, its overflow half at settlement — and the incomplete-valuation branch now
+parks the whole block's principal rather than one conversion's. The closing paragraph's rule against deferring the
+waterfall to BeginBlock, EndBlock, or an epoch is what this amendment reverses. What that rule protected still holds:
+Treasury retains no gross offer, no pending allocation record exists — the accumulators are transient and die with the
+block — and settlement stays atomic, with the atom now the block. A settlement failure fails the block rather than one
+transaction, which is the deliberate trade: the hazard it replaces mis-allocated silently.
+
+Amended 2026-09-02 (D6): the spread half no longer burns in the conversion. Market escrows the gross offer whole and
+accumulates `gross_offer.Amount`; the waterfall below runs against the block's gross total, so `spread_and_dust_burn`
+leaves the identities and the waterfall input is read as the gross sum wherever `eligible_principal_noah` appears.
+Conservation becomes `gross_offer.Amount = buffer_credit + strategic_reserve_credit + insurance_credit + overflow_burn`
+with `total_noah_burn = overflow_burn`. The eligibility check `eligible_principal_noah <= gross_offer.Amount` stays as
+the bound that the stable minted is worth no more than the NOAH offered. Liability created is still `stable_output`, so
+Buffer credit and coverage keep their meaning; the funds are credited the premium as well as the principal. The
+incomplete-valuation branch parks the gross total. `EventExpansionAllocated` carries no spread field; its credits and
+overflow now sum to the gross offer, and its note that the spread burns per conversion goes.
+
 Inputs:
 
 - `gross_offer`: positive integer `anoah` received from the trader and held in Market's transaction-local escrow.
@@ -406,11 +500,12 @@ Market passes those three facts to `RouteExpansion`; it does not pass eligible p
 Treasury validates the input denominations and derives the complete result. The first settlement in a block that needs
 aggregate liability enumerates every nonzero-supply native stable and adds only missing rates to the shared
 execution-local `quote_rates` map from unchanged Oracle state in the same execution context and block time. Treasury
-may augment that caller-provided map in place, but it never refetches or replaces an existing quote. Treasury caches the
-resulting liability only when the valuation is complete. Later settlements in the block reuse that snapshot; after each
-successful conversion Market advances it through `RecordSupplyChange`. An incomplete valuation is not cached, so a
-later settlement may retry it. This does not make Market enumerate Treasury liability denoms. A missing or stale
-unrelated rate activates the conservative Buffer-only branch for the current settlement; it does not change
+may augment that caller-provided map in place, but it never refetches or replaces an existing quote. Treasury caches
+the claimable aggregate together with its completeness flag. Later settlements in the block reuse that snapshot; after
+each successful conversion Market advances it through `RecordSupplyChange`. Rates are fixed at preblock, so an
+incomplete valuation cannot become complete within the block and is cached like any other. This does not make Market
+enumerate Treasury liability denoms. A missing or stale unrelated rate excludes that supply from the claimable
+aggregate and activates the conservative Buffer-only branch for the current expansion's routing; it does not change
 conversion-time valuation of the priceable `stable_output`. Missing or invalid output/NOAH quote rates are fatal.
 
 Calculation:
@@ -473,9 +568,9 @@ Each account's actual `anoah` bank balance is its complete launch custody balanc
 Reserve, that complete balance counts toward the target. Insurance uses its unencumbered balance after subtracting
 approved pending claims. The allocator never converts deposited assets or substitutes another denomination for the NOAH
 credits above. Treasury constructs the complete allocation before making the first fund transfer: each credit is
-bounded by the current remaining eligible principal and the final remainder becomes overflow burn. There is no
-separate Treasury `ExpansionAllocation.Validate` method. `RouteExpansion` returns an error when it cannot derive or
-execute the allocation. Market treats a successful result as authoritative and does not duplicate Treasury's checks or
+bounded by the current remaining eligible principal and the final remainder becomes overflow burn. There is no separate
+Treasury allocation-validation method. `RouteExpansion` returns an error when it cannot derive or execute the
+allocation. Market treats a successful result as authoritative and does not duplicate Treasury's checks or
 recompute its conservation result.
 
 Settlement:
@@ -485,14 +580,14 @@ Settlement:
 2. Market transfers `gross_offer` from the user into the Market module account.
 3. Market calls `RouteExpansion(ctx, gross_offer, stable_output, quote_rates)`.
 4. Treasury derives the full allocation, transfers each positive fixed credit directly from Market to
-   `treasury_redemption_buffer`, `treasury_strategic_reserve`, and `treasury_insurance`, emits
+   `treasury_redemption_buffer`, `strategic_reserve`, and `claims_insurance`, emits
    `ark.treasury.v1.EventExpansionAllocated`,
    and returns the execution-local result.
 5. Market burns the returned `total_noah_burn` from its remaining escrow without recomputing or revalidating Treasury's
    valuation, targets, or waterfall.
 6. Market mints exactly `stable_output`.
-7. Market calls `RecordSupplyChange` with the actual NOAH burn and stable mint. If a complete liability snapshot exists,
-   Treasury adds `stable_output` to it exactly once.
+7. Market calls `RecordSupplyChange` with the actual NOAH burn and stable mint. If a liability snapshot exists,
+   Treasury adds `stable_output` to it exactly once, preserving its completeness flag.
 8. Market sends `stable_output` to the receiver and emits the conversion-settlement event from the returned result.
 
 Conservation:
@@ -515,28 +610,58 @@ Delta stable supply = +stable_output
 The transaction is the atomic boundary. Treasury does not retain the gross offer, create a pending allocation record, or
 defer the waterfall to BeginBlock, EndBlock, or an epoch. A Treasury error or a failure in Market's burn, mint, or
 receiver payment rolls back the pool transition, escrow transfer, every fund credit, supply change, and event together.
-No separate stablecoin fee is minted and then burned; spread and integer dust remain part of the NOAH burn and are
-reported separately from target-overflow burn.
+No separate stablecoin fee is minted and then burned; spread and integer dust remain in NOAH and, since the
+2026-09-02 amendment of D6, enter the waterfall rather than burning outright.
 
 ### 6.2 Stablecoin to NOAH redemption
+
+**Amended 2026-08-08 (D33): the draw happens once per block, and the conversion mints first.** Market burns the
+complete stablecoin offer, mints the complete `noah_output` to the redeemer, and records the pair `noah_output` and
+`redeemed_liability_noah` in a transient block accumulator, each valued at the rate its own path quoted — the fresh
+oracle set for a swap, the plan's committed rate for a settlement conversion. `DrawRedemptionBuffer` and
+`RecordSupplyChange` are gone from the path. At settlement the Buffer's share of the block's summed output is
+transferred into Market and burned there, so the end state is exactly the split below — the redeemer holds
+`noah_output`, the Buffer is down `buffer_paid`, net new supply is `noah_output - buffer_paid` — reached by
+mint-then-burn instead of by minting only the residual. `residual_mint` therefore names an end-state quantity rather
+than an executed mint, and the hard mint limit of step 5, should one ever be approved, binds that net figure for the
+block. The visible consequence is that a same-block reader sees supply the settlement has not yet netted; committed
+state at every height is unchanged.
+
+The coverage arithmetic below is unchanged in meaning and evaluated once per block, after the waterfall, so a block's
+own expansions replenish the Buffer its redemptions then draw against. `claimable_liability_noah_before` is
+reconstructed at settlement as the freshly scanned net liability plus the block's summed redeemed value: the scan runs
+after every burn, so adding back what the block retired recovers the pre-burn basis without a snapshot. One arithmetic
+detail differs deliberately — the draw multiplies the summed output by the Buffer balance before dividing by that
+basis, where the per-conversion form below divides first. Forming the ratio first rounds an intermediate against its
+own bound of one, and the output then amplifies the error past the balance; multiplying first leaves a single rounding
+on a quantity whose bounds are whole base units, which monotone rounding cannot cross, so `buffer_paid <= buffer` and
+`buffer_paid <= noah_output` become theorems. It also floors the block's draw to within one base unit rather than
+losing up to one per redemption. The bounds and the coverage monotonicity proof below are unaffected; they now apply to
+the block's aggregate.
 
 Inputs:
 
 - `stable_offer`: gross stablecoins received from the trader.
 - `noah_output`: final integer NOAH output after Market spread.
 - `buffer_balance_before`: integer NOAH in `treasury_redemption_buffer` before settlement.
-- `aggregate_liability_before`: complete transient liability snapshot before burning the offer, initialized from full
-  bank supplies on the first aggregate valuation in the block.
+- `claimable_liability_before`: transient snapshot of the claimable liability before burning the offer, initialized
+  from full bank supplies on the first aggregate valuation in the block. Claimable means the supply can currently
+  redeem: members with a fresh feed plus suspended supply under a stored settlement plan. Supply that cannot claim — a
+  member whose feed is stale, suspended supply without a plan — is excluded and disclosed; because a denomination
+  without a fresh rate also cannot quote, and suspension without an active plan closes both exits, unvaluable and
+  unredeemable coincide by construction. The one divergence is safe-side: a stored-but-unactivated plan is counted
+  while its holders cannot yet claim, which only overstates the denominator.
 - `quote_rates`: fresh offered-stable/NOAH rates already present in Market's execution-local pricing snapshot.
 - `aggregate_rates`: rates captured by Treasury when the block-local snapshot is first initialized. They are read from
-  unchanged Oracle state before any relevant stable burn; whether that snapshot is complete is an explicit result.
+  unchanged Oracle state before any relevant stable burn; whether every recognised liability was valued is recorded on
+  the snapshot as `valuation_complete` and disclosed, but the draw below runs either way.
 
-When aggregate valuation is complete, calculate:
+Calculate:
 
 ```text
-total_liability_noah_before = checked LegacyDec sum(
+claimable_liability_noah_before = checked LegacyDec sum(
   aggregate_rates.Convert(full_supply(denom), anoah).Amount
-  for every native stable denom with nonzero supply
+  for every claimable native stable denom with nonzero supply
 )
 
 redeemed_liability_noah =
@@ -544,7 +669,7 @@ redeemed_liability_noah =
 
 buffer_coverage = min(
   1,
-  checked LegacyDec(buffer_balance_before).Quo(total_liability_noah_before)
+  checked LegacyDec(buffer_balance_before).Quo(claimable_liability_noah_before)
 )
 
 buffer_paid = truncate(
@@ -555,16 +680,26 @@ residual_mint = noah_output - buffer_paid
 
 Treasury uses `math.LegacyDec` consistently for converted liabilities, aggregate liability, fund targets, and the
 coverage calculation, truncating only the final integer principal or payment. Aggregate summation and coverage arithmetic use the checked
-decimal helpers in `pkg/decimal`. If aggregate summation, or adding a pending stable output to aggregate liability,
-returns `decimal.ErrOutOfRange`, Treasury treats aggregate valuation as incomplete and uses the conservative fallback.
-Failure to convert the stable output or redeemed stable input itself remains fatal. Never use floating point or an
-alternate direct-rate multiplication path with a different rounding order.
+decimal helpers in `pkg/decimal`. Every arithmetic failure in the valuation path — converting one supply, summing the
+aggregate, adding a pending stable output to it, or converting the stable output or redeemed stable input — is fatal to
+its caller: the block for the priming scan, the transaction for a settlement. Never use floating point or an alternate
+direct-rate multiplication path with a different rounding order.
 
-The coverage numerator uses the Buffer balance that actually exists and the denominator uses complete pre-burn
+This supersedes the earlier rule that treated `decimal.ErrOutOfRange` from aggregate summation as an incomplete
+valuation. Incompleteness now means exactly one thing — recognised exposure that no honest rate could value — so the
+conservative fallback and the `valuation_complete = false` flag describe a missing price and nothing else. Leaving
+arithmetic out of range inside that flag conflated two conditions that behave differently: a missing rate is expected,
+self-healing, and has a safe conservative answer, while a value outside the representable domain is state the protocol
+does not support, does not recover on the next block, and would otherwise retire the Buffer permanently behind a signal
+that already fires for benign reasons. Both are unreachable at any supply the chain can mint, so this chooses the
+failure mode for an impossible state rather than a live one.
+
+The coverage numerator uses the Buffer balance that actually exists and the denominator uses pre-burn claimable
 liability. The gross stable offer still determines `redeemed_liability_noah` because the complete offer is burned and
 removed from outstanding liability, but the Buffer funds its coverage share of actual post-spread output rather than a
-nominal-liability entitlement. Always require `0 < noah_output <= redeemed_liability_noah`. Whenever aggregate
-valuation is complete, additionally require `redeemed_liability_noah <= total_liability_noah_before`.
+nominal-liability entitlement. Always require `0 < noah_output <= redeemed_liability_noah` and
+`redeemed_liability_noah <= claimable_liability_noah_before`; the redeemed denomination is claimable by definition —
+it just quoted — so its full supply is in the denominator and the second bound holds for every reachable redemption.
 
 Do not derive the draw share from `redemption_buffer_target_ratio`, the current NOAH price, a price trend, or a target
 gap. The draw is the Buffer's actual liability-coverage percentage applied to the quoted output. It is not an adaptive
@@ -589,7 +724,7 @@ Settlement:
 6. Market burns the complete stablecoin offer.
 7. Market mints exactly `residual_mint`.
 8. Market calls `RecordSupplyChange` with the stable burn and residual NOAH mint, subtracting the redeemed liability
-   from an existing complete block-local snapshot.
+   from the existing block-local snapshot and preserving its completeness flag.
 9. Market sends the complete `noah_output` to the receiver.
 
 Conservation:
@@ -615,16 +750,22 @@ Boundary rules:
 - With complete valuation, floor rounding conservatively retains less than one base-unit NOAH per redemption relative to
   the exact coverage-funded output. Do not add a persistent remainder accumulator in the initial implementation.
 - If the offered pair itself cannot be priced, fail atomically under the normal Market rules.
-- If the current offer is priceable but another nonzero-supply native stable lacks a fresh rate, set `buffer_paid = 0`,
-  mint the complete `noah_output`, and emit `valuation_complete = false`. This preserves redemption availability without
-  allowing incomplete information to drain the shared Buffer.
+- If the current offer is priceable but another nonzero-supply native stable lacks a fresh rate — or suspended supply
+  carries no plan — that supply is excluded from the claimable denominator, the draw proceeds against the claimable
+  aggregate, and the event discloses `valuation_complete = false`. The excluded supply cannot itself redeem while in
+  that state, so nothing it will later claim is being spent; a suspension or lapsed feed elsewhere must not retire the
+  Buffer for the healthy exits it exists to dampen, which is exactly when contagion redemptions arrive. This supersedes
+  the original zero-draw rule. The cost accepted: frozen supply exerts no drag on coverage, so the Buffer spends
+  proportionally faster during a freeze, bounded by the frozen fraction — inventory doing its damping work earlier
+  rather than being preserved into the same empty-Buffer end state.
 
 If an approved hard residual-mint limit exists and the requested mint would exceed it, the entire transaction fails
 atomically. No stablecoin is burned and no Buffer NOAH is moved. Because a visible quota or gate creates first-mover
 pressure, any such limit requires a separate policy review rather than an implementation-time addition.
 
-Let `B` be the pre-trade Buffer, `L` complete pre-trade liability, `R` redeemed liability, and `Q` quoted NOAH output.
-Market's nonnegative spread guarantees `0 < Q <= R <= L`. With exact arithmetic and `B < L`:
+Let `B` be the pre-trade Buffer, `L` pre-trade claimable liability, `R` redeemed liability, and `Q` quoted NOAH output.
+Market's nonnegative spread guarantees `0 < Q <= R <= L`. Within any span where the claimable set is fixed, with exact
+arithmetic and `B < L`:
 
 ```text
 c = B / L
@@ -640,6 +781,11 @@ Flooring `buffer_paid` only retains more Buffer, so actual Buffer coverage canno
 `liability_after` with the same fixed `LegacyDec` snapshot shown above; do not re-fetch rates. Define actual
 `buffer_after = buffer_balance_before - buffer_paid`; post-burn integer supplies may be checked separately. When
 `liability_after > 0`, assert non-decreasing coverage by cross-multiplication rather than a separately rounded ratio.
+
+At a boundary where the claimable set itself changes, the coverage ratio steps while the Buffer balance stays
+continuous. A suspension shrinks `L`, so coverage steps up; a plan activation or returning feed re-enters supply and
+steps it down. Neither direction changes any quote, output, or minimum receive — the funding split is invisible to the
+redeemer — so a step creates no first-mover entitlement, and inventory can never jump, only the rate it is spent at.
 
 This removes the former whole-Reserve depletion threshold. It does not guarantee the peg or remove sell pressure;
 Buffer-funded NOAH and newly minted NOAH are both liquid in the recipient's hands.
@@ -670,7 +816,7 @@ make each signal correspond to one honest mandate.
 ### 6.4 Governed strategic Reserve commitment
 
 At launch governance may commit already-issued Reserve NOAH to the existing shared Redemption Buffer through
-`MsgTransferReserveToBuffer`. This is the only production path that may debit `treasury_strategic_reserve`. It is a
+`MsgTransferReserveToBuffer`, which lives in the `x/reserve` Msg service (D55). This is the only production path that may debit `strategic_reserve`. It is a
 standalone Treasury policy action, never a Market callback or part of an individual redemption.
 
 The request contains:
@@ -682,7 +828,7 @@ minimum_reserve_balance: sdk.Coin   // nonnegative anoah after transfer
 ```
 
 The general Treasury `authority`, configured as `x/gov` at launch, authorises the message. Do not use the Claims
-committee or introduce a launch Reserve operator. Source `treasury_strategic_reserve`, destination
+committee or introduce a launch Reserve operator. Source `strategic_reserve`, destination
 `treasury_redemption_buffer`, and denomination `anoah` are fixed in keeper code; the request has no recipient, purpose
 selector, asset selector, conversion, or arbitrary call data.
 
@@ -693,7 +839,7 @@ Execution must:
 3. Read the live Reserve `anoah` bank balance without consulting the Buffer balance, Oracle rates, fund targets, prices,
    or Market state.
 4. Reject if the Reserve cannot fund the transfer or its post-transfer balance would be below `minimum_reserve_balance`.
-5. Atomically call `SendCoinsFromModuleToModule` from `treasury_strategic_reserve` to
+5. Atomically call `SendCoinsFromModuleToModule` from `strategic_reserve` to
    `treasury_redemption_buffer`. The signed message and canonical Bank event are the audit trail; Treasury emits no
    custom Reserve-transfer event. A Bank failure changes neither balance and emits no successful transfer event.
 
@@ -720,10 +866,10 @@ Delta subsidy pool and Insurance balances = 0
 ```
 
 The action succeeds even when Oracle valuation is stale or incomplete. The larger Buffer remains subject to the normal
-redemption rules: incomplete aggregate valuation still draws zero, while a later complete-valuation redemption draws its
-actual Buffer-coverage share and reduces residual mint without changing the quoted output or privileging a redeemer. Because
-the visible governance proposal cannot change the quote or absolute output and the Buffer share follows live coverage, it
-creates no protocol-level first-redeemer entitlement to the committed amount.
+redemption rules: every redemption draws its actual coverage share of the claimable liability and reduces residual mint
+without changing the quoted output or privileging a redeemer. Because the visible governance proposal cannot change the
+quote or absolute output and the Buffer share follows live coverage, it creates no protocol-level first-redeemer
+entitlement to the committed amount.
 
 After the transfer, live balance-based gaps are recalculated normally. The Buffer gap may fall by up to `amount`; the
 Reserve gap may rise by up to `amount`; and a Buffer above target remains above target. Later eligible expansion fills
@@ -748,7 +894,7 @@ through `BasePool.Denom`, and do not load `BasePool` or `ArkPoolDelta` for this 
 - Do not touch NOAH, Redemption Buffer, strategic Reserve, Insurance, or `ArkPoolDelta`.
 
 Direct stable-to-stable conversion makes the economic result independent of which flagship denomination currently labels
-the virtual NOAH/stable pool. The basket and `asdr` remain valid in both directions; changing the pool unit does not
+the virtual NOAH/stable pool. The basket and `axdr` remain valid in both directions; changing the pool unit does not
 change stablecoin output eligibility.
 
 ### 6.6 Insurance claim
@@ -770,12 +916,12 @@ governance submits under the same validation and held-balance rules at any heigh
 without reading the mandate. Treasury assigns the claim a globally monotonic `uint64` ID from consensus state. A
 committee submission must fit within the remaining Claims allowance and atomically increases the allowance used; a
 governance submission does not consume that delegated allowance. Treasury reserves the amount and derives the
-executable height from the params cancellation period; a committee claim additionally stores the mandate term and its
-executable height must not exceed the mandate expiry, while a governance claim records term zero. During the half-open
+closing height from the params cancellation period; a committee claim additionally stores the mandate term and its
+closing height must not exceed the mandate expiry, while a governance claim records term zero. During the half-open
 cancellation period, governance may cancel any pending claim without depending on the current mandate term. The current
 active committee may cancel only a non-governance-submitted claim and must supply the exact current term. At the
-executable height, cancellation closes for both actors and any account may execute the immutable payment. Paid claims
-are final.
+closing height, cancellation closes for both actors and the chain itself pays the immutable claim in EndBlock. Paid
+claims are final; a claim the chain cannot pay ends failed and releases its reservation.
 
 Cancellation and execution release the Insurance reservation but never restore Claims allowance usage. There is no
 guardian, category allowlist, per-claim cap, governance late-cancellation override, or governance-cancellation flag. The
@@ -859,9 +1005,13 @@ governance cancellation and permissionless expiry remain available while paused.
 
 #### Committee approval
 
-The committee threshold-signs an exact approval containing the policy version, unique bounded claim ID, bounded incident
-or case reference, recipient, positive `sdk.Coins` amount, and external evidence reference. At launch the amount must
+The committee threshold-signs an exact approval containing the policy version, unique bounded claim ID, a single bounded
+`reference` pointing at the off-chain case record, recipient, and positive `sdk.Coins` amount. At launch the amount must
 contain only `anoah`; keeping `sdk.Coins` preserves a later additive payout path without weakening launch validation.
+
+The reference is one field rather than a separate incident and evidence pair. The chain applies the identical rule to
+both — required, bounded, never interpreted — so splitting them states a distinction only the submitter can enforce,
+at the cost of a second way for a submission to fail validation.
 
 Approval must:
 
@@ -886,7 +1036,7 @@ liquidates, invokes Market, or draws another fund.
 
 After the challenge period, any fee-paying account may execute the exact stored approval while it remains pending,
 unexpired, and unpaused. Execution rechecks the Insurance balance, atomically sends the held `anoah` from
-`treasury_insurance`, reduces `insurance_reserved` by the same amount, marks the claim paid, and emits the audit event.
+`claims_insurance`, reduces `insurance_reserved` by the same amount, marks the claim paid, and emits the audit event.
 The committee never receives custody or chooses different execution fields.
 
 Because approval already excluded the reserved amount from target eligibility, ordinary execution changes
@@ -902,6 +1052,13 @@ governance cancellation commits, an overdue claim remains `pending`, its reserva
 `FundStatus` continues to subtract it. Launch operations must monitor the paginated Claims query/events and submit the
 permissionless expiry message promptly; tests must preserve this interim accounting rather than silently treating an
 unprocessed deadline as released.
+
+**The execution deadline and its expiry path are retired, not merely deferred.** They exist above to answer one
+question — what happens to a claim nobody executes — and §10.5's automatic settlement answers it instead, by paying
+the claim the mandate already authorised rather than voiding it. The deadline was the cheaper answer only while
+settlement needed a signer: an expiry sweep needs the same height-keyed index and the same block hook that settlement
+now uses, so keeping it would buy a second mechanism at the same cost. Should the extended model be revived, it should
+be revived without them.
 
 Mandate expiry or retirement stops new approvals. Each already-approved claim follows its stored execution deadline
 unless governance globally pauses execution or cancels it individually. Replacement and committee rotation affect new
@@ -959,9 +1116,9 @@ insurance_target_noah =
 ```
 
 Target exposure and ratios remain `LegacyDec` values through multiplication; only the final target is rounded up to
-integer `anoah`. If the aggregate exposure cannot be represented while summing converted supplies, valuation is
-incomplete and the caller uses its documented fallback. Do not convert through SDR or divide by a separate NOAH/SDR
-price.
+integer `anoah`. An aggregate exposure that cannot be represented while summing converted supplies is fatal to the
+scan's caller, not an incomplete valuation; see the arithmetic rule in Section 6.2. Do not convert through XDR or divide
+by a separate XDR/NOAH price.
 
 For the expansion currently being settled, `RouteExpansion` gets the current pre-mint liability from the transient
 snapshot, initializing it from Bank supply only when no snapshot exists, and adds the new integer stable output exactly
@@ -977,12 +1134,21 @@ coverage.
 
 ### 7.2 Asset recognition
 
+The two sides of the contract below have different owners, and that split is the `x/treasury` / `x/claims` /
+`x/reserve` module boundary (D54). Treasury computes `required_capital`, because it needs consolidated liability and
+the governed target ratio. Each fund's operating module computes `recognised_capital`, because it needs that fund's own
+encumbrance and, later, its eligibility entries, haircuts, and caps; it returns the figure to Treasury through
+`RecognisedCapital`. The formulas themselves are unchanged.
+
 Initially:
 
 - Count the liquid `anoah` bank balance in Redemption Buffer and strategic Reserve toward their targets. For Insurance,
   count only `insurance_anoah_balance - insurance_reserved`; approved pending claims are encumbered and cannot
   simultaneously cover another loss.
-- All four fund accounts reject mixed and non-NOAH deposits because every launch use is NOAH-denominated.
+- All four fund accounts reject mixed and non-NOAH deposits because every launch use is NOAH-denominated. *(Amended
+  2026-08-05, D58: the strategic Reserve account now admits eligibility-listed denominations beside `anoah` — its send
+  restriction reads the recognition policy — while the other three funds keep the NOAH-only rule. The
+  `transfer_tax_collector` → Reserve exempt pair is unchanged.)*
 - Never count an outstanding Ark-issued stablecoin as backing for Ark's consolidated stablecoin liabilities, including
   if a future policy permits one to be held by the strategic Reserve or Insurance. It remains a liability until burned
   and is permanently ineligible for target credit against that consolidated exposure.
@@ -1030,6 +1196,20 @@ Ark-issued stablecoins always receive zero target credit while outstanding, even
 allows a fund to hold them. Recognition failures are conservative accounting events: they may reopen a gap, but they
 must never trigger minting, forced selling, automatic conversion, or deployment.
 
+*(Amended 2026-08-06, D64: `remaining_asset_cap_headroom` above is each asset's share of recognised capital itself
+rather than a flat amount — `recognition_cap_ratio × recognised_capital`, the self-reference solved per block in
+closed form. The concentration limit is therefore stated against the certificate it disciplines, the same denominator
+prudential regimes use when they cap a component at a share of the measured stock, and it needs no governance upkeep
+as holdings or liability move. Asset credit levers only the liquid unencumbered `anoah` term, so recognition can
+never certify more than that base times a bounded multiplier, whatever is attested. Ratios across the policy must sum
+strictly below one for the solve to exist. The correlated-group headroom term remains unimplemented while Insurance
+is NOAH-only.)*
+
+*(Amended 2026-08-05, D62: the Ark-issued rule is enforced rather than declared — a Reserve eligibility entry naming an
+asset-registry member must be custody-only, checked at the policy write and at genesis import. D61 adds the disposal
+side the recognition rules imply: custody the fund holds at zero credit, and NOAH above the requirement, can be burned
+under authority split by what the burn can destroy.)*
+
 External recognition must also preserve a separately configured liquid-capital requirement:
 
 ```text
@@ -1042,6 +1222,16 @@ The same liquid NOAH may satisfy both requirements, so the gaps use `max`, not a
 different recognition factors, concentration caps, and liquid requirements because their loss horizons and permitted
 uses differ. Concentration limits must also aggregate correlated exposure across both funds so splitting one risk
 between accounts cannot evade the cap.
+
+**Amended 2026-08-05 (D56–D58):** for the strategic Reserve the liquid requirement is discharged structurally, and the
+`allocation_gap = max(total_gap, liquid_gap)` machinery is deliberately not implemented for it. The Redemption Buffer
+is the system's liability-scaled liquid tranche — `RedemptionBufferTargetRatio × liability`, `anoah`-only, with no
+operator and no deployment path, filled first in the waterfall and drawn by redemptions — one slot above the Reserve.
+The Reserve's own floor is the mandate's `minimum_liquid_balance`: absolute and appointment-scoped because the need it
+serves is operational rather than exposure-tracking, and enforced at deployment time on the only debit paths the
+account has, so it cannot be breached passively. `RecognisedCapital` therefore stays a single figure per operating
+module, with no total/liquid widening (reserve extraction plan D4, closed). The cross-fund aggregation above likewise
+lands as per-asset Reserve caps while Insurance is NOAH-only (claims plan D4).
 
 When Reserve spends 100 NOAH to acquire an asset recognised at 70 after all haircuts, only a 30-NOAH target gap reopens.
 Giving the asset zero credit would reopen the entire 100 and could create a repeated acquisition/refill loop that
@@ -1068,18 +1258,24 @@ therefore part of the anti-feedback policy, not only reporting.
   Redemption Buffer. `RouteExpansion` sets the Reserve, Insurance, and overflow-burn amounts to zero. Do not route
   uncertain principal elsewhere, burn it, or fail an otherwise priceable conversion. Failure to value the final output
   itself remains a hard conversion error before any fund transfer.
-- If complete aggregate valuation is unavailable during a priceable redemption, draw zero from the Buffer and mint the
-  complete quoted output as specified in Section 6.2.
-- `FundStatus` should return an error when it cannot produce a complete live valuation rather than present a partial
-  target as complete.
+- A priceable redemption always draws the Buffer's coverage share of the claimable liability, as specified in Section
+  6.2. Unclaimable supply is excluded from that denominator and disclosed; it never switches the draw off.
+- `FundStatus` always answers, and never presents a partial target as complete. When live valuation is incomplete it
+  reports every target as zero, and each valued bucket carries exactly what the block could price beside a list
+  enumerating what it excludes: untrusted suspended supply, written-off exposure, and members whose feed is stale or
+  absent. Incompleteness is read off those lists rather than a separate flag — a non-empty `untrusted_suspended_supply`
+  or `stale_member_supply` is what zeroes the targets, while `written_off_exposure` does not, because a write-off
+  extinguishes the obligation rather than leaving it unvalued. A bucket may be partial precisely because its shortfall
+  is disclosed, so no reader can mistake a partial sum for a whole one. Refusing to answer during exactly the stress that makes valuation
+  incomplete would blind operators when they most need the report.
 - Direct deposits trigger no target-driven transfer, trade, conversion, or deployment and create no depositor rights or
   authority over the governed Reserve-to-Buffer path.
 - Claims Mandate submission and cancellation affect the Insurance reservation, unencumbered balance, and resulting
   coverage ratio/gap; neither changes required target exposure or ratio parameters, prices, issuance, another fund, or
   mandate term automatically.
 
-Completeness is defined by outstanding liabilities, not by either configurable policy denomination. A missing SDR rate
-alone is irrelevant when `asdr` supply is zero; nonzero `asdr` supply requires a fresh `asdr`/NOAH value like any other
+Completeness is defined by outstanding liabilities, not by either configurable policy denomination. A missing XDR rate
+alone is irrelevant when `axdr` supply is zero; nonzero `axdr` supply requires a fresh `axdr`/NOAH value like any other
 liability. A stale `Params.reference_tax_cap.denom` rate affects cap refresh only. A stale Market pool-denom rate may
 prevent a Market quote that needs the virtual pool, but it is not an additional Treasury aggregate-valuation dependency.
 
@@ -1092,13 +1288,47 @@ stable supply. Coverage-based redemption always uses nominal liability as the de
 later risk-exposure model may replace the target denominator without silently changing redemption funding shares. Keep both
 calculations single-sourced so that later target changes do not duplicate Market settlement logic.
 
-## 8. Stability tax policy
+### 7.4 Exposure multiplier
+
+D72 supplies the risk-exposure model §7.3 closes by anticipating: it replaces the target denominator without
+changing redemption funding shares. Targets become `ratio x m x L` where `L` is the same liability basis each
+consumer already uses, and the draw keeps dividing by raw `L`.
+
+**Why a stock measure is not enough.** Total liability states the size of the claim, not how hard it is to
+service. The same nominal liability is a different exposure at five percent of NOAH market capitalisation than
+at fifty, on a violently moving asset, under one-directional flow. Three indicators scale it, each already
+maintained by the chain:
+
+- **Liability ratio** — net liability over circulating NOAH. This is the dilution term: redeeming one unit of
+  liability mints NOAH in proportion to it. Because liability is valued in NOAH (D24), it needs no extra rate
+  read; circulating NOAH is total supply less the four dormant custody accounts at their raw balances, since the
+  Reserve's recognised figure includes haircut external credit that is not circulating NOAH.
+- **Realised volatility** — an EWMA of squared per-block returns of the protocol reference rate, annualised at
+  read time. Oracle rates quote NOAH per one unit (D75), so the reference rate is the reference unit's NOAH price; its
+  squared return is NOAH's own to the order the model reads.
+- **Flow pressure** — an EMA of per-block net redemption value, taken from `ConversionTotals`, which already
+  carries both sides NOAH-valued.
+
+**Guardrails.** Weights, decays, cap, step, and period are governance `Params` (D72). `m` is floored at one, so
+the inert configuration is exactly the unscaled sizing; capped; and rate-limited per update, so no single period
+can move it far. Every input is a vote-median rate, a Bank supply, or settled flow that cost spread to produce —
+no spot price enters. Sampling folds into settlement, which already runs each block; application runs on the
+governed period.
+
+**Consumption.** Requirement bases scale: the expansion waterfall on the net basis, and the bounds on committee
+acts on the gross basis, which tightens the Reserve's burnable surplus and widens the shortfalls bounding
+committee transfers into the Buffer and Insurance — both conservative directions, and `m` is protocol-computed
+state rather than anything the bounded actor can reverse. `FundStatus` reports both target families and the
+multiplier behind them. The draw does not scale (D73), and neither does the multiplier's own liability-ratio
+input.
+
+## 8. Transfer tax policy
 
 ### 8.1 Policy and governance settings
 
-- `MonetaryPolicy.stability_tax_rate`: reversible rate in `[0, 1]`.
+- `Params.transfer_tax_rate`: governance-owned rate in `[0, 1]`; moved from the committee's `EconomicPolicy` by D80.
 - `Params.reference_tax_cap`: governance-owned nonnegative Coin with a canonical Ark-native base denomination, launched in
-  `asdr`; zero means no tax ceiling.
+  `axdr`; zero means no tax ceiling.
 - Per-denom `TaxCaps`: derived state, not an adaptive policy controller.
 
 The effective reference cap is stored directly in Params. Its denomination is only the unit for canonical tax-cap
@@ -1132,8 +1362,16 @@ Initial signed-message coverage:
 | `market.MsgSwap`                               | Exempt; self-returning conversion remains governed by Market spread |
 | `authz.MsgExec`                                | Recursively inspect all nested messages                             |
 | IBC `MsgTransfer`, when enabled                | Outbound taxable stablecoin token                                   |
+| IBC v2 `MsgSendPacket`, when enabled           | Outbound taxable token in each transfer-port payload; other ports carry none |
 | Wasm instantiate/execute, when enabled         | Attached taxable stablecoin funds                                   |
 | Treasury, Oracle, governance, staking messages | No transfer-tax principal                                           |
+
+`MsgSwap`'s exemption is what couples the transfer tax to Market's spread floor. NOAH is untaxed and a
+self-returning swap is untaxed, so `MsgSwap` stable→NOAH, `bank.MsgSend` NOAH, `MsgSwap` NOAH→stable reaches the
+same recipient with the same value for spread instead of tax. The substitution pays exactly when `transfer_tax_rate`
+exceeds `min_stability_spread`, at every principal: below the cap crossover both charges scale with the amount, and
+above it the capped tax meets an uncapped spread. Governance therefore holds the rate at or under the floor a
+conversion committee can reach — `ConversionMandate.minimum_policy.min_stability_spread`, not the live floor (D81).
 
 Every user-facing stablecoin transfer surface enabled in production must use the same Treasury calculator. Phase 4
 implements IBC foundations before Wasm, because contracts may dispatch IBC messages, and designs the Treasury execution
@@ -1142,7 +1380,7 @@ passes. Top-level IBC transfers and Wasm attached funds are visible to ante insp
 submessages are discovered only during execution, so the custom Wasm/IBC integration must invoke the same calculator at
 that execution boundary rather than pretending the `TxFeeChecker` can see them in advance.
 
-A launch deposit to any Treasury fund is `anoah` and has zero stability-tax principal. A mixed or non-NOAH deposit is
+A launch deposit to any Treasury fund is `anoah` and has zero transfer-tax principal. A mixed or non-NOAH deposit is
 rejected by the fund restriction; it does not become admissible merely because the normal tax calculator could assess
 its denomination. When an external asset is later allowlisted, its user-facing transfer remains subject to the same tax
 classification as a transfer to an ordinary account; the fund recipient creates no exemption.
@@ -1156,8 +1394,8 @@ sponsor execution-generated tax. For each input/denomination pair:
 
 ```text
 tax[input][denom] =
-  floor(principal[input][denom] * stability_tax_rate)                    if TaxCaps[denom] == 0
-  min(floor(principal[input][denom] * stability_tax_rate), TaxCaps[denom]) otherwise
+  floor(principal[input][denom] * transfer_tax_rate)                    if TaxCaps[denom] == 0
+  min(floor(principal[input][denom] * transfer_tax_rate), TaxCaps[denom]) otherwise
 ```
 
 Inputs are not combined merely because they share a source or occur in the same transaction. Each `MsgSend`,
@@ -1175,7 +1413,7 @@ Reserve-to-Buffer commitment, and other protocol-internal movements unless it re
 The calculator recursively extracts taxable inputs and applies each denomination's cap independently to each input:
 
 ```text
-uncapped_tax[input][denom] = floor(principal[input][denom] * stability_tax_rate)
+uncapped_tax[input][denom] = floor(principal[input][denom] * transfer_tax_rate)
 
 tax[input][denom] = uncapped_tax[input][denom]                         if TaxCaps[denom] == 0
 tax[input][denom] = min(uncapped_tax[input][denom], TaxCaps[denom])     otherwise
@@ -1200,7 +1438,12 @@ prices.
 
 Refresh rules:
 
-1. Refresh on the fixed weekly boundary.
+1. Refresh on the `Params.tax_cap_refresh_period_blocks` boundary, which defaults to a chain week. The cadence governs
+   only the drift between membership changes — rule 2 refreshes on those independently — so it trades how closely the
+   derived ceilings track the amount governance voted for against how often the whole map is rebuilt. It is a parameter
+   rather than a constant for the same reason the amount it derives from is one, and is refused at zero, which would
+   divide by zero in the modular boundary check. Because the check is stateless arithmetic on the block height, a change
+   simply moves the next boundary; there is no active countdown to protect, unlike `reward_funding_window`.
 2. Also refresh when the configured stable-denom set differs from the stored cap-denom set.
 3. Build the complete replacement map in memory before writing anything.
 4. If any required price is missing, stale, invalid, or unrepresentable, retain the complete previous map.
@@ -1219,7 +1462,7 @@ Changing the effective reference cap has stricter replacement semantics than a s
    a zero candidate needs no conversion rates.
 2. Governance-only `MsgUpdateParams` rebuilds the complete candidate map whenever the reference Coin changes. Params and
    the cap map commit together or neither changes.
-3. Neither `MsgUpdateMonetaryPolicy` nor `MsgCommitteeUpdateMonetaryPolicy` does more than validate and store the
+3. Neither `MsgUpdatePolicy` nor `MsgCommitteeUpdatePolicy` does more than validate and store the
    candidate policy. No rate change rebuilds caps because the complete cap map exists independently and cap values do
    not depend on the rate.
 4. If a reference-cap change cannot derive every candidate cap, reject `MsgUpdateParams` and preserve the old Params and
@@ -1229,10 +1472,116 @@ Changing the effective reference cap has stricter replacement semantics than a s
    taxable denomination is nevertheless missing at calculation time, `ComputeTax` fails closed when tax is positive.
 
 Governance must configure the candidate denomination in Oracle and wait for a fresh settled rate before proposing the
-Treasury cap change. A reference-cap update never changes Market's pool denomination. Market performs that independent
-live transition only through the denomination-changing `MsgUpdateParams` contract in Section 15.3.
+Treasury cap change. A reference-cap update never changes Market's pool denomination: the amount is Treasury's to move,
+the unit is not. Both units move together, and only through Oracle's `MsgSetReferenceDenom`, which rebases Treasury's
+cap and Market's pool in one transaction.
+
+**Where the reference-denomination invariant is enforced.** `Params.reference_tax_cap.denom` equals Oracle's configured
+reference at every height, and every guard sits at a mutation point rather than at a read:
+
+1. Keeper `InitGenesis` refuses an empty reference or a cap naming anything else. This is the only place Treasury ever
+   reads the reference — once per chain lifetime.
+2. `MsgUpdateParams` rejects any denomination change outright, so governance can move the amount and nothing else.
+3. `MsgSetReferenceDenom` is the sole denomination-moving path. It runs Treasury's and Market's rebase executors before
+   storing the new reference, refuses to run at all with an executor unwired, and fails the whole message if either
+   executor fails, so no partial re-point can commit.
+4. `RebaseTaxCap` refuses to convert from a denomination Treasury does not currently hold, so it cannot quietly repair
+   state that is already inconsistent.
+
+Nothing re-checks the invariant at runtime. The cap rebuild once carried a derive-time guard that halted the chain on a
+mismatch; it was removed deliberately, because it fired only when a rebuild was owed — leaving any desync live until
+the next boundary regardless — and its Oracle read made the rebuild depend on state the derivation never used.
+
+The obligation this leaves is on future writers. Any new path that writes `Params` — an upgrade handler, a store
+migration, a keeper method that does not exist yet — carries the invariant itself. Breaking it does not fail: rates
+for the abandoned denomination normally keep existing, so every conversion still succeeds and the derived caps stay
+denominated in a unit the protocol has left, indefinitely and silently. An upgrade that touches either
+`Params.reference_tax_cap` or Oracle's reference must therefore repeat the genesis check, and its test must assert the
+pair rather than each side alone.
 
 ### 8.6 Fee checking and routing
+
+**Amended 2026-09-02: the ante construction below is superseded; its tax and feegrant semantics survive.** Three rules
+no longer hold. First, the decorator list *is* copied into Ark, in `app/ante/ante.go`, because the Wasm decorators must
+sit immediately after context setup and `sdkante.NewAnteHandler` admits no insertion point; an SDK upgrade adding a
+decorator must therefore be mirrored by hand, and `app/ante/order_test.go` pins the assembled order. Second, there is
+no wrapper around a completed stock handler and no routing step, because the tax no longer travels in the fee field:
+the ante charges it straight from the fee payer to `transfer_tax_collector` on the terms the execution policy router
+already used for contract, GMP, and ICA dispatches, so `GetFee()` is pure gas payment and items 2 through 7 of the fee
+checker's contract are gone with the subtraction they described
+(`docs/DESIGN_NOTES.md` §4.3, Phase 1). The checker instead prices gas against
+Treasury's consensus base fee, which replaces node-local minimum gas prices rather than applying them. Third, the tax
+is charged immediately after fee deduction rather than after the signature decorators. The claim that motivated the
+old position — invalid signatures must not reach the charge — never needed the position: BaseApp runs the whole ante
+on a cache branch it writes only on success, so a failed signature moves nothing wherever the charge sits. The rule
+that replaces it is that a check able to refuse without moving a balance precedes the deduction, and a charge follows
+it in the order money moves, so an underpriced transaction is refused by the fee gate before it is charged any tax.
+
+**Amended 2026-09-03: the tax returns to the fee field as a declaration; the direct charge stays (D78).** Charging the
+tax off the fee field left a signer no way to know the tax before signing and no bound on it after: the query was
+advisory, nothing signed carried the figure, and a rate change between signing and inclusion was charged silently. The
+fee field is the one slot every wallet already builds and every sign mode renders, amino included, so it carries the
+declaration. The signed fee is gas plus the exact tax, and one Ark-owned `FeeDecorator` in `app/ante/fee.go`, in place
+of the SDK's, holds it to the tax coin for coin: a fee short of the tax is refused before anything is deducted, so a
+signer is never taxed past what they signed. What remains once the tax is set aside is gated against the base fee
+under the single-denomination rule and deducted, so only gas reaches `fee_collector`; excess in the gas denomination
+is gas, excess in any other is refused. The same decorator then charges the tax straight to `transfer_tax_collector`
+as before, and a granter sponsors both through one draw on the allowance. The decorator mirrors the SDK's deduction
+from `x/auth/ante/fee.go` at v0.54.3 under the mirror-by-hand caveat the decorator list already carries; owning it is
+what lets simulation deduct what execution deducts — the SDK skipped its checker under simulation and deducted a
+declared fee whole, tax included — so under simulation nothing is refused on fee grounds, what the fee covers of the
+tax is set aside, and the rest is deducted unpriced, while the gate's reads are made and not enforced and a fee-less
+estimate consumes a stand-in for the transfer it cannot make, so estimates track execution to within about a percent.
+Item 7 of the old contract — return the whole fee and route the
+tax onward — is the one thing not restored: the gas remainder alone reaches `fee_collector`, so no routing step
+exists. `app/client/fees.go` adds the chain's tax to the fee it builds; a wallet that does not is refused with an error
+naming the tax rather than charged silently, the deliberate cost of the declaration.
+
+**Amended 2026-09-03: the fee is a ceiling and the tip is NOAH (D80).** The subtraction D78 restored had one
+consequence D78 did not price: with tax a multiple of gas, any headroom a wallet declared on the tax — a percent for a
+cap that re-derives every block — was deducted as gas. `FeeDecorator` now settles the fee by denomination instead of
+subtracting. A stable leg is held to the tax it declares and charged that tax, plus the base fee if it is the first
+leg in denomination order whose slack above the tax covers its own requirement; the rest is never deducted. The NOAH
+leg is charged whole — base fee if no stable leg covered it, remainder tip — and only the tip ranks. The
+single-denomination rule and the refusal of excess in a second denomination are gone: an accepted fee is any set of
+stable ceilings plus at most one NOAH leg. A NOAH leg the factor table cannot price is refused, as NOAH gas is.
+`app/client/fees.go` declares headroom on every stable leg and none on NOAH, and takes a `--tip` in NOAH. Feegrant,
+simulation parity, the gentx waiver, and the execution-generated path are unchanged.
+
+`arkd` prices every module transaction command this way, not only `swap-send`, through `PriceTransactions`
+(`app/client/pricing.go`, wired by `dressTxCommands` in `cmd/arkd/cmd/root.go`). The command runs once, as written;
+what is replaced is the `TxConfig` it builds through. Every transaction the SDK's factory builds comes from
+`TxConfig.NewTxBuilder`, so a builder handed out there sees the messages and the settled gas — all the fee needs,
+and the one place both are known. The fee is settled on the first read of what was built — the confirmation, the
+sign bytes, the generate-only print — each of which precedes signing: the chain is asked then, about the
+transaction's own messages and for the account it names as payer, so no keyring is involved, and `ComputeTax`
+answers with the principal it taxed beside the tax, so the client keeps no message walk of its own. The parts of
+the fee are printed above the SDK's confirmation, which shows one figure. An explicit `--fees` is left as declared; the
+auth utilities under `tx`, which carry a finished transaction, are left alone, and a command that builds no
+transaction — `gov draft-proposal` — reaches no builder and is untouched. Wallets meet the same rules through `Query/ComputeTax` and `Query/GasPrices`, and stock wallet fee logic
+clears neither the tax declaration nor a moving base fee on its own, so a front end passes the fee explicitly.
+
+**Amended 2026-09-04: the tax is charged after the messages, on success only (D82).** The ante wrote its branch the
+moment it succeeded, so a transaction that then failed — out of gas, a send past what the fee left, a blocked
+recipient, a contract error, a closed channel, an exhausted quota, one bad message in a bundle — paid the gas fee and
+the tax on a principal that never moved, while a contract's dispatch had been atomic with its tax since D42. The
+charge now sits in a post decorator, `TransferTaxDecorator` in `app/ante/transfer_tax.go`, which BaseApp runs on the
+messages' branch: on success it charges the tax the ante priced and handed on through the context, draws a granter's
+allowance for it, and moves it to `transfer_tax_collector`; on failure it does nothing. `FeeDecorator` keeps every judgement that needs no balance — the declaration
+and the settlement, both of which need the computed tax, since a stable leg's slack above its tax is what pays the base
+fee — and deducts the gas fee and tip alone, drawing the allowance for the
+gas fee alone. Affordability is left entirely to the charge, which reads the balance the messages left, and which runs
+in CheckTx as well, where the messages do not run, so the mempool refuses an underfunded payer exactly as an ante check
+would have. A payer the messages leave short of the tax fails at the charge; BaseApp reverts the
+messages and keeps the gas fee. The reverse case is what the move gains beyond fairness: a payer who acquires the taxed
+denomination from an earlier message in the same transaction is taxed and succeeds, where the ante charge refused it. The fee and tip are named on the ante's tx event, the tax on the post's, since an ante
+event outlives a failed transaction. Nothing is escrowed or returned, so the no-refunds finding of the dynamic fees
+spec stands; the post chain returns for deferral, not settlement. Rationale in
+`docs/DESIGN_NOTES.md` §4.4.
+
+Unchanged below: the execution-generated tax path and its Wasm-cache atomicity, the feegrant asymmetry between signed
+and dispatched messages, the retention semantics on message failure (since changed by D82), and the advisory status of
+the tax query. The text is kept as the record of the wrapper model that was considered and replaced.
 
 Use Cosmos SDK v0.54.3's stock ante handler with a custom `TxFeeChecker`, then wrap the completed stock ante handler to
 route the tax. Do not copy the SDK decorator list into Ark.
@@ -1258,7 +1607,7 @@ After the stock handler succeeds, the Ark wrapper:
 
 1. Skips routing during simulation.
 2. Recomputes the exact tax with the same Treasury calculator.
-3. Moves the complete exact tax from `fee_collector` to `stability_tax_collector` for every denomination.
+3. Moves the complete exact tax from `fee_collector` to `transfer_tax_collector` for every denomination.
 4. Leaves only gas fees and overpayment in `fee_collector`.
 
 This ordering means invalid signatures never reach routing. If routing fails, BaseApp's ante cache rolls back feegrant
@@ -1269,7 +1618,7 @@ For a contract-generated transfer that was not knowable in ante, the custom Wasm
 1. Calculates the tax for that execution-generated transfer input independently.
 2. Debits that tax from the sending contract account in the transferred denomination, in addition to the complete
    requested principal.
-3. Sends the complete exact input tax to `stability_tax_collector`.
+3. Sends the complete exact input tax to `transfer_tax_collector`.
 4. Performs the tax collection and transfer in the same Wasm submessage cache.
 
 Only the contract dispatcher calls this adapter; top-level handlers bypass it because ante already owns those inputs.
@@ -1287,12 +1636,14 @@ The custom fee checker must:
 7. Return the complete declared fee so the stock decorator deducts gas, tax, and overpayment together.
 8. Guard zero gas and values that cannot be represented by the SDK-compatible priority calculation.
 
-Feegrant semantics remain standard for ante-visible tax: the granter pays the complete declared fee and its allowance is
-charged for gas, tax, and overpayment. Feegrant does not make a granter or outer transaction fee payer responsible for
+Feegrant semantics remain standard for ante-visible tax: the granter pays the gas fee and the tax, each drawn on its
+allowance as it is charged, so the allowance is never charged for a tax a failed transaction did not pay (D82, amended
+2026-09-04). Feegrant does not make a granter or outer transaction fee payer responsible for
 execution-generated tax incurred later by a contract; the sending contract pays it from its own balance.
 
-Ante-visible tax and gas fees are retained when message execution fails after a valid ante, matching normal
-transaction-fee semantics. A failure inside ante retains neither. Execution-generated tax commits only with its
+The gas fee is retained when message execution fails after a valid ante, matching normal transaction-fee
+semantics; the tax is not, since it is charged after the messages and only with them (D82, amended 2026-09-04). A
+failure inside ante retains neither. Execution-generated tax commits only with its
 corresponding transfer and rolls back when that transfer or its enclosing cached execution is reverted. A successfully
 created IBC packet retains its tax if later acknowledgement, timeout, refund, or return bookkeeping occurs; those later
 operations are not new taxable transfers.
@@ -1312,14 +1663,14 @@ The launch model keeps the services separate:
 - Gas fees go to `fee_collector` and then Cosmos distribution every block. Before Distribution empties the collector,
   Treasury values the eligible balances from the completed block and adds that value to its current funding window; it
   does not retain or move those gas coins.
-- Complete stability tax remains in `stability_tax_collector` until Treasury settles the current funding window.
+- Complete transfer tax remains in `transfer_tax_collector` until Treasury settles the current funding window.
 - Validator and Oracle funding retain separate per-block NOAH-value parameters, but Treasury adds the applicable target
   once for every observed completed block and compares only the aggregate window totals.
 - The balance-constrained subsidy pool covers only aggregate shortfalls at settlement, not transient block-by-block
   gaps.
 - Expansion proceeds fund the Redemption Buffer, strategic Reserve, and Insurance, not routine rewards.
 
-Gas is the validator lane's first recurring source. Stability tax protects the Oracle target before it can fund a
+Gas is the validator lane's first recurring source. Transfer tax protects the Oracle target before it can fund a
 validator gap. Tax above both target needs remains Oracle-performance-weighted validator/delegator compensation. The
 allocation never changes the tax rate, either target, or total collected revenue.
 
@@ -1368,7 +1719,7 @@ V = accumulated validator_target
 O = accumulated oracle_target
 B = current spendable subsidy-pool NOAH balance
 G = accumulated validator_fee_value
-T = NOAH value of eligible stability_tax_collector balances
+T = NOAH value of eligible transfer_tax_collector balances
 
 validator_pre_tax_gap = max(0, V - G)
 protected_oracle_tax = min(T, O)
@@ -1421,19 +1772,22 @@ At settlement, value `anoah` directly and value the accumulated tax pot from one
 currently configured native stable denominations receive target credit. Any unexpected or no-longer-configured tax
 denomination goes entirely to Oracle.
 
-If a required validator-fee valuation is unavailable during any observation, set `valuation_complete = false` and do not
-attempt to reconstruct or partially trust the window later. At the boundary, send the complete accumulated tax pot to
-Oracle, spend no subsidy, emit `ark.treasury.v1.EventBlockRewardTopUpSkipped`, and reset the state. Use the same fallback
-when tax valuation is unavailable at settlement. The window is never retained for a later period. An individually valid
-conversion whose aggregate decimal value or cross-block integer accumulator is not representable is also
-valuation-unavailable for this reward-only fallback. An empty fee collector needs no Oracle valuation and does not make
-a window incomplete.
+A fee or tax denomination the registry cannot price counts as zero for that observation rather than poisoning the
+window: availability is settled per denomination by the pricing verdict, and the priced remainder still accrues. The
+collector's unpriced coins are partitioned before settlement values the pot — derecognized supply routed to the
+strategic Reserve, everything still awaiting a feed left in place — so no unvalued coin reaches an allocation. An empty
+fee collector needs no Oracle valuation.
+
+Arithmetic that leaves the representable domain is not a valuation-availability question and gets no reward-side
+fallback: an unrepresentable aggregate fee value or cross-block accumulator fails that BeginBlock transition, matching
+the liability rule in Section 6.2. A window valued from a partially summed pot would misallocate real coins between
+validators and Oracle rather than degrade safely, which is why the reward lane has no conservative branch to take.
 
 The settlement flow runs in Treasury BeginBlock immediately before that block's Distribution execution:
 
 ```text
-stability_tax_collector -> fee_collector: validator_tax coins
-stability_tax_collector -> oracle:       oracle_tax coins
+transfer_tax_collector -> fee_collector: validator_tax coins
+transfer_tax_collector -> oracle:       oracle_tax coins
 treasury_subsidy_pool   -> fee_collector: validator_paid anoah
 treasury_subsidy_pool   -> oracle:        oracle_paid anoah
 ```
@@ -1447,15 +1801,21 @@ is organic transaction-fee value only.
 
 ### 9.3 Cosmos distribution genesis
 
-Cosmos SDK v0.54.3 generates distribution genesis with `community_tax` set to 2%. Ark does not override that SDK default
-in application code. The canonical Ark launch genesis must explicitly set it to zero; otherwise 2% of gas fees and
-validator top-ups is deliberately diverted from validators. Generic `arkd init` output is a development scaffold until
-the canonical launch-genesis configuration is applied.
+Cosmos SDK v0.54.3 generates distribution genesis with `community_tax` set to 2%; left alone, that skims 2% of gas fees
+and validator top-ups away from validators. Ark overrides the default in application code: `app/genesis.go` decorates
+the distribution module basic so its default genesis carries `community_tax = 0`, and `ProvideModuleBasics` in
+`app/app_config.go` installs it in the one BasicManager that `arkd init`, testnet init-files, and the app's own
+`DefaultGenesis` all compose from. Every generated genesis therefore starts at zero without a hand edit;
+`app/genesis_test.go` pins that for the CLI and the app alike. A live chain changes the value only through a governance
+`MsgUpdateParams` to distribution.
 
-Even with `community_tax = 0`, distribution can retain rounding, non-voter, or zero-previous-power residuals in its
-community-pool accounting and may forward whole coins to `x/protocolpool`. This redesign does not fork distribution or
-remove protocolpool. It only ensures Treasury does not deliberately fund a community pool and the configured community
-skim is zero. Treat complete removal or redirection of SDK residuals as a separate policy decision.
+Even with `community_tax = 0`, distribution keeps its internal community-pool ledger, `FeePool.CommunityPool`: rounding
+remainders from allocation and reward withdrawal, a removed validator's residue, and the zero-previous-power fallback
+all land there, and anyone may still deposit through `MsgFundCommunityPool`. `x/protocolpool`, the SDK's external
+custodian for that ledger, is not wired, so the ledger stays inside distribution and distribution's own pool messages
+are the live ones. This redesign does not fork distribution. It only ensures Treasury never deliberately funds the pool
+and the configured community skim is zero; whatever lands there, governance can sweep with `MsgCommunityPoolSpend`.
+Treat complete removal or redirection of SDK residuals as a separate policy decision.
 
 ### 9.4 Oracle reward distribution
 
@@ -1481,18 +1841,18 @@ PreBlock:
 BeginBlock:
   treasury       // refresh caps; observe prior fees; settle the active funding window when due
   distribution   // distribute prior fees plus any settlement-time validator allocation/top-up
-  protocolpool and remaining SDK begin blockers
+  remaining SDK begin blockers
 
 Transaction ante:
   deduct complete declared fee
-  after successful signature/sequence ante, collect exact tax in stability_tax_collector
+  after successful signature/sequence ante, collect exact tax in transfer_tax_collector
 
 EndBlock:
   market         // recover virtual-pool imbalance
   oracle         // settle reward period when due
 ```
 
-Tax collected in block `h` remains in `stability_tax_collector` until the current Treasury window settles. Gas fees
+Tax collected in block `h` remains in `transfer_tax_collector` until the current Treasury window settles. Gas fees
 remain in `fee_collector` only until Distribution BeginBlock `h+1`; Treasury first records their eligible value, so it
 does not need to retain the coins. At a settlement boundary, target-aware validator tax and subsidy allocations join the
 current `fee_collector` balance immediately before Distribution, while Oracle allocations move directly to Oracle. The
@@ -1508,19 +1868,20 @@ updated aggregate, and returns it. `BeginBlocker` owns the height-one gate, comp
 Phase 1 is the only planned Treasury protobuf-changing phase. Every rewritten Treasury proto uses compact launch-only
 field numbering; do not retain deprecated fields or compatibility wrapper messages.
 
-### 10.1 `Params` and `MonetaryPolicy`
+### 10.1 `Params` and `EconomicPolicy`
 
 `Params` stores only governance-owned settings:
 
 ```text
-1 reference_tax_cap                cosmos.base.v1beta1.Coin, launch denom asdr
+1 reference_tax_cap                cosmos.base.v1beta1.Coin, launch denom axdr
 2 reward_funding_window            uint64
+3 transfer_tax_rate                cosmos.Dec / math.LegacyDec, in [0, 1] (D80)
 ```
 
-`MonetaryPolicy` is independent persisted state and is the complete reversible lever set:
+`EconomicPolicy` is independent persisted state and is the complete reversible lever set:
 
 ```text
-1 stability_tax_rate               cosmos.Dec / math.LegacyDec
+1 (reserved; transfer_tax_rate until D80)
 2 validator_block_reward_target    cosmos.Int / math.Int, implicit base-unit NOAH
 3 oracle_block_reward_target       cosmos.Int / math.Int, implicit base-unit NOAH
 4 redemption_buffer_target_ratio   cosmos.Dec / math.LegacyDec
@@ -1532,13 +1893,13 @@ Remove the unused `PolicyConstraints` message.
 
 Validation:
 
-- Every Monetary Policy `LegacyDec` and `math.Int` must be set and representable.
+- Every Economic Policy `LegacyDec` and `math.Int` must be set and representable.
 - Rate/share/ratio fields must be in `[0, 1]`.
 - The three target ratios are independent stock targets; their sum may exceed one. The allocation waterfall, not their
   sum, determines how scarce expansion principal is routed.
 - `Params.reference_tax_cap` must be a nonnegative Coin with a canonical lowercase Ark-native base denomination, and
   `reward_funding_window` must be positive. Each policy reward target must be set and nonnegative.
-- Reward-target/window compatibility is not precomputed during Params, Monetary Policy, or genesis validation. The
+- Reward-target/window compatibility is not precomputed during Params, Economic Policy, or genesis validation. The
   active reward-funding state uses checked addition for each observation and fails the BeginBlock transition if an
   accumulated target is unrepresentable.
 - Keeper-level genesis verifies the reference-cap denomination belongs to Oracle's configured native-stable set.
@@ -1548,10 +1909,10 @@ Validation:
 
 Safe defaults:
 
-- Monetary Policy tax rate, reward targets, and fund target ratios default to zero until launch economics are
+- The Params tax rate and the Economic Policy reward targets and fund target ratios default to zero until launch economics are
   configured.
-- The Params reference cap defaults to zero `asdr`, producing explicit uncapped entries without genesis Oracle prices;
-  the zero Monetary Policy tax rate remains the inert default.
+- The Params reference cap defaults to zero `axdr`, producing explicit uncapped entries without genesis Oracle prices;
+  the zero Params tax rate remains the inert default.
 - Reward-funding window defaults to one chain week.
 - Production genesis must explicitly set all nonzero launch values.
 
@@ -1566,17 +1927,17 @@ prefix 2: ClaimsMandate
 prefix 3: InsuranceReserved
 prefix 4: Claims map[uint64]Claim
 prefix 5: RewardFundingState
-prefix 6: MonetaryMandate
-prefix 7: MonetaryPolicy
+prefix 6: EconomicMandate
+prefix 7: EconomicPolicy
 prefix 8: ClaimsAllowanceUsed
 prefix 9: NextClaimID
 ```
 
-`MonetaryPolicy` is the single stored source for the six reversible economic levers. It is read directly by tax,
+`EconomicPolicy` is the single stored source for the six reversible economic levers. It is read directly by tax,
 reward-funding, fund-target, and expansion-routing paths; those values are not mirrored in Params or the mandate.
 
-`MonetaryMandate` stores the current committee address, chain-derived `uint64` term, half-open activation and expiry
-heights, and complete minimum/maximum bounds for the reversible monetary-policy fields. Its zero-bounded,
+`EconomicMandate` stores the current committee address, chain-derived `uint64` term, half-open activation and expiry
+heights, and complete minimum/maximum bounds for the reversible economic-policy fields. Its zero-bounded,
 empty-committee form is the canonical disabled state. Replacement derives `current.Term + 1` with the wrap behavior
 specified in Section 10.5.
 
@@ -1593,20 +1954,44 @@ Each `Claim` stores:
 ```text
 claim_id                       // keeper-assigned globally monotonic uint64
 submitter                      // committee or governance authority
-origin                         // committee | governance
+origin                         // ClaimAuthority: committee | governance
 mandate_term                   // committee appointment; zero for governance
-incident_reference
+reference                      // bounded pointer to the off-chain case record
 recipient
 amount                         // sdk.Coin; anoah-only at launch
-evidence_reference
-status                         // pending | paid | cancelled
+status                         // pending | paid | cancelled | failed
 submitted_height
-executable_height
-finalized_height
-finalized_by
-cancellation_reason
-cancellation_reference
+closing_height                 // scheduled while pending, actual once not
+cancelled_by                   // ClaimAuthority: unspecified unless vetoed
 ```
+
+One height covers the whole lifecycle. A separate finalisation height would restate `closing_height` rather than add
+to it: settlement happens in the EndBlock of the very block a claim comes due, so a paid or failed claim closes at
+exactly the height submission scheduled — and a cancelled claim never reaches the height it was scheduled for, making
+that height a counterfactual rather than a fact worth keeping. Cancellation therefore overwrites `closing_height` with
+the height of the veto. The cost of the merge is that stored-record validation can no longer check that a cancelled
+claim closed inside its own window; the live guard in the cancellation handler, which refuses from the closing height
+onward, is what actually enforces it.
+
+`origin` and `cancelled_by` are both `ClaimAuthority` — one enum naming the two authority domains, filling two roles:
+the domain that submitted the claim and, if it was vetoed, the domain that ended it. `cancelled_by` is a domain rather
+than an address because the domain is the whole of what a cancellation decides. The governance authority is a
+chain-wide constant, so storing its address states only what the enum already does; and a committee cancellation is
+valid solely from the mandate current at `closing_height`, which leaves that address recoverable from the appointment
+history. Sharing the type also makes `cancelled_by == origin` a meaningful comparison — the committee withdrawing its
+own claim — which two mismatched types could not express. What this gives up is the committee address in the record
+itself, which drops from state to the `EventClaimsMandateSet` history.
+
+`submitter` stays an address for a reason the cancel side does not share: submission is the value-moving act, and it
+stores `mandate_term` beside the address, so the two together pin the exact accountable party for a payout with no
+lookup at all. Cancellation moves no value, consumes no allowance, and records no term.
+
+The record likewise stores no free-text cancellation reason. A cancelled claim already carries which authority vetoed
+it, at what height, and every immutable term it was submitted under; a required reason no rule reads and no party can
+verify adds a field the signer must satisfy without adding a fact anyone can rely on. Where a stated reason exists it
+is already on chain in the governance proposal that carried the cancellation.
+
+Payment records no authority because there is none: see the settlement paragraph below.
 
 `RewardFundingState` stores one remaining-observation countdown, accumulated validator and Oracle targets,
 contemporaneously valued eligible validator fees, and a valuation-completeness flag. It stores neither tax coins nor
@@ -1625,7 +2010,7 @@ passed proposal is a second explicit authorisation, regardless of any caller-cho
 
 No old store layout is preserved. Remove:
 
-- `TaxRate` item; the rate lives in `MonetaryPolicy`.
+- `TaxRate` item; the rate lives in `EconomicPolicy`.
 - `RewardWeight`.
 - `EpochTaxProceeds`.
 - `EpochInitialIssuance`.
@@ -1654,21 +2039,21 @@ Rewrite `GenesisState` with compact launch-only fields:
 6 next_claim_id
 7 claims
 8 reward_funding
-9 monetary_mandate
-10 monetary_policy
+9 economic_mandate
+10 economic_policy
 ```
 
 Subsidy pool, Redemption Buffer, strategic Reserve, and Insurance balances live only in bank genesis. Every fund may
 begin only with `anoah`. Redemption Buffer and strategic Reserve count their complete balances toward their targets;
 Insurance subtracts any imported reservation to derive its unencumbered balance. Treasury InitGenesis never mints them.
 
-Default genesis disables Claims and monetary delegation, stores the zero Monetary Policy and zero reference cap, derives
+Default genesis disables Claims and economic delegation, stores the zero Economic Policy and zero reference cap, derives
 a complete explicit-zero uncapped map, and uses zero accounting, no claims, and the canonical empty reward-funding state.
 Production genesis must supply the approved P4 policy, zero accounting, and no pending/completed claims unless an explicit
 test or export/import case requires otherwise. InitGenesis validates the canonical committee address, role separation,
 unique claims, claim-status transitions, reservation sum, and `insurance_reserved <= insurance_anoah_balance`.
-Export/import preserves the mandate, Insurance reservation, immutable claim fields, executable heights, finalizers, and
-statuses.
+Export/import preserves the mandate, Insurance reservation, immutable claim fields, closing heights, cancelling
+authorities, and statuses.
 
 Reserve-to-Buffer history requires no Treasury genesis field. Bank genesis/export preserves the resulting account
 balances, while governance genesis/export preserves the authorising proposals and outcomes.
@@ -1678,7 +2063,7 @@ genesis if any contains a non-NOAH coin. This closes the one path that does not 
 restriction.
 
 Keeper-level InitGenesis must validate the Params reference-cap denomination against Oracle's configured native-stable
-set and establish a complete cap set regardless of the Monetary Policy tax rate. It verifies that a supplied set covers
+set and establish a complete cap set regardless of the Params tax rate. It verifies that a supplied set covers
 every configured native stable and exactly matches the effective reference Coin, or fully derives it from valid genesis
 Oracle prices. A zero reference cap instead derives a complete explicit-zero uncapped set without prices. Supplied
 derived caps must all be zero when the reference cap is zero and positive when the reference cap is positive.
@@ -1688,23 +2073,36 @@ derived caps must all be zero when the reference cap is zero and positive when t
 The launch Query service exposes only:
 
 - `Params`.
-- `MonetaryPolicy` returning the current six reversible lever values.
-- `MonetaryMandate` returning the governed appointment and whether it is active at the current height.
+- `EconomicPolicy` returning the current six reversible lever values.
+- `EconomicMandate` returning the governed appointment and whether it is active at the current height.
 - `TaxCap(denom)`.
 - `TaxCaps`.
 - `ComputeTax(messages)` using repeated `google.protobuf.Any` annotated as SDK messages.
 - `FundStatus` returning:
-  - `nominal_liability_noah_equivalent` as an `sdk.DecCoin` explicitly denominated in `anoah`;
-  - `subsidy_pool_balance` as the current subsidy-pool `anoah` `sdk.Coin`, including accepted deposits;
+  - `priced_liability` and `settlement_liability` as `sdk.DecCoin` values in `anoah`,
+    valuing ACTIVE/ISSUANCE_HALTED supply at Oracle rates and SUSPENDED supply under an open plan at its committed rate;
+  - `stale_priced_liability` as an `sdk.DecCoin` valuing stale members at their last known rate, kept
+    apart from the priced bucket because the rate behind it failed the freshness gate;
+  - `stale_member_supply`, `untrusted_suspended_supply`, and `written_off_exposure` as the three disclosure lists
+    naming every exposure excluded from those buckets — respectively members whose feed is stale or absent, suspended
+    supply with no plan, and derecognized supply. A non-empty one of the first two is what says a recognized exposure
+    went unvalued, below which every target is zero; the third does not bear on it. No separate availability flag is
+    returned, because it would restate what those lists already say;
+  - `nominal_liability` as an `sdk.DecCoin` explicitly denominated in `anoah`;
   - `redemption_buffer_balance` and `redemption_buffer_target` as `sdk.Coin` values in `anoah`;
   - `strategic_reserve_balance` and `strategic_reserve_target` as separate `sdk.Coin` values;
-  - `insurance_balance`, `insurance_reserved`, `insurance_unencumbered_balance`, and `insurance_target` as separate
-    `sdk.Coin` values.
+  - `insurance_balance` and `insurance_target` as separate `sdk.Coin` values;
+  - `subsidy_pool_balance` as the current subsidy-pool `anoah` `sdk.Coin`, including accepted deposits.
 - `RewardFunding` returning the stored aggregate state, including `blocks_remaining`, without requiring Oracle prices or
   fund valuation. The separate `Params` query exposes the configured length that the next empty state will use.
-- `ClaimsMandate` returning the current committee appointment, Insurance reservation, allowance used/remaining, and
-  whether the appointment is active at the current height; the shared cancellation period is exposed by the `Params`
-  query.
+- `ClaimsMandate` returning the current committee appointment, allowance used/remaining, and whether the appointment is
+  active at the current height; the shared cancellation period is exposed by the `Params` query. Every figure it returns
+  is term-scoped and resets with a mandate replacement.
+- `InsuranceBalance` returning the fund's custody balance and the amount reserved against pending claims, both `anoah`
+  `sdk.Coin` values, as is every quantity the Claims Query service returns.
+  These answer separately from the mandate because neither is term-scoped: the reservation spans the pending claims of
+  every mandate and a replacement never clears it, so returning it beside figures that do reset invites reading the two
+  at the same scope. Their difference is the recognised capital `FundStatus` reports.
 - `Claim(claim_id)`. Its canonical REST binding is `GET /ark/treasury/v1/claims/{claim_id}`.
 - `Claims` as a paginated audit and operations view of claim records.
 
@@ -1712,8 +2110,10 @@ Do not add a Treasury Reserve-transfer history query. `FundStatus` and Bank quer
 authorising governance proposal, signed Treasury message, and standard Bank transfer event expose the action history.
 
 At launch, the Buffer and Reserve balances count in full toward their targets. `FundStatus` must additionally return
-`insurance_balance`, `insurance_reserved`, `insurance_unencumbered_balance`, and `insurance_target` as separate
-`sdk.Coin` values, with the unencumbered balance equal to balance minus reservations. The standard paginated Bank query
+`insurance_balance` and `insurance_target` as separate `sdk.Coin` values, where the balance is the capital `x/claims`
+recognises — its module balance less the reservation held against approved pending claims. Treasury asks `x/claims` for
+that figure rather than reading the Insurance account and re-deriving it; the reservation itself is `x/claims` state,
+exposed by its own `InsuranceBalance` query, and `FundStatus` does not restate it. The standard paginated Bank query
 remains the canonical custody view. `FundStatus` must not return a combined backing or health percentage. The launch
 query exposes only nominal liability; a later risk-exposure target model must add explicit fund-specific exposure fields
 rather than overloading that value. Future external-asset queries must report gross custody, recognised value,
@@ -1722,7 +2122,7 @@ one opaque balance.
 
 Remove:
 
-- `TaxRate` as a separate state query; read it through `MonetaryPolicy`.
+- `TaxRate` as a separate state query; read it through `EconomicPolicy`.
 - `RewardWeight`.
 - `SeigniorageProceeds`.
 - `TaxProceeds`.
@@ -1744,27 +2144,43 @@ authoritative and may change through an ordinary deposit at any time.
 
 ### 10.5 Messages
 
-The launch Msg service exposes:
+The claim messages moved to the `x/claims` Msg service with D54, under the `ark.claims.v1` package and the
+`ark/claims/` Amino prefix. Their signers, validation, and semantics are unchanged; only their home is. Every name
+stays inside the 39-character Amino limit, and the shorter path is what buys the headroom.
+
+The launch Treasury Msg service exposes:
 
 Governance-signed messages:
 
 - `MsgUpdateParams`.
-- `MsgSetMonetaryMandate`.
-- `MsgUpdateMonetaryPolicy`.
-- `MsgSetClaimsMandate`.
-- `MsgSubmitClaim`.
-- `MsgCancelClaim`.
-- `MsgTransferReserveToBuffer`.
+- `MsgSetEconomicMandate`.
+- `MsgUpdatePolicy`.
 
 Committee-signed messages (term-checked, one exact appointed committee each):
 
-- `MsgCommitteeUpdateMonetaryPolicy`.
+- `MsgCommitteeUpdatePolicy`.
+
+The `x/reserve` Msg service exposes one governance-signed message,
+`MsgTransferReserveToBuffer`, under the `ark.reserve.v1` package and the `ark/reserve/` Amino prefix (D55). Its
+signer, validation, and semantics are unchanged; only its home is.
+
+The `x/claims` Msg service exposes:
+
+Governance-signed messages:
+
+- `MsgUpdateParams`, carrying the governance-owned `claim_cancellation_period_blocks`, which moved out of Treasury
+  `Params` with the mandate it governs.
+- `MsgSetClaimsMandate`.
+- `MsgSubmitClaim`.
+- `MsgCancelClaim`.
+
+Committee-signed messages (term-checked, one exact appointed committee each):
+
 - `MsgCommitteeSubmitClaim`.
 - `MsgCommitteeCancelClaim`.
 
-Permissionless messages:
-
-- `MsgExecuteClaim`.
+There are no permissionless claim messages. Settlement is the only remaining transition and the chain performs it
+itself, so no role signs for it.
 
 Every action a committee may take is its own message type, so the complete committee surface is enumerable from the
 proto service alone rather than by reading handler branches. This matches `x/asset`'s emergency mandate and the future
@@ -1772,7 +2188,7 @@ Reserve mandate in Section 20.2. The governing principle: **roles with disjoint 
 get separate messages per role; one message serves several roles only when they are the same action under the same
 rules.** In Treasury no role passes that second test — governance and each committee differ in staleness guard,
 allowance metering, or cancellable set — so every role gets its own message. Each handler is one positive authorization
-assertion followed by a shared keeper core (`applyMonetaryPolicy`, `submitClaim`, `cancelClaim`), so effect logic
+assertion followed by a shared keeper core (`applyEconomicPolicy`, `submitClaim`, `cancelClaim`), so effect logic
 cannot drift between roles while authorization stays legible per message.
 
 Two consequences of the split are deliberate. Governance messages carry no `expected_term`, because no governance
@@ -1785,52 +2201,91 @@ Do not add `MsgFundSubsidyPool`, `MsgFundRedemptionBuffer`, `MsgFundReserve`, or
 ordinary bank `MsgSend`/`MsgMultiSend` paths plus Treasury's recipient-specific restriction, so they need no Treasury
 message, signer rule, receipt, or persistent record.
 
-`MsgSetMonetaryMandate` is governance-signed and replaces the complete committee appointment. Treasury derives the next
+`MsgSetEconomicMandate` is governance-signed and replaces the complete committee appointment. Treasury derives the next
 term as `current.Term + 1`. The reviewed implementation has no separate maximum-term exhaustion check: a nonempty
 appointment whose increment wraps to zero is rejected by configured-mandate validation, while an empty disablement can
 store the wrapped zero term. An empty committee otherwise disables the mandate; a configured message supplies the exact
 committee address, half-open activation/expiry heights, and complete minimum/maximum policy bounds.
 
-`MsgUpdateParams` is governance-only and replaces the complete governance-owned settings, including the reference-cap
-Coin and `claim_cancellation_period_blocks`, the shared claim veto window for both origins. It cannot change a tax
-rate, reward target, or fund target ratio.
+Treasury's `MsgUpdateParams` is governance-only and replaces the complete governance-owned settings, including the
+reference-cap Coin. It cannot change a tax rate, reward target, or fund target ratio. The shared claim veto window for
+both origins, `claim_cancellation_period_blocks`, is now `x/claims`' own governance-owned param (D54); keeping it
+outside the mandate is what stops a mandate replacement from changing it.
 
-`MsgCommitteeUpdateMonetaryPolicy` contains one complete candidate policy signed by the exact stored committee. It is
+`MsgCommitteeUpdatePolicy` contains one complete candidate policy signed by the exact stored committee. It is
 accepted only during the active term and window, with the current expected term and every field inside the mandate
-bounds. `MsgUpdateMonetaryPolicy` is the governance form of the same effect: it applies any structurally valid
+bounds. `MsgUpdatePolicy` is the governance form of the same effect: it applies any structurally valid
 candidate, overriding those bounds without depending on the mandate at all. Neither path may change the
-governance-owned reference cap in Params. Because the protobuf-derived Amino name of the committee message exceeds the
-SDK type-name limit, it registers under the compact identifier `ark/x/treasury/MsgCommitteeUpdatePolicy`, following the
-`MsgTransferToBuffer` precedent; its protobuf message name, RPC name, signer, and semantics are unchanged.
+governance-owned reference cap in Params. Its Amino name is `ark/treasury/MsgCommitteeUpdatePolicy` — the
+protobuf-derived name under the module prefix, inside the SDK 39-byte type-name limit.
 
 `MsgSetClaimsMandate` is governance-signed and replaces or disables the complete committee appointment. Treasury derives
 a new monotonically increasing term. An empty committee disables the mandate; otherwise the message supplies the exact
-committee, half-open activation/expiry heights, and a positive fixed `anoah` committee claim limit. The Claims
-committee, monetary-policy committee, and Treasury authority must be distinct addresses. The current params
+committee, half-open activation/expiry heights, and a positive fixed committee claim limit. That limit is an `sdk.Coin`
+rather than a bare amount, so its `anoah` denomination is validated rather than assumed, and it reads at the same
+shape as the allowance figures the Query service reports against it. The Claims
+committee must be a distinct address from the Treasury authority; it may be the same address as the
+economic-policy committee. The current params
 cancellation period must not exceed `expiry_height - activation_height`; equality permits a claim at the activation
-boundary to become executable exactly at expiry. A successful replacement resets Claims allowance used to zero without
+boundary to close exactly at expiry. A successful replacement resets Claims allowance used to zero without
 changing the Insurance reservation.
 
 `MsgCommitteeSubmitClaim` is signed by the exact committee and `MsgSubmitClaim` by the governance authority. Both
 validate the same positive `anoah` amount, recipient, references, and live Insurance coverage, and both derive the
-executable height from the params cancellation period. Only the committee message carries `expected_term`: it is
-accepted only during the active window, its executable height must not pass mandate expiry, and its claim stores the
+closing height from the params cancellation period. Only the committee message carries `expected_term`: it is
+accepted only during the active window, its closing height must not pass mandate expiry, and its claim stores the
 mandate term, while a governance submission never reads the mandate and stores term zero. The recipient must be
 neither the Insurance account itself nor any address Bank currently blocks from receiving module-account sends.
 Treasury assigns the next globally monotonic `uint64` claim ID, returns it in the response, and reserves the amount
 without moving coins. The message type decides the immutable stored origin: committee submissions must fit within and
-permanently consume the current term allowance; governance submissions do not consume it. `MsgExecuteClaim` is permissionless at or after
-the stored executable height and pays only the immutable stored recipient and amount, independent of later mandate
-replacement, disablement, or expiry. Genesis persists the next claim ID and enforces the same Bank-receivability
-invariant for pending claims; an app upgrade that changes the blocked set must explicitly migrate any affected pending
-claim.
+permanently consume the current term allowance; governance submissions do not consume it. Genesis persists the next
+claim ID and enforces the same Bank-receivability invariant for pending claims; an app upgrade that changes the blocked
+set must explicitly migrate any affected pending claim.
+
+**Settlement is automatic and carries no message.** The `x/claims` EndBlocker pays every pending claim at or after its
+stored closing height, using only the immutable stored recipient and amount, independent of later mandate
+replacement, disablement, or expiry. Requiring a signer would have made payment a liveness problem rather than a
+protocol one: an unsettled claim is not merely unpaid but permanently encumbering, since its reservation continues to
+depress the capital `x/claims` reports to Treasury for as long as it stands — and the recipient, who by construction
+has just suffered the covered loss, is the party least able to send the transaction. Nothing about paying a stored
+claim is discretionary, so nothing is lost by removing the signer.
+
+**The sweep is uncapped, deliberately.** A per-block execution limit would bound nothing consensus does not already
+bound. Every claim costs a transaction, so the claims created in any one block already fit inside that block's limits;
+and because the cancellation period is a single stored value, due heights are simply the submission heights shifted by
+it. One settling block therefore answers exactly one submitting block, at comparable per-claim store cost — the
+amplification is a constant factor over work a valid block already carried, not an unbounded burst. Shortening the
+period does not break this: stored heights are never rewritten, so the worst collision puts one old block's claims and
+one new block's on the same height. A cap would only defer payments the chain had already accepted the cost of, which
+is the stall automatic settlement exists to remove. The one path the argument does not cover is genesis, which is not
+gas-metered — but an import of N pending claims already validates and writes all N, so the import dominates the first
+sweep, and its content is a deliberate operator artefact.
+
+Each payment runs against a cache, so a failure writes nothing of its own. **A claim the chain cannot pay ends
+`failed`, not pending**, and its reservation is released with it: nothing about a due claim changes with height — the
+amount, the recipient, and the coverage test are all fixed — so a retry would re-run an identical computation, and a
+claim left queued would encumber Insurance forever. A failure means an invariant broke and wants investigating.
+`EventClaimFailed` carries no reason: the cause is a chain-generated error, and putting error text in state or in a
+consensus-visible field would make message formatting consensus-critical. It goes to the node log. No reachable
+failure is known in any case — Insurance pays out through this path alone, submission holds `balance >= reserved`, and
+the Bank-blocked set is fixed at app wiring.
+
+A queue entry that disagrees with its claim is dropped without touching the record, rather than treated as a failed
+payment, so a divergence cannot overwrite the status of a claim already paid or cancelled. The sweep removes the key it
+iterated rather than one rebuilt from the record, so such an entry cannot outlive its sweep.
+
+Settlement and the veto window cannot contend for the same claim. Cancellation is refused from the closing height
+onward, so a claim stops being cancellable when block H opens and is settled after that same block's transactions.
+The EndBlocker ordering in `app_config.go` places Claims after `x/gov` for readability, but correctness does not
+depend on it.
 
 `MsgCancelClaim` is signed by the governance authority and `MsgCommitteeCancelClaim` by the exact current committee.
-Both may cancel only before the stored executable height. Governance may cancel any pending claim without depending on
+Both may cancel only before the stored closing height. Governance may cancel any pending claim without depending on
 the current Claims Mandate, so its message carries no expected term. The committee must be in the current active
 appointment, supply its exact expected term, and may cancel only a claim whose immutable origin is not governance.
-Cancellation releases the reservation and records the signer in `finalized_by`; no separate governance-cancellation
-flag is stored.
+Cancellation releases the reservation, drops the claim from the settlement queue, records the vetoing domain in
+`cancelled_by`, and emits `EventClaimCancelled`; no separate governance-cancellation flag is stored. Neither message
+carries a reason or reference: see the claim record above.
 
 `MsgTransferReserveToBuffer` contains:
 
@@ -1847,7 +2302,7 @@ It validates the general Treasury authority, which is `x/gov` at launch. Both Co
 positive and `minimum_reserve_balance` nonnegative. The handler enforces sufficient Reserve balance and
 `post_transfer_reserve_balance >= minimum_reserve_balance`, then performs the fixed module-to-module transfer described
 in Section 6.4. It must not read Oracle rates, calculate targets, accept an arbitrary recipient, convert an asset, call
-Market, or create transfer-history state. The message has zero stability-tax principal as a Treasury governance action,
+Market, or create transfer-history state. The message has zero transfer-tax principal as a Treasury governance action,
 and its internal Bank movement is not independently taxed.
 
 Do not add `MsgWithdrawReserve`, a Buffer-to-Reserve message, a generic deployment recipient, or any other Reserve
@@ -1857,7 +2312,7 @@ remain outside this message.
 ### 10.6 Module config
 
 Keep only field 1 `authority`, defaulting to the governance module account. The Claims committee address lives in
-governance-controlled Claims Mandate state, and the monetary-policy committee lives in its governed mandate state, not
+governance-controlled Claims Mandate state, and the economic-policy committee lives in its governed mandate state, not
 immutable app module configuration. The Reserve-to-Buffer message uses the general authority and adds no
 `reserve_authority` configuration. Do not reserve or retain `claims_authority` or `reward_collector_name` in this
 fresh-genesis schema.
@@ -1866,13 +2321,15 @@ fresh-genesis schema.
 
 Replace legacy policy/seigniorage events with:
 
-- `ark.treasury.v1.EventTaxCapsUpdated` with the complete typed `tax_caps` set, and
-  `ark.treasury.v1.EventTaxCapsUpdateSkipped` with an `EventSkipReason`; detailed errors remain in logs.
+- `ark.treasury.v1.EventTaxCapsRefreshed` with the typed `tax_caps` a pass wrote (renamed from
+  `EventTaxCapsUpdated` on 2026-08-10 so the cap rebuild and the D72 exposure refresh, which share the
+  period/pending/retry mechanism, share its vocabulary; the skip event was never built — a pass that cannot
+  derive leaves `tax_cap_refresh_pending` raised and retries, and the detail stays in logs).
 - `ark.treasury.v1.EventBlockRewardsToppedUp` with the `anoah` denomination and separate validator/Oracle target,
   organic-funding, and exact-payment amounts. Shortfall is derived from target and organic funding, while the remaining
   subsidy balance is queryable Bank state.
 - `ark.treasury.v1.EventBlockRewardTopUpSkipped` with an `EventSkipReason`; detailed errors remain in logs, and collected
-  stability tax is sent entirely to Oracle.
+  transfer tax is sent entirely to Oracle.
 - `ark.treasury.v1.EventExpansionAllocated` with the `anoah` denomination, separate Buffer, strategic Reserve, and
   Insurance credits, separate spread/dust and overflow burns, and the target-valuation-complete flag. Eligible
   principal, gross offer, total burn, and conservative fallback are derived from these fields; Market's
@@ -1885,16 +2342,16 @@ Replace legacy policy/seigniorage events with:
 
 Policy updates, claim cancellations, and governed Reserve transfers rely on their signed messages and stored state or
 canonical Bank events. `EventClaimSubmitted` records the generated ID that is absent from the signed submission;
-stability-tax collection and allocation rely on their fixed module-to-module Bank movements. `EventClaimPaid` remains
+transfer-tax collection and allocation rely on their fixed module-to-module Bank movements. `EventClaimPaid` remains
 as the domain link between a claim ID and its Bank payment.
 
 Do not add a Treasury-specific deposit event for any fund. The canonical bank transfer event already records sender,
 recipient, and coins; standard Bank queries report custody, while `FundStatus` reports target comparison balances. Every
-accepted launch deposit is `anoah` and therefore has no stability-tax principal.
+accepted launch deposit is `anoah` and therefore has no transfer-tax principal.
 
-On incomplete aggregate valuation, `EventRedemptionBufferDrawn` records Buffer payment zero and sets
-`aggregate_valuation_complete = false`, distinguishing the conservative fallback from a complete zero draw without
-exporting internal liability valuations.
+On incomplete aggregate valuation, `EventRedemptionBufferDrawn` records the actual claimable-coverage payment and sets
+`aggregate_valuation_complete = false`, disclosing that the draw ran while some recognised exposure was excluded from
+the denominator, without exporting internal liability valuations.
 
 Likewise, an incomplete expansion target valuation records the complete Buffer credit, spread/dust burn, zero
 Reserve/Insurance/overflow amounts, and `target_valuation_complete = false`. Market owns the gross offer, stable output,
@@ -1995,15 +2452,15 @@ All core launch-policy decisions D1 through D33 are confirmed. This includes:
   automatically resets when a fund is refilled.
 - Apply one tax cap per taxable input/denomination pair across every enabled user-facing bank, Market-send, Wasm, and
   IBC transfer boundary, without taxing arbitrary internal bank movements.
-- Store the canonical tax cap as a governance-changeable Coin launching in `asdr`, independent from Treasury's direct
+- Store the canonical tax cap as a governance-changeable Coin launching in `axdr`, independent from Treasury's direct
   NOAH-equivalent liability valuation and Market's changeable pool unit.
-- Make `BasePool` a denomination-bearing `sdk.DecCoin` launching in `asdr`, and support one live pool-unit transition
+- Make `BasePool` a denomination-bearing `sdk.DecCoin` launching in `axdr`, and support one live pool-unit transition
   through the existing `MsgUpdateParams` without adding a transition object, message, or parallel pool.
 - Treat submitted `BasePool.Amount` as a non-binding audit expectation on a denomination change; retain it in the
   transaction, derive and store the amount from one fresh deterministic conversion, emit the old and applied pool state,
   and atomically rescale `ArkPoolDelta`.
 - Price stable-to-stable conversion directly and keep Treasury fund calculations independent of Market's pool unit.
-- Keep `asdr` as a normal supported offer and output after the basket becomes the flagship and Market pool unit; the
+- Keep `axdr` as a normal supported offer and output after the basket becomes the flagship and Market pool unit; the
   pool-denomination change does not alter stablecoin mint eligibility.
 
 P1 numerical launch configuration and P4 Claims Mandate operating values remain pending before launch. P2 virtual-pool
@@ -2066,12 +2523,10 @@ Rewrite:
 - `x/treasury/types/expected_keepers.go`.
 - `x/treasury/types/codec.go`.
 
-Add:
-
-- `x/treasury/types/allocation.go` and tests for the handwritten, non-protobuf `ExpansionAllocation` and `BufferDraw`
-  execution results and derived total burn. These types contain amounts and audit classification only; they store no
-  account names, addresses, rates, mutable maps, or keeper references. Treasury constructs the result through checked,
-  bounded arithmetic and returns an error instead of exposing a separate result-validation API.
+No execution-result type is added. Both fund entry points return bare values — `RouteExpansion` the `anoah` burn coin,
+`DrawRedemptionBuffer` the `anoah` payment — and publish the eligible principal, credit split, burn causes, and
+completeness flags through their typed events instead. Treasury constructs those figures through checked, bounded
+arithmetic and returns an error rather than exposing a separate result-validation API.
 
 Add only if stable module error codes are needed:
 
@@ -2105,7 +2560,7 @@ Rewrite:
 Add:
 
 - `x/treasury/keeper/tax.go` and tests.
-- `x/treasury/keeper/funds.go` and tests.
+- `x/treasury/keeper/capital.go` and tests.
 - `x/treasury/keeper/liability.go` and tests for the lazy block-local liability snapshot and exact supply-delta updates.
 - `x/treasury/keeper/reward_funding.go` and tests.
 - `x/treasury/keeper/claims.go` and claims coverage in the message-server tests.
@@ -2121,22 +2576,27 @@ Claim-submission tests must cover an actual Legacy Amino threshold multisig; wro
 nonexistent signer account, account sequence and fee behavior; expected-term mismatch for the committee;
 role disjointness in both directions, proving neither role can act through the other's message even while both are
 live; not-yet-active and expired mandate for the committee alongside governance submission that ignores the window
-and the disabled sentinel; keeper-assigned globally monotonic claim IDs, sequence exhaustion, bounded
-incident/evidence references, and numeric REST lookup; recipient validation; rejection of Insurance and Bank-blocked
+and the disabled sentinel; keeper-assigned globally monotonic claim IDs, sequence exhaustion, the bounded required
+reference, and numeric REST lookup; recipient validation; rejection of Insurance and Bank-blocked
 recipients before any accounting write; positive `anoah`-only amounts; pending-reservation and held-balance boundaries;
-checked executable-height addition; rejection when the cancellation period would cross mandate expiry; atomic rollback;
+checked closing-height addition; rejection when the cancellation period would cross mandate expiry; atomic rollback;
 no Bank send on submission; and pending-genesis recipient validation.
 
-Execution tests must prove that any fee-paying caller can execute only the immutable stored claim at or after its
-executable height, including after mandate replacement, disablement, or expiry; cannot alter recipient, amount,
-reference, origin, or mandate term; cannot execute twice; and rolls back claim state, reservation, balance, and events
-on Bank failure. Cancellation tests must prove governance can cancel any pending claim before the executable height
-without depending on the current mandate, while the committee must hold the current active appointment and exact term
-and cannot cancel a governance-origin claim. Both paths release the exact reservation and move no coin.
+Settlement tests must prove the EndBlocker pays the immutable stored claim at, and never before, its closing
+height, including after mandate replacement, disablement, or expiry; alters no recipient, amount, reference, origin, or
+mandate term; never pays a cancelled claim or pays one twice; settles the whole due queue on one block, both for a
+backlog already overdue and for many claims sharing a height; ends an unpayable claim `failed` with its reservation
+released, terminally and without stalling the claims behind it; and drops a queue entry that disagrees with its claim
+without rewriting that claim's status. Cancellation
+tests must prove governance can cancel any pending claim before the closing height without depending on the current
+mandate, while the committee must hold the current active appointment and exact term and cannot cancel a
+governance-origin claim. Both paths release the exact reservation, clear the settlement queue entry, and move no coin.
 
-Target tests must prove `insurance_unencumbered_balance = insurance_balance - insurance_reserved`: submission opens the
-gap without moving coins; execution decreases balance and reservation equally without opening a second gap; and
-cancellation releases the reservation and closes the corresponding gap. None changes required exposure or the target.
+Target tests must prove the recognised Insurance capital `x/claims` reports is its module balance less
+`insurance_reserved`, which is the `insurance_balance` `FundStatus` returns: submission opens the gap without moving
+coins; settlement decreases balance and reservation equally without opening a second gap; and cancellation releases the
+reservation and closes the corresponding gap. None changes required exposure or the target. That settlement leaves
+recognised capital unchanged is also why no EndBlocker ordering constraint arises against Treasury.
 
 Reserve-to-Buffer message and fund tests must cover general-authority validation; positive exact `anoah`; rejection of
 zero, malformed, or wrong-denomination Coins; insufficient Reserve balance; the per-proposal minimum remaining balance;
@@ -2158,13 +2618,13 @@ lower-level pure primitives from that implementation, but none may copy the form
 calculator must accept each execution-generated transfer as a separate taxable input so execution boundaries preserve per-input caps
 without double-assessing any transfer already covered by ante.
 
-Keep target gaps, `RouteExpansion`, and coverage-based Buffer funding in `funds.go`. Keep the shared aggregate
+Keep target gaps, `RouteExpansion`, and coverage-based Buffer funding in `capital.go`. Keep the shared aggregate
 valuation and transient snapshot mechanics in `liability.go`. Keep reward-window observation and settlement in
 `reward_funding.go`, Claims lifecycle handling in `claims.go`, and the governed Reserve-to-Buffer handler in
 `msg_server.go`. Inject Treasury's module-scoped `store.TransientStoreService`; the cache is derived state with no
 genesis field, export surface, or migration. Use the shared `RateSet.Convert` path and checked `LegacyDec`
 aggregation consistently for nominal liability, target exposure, expansion-principal valuation, and redemption
-coverage. Treasury fund logic must have no permanent `SDRBaseDenom` dependency.
+coverage. Treasury fund logic must have no permanent `XDRBaseDenom` dependency.
 
 `RouteExpansion` must validate positive `anoah` gross input and native-stable output, preserve every existing caller
 quote rate, add only missing liability rates, derive eligible principal from the final integer output, reject output
@@ -2176,11 +2636,11 @@ spread/dust and overflow burn
 distinct and contains no redundant stored total burn. An unrelated missing aggregate rate uses the Buffer-only fallback,
 while inability to value `stable_output` itself fails before any transfer.
 
-The first `RouteExpansion` or `DrawRedemptionBuffer` that needs aggregate liability in a block must scan the configured
-stable supplies and capture missing rates, then write the NOAH-equivalent value to transient storage only when the
-valuation is complete. An incomplete valuation is not cached and may be retried by a later settlement. A complete
-snapshot must advance only through `RecordSupplyChange` after Market has successfully applied the corresponding burn and
-mint. The update ignores NOAH supply changes, values every stable delta with the conversion quote's fixed rate values,
+The preblocker primes the block's snapshot; the first `RouteExpansion` or `DrawRedemptionBuffer` that finds none (the
+lazy fallback) must scan the configured stable supplies and capture missing rates, then write the claimable
+NOAH-equivalent value and its completeness flag to transient storage. Rates are fixed for the block, so an incomplete
+valuation is cached like a complete one. The snapshot must advance only through `RecordSupplyChange` after Market has
+successfully applied the corresponding burn and mint. The update ignores NOAH supply changes, values every stable delta with the conversion quote's fixed rate values,
 rejects underflow or unrepresentable arithmetic, and is included for stable-to-stable conversions. With no snapshot it
 is a no-op. Direct queries must not read the transient cache.
 
@@ -2200,8 +2660,8 @@ large representable values, overflow/unrepresentable values, zero and overfunded
 incomplete-valuation fallback, split-versus-unsplit floor rounding, zero aggregate liability, redeemed liability
 exceeding aggregate liability, quoted output exceeding redeemed liability, non-decreasing post-redemption coverage, and
 zero draw without a bank-send call. For identical pre-trade balances and liabilities, changing
-`redemption_buffer_target_ratio` must not change the coverage-based draw. An absent SDR rate must be irrelevant
-when `asdr` supply is zero, while nonzero `asdr` supply still requires a fresh `asdr`/NOAH valuation like every other
+`redemption_buffer_target_ratio` must not change the coverage-based draw. An absent XDR rate must be irrelevant
+when `axdr` supply is zero, while nonzero `axdr` supply still requires a fresh `axdr`/NOAH valuation like every other
 outstanding liability.
 
 Target-gap calculation must read each fund account's `anoah` Bank balance at launch and subtract `InsuranceReserved`
@@ -2216,7 +2676,7 @@ read the Buffer balance, invoke the valuation helper, emit a custom event, or st
 Phase 1 must deliver the complete final calculator and `ComputeTax` query described in Section 8, including bank send,
 multi-send inputs, `MsgSwapSend`, `MsgSwap`, recursive authz, denomination filtering, independent per-input and
 per-denomination caps, and malformed-message behavior. It must also atomically rebuild all derived caps when the
-effective reference Coin changes; tests cover a successful `asdr`-to-another-denom switch, direct reference-cap
+effective reference Coin changes; tests cover a successful `axdr`-to-another-denom switch, direct reference-cap
 copying, missing/stale-rate rollback, invalid candidate denoms, and export/import. Phase 4 wires the reviewed calculator
 into ante and every enabled Wasm/IBC execution boundary; it does not invent the tax semantics later.
 
@@ -2260,7 +2720,8 @@ Add:
 
 - `x/treasury/module/send_restriction.go` and tests: for all four Treasury fund recipients, accept only a positive
   `sdk.Coins` value consisting solely of `anoah` and reject every mixed or non-NOAH set; pass through every unrelated
-  recipient. The restriction owns no state, conversion, or redirection.
+  recipient, and pass through the exact `transfer_tax_collector` to `strategic_reserve` pair so settlement
+  can route derecognized transfer tax into Reserve custody. The restriction owns no state, conversion, or redirection.
 
 Restriction tests must also compose a preceding address-rewriting restriction and prove Treasury applies the NOAH-only
 rule to the rewritten final destination. Because Treasury is recipient-based, outbound reward top-ups and Insurance
@@ -2275,16 +2736,16 @@ a misleading half-wired surface.
 
 Modify `app/app_config.go` narrowly:
 
-- Register `treasury_subsidy_pool`, `treasury_redemption_buffer`, `treasury_strategic_reserve`, and
-  `treasury_insurance`, all with no permissions. Do not register a module account named exactly `treasury`.
-- Register blocked `stability_tax_collector` with no permissions; it is the active reward-funding-window staging
+- Register `treasury_subsidy_pool`, `treasury_redemption_buffer`, `strategic_reserve`, and
+  `claims_insurance`, all with no permissions. Do not register a module account named exactly `treasury`.
+- Register blocked `transfer_tax_collector` with no permissions; it is the active reward-funding-window staging
   account, not a Treasury fund.
 - Remove Treasury's `Minter` permission.
 - Leave the subsidy pool, Redemption Buffer, strategic Reserve, and Insurance accounts out of the explicit bank blocked
   list so ordinary deposits may reach them; enforce the fund-specific denomination rules through Treasury's send
   restriction.
 - Keep every required infrastructure account blocked and explicitly include at least Market, Oracle,
-  `stability_tax_collector`, and `fee_collector`; the override replaces rather than augments the SDK default list.
+  `transfer_tax_collector`, and `fee_collector`; the override replaces rather than augments the SDK default list.
 - Set Bank `RestrictionsOrder` explicitly with Treasury last. At launch Treasury is the only planned provider, so the
   list is exactly `[treasury]`.
 - Preserve Bank-before-Treasury InitGenesis ordering so Treasury can reject non-NOAH genesis balances in all four fund
@@ -2304,16 +2765,16 @@ deposits, and are distinct from one another and from the Treasury subsidy-pool a
 
 - Every fund accepts positive `anoah` and rejects every non-NOAH or mixed-denom deposit atomically.
 - A rejection leaves the rejected principal transfer and every `MsgMultiSend` output unchanged atomically. In a full
-  transaction after Phase 4, already-valid ante gas fees and stability tax retain their normal message-failure behavior.
+  transaction after Phase 4, already-valid ante gas fees and transfer tax retain their normal message-failure behavior.
 - Unrelated recipients retain ordinary Bank behavior.
 - Deposits change no total supply and create ordinary bank events; after Phase 4 activates taxation, taxable stable
-  deposits additionally use the ordinary stability-tax events.
+  deposits additionally use the ordinary transfer-tax events.
 - Intended protocol `anoah` credits from Market to Buffer, Reserve, and Insurance pass the same final-recipient
   restriction; a non-NOAH module credit to any fund fails.
 - A preceding restriction that rewrites an address into any fund cannot bypass the NOAH-only rule.
 - Outbound reward top-ups and authorised Insurance claims are not rejected merely because of their source module
   account.
-- A passed governance message can move only positive `anoah` from `treasury_strategic_reserve` to
+- A passed governance message can move only positive `anoah` from `strategic_reserve` to
   `treasury_redemption_buffer`; no user-supplied source, destination, denomination, or Market call path exists.
 
 Do not remove `x/mint` until Phase 2.
@@ -2374,7 +2835,7 @@ Do not remove `x/mint` until Phase 2.
   standard paginated Bank queries remain the canonical custody view.
 - Redemption Buffer, strategic Reserve, and Insurance never share an account.
 - Market has no automatic interface for debiting strategic Reserve or Insurance.
-- The only launch production path naming `treasury_strategic_reserve` as a bank-send source is
+- The only launch production path naming `strategic_reserve` as a bank-send source is
   `MsgTransferReserveToBuffer`; it is general-authority gated, `anoah`-only, uses the fixed Buffer destination, and
   checks its per-proposal minimum remaining Reserve balance.
 - A successful Reserve-to-Buffer action satisfies `Delta Reserve = -amount`, `Delta Buffer = +amount`, and zero change
@@ -2384,13 +2845,13 @@ Do not remove `x/mint` until Phase 2.
 - Treasury's general authority remains governance. The Claims committee is a mandate role with exact canonical matching;
   it cannot update Params, change policy, access Reserve, send generically, mint, or borrow.
 - Claim submission enforces exact role authorization, unique ID, positive `anoah`-only amount, recipient/reference,
-  derived executable height, live Insurance coverage, remaining Claims allowance when committee-origin, and audit record
+  derived closing height, live Insurance coverage, remaining Claims allowance when committee-origin, and audit record
   before encumbering funds.
 - Insurance reservation never exceeds Insurance balance. Approval changes `insurance_reserved` and the unencumbered
   balance but no Bank balance or supply; execution changes balance and reservation equally; cancellation or expiry
   changes only reservation and claim status; no path changes target exposure or performs conversion.
-- At the executable height cancellation closes for committee and governance, and permissionless execution opens. No
-  target or query releases the reservation before cancellation or successful execution.
+- At the closing height cancellation closes for committee and governance, and automatic settlement runs. No target or
+  query releases the reservation before cancellation, successful settlement, or failure.
 - Committee and governance submissions reject zero, mixed, and non-NOAH amounts at launch.
 - Claims allowance usage is gross: cancellation and execution do not restore it, deposits do not increase it, and only
   an explicit new mandate term resets it.
@@ -2404,9 +2865,9 @@ Do not remove `x/mint` until Phase 2.
 - Once any required validator-fee valuation is unavailable, that window cannot spend subsidy or allocate tax to
   validators; settlement sends all accumulated tax to Oracle and resets the window.
 - Treasury observes `fee_collector` before Distribution every completed block but never retains or moves those organic
-  fee coins. Stability tax remains in its collector until the funding window settles.
+  fee coins. Transfer tax remains in its collector until the funding window settles.
 - A reference-cap update commits the candidate Params and complete derived cap map together or changes neither.
-  InitGenesis establishes the complete map even while tax is disabled, and no stability-tax-rate change rebuilds it.
+  InitGenesis establishes the complete map even while tax is disabled, and no transfer-tax-rate change rebuilds it.
   Tax computation fails closed if the stored map nevertheless lacks a configured taxable denomination.
 - Changing `Params.reference_tax_cap` changes no Market parameter/state, fund balance/target, conversion quote, or
   redemption coverage result.
@@ -2452,7 +2913,7 @@ Recorded 2026-07-16 reward-funding revision:
   before decrementing it, so a mid-window update affects only the next window. Accumulated reward targets use checked
   addition at each observation; parameter and policy updates do not precompute remaining-window compatibility.
 - BeginBlock still observes `fee_collector` before Distribution on every completed block, but subsidy and tax allocation
-  occur only after a complete window. Stability tax remains in its collector between settlements.
+  occur only after a complete window. Transfer tax remains in its collector between settlements.
 - `UpdateRewardFunding` owns only observation and persistence. `BeginBlocker` owns the genesis-height gate, boundary
   decision, settlement call, and state reset; `SettleRewardFunding` is settlement-only.
 - The target-aware waterfall is unchanged after replacing per-block `V`, `O`, and `G` with their window aggregates.
@@ -2462,7 +2923,7 @@ Recorded 2026-07-16 reward-funding revision:
   scarce subsidy, multi-denomination rounding, valuation fallbacks, query/genesis state, and Bank-failure rollback.
 
 Implementation note: `MsgTransferReserveToBuffer` uses the compact Legacy Amino identifier
-`ark/x/treasury/MsgTransferToBuffer` because its full protobuf-derived name exceeds the SDK type-name limit. Its
+`ark/treasury/MsgTransferToBuffer` because its full protobuf-derived name exceeds the SDK type-name limit. Its
 protobuf message name, RPC name, signer, and semantics are unchanged.
 
 Phase 1 retained `x/mint` at its approved boundary. Phase 2 has now removed its Ark app wiring. The
@@ -2497,21 +2958,22 @@ Do not remove the SDK mint dependency from `go.mod`; it may remain transitively 
 
 ### 14.2 Record the launch distribution setting
 
-Do not add an Ark Distribution module-basic wrapper, fork the Distribution keeper, or change generic `arkd init` and
-testnet defaults during Phase 2. Ark's canonical launch `genesis.json` will be assembled and reviewed during launch
-readiness. It must set `app_state.distribution.params.community_tax` to zero. Section 18 tracks that later deliverable.
+Do not fork the Distribution keeper. Ark zeroes `community_tax` at the module basic (`app/genesis.go`, wired through
+`ProvideModuleBasics` in `app/app_config.go`), so generic `arkd init` and testnet defaults already carry the launch value
+and the canonical launch `genesis.json` assembled during launch readiness inherits it rather than patching it in.
+`docs/GENESIS.md` tracks that deliverable.
 
 ### 14.3 Activate balance-constrained reward top-ups
 
 Treasury BeginBlock must run immediately before Distribution. It observes the completed block's eligible validator-fee
-value every block, retains stability tax while the active reward-funding countdown is positive, and settles when it
+value every block, retains transfer tax while the active reward-funding countdown is positive, and settles when it
 reaches zero. Test:
 
 - Height 1 records no observation; under the default, the first clean-genesis settlement occurs after exactly
   `DefaultRewardFundingWindow` completed blocks.
 - A mid-window `reward_funding_window` update leaves the active countdown and boundary unchanged; the first observation
   after reset initializes the countdown from the new value.
-- Before the boundary, targets and eligible validator-fee value accrue, stability tax remains untouched, and no subsidy
+- Before the boundary, targets and eligible validator-fee value accrue, transfer tax remains untouched, and no subsidy
   is spent.
 - Quiet and busy blocks net across the window; aggregate gas at or above the aggregate validator target sends all
   accumulated tax to Oracle and spends no validator subsidy.
@@ -2523,7 +2985,7 @@ reaches zero. Test:
 - Exact partial shortfalls are paid without adding the full targets.
 - A scarce subsidy-pool balance is divided proportionally between actual shortfalls with the integer remainder to
   validators.
-- `stability_tax_collector` is emptied even when targets are zero or valuation is unavailable; the fallback sends all
+- `transfer_tax_collector` is emptied even when targets are zero or valuation is unavailable; the fallback sends all
   tax to Oracle.
 - One unavailable required fee valuation marks the whole window incomplete; later valid prices do not reconstruct it,
   settlement spends no subsidy, and the state resets. Settlement-time tax valuation failure uses the same fallback.
@@ -2586,6 +3048,15 @@ recorded below.
 ## 15. Phase 3: Market settlement and live pool-denomination support
 
 Status: **Reviewed**
+
+**Amended 2026-08-08 (D33): the Treasury call surface described in this phase no longer exists.** `RouteExpansion`,
+`DrawRedemptionBuffer`, and `RecordSupplyChange` were replaced by the single `SettleConversions` call Market's
+EndBlocker makes once per block; the liability snapshot the phase's caching rules govern is deleted (D39, D68). The
+phase text below stays as the as-built record of how Market settlement was first implemented — its pool, quoting,
+minimum-receive, and transition work is untouched by the change. Read §6.1, §6.2, and
+`docs/DESIGN_NOTES.md` §3.3 for the current settlement contract, including the
+failure matrix of §15.4, whose per-transaction rows for the three deleted calls are now one block-level settlement
+row.
 
 ### 15.1 Phase 3A: read-only capacity analysis
 
@@ -2699,7 +3170,7 @@ Regenerate:
 
 Modify:
 
-- `x/market/types/params.go`: construct the launch `BasePool` in `asdr` and validate positive canonical DecCoin data.
+- `x/market/types/params.go`: construct the launch `BasePool` in `axdr` and validate positive canonical DecCoin data.
   Keep the cross-module Oracle-native check in the keeper rather than pure Params validation.
 - `x/market/types/pool.go`: continue deriving effective pools from `BasePool.Amount` and the signed delta.
 - `x/market/types/genesis.go` and tests.
@@ -2740,7 +3211,7 @@ transition progress. Phase 3A decides only whether a separate residual-mint limi
    directly from offer to ask, and apply the larger Tobin tax. Its quote and settlement must be independent of
    `BasePool`, `ArkPoolDelta`, and the current pool denomination.
 4. For NOAH/stable pricing, read `Params.BasePool.Denom` and use it everywhere the current implementation hard-codes
-   `chain.SDRBaseDenom`: rate-snapshot capture, offer normalisation, constant-product inputs, ask normalisation, and
+   `chain.XDRBaseDenom`: rate-snapshot capture, offer normalisation, constant-product inputs, ask normalisation, and
    delta updates. The pool denomination is a unit of account, not an intermediate mint or transfer.
 5. Implement `MsgUpdateParams` with one branch inside the existing Market handler. This is the sole pool amount and
    denomination transition path; it makes no Treasury call:
@@ -2801,14 +3272,14 @@ transition progress. Phase 3A decides only whether a separate residual-mint limi
 The future flagship change uses ordinary module configuration and one Market parameter update:
 
 1. Add the new basket denomination to Oracle's native-stable/Tobin configuration, then wait for fresh settled basket
-   and `asdr` rates. Treasury observes the shared Oracle configuration and derives the corresponding tax cap; no
+   and `axdr` rates. Treasury observes the shared Oracle configuration and derives the corresponding tax cap; no
    Treasury Params change is required merely to make the denomination Market's pool unit.
 2. Submit one Market `MsgUpdateParams` whose `BasePool` carries the basket denom and governance's expected basket
    amount, together with any intended recovery-period or minimum-spread changes.
 3. At execution, retain the submitted value in the successful transaction, emit the old and applied pool state, apply
    the fresh live-derived basket amount, and rescale `ArkPoolDelta` atomically. Do not alter stablecoin output eligibility.
-4. Keep `asdr` in Oracle, Tobin-tax, Treasury-tax, and Market support. Both NOAH-to-`asdr` and basket-to-`asdr`
-   conversions remain valid, so `asdr` may continue to be minted as an ordinary Ark stablecoin.
+4. Keep `axdr` in Oracle, Tobin-tax, Treasury-tax, and Market support. Both NOAH-to-`axdr` and basket-to-`axdr`
+   conversions remain valid, so `axdr` may continue to be minted as an ordinary Ark stablecoin.
 5. Change `Params.reference_tax_cap` to a basket-denominated Coin later only if governance wants the basket to become
    the tax-cap reference; that separate Treasury update neither drives nor repeats the Market transition.
 
@@ -2816,7 +3287,7 @@ Do not add a Treasury orchestration message, a Treasury-to-Market keeper depende
 change Params together. Governance may coordinate the two independent policy choices operationally, but each module
 validates and writes only its own state.
 
-Ark never runs parallel SDR and basket virtual pools. Basket and `asdr` liabilities may coexist indefinitely and both
+Ark never runs parallel XDR and basket virtual pools. Basket and `axdr` liabilities may coexist indefinitely and both
 remain valid outputs, while all NOAH/stable pressure updates the one active pool expressed in the basket denomination
 after the transition.
 
@@ -2857,9 +3328,9 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 ### 15.5 Phase 3 invariants
 
 - Expansion allocation fields are nonnegative and representable.
-- Expansion: `eligible_principal_noah = buffer_credit + strategic_reserve_credit + insurance_credit + overflow_burn`.
-- Expansion: `gross_offer_noah = eligible_principal_noah + spread_and_dust_burn`.
-- Expansion: `total_noah_burn = spread_and_dust_burn + overflow_burn`.
+- Expansion (D6, 2026-09-02): `gross_offer_noah = buffer_credit + strategic_reserve_credit + insurance_credit + overflow_burn`.
+- Expansion: `eligible_principal_noah <= gross_offer_noah`.
+- Expansion: `total_noah_burn = overflow_burn`.
 - Expansion: `gross_offer_noah = buffer_credit + strategic_reserve_credit + insurance_credit + total_noah_burn`.
 - Market calls `RouteExpansion` exactly once per NOAH-to-stable conversion and never for an ordinary transfer,
   stable-to-NOAH redemption, stable-to-stable conversion, BeginBlock, EndBlock, or epoch.
@@ -2874,7 +3345,7 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - Treasury derives eligible principal and the complete waterfall; Market consumes the returned allocation without
   recomputing its policy.
 - Treasury has no `BurnCoins` dependency and never burns during routing. Market performs one NOAH burn equal to the
-  `ExpansionAllocation.TotalBurn()` returned by Treasury.
+  `total_noah_burn` coin returned by `RouteExpansion`.
 - Redemption: `noah_output = buffer_paid + residual_mint`.
 - Stable offers are burned exactly once.
 - Stable outputs are minted exactly once.
@@ -2882,11 +3353,10 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - Expansion fills Redemption Buffer, then strategic Reserve, then Insurance.
 - Every priced redemption requires `0 < noah_output <= redeemed_liability_noah`. Complete valuation additionally
   requires `redeemed_liability_noah <= aggregate_liability_noah`.
-- With complete valuation, `buffer_coverage = min(1, pre_trade_buffer / aggregate_liability_noah)` and `buffer_paid`
-  equals `floor(noah_output * buffer_coverage)`.
-- For non-final redemptions with complete valuation, cross-multiplication proves the post-redemption actual
+- `buffer_coverage = min(1, pre_trade_buffer / claimable_liability_noah)` and `buffer_paid` equals
+  `floor(noah_output * buffer_coverage)`, for every priceable redemption regardless of valuation completeness.
+- For non-final redemptions within a fixed claimable set, cross-multiplication proves the post-redemption actual
   Buffer-per-liability coverage does not fall because quoted output cannot exceed redeemed liability.
-- A priceable redemption with incomplete aggregate valuation draws zero Buffer and mints its full quoted output.
 - Strategic Reserve is never debited directly by ordinary redemption.
 - Insurance never services redemption.
 - Buffer usage never changes the quote, minimum receive, or economic pool-delta calculation.
@@ -2901,7 +3371,7 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - Stable-to-stable output is calculated directly from offer/ask rates and is unchanged by `BasePool.Denom`,
   `BasePool.Amount`, or `ArkPoolDelta` when the offer/ask snapshot and Tobin taxes are fixed.
 - Every NOAH/stable pool input and delta update uses the current `BasePool.Denom`; generic Market pricing contains no
-  hard-coded SDR unit.
+  hard-coded XDR unit.
 - `ArkPoolDelta` is always reported and interpreted in `BasePool.Denom`.
 - A same-denomination BasePool resize and a denomination change both preserve `delta / BasePool.Amount` within the
   documented fixed-point rounding bound; neither resets the delta.
@@ -2913,7 +3383,7 @@ together; do not introduce injectable collection-write wrappers solely to manufa
 - A Market pool-denomination transition leaves Treasury nominal liability, target exposure, targets, and
   coverage-based Buffer funding unchanged under the same stable/NOAH rates. It also leaves `reference_tax_cap`
   unchanged unless governance later submits the independent Treasury Params update.
-- Changing `BasePool.Denom` changes no stablecoin's offer/output eligibility. `asdr` remains a valid output after the
+- Changing `BasePool.Denom` changes no stablecoin's offer/output eligibility. `axdr` remains a valid output after the
   basket transition and its supply may continue to increase through ordinary conversion settlement.
 - There is exactly one active virtual pool and no transition object, parallel delta, or persistent transition phase.
 - Same-direction pressure never improves the quoted price.
@@ -2944,8 +3414,8 @@ negative-spread flooring including an extreme valid pool state that previously o
 queries, mocked settlement error propagation, settlement event accounting, and the Phase 3A capacity model. Full-app
 cache tests force a late payout failure after each of the three directional settlement paths and confirm balances,
 supplies, pool state, transient Treasury liability, targets, and events all roll back. The full-app transition test
-changes the pool unit from `asdr` to `ausd`,
-applies the live-derived amount, rescales delta, preserves stable-to-stable quotes, confirms `asdr` remains a valid
+changes the pool unit from `axdr` to `ausd`,
+applies the live-derived amount, rescales delta, preserves stable-to-stable quotes, confirms `axdr` remains a valid
 NOAH conversion output, and confirms an ordinary app-genesis export preserves the denomination-bearing Params and
 post-settlement delta. The binary built at `/private/tmp/arkd-phase3`; the known listener-dependent app and command
 suites passed in the loopback-capable test environment.
@@ -2953,9 +3423,9 @@ suites passed in the loopback-capable test environment.
 The user review and independent call-path review completed on 2026-07-20. The independent review's arithmetic boundary,
 rollback-coverage, and stale-plan findings were remediated and verified; Phase 3 is reviewed.
 
-## 16. Phase 4: Wasm/IBC foundations, stability-tax integration, and multi-denom Oracle rewards
+## 16. Phase 4: Wasm/IBC foundations, transfer-tax integration, and multi-denom Oracle rewards
 
-Status: **IBC foundation implemented; focused review and the remaining Phase 4 integrations are pending**
+Status: **Reviewed 2026-09-06, and the §16.6 matrix landed the same day. The hub ships shut behind an empty client allowlist and the contract runtime ships open; opening IBC is a governance decision**
 
 This phase first fixes the execution contract that every transfer adapter must implement, then adds IBC foundations,
 then Wasm foundations, and finally completes tax integration across the real execution paths. IBC precedes Wasm because
@@ -2979,7 +3449,7 @@ contract before implementation files are selected:
 - Ante owns signed top-level `MsgTransfer` and Wasm attached funds. The Wasm dispatcher owns only contract-generated Bank
   sends, IBC sends, execute funds, and instantiate funds. This structural ownership provides exactly-once assessment;
   Ark adds no persistent transfer ID, context marker, or global Bank tax hook.
-- The dispatcher sends tax directly to `stability_tax_collector` and collects it in the same Wasm submessage cache as
+- The dispatcher sends tax directly to `transfer_tax_collector` and collects it in the same Wasm submessage cache as
   the corresponding transfer. Synchronous, caught, and uncaught execution failures roll back both at that boundary.
 - Feegrant and the outer transaction fee payer do not sponsor execution-generated tax. A separate explicit sponsorship
   mechanism would require later policy approval.
@@ -3004,9 +3474,10 @@ launch, but distinguish installed capability from production activation:
   transfer state.
 - Give the transfer module account only its required minter and burner permissions.
 - The implemented foundation registers only the 07-Tendermint light-client module. Keep the standard IBC module genesis
-  defaults in generic application genesis construction, but set Ark's canonical launch genesis allowed-client list to
-  exactly `07-tendermint`, not the upstream wildcard. The conditional 08-Wasm installation below does not change that
-  launch authorization; any other client type requires a separate policy and implementation decision.
+  defaults in generic application genesis construction, but set Ark's canonical launch genesis allowed-client list
+  empty (amended 2026-09-06 from `07-tendermint`): it is the one switch behind every IBC surface, and governance admits
+  `07-tendermint` when it opens the hub. The conditional 08-Wasm installation below does not change that launch
+  authorization; any other client type requires a separate policy and implementation decision.
 - Build the IBC Classic transfer stack from the base application outward as transfer, callbacks when Wasm is added,
   packet forwarding, and rate limiting. The effective inbound stack order is therefore rate limit, packet forward,
   callbacks when present, then transfer. Packet forwarding is initially a Classic capability; do not invent a v2 PFM
@@ -3024,8 +3495,8 @@ launch, but distinguish installed capability from production activation:
   back on dispatch failure. GMP requires authorization, tax, recipient-restriction, acknowledgement, and timeout tests
   before it becomes production-accessible.
 - Consider the 08-Wasm light client only while integrating the real Wasm runtime and only if its exact dependency and VM
-  family resolve and compile cleanly. If installed, keep it dormant at launch: Ark's allowed-client list remains exactly
-  `07-tendermint` and the canonical launch genesis contains no Wasm-client checksums. `09-localhost` is part of the core
+  family resolve and compile cleanly. If installed, keep it dormant at launch: Ark's allowed-client list admits nothing
+  at launch and the canonical launch genesis contains no Wasm-client checksums. `09-localhost` is part of the core
   client machinery but remains unavailable under that launch policy; add neither 06-Solo Machine nor the experimental
   attestations client.
 - Keep packet forwarding Classic-only until upstream supplies reviewed v2 support. Add no custom v2 PFM adapter, no
@@ -3042,16 +3513,17 @@ Foundation implementation recorded 2026-07-21:
 - `app/ibc.go` owns the manually wired IBC keepers, stores, Classic and v2 routes, 07-Tendermint registration, redundant
   relay ante decorator, module basics, and IBC-Go testing-app accessors. It uses the SDK runtime's `RegisterStores` and
   `RegisterModules` hooks so IBC can coexist with Ark's depinject-wired modules without duplicating the app lifecycle.
-- The currently implemented Classic ICS-20 stack is transfer, packet forwarding, then rate limiting; the v2 route is
-  transfer wrapped by the v11 rate limiter. ICA controller and host keepers and routes are installed. The approved Wasm
-  slice will insert callbacks between transfer and packet forwarding in Classic and between transfer and rate limiting
-  in v2, and will add GMP through the shared execution router. Those callbacks and GMP are not wired yet. 08-Wasm remains
-  conditional on the compatibility gate above.
+- The Classic ICS-20 stack as first implemented was transfer, packet forwarding, then rate limiting; the v2 route was
+  transfer wrapped by the v11 rate limiter. ICA controller and host keepers and routes are installed. The Wasm slice
+  (2026-08-29, §16.3) inserted callbacks between transfer and packet forwarding in Classic and between transfer and rate
+  limiting in v2, and added GMP through the shared execution router. 08-Wasm passed the compatibility gate and is
+  installed dormant, as D50 requires.
 - `app/app_config.go` owns module accounts and lifecycle order. `cmd/arkd/cmd` merges IBC module basics into genesis and
   client encoding and exposes their query and transaction commands.
-- Generic `DefaultGenesis()` deliberately retains the upstream module defaults. Building and reviewing Ark's canonical
-  launch `genesis.json` remains a Phase 5 TODO; that artifact must apply the disabled transfer and ICA settings, empty
-  ICA host allowlist, `07-tendermint`-only client policy, and no 08-Wasm checksums before production launch.
+- Generic `DefaultGenesis()` deliberately retains the upstream module defaults. The launch posture lives in
+  `app/genesis/genesis.json`, whose tests pin the empty allowed-client list, the disabled transfer and ICA settings, the
+  empty ICA host allowlist, the absence of 08-Wasm checksums, and the open contract runtime (2026-09-06). Filling in the P1 balances and
+  parameters and reviewing the finished artifact remain Phase 5 launch-readiness work (`docs/GENESIS.md`).
 
 The IBC design must:
 
@@ -3065,8 +3537,8 @@ The IBC design must:
 - Preserve the Section 16.1 structural ownership and atomic rollback before the transfer surface becomes
   production-accessible.
 
-IBC foundation code may precede the final ante refactor in development, but it must remain production-disabled until the
-complete Phase 4 activation matrix passes.
+IBC foundation code ships production-disabled behind the empty launch allowed-client list (D45 as amended). The vote
+that admits `07-tendermint` is the activation, made after rate limits are configured for every route.
 
 ### 16.3 Wasm foundations
 
@@ -3077,13 +3549,46 @@ newer patch versions remain implementation gates. Do not add replacement directi
 maintain an Ark Wasmd fork. If the clean integration fails, stop the slice and reassess the dependency rather than
 copying the runtime.
 
+**Gate result, 2026-08-11: failed against SDK v0.55.0. The slice is stopped here pending a dependency decision.**
+
+Module resolution is clean — every Ark version holds (SDK v0.55.0, CometBFT v0.40.0, ibc-go v11.2.0), Wasmd v0.70.3
+brings `wasmvm/v3 v3.0.7` as specified, and the only movement in the graph is an indirect go-ethereum bump. The break is
+at compile time: SDK v0.55.0 completed the deprecation of `x/params`, leaving the in-tree directory as a README, and
+Wasmd still imports `github.com/cosmos/cosmos-sdk/x/params` in four non-test files — `x/wasm/exported/exported.go`,
+`x/wasm/migrations/v2/params_legacy.go`, `x/wasm/keeper/test_common.go`, and that migration's test. The code moved to
+`cosmossdk.io/x/params` under a different import path and is itself only at `v0.2.0-rc.1`, so requiring the extracted
+module cannot satisfy those imports; only a Wasmd source change can.
+
+The failure is shallow rather than architectural, which is what makes it a scheduling question instead of a redesign.
+`x/wasm/types` compiles clean against the whole v0.55 family, so no deep API divergence exists; `keeper`, `exported`,
+`migrations/v2`, `client/cli`, and `simulation` fail on nothing but `x/params`. What blocks Ark is legacy Subspace
+migration scaffolding that a D20 fresh-genesis chain can never execute. Upstream has not fixed it — Wasmd `main` at
+2026-07-28 still requires SDK v0.54.0 and carries the identical imports. Two verification traps are worth recording for whoever retries this: Wasmd's `v1.0.0` tag is from 2019
+and sorts highest under semver, so a bare `go get github.com/CosmWasm/wasmd` silently fetches SDK v0.36-era code; and
+`go get` reports success on the module graph alone, so the gate is only met by compiling Wasmd's packages.
+
+**The same gate passes against SDK v0.54.3**, verified the same day in an isolated probe module. Wasmd v0.70.3 compiles
+clean against Ark's pre-upgrade family exactly — SDK v0.54.3, CometBFT v0.39.3, ibc-go v11.2.0, `wasmvm/v3 v3.0.7` — so
+D49's pin was sound and the slice is executable on v0.54.3 today. Holding there costs less than the first assessment
+implied: the Oracle vote-accounting rotation fallback is not a fix that would be given up, because v0.54.3 has no
+consensus key rotation at all. Neither `MsgRotateConsPubKey` nor a historical consensus-address index exists before
+v0.55.0, so the fallback is unreachable by construction rather than merely unused. The v0.55 couplings in the tree are
+correspondingly narrow: the removal of `x/protocolpool`, which v0.55.0 deletes upstream; the staking key-rotation fee
+pool and its atto-denominated default; `auth.NewAppModule`, which still takes the legacy `exported.Subspace` on v0.54.3
+and therefore still needs `app/params`; and that Oracle fallback. Everything else in flight is version-independent —
+`abci/lanes` and `x/oracle/...` both build against v0.54.3 unchanged.
+
 The file-level implementation should:
 
 - Add the upstream Wasm keeper, store, module, module account permission, node configuration, CLI/genesis basics,
   snapshot extension, pinned-code initialization, and native Classic and v2 contract IBC routes through Ark's existing
   manual runtime-registration boundary.
-- Replace the unused `x/wasm/exported` `wasmvm` v1 parser/query interfaces with the real `wasmvm/v3` integration; retain
-  no parallel legacy adapter.
+- Delete the unused `x/wasm/exported` `wasmvm` v1 parser/query interfaces and `x/market/wasm` with them (D74); retain no
+  parallel legacy adapter and register no custom message encoder.
+- Admit 32-byte addresses. Ark's sealed `AddressVerifier` accepted 20 bytes alone, which is every key-derived and module
+  address but not a contract: CosmWasm derives both the classic and the predictable form to 32. Left as it was, every
+  message naming a contract fails address validation, so the runtime is unusable rather than merely restricted. Found by
+  the application simulation once the Wasm module was registered, and fixed in `app/params/address.go`.
 - Wrap the SDK message router supplied to Wasmd rather than forking Wasmd's message parser or dispatcher. The wrapper
   receives the exact SDK message produced by Wasmd's canonical encoder, invokes Treasury's canonical tax calculator,
   collects execution-generated tax from the unique sending contract account, and then calls the existing handler in
@@ -3091,9 +3596,24 @@ The file-level implementation should:
 - Supply that same Treasury-aware SDK message router to the v2 GMP keeper. GMP performs its own derived-account signer
   authentication; the shared wrapper then charges that derived account for any taxable execution-generated principal
   before dispatch. Top-level signed messages continue to use the ordinary application router and remain ante-owned.
-- Wrap Wasmd's query handler to expose one Ark custom tax query. Intercept the proposed `wasmvm/v3` `CosmosMsg`, encode
-  it with the same canonical encoder used by execution and the calling contract as sender, and invoke Treasury's
-  calculator. Do not parse through a second Ark-owned message model.
+- Register no custom querier. The tax estimate D43 requires is Treasury's `Query/ComputeTax`, admitted through the
+  accept list below like any other read; a contract prices the proto form of the message it will dispatch. Do not
+  parse through a second Ark-owned message model.
+- Supply the Stargate/gRPC query accept list by hand, as Osmosis, Neutron, Juno, and Archway keep theirs (D74). Wasmd
+  ships no permissive default, so an absent list leaves contracts unable to read Ark state at all; a permissive one,
+  Terra Classic's deny-list, leaks nondeterministic reads into consensus.
+- List a path only when it is also annotated `module_query_safe`, which a test enforces. The annotation says a query is
+  deterministic; listing says something further, that its response shape is frozen for the life of the chain, because a
+  value a contract reads is an input to consensus and reshaping it afterwards is a coordinated upgrade rather than a
+  patch. The list was populated on 2026-09-06 with fourteen paths (`app/wasm_query.go`): the tax estimate and the caps
+  and gas prices behind it, the Oracle rates and reference unit, Market's quote, pool, policy, and Tobin tax, and the
+  asset registry — what a contract needs to price and route a conversion or a transfer. Everything else stays unlisted,
+  since widening is additive while narrowing breaks every contract that came to depend on a path. All 44 annotated
+  queries were audited for determinism on 2026-08-11 and none failed; `Query/FeedReferents` is deliberately unannotated
+  because its claims are operator prose, so rewording one would become a state-machine change. The annotated set is
+  consensus-reachable regardless of the Wasm list, through the ICA host's `MsgModuleQuerySafe`, which ibc-go derives from
+  the annotation with no chain-side override; the golden list of annotated paths, the `FeedReferents` exclusion, and the
+  determinism smoke test guard that surface (`app/query_safe_test.go`).
 - Install compatible callbacks around both transfer applications only after the Wasm keeper can receive them. The
   Classic effective inbound order is rate limit, packet forward, callbacks, transfer; the v2 effective order is rate
   limit, callbacks, transfer. Native Wasm IBC channels remain the path for custom contract protocols.
@@ -3127,14 +3647,16 @@ The Wasm design must:
   authorize the client at launch and adds no launch checksum; an incompatible dependency is omitted without blocking
   Wasm contracts.
 
-Wasm foundation code may precede the final ante refactor in development, but it must remain production-disabled until
-the complete Phase 4 activation matrix passes.
+Decided 2026-09-06: the contract runtime ships open at launch, anyone may upload and instantiate. The Section 16.6
+matrix has landed, its tax seams are in place (the ante for attached funds, the policy router for dispatch), the accept
+list is populated, and the empty IBC client allowlist leaves contract channels on both stacks unopenable.
 
 ### 16.4 Ante and Treasury tax integration
 
 Review the currently retained `app/treasury_ante.go` implementation against the approved Section 16.1 contract. Decide at
 the file-level gate whether to retain that direct app layout or move the behavior into `app/ante`; do not refactor solely
-to match a planned directory.
+to match a planned directory. Decided 2026-09-02: the behaviour moved into the `app/ante` package, which owns the whole
+chain and the message policy the ante and execution seams share; `app/treasury_ante.go` is gone.
 
 If the local ante package is selected, add:
 
@@ -3168,7 +3690,7 @@ Test:
 - Malformed `Any` or authz contents.
 - `MsgSwapSend` taxable stable offer.
 - `MsgSwap` exemption.
-- `anoah` fund deposits create no stability-tax principal.
+- `anoah` fund deposits create no transfer-tax principal.
 - Taxable native-stable, mixed, and other non-NOAH fund principal is rejected atomically; tax classification does not
   bypass the recipient restriction, and ante-assessed tax retains the message-failure semantics defined in Section 8.6.
 - NOAH and non-native-denom exclusion.
@@ -3195,6 +3717,19 @@ Modify narrowly around the active Oracle refactor:
 No Oracle proto change is planned.
 
 ### 16.6 Activation test matrix and invariants
+
+*(Landed 2026-09-06. `app/testutil/ibc.go` runs ibc-go's testing coordinator over Ark chains, signing through Ark's
+own ante. On it, `app/ibc_relay_test.go` drives relayed transfers and packet-forward multi-hop, unknown-channel
+refund, timeout refund, and the no-second-tax hop; `app/gmp_relay_test.go` executes, refuses, and fails GMP over a
+real v2 client; `app/ibc_callbacks_test.go` delivers source, acknowledgement, timeout, and destination callbacks into
+the CosmWasm ibc-callbacks contract (v2.2.2, checksum-verified, embedded from `app/testdata`), and covers destination
+failure, source authorisation, non-blocking source failure under the gas cap, and malformed metadata.
+`app/wasm_contract_test.go` covers, on Wasmd's reflect contract, contract-generated Bank and IBC transfers, attached
+and contract-to-contract funds, nested submessages and independent caps, caught and uncaught rollback, insufficient
+balance, and fund credits; `app/wasm_query_test.go` covers the tax query across every message shape, fail-closed
+inputs, no writes, and contract-side reads of listed and unlisted paths. The contract runtime ships open (§16.3).
+Opening IBC is a governance sequence: admit `07-tendermint`, configure rate limits for every route, then the transfer
+flags.)*
 
 Before either transfer surface is production-enabled:
 
@@ -3225,27 +3760,30 @@ Ante and routing tests:
 - Tax-only fee fails validator-local minimum gas price in CheckTx when configured.
 - Gas overpayment remains in `fee_collector`.
 - Priority excludes mandatory tax.
-- Feegrant granter pays complete gas plus tax.
+- Feegrant granter pays gas plus tax, each drawn on the allowance as it is charged; a failed transaction draws the gas
+  fee alone.
 - Simulation performs no collection and no persistent writes.
 - Invalid signature produces no persistent fee, tax, sequence, or feegrant change.
 - Collection failure rolls back the complete ante.
-- Message execution failure retains valid fee and tax but rolls back message state.
-- Multi-denom collection moves the exact per-denom tax into `stability_tax_collector`.
+- Message execution failure retains the valid gas fee, charges no tax, and rolls back message state; a payer that
+  execution leaves short of the tax fails at the charge with the gas fee retained and no principal moved.
+- Multi-denom collection moves the exact per-denom tax into `transfer_tax_collector`.
 - Target-aware allocation conserves every denomination exactly between validator and Oracle destinations.
 - Validator tax rounds down per denomination and Oracle receives every integer remainder.
 
 IBC and Wasm execution tests:
 
-- Ark's canonical launch genesis starts ICS-20 send and receive disabled, permits only the 07-Tendermint client type,
-  leaves both ICA sides disabled, gives ICA host no allowed messages, and contains no 08-Wasm checksums. If 08-Wasm is
-  installed after its compatibility gate, its client type remains unavailable under this launch policy.
+- Ark's canonical launch genesis admits no client type, starts ICS-20 send and receive disabled, leaves both ICA sides
+  disabled, gives ICA host no allowed messages, and contains no 08-Wasm checksums; the contract runtime is open to
+  everybody. If 08-Wasm is installed after its compatibility gate, its client type remains unavailable under this launch
+  policy.
 - Classic and v2 transfer reuse one transfer keeper and preserve their distinct routing and timeout semantics.
 - Classic transfer has the effective inbound order rate limit, packet forward, callbacks, transfer; v2 has rate limit,
   callbacks, transfer. Classic packet forwarding still works through callbacks, while no v2 PFM route exists.
 - Governance rate limits apply per denomination and channel/client, reject an excess before transfer execution, restore
   accounting correctly on failure/timeout, and are configured for every route before activation.
 - Packet forwarding covers multi-hop success, downstream error, retry, timeout, and refund without assessing a second
-  stability tax or bypassing the final Bank recipient restriction.
+  transfer tax or bypassing the final Bank recipient restriction.
 - ICA controller and host traffic fails while disabled; host activation accepts only its explicit type-URL allowlist and
   never a wildcard policy. No generic custom ICA authentication route exists.
 - Classic and v2 callbacks cover source send, destination receive, acknowledgement, timeout, malformed metadata,
@@ -3292,14 +3830,16 @@ the real block lifecycle, execution-generated transfer rollback, and production 
 
 ## 17. Phase 5: Full-system invariants, simplification, and launch readiness
 
-Status: **Pending Phase 4 approval**
+Status: **In progress since 2026-09-06**
 
 ### 17.1 Full-app tests
 
+Skipped by decision on 2026-09-06, and §17.2 with it (§21).
+
 Add:
 
-- `app/monetary_policy_test.go` for deterministic lifecycle and supply invariants.
-- `app/monetary_policy_sim_test.go` if a bounded stateful simulation is stable and maintainable.
+- `app/economic_policy_test.go` for deterministic lifecycle and supply invariants.
+- `app/economic_policy_sim_test.go` if a bounded stateful simulation is stable and maintainable.
 - Property tests under Market or Treasury only where they provide more signal than table tests.
 
 Exercise:
@@ -3340,8 +3880,8 @@ Exercise:
 - Claims Mandate disabled/default and configured states, monotonic replacement/disable terms, half-open appointment
   windows, committee rotation, and rejection of cross-role use, including a Claims committee attempting Reserve or
   parameter messages and a future Reserve executor attempting Claims.
-- Actual threshold-multisig Insurance submission followed by the shared cancellation delay and permissionless execution;
-  exact half-open cancellation/execution boundary; overlapping pending claims; exact reservation accounting; committee
+- Actual threshold-multisig Insurance submission followed by the shared cancellation delay and automatic settlement;
+  exact half-open cancellation/settlement boundary; overlapping pending claims; exact reservation accounting; committee
   and governance cancellation; stale expected-term rejection; committee rejection for governance-submitted claims;
   governance cancellation after mandate replacement or expiry; Bank rollback; replay rejection; and immutable
   recipient/amount/reference/mandate-term fields.
@@ -3355,18 +3895,18 @@ Exercise:
 - Mixed stablecoin tax balances in Oracle.
 - Mixed bank, Market-send, Wasm, and IBC transfers receiving independent caps per taxable input, including multiple
   inputs from the same source.
-- Successful and failed Monetary Policy cap-amount changes, plus governance-only Params denomination changes.
-- Successful and failed same-denom BasePool resizes and live `asdr`-to-basket pool-denom changes, including zero, small,
+- Successful and failed Economic Policy cap-amount changes, plus governance-only Params denomination changes.
+- Successful and failed same-denom BasePool resizes and live `axdr`-to-basket pool-denom changes, including zero, small,
   and arbitrarily large differences between submitted and applied amounts that do not independently reject execution.
 - Stable-to-stable quote equality before and after a pool-denom transition.
 - Treasury liability, target, and coverage-funded-output equality before and after both a pool-denom transition and a
   reference-tax-cap denomination change.
-- Missing SDR pricing with zero `asdr` supply versus nonzero `asdr` supply.
+- Missing XDR pricing with zero `axdr` supply versus nonzero `axdr` supply.
 - `FundStatus` with basket pricing missing when basket is only the Market pool unit versus when basket supply is
   outstanding; separately prove a NOAH/stable Market quote still fails when its required pool-unit rate is stale.
 - `RewardFunding` remains queryable without Oracle calls when `FundStatus` cannot produce a complete valuation.
-- Bidirectional `asdr` conversions remain valid after the basket transition, including NOAH-to-`asdr` and
-  basket-to-`asdr` outputs, and every flow updates the single basket-denominated virtual pool where applicable.
+- Bidirectional `axdr` conversions remain valid after the basket transition, including NOAH-to-`axdr` and
+  basket-to-`axdr` outputs, and every flow updates the single basket-denominated virtual pool where applicable.
 - Target ceiling and redemption-floor rounding errors each remain below one base-unit NOAH where their respective caps do
   not bind.
 - Governance parameter updates.
@@ -3387,9 +3927,9 @@ No Market conversion:
   Delta total NOAH supply = 0
 
 NOAH -> stable:
-  eligible_principal_noah = buffer_credit + strategic_reserve_credit + insurance_credit + overflow_burn
-  gross_offer_noah = eligible_principal_noah + spread_and_dust_burn
-  total_noah_burn = spread_and_dust_burn + overflow_burn
+  gross_offer_noah = buffer_credit + strategic_reserve_credit + insurance_credit + overflow_burn   (D6, 2026-09-02)
+  eligible_principal_noah <= gross_offer_noah
+  total_noah_burn = overflow_burn
   gross_offer_noah = buffer_credit + strategic_reserve_credit + insurance_credit + total_noah_burn
   RouteExpansion is called exactly once before burn/mint/payout
   Treasury subsidy-pool balance receives none of gross_offer_noah
@@ -3407,7 +3947,7 @@ stable -> NOAH:
 
 Tax:
   total_assessed_tax = ante_tax + sum(execution_generated_input_tax)
-  before settlement: stability_tax_collector accumulates every committed assessed-tax coin exactly
+  before settlement: transfer_tax_collector accumulates every committed assessed-tax coin exactly
   at settlement: window_tax = oracle_tax_credit + validator_tax_credit
   aggregate_validator_target = sum(applied validator_block_reward_target for each observed block)
   aggregate_oracle_target = sum(applied oracle_block_reward_target for each observed block)
@@ -3415,7 +3955,7 @@ Tax:
   validator_pre_tax_gap = max(aggregate_validator_target - aggregate_eligible_gas_value, 0)
   protected_oracle_tax_value = min(eligible_window_tax_value, aggregate_oracle_target)
   desired_validator_tax_value = min(eligible_window_tax_value - protected_oracle_tax_value, validator_pre_tax_gap)
-  stability_tax_collector balance = 0 after every successful allocation
+  transfer_tax_collector balance = 0 after every successful allocation
   if aggregate_eligible_gas_value >= aggregate_validator_target: validator_tax_credit = 0
   if eligible_window_tax_value <= aggregate_oracle_target: validator_tax_credit = 0
   empty reward-funding state => blocks_remaining = 0 and canonical zero aggregates
@@ -3430,7 +3970,7 @@ Tax:
 
 Reference tax cap change:
   Params reference Coin and the complete derived TaxCaps map change together or neither changes
-  Monetary Mandate does not change
+  Economic Mandate does not change
   Market BasePool, ArkPoolDelta, quotes, fund balances, and coverage-based redemption funding do not change
 
 Market BasePool change:
@@ -3451,7 +3991,7 @@ Market pool denomination change:
 
 Supported stable outputs:
   BasePool.Denom does not determine mint eligibility
-  asdr remains valid as both offer and ask after the basket transition
+  axdr remains valid as both offer and ask after the basket transition
   changing the pool denomination adds no output ban
 
 Subsidy pool:
@@ -3490,7 +4030,7 @@ Funds:
   Reserve commitment succeeds without Oracle or target valuation and stores no duplicate Treasury history
   no Buffer-to-Reserve or arbitrary-recipient Reserve path exists
   Insurance never funds Market
-  Claims Mandate committee is distinct from Treasury general authority and the monetary-policy committee
+  Claims Mandate committee is distinct from Treasury general authority
   each Claims Mandate replacement or disablement advances the chain-derived term
   Claims Mandate active iff committee is nonempty and activation_height <= h < expiry_height
   committee and governance submit under the same active term, validation, and held-balance rules
@@ -3498,11 +4038,11 @@ Funds:
   committee claim submission: Delta committee term used = amount
   governance claim submission: Delta committee term used = 0
   claim cancellation or execution: Delta committee term used = 0
-  each submitted claim stores its mandate_term and executable_height <= mandate expiry_height
-  current active committee with exact current term may cancel only non-governance-origin pending claims before executable_height
-  governance may cancel any pending claim before executable_height regardless of the current Claims Mandate
-  cancellation is unavailable to both roles at or after executable_height
-  permissionless execution is available at or after executable_height
+  each submitted claim stores its mandate_term and closing_height <= mandate expiry_height
+  current active committee with exact current term may cancel only non-governance-origin pending claims before closing_height
+  governance may cancel any pending claim before closing_height regardless of the current Claims Mandate
+  cancellation is unavailable to both roles at or after closing_height
+  automatic settlement runs in the EndBlock of the first height at or after closing_height
   0 <= Insurance reserved <= Insurance anoah Bank balance
   claim submission: Delta Insurance Bank balance = 0
   claim submission: Delta Insurance reserved = amount
@@ -3538,8 +4078,8 @@ After behavior is proven:
 - Keep tax calculation single-sourced.
 - Keep target calculation single-sourced.
 - Keep expansion-principal valuation and the complete Buffer → Reserve → Insurance → overflow waterfall single-sourced
-  in Treasury. Market consumes the successful `ExpansionAllocation`, including its derived total burn, without
-  revalidating or recomputing Treasury policy.
+  in Treasury. Market consumes the returned total burn without revalidating or recomputing Treasury policy, and never
+  sees the credit split behind it.
 - Keep the coverage-based Buffer draw and its `LegacyDec` conversion path single-sourced.
 - Keep Market's three settlement paths explicit rather than hiding materially different supply effects behind generic
   transfer helpers.
@@ -3548,6 +4088,8 @@ After behavior is proven:
 - Refresh package documentation to describe current ownership rather than Terra inheritance.
 
 ### 17.4 Final verification
+
+Skipped by decision on 2026-09-06 (§21).
 
 ```sh
 gofmt -w <changed-go-files>
@@ -3568,133 +4110,30 @@ passed.
 
 ## 18. Fresh-genesis launch rules
 
-Ark is confirmed prelaunch. No existing chain state, client wire compatibility, or historical module account balance
-must survive this redesign. Implementation must therefore:
-
-- Set Treasury consensus version to 1 and register no state migrator.
-- Use only the compact protobuf tags and collection prefixes defined in Section 10.
-- Delete controller-era proto fields, generated compatibility surfaces, store keys, codecs, and keeper logic outright.
-- Remove Mint entirely from app configuration and genesis; do not preserve its store, query service, module account, or
-  module-version entry.
-- Allocate the initial subsidy pool, Redemption Buffer seed, strategic Reserve seed, and Insurance seed through bank
-  genesis.
-- Set `app_state.distribution.params.community_tax` to zero in the canonical launch genesis. Do not treat the SDK's
-  generic `arkd init` output as Ark's launch configuration.
-- Launch with all four Treasury custody accounts unblocked for inbound bank sends and the recipient-aware restriction
-  active: every fund accepts only positive `anoah`; every mixed or non-NOAH credit fails atomically after the complete
-  restriction chain.
-- Require every fund's bank-genesis balance to contain only `anoah`; reject genesis otherwise.
-- Initialise the approved Claims Mandate term, committee, half-open activation/expiry window, fixed gross claim limit,
-  zero Claims allowance used, and zero Insurance reservation; the shared cancellation period ships in Treasury
-  `Params`. The committee is an ordinary account
-  distinct from Treasury authority and every other Treasury role; it is not a fund custodian.
-- Create the committee BaseAccount and give it an explicit non-Treasury fee path. Do not seed it from the Insurance
-  account or grant it a generic fee or Bank authorization.
-- Initialise Market `BasePool` as the approved positive `sdk.DecCoin` in `asdr` and `ArkPoolDelta` to zero in that unit.
-- Supply launch Params with the intended `reference_tax_cap` Coin in `asdr` and a complete derived cap map when genesis
-  Oracle prices cannot derive a positive reference cap deterministically. A zero reference cap derives a complete
-  explicit-zero uncapped map without Oracle prices.
-- Ensure bank supply exactly equals user balances plus every module-account allocation.
-- Discard and regenerate any developer or test genesis that uses the old Treasury or Mint schema.
-
-Do not implement frozen legacy types, old-to-new converters, reserved compatibility tags, store-prefix shims, or an
-upgrade handler. If such code appears during implementation, remove it rather than treating it as a future requirement.
-
-Fresh launch does not weaken post-launch export correctness. Export/import tests must preserve the new Treasury params,
-tax caps, Claims Mandate, Claims allowance used, Insurance reservation, every Insurance claim status/submission
-snapshot, all bank-held fund balances, total supplies, denomination-bearing `BasePool`, and labelled `ArkPoolDelta`;
-governance export/import must preserve any Reserve-to-Buffer or exact-claim authorising proposal and outcome. Only the
-initial launch genesis starts with zero `ArkPoolDelta`.
-
-Launch-readiness TODO: define the reproducible build process for Ark's canonical `genesis.json`, generate the artifact,
-and review it before launch. At minimum, the review must confirm zero Distribution `community_tax`, absence of Mint,
-approved module-account permissions, initial Treasury fund balances, economic parameters, total-supply conservation,
-an IBC allowed-client list containing only `07-tendermint`, disabled ICS-20 send and receive, disabled ICA controller and
-host, an empty ICA host message allowlist, and no 08-Wasm client checksums. This is a Phase 5 launch-readiness
-deliverable, not Phase 2 application wiring.
+Moved to `docs/GENESIS.md` on 2026-09-06. That document records every launch setting with its value in
+`app/genesis/genesis.json`, its status, and the decision behind it, and carries the fresh-genesis rules, the
+export/import requirements, and the pre-launch review checklist that lived here.
 
 ## 19. Launch economic configuration
 
-Architecture tests cannot choose sustainable economic values. Before launch, explicitly approve:
-
-| Parameter / balance            | Required decision                                                                             |
-| ------------------------------ | --------------------------------------------------------------------------------------------- |
-| Stability tax rate             | Fixed launch percentage                                                                       |
-| Reference tax cap              | Launch Coin amount and denomination; recommended initial denomination `asdr`                  |
-| Validator block reward target  | Minimum aggregate validator-funding value per block in base-unit NOAH                             |
-| Oracle block reward target     | Minimum aggregate Oracle-funding value per block in base-unit NOAH                                |
-| Reward funding window          | Settlement observations per window; default recommendation is one chain week                  |
-| Subsidy pool genesis balance   | Must imply intentional zero-revenue shortfall coverage; later `anoah` deposits may extend it  |
-| Redemption Buffer target ratio | Operational NOAH inventory target as a percentage of stable liability                         |
-| Strategic Reserve target ratio | Retained emergency-capacity target as a percentage of stable liability                        |
-| Insurance target ratio         | Covered-loss capacity target as a percentage of stable liability                              |
-| Redemption Buffer genesis seed | Existing NOAH assigned to coverage-based redemption funding                                   |
-| Strategic Reserve genesis seed | Existing NOAH retained from automatic use; governance may commit `anoah` to the shared Buffer |
-| Insurance genesis seed         | Existing NOAH recommended for immediate target capacity                                       |
-| Claims committee               | Role-specific Legacy Amino threshold-multisig address, membership, threshold, and role keys   |
-| Claims timing                  | Half-open committee activation/expiry heights and cancellation blocks before execution        |
-| Claims role fees               | Own genesis balance or separately approved narrow fee grants; never automatic Insurance spend |
-| BasePool                       | Launch virtual conversion depth as a positive `sdk.DecCoin` denominated in `asdr`             |
-| Pool-denom submitted amount  | Non-binding expectation retained in the transaction; event exposes old and applied state; no rejection threshold |
-| MinStabilitySpread             | Minimum conversion friction                                                                   |
-| PoolRecoveryPeriod             | Exponential imbalance decay rate                                                              |
-| Residual mint limit            | None; Phase 3A and P2 found no need for a hard cap                                             |
-| Oracle reward windows          | Tax-reward smoothing horizon                                                                  |
-| Distribution community tax     | Zero at launch                                                                                |
-| Transfer-surface activation    | Phase 4 implements IBC before Wasm; both remain production-disabled until their complete tax and recipient-restriction integrations pass |
-
-There is no global launch Reserve-withdrawal floor, rolling deployment cap, or price/target trigger to configure. Each
-governance Reserve-to-Buffer proposal states its exact `anoah` amount and minimum remaining Reserve balance. A future
-operational executor would require a separate bounded mandate; do not preconfigure one for launch.
-
-The Claims Mandate values above are P4 launch decisions. The Claims committee multisig address controls only typed claim
-submission and eligible cancellation during its active appointment and current term. Its balance is for gas, not
-Insurance custody; deposits or expansion allocations to Insurance increase available held coverage but grant the
-committee no generic send or custody authority. Governance may replace or disable the appointment at any time, submits
-under the same active term and deadline, and may cancel a pending claim before its executable height regardless of the
-current appointment.
-
-The zero-organic-revenue coverage estimate, when the sum of reward targets is positive, is:
-
-```text
-worst_case_coverage_blocks = current_subsidy_pool_noah /
-                             (validator_block_reward_target + oracle_block_reward_target)
-```
-
-This is a conservative display estimate, not stored consensus state. Actual duration is longer whenever fees or Oracle
-tax cover part of either target and changes as organic revenue and deposits vary. Tax revenue, fees, expansion
-principal, and fund balances do not automatically refill the subsidy pool. Stablecoin tax cannot become NOAH subsidy
-funding without a conversion, and no automatic conversion belongs in the initial design. Permissionless direct `anoah`
-transfers are the only launch replenishment path. Permissionless deposits to the other funds are donations to their
-distinct mandates and never refill the subsidy pool.
+Moved to `docs/GENESIS.md` §12 on 2026-09-06, together with the table of what each target ratio sets and the
+subsidy-runway estimate. The P1 and P4 values are chosen there and entered into the artefact.
 
 ## 20. Deferred extensions and required post-launch sequence
 
-The launch implementation must not contain dormant multi-asset custody, generic Reserve send authority, an operational
-hot key, or placeholder recognition policy. Add those capabilities only when the chain has a concrete risk model and a
-first external asset or action to approve. The required sequence is:
-
-1. Launch and verify the NOAH-only model in Phases 0 through 5, including the bounded Claims Mandate and claims
-   committee multisig. Governance remains the only actor that can invoke the fixed Reserve-to-Buffer message; no Reserve
-   executor exists yet.
-2. Replace total native stable supply as the Reserve and Insurance target-exposure proxy with an approved fund-specific
-   covered-risk-exposure model while custody and recognised capital remain NOAH-only. This changes the required-capital
-   side of the equation, not the assets counted against it. The Redemption Buffer remains an operational ratio against
-   outstanding stable liability unless separately reconsidered.
-3. With the first proposed external asset, approve and implement its exact custody identity, valuation source, haircuts,
-   liquidity treatment, concentration limits, and per-fund eligibility. Recognition must be live and audited before any
-   Reserve mandate can deploy NOAH to acquire that asset.
-4. Add the smallest typed Reserve action and bounded mandate needed for the approved deployment. Governance creates the
-   mandate; a threshold multisig may execute only inside it; a separate guardian may only pause it.
-5. Activate the mandate only after its adapter, accounting lifecycle, failure rollback, queries, events, and invariants
-   pass their own review gate. A successful deployment receives zero target credit until the acquired asset is settled,
-   controlled, fresh-priced, and otherwise recognisable.
-6. Add each later asset, venue, counterparty, action, or Insurance payout denomination through another explicit policy
-   approval. Never turn the first allowlist into an `any bank denom` or arbitrary-call facility.
-
-Phases 6 through 8 in Section 21 record this order but are not authorised launch work.
+The operational sequence moved to `docs/POST_LAUNCH.md` on 2026-09-06: opening the hub (the client type, channels, rate
+limits, then the transfer and ICA flags), what opens with the client type, the contract runtime's governance surface,
+the Ark governance operations (appointments, Reserve-to-Buffer commitments, the tax, the exposure multiplier, the first
+external asset), what is deferred on a trigger, and what will not be built. The subsections below are the design record
+those operations rest on; where a later decision superseded a passage, its amendment note says so. Section 21 records
+Phase 6 as retired and Phases 7 and 8 as complete.
 
 ### 20.1 Risk-exposure targets and external-asset recognition
+
+*(Amended 2026-09-06: the custody allowlist, the widened recipient restriction, and the custody adapters below will never
+be built. External assets are held at mandate destinations and attested (D59), and the Reserve account admits NOAH and
+registry members only (D70). The eligibility-entry and recognition rules stand, implemented as D58, D62, D64, and
+D69–D71. The target-exposure model paragraphs are retired with Phase 6; `docs/GENESIS.md` §12 records what the ratios mean instead.)*
 
 Required Reserve and Insurance capital remains a percentage of the risk that each fund covers. Their exposure models may
 differ: Reserve capacity and covered Insurance loss exposure are not automatically the same scalar. Assets held by a
@@ -3748,7 +4187,7 @@ Changing the target-exposure model or recognition policy requires deterministic 
 - spending NOAH for a haircut-recognised asset reopens only the unrecognised portion of the gap, preventing both a
   full-credit solvency illusion and a zero-credit acquisition/refill feedback loop.
 
-### 20.2 Committee roles, monetary-policy authority, Reserve policy authority, and fast execution
+### 20.2 Committee roles, economic-policy authority, Reserve policy authority, and fast execution
 
 Treasury's general `authority` remains the governance module account because it also controls `MsgUpdateParams` and
 other policy decisions. Do not assign it to an emergency key, multisig, Claims Mandate role, or operational executor. Do
@@ -3758,20 +4197,22 @@ Ark uses role-scoped authority accounts:
 
 ```text
 root policy authority         = x/gov
-monetary-policy committee     = threshold multisig A
+economic-policy committee     = threshold multisig A
 Insurance claims committee    = threshold multisig B
-future Reserve executor       = threshold multisig C
-future Reserve guardian       = separate account or multisig D
+Reserve committee             = threshold multisig C
 ```
 
-Human signers may overlap initially, but every role uses a distinct on-chain address so monetary policy, claims, and
+*(Amended 2026-08-05, D56: the table previously listed a future Reserve executor and a separate Reserve guardian; both
+rows collapse into the single Reserve committee, which mirrors the Claims committee row exactly — appointed,
+term-checked, and replaceable through the same envelope pattern.)*
+
+Human signers may overlap initially, but every role uses a distinct on-chain address so economic policy, claims, and
 future Reserve actions can have different thresholds, rotation, audit history, and compromise boundaries. No role
 inherits another merely because its human membership overlaps.
 
-The implemented monetary mandate delegates only:
+The implemented economic mandate delegates only:
 
 ```text
-stability_tax_rate
 validator_block_reward_target
 oracle_block_reward_target
 redemption_buffer_target_ratio
@@ -3779,27 +4220,42 @@ strategic_reserve_target_ratio
 insurance_target_ratio
 ```
 
-Governance appoints, replaces, or disables one exact committee address through `MsgSetMonetaryMandate`. Each appointment
+Governance appoints, replaces, or disables one exact committee address through `MsgSetEconomicMandate`. Each appointment
 stores the chain-derived `uint64` term with the increment behavior specified in Section 10.5, half-open
 `activation_height <= height < expiry_height`, and complete minimum and maximum policies. Committee transactions name
 the expected term and replace the entire reversible policy subset atomically; stale-term, inactive, out-of-bounds, and
 partial updates fail. Normal account authentication enforces the configured threshold multisig, after which Treasury
 uses exact address equality for role authorization.
 
-Governance retains both override levers. It may sign its own `MsgUpdateMonetaryPolicy` to apply a structurally valid
+Governance retains both override levers. It may sign its own `MsgUpdatePolicy` to apply a structurally valid
 candidate outside committee bounds, or replace/disable the mandate immediately. `MsgUpdateParams` remains governance-only for
-`reward_funding_window` and the complete reference-cap Coin. Reference-cap changes rebuild the derived cap map without
-changing the committee mandate. Separate queries expose the current Monetary Policy and the stored mandate; mandate
+`transfer_tax_rate`, `reward_funding_window`, and the complete reference-cap Coin. Reference-cap changes rebuild the derived cap map without
+changing the committee mandate. Separate queries expose the current Economic Policy and the stored mandate; mandate
 activity is derived from the current height.
 
 The Claims committee and governance may submit any unique positive `anoah` claim covered by the live Insurance balance.
 Committee submissions additionally consume the fixed gross allowance for the current mandate term; governance
-submissions do not. Both may cancel before the same executable height, but the committee cannot cancel a
+submissions do not. Both may cancel before the same closing height, but the committee cannot cancel a
 governance-submitted claim. Governance may replace the committee but cannot cancel after the shared deadline or claw
-back a paid claim. The monetary-policy committee cannot submit/cancel claims, move fund custody, change governance-owned
+back a paid claim. The economic-policy committee cannot submit/cancel claims, move fund custody, change governance-owned
 Params, or invoke the governance-only Reserve transfer.
 
-For future fast action, governance may create a Treasury-native Reserve mandate with:
+The mandate landed in `x/reserve` (D56, 2026-08-05): the module owns the strategic Reserve custody account, the
+governance-only commitment message, the committee mandate and its accounting journal, the recognition policy, and the
+send restriction over that account, and it reports `recognised_capital` to Treasury through the same
+`RecognisedCapital` contract `x/claims` answers. That keeps Treasury at one mandate and keeps §20.4's settlement
+evidence out of the module that computes tax caps. See
+`docs/DESIGN_NOTES.md` §6 for the as-built record.
+
+**Amended 2026-08-05 (D56–D57): the machinery below is superseded.** The implemented design appoints a single Reserve
+committee through `MsgSetReserveMandate` — no executor/guardian split, no pause state, no
+`MsgCreateReserveMandate`/`MsgExecuteReserveMandate`/`MsgPauseReserveMandate`/`MsgRevokeReserveMandate`, no
+configured-versus-effective status model, and one mandate at a time. The committee deploys to mandate destinations and
+keeps the books — quantity updates, return attribution, impairment marking, closure — while governance corrects
+records, clears impairment, owns the recognition policy, and replaces or disables the mandate at proposal latency. The
+text below is kept as the record of the maximal model that was considered and pared down.
+
+For future fast action, governance may create a Reserve mandate with:
 
 ```text
 policy authority = x/gov
@@ -3863,6 +4319,16 @@ future protobuf review. No launch proto or state slot is reserved for these mess
 
 ### 20.3 Minimum mandate contents and accounting
 
+**Amended 2026-08-05 (D56–D57):** the implemented `ReserveMandate` reduces this list to the shared envelope (term,
+committee, half-open activation window) plus the term deployment allowance, the minimum liquid `anoah` floor, and the
+exact destination list. Gross spent, returned capital, and outstanding exposure live as ledger aggregates
+(`AllowanceUsed`, `GrossDeployed`, `TotalReturned`, and per-position folds re-derived from the journal at genesis), not
+as mandate caps; the allowance is consumed permanently, which enforces the no-automatic-reset rule below by
+construction rather than by a governance decision each time. The omitted fields — IDs and status models,
+per-transaction and rolling-window caps, exposure limits, price/slippage/deadline constraints, adapter pins — are each
+recorded with rationale in `docs/DESIGN_NOTES.md` §6.2 (its §2): they either bound the off-chain leg the chain cannot see or
+reintroduce the roles D56 removed. The list below is kept as the checklist for any future widening (Phase C adapters).
+
 A mandate must contain at least:
 
 - bounded unique ID, purpose, activation time/height, expiry, configured active/paused/revoked state, and derived
@@ -3913,6 +4379,17 @@ the only such path until this separate mandate phase is approved.
 
 ### 20.4 External settlement lifecycle
 
+**Amended 2026-08-05 (D57):** the status machine below is replaced by the journal's entry kinds — DEPLOYMENT,
+QUANTITY_UPDATE, RETURN_ATTRIBUTION, IMPAIRMENT, CORRECTION, CLOSURE — with `impaired`/`closed` position flags instead
+of a state enum. In-flight and unresolved value still earns zero credit, because recognition prices only quantities the
+committee has booked and nothing is credited before it is recorded. "Any manual reconciliation or write-down is
+governance-authorised" narrows to: corrections and impairment clearing are governance-authorised, while closure —
+including at a loss — is the committee's, because both legs of realised P&L are proven coin movements the committee
+cannot misstate (`docs/DESIGN_NOTES.md` §6.2, its §14). Adapters are redescribed as evidence upgrades that append to the same
+journal (`docs/DESIGN_NOTES.md` §6.2, Phase C), not the settlement machinery itself — and D59 then closes Phase C as not planned: no major
+off-chain asset is reachable through IBC, so the lifecycle below stays a record of what a chain-verifiable venue
+would require, not pending work.
+
 A same-chain swap may be atomic only when the approved adapter performs input debit, minimum-output enforcement, and
 direct Reserve output credit in one cached state transition. A plain transfer to an external custodian is not an atomic
 asset purchase; it creates trusted counterparty exposure and remains zero-credit unless and until the approved custody
@@ -3925,6 +4402,11 @@ without resetting lifetime gross outflow. Any manual reconciliation or write-dow
 
 ### 20.5 Other deferred policy work
 
+*(Amended 2026-08-05, D61: the disposal path for non-NOAH Reserve custody is partly built. Burning credit-zero custody
+exists — committee-authorised, since it destroys what the capital system counts at nothing — so derecognized residue
+routed here is no longer strictly inert. Selling it does not exist and remains deferred: a disposal that receives value
+needs a venue, a counterparty, and a price, none of which this module has.)*
+
 The following also remains outside the launch phases:
 
 - A formal claims adjudication/voting module and any non-NOAH Insurance custody or in-kind payout allowlist.
@@ -3932,44 +4414,66 @@ The following also remains outside the launch phases:
   permissionless direct `anoah` transfers.
 - The future basket's composition, weighting, rebalance rules, denomination, Oracle derivation, and governance launch
   schedule. The generic live Market pool-unit transition is implemented in Phase 3; activating it still requires a
-  separate operational proposal once the basket policy exists, and it leaves `asdr` fully supported.
+  separate operational proposal once the basket policy exists, and it leaves `axdr` fully supported.
 - Any future stablecoin retirement or output-disable policy. It is not implied by a flagship or pool-denomination change
   and requires its own authority, lifecycle, holder-exit, and reactivation decisions.
 - A hard rolling residual-mint cap if virtual-pool analysis requires one, with explicit review of the redemption queue
   and first-mover incentive it would create.
-- Replacing or redirecting Cosmos distribution/protocolpool residual accounting.
+- Replacing or redirecting Cosmos distribution's community-pool residual accounting.
 
 Each extension requires its own policy decision, file-level implementation plan, protobuf approval where applicable,
 tests, and review gate. None should be inferred while implementing the launch phases in this document.
 
 ## 21. Phase status
 
-| Phase | Scope                                                      | Status                                  | Approval evidence                                          |
-| ----- | ---------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------- |
-| 0     | Policy, assumptions, baseline                              | Complete                                | D1-D33 confirmed; baseline passed; implementation approved |
-| 1     | Treasury proto, core, accounts                             | Reviewed                                | Treasury and required support accepted 2026-07-18          |
-| 2     | Remove Mint and activate subsidy-pool funding               | Reviewed                                | Verification passed; user approved closure 2026-07-20      |
-| 3     | Market settlement, labelled pool unit, and live transition | Reviewed                                | User and independent review completed 2026-07-20           |
-| 4     | IBC/Wasm foundations, stability-tax integration, and multi-denom Oracle rewards | IBC foundation implemented; review and remaining integrations pending | Sections 16.1-16.3 approved; IBC keepers, routes, lifecycle, ante, CLI, and testing accessors implemented 2026-07-21; Wasm/GMP slice approved but not implemented |
-| 5     | Full-system invariants and simplification                  | Not started                             | Pending Phase 4                                            |
-| 6     | Reserve/Insurance covered-risk-exposure target models      | Deferred                                | Separate post-launch policy and implementation approval    |
-| 7     | First external asset: custody and recognition              | Deferred                                | Pending Phase 6 and exact asset-policy approval            |
-| 8     | Bounded Reserve mandate and first typed deployment adapter | Deferred                                | Pending Phase 7 recognition and separate approval          |
+| Phase | Scope | Status | Evidence and amendments |
+| ----- | ----- | ------ | ----------------------- |
+| 0     | Policy, assumptions, baseline                              | Complete                                | D1-D33 confirmed at the gate; D34-D73 added through 2026-08-11 under the same register rule. Baseline passed; implementation approved. P1 and P4 launch values stay open until launch. |
+| 1     | Treasury proto, core, accounts                             | Reviewed, since amended                 | Treasury and required support accepted 2026-07-18. Amended by the asset-registry reshape (2026-08-02), the D54/D55 extractions to `x/claims` and `x/reserve` (2026-08-05), the D66/D67 self-held partition and two-basis rule (2026-08-08), and the D72 exposure multiplier (2026-08-10). Each amendment carries its own design record; the 2026-07-18 gate is not reopened. |
+| 2     | Remove Mint and activate subsidy-pool funding               | Reviewed                                | Verification passed; user approved closure 2026-07-20. `x/mint` is still absent and the subsidy pool is unchanged. |
+| 3     | Market settlement, labelled pool unit, and live transition | Reviewed, settlement cadence amended    | User and independent review completed 2026-07-20. D33 amended 2026-08-08 to settle every conversion once per block from Market's EndBlocker, collapsing Treasury's three settlement calls into `SettleConversions` and deleting the D39 snapshot and D68 invalidators; implemented per `docs/DESIGN_NOTES.md` §3.3. Market's conversion policy separately moved under a committee mandate (2026-08-01). |
+| 4     | IBC/Wasm foundations, transfer-tax integration, and multi-denom Oracle rewards | Reviewed 2026-09-06 | Sections 16.1-16.3 approved; IBC keepers, routes, lifecycle, CLI, and testing accessors implemented 2026-07-21. The D49 gate ran on 2026-08-11 against both SDK lines: it fails on v0.55.0, where Wasmd v0.70.3 cannot compile because that release finished removing `x/params`, and passes on v0.54.3, so the chain was held at v0.54.3 and the in-flight v0.55.0 move reverted (§16.3). The Wasm runtime, 08-Wasm client, callbacks, and GMP landed 2026-08-29, the `app/ante` package 2026-09-02, and the query accept list 2026-09-03; the multi-denom Oracle rewards had been in the tree since 2026-07-21. All of it reviewed and accepted 2026-09-06. Both transfer surfaces ship disabled and the contract runtime shut; the §16.6 matrix landed 2026-09-06 (§16.6, §21.1), so enabling either surface is a governance parameter change. |
+| 5     | Full-system invariants and simplification                  | In progress                             | Opened 2026-09-06 on Phase 4 approval. First deliverable: the launch genesis holds the hub shut behind an empty client allowlist and ships the contract runtime open, and `app/genesis_test.go` pins both (`docs/GENESIS.md`). §17.1 and §17.2 skipped by decision the same day: the keeper suites carry the arithmetic and the app tests the wiring, and no full-app lifecycle driver is planned. The capital-accounting consolidation draft was retired the same day (§21.2), so §17.3 ran ungated: the checklist was clean except two uncalled methods on Treasury's bank interface, dropped, and package documentation, which was absent rather than stale and is now written for all seven modules. §17.4 skipped by decision the same day. The P1 and P4 genesis fill (`docs/GENESIS.md`) is deferred until the in-flight code lands, and is the only pre-launch item left; the §16.6 matrix and the Wasm query accept list, the two pre-launch code items, landed 2026-09-06. |
+| 6     | Reserve/Insurance covered-risk-exposure target models      | Retired 2026-09-06                      | Under NOAH-only custody with attested positions, every fund's exposure has liability as its sole base, so a per-fund model reduces to the launch ratios (`docs/GENESIS.md` §12) scaled by D72; there is no second base for it to weigh. D28 stands as a principle and is enforced structurally: the target fold reads no fund balance. §20.1's recognition machinery landed as D58, D62, and D64. Revisit only if a fund carries material risk that does not scale with liability. |
+| 7     | First external asset: custody and recognition              | Complete                                | External symbols (D69), prefix-derived pricing (D70), and per-entry staleness tolerance (D71) landed 2026-08-09. Onboarding an asset is three governance messages: `AddFeed`, `SetRecognitionPolicy`, `SetReserveMandate`. Decided 2026-09-06: on-chain custody of an external token will never be built; attestation is the model and the send restriction's refusal of external symbols is permanent. The first asset is a governance decision, not a phase. |
+| 8     | Bounded Reserve mandate and first typed deployment adapter | Complete                                | The one-committee Reserve mandate (D56), quantity journal (D57), and split burn authority (D61) were implemented 2026-08-05, collapsing §20.2's executor/guardian split. D59 permanently closes the typed deployment adapter: committee attestation with bounded references is the permanent evidence model, not an interim one. Nothing remains but the appointment. |
 
 ### 21.1 Current outside-`x/treasury` disposition
 
-The following working-tree changes are outside the reviewed `x/treasury` directory. This table records which supporting
-changes are accepted and which later-phase changes remain provisional; retaining partial code does not mark its phase
-complete:
+This table records the disposition of code outside `x/treasury`, committed and working-tree alike: which supporting
+changes are accepted, and which later-phase changes remain provisional. Retaining partial code does not mark its phase
+complete.
 
-| Area | Current working-tree state | Disposition |
-| ---- | -------------------------- | ----------- |
-| Treasury protobuf/API | `proto/ark/treasury/**` defines the compact reviewed Treasury contract and `api/ark/treasury/**` contains its generated Pulsar/grpc output. | Accepted as part of the reviewed Treasury implementation; retain. |
-| Phase 1 app support | `app/app_config.go` registers the four fund accounts and tax collector, orders the Treasury send restriction, places Treasury before Distribution in BeginBlock, and removes Treasury EndBlock. `app/treasury_test.go` and `app/treasury_multisig_test.go` exercise this integration. | Accepted as required Phase 1 support; retain. |
+| Area | Current state | Disposition |
+| ---- | ------------- | ----------- |
+| Treasury protobuf/API | `proto/ark/treasury/**` defines the Treasury contract and `api/ark/treasury/**` contains its generated Pulsar/grpc output. Reshaped since the review: the schema moved onto the asset lifecycle (2026-08-02), the claims and Reserve surfaces left with their modules (2026-08-03), `FundStatus` gained the self-held partition (D66), and the exposure instrument arrived (D72). | Accepted as part of the reviewed Treasury implementation; retain. |
+| Phase 1 app support | `app/app_config.go` registers `subsidy_pool`, `redemption_buffer`, and `transfer_tax_collector` for Treasury, `strategic_reserve` for `x/reserve` (the one fund account holding `Burner`, never `Minter`), and `claims_insurance` for `x/claims`; it orders each module's send restriction, keeps Treasury ahead of Distribution in BeginBlock, and puts Market first and Claims last in EndBlock for D33 settlement. `app/treasury_test.go`, `app/treasury_multisig_test.go`, and the per-module app tests exercise this integration. | Accepted as required Phase 1 support, as amended by D54/D55 and D33; retain. |
 | Oracle quote support | `x/oracle/keeper/conversion.go` always includes the `anoah` identity rate in `GetRateSet`, with corresponding keeper-test changes. | Accepted as the shared quote behavior used by Treasury reward and liability valuation; retain. |
-| Phase 3 Market settlement and pool-unit transition | Market injects a Treasury keeper and calls `RouteExpansion`, `DrawRedemptionBuffer`, and `RecordSupplyChange`; a successful Treasury result is authoritative. `BasePool` is a denomination-bearing `sdk.DecCoin`, delta queries return its unit, NOAH/stable math uses that unit, and stable-to-stable pricing is independent of virtual-pool state. `MsgUpdateParams` applies one fresh deterministic Oracle-derived amount on denomination changes, retains the submitted expectation in the transaction, emits old and applied pool state, atomically rescales delta on every amount change, and ordinary export preserves both values. | Reviewed and accepted. Treasury errors and actual rate, denomination, arithmetic, or effective-pool failures abort atomically. Do not add a submitted-versus-applied rejection threshold, duplicate audit fields, or a second transition path. |
-| Phase 4 IBC foundation | IBC-Go v11.2 keepers, stores, Classic/v2 ICS-20 routes, Classic PFM, Classic/v2 rate limiting, 07-Tendermint, ICA controller/host, module accounts, lifecycle, redundant-relay ante, CLI/genesis basics, and IBC testing accessors are wired through the SDK runtime's manual registration hooks. | Implemented under the approved Section 16.2 scope; focused review pending. Section 16.3 now approves the next Wasm/callback/GMP slice, but none of that later wiring is recorded as implemented. Production activation remains blocked on canonical launch genesis and the complete tax, recipient-restriction, rate-limit, relay, acknowledgement, timeout, refund, packet-forward, callback, and GMP gates. |
-| Partial Phase 4 ante | `app/app.go` installs `treasuryFeeChecker` and wraps the stock ante handler with `routeStabilityTax`; the implementation and tests live directly in `app/treasury_ante.go` rather than the planned `app/ante` package. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Revisit its layout, semantics, activation, and Wasm/IBC transfer-surface gate against the original Phase 4 plan when Phase 4 begins. |
-| Partial Phase 4 Oracle rewards | Oracle's Bank interface now uses `GetAllBalances`, and `x/oracle/keeper/reward.go` distributes every positive denomination with updated mocks and tests. | Leave unchanged and treat as provisional, unreviewed Phase 4 code. Review it together with tax activation when Phase 4 begins. |
+| Phase 3 Market settlement and pool-unit transition | Market injects a Treasury keeper and, since D33's 2026-08-08 amendment, calls one `SettleConversions` from its EndBlocker over the block's accumulated `ConversionTotals`; the three per-conversion calls it replaced (`RouteExpansion`, `DrawRedemptionBuffer`, `RecordSupplyChange`) are gone. A successful Treasury result is still authoritative and still the value Market finishes settlement with. `BasePool` is a denomination-bearing `sdk.DecCoin`, delta queries return its unit, NOAH/stable math uses that unit, and stable-to-stable pricing is independent of virtual-pool state. `MsgUpdateParams` applies one fresh deterministic Oracle-derived amount on denomination changes, retains the submitted expectation in the transaction, emits old and applied pool state, atomically rescales delta on every amount change, and ordinary export preserves both values. | Reviewed and accepted. Treasury errors and actual rate, denomination, arithmetic, or effective-pool failures abort atomically. Do not add a submitted-versus-applied rejection threshold, duplicate audit fields, or a second transition path. |
+| Phase 4 IBC foundation | IBC-Go v11.2 keepers, stores, Classic/v2 ICS-20 routes, Classic PFM, Classic/v2 rate limiting, 07-Tendermint, ICA controller/host, module accounts, lifecycle, redundant-relay ante, CLI/genesis basics, and IBC testing accessors are wired through the SDK runtime's manual registration hooks. | Implemented under the approved Section 16.2 scope on SDK v0.54.3; reviewed and accepted 2026-09-06. The Wasm slice below added the callbacks and GMP. `app/ibc_packet_test.go` drives packets through the routed stack: delivery, rate-limit refusal ahead of transfer, timeout and failed-acknowledgement refunds, and escrow. The §16.6 gates landed 2026-09-06 on an `ibctesting` coordinator of Ark chains (`app/testutil/ibc.go`, `app/ibc_relay_test.go`, `app/gmp_relay_test.go`); opening IBC is a governance sequence: admit `07-tendermint`, set rate limits per route, then the transfer flags. |
+| Phase 4 ante | `app/ante` assembles the ante chain — the SDK's v0.54.3 decorators with Ark's fee checker, the Wasm and redundant-relay decorators, and Ark's message policies: transfer tax over Bank, Market, IBC, and Wasm attached-funds messages through one shared authz walker, the MultiSend fan-out guard, the gov-vote stake floor, and the lane privilege vouch — and the post handler that charges the tax once the messages have executed. `app/treasury_ante.go` is gone; `app/app.go` installs the package's builder. | Reviewed and accepted 2026-09-06 as the §16.4 layout decision. |
+| Phase 4 Oracle rewards | Oracle's Bank interface uses `GetAllBalances`, and `SettleRewards` in `x/oracle/keeper/accounting.go` distributes every positive denomination of the Oracle balance. | Reviewed and accepted 2026-09-06 together with tax activation. |
+| `x/asset` | The authoritative registry and lifecycle owner for every governance-managed Bank asset other than NOAH, on a five-status lifecycle, with an emergency-suspension committee mandate. Treasury derives its tax base, liability partition, and cap membership from it; Market reads it for conversion eligibility; it registers as an Oracle feed-removal guard. | Implemented, Phases 0-6 of `docs/ASSET_MODULE_PLAN.md`; accepted and load-bearing for Treasury. Not a Treasury-plan phase — the registry is the lifecycle authority this plan's liability text now assumes. |
+| `x/claims` | Owns the Claims mandate, the claim record, the Insurance reservation, and `claims_insurance` custody; answers Treasury through one-way `RecognisedCapital`. | Implemented 2026-08-05 under D54. Accepted; the §6.6 and §10 claims text describes this module, not Treasury. |
+| `x/reserve` | Owns `strategic_reserve` custody and its send restriction, the one-committee mandate (D56), the append-only quantity journal (D57), recognition policy with self-referential caps (D58, D64), split burn authority (D61), external symbols and prefix-derived pricing (D69, D70), and per-entry staleness tolerance (D71). Registers as an Oracle feed-removal guard (D63). | Implemented 2026-08-05 through 2026-08-10 under D55-D65 and D69-D71; see `docs/DESIGN_NOTES.md` §6. Accepted. This delivers most of the Phase 8 mandate ahead of schedule; §20.2-20.4 survive only where those decisions did not supersede them. |
+| `x/security` | A security committee with a bounded fast path over the standard-module emergency surface — upgrade schedule/cancel, IBC client recovery, and door-closing halts — dispatching self-constructed upstream messages through `baseapp.MessageRouter` with the effective authority injected. Owns no domain state, no module account, no params. | Implemented 2026-08-11 per `docs/DESIGN_NOTES.md` §7. Accepted. Outside this plan's scope but shares `pkg/mandate.Envelope` with Treasury's economic and claims mandates, so envelope changes are cross-cutting. |
+| Phase 4 Wasm slice | Wasmd v0.70.3 on `wasmvm/v3`: keeper, store, module, module account, node config, snapshot extension, native contract routes on both IBC stacks, and CLI/genesis basics (`app/wasm.go`). Contracts dispatch through a Treasury-aware message router that charges execution-generated tax from the sending contract (`app/wasm_tax_router.go`, D41/D42), read through a hand-written accept list of fourteen paths (`app/wasm_query.go`, D43/D74), and reach ICS-20 transfer-and-call through callbacks on the Classic and v2 stacks (D47). `x/wasm/exported` and `x/market/wasm` are deleted per D74. Treasury's calculator gained the `MsgTransfer`, execute-funds, and instantiate-funds cases D41 assigns to the dispatcher. ICS-27 v2 GMP is wired on the same router, so an account the chain derives for a remote caller pays execution-generated tax on a contract's terms (`app/gmp.go`, D48). | The complete Section 16.3 file-level slice, implemented on SDK v0.54.3 after the D49 gate. Open at launch (decided 2026-09-06): anyone may upload and instantiate; the query accept list carries the fourteen paths §16.3 names, and the empty IBC client allowlist leaves contract channels unopenable. The Wasm ante decorators are installed, which required spelling out the ante chain: they must sit immediately after context setup, and `ante.NewAnteHandler` admits no insertion point. Everything below them is the SDK's v0.54.3 default list in its original order, and an SDK upgrade adding a decorator must be mirrored by hand. `withIBCAnte` is gone, its redundant-relay decorator now last in the chain where it already effectively sat. Reviewed and accepted 2026-09-06, and the Section 16.6 matrix landed the same day: `app/wasm_contract_test.go` on Wasmd's reflect contract, `app/ibc_callbacks_test.go` on the CosmWasm ibc-callbacks contract (v2.2.2, checksum-verified, embedded from `app/testdata`), and `app/wasm_query_test.go` on the accept list, which now carries fourteen paths. The runtime is live from height one; nothing remains before IBC activation but governance's own decision. |
+| Priority mempool lanes | `abci/lanes` configures the SDK `PriorityNonceMempool` on a two-field `{Lane, Fee}` key so committee and governance transactions drain ahead of other traffic; wired in `app/app.go` behind the app.toml mempool cap. Paired with `docs/EMERGENCY_SUBMISSION_RUNBOOK.md`. | Working tree, uncommitted. Executed per `docs/DESIGN_NOTES.md` §8 (Layers 1-2; Layer 3 deliberately deferred). No change to the oracle proposal/VE/preblock pipeline and no consensus-enforced ordering. |
+| SDK v0.55.0 move | Built, then reverted on 2026-08-11 when the D49 gate failed against v0.55.0 (§16.3). The chain stays on cosmos-sdk v0.54.3, CometBFT v0.39.3, and Go 1.25.9. Reverting with it: the staking key-rotation fee pool, the `auth.NewAppModule` Subspace drop, the `ExportGenesisFileWithTime` consensus-param form, the ML-DSA-65 vote-extension sizing, and commit `db1fde3`'s Oracle rotation fallback — all of them v0.55/CometBFT v0.40 surfaces with no v0.54.3 equivalent, and the rotation fallback moot there because the SDK has no key rotation before v0.55. `x/protocolpool` stays unregistered by decision, not necessity: v0.54.3 still ships it, and Ark declines it. | Reverted in the working tree; `go build ./...`, `go vet`, and `go test ./...` all pass on v0.54.3. Redo the move once Wasmd compiles against v0.55.0; the reverted work is a patch, not a redesign. Block-STM, which v0.55 promotes from per-chain programmatic wiring to `app.toml` configuration, is scoped separately in `docs/BLOCK_EXECUTION.md`. That document also records the 2026-08-29 prelaunch removal of `baseapp.EnableBlockGasMeter`: the parallel executor cannot coexist with the meter, and dropping it is consensus-visible after genesis but free before it, so it was taken now rather than deferred to the move. |
 
-Untracked `build/` and `oracle.test` outputs are local artifacts, not plan or phase work, and must remain untouched.
+Build output, test binaries, and fuzz crashers are gitignored as of 2026-08-11; they are local artifacts, not plan or
+phase work, and must remain untouched.
+
+### 21.2 Open design records
+
+Recorded designs that are drafted or deferred rather than implemented, and therefore not reflected anywhere above:
+
+- `2026-08-08-capital-accounting-consolidation-design.md` — retired 2026-09-06, nothing implemented. Block settlement
+  removed the snapshot its invariant suite and custody chokepoints were built around, the basis rule became
+  structural under D66/D67, the doctrine is written in `docs/DESIGN_NOTES.md` §4.1 and §6.3, and no duplicated
+  arithmetic exists for a shared package to remove. Disposition in `docs/DESIGN_NOTES.md` §9; a shared arithmetic
+  package is revisited only if Phase 6 adds a second consumer.
+- `2026-08-10-exposure-observability.md` — draft, pending review. Off-chain observability for D72; the chain-side
+  prerequisites already ship (`Query/ExposureStatus`, typed events), and the document deliberately adds no metrics.
+- `2026-08-11-committee-realisation-design.md` — Stage 0 is the shipped default; Stages 1-3 are deferred, each gated
+  on a stated trigger.
