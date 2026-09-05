@@ -10,7 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
-	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -19,7 +19,7 @@ import (
 // prices are returned for telemetry.
 func ProcessVoteExtensions(
 	ctx sdk.Context,
-	oracleKeeper arkabcitypes.OracleKeeper,
+	oracleKeeper abcitypes.OracleKeeper,
 	req *cmtabci.RequestFinalizeBlock,
 ) (map[string]math.LegacyDec, error) {
 	voteHeight := req.Height - 1
@@ -27,7 +27,7 @@ func ProcessVoteExtensions(
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: get feeds for height %d: %w",
-			arkabcitypes.ErrOracleKeeper,
+			abcitypes.ErrOracleKeeper,
 			voteHeight,
 			err,
 		)
@@ -46,7 +46,7 @@ func ProcessVoteExtensions(
 	if err != nil {
 		return nil, fmt.Errorf(
 			"%w: get oracle params for block %d: %w",
-			arkabcitypes.ErrOracleKeeper,
+			abcitypes.ErrOracleKeeper,
 			req.Height,
 			err,
 		)
@@ -68,7 +68,7 @@ func ProcessVoteExtensions(
 		if err := oracleKeeper.SetExchangeRateWithEvent(ctx, exchangeRate); err != nil {
 			return nil, fmt.Errorf(
 				"%w: set exchange rate for %s: %w",
-				arkabcitypes.ErrOracleKeeper,
+				abcitypes.ErrOracleKeeper,
 				denom,
 				err,
 			)
@@ -86,7 +86,7 @@ func ProcessVoteExtensions(
 		); err != nil {
 			return nil, fmt.Errorf(
 				"%w: record vote accounting for %s: %w",
-				arkabcitypes.ErrOracleKeeper,
+				abcitypes.ErrOracleKeeper,
 				score.recipient.String(),
 				err,
 			)

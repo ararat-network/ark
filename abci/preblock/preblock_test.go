@@ -19,7 +19,7 @@ import (
 
 	"github.com/ararat-network/ark/abci/preblock"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
-	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -30,7 +30,7 @@ func TestWrappedPreBlockerRejectsNilRequest(t *testing.T) {
 
 	_, err := handler.WrappedPreBlocker(managerWith(fake))(abcitestutil.NewSDKContext(3, 2, sdk.ExecModeFinalize), nil)
 
-	require.ErrorIs(t, err, arkabcitypes.ErrNilRequest)
+	require.ErrorIs(t, err, abcitypes.ErrNilRequest)
 	require.Zero(t, fake.called)
 }
 
@@ -45,7 +45,7 @@ func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
 		&cmtabci.RequestFinalizeBlock{Height: 1},
 	)
 
-	require.ErrorIs(t, err, arkabcitypes.ErrWrappedHandler)
+	require.ErrorIs(t, err, abcitypes.ErrWrappedHandler)
 	require.ErrorIs(t, err, moduleErr)
 }
 
@@ -82,7 +82,7 @@ func TestWrappedPreBlockerWrapsAdvanceFeedsError(t *testing.T) {
 		&cmtabci.RequestFinalizeBlock{Height: 1},
 	)
 
-	require.ErrorIs(t, err, arkabcitypes.ErrOracleKeeper)
+	require.ErrorIs(t, err, abcitypes.ErrOracleKeeper)
 	require.ErrorIs(t, err, advanceErr)
 	require.Contains(t, err.Error(), "advance feeds for height 1")
 }

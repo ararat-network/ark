@@ -8,14 +8,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // EndBlocker settles every claim whose cancellation period closed at or before
 // this height.
 func (k *Keeper) EndBlocker(ctx context.Context) error {
-	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
+	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	height := uint64(sdkCtx.BlockHeight())

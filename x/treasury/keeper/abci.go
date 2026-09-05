@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -16,7 +16,7 @@ import (
 // valuation it needs can be built from final state — so an idle block now folds
 // the registry not at all, and a busy one folds it exactly once.
 func (k Keeper) BeginBlocker(ctx context.Context) error {
-	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.BeginBlock)()
+	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.BeginBlock)()
 
 	if err := k.refreshConversionFactors(ctx); err != nil {
 		return err
@@ -37,7 +37,7 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 // reads is written by the ante as the block's transactions execute and clears
 // at commit, so no other hook ever sees it complete.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
+	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
 	if err := k.advanceRewardFunding(ctx); err != nil {
 		return err

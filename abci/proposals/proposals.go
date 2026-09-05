@@ -12,8 +12,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/abci/codec"
-	arkmetrics "github.com/ararat-network/ark/abci/metrics"
-	arkabci "github.com/ararat-network/ark/abci/types"
+	abcimetrics "github.com/ararat-network/ark/abci/metrics"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/abci/voteextension"
 )
 
@@ -69,15 +69,15 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			if statusErr == nil {
 				statusErr = err
 			}
-			arkmetrics.RecordLatencyAndStatus(
+			abcimetrics.RecordLatencyAndStatus(
 				totalLatency-wrappedPrepareProposalLatency,
 				proposalStatus(statusErr),
-				arkmetrics.PrepareProposal,
+				abcimetrics.PrepareProposal,
 			)
 		}()
 
 		if req == nil {
-			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.PrepareProposal)
+			err = fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.PrepareProposal)
 			return nil, err
 		}
 
@@ -100,7 +100,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			// proposal and applied in PreBlock.
 			extInfoBz, err = codec.EncodeExtendedCommit(extInfo)
 			if err != nil {
-				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
+				err = fmt.Errorf("%w: %w", abcitypes.ErrCodec, err)
 
 				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
@@ -126,7 +126,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		resp, err = h.prepareProposalHandler(ctx, wrappedReq)
 		wrappedPrepareProposalLatency = time.Since(wrappedPrepareProposalStartTime)
 		if err != nil {
-			err = fmt.Errorf("%w for %s: %w", arkabci.ErrWrappedHandler, arkmetrics.PrepareProposal, err)
+			err = fmt.Errorf("%w for %s: %w", abcitypes.ErrWrappedHandler, abcimetrics.PrepareProposal, err)
 			if !voteExtensionsEnabled {
 				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
@@ -165,16 +165,16 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
 			totalLatency := time.Since(start)
-			arkmetrics.RecordLatencyAndStatus(
+			abcimetrics.RecordLatencyAndStatus(
 				totalLatency-wrappedProcessProposalLatency,
 				proposalStatus(err),
-				arkmetrics.ProcessProposal,
+				abcimetrics.ProcessProposal,
 			)
 		}()
 
 		// this should never happen, but just in case
 		if req == nil {
-			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.ProcessProposal)
+			err = fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.ProcessProposal)
 			return nil, err
 		}
 
@@ -182,20 +182,20 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		voteExtensionsEnabled := voteextension.VoteExtensionsAvailable(ctx)
 		if voteExtensionsEnabled {
 			// Ensure that the commit info was correctly injected into the proposal.
-			if len(req.Txs) < arkabci.NumInjectedTxs {
-				err = arkabci.ErrMissingCommitInfo
+			if len(req.Txs) < abcitypes.NumInjectedTxs {
+				err = abcitypes.ErrMissingCommitInfo
 				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT},
 					err
 			}
 
-			extCommitBz := req.Txs[arkabci.OracleInfoIndex]
+			extCommitBz := req.Txs[abcitypes.OracleInfoIndex]
 
 			// Validate the vote extensions included in the proposal.
 			var extInfo cmtabci.ExtendedCommitInfo
 			expectedVotes := ctx.CometInfo().GetLastCommit().Votes().Len()
 			extInfo, err = codec.DecodeExtendedCommit(extCommitBz, expectedVotes)
 			if err != nil {
-				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
+				err = fmt.Errorf("%w: %w", abcitypes.ErrCodec, err)
 				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT},
 					err
 			}
@@ -207,12 +207,12 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			}
 
 			// Observe the size of the extended commit info.
-			arkmetrics.ObserveMessageSize(arkmetrics.ExtendedCommit, len(extCommitBz))
+			abcimetrics.ObserveMessageSize(abcimetrics.ExtendedCommit, len(extCommitBz))
 
 			// The injected commit is protocol metadata, not an SDK transaction.
 			// Remove it from a request copy before invoking the wrapped handler.
 			wrappedReqCopy := *req
-			wrappedReqCopy.Txs = req.Txs[arkabci.NumInjectedTxs:]
+			wrappedReqCopy.Txs = req.Txs[abcitypes.NumInjectedTxs:]
 			wrappedReq = &wrappedReqCopy
 		}
 
@@ -221,28 +221,28 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		resp, err = h.processProposalHandler(ctx, wrappedReq)
 		wrappedProcessProposalLatency = time.Since(wrappedProcessProposalStartTime)
 		if err != nil {
-			err = fmt.Errorf("%w for %s: %w", arkabci.ErrWrappedHandler, arkmetrics.ProcessProposal, err)
+			err = fmt.Errorf("%w for %s: %w", abcitypes.ErrWrappedHandler, abcimetrics.ProcessProposal, err)
 		}
 
 		return resp, err
 	}
 }
 
-func proposalStatus(err error) arkmetrics.Status {
+func proposalStatus(err error) abcimetrics.Status {
 	switch {
 	case err == nil:
-		return arkmetrics.StatusSuccess
-	case errors.Is(err, arkabci.ErrNilRequest):
-		return arkmetrics.StatusNilRequest
-	case errors.Is(err, arkabci.ErrWrappedHandler):
-		return arkmetrics.StatusWrappedHandler
+		return abcimetrics.StatusSuccess
+	case errors.Is(err, abcitypes.ErrNilRequest):
+		return abcimetrics.StatusNilRequest
+	case errors.Is(err, abcitypes.ErrWrappedHandler):
+		return abcimetrics.StatusWrappedHandler
 	case errors.Is(err, ErrExtendedCommitValidation):
-		return arkmetrics.StatusExtendedCommitValidation
-	case errors.Is(err, arkabci.ErrCodec):
-		return arkmetrics.StatusCodec
-	case errors.Is(err, arkabci.ErrMissingCommitInfo):
-		return arkmetrics.StatusMissingCommitInfo
+		return abcimetrics.StatusExtendedCommitValidation
+	case errors.Is(err, abcitypes.ErrCodec):
+		return abcimetrics.StatusCodec
+	case errors.Is(err, abcitypes.ErrMissingCommitInfo):
+		return abcimetrics.StatusMissingCommitInfo
 	default:
-		return arkmetrics.StatusFailure
+		return abcimetrics.StatusFailure
 	}
 }

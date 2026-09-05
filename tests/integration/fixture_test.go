@@ -24,7 +24,7 @@ import (
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -261,7 +261,7 @@ func (f *activationFixture) voteExtension(voteHeight int64) []byte {
 
 	rates := make(map[string][]byte, len(feeds.Denoms))
 	for _, denom := range feeds.Denoms {
-		encoded, err := arkencoding.EncodeCompactLegacyDec(fixtureRate)
+		encoded, err := encoding.EncodeCompactLegacyDec(fixtureRate)
 		require.NoError(f.t, err)
 		rates[denom] = encoded
 	}

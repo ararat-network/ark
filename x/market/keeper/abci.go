@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "github.com/ararat-network/ark/pkg/chain"
-	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/market/types"
 )
 
@@ -26,7 +26,7 @@ import (
 // not one of them: Treasury parks the principal and discloses, and the block
 // continues.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
+	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
 	totals, err := k.conversionTotals(ctx)
 	if err != nil {

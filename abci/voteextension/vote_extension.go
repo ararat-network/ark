@@ -13,9 +13,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/abci/codec"
-	arkmetrics "github.com/ararat-network/ark/abci/metrics"
+	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	abcioracle "github.com/ararat-network/ark/abci/oracle"
-	arkabci "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	"github.com/ararat-network/ark/pricefeed/api"
 )
@@ -27,10 +27,10 @@ type Handler struct {
 	logger log.Logger
 
 	// oracleClient is the remote oracle client that is responsible for fetching prices
-	oracleClient arkabci.PriceFeedClient
+	oracleClient abcitypes.PriceFeedClient
 
 	// oracleKeeper resolves the consensus target epoch for each vote height.
-	oracleKeeper arkabci.OracleKeeper
+	oracleKeeper abcitypes.OracleKeeper
 
 	// timeout is the maximum amount of time to wait for the oracle to respond
 	// to a price request.
@@ -40,8 +40,8 @@ type Handler struct {
 // NewHandler returns a new Handler.
 func NewHandler(
 	logger log.Logger,
-	oracleClient arkabci.PriceFeedClient,
-	oracleKeeper arkabci.OracleKeeper,
+	oracleClient abcitypes.PriceFeedClient,
+	oracleKeeper abcitypes.OracleKeeper,
 	timeout time.Duration,
 ) *Handler {
 	return &Handler{
@@ -76,7 +76,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			}
 
 			latency := time.Since(start)
-			arkmetrics.RecordLatencyAndStatus(latency, voteExtensionStatus(err), arkmetrics.ExtendVote)
+			abcimetrics.RecordLatencyAndStatus(latency, voteExtensionStatus(err), abcimetrics.ExtendVote)
 			if err != nil {
 				if req == nil {
 					h.logger.Error("extend vote handler failed", "err", err)
@@ -91,14 +91,14 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		}()
 
 		if req == nil {
-			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.ExtendVote)
+			err = fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.ExtendVote)
 			returnError = true
 			return nil, err
 		}
 
 		feeds, err := h.oracleKeeper.GetFeeds(ctx, req.Height)
 		if err != nil {
-			err = fmt.Errorf("%w: get feeds for height %d: %w", arkabci.ErrOracleKeeper, req.Height, err)
+			err = fmt.Errorf("%w: get feeds for height %d: %w", abcitypes.ErrOracleKeeper, req.Height, err)
 			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
@@ -156,7 +156,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		}
 		bz, err := codec.EncodeVoteExtension(voteExt)
 		if err != nil {
-			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
+			err = fmt.Errorf("%w: %w", abcitypes.ErrCodec, err)
 			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
@@ -175,11 +175,11 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		// Measure latency from invocation to return.
 		defer func() {
 			latency := time.Since(start)
-			arkmetrics.RecordLatencyAndStatus(latency, voteExtensionStatus(err), arkmetrics.VerifyVoteExtension)
+			abcimetrics.RecordLatencyAndStatus(latency, voteExtensionStatus(err), abcimetrics.VerifyVoteExtension)
 		}()
 
 		if req == nil {
-			err = fmt.Errorf("%w for %s", arkabci.ErrNilRequest, arkmetrics.VerifyVoteExtension)
+			err = fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.VerifyVoteExtension)
 			return nil, err
 		}
 
@@ -191,14 +191,14 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		// Decode the vote-extension bytes.
 		voteExtension, err := codec.DecodeVoteExtension(req.VoteExtension)
 		if err != nil {
-			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
+			err = fmt.Errorf("%w: %w", abcitypes.ErrCodec, err)
 
 			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 
 		feeds, err := h.oracleKeeper.GetFeeds(ctx, req.Height)
 		if err != nil {
-			err = fmt.Errorf("%w: get feeds for height %d: %w", arkabci.ErrOracleKeeper, req.Height, err)
+			err = fmt.Errorf("%w: get feeds for height %d: %w", abcitypes.ErrOracleKeeper, req.Height, err)
 			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 		if _, validationErr := abcioracle.ValidateVoteExtension(voteExtension, feeds); validationErr != nil {
@@ -207,31 +207,31 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		}
 
 		// Observe message size.
-		arkmetrics.ObserveMessageSize(arkmetrics.VoteExtension, len(req.VoteExtension))
+		abcimetrics.ObserveMessageSize(abcimetrics.VoteExtension, len(req.VoteExtension))
 
 		return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 	}
 }
 
-func voteExtensionStatus(err error) arkmetrics.Status {
+func voteExtensionStatus(err error) abcimetrics.Status {
 	switch {
 	case err == nil:
-		return arkmetrics.StatusSuccess
-	case errors.Is(err, arkabci.ErrNilRequest):
-		return arkmetrics.StatusNilRequest
+		return abcimetrics.StatusSuccess
+	case errors.Is(err, abcitypes.ErrNilRequest):
+		return abcimetrics.StatusNilRequest
 	case errors.Is(err, errPanic):
-		return arkmetrics.StatusPanic
+		return abcimetrics.StatusPanic
 	case errors.Is(err, errPriceFeedClient):
-		return arkmetrics.StatusPriceFeedClient
+		return abcimetrics.StatusPriceFeedClient
 	case errors.Is(err, errInvalidPrices):
-		return arkmetrics.StatusInvalidPrices
+		return abcimetrics.StatusInvalidPrices
 	case errors.Is(err, errVoteExtensionValidation):
-		return arkmetrics.StatusVoteExtensionValidation
-	case errors.Is(err, arkabci.ErrOracleKeeper):
-		return arkmetrics.StatusOracleKeeper
-	case errors.Is(err, arkabci.ErrCodec):
-		return arkmetrics.StatusCodec
+		return abcimetrics.StatusVoteExtensionValidation
+	case errors.Is(err, abcitypes.ErrOracleKeeper):
+		return abcimetrics.StatusOracleKeeper
+	case errors.Is(err, abcitypes.ErrCodec):
+		return abcimetrics.StatusCodec
 	default:
-		return arkmetrics.StatusFailure
+		return abcimetrics.StatusFailure
 	}
 }

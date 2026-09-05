@@ -19,7 +19,7 @@ import (
 	"github.com/ararat-network/ark/abci/codec"
 	"github.com/ararat-network/ark/abci/voteextension"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -91,7 +91,7 @@ func benchmarkVoteExtension(b *testing.B, targetCount int) []byte {
 
 	rates := make(map[string][]byte, targetCount)
 	for i := range targetCount {
-		rate, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
+		rate, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -7,13 +7,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	chain "github.com/ararat-network/ark/pkg/chain"
-	arkmetrics "github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
 // EndBlocker settles periodic oracle rewards and attendance.
 func (k Keeper) EndBlocker(ctx context.Context) error {
-	defer arkmetrics.RecordModuleMethodLatency(ctx, types.ModuleName, arkmetrics.EndBlock)()
+	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params, err := k.Params.Get(ctx)

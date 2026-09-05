@@ -19,7 +19,7 @@ import (
 	"github.com/ararat-network/ark/abci/oracle"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -284,7 +284,7 @@ func TestValidateVoteExtension(t *testing.T) {
 						require.False(t, found)
 						continue
 					}
-					expected, decodeErr := arkencoding.DecodeCompactLegacyDec(rawRate)
+					expected, decodeErr := encoding.DecodeCompactLegacyDec(rawRate)
 					require.NoError(t, decodeErr)
 					actual, found := indexedRates[targetIndex]
 					require.True(t, found)
@@ -471,7 +471,7 @@ func makeRateMap(tb testing.TB, count int) map[string][]byte {
 
 	rates := make(map[string][]byte, count)
 	for i := range count {
-		encoded, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
+		encoded, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 1)))
 		require.NoError(tb, err)
 		rates[fmt.Sprintf("a%03d", i)] = encoded
 	}

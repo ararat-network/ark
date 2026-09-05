@@ -16,7 +16,7 @@ import (
 
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	chain "github.com/ararat-network/ark/pkg/chain"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -174,7 +174,7 @@ func TestCodecsAccommodateMaximumOracleCapacity(t *testing.T) {
 	t.Run("256-target vote extension", func(t *testing.T) {
 		// The widest rate a vote may carry: the largest raw value encoding to
 		// MaxEncodedVoteRateBytes big-endian bytes.
-		maxRate, err := arkencoding.EncodeCompactLegacyDec(
+		maxRate, err := encoding.EncodeCompactLegacyDec(
 			math.LegacyNewDecFromBigIntWithPrec(
 				new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
 				math.LegacyPrecision,

@@ -16,7 +16,7 @@ import (
 
 	"github.com/ararat-network/ark/abci/codec"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -42,7 +42,7 @@ func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.
 func MustEncodeRate(t *testing.T, rate math.LegacyDec) []byte {
 	t.Helper()
 
-	encodedRate, err := arkencoding.EncodeCompactLegacyDec(rate)
+	encodedRate, err := encoding.EncodeCompactLegacyDec(rate)
 	require.NoError(t, err)
 
 	return encodedRate

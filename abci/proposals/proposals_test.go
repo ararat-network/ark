@@ -23,7 +23,7 @@ import (
 
 	"github.com/ararat-network/ark/abci/proposals"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
-	arkabci "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 )
 
 const (
@@ -85,7 +85,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			},
 			expectErr:         true,
 			expectNilResponse: true,
-			expectedCategory:  arkabci.ErrNilRequest,
+			expectedCategory:  abcitypes.ErrNilRequest,
 		},
 		{
 			name: "vote extensions disabled passes app txs through",
@@ -116,7 +116,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			},
 			expectErr:            true,
 			expectedTxs:          [][]byte{},
-			expectedCategory:     arkabci.ErrWrappedHandler,
+			expectedCategory:     abcitypes.ErrWrappedHandler,
 			expectedErrIs:        prepareErr,
 			expectedPrepareTxs:   [][]byte{appTx1},
 			expectedMaxTxBytes:   100,
@@ -293,7 +293,7 @@ func TestProcessProposalHandler(t *testing.T) {
 			process:           rejectUnexpectedProcessProposal(t),
 			expectErr:         true,
 			expectNilResponse: true,
-			expectedCategory:  arkabci.ErrNilRequest,
+			expectedCategory:  abcitypes.ErrNilRequest,
 		},
 		{
 			name: "vote extensions disabled passes app txs through",
@@ -334,7 +334,7 @@ func TestProcessProposalHandler(t *testing.T) {
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
-			expectedCategory: arkabci.ErrMissingCommitInfo,
+			expectedCategory: abcitypes.ErrMissingCommitInfo,
 			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 		{
@@ -377,7 +377,7 @@ func TestProcessProposalHandler(t *testing.T) {
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
-			expectedCategory: arkabci.ErrCodec,
+			expectedCategory: abcitypes.ErrCodec,
 			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 		{
@@ -389,7 +389,7 @@ func TestProcessProposalHandler(t *testing.T) {
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
-			expectedCategory: arkabci.ErrCodec,
+			expectedCategory: abcitypes.ErrCodec,
 			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 	}

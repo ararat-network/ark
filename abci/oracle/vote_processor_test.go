@@ -16,7 +16,7 @@ import (
 
 	"github.com/ararat-network/ark/abci/oracle"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
-	arkabci "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -42,7 +42,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				Height: 3,
 			},
 			expectErr:       true,
-			expectedErrorIs: arkabci.ErrOracleKeeper,
+			expectedErrorIs: abcitypes.ErrOracleKeeper,
 			expectedCause:   feedsErr,
 			setup: func(_ *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(oracletypes.FeedSet{}, feedsErr)
@@ -56,7 +56,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				Txs:    nil,
 			},
 			expectErr:       true,
-			expectedErrorIs: arkabci.ErrMissingCommitInfo,
+			expectedErrorIs: abcitypes.ErrMissingCommitInfo,
 			setup: func(_ *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				keeper.EXPECT().GetFeeds(gomock.Any(), int64(2)).Return(oracletypes.FeedSet{
 					Version: oracletypes.InitialFeedVersion,

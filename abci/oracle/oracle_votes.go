@@ -10,9 +10,9 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/abci/codec"
-	arkabci "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -56,7 +56,7 @@ func DecodeVoteRate(bz []byte) (math.LegacyDec, error) {
 		)
 	}
 
-	return arkencoding.DecodeCompactLegacyDec(bz)
+	return encoding.DecodeCompactLegacyDec(bz)
 }
 
 // ParseVoteExtension converts transport rate bytes into domain rates.
@@ -146,13 +146,13 @@ func GetOracleVotes(
 	feeds oracletypes.FeedSet,
 	maxVotes int,
 ) ([]Vote, error) {
-	if len(proposal) < arkabci.NumInjectedTxs {
-		return nil, arkabci.ErrMissingCommitInfo
+	if len(proposal) < abcitypes.NumInjectedTxs {
+		return nil, abcitypes.ErrMissingCommitInfo
 	}
 
-	extendedCommitInfo, err := codec.DecodeExtendedCommit(proposal[arkabci.OracleInfoIndex], maxVotes)
+	extendedCommitInfo, err := codec.DecodeExtendedCommit(proposal[abcitypes.OracleInfoIndex], maxVotes)
 	if err != nil {
-		return nil, fmt.Errorf("%w: decode extended commit info: %w", arkabci.ErrCodec, err)
+		return nil, fmt.Errorf("%w: decode extended commit info: %w", abcitypes.ErrCodec, err)
 	}
 
 	votes := make([]Vote, len(extendedCommitInfo.Votes))

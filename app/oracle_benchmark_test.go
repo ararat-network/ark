@@ -24,7 +24,7 @@ import (
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	chain "github.com/ararat-network/ark/pkg/chain"
-	arkencoding "github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -489,7 +489,7 @@ func benchmarkVoteExtension(
 
 	rates := make(map[string][]byte, len(targets))
 	for i, denom := range targets {
-		rate, err := arkencoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 100)))
+		rate, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(int64(i + 100)))
 		if err != nil {
 			tb.Fatal(err)
 		}

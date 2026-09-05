@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	arkmetrics "github.com/ararat-network/ark/abci/metrics"
+	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	abcioracle "github.com/ararat-network/ark/abci/oracle"
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
-	arkabcitypes "github.com/ararat-network/ark/abci/types"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/abci/voteextension"
 )
 
@@ -24,12 +24,12 @@ import (
 // are executed/finalised for a given block.
 type Handler struct {
 	// oracleKeeper provides the oracle state used during preblock processing.
-	oracleKeeper arkabcitypes.OracleKeeper
+	oracleKeeper abcitypes.OracleKeeper
 }
 
 // NewHandler returns a new Handler. The handler
 // is responsible for writing oracle data included in vote extensions to state.
-func NewHandler(oracleKeeper arkabcitypes.OracleKeeper) *Handler {
+func NewHandler(oracleKeeper abcitypes.OracleKeeper) *Handler {
 	return &Handler{oracleKeeper: oracleKeeper}
 }
 
@@ -48,7 +48,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			// manager preblockers
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
 				latency := time.Since(start) - wrappedPreBlockLatency
-				arkmetrics.RecordLatencyAndStatus(latency, preblockStatus(err), arkmetrics.PreBlock)
+				abcimetrics.RecordLatencyAndStatus(latency, preblockStatus(err), abcimetrics.PreBlock)
 
 				// Record prices only if they were written successfully.
 				if err == nil && prices != nil {
@@ -61,7 +61,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		}()
 
 		if req == nil {
-			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", arkabcitypes.ErrNilRequest, arkmetrics.PreBlock)
+			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.PreBlock)
 		}
 
 		// call module manager's PreBlocker first in case there is changes made on upgrades
@@ -70,7 +70,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		response, err = mm.PreBlock(ctx)
 		wrappedPreBlockLatency = time.Since(wrappedStart)
 		if err != nil {
-			return response, fmt.Errorf("%w for %s: %w", arkabcitypes.ErrWrappedHandler, arkmetrics.PreBlock, err)
+			return response, fmt.Errorf("%w for %s: %w", abcitypes.ErrWrappedHandler, abcimetrics.PreBlock, err)
 		}
 
 		if voteextension.VoteExtensionsAvailable(ctx) {
@@ -91,7 +91,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		if err != nil {
 			return response, fmt.Errorf(
 				"%w: advance feeds for height %d: %w",
-				arkabcitypes.ErrOracleKeeper,
+				abcitypes.ErrOracleKeeper,
 				req.Height,
 				err,
 			)
@@ -105,21 +105,21 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	}
 }
 
-func preblockStatus(err error) arkmetrics.Status {
+func preblockStatus(err error) abcimetrics.Status {
 	switch {
 	case err == nil:
-		return arkmetrics.StatusSuccess
-	case errors.Is(err, arkabcitypes.ErrNilRequest):
-		return arkmetrics.StatusNilRequest
-	case errors.Is(err, arkabcitypes.ErrWrappedHandler):
-		return arkmetrics.StatusWrappedHandler
-	case errors.Is(err, arkabcitypes.ErrOracleKeeper):
-		return arkmetrics.StatusOracleKeeper
-	case errors.Is(err, arkabcitypes.ErrCodec):
-		return arkmetrics.StatusCodec
-	case errors.Is(err, arkabcitypes.ErrMissingCommitInfo):
-		return arkmetrics.StatusMissingCommitInfo
+		return abcimetrics.StatusSuccess
+	case errors.Is(err, abcitypes.ErrNilRequest):
+		return abcimetrics.StatusNilRequest
+	case errors.Is(err, abcitypes.ErrWrappedHandler):
+		return abcimetrics.StatusWrappedHandler
+	case errors.Is(err, abcitypes.ErrOracleKeeper):
+		return abcimetrics.StatusOracleKeeper
+	case errors.Is(err, abcitypes.ErrCodec):
+		return abcimetrics.StatusCodec
+	case errors.Is(err, abcitypes.ErrMissingCommitInfo):
+		return abcimetrics.StatusMissingCommitInfo
 	default:
-		return arkmetrics.StatusFailure
+		return abcimetrics.StatusFailure
 	}
 }
