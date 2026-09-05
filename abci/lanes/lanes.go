@@ -6,13 +6,12 @@
 // the caller, because that choice is wiring policy over the app's own module
 // surface, while this package is protocol mechanism. Ordering is
 // proposer-local and deliberately unenforced in ProcessProposal;
-// docs/superpowers/plans/2026-08-11-priority-mempool.md records that decision
+// docs/DESIGN_NOTES.md §8 records that decision
 // and the deferred alternatives.
 package lanes
 
 import (
 	"context"
-	"maps"
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,53 +39,6 @@ type Priority struct {
 	Lane int8
 	// Fee is the ante-assigned fee priority from the CheckTx context.
 	Fee int64
-}
-
-// Set is the message surface that qualifies for the priority lane, keyed by
-// proto type URL. The zero Set privileges nothing, leaving a plain fee-ordered
-// pool.
-type Set struct {
-	urls map[string]struct{}
-}
-
-// NewSet builds a lane set from message prototypes.
-func NewSet(msgs ...sdk.Msg) Set {
-	urls := make(map[string]struct{}, len(msgs))
-	for _, msg := range msgs {
-		urls[sdk.MsgTypeURL(msg)] = struct{}{}
-	}
-
-	return Set{urls: urls}
-}
-
-// Has reports whether a message qualifies for the priority lane.
-func (s Set) Has(msg sdk.Msg) bool {
-	_, ok := s.urls[sdk.MsgTypeURL(msg)]
-	return ok
-}
-
-// URLs returns a copy of the type URLs in the set, so callers can pin it
-// against their interface registry.
-func (s Set) URLs() map[string]struct{} {
-	return maps.Clone(s.urls)
-}
-
-// Classify assigns the lane. Every message must qualify: a mixed transaction
-// rides the normal lane, so one cheap privileged message cannot tow arbitrary
-// messages past the fee market. Authz-wrapped messages are deliberately not
-// unwrapped.
-func (s Set) Classify(tx sdk.Tx) int8 {
-	msgs := tx.GetMsgs()
-	if len(msgs) == 0 {
-		return LaneNormal
-	}
-	for _, msg := range msgs {
-		if !s.Has(msg) {
-			return LaneNormal
-		}
-	}
-
-	return LanePriority
 }
 
 // TxPriority orders by lane, then by ante fee priority; the mempool breaks
