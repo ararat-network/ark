@@ -10,7 +10,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	querytypes "github.com/cosmos/cosmos-sdk/types/query"
+	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
@@ -185,7 +185,7 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
-			Pagination: &querytypes.PageRequest{
+			Pagination: &sdkquery.PageRequest{
 				Limit:      2,
 				CountTotal: true,
 			},
@@ -200,7 +200,7 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
-			Pagination: &querytypes.PageRequest{
+			Pagination: &sdkquery.PageRequest{
 				Key:   first.Pagination.NextKey,
 				Limit: 2,
 			},
@@ -221,7 +221,7 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
-			Pagination: &querytypes.PageRequest{
+			Pagination: &sdkquery.PageRequest{
 				Reverse: true,
 			},
 		},
@@ -232,7 +232,7 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
-			Pagination: &querytypes.PageRequest{
+			Pagination: &sdkquery.PageRequest{
 				Key:    first.Pagination.NextKey,
 				Offset: 1,
 			},

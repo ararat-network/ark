@@ -8,7 +8,7 @@ import (
 	gometrics "github.com/hashicorp/go-metrics"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 )
 
 // maxInstrumentNameLen is OTel's cap on an instrument name.
@@ -87,7 +87,7 @@ func (s *GoMetricsSink) gauge(key []string) metric.Float64Gauge {
 	}
 	inst, err := s.meter.Float64Gauge(name)
 	if err != nil || inst == nil {
-		inst = noop.Float64Gauge{}
+		inst = metricnoop.Float64Gauge{}
 	}
 	entry, _ := s.gauges.LoadOrStore(name, inst)
 	return entry.(metric.Float64Gauge)
@@ -100,7 +100,7 @@ func (s *GoMetricsSink) counter(key []string) metric.Float64Counter {
 	}
 	inst, err := s.meter.Float64Counter(name)
 	if err != nil || inst == nil {
-		inst = noop.Float64Counter{}
+		inst = metricnoop.Float64Counter{}
 	}
 	entry, _ := s.counters.LoadOrStore(name, inst)
 	return entry.(metric.Float64Counter)
@@ -113,7 +113,7 @@ func (s *GoMetricsSink) histogram(key []string) metric.Float64Histogram {
 	}
 	inst, err := s.meter.Float64Histogram(name, histogramBoundaries)
 	if err != nil || inst == nil {
-		inst = noop.Float64Histogram{}
+		inst = metricnoop.Float64Histogram{}
 	}
 	entry, _ := s.histograms.LoadOrStore(name, inst)
 	return entry.(metric.Float64Histogram)

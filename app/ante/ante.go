@@ -11,7 +11,7 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v11/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
-	corestoretypes "cosmossdk.io/core/store"
+	"cosmossdk.io/core/store"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -53,7 +53,7 @@ func NewAnteHandler(
 	ibcKeeper *ibckeeper.Keeper,
 	wasmGasRegister wasmtypes.GasRegister,
 	wasmNodeConfig wasmtypes.NodeConfig,
-	wasmTxCounterStore corestoretypes.KVStoreService,
+	wasmTxCounterStore store.KVStoreService,
 ) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		// SetUpContext must be first: it installs the gas meter the decorators

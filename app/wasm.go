@@ -12,7 +12,7 @@ import (
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	"github.com/spf13/cast"
 
-	corestoretypes "cosmossdk.io/core/store"
+	"cosmossdk.io/core/store"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -46,7 +46,7 @@ func WasmModuleBasics() module.BasicManager {
 // instantiate, and the execution policy router, the tax query, callbacks,
 // and GMP are all still absent, so no contract path is reachable until the
 // Phase 4 activation matrix passes.
-func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConfig, corestoretypes.KVStoreService, error) {
+func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConfig, store.KVStoreService, error) {
 	wasmKey := storetypes.NewKVStoreKey(wasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmKey); err != nil {
 		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("register Wasm store: %w", err)

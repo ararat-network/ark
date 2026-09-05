@@ -22,7 +22,7 @@ import (
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
-	clienthelpers "cosmossdk.io/client/v2/helpers"
+	clientv2helpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log/v2"
 
@@ -33,7 +33,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
-	"github.com/cosmos/cosmos-sdk/server/config"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -138,8 +138,8 @@ type ArkApp struct {
 
 func init() {
 	var err error
-	clienthelpers.EnvPrefix = strings.ToUpper(Name)
-	DefaultNodeHome, err = clienthelpers.GetNodeHomeDirectory("." + Name)
+	clientv2helpers.EnvPrefix = strings.ToUpper(Name)
+	DefaultNodeHome, err = clientv2helpers.GetNodeHomeDirectory("." + Name)
 	if err != nil {
 		panic(err)
 	}
@@ -399,7 +399,7 @@ func (app *ArkApp) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *ArkApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+func (app *ArkApp) RegisterAPIRoutes(apiSvr *api.Server, apiConfig serverconfig.APIConfig) {
 	app.App.RegisterAPIRoutes(apiSvr, apiConfig)
 	// register swagger API in app.go so that other applications can override easily
 	if err := server.RegisterSwaggerAPI(apiSvr.ClientCtx, apiSvr.Router, apiConfig.Swagger); err != nil {

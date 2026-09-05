@@ -28,7 +28,7 @@ import (
 	ratelimitingv2 "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/v2"
 	"github.com/cosmos/ibc-go/v11/modules/apps/transfer"
 	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
-	transfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	transferv2 "github.com/cosmos/ibc-go/v11/modules/apps/transfer/v2"
 	ibc "github.com/cosmos/ibc-go/v11/modules/core"
 	porttypes "github.com/cosmos/ibc-go/v11/modules/core/05-port/types"
@@ -66,7 +66,7 @@ func IBCModuleBasics() module.BasicManager {
 // handlers must join the routers before they are sealed.
 func (app *ArkApp) setupIBCKeepers() error {
 	ibcKey := storetypes.NewKVStoreKey(ibcexported.StoreKey)
-	transferKey := storetypes.NewKVStoreKey(transfertypes.StoreKey)
+	transferKey := storetypes.NewKVStoreKey(ibctransfertypes.StoreKey)
 	rateLimitKey := storetypes.NewKVStoreKey(ratelimittypes.StoreKey)
 	packetForwardKey := storetypes.NewKVStoreKey(packetforwardtypes.StoreKey)
 	icaControllerKey := storetypes.NewKVStoreKey(icacontrollertypes.StoreKey)
@@ -179,7 +179,7 @@ func (app *ArkApp) setupIBCRoutes() error {
 			packetforwardkeeper.DefaultForwardTransferPacketTimeoutTimestamp,
 		)).
 		Next(ratelimiting.NewIBCMiddleware(app.RateLimitKeeper))
-	ibcRouter.AddRoute(transfertypes.ModuleName, transferStack.Build())
+	ibcRouter.AddRoute(ibctransfertypes.ModuleName, transferStack.Build())
 	ibcRouter.AddRoute(
 		icacontrollertypes.SubModuleName,
 		icacontroller.NewIBCMiddleware(app.ICAControllerKeeper),
@@ -207,7 +207,7 @@ func (app *ArkApp) setupIBCRoutes() error {
 		app.IBCKeeper.ChannelKeeperV2,
 		app.IBCKeeper.ChannelKeeperV2,
 	)
-	ibcRouterV2.AddRoute(transfertypes.PortID, transferStackV2)
+	ibcRouterV2.AddRoute(ibctransfertypes.PortID, transferStackV2)
 	// Contract v2 ports are per-contract, so they route by prefix rather than
 	// by an exact port ID.
 	ibcRouterV2.AddPrefixRoute(wasmkeeper.PortIDPrefixV2, wasmkeeper.NewIBC2Handler(app.WasmKeeper))

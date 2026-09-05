@@ -10,7 +10,7 @@ import (
 	"time"
 
 	gateway "github.com/cosmos/gogogateway"
-	gatewayruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -28,7 +28,7 @@ type server struct {
 	address string
 
 	grpcSrv    *grpc.Server
-	gatewayMux *gatewayruntime.ServeMux
+	gatewayMux *runtime.ServeMux
 	httpSrv    *http.Server
 }
 
@@ -54,8 +54,8 @@ func newServer(service api.PriceFeedServer, logger log.Logger, address string) (
 	s.grpcSrv = grpc.NewServer(grpc.UnaryInterceptor(s.recoverUnaryPanic))
 	api.RegisterPriceFeedServer(s.grpcSrv, service)
 
-	s.gatewayMux = gatewayruntime.NewServeMux(
-		gatewayruntime.WithMarshalerOption(gatewayruntime.MIMEWildcard, &gateway.JSONPb{
+	s.gatewayMux = runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &gateway.JSONPb{
 			EmitDefaults: true,
 			Indent:       "",
 			OrigName:     true,

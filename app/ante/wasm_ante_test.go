@@ -9,7 +9,7 @@ import (
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
-	corestoretypes "cosmossdk.io/core/store"
+	"cosmossdk.io/core/store"
 
 	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +20,7 @@ import (
 
 // wasmTxCounterStore rebuilds the counter's store service from the registered
 // Wasm store key, the way setupWasm hands it to the ante chain.
-func wasmTxCounterStore(t *testing.T, arkApp *app.ArkApp) corestoretypes.KVStoreService {
+func wasmTxCounterStore(t *testing.T, arkApp *app.ArkApp) store.KVStoreService {
 	t.Helper()
 	key := arkApp.GetKey(wasmtypes.StoreKey)
 	require.NotNil(t, key, "the Wasm store must be registered")

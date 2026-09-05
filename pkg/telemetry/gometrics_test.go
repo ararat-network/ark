@@ -10,7 +10,7 @@ import (
 	gometrics "github.com/hashicorp/go-metrics"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/noop"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
@@ -151,7 +151,7 @@ func TestGoMetricsSinkReusesInstruments(t *testing.T) {
 // exists for: a meter that refuses every instrument must leave the sink inert
 // rather than take the node down from a metrics call.
 func TestGoMetricsSinkSurvivesAnUnusableMeter(t *testing.T) {
-	sink := telemetry.NewGoMetricsSink(context.Background(), noop.Meter{})
+	sink := telemetry.NewGoMetricsSink(context.Background(), metricnoop.Meter{})
 
 	require.NotPanics(t, func() {
 		sink.SetGauge([]string{"gauged"}, 1)

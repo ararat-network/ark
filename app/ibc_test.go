@@ -15,7 +15,7 @@ import (
 	ratelimiting "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting"
 	ratelimittypes "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/types"
 	ratelimitingv2 "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/v2"
-	transfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v11/modules/light-clients/07-tendermint"
 	ibctesting "github.com/cosmos/ibc-go/v11/testing"
@@ -49,7 +49,7 @@ func TestIBCWiring(t *testing.T) {
 	// Rate limiting is outermost on both stacks, which is also what keeps the
 	// callbacks middleware underneath it: a callback must not run for a packet
 	// the limiter refused.
-	transferRoute, ok := arkApp.IBCKeeper.PortKeeper.Route(transfertypes.ModuleName)
+	transferRoute, ok := arkApp.IBCKeeper.PortKeeper.Route(ibctransfertypes.ModuleName)
 	require.True(t, ok)
 	require.IsType(t, &ratelimiting.IBCMiddleware{}, transferRoute)
 
@@ -64,11 +64,11 @@ func TestIBCWiring(t *testing.T) {
 	require.True(t, ok)
 	require.True(t, arkApp.IBCKeeper.PortKeeper.Router.Sealed())
 
-	require.True(t, arkApp.IBCKeeper.ChannelKeeperV2.Router.HasRoute(transfertypes.PortID))
+	require.True(t, arkApp.IBCKeeper.ChannelKeeperV2.Router.HasRoute(ibctransfertypes.PortID))
 	require.IsType(
 		t,
 		ratelimitingv2.IBCMiddleware{},
-		arkApp.IBCKeeper.ChannelKeeperV2.Router.Route(transfertypes.PortID),
+		arkApp.IBCKeeper.ChannelKeeperV2.Router.Route(ibctransfertypes.PortID),
 	)
 	// Contract v2 ports are per-contract, so any port under the prefix resolves.
 	require.True(t, arkApp.IBCKeeper.ChannelKeeperV2.Router.HasRoute(
@@ -77,7 +77,7 @@ func TestIBCWiring(t *testing.T) {
 
 	for _, moduleName := range []string{
 		ibcexported.ModuleName,
-		transfertypes.ModuleName,
+		ibctransfertypes.ModuleName,
 		ratelimittypes.ModuleName,
 		packetforwardtypes.ModuleName,
 		icatypes.ModuleName,
@@ -91,7 +91,7 @@ func TestIBCWiring(t *testing.T) {
 		t,
 		arkApp.ModuleManager.OrderInitGenesis,
 		ibcexported.ModuleName,
-		transfertypes.ModuleName,
+		ibctransfertypes.ModuleName,
 	)
 	requireOrderBefore(
 		t,

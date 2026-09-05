@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/mock/gomock"
 
-	corestore "cosmossdk.io/core/store"
+	"cosmossdk.io/core/store"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -35,7 +35,7 @@ import (
 type liabilityBenchFixture struct {
 	keeper           *treasurykeeper.Keeper
 	ctx              sdk.Context
-	transientService corestore.TransientStoreService
+	transientService store.TransientStoreService
 	denoms           []string
 }
 

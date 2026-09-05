@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -180,7 +180,7 @@ func (b *pricingTxBuilder) GetTx() authsigning.Tx {
 	return b.TxBuilder.GetTx()
 }
 
-func (b *pricingTxBuilder) SetSignatures(signatures ...signingtypes.SignatureV2) error {
+func (b *pricingTxBuilder) SetSignatures(signatures ...signing.SignatureV2) error {
 	b.settle()
 	return b.TxBuilder.SetSignatures(signatures...)
 }
