@@ -9,6 +9,11 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	icagenesistypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/genesis/types"
+	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
+	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
+	ibctypes "github.com/cosmos/ibc-go/v11/modules/core/types"
 	"github.com/stretchr/testify/require"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
@@ -280,23 +285,84 @@ func TestLaunchGenesisBoots(t *testing.T) {
 		string(arkApp.AppCodec().MustMarshalJSON(&want)),
 		string(arkApp.AppCodec().MustMarshalJSON(&metadata)),
 	)
+
+	// The IBC and Wasm modules are registered by hand, outside depinject, so
+	// a module whose InitGenesis the wiring skipped would boot on its code
+	// defaults — which open every IBC surface the artefact shuts.
+	require.Empty(t, arkApp.IBCKeeper.ClientKeeper.GetParams(ctx).AllowedClients)
+	transferParams := arkApp.TransferKeeper.GetParams(ctx)
+	require.False(t, transferParams.SendEnabled)
+	require.False(t, transferParams.ReceiveEnabled)
+	require.False(t, arkApp.ICAControllerKeeper.GetParams(ctx).ControllerEnabled)
+	hostParams := arkApp.ICAHostKeeper.GetParams(ctx)
+	require.False(t, hostParams.HostEnabled)
+	require.Empty(t, hostParams.AllowMessages)
+	wasmParams := arkApp.WasmKeeper.GetParams(ctx)
+	require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.CodeUploadAccess.Permission)
+	require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
 }
 
-// The contract runtime must ship shut. Wasmd's default genesis opens upload
-// and instantiation to everybody and Ark keeps that default in code, so the
-// launch posture holds in exactly one place: the curated genesis under
-// app/genesis. This pins it there.
-func TestWasmGenesisShipsDisabled(t *testing.T) {
+// The hub ships shut behind one switch: an empty allowed-client list. Every
+// IBC surface starts with a client — connections and channels, ICS-20 and ICA
+// on channels, v2 counterparties, and on those GMP and a contract's own
+// channels — so with no client type admitted nothing can be created and no
+// packet can arrive or leave. The transfer and ICA flags are off as well, so
+// the vote that admits 07-tendermint opens client creation and nothing more.
+// ibc-go's defaults open every one of these, so the artefact is their only
+// carrier and this pins it. The 08-wasm checksum half is pinned by
+// TestWasmLightClientGenesisShipsEmpty.
+func TestLaunchGenesisHoldsTheHubShut(t *testing.T) {
+	_, state := launchGenesis(t)
+	_, cdc := cliBasicManager(t)
+
+	var ibcGenesis ibctypes.GenesisState
+	require.NoError(t, cdc.UnmarshalJSON(state[ibcexported.ModuleName], &ibcGenesis))
+	require.Empty(t, ibcGenesis.ClientGenesis.Params.AllowedClients,
+		"no client type may be created at launch; governance admits 07-tendermint when it opens the hub (D45, D50)")
+
+	var transferGenesis ibctransfertypes.GenesisState
+	require.NoError(t, cdc.UnmarshalJSON(state[ibctransfertypes.ModuleName], &transferGenesis))
+	require.False(t, transferGenesis.Params.SendEnabled, "ICS-20 send is off until the activation matrix passes")
+	require.False(t, transferGenesis.Params.ReceiveEnabled, "ICS-20 receive is off until the activation matrix passes")
+
+	var icaGenesis icagenesistypes.GenesisState
+	require.NoError(t, cdc.UnmarshalJSON(state[icatypes.ModuleName], &icaGenesis))
+	require.False(t, icaGenesis.ControllerGenesisState.Params.ControllerEnabled, "ICA controller launches disabled")
+	require.False(t, icaGenesis.HostGenesisState.Params.HostEnabled, "ICA host launches disabled")
+	require.Empty(t, icaGenesis.HostGenesisState.Params.AllowMessages,
+		"the host allowlist ships empty; activation names explicit type URLs, never the wildcard")
+
+	require.NotContains(t, state, "mint", "Ark has no mint module (D1)")
+}
+
+// Oracle rates arrive through vote extensions, and the pipeline treats an
+// enable height of zero as disabled, so a launch genesis that left the SDK
+// default would never price anything. The testnet command and the upgrade
+// rehearsal both enable them from the first height; this pins the artefact to
+// the same.
+func TestLaunchGenesisEnablesVoteExtensions(t *testing.T) {
+	appGenesis, _ := launchGenesis(t)
+	require.EqualValues(t, 1, appGenesis.Consensus.Params.ABCI.VoteExtensionsEnableHeight)
+}
+
+// The contract runtime ships open: anyone may upload and instantiate from
+// height one. What bounds a contract is the policy router charging its tax at
+// dispatch, the accept list fixing what it may read, and the empty client
+// allowlist leaving its IBC channels unopenable. Wasmd's default says the same,
+// so the pin here is against a hand edit that shuts the runtime by accident,
+// and against the artefact carrying code or contracts, which a fresh chain
+// must not.
+func TestWasmGenesisShipsOpen(t *testing.T) {
 	_, appState := launchGenesis(t)
 	require.NotNil(t, appState[wasmtypes.ModuleName], "wasm genesis must be present")
 
 	var state wasmtypes.GenesisState
 	require.NoError(t, json.Unmarshal(appState[wasmtypes.ModuleName], &state))
 
-	require.Equal(t, wasmtypes.AccessTypeNobody, state.Params.CodeUploadAccess.Permission,
-		"nobody may upload contract code at launch")
-	require.Equal(t, wasmtypes.AccessTypeNobody, state.Params.InstantiateDefaultPermission,
-		"nobody may instantiate contracts at launch")
+	require.Equal(t, wasmtypes.AccessTypeEverybody, state.Params.CodeUploadAccess.Permission,
+		"anyone may upload contract code at launch")
+	require.Equal(t, wasmtypes.AccessTypeEverybody, state.Params.InstantiateDefaultPermission,
+		"anyone may instantiate contracts at launch")
 	require.Empty(t, state.Codes, "launch genesis carries no contract code")
 	require.Empty(t, state.Contracts, "launch genesis carries no contracts")
 }

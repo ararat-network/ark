@@ -1,0 +1,827 @@
+{
+  "app_hash": null,
+  "app_name": "arkd",
+  "app_state": {
+    "07-tendermint": null,
+    "08-wasm": {
+      "contracts": []
+    },
+    "asset": {
+      "assets": [
+        {
+          "denom": "aaud",
+          "metadata": {
+            "base": "aaud",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "aaud",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "aud",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "aud",
+            "name": "ArkAUD",
+            "symbol": "arkAUD",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "acad",
+          "metadata": {
+            "base": "acad",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "acad",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "cad",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "cad",
+            "name": "ArkCAD",
+            "symbol": "arkCAD",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "acny",
+          "metadata": {
+            "base": "acny",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "acny",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "cny",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "cny",
+            "name": "ArkCNY",
+            "symbol": "arkCNY",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "aeur",
+          "metadata": {
+            "base": "aeur",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "aeur",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "eur",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "eur",
+            "name": "ArkEUR",
+            "symbol": "arkEUR",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "agbp",
+          "metadata": {
+            "base": "agbp",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "agbp",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "gbp",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "gbp",
+            "name": "ArkGBP",
+            "symbol": "arkGBP",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "ajpy",
+          "metadata": {
+            "base": "ajpy",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "ajpy",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "jpy",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "jpy",
+            "name": "ArkJPY",
+            "symbol": "arkJPY",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "akrw",
+          "metadata": {
+            "base": "akrw",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "akrw",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "krw",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "krw",
+            "name": "ArkKRW",
+            "symbol": "arkKRW",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "amxn",
+          "metadata": {
+            "base": "amxn",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "amxn",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "mxn",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "mxn",
+            "name": "ArkMXN",
+            "symbol": "arkMXN",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "asgd",
+          "metadata": {
+            "base": "asgd",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "asgd",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "sgd",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "sgd",
+            "name": "ArkSGD",
+            "symbol": "arkSGD",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        },
+        {
+          "denom": "ausd",
+          "metadata": {
+            "base": "ausd",
+            "denom_units": [
+              {
+                "aliases": [],
+                "denom": "ausd",
+                "exponent": 0
+              },
+              {
+                "aliases": [],
+                "denom": "usd",
+                "exponent": 18
+              }
+            ],
+            "description": "A native asset of Ark Icarus.",
+            "display": "usd",
+            "name": "ArkUSD",
+            "symbol": "arkUSD",
+            "uri": "",
+            "uri_hash": ""
+          },
+          "status": "ASSET_STATUS_ACTIVE",
+          "version": "1"
+        }
+      ],
+      "emergency_mandate": {
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        }
+      },
+      "emergency_suspensions": [],
+      "params": {
+        "settlement_activation_delay_blocks": "14400"
+      },
+      "resolution_records": [],
+      "settlement_plans": []
+    },
+    "auth": {
+      "accounts": [],
+      "params": {
+        "max_memo_characters": "256",
+        "sig_verify_cost_ed25519": "590",
+        "sig_verify_cost_secp256k1": "1000",
+        "tx_sig_limit": "7",
+        "tx_size_cost_per_byte": "10"
+      }
+    },
+    "authz": {
+      "authorization": []
+    },
+    "bank": {
+      "balances": [],
+      "denom_metadata": [
+        {
+          "base": "anoah",
+          "denom_units": [
+            {
+              "aliases": [],
+              "denom": "anoah",
+              "exponent": 0
+            },
+            {
+              "aliases": [],
+              "denom": "noah",
+              "exponent": 18
+            }
+          ],
+          "description": "The native staking token of Ark.",
+          "display": "noah",
+          "name": "NOAH",
+          "symbol": "NOAH",
+          "uri": "",
+          "uri_hash": ""
+        }
+      ],
+      "params": {
+        "default_send_enabled": true,
+        "send_enabled": []
+      },
+      "send_enabled": [],
+      "supply": []
+    },
+    "claims": {
+      "claims": [],
+      "claims_allowance_used": "0",
+      "claims_mandate": {
+        "committee_claim_limit": {
+          "amount": "0",
+          "denom": "anoah"
+        },
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        }
+      },
+      "insurance_reserved": "0",
+      "next_claim_id": "1",
+      "params": {
+        "claim_cancellation_period_blocks": "100800"
+      }
+    },
+    "consensus": null,
+    "distribution": {
+      "delegator_starting_infos": [],
+      "delegator_withdraw_infos": [],
+      "fee_pool": {
+        "community_pool": []
+      },
+      "outstanding_rewards": [],
+      "params": {
+        "base_proposer_reward": "0.000000000000000000",
+        "bonus_proposer_reward": "0.000000000000000000",
+        "community_tax": "0.000000000000000000",
+        "withdraw_addr_enabled": true
+      },
+      "previous_proposer": "",
+      "validator_accumulated_commissions": [],
+      "validator_current_rewards": [],
+      "validator_historical_rewards": [],
+      "validator_slash_events": []
+    },
+    "evidence": {
+      "evidence": []
+    },
+    "feegrant": {
+      "allowances": []
+    },
+    "genutil": {
+      "gen_txs": []
+    },
+    "gmp": {
+      "ics27_accounts": []
+    },
+    "gov": {
+      "constitution": "",
+      "deposit_params": null,
+      "deposits": [],
+      "params": {
+        "burn_proposal_deposit_prevote": false,
+        "burn_vote_quorum": false,
+        "burn_vote_veto": true,
+        "expedited_min_deposit": [
+          {
+            "amount": "50000000000000000000",
+            "denom": "anoah"
+          }
+        ],
+        "expedited_threshold": "0.667000000000000000",
+        "expedited_voting_period": "86400s",
+        "max_deposit_period": "172800s",
+        "min_deposit": [
+          {
+            "amount": "10000000000000000000",
+            "denom": "anoah"
+          }
+        ],
+        "min_deposit_ratio": "0.010000000000000000",
+        "min_initial_deposit_ratio": "0.100000000000000000",
+        "proposal_cancel_dest": "",
+        "proposal_cancel_ratio": "0.500000000000000000",
+        "quorum": "0.334000000000000000",
+        "threshold": "0.500000000000000000",
+        "veto_threshold": "0.334000000000000000",
+        "voting_period": "172800s"
+      },
+      "proposals": [],
+      "starting_proposal_id": "1",
+      "tally_params": null,
+      "votes": [],
+      "voting_params": null
+    },
+    "ibc": {
+      "channel_genesis": {
+        "ack_sequences": [],
+        "acknowledgements": [],
+        "channels": [],
+        "commitments": [],
+        "next_channel_sequence": "0",
+        "receipts": [],
+        "recv_sequences": [],
+        "send_sequences": []
+      },
+      "channel_v2_genesis": {
+        "acknowledgements": [],
+        "async_packets": [],
+        "commitments": [],
+        "receipts": [],
+        "send_sequences": []
+      },
+      "client_genesis": {
+        "clients": [],
+        "clients_consensus": [],
+        "clients_metadata": [],
+        "create_localhost": false,
+        "next_client_sequence": "0",
+        "params": {
+          "allowed_clients": []
+        }
+      },
+      "client_v2_genesis": {
+        "counterparty_infos": []
+      },
+      "connection_genesis": {
+        "client_connection_paths": [],
+        "connections": [],
+        "next_connection_sequence": "0",
+        "params": {
+          "max_expected_time_per_block": "30000000000"
+        }
+      }
+    },
+    "interchainaccounts": {
+      "controller_genesis_state": {
+        "active_channels": [],
+        "interchain_accounts": [],
+        "params": {
+          "controller_enabled": false
+        },
+        "ports": []
+      },
+      "host_genesis_state": {
+        "active_channels": [],
+        "interchain_accounts": [],
+        "params": {
+          "allow_messages": [],
+          "host_enabled": false
+        },
+        "port": "icahost"
+      }
+    },
+    "market": {
+      "ark_pool_delta": "0.000000000000000000",
+      "conversion_mandate": {
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        },
+        "max_tobin_tax": "0.000000000000000000",
+        "maximum_policy": {
+          "base_pool": {
+            "amount": "0.000000000000000000",
+            "denom": ""
+          },
+          "min_stability_spread": "0.000000000000000000",
+          "pool_recovery_period": "0"
+        },
+        "minimum_policy": {
+          "base_pool": {
+            "amount": "0.000000000000000000",
+            "denom": ""
+          },
+          "min_stability_spread": "0.000000000000000000",
+          "pool_recovery_period": "0"
+        }
+      },
+      "conversion_policy": {
+        "base_pool": {
+          "amount": "1000000000000000000000000.000000000000000000",
+          "denom": "axdr"
+        },
+        "min_stability_spread": "0.020000000000000000",
+        "pool_recovery_period": "14400"
+      },
+      "params": {
+        "default_tobin_tax": "0.002500000000000000"
+      },
+      "tobin_tax_overrides": []
+    },
+    "oracle": {
+      "accounting": {
+        "attendance_window": "100800",
+        "attendance_window_start_height": "0",
+        "reward_distribution_window": "5256000",
+        "reward_window": "100800",
+        "reward_window_start_height": "0"
+      },
+      "attendance_records": [],
+      "exchange_rates": [],
+      "feeds": {
+        "denoms": [
+          "aaud",
+          "acad",
+          "acny",
+          "aeur",
+          "agbp",
+          "ajpy",
+          "akrw",
+          "amxn",
+          "asgd",
+          "ausd",
+          "axdr"
+        ],
+        "transitions": [],
+        "version": "1"
+      },
+      "params": {
+        "attendance_window": "100800",
+        "functioning_block_threshold": "0.500000000000000000",
+        "max_exchange_rate_age": "60s",
+        "min_attendance_per_window": "0.050000000000000000",
+        "participation_threshold": "0.200000000000000000",
+        "reward_band": "0.020000000000000000",
+        "reward_distribution_window": "5256000",
+        "reward_window": "100800",
+        "vote_threshold": "0.666666666666666667"
+      },
+      "reference_denom": "axdr",
+      "reward_weights": []
+    },
+    "packetfowardmiddleware": {
+      "in_flight_packets": {}
+    },
+    "ratelimit": {
+      "blacklisted_denoms": [],
+      "hour_epoch": {
+        "duration": "3600s",
+        "epoch_number": "0",
+        "epoch_start_height": "0",
+        "epoch_start_time": "0001-01-01T00:00:00Z"
+      },
+      "pending_recv_packet_sequence_numbers": [],
+      "pending_send_packet_sequence_numbers": [],
+      "rate_limits": [],
+      "whitelisted_address_pairs": []
+    },
+    "reserve": {
+      "allowance_used": {
+        "amount": "0",
+        "denom": "anoah"
+      },
+      "closed_positions": [],
+      "ledger": [],
+      "mandate": {
+        "deployment_allowance": {
+          "amount": "0",
+          "denom": "anoah"
+        },
+        "destinations": [],
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        },
+        "minimum_noah_balance": {
+          "amount": "0",
+          "denom": "anoah"
+        }
+      },
+      "next_entry_id": "1",
+      "next_position_id": "1",
+      "open_positions": [],
+      "recognition_policy": []
+    },
+    "runtime": null,
+    "security": {
+      "committee_plan": {
+        "height": "0",
+        "name": "",
+        "term": "0"
+      },
+      "security_mandate": {
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        }
+      }
+    },
+    "slashing": {
+      "missed_blocks": [],
+      "params": {
+        "downtime_jail_duration": "600s",
+        "min_signed_per_window": "0.500000000000000000",
+        "signed_blocks_window": "100",
+        "slash_fraction_double_sign": "0.050000000000000000",
+        "slash_fraction_downtime": "0.010000000000000000"
+      },
+      "signing_infos": []
+    },
+    "staking": {
+      "delegations": [],
+      "exported": false,
+      "last_total_power": "0",
+      "last_validator_powers": [],
+      "params": {
+        "bond_denom": "anoah",
+        "historical_entries": 10000,
+        "max_entries": 7,
+        "max_validators": 100,
+        "min_commission_rate": "0.000000000000000000",
+        "unbonding_time": "1814400s"
+      },
+      "redelegations": [],
+      "unbonding_delegations": [],
+      "validators": []
+    },
+    "transfer": {
+      "denoms": [],
+      "params": {
+        "receive_enabled": false,
+        "send_enabled": false
+      },
+      "port_id": "transfer",
+      "total_escrowed": []
+    },
+    "treasury": {
+      "base_gas_price": "100000000000.000000000000000000",
+      "conversion_factors": [
+        {
+          "denom": "anoah",
+          "factor": "1.371000000000000000",
+          "derived_height": "0"
+        }
+      ],
+      "exposure_refresh_pending": false,
+      "exposure_state": {
+        "flow_pressure": "0.000000000000000000",
+        "flow_ratio": "0.000000000000000000",
+        "last_reference_price": "0.000000000000000000",
+        "last_refresh_height": "0",
+        "liability_ratio": "0.000000000000000000",
+        "multiplier": "1.000000000000000000",
+        "volatility_variance": "0.000000000000000000"
+      },
+      "economic_mandate": {
+        "envelope": {
+          "activation_height": "0",
+          "committee": "",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "member_count": 0,
+            "module": "",
+            "threshold": 0
+          },
+          "expiry_height": "0",
+          "term": "0"
+        },
+        "maximum_policy": {
+          "flow_weight": "0.000000000000000000",
+          "insurance_target_ratio": "0.000000000000000000",
+          "liability_ratio_weight": "0.000000000000000000",
+          "oracle_block_reward_target": "0",
+          "redemption_buffer_target_ratio": "0.000000000000000000",
+          "strategic_reserve_target_ratio": "0.000000000000000000",
+          "validator_block_reward_target": "0",
+          "volatility_weight": "0.000000000000000000"
+        },
+        "minimum_policy": {
+          "flow_weight": "0.000000000000000000",
+          "insurance_target_ratio": "0.000000000000000000",
+          "liability_ratio_weight": "0.000000000000000000",
+          "oracle_block_reward_target": "0",
+          "redemption_buffer_target_ratio": "0.000000000000000000",
+          "strategic_reserve_target_ratio": "0.000000000000000000",
+          "validator_block_reward_target": "0",
+          "volatility_weight": "0.000000000000000000"
+        }
+      },
+      "economic_policy": {
+        "flow_weight": "0.000000000000000000",
+        "insurance_target_ratio": "0.000000000000000000",
+        "liability_ratio_weight": "0.000000000000000000",
+        "oracle_block_reward_target": "0",
+        "redemption_buffer_target_ratio": "0.000000000000000000",
+        "strategic_reserve_target_ratio": "0.000000000000000000",
+        "validator_block_reward_target": "0",
+        "volatility_weight": "0.000000000000000000"
+      },
+      "params": {
+        "base_fee_adjustment_rate": "0.025000000000000000",
+        "base_fee_target_utilisation": "0.500000000000000000",
+        "exposure_refresh_period_blocks": "600",
+        "flow_decay": "0.998850000000000000",
+        "min_base_gas_price": "100000000000.000000000000000000",
+        "multiplier_cap": "4.000000000000000000",
+        "multiplier_max_step": "0.250000000000000000",
+        "reference_denom": "axdr",
+        "reference_tax_cap": "1",
+        "reward_funding_window": "100800",
+        "transfer_tax_rate": "0.000000000000000000",
+        "volatility_decay": "0.999950000000000000"
+      },
+      "reward_funding": {
+        "blocks_remaining": "0",
+        "oracle_target": "0",
+        "validator_fee_value": "0",
+        "validator_target": "0"
+      }
+    },
+    "upgrade": {},
+    "vesting": {},
+    "wasm": {
+      "codes": [],
+      "contracts": [],
+      "params": {
+        "code_upload_access": {
+          "addresses": [],
+          "permission": "Everybody"
+        },
+        "instantiate_default_permission": "Everybody"
+      },
+      "sequences": []
+    }
+  },
+  "app_version": "",
+  "chain_id": "ark-1",
+  "consensus": {
+    "params": {
+      "abci": {
+        "vote_extensions_enable_height": "1"
+      },
+      "authority": {
+        "authority": ""
+      },
+      "block": {
+        "max_bytes": "22020096",
+        "max_gas": "100000000"
+      },
+      "evidence": {
+        "max_age_duration": "172800000000000",
+        "max_age_num_blocks": "100000",
+        "max_bytes": "1048576"
+      },
+      "validator": {
+        "pub_key_types": [
+          "ed25519"
+        ]
+      },
+      "version": {
+        "app": "0"
+      }
+    }
+  },
+  "genesis_time": "0001-01-01T00:00:00Z",
+  "initial_height": 1
+}

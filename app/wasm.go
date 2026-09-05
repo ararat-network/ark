@@ -28,9 +28,10 @@ import (
 // genesis construction, which run without constructing an ArkApp instance.
 //
 // The basics carry wasmd's own default genesis, which opens upload and
-// instantiation to everybody. The launch posture — shut until the Phase 4
-// activation matrix passes — lives in app/genesis/genesis.json, not in code
-// defaults; a genesis generated from these defaults is a scratch genesis.
+// instantiation to everybody, and the launch genesis keeps that: the runtime
+// is open from height one. The posture lives in app/genesis/genesis.json, not
+// in code defaults; a genesis generated from these defaults is a scratch
+// genesis.
 func WasmModuleBasics() module.BasicManager {
 	return module.NewBasicManager(wasm.AppModuleBasic{})
 }
@@ -42,10 +43,11 @@ func WasmModuleBasics() module.BasicManager {
 // chain: the store backs the per-block transaction count that makes
 // an instantiated contract's address deterministic.
 //
-// The runtime ships inert. Ark's launch genesis permits nobody to upload or
-// instantiate, and the execution policy router, the tax query, callbacks,
-// and GMP are all still absent, so no contract path is reachable until the
-// Phase 4 activation matrix passes.
+// The runtime ships open. What bounds a contract is the policy router, which
+// charges execution-generated tax at dispatch; the accept list, which fixes
+// what it may read; and the IBC client allowlist, empty at launch, which
+// leaves its channels on both stacks unopenable until governance admits a
+// client type.
 func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConfig, store.KVStoreService, error) {
 	wasmKey := storetypes.NewKVStoreKey(wasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmKey); err != nil {
@@ -122,7 +124,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 // setupIBCKeepers, which built the client keeper it registers against; its
 // light-client route joins the client router in setupIBCRoutes.
 //
-// It ships inert, like the contract runtime: the launch genesis carries no
+// It ships inert: the launch genesis carries no
 // client code, uploading it is authority-gated to governance, and the only
 // query surface beyond the module's stargate defaults is the BLS12-381
 // verifier below, pure deterministic crypto with no state access. The VM
