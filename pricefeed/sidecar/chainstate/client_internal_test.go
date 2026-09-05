@@ -153,3 +153,17 @@ func (c feedQueryClient) Feeds(
 ) (*oracletypes.QueryFeedsResponse, error) {
 	return c.response, nil
 }
+
+// waitForRetry is the only place the polling loop yields to cancellation
+// between attempts. Its two outcomes are what decide whether a shutdown waits
+// out a full retry interval or returns at once.
+func TestWaitForRetryReturnsAfterTheInterval(t *testing.T) {
+	require.NoError(t, waitForRetry(context.Background(), time.Millisecond))
+}
+
+func TestWaitForRetryReturnsOnCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	require.ErrorIs(t, waitForRetry(ctx, time.Hour), context.Canceled)
+}
