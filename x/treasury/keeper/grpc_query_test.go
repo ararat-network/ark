@@ -7,7 +7,10 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	protov2 "google.golang.org/protobuf/proto"
 
+	bankv1beta1 "cosmossdk.io/api/cosmos/bank/v1beta1"
+	basev1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	"cosmossdk.io/math"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -281,6 +284,63 @@ func (s *KeeperTestSuite) TestQueryComputeTax() {
 	)
 	s.Require().NoError(err)
 	s.Require().True(response.Tax.IsZero())
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), response.TaxBase)
+}
+
+// TestQueryComputeTaxBaseSumsPrincipal pins tax_base: every input summed per
+// denomination, taxed or not — NOAH is never taxed and counts all the same.
+func (s *KeeperTestSuite) TestQueryComputeTaxBaseSumsPrincipal() {
+	from := sdk.AccAddress{1}
+	to := sdk.AccAddress{2}
+	var messages []*codectypes.Any
+	for _, amount := range []sdk.Coins{
+		sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100), sdk.NewInt64Coin(chain.NoahBaseDenom, 7)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50)),
+	} {
+		message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
+			FromAddress: from.String(),
+			ToAddress:   to.String(),
+			Amount:      amount,
+		})
+		s.Require().NoError(err)
+		messages = append(messages, message)
+	}
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: messages},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 7), sdk.NewInt64Coin(chain.USDBaseDenom, 150)),
+		response.TaxBase,
+	)
+}
+
+// TestQueryComputeTaxDecodesForItself pins what makes the query safe to ask
+// from any client: a message arrives as bytes under a type URL and is decoded
+// here into the registered type, so one built dynamically — as autocli builds
+// them — is walked like any other. The Any carries no cached value, as one
+// off the wire does not.
+func (s *KeeperTestSuite) TestQueryComputeTaxDecodesForItself() {
+	from := sdk.AccAddress{1}
+	to := sdk.AccAddress{2}
+	dynamic, err := protov2.Marshal(&bankv1beta1.MsgSend{
+		FromAddress: from.String(),
+		ToAddress:   to.String(),
+		Amount:      []*basev1beta1.Coin{{Denom: chain.USDBaseDenom, Amount: "100"}},
+	})
+	s.Require().NoError(err)
+
+	response, err := keeper.NewQueryServerImpl(s.keeper).ComputeTax(
+		s.ctx,
+		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{{
+			TypeUrl: sdk.MsgTypeURL(&banktypes.MsgSend{}),
+			Value:   dynamic,
+		}}},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), response.TaxBase)
 }
 
 func (s *KeeperTestSuite) TestQueryComputeTaxRejectsNilMessage() {

@@ -22,6 +22,7 @@ import (
 	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	chain "github.com/ararat-network/ark/pkg/chain"
@@ -109,6 +110,7 @@ func TestKeeperTestSuite(t *testing.T) {
 func (s *KeeperTestSuite) SetupTest() {
 	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
+	banktypes.RegisterInterfaces(interfaceRegistry)
 	types.RegisterInterfaces(interfaceRegistry)
 	s.cdc = codec.NewProtoCodec(interfaceRegistry)
 
