@@ -13,6 +13,11 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
+// AttributeKeyTransferTax names, on the tx event TransferTaxDecorator emits
+// once the messages have succeeded, the transfer tax a transaction paid
+// within its fee.
+const AttributeKeyTransferTax = "transfer_tax"
+
 // transferTaxKey keys, on the context FeeDecorator hands on, the tax it
 // priced and held the declared fee to. BaseApp carries the ante's context
 // into the messages and the post chain, so the charge reads the figure the
@@ -51,12 +56,18 @@ func transferTaxFromContext(ctx sdk.Context) (sdk.Coins, bool) {
 // A granter bears the tax as they bear the gas fee, through a draw on the
 // allowance for the tax alone.
 type TransferTaxDecorator struct {
+	accountKeeper  sdkante.AccountKeeper
 	bankKeeper     authtypes.BankKeeper
 	feegrantKeeper sdkante.FeegrantKeeper
 }
 
-func NewTransferTaxDecorator(bankKeeper authtypes.BankKeeper, feegrantKeeper sdkante.FeegrantKeeper) TransferTaxDecorator {
+func NewTransferTaxDecorator(
+	accountKeeper sdkante.AccountKeeper,
+	bankKeeper authtypes.BankKeeper,
+	feegrantKeeper sdkante.FeegrantKeeper,
+) TransferTaxDecorator {
 	return TransferTaxDecorator{
+		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
 		feegrantKeeper: feegrantKeeper,
 	}
@@ -76,6 +87,9 @@ func (d TransferTaxDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, s
 	feeTx, ok := tx.(sdk.FeeTx)
 	if !ok {
 		return ctx, errorsmod.Wrap(sdkerrors.ErrTxDecode, "Tx must be a FeeTx")
+	}
+	if addr := d.accountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName); addr == nil {
+		return ctx, fmt.Errorf("transfer tax collector module account (%s) has not been set", treasurytypes.TransferTaxCollectorName)
 	}
 
 	deductFrom, payer, sponsored := chargedAccount(feeTx)

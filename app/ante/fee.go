@@ -19,96 +19,57 @@ import (
 	chain "github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
+	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
-
-// AttributeKeyTransferTax names, on the tx event TransferTaxDecorator emits
-// once the messages have succeeded, the transfer tax a transaction paid
-// within its fee.
-const AttributeKeyTransferTax = "transfer_tax"
 
 // AttributeKeyTip names, on the SDK's tx event, the NOAH a transaction paid
 // above the base fee.
 const AttributeKeyTip = "tip"
 
-// SimulatedFeeTransferGas is what a fee-less simulation consumes in place of
-// the gas fee transfer it cannot make: the store traffic of a one-coin send
-// to the fee collector — the payer's account and balance, the collector's
-// balance and account check — at the store's prices with amounts at the
-// 2^128 quantity bound, wider than any balance the chain issues, so a real
-// transfer costs no more. TestGasEstimateMatchesExecution measures a real
-// transfer against it and fails if it falls below the measurement or drifts
-// loose above it.
+// SimulatedFeeTransferGas stands in for the gas fee transfer a fee-less
+// simulation cannot make: the store traffic of a one-coin send to the fee
+// collector, at amounts on the 2^128 quantity bound, so a real transfer
+// costs no more.
 const SimulatedFeeTransferGas = 21_000
 
-// useBaseFeeGate gates the consensus base fee, and no genesis can stand in
-// for it: Validate refuses a zero MinBaseGasPrice, the controller floors the
-// live price at it every block, and the requirement ceils to at least one base
-// unit, so the gate is unsatisfiable-free by construction.
+// useBaseFeeGate gates the consensus base fee.
 var useBaseFeeGate = true
 
-// SetBaseFeeGate switches the base-fee gate, and false disables it outright:
-// the fee is then deducted as a simulation deducts it, nothing refused. It
-// exists for the simulation harness, which draws every transaction's fee
-// uniformly from the sender's spendable balance and cannot be told what a
-// transaction owes: it spends senders down to an empty balance and then
-// offers no fee at all, which no base fee can accept. The Hub switches its
-// own fee market off for the same reason. Never call it outside a test.
+// SetBaseFeeGate switches the base-fee gate; false deducts the fee as a
+// simulation does, refusing nothing. It exists for the simulation harness,
+// which draws every fee from the sender's spendable balance and cannot be
+// told what a transaction owes. Never call it outside a test.
 func SetBaseFeeGate(enabled bool) {
 	useBaseFeeGate = enabled
 }
 
-// FeeDecorator is the ante half of the fee mechanism. It prices the transfer
-// tax a transaction's messages owe, holds the declared fee to it, settles the
-// fee by denomination against Treasury's consensus base fee, and deducts the
-// base fee and the NOAH tip to the fee collector — on the ante's cache
-// branch, so a refusal anywhere moves nothing. The tax itself is charged by
-// TransferTaxDecorator after the messages, on their branch, so a transaction
-// that fails is never taxed (D82). What this decorator judges about the tax
-// is the declaration: whether the signed fee covers it. It prices the tax to
-// judge that, the settlement needs the same figure, since a stable leg's
-// slack above its tax is what pays the base fee, and it hands the figure on
-// through the context so the charge is the declaration's own number and the
-// tax is computed once. Affordability is the charge's own judgement, against
-// the balance the messages left. It replaces the SDK's DeductFeeDecorator,
-// whose deduction it mirrors — granter resolution, account check, collector
-// send, tx event — from x/auth/ante/fee.go at v0.54.3; an SDK upgrade
-// touching that file is re-diffed here by hand, as the decorator list
-// already is. Owning it is what lets an estimate move what execution moves:
-// the SDK skipped its checker under simulation and deducted a declared fee
-// whole, tax included.
+// FeeDecorator prices the transfer tax a transaction's messages owe, holds
+// the declared fee to it, settles the fee by denomination against Treasury's
+// consensus base fee, and deducts the base fee and the NOAH tip to the fee
+// collector on the ante's cache branch. It replaces the SDK's
+// DeductFeeDecorator.
 //
-// The fee is a ceiling and the tip is NOAH (D80). A leg in any other
-// denomination is charged the exact tax it declares, plus
-// ceil(BaseGasPrice × gas limit × factor) if it is the first leg in
-// denomination order whose slack above the tax covers it; the rest never
-// leaves the payer. The NOAH leg is charged whole: base fee if no stable
-// leg covered it, remainder tip. NOAH carries the tip because the tax is
-// never owed in it, so a tip and a padded tax are told apart by
-// denomination where one denomination split by subtraction could not. A
-// fee short of the tax is refused before anything is deducted (D78).
+// The fee is a ceiling and the tip is NOAH. A leg in any other denomination
+// is charged the exact tax it declares, plus ceil(BaseGasPrice × gas limit ×
+// factor) if it is the first leg in denomination order whose slack above the
+// tax covers it; the rest never leaves the payer. The NOAH leg is charged
+// whole: base fee if no stable leg covered it, remainder tip. A fee short of
+// the tax is refused before anything is deducted. The tax itself is charged
+// by TransferTaxDecorator after the messages; the figure priced here rides
+// the context, so the charge is the declaration's own number and the tax is
+// computed once.
 //
-// Under simulation, and in the harness with the gate off, nothing is
-// refused on fee grounds: the tax is set aside, the base fee taken where a
-// leg covers it, a NOAH leg charged as the tip it would be.
-// An estimate still carries what execution will cost: the settlement's
-// reads are made and not enforced, and a fee-less estimate consumes
-// SimulatedFeeTransferGas for the transfer it cannot make. Height zero
-// waives tax and gate alike: gentxs carry no fees, and a transfer tax at
-// genesis defends nothing, since whoever can place a taxable message in a
-// gentx can write the balances directly.
+// Under simulation, and in the harness with the gate off, nothing is refused
+// on fee grounds: the settlement's reads are made and not enforced, and a
+// fee-less estimate consumes SimulatedFeeTransferGas for the transfer it
+// cannot make. Height zero waives tax and gate alike.
 //
-// A fee granter bears base fee, tip, and tax together, each drawn on the
-// allowance as it is charged — base fee and tip here, the tax after the
-// messages — so the allowance records what left the granter and nothing
-// more. Strictness is unchanged: a grant that will not cover a charge fails
-// the transaction rather than falling back to the payer.
+// A fee granter bears base fee, tip and tax together, each drawn on the
+// allowance as it is charged. A grant that will not cover a charge fails the
+// transaction rather than falling back to the payer.
 //
 // Priority is the tip in reference units per gas unit, through the factor
-// NOAH is priced with: what a transaction chose to pay above the
-// requirement, never the tax or a stable leg's slack, neither of which buys
-// block space. A NOAH leg the table cannot price is refused, as a NOAH gas
-// fee is while the same entry is absent: a tip nothing can rank would be
-// paid for nothing.
+// NOAH is priced with.
 type FeeDecorator struct {
 	accountKeeper  sdkante.AccountKeeper
 	bankKeeper     authtypes.BankKeeper
@@ -146,18 +107,22 @@ func (d FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	if ctx.BlockHeight() == 0 {
 		settled = settlement{gasFee: feeTx.GetFee(), tip: math.ZeroInt()}
 	} else {
-		var err error
-		tax, err = d.treasury.ComputeTax(ctx, tx.GetMsgs())
+		// One Params read prices the tax and settles the fee.
+		params, err := d.treasury.Params.Get(ctx)
+		if err != nil {
+			return ctx, fmt.Errorf("getting treasury params: %w", err)
+		}
+		tax, _, err = d.treasury.ComputeTaxWithParams(ctx, params, tx.GetMsgs())
 		if err != nil {
 			return ctx, err
 		}
-		settled, err = d.settle(ctx, feeTx, tax, !simulate && useBaseFeeGate)
+		settled, err = d.settle(ctx, params, feeTx, tax, !simulate && useBaseFeeGate)
 		if err != nil {
 			return ctx, err
 		}
 	}
 
-	if err := d.deduct(ctx, tx, feeTx, settled); err != nil {
+	if err := d.deduct(ctx, feeTx, settled); err != nil {
 		return ctx, err
 	}
 	if simulate && ctx.BlockHeight() != 0 && settled.gasFee.IsZero() {
@@ -170,8 +135,7 @@ func (d FeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 
 // settlement is what the fee settles to: what reaches the fee collector —
 // the base fee in the one denomination that covered it, plus the NOAH leg —
-// the tip alone, and the rank it buys. The tax is what the messages owe,
-// known before the fee is read, so it is not here.
+// the tip within that, and the rank the tip buys.
 type settlement struct {
 	gasFee   sdk.Coins
 	tip      math.Int
@@ -180,28 +144,27 @@ type settlement struct {
 
 // settle partitions the fee by denomination and prices it. Enforcing, it
 // refuses before anything moves: a fee short of the tax, a fee no leg can
-// cover the base fee from, a NOAH leg the table cannot price. Not enforcing
-// — simulation, or the harness with the gate off — it refuses nothing,
-// settles what it can, and makes the reads execution makes so the estimate
-// carries them.
-func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, enforce bool) (settlement, error) {
+// cover the base fee from. Not enforcing, it refuses nothing on fee grounds,
+// settles what it can, and still makes the reads execution makes. A NOAH leg
+// the table cannot price is refused either way: broken state, not a fee.
+func (d FeeDecorator) settle(
+	ctx sdk.Context, params treasurytypes.Params, feeTx sdk.FeeTx, tax sdk.Coins, enforce bool,
+) (settlement, error) {
 	fee := feeTx.GetFee()
 	gas := feeTx.GetGas()
 	settled := settlement{tip: math.ZeroInt()}
 
-	// A tx's fee is decoded Coins, never constructed ones: ValidateBasic
-	// rejects only nil and negative amounts. Sorting a copy before validating
-	// it drops only the sortedness check — junk denoms, zero legs and repeats
-	// still fail — which leaves the encoded order free to name the paying
-	// leg. Read the fee by denomination through byDenom, since AmountOf
-	// binary searches; fee itself is only ever ranged over.
+	// Sorting a copy before validating it drops only the sortedness check —
+	// junk denoms, zero legs and repeats still fail — which leaves the encoded
+	// order free to name the paying leg. byDenom answers lookups by
+	// denomination, since AmountOf binary searches; fee is only ranged over.
 	byDenom := slices.Clone(fee).Sort()
 	if err := byDenom.Validate(); err != nil {
 		return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
 			"invalid fee %s: %v", fee, err)
 	}
 
-	// The declaration. Refused whole, whatever the fee offers for gas.
+	// A fee short of the declared tax is refused whole.
 	if enforce {
 		for _, coin := range tax {
 			if byDenom.AmountOf(coin.Denom).LT(coin.Amount) {
@@ -211,10 +174,6 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 		}
 	}
 
-	params, err := d.treasury.Params.Get(ctx)
-	if err != nil {
-		return settlement{}, err
-	}
 	price, err := d.treasury.BaseGasPrice.Get(ctx)
 	if err != nil {
 		return settlement{}, err
@@ -228,9 +187,8 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 	if noah.IsPositive() {
 		noahRequired, noahFactor, err = d.treasury.GetRequiredGasFee(ctx, params, price, gas, chain.NoahBaseDenom)
 		if err != nil {
-			// Genesis mandates the NOAH cross and nothing deletes it, so a
-			// missing factor refuses the leg on broken state rather than on
-			// NOAH being an unaccepted fee denomination.
+			// Genesis mandates the NOAH cross, so a missing factor is broken
+			// state rather than NOAH being an unaccepted fee denomination.
 			return settlement{}, errorsmod.Wrapf(err,
 				"reading the NOAH gas factor to price %s",
 				sdk.NewCoin(chain.NoahBaseDenom, noah))
@@ -238,28 +196,21 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 	}
 
 	// A fee-less estimate gives the loop below no leg to price, so it reads
-	// NOAH's factor in place of the one the eventual fee will name — one
-	// more than the reference, whose identity factor reads nothing, so a
-	// reference payer's estimate runs one read high. A failure is the same
-	// broken state as above, with no leg of its own to name.
+	// NOAH's factor in place of the one the eventual fee will name.
 	if fee.IsZero() && !enforce {
 		if _, _, err := d.treasury.GetRequiredGasFee(ctx, params, price, gas, chain.NoahBaseDenom); err != nil {
 			return settlement{}, errorsmod.Wrap(err, "reading the NOAH gas factor")
 		}
 	}
 
-	// The reference requirement ceil(price × gas) is zero exactly when the
-	// price or the gas limit is, and a zero requirement is covered by
-	// construction.
+	// ceil(price × gas) is zero exactly when the price or the gas limit is,
+	// and a zero requirement is covered.
 	covered := price.IsZero() || gas == 0
 
 	// Stable legs in the payer's own order: the first whose slack above its
-	// declared tax covers its own requirement pays the base fee, so the fee's
-	// encoding is how a payer names the leg it comes from. The legs are
-	// value-equivalent through their factors, so the choice costs at most a
-	// rounding unit. A leg with no factor is a tax-only ceiling and
-	// a leg short of its requirement is left for the next; neither is
-	// refused, because neither is charged past the tax it declared.
+	// declared tax covers its own requirement pays the base fee. A leg with no
+	// factor, or one short of its requirement, is left at the tax it declared
+	// and passed over.
 	for _, coin := range fee {
 		if covered {
 			break
@@ -285,8 +236,8 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 		covered = true
 	}
 
-	// NOAH pays the base fee only when no stable leg did. The rest of the
-	// leg is the tip either way.
+	// NOAH pays the base fee only when no stable leg did; the rest of the leg
+	// is the tip.
 	tip := noah
 	if !covered && noah.IsPositive() && noah.GTE(noahRequired.Amount) {
 		settled.gasFee = sdk.NewCoins(noahRequired)
@@ -294,8 +245,8 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 		covered = true
 	}
 	if !covered && enforce {
-		// Only refusal derives the reference figure it quotes — identity
-		// factor, so it cannot miss.
+		// Only the refusal needs the reference figure; its factor is the
+		// identity, so it cannot miss.
 		reference, _, err := d.treasury.GetRequiredGasFee(ctx, params, price, gas, params.ReferenceDenom)
 		if err != nil {
 			return settlement{}, err
@@ -309,15 +260,14 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 		settled.tip = tip
 		settled.gasFee = settled.gasFee.Add(sdk.NewCoin(chain.NoahBaseDenom, tip))
 		if !noahFactor.IsPositive() {
-			// Unreachable: every stored factor is written positive. Kept so
-			// the division can never be reached by zero or a negative, which
-			// the checked call below does not judge.
+			// Unreachable: every stored factor is written positive. Kept
+			// because the division below does not judge its divisor's sign.
 			return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
 				"non-positive gas factor for %s", chain.NoahBaseDenom)
 		}
 		// The numerator is a declared fee amount, bounded only by the decoder
 		// at 2^256, so a factor below one carries the quotient out of the Dec
-		// domain where the stock Quo would panic.
+		// domain, where the stock Quo panics.
 		value, err := decimal.Quo(math.LegacyNewDecFromInt(tip), noahFactor)
 		if err != nil {
 			return settlement{}, errorsmod.Wrapf(sdkerrors.ErrInvalidCoins,
@@ -328,14 +278,11 @@ func (d FeeDecorator) settle(ctx sdk.Context, feeTx sdk.FeeTx, tax sdk.Coins, en
 	return settled, nil
 }
 
-// deduct moves what the ante moves: the base fee and tip to the fee
-// collector, from the payer or from a granter through a draw on the
-// allowance. It mirrors the SDK's checkDeductFee. The SDK's DeductFees helper
-// is not used because its recipient is a package variable that only the
-// SDK's own constructor sets. The tax does not move here:
-// TransferTaxDecorator charges it once the messages have succeeded, and
-// refusing an unaffordable one is that charge's own job.
-func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settled settlement) error {
+// deduct moves the base fee and tip to the fee collector, from the payer or
+// from a granter through a draw on the allowance. The SDK's DeductFees helper
+// is unusable here: its recipient is a package variable that only the SDK's
+// own constructor sets. The tax moves in TransferTaxDecorator.
+func (d FeeDecorator) deduct(ctx sdk.Context, feeTx sdk.FeeTx, settled settlement) error {
 	gasFee := settled.gasFee
 	if addr := d.accountKeeper.GetModuleAddress(authtypes.FeeCollectorName); addr == nil {
 		return fmt.Errorf("fee collector module account (%s) has not been set", authtypes.FeeCollectorName)
@@ -343,7 +290,7 @@ func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settle
 
 	deductFrom, payer, sponsored := chargedAccount(feeTx)
 	if sponsored {
-		if err := d.feegrantKeeper.UseGrantedFees(ctx, deductFrom, payer, gasFee, tx.GetMsgs()); err != nil {
+		if err := d.feegrantKeeper.UseGrantedFees(ctx, deductFrom, payer, gasFee, feeTx.GetMsgs()); err != nil {
 			return errorsmod.Wrapf(err, "%s does not allow to pay fees for %s", deductFrom, payer)
 		}
 	}
@@ -360,8 +307,8 @@ func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settle
 		}
 	}
 
-	// The fee named is what moved. The tax is named by the post event, since
-	// an ante event outlives a failed transaction, which pays no tax.
+	// The fee named is what moved; the tax is named by the post event, since
+	// an ante event outlives a failed transaction.
 	attributes := []sdk.Attribute{
 		sdk.NewAttribute(sdk.AttributeKeyFee, gasFee.String()),
 		sdk.NewAttribute(sdk.AttributeKeyFeePayer, deductFrom.String()),
@@ -374,9 +321,8 @@ func (d FeeDecorator) deduct(ctx sdk.Context, tx sdk.Tx, feeTx sdk.FeeTx, settle
 }
 
 // chargedAccount resolves who a transaction's charges come from: the fee
-// payer, or the granter when one is named and is not the payer, in which
-// case each charge is also a draw on the granter's allowance. It mirrors the
-// SDK's checkDeductFee.
+// payer, or the granter when one is named and differs, in which case each
+// charge is also a draw on the granter's allowance.
 func chargedAccount(feeTx sdk.FeeTx) (deductFrom, payer sdk.AccAddress, sponsored bool) {
 	payer = sdk.AccAddress(feeTx.FeePayer())
 	deductFrom = payer
@@ -411,11 +357,9 @@ func gasPriority(value math.Int, gas uint64) int64 {
 }
 
 // GasTallyDecorator records each transaction's declared gas for the base-fee
-// controller. Block execution only: CheckTx sees mempool traffic rather
-// than the block, and a transaction failing later in the ante reverts the
-// write with everything else, so the tally reads as the block's paid-for
-// gas. Simulation tallies too, onto its discarded cache, so the estimate
-// carries the write.
+// controller. Block execution and simulation only; a transaction failing
+// later in the ante reverts the write with everything else, so the tally
+// reads as the block's paid-for gas.
 type GasTallyDecorator struct {
 	treasury *treasurykeeper.Keeper
 }
@@ -426,8 +370,7 @@ func NewGasTallyDecorator(treasury *treasurykeeper.Keeper) GasTallyDecorator {
 
 func (d GasTallyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
 	// Genesis transactions are not block traffic and must not seed the first
-	// block's tally. Baseapp happens not to stamp ExecModeFinalize on the
-	// InitChain context, but the height gate is the rule.
+	// block's tally.
 	if (ctx.ExecMode() == sdk.ExecModeFinalize || simulate) && ctx.BlockHeight() != 0 {
 		if feeTx, ok := tx.(sdk.FeeTx); ok {
 			if err := d.treasury.TallyBlockGas(ctx, feeTx.GetGas()); err != nil {

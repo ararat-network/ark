@@ -99,10 +99,9 @@ func NewAnteHandler(
 		// The tax is charged after the messages by the post chain, on the
 		// terms the policy router charges execution-generated messages, and
 		// whether a payer can afford it is judged there rather than here.
-		// Node-local
-		// minimum-gas-prices should be zero. The tally is the controller's
-		// input: what cleared the gate reports its declared gas, and
-		// Treasury's EndBlocker prices the next block from the total.
+		// Node-local minimum-gas-prices should be zero. The tally is the
+		// controller's input: what cleared the gate reports its declared gas,
+		// and Treasury's EndBlocker prices the next block from the total.
 		NewFeeDecorator(accountKeeper, bankKeeper, feeGrantKeeper, treasuryKeeper),
 		NewGasTallyDecorator(treasuryKeeper),
 
@@ -121,12 +120,16 @@ func NewAnteHandler(
 
 // NewPostHandler assembles the post chain, which BaseApp runs after a
 // transaction's messages on their own branch, so what it writes commits with
-// them and is discarded with them. One decorator: tax_post.go's
+// them and is discarded with them. One decorator: transfer_tax.go's
 // TransferTaxDecorator, which charges the transfer tax FeeDecorator priced,
 // held the fee to, and handed on through the context, once the messages
 // have succeeded and never otherwise. The runtime installs no post chain of
 // its own, so this is the whole of it, and it is only correct beside an ante
 // chain carrying FeeDecorator.
-func NewPostHandler(bankKeeper bankkeeper.BaseKeeper, feeGrantKeeper feegrantkeeper.Keeper) sdk.PostHandler {
-	return sdk.ChainPostDecorators(NewTransferTaxDecorator(bankKeeper, feeGrantKeeper))
+func NewPostHandler(
+	accountKeeper authkeeper.AccountKeeper,
+	bankKeeper bankkeeper.BaseKeeper,
+	feeGrantKeeper feegrantkeeper.Keeper,
+) sdk.PostHandler {
+	return sdk.ChainPostDecorators(NewTransferTaxDecorator(accountKeeper, bankKeeper, feeGrantKeeper))
 }

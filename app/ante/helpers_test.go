@@ -65,7 +65,7 @@ func feeDecorator(arkApp *app.ArkApp) ante.FeeDecorator {
 // taxDecorator is the production transfer tax decorator over the app's
 // keepers.
 func taxDecorator(arkApp *app.ArkApp) ante.TransferTaxDecorator {
-	return ante.NewTransferTaxDecorator(arkApp.BankKeeper, arkApp.FeeGrantKeeper)
+	return ante.NewTransferTaxDecorator(arkApp.AccountKeeper, arkApp.BankKeeper, arkApp.FeeGrantKeeper)
 }
 
 // runAnteFee runs the fee decorator alone over tx and returns the context it
