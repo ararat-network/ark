@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -975,7 +975,7 @@ func processVoteExtensions(
 ) (*recordingOracleKeeper, map[string]math.LegacyDec, error) {
 	t.Helper()
 
-	extendedVotes := make([]cometabci.ExtendedVoteInfo, 0, len(votes))
+	extendedVotes := make([]cmtabci.ExtendedVoteInfo, 0, len(votes))
 	for _, vote := range votes {
 		var voteExtension []byte
 		if !vote.absent {
@@ -986,17 +986,17 @@ func processVoteExtensions(
 		extendedVotes = append(extendedVotes, abcitestutil.NewExtendedVoteInfo(vote.validator, vote.power, voteExtension))
 	}
 
-	extendedCommit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{Votes: extendedVotes})
+	extendedCommit, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{Votes: extendedVotes})
 	require.NoError(t, err)
 
 	keeper := newRecordingOracleKeeper(params, voteTargets)
 	prices, err := oracle.ProcessVoteExtensions(
 		abcitestutil.NewSDKContext(3, 0),
 		keeper,
-		&cometabci.RequestFinalizeBlock{
+		&cmtabci.RequestFinalizeBlock{
 			Height:            3,
 			Txs:               [][]byte{extendedCommit},
-			DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, len(extendedVotes))},
+			DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, len(extendedVotes))},
 		},
 	)
 

@@ -10,7 +10,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -91,7 +91,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	genesisState[treasurytypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&treasuryGenesis)
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         chainID,
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
@@ -100,9 +100,9 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 
 	// deliver runs one transaction in its own block and commits it.
 	height := int64(0)
-	deliver := func(txBytes []byte) *abci.ExecTxResult {
+	deliver := func(txBytes []byte) *cmtabci.ExecTxResult {
 		height++
-		res, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		res, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 			Height:             height,
 			NextValidatorsHash: validators.Set.Hash(),
 			Txs:                [][]byte{txBytes},
@@ -116,7 +116,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	// deliverEmpty commits a block carrying no transactions.
 	deliverEmpty := func() {
 		height++
-		_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{Height: height, NextValidatorsHash: validators.Set.Hash()})
+		_, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{Height: height, NextValidatorsHash: validators.Set.Hash()})
 		require.NoError(t, err)
 		_, err = arkApp.Commit()
 		require.NoError(t, err)

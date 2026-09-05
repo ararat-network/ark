@@ -3,7 +3,7 @@ package oracle
 import (
 	"fmt"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -20,7 +20,7 @@ import (
 func ProcessVoteExtensions(
 	ctx sdk.Context,
 	oracleKeeper arkabcitypes.OracleKeeper,
-	req *cometabci.RequestFinalizeBlock,
+	req *cmtabci.RequestFinalizeBlock,
 ) (map[string]math.LegacyDec, error) {
 	voteHeight := req.Height - 1
 	feeds, err := oracleKeeper.GetFeeds(ctx, voteHeight)

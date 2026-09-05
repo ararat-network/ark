@@ -14,7 +14,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/core/address"
@@ -115,7 +115,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	require.NoError(t, err)
 	consensusParams := proto.Clone(simtestutil.DefaultConsensusParams).(*cmtproto.ConsensusParams)
 	consensusParams.Block.MaxGas = 200_000
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         chainID,
 		ConsensusParams: consensusParams,
 		AppStateBytes:   stateBytes,
@@ -146,7 +146,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+	response, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             1,
 		NextValidatorsHash: validators.Set.Hash(),
 		Txs:                txs,
@@ -185,7 +185,7 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 	}
 
 	// finalise block so we have CheckTx state set
-	_, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+	_, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height: 1,
 	})
 	require.NoError(t, err)

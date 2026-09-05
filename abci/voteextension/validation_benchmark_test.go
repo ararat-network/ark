@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtcrypto "github.com/cometbft/cometbft/crypto"
 	cmted25519 "github.com/cometbft/cometbft/crypto/ed25519"
 	cryptoenc "github.com/cometbft/cometbft/crypto/encoding"
@@ -114,7 +114,7 @@ func benchmarkExtendedCommit(
 	validatorCount int,
 	newPrivateKey func() cmtcrypto.PrivKey,
 	extension []byte,
-) (sdk.Context, fakeValidatorStore, cometabci.ExtendedCommitInfo) {
+) (sdk.Context, fakeValidatorStore, cmtabci.ExtendedCommitInfo) {
 	b.Helper()
 
 	ctx := newVoteExtensionContext(3, 1)
@@ -122,15 +122,15 @@ func benchmarkExtendedCommit(
 		pubKeys: make(map[string]cmtprotocrypto.PublicKey, validatorCount),
 		errs:    make(map[string]error),
 	}
-	commit := cometabci.ExtendedCommitInfo{
-		Votes: make([]cometabci.ExtendedVoteInfo, validatorCount),
+	commit := cmtabci.ExtendedCommitInfo{
+		Votes: make([]cmtabci.ExtendedVoteInfo, validatorCount),
 	}
 
 	for i := range validatorCount {
 		validator := newBenchmarkValidator(b, newPrivateKey())
 		store.pubKeys[string(validator.consAddr)] = validator.protoKey
-		commit.Votes[i] = cometabci.ExtendedVoteInfo{
-			Validator: cometabci.Validator{
+		commit.Votes[i] = cmtabci.ExtendedVoteInfo{
+			Validator: cmtabci.Validator{
 				Address: validator.consAddr,
 				Power:   1,
 			},

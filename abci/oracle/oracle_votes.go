@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"slices"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -28,7 +28,7 @@ type Vote struct {
 	// Validator is the CometBFT validator metadata from ExtendedVoteInfo.
 	// Address is the consensus address and Power is the consensus voting power
 	// for this commit.
-	Validator cometabci.Validator
+	Validator cmtabci.Validator
 
 	// Rates contains validated domain rates keyed by canonical target index.
 	// Decoded rates are strictly positive; abstention is omission, so an

@@ -11,7 +11,7 @@ import (
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/depinject"
@@ -254,14 +254,14 @@ func TestLaunchGenesisBoots(t *testing.T) {
 	require.NoError(t, err)
 
 	consensusParams := appGenesis.Consensus.Params.ToProto()
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
-		Validators:      []abci.ValidatorUpdate{},
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+		Validators:      []cmtabci.ValidatorUpdate{},
 		ConsensusParams: &consensusParams,
 		AppStateBytes:   stateBytes,
 	})
 	require.NoError(t, err)
 
-	_, err = arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             arkApp.LastBlockHeight() + 1,
 		Hash:               arkApp.LastCommitID().Hash,
 		NextValidatorsHash: valSet.Hash(),

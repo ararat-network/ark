@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/math"
@@ -19,8 +19,8 @@ import (
 
 func TestAggregateOracleVotesWithNoTargetsIsNotFunctioning(t *testing.T) {
 	votes := []Vote{
-		{Validator: cometabci.Validator{Address: []byte("validator1"), Power: 10}},
-		{Validator: cometabci.Validator{Address: []byte("validator2"), Power: 20}},
+		{Validator: cmtabci.Validator{Address: []byte("validator1"), Power: 10}},
+		{Validator: cmtabci.Validator{Address: []byte("validator2"), Power: 20}},
 	}
 
 	result := aggregateOracleVotes(votes, oracletypes.DefaultParams(), []string{})

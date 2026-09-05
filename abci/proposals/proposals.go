@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -55,7 +55,7 @@ func NewHandler(
 // If the protobuf-encoded extended commit exceeds the request's MaxTxBytes
 // budget, this handler will fail.
 func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
-	return func(ctx sdk.Context, req *cometabci.RequestPrepareProposal) (resp *cometabci.ResponsePrepareProposal, err error) {
+	return func(ctx sdk.Context, req *cmtabci.RequestPrepareProposal) (resp *cmtabci.ResponsePrepareProposal, err error) {
 		start := time.Now()
 		var (
 			extInfoBz                     []byte
@@ -93,7 +93,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			if err = voteextension.ValidateExtendedCommit(ctx, h.validatorStore, extInfo); err != nil {
 				err = fmt.Errorf("%w: %w", ErrExtendedCommitValidation, err)
 
-				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
+				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
 			// Encode the extended commit info that will be injected into the
@@ -102,7 +102,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			if err != nil {
 				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 
-				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
+				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 			// Give the wrapped handler only the remaining protobuf transaction
 			// budget. Use a request copy so this wrapper does not mutate its input.
@@ -113,7 +113,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 					extInfoBzSize,
 					req.MaxTxBytes,
 				)
-				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
+				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
 			wrappedReqCopy := *req
@@ -128,7 +128,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 		if err != nil {
 			err = fmt.Errorf("%w for %s: %w", arkabci.ErrWrappedHandler, arkmetrics.PrepareProposal, err)
 			if !voteExtensionsEnabled {
-				return &cometabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
+				return &cmtabci.ResponsePrepareProposal{Txs: make([][]byte, 0)}, err
 			}
 
 			statusErr = err
@@ -140,7 +140,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				)
 			}
 
-			return &cometabci.ResponsePrepareProposal{Txs: [][]byte{extInfoBz}}, nil
+			return &cmtabci.ResponsePrepareProposal{Txs: [][]byte{extInfoBz}}, nil
 		}
 
 		// The wrapped handler was budgeted without the extended commit, so prepend
@@ -158,7 +158,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 // will verify that the vote extensions included in the proposal are valid and compose
 // a super-majority of signatures and vote extensions for the current block.
 func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
-	return func(ctx sdk.Context, req *cometabci.RequestProcessProposal) (resp *cometabci.ResponseProcessProposal, err error) {
+	return func(ctx sdk.Context, req *cmtabci.RequestProcessProposal) (resp *cmtabci.ResponseProcessProposal, err error) {
 		start := time.Now()
 		var wrappedProcessProposalLatency time.Duration
 
@@ -184,25 +184,25 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			// Ensure that the commit info was correctly injected into the proposal.
 			if len(req.Txs) < arkabci.NumInjectedTxs {
 				err = arkabci.ErrMissingCommitInfo
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT},
 					err
 			}
 
 			extCommitBz := req.Txs[arkabci.OracleInfoIndex]
 
 			// Validate the vote extensions included in the proposal.
-			var extInfo cometabci.ExtendedCommitInfo
+			var extInfo cmtabci.ExtendedCommitInfo
 			expectedVotes := ctx.CometInfo().GetLastCommit().Votes().Len()
 			extInfo, err = codec.DecodeExtendedCommit(extCommitBz, expectedVotes)
 			if err != nil {
 				err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT},
 					err
 			}
 
 			if err = voteextension.ValidateExtendedCommit(ctx, h.validatorStore, extInfo); err != nil {
 				err = fmt.Errorf("%w: %w", ErrExtendedCommitValidation, err)
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT},
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT},
 					err
 			}
 

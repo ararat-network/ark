@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
 
@@ -58,7 +58,7 @@ func NewHandler(
 // encoded at all, the handler returns an empty vote extension to preserve
 // liveness.
 func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
-	return func(ctx sdk.Context, req *cometabci.RequestExtendVote) (resp *cometabci.ResponseExtendVote, err error) {
+	return func(ctx sdk.Context, req *cmtabci.RequestExtendVote) (resp *cmtabci.ResponseExtendVote, err error) {
 		start := time.Now()
 		returnError := false
 
@@ -71,7 +71,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 				if !ok {
 					panicCause = fmt.Errorf("%v", r)
 				}
-				resp, err = &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, fmt.Errorf("%w: %w", errPanic, panicCause)
+				resp, err = &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, fmt.Errorf("%w: %w", errPanic, panicCause)
 				returnError = true
 			}
 
@@ -99,7 +99,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		feeds, err := h.oracleKeeper.GetFeeds(ctx, req.Height)
 		if err != nil {
 			err = fmt.Errorf("%w: get feeds for height %d: %w", arkabci.ErrOracleKeeper, req.Height, err)
-			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
+			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
 		// Create a context with a timeout to ensure we do not wait forever for the oracle to respond.
@@ -111,13 +111,13 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		oracleResp, err := h.oracleClient.Prices(reqCtx, &api.PricesRequest{})
 		if err != nil {
 			err = fmt.Errorf("%w: %w", errPriceFeedClient, err)
-			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
+			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
 		// If we get no response, we return an empty vote extension.
 		if oracleResp == nil {
 			err = fmt.Errorf("%w: oracle returned nil prices", errPriceFeedClient)
-			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
+			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
 		rates := make(map[string][]byte, len(feeds.Denoms))
@@ -152,15 +152,15 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 		}
 		if _, validationErr := abcioracle.ValidateVoteExtension(voteExt, feeds); validationErr != nil {
 			err = fmt.Errorf("%w: %w", errInvalidPrices, validationErr)
-			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
+			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 		bz, err := codec.EncodeVoteExtension(voteExt)
 		if err != nil {
 			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
-			return &cometabci.ResponseExtendVote{VoteExtension: []byte{}}, err
+			return &cmtabci.ResponseExtendVote{VoteExtension: []byte{}}, err
 		}
 
-		return &cometabci.ResponseExtendVote{VoteExtension: bz}, nil
+		return &cmtabci.ResponseExtendVote{VoteExtension: bz}, nil
 	}
 }
 
@@ -169,7 +169,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 // that the validator may have been unable to fetch prices from the oracle and is voting an empty vote extension.
 // We reject any non-empty vote extensions that fail to decode or contain invalid prices.
 func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
-	return func(ctx sdk.Context, req *cometabci.RequestVerifyVoteExtension) (_ *cometabci.ResponseVerifyVoteExtension, err error) {
+	return func(ctx sdk.Context, req *cmtabci.RequestVerifyVoteExtension) (_ *cmtabci.ResponseVerifyVoteExtension, err error) {
 		start := time.Now()
 
 		// Measure latency from invocation to return.
@@ -185,7 +185,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 
 		// By default, we accept empty vote extensions.
 		if len(req.VoteExtension) == 0 {
-			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_ACCEPT}, nil
+			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 		}
 
 		// Decode the vote-extension bytes.
@@ -193,23 +193,23 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		if err != nil {
 			err = fmt.Errorf("%w: %w", arkabci.ErrCodec, err)
 
-			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_REJECT}, err
+			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 
 		feeds, err := h.oracleKeeper.GetFeeds(ctx, req.Height)
 		if err != nil {
 			err = fmt.Errorf("%w: get feeds for height %d: %w", arkabci.ErrOracleKeeper, req.Height, err)
-			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_REJECT}, err
+			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 		if _, validationErr := abcioracle.ValidateVoteExtension(voteExtension, feeds); validationErr != nil {
 			err = fmt.Errorf("%w: %w", errVoteExtensionValidation, validationErr)
-			return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_REJECT}, err
+			return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_REJECT}, err
 		}
 
 		// Observe message size.
 		arkmetrics.ObserveMessageSize(arkmetrics.VoteExtension, len(req.VoteExtension))
 
-		return &cometabci.ResponseVerifyVoteExtension{Status: cometabci.ResponseVerifyVoteExtension_ACCEPT}, nil
+		return &cmtabci.ResponseVerifyVoteExtension{Status: cmtabci.ResponseVerifyVoteExtension_ACCEPT}, nil
 	}
 }
 

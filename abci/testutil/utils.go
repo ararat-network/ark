@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
-	cometproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/math"
 
@@ -26,8 +26,8 @@ func NewSDKContext(height int64, voteExtensionsEnableHeight int64, modes ...sdk.
 		WithContext(context.Background()).
 		WithBlockHeight(height).
 		WithBlockTime(time.Unix(1, 0).UTC()).
-		WithConsensusParams(cometproto.ConsensusParams{
-			Abci: &cometproto.ABCIParams{
+		WithConsensusParams(cmtproto.ConsensusParams{
+			Abci: &cmtproto.ABCIParams{
 				VoteExtensionsEnableHeight: voteExtensionsEnableHeight,
 			},
 		})
@@ -77,7 +77,7 @@ func MustEncodeVoteExtension(t *testing.T, voteExtension vetypes.OracleVoteExten
 	return encoded
 }
 
-func MustEncodeExtendedCommit(t *testing.T, extendedCommit cometabci.ExtendedCommitInfo) []byte {
+func MustEncodeExtendedCommit(t *testing.T, extendedCommit cmtabci.ExtendedCommitInfo) []byte {
 	t.Helper()
 
 	encoded, err := codec.EncodeExtendedCommit(extendedCommit)
@@ -86,9 +86,9 @@ func MustEncodeExtendedCommit(t *testing.T, extendedCommit cometabci.ExtendedCom
 	return encoded
 }
 
-func NewExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension []byte) cometabci.ExtendedVoteInfo {
-	return cometabci.ExtendedVoteInfo{
-		Validator: cometabci.Validator{
+func NewExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension []byte) cmtabci.ExtendedVoteInfo {
+	return cmtabci.ExtendedVoteInfo{
+		Validator: cmtabci.Validator{
 			Address: validator,
 			Power:   power,
 		},
@@ -96,9 +96,9 @@ func NewExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension [
 	}
 }
 
-func NewCommitExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension []byte) cometabci.ExtendedVoteInfo {
+func NewCommitExtendedVoteInfo(validator sdk.ConsAddress, power int64, voteExtension []byte) cmtabci.ExtendedVoteInfo {
 	vote := NewExtendedVoteInfo(validator, power, voteExtension)
-	vote.BlockIdFlag = cometproto.BlockIDFlagCommit
+	vote.BlockIdFlag = cmtproto.BlockIDFlagCommit
 
 	return vote
 }

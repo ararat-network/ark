@@ -20,7 +20,7 @@ import (
 	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	clienthelpers "cosmossdk.io/client/v2/helpers"
 	"cosmossdk.io/depinject"
@@ -290,7 +290,7 @@ func NewArkApp(
 	// Seed the upgrade version map at InitChain so the first upgrade migrates
 	// the manually registered modules rather than re-running their InitGenesis.
 	// Must precede Load, which installs the default InitChainer when none is set.
-	app.SetInitChainer(func(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
+	app.SetInitChainer(func(ctx sdk.Context, req *cmtabci.RequestInitChain) (*cmtabci.ResponseInitChain, error) {
 		if err := app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap()); err != nil {
 			return nil, err
 		}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -60,7 +60,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 	// height-addressable before it is folded into the materialised set.
 	oldResponse, err := extendVote(
 		abcitestutil.NewSDKContext(activationVoteHeight-1, 1),
-		&cometabci.RequestExtendVote{Height: activationVoteHeight - 1},
+		&cmtabci.RequestExtendVote{Height: activationVoteHeight - 1},
 	)
 	require.NoError(t, err)
 	oldVoteExtension, err := codec.DecodeVoteExtension(oldResponse.VoteExtension)
@@ -70,7 +70,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 
 	newResponse, err := extendVote(
 		abcitestutil.NewSDKContext(activationVoteHeight, 1),
-		&cometabci.RequestExtendVote{Height: activationVoteHeight},
+		&cmtabci.RequestExtendVote{Height: activationVoteHeight},
 	)
 	require.NoError(t, err)
 	newVoteExtension, err := codec.DecodeVoteExtension(newResponse.VoteExtension)
@@ -161,7 +161,7 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 	for i, want := range expected {
 		response, err := extendVote(
 			abcitestutil.NewSDKContext(want.voteHeight, 1),
-			&cometabci.RequestExtendVote{Height: want.voteHeight},
+			&cmtabci.RequestExtendVote{Height: want.voteHeight},
 		)
 		require.NoError(t, err)
 		extensions[i] = response.VoteExtension
@@ -232,7 +232,7 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 
 	response, err := extendVote(
 		abcitestutil.NewSDKContext(activationVoteHeight-1, 1),
-		&cometabci.RequestExtendVote{Height: activationVoteHeight - 1},
+		&cmtabci.RequestExtendVote{Height: activationVoteHeight - 1},
 	)
 	require.NoError(t, err)
 
@@ -360,20 +360,20 @@ func finalizeRequest(
 	height int64,
 	validator sdk.ConsAddress,
 	voteExtension []byte,
-) *cometabci.RequestFinalizeBlock {
+) *cmtabci.RequestFinalizeBlock {
 	t.Helper()
 
-	commit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{
-		Votes: []cometabci.ExtendedVoteInfo{
+	commit, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{
+		Votes: []cmtabci.ExtendedVoteInfo{
 			abcitestutil.NewCommitExtendedVoteInfo(validator, 1, voteExtension),
 		},
 	})
 	require.NoError(t, err)
 
-	return &cometabci.RequestFinalizeBlock{
+	return &cmtabci.RequestFinalizeBlock{
 		Height:            height,
 		Txs:               [][]byte{commit},
-		DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 1)},
+		DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 1)},
 	}
 }
 

@@ -3,7 +3,7 @@ package voteextension
 import (
 	"fmt"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -35,7 +35,7 @@ func VoteExtensionsAvailable(ctx sdk.Context) bool {
 func ValidateExtendedCommit(
 	ctx sdk.Context,
 	valStore baseapp.ValidatorStore,
-	extCommit cometabci.ExtendedCommitInfo,
+	extCommit cmtabci.ExtendedCommitInfo,
 ) error {
 	// The SDK owns structural consistency with LastCommit, canonical sign bytes,
 	// signature checks, and quorum. In SDK v0.54 the legacy height and chain ID

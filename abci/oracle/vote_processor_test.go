@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -29,7 +29,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		req             *cometabci.RequestFinalizeBlock
+		req             *cmtabci.RequestFinalizeBlock
 		setup           func(*testing.T, *abcitestutil.MockOracleKeeper) [][]byte
 		expectErr       bool
 		expectedPrices  map[string]math.LegacyDec
@@ -38,7 +38,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 	}{
 		{
 			name: "feed lookup preserves keeper category and cause",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height: 3,
 			},
 			expectErr:       true,
@@ -51,7 +51,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 		},
 		{
 			name: "missing injected commit info preserves missing commit classification",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height: 3,
 				Txs:    nil,
 			},
@@ -67,9 +67,9 @@ func TestProcessVoteExtensions(t *testing.T) {
 		},
 		{
 			name: "valid quorum writes exchange rate and score weights",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height:            3,
-				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
+				DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				t.Helper()
@@ -84,8 +84,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				})
 				ve1Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
 				ve2Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
-				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-					Votes: []cometabci.ExtendedVoteInfo{
+				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+					Votes: []cmtabci.ExtendedVoteInfo{
 						abcitestutil.NewExtendedVoteInfo(val1, 1, ve1Bz),
 						abcitestutil.NewExtendedVoteInfo(val2, 1, ve2Bz),
 					},
@@ -109,9 +109,9 @@ func TestProcessVoteExtensions(t *testing.T) {
 		},
 		{
 			name: "failed quorum target is unpriced without costing attendance",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height:            3,
-				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
+				DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				t.Helper()
@@ -128,8 +128,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				ve2Bz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 					"ausd": math.LegacyNewDec(100),
 				}))
-				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-					Votes: []cometabci.ExtendedVoteInfo{
+				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+					Votes: []cmtabci.ExtendedVoteInfo{
 						abcitestutil.NewExtendedVoteInfo(val1, 10, ve1Bz),
 						abcitestutil.NewExtendedVoteInfo(val2, 10, ve2Bz),
 					},
@@ -153,9 +153,9 @@ func TestProcessVoteExtensions(t *testing.T) {
 		},
 		{
 			name: "invalid and empty reports leave the block non-functioning",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height:            3,
-				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 3)},
+				DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 3)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				t.Helper()
@@ -171,8 +171,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				positiveBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 					"ausd": math.LegacyNewDec(100),
 				}))
-				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-					Votes: []cometabci.ExtendedVoteInfo{
+				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+					Votes: []cmtabci.ExtendedVoteInfo{
 						abcitestutil.NewCommitExtendedVoteInfo(val1, 40, []byte("not-zlib")),
 						abcitestutil.NewCommitExtendedVoteInfo(val2, 30, emptyReportBz),
 						abcitestutil.NewCommitExtendedVoteInfo(val3, 30, positiveBz),
@@ -191,9 +191,9 @@ func TestProcessVoteExtensions(t *testing.T) {
 		},
 		{
 			name: "invalid payload is graded eligible without participation",
-			req: &cometabci.RequestFinalizeBlock{
+			req: &cmtabci.RequestFinalizeBlock{
 				Height:            3,
-				DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)},
+				DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 2)},
 			},
 			setup: func(t *testing.T, keeper *abcitestutil.MockOracleKeeper) [][]byte {
 				t.Helper()
@@ -206,8 +206,8 @@ func TestProcessVoteExtensions(t *testing.T) {
 				validBz := abcitestutil.MustEncodeVoteExtension(t, abcitestutil.NewOracleVoteExtension(t, map[string]math.LegacyDec{
 					"ausd": math.LegacyNewDec(100),
 				}))
-				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-					Votes: []cometabci.ExtendedVoteInfo{
+				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+					Votes: []cmtabci.ExtendedVoteInfo{
 						abcitestutil.NewCommitExtendedVoteInfo(val1, 67, validBz),
 						abcitestutil.NewCommitExtendedVoteInfo(val2, 33, []byte("not-zlib")),
 					},

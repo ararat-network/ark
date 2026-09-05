@@ -8,7 +8,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -173,7 +173,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				sequence,
 				test.signatures,
 			)
-			response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+			response, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 				Height:             1,
 				Hash:               arkApp.LastCommitID().Hash,
 				NextValidatorsHash: nextValidatorsHash,
@@ -291,7 +291,7 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 			{memberIndex: 2, privateKey: members[2]},
 		},
 	)
-	response, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+	response, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             1,
 		Hash:               arkApp.LastCommitID().Hash,
 		NextValidatorsHash: nextValidatorsHash,
@@ -376,9 +376,9 @@ func setupTreasuryMultisigApp(
 
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         treasuryMultisigChainID,
-		Validators:      []abci.ValidatorUpdate{},
+		Validators:      []cmtabci.ValidatorUpdate{},
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
 	})

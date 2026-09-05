@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -45,7 +45,7 @@ func TestExtendVoteHandler(t *testing.T) {
 
 	testCases := []struct {
 		name              string
-		req               *cometabci.RequestExtendVote
+		req               *cmtabci.RequestExtendVote
 		setup             func(*abcitestutil.MockPriceFeedClient)
 		targetErr         error
 		expectedExtension []byte
@@ -60,14 +60,14 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name:              "feed lookup error returns empty vote extension",
-			req:               &cometabci.RequestExtendVote{Height: 10},
+			req:               &cmtabci.RequestExtendVote{Height: 10},
 			targetErr:         errors.New("feeds unavailable"),
 			expectedExtension: []byte{},
 			expectResp:        true,
 		},
 		{
 			name: "oracle client error returns empty vote extension",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -78,7 +78,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name: "nil oracle response returns empty vote extension",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -89,7 +89,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name: "undecodable rate degrades to an empty report",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -102,7 +102,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name: "fresh sparse response encodes target unavailability",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -113,7 +113,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name: "valid prices are encoded into vote extension",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -124,7 +124,7 @@ func TestExtendVoteHandler(t *testing.T) {
 		},
 		{
 			name: "panic returns empty vote extension and error",
-			req:  &cometabci.RequestExtendVote{Height: 10},
+			req:  &cmtabci.RequestExtendVote{Height: 10},
 			setup: func(oracleClient *abcitestutil.MockPriceFeedClient) {
 				oracleClient.EXPECT().
 					Prices(gomock.Any(), &api.PricesRequest{}).
@@ -236,7 +236,7 @@ func TestExtendVoteHandlerDropsUndecodableRates(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			oracleClient := abcitestutil.NewMockPriceFeedClient(ctrl)
 			oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
-			req := &cometabci.RequestExtendVote{Height: 10}
+			req := &cmtabci.RequestExtendVote{Height: 10}
 			oracleKeeper.EXPECT().
 				GetFeeds(gomock.Any(), req.Height).
 				Return(targets, nil)
@@ -290,9 +290,9 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		req            *cometabci.RequestVerifyVoteExtension
+		req            *cmtabci.RequestVerifyVoteExtension
 		targetErr      error
-		expectedStatus cometabci.ResponseVerifyVoteExtension_VerifyStatus
+		expectedStatus cmtabci.ResponseVerifyVoteExtension_VerifyStatus
 		expectResp     bool
 		expectErr      bool
 	}{
@@ -303,71 +303,71 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 		},
 		{
 			name: "empty vote extension is accepted",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: nil,
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_ACCEPT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_ACCEPT,
 			expectResp:     true,
 		},
 		{
 			name: "decode error rejects vote extension",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: []byte("not-zlib"),
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
 			expectErr:      true,
 		},
 		{
 			name: "decoded invalid prices reject vote extension",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, invalidVoteExt),
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
 			expectErr:      true,
 		},
 		{
 			name: "feed lookup error rejects vote extension",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, validVoteExt),
 			},
 			targetErr:      errors.New("feeds unavailable"),
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
 			expectErr:      true,
 		},
 		{
 			name: "wrong target version rejects vote extension",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, wrongVersionVoteExt),
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
 			expectErr:      true,
 		},
 		{
 			name: "unversioned report is rejected",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, unversionedVoteExt),
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_REJECT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
 			expectErr:      true,
 		},
 		{
 			name: "decoded valid prices accept vote extension",
-			req: &cometabci.RequestVerifyVoteExtension{
+			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, validVoteExt),
 			},
-			expectedStatus: cometabci.ResponseVerifyVoteExtension_ACCEPT,
+			expectedStatus: cmtabci.ResponseVerifyVoteExtension_ACCEPT,
 			expectResp:     true,
 		},
 	}

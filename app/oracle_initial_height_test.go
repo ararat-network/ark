@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -67,7 +67,7 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	}
 	consensusParams.Abci.VoteExtensionsEnableHeight = 1
 
-	_, err = arkApp.InitChain(&cometabci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         chainID,
 		InitialHeight:   initialHeight,
 		Time:            time.Unix(0, 0).UTC(),
@@ -76,7 +76,7 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	prepareInitial, err := arkApp.PrepareProposal(&cometabci.RequestPrepareProposal{
+	prepareInitial, err := arkApp.PrepareProposal(&cmtabci.RequestPrepareProposal{
 		Height:             initialHeight,
 		Time:               time.Unix(1, 0).UTC(),
 		MaxTxBytes:         1_000_000,
@@ -85,16 +85,16 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, prepareInitial.Txs)
 
-	processInitial, err := arkApp.ProcessProposal(&cometabci.RequestProcessProposal{
+	processInitial, err := arkApp.ProcessProposal(&cmtabci.RequestProcessProposal{
 		Height:             initialHeight,
 		Time:               time.Unix(1, 0).UTC(),
 		Txs:                prepareInitial.Txs,
 		NextValidatorsHash: validators.Set.Hash(),
 	})
 	require.NoError(t, err)
-	require.Equal(t, cometabci.ResponseProcessProposal_ACCEPT, processInitial.Status)
+	require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, processInitial.Status)
 
-	_, err = arkApp.FinalizeBlock(&cometabci.RequestFinalizeBlock{
+	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             initialHeight,
 		Time:               time.Unix(1, 0).UTC(),
 		NextValidatorsHash: validators.Set.Hash(),
@@ -118,26 +118,26 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	extensionSignature, err := validators.Keys[0].Sign(signBytes.Bytes())
 	require.NoError(t, err)
 
-	validator := cometabci.Validator{
+	validator := cmtabci.Validator{
 		Address: validators.Keys[0].PubKey().Address(),
 		Power:   1,
 	}
-	extendedCommit := cometabci.ExtendedCommitInfo{
-		Votes: []cometabci.ExtendedVoteInfo{{
+	extendedCommit := cmtabci.ExtendedCommitInfo{
+		Votes: []cmtabci.ExtendedVoteInfo{{
 			Validator:          validator,
 			VoteExtension:      voteExtension,
 			ExtensionSignature: extensionSignature,
 			BlockIdFlag:        cmtproto.BlockIDFlagCommit,
 		}},
 	}
-	lastCommit := cometabci.CommitInfo{
-		Votes: []cometabci.VoteInfo{{
+	lastCommit := cmtabci.CommitInfo{
+		Votes: []cmtabci.VoteInfo{{
 			Validator:   validator,
 			BlockIdFlag: cmtproto.BlockIDFlagCommit,
 		}},
 	}
 
-	prepareNext, err := arkApp.PrepareProposal(&cometabci.RequestPrepareProposal{
+	prepareNext, err := arkApp.PrepareProposal(&cmtabci.RequestPrepareProposal{
 		Height:             initialHeight + 1,
 		Time:               time.Unix(2, 0).UTC(),
 		MaxTxBytes:         1_000_000,
@@ -148,7 +148,7 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	require.Len(t, prepareNext.Txs, 1)
 
 	blockHash := []byte("height-101")
-	processNextRequest := &cometabci.RequestProcessProposal{
+	processNextRequest := &cmtabci.RequestProcessProposal{
 		Hash:               blockHash,
 		Height:             initialHeight + 1,
 		Time:               time.Unix(2, 0).UTC(),
@@ -158,9 +158,9 @@ func TestProposalHandlersAtNonstandardInitialHeight(t *testing.T) {
 	}
 	processNext, err := arkApp.ProcessProposal(processNextRequest)
 	require.NoError(t, err)
-	require.Equal(t, cometabci.ResponseProcessProposal_ACCEPT, processNext.Status)
+	require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, processNext.Status)
 
-	_, err = arkApp.FinalizeBlock(&cometabci.RequestFinalizeBlock{
+	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Hash:               blockHash,
 		Height:             initialHeight + 1,
 		Time:               time.Unix(2, 0).UTC(),

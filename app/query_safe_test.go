@@ -13,7 +13,7 @@ import (
 	protov2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	msgv1 "cosmossdk.io/api/cosmos/msg/v1"
@@ -179,8 +179,8 @@ func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 			route := arkApp.GRPCQueryRouter().Route(path)
 			require.NotNil(t, route)
 
-			first, firstErr := route(ctx, &abci.RequestQuery{Path: path, Data: []byte{}})
-			second, secondErr := route(ctx, &abci.RequestQuery{Path: path, Data: []byte{}})
+			first, firstErr := route(ctx, &cmtabci.RequestQuery{Path: path, Data: []byte{}})
+			second, secondErr := route(ctx, &cmtabci.RequestQuery{Path: path, Data: []byte{}})
 
 			require.Equal(t, fmt.Sprint(firstErr), fmt.Sprint(secondErr), "error must not vary")
 			if firstErr == nil {

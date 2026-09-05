@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/math"
@@ -42,7 +42,7 @@ func TestWrappedPreBlockerWrapsModuleManagerError(t *testing.T) {
 
 	_, err := handler.WrappedPreBlocker(managerWith(fake))(
 		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
-		&cometabci.RequestFinalizeBlock{Height: 1},
+		&cmtabci.RequestFinalizeBlock{Height: 1},
 	)
 
 	require.ErrorIs(t, err, arkabcitypes.ErrWrappedHandler)
@@ -61,8 +61,8 @@ func TestWrappedPreBlockerSkipsVoteExtensionsWithoutPreviousCommit(t *testing.T)
 
 	res, err := handler.WrappedPreBlocker(managerWith(fake))(
 		abcitestutil.NewSDKContext(100, 1, sdk.ExecModeFinalize).
-			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{})),
-		&cometabci.RequestFinalizeBlock{Height: 100},
+			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cmtabci.CommitInfo{})),
+		&cmtabci.RequestFinalizeBlock{Height: 100},
 	)
 
 	require.NoError(t, err)
@@ -79,7 +79,7 @@ func TestWrappedPreBlockerWrapsAdvanceFeedsError(t *testing.T) {
 
 	_, err := handler.WrappedPreBlocker(managerWith())(
 		abcitestutil.NewSDKContext(1, 2, sdk.ExecModeFinalize),
-		&cometabci.RequestFinalizeBlock{Height: 1},
+		&cmtabci.RequestFinalizeBlock{Height: 1},
 	)
 
 	require.ErrorIs(t, err, arkabcitypes.ErrOracleKeeper)
@@ -104,8 +104,8 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	})
 	ve1Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
 	ve2Bz := abcitestutil.MustEncodeVoteExtension(t, voteExtension)
-	commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-		Votes: []cometabci.ExtendedVoteInfo{
+	commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+		Votes: []cmtabci.ExtendedVoteInfo{
 			abcitestutil.NewExtendedVoteInfo(val1, 1, ve1Bz),
 			abcitestutil.NewExtendedVoteInfo(val2, 1, ve2Bz),
 		},
@@ -123,11 +123,11 @@ func TestWrappedPreBlockerAppliesPricesAndAdvancesVoteTargetsWhenVoteExtensionsE
 	keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), true, true).Return(nil)
 	keeper.EXPECT().AdvanceFeeds(gomock.Any()).Return(nil)
 
-	lastCommit := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, 2)}
+	lastCommit := cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, 2)}
 	_, err := handler.WrappedPreBlocker(managerWith())(
 		abcitestutil.NewSDKContext(101, 1, sdk.ExecModeFinalize).
 			WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, lastCommit)),
-		&cometabci.RequestFinalizeBlock{
+		&cmtabci.RequestFinalizeBlock{
 			Height:            101,
 			Txs:               [][]byte{commitBz},
 			DecidedLastCommit: lastCommit,

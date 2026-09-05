@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtsecp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
 	cmtprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -101,8 +101,8 @@ func TestVoteExtensionsAvailable(t *testing.T) {
 			}
 			ctx = ctx.WithConsensusParams(params)
 			if tc.withCommit {
-				ctx = ctx.WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{
-					Votes: []cometabci.VoteInfo{{}},
+				ctx = ctx.WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cmtabci.CommitInfo{
+					Votes: []cmtabci.VoteInfo{{}},
 				}))
 			}
 
@@ -154,7 +154,7 @@ func TestValidateExtendedCommit(t *testing.T) {
 		name        string
 		ctx         sdk.Context
 		store       fakeValidatorStore
-		commit      cometabci.ExtendedCommitInfo
+		commit      cmtabci.ExtendedCommitInfo
 		expectedErr string
 	}{
 		{
@@ -180,7 +180,7 @@ func TestValidateExtendedCommit(t *testing.T) {
 			name:  "disabled vote extensions reject present extension",
 			ctx:   disabledCtx.WithCometInfo(validInfo),
 			store: validStore,
-			commit: func() cometabci.ExtendedCommitInfo {
+			commit: func() cmtabci.ExtendedCommitInfo {
 				commit := cloneExtendedCommit(validCommit)
 				commit.Votes[0].ExtensionSignature = nil
 				return commit
@@ -191,7 +191,7 @@ func TestValidateExtendedCommit(t *testing.T) {
 			name:  "enabled commit vote missing signature rejects",
 			ctx:   enabledCtx,
 			store: validStore,
-			commit: func() cometabci.ExtendedCommitInfo {
+			commit: func() cmtabci.ExtendedCommitInfo {
 				commit := cloneExtendedCommit(validCommit)
 				commit.Votes[0].ExtensionSignature = nil
 				return commit
@@ -228,7 +228,7 @@ func TestValidateExtendedCommit(t *testing.T) {
 				store.errs[string(vals[1].consAddr)] = errors.New("validator not found")
 				return store
 			}(),
-			commit: func() cometabci.ExtendedCommitInfo {
+			commit: func() cmtabci.ExtendedCommitInfo {
 				commit := cloneExtendedCommit(validCommit)
 				commit.Votes[1].VoteExtension = []byte("fabricated-vote-extension")
 				commit.Votes[1].ExtensionSignature = []byte("bogus-signature")
@@ -266,8 +266,8 @@ func newTestValidator() testValidator {
 	}
 }
 
-func (v testValidator) toCometValidator(power int64) cometabci.Validator {
-	return cometabci.Validator{
+func (v testValidator) toCometValidator(power int64) cmtabci.Validator {
+	return cmtabci.Validator{
 		Address: v.consAddr,
 		Power:   power,
 	}
@@ -313,14 +313,14 @@ func signedExtendedCommit(
 	vals []testValidator,
 	powers []int64,
 	extension []byte,
-) cometabci.ExtendedCommitInfo {
+) cmtabci.ExtendedCommitInfo {
 	t.Helper()
 
 	require.Len(t, vals, len(powers))
 	round := int32(0)
-	commit := cometabci.ExtendedCommitInfo{
+	commit := cmtabci.ExtendedCommitInfo{
 		Round: round,
-		Votes: make([]cometabci.ExtendedVoteInfo, len(vals)),
+		Votes: make([]cmtabci.ExtendedVoteInfo, len(vals)),
 	}
 	for i, val := range vals {
 		signature := signVoteExtension(t, val, extension, ctx.HeaderInfo().Height-1, round)
@@ -354,8 +354,8 @@ func newExtendedVote(
 	blockIDFlag cmtproto.BlockIDFlag,
 	extension []byte,
 	signature []byte,
-) cometabci.ExtendedVoteInfo {
-	return cometabci.ExtendedVoteInfo{
+) cmtabci.ExtendedVoteInfo {
+	return cmtabci.ExtendedVoteInfo{
 		Validator:          val.toCometValidator(power),
 		VoteExtension:      extension,
 		ExtensionSignature: signature,
@@ -363,15 +363,15 @@ func newExtendedVote(
 	}
 }
 
-func extendedCommitToBlockInfo(commit cometabci.ExtendedCommitInfo) (cometabci.ExtendedCommitInfo, comet.BlockInfo) {
+func extendedCommitToBlockInfo(commit cmtabci.ExtendedCommitInfo) (cmtabci.ExtendedCommitInfo, comet.BlockInfo) {
 	commit = sortExtendedCommit(commit)
-	lastCommit := cometabci.CommitInfo{
+	lastCommit := cmtabci.CommitInfo{
 		Round: commit.Round,
-		Votes: make([]cometabci.VoteInfo, len(commit.Votes)),
+		Votes: make([]cmtabci.VoteInfo, len(commit.Votes)),
 	}
 	for i, vote := range commit.Votes {
-		lastCommit.Votes[i] = cometabci.VoteInfo{
-			Validator: cometabci.Validator{
+		lastCommit.Votes[i] = cmtabci.VoteInfo{
+			Validator: cmtabci.Validator{
 				Address: vote.Validator.Address,
 				Power:   vote.Validator.Power,
 			},
@@ -382,7 +382,7 @@ func extendedCommitToBlockInfo(commit cometabci.ExtendedCommitInfo) (cometabci.E
 	return commit, baseapp.NewBlockInfo(nil, nil, nil, lastCommit)
 }
 
-func sortExtendedCommit(commit cometabci.ExtendedCommitInfo) cometabci.ExtendedCommitInfo {
+func sortExtendedCommit(commit cmtabci.ExtendedCommitInfo) cmtabci.ExtendedCommitInfo {
 	sort.Slice(commit.Votes, func(i, j int) bool {
 		if commit.Votes[i].Validator.Power == commit.Votes[j].Validator.Power {
 			return bytes.Compare(commit.Votes[i].Validator.Address, commit.Votes[j].Validator.Address) < 0
@@ -393,9 +393,9 @@ func sortExtendedCommit(commit cometabci.ExtendedCommitInfo) cometabci.ExtendedC
 	return commit
 }
 
-func cloneExtendedCommit(commit cometabci.ExtendedCommitInfo) cometabci.ExtendedCommitInfo {
+func cloneExtendedCommit(commit cmtabci.ExtendedCommitInfo) cmtabci.ExtendedCommitInfo {
 	clone := commit
-	clone.Votes = make([]cometabci.ExtendedVoteInfo, len(commit.Votes))
+	clone.Votes = make([]cmtabci.ExtendedVoteInfo, len(commit.Votes))
 	copy(clone.Votes, commit.Votes)
 
 	return clone

@@ -11,7 +11,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtjson "github.com/cometbft/cometbft/libs/json"
 
 	"cosmossdk.io/log/v2"
@@ -82,8 +82,8 @@ func NewArkappWithCustomOptions(tb testing.TB, isCheckTx bool, options SetupOpti
 		require.NoError(tb, err)
 
 		// Initialise the chain
-		_, err = arkApp.InitChain(&abci.RequestInitChain{
-			Validators:      []abci.ValidatorUpdate{},
+		_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+			Validators:      []cmtabci.ValidatorUpdate{},
 			ConsensusParams: simtestutil.DefaultConsensusParams,
 			AppStateBytes:   stateBytes,
 		})
@@ -118,15 +118,15 @@ func SetupWithGenesisValSet(tb testing.TB, validators Validators, genAccs []auth
 	require.NoError(tb, err)
 
 	// init chain will set the validator set and initialise the genesis accounts
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
-		Validators:      []abci.ValidatorUpdate{},
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+		Validators:      []cmtabci.ValidatorUpdate{},
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
 	},
 	)
 	require.NoError(tb, err)
 
-	_, err = arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             arkApp.LastBlockHeight() + 1,
 		Hash:               arkApp.LastCommitID().Hash,
 		NextValidatorsHash: validators.Set.Hash(),

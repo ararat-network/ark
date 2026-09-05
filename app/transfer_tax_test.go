@@ -8,7 +8,7 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -71,7 +71,7 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 	genesisState[treasurytypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&treasuryGenesis)
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)
-	_, err = arkApp.InitChain(&abci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         chainID,
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
@@ -80,9 +80,9 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 
 	height := int64(0)
 	// deliver runs the transactions in one block and commits it.
-	deliver := func(txs ...[]byte) []*abci.ExecTxResult {
+	deliver := func(txs ...[]byte) []*cmtabci.ExecTxResult {
 		height++
-		res, err := arkApp.FinalizeBlock(&abci.RequestFinalizeBlock{
+		res, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 			Height:             height,
 			NextValidatorsHash: validators.Set.Hash(),
 			Txs:                txs,

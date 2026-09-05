@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -172,7 +172,7 @@ func benchmarkAggregationInput(
 		address := make([]byte, 20)
 		binary.BigEndian.PutUint64(address[12:], uint64(validatorIndex+1))
 		votes[validatorIndex] = Vote{
-			Validator: cometabci.Validator{
+			Validator: cmtabci.Validator{
 				Address: address,
 				Power:   1,
 			},

@@ -5,7 +5,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/protowire"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
@@ -68,7 +68,7 @@ func DecodeVoteExtension(encoded []byte) (vetypes.OracleVoteExtension, error) {
 }
 
 // EncodeExtendedCommit encodes CometBFT extended commit info as protobuf.
-func EncodeExtendedCommit(extendedCommit cometabci.ExtendedCommitInfo) ([]byte, error) {
+func EncodeExtendedCommit(extendedCommit cmtabci.ExtendedCommitInfo) ([]byte, error) {
 	if len(extendedCommit.Votes) > cmttypes.MaxVotesCount {
 		return nil, fmt.Errorf(
 			"extended commit vote count %d exceeds maximum %d",
@@ -82,22 +82,22 @@ func EncodeExtendedCommit(extendedCommit cometabci.ExtendedCommitInfo) ([]byte, 
 
 // DecodeExtendedCommit decodes protobuf extended commit info bounded by
 // repeated vote cardinality. CometBFT bounds the containing proposal bytes.
-func DecodeExtendedCommit(encoded []byte, maxVotes int) (cometabci.ExtendedCommitInfo, error) {
+func DecodeExtendedCommit(encoded []byte, maxVotes int) (cmtabci.ExtendedCommitInfo, error) {
 	if maxVotes < 0 || maxVotes > cmttypes.MaxVotesCount {
-		return cometabci.ExtendedCommitInfo{}, fmt.Errorf(
+		return cmtabci.ExtendedCommitInfo{}, fmt.Errorf(
 			"extended commit vote limit %d is outside range [0, %d]",
 			maxVotes,
 			cmttypes.MaxVotesCount,
 		)
 	}
 	if len(encoded) == 0 {
-		return cometabci.ExtendedCommitInfo{}, nil
+		return cmtabci.ExtendedCommitInfo{}, nil
 	}
 	if err := preflightExtendedCommit(encoded, maxVotes); err != nil {
-		return cometabci.ExtendedCommitInfo{}, err
+		return cmtabci.ExtendedCommitInfo{}, err
 	}
 
-	var extendedCommit cometabci.ExtendedCommitInfo
+	var extendedCommit cmtabci.ExtendedCommitInfo
 	return extendedCommit, extendedCommit.Unmarshal(encoded)
 }
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -320,8 +320,8 @@ func TestGetOracleVotes(t *testing.T) {
 		})
 		unversionedBz := abcitestutil.MustEncodeVoteExtension(t, unversionedVoteExtension)
 		unexpectedTargetBz := abcitestutil.MustEncodeVoteExtension(t, unexpectedTargetVoteExtension)
-		commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-			Votes: []cometabci.ExtendedVoteInfo{
+		commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+			Votes: []cmtabci.ExtendedVoteInfo{
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 3, validBz),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 2, []byte("not-zlib")),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator3"), 1, invalidBz),
@@ -353,8 +353,8 @@ func TestGetOracleVotes(t *testing.T) {
 		validEmptyBz := abcitestutil.MustEncodeVoteExtension(t, vetypes.OracleVoteExtension{
 			TargetVersion: targets.Version,
 		})
-		commitBz := abcitestutil.MustEncodeExtendedCommit(t, cometabci.ExtendedCommitInfo{
-			Votes: []cometabci.ExtendedVoteInfo{
+		commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
+			Votes: []cmtabci.ExtendedVoteInfo{
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 1, validEmptyBz),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 1, nil),
 			},
@@ -433,7 +433,7 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 			}
 			voteExtensionBz, err := codec.EncodeVoteExtension(voteExtension)
 			require.NoError(b, err)
-			extendedVotes := make([]cometabci.ExtendedVoteInfo, 100)
+			extendedVotes := make([]cmtabci.ExtendedVoteInfo, 100)
 			for validatorIndex := range extendedVotes {
 				address := make([]byte, 20)
 				binary.BigEndian.PutUint64(address[12:], uint64(validatorIndex+1))
@@ -443,7 +443,7 @@ func BenchmarkGetOracleVotes(b *testing.B) {
 					voteExtensionBz,
 				)
 			}
-			commitBz, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{
+			commitBz, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{
 				Votes: extendedVotes,
 			})
 			require.NoError(b, err)

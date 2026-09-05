@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 
 	"cosmossdk.io/math"
 
@@ -37,7 +37,7 @@ func NewHandler(oracleKeeper arkabcitypes.OracleKeeper) *Handler {
 // is responsible for calling the module manager's PreBlock method, aggregating oracle data from each validator and
 // writing the oracle data to the store.
 func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
-	return func(ctx sdk.Context, req *cometabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
+	return func(ctx sdk.Context, req *cmtabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
 		start := time.Now()
 		var (
 			prices                 map[string]math.LegacyDec

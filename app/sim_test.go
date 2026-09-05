@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -166,7 +166,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		newApp := newTestInstance.App
 		var genesisState map[string]json.RawMessage
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
-		_, err = newApp.InitChain(&abci.RequestInitChain{
+		_, err = newApp.InitChain(&cmtabci.RequestInitChain{
 			AppStateBytes: exported.AppState,
 			ChainId:       sims.SimAppChainID,
 			Time:          exportedRateTime(tb, newApp.appCodec, genesisState),

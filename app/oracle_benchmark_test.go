@@ -9,8 +9,8 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
-	cometproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -63,7 +63,7 @@ type oracleSettlementBenchmarkCase struct {
 
 func BenchmarkOracleProcessVoteExtensions(b *testing.B) {
 	fixture := newOracleBenchmarkFixture(b, oracleBenchmarkValidatorCount, 1, 2)
-	baseCtx := fixture.app.NewNextBlockContext(cometproto.Header{
+	baseCtx := fixture.app.NewNextBlockContext(cmtproto.Header{
 		Height: 3,
 		Time:   time.Unix(3, 0).UTC(),
 	})
@@ -114,10 +114,10 @@ func benchmarkProcessVoteExtensions(
 		}
 	}
 	commitBz := benchmarkExtendedCommit(b, fixture.consAddrs, targets, benchmarkCase)
-	req := &cometabci.RequestFinalizeBlock{
+	req := &cmtabci.RequestFinalizeBlock{
 		Height:            3,
 		Txs:               [][]byte{commitBz},
-		DecidedLastCommit: cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, len(fixture.consAddrs))},
+		DecidedLastCommit: cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, len(fixture.consAddrs))},
 	}
 
 	b.ReportAllocs()
@@ -215,7 +215,7 @@ func benchmarkOracleSettlement(b *testing.B, benchmarkCase oracleSettlementBench
 		rewardDenomCount,
 		0,
 	)
-	baseCtx := fixture.app.NewNextBlockContext(cometproto.Header{
+	baseCtx := fixture.app.NewNextBlockContext(cmtproto.Header{
 		Height: benchmarkCase.height,
 		Time:   time.Unix(benchmarkCase.height, 0).UTC(),
 	})
@@ -305,11 +305,11 @@ func benchmarkOracleFinalizeAndCommit(b *testing.B, withOracle bool) {
 		voteExtensionsEnableHeight,
 	)
 
-	commitInfo := cometabci.CommitInfo{Votes: make([]cometabci.VoteInfo, len(fixture.consAddrs))}
+	commitInfo := cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, len(fixture.consAddrs))}
 	for i, consAddr := range fixture.consAddrs {
-		commitInfo.Votes[i] = cometabci.VoteInfo{
-			Validator:   cometabci.Validator{Address: consAddr, Power: 1},
-			BlockIdFlag: cometproto.BlockIDFlagCommit,
+		commitInfo.Votes[i] = cmtabci.VoteInfo{
+			Validator:   cmtabci.Validator{Address: consAddr, Power: 1},
+			BlockIdFlag: cmtproto.BlockIDFlagCommit,
 		}
 	}
 
@@ -331,7 +331,7 @@ func benchmarkOracleFinalizeAndCommit(b *testing.B, withOracle bool) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		height := fixture.app.LastBlockHeight() + 1
-		_, err := fixture.app.FinalizeBlock(&cometabci.RequestFinalizeBlock{
+		_, err := fixture.app.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 			Height:             height,
 			Time:               time.Unix(height, 0).UTC(),
 			Hash:               fixture.app.LastCommitID().Hash,
@@ -387,25 +387,25 @@ func newOracleBenchmarkFixture(
 		tb.Fatal(err)
 	}
 
-	consensusParams := proto.Clone(simtestutil.DefaultConsensusParams).(*cometproto.ConsensusParams)
+	consensusParams := proto.Clone(simtestutil.DefaultConsensusParams).(*cmtproto.ConsensusParams)
 	if consensusParams.Abci == nil {
-		consensusParams.Abci = &cometproto.ABCIParams{}
+		consensusParams.Abci = &cmtproto.ABCIParams{}
 	}
 	consensusParams.Abci.VoteExtensionsEnableHeight = voteExtensionsEnableHeight
-	if _, err := arkApp.InitChain(&cometabci.RequestInitChain{
+	if _, err := arkApp.InitChain(&cmtabci.RequestInitChain{
 		ConsensusParams: consensusParams,
 		AppStateBytes:   stateBytes,
 	}); err != nil {
 		tb.Fatal(err)
 	}
-	if _, err := arkApp.FinalizeBlock(&cometabci.RequestFinalizeBlock{
+	if _, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             1,
 		Time:               time.Unix(1, 0).UTC(),
 		NextValidatorsHash: validators.Set.Hash(),
 	}); err != nil {
 		tb.Fatal(err)
 	}
-	ctx := arkApp.NewContextLegacy(false, cometproto.Header{Height: 2})
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 2})
 	valAddrs := make([]sdk.ValAddress, len(consAddrs))
 	for i, consAddr := range consAddrs {
 		validator, err := arkApp.StakingKeeper.ValidatorByConsAddr(ctx, consAddr)
@@ -458,7 +458,7 @@ func benchmarkExtendedCommit(
 	}
 	partialVoteExtension := benchmarkVoteExtension(tb, partialTargets)
 
-	votes := make([]cometabci.ExtendedVoteInfo, len(consAddrs))
+	votes := make([]cmtabci.ExtendedVoteInfo, len(consAddrs))
 	for i, consAddr := range consAddrs {
 		voteExtension := fullVoteExtension
 		switch {
@@ -467,14 +467,14 @@ func benchmarkExtendedCommit(
 		case benchmarkCase.partialEvery > 0 && i%benchmarkCase.partialEvery == 0:
 			voteExtension = partialVoteExtension
 		}
-		votes[i] = cometabci.ExtendedVoteInfo{
-			Validator:     cometabci.Validator{Address: consAddr, Power: 1},
+		votes[i] = cmtabci.ExtendedVoteInfo{
+			Validator:     cmtabci.Validator{Address: consAddr, Power: 1},
 			VoteExtension: voteExtension,
-			BlockIdFlag:   cometproto.BlockIDFlagCommit,
+			BlockIdFlag:   cmtproto.BlockIDFlagCommit,
 		}
 	}
 
-	encoded, err := abcicodec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{Votes: votes})
+	encoded, err := abcicodec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{Votes: votes})
 	if err != nil {
 		tb.Fatal(err)
 	}

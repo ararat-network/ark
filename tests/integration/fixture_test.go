@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
@@ -61,7 +61,7 @@ type activationFixture struct {
 	// transactions. Conversion settlement runs in Market's EndBlocker, so its
 	// allocation and disclosure land here rather than in the context a test's
 	// closure holds.
-	blockEvents []cometabci.Event
+	blockEvents []cmtabci.Event
 }
 
 func newActivationFixture(t *testing.T) *activationFixture {
@@ -106,7 +106,7 @@ func newActivationFixture(t *testing.T) *activationFixture {
 	consensusParams.Abci.VoteExtensionsEnableHeight = 1
 
 	genesisTime := time.Unix(1_700_000_000, 0).UTC()
-	_, err = arkApp.InitChain(&cometabci.RequestInitChain{
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
 		ChainId:         chainID,
 		InitialHeight:   1,
 		Time:            genesisTime,
@@ -171,15 +171,15 @@ func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 
 	var (
 		txs        [][]byte
-		lastCommit cometabci.CommitInfo
+		lastCommit cmtabci.CommitInfo
 	)
 	if voteHeight > 0 {
-		validator := cometabci.Validator{
+		validator := cmtabci.Validator{
 			Address: f.validators.Keys[0].PubKey().Address(),
 			Power:   1,
 		}
-		lastCommit = cometabci.CommitInfo{
-			Votes: []cometabci.VoteInfo{{
+		lastCommit = cmtabci.CommitInfo{
+			Votes: []cmtabci.VoteInfo{{
 				Validator:   validator,
 				BlockIdFlag: cmtproto.BlockIDFlagCommit,
 			}},
@@ -188,8 +188,8 @@ func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 		// it. Extension signatures are consensus's business and are verified in
 		// ProcessProposal, which the proposal-handler tests cover; the preblock
 		// trusts what consensus decided.
-		commit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{
-			Votes: []cometabci.ExtendedVoteInfo{{
+		commit, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{
+			Votes: []cmtabci.ExtendedVoteInfo{{
 				Validator:     validator,
 				VoteExtension: f.voteExtension(voteHeight),
 				BlockIdFlag:   cmtproto.BlockIDFlagCommit,
@@ -199,7 +199,7 @@ func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 		txs = [][]byte{commit}
 	}
 
-	res, err := f.app.FinalizeBlock(&cometabci.RequestFinalizeBlock{
+	res, err := f.app.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             f.height,
 		Time:               f.blockTime,
 		Txs:                txs,

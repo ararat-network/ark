@@ -10,7 +10,7 @@ import (
 	protoio "github.com/cosmos/gogoproto/io"
 	"github.com/stretchr/testify/require"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtsecp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
 	cmtprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -33,7 +33,7 @@ const (
 
 type proposalValidationFixture struct {
 	ctx            sdk.Context
-	commit         cometabci.ExtendedCommitInfo
+	commit         cmtabci.ExtendedCommitInfo
 	validatorStore testValidatorStore
 }
 
@@ -51,7 +51,7 @@ func (s testValidatorStore) GetPubKeyByConsAddr(_ context.Context, consAddr sdk.
 func TestPrepareProposalHandler(t *testing.T) {
 	fixture := newProposalValidationFixture(t)
 	initialCtx := abcitestutil.NewSDKContext(100, 1).
-		WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{}))
+		WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cmtabci.CommitInfo{}))
 	appTx1 := []byte("tx1")
 	appTx2 := []byte("tx2")
 	commitInfo := fixture.commit
@@ -64,7 +64,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		ctx                  sdk.Context
-		req                  *cometabci.RequestPrepareProposal
+		req                  *cmtabci.RequestPrepareProposal
 		prepare              sdk.PrepareProposalHandler
 		expectErr            bool
 		expectNilResponse    bool
@@ -79,9 +79,9 @@ func TestPrepareProposalHandler(t *testing.T) {
 			name: "nil request returns error",
 			ctx:  fixture.ctx,
 			req:  nil,
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				require.Fail(t, "wrapped prepare handler should not be called")
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
 			expectErr:         true,
 			expectNilResponse: true,
@@ -90,13 +90,13 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions disabled passes app txs through",
 			ctx:  abcitestutil.NewSDKContext(1, 2),
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:     1,
 				Txs:        [][]byte{appTx1, appTx2},
 				MaxTxBytes: 100,
 			},
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
 			expectedTxs:          [][]byte{appTx1, appTx2},
 			expectedPrepareTxs:   [][]byte{appTx1, appTx2},
@@ -106,12 +106,12 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions disabled returns wrapped handler error",
 			ctx:  abcitestutil.NewSDKContext(1, 2),
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:     1,
 				Txs:        [][]byte{appTx1},
 				MaxTxBytes: 100,
 			},
-			prepare: func(_ sdk.Context, _ *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
+			prepare: func(_ sdk.Context, _ *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				return nil, prepareErr
 			},
 			expectErr:            true,
@@ -125,13 +125,13 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "nonstandard initial height passes app txs without commit info",
 			ctx:  initialCtx,
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:     100,
 				Txs:        [][]byte{appTx1, appTx2},
 				MaxTxBytes: 100,
 			},
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
 			expectedTxs:          [][]byte{appTx1, appTx2},
 			expectedPrepareTxs:   [][]byte{appTx1, appTx2},
@@ -141,14 +141,14 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions enabled injects encoded commit info",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1, appTx2},
 				MaxTxBytes:      maxTxBytes,
 			},
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
 			expectedTxs:          [][]byte{commitBz, appTx1, appTx2},
 			expectedPrepareTxs:   [][]byte{appTx1, appTx2},
@@ -158,13 +158,13 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions enabled falls back to commit-only proposal on wrapped handler error",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      maxTxBytes,
 			},
-			prepare: func(_ sdk.Context, _ *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
+			prepare: func(_ sdk.Context, _ *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				return nil, prepareErr
 			},
 			expectedTxs:          [][]byte{commitBz},
@@ -175,14 +175,14 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "protobuf overhead excludes transaction that raw size would admit",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{largeAppTx},
 				MaxTxBytes:      maxTxBytes,
 			},
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-				return &cometabci.ResponsePrepareProposal{}, nil
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{}, nil
 			},
 			expectedTxs:          [][]byte{commitBz},
 			expectedPrepareTxs:   [][]byte{largeAppTx},
@@ -192,15 +192,15 @@ func TestPrepareProposalHandler(t *testing.T) {
 		{
 			name: "encoded commit info larger than max tx bytes returns error",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestPrepareProposal{
+			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      commitBzSize - 1,
 			},
-			prepare: func(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				require.Fail(t, "wrapped prepare handler should not be called")
-				return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
 			expectErr:   true,
 			expectedTxs: [][]byte{},
@@ -216,7 +216,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 				originalTxs = slices.Clone(tc.req.Txs)
 			}
 			wrappedCalls := 0
-			prepare := sdk.PrepareProposalHandler(func(ctx sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
+			prepare := sdk.PrepareProposalHandler(func(ctx sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				wrappedCalls++
 				if tc.expectedPrepareTxs != nil {
 					require.Equal(t, tc.expectedPrepareTxs, req.Txs)
@@ -263,7 +263,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 func TestProcessProposalHandler(t *testing.T) {
 	fixture := newProposalValidationFixture(t)
 	initialCtx := abcitestutil.NewSDKContext(100, 1).
-		WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cometabci.CommitInfo{}))
+		WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, cmtabci.CommitInfo{}))
 	appTx := []byte("tx")
 	commitInfo := fixture.commit
 	commitBz := abcitestutil.MustEncodeExtendedCommit(t, commitInfo)
@@ -276,11 +276,11 @@ func TestProcessProposalHandler(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		ctx                  sdk.Context
-		req                  *cometabci.RequestProcessProposal
+		req                  *cmtabci.RequestProcessProposal
 		process              sdk.ProcessProposalHandler
 		expectErr            bool
 		expectNilResponse    bool
-		expectedStatus       cometabci.ResponseProcessProposal_ProposalStatus
+		expectedStatus       cmtabci.ResponseProcessProposal_ProposalStatus
 		expectedProcessTxs   [][]byte
 		expectedFinalTxs     [][]byte
 		expectedCategory     error
@@ -298,14 +298,14 @@ func TestProcessProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions disabled passes app txs through",
 			ctx:  abcitestutil.NewSDKContext(1, 2),
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: 1,
 				Txs:    [][]byte{appTx},
 			},
-			process: func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
+			process: func(_ sdk.Context, _ *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_ACCEPT}, nil
 			},
-			expectedStatus:       cometabci.ResponseProcessProposal_ACCEPT,
+			expectedStatus:       cmtabci.ResponseProcessProposal_ACCEPT,
 			expectedProcessTxs:   [][]byte{appTx},
 			expectedFinalTxs:     [][]byte{appTx},
 			expectedWrappedCalls: 1,
@@ -313,14 +313,14 @@ func TestProcessProposalHandler(t *testing.T) {
 		{
 			name: "nonstandard initial height accepts app txs without commit info",
 			ctx:  initialCtx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: 100,
 				Txs:    [][]byte{appTx},
 			},
-			process: func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
+			process: func(_ sdk.Context, _ *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_ACCEPT}, nil
 			},
-			expectedStatus:       cometabci.ResponseProcessProposal_ACCEPT,
+			expectedStatus:       cmtabci.ResponseProcessProposal_ACCEPT,
 			expectedProcessTxs:   [][]byte{appTx},
 			expectedFinalTxs:     [][]byte{appTx},
 			expectedWrappedCalls: 1,
@@ -328,26 +328,26 @@ func TestProcessProposalHandler(t *testing.T) {
 		{
 			name: "vote extensions enabled rejects missing injected commit info",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: proposalTestHeight,
 				Txs:    nil,
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
 			expectedCategory: arkabci.ErrMissingCommitInfo,
-			expectedStatus:   cometabci.ResponseProcessProposal_REJECT,
+			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 		{
 			name: "vote extensions enabled removes injected commit info before wrapped handler and restores it after",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: proposalTestHeight,
 				Txs:    [][]byte{commitBz, appTx},
 			},
-			process: func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-				return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
+			process: func(_ sdk.Context, _ *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
+				return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_ACCEPT}, nil
 			},
-			expectedStatus:       cometabci.ResponseProcessProposal_ACCEPT,
+			expectedStatus:       cmtabci.ResponseProcessProposal_ACCEPT,
 			expectedProcessTxs:   [][]byte{appTx},
 			expectedFinalTxs:     [][]byte{commitBz, appTx},
 			expectedWrappedCalls: 1,
@@ -355,14 +355,14 @@ func TestProcessProposalHandler(t *testing.T) {
 		{
 			name: "invalid vote extension signature rejects proposal before wrapped handler",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: proposalTestHeight,
 				Txs:    [][]byte{invalidCommitBz, appTx},
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
 			expectedCategory: proposals.ErrExtendedCommitValidation,
-			expectedStatus:   cometabci.ResponseProcessProposal_REJECT,
+			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 			expectedFinalTxs: [][]byte{
 				invalidCommitBz,
 				appTx,
@@ -371,33 +371,33 @@ func TestProcessProposalHandler(t *testing.T) {
 		{
 			name: "malformed commit info rejects proposal before wrapped handler",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: proposalTestHeight,
 				Txs:    [][]byte{[]byte("not-protobuf"), appTx},
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
 			expectedCategory: arkabci.ErrCodec,
-			expectedStatus:   cometabci.ResponseProcessProposal_REJECT,
+			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 		{
 			name: "excess commit votes reject proposal before protobuf unmarshal",
 			ctx:  fixture.ctx,
-			req: &cometabci.RequestProcessProposal{
+			req: &cmtabci.RequestProcessProposal{
 				Height: proposalTestHeight,
 				Txs:    [][]byte{excessVotesBz, appTx},
 			},
 			process:          rejectUnexpectedProcessProposal(t),
 			expectErr:        true,
 			expectedCategory: arkabci.ErrCodec,
-			expectedStatus:   cometabci.ResponseProcessProposal_REJECT,
+			expectedStatus:   cmtabci.ResponseProcessProposal_REJECT,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			wrappedCalls := 0
-			process := sdk.ProcessProposalHandler(func(ctx sdk.Context, req *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
+			process := sdk.ProcessProposalHandler(func(ctx sdk.Context, req *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
 				wrappedCalls++
 				if tc.expectedProcessTxs != nil {
 					require.Equal(t, tc.expectedProcessTxs, req.Txs)
@@ -453,11 +453,11 @@ func newProposalValidationFixture(t *testing.T) proposalValidationFixture {
 
 	vote := abcitestutil.NewCommitExtendedVoteInfo(consensusAddress, 1, voteExtension)
 	vote.ExtensionSignature = extensionSignature
-	commit := cometabci.ExtendedCommitInfo{
-		Votes: []cometabci.ExtendedVoteInfo{vote},
+	commit := cmtabci.ExtendedCommitInfo{
+		Votes: []cmtabci.ExtendedVoteInfo{vote},
 	}
-	lastCommit := cometabci.CommitInfo{
-		Votes: []cometabci.VoteInfo{
+	lastCommit := cmtabci.CommitInfo{
+		Votes: []cmtabci.VoteInfo{
 			{
 				Validator:   vote.Validator,
 				BlockIdFlag: vote.BlockIdFlag,
@@ -482,19 +482,19 @@ func newProposalValidationFixture(t *testing.T) proposalValidationFixture {
 	}
 }
 
-func passThroughPrepareProposal(_ sdk.Context, req *cometabci.RequestPrepareProposal) (*cometabci.ResponsePrepareProposal, error) {
-	return &cometabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+func passThroughPrepareProposal(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+	return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 }
 
-func acceptProcessProposal(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
-	return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_ACCEPT}, nil
+func acceptProcessProposal(_ sdk.Context, _ *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
+	return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_ACCEPT}, nil
 }
 
 func rejectUnexpectedProcessProposal(t *testing.T) sdk.ProcessProposalHandler {
 	t.Helper()
 
-	return func(_ sdk.Context, _ *cometabci.RequestProcessProposal) (*cometabci.ResponseProcessProposal, error) {
+	return func(_ sdk.Context, _ *cmtabci.RequestProcessProposal) (*cmtabci.ResponseProcessProposal, error) {
 		require.Fail(t, "wrapped process handler should not be called")
-		return &cometabci.ResponseProcessProposal{Status: cometabci.ResponseProcessProposal_REJECT}, nil
+		return &cmtabci.ResponseProcessProposal{Status: cmtabci.ResponseProcessProposal_REJECT}, nil
 	}
 }
