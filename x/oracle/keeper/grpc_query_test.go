@@ -8,7 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
 	"github.com/ararat-network/ark/x/oracle/types"
 )

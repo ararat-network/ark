@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // DefaultSettlementActivationDelayBlocks gives governance a day to notice a

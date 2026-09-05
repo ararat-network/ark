@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -118,9 +118,9 @@ func TestPricing(t *testing.T) {
 	)
 	sheet := treasurytypes.QueryGasPricesResponse{
 		GasPrices: []treasurytypes.GasPrice{
-			{Denom: "anoah", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
+			{Denom: "anoah", GasPrice: math.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
 		},
-		ReferenceGasPrice: treasurytypes.GasPrice{Denom: "axdr", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.1")},
+		ReferenceGasPrice: treasurytypes.GasPrice{Denom: "axdr", GasPrice: math.LegacyMustNewDecFromStr("0.1")},
 	}
 	oneTax := sdk.NewCoins(sdk.NewInt64Coin("axdr", 1))
 	transferred := sdk.NewCoins(sdk.NewInt64Coin("axdr", 100))
@@ -256,12 +256,12 @@ func TestPricing(t *testing.T) {
 // account. The reference rides beside the sheet as its own row, never a list
 // entry.
 func TestPickFeeDenom(t *testing.T) {
-	reference := treasurytypes.GasPrice{Denom: "axdr", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.1")}
+	reference := treasurytypes.GasPrice{Denom: "axdr", GasPrice: math.LegacyMustNewDecFromStr("0.1")}
 	sheet := []treasurytypes.GasPrice{
-		{Denom: "anoah", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
-		{Denom: "ausd", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.2"), DerivedHeight: 5},
+		{Denom: "anoah", GasPrice: math.LegacyMustNewDecFromStr("0.025"), DerivedHeight: 6},
+		{Denom: "ausd", GasPrice: math.LegacyMustNewDecFromStr("0.2"), DerivedHeight: 5},
 	}
-	gasLimit := sdkmath.LegacyNewDec(200_000)
+	gasLimit := math.LegacyNewDec(200_000)
 	coin := sdk.NewInt64Coin
 	noTax := sdk.NewCoins()
 	// Fees at these prices: 20,000axdr, 40,000ausd, 5,000anoah; lifted,

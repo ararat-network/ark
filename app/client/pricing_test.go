@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 
 	bankv1beta1 "cosmossdk.io/api/cosmos/bank/v1beta1"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -92,8 +92,8 @@ func TestPriceTransactions(t *testing.T) {
 	transferred := sdk.NewCoins(sdk.NewInt64Coin("axdr", 100))
 	msg := banktypes.NewMsgSend(sender, sdk.AccAddress("recipient"), transferred)
 	sheet := treasurytypes.QueryGasPricesResponse{
-		GasPrices:         []treasurytypes.GasPrice{{Denom: "anoah", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.025")}},
-		ReferenceGasPrice: treasurytypes.GasPrice{Denom: "axdr", GasPrice: sdkmath.LegacyMustNewDecFromStr("0.1")},
+		GasPrices:         []treasurytypes.GasPrice{{Denom: "anoah", GasPrice: math.LegacyMustNewDecFromStr("0.025")}},
+		ReferenceGasPrice: treasurytypes.GasPrice{Denom: "axdr", GasPrice: math.LegacyMustNewDecFromStr("0.1")},
 	}
 	oneTax := sdk.NewCoins(sdk.NewInt64Coin("axdr", 1))
 	// 200k gas at 0.1axdr is 20,000; with the one of tax, lifted, 22,002.

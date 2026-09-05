@@ -15,7 +15,7 @@ import (
 	"cosmossdk.io/math"
 
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )

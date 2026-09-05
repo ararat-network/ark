@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/collections"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )

@@ -14,7 +14,7 @@ import (
 
 	"github.com/ararat-network/ark/app/ante"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // TestTransferTaxDecoratorChargesNothingOnFailure pins D82 at the seam: a

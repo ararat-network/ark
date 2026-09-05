@@ -6,14 +6,14 @@ import (
 	"math/big"
 	"strings"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -23,7 +23,7 @@ import (
 // costs nothing and survives what moves between building and inclusion —
 // the base fee by at most 2.5% a block, a capped tax with the oracle rate.
 // NOAH gets none: its leg is charged whole, so headroom there is a tip.
-var DefaultFeeHeadroom = sdkmath.LegacyMustNewDecFromStr("1.1")
+var DefaultFeeHeadroom = math.LegacyMustNewDecFromStr("1.1")
 
 // withHeadroom sizes the declaration for every leg of a priced fee.
 func withHeadroom(fee sdk.Coins) sdk.Coins {
@@ -38,7 +38,7 @@ func withHeadroom(fee sdk.Coins) sdk.Coins {
 // lift sizes one fee leg's declaration under DefaultFeeHeadroom: a stable
 // leg ceils, NOAH stays exact. The declaration and the balance check that
 // picks a denomination both price through here, so they cannot disagree.
-func lift(denom string, amount sdkmath.Int) sdkmath.Int {
+func lift(denom string, amount math.Int) math.Int {
 	if denom == chain.NoahBaseDenom {
 		return amount
 	}
@@ -46,8 +46,8 @@ func lift(denom string, amount sdkmath.Int) sdkmath.Int {
 }
 
 // headroomPercent is DefaultFeeHeadroom as the whole percentage it adds.
-func headroomPercent() sdkmath.Int {
-	return DefaultFeeHeadroom.Sub(sdkmath.LegacyOneDec()).MulInt64(100).TruncateInt()
+func headroomPercent() math.Int {
+	return DefaultFeeHeadroom.Sub(math.LegacyOneDec()).MulInt64(100).TruncateInt()
 }
 
 // FeeBreakdown is one priced fee and the parts it was built from: the base
@@ -205,7 +205,7 @@ func computeTax(clientCtx sdkclient.Context, msgs []sdk.Msg) (tax, transferred s
 // first denomination in the recorded order whose spendable balance covers the
 // declaration.
 func (q feeQuote) gasFee(gas uint64) (sdk.Coins, error) {
-	gasLimit := sdkmath.LegacyNewDecFromBigInt(new(big.Int).SetUint64(gas))
+	gasLimit := math.LegacyNewDecFromBigInt(new(big.Int).SetUint64(gas))
 	if !q.hasPayer {
 		return sdk.NewCoins(sdk.NewCoin(
 			q.reference.Denom,
@@ -233,7 +233,7 @@ func (q feeQuote) gasFee(gas uint64) (sdk.Coins, error) {
 // so a transferred reference amount still prices through the first tier. The
 // coin returned is the gas portion alone, unlifted; the caller adds the tax
 // and lifts.
-func (q feeQuote) pickFeeDenom(gasLimit sdkmath.LegacyDec) (sdk.Coin, bool) {
+func (q feeQuote) pickFeeDenom(gasLimit math.LegacyDec) (sdk.Coin, bool) {
 	rows := make(map[string]treasurytypes.GasPrice, len(q.sheet)+1)
 	for _, row := range q.sheet {
 		rows[row.Denom] = row

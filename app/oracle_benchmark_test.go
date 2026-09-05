@@ -18,12 +18,12 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	abcicodec "github.com/ararat-network/ark/abci/codec"
+	"github.com/ararat-network/ark/abci/codec"
 	abcioracle "github.com/ararat-network/ark/abci/oracle"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/encoding"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -474,7 +474,7 @@ func benchmarkExtendedCommit(
 		}
 	}
 
-	encoded, err := abcicodec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{Votes: votes})
+	encoded, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{Votes: votes})
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -495,7 +495,7 @@ func benchmarkVoteExtension(
 		}
 		rates[denom] = rate
 	}
-	encoded, err := abcicodec.EncodeVoteExtension(vetypes.OracleVoteExtension{
+	encoded, err := codec.EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates:         rates,
 		TargetVersion: oracletypes.InitialFeedVersion,
 	})

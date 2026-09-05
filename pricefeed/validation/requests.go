@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"

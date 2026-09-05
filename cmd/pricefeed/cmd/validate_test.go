@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"cosmossdk.io/log/v2"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
@@ -81,7 +81,7 @@ func TestValidateCmdPrintsDisabledState(t *testing.T) {
 }
 
 func TestRunValidationUsesExternalRPCs(t *testing.T) {
-	rawPrice, err := encoding.EncodeCompactLegacyDec(sdkmath.LegacyNewDec(1))
+	rawPrice, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(1))
 	require.NoError(t, err)
 
 	oracleServer := &validationPriceFeedServer{rawPrice: rawPrice}

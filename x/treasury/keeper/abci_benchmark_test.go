@@ -22,7 +22,7 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
 	oracletestutil "github.com/ararat-network/ark/x/oracle/testutil"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // FeedSet is the feed epoch selected for one vote-extension height.

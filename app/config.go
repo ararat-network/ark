@@ -1,7 +1,7 @@
 package app
 
 import (
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -20,7 +20,7 @@ func init() {
 	)
 	// A proposal's initial deposit must reach this share of MinDeposit, or the
 	// submission is rejected outright; matches the Cosmos Hub's 10%.
-	govv1.DefaultMinInitialDepositRatio = sdkmath.LegacyNewDecWithPrec(1, 1)
+	govv1.DefaultMinInitialDepositRatio = math.LegacyNewDecWithPrec(1, 1)
 
 	// sdk.KeyringServiceName reads version.Name, and on the os, pass, and
 	// kwallet backends that name is the credential store's service label. Unset,

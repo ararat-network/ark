@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
@@ -128,9 +128,9 @@ func TestPriceSnapshotAgeIsUnknownForZeroTimestamp(t *testing.T) {
 func pricesResponse(t *testing.T) *api.PricesResponse {
 	t.Helper()
 
-	ausd, err := encoding.EncodeCompactLegacyDec(sdkmath.LegacyNewDec(1))
+	ausd, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(1))
 	require.NoError(t, err)
-	akrw, err := encoding.EncodeCompactLegacyDec(sdkmath.LegacyMustNewDecFromStr("1234.5"))
+	akrw, err := encoding.EncodeCompactLegacyDec(math.LegacyMustNewDecFromStr("1234.5"))
 	require.NoError(t, err)
 
 	return &api.PricesResponse{

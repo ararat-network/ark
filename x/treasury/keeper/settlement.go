@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"

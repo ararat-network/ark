@@ -12,7 +12,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 

@@ -16,7 +16,7 @@ import (
 	sdkante "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"

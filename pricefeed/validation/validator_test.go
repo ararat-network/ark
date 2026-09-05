@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"math"
+	stdmath "math"
 	"testing"
 	"time"
 
@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 
 	"cosmossdk.io/log/v2"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/encoding"
 	"github.com/ararat-network/ark/pricefeed/api"
@@ -350,7 +350,7 @@ func TestRunFailsWhenDenomBelowLivenessThreshold(t *testing.T) {
 			Return(pricesResponse(t, now, "ausd", "akrw"), nil),
 		client.EXPECT().
 			Prices(gomock.Any(), gomock.Any(), waitForReady()).
-			Return(pricesResponseWithValues(t, now, map[string]sdkmath.LegacyDec{
+			Return(pricesResponseWithValues(t, now, map[string]math.LegacyDec{
 				"ausd": positivePrice(),
 			}), nil),
 	)
@@ -574,7 +574,7 @@ func TestConfigValidateRejectsInvalidFields(t *testing.T) {
 		{
 			name: "liveness percent NaN",
 			mutate: func(cfg *Config) {
-				cfg.RequiredPriceLivenessPercent = math.NaN()
+				cfg.RequiredPriceLivenessPercent = stdmath.NaN()
 			},
 			wantErr: "required price liveness percent must be between 0 and 100",
 		},
@@ -635,7 +635,7 @@ func validConfig() Config {
 func pricesResponse(t *testing.T, timestamp time.Time, feeds ...string) *api.PricesResponse {
 	t.Helper()
 
-	prices := make(map[string]sdkmath.LegacyDec, len(feeds))
+	prices := make(map[string]math.LegacyDec, len(feeds))
 	for _, denom := range feeds {
 		prices[denom] = positivePrice()
 	}
@@ -645,7 +645,7 @@ func pricesResponse(t *testing.T, timestamp time.Time, feeds ...string) *api.Pri
 func pricesResponseWithValues(
 	t *testing.T,
 	timestamp time.Time,
-	prices map[string]sdkmath.LegacyDec,
+	prices map[string]math.LegacyDec,
 ) *api.PricesResponse {
 	t.Helper()
 
@@ -659,7 +659,7 @@ func pricesResponseWithValues(
 	}
 }
 
-func encodedPrice(t *testing.T, price sdkmath.LegacyDec) []byte {
+func encodedPrice(t *testing.T, price math.LegacyDec) []byte {
 	t.Helper()
 
 	rawPrice, err := encoding.EncodeCompactLegacyDec(price)
@@ -667,8 +667,8 @@ func encodedPrice(t *testing.T, price sdkmath.LegacyDec) []byte {
 	return rawPrice
 }
 
-func positivePrice() sdkmath.LegacyDec {
-	return sdkmath.LegacyMustNewDecFromStr("1.23")
+func positivePrice() math.LegacyDec {
+	return math.LegacyMustNewDecFromStr("1.23")
 }
 
 type waitForReadyMatcher struct{}

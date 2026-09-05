@@ -12,7 +12,7 @@ import (
 
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"

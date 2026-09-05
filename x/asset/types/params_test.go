@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	chain "github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
