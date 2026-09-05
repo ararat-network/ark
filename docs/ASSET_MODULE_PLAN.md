@@ -1,13 +1,17 @@
 # Asset Module Plan
 
-Status: Phases 0 through 2 are implemented against an earlier draft of this contract and require alignment before Phase
-3; the Phase 3 target-ownership cutover is pending.
+Status: implemented, Phases 0 through 6 — the pricefeed decoupling re-homed feed epochs to `x/oracle`, a feed is keyed
+by the denomination it prices, `x/asset` is wired into the application, Market owns conversion policy, Treasury derives
+its tax base, liability partition, and cap membership from the asset registry, and Oracle's Tobin-tax surface is gone.
 
 ## Purpose
 
 Build `x/asset` as the authoritative registry and lifecycle owner for governance-managed Bank assets other than NOAH.
-The module must support stablecoins, tokenized commodities such as gold, and assets that do not use the chain Oracle
-without treating every registered asset as a stablecoin.
+The module must support stablecoins and tokenized commodities such as gold. Every registered asset is priced by the
+feed its own denomination keys, and is convertible through Market: conversion is the chain's only native mint path, so
+an asset outside the conversion loop could never acquire supply, and the Ark ecosystem is deliberately built around
+NOAH as the sole monetary basis. Pricing without listing lives at the feed layer — a feed may exist with no asset
+carrying its denomination — so observing a price never creates a liability; registering an asset is the act that does.
 
 Normal retirement must stop issuance before removing support for outstanding supply, and must be able to close the books
 on an asset whose residual supply will never be redeemed. Emergency suspension must stop unsafe economic operations
@@ -25,21 +29,36 @@ as recovering a fully settled asset solely to remove its settlement plan.
 
 ## Core decisions
 
-- Asset is the general domain name. Stablecoin is a Treasury policy classification.
+- Asset is the general domain name. Stablecoin is a description, not a classification: no module stores a
+  stable-versus-commodity distinction, because the axis every consumer cares about is convertibility, and every
+  registered asset is convertible by invariant.
 - `anoah` is the native base denomination and remains outside this lifecycle.
 - Every Ark-native asset defines at least an `a<display>` base unit at exponent 0 and `<display>` at exponent 18. Sorted
   intermediate units are permitted; aliases are not.
-- Every Oracle-priced asset has one denomination-keyed rate expressed directly against NOAH.
-- Generalized feed identifiers remain deferred until the protocol needs non-asset observations or multiple independent
-  prices for one asset.
-- `x/asset` owns identity, Bank metadata, economic lifecycle, Oracle-target epochs, dependency locks, settlement terms,
-  resolution history, and lifecycle-aware valuation access.
-- `x/oracle` owns validator reporting, aggregation, accounting, stored rates, freshness, and rate pruning. Freshness has
+- A feed is keyed by the denomination it prices, so an asset's price source is not a separate choice the registry
+  records — it is the asset's own identity. That feed carries one rate expressed directly against NOAH today, and may
+  later be a derived basket; either way two assets can never share it, and no asset can be unpriced, because conversion
+  is the only mint path and conversion needs a rate.
+- Every asset is convertible through Market, and only Market ever holds mint authority. No native issuance path outside
+  conversion will exist: the Ark ecosystem is built around NOAH, and native money created outside the conversion loop
+  would fragment the backstop that makes per-asset failure containable. Oracle-priced membership therefore *is*
+  convertibility, and swap eligibility, tax-cap membership, and liability recognition all derive from it — no consumer
+  enrollment set exists anywhere. This supersedes two earlier decisions: support for assets that do not use the chain
+  Oracle, and the planned Treasury `StableAssets` enrollment.
+- A feed registry independent of the asset registry is v1, not deferred. The deferral recorded here previously was
+  reversed once the protocol acquired non-asset price consumers — a basket-indexed flagship currency and
+  strategic-reserve marks. What the reversal buys is a feed layer that is a superset of the listed assets, not a
+  separate identifier space: feeds and assets share one key, so a commodity can be priced under the denomination it
+  would carry long before, or without ever, being listed. The reversal and its reasoning are recorded in
+  `docs/DESIGN_NOTES.md` §1.2.
+- `x/asset` owns identity, Bank metadata, economic lifecycle, settlement terms, resolution
+  history, and lifecycle-aware valuation access.
+- `x/oracle` owns the feed registry and its epochs, validator reporting, aggregation, accounting, stored rates,
+  freshness, and rate pruning. Freshness has
   exactly one definition, owned by `x/oracle`; lifecycle transitions that depend on a fresh rate consume that definition
   through `RateSet` and never define their own staleness policy.
 - `x/market` owns ordinary conversion eligibility, Tobin-tax policy, settlement execution, minting, and burning.
-- `x/treasury` owns stable-liability enrollment, reference-asset policy, liability reporting, and redemption-buffer
-  accounting.
+- `x/treasury` owns reference-asset policy, liability reporting, and redemption-buffer accounting.
 - Asset status describes economic treatment only, and status names must describe that treatment, never an intent or a
   predicted destiny. Oracle transitions and settlement-plan presence are separate authoritative state.
 - Recovery after emergency suspension restores normal pricing and redemption into `ISSUANCE_HALTED`. Issuance resumes
@@ -47,23 +66,33 @@ as recovering a fully settled asset solely to remove its settlement plan.
 - Write-off never burns, transfers, or reprices holder balances. It changes recognized protocol obligation and appends
   permanent resolution history.
 - Suspension closes the only unbounded transmission channel from an asset failure into NOAH: ordinary conversion at the
-  reference rate. From suspension onward the asset's maximum remaining claim on NOAH is closed — zero while unpriced, at
-  most outstanding supply times the fixed rate while a settlement is open, and zero again after write-off. Recovery
-  deliberately reopens ordinary pricing and redemption; that is its meaning, and it is why completion requires a fresh
-  rate and full policy prerequisites.
+  reference rate. From suspension onward the asset's maximum remaining claim on NOAH is closed — zero while no
+  settlement is open, at most outstanding supply times the fixed rate while one is, and zero again after write-off.
+  Recovery deliberately reopens ordinary pricing and redemption; that is its meaning, and it is why completion requires
+  a rate the fleet aggregated after governance began the recovery.
 - A bounded committee may act where only speed is needed, never where terms are chosen. The Asset Emergency Mandate
   reuses the treasury mandate pattern — monotonic term, exact threshold-multisig committee, expiring height window,
-  governance replacement at any time — to execute issuance halts and suspensions in minutes, bounded by one action per
-  asset per kind per term. Settlement, write-off, recovery, and every other decision with terms attached remains
-  governance-only.
+  governance replacement at any time — to execute suspensions in minutes, bounded by one suspension per asset per
+  term. Suspension is its only power: halting issuance contains nothing a crisis cares about, so it stays
+  governance-only alongside settlement, write-off, recovery, and every other decision with terms attached.
 - Derecognition is never automatic. No timer or height threshold may write off an obligation on its own. Explicit
   governance finalization that derecognizes a bounded residual is a decision, not an automation, and is permitted.
-- The denomination is immutable forever. Metadata is mutable only while the asset is `PENDING` and frozen in every other
-  status. Before first activation there are no holders and no economic reliance, so pre-activation immutability protects
-  nothing.
-- Governance corrects its own mistakes at defined points, and holder-facing commitments bind between them. A settlement
-  plan is freely cancellable before activation and closable after its announced earliest closing height; between those
-  points the window is a hard commitment that only `WriteOffAsset` overrides. Assurance to redeeming holders outweighs
+- The denomination is immutable forever, and because it is also the feed key, the price source is immutable with it: no
+  message can re-point a registered asset at different price data. Bank metadata is immutable with them both, because
+  it is derived from the denomination rather than supplied alongside it — description, name, symbol, display unit and
+  exponent are all functions of the denom. A registration states one thing, so it has nothing that could be misspelled
+  and needs no message to correct it.
+- A denomination is shaped so that it can always key a feed, and that is the chain's only denomination rule. `a`
+  followed by two to fifteen lowercase alphanumerics is deliberately tighter than the SDK denomination charset, which
+  admits punctuation: a name the oracle could not carry as a feed key must not be able to exist as a denomination in
+  the first place, since every asset is priced by invariant. Everything that validates a denomination anywhere — a
+  registered asset, a settlement plan, a Market Tobin override, a tax cap, a resolver route, the protocol reference — is
+  validating something that must be able to carry a feed, so one rule serves them all, and `anoah` is excluded by it
+  for the same reason it has no feed: NOAH is not priced, it is what prices everything else. Code that legitimately
+  handles NOAH compares against the constant instead of validating. The three-character floor also keeps every feed key
+  a valid SDK denomination, so rates travel as `DecCoins` without a key that could not be one.
+- Governance corrects its own mistakes at defined points, and holder-facing commitments bind after them. A settlement
+  plan is freely cancellable before activation and binding from it. Assurance to redeeming holders outweighs
   mid-window correctability by design, so the correction window before activation must be real: plans activate only
   after a minimum delay.
 
@@ -71,7 +100,7 @@ as recovering a fully settled asset solely to remove its settlement plan.
 
 Version 1 does not provide:
 
-- generalized on-chain feed identifiers separate from asset denoms;
+- feed keys drawn from any namespace other than Ark-native base denominations;
 - arbitrary non-asset Oracle observations;
 - an on-chain provider or exchange-symbol registry;
 - issuer, custody, proof-of-reserve, or physical redemption machinery;
@@ -82,12 +111,14 @@ Version 1 does not provide:
 - timer-driven or height-driven automatic derecognition of any obligation;
 - a generic mandate or committee module: the shared `ark.mandate.v1` envelope and `pkg/mandate` helpers are the
   permanent boundary, and authority powers stay domain-owned;
+- any native mint path outside Market conversion, permanently: only Market holds `Minter`, and tests inspect the
+  configured module-account permissions to hold that line;
 - any systemic backstop for NOAH itself: the emergency lifecycle contains individual asset failures, and no mechanism in
   this plan attempts to contain a loss of confidence in the base denomination;
 - live-chain compatibility unless deployment requires an upgrade from committed state.
 
-Provider markets and resolver routes remain generalized off-chain. The sidecar may combine inputs such as `NOAH/USD` and
-`USD/XAU`, but consensus receives one final denomination-specific NOAH-relative rate.
+Provider markets and resolver routes remain generalized off-chain. The sidecar may combine inputs such as `XAU/USD` and
+`USD/NOAH`, but consensus receives one final denomination-specific NOAH-relative rate.
 
 ## Price contract
 
@@ -108,10 +139,11 @@ finite band of representable and precision-safe rates. The plan requires a docum
 fails closed outside it, and treatment of any proposal to list an asset whose expected rate sits near either edge as an
 explicit review item rather than an arithmetic surprise.
 
-A governance settlement uses a different contract:
+A governance settlement uses a different contract, quoted in the same orientation as an Oracle rate so a plan can serve
+as a rate set unchanged:
 
-    redemption_rate[denom] = NOAH paid per unit of the settled asset
-    output anoah = floor(input asset amount * redemption_rate)
+    redemption_rate[denom] = NOAH paid per one unit of the settled asset
+    output anoah = floor(input asset amount × redemption_rate)
 
 The fixed settlement rate is a one-way entitlement while its plan is active. It is not an Oracle observation, must not
 enter ordinary conversion, and never permits asset issuance. Rounding down prevents payout amplification through
@@ -126,20 +158,18 @@ Owns:
 
 - asset registration and Bank metadata;
 - asset economic status and version;
-- whether normal operation requires Oracle pricing;
-- active and pending Oracle-target epochs;
-- `AssetLocks`;
+- the protocol `Reference` feed;
+- the `PricedLiveVersion` membership epoch;
 - active `SettlementPlans`;
 - append-only `ResolutionRecords`;
-- the `EmergencyMandate`, per-term `EmergencyActions` usage, and the committee execution paths;
+- the `EmergencyMandate`, per-term `EmergencySuspensions` usage, and the committee execution path;
 - lifecycle-aware priced-asset and retirement-readiness views.
 
 Does not own:
 
 - validator reports, rate aggregation, stored rates, or freshness;
 - Market curves, Tobin taxes, minting, or burning;
-- Treasury stable-liability enrollment or buffer balances;
-- emergency reference fallbacks, which belong to the consumer that owns the reference being replaced.
+- Treasury stable-liability enrollment or buffer balances.
 
 ### x/oracle
 
@@ -148,31 +178,36 @@ whether an asset may be issued, redeemed, settled, suspended, written off, or re
 
 ### x/market
 
-Owns supported converter assets, per-asset conversion policy, the base-pool reference, the base-pool emergency fallback,
-and execution of ordinary and settlement redemption. It consumes lifecycle-checked views from `x/asset`.
+Owns supported converter assets, per-asset conversion policy, and execution of ordinary and settlement redemption. It
+consumes lifecycle-checked views from `x/asset`. State it holds in reference units — the base-pool `DecCoin` and the
+pool delta — rebases through the oracle module's reference executor when the protocol reference moves.
 
 ### x/treasury
 
-Owns stable enrollment, reference-tax-cap policy, the reference-tax-cap emergency fallback, liability classification,
-redemption accounting, and the shared buffer. It enumerates its own stable set and never infers liabilities from Oracle
-targets.
+Owns reference-tax-cap policy, liability classification, redemption accounting, and the shared buffer. Tax-cap
+membership and liability inclusion are derived from `x/asset` rather than enumerated locally: membership is
+`OraclePricedDenoms`, and the liability set is every Oracle-priced asset whose status is not `RETIRED`.
+State it holds in reference units rebases through the oracle module's reference executor when the protocol reference
+moves.
 
-Each consumer owns the fallback for the reference it owns. One asset may hold both live-reference locks, and the right
-replacement for the base pool is not necessarily the right replacement for the reference tax cap; storing one fallback
-per asset in `x/asset` would force a single answer to two independent policy questions, and `x/asset` cannot judge
-whether a candidate is a viable base pool.
+The base-pool reference and the reference-tax-cap denomination are the same unit by design, permanently. A single
+chain-level protocol reference therefore names that denomination — set by governance only, read as a feed key, with
+each consumer's reference-unit state rebased through executor interfaces when it moves. It lives in `x/oracle`, which
+keys it by the feed that prices it: every rule it has is a feed rule. This reverses three earlier decisions:
+consumer-owned independent fallbacks, the asset-keyed reference carrying a stored fallback, and asset ownership of the
+reference itself. All three reversals and their reasoning are recorded in
+`docs/DESIGN_NOTES.md` §1.3 and §2.1.
 
 ## State model
 
 The canonical collections are:
 
-    Assets            collections.Map[string, types.Asset]
-    AssetLocks        collections.KeySet[collections.Pair[string, types.AssetLockKind]]
-    OracleTargets     collections.Item[types.OracleTargets]
-    SettlementPlans   collections.Map[string, types.SettlementPlan]
-    ResolutionRecords collections.Map[collections.Pair[string, uint64], types.ResolutionRecord]
-    EmergencyMandate  collections.Item[types.EmergencyMandate]
-    EmergencyActions  collections.KeySet[collections.Pair[string, types.EmergencyAction]]
+    Assets               collections.Map[string, types.Asset]
+    SettlementPlans      collections.Map[string, types.SettlementPlan]
+    ResolutionRecords    collections.Map[collections.Pair[string, uint64], types.ResolutionRecord]
+    EmergencyMandate     collections.Item[types.EmergencyMandate]
+    EmergencySuspensions collections.KeySet[string]
+    PricedLiveVersion    collections.Item[uint64]
 
 `Asset` contains:
 
@@ -181,22 +216,28 @@ The canonical collections are:
       cosmos.bank.v1beta1.Metadata metadata = 2;
       AssetStatus status = 3;
       uint64 version = 4;
-      bool oracle_required = 5;
     }
 
-The denomination is immutable after registration. Metadata is mutable only while the asset is `PENDING` and frozen in
-every other status.
+The denomination is immutable after registration, and it is also the key of the feed that prices the asset, so the
+record stores no separate price source: there is nothing to name and nothing to keep consistent. Metadata is stored
+rather than derived on read, so an exported genesis describes itself and Bank's record and the registry's cannot drift
+— but it is validated against the derivation, so the stored copy is the derivation or the state is invalid.
 
-`oracle_required` describes normal pricing mode. It does not describe current target membership, Market eligibility,
-Treasury classification, or settlement.
+The record carries no pending-transition state. Every status change is a governance act that verifies its own feed
+precondition and takes effect in the block it executes, so there is nothing to mark as in progress and no automatic
+path that can move an asset between blocks. Registration is one of those acts, which is why there is no status between
+it and admission.
 
-`OracleTargets` contains the complete active target set, the active target version, and a sorted list of immutable
-per-denom transition records, each carrying its denom, direction, and activation vote height.
+Feed membership is not asset state. `x/oracle` owns the `Feeds` registry — the materialized active set, its version,
+and immutable per-feed transition records — and governance moves it through `MsgAddFeed` and `MsgRemoveFeed`. The two
+registries share one key namespace, and the feed set is deliberately the larger of the two: a feed must already be
+Active before an asset may activate under its denomination, so every feed spends a window un-referenced, and some are
+priced permanently without ever being listed. Registration itself asks nothing of the feed, so the two registries may
+be populated in either order.
 
-`SettlementPlan` contains a positive NOAH-per-asset rate, an activation height, and an optional earliest closing height.
-The earliest closing height may be set when the plan is opened, as a commitment to holders, and may be set or raised —
-never lowered or cleared — when recovery begins. While supply remains outstanding, the commitment is hard: nothing but
-`WriteOffAsset` ends the plan before that height. It is authoritative only while attached to a `SUSPENDED` asset.
+`SettlementPlan` contains a positive NOAH-per-asset rate, an activation height, and a mandatory earliest closing
+height. Every term is set when the plan opens and fixed thereafter; there is no amendment. The closing height is the
+commitment to holders, and `WriteOffAsset` is the one message refused before it. It is authoritative only while attached to a `SUSPENDED` asset.
 Settlement mutations advance the owning asset's version.
 
 `ResolutionRecords` are immutable and keyed by denom and asset version. Each record carries a kind:
@@ -204,8 +245,8 @@ Settlement mutations advance the owning asset's version.
     WRITE_OFF            emergency derecognition of all recognized obligation
     RETIREMENT_RESIDUAL  derecognition of bounded residual supply at final retirement
 
-A record stores the supply outstanding at resolution and, when a settlement plan existed, its final terms. Later
-reinstatement or reactivation never erases or reinterprets an earlier record.
+A record stores the supply outstanding at resolution and, when a settlement plan existed, its final terms. A later
+recovery never erases or reinterprets an earlier record.
 
 ## Version and concurrency semantics
 
@@ -213,23 +254,19 @@ reinstatement or reactivation never erases or reinterprets an earlier record.
 Rules:
 
 - `RegisterAsset` stores version 1. Every successful governance mutation of the asset advances the version by one:
-  metadata replacement, pricing-mode change, every status transition message, settlement open, cancel, and close,
-  write-off, and reactivation.
-- Automatic completions never advance the version: `PENDING` to `ACTIVE` on the first fresh rate, recovery completion
-  into `ISSUANCE_HALTED`, and epoch-activation transitions into `RETIRED`. This keeps `expected_version` predictable for
-  proposal authors and allows pipelined proposals that intentionally target the state an automatic completion will
-  produce, such as a `ResumeIssuance` proposal voted during recovery.
+  metadata replacement, every status transition message, settlement open, cancel, and close, and write-off.
+- Nothing else advances it. There is no automatic transition, so the version moves only when a governance message
+  lands, which keeps `expected_version` fully predictable for proposal authors.
 - Status preconditions are the authoritative safety check on every operation. `expected_version` is defense in depth
   against stale proposals, not the primary guard. Every operation must therefore state its required status explicitly.
 - Committee actions under the Asset Emergency Mandate are governance-equivalent mutations: they advance the asset
   version. Committee messages carry the mandate term instead of `expected_version`; staleness protection moves from the
   asset object to the authority object.
 
-## Six-state lifecycle
+## Five-state lifecycle
 
 Only these economic states are persisted:
 
-    PENDING
     ACTIVE
     ISSUANCE_HALTED
     SUSPENDED
@@ -238,10 +275,20 @@ Only these economic states are persisted:
 
 The primary flow is:
 
-    PENDING -> ACTIVE -> ISSUANCE_HALTED -> RETIRED
-       |          ^            |
-       |          +------------+ ResumeIssuance
-       +-------------------------> RETIRED (cancelled registration)
+    ACTIVE -> ISSUANCE_HALTED -> RETIRED
+       ^            |
+       +------------+ ResumeIssuance
+
+There is no state between registration and admission. `RegisterAsset` demands the asset's feed and stores `ACTIVE` at
+version 1, so an asset exists exactly when it is listed. A status that waited for the feed would hold nothing:
+admission never demanded a *rate*, only a feed, so `ACTIVE` without a rate is a state the chain reaches whenever a feed
+is young or has gone stale, and consumers handle both identically.
+
+The feed must already be Active, so a feed addition and the registration against it never share a proposal: governance
+proposes the feed, watches it print rates, then proposes the registration. Proving the feed first is the admission rule
+rather than a way of composing proposals, and the cycle it costs falls where it is cheapest — registration is the one
+admission path with no holders waiting on it, and the one where the price data is least proven, since the asset goes
+convertible on the first rate its feed ever produces.
 
 Emergency resolution is:
 
@@ -251,24 +298,18 @@ Emergency resolution is:
                                      |              |
                                      |              +-> RETIRED (finalize, residual permitted)
                                      |
-                                     +-> ISSUANCE_HALTED (recovery completion)
+                                     +-> ISSUANCE_HALTED (RecoverAsset)
                                      |
                                      +-> RETIRED (zero supply)
-
-### PENDING
-
-- The registry record and Bank metadata exist.
-- Metadata may be replaced.
-- Normal issuance, conversion, and redemption are disabled.
-- Supply must remain zero.
-- An Oracle-priced asset may be off-target, awaiting target addition, targeted while awaiting its first fresh rate, or
-  awaiting target removal after registration cancellation.
 
 ### ACTIVE
 
 - Normal policy-dependent issuance, conversion, valuation, liability accounting, and redemption are allowed.
-- An Oracle-required asset has active, non-removing target membership and a fresh rate.
-- Live-reference and policy locks may be attached.
+- The registry record and Bank metadata exist, both derived from the denomination and neither replaceable.
+- The asset's feed was Active when the asset was admitted, and the asset pins that feed for as long as it stays
+  oracle-priced. Whether a rate has arrived yet, and whether it is currently fresh, are use-time questions each
+  consumer answers for itself — Active is not a promise that a rate exists, since a feed carries none for the block it
+  activates in.
 
 ### ISSUANCE_HALTED
 
@@ -276,20 +317,24 @@ Emergency resolution is:
 - Existing supply remains transferable.
 - Ordinary asset-to-NOAH redemption, Oracle pricing, and liability accounting remain available.
 - Market may consume the asset but cannot produce more of it.
-- The status carries no intent. An asset winding down toward retirement and an asset that has just completed emergency
-  recovery are both `ISSUANCE_HALTED`; the difference lives in proposal history, not in status.
-- Governance may return to `ACTIVE` via `ResumeIssuance` only before final target removal is scheduled.
-- Finalized priced retirement remains `ISSUANCE_HALTED` while target removal is pending.
+- The status carries no intent. An asset winding down toward retirement and an asset that has just recovered from
+  suspension are both `ISSUANCE_HALTED`; the difference lives in proposal history, not in status.
+- It is never produced by an emergency act. Entering it always took a governance vote, so the
+  status cannot mean "the committee smelled smoke" — which is what keeps a wind-down halt from reading as a distress
+  signal and starting the run it was never meant to announce.
+- Governance may return to `ACTIVE` via `ResumeIssuance`; the status precondition is the whole guard.
 
 ### SUSPENDED
 
 - Issuance, ordinary Market conversion, and ordinary protocol redemption are disabled.
 - Existing Bank balances and transfers remain unchanged.
 - A still-stored Oracle rate is not trusted for ordinary economic operation.
-- Without a settlement plan, outstanding stable supply is disclosed as unpriced exposure.
+- Without a settlement plan, outstanding supply is disclosed as untrusted exposure.
 - With a settlement plan, only fixed one-way asset-to-NOAH redemption is available.
-- Oracle target removal, absence, addition, and fresh-rate recovery are derived from target state rather than new asset
-  statuses.
+- The asset's feed keeps running: the chain still observes and stores that denomination's rate, which may even be
+  denominating the protocol reference, and the status gate each consumer applies — Market refusing the asset either
+  side of a conversion, Treasury dropping it from oracle-priced membership, the asset queries withholding its rate — is
+  the containment, not the absence of a rate.
 - Recovery completes into `ISSUANCE_HALTED`, never directly into issuance-enabled `ACTIVE`.
 
 ### WRITTEN_OFF
@@ -305,42 +350,13 @@ Emergency resolution is:
 
 - No recognized obligation exists. Residual supply may remain when a matching `WRITE_OFF` or `RETIREMENT_RESIDUAL`
   resolution record discloses it; transfers of residual supply remain possible.
-- No `AssetLocks` or settlement plan remain.
-- The asset is absent from current and pending Oracle target sets.
+- No settlement plan remains.
+- The feed keyed by the tombstone's denomination may still exist and may still be priced; a retired asset simply makes
+  no claim on it.
 - The registry record remains as an immutable denomination tombstone.
-- Reactivation requires zero current supply and starts a new `PENDING` flow. A tombstone with residual supply is
-  permanent; a successor asset must use a new denomination.
-
-## Derived Oracle state
-
-For an Oracle-required asset, active membership and the asset's own scheduled transition derive the phase:
-
-| Active set | Scheduled transition | Meaning                 |
-| ---------- | -------------------- | ----------------------- |
-| absent     | none                 | Oracle off              |
-| absent     | addition             | target addition pending |
-| present    | none                 | Oracle active           |
-| present    | removal              | target removal pending  |
-
-A denom with no scheduled transition keeps its active membership. Transitions scheduled for other denoms never affect
-this denom's phase. An asset without an Oracle requirement must be absent from the active set and hold no transition.
-
-Allowed combinations are:
-
-| Asset status      | Oracle state                                         |
-| ----------------- | ---------------------------------------------------- |
-| `PENDING`         | off, adding, active awaiting first rate, or removing |
-| `ACTIVE`          | active                                               |
-| `ISSUANCE_HALTED` | active or removing                                   |
-| `SUSPENDED`       | off, adding, active during recovery, or removing     |
-| `WRITTEN_OFF`     | off or removing                                      |
-| `RETIRED`         | off                                                  |
-
-`WRITTEN_OFF` admits `removing` for the same reason `SUSPENDED` does: write-off schedules target removal and moves in
-the same block rather than waiting for an epoch. Write-off is the only early exit from a committed settlement window, so
-gating it behind a two-height target transition would defeat its purpose.
-
-These descriptions may be exposed through a derived query view, but they are not additional consensus fields.
+- `RETIRED` is terminal. No message leads out of it, and the denomination is spent permanently: the tombstone keeps
+  both the registry entry and the Bank metadata, each of which registration refuses to collide with. A successor asset
+  uses a new denomination.
 
 ## Settlement state
 
@@ -348,16 +364,23 @@ Settlement is derived from `SettlementPlans.Has(denom)`, not from `Asset.status`
 
 | Status           | Plan    | Meaning                                           |
 | ---------------- | ------- | ------------------------------------------------- |
-| `SUSPENDED`      | absent  | unpriced suspended exposure                       |
+| `SUSPENDED`      | absent  | untrusted suspended exposure                      |
 | `SUSPENDED`      | present | fixed settlement available at or after activation |
 | any other status | present | invalid                                           |
 
-An activated plan ends in exactly one of two ways: `EndSettlement` or `WriteOffAsset`. Recovery completion and final
-retirement both require the plan to be closed first; neither closes it implicitly. When an earliest closing height is
-set, `EndSettlement` is rejected before it while any supply remains outstanding. The announced window is a hard
-commitment: holders never need to race a governance vote to redeem, and `WriteOffAsset` is the only earlier exit. A
-committed window never threatens the system: the plan's maximum NOAH entitlement was fixed when it opened, so the
-window's length affects the timing of redemptions, never the bound.
+Every plan carries a mandatory earliest closing height, and exactly one message reads it: `WriteOffAsset`, which is
+refused before it. That is the whole guarantee, and it is sayable in one line — once your redemption opens, nothing can
+derecognize you before the announced height.
+
+The window gates only write-off because write-off is the only act that can leave a holder with nothing. The other
+plan-ending paths need no gate to be safe. `CancelSettlement` runs strictly before activation, when no holder could
+have redeemed and none was relying on a live window. `RecoverAsset` closes the plan by restoring the ordinary exit the
+settlement was substituting for. `FinalizeRetirement` can only reach a plan on a `SUSPENDED` asset, and suspended
+retirement already demands zero supply, so an attached plan is necessarily one nobody can still redeem against.
+
+A committed window never threatens the system: supply cannot grow while an asset is suspended and the rate is fixed, so
+the plan's maximum NOAH entitlement was knowable when it opened. The window's length affects the timing of redemptions,
+never the bound — which is why no emergency brake inside it is needed.
 
 ## Lifecycle operations
 
@@ -365,153 +388,178 @@ window's length affects the timing of redemptions, never the bound.
 
 - Validate native denomination and Bank metadata.
 - Reject `anoah` and any previously registered denom, including a tombstone.
-- Require zero existing Bank supply and no pre-existing Bank denom metadata for the denomination, so the `PENDING`
-  zero-supply invariant holds by construction rather than by assumption.
-- Store `PENDING`, version 1, and the requested `oracle_required`.
+- Require zero existing Bank supply and no pre-existing Bank denom metadata for the denomination, so an asset starts
+  at zero by construction rather than by assumption.
+- Require the feed keyed by the denomination in phase Active — the same rule recovery and genesis import answer to.
+  Adding, Removing, and absent feeds are all refused: an asset admitted against any of them has no running price
+  source to be admitted against. `MsgAddFeed` and `MsgRegisterAsset` therefore cannot share a proposal; governance
+  proposes the feed, watches it print rates, and proposes the registration in a second cycle. That cost falls where it
+  is cheapest — registration is the one admission path with no holders waiting on it, and the one where the price data
+  is least proven, since the asset goes convertible on the first rate its feed ever produces.
+- Check the feed last of the preconditions, so a denomination already spoken for is reported as the collision it is. A
+  re-registration whose feed has since been removed is an identity conflict first; naming the feed would send
+  governance to fix the wrong thing.
+- Take the denomination as the whole input and derive the Bank metadata from it. Every field is a function of the
+  denom, so a proposal supplies no value that could be wrong, and there is nothing for a later message to correct —
+  which is why no amendment message exists. Deriving also closes the gap a supplied record left open: a denomination
+  and a metadata that disagreed, or two assets described in different styles.
+- Store `ACTIVE` at version 1, which pins the feed from this block.
 - Set Bank metadata as its sole owner without minting supply or granting mint authority.
-
-### AmendRegistration
-
-- Require `PENDING`, expected version, and zero supply.
-- Replace Bank metadata and `oracle_required` together under the same denomination and unit rules as registration.
-- Never change the denomination.
-- Changing the pricing mode additionally requires the denom to be absent from active and pending targets: pricing mode
-  never moves while an asset has live economic obligations or an in-flight target transition. Metadata alone stays
-  correctable while a scheduled target addition is pending. A `RETIRED` asset must be reactivated into `PENDING` before
-  its registration may change.
-
-### ActivateAsset
-
-- Require `PENDING` and expected version.
-- An unpriced asset moves directly to `ACTIVE`.
-- A priced asset schedules target addition and remains `PENDING`.
-- Target activation alone does not activate the asset.
-- After the first fresh positive rate and required policy are available, complete `PENDING -> ACTIVE`.
-- Leaving `PENDING` freezes metadata.
 
 ### HaltIssuance
 
 - Require `ACTIVE` and expected version.
 - Move immediately to `ISSUANCE_HALTED`.
 - Treat this as the issuance cutoff while preserving pricing, liability accounting, transfers, and redemption.
-- Also executable by the emergency committee under a live mandate (see Asset Emergency Mandate).
+- A governance act only, never an emergency one. Halting contains nothing in distress: the exit leg keeps converting
+  at the full oracle rate, so the only crisis effect is a run-starting signal through a door the halt holds open.
+  Distress response is `SuspendAsset`. Halting is reserved for the cases where preserving every exit is the point — a
+  deliberate wind-down, or an inflow-side problem such as a mint-path exploit — and none is minutes-scale.
 
 ### ResumeIssuance
 
-- Require `ISSUANCE_HALTED`, expected version, and no target removal pending.
+- Require `ISSUANCE_HALTED` and expected version.
 - Return to `ACTIVE` without changing Oracle, Market, or Treasury policy.
 
 ### FinalizeRetirement
 
-Every path requires expected version, no locks, and no settlement plan, and every path ends in `RETIRED`.
+Every path requires expected version and ends in `RETIRED`. A settlement plan does not block retirement and is closed
+on the way out: plans exist only on `SUSPENDED` assets, and suspended retirement already demands zero supply, so an
+attached plan is necessarily one nobody can still redeem against. Requiring a separate closure first would force
+recovering a fully settled asset purely to clear the record — the sham operation this design forbids.
 
-- From `PENDING`: cancel the registration at zero residual. If never targeted, move directly to `RETIRED`. If already
-  targeted while awaiting a first rate, schedule removal and remain `PENDING`; removal activation moves it to `RETIRED`.
+There is no path here for a registration governance regrets. Registration admits the asset outright, so an unwanted one
+unwinds the way every other asset does — halted first, so redemption stays open across the decision — and the Bank
+metadata a registration writes is permanent whichever path ends it, so no cancellation could have returned the
+denomination anyway.
+
 - From `ISSUANCE_HALTED`: the message carries `max_residual_supply`. Require current supply at or below that bound.
   Redemption has been continuously available in this status, so governance may judge the remainder unredeemable and
-  derecognize it explicitly. From unpriced `ISSUANCE_HALTED`, move directly to `RETIRED`. From priced `ISSUANCE_HALTED`,
-  schedule target removal and remain `ISSUANCE_HALTED` with redemption open; removal activation moves it to `RETIRED`.
-  Supply can only shrink meanwhile, so the approved bound continues to hold. On entering `RETIRED` with positive supply,
-  append a `RETIREMENT_RESIDUAL` record with the actual residual.
-- From `SUSPENDED`: require zero supply and the target already absent, and move directly to `RETIRED`. Holders of a
+  derecognize it explicitly. Move directly to `RETIRED`: retirement is immediate on every path, because feed membership
+  is not asset state, so nothing is scheduled and no status lingers waiting for an epoch. On entering `RETIRED` with
+  positive supply, append a `RETIREMENT_RESIDUAL` record with the actual residual.
+- From `SUSPENDED`: require zero supply and move directly to `RETIRED`. Holders of a
   suspended asset may have had no exit, so positive residual from `SUSPENDED` must go through `WriteOffAsset`, which
   names the derecognition honestly.
-- From `WRITTEN_OFF`: require the target absent, and move directly to `RETIRED`. Residual supply is permitted; its
+- From `WRITTEN_OFF`: move directly to `RETIRED`. Residual supply is permitted; its
   derecognition is already recorded by the `WRITE_OFF` record, and no new record is appended.
 
-Reject conflicting target transitions. IBC-escrowed supply counts toward outstanding supply: tokens stranded on a dead
+IBC-escrowed supply counts toward outstanding supply: tokens stranded on a dead
 counterparty chain are residual exactly like lost wallets, and the residual bound is how governance closes the books on
 them.
 
 ### SuspendAsset
 
 - From `ACTIVE` or `ISSUANCE_HALTED`, immediately move to `SUSPENDED`.
-- Require live `MARKET_BASE_POOL` and `TREASURY_REFERENCE_TAX_CAP` dependencies to have moved first — in the same
-  governance proposal per Emergency execution requirements, or atomically through each consumer's pre-approved fallback.
+- Never touches `ReferenceState`: the reference names a feed, not an asset, so an asset carrying the reference
+  denomination suspends like any other while its feed keeps denominating. Suspension is a pure status move.
 - Also executable by the emergency committee under a live mandate (see Asset Emergency Mandate).
 - Stop issuance, ordinary conversion, and ordinary redemption immediately.
-- Preserve balances, transfers, metadata, policy enrollment, dormant locks, and liability disclosure.
-- Schedule target removal when Oracle pricing is configured.
-
-### CancelRecovery
-
-- Require `SUSPENDED` and expected version.
-- Leave any settlement commitment untouched; an announced earliest closing height is never lowered or cleared while its
-  plan exists.
-- Schedule target removal when recovery restored Oracle participation.
-- Remain `SUSPENDED`; return a no-op when recovery is already cancelled.
-- Require a pending target addition to activate before scheduling its removal.
+- Preserve balances, transfers, metadata, and liability disclosure.
+- Leave the asset's feed untouched: the rate keeps arriving and keeps serving every reader that is not this asset's
+  economics, and containment is the status gate.
 
 ### OpenSettlement
 
-- Require `SUSPENDED` or `WRITTEN_OFF`, positive supply, expected version, and Market settlement eligibility. Target
-  state is not a precondition: a settlement may be opened while recovery is underway, because the two coexist by design
-  and recovery completion is already blocked while a plan exists. Opening against a recovering priced asset must
-  announce an earliest closing height, for the same reason `BeginRecovery` must.
+- Require `SUSPENDED` or `WRITTEN_OFF`, positive supply, expected version, and Market settlement eligibility.
 - A written-off asset becomes `SUSPENDED`, re-recognizing its exposure.
-- Store a positive fixed NOAH-per-asset rate, an activation height at least `SettlementActivationDelayBlocks` in the
-  future, and optionally an earliest closing height as a commitment to holders.
+- Store a positive fixed NOAH-per-asset rate, an activation height of `Params.SettlementActivationDelayBlocks` past the
+  opening height, and an earliest closing height after activation. The closing height is mandatory: a plan without one
+  could be written off the block after it activates, so the guarantee would be opt-in by the same governance that might
+  want to skip it.
+- The closing height is the only height governance states. Activation is derived rather than proposed, because the
+  delay is a correction window only governance draws on: every block before activation is one where a holder sits in a
+  suspended asset, unable to redeem, against a plan that can still be cancelled, so a longer-than-required activation
+  is a cost borne entirely by holders for governance's benefit. Deriving it also removes a way for a passing proposal
+  to fail — an absolute height fixed at drafting time falls inside the delay if the vote runs long, and the settlement
+  is then refused at execution.
+- Every term is fixed for the plan's life. There is no amendment: a mutable rate would make the maximum entitlement
+  unknowable at commit time, which is the surprise the absence of an emergency brake depends on not existing, and it
+  would make redemption timing strategic — holders would wait for a better number instead of redeeming.
 - The activation delay is the designed correction window: a mistaken plan is cancelled before it activates, because once
-  activated a committed window cannot be closed early.
+  activated a plan cannot be cancelled at all.
+- The delay is a governance parameter rather than a constant, because the window it must outlast is one: its only
+  meaning is relative to how long a correcting proposal currently takes to land, and x/gov's voting period moves without
+  consulting x/asset. It defaults to a day of blocks, is refused at zero, and is capped at a chain year — past which it
+  stops being a delay and becomes a standing ban on opening settlement. The delay is read when a plan is written and
+  never again, so changing it never reaches terms holders have already been shown.
 - Settlement creation never adds an Oracle rate or permits issuance.
 
-### EndSettlement
+### CancelSettlement
 
-- Require `SUSPENDED`, expected version, and an existing plan.
-- Before activation, remove the never-activated plan and remain `SUSPENDED`.
-- At or after activation, close prospectively. When the plan announces an earliest closing height, require that height
-  to have been reached or outstanding supply to be zero. A window with no holders left protects nobody; a window with
-  holders is a hard commitment.
-- Remove the plan and remain `SUSPENDED`; outstanding supply reverts to unpriced suspended exposure.
-- Executed redemptions stand; closure is prospective only.
-- A close emits the plan's full terms and its open and close heights.
-- Replacement terms require a new plan and advance the asset version.
+- Require `SUSPENDED`, expected version, an existing plan, and that the plan has not activated.
+- Remove the plan and remain `SUSPENDED`, emitting a cancellation.
+- This is the whole of the correction window. From the activation height onward there is nothing here to withdraw: the
+  plan ends only through `RecoverAsset`, `FinalizeRetirement`, or a `WriteOffAsset` past the announced closing
+  height.
 
-### BeginRecovery
+### RecoverAsset
 
 - Require `SUSPENDED` or `WRITTEN_OFF` and expected version.
-- A written-off asset first becomes `SUSPENDED`.
-- Schedule target addition when Oracle pricing is required.
-- Preserve an existing settlement and set or raise its earliest closing height; a commitment is never lowered.
-- Keep issuance and ordinary redemption disabled while recovery is incomplete.
-- Reject conflicting target transitions.
-
-### Recovery completion
-
-- Require `SUSPENDED` and no active settlement plan; governance closes the plan explicitly with `EndSettlement` once its
-  commitment allows, so recovery cannot complete before an announced window has run.
-- For a priced asset, require active target membership and a fresh rate obtained after target restoration.
-- Require Market and Treasury policy prerequisites.
-- Move to `ISSUANCE_HALTED`, restoring ordinary pricing and redemption without restoring issuance.
-- Governance may later use `ResumeIssuance` to return to `ACTIVE`.
+- Close any settlement plan in the same act, without consulting the announced window. The plan's fixed rate cannot
+  coexist with the live Oracle rate now governing conversion, and holders are not losing an exit: they are getting the
+  ordinary one back, which is the outcome the settlement substituted for.
+- Require the asset's feed in phase Active, the same rule registration and genesis import answer to. Recovery is a
+  referent-creating path: the feed may have been legitimately removed while the asset was suspended, and this
+  transition takes effect immediately.
+- Move to `ISSUANCE_HALTED` in the block the transition executes, restoring ordinary pricing and redemption without
+  restoring issuance. Governance may later use `ResumeIssuance` to return to `ACTIVE`. The two-step is not caution for
+  its own sake: restoring pricing and permitting new exposure are different bets on different evidence, a halted asset
+  has a bounded holder set so a premature recovery is re-suspendable with the exposure unchanged, and recovered assets
+  sharing the status with winding-down ones is what keeps `ISSUANCE_HALTED` free of intent. Land recovery in `ACTIVE`
+  and the halt has one population left, which makes it a distress signal.
+- Never compare the plan's redemption rate against the live one. They are not the same kind of quantity: a settlement
+  rate is a number governance froze at some past block, so above the live rate it overpays and dilutes NOAH holders to
+  do it, and below the live rate it shortchanges the settling holder. It is the degraded instrument whichever way it
+  currently points, which is the whole reason recovery ends it. Gating on the frozen number winning would hold holders
+  in the substitute to protect a figure that was never the asset's worth, and deny them the optionality recovery
+  restores — hold, transfer, or convert either direction, rather than one one-way exit.
+- Recovery does not arm and wait. Governance watches the feed and satisfies itself the price is stable before proposing,
+  so the decision and its effect describe the same evidence; an armed recovery would instead fire on whatever rate
+  happened to arrive afterwards, moving the asset into Treasury's liability accounting and Market's convertible set on a
+  price nobody voted on. Freshness stays a use-time concern: Market and Treasury already reject or omit a rate past its
+  maximum age, matching x/oracle's own eligibility rule for naming the protocol reference denomination.
 
 ### WriteOffAsset
 
 - Require `SUSPENDED`, expected version, and explicit governance resolution.
-- Close and remove any settlement plan; the override is exempt from the earliest-closing-height commitment and is the
-  only way to end a committed window early.
+- Require the announced earliest closing height to have been reached. This is the only message the window constrains,
+  and the check subsumes the not-yet-activated case because a closing height always falls after activation: governance
+  that wants to derecognize before holders could ever redeem cancels the plan first.
+- Close and remove any settlement plan, emitting its full terms.
 - Append a `WRITE_OFF` resolution record with current supply and any final settlement terms.
 - Move to `WRITTEN_OFF` without burning, transferring, or repricing balances.
 - Never trigger write-off from elapsed time alone.
 
-### ReactivateAsset
+### Terminality
 
-- Require `RETIRED`, zero current supply, and expected version.
-- Move to `PENDING`, where the registration becomes mutable again through `AmendRegistration`.
-- Require explicit policy reconstruction and a new target activation when priced.
+There is no message out of `RETIRED`, and the `ReactivateAsset` RPC that once provided one is removed with its name
+burned. An asset that might return does not need a way back, because the lifecycle already carries two reversible
+pairs: `HaltIssuance`/`ResumeIssuance` for a pause, and `SuspendAsset`/`RecoverAsset` for distress, the latter reaching
+back even from `WRITTEN_OFF`. Staying halted costs nothing and gives up nothing — pricing, redemption, and liability
+accounting all continue, and only new issuance stops — so retirement is what governance reaches for when none of that
+is wanted any longer, and an undo would only blur the one act that means finished.
 
-### Target epoch activation
+The comeback this replaced was gated on zero current supply, which could never have served more than the clean
+wind-down anyway. Nothing burns a retired asset's residual — Market refuses to price it and no module burns holder
+balances — so a retirement that derecognized anything was already permanent, and the tombstones an undo could still
+reopen were exactly the ones holding no exposure worth reopening.
 
-After consuming reports produced against the old epoch, for every batch whose activation height has arrived:
+Terminality also disposes of the relist hazards a comeback carried. Market rate overrides survive retirement as inert
+dust, and a relist under the same denomination would have had to review them rather than silently inherit them: a
+stale downward override resurrecting on a relisted asset was the one dangling-state hazard with teeth. A successor
+under a new denomination inherits none of it.
 
-- promote the batch, advancing the target version once;
-- keep added `PENDING` assets pending until their first fresh rate;
-- keep added `SUSPENDED` assets suspended during recovery;
-- move removed `PENDING` assets to `RETIRED`;
-- move removed `ISSUANCE_HALTED` assets to `RETIRED`, appending a `RETIREMENT_RESIDUAL` record when residual supply
-  remains;
-- keep removed `SUSPENDED` assets suspended;
-- return removed denoms to the application for Oracle-owned rate pruning.
+### Feed epoch activation
+
+After consuming reports produced against the old epoch, `x/oracle` promotes every batch whose activation height has
+arrived, advancing the feed version once per batch and pruning the rates of removed feeds in the same call.
+
+Promotion touches no asset. That is a consequence of the decoupling rather than an omission: feed membership and asset
+lifecycle are separate clocks, so a feed leaving the active set never retires the asset sharing its denomination, and
+a suspended asset whose feed is removed simply stays suspended until governance adds one back. The removal guard is
+what keeps the two coherent — a feed an oracle-priced asset needs cannot be scheduled for removal in the first place, so
+the only feeds that ever leave are ones no live asset depends on.
 
 Vote accounting stays unconditional across target changes: a newly activated target is graded like any established one,
 with no grace keyed to first aggregation. Adding a target before every sidecar can price it is an operational reality,
@@ -543,9 +591,10 @@ already bound, and it fails closed in exactly the correlated-failure case the ma
 mandate routes to the governance path, paying suspension latency in unbounded NOAH dilution at the worst possible
 moment. Governance bounds the committee through the expiry window and through replacement, not through a counter.
 
-Per-term action usage is separate consensus state, not a mandate field:
+Per-term suspension usage is separate consensus state, not a mandate field. With a single power there is no action
+dimension to key on, so the denomination is the whole record:
 
-    EmergencyActions collections.KeySet[collections.Pair[string, types.EmergencyAction]]
+    EmergencySuspensions collections.KeySet[string]
 
 `SetEmergencyMandate` clears it. Because every replacement advances the term, clearing on replacement is exactly
 term-scoping, so no term needs to be stored alongside each entry and no counter can drift from the set it summarizes.
@@ -554,15 +603,21 @@ The term, committee, and window form the shared mandate envelope: one `ark.manda
 mandate and by Treasury's Claims Mandate, with validation, window-activity, term, and disabled checks in `pkg/mandate`.
 Envelope semantics — term monotonicity, half-open windows, empty committee as disabled — are defined once and cannot
 drift between modules. The envelope is a shared type and helper library, deliberately not a module, and that is the
-permanent boundary: allowances, usage, fallbacks, and every power stay domain-owned.
+permanent boundary: allowances, usage, and every power stay domain-owned.
 
-Committee powers are exactly two, both capability removal:
+The committee power is exactly one, capability removal:
 
-- `EmergencyHaltIssuance` applies `HaltIssuance` semantics. This is the graduated first response for ambiguous signals:
-  holders are unaffected and redemption continues, so a committee with a lighter option acts earlier instead of
-  hesitating over the sledgehammer.
-- `EmergencySuspendAsset` executes each consumer's pre-approved reference fallback and `SuspendAsset` semantics in one
-  transaction.
+- `EmergencySuspendAsset` applies `SuspendAsset` semantics.
+
+There is deliberately no emergency halt. Suspension is the only act with containment value, because ordinary conversion
+is the contagion channel and a halt leaves it wide open: halting blocks only the ask leg, and in a depeg the flow that
+matters is the exit, which a halted asset serves exactly as fast as an active one. An emergency halt would therefore pay
+the full suspension latency — every block of it priced in unbounded NOAH dilution — while broadcasting a
+committee-confirmed distress signal through a door it deliberately held open. That is a run accelerant with a
+first-mover advantage: early exiters leave at oracle par and late holders eat the settlement haircut. The error
+asymmetry settles it. A wrong suspension is recovered by ordinary governance and moves no value; a wrong halt is paid in
+dilution that nothing returns, so the committee's single tool must be the one whose failure mode is reversible. Issuance
+halts are wind-down policy, and policy runs at governance speed.
 
 Execution rules:
 
@@ -573,24 +628,19 @@ Execution rules:
 - Committee actions execute immediately. There is deliberately no cancellation period: the Claims delay window protects
   irreversible value outflow, while suspension moves no value and is reversible through ordinary recovery. Governance's
   protection is after the fact — recover the asset and replace the mandate.
-- Each asset admits at most one action per kind per term. Halt-then-suspend escalation of one failing asset within a
-  term is the graduated response working as intended; re-suspending an asset governance has recovered within the same
+- Each asset admits at most one suspension per term. Re-suspending an asset governance has recovered within the same
   term is griefing, and requires governance. This rule is the mandate's binding abuse bound: without it a committee
   re-suspends faster than governance can recover, and governance cannot win that race.
-- Suspending an asset that holds a live reference requires the owning consumer's fallback entry. Each consumer stores
-  its own fallback, moves its reference to it, and maintains its lock atomically, then the suspension applies, all in
-  one transaction. Every fallback is validated at execution by its owner: it must identify a distinct `ACTIVE` asset
-  able to accept that consumer's live-reference lock. An invalid or missing fallback fails the whole action atomically
-  and the governance path takes over — the correct escalation for correlated failures where the pre-approved contingency
-  is itself unhealthy.
+- Suspension never touches the protocol reference: the reference names a feed, and the feed keeps running through any
+  asset's suspension. No committee action reads or writes `ReferenceState`.
 - Committee actions are governance-equivalent mutations: they advance the asset version and emit full audit events
-  including the term, the action, and any fallbacks applied.
+  including the term.
 
 The committee cannot recover, resume issuance, open, cancel, or close settlement, write off, retire, register,
-reactivate, change metadata or pricing mode, schedule targets, choose references, or modify any mandate. Every
-restoration path is ordinary governance. This boundary is what makes the mandate safe: its worst abuse halts one healthy
-asset for the days governance needs to recover it and replace the committee, and no committee path can mint, move, or
-re-enable anything.
+change metadata, schedule feed transitions, choose the protocol reference, or modify any mandate. Every
+restoration path is ordinary governance. This boundary is what makes the mandate safe: its worst abuse suspends one
+healthy asset for the days governance needs to recover it and replace the committee, and no committee path can mint,
+move, or re-enable anything.
 
 ## Emergency execution requirements
 
@@ -600,13 +650,12 @@ design refuses everywhere else. The latency budget is a design property, not an 
 
 - The primary path is the Asset Emergency Mandate: a live committee musters its multisig threshold and suspends in
   minutes, with no governance round-trip.
-- The governance path remains fully supported as the fallback and the universal authority. Every governance handler on
-  the suspension path — moving the Market base-pool reference, moving the Treasury reference tax cap, and `SuspendAsset`
-  itself — must be executable in a single multi-message expedited proposal, in order, in one block. No handler on this
-  path may require state that only a later block can produce. The delayed target epoch machinery is exempt because
-  suspension schedules removal rather than waiting for it.
-- The governance path is the only path when the mandate is disabled, expired, or exhausted, when a fallback entry is
-  missing or invalid at execution, when an asset needs a second action of the same kind within a term, and for
+- The governance path remains fully supported as the backstop and the universal authority. `SuspendAsset` must be
+  executable in a single expedited proposal, in one block; it requires no reference move and no state that only a later
+  block can produce. Suspension touches neither feed state nor `ReferenceState`, so neither the delayed feed-epoch
+  machinery nor a reference re-point is on this path.
+- The governance path is the only path when the mandate is disabled, expired, or exhausted, when an asset needs a
+  second action of the same kind within a term, and for
   everything with terms attached: settlement, write-off, recovery, and resolution.
 - Committee operations are part of the design: a mandate whose committee cannot muster its threshold within minutes at
   any hour is theater. Membership, threshold, and rotation are governance choices made with that test in mind.
@@ -614,116 +663,196 @@ design refuses everywhere else. The latency budget is a design property, not an 
   one-directional conversion flow is required operational work.
 - An early-tally modification to expedited governance — passing once the outcome is mathematically decided — remains
   optional future work; the mandate removes its urgency.
-- A required integration scenario exercises the full emergency path as one proposal: move both live references and
-  suspend the asset in a single proposal, and verify issuance and ordinary redemption stop in that block.
+- A required integration scenario exercises the full emergency path as one proposal: suspend the asset in a single
+  message, with `ReferenceState` untouched and no rebase on the path, and verify issuance and ordinary redemption stop
+  in that block.
 
-## Asset locks
+## Protocol reference
 
-`AssetLock` is an inverse dependency index maintained atomically by the module that owns the underlying policy. It is
-not a balance, rate, or governance-supplied label.
+> **Amendment (2026-08-01):** the protocol reference moved to `x/oracle` and is a plain `reference_denom` string rather
+> than a `ReferenceState` message. Every rule it has is a feed rule — eligibility is a feed phase, identity is the
+> feed-key rule, the rebase preconditions are rate freshness — so the feed registry owns it. The semantics below are
+> unchanged; read `x/asset` as `x/oracle` throughout this section, `ReferenceState` as the stored reference denom, and
+> the referent guard as `x/oracle` checking its own state before consulting consumer guards. Reasoning is recorded in
+> `docs/DESIGN_NOTES.md` §1.3 and §2.1.
 
-Initial lock kinds:
+The protocol reference names the single reference denomination shared by Market's base pool and Treasury's reference
+tax cap. It is governance-set state, not an index maintained by consumers — and what it names is a feed, not
+an asset. The reference is a unit of account, and nothing either consumer does requires that unit to be a tradable
+asset: Market needs the reference rate to size and maintain the pool, Treasury needs it to convert the cap, and both
+are feed reads. Suspending or retiring a stablecoin that happens to carry the reference denomination therefore never
+touches the reference; the feed keeps running and the unit keeps denominating.
 
-- `MARKET_ASSET_POLICY`
-- `MARKET_BASE_POOL`
-- `TREASURY_STABLE_POLICY`
-- `TREASURY_REFERENCE_TAX_CAP`
+At launch no asset is listed against the reference denomination at all: the registry ships without it, so the unit of
+account is a pure feed. That makes the separation structural rather than merely permitted — there is no claim whose
+failure could be mistaken for the unit's, and nothing in the asset lifecycle can reach the reference even by accident.
+The rules below still hold for a reference later re-pointed at a denomination some asset does carry.
 
 Rules:
 
-- Live-reference locks are accepted only by `ACTIVE` or non-finalized `ISSUANCE_HALTED` assets that are Oracle-priced
-  with active target membership:
-  - `MARKET_BASE_POOL`
-  - `TREASURY_REFERENCE_TAX_CAP`
+- The named feed must be in phase Active when governance sets it. Adding-phase feeds have no rate yet; Removing-phase
+  feeds are excluded so naming the reference can never race an in-flight removal. Freshness is not an eligibility
+  predicate — it is a use-time concern, load-bearing only as a precondition of the rebase — so genesis may import a
+  reference before the chain has aggregated a single rate.
+- Feed phase is the entire eligibility rule. The asset registry is never consulted: the reference may name a
+  denomination no asset carries, and an asset that does carry it may be `SUSPENDED`, `WRITTEN_OFF`, or
+  `RETIRED` without disturbing the unit. Peg failure of an asset and failure of the unit's price data are different
+  axes with different responses, and fusing them was the mistake the feed-keyed reference corrects.
+- `MsgSetReferenceDenom` is the only mutation, and re-pointing is always an explicit governance act. There is no automatic
+  promotion on feed failure, and no stored fallback: with promotion explicit, the proposal names the successor, and a
+  stored contingency would be state nothing reads. An automatic trigger was rejected as attacker-facing — whatever
+  wedges the reference aggregate would force a unit-of-account move at a chosen moment — and as flap-prone, buying
+  only governance latency off a halt that is already safe.
+- Reference-feed failure is a liveness event, not a bleed. Every Noah conversion prices through the reference feed, so
+  a stale reference rate fails all Noah conversion closed chain-wide, while stablecoin cross conversion between fresh
+  pairs continues and Treasury's cap rebuild skips and retries. That fail-closed halt is the designed response.
+  Recovery is one `MsgSetReferenceDenom` proposal naming any Active feed with a fresh rate. In a common-mode failure with
+  no fresh feed, no legal re-point exists and none would help; conversion stays halted until data returns.
+- Changing a configured reference rebases every consumer's reference-unit state in the same transaction; a missing
+  executor or executor error fails the whole action. Market's reference-unit state is the base-pool `DecCoin` (denom
+  and amount) plus the pool delta, converted together. The incoming feed's rate must be fresh; the outgoing rate is
+  read raw at any stored age — the single deliberate exception to fail-closed freshness, confined to this
+  governance-invoked action, whose converted quantities are a spread-pressure gauge and a policy cap rather than
+  holder obligations. The delta is converted, never zeroed.
+- `MsgRemoveFeed` is rejected while `ReferenceState` names the feed — the stronger of the two claims `x/asset` makes
+  through its referent guard, and the one checked first. Governance re-points first, then removes. No asset lifecycle
+  path consults the reference: the protection lives entirely at the feed layer.
+- Committee-speed re-pointing, if ever wanted, ships together with a governance-pre-approved successor slot, so the
+  committee executes a unit change governance already chose; neither exists until the case does.
 
-  Both references are inherently price-dependent — `MARKET_BASE_POOL` is what Market prices conversion through, and
-  `TREASURY_REFERENCE_TAX_CAP` is the denomination Treasury converts the cap from — so an unpriced asset, or a priced
-  asset without an active target, cannot serve either. Locks are reconstructed from consumer genesis rather than
-  validated here on import, so `SuspendAsset` rechecks live references unconditionally as a backstop.
+Consumer membership needs no index. Swap eligibility and tax-cap membership are `OraclePricedDenoms`, and liability
+inclusion is every Oracle-priced asset whose status is not `RETIRED`, so nothing dangles when an asset
+leaves the live set. `PricedLiveVersion` advances whenever the oracle-priced set changes, and consumers compare it each
+BeginBlocker instead of scanning their own state for drift.
 
-- Dormant policy locks may remain on `SUSPENDED` and `WRITTEN_OFF` assets:
-  - `MARKET_ASSET_POLICY`
-  - `TREASURY_STABLE_POLICY`
-- `PENDING` or `ISSUANCE_HALTED` assets awaiting final target removal cannot acquire any new lock.
-- `RETIRED` assets cannot acquire any lock.
-- Final retirement requires every lock to be removed.
-- Lock updates and the consumer policy mutation they protect occur in the same transaction.
+The superseded `AssetLock` index is deleted: `AssetLockKind` values 1 through 4, collection prefix 1, and error code 5
+belonged to it and stay burned.
 
-Asset locks are reconstructed from Market and Treasury genesis rather than imported independently.
+## Feed epochs
 
-## Oracle target epochs
-
-`x/asset` absorbs the existing target scheduler while preserving:
+Feed membership lives in `x/oracle`, not here. The registry preserves:
 
 - vote-height-based epoch selection;
-- the two-height activation boundary, now per transition record;
+- the two-height activation boundary, per transition record;
 - immutable transition records, each activating at its scheduled height;
-- one scheduled transition per denom, with contention scoped to that denom;
+- one scheduled transition per feed, with contention scoped to that feed;
 - old-epoch aggregation before promotion;
 - rate pruning after promotion;
-- explicit target versioning, advancing once per activation batch;
-- empty target sets as valid protocol state.
+- explicit feed versioning, advancing once per activation batch;
+- empty feed sets as valid protocol state.
 
-The per-denom transition model is specified in `docs/superpowers/specs/2026-07-28-oracle-target-transitions-design.md`,
-including the correctness argument for multiple transitions in flight and the consume-before-promote ordering the
-preblock depends on. It replaces two invariants this list previously carried — a single immutable pending target set at
-a time, and complete sorted snapshots rather than deltas. Immutability is retained per record and is what the
-height-addressable read depends on; the one-at-a-time constraint is what the redesign removed, because it made unrelated
-assets contend for a single chain-global slot.
+The per-feed transition model is specified in `docs/DESIGN_NOTES.md` §1.2, including the correctness argument for multiple
+transitions in flight and the consume-before-promote ordering the preblock depends on. That design was written against
+`x/asset`; the mechanism shipped verbatim, re-homed to `x/oracle` and re-keyed to the feed registry's own denomination
+keys, recorded in the same section.
 
-Primary ABCI boundaries remain narrow:
-
-    type ABCIAssetKeeper interface {
-        GetOracleTargets(ctx context.Context, voteHeight int64) (assettypes.OracleTargetSet, error)
-        AdvanceOracleTargets(ctx context.Context) ([]string, error)
-    }
+The ABCI boundary is a single oracle keeper again, because targets never left the module that owns rates:
 
     type ABCIOracleKeeper interface {
         GetParams(ctx context.Context) (oracletypes.Params, error)
         SetExchangeRateWithEvent(ctx context.Context, rate oracletypes.ExchangeRate) error
-        RemoveExchangeRate(ctx context.Context, denom string) error
         RecordVoteAccounting(...)
+        GetFeeds(ctx context.Context, voteHeight int64) (oracletypes.FeedSet, error)
+        AdvanceFeeds(ctx context.Context) error
     }
 
-`x/asset` returns removed denoms because it owns membership; `x/oracle` prunes rates because it owns rate storage. The
-application owns their consensus-safe ordering.
+`AdvanceFeeds` prunes the rates of removed feeds internally, so no removed-denom list crosses a module boundary.
 
-## Sidecar target mapping
+Feed removal is validated against referent guards: a wiring-owned, conjunctive veto set holding exactly the consumers
+that exist — empty on the pre-activation chain, one `x/asset` guard from activation, basket and reserve guards with
+their specs. A guard derives its answer from its consumer's own state at call time; nothing is indexed, and a guard's
+lifetime equals its consumer's lifetime.
 
-The sidecar continues to resolve generalized provider pairs off-chain and publishes final rates keyed by target denom.
-For example, `agold` maps to a resolver-produced `NOAH/GOLD` economic rate and validators report `agold` units per
-`anoah`.
+`x/asset` is one consumer with one claim on a feed. The protocol reference is not among them: it is `x/oracle`'s own
+state, and `x/oracle` checks it directly rather than asking a consumer to speak for it. The asset claim pins a feed
+exactly while the asset carrying its denomination is oracle-priced:
+`ACTIVE` or `ISSUANCE_HALTED`. Nothing waits on a feed any more, so an asset pins from the block it is registered,
+`SUSPENDED` does not (`RegisterAsset` and `RecoverAsset` re-check the phase themselves), and
+`WRITTEN_OFF` and `RETIRED` do not — a
+tombstone is a status, not a claim on price data, the same dust rule as Market overrides. Because the asset registry and the feed registry share one key, the
+asset claim resolves as a point lookup rather than a walk of the registry. There is deliberately no transitional guard
+for the params-driven swap path that exists before activation.
 
-The target query exposes only the active target set and its scheduled transitions. It does not duplicate asset metadata
-because all native assets use the same exponent and the sidecar does not consume metadata.
+## Sidecar feed mapping
+
+The sidecar continues to resolve generalized provider pairs off-chain and publishes final rates keyed by feed. For
+example, an `agold` feed maps to a resolver-produced `GOLD/NOAH` route price — NOAH per one GOLD, the orientation the
+store keeps (D75, D77) — with nothing inverted at the feed boundary. Because every feed key is an Ark-native
+base denomination, the sidecar needs no second namespace: route keys, the runtime feed list, and pair derivation
+validate exactly what consensus validates, and a commodity feed configures like any stablecoin feed. The denomination
+rule is what buys this — it was chosen so that the off-chain and on-chain views of a feed key can never diverge.
+
+`Query/Feeds` exposes only the active feed set and its scheduled transitions. It does not duplicate asset metadata
+because all native assets use the same exponent and the sidecar does not consume metadata. The warm-up union is the
+active set plus every scheduled addition.
 
 ## Lifecycle-aware pricing
 
-`RateSet` is the Oracle-owned in-memory set of fresh rates used for conversion. "Fresh" everywhere in this plan means
-fresh by the Oracle module's freshness parameter as surfaced through `RateSet`; `x/asset` defines no staleness policy of
-its own.
+`RateSet` is the Oracle-owned in-memory set of fresh rates used for conversion. "Fresh" for consumption — valuation,
+conversion, liability — means fresh by the Oracle module's freshness parameter as surfaced through `RateSet`; `x/asset`
+defines no staleness policy of its own, and no lifecycle transition consults a rate at all. Transitions gate on feed
+phase; freshness is left to the point of use.
 
-`PricedAssetView` combines immutable asset records with a `RateSet` and admits only lifecycle states appropriate for the
-caller. Market and Treasury consume this boundary instead of interpreting raw target membership or duplicating freshness
-checks.
+There is no bundled record-plus-rate boundary between the registry and its consumers. Rates are keyed by denomination,
+so `GetRateSet(ctx, denom)` needs no indirection to resolve, and each consumer already owns an admission rule the
+registry cannot state for it: Market's is asymmetric across a conversion (an `ISSUANCE_HALTED` denomination may be
+offered but never produced), and both Market and Treasury price through the protocol reference, which need not itself
+be a listed asset. A shared view would have to be loosened past both to be usable, leaving each consumer's real gate
+in place anyway. So consumers read `RateSet` directly and apply their own status gate — Market per conversion leg,
+Treasury through oracle-priced membership.
+
+Joining records to rates is a query-layer concern, where `Query/Asset` and `Query/Assets` return each asset with the
+fresh rate the protocol would value it at. That join is per-denom: one unpriced member leaves its own rate unset
+rather than failing the response, which is right for a reader and wrong for the fail-closed consumers above — the
+second reason the two do not share one boundary.
 
 Settlement access remains separate. A fixed governance rate must never appear in ordinary `RateSet` conversion.
 
 ## Market policy
 
-Market owns:
+Market owns no membership set. Every oracle-priced asset is convertible by the conversion invariant, so eligibility is
+derived from the registry; what Market stores is rate policy only:
 
-    AssetPolicies collections.Map[string, types.AssetPolicy]
+    DefaultTobinTax   (params)                      // rate applied to every member
+    TobinTaxOverrides collections.Map[string, Dec]  // sparse per-denom exceptions
 
-Policy presence means the native converter supports the asset. A registered and priced commodity does not automatically
-receive a Market policy.
+Tobin rates were never derivable — they are governance judgment — so a newly activated asset swaps at the default
+immediately and overrides are rare governance acts. This restores Terra's original factoring: before Columbus-4 the
+market module held one `tobin_tax` default plus an `illiquid_tobin_tax_list` override (MNT at 8x the 0.25% default),
+and the per-denom whitelist Ark's port inherited was that migration's flattening. The override list's name is also its
+sizing principle: overrides exist for markets whose plausible oracle error between updates exceeds the default — the
+Tobin tax is the buffer against oracle-staleness arbitrage, so illiquid or gap-prone markets (a tokenized commodity
+with weekend closures, for example) warrant a raise above the fiat default.
+
+Override membership rules, decided here so Phase 4 inherits them:
+
+- Setting an override requires the denom to identify a registered asset. Overrides are policy annotations on members,
+  not membership, so a dangling entry is unreachable dust — but a typo means the intended protection silently does not
+  exist on the real denom, which for an illiquid listing is exactly the unprotected window the override was meant to
+  close. The existence check turns that silent failure into a loud proposal failure. Status is not consulted, so
+  the safe listing flow composes in one proposal — add the feed, register the asset, set the override, in whichever
+  order reads best, since only the override depends on the registration — and because activation is a separate
+  proposal, the asset never spends a block live at the default rate.
+- Retirement deliberately does not delete overrides. A cleanup hook would be an asset-lifecycle-writes-Market-state
+  edge — the coupling class the `AssetLocks` deletion removed — purchased only for tidiness: derivation already makes
+  an ex-member's entry unreachable on every execution path.
+- Removing an override requires the entry to exist, so a typo fails rather than reporting success on a denomination
+  that was never overridden, but it deliberately does not check the registry. Since retirement leaves entries behind,
+  requiring membership to delete one would make the dust it creates permanently unremovable.
+- The asymmetry against feed referent guards is intentional and is the rule for future per-denom policy maps (a
+  Treasury tax exemption, if ever wanted): validate strictly where a dangling reference changes execution (a removed
+  feed breaks live members chain-wide), tolerate inert dust where derivation guarantees it cannot be read.
+- Genesis carries the overrides in both directions. Nothing re-derives them — they are the one piece of Market state
+  that is pure governance judgment — so an export omitting them would silently return every exception to the default
+  on the next boot. That is the only failure this map has that is quiet rather than loud, which is why it is stated
+  here as a rule rather than left to the genesis implementation.
 
 Ordinary conversion:
 
-- offer assets require Market policy and `ACTIVE` or `ISSUANCE_HALTED`;
-- ask assets require Market policy and `ACTIVE`;
+- offer assets require `ACTIVE` or `ISSUANCE_HALTED`;
+- ask assets require `ACTIVE`;
 - `ISSUANCE_HALTED` assets may be consumed but never produced;
-- `SUSPENDED`, `WRITTEN_OFF`, `PENDING`, and `RETIRED` assets are excluded;
+- `SUSPENDED`, `WRITTEN_OFF`, and `RETIRED` assets are excluded;
 - every issuance path rechecks status immediately before minting.
 
 Settlement:
@@ -735,29 +864,46 @@ Settlement:
 - mints only the uncovered NOAH entitlement;
 - never exposes the settlement rate to ordinary routing or reverse issuance.
 
+Settlement is its own message and its own execution path rather than a special case of conversion, because the two
+answer different questions: conversion asks what the market says a denomination is worth, settlement asks what
+governance committed to pay holders of a denomination the market can no longer price honestly. It is signed by the
+holder rather than by governance — it is their exit, not a policy act — and it is the plan's rate, not the oracle's,
+that Treasury is handed for the buffer draw and the liability record. Passing the committed rate is what makes the
+resulting accounting settlement-priced rather than a fiction built on the price that stopped being trustworthy.
+
+The virtual pool is denominated in the protocol reference, so its unit is not Market's to set: `MsgUpdateParams` may
+resize depth but rejects a denomination outright, and `RebaseBasePool` is the only path that moves it. Genesis holds
+the same rule as an import check — a market genesis whose pool disagrees with the configured reference is not a
+launchable configuration — because the alternative is a chain that prices conversion in one unit while Treasury caps
+tax in another.
+
 ## Treasury policy
 
-Treasury keeps:
-
-    StableAssets collections.KeySet[string]
-
-Registration does not make an asset a stablecoin. Stable enrollment is separate policy.
+Treasury keeps no enrollment set. The transfer tax is functionally an insurance premium on protocol-convertible money:
+its proceeds fund the waterfall that backs conversion redemptions, so the tax base and the redemption-liability base are
+the same derived set — every oracle-priced asset. There is no stable-versus-commodity classifier, because the axis that
+matters is convertible-versus-not, and by the conversion invariant every registered asset is convertible. A future
+exemption, should one ever be wanted, is a sparse override in the Tobin pattern, added when the case exists.
 
 Liability reporting is partitioned:
 
-    priced_liability_noah
-    settlement_liability_noah
-    unpriced_stable_assets[{denom, outstanding_supply}]
-    written_off_assets[{denom, outstanding_supply, write_off_version}]
-    total_liability_available
+    priced_liability
+    settlement_liability
+    stale_priced_liability
+    stale_member_supply[coin]
+    untrusted_suspended_supply[coin]
+    written_off_exposure[{outstanding_supply, write_off_version}]
 
-- `ACTIVE` and `ISSUANCE_HALTED` stable supply with fresh rates is Oracle-priced.
-- `SUSPENDED` stable supply with an active settlement is settlement-priced.
-- Other `SUSPENDED` stable supply is explicit unpriced exposure, never zero.
+- `ACTIVE` and `ISSUANCE_HALTED` supply with fresh rates is Oracle-priced.
+- `SUSPENDED` supply with an active settlement is settlement-priced.
+- Other `SUSPENDED` supply is explicit untrusted exposure, never zero: the asset's feed may still publish, but a
+  suspended asset's rate is not trusted for its economics.
 - `WRITTEN_OFF` supply is excluded from recognized liability but remains separately disclosed.
 - Residual supply on `RETIRED` assets is fully derecognized and visible through asset resolution history rather than the
   liability report.
-- A total is available only when every recognized liability is valued.
+- A total covers every recognized liability exactly when `untrusted_suspended_supply` and `stale_member_supply` are both
+  empty. The response carries no separate flag for this: the two lists are the answer, and `written_off_exposure` is
+  deliberately not among them because a write-off extinguishes the obligation rather than leaving it unvalued.
 - Policy requiring a complete total uses conservative behavior while valuation is incomplete.
 
 The shared buffer remains proportional:
@@ -771,9 +917,10 @@ settlement entitlement. This is a deliberate choice: pausing settlement while va
 only exit during exactly the stress that makes valuation incomplete, and incompleteness can persist indefinitely. The
 buffer is the healthy system's shared capital, and a failing asset's exit must never drain it blind; full minting is
 bounded by the fixed entitlement, so the cost of an orderly single-asset failure lands as bounded NOAH dilution, which
-is where this design deliberately places it. One consequence is cross-asset: while any suspended asset remains unpriced,
-concurrent settlements of other assets also mint in full. This is accepted for the same reason. The alternative was
-considered and rejected.
+is where this design deliberately places it. One consequence is cross-asset: while any suspended asset remains
+unvalued, concurrent settlements of other assets also mint in full. That is accepted for the same reason — each of those
+exits is separately bounded by its own plan, so the dilution stays the sum of committed entitlements rather than
+anything the incompleteness itself can widen.
 
 ## Protobuf surface
 
@@ -791,38 +938,35 @@ Claims Mandate embeds.
 
 Governance messages:
 
-- `RegisterAsset`
-- `AmendRegistration`
-- `ActivateAsset`
+- `RegisterAsset` (carries the denomination alone; metadata is derived)
 - `HaltIssuance`
 - `ResumeIssuance`
-- `FinalizeRetirement` (carries `max_residual_supply`; from `PENDING` it cancels the registration)
-- `ReactivateAsset`
+- `FinalizeRetirement` (carries `max_residual_supply`)
 - `SuspendAsset`
-- `CancelRecovery`
 - `OpenSettlement`
-- `EndSettlement`
-- `BeginRecovery`
+- `CancelSettlement`
+- `RecoverAsset`
 - `WriteOffAsset`
 - `SetEmergencyMandate`
 
 Committee messages (signed by the mandate committee, term-checked):
 
-- `EmergencyHaltIssuance`
 - `EmergencySuspendAsset`
 
 Queries:
 
 - `Asset`
-- paginated `Assets`
-- `AssetLocks`
-- `OracleTargets`
+- `Assets`, returned whole rather than paged: the registry is governance-bounded
 - `SettlementPlan`
-- `ResolutionHistory`
+- paginated `ResolutionHistory`
 - `EmergencyMandate`
 
-`OracleTargets` is the single public target-epoch query. A public valuation query remains deferred until the internal
-`PricedAssetView` integration is complete.
+Feed epochs are queried through `ark.oracle.v1 Query/Feeds`, and the protocol reference through that module's
+`Query/ReferenceDenom`; both left `x/asset` with the state they read. `Asset` and `Assets` carry the fresh Oracle
+exchange rate alongside each record, so a caller needs one query rather than a join across two modules that would
+have to replicate the status and freshness rules to get right. The rate is unset when the protocol would not value
+the asset — a status that does not admit ordinary Oracle pricing, or no fresh rate behind a status that does — and
+status is answered first, so a feed still running under a suspended asset never surfaces as a price.
 
 ## Module implementation layout
 
@@ -832,25 +976,24 @@ Queries:
         msg_server.go
         grpc_query.go
         genesis.go
+        assets.go
         lifecycle.go
-        lifecycle_completion.go
         settlement.go
         emergency_mandate.go
-        asset_locks.go
-        oracle_targets.go
-        valuation.go
+        feed_guard.go
+        oracle_priced.go
+        pricing.go
       types/
         asset.go
         codec.go
-        constants.go
         errors.go
         expected_keepers.go
         genesis.go
         keys.go
-        oracle_targets.go
+        params.go
+        pricing.go
         settlement.go
         emergency_mandate.go
-        valuation.go
       module/
         module.go
         depinject.go
@@ -866,47 +1009,47 @@ The keeper needs narrow Bank access:
 It needs Oracle `GetRateSet` for valuation. `x/oracle` does not depend on `x/asset`; the application receives both
 keepers separately. `x/asset` needs no module account or mint permission.
 
-For committee suspension, the keeper holds narrow emergency consumer interfaces:
+Whenever the protocol reference moves, the keeper rebases consumer state held in reference units through narrow
+executor interfaces:
 
-    type EmergencyMarketKeeper interface {
-        ExecuteBasePoolFallback(ctx context.Context, from string) error
+    type MarketReferenceKeeper interface {
+        RebaseBasePool(ctx context.Context, from string, to string) error
     }
 
-    type EmergencyTreasuryKeeper interface {
-        ExecuteTaxCapFallback(ctx context.Context, from string) error
+    type TreasuryReferenceKeeper interface {
+        RebaseTaxCap(ctx context.Context, from string, to string) error
     }
 
-Each consumer stores, validates, and applies its own fallback, so `x/asset` supplies only the asset being suspended.
+`x/oracle` owns the target choice and passes it — `from` and `to` are reference denominations, each keying the feed its
+rate is read from — so consumers re-denominate rather than each picking a destination. `MsgSetReferenceDenom` is the only
+caller.
 
-Market and Treasury already depend on `x/asset`, so these references are injected after construction, hooks-style, to
-avoid a dependency cycle. Each implementation moves its own reference and maintains its own lock in the same
-transaction. These are the only asset-to-consumer edges and exist solely for atomic fallback execution.
+Market and Treasury already depend on `x/oracle`, so these references are injected after construction, hooks-style, via
+`SetReferenceDenomConsumers`, to avoid a dependency cycle. These are the only oracle-to-consumer edges and exist solely to
+re-denominate reference-unit state atomically with a reference move.
 
 ## Genesis
 
 Clean prelaunch genesis:
 
 - seeds the existing eight stable assets as `ACTIVE` and Oracle-required;
-- moves target epochs and Bank metadata ownership into `x/asset`;
-- leaves denomination-keyed rates in `x/oracle`;
-- seeds Market policies and Treasury stable enrollment separately;
-- reconstructs locks from consumer genesis;
-- imports no independent lock list;
-- seeds the emergency mandate or its canonical disabled state, with no recorded emergency actions;
-- seeds each consumer's emergency reference fallback with that consumer's own genesis.
+- moves Bank metadata ownership into `x/asset`;
+- leaves feed epochs and feed-keyed rates in `x/oracle`; feed keys are denominations by rule rather than by convention,
+  so rate-store keys are unchanged;
+- seeds Market's default Tobin rate and any overrides separately;
+- seeds the protocol reference feed and the oracle-priced membership epoch;
+- seeds the emergency mandate or its canonical disabled state, with no recorded emergency actions.
 
 Validation requires:
 
 - assets, settlement plans, and resolution records in deterministic unique order;
-- every target denom to identify a registered Oracle-required asset;
-- `ACTIVE` priced assets in current and effective-next targets;
-- `ISSUANCE_HALTED` priced assets in the current target until removal activates;
-- `PENDING` target combinations to represent activation or cancellation safely;
-- `PENDING` assets to have zero supply;
-- `SUSPENDED` target combinations to represent removal, absence, or recovery;
-- `WRITTEN_OFF` and `RETIRED` assets absent from current and pending targets;
+- every oracle-priced asset's feed to be in phase Active — the stricter of the two runtime admission rules — checked at
+  the keeper boundary because the feed registry is `x/oracle` state. A launching chain lists its feeds in the active
+  set outright and the two-block activation delay is an artefact of runtime transitions alone, so holding import to the
+  stricter rule costs nothing and keeps genesis from expressing asset state the running chain could not reach. A
+  suspended, written-off, or retired asset may carry a denomination whose feed does not exist yet or governance has
+  since removed;
 - settlement plans only on `SUSPENDED` assets;
-- recovering settlement plans to carry an earliest closing height;
 - the current `WRITTEN_OFF` version to have a matching `WRITE_OFF` record;
 - `RETIRED` assets with positive supply to have a matching `WRITE_OFF` or `RETIREMENT_RESIDUAL` record;
 - the emergency mandate window and term to be internally consistent;
@@ -915,33 +1058,52 @@ Validation requires:
 
 ## Application wiring
 
-Intended genesis order:
+Genesis order:
 
-    bank -> asset -> oracle -> market -> treasury
+    bank -> oracle -> asset -> market -> treasury
+
+Oracle initialises before asset because asset's `InitGenesis` validates every live or waiting asset's feed against the
+feed registry; the reverse order would validate against an empty one.
 
 `x/asset` needs no BeginBlocker or EndBlocker. The Oracle application preblock pipeline:
 
-1. selects the epoch for the committed vote height;
+1. selects the feed epoch for the committed vote height;
 2. aggregates and stores rates in `x/oracle`;
 3. records Oracle accounting;
-4. advances due `x/asset` target state after consuming the old epoch;
-5. asks `x/oracle` to prune returned removed denoms;
-6. completes eligible `PENDING` activation and `SUSPENDED` recovery only when a fresh rate and all policy prerequisites
-   exist.
+4. advances due feed transitions after consuming the old epoch, pruning removed feeds' rates in the same call;
+5. primes the Treasury liability snapshot.
+
+x/asset has no ABCI boundary at all. Every lifecycle transition is a governance message that checks its own feed
+precondition and applies in the block it executes, so no preblock hook, no rate arrival, and no elapsed height can move
+an asset between statuses. Freshness stays a use-time concern: Market and Treasury reject or omit a rate past
+`MaxExchangeRateAge` at the point of use, which is where a stale price actually matters.
+
+Step 5 must follow step 4: Treasury's liability partition is enumerated from the asset registry and priced from the
+block's feeds, so the primed snapshot has to see the promoted feed set.
 
 Expected touchpoints include app dependency injection, genesis ordering, ABCI interfaces and mocks, vote extension,
 proposal, aggregation, preblock, sidecar target polling, CLI queries, and Market/Treasury consumer interfaces.
 
 ## Implementation phases
 
+The phases are repository commit sequencing for a prelaunch chain, and only the end state is a launchable
+configuration. No interim protections are built for the states between commits: the params-driven swap path carries no
+feed-removal guard while it waits to be replaced, and suspension's conversion containment is complete only once Market
+is lifecycle-aware in Phase 4. Anything that must hold on a running chain is a completion criterion, not a
+phase-boundary property.
+
 ### Phase 0: Contain the confirmed defect
 
-Implemented: Oracle parameter updates reject every current-target removal, including emptying a non-empty set. This
-guard remains until the old parameter-owned target path is removed.
+Implemented, then retired: Oracle parameter updates rejected every current-target removal, including emptying a
+non-empty set, until the parameter-owned membership path it contained was itself deleted. The pricefeed decoupling
+moved membership behind `MsgAddFeed` and `MsgRemoveFeed`, so the defect's mechanism no longer exists. Its successor —
+the coherence rule requiring a Tobin entry to name a feed in phase Active or Adding — was deleted in turn with the
+Tobin parameter itself in Phase 6, once parameters carried no feed referents at all. What protects a feed today is the
+consumer-side removal guard, which asks the asset registry and the protocol reference directly.
 
 ### Phase 1: Define the x/asset contract
 
-- asset identity, metadata mutability, the six-state lifecycle, settlement, resolution records, locks, target epochs,
+- asset identity, metadata mutability, the six-state lifecycle, settlement, resolution records, the protocol reference,
   version semantics, and the emergency mandate with its shared envelope;
 - governance messages, committee messages, queries, and events;
 - direct NOAH-relative pricing and standardized exponent 18;
@@ -952,109 +1114,215 @@ guard remains until the old parameter-owned target path is removed.
 
 - keeper collections and dependency interfaces;
 - deterministic genesis import/export;
-- `AssetLock`, settlement, mandate, and resolution operations;
-- target scheduling and activation;
+- reference, settlement, mandate, and resolution operations;
 - lifecycle, message, query, and event handlers;
-- `PricedAssetView` over Oracle `RateSet`;
-- completion of eligible `PENDING` activation and `SUSPENDED` recovery;
-- focused keeper and query suites for all six statuses and derived target/settlement combinations;
+- `PricedAssetView` over Oracle `RateSet` (later removed unused — see "Lifecycle-aware pricing");
+- focused keeper and query suites for all six statuses and their settlement combinations;
 - standalone `AppModule` service and genesis registration;
 - dependency-injection provider, governance AutoCLI descriptors, and simulation genesis/store-decoder support.
 
 Production consumers remain on their current paths until replacement integration is complete.
 
-### Phase 3: Cut target ownership over to x/asset
+### Phase 3: Activate x/asset
+
+Feed epochs never move here: the pricefeed decoupling left them in `x/oracle`, so this phase is wiring rather than a
+target-ownership transfer.
 
 - wire AssetKeeper through app genesis and dependency injection;
-- move target epoch state from `x/oracle`;
-- split ABCI dependencies into narrow Asset and Oracle interfaces;
-- update vote extension, proposal, aggregation, preblock, sidecar, validation, CLI, and mocks;
+- register the single `x/asset` referent guard with `x/oracle`, covering the asset claim (the protocol reference is
+  `x/oracle`'s own state and needs no guard);
 - move Bank metadata registration into `x/asset`;
-- preserve epoch versioning and activation timing exactly;
-- verify attendance accounting is preserved exactly across cutover: fleet-wide-OR participation, the functioning-block
-  threshold, and windowed settlement.
+- update CLI and mocks.
 
-### Phase 4: Move Market policy ownership
+Reference executors stay unwired until Phases 4 and 5 supply `RebaseBasePool` and `RebaseTaxCap`. Until then a
+reference *change* fails atomically, which the end-state principle accepts: genesis configures the first reference
+without rebasing anything, and no interim configuration is launchable anyway.
 
-- add Market `AssetPolicies`;
-- move Tobin tax and conversion eligibility out of Oracle parameters;
+Activation also settled what a rate-store key is. Rates are keyed by feed, and both the live write path and genesis
+validation check that key against one rule: an Ark-native base denomination that is not the numeraire. A
+governance-added commodity feed — the case the decoupling exists for — is keyed by the denomination it prices, so it
+passes the same check a launch stablecoin's feed passes, and no feed can be admitted whose key would halt the block
+that first priced it. The three-character floor in that rule also removes a latent panic on the read side: every feed
+key is a valid SDK denomination, so `GetExchangeRates` can build `sdk.DecCoins` straight from the rate store without a
+key that `sdk.NewDecCoinFromDec` would reject.
+
+### Phase 4: Move Tobin ownership to Market
+
+- add Market's default Tobin rate parameter and sparse per-denom override map;
+- move Tobin taxes and conversion eligibility out of Oracle parameters;
 - enforce lifecycle-aware offer, ask, issuance, and settlement rules;
 - execute one-way settlement redemption;
-- add the Market-owned base-pool emergency fallback and its governance message;
-- implement the Market emergency fallback executor with atomic lock maintenance;
-- maintain Market locks atomically.
+- derive conversion eligibility from `OraclePricedDenoms` rather than a Market-held membership set;
+- implement `MarketReferenceKeeper.RebaseBasePool` to re-denominate the base pool when the protocol reference moves.
+
+Nothing in this phase touches the rate keyspace or the sidecar. `ExchangeRate.denom` says what it holds, a feed key is
+a denomination, and `GetExchangeRate(ctx, denom)` is an honest signature for Market and Treasury rather than a
+coincidence of denom-named launch feeds — so the indirection this phase would otherwise owe `PricedAssetView` does not
+exist to build.
+
+Market's dependency on `x/oracle` narrows to `GetRateSet`: rates are all it ever needed from there, and everything
+else it was reading — Tobin rates, and membership inferred from which denominations had prices — now comes from its own
+parameters and from the asset registry. Ownership moving did not delete Oracle's `TobinTaxes` parameter, its coherence
+rule, or its `Query/TobinTax`: Treasury still derived its tax base from them until Phase 5, and Phase 6 removed them
+once nothing read them.
+
+Two rules the implementation settled that are worth stating plainly. The ask-side gate is stricter than the offer-side
+gate — an offer may be `ISSUANCE_HALTED` while an ask must be `ACTIVE` — because halting issuance is meant to preserve
+every exit while forbidding new supply, so the same status that keeps holders able to convert out must stop conversion
+producing more. And `MsgUpdateParams` no longer accepts a base-pool denomination at all: the pool is denominated in the
+protocol reference, so its unit moves only when governance re-points that reference, and accepting one here would let
+Market re-anchor behind the reference's back and leave Treasury's cap expressed in a different unit.
+
+Phase 4 left `SetReferenceDenomConsumers` unwired — it takes both executors and Treasury's `RebaseTaxCap` was Phase 5 work —
+so a reference change failed atomically until Phase 5 wired it.
 
 ### Phase 5: Move Treasury classification ownership
 
-- add Treasury `StableAssets`;
-- replace every target-derived liability enumeration;
+- replace every liability enumeration derived from oracle params with the oracle-priced set;
 - preserve priced liability and redemption throughout `ISSUANCE_HALTED`;
-- partition priced, settlement-priced, unpriced, and written-off exposure;
-- add the Treasury-owned reference-tax-cap emergency fallback and its governance message;
-- implement the Treasury emergency fallback executor with atomic lock maintenance;
-- maintain Treasury locks atomically.
+- partition priced, settlement-priced, untrusted-suspended, and written-off exposure;
+- derive tax-cap membership from `OraclePricedDenoms` and refresh on the `PricedLiveVersion` epoch;
+- implement `TreasuryReferenceKeeper.RebaseTaxCap` to re-express the cap when the protocol reference moves.
+
+Treasury's dependency on `x/oracle` narrows to `GetRateSet`, completing what Phase 4 did for Market: after this phase
+nothing outside `x/oracle` read `GetTobinTaxes`, its param, or its coherence rule, which was Phase 6's deletion gate.
+Membership arrives through a Treasury-declared `AssetKeeper` interface — statuses, the oracle-priced list and its
+epoch, ungated settlement plans, and the protocol reference — and the reference tax cap denomination is pinned the way
+Market's pool denomination is: genesis validates it equals the configured reference, `MsgUpdateParams` rejects a denom
+change by pointing at `MsgSetReferenceDenom`, and `RebaseTaxCap` is the only path that moves it.
+
+Rules the implementation settled that are worth stating plainly:
+
+- **Settlement-priced recognition begins at plan open, not activation.** The commitment is irrevocable from
+  activation, and every path that ends a plan deletes the record, so plan-exists is exactly open-commitment. The activation delay gates execution, not
+  obligation; Treasury reads the plan ungated while Market keeps its activation-gated view of who may redeem.
+- **`FundStatus` always answers.** The old response hid everything behind `FailedPrecondition` while valuation was
+  incomplete — blinding operators during exactly the stress that makes valuation incomplete. The partition is the
+  degraded-mode answer: untrusted exposure listed by name, targets zero, balances real. The non-empty list is itself
+  what says the valuation was incomplete.
+- **The executor rate contract is fresh-in, raw-out, read once by `x/asset`.** Phase 4's `RebaseBasePool` read
+  `GetRateSet(from, to)` — fresh on both sides — under which recovery from a stale reference feed was impossible, the
+  exact scenario the spec's raw-outgoing exception exists for. Both executors now take a handed `RateSet`;
+  `rebaseReference` builds it from `GetRateSet(to)` plus Oracle's `GetStoredExchangeRate(from)`, and the raw-read
+  exception lives in the one module that owns the governance action. A from-unit with no stored rate at all still
+  fails: a unit the chain never valued cannot be converted out of.
+- **`RebaseTaxCap` does not rebuild the stored caps.** Each stored cap is the reference value already expressed in its
+  own denomination — a unit-independent quantity — so re-expressing the params coin leaves them correct modulo
+  truncation drift, which the weekly refresh trues up. Rebuilding in-transaction would demand fresh rates for every
+  member, letting one stale unrelated feed block reference recovery.
+- **The tax-cap epoch is recorded only on successful rebuild.** `TaxCapsEpoch` stores the `PricedLiveVersion` the caps
+  were built against (genesis seeds it after building or validating the imported caps); a refresh skipped on stale
+  rates leaves it behind so the rebuild retries every block until rates return. The per-block drift walk is deleted.
+- The reference unit need not itself be oracle-priced: rates exist for any feed, so the cap converts into member units
+  whether or not an asset is listed under the reference denomination, and a memberless chain simply carries no caps.
+
+`SetReferenceDenomConsumers` is wired in app construction beside the feed referent guards, and the end-to-end re-point —
+one `MsgSetReferenceDenom` re-denominating Market's pool and Treasury's cap in the same transaction, both events emitted —
+is covered at the app level.
 
 ### Phase 6: Remove legacy coupling
 
-- remove Tobin taxes, target state, scheduling, metadata ownership, and obsolete queries from `x/oracle`;
-- reserve removed established protobuf field numbers where required;
-- remove the temporary removal guard;
-- add full lifecycle and rate-contract integration coverage, including the single-proposal emergency scenario.
+- removed the Tobin tax parameter, its coherence rule, and its accessors from `x/oracle` once Market (Phase 4) and
+  Treasury (Phase 5) stopped reading them — metadata ownership had already moved to `x/asset` at activation;
+- added full lifecycle and rate-contract integration coverage, including the single-proposal emergency scenario.
+
+Deleted proto fields were removed and renumbered rather than reserved, matching the pre-launch convention recorded in
+the consolidation spec: no deployed state exists to migrate, so burning numbers would preserve compatibility with
+nothing. `Params` lost `tobin_taxes` at field 5 and its tail renumbered contiguously — `attendance_window` 6→5 through
+`participation_threshold` 10→9. The `TobinTax` message, the `TobinTax` and `TobinTaxes` query RPCs, and their four
+request and response messages left the module with prose comments burning their names.
+
+What the deletion settled:
+
+- **The launch feed list needed its own home.** `DefaultFeeds` derived the launch feed set from the Tobin table — the
+  last place that parameter was load-bearing rather than vestigial. `DefaultFeedDenoms` in `x/oracle/types` now
+  declares those eight denominations directly and `DefaultFeeds()` takes no arguments. `MaxFeeds` survives untouched:
+  it bounds the feed set across ABCI vote validation, sidecar polling, and the cached client, and only incidentally
+  bounded the Tobin list.
+- **`MsgUpdateParams` shrank to authority, validate, store.** The deleted coherence rule — a new Tobin entry must name
+  a feed in phase Active or Adding — was the last feed referent parameters carried. Membership moves only through
+  `MsgAddFeed` and `MsgRemoveFeed`, and every consumer-side referent is checked by the removal guard, so the handler
+  has nothing left to cross-check. `ErrUnknownFeed` was that rule's only raiser and went with it; code 9 stays burned.
+- **One benchmark axis was measuring the deleted parameter.** Market's `BenchmarkStableToStableQuote` varied "the
+  number of denominations Oracle prices" by growing the Tobin list, and it was a real axis for the wrong reason: every
+  quote read `Params`, and the Tobin list lived inside that record, so decoding cost grew with the priced set.
+  `GetRateSet` itself is a point lookup per requested denomination. The axis now varies stored exchange rates and
+  expects a flat result, kept as a regression guard against reintroducing registry-scaled work in the quote path.
+
+Market's Tobin surface — `DefaultTobinTax`, the sparse overrides, and its own `Query/TobinTax` — is untouched: it is
+the owner's, not legacy.
 
 ## Required integration scenarios
 
+These landed as four app-level scripts driving the real application through full blocks — real vote extensions, real
+preblock, real BeginBlocker — in `app/asset_retirement_test.go`, `app/asset_resolution_test.go` (suspension/settlement
+plus write-off), and `app/asset_emergency_test.go`.
+
+Each script asserts what crosses a module boundary: what Bank owns, when consensus completes a transition, what Market
+permits, what Treasury recognizes, and what the feed layer releases. Single-module state-machine transitions stay with
+the keeper suites, which is where their rejection matrices already live; a scenario step below annotated *keeper*
+is verified there rather than through app fixtures. Two limits are worth stating rather than leaving to be discovered:
+the settlement activation delay is a day of blocks, which no fixture walks, so the executable phase is reached by
+bringing an announced plan forward in place and the delay itself is keeper-tested; and the fixture validator prices
+every feed every block, so tests that need a starved feed withhold one denomination explicitly.
+
 ### Normal activation and retirement
 
-1. Register an 18-decimal priced asset such as `agold`; verify registration rejects a denom with pre-existing supply or
-   metadata.
-2. Correct a metadata mistake with `AmendRegistration` while `PENDING`; verify metadata freezes on activation.
-3. Activate its target through the delayed epoch.
-4. Verify it remains `PENDING` until its first fresh rate; verify a validator omitting the new target while pricing any
-   established one stays fully attended, and one pricing nothing accrues eligible-but-not-attended units while blocks
-   function.
+1. Add the feed for an 18-decimal priced asset such as `agold` through `MsgAddFeed`; verify registration in that same
+   block is rejected against the still-Adding feed and leaves no registry row, then let the transition activate and
+   verify the asset registers `ACTIVE` at version 1. Verify registration also rejects a denom with no feed at all, one
+   whose feed is Removing, and one with pre-existing supply or metadata.
+2. Verify Bank's record is the metadata derived from `agold` — `ArkGOLD`, `arkGOLD`, display `gold` at exponent 18 — and
+   that no message can rewrite it in any status.
+3. Verify the asset pins its feed from the block it registers in — `MsgRemoveFeed` is vetoed from there on — and
+   that its pricing verdict is feed-unavailable until the first aggregation lands.
+4. Verify a validator omitting the new feed while pricing any established one stays fully attended, and one pricing
+   nothing accrues eligible-but-not-attended units while blocks function (*attendance grading: `abci/oracle`*).
 5. Configure Market and Treasury policy.
 6. Issue non-zero supply.
 7. Halt issuance and verify pricing, liability, transfers, and redemption continue.
-8. Verify finalization fails with locks, and with supply above `max_residual_supply`.
-9. Redeem most supply, clear dependencies, and finalize with a residual bound covering the unredeemed dust.
-10. Verify target removal activates, the old epoch is consumed before rate pruning, validators stop pricing the denom,
-    the asset is `RETIRED` with a `RETIREMENT_RESIDUAL` record, and residual balances remain transferable.
-11. Verify the `RETIRED` tombstone cannot be reused and, with residual supply, cannot be reactivated.
+8. Verify finalization fails with supply above `max_residual_supply`, and succeeds regardless of what the reference
+   state names — retirement never consults it (*reference indifference: keeper*).
+9. Redeem most supply, clear dependencies, and finalize with a residual bound covering the unredeemed dust; verify the
+   asset is `RETIRED` in that block with a `RETIREMENT_RESIDUAL` record and residual balances remain transferable.
+10. Remove the now-unreferenced feed through `MsgRemoveFeed`; verify the old epoch is consumed before rate pruning and
+    validators stop pricing it.
+11. Verify the `RETIRED` tombstone cannot be reused: the denomination is refused re-registration, and no transition
+    carries the asset back out of the tombstone.
 
 ### Suspension, settlement, and recovery
 
-1. In one governance proposal, move the base-pool reference, move the reference tax cap, and suspend an `ACTIVE` or
-   `ISSUANCE_HALTED` asset; verify issuance and ordinary redemption stop in that block.
-2. Preserve balances and disclose outstanding stable supply as unpriced exposure.
-3. Consume the old epoch before pruning its rate while the asset remains `SUSPENDED`.
-4. Open a fixed settlement with an earliest closing height and recognize its maximum NOAH entitlement.
+1. Suspend an `ACTIVE` or `ISSUANCE_HALTED` asset in one governance message, including one carrying the reference
+   denomination; verify issuance and ordinary redemption stop in that block, `ReferenceState` is untouched, and no
+   rebase executor runs.
+2. Preserve balances and disclose outstanding supply as untrusted exposure.
+3. Consume the old epoch before pruning its rate while the asset remains `SUSPENDED` (*epoch and pruning: `x/oracle`*).
+4. Open a fixed settlement with an earliest closing height and recognize its maximum NOAH entitlement — and verify the
+   split the activation delay exists to create: Treasury owes the entitlement from the block the plan opens while
+   Market still refuses to pay it.
 5. Redeem by burning the asset, drawing the buffer proportionally, and minting only the uncovered NOAH.
-6. Close the settlement after its earliest closing height; verify executed redemptions stand and remaining supply
-   reverts to unpriced exposure.
-7. Verify closing an activated settlement before its earliest closing height is rejected while supply remains, that
-   recovery cannot lower the commitment, and that write-off remains the only earlier exit; verify replacement after
-   closure requires a new plan and version.
+6. Verify write-off is rejected at every height inside the committed window, and permitted from the closing height
+   onward, closing the plan as it lands.
+7. Verify cancellation is refused from the activation height onward, and that recovery closes an open plan in the same
+   act without consulting the window — holders regain the ordinary exit rather than losing one.
 8. Verify a fully settled asset closes its plan at zero supply without waiting for the commitment height and finalizes
-   to `RETIRED` without recovery, write-off, or any oracle transition.
-9. Begin recovery on a separate suspended asset and keep it `SUSPENDED` through target addition and fresh-rate
-   collection.
-10. Verify recovery completion requires the settlement closed, then recovers to `ISSUANCE_HALTED`.
+   to `RETIRED` without recovery, write-off, or any oracle transition (*keeper*).
+9. Verify recovery is refused on a separate suspended asset while its feed is not active.
+10. Verify recovery requires the settlement closed, then recovers to `ISSUANCE_HALTED` in that block.
 11. Require a separate `ResumeIssuance` before issuance resumes.
 
 ### Emergency mandate
 
-1. Committee-suspend an asset holding both live references: verify each consumer's pre-approved fallback executes, locks
-   move atomically, suspension lands in the same transaction, the action is recorded for the term, the asset version
-   advances, and events carry the term.
+1. Committee-suspend the asset carrying the reference denomination: verify `ReferenceState` is untouched, no executor
+   runs, suspension lands, the action is recorded for the term, the asset version advances, and events carry the term.
 2. Halt issuance on an ambiguous signal, then suspend the same asset later in the same term; verify the escalation is
    permitted.
 3. Committee-suspend, let governance recover and resume the asset, and verify a second committee suspension of that
    asset in the same term is rejected while the governance path succeeds.
-4. Verify committee actions are rejected under a disabled, expired, or not-yet-active mandate and with a stale term.
-   Verify mandate replacement clears recorded usage, so the same action becomes available again under the new term.
-5. Make a fallback invalid by suspending the fallback asset first; verify the committee action fails atomically and the
-   single-proposal governance path still executes.
-6. Replace the mandate; verify the term advances and messages carrying the old term are rejected.
+4. Verify committee actions are rejected under a disabled, expired, or not-yet-active mandate (*keeper*) and with a
+   stale term. Verify mandate replacement clears recorded usage, so the same action becomes available again under the
+   new term.
+5. Replace the mandate; verify the term advances and messages carrying the old term are rejected.
 
 ### Write-off and reinstatement
 
@@ -1062,14 +1330,17 @@ Production consumers remain on their current paths until replacement integration
 2. Keep the quantity and append-only record queryable.
 3. Reinstate through settlement or Oracle recovery into `SUSPENDED`.
 4. Verify historical records remain unchanged.
-5. Finalize a different `WRITTEN_OFF` asset directly to `RETIRED` with residual supply and verify no new record is
-   appended.
-6. Permit final retirement only after locks, plans, and targets are cleared.
+5. Finalize a `WRITTEN_OFF` asset directly to `RETIRED` with residual supply and verify no new record is appended — the
+   derecognition was already recorded, so there is nothing left to disclose.
+6. Permit final retirement once no settlement plan remains, with no reference or feed precondition on the path
+   (*preconditions: keeper*).
 
-Additional cases cover unpriced assets, non-stable tokenized commodities, registration and retirement cancellation,
-stale versions, pipelined proposals across automatic completions, conflicting target epochs, native-denom rejection,
-metadata rules, each lock kind, arithmetic boundaries at the documented rate band edges, stale rates, and incomplete
-liability.
+A second write-off cycle on the same asset is covered too: reinstatement through recovery and a second write-off append
+rather than replace, which is the append-only promise under the one case that could break it.
+
+Additional cases cover tokenized commodities, registration and retirement cancellation, stale versions,
+feed-removal referent guards, numeraire rejection, metadata rules, reference
+eligibility, arithmetic boundaries at the documented rate band edges, stale rates, and incomplete liability.
 
 ## Live-chain upgrade variant
 
@@ -1077,10 +1348,10 @@ If deployed after a live genesis:
 
 - add the `x/asset` store through a named upgrade;
 - retain old decoders until migration completes;
-- seed assets, metadata, target versions and heights, Market policy, Treasury enrollment, and locks from committed
-  state;
+- seed assets, metadata, feed versions and heights, the protocol reference, and Market and Treasury policy from
+  committed state;
 - import active settlements and resolution history exactly;
-- verify every target maps to one Oracle-required asset;
+- verify every live or waiting asset's denomination keys a present feed;
 - reject or explicitly resolve unsafe pending removals;
 - delete obsolete Oracle state only after validation succeeds.
 
@@ -1106,12 +1377,13 @@ Run:
 
 ## Suggested commit sequence
 
-1. Temporary Oracle target-removal containment. Completed.
+1. Temporary Oracle target-removal containment. Completed, then retired with the params-driven target path; end-state
+   protection is the `x/asset` referent guard, which arrives with the consumers it protects.
 2. Contract alignment across protobuf, types, and keeper: renames, `SetAssetMetadata`, `CloseSettlement`, residual
    finalization, `ResolutionRecord`, version semantics, registration preconditions, and the emergency mandate.
 3. Target ownership, ABCI, sidecar, metadata, and pricing-consumer cutover.
 4. Market policy ownership and settlement execution.
-5. Treasury stable enrollment and partitioned liabilities.
+5. Treasury derived tax caps and partitioned liabilities.
 6. Legacy Oracle removal and full integration, including the single-proposal emergency scenario.
 7. Live-chain migrations only if required.
 
@@ -1119,17 +1391,18 @@ Run:
 
 The design is complete when:
 
-- every priced asset has one denom-keyed NOAH-relative rate;
+- every asset is priced by the feed its denomination keys, carrying a NOAH-relative rate;
 - no module infers asset existence or liability from Oracle parameters;
-- activation waits for a fresh rate;
+- a feed may exist with no asset carrying its denomination, and no two assets can ever share one;
+- activation waits for a rate aggregated after the request;
 - normal retirement preserves pricing and redemption for outstanding supply, and can close the books on a bounded,
   disclosed residual without a sham transition;
 - every lifecycle state reaches `RETIRED` through an honest path;
 - suspension never treats unavailable valuation as zero;
 - from suspension onward, an asset's maximum remaining claim on NOAH is a closed, governance-chosen bound;
-- suspension and its policy prerequisites execute in one proposal;
-- a live mandate suspends a failing asset in one transaction, and every mandate bound — term, window, one action per
-  asset per kind per term, fallback validity — is enforced;
+- suspension executes in a single-message proposal, with no reference move on the path;
+- a live mandate suspends a failing asset in one transaction, and every mandate bound — term, window, one suspension per
+  asset per term — is enforced;
 - committee powers only remove capabilities: no committee path restores issuance, redemption, pricing, or recognition,
   or moves value;
 - settlement is one-way, explicit, auditable, and cannot enable issuance; its window closes only after any announced
@@ -1137,12 +1410,15 @@ The design is complete when:
 - every governance mistake outside a committed settlement window is correctable without write-off;
 - recovery restores `ISSUANCE_HALTED` before issuance can resume;
 - write-off, reinstatement, and residual retirement preserve balances and immutable history;
-- final retirement requires no locks, no plan, no target, and residual within the governance-approved bound;
-- target removal remains height-correct and consumes the old epoch before pruning;
+- final retirement requires no settlement plan and residual within the governance-approved bound, and consults neither
+  the reference state nor the feed registry;
+- feed removal remains height-correct and consumes the old epoch before pruning;
 - attendance is unconditional per window: pricing any target attends a validator, correlated incapacity grades nobody,
   and sustained whole-report absence against a pricing majority jails at settlement;
-- unpriced assets cannot accidentally enter Oracle-dependent monetary policy;
-- commodities may be priced without becoming stable liabilities;
-- the metadata of an unactivated asset is correctable and the metadata of an activated asset is immutable;
+- every registered asset is priced and convertible: no unpriced or unconvertible native asset can exist, and no
+  denomination can be registered that could not have carried a feed;
+- commodities may be priced at the feed layer without being listed; listing an asset is the act of creating a
+  convertible liability;
+- an asset's metadata is derived from its denomination in every status, and no message can rewrite it;
 - the supported rate precision band is documented and arithmetic fails closed outside it;
 - the full normal and emergency integration scenarios pass.
