@@ -19,9 +19,13 @@ import (
 )
 
 // NewPrometheusProvider returns a MeterProvider exporting through registerer,
-// with service.name and attrs as its resource. The registerer is explicit
+// with service.name, service.version, and attrs as its resource. The registerer is explicit
 // because it decides which scrape endpoint the metrics land on: CometBFT and
 // the SDK's legacy sink both own the default registry, so arkd passes its own.
+//
+// Scope labels are left off. Every Ark instrument is unique under its "ark."
+// prefix, so otel_scope_name would repeat the name on every series and
+// otel_scope_version, with no meter versioned, would always be empty.
 func NewPrometheusProvider(
 	serviceName string,
 	registerer prometheus.Registerer,
@@ -34,12 +38,18 @@ func NewPrometheusProvider(
 		return nil, errors.New("registerer cannot be nil")
 	}
 
-	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registerer))
+	exporter, err := otelprometheus.New(
+		otelprometheus.WithRegisterer(registerer),
+		otelprometheus.WithoutScopeInfo(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("creating Prometheus exporter: %w", err)
 	}
 
-	attrs = append([]attribute.KeyValue{attribute.String("service.name", serviceName)}, attrs...)
+	attrs = append([]attribute.KeyValue{
+		attribute.String("service.name", serviceName),
+		attribute.String("service.version", BuildVersion()),
+	}, attrs...)
 	return sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(exporter),
 		sdkmetric.WithResource(resource.NewSchemaless(attrs...)),

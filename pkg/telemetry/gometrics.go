@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"strings"
 	"sync"
 
@@ -14,25 +16,29 @@ import (
 // maxInstrumentNameLen is OTel's cap on an instrument name.
 const maxInstrumentNameLen = 255
 
-// histogramBoundaries are the buckets the SDK's own bridge uses, kept so the
-// exported series do not change with the sink.
-var histogramBoundaries = metric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
-
-// GoMetricsSink bridges the SDK's legacy go-metrics into an OTel meter the
-// way cosmos-sdk's "otel" sink does, with two differences: instrument names
-// are sanitised, and nothing panics. The SDK's sink hands raw keys to the
-// meter and panics when OTel rejects one, and baseapp records every ABCI
-// query under its request path — "/cosmos.auth.v1beta1.Query/Account" —
-// which OTel refuses because a name must start with a letter, so under that
-// sink every CLI query over CometBFT RPC fails. A name OTel still refuses
-// after sanitising records nowhere.
+// GoMetricsSink bounds legacy instruments and isolates their exported names.
+// SDK query paths are untrusted, including paths that do not start with '/'.
+// Their timers become fixed instruments with a bounded route classification.
 type GoMetricsSink struct {
-	ctx        context.Context
-	meter      metric.Meter
-	counters   sync.Map
-	gauges     sync.Map
-	histograms sync.Map
+	ctx           context.Context
+	meter         metric.Meter
+	config        GoMetricsConfig
+	mu            sync.Mutex
+	instruments   map[string]any
+	queryDuration metric.Float64Histogram
 }
+
+// GoMetricsConfig describes the SDK's key prefix and registered query routes.
+// IsQueryRoute must be a read-only lookup over the app's fixed service router.
+type GoMetricsConfig struct {
+	ServiceName  string
+	IsQueryRoute func(string) bool
+}
+
+// maxLegacyInstruments bounds the cache even if a future SDK call site uses
+// dynamic keys. Queries never consume this allowance. Existing entries remain
+// usable when the limit is reached; further names record nowhere.
+const maxLegacyInstruments = 1024
 
 var (
 	_ gometrics.MetricSink               = (*GoMetricsSink)(nil)
@@ -40,8 +46,17 @@ var (
 )
 
 // NewGoMetricsSink returns a sink recording into meter under ctx.
-func NewGoMetricsSink(ctx context.Context, meter metric.Meter) *GoMetricsSink {
-	return &GoMetricsSink{ctx: ctx, meter: meter}
+func NewGoMetricsSink(ctx context.Context, meter metric.Meter, config ...GoMetricsConfig) *GoMetricsSink {
+	s := &GoMetricsSink{ctx: ctx, meter: meter, instruments: make(map[string]any)}
+	if len(config) != 0 {
+		s.config = config[0]
+	}
+	var err error
+	s.queryDuration, err = meter.Float64Histogram("ark.sdk.query.duration", metric.WithUnit("ms"), metric.WithDescription("Duration of completed ABCI queries"))
+	if err != nil || s.queryDuration == nil {
+		s.queryDuration = metricnoop.Float64Histogram{}
+	}
+	return s
 }
 
 // SanitiseInstrumentName maps a go-metrics key onto a valid OTel instrument
@@ -74,49 +89,116 @@ func isASCIILetter(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 }
 
-// instrumentName flattens a go-metrics key as the SDK's bridge does, joined
-// with dots, then sanitises it.
-func instrumentName(key []string) string {
-	return SanitiseInstrumentName(strings.Join(key, "."))
+// legacyName uses only Prometheus-safe characters. The digest preserves
+// distinctions lost by sanitisation (dots, slashes, underscores, truncation),
+// and the kind keeps a histogram's generated suffixes away from other types.
+func legacyName(kind string, key []string) string {
+	raw := strings.Join(key, "\x00")
+	digest := sha256.Sum256([]byte(raw))
+	readable := SanitiseInstrumentName(strings.Join(key, "."))
+	readable = strings.Map(func(r rune) rune {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			return r
+		}
+		return '_'
+	}, readable)
+	if len(readable) > 120 {
+		readable = readable[:120]
+	}
+	return "sdk_legacy_" + kind + "_" + readable + "_" + hex.EncodeToString(digest[:])
+}
+
+func legacyInstrument[I any](s *GoMetricsSink, kind string, key []string, create func(string) (I, error), fallback I) I {
+	name := legacyName(kind, key)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if existing, ok := s.instruments[name]; ok {
+		return existing.(I)
+	}
+	if len(s.instruments) >= maxLegacyInstruments {
+		return fallback
+	}
+	inst, err := create(name)
+	if err != nil {
+		inst = fallback
+	}
+	s.instruments[name] = inst
+	return inst
 }
 
 func (s *GoMetricsSink) gauge(key []string) metric.Float64Gauge {
-	name := instrumentName(key)
-	if entry, ok := s.gauges.Load(name); ok {
-		return entry.(metric.Float64Gauge)
-	}
-	inst, err := s.meter.Float64Gauge(name)
-	if err != nil || inst == nil {
-		inst = metricnoop.Float64Gauge{}
-	}
-	entry, _ := s.gauges.LoadOrStore(name, inst)
-	return entry.(metric.Float64Gauge)
+	return legacyInstrument(s, "gauge", key, func(name string) (metric.Float64Gauge, error) {
+		inst, err := s.meter.Float64Gauge(name)
+		if inst == nil {
+			inst = metricnoop.Float64Gauge{}
+		}
+		return inst, err
+	}, metric.Float64Gauge(metricnoop.Float64Gauge{}))
 }
 
 func (s *GoMetricsSink) counter(key []string) metric.Float64Counter {
-	name := instrumentName(key)
-	if entry, ok := s.counters.Load(name); ok {
-		return entry.(metric.Float64Counter)
-	}
-	inst, err := s.meter.Float64Counter(name)
-	if err != nil || inst == nil {
-		inst = metricnoop.Float64Counter{}
-	}
-	entry, _ := s.counters.LoadOrStore(name, inst)
-	return entry.(metric.Float64Counter)
+	return legacyInstrument(s, "counter", key, func(name string) (metric.Float64Counter, error) {
+		inst, err := s.meter.Float64Counter(name)
+		if inst == nil {
+			inst = metricnoop.Float64Counter{}
+		}
+		return inst, err
+	}, metric.Float64Counter(metricnoop.Float64Counter{}))
 }
 
 func (s *GoMetricsSink) histogram(key []string) metric.Float64Histogram {
-	name := instrumentName(key)
-	if entry, ok := s.histograms.Load(name); ok {
-		return entry.(metric.Float64Histogram)
+	return legacyInstrument(s, "histogram", key, func(name string) (metric.Float64Histogram, error) {
+		inst, err := s.meter.Float64Histogram(name)
+		if inst == nil {
+			inst = metricnoop.Float64Histogram{}
+		}
+		return inst, err
+	}, metric.Float64Histogram(metricnoop.Float64Histogram{}))
+}
+
+func (s *GoMetricsSink) unprefixed(key []string) []string {
+	if s.config.ServiceName != "" && len(key) > 0 && key[0] == s.config.ServiceName {
+		return key[1:]
 	}
-	inst, err := s.meter.Float64Histogram(name, histogramBoundaries)
-	if err != nil || inst == nil {
-		inst = metricnoop.Float64Histogram{}
+	return key
+}
+
+func (s *GoMetricsSink) queryRoute(path string) string {
+	if s.config.IsQueryRoute != nil && s.config.IsQueryRoute(path) {
+		return path
 	}
-	entry, _ := s.histograms.LoadOrStore(name, inst)
-	return entry.(metric.Float64Histogram)
+	// Legacy handlers accept arbitrary suffixes. Export only their category.
+	category, _, _ := strings.Cut(strings.TrimPrefix(path, "/"), "/")
+	switch category {
+	case "app":
+		return "app"
+	case "store":
+		return "store"
+	case "p2p":
+		return "p2p"
+	default:
+		return "unknown"
+	}
+}
+
+// SDK v0.54 query timers have one key, the raw path. Module lifecycle timers
+// also have one key, but carry a module label and one of these three constants.
+// Classify before sanitising so even malformed paths cannot allocate instruments.
+func (s *GoMetricsSink) recordQuery(key []string, value float32, labels []gometrics.Label) bool {
+	key = s.unprefixed(key)
+	if len(key) != 1 {
+		return false
+	}
+	if key[0] == "pre_blocker" || key[0] == "begin_blocker" || key[0] == "end_blocker" {
+		for _, label := range labels {
+			if label.Name == "module" {
+				return false
+			}
+		}
+	}
+	route := metric.WithAttributes(attribute.String("route", s.queryRoute(key[0])))
+	s.queryDuration.Record(s.ctx, float64(value), attrs(labels), route)
+	return true
 }
 
 // SetGauge implements gometrics.MetricSink.
@@ -146,21 +228,30 @@ func (s *GoMetricsSink) EmitKey(key []string, val float32) {
 
 // IncrCounter implements gometrics.MetricSink.
 func (s *GoMetricsSink) IncrCounter(key []string, val float32) {
-	s.counter(key).Add(s.ctx, float64(val))
+	s.IncrCounterWithLabels(key, val, nil)
 }
 
 // IncrCounterWithLabels implements gometrics.MetricSink.
 func (s *GoMetricsSink) IncrCounterWithLabels(key []string, val float32, labels []gometrics.Label) {
+	// The deferred query timer records duration and its sample count once, including
+	// a query literally named "count", indistinguishable from the SDK's total.
+	unprefixed := s.unprefixed(key)
+	if len(unprefixed) == 2 && unprefixed[0] == "query" {
+		return
+	}
 	s.counter(key).Add(s.ctx, float64(val), attrs(labels))
 }
 
 // AddSample implements gometrics.MetricSink.
 func (s *GoMetricsSink) AddSample(key []string, val float32) {
-	s.histogram(key).Record(s.ctx, float64(val))
+	s.AddSampleWithLabels(key, val, nil)
 }
 
 // AddSampleWithLabels implements gometrics.MetricSink.
 func (s *GoMetricsSink) AddSampleWithLabels(key []string, val float32, labels []gometrics.Label) {
+	if s.recordQuery(key, val, labels) {
+		return
+	}
 	s.histogram(key).Record(s.ctx, float64(val), attrs(labels))
 }
 

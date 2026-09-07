@@ -35,6 +35,7 @@ func TestNewPrometheusProviderExportsInstrument(t *testing.T) {
 	require.Equal(t, http.StatusOK, resp.Code)
 	require.Contains(t, resp.Body.String(), "ark_test_requests_total")
 	require.Contains(t, resp.Body.String(), `service_name="oracle"`)
+	require.Contains(t, resp.Body.String(), `service_version="`)
 	require.Contains(t, resp.Body.String(), `ark_chain_id="ark-test"`)
 }
 
