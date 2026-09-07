@@ -2,8 +2,10 @@ package app_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"testing"
+	"time"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
@@ -32,8 +34,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// TestTransferTaxChargesOnlySuccessfulTransactions pins D82 end to end,
-// through FinalizeBlock: a signed transaction pays its transfer tax exactly
+// TestTransferTaxChargesOnlySuccessfulTransactions pins D82 through admission,
+// recheck, proposals, and FinalizeBlock: a signed transaction pays tax exactly
 // when its messages succeed. One whose message fails — a send to a blocked
 // address — pays the gas fee and nothing else; one whose messages leave the
 // payer short of the tax fails at the charge, pays the gas fee, and moves no
@@ -79,11 +81,17 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 	require.NoError(t, err)
 
 	height := int64(0)
-	// deliver runs the transactions in one block and commits it.
-	deliver := func(txs ...[]byte) []*cmtabci.ExecTxResult {
+	blockTime := func(height int64) time.Time { return time.Unix(1_700_000_000+height, 0).UTC() }
+	blockHash := func(height int64) []byte {
+		hash := sha256.Sum256([]byte(blockTime(height).String()))
+		return hash[:]
+	}
+	finalise := func(txs [][]byte) []*cmtabci.ExecTxResult {
 		height++
 		res, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 			Height:             height,
+			Hash:               blockHash(height),
+			Time:               blockTime(height),
 			NextValidatorsHash: validators.Set.Hash(),
 			Txs:                txs,
 		})
@@ -92,6 +100,34 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, res.TxResults, len(txs))
 		return res.TxResults
+	}
+	// Every transaction must survive an intervening commit's recheck and
+	// proposal verification before execution; FinalizeBlock alone would hide
+	// an upfront tax-affordability check in either earlier path.
+	deliver := func(txs ...[]byte) []*cmtabci.ExecTxResult {
+		for _, bz := range txs {
+			res, err := arkApp.CheckTx(&cmtabci.RequestCheckTx{Tx: bz})
+			require.NoError(t, err)
+			require.Zero(t, res.Code, res.Log)
+		}
+		if len(txs) == 0 {
+			return finalise(nil)
+		}
+		finalise(nil)
+		require.Equal(t, len(txs), arkApp.Mempool().CountTx(), "recheck must retain pending transactions")
+		proposal, err := arkApp.PrepareProposal(&cmtabci.RequestPrepareProposal{
+			Height: height + 1, Time: blockTime(height + 1), MaxTxBytes: 1 << 20,
+		})
+		require.NoError(t, err)
+		require.Equal(t, txs, proposal.Txs)
+		verified, err := arkApp.ProcessProposal(&cmtabci.RequestProcessProposal{
+			Height: height + 1, Time: blockTime(height + 1), Hash: blockHash(height + 1), Txs: proposal.Txs,
+		})
+		require.NoError(t, err)
+		require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, verified.Status)
+		results := finalise(proposal.Txs)
+		require.Zero(t, arkApp.Mempool().CountTx())
+		return results
 	}
 	committed := func() sdk.Context {
 		return arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID})
@@ -255,6 +291,30 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 		require.Equal(t, allowance.Sub(gasFee).Sub(gasFee).Sub(sdk.NewCoin(chain.USDBaseDenom, tax)), spendLimit())
 	})
 
+	t.Run("a gas-only allowance admits the transaction but cannot pay its tax", func(t *testing.T) {
+		gasAllowance := sdk.NewCoins(gasFee.AddAmount(gasFee.Amount))
+		grant, err := feegrant.NewMsgGrantAllowance(&feegrant.BasicAllowance{SpendLimit: gasAllowance}, funder.Address(), granteeAddr)
+		require.NoError(t, err)
+		revoke := feegrant.NewMsgRevokeAllowance(funder.Address(), granteeAddr)
+		res := deliver(sign(funder.Key, funderNumber, sequence, nil, &revoke, grant))
+		sequence++
+		require.Zero(t, res[0].Code, res[0].Log)
+
+		granterUSD, granterXDR := usd(funder.Address()), xdr(funder.Address())
+		granteeUSD, recipientUSD, taxBefore := usd(granteeAddr), usd(recipient), usd(taxCollector)
+		res = deliver(sign(grantee, granteeNumber, granteeSequence, funder.Address(),
+			banktypes.NewMsgSend(granteeAddr, recipient, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)))))
+		granteeSequence++
+		require.NotZero(t, res[0].Code)
+		require.Contains(t, res[0].Log, "does not allow to pay fees")
+		require.Equal(t, granterUSD, usd(funder.Address()))
+		require.Equal(t, granterXDR.Sub(gasFee.Amount), xdr(funder.Address()))
+		require.Equal(t, granteeUSD, usd(granteeAddr))
+		require.Equal(t, recipientUSD, usd(recipient))
+		require.Equal(t, taxBefore, usd(taxCollector))
+		require.Equal(t, gasAllowance.Sub(gasFee), spendLimit())
+	})
+
 	t.Run("a transfer the messages fund is taxed rather than refused", func(t *testing.T) {
 		// The payer holds none of the taxed denomination when the ante runs
 		// and acquires it from the very message that owes the tax, pulling
@@ -277,9 +337,24 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 
 		taxBefore := usd(taxCollector)
 		tax := taxOn(100_000)
+		// This variant never funds the payer. Admission and proposal checks
+		// accept it, but execution must undo the transfer when tax collection
+		// fails and retain only the gas fee and sequence increment.
+		unfunded := authz.NewMsgExec(payerAddr, []sdk.Msg{banktypes.NewMsgSend(
+			funder.Address(), recipient, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100_000)))})
+		funderBefore, recipientBefore, gasBefore := usd(funder.Address()), usd(recipient), xdr(payerAddr)
+		res = deliver(sign(payer, accountNumber(payerAddr), 0, nil, &unfunded))
+		require.NotZero(t, res[0].Code)
+		require.Contains(t, res[0].Log, "collecting transfer tax")
+		require.Equal(t, funderBefore, usd(funder.Address()))
+		require.Equal(t, recipientBefore, usd(recipient))
+		require.Equal(t, taxBefore, usd(taxCollector))
+		require.Equal(t, gasBefore.Sub(gasFee.Amount), xdr(payerAddr))
+		require.True(t, usd(payerAddr).IsZero())
+
 		exec := authz.NewMsgExec(payerAddr, []sdk.Msg{banktypes.NewMsgSend(
 			funder.Address(), payerAddr, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100_000)))})
-		res = deliver(sign(payer, accountNumber(payerAddr), 0, nil, &exec))
+		res = deliver(sign(payer, accountNumber(payerAddr), 1, nil, &exec))
 		require.Zero(t, res[0].Code, res[0].Log)
 		require.Equal(t, math.NewInt(100_000).Sub(tax), usd(payerAddr))
 		require.Equal(t, taxBefore.Add(tax), usd(taxCollector))

@@ -56,8 +56,8 @@ import (
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
-	"github.com/ararat-network/ark/abci/lanes"
 	"github.com/ararat-network/ark/app/ante"
+	"github.com/ararat-network/ark/app/mempool"
 	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
 	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
@@ -89,6 +89,8 @@ var (
 // capabilities aren't needed for testing.
 type ArkApp struct {
 	*runtime.App
+
+	mempoolHandler *mempool.Handler
 
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
@@ -222,27 +224,16 @@ func NewArkApp(
 		baseapp.SetOptimisticExecution(),
 	)
 
-	// Committee and governance transactions are proposed ahead of all other
-	// traffic; app/mempool.go owns both the privileged message set and the
-	// app.toml sizing this reads. This option lands after the server defaults
-	// and supersedes their mempool choice. The cap carries the SDK's tri-state:
-	// positive bounds the pool, zero leaves it unbounded, negative installs
-	// nothing so the server defaults' NoOpMempool survives. That last case has
-	// to install nothing rather than a negative-cap lane pool, because the SDK
-	// proposal handler's FIFO fallback tests for the NoOpMempool concrete type
-	// and not for emptiness: a lane pool that accepts nothing would propose
-	// empty blocks forever.
-	// The lane set the mempool classifies with and the ante chain vouches
-	// with; one construction serves both.
-	privileges := app.Privileges()
-	if maxTxs := mempoolMaxTxs(appOpts); maxTxs >= 0 {
-		baseAppOptions = append(
-			baseAppOptions,
-			baseapp.SetMempool(lanes.NewMempool(maxTxs, privileges)),
-		)
+	// Always install the lane pool so local sizing cannot change validation.
+	maxTxs, err := mempoolMaxTxs(appOpts)
+	if err != nil {
+		panic(err)
 	}
+	pool := mempool.NewPool(maxTxs, app.txConfig.TxEncoder())
+	baseAppOptions = append(baseAppOptions, baseapp.SetMempool(pool))
 
 	app.App = appBuilder.Build(db, baseAppOptions...)
+
 	// Keepers, then the contract runtime, then the routes: Wasm needs the IBC
 	// channel keepers, and the IBC routers need Wasm's contract handlers.
 	if err := app.setupIBCKeepers(); err != nil {
@@ -261,18 +252,9 @@ func NewArkApp(
 	if err := app.setupIBCRoutes(); err != nil {
 		panic(err)
 	}
-	if err := app.setupOracleABCI(logger, appOpts); err != nil {
-		panic(err)
-	}
 
-	// Streaming must follow the hand-wired RegisterStores calls above:
-	// kvStoreKeys reads the runtime's key list, so registering earlier would
-	// silently hide the IBC, Wasm, GMP, and 08-wasm stores from listeners.
-	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
-		panic(err)
-	}
-
-	// set custom ante handler
+	// Install transaction validation and execution handlers.
+	privileges := app.newPrivileges()
 	app.SetAnteHandler(ante.NewAnteHandler(
 		app.appCodec,
 		app.txConfig,
@@ -287,9 +269,15 @@ func NewArkApp(
 		wasmNodeConfig,
 		wasmTxCounterStore,
 	))
-	// The post chain: the transfer tax, charged once a transaction's
-	// messages have succeeded and never otherwise (D82).
+
 	app.SetPostHandler(ante.NewPostHandler(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper))
+
+	// Connect admission and proposal handling to the application.
+	app.mempoolHandler = mempool.NewHandler(app.App, pool, app.txConfig.TxDecoder(), privileges)
+
+	if err := app.setupOracleABCI(logger, appOpts); err != nil {
+		panic(err)
+	}
 
 	// Seed the upgrade version map at InitChain so the first upgrade migrates
 	// the manually registered modules rather than re-running their InitGenesis.
@@ -302,6 +290,13 @@ func NewArkApp(
 	})
 
 	if err := app.setupUpgrades(); err != nil {
+		panic(err)
+	}
+
+	// Streaming must follow the hand-wired RegisterStores calls above:
+	// kvStoreKeys reads the runtime's key list, so registering earlier would
+	// silently hide the IBC, Wasm, GMP, and 08-wasm stores from listeners.
+	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
 		panic(err)
 	}
 
@@ -374,7 +369,7 @@ func (app *ArkApp) RunPriceFeed(ctx context.Context) error {
 // here: the start command's errgroup cancels it before app cleanup runs.
 func (app *ArkApp) Close() error {
 	app.closeOnce.Do(func() {
-		app.closeErr = app.App.Close()
+		app.closeErr = app.mempoolHandler.Close()
 	})
 
 	return app.closeErr

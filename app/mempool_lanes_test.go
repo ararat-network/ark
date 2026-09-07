@@ -1,6 +1,7 @@
 package app_test
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
@@ -8,32 +9,33 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
 
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
-	"github.com/ararat-network/ark/abci/lanes"
 	"github.com/ararat-network/ark/app"
+	"github.com/ararat-network/ark/app/mempool"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
 // TestLaneMempoolOrdersCommitteeAndGovernanceFirst proves the wired mempool
 // drains the priority lane before any normal-lane fee, and fee order within a
-// lane, using real signed transactions. Block assembly from this order is the
-// SDK default proposal handler's covered behaviour.
+// lane, using real signed transactions. This checks the SDK index exposed by
+// Pool.Select; proposal assembly separately applies bounded lane service.
 func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
-	mp, ok := arkApp.Mempool().(*mempool.PriorityNonceMempool[lanes.Priority])
+	mp, ok := arkApp.Mempool().(*mempool.Pool)
 	require.True(t, ok, "BaseApp must be wired with the lane mempool")
 
 	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: arkApp.LastBlockHeight()})
@@ -72,7 +74,7 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	// assignment reads the context priority, not the ante-reported gas.
 	require.NoError(t, mp.Insert(ctx.WithPriority(1_000_000), richSend))
 	require.NoError(t, mp.Insert(ctx.WithPriority(10), poorSend))
-	require.NoError(t, mp.Insert(ctx.WithPriority(0), vote))
+	require.NoError(t, mp.Insert(mempool.WithLane(ctx.WithPriority(0), mempool.LaneGovernance), vote))
 
 	var order []sdk.Msg
 	for it := mp.Select(ctx, nil); it != nil; it = it.Next() {
@@ -89,11 +91,7 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	require.Equal(t, poorAddr, second.FromAddress)
 }
 
-// TestMempoolSizingFollowsAppConfig covers the three app.toml states. The
-// negative case is the load-bearing one: a disabled pool must stay a
-// NoOpMempool, because the default proposal handler falls back to CometBFT's
-// FIFO transactions for that type alone — a zero-capacity lane pool would
-// propose empty blocks.
+// Capacity must never disable application proposal verification.
 func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 	newApp := func(t *testing.T, maxTxs any) *app.ArkApp {
 		t.Helper()
@@ -107,20 +105,22 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 	}
 
 	t.Run("absent key keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.PriorityNonceMempool[lanes.Priority]{}, newApp(t, nil).Mempool())
+		require.IsType(t, &mempool.Pool{}, newApp(t, nil).Mempool())
 	})
 
 	t.Run("configured cap keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.PriorityNonceMempool[lanes.Priority]{}, newApp(t, 20000).Mempool())
+		require.IsType(t, &mempool.Pool{}, newApp(t, 20000).Mempool())
 	})
 
-	t.Run("zero means unbounded and keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.PriorityNonceMempool[lanes.Priority]{}, newApp(t, 0).Mempool())
+	t.Run("zero selects the bounded default and keeps the lanes on", func(t *testing.T) {
+		require.IsType(t, &mempool.Pool{}, newApp(t, 0).Mempool())
 	})
 
-	t.Run("negative disables the pool without stranding the proposer", func(t *testing.T) {
-		require.Equal(t, mempool.NoOpMempool{}, newApp(t, -1).Mempool())
-	})
+	for _, value := range []any{-1, -100, "bad", 1.5} {
+		t.Run(fmt.Sprint(value), func(t *testing.T) {
+			require.Panics(t, func() { newApp(t, value) })
+		})
+	}
 }
 
 // TestPriorityMsgURLsCoverCommitteeSurface pins the lane list to the
@@ -147,5 +147,18 @@ func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
 		if strings.Contains(url, ".MsgCommittee") || strings.HasSuffix(url, ".MsgEmergencySuspendAsset") {
 			require.Contains(t, priority, url, "committee message missing from the priority lane: %s", url)
 		}
+	}
+}
+
+func TestPoolCapacityNeverDisablesProposalVerification(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
+	for _, capacity := range []int{0, 1, mempool.DefaultMaxTx} {
+		t.Run(fmt.Sprint(capacity), func(t *testing.T) {
+			handler := baseapp.NewDefaultProposalHandler(mempool.NewPool(capacity, arkApp.GetTxConfig().TxEncoder()), arkApp)
+			response, err := handler.ProcessProposalHandler()(ctx, &cmtabci.RequestProcessProposal{Txs: [][]byte{[]byte("malformed transaction")}})
+			require.NoError(t, err)
+			require.Equal(t, cmtabci.ResponseProcessProposal_REJECT, response.Status)
+		})
 	}
 }

@@ -147,6 +147,7 @@ func NewTestNetworkFixture() network.TestFixture {
 	arkApp := app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.NewAppOptionsWithFlagHome(dir))
 
 	appCtr := func(val network.ValidatorI) servertypes.Application {
+		val.GetCtx().Config.Mempool.Type = "app"
 		return app.NewArkApp(
 			val.GetCtx().Logger, dbm.NewMemDB(), true,
 			simtestutil.NewAppOptionsWithFlagHome(val.GetCtx().Config.RootDir),
