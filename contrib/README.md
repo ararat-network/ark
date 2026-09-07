@@ -10,11 +10,16 @@ tooling stays in `proto/scripts`; Go code stays in the module tree.
   with its own price-feed sidecar, plus the init script that generates their
   homes under `.testnets/`. Driven by `make localnet-start`, `localnet-stop`,
   and `localnet-liveness`. Node N exposes RPC on `26657+10N`, REST on
-  `1317+N`, gRPC on `9090+N`, and Prometheus metrics on `9464+N`. The init
+  `1317+N`, gRPC on `9090+N`, application metrics on `9464+N`, and CometBFT
+  metrics on `26660+10N`. The init
   script also seats a 3-of-4 multisig emergency committee in the asset
   module's mandate, keyring under `.testnets/committee`, and makes the last
-  validator a dark carrier (`broadcast = false`) so the runbook below has a
-  private submission path and public nodes to check for leaks. node0 also
+  validator a dark carrier on a separate Docker network. Its sole P2P path is
+  `carrier-sentry`; both disable transaction broadcast and PEX, so public
+  transaction gossip cannot fill the carrier. Carrier host ports bind only to
+  loopback. The rehearsal service joins both networks; production uses a VPN
+  and multiple dedicated sentries. `ARK_LOCALNET_DATA` can select a disposable
+  home directory instead of `.testnets/`. node0 also
   keeps snapshots every 20 blocks, and `sync0`, behind the `statesync`
   profile, is a non-validator that bootstraps from them: start it with
   `docker compose -f contrib/localnet/docker-compose.yml --profile multi
@@ -45,3 +50,12 @@ and asserts liveness and the runbook on every pull request;
 `docker-push.yml` publishes the image to ghcr on releases and nightly.
 
 Planned addition: `audits/` for third-party reports.
+
+A bounded saturation rehearsal is available on a disposable four-validator
+network: `make localnet-start PUBLIC_MEMPOOL_SIZE=32`, wait for
+`make localnet-liveness`, then run `make localnet-saturation`. It temporarily
+pauses two validators, fills node0's public pool with fee-paying transactions,
+checks overflow rejection and an empty carrier pool, submits the emergency
+transaction privately, then resumes consensus and verifies inclusion. This
+tests gossip isolation and admission under a full public pool; it is not a
+throughput benchmark or proof against sustained qualified spam.

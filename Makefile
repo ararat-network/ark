@@ -160,6 +160,9 @@ proto-update-deps:
 # services, so any other count has no containers to land on. node1..3 and
 # their sidecars sit behind the "multi" profile.
 VALIDATORS ?= 4
+PUBLIC_MEMPOOL_SIZE ?= 5000
+ARK_LOCALNET_DATA ?= $(CURDIR)/.testnets
+export ARK_LOCALNET_DATA
 localnetImage=ark/arkd
 localnetCompose=$(DOCKER) compose -f contrib/localnet/docker-compose.yml
 localnetProfile=$(if $(filter 1,$(VALIDATORS)),,--profile multi)
@@ -176,8 +179,8 @@ localnet-build-env:
 # init wipes it from inside the container, and the mode lets the container's
 # uid write to it on a Linux host.
 localnet-init: localnet-check
-	@mkdir -p $(CURDIR)/.testnets && chmod 0777 $(CURDIR)/.testnets
-	$(DOCKER) run --rm -e VALIDATORS=$(VALIDATORS) -v $(CURDIR)/.testnets:/data \
+	@mkdir -p "$(ARK_LOCALNET_DATA)" && chmod 0777 "$(ARK_LOCALNET_DATA)"
+	$(DOCKER) run --rm -e VALIDATORS=$(VALIDATORS) -e PUBLIC_MEMPOOL_SIZE=$(PUBLIC_MEMPOOL_SIZE) -v "$(ARK_LOCALNET_DATA):/data" \
 		-v $(CURDIR)/contrib/localnet/init.sh:/init.sh:ro \
 		--entrypoint sh $(localnetImage) /init.sh
 
@@ -190,7 +193,7 @@ localnet-start: localnet-stop localnet-build-env localnet-init localnet-up
 # Every profile is named so their services come down too: a service in a
 # profile that is not enabled is not an orphan, and down would skip it.
 localnet-stop:
-	$(localnetCompose) --profile multi --profile statesync down --remove-orphans
+	$(localnetCompose) --profile multi --profile statesync --profile rehearsal down --remove-orphans
 
 # Wait for node0 to pass five blocks and hold an oracle exchange rate.
 localnet-liveness:
@@ -201,9 +204,12 @@ localnet-liveness:
 # checks. Needs the four-validator shape: the carrier is the last node and
 # the leak check reads the others' mempools.
 localnet-runbook: localnet-check
-	$(DOCKER) run --rm --network ark-localnet -e VALIDATORS=$(VALIDATORS) -v $(CURDIR)/.testnets:/data \
-		-v $(CURDIR)/contrib/scripts/runbook-emergency-suspend.sh:/runbook.sh:ro \
-		--entrypoint sh $(localnetImage) /runbook.sh
+	@$(if $(filter 4,$(VALIDATORS)),:,$(error localnet-runbook needs VALIDATORS=4))
+	$(localnetCompose) --profile rehearsal run --rm runbook
+
+# On a disposable localnet initialised with PUBLIC_MEMPOOL_SIZE=32.
+localnet-saturation:
+	@contrib/scripts/localnet-saturation.sh
 
 # Bring up the state-sync client and hold it to a snapshot restore. Needs the
 # four-validator shape: sync0's light client wants two RPC servers, and the
@@ -222,4 +228,4 @@ upgrade-rehearsal:
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
-	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook localnet-statesync upgrade-rehearsal
+	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook localnet-saturation localnet-statesync upgrade-rehearsal

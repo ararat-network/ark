@@ -7,6 +7,7 @@ VALIDATORS=${VALIDATORS:-4}
 CHAIN_ID=${CHAIN_ID:-localark}
 STARTING_IP=${STARTING_IP:-192.168.10.2}
 DATA=${DATA:-/data}
+PUBLIC_MEMPOOL_SIZE=${PUBLIC_MEMPOOL_SIZE:-5000}
 # The last validator is the dark carrier the emergency runbook submits through.
 CARRIER=$((VALIDATORS - 1))
 
@@ -36,12 +37,22 @@ while [ "$i" -lt "$VALIDATORS" ]; do
     -e '/^\[grpc\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9090"|' \
     -e '/^\[pricefeed\]/,/^\[/ s|^enabled = .*|enabled = "true"|' \
     -e '/^\[pricefeed\]/,/^\[/ s|^sidecar_addresses = .*|sidecar_addresses = ["pricefeed'"$i"':8080"]|' \
+    -e '/^\[pricefeed\.tls\]/,/^\[/ s|^mode = .*|mode = "plaintext"|' \
+    -e '/^\[prometheus\]/,/^\[/ s|^enabled = .*|enabled = true|' \
+    -e '/^\[prometheus\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9464"|' \
     "$app"
+
+  if [ "$i" -lt "$CARRIER" ]; then
+    sed -i '/^\[mempool\]/,/^\[/ s|^max-txs = .*|max-txs = '"$PUBLIC_MEMPOOL_SIZE"'|' "$app"
+  fi
 
   # Sidecar runtime config, polling this node for the feed registry.
   cfg="$DATA/node$i/pricefeed/pricefeed.toml"
   pricefeed init --config "$cfg"
   sed -i '/^\[client\]/,/^\[/ s|^addresses = .*|addresses = ["node'"$i"':9090"]|' "$cfg"
+
+  # Container-to-container transport is explicitly plaintext on this localnet.
+  sed -i '/^\[client\.tls\]/,/^\[/ s|^mode = .*|mode = "plaintext"|' "$cfg"
 
   i=$((i + 1))
 done
@@ -51,12 +62,6 @@ done
 # normally do this; on a localnet node0 is the only full node there is.
 sed -i '/^\[state-sync\]/,/^\[/ {s|^snapshot-interval = .*|snapshot-interval = 20|;s|^snapshot-keep-recent = .*|snapshot-keep-recent = 3|}' \
   "$DATA/node0/arkd/config/app.toml"
-
-# Dark carrier (runbook Variant A): accepts transactions over RPC but relays
-# them to no peer, so a committee transaction first appears in a block it
-# proposes. Inbound gossip is unaffected.
-sed -i '/^\[mempool\]/,/^\[/ s|^broadcast = .*|broadcast = false|' \
-  "$DATA/node$CARRIER/arkd/config/config.toml"
 
 # Emergency committee: a 3-of-4 legacy amino multisig of fresh member keys,
 # seated in the asset module's mandate from height 1 and funded for fees.
@@ -85,5 +90,59 @@ while [ "$i" -lt "$VALIDATORS" ]; do
   i=$((i + 1))
 done
 
+# Multi-validator rehearsal: the carrier has no public-network interface and
+# dials only its dedicated sentry. Both disable transaction broadcast. PEX is
+# off so peer discovery cannot recreate a public transaction path.
+if [ "$VALIDATORS" -gt 1 ]; then
+  sentry_home="$DATA/carrier-sentry/arkd"
+  arkd init carrier-sentry --chain-id "$CHAIN_ID" --home "$sentry_home" > /dev/null
+  cp "$genesis" "$sentry_home/config/genesis.json"
+  sentry_id=$(arkd comet show-node-id --home "$sentry_home")
+  carrier_home="$DATA/node$CARRIER/arkd"
+  carrier_id=$(arkd comet show-node-id --home "$carrier_home")
+  peers=""
+  i=0
+  while [ "$i" -lt "$CARRIER" ]; do
+    peer_id=$(arkd comet show-node-id --home "$DATA/node$i/arkd")
+    peers="${peers:+$peers,}$peer_id@node$i:26656"
+    i=$((i + 1))
+  done
+  # Keep the public validator mesh and replace only the carrier connection.
+  i=0
+  while [ "$i" -lt "$CARRIER" ]; do
+    public_peers="$sentry_id@carrier-sentry:26656"
+    j=0
+    while [ "$j" -lt "$CARRIER" ]; do
+      if [ "$j" -ne "$i" ]; then
+        peer_id=$(arkd comet show-node-id --home "$DATA/node$j/arkd")
+        public_peers="$public_peers,$peer_id@node$j:26656"
+      fi
+      j=$((j + 1))
+    done
+    sed -i \
+      -e '/^\[p2p\]/,/^\[/ s|^persistent_peers = .*|persistent_peers = "'"$public_peers"'"|' \
+      -e '/^\[p2p\]/,/^\[/ s|^pex = .*|pex = false|' \
+      "$DATA/node$i/arkd/config/config.toml"
+    i=$((i + 1))
+  done
+  sed -i \
+    -e '/^\[p2p\]/,/^\[/ s|^persistent_peers = .*|persistent_peers = "'"$sentry_id"'@carrier-sentry:26656"|' \
+    -e '/^\[p2p\]/,/^\[/ s|^pex = .*|pex = false|' \
+    -e '/^\[p2p\]/,/^\[/ s|^max_num_inbound_peers = .*|max_num_inbound_peers = 0|' \
+    -e '/^\[p2p\]/,/^\[/ s|^external_address = .*|external_address = ""|' \
+    -e '/^\[mempool\]/,/^\[/ s|^broadcast = .*|broadcast = false|' \
+    "$carrier_home/config/config.toml"
+  sed -i \
+    -e '/^\[p2p\]/,/^\[/ s|^persistent_peers = .*|persistent_peers = "'"$peers"'"|' \
+    -e '/^\[p2p\]/,/^\[/ s|^private_peer_ids = .*|private_peer_ids = "'"$carrier_id"'"|' \
+    -e '/^\[p2p\]/,/^\[/ s|^addr_book_strict = .*|addr_book_strict = false|' \
+    -e '/^\[p2p\]/,/^\[/ s|^pex = .*|pex = false|' \
+    -e '/^\[mempool\]/,/^\[/ s|^broadcast = .*|broadcast = false|' \
+    "$sentry_home/config/config.toml"
+fi
+
 echo "wrote $VALIDATORS validator homes for chain-id $CHAIN_ID under $DATA"
-echo "dark carrier: node$CARRIER; emergency committee: $committee (3-of-4, keyring $committee_home)"
+if [ "$VALIDATORS" -gt 1 ]; then
+  echo "dark carrier: node$CARRIER via carrier-sentry"
+fi
+echo "emergency committee: $committee (3-of-4, keyring $committee_home)"

@@ -57,19 +57,14 @@ info=$(q auth account-info "$committee")
 account_number=$(printf '%s' "$info" | jq -r '.info.account_number // "0"')
 sequence=$(printf '%s' "$info" | jq -r '.info.sequence // "0"')
 
-# The fee floor is the larger of the carrier's node-local minimum-gas-prices
-# and the chain's live base fee for NOAH from the Treasury gas-price sheet,
-# both in anoah per gas. Integer parts plus one over-approximate the decimal
-# prices, and the real fee carries a 10% margin because the controller can
-# move the base fee between the query and CheckTx.
-node_floor=$(sed -n 's/^minimum-gas-prices = "\([0-9]*\)[.0-9]*anoah"/\1/p' "$DATA/$CARRIER/arkd/config/app.toml")
+# Treasury's live consensus price is the fee floor; Ark does not consult
+# node-local minimum-gas-prices. Round upward and allow controller movement.
 chain_price=$(q treasury gas-price anoah | jq -r '.gas_price.gas_price')
-chain_floor=$(( ${chain_price%%.*} + 1 ))
-floor=$chain_floor
-[ "${node_floor:-0}" -le "$floor" ] || floor=$(( node_floor + 1 ))
+floor=$(( ${chain_price%%.*} + 1 ))
 fees="$(( floor * GAS * 11 / 10 ))anoah"
-subfloor_fees="$(( floor * GAS / 2 ))anoah"
-echo "account_number=$account_number sequence=$sequence floor=${floor}anoah/gas (node ${node_floor:-0}, chain $chain_price) fees=$fees"
+# Zero is strictly below the positive Treasury floor, without decimal rounding.
+subfloor_fees="0anoah"
+echo "account_number=$account_number sequence=$sequence chain_price=${chain_price}anoah/gas fees=$fees"
 
 # ceremony <fees> <out>: unsigned tx, three offline member signatures, assembly.
 ceremony() {
@@ -90,7 +85,8 @@ ceremony() {
 }
 
 broadcast() {
-  arkd tx broadcast "$1" --broadcast-mode sync --node "$CARRIER_RPC" --output json 2>&1 || true
+  result=$(arkd tx broadcast "$1" --broadcast-mode sync --node "$CARRIER_RPC" --output json 2> "$WORK/broadcast.err" || true)
+  if [ -n "$result" ]; then printf '%s\n' "$result"; else cat "$WORK/broadcast.err"; fi
 }
 
 step "sub-floor fee is rejected at CheckTx"
@@ -98,6 +94,9 @@ ceremony "$subfloor_fees" "$WORK/subfloor.json"
 resp=$(broadcast "$WORK/subfloor.json")
 code=$(printf '%s' "$resp" | jq -r '.code // empty' 2>/dev/null || true)
 [ -n "$code" ] && [ "$code" != "0" ] || fail "sub-floor transaction was not rejected: $resp"
+# SDK ErrInsufficientFee is codespace sdk, code 13; raw logs may be omitted.
+printf '%s' "$resp" | jq -e '.codespace == "sdk" and .code == 13' > /dev/null \
+  || fail "sub-floor rejection was not a fee failure: $resp"
 echo "rejected with code $code"
 
 step "signing ceremony"
