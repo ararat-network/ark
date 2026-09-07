@@ -17,6 +17,10 @@ type aggregationResult struct {
 	// functioningBlock is true when participating power reached the attendance
 	// threshold, making the block eligible for every commit validator.
 	functioningBlock bool
+	// participatingPower and totalPower are what the functioning check
+	// compared, kept for telemetry. totalPower is zero for a powerless commit.
+	participatingPower int64
+	totalPower         int64
 }
 
 // validatorScore directs oracle rewards and attendance accounting to a validator.
@@ -53,6 +57,7 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 			rewardWeight: math.ZeroInt(),
 		}
 	}
+	result.totalPower = totalPower
 	if len(targetDenoms) == 0 {
 		// No targets means no vote can ever carry a valid rate, so no validator
 		// is ever marked participated: the block is never functioning, and
@@ -98,6 +103,7 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 			participatingPower += vote.Validator.Power
 		}
 	}
+	result.participatingPower = participatingPower
 	// A powerless commit never prices targets and is never functioning. This
 	// return sits after the participation pass so zero-power reporters still
 	// carry their participated flags.

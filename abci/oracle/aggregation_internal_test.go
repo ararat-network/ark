@@ -27,11 +27,31 @@ func TestAggregateOracleVotesWithNoTargetsIsNotFunctioning(t *testing.T) {
 
 	require.Empty(t, result.prices)
 	require.False(t, result.functioningBlock)
+	require.Equal(t, int64(30), result.totalPower)
+	require.Zero(t, result.participatingPower)
 	require.Len(t, result.scores, len(votes))
 	for _, score := range result.scores {
 		require.True(t, score.rewardWeight.IsZero())
 		require.False(t, score.participated)
 	}
+}
+
+func TestAggregateOracleVotesReportsParticipatingPower(t *testing.T) {
+	votes := []Vote{
+		{Validator: cmtabci.Validator{Address: []byte("validator1"), Power: 10}, Rates: []VoteRate{{TargetIndex: 0, Value: math.LegacyOneDec()}}},
+		{Validator: cmtabci.Validator{Address: []byte("validator2"), Power: 20}},
+		{Validator: cmtabci.Validator{Address: []byte("validator3"), Power: 5}, Rates: []VoteRate{{TargetIndex: 0, Value: math.LegacyZeroDec()}}},
+	}
+
+	result := aggregateOracleVotes(votes, oracletypes.DefaultParams(), []string{"ausd"})
+
+	// One positive rate meets the floor for a single target; an omission and
+	// an abstention do not.
+	require.Equal(t, int64(35), result.totalPower)
+	require.Equal(t, int64(10), result.participatingPower)
+	require.True(t, result.scores[0].participated)
+	require.False(t, result.scores[1].participated)
+	require.False(t, result.scores[2].participated)
 }
 
 func TestBallotAdd(t *testing.T) {

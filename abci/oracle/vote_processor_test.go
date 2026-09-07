@@ -32,7 +32,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 		req             *cmtabci.RequestFinalizeBlock
 		setup           func(*testing.T, *abcitestutil.MockOracleKeeper) [][]byte
 		expectErr       bool
-		expectedPrices  map[string]math.LegacyDec
 		expectedErrorIs error
 		expectedCause   error
 	}{
@@ -103,9 +102,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(1), true, true).Return(nil)
 				return [][]byte{commitBz}
 			},
-			expectedPrices: map[string]math.LegacyDec{
-				"ausd": math.LegacyNewDec(100),
-			},
 		},
 		{
 			name: "failed quorum target is unpriced without costing attendance",
@@ -147,9 +143,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.NewInt(10), true, true).Return(nil)
 				return [][]byte{commitBz}
 			},
-			expectedPrices: map[string]math.LegacyDec{
-				"ausd": math.LegacyNewDec(100),
-			},
 		},
 		{
 			name: "invalid and empty reports leave the block non-functioning",
@@ -187,7 +180,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val3, math.ZeroInt(), false, true).Return(nil)
 				return [][]byte{commitBz}
 			},
-			expectedPrices: nil,
 		},
 		{
 			name: "invalid payload is graded eligible without participation",
@@ -225,9 +217,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 				keeper.EXPECT().RecordVoteAccounting(gomock.Any(), val2, math.ZeroInt(), true, false).Return(nil)
 				return [][]byte{commitBz}
 			},
-			expectedPrices: map[string]math.LegacyDec{
-				"ausd": math.LegacyNewDec(100),
-			},
 		},
 	}
 
@@ -239,7 +228,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				tc.req.Txs = tc.setup(t, keeper)
 			}
 			// Finalise mode also exercises the vote-report telemetry path.
-			prices, err := oracle.ProcessVoteExtensions(
+			err := oracle.ProcessVoteExtensions(
 				abcitestutil.NewSDKContext(3, 0, sdk.ExecModeFinalize),
 				keeper,
 				tc.req,
@@ -256,7 +245,6 @@ func TestProcessVoteExtensions(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedPrices, prices)
 		})
 	}
 }

@@ -5,8 +5,6 @@ import (
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
-	"cosmossdk.io/math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
@@ -14,18 +12,17 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// ProcessVoteExtensions derives aggregate prices from vote extensions.
-// If a price exists for an asset, it is written to state. Successfully written
-// prices are returned for telemetry.
+// ProcessVoteExtensions derives aggregate prices from vote extensions, writes
+// available prices to state, and records validator rewards and attendance.
 func ProcessVoteExtensions(
 	ctx sdk.Context,
 	oracleKeeper abcitypes.OracleKeeper,
 	req *cmtabci.RequestFinalizeBlock,
-) (map[string]math.LegacyDec, error) {
+) error {
 	voteHeight := req.Height - 1
 	feeds, err := oracleKeeper.GetFeeds(ctx, voteHeight)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"%w: get feeds for height %d: %w",
 			abcitypes.ErrOracleKeeper,
 			voteHeight,
@@ -38,13 +35,13 @@ func ProcessVoteExtensions(
 	expectedVotes := len(req.DecidedLastCommit.Votes)
 	votes, err := GetOracleVotes(req.Txs, feeds, expectedVotes)
 	if err != nil {
-		return nil, fmt.Errorf("get oracle votes for block %d: %w", req.Height, err)
+		return fmt.Errorf("get oracle votes for block %d: %w", req.Height, err)
 	}
 	recordVoteReportTelemetry(ctx, votes)
 
 	params, err := oracleKeeper.GetParams(ctx)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"%w: get oracle params for block %d: %w",
 			abcitypes.ErrOracleKeeper,
 			req.Height,
@@ -53,6 +50,7 @@ func ProcessVoteExtensions(
 	}
 	// Aggregate all oracle vote extensions into a single set of prices.
 	result := aggregateOracleVotes(votes, params, feeds.Denoms)
+	recordParticipationTelemetry(ctx, result)
 
 	for _, denom := range feeds.Denoms {
 		price, ok := result.prices[denom]
@@ -66,7 +64,7 @@ func ProcessVoteExtensions(
 			BlockHeight:    uint64(ctx.BlockHeight()),
 		}
 		if err := oracleKeeper.SetExchangeRateWithEvent(ctx, exchangeRate); err != nil {
-			return nil, fmt.Errorf(
+			return fmt.Errorf(
 				"%w: set exchange rate for %s: %w",
 				abcitypes.ErrOracleKeeper,
 				denom,
@@ -84,7 +82,7 @@ func ProcessVoteExtensions(
 			result.functioningBlock,
 			score.participated,
 		); err != nil {
-			return nil, fmt.Errorf(
+			return fmt.Errorf(
 				"%w: record vote accounting for %s: %w",
 				abcitypes.ErrOracleKeeper,
 				score.recipient.String(),
@@ -93,7 +91,7 @@ func ProcessVoteExtensions(
 		}
 	}
 
-	return result.prices, nil
+	return nil
 }
 
 // recordVoteReportTelemetry classifies decoded reports for operators, keeping
@@ -124,4 +122,13 @@ func recordVoteReportTelemetry(ctx sdk.Context, votes []Vote) {
 		}
 	}
 	oraclemetrics.CountVoteReports(valid, empty, invalid)
+}
+
+// recordParticipationTelemetry exports the block's attendance verdict for
+// operators. Telemetry only, and only from the canonical finalise execution.
+func recordParticipationTelemetry(ctx sdk.Context, result aggregationResult) {
+	if ctx.ExecMode() != sdk.ExecModeFinalize {
+		return
+	}
+	oraclemetrics.RecordBlockParticipation(result.participatingPower, result.totalPower, result.functioningBlock)
 }

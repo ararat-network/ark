@@ -14,7 +14,6 @@ var (
 
 	methodLatency metric.Float64Histogram
 	requests      metric.Int64Counter
-	messageSize   metric.Int64Histogram
 )
 
 func init() {
@@ -31,15 +30,6 @@ func init() {
 	requests, err = meter.Int64Counter(
 		"ark.abci.requests",
 		metric.WithDescription("Number of ABCI++ requests"),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	messageSize, err = meter.Int64Histogram(
-		"ark.abci.message.size",
-		metric.WithDescription("Size of oracle ABCI messages"),
-		metric.WithUnit("By"),
 	)
 	if err != nil {
 		panic(err)
@@ -68,14 +58,6 @@ func addRequest(method Method, status Status) {
 func RecordLatencyAndStatus(latency time.Duration, status Status, method Method) {
 	observeMethodLatency(method, latency)
 	addRequest(method, status)
-}
-
-func ObserveMessageSize(msg MessageType, size int) {
-	messageSize.Record(
-		context.Background(),
-		int64(size),
-		metric.WithAttributes(attribute.String("message_type", msg.String())),
-	)
 }
 
 func durationMillis(duration time.Duration) float64 {

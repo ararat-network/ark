@@ -46,8 +46,6 @@ func TestTypesString(t *testing.T) {
 		{name: "extend vote", got: metrics.ExtendVote.String(), want: "extend_vote"},
 		{name: "verify vote extension", got: metrics.VerifyVoteExtension.String(), want: "verify_vote_extension"},
 		{name: "pre block", got: metrics.PreBlock.String(), want: "pre_blocker"},
-		{name: "extended commit", got: metrics.ExtendedCommit.String(), want: "extended_commit"},
-		{name: "vote extension", got: metrics.VoteExtension.String(), want: "vote_extension"},
 	}
 
 	for _, tt := range tests {

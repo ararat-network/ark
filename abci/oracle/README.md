@@ -200,7 +200,7 @@ algorithm or capacity are measured together.
 
 ## Price Application
 
-`ProcessVoteExtensions` coordinates the preblock oracle write and returns the consensus prices applied to state:
+`ProcessVoteExtensions` coordinates the preblock oracle writes and returns only an error:
 
 1. Load the feed epoch for the previous height.
 2. Decode and validate proposal vote data with `GetOracleVotes` against that epoch.

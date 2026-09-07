@@ -7,14 +7,11 @@ import (
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
-	"cosmossdk.io/math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	abcioracle "github.com/ararat-network/ark/abci/oracle"
-	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
 	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/abci/voteextension"
 )
@@ -39,69 +36,67 @@ func NewHandler(oracleKeeper abcitypes.OracleKeeper) *Handler {
 func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 	return func(ctx sdk.Context, req *cmtabci.RequestFinalizeBlock) (response *sdk.ResponsePreBlock, err error) {
 		start := time.Now()
-		var (
-			prices                 map[string]math.LegacyDec
-			wrappedPreBlockLatency time.Duration
-		)
+		completed := false
+		var wrappedPreBlockLatency time.Duration
 		defer func() {
 			// only measure latency in Finalise, excluding the wrapped module
 			// manager preblockers
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
 				latency := time.Since(start) - wrappedPreBlockLatency
-				abcimetrics.RecordLatencyAndStatus(latency, preblockStatus(err), abcimetrics.PreBlock)
-
-				// Record prices only if they were written successfully.
-				if err == nil && prices != nil {
-					for denom, price := range prices {
-						floatPrice, _ := price.Float64()
-						oraclemetrics.ObservePriceForTicker(denom, floatPrice)
-					}
+				status := preblockStatus(err)
+				if !completed {
+					status = abcimetrics.StatusPanic
 				}
+				abcimetrics.RecordLatencyAndStatus(latency, status, abcimetrics.PreBlock)
 			}
 		}()
 
-		if req == nil {
-			return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.PreBlock)
-		}
-
-		// call module manager's PreBlocker first in case there is changes made on upgrades
-		// that can modify state and lead to serialisation/deserialisation issues
-		wrappedStart := time.Now()
-		response, err = mm.PreBlock(ctx)
-		wrappedPreBlockLatency = time.Since(wrappedStart)
-		if err != nil {
-			return response, fmt.Errorf("%w for %s: %w", abcitypes.ErrWrappedHandler, abcimetrics.PreBlock, err)
-		}
-
-		if voteextension.VoteExtensionsAvailable(ctx) {
-			// Decode vote extensions and apply prices to state. This must run
-			// before AdvanceFeeds: the injected votes were signed for height
-			// req.Height-1 and validate against the feed epoch
-			// AtHeight(req.Height-1), which an advance due at req.Height folds
-			// away. Advancing first would reject every report with a version
-			// mismatch exactly at an activation height. This ordering is a
-			// consensus invariant, not an implementation detail.
-			prices, err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, req)
-			if err != nil {
-				return response, err
+		response, err = func() (response *sdk.ResponsePreBlock, err error) {
+			if req == nil {
+				return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.PreBlock)
 			}
-		}
 
-		err = h.oracleKeeper.AdvanceFeeds(ctx)
-		if err != nil {
-			return response, fmt.Errorf(
-				"%w: advance feeds for height %d: %w",
-				abcitypes.ErrOracleKeeper,
-				req.Height,
-				err,
-			)
-		}
+			// call module manager's PreBlocker first in case there is changes made on upgrades
+			// that can modify state and lead to serialisation/deserialisation issues
+			wrappedStart := time.Now()
+			response, err = mm.PreBlock(ctx)
+			wrappedPreBlockLatency = time.Since(wrappedStart)
+			if err != nil {
+				return response, fmt.Errorf("%w for %s: %w", abcitypes.ErrWrappedHandler, abcimetrics.PreBlock, err)
+			}
 
-		// Prices and feeds for the block are final here. Consumers that derive
-		// block-local state from them — Treasury's liability snapshot among
-		// them — do so in their own BeginBlocker, which the ABCI lifecycle
-		// already sequences after every PreBlocker.
-		return response, nil
+			if voteextension.VoteExtensionsAvailable(ctx) {
+				// Decode vote extensions and apply prices to state. This must run
+				// before AdvanceFeeds: the injected votes were signed for height
+				// req.Height-1 and validate against the feed epoch
+				// AtHeight(req.Height-1), which an advance due at req.Height folds
+				// away. Advancing first would reject every report with a version
+				// mismatch exactly at an activation height. This ordering is a
+				// consensus invariant, not an implementation detail.
+				err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, req)
+				if err != nil {
+					return response, err
+				}
+			}
+
+			err = h.oracleKeeper.AdvanceFeeds(ctx)
+			if err != nil {
+				return response, fmt.Errorf(
+					"%w: advance feeds for height %d: %w",
+					abcitypes.ErrOracleKeeper,
+					req.Height,
+					err,
+				)
+			}
+
+			// Prices and feeds for the block are final here. Consumers that derive
+			// block-local state from them — Treasury's liability snapshot among
+			// them — do so in their own BeginBlocker, which the ABCI lifecycle
+			// already sequences after every PreBlocker.
+			return response, nil
+		}()
+		completed = true
+		return response, err
 	}
 }
 

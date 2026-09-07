@@ -990,7 +990,7 @@ func processVoteExtensions(
 	require.NoError(t, err)
 
 	keeper := newRecordingOracleKeeper(params, voteTargets)
-	prices, err := oracle.ProcessVoteExtensions(
+	err = oracle.ProcessVoteExtensions(
 		abcitestutil.NewSDKContext(3, 0),
 		keeper,
 		&cmtabci.RequestFinalizeBlock{
@@ -1000,7 +1000,8 @@ func processVoteExtensions(
 		},
 	)
 
-	return keeper, prices, err
+	// Assert the prices actually written through the keeper.
+	return keeper, keeper.exchangeRate, err
 }
 
 type recordingOracleKeeper struct {

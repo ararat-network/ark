@@ -7,6 +7,7 @@ type Status string
 
 const (
 	StatusSuccess                  Status = "Success"
+	StatusRejected                 Status = "Rejected"
 	StatusFailure                  Status = "Failure"
 	StatusNilRequest               Status = "NilRequestError"
 	StatusWrappedHandler           Status = "WrappedHandlerError"
@@ -25,24 +26,6 @@ func (s Status) String() string {
 		return string(StatusFailure)
 	}
 	return string(s)
-}
-
-type MessageType int
-
-const (
-	ExtendedCommit MessageType = iota
-	VoteExtension
-)
-
-func (m MessageType) String() string {
-	switch m {
-	case ExtendedCommit:
-		return "extended_commit"
-	case VoteExtension:
-		return "vote_extension"
-	default:
-		return notImplemented
-	}
 }
 
 type Method int
