@@ -22,33 +22,31 @@ func TestClientValidate(t *testing.T) {
 		wantErr string
 	}{
 		{name: "plaintext", client: tlsconfig.Client{}},
-		{name: "ca only", client: tlsconfig.Client{CAFile: "ca.pem"}},
-		{name: "ca with server name", client: tlsconfig.Client{CAFile: "ca.pem", ServerName: "sidecar"}},
+		{name: "ca only", client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "ca.pem"}},
+		{name: "ca with server name", client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "ca.pem", ServerName: "sidecar"}},
 		{
 			name:   "ca with client certificate",
-			client: tlsconfig.Client{CAFile: "ca.pem", CertFile: "c.pem", KeyFile: "c.key"},
+			client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "ca.pem", CertFile: "c.pem", KeyFile: "c.key"},
 		},
 		{
 			name:    "cert without key",
-			client:  tlsconfig.Client{CAFile: "ca.pem", CertFile: "c.pem"},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "ca.pem", CertFile: "c.pem"},
 			wantErr: "set together",
 		},
 		{
 			name:    "key without cert",
-			client:  tlsconfig.Client{CAFile: "ca.pem", KeyFile: "c.key"},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "ca.pem", KeyFile: "c.key"},
 			wantErr: "set together",
 		},
 		{
-			name:    "certificate without ca",
-			client:  tlsconfig.Client{CertFile: "c.pem", KeyFile: "c.key"},
-			wantErr: "requires a ca file",
+			name:   "certificate without ca",
+			client: tlsconfig.Client{Mode: tlsconfig.TLS, CertFile: "c.pem", KeyFile: "c.key"},
 		},
 		{
-			name:    "server name without ca",
-			client:  tlsconfig.Client{ServerName: "sidecar"},
-			wantErr: "requires a ca file",
+			name:   "server name without ca",
+			client: tlsconfig.Client{Mode: tlsconfig.TLS, ServerName: "sidecar"},
 		},
-		{name: "blank ca is plaintext", client: tlsconfig.Client{CAFile: "  "}},
+		{name: "blank ca uses system roots", client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "  "}},
 	}
 
 	for _, tt := range tests {
@@ -70,16 +68,16 @@ func TestServerValidate(t *testing.T) {
 		wantErr string
 	}{
 		{name: "plaintext", server: tlsconfig.Server{}},
-		{name: "cert and key", server: tlsconfig.Server{CertFile: "s.pem", KeyFile: "s.key"}},
+		{name: "cert and key", server: tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: "s.pem", KeyFile: "s.key"}},
 		{
 			name:   "cert, key, and client ca",
-			server: tlsconfig.Server{CertFile: "s.pem", KeyFile: "s.key", ClientCAFile: "ca.pem"},
+			server: tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: "s.pem", KeyFile: "s.key", ClientCAFile: "ca.pem"},
 		},
-		{name: "cert without key", server: tlsconfig.Server{CertFile: "s.pem"}, wantErr: "set together"},
-		{name: "key without cert", server: tlsconfig.Server{KeyFile: "s.key"}, wantErr: "set together"},
+		{name: "cert without key", server: tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: "s.pem"}, wantErr: "set together"},
+		{name: "key without cert", server: tlsconfig.Server{Mode: tlsconfig.TLS, KeyFile: "s.key"}, wantErr: "set together"},
 		{
 			name:    "client ca without cert",
-			server:  tlsconfig.Server{ClientCAFile: "ca.pem"},
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, ClientCAFile: "ca.pem"},
 			wantErr: "requires a cert file",
 		},
 	}
@@ -105,23 +103,23 @@ func TestClientLoad(t *testing.T) {
 	t.Run("plaintext loads to nil", func(t *testing.T) {
 		cfg, err := tlsconfig.Client{}.Load()
 		require.NoError(t, err)
-		require.Nil(t, cfg)
+		require.Nil(t, cfg.Config)
 	})
 
 	t.Run("ca and server name", func(t *testing.T) {
-		cfg, err := tlsconfig.Client{CAFile: ca.CAFile, ServerName: " sidecar "}.Load()
+		cfg, err := tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, ServerName: " sidecar "}.Load()
 		require.NoError(t, err)
-		require.NotNil(t, cfg.RootCAs)
-		require.Equal(t, "sidecar", cfg.ServerName)
-		require.Equal(t, uint16(tls.VersionTLS13), cfg.MinVersion)
-		require.Nil(t, cfg.GetClientCertificate)
+		require.NotNil(t, cfg.Config.RootCAs)
+		require.Equal(t, "sidecar", cfg.Config.ServerName)
+		require.Equal(t, uint16(tls.VersionTLS13), cfg.Config.MinVersion)
+		require.Nil(t, cfg.Config.GetClientCertificate)
 	})
 
 	t.Run("client certificate", func(t *testing.T) {
-		cfg, err := tlsconfig.Client{CAFile: ca.CAFile, CertFile: certFile, KeyFile: keyFile}.Load()
+		cfg, err := tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, CertFile: certFile, KeyFile: keyFile}.Load()
 		require.NoError(t, err)
-		require.NotNil(t, cfg.GetClientCertificate)
-		cert, err := cfg.GetClientCertificate(nil)
+		require.NotNil(t, cfg.Config.GetClientCertificate)
+		cert, err := cfg.Config.GetClientCertificate(nil)
 		require.NoError(t, err)
 		require.Equal(t, "client", cert.Leaf.Subject.CommonName)
 	})
@@ -133,22 +131,22 @@ func TestClientLoad(t *testing.T) {
 	}{
 		{
 			name:    "invalid shape",
-			client:  tlsconfig.Client{CertFile: certFile, KeyFile: keyFile},
-			wantErr: "requires a ca file",
+			client:  tlsconfig.Client{Mode: tlsconfig.Local, CertFile: certFile, KeyFile: keyFile},
+			wantErr: "require mode tls",
 		},
 		{
 			name:    "missing ca file",
-			client:  tlsconfig.Client{CAFile: filepath.Join(t.TempDir(), "absent.pem")},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: filepath.Join(t.TempDir(), "absent.pem")},
 			wantErr: "tls ca file",
 		},
 		{
 			name:    "ca file without certificates",
-			client:  tlsconfig.Client{CAFile: emptyPEM},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: emptyPEM},
 			wantErr: "no certificates in",
 		},
 		{
 			name:    "unreadable certificate",
-			client:  tlsconfig.Client{CAFile: ca.CAFile, CertFile: emptyPEM, KeyFile: keyFile},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, CertFile: emptyPEM, KeyFile: keyFile},
 			wantErr: "tls cert file",
 		},
 	}
@@ -168,24 +166,24 @@ func TestServerLoad(t *testing.T) {
 	t.Run("plaintext loads to nil", func(t *testing.T) {
 		cfg, err := tlsconfig.Server{}.Load()
 		require.NoError(t, err)
-		require.Nil(t, cfg)
+		require.Nil(t, cfg.Config)
 	})
 
 	t.Run("certificate", func(t *testing.T) {
-		cfg, err := tlsconfig.Server{CertFile: certFile, KeyFile: keyFile}.Load()
+		cfg, err := tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: certFile, KeyFile: keyFile}.Load()
 		require.NoError(t, err)
-		cert, err := cfg.GetCertificate(nil)
+		cert, err := cfg.Config.GetCertificate(nil)
 		require.NoError(t, err)
 		require.Equal(t, "server", cert.Leaf.Subject.CommonName)
-		require.Equal(t, uint16(tls.VersionTLS13), cfg.MinVersion)
-		require.Equal(t, tls.NoClientCert, cfg.ClientAuth)
+		require.Equal(t, uint16(tls.VersionTLS13), cfg.Config.MinVersion)
+		require.Equal(t, tls.NoClientCert, cfg.Config.ClientAuth)
 	})
 
 	t.Run("client ca requires client certificates", func(t *testing.T) {
-		cfg, err := tlsconfig.Server{CertFile: certFile, KeyFile: keyFile, ClientCAFile: ca.CAFile}.Load()
+		cfg, err := tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: certFile, KeyFile: keyFile, ClientCAFile: ca.CAFile}.Load()
 		require.NoError(t, err)
-		require.NotNil(t, cfg.ClientCAs)
-		require.Equal(t, tls.RequireAndVerifyClientCert, cfg.ClientAuth)
+		require.NotNil(t, cfg.Config.ClientCAs)
+		require.Equal(t, tls.RequireAndVerifyClientCert, cfg.Config.ClientAuth)
 	})
 
 	tests := []struct {
@@ -193,15 +191,16 @@ func TestServerLoad(t *testing.T) {
 		server  tlsconfig.Server
 		wantErr string
 	}{
-		{name: "invalid shape", server: tlsconfig.Server{KeyFile: keyFile}, wantErr: "set together"},
+		{name: "invalid shape", server: tlsconfig.Server{Mode: tlsconfig.TLS, KeyFile: keyFile}, wantErr: "set together"},
 		{
 			name:    "missing key file",
-			server:  tlsconfig.Server{CertFile: certFile, KeyFile: filepath.Join(t.TempDir(), "absent.key")},
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: certFile, KeyFile: filepath.Join(t.TempDir(), "absent.key")},
 			wantErr: "tls cert file",
 		},
 		{
 			name: "missing client ca file",
 			server: tlsconfig.Server{
+				Mode:         tlsconfig.TLS,
 				CertFile:     certFile,
 				KeyFile:      keyFile,
 				ClientCAFile: filepath.Join(t.TempDir(), "absent.pem"),
@@ -223,10 +222,10 @@ func TestServerLoad(t *testing.T) {
 func TestKeyPairFollowsRotation(t *testing.T) {
 	ca := tlstestutil.NewAuthority(t)
 	certFile, keyFile := ca.Issue(t, "server", "localhost")
-	cfg, err := tlsconfig.Server{CertFile: certFile, KeyFile: keyFile}.Load()
+	cfg, err := tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: certFile, KeyFile: keyFile}.Load()
 	require.NoError(t, err)
 	served := func() string {
-		cert, err := cfg.GetCertificate(nil)
+		cert, err := cfg.Config.GetCertificate(nil)
 		require.NoError(t, err)
 		return cert.Leaf.Subject.CommonName
 	}
@@ -236,16 +235,22 @@ func TestKeyPairFollowsRotation(t *testing.T) {
 	at := time.Now().Add(time.Hour)
 	copyFileAt(t, certFile, rotatedCert, at)
 	copyFileAt(t, keyFile, rotatedKey, at)
+	_, err = cfg.Reload()
+	require.NoError(t, err)
 	require.Equal(t, "rotated", served())
 
 	at = at.Add(time.Hour)
 	writeFileAt(t, certFile, []byte("not a certificate\n"), at)
+	_, err = cfg.Reload()
+	require.Error(t, err)
 	require.Equal(t, "rotated", served())
 
 	fixedCert, fixedKey := ca.Issue(t, "fixed", "localhost")
 	at = at.Add(time.Hour)
 	copyFileAt(t, certFile, fixedCert, at)
 	copyFileAt(t, keyFile, fixedKey, at)
+	_, err = cfg.Reload()
+	require.NoError(t, err)
 	require.Equal(t, "fixed", served())
 }
 
@@ -281,30 +286,36 @@ func TestHandshake(t *testing.T) {
 	}{
 		{
 			name:   "server certificate only",
-			server: tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey},
-			client: tlsconfig.Client{CAFile: ca.CAFile},
+			server: tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey},
+			client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile},
+		},
+		{
+			name:    "hostname mismatch",
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, ServerName: "wrong.example"},
+			wantErr: true,
 		},
 		{
 			name:    "client distrusts the server",
-			server:  tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey},
-			client:  tlsconfig.Client{CAFile: other.CAFile},
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: other.CAFile},
 			wantErr: true,
 		},
 		{
 			name:   "mutual",
-			server: tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
-			client: tlsconfig.Client{CAFile: ca.CAFile, CertFile: clientCert, KeyFile: clientKey},
+			server: tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
+			client: tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, CertFile: clientCert, KeyFile: clientKey},
 		},
 		{
 			name:    "server requires a certificate the client lacks",
-			server:  tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
-			client:  tlsconfig.Client{CAFile: ca.CAFile},
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile},
 			wantErr: true,
 		},
 		{
 			name:    "server distrusts the client",
-			server:  tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
-			client:  tlsconfig.Client{CAFile: ca.CAFile, CertFile: otherCert, KeyFile: otherKey},
+			server:  tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey, ClientCAFile: ca.CAFile},
+			client:  tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: ca.CAFile, CertFile: otherCert, KeyFile: otherKey},
 			wantErr: true,
 		},
 	}
@@ -316,7 +327,7 @@ func TestHandshake(t *testing.T) {
 			clientCfg, err := tt.client.Load()
 			require.NoError(t, err)
 
-			ln, err := tls.Listen("tcp", "127.0.0.1:0", serverCfg)
+			ln, err := tls.Listen("tcp", "127.0.0.1:0", serverCfg.Config)
 			require.NoError(t, err)
 			t.Cleanup(func() { _ = ln.Close() })
 			serverErr := make(chan error, 1)
@@ -330,7 +341,7 @@ func TestHandshake(t *testing.T) {
 				serverErr <- conn.(*tls.Conn).Handshake()
 			}()
 
-			conn, err := tls.Dial("tcp", ln.Addr().String(), clientCfg)
+			conn, err := tls.Dial("tcp", ln.Addr().String(), clientCfg.Config)
 			if err == nil {
 				err = conn.Handshake()
 				_ = conn.Close()
@@ -351,10 +362,10 @@ func TestHandshake(t *testing.T) {
 func TestHandshakeListenerRejectsPlaintext(t *testing.T) {
 	ca := tlstestutil.NewAuthority(t)
 	serverCert, serverKey := ca.Issue(t, "server", "127.0.0.1")
-	serverCfg, err := tlsconfig.Server{CertFile: serverCert, KeyFile: serverKey}.Load()
+	serverCfg, err := tlsconfig.Server{Mode: tlsconfig.TLS, CertFile: serverCert, KeyFile: serverKey}.Load()
 	require.NoError(t, err)
 
-	ln, err := tls.Listen("tcp", "127.0.0.1:0", serverCfg)
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", serverCfg.Config)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = ln.Close() })
 	go func() {

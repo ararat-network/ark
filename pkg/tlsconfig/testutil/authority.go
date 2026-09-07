@@ -31,6 +31,17 @@ type Authority struct {
 // NewAuthority creates a CA under t's temporary directory.
 func NewAuthority(t *testing.T) *Authority {
 	t.Helper()
+	return newAuthority(t, nil)
+}
+
+// Intermediate creates a CA signed by a, for tests that need a full chain.
+func (a *Authority) Intermediate(t *testing.T) *Authority {
+	t.Helper()
+	return newAuthority(t, a)
+}
+
+func newAuthority(t *testing.T, parent *Authority) *Authority {
+	t.Helper()
 
 	dir := t.TempDir()
 	key := newKey(t)
@@ -43,7 +54,14 @@ func NewAuthority(t *testing.T) *Authority {
 		BasicConstraintsValid: true,
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
 	}
-	der, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	issuer, signer := template, key
+	if parent != nil {
+		parent.serial++
+		template.SerialNumber = big.NewInt(parent.serial)
+		template.Subject.CommonName = "test intermediate ca"
+		issuer, signer = parent.cert, parent.key
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, issuer, &key.PublicKey, signer)
 	require.NoError(t, err)
 	cert, err := x509.ParseCertificate(der)
 	require.NoError(t, err)
@@ -57,6 +75,12 @@ func NewAuthority(t *testing.T) *Authority {
 // Issue signs a certificate for hosts, DNS names or IP addresses, usable for
 // either side of a handshake, and returns its PEM certificate and key files.
 func (a *Authority) Issue(t *testing.T, label string, hosts ...string) (certFile, keyFile string) {
+	t.Helper()
+	return a.IssueWith(t, label, nil, hosts...)
+}
+
+// IssueWith lets transport tests exercise certificate validity and role limits.
+func (a *Authority) IssueWith(t *testing.T, label string, mutate func(*x509.Certificate), hosts ...string) (certFile, keyFile string) {
 	t.Helper()
 
 	key := newKey(t)
@@ -75,6 +99,9 @@ func (a *Authority) Issue(t *testing.T, label string, hosts ...string) (certFile
 		} else {
 			template.DNSNames = append(template.DNSNames, host)
 		}
+	}
+	if mutate != nil {
+		mutate(template)
 	}
 	der, err := x509.CreateCertificate(rand.Reader, template, a.cert, &key.PublicKey, a.key)
 	require.NoError(t, err)
