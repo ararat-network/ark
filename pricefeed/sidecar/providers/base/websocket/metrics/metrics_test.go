@@ -26,7 +26,7 @@ func TestRecordWebSocketMetrics(t *testing.T) {
 	otel.SetMeterProvider(provider)
 
 	RecordConnectionEvent(context.Background(), "kraken", ConnectionEventHealthy)
-	RecordReconnect(context.Background(), "kraken")
+	RecordConnectionEvent(context.Background(), "kraken", ConnectionEventReconnect)
 	RecordParseError(context.Background(), "kraken")
 	RecordWriteError(context.Background(), "kraken", WriteOperationHeartbeat)
 
@@ -39,9 +39,9 @@ func TestRecordWebSocketMetrics(t *testing.T) {
 		"event":    ConnectionEventHealthy,
 	}))
 
-	reconnects := metricFamily(t, families, "ark_pricefeed_provider_websocket_reconnects_total")
-	require.Equal(t, float64(1), counterValue(t, reconnects, map[string]string{
+	require.Equal(t, float64(1), counterValue(t, connectionEvents, map[string]string{
 		"provider": "kraken",
+		"event":    ConnectionEventReconnect,
 	}))
 
 	parseErrors := metricFamily(t, families, "ark_pricefeed_provider_websocket_parse_errors_total")

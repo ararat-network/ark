@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"strconv"
 )
 
 // ErrorCode classifies provider failures for response handling and metrics.
@@ -27,6 +28,37 @@ const (
 	ErrorNoExistingPrice        ErrorCode = 16
 	ErrorTickerMetadataNotFound ErrorCode = 17
 )
+
+// String is the code's metric label: a stable snake_case name for a declared
+// code, the number itself for any other, such as an HTTP status the API
+// fetcher casts through.
+func (e ErrorCode) String() string {
+	if name, ok := errorCodeNames[e]; ok {
+		return name
+	}
+	return strconv.Itoa(int(e))
+}
+
+var errorCodeNames = map[ErrorCode]string{
+	OK:                          "ok",
+	ErrorRateLimitExceeded:      "rate_limit_exceeded",
+	ErrorUnknown:                "unknown",
+	ErrorUnknownPair:            "unknown_pair",
+	ErrorUnableToCreateURL:      "unable_to_create_url",
+	ErrorWebsocketStartFail:     "websocket_start_fail",
+	ErrorInvalidAPIChains:       "invalid_api_chains",
+	ErrorNoResponse:             "no_response",
+	ErrorInvalidResponse:        "invalid_response",
+	ErrorInvalidChainID:         "invalid_chain_id",
+	ErrorFailedToParsePrice:     "failed_to_parse_price",
+	ErrorInvalidWebSocketTopic:  "invalid_websocket_topic",
+	ErrorFailedToDecode:         "failed_to_decode",
+	ErrorAPIGeneral:             "api_general",
+	ErrorWebSocketGeneral:       "websocket_general",
+	ErrorGRPCGeneral:            "grpc_general",
+	ErrorNoExistingPrice:        "no_existing_price",
+	ErrorTickerMetadataNotFound: "ticker_metadata_not_found",
+}
 
 // Error returns the error representation of the ErrorCode.
 func (e ErrorCode) Error() error {

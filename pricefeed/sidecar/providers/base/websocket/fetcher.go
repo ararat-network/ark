@@ -130,7 +130,7 @@ func (f *Fetcher) runConnection(ctx context.Context, tickers []types.Ticker, res
 		}
 
 		if restarts > 0 {
-			metrics.RecordReconnect(ctx, f.config.Name)
+			metrics.RecordConnectionEvent(ctx, f.config.Name, metrics.ConnectionEventReconnect)
 			f.logger.Debug(
 				"restarting websocket connection",
 				"num_restarts", restarts,

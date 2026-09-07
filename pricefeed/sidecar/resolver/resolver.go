@@ -22,7 +22,9 @@ func ResolvePrices(
 	feeds []string,
 	now time.Time,
 ) types.Prices {
-	recordProviderPrices(ctx, providerPrices)
+	snapshot := sidecarmetrics.AggregationSnapshot{
+		Prices: make(map[string]float64), SampleCounts: make(map[string]int64),
+	}
 
 	medianPrices := make(types.Prices)
 	resolvedPairs := make(map[types.Pair]struct{})
@@ -41,6 +43,7 @@ func ResolvePrices(
 				resolvedPairs[pair] = struct{}{}
 
 				samples := providerSamples(providerPrices, pair)
+				snapshot.SampleCounts[pair.String()] = int64(len(samples))
 				if len(samples) == 0 {
 					bootstrapPrice, ok := cfg.bootstrapPrice(pair, now)
 					if !ok {
@@ -51,7 +54,6 @@ func ResolvePrices(
 					continue
 				}
 				medianPrices[pair] = calculateMedian(samples)
-				sidecarmetrics.RecordPairSampleCount(ctx, pair.String(), len(samples))
 			}
 
 			finalPrice, ok := resolveRoutePrice(medianPrices, route.Pairs)
@@ -59,8 +61,6 @@ func ResolvePrices(
 				continue
 			}
 			routePrices[output] = append(routePrices[output], finalPrice)
-			floatPrice, _ := finalPrice.Float64()
-			sidecarmetrics.RecordRoutePrice(ctx, output.String(), route.Name, floatPrice)
 		}
 	}
 
@@ -70,10 +70,11 @@ func ResolvePrices(
 			continue
 		}
 		finalPrices[pair] = calculateAverage(prices)
-		sidecarmetrics.RecordResolvedSourceCount(ctx, pair.String(), len(prices))
 	}
 
-	return recordFinalPrices(ctx, finalPrices)
+	prices := recordFinalPrices(&snapshot, finalPrices)
+	sidecarmetrics.PublishAggregationSnapshot(snapshot)
+	return prices
 }
 
 // bootstrapPrice returns an active configured price for pair. Config validation
@@ -125,19 +126,6 @@ func providerSamples(providerPrices map[string]types.Prices, pair types.Pair) []
 	return samples
 }
 
-func recordProviderPrices(ctx context.Context, providerPrices map[string]types.Prices) {
-	for provider, prices := range providerPrices {
-		for pair, price := range prices {
-			if !validPrice(price) {
-				continue
-			}
-
-			floatPrice, _ := price.Float64()
-			sidecarmetrics.RecordProviderPrice(ctx, provider, pair.String(), floatPrice)
-		}
-	}
-}
-
 // resolveRoutePrice multiplies normalised median prices for each route step.
 func resolveRoutePrice(prices types.Prices, steps []types.Pair) (*big.Float, bool) {
 	var finalPrice *big.Float
@@ -161,7 +149,7 @@ func resolveRoutePrice(prices types.Prices, steps []types.Pair) (*big.Float, boo
 
 // recordFinalPrices returns a defensive copy and records the aggregate-price
 // metric for each resolved pair.
-func recordFinalPrices(ctx context.Context, prices types.Prices) types.Prices {
+func recordFinalPrices(snapshot *sidecarmetrics.AggregationSnapshot, prices types.Prices) types.Prices {
 	finalPrices := make(types.Prices, len(prices))
 	for pair, price := range prices {
 		if !validPrice(price) {
@@ -172,7 +160,7 @@ func recordFinalPrices(ctx context.Context, prices types.Prices) types.Prices {
 		finalPrices[pair] = copied
 
 		floatPrice, _ := copied.Float64()
-		sidecarmetrics.RecordAggregatePrice(ctx, pair.String(), floatPrice)
+		snapshot.Prices[pair.String()] = floatPrice
 	}
 
 	return finalPrices

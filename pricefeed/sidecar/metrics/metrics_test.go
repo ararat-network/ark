@@ -2,6 +2,7 @@ package metrics_test
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,25 +26,20 @@ func TestRecordOracleMetrics(t *testing.T) {
 	})
 	otel.SetMeterProvider(provider)
 
-	metrics.RecordOracleTick(context.Background())
-	metrics.RecordProviderPrice(context.Background(), "kraken", "USD/NOAH", 1.23)
-	metrics.RecordAggregatePrice(context.Background(), "USD/NOAH", 1.25)
-	metrics.RecordPairSampleCount(context.Background(), "USD/NOAH", 2)
-	metrics.RecordResolvedSourceCount(context.Background(), "KRW/NOAH", 3)
-	metrics.RecordRoutePrice(context.Background(), "KRW/NOAH", "krw-usd-noah", 2000)
+	metrics.RecordTick(context.Background())
+	metrics.PublishAggregationSnapshot(metrics.AggregationSnapshot{
+		Prices:       map[string]float64{"USD/NOAH": 1.25},
+		SampleCounts: map[string]int64{"USD/NOAH": 2},
+	})
 	metrics.RecordMissingPrices(context.Background(), []string{"akrw"})
+	metrics.RecordSkippedSample(context.Background(), "kraken", "USD/NOAH", metrics.SkipReasonUnchanged)
+	metrics.RecordRPC(context.Background(), "/ark.pricefeed.v1.PriceFeed/Prices", "OK")
 
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
 	ticks := metricFamily(t, families, "ark_pricefeed_ticks_total")
 	require.Equal(t, float64(1), counterValue(t, ticks, nil))
-
-	providerPrices := metricFamily(t, families, "ark_pricefeed_provider_price")
-	require.Equal(t, float64(1.23), gaugeValue(t, providerPrices, map[string]string{
-		"provider": "kraken",
-		"pair":     "usd/noah",
-	}))
 
 	aggregatePrices := metricFamily(t, families, "ark_pricefeed_aggregate_price")
 	require.Equal(t, float64(1.25), gaugeValue(t, aggregatePrices, map[string]string{
@@ -55,23 +51,59 @@ func TestRecordOracleMetrics(t *testing.T) {
 		"pair": "usd/noah",
 	}))
 
-	resolvedSourceCounts := metricFamily(t, families, "ark_pricefeed_resolved_source_count")
-	require.Equal(t, float64(3), gaugeValue(t, resolvedSourceCounts, map[string]string{
-		"pair": "krw/noah",
-	}))
-
-	routePrices := metricFamily(t, families, "ark_pricefeed_route_price")
-	routePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "krw/noah",
-		"route": "krw-usd-noah",
-	})
-	require.Equal(t, float64(2000), routePrice.GetGauge().GetValue())
-	requireNoLabel(t, routePrice, "denom")
-
 	missingPrices := metricFamily(t, families, "ark_pricefeed_missing_prices_total")
 	require.Equal(t, float64(1), counterValue(t, missingPrices, map[string]string{
 		"denom": "akrw",
 	}))
+
+	skipped := metricFamily(t, families, "ark_pricefeed_skipped_samples_total")
+	require.Equal(t, float64(1), counterValue(t, skipped, map[string]string{
+		"provider": "kraken",
+		"pair":     "usd/noah",
+		"reason":   metrics.SkipReasonUnchanged,
+	}))
+
+	rpcRequests := metricFamily(t, families, "ark_pricefeed_rpc_requests_total")
+	require.Equal(t, float64(1), counterValue(t, rpcRequests, map[string]string{
+		"method": "/ark.pricefeed.v1.PriceFeed/Prices",
+		"code":   "OK",
+	}))
+	t.Run("publication owns data and collection is concurrent", func(t *testing.T) {
+		snapshot := metrics.AggregationSnapshot{Prices: map[string]float64{"USD/NOAH": 2}, SampleCounts: map[string]int64{"USD/NOAH": 1}}
+		metrics.PublishAggregationSnapshot(snapshot)
+		snapshot.Prices["USD/NOAH"] = 999
+		families, err := registry.Gather()
+		require.NoError(t, err)
+		require.Equal(t, 2.0, gaugeValue(t, metricFamily(t, families, "ark_pricefeed_aggregate_price"), map[string]string{"pair": "usd/noah"}))
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 100 {
+				metrics.PublishAggregationSnapshot(snapshot)
+			}
+		}()
+		for range 100 {
+			_, err := registry.Gather()
+			require.NoError(t, err)
+		}
+		wg.Wait()
+	})
+	t.Run("unavailable and removed observations disappear", func(t *testing.T) {
+		metrics.PublishAggregationSnapshot(metrics.AggregationSnapshot{SampleCounts: map[string]int64{"USD/NOAH": 0}})
+		families, err := registry.Gather()
+		require.NoError(t, err)
+		require.Zero(t, gaugeValue(t, metricFamily(t, families, "ark_pricefeed_pair_sample_count"), map[string]string{"pair": "usd/noah"}))
+		for _, family := range families {
+			require.NotEqual(t, "ark_pricefeed_aggregate_price", family.GetName())
+		}
+		metrics.PublishAggregationSnapshot(metrics.AggregationSnapshot{})
+		families, err = registry.Gather()
+		require.NoError(t, err)
+		for _, family := range families {
+			require.NotEqual(t, "ark_pricefeed_pair_sample_count", family.GetName())
+		}
+	})
 }
 
 func metricFamily(t *testing.T, families []*dto.MetricFamily, name string) *dto.MetricFamily {
@@ -135,12 +167,4 @@ func matchingMetric(
 
 	t.Fatalf("metric with labels %v not found", labels)
 	return nil
-}
-
-func requireNoLabel(t *testing.T, metric *dto.Metric, name string) {
-	t.Helper()
-
-	for _, label := range metric.Label {
-		require.NotEqual(t, name, label.GetName())
-	}
 }

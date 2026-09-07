@@ -26,18 +26,17 @@ func TestRecordResponse(t *testing.T) {
 	})
 	otel.SetMeterProvider(provider)
 
+	SetTickers(context.Background(), "kraken", []types.Ticker{"ATOM/USD", "BTC/USD"})
 	RecordResponse(
 		context.Background(),
 		"kraken",
 		types.Ticker("ATOM/USD"),
-		"api",
 		types.OK,
 	)
 	RecordResponse(
 		context.Background(),
 		"kraken",
 		types.Ticker("BTC/USD"),
-		"api",
 		types.ErrorNoResponse,
 	)
 
@@ -45,29 +44,42 @@ func TestRecordResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	responses := metricFamily(t, families, "ark_pricefeed_provider_responses_total")
-	require.Len(t, responses.Metric, 2)
+	require.Len(t, responses.Metric, 3)
 	require.Equal(t, float64(1), counterValue(t, responses, map[string]string{
 		"provider":   "kraken",
 		"ticker":     "ATOM/USD",
-		"fetcher":    "api",
-		"status":     "success",
-		"error_code": "0",
+		"error_code": "ok",
 	}))
 	require.Equal(t, float64(1), counterValue(t, responses, map[string]string{
 		"provider":   "kraken",
 		"ticker":     "BTC/USD",
-		"fetcher":    "api",
-		"status":     "failure",
-		"error_code": "7",
+		"error_code": "no_response",
 	}))
 
 	lastSuccess := metricFamily(t, families, "ark_pricefeed_provider_last_success_seconds")
-	require.Len(t, lastSuccess.Metric, 1)
+	require.Len(t, lastSuccess.Metric, 2)
+	require.Zero(t, gaugeValue(t, lastSuccess, map[string]string{"provider": "kraken", "ticker": "BTC/USD"}))
 	require.Positive(t, gaugeValue(t, lastSuccess, map[string]string{
 		"provider": "kraken",
 		"ticker":   "ATOM/USD",
-		"fetcher":  "api",
 	}))
+	t.Run("market replacement and provider removal", func(t *testing.T) {
+		labels := map[string]string{"provider": "kraken", "ticker": "ATOM/USD"}
+		stamp := gaugeValue(t, lastSuccess, labels)
+		SetTickers(context.Background(), "kraken", []types.Ticker{"ATOM/USD", "ETH/USD"})
+		families, err := registry.Gather()
+		require.NoError(t, err)
+		last := metricFamily(t, families, "ark_pricefeed_provider_last_success_seconds")
+		require.Len(t, last.Metric, 2)
+		require.Equal(t, stamp, gaugeValue(t, last, labels))
+		require.Zero(t, gaugeValue(t, last, map[string]string{"provider": "kraken", "ticker": "ETH/USD"}))
+		RemoveProvider("kraken")
+		families, err = registry.Gather()
+		require.NoError(t, err)
+		for _, family := range families {
+			require.NotEqual(t, "ark_pricefeed_provider_last_success_seconds", family.GetName())
+		}
+	})
 }
 
 func metricFamily(t *testing.T, families []*dto.MetricFamily, name string) *dto.MetricFamily {

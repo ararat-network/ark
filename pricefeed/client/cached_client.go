@@ -64,6 +64,7 @@ func (c *Client) Run(ctx context.Context) (err error) {
 		<-ctx.Done()
 		return ctx.Err()
 	}
+	clientmetrics.SetEndpoints(ctx, []string{c.config.SidecarAddress})
 	conn, err := grpc.NewClient(
 		c.config.SidecarAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -112,7 +113,7 @@ func (c *Client) fetchPrices(ctx context.Context, rpc api.PriceFeedClient) {
 	if err == nil {
 		err = validatePricesResponse(resp)
 	}
-	clientmetrics.RecordOracleResponse(time.Since(start), err)
+	clientmetrics.RecordSidecarResponse(c.config.SidecarAddress, time.Since(start), err)
 	if err != nil {
 		if ctx.Err() == nil {
 			c.logger.Error(
@@ -123,6 +124,8 @@ func (c *Client) fetchPrices(ctx context.Context, rpc api.PriceFeedClient) {
 		}
 		return
 	}
+
+	clientmetrics.RecordSnapshotTimestamp(c.config.SidecarAddress, resp.Timestamp)
 
 	c.logger.Debug(
 		"fetched prices",

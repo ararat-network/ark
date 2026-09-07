@@ -17,6 +17,7 @@ import (
 // cancellation, reconnect, or an unrecoverable connection-level failure.
 func (c *Client) runOnce(ctx context.Context) (err error) {
 	cfg := c.getConfig()
+	chainstatemetrics.SetEndpoints(ctx, []string{cfg.Address})
 	conn, err := grpc.NewClient(cfg.Address, c.dialOptions...)
 	if err != nil {
 		return fmt.Errorf("create oracle query connection: %w", err)
@@ -44,7 +45,7 @@ func (c *Client) poll(
 	interval time.Duration,
 	query oracletypes.QueryClient,
 ) error {
-	c.refresh(ctx, query)
+	c.refresh(ctx, address, query)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -64,7 +65,7 @@ func (c *Client) poll(
 				ticker.Reset(nextCfg.Interval)
 				interval = nextCfg.Interval
 			}
-			c.refresh(ctx, query)
+			c.refresh(ctx, address, query)
 		}
 	}
 }
@@ -72,10 +73,10 @@ func (c *Client) poll(
 // refresh commits successful snapshots. Query failures log a warning and
 // preserve the previous snapshot so the runtime can keep using the last-known
 // feed set with operator-visible refresh errors.
-func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
+func (c *Client) refresh(ctx context.Context, address string, query oracletypes.QueryClient) {
 	feeds, err := c.queryFeeds(ctx, query)
 	if err != nil {
-		chainstatemetrics.RecordRefresh(ctx, "error")
+		chainstatemetrics.RecordRefresh(ctx, address, "error")
 		c.logger.Warn("failed to refresh chain state feeds", "error", err)
 		return
 	}
@@ -85,7 +86,7 @@ func (c *Client) refresh(ctx context.Context, query oracletypes.QueryClient) {
 	c.hasSnapshot = true
 	c.mut.Unlock()
 
-	chainstatemetrics.RecordRefresh(ctx, "success")
+	chainstatemetrics.RecordRefresh(ctx, address, "success")
 }
 
 // queryFeeds performs one oracle query and unions the active feeds with every

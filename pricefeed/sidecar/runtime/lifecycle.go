@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
 )
 
 // Run is a blocking, single-use lifecycle call. It starts runtime-owned
@@ -19,6 +21,7 @@ func (r *Runtime) Run(ctx context.Context) error {
 	mainCtx, cancelCause := context.WithCancelCause(ctx)
 	var clientDone <-chan struct{}
 	r.updateMu.Lock()
+	r.initialiseMetrics(mainCtx)
 	clientDone = r.startClient(mainCtx, cancelCause)
 	for _, managed := range r.providers {
 		managed.start(mainCtx, cancelCause, r.logger)
@@ -76,6 +79,7 @@ func (r *Runtime) shutdown(cancel context.CancelCauseFunc, clientDone <-chan str
 	r.mainCancel = nil
 	r.mut.Unlock()
 
+	sidecarmetrics.PublishAggregationSnapshot(sidecarmetrics.AggregationSnapshot{})
 	r.logger.Info("oracle exited successfully")
 }
 
@@ -85,4 +89,14 @@ func (r *Runtime) getUpdateInterval() time.Duration {
 	defer r.mut.RUnlock()
 
 	return r.cfg.UpdateInterval
+}
+
+// initialiseMetrics is called with updateMu held after a config/feed change.
+func (r *Runtime) initialiseMetrics(ctx context.Context) {
+	pairs := r.cfg.Resolver.MarketPairs(r.feeds)
+	names := make([]string, 0, len(pairs))
+	for pair := range pairs {
+		names = append(names, pair.String())
+	}
+	sidecarmetrics.Initialise(ctx, r.feeds, names)
 }

@@ -15,6 +15,7 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/mock/gomock"
 
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
@@ -276,6 +277,27 @@ func TestRunRecordsMissingPriceMetricsFromFallbackFeeds(t *testing.T) {
 
 	cancel()
 	requireOracleStopped(t, errCh)
+	t.Run("configuration metric lifecycle", func(t *testing.T) {
+		sidecarmetrics.PublishAggregationSnapshot(sidecarmetrics.AggregationSnapshot{Prices: map[string]float64{"USD/NOAH": 2}})
+		invalid := cfg.Clone()
+		invalid.UpdateInterval = 0
+		require.Error(t, oracle.Update(invalid))
+		families, err := registry.Gather()
+		require.NoError(t, err)
+		require.NotNil(t, findOracleMetricFamily(families, "ark_pricefeed_aggregate_price"))
+		timing := cfg.Clone()
+		timing.UpdateInterval = time.Second
+		require.NoError(t, oracle.Update(timing))
+		families, err = registry.Gather()
+		require.NoError(t, err)
+		require.NotNil(t, findOracleMetricFamily(families, "ark_pricefeed_aggregate_price"), "timing-only updates preserve prices")
+		changed := timing.Clone()
+		changed.FallbackFeeds = []string{"ausd"}
+		require.NoError(t, oracle.Update(changed))
+		families, err = registry.Gather()
+		require.NoError(t, err)
+		require.Nil(t, findOracleMetricFamily(families, "ark_pricefeed_aggregate_price"), "changed inputs invalidate old prices")
+	})
 }
 
 func TestUpdateWaitsForInFlightPriceTick(t *testing.T) {

@@ -2,6 +2,7 @@ package metrics_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -34,23 +35,20 @@ func TestRecordAPIMetrics(t *testing.T) {
 		&http.Response{StatusCode: http.StatusInternalServerError},
 		nil,
 	)
-	RecordCycle(context.Background(), "kraken", 10*time.Millisecond, nil)
+	RecordRequest(context.Background(), "kraken", time.Millisecond, nil, errors.New("dial tcp: refused"))
 
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	requests := metricFamily(t, families, "ark_pricefeed_provider_api_requests_total")
-	require.Equal(t, float64(1), counterValue(t, requests, map[string]string{
-		"provider":     "kraken",
-		"status":       "failure",
-		"status_code":  "500",
-		"status_class": "5xx",
+	durations := metricFamily(t, families, "ark_pricefeed_provider_api_request_duration_milliseconds")
+	require.Equal(t, uint64(1), histogramSampleCount(t, durations, map[string]string{
+		"provider":    "kraken",
+		"status_code": "500",
 	}))
-
-	cycles := metricFamily(t, families, "ark_pricefeed_provider_api_cycle_duration_milliseconds")
-	require.Equal(t, uint64(1), histogramSampleCount(t, cycles, map[string]string{
-		"provider": "kraken",
-		"status":   "success",
+	// A transport failure has no response, so the code reads "none".
+	require.Equal(t, uint64(1), histogramSampleCount(t, durations, map[string]string{
+		"provider":    "kraken",
+		"status_code": "none",
 	}))
 }
 
@@ -67,16 +65,6 @@ func metricFamily(t *testing.T, families []*dto.MetricFamily, name string) *dto.
 
 	t.Fatalf("metric family %q not found in %v", name, names)
 	return nil
-}
-
-func counterValue(
-	t *testing.T,
-	family *dto.MetricFamily,
-	labels map[string]string,
-) float64 {
-	t.Helper()
-
-	return matchingMetric(t, family, labels).GetCounter().GetValue()
 }
 
 func histogramSampleCount(

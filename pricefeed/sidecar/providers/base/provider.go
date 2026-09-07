@@ -11,6 +11,7 @@ import (
 	"cosmossdk.io/log/v2"
 
 	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
+	providermetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
@@ -89,6 +90,7 @@ func (p *Provider) Run(ctx context.Context) error {
 	}
 
 	tickers := p.GetTickers()
+	providermetrics.SetTickers(ctx, p.name, tickers)
 	if len(tickers) == 0 {
 		p.logger.Debug("no tickers set on provider; waiting for cancellation")
 		<-ctx.Done()

@@ -51,7 +51,7 @@ func newServer(service api.PriceFeedServer, logger log.Logger, address string) (
 		logger:  logger.With("component", "transport"),
 		address: net.JoinHostPort(host, port),
 	}
-	s.grpcSrv = grpc.NewServer(grpc.UnaryInterceptor(s.recoverUnaryPanic))
+	s.grpcSrv = grpc.NewServer(grpc.ChainUnaryInterceptor(unaryMetrics, s.recoverUnaryPanic))
 	api.RegisterPriceFeedServer(s.grpcSrv, service)
 
 	s.gatewayMux = runtime.NewServeMux(

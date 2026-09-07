@@ -17,6 +17,8 @@ const (
 	ConnectionEventHealthy = "healthy"
 	// ConnectionEventReadError records a websocket read failure.
 	ConnectionEventReadError = "read_error"
+	// ConnectionEventReconnect records a reconnect attempt after a failure.
+	ConnectionEventReconnect = "reconnect"
 
 	// WriteOperationSubscribe labels subscription message write errors.
 	WriteOperationSubscribe = "subscribe"
@@ -30,7 +32,6 @@ var (
 	meter = otel.Meter("ark/pricefeed/sidecar/providers/base/websocket/metrics")
 
 	connectionEvents metric.Int64Counter
-	reconnects       metric.Int64Counter
 	parseErrors      metric.Int64Counter
 	writeErrors      metric.Int64Counter
 )
@@ -41,14 +42,6 @@ func init() {
 	connectionEvents, err = meter.Int64Counter(
 		"ark.pricefeed.provider.websocket.connection.events",
 		metric.WithDescription("Number of websocket provider connection lifecycle events"),
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	reconnects, err = meter.Int64Counter(
-		"ark.pricefeed.provider.websocket.reconnects",
-		metric.WithDescription("Number of websocket provider reconnect attempts"),
 	)
 	if err != nil {
 		panic(err)
@@ -80,15 +73,6 @@ func RecordConnectionEvent(ctx context.Context, provider string, event string) {
 			attribute.String("provider", provider),
 			attribute.String("event", event),
 		),
-	)
-}
-
-// RecordReconnect records a websocket reconnect attempt.
-func RecordReconnect(ctx context.Context, provider string) {
-	reconnects.Add(
-		ctx,
-		1,
-		metric.WithAttributes(attribute.String("provider", provider)),
 	)
 }
 

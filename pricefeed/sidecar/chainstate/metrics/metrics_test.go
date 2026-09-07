@@ -25,19 +25,39 @@ func TestRecordRefresh(t *testing.T) {
 	})
 	otel.SetMeterProvider(provider)
 
-	metrics.RecordRefresh(context.Background(), "success")
-	metrics.RecordRefresh(context.Background(), "error")
+	metrics.SetEndpoints(context.Background(), []string{"sentry:9090", "backup:9090"})
+	metrics.RecordRefresh(context.Background(), "sentry:9090", "error")
+	metrics.RecordRefresh(context.Background(), "backup:9090", "success")
+	metrics.RecordRefresh(context.Background(), "backup:9090", "success")
 
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
 	refreshes := metricFamily(t, families, "ark_pricefeed_chainstate_refreshes_total")
 	require.Equal(t, float64(1), counterValue(t, refreshes, map[string]string{
-		"status": "success",
+		"address": "sentry:9090",
+		"status":  "error",
 	}))
-	require.Equal(t, float64(1), counterValue(t, refreshes, map[string]string{
-		"status": "error",
+	require.Equal(t, float64(2), counterValue(t, refreshes, map[string]string{
+		"address": "backup:9090",
+		"status":  "success",
 	}))
+
+	// Configured nodes exist from startup; only a success moves the timestamp.
+	lastSuccess := metricFamily(t, families, "ark_pricefeed_chainstate_last_success_seconds")
+	require.Len(t, lastSuccess.Metric, 2)
+	require.Zero(t, matchingMetric(t, lastSuccess, map[string]string{"address": "sentry:9090"}).GetGauge().GetValue())
+	require.Positive(t, matchingMetric(t, lastSuccess, map[string]string{"address": "backup:9090"}).GetGauge().GetValue())
+	t.Run("reconnect and address changes", func(t *testing.T) {
+		stamp := matchingMetric(t, lastSuccess, map[string]string{"address": "backup:9090"}).GetGauge().GetValue()
+		metrics.SetEndpoints(context.Background(), []string{"backup:9090", "new:9090"})
+		families, err := registry.Gather()
+		require.NoError(t, err)
+		last := metricFamily(t, families, "ark_pricefeed_chainstate_last_success_seconds")
+		require.Len(t, last.Metric, 2)
+		require.Equal(t, stamp, matchingMetric(t, last, map[string]string{"address": "backup:9090"}).GetGauge().GetValue())
+		require.Zero(t, matchingMetric(t, last, map[string]string{"address": "new:9090"}).GetGauge().GetValue())
+	})
 }
 
 func metricFamily(t *testing.T, families []*dto.MetricFamily, name string) *dto.MetricFamily {

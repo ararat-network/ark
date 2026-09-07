@@ -41,7 +41,6 @@ func (p *Provider) recv(ctx context.Context, responseCh <-chan types.Response) {
 					ctx,
 					p.name,
 					ticker,
-					string(p.transportType),
 					types.OK,
 				)
 			}
@@ -58,7 +57,6 @@ func (p *Provider) recv(ctx context.Context, responseCh <-chan types.Response) {
 					ctx,
 					p.name,
 					ticker,
-					string(p.transportType),
 					result.Code(),
 				)
 			}

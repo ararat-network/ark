@@ -53,7 +53,7 @@ func newAdminServer(svc *Service, logger log.Logger, address string) (*adminServ
 		logger:  logger.With("component", "admin_transport"),
 		address: net.JoinHostPort(host, port),
 	}
-	s.grpcSrv = grpc.NewServer(grpc.UnaryInterceptor(s.recoverUnaryPanic))
+	s.grpcSrv = grpc.NewServer(grpc.ChainUnaryInterceptor(unaryMetrics, s.recoverUnaryPanic))
 	api.RegisterPriceFeedAdminServer(s.grpcSrv, &adminService{svc: svc})
 
 	return s, nil

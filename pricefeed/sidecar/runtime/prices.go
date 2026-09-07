@@ -20,6 +20,7 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	defer r.updateMu.Unlock()
 
 	r.syncFeedsLocked()
+	r.initialiseMetrics(ctx)
 
 	r.mut.RLock()
 	feeds := append([]string(nil), r.feeds...)
@@ -40,7 +41,7 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 		if !ok {
 			continue
 		}
-		providerPrices[name] = r.freshProviderPrices(managed.provider, now, window)
+		providerPrices[name] = r.freshProviderPrices(ctx, managed.provider, now, window)
 	}
 	r.logger.Debug("collected cached provider prices")
 
@@ -48,7 +49,7 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	prices := types.PricesByFeed(resolvedPrices, feeds)
 	r.recordMissingPrices(ctx, feeds, prices)
 	r.commitPriceSnapshot(prices, now)
-	sidecarmetrics.RecordOracleTick(ctx)
+	sidecarmetrics.RecordTick(ctx)
 }
 
 // freshProviderPrices returns one provider's cached prices that are fresh enough
@@ -63,6 +64,7 @@ type providerFreshness struct {
 }
 
 func (r *Runtime) freshProviderPrices(
+	ctx context.Context,
 	provider *base.Provider,
 	now time.Time,
 	window providerFreshness,
@@ -97,6 +99,7 @@ func (r *Runtime) freshProviderPrices(
 				"pair", pair,
 				"age", age,
 			)
+			sidecarmetrics.RecordSkippedSample(ctx, name, pair.String(), sidecarmetrics.SkipReasonStale)
 
 			continue
 		}
@@ -116,6 +119,7 @@ func (r *Runtime) freshProviderPrices(
 				"observed_age", observedAge,
 				"limit", limit,
 			)
+			sidecarmetrics.RecordSkippedSample(ctx, name, pair.String(), sidecarmetrics.SkipReasonUnchanged)
 
 			continue
 		}

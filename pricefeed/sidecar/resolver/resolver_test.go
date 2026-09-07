@@ -41,19 +41,6 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	families, err := registry.Gather()
 	require.NoError(t, err)
 
-	providerPrices := metricFamily(t, families, "ark_pricefeed_provider_price")
-	require.Equal(t, float64(1.20), gaugeValue(t, providerPrices, map[string]string{
-		"provider": "binance",
-		"pair":     "usd/noah",
-	}))
-	require.Equal(t, float64(1.40), gaugeValue(t, providerPrices, map[string]string{
-		"provider": "coinbase",
-		"pair":     "usd/noah",
-	}))
-
-	families, err = registry.Gather()
-	require.NoError(t, err)
-
 	pairSampleCounts := metricFamily(t, families, "ark_pricefeed_pair_sample_count")
 	require.Equal(t, float64(2), gaugeValue(t, pairSampleCounts, map[string]string{
 		"pair": "usd/noah",
@@ -72,53 +59,6 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 
 	require.Contains(t, resolved, types.Pair("USD/NOAH"))
 
-	routedCfg := resolver.Config{
-		Routes: map[string][]resolver.Route{
-			"akrw": {
-				{
-					Name:  "krw-usd-noah",
-					Pairs: []types.Pair{"KRW/USD", "USD/NOAH"},
-				},
-				{
-					Name:  "krw-usdt-noah",
-					Pairs: []types.Pair{"KRW/USDT", "USDT/NOAH"},
-				},
-			},
-		},
-	}
-	resolver.ResolvePrices(context.Background(), routedCfg, map[string]types.Prices{
-		"binance": {
-			"USD/NOAH":  mustBigFloat(t, "2"),
-			"KRW/USD":   mustBigFloat(t, "1000"),
-			"USDT/NOAH": mustBigFloat(t, "2"),
-			"KRW/USDT":  mustBigFloat(t, "1100"),
-		},
-	}, []string{"akrw"}, time.Now().UTC())
-
-	families, err = registry.Gather()
-	require.NoError(t, err)
-
-	resolvedSourceCounts := metricFamily(t, families, "ark_pricefeed_resolved_source_count")
-	require.Equal(t, float64(2), gaugeValue(t, resolvedSourceCounts, map[string]string{
-		"pair": "krw/noah",
-	}))
-
-	routePrices := metricFamily(t, families, "ark_pricefeed_route_price")
-	usdRoutePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "krw/noah",
-		"route": "krw-usd-noah",
-	})
-	require.Equal(t, float64(2000), usdRoutePrice.GetGauge().GetValue())
-	requireNoLabel(t, usdRoutePrice, "denom")
-	usdtRoutePrice := matchingMetric(t, routePrices, map[string]string{
-		"pair":  "krw/noah",
-		"route": "krw-usdt-noah",
-	})
-	require.Equal(t, float64(2200), usdtRoutePrice.GetGauge().GetValue())
-	requireNoLabel(t, usdtRoutePrice, "denom")
-
-	require.Nil(t, findMetricFamily(families, "ark_pricefeed_route_premium"))
-
 	now := time.Date(2026, time.July, 11, 0, 0, 0, 0, time.UTC)
 	resolver.ResolvePrices(context.Background(), resolver.Config{
 		BootstrapPrices: []resolver.BootstrapPrice{{
@@ -134,6 +74,36 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	require.Equal(t, float64(1), matchingMetric(t, bootstrapPriceUses, map[string]string{
 		"pair": "usd/noah",
 	}).GetCounter().GetValue())
+	require.Zero(t, gaugeValue(t, metricFamily(t, families, "ark_pricefeed_pair_sample_count"), map[string]string{"pair": "usd/noah"}), "bootstrap uses zero providers")
+	for _, tc := range []struct {
+		name      string
+		providers map[string]types.Prices
+		feeds     []string
+		samples   float64
+		priced    bool
+	}{
+		{name: "no samples", feeds: []string{"ausd"}},
+		{name: "recovered", feeds: []string{"ausd"}, providers: map[string]types.Prices{"venue": {"USD/NOAH": big.NewFloat(2)}}, samples: 1, priced: true},
+		{name: "feed removed"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			result := resolver.ResolvePrices(context.Background(), resolver.Config{}, tc.providers, tc.feeds, now)
+			families, err := registry.Gather()
+			require.NoError(t, err)
+			if len(tc.feeds) == 0 {
+				require.Nil(t, findMetricFamily(families, "ark_pricefeed_pair_sample_count"))
+			} else {
+				require.Equal(t, tc.samples, gaugeValue(t, metricFamily(t, families, "ark_pricefeed_pair_sample_count"), map[string]string{"pair": "usd/noah"}))
+			}
+			if tc.priced {
+				require.NotEmpty(t, result)
+				require.NotNil(t, findMetricFamily(families, "ark_pricefeed_aggregate_price"))
+			} else {
+				require.Empty(t, result)
+				require.Nil(t, findMetricFamily(families, "ark_pricefeed_aggregate_price"))
+			}
+		})
+	}
 }
 
 func TestResolvePricesAveragesConfiguredRoutePricesForFeed(t *testing.T) {
@@ -498,12 +468,4 @@ func matchingMetric(
 
 	t.Fatalf("metric with labels %v not found", labels)
 	return nil
-}
-
-func requireNoLabel(t *testing.T, metric *dto.Metric, name string) {
-	t.Helper()
-
-	for _, label := range metric.Label {
-		require.NotEqual(t, name, label.GetName())
-	}
 }

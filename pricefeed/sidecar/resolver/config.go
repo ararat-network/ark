@@ -28,7 +28,7 @@ type Config struct {
 // satisfied by a provider observation in either orientation, normalised per
 // sample by the resolver.
 type Route struct {
-	// Name identifies this path in per-route metrics.
+	// Name identifies this path in configuration and validation errors.
 	Name string `mapstructure:"name"`
 
 	// Pairs are multiplied in order. A step may be satisfied by provider data

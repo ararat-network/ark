@@ -1,5 +1,13 @@
 package runtime
 
+import (
+	"reflect"
+	"slices"
+
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	providermetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
+)
+
 // Update validates and serialises a config replacement with aggregation and
 // lifecycle transitions. Replacement providers are built before live state is
 // changed, so validation or construction errors leave the runtime unchanged.
@@ -34,7 +42,15 @@ func (r *Runtime) Update(cfg Config) error {
 	for _, update := range plan.markets {
 		update.managed.provider.UpdateMarkets(update.markets)
 	}
+	for name := range r.providers {
+		if _, retained := plan.next[name]; !retained {
+			providermetrics.RemoveProvider(name)
+		}
+	}
 	r.providers = plan.next
+	if len(plan.stop) != 0 || len(plan.start) != 0 || !slices.Equal(oldFeeds, nextFeeds) || !reflect.DeepEqual(oldCfg.Resolver, nextCfg.Resolver) {
+		sidecarmetrics.PublishAggregationSnapshot(sidecarmetrics.AggregationSnapshot{})
+	}
 
 	intervalChanged := oldCfg.UpdateInterval != nextCfg.UpdateInterval
 	clientChanged := !oldCfg.Client.Equal(nextCfg.Client)

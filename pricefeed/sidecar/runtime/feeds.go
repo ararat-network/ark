@@ -1,6 +1,10 @@
 package runtime
 
-import "slices"
+import (
+	"slices"
+
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+)
 
 // syncFeedsLocked applies the latest cached feed snapshot while the caller owns
 // updateMu. Read errors preserve the current active feeds.
@@ -71,6 +75,7 @@ func (r *Runtime) syncFeedsLocked() {
 
 	r.mut.Lock()
 	r.feeds = append([]string(nil), feeds...)
+	sidecarmetrics.PublishAggregationSnapshot(sidecarmetrics.AggregationSnapshot{})
 	r.feedsFromChain = true
 	r.mut.Unlock()
 
