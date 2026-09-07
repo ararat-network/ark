@@ -198,7 +198,7 @@ func txEvent(t *testing.T, ctx sdk.Context) map[string]string {
 func setupTreasuryAnteTest(t *testing.T) (*app.ArkApp, sdk.Context, treasuryFeeTx) {
 	t.Helper()
 	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1}).WithExecMode(sdk.ExecModeFinalize)
 	params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
 	require.NoError(t, err)
 	params.ReferenceTaxCap = math.NewInt(100)

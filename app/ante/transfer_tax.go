@@ -49,9 +49,10 @@ func transferTaxFromContext(ctx sdk.Context) (sdk.Coins, bool) {
 // signed fee was held to, so the charge cannot exceed the declaration by
 // construction. A context carrying no figure is a wiring fault — the post
 // chain running without FeeDecorator — and fails the transaction rather than
-// letting a transfer through untaxed. The ante prices nothing at height
-// zero and hands on nothing, so genesis charges nothing here without a rule
-// of its own.
+// letting a transfer through untaxed. The ante hands on a zero tax at height
+// zero, so genesis charges nothing here without a rule of its own.
+// Admission and proposal verification skip collection because they do not
+// execute messages. Simulation includes it to estimate the execution cost.
 //
 // A granter bears the tax as they bear the gas fee, through a draw on the
 // allowance for the tax alone.
@@ -74,7 +75,9 @@ func NewTransferTaxDecorator(
 }
 
 func (d TransferTaxDecorator) PostHandle(ctx sdk.Context, tx sdk.Tx, simulate, success bool, next sdk.PostHandler) (sdk.Context, error) {
-	if !success {
+	// Tax affordability depends on the balances and allowances left by the
+	// messages. CheckTx and proposal verification do not execute those messages.
+	if !success || (!simulate && ctx.ExecMode() != sdk.ExecModeFinalize) {
 		return next(ctx, tx, simulate, success)
 	}
 	tax, ok := transferTaxFromContext(ctx)

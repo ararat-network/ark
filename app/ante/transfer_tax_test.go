@@ -8,6 +8,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
@@ -16,6 +17,86 @@ import (
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 )
+
+func TestTransferTaxDecoratorExecutionModes(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		mode     sdk.ExecMode
+		simulate bool
+		collect  bool
+	}{
+		{name: "check", mode: sdk.ExecModeCheck},
+		{name: "recheck", mode: sdk.ExecModeReCheck},
+		{name: "prepare proposal", mode: sdk.ExecModePrepareProposal},
+		{name: "process proposal", mode: sdk.ExecModeProcessProposal},
+		{name: "finalise", mode: sdk.ExecModeFinalize, collect: true},
+		{name: "simulate", mode: sdk.ExecModeSimulate, simulate: true, collect: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, sponsored := range []bool{false, true} {
+				name := "payer"
+				if sponsored {
+					name = "granter"
+				}
+				t.Run(name, func(t *testing.T) {
+					arkApp, ctx, tx := setupTreasuryAnteTest(t)
+					charged := tx.payer
+					if sponsored {
+						charged = sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
+						tx.granter = charged
+						apptestutil.FundAccount(t, arkApp, ctx, charged, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)))
+						require.NoError(t, arkApp.FeeGrantKeeper.GrantAllowance(ctx, charged, tx.payer, &feegrant.BasicAllowance{
+							SpendLimit: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)),
+						}))
+					}
+					cached, _ := ctx.WithExecMode(tc.mode).CacheContext()
+					cached = cached.WithGasMeter(storetypes.NewInfiniteGasMeter())
+					tax := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 7))
+					handed, err := runTax(t, arkApp, ante.WithTransferTax(cached, tax), tx, tc.simulate, true)
+					require.NoError(t, err)
+					require.NotZero(t, handed)
+					if tc.collect {
+						require.Positive(t, cached.GasMeter().GasConsumed())
+						require.Equal(t, "7ausd", collected(arkApp, ctx, cached, taxCollector).String())
+						require.Equal(t, math.NewInt(13), usdBalance(arkApp, cached, charged))
+					} else {
+						require.Zero(t, cached.GasMeter().GasConsumed(), "pre-execution checks must not touch tax state")
+						require.Empty(t, txEvents(handed))
+						require.Empty(t, collected(arkApp, ctx, cached, taxCollector))
+						require.Equal(t, math.NewInt(20), usdBalance(arkApp, cached, charged))
+					}
+					if sponsored {
+						allowance, err := arkApp.FeeGrantKeeper.GetAllowance(cached, charged, tx.payer)
+						require.NoError(t, err)
+						remaining := int64(20)
+						if tc.collect {
+							remaining = 13
+						}
+						require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, remaining)), allowance.(*feegrant.BasicAllowance).SpendLimit)
+					}
+
+					// Without an ante-provided figure, execution must still fail
+					// closed. Pre-execution modes must not inspect that figure.
+					_, err = runTax(t, arkApp, ctx.WithExecMode(tc.mode), tx, tc.simulate, true)
+					if tc.collect {
+						require.ErrorContains(t, err, "no transfer tax on the context")
+					} else {
+						require.NoError(t, err)
+					}
+
+					unaffordable, _ := ctx.WithExecMode(tc.mode).CacheContext()
+					unaffordable = ante.WithTransferTax(unaffordable, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 21)))
+					_, err = runTax(t, arkApp, unaffordable, tx, tc.simulate, true)
+					if tc.collect {
+						require.Error(t, err, "execution and simulation must enforce tax payment")
+					} else {
+						require.NoError(t, err, "pre-execution checks must allow messages to fund the tax")
+					}
+				})
+			}
+		})
+	}
+}
 
 // TestTransferTaxDecoratorChargesNothingOnFailure pins D82 at the seam: a
 // transaction whose messages failed reaches the post decorator with success
