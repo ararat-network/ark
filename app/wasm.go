@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/blsverifier"
 	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 
 	"cosmossdk.io/core/store"
@@ -36,6 +37,12 @@ func WasmModuleBasics() module.BasicManager {
 	return module.NewBasicManager(wasm.AppModuleBasic{})
 }
 
+// WasmVMCacheMetricsRegistererOpt is the app option under which `arkd start`
+// hands the metrics endpoint's registry to the contract runtime, so wasmvm's
+// cache counters export beside the node's own meters. Set in memory by start,
+// never read from a file; absent, the counters are not exported.
+const WasmVMCacheMetricsRegistererOpt = "ark.wasm.vm-cache-metrics-registerer"
+
 // setupWasm registers the Wasm store and constructs the contract runtime. It
 // runs between setupIBCKeepers and setupIBCRoutes: the keeper needs the channel
 // keepers, and its contract IBC handlers must be in hand when the routers are
@@ -58,6 +65,17 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	nodeConfig, err := wasm.ReadNodeConfig(appOpts)
 	if err != nil {
 		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("read Wasm node config: %w", err)
+	}
+
+	// Contracts read through a hand-written accept list that is empty at
+	// launch (app/wasm_query.go). No custom querier: the tax estimate D43
+	// asks for is Treasury's ComputeTax query, listed there like any other
+	// path (D74).
+	wasmOpts := []wasmkeeper.Option{
+		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
+	}
+	if registerer, ok := appOpts.Get(WasmVMCacheMetricsRegistererOpt).(prometheus.Registerer); ok {
+		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(registerer))
 	}
 
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
@@ -84,11 +102,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		wasmtypes.VMConfig{},
 		wasmkeeper.BuiltInCapabilities(),
 		authority,
-		// Contracts read through a hand-written accept list that is empty at
-		// launch (app/wasm_query.go). No custom querier: the tax estimate D43
-		// asks for is Treasury's ComputeTax query, listed there like any other
-		// path (D74).
-		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
+		wasmOpts...,
 	)
 
 	if err := app.RegisterModules(wasm.NewAppModule(
