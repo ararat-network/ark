@@ -3,9 +3,9 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/wasm/`. The chain currently uses **cosmos-sdk v0.54.2** with
-depinject and `cosmossdk.io/*` packages; always verify `go.mod` before SDK-specific work because the SDK version can
-move.
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/`. The chain
+currently uses **cosmos-sdk v0.54.3** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
+SDK-specific work because the SDK version can move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 
@@ -28,7 +28,8 @@ Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern pat
 
 Reference codebases:
 
-- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/` (this repo)
+- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/` (this
+  repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
 - **Terra Feeder reference**: `../oracle-feeder/`; when the user says `feeder`, use this repo.
@@ -39,35 +40,43 @@ Reference codebases:
 
 ```text
 x/market/       # DEX swap module (Noah ↔ stablecoins)
-x/oracle/       # Price oracle module (validator price voting)
-x/treasury/     # Macro policy module (tax rate, reward weight, seigniorage)
-x/wasm/         # CosmWasm smart contract module (exported interfaces)
+x/oracle/       # Price oracle module (validator price voting, feed registry)
+x/treasury/     # Macro policy module (tax, reward funding, liability, fund targets)
+x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank asset
+x/claims/       # Insurance claims module (Claims mandate, claim record, Insurance custody)
+x/reserve/      # Strategic Reserve module (custody, mandate, journal, recognition policy)
+x/security/     # Security committee over the standard-module emergency surface
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
-oracle/         # Off-chain oracle runtime, providers, transport, and validation
-pkg/            # Shared primitives such as encoding, telemetry, and minimal metrics
-proto/ark/     # Proto definitions (modules, ABCI, transport)
+pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
+pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
+proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
-app/            # App wiring, depinject config
+app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
+app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
 ```
 
-## Oracle, Transport, And ABCI Boundaries
+## Oracle, Price Feed, And ABCI Boundaries
 
-- Keep `x/oracle/` as the on-chain module. Top-level `oracle/` is split into `oracle/client` for the app-side
-  cached client, `oracle/types` for generated transport API types, and `oracle/sidecar` for the off-chain sidecar.
-- `oracle/sidecar` owns the sidecar process and transport: the sidecar `Oracle` implements the generated RPC server,
-  owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `oracle/sidecar/runtime`.
-  `oracle/sidecar/runtime` owns the price-fetch loop and runtime updates.
-- Keep `oracle/types` generated transport API only. Sidecar domain structs live under `oracle/sidecar/types`; routes
-  use `/ark/transport/v1/...`.
-- `oracle/sidecar/providers` owns full provider config and construction. `oracle/sidecar/providers/base` owns provider
-  runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and
-  `TransportType`.
+- Keep `x/oracle/` as the on-chain module. Top-level `pricefeed/` is split into `pricefeed/client` for the app-side
+  cached client, `pricefeed/api` for generated transport API types, and `pricefeed/sidecar` for the off-chain sidecar.
+- `pricefeed/sidecar` owns the sidecar process and transport: the sidecar `Service` implements the generated RPC server,
+  owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `pricefeed/sidecar/runtime`.
+  `pricefeed/sidecar/runtime` owns the price-fetch loop and runtime updates.
+- Keep `pricefeed/api` generated transport API only. Sidecar domain structs live under `pricefeed/sidecar/types`; routes
+  use `/ark/pricefeed/v1/...`.
+- `pricefeed/sidecar/providers` owns full provider config and construction. `pricefeed/sidecar/providers/base` owns
+  provider runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`,
+  and `TransportType`.
 - `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
   extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
 - Keep primitive codecs and per-value encoding limits in `pkg/encoding`; keep aggregate vote-extension wire and decoded
   size limits in `abci/codec`.
-- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `oracle/client/metrics`,
-  `oracle/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
+  `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- The node-to-sidecar compatibility rule lives in `pricefeed/doc.go`: additive changes only within `ark.pricefeed.v1`,
+  build versions are informational and never gated on. Both transports take their TLS files through `pkg/tlsconfig` and
+  their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via
+  `.goreleaser.pricefeed.yml`.
 
 ## Cosmos SDK Conventions
 
@@ -96,6 +105,36 @@ When porting from Classic, always modernize:
 - Cargo-culted methods on custom types (e.g., `Marshal`, `Unmarshal`, `MarshalJSON`, `Empty`, `Bytes`, `Format`) →
   remove unless actually used. Classic copied these from `sdk.AccAddress` onto types like `AggregateVoteHash`.
 
+## Arithmetic Rules
+
+These are consensus rules, not style. All three were violated in reviewed code before being written down here.
+
+- **Round in the direction of what the number funds.** A division producing a payment floors; a division sizing a
+  requirement ceils; round-to-nearest is only for figures nothing pays from. Fund targets use `MulRoundUp(...).Ceil()`;
+  the subsidy split and the redemption coverage draw floor.
+- **Multiply before dividing, and check the product.** Forming a ratio first rounds an intermediate against its own
+  bound, and the other operand then amplifies that error past the bound — the coverage draw could exceed the Buffer it
+  was paid from. Multiplying first leaves one rounding on a quantity whose bounds are whole base units, which monotone
+  rounding cannot cross, so the bound becomes a theorem rather than a guarded hope. Use `SafeMul` for the product:
+  unlike `Mul` it errors rather than panicking.
+- **Bound governance inputs with domain caps, not projections.** For a governance-set number feeding halt-class
+  arithmetic, cap the field in its own `Validate` with orders of magnitude of headroom (`MaxBlockRewardTarget`,
+  `MaxRewardFundingWindow`). Reach for a projection — "this value plus live state over N blocks will still fit" — only
+  when the domain genuinely cannot be bounded, and treat needing one as a signal that something in the state design is
+  compounding: a projection has to be re-proved by every future writer of every input it reads, and its verdict moves
+  with live state, so the same value can be valid today and invalid next month.
+- **Oracle rates are NOAH per unit.** A rate is NOAH per one unit of its denomination, so valuing in NOAH multiplies and
+  `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a _price_ of the reference unit (the
+  exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the two units passed in the
+  opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at
+  `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity by it stay representable. (D75–D77,
+  `docs/DESIGN_NOTES.md` §1.4.)
+
+The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
+outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The
+defence is refusing the input at the write, where a human is in the loop; `Safe*` is the loud backstop behind it. Keep
+the backstop even when it is provably unreachable, and say so in a comment naming what makes it unreachable.
+
 ## Git Workflow
 
 - Before running any `git push` commands, verify that a remote is configured with `git remote -v`
@@ -108,9 +147,13 @@ When porting from Classic, always modernize:
 ## General Rules
 
 - Before making any changes, first outline exactly what files you'll modify and what the changes will be. Show the key
-  diffs. Wait for approval before editing. This is especially important for proto files and keeper/module wiring.
+  diffs. Wait for approval before editing. This is especially important for proto files, keeper/module wiring, and
+  parameter validation — a validation that is too loose, too strict, or the wrong shape is a halt or a governance
+  deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
+- `docs/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a message
+  type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation
 
@@ -118,7 +161,7 @@ Dual generation pipeline matching the current upstream Cosmos SDK pattern:
 
 - `proto/buf.gen.gogo.yaml`: gocosmos + grpc-gateway → `x/*/types/*.pb.go` (typed Go structs via `gogoproto.customtype`)
 - `proto/buf.gen.yaml`: go-pulsar + go-grpc → `api/*.pulsar.go` (standard protobuf, managed mode)
-- Proto files use `option go_package = "ark/x/{module}/types"` to route gogo output
+- Proto files use `option go_package = "github.com/ararat-network/ark/x/{module}/types"` to route gogo output
 - Run `make proto-gen` to regenerate (runs Docker proto-builder)
 - Proto-gen uses a named Docker volume (`ark-proto-cache`) for BSR dependency caching
 - `go mod tidy` runs on the host (in Makefile), not inside the container — avoids re-downloading Go modules every run
@@ -141,6 +184,9 @@ string field_name = N [
 
 - Address keys: use typed codecs (`sdk.ValAddressKey`, `sdk.AccAddressKey`), not `collections.StringKey`
 - Address as value: `collcodec.KeyToValueCodec(sdk.AccAddressKey)` — adapts a KeyCodec into a ValueCodec
+- Key persistent state by operator address (`sdk.ValAddress`), never by consensus address. The operator address is the
+  validator's identity; the consensus address is a rotatable credential, and SDK v0.55 key rotation makes that mapping
+  mutable. Cons-addr-keyed state has to be migrated on every rotation; cons addrs belong at attribution boundaries only
 - Default param values: use `const` for compile-time literals (integers, strings); `var` only for runtime init (function
   calls, struct/slice literals)
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
@@ -160,8 +206,17 @@ string field_name = N [
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`
+- Go linting: `make lint` (golangci-lint); `make lint-fix` auto-fixes; `make format` runs gci and gofumpt
 - Run tests: `go test ./x/{module}/...` for a single module, or `go test ./...` for all
 - Run with verbose output: `go test -v ./x/{module}/...`
+
+## Export & Relaunch
+
+- `arkd export` is a continuation export: heights stay absolute and the genesis starts at the next height, so every
+  height-anchored record (mandate windows, claim schedules, settlement plans, oracle windows) resumes as is. A relaunch
+  takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
+  simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that lost
+  more than a third of its power.
 
 ## Testing Conventions
 

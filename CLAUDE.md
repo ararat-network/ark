@@ -46,12 +46,13 @@ x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank ass
 x/claims/       # Insurance claims module (Claims mandate, claim record, Insurance custody)
 x/reserve/      # Strategic Reserve module (custody, mandate, journal, recognition policy)
 x/security/     # Security committee over the standard-module emergency surface
-abci/           # Vote-extension, proposal, preblock oracle pipeline, and mempool lanes
+abci/           # Vote-extension, proposal, and preblock oracle pipeline
 pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
 pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
 proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
+app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
 ```
 
 ## Oracle, Price Feed, And ABCI Boundaries

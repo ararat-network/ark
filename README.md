@@ -49,9 +49,10 @@ Now you have a small testnet that you can use to try out changes to the Cosmos S
 
 `make localnet-start` builds the `ark/arkd` image from the working tree, generates four validator
 homes under `.testnets/`, and starts four `arkd` nodes each paired with its own `pricefeed` sidecar.
-Node 0 serves RPC on `localhost:26657`, REST on `localhost:1317`, and Prometheus metrics on
-`localhost:9464/metrics`; later nodes offset each port by one. `make localnet-liveness` waits until
-blocks and an oracle exchange rate appear, and `make localnet-stop` tears everything down.
+Node 0 serves RPC on `localhost:26657`, REST on `localhost:1317`, application metrics on
+`localhost:9464/metrics`, and CometBFT metrics on `localhost:26660/metrics`; later nodes offset the
+application ports by one and the CometBFT ports by ten. `make localnet-liveness` waits until blocks and
+an oracle exchange rate appear, and `make localnet-stop` tears everything down.
 `VALIDATORS=1 make localnet-start` runs a single validator with one sidecar instead.
 `make localnet-runbook` rehearses the emergency submission runbook against the four-validator
 localnet: offline multisig ceremony, dark-carrier submission, leak and inclusion checks.
@@ -64,22 +65,41 @@ for the layout.
 `pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for
 prices, and the sidecar reads the feed registry back from the node's gRPC port. `pricefeed init` writes
 its config, `pricefeed.toml`, under `~/.ark/pricefeed/`, a directory of its own rather than the node's
-`config/`, so the two processes need not share a user; `--config` points anywhere else. Both links are
-plaintext by default, which is fine only while both processes share a host, and each side warns at start
-when it would speak plaintext off loopback. For a sidecar on another machine, give each link a trust
-anchor. The rules the files follow are stated once, in `pkg/tlsconfig`; a certificate and key are re-read
-when they change on disk, so rotating them is a file swap, and a CA bundle is read once, so changing it
-is a restart.
+`config/`, so the two processes need not share a user; `--config` points anywhere else. Both links default to `local` mode, which permits plaintext only on local endpoints.
+Remote connections require `mode = "tls"` or an explicit `mode = "plaintext"` for an externally
+protected link. Missing mode means local; supplying certificate files without TLS mode is an error.
+TLS uses version 1.3 or newer with normal hostname and certificate verification.
 
-- **Node to sidecar.** Start the sidecar with `--tls-cert-file` and `--tls-key-file`, and add
-  `--tls-client-ca-file` to admit only nodes that present a certificate signed by that CA. In the node's
-  `app.toml`, set `ca_file` under `[pricefeed.tls]` to the CA the sidecar's certificate chains to, with
-  `cert_file` and `key_file` when the sidecar requires a client certificate and `server_name` when the
-  certificate carries neither the dialled host nor its IP.
-- **Sidecar to node.** The node's gRPC port does not terminate TLS, so put a TLS terminator in front of it
-  and point `ca_file` under `[client.tls]` in the sidecar's `pricefeed.toml` at the terminator's CA;
-  `cert_file`, `key_file`, and `server_name` sit beside it. `pricefeed validate` and `pricefeed prices` take the same
-  files as `--tls-*` flags, and `validate` takes the chain link's as `--chain-tls-*`.
+- **Node to sidecar.** Start the sidecar with `--tls-mode tls`, `--tls-cert-file`, and `--tls-key-file`.
+  Add `--tls-client-ca-file` to require client certificates chaining to that bundle. Set `mode = "tls"`
+  under `[pricefeed.tls]` in the node's `app.toml`. An empty `ca_file` uses system roots; a supplied
+  bundle replaces them. Set `cert_file` and `key_file` for client authentication and `server_name`
+  when the certificate names the service rather than the dialled host or IP.
+- **Sidecar to node.** Put a TLS terminator in front of the node's plaintext gRPC port and select
+  `mode = "tls"` under `[client.tls]` in `pricefeed.toml`. The same root and client-certificate rules
+  apply. `pricefeed prices` and `pricefeed validate` accept `--tls-mode` and `--tls-*` files;
+  `validate` also accepts `--chain-tls-mode` and `--chain-tls-*` for its chain connection.
+
+**Upgrading existing configurations:** add TLS mode wherever certificate files are already set.
+For remote plaintext, explicitly select plaintext mode; the default now refuses those endpoints.
+Local plaintext configurations continue to work. The Docker localnet selects plaintext explicitly
+for its container-to-container links.
+
+Long-lived connections check certificate/key contents every minute, including timestamp-preserving
+file replacements and symlink swaps. Handshakes read only the current certificate from memory.
+Malformed, mismatched, expired, not-yet-valid, or unsuitable replacements retain the previous identity
+and log an error; recovery and successful rotation are logged too. Expiry warnings begin 24 hours
+before the earliest presented certificate expires. Repeated failure/expiry messages are limited to
+once an hour. Publish complete pairs, preferably by atomically swapping a directory symlink.
+Rotation affects new handshakes; it does not reauthenticate or revoke existing connections.
+
+Trust bundles are fixed for each loaded transport. Changing a bundle at the same path requires a
+restart. A sidecar chain-client address or TLS configuration change loads a new transport before
+accepting the update; timing-only changes retain existing material. Short-lived commands load once.
+
+Provider endpoints require HTTPS for APIs and WSS for WebSockets. Both refuse redirects before a
+second request, including same-origin redirects. Configure the final endpoint URL. API handlers may
+change the path and query but must retain the configured HTTPS origin before credentials are attached.
 
 `addresses` under `[client]` in the sidecar's `pricefeed.toml` lists the chain nodes to query, in
 preference order and at most four — a local sentry first, a fallback behind it. The sidecar polls the
