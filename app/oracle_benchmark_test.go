@@ -30,8 +30,6 @@ import (
 
 const oracleBenchmarkValidatorCount = 100
 
-var oracleBenchmarkPrices map[string]math.LegacyDec
-
 type oracleBenchmarkFixture struct {
 	app        *app.ArkApp
 	validators apptestutil.Validators
@@ -130,11 +128,10 @@ func benchmarkProcessVoteExtensions(
 		ctx, _ := baseCtx.CacheContext()
 		b.StartTimer()
 
-		prices, err := abcioracle.ProcessVoteExtensions(ctx, fixture.app.OracleKeeper, req)
+		err := abcioracle.ProcessVoteExtensions(ctx, fixture.app.OracleKeeper, req)
 		if err != nil {
 			b.Fatal(err)
 		}
-		oracleBenchmarkPrices = prices
 	}
 }
 
