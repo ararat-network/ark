@@ -1,7 +1,9 @@
 package ante_test
 
 import (
+	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
@@ -157,7 +160,7 @@ func TestGovVoteStakeFloor(t *testing.T) {
 // for one who clears the floor.
 func TestGovVoteDecoratorSimulationMatchesExecution(t *testing.T) {
 	arkApp, ctx, rich, poor := setupGovVoteTest(t)
-	decorator := ante.NewPrivilegeDecorator(arkApp.AppCodec(), arkApp.Privileges())
+	decorator := ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper)
 	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
 
 	poorTx := treasuryFeeTx{msgs: []sdk.Msg{vote(poor)}}
@@ -219,4 +222,48 @@ func TestZeroVoterStakeFloorAdmitsEveryone(t *testing.T) {
 	undelegated := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	require.NoError(t, ante.ValidateVoterStake(ctx, arkApp.StakingKeeper, poor))
 	require.NoError(t, ante.ValidateVoterStake(ctx, arkApp.StakingKeeper, undelegated))
+}
+
+func TestVoterStakeValidatorErrors(t *testing.T) {
+	for _, name := range []string{"missing validator", "malformed validator", "malformed delegation address"} {
+		t.Run(name, func(t *testing.T) {
+			arkApp, ctx, voter, _ := setupGovVoteTest(t)
+			validators, err := arkApp.StakingKeeper.GetAllValidators(ctx)
+			require.NoError(t, err)
+			addr, err := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
+			require.NoError(t, err)
+			store := ctx.KVStore(arkApp.GetKey(stakingtypes.StoreKey))
+			switch name {
+			case "missing validator":
+				store.Delete(stakingtypes.GetValidatorKey(addr))
+			case "malformed validator":
+				store.Set(stakingtypes.GetValidatorKey(addr), []byte{0xff})
+			case "malformed delegation address":
+				delegation, err := arkApp.StakingKeeper.GetDelegation(ctx, voter, addr)
+				require.NoError(t, err)
+				delegation.ValidatorAddress = "invalid"
+				store.Set(stakingtypes.GetDelegationKey(voter, addr), arkApp.AppCodec().MustMarshal(&delegation))
+			}
+			err = ante.ValidateVoterStake(ctx, arkApp.StakingKeeper, voter)
+			end := ctx.BlockTime().Add(time.Hour)
+			require.NoError(t, arkApp.GovKeeper.Proposals.Set(ctx, 1, govv1.Proposal{
+				Id: 1, Status: govv1.StatusVotingPeriod, VotingEndTime: &end,
+			}))
+			eligible, priorityErr := arkApp.Privileges().Vouch(ctx, vote(voter))
+			require.False(t, eligible)
+			if name == "missing validator" {
+				require.ErrorIs(t, err, errortypes.ErrUnauthorized)
+				require.NoError(t, priorityErr)
+				return
+			}
+			require.Error(t, err)
+			require.NotErrorIs(t, err, errortypes.ErrUnauthorized)
+			require.EqualError(t, priorityErr, err.Error())
+			if name == "malformed validator" {
+				require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+			} else {
+				require.ErrorContains(t, err, "decoding delegated validator address")
+			}
+		})
+	}
 }

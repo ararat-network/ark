@@ -1,6 +1,7 @@
 package ante_test
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -18,11 +19,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/runtime"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
+	"github.com/ararat-network/ark/app/mempool"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 )
@@ -39,19 +42,19 @@ type benchFixture struct {
 	accNum  uint64
 }
 
-func newBenchFixture(b *testing.B) *benchFixture {
-	b.Helper()
-	arkApp := apptestutil.Setup(b, false)
+func newBenchFixture(tb testing.TB) *benchFixture {
+	tb.Helper()
+	arkApp := apptestutil.Setup(tb, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1}).
 		WithExecMode(sdk.ExecModeFinalize)
 
 	// A nonzero rate and cap, so the tax path computes and moves coins rather
 	// than early-outing.
 	params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	params.ReferenceTaxCap = math.NewInt(1_000_000)
 	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
-	require.NoError(b, arkApp.TreasuryKeeper.Params.Set(ctx, params))
+	require.NoError(tb, arkApp.TreasuryKeeper.Params.Set(ctx, params))
 
 	priv := secp256k1.GenPrivKey()
 	addr := sdk.AccAddress(priv.PubKey().Address())
@@ -60,7 +63,7 @@ func newBenchFixture(b *testing.B) *benchFixture {
 
 	// Enough for one pass of fee plus tax; every iteration replays against the
 	// same base state through a fresh cache.
-	apptestutil.FundAccount(b, arkApp, ctx, addr, sdk.NewCoins(
+	apptestutil.FundAccount(tb, arkApp, ctx, addr, sdk.NewCoins(
 		sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000),
 		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 	))
@@ -68,12 +71,12 @@ func newBenchFixture(b *testing.B) *benchFixture {
 	// Stake past the vote floor, so the vote benchmark measures an admitted
 	// vote rather than a refusal.
 	validators, err := arkApp.StakingKeeper.GetAllValidators(ctx)
-	require.NoError(b, err)
-	require.NotEmpty(b, validators)
+	require.NoError(tb, err)
+	require.NotEmpty(tb, validators)
 	bond := chain.NativeBaseAmount(2)
-	fundVoter(b, arkApp, ctx, addr, bond)
+	fundVoter(tb, arkApp, ctx, addr, bond)
 	_, err = arkApp.StakingKeeper.Delegate(ctx, addr, bond, stakingtypes.Unbonded, validators[0], true)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 
 	handler := ante.NewAnteHandler(
 		arkApp.AppCodec(),
@@ -102,14 +105,14 @@ func newBenchFixture(b *testing.B) *benchFixture {
 
 // signedTx signs msgs with the fixture key at sequence zero, priced exactly at
 // the consensus floor for the declared gas.
-func (f *benchFixture) signedTx(b *testing.B, gas uint64, msgs ...sdk.Msg) sdk.Tx {
-	b.Helper()
+func (f *benchFixture) signedTx(tb testing.TB, gas uint64, msgs ...sdk.Msg) sdk.Tx {
+	tb.Helper()
 	params, err := f.app.TreasuryKeeper.Params.Get(f.ctx)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	price, err := f.app.TreasuryKeeper.BaseGasPrice.Get(f.ctx)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	required, _, err := f.app.TreasuryKeeper.GetRequiredGasFee(f.ctx, params, price, gas, params.ReferenceDenom)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	tx, err := simtestutil.GenSignedMockTx(
 		rand.New(rand.NewSource(1)),
 		f.app.GetTxConfig(),
@@ -121,7 +124,7 @@ func (f *benchFixture) signedTx(b *testing.B, gas uint64, msgs ...sdk.Msg) sdk.T
 		[]uint64{0},
 		f.priv,
 	)
-	require.NoError(b, err)
+	require.NoError(tb, err)
 	return tx
 }
 
@@ -232,4 +235,37 @@ func TestWasmTxCounterSkipsSimulation(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+}
+
+func TestPrivilegeVouchRunsAfterSignatureVerification(t *testing.T) {
+	f := newBenchFixture(t)
+	calls := 0
+	set := mempool.NewSet(mempool.Privilege{Lane: mempool.LaneGovernance, Msgs: []sdk.Msg{&banktypes.MsgSend{}}, Vouch: func(sdk.Context, sdk.Msg) (bool, error) { calls++; return true, nil }})
+	handler := ante.NewAnteHandler(f.app.AppCodec(), f.app.GetTxConfig(), f.app.AccountKeeper, f.app.BankKeeper,
+		f.app.FeeGrantKeeper, f.app.StakingKeeper, f.app.TreasuryKeeper, set, f.app.IBCKeeper,
+		f.app.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), wasmTxCounterStore(t, f.app))
+	for _, valid := range []bool{false, true} {
+		t.Run(fmt.Sprint(valid), func(t *testing.T) {
+			calls = 0
+			tx := f.signedTx(t, 300_000, &banktypes.MsgSend{FromAddress: f.addr.String(), ToAddress: guardAddr(42).String(), Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1))})
+			builder, err := f.app.GetTxConfig().WrapTxBuilder(tx)
+			require.NoError(t, err)
+			if !valid {
+				sigs, err := builder.GetTx().GetSignaturesV2()
+				require.NoError(t, err)
+				sigs[0].Data.(*signing.SingleSignatureData).Signature[0] ^= 1
+				require.NoError(t, builder.SetSignatures(sigs...))
+			}
+			branch, _ := f.ctx.WithIsSigverifyTx(true).CacheContext()
+			got, err := handler(branch, builder.GetTx(), false)
+			if valid {
+				require.NoError(t, err)
+				require.Equal(t, 1, calls)
+				require.Equal(t, mempool.LaneGovernance, mempool.FromContext(got))
+			} else {
+				require.ErrorContains(t, err, "signature verification failed")
+				require.Zero(t, calls)
+			}
+		})
+	}
 }

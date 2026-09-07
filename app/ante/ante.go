@@ -22,7 +22,7 @@ import (
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	"github.com/ararat-network/ark/abci/lanes"
+	"github.com/ararat-network/ark/app/mempool"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 )
 
@@ -37,12 +37,12 @@ import (
 // relative order of its v0.54.3 default list; an upgrade adding one must be
 // mirrored here by hand.
 //
-// Ark's decorators follow one rule: a check that can refuse without moving a
-// balance goes before any charge, and the charges follow in the order money
-// moves — the gas fee here, inside FeeDecorator, and the transfer tax after
-// the messages, inside NewPostHandler's TransferTaxDecorator. A refused
-// transaction is then never charged first, and one failing both reports the
-// standard fee error wallets already handle.
+// Message policy and the signed fee requirements precede fee deduction.
+// Signature verification and priority eligibility follow it, so eligibility
+// sees authenticated signers and post-fee balances. If any ante decorator
+// fails, the caller discards all ante writes, including the fee deduction.
+// Once ante succeeds, the gas fee stands even if execution fails; transfer
+// tax commits only with successful messages through NewPostHandler.
 func NewAnteHandler(
 	cdc codec.Codec,
 	txConfig client.TxConfig,
@@ -51,7 +51,7 @@ func NewAnteHandler(
 	feeGrantKeeper feegrantkeeper.Keeper,
 	stakingKeeper *stakingkeeper.Keeper,
 	treasuryKeeper *treasurykeeper.Keeper,
-	privileges lanes.Set,
+	privileges mempool.Set,
 	ibcKeeper *ibckeeper.Keeper,
 	wasmGasRegister wasmtypes.GasRegister,
 	wasmNodeConfig wasmtypes.NodeConfig,
@@ -82,17 +82,10 @@ func NewAnteHandler(
 		sdkante.NewValidateMemoDecorator(accountKeeper),
 		sdkante.NewConsumeGasForTxSizeDecorator(accountKeeper),
 
-		// Ark's message policy, before any charge because none moves a
-		// balance. The privilege decorator vouches for every message the
-		// priority lane carries, through the lane set the mempool classifies
-		// with: the stake floor on votes, x/gov's own first refusals on
-		// proposals and deposits, and the mandate check on committee
-		// messages. MultiSend's fan-out cap and quadratic gas surcharge
-		// follow. Both walk authz; the policy router applies the vote floor
-		// and the MultiSend cap to execution-generated messages, whose
-		// committee messages reach the mandate check in their handlers
-		// without ever touching a lane.
-		NewPrivilegeDecorator(cdc, privileges),
+		// Consensus message policy stays before fee collection. The vote
+		// floor also covers authz; priority-only eligibility is evaluated
+		// separately after signature verification below.
+		NewGovVoteDecorator(cdc, stakingKeeper),
 		NewMultiSendDecorator(cdc),
 
 		// The ante half of the fee mechanism, fee.go's FeeDecorator in place
@@ -117,6 +110,7 @@ func NewAnteHandler(
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
 		sdkante.NewSigGasConsumeDecorator(accountKeeper, sdkante.DefaultSigVerificationGasConsumer),
 		sdkante.NewSigVerificationDecorator(accountKeeper, txConfig.SignModeHandler()),
+		NewPrivilegeDecorator(privileges),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
 
 		// Last, as it was when it wrapped the chain from outside: a redundant

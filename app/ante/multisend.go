@@ -59,8 +59,8 @@ func ValidateMultiSendMsg(ctx sdk.Context, cdc codec.Codec, msg sdk.Msg, depth i
 
 // MultiSendDecorator applies the fan-out guard to signed transactions; the
 // policy router applies the same guard to execution-generated messages.
-// Unlike the gov-vote decorator it runs in simulation too: the cap is pure
-// message shape, and skipping the surcharge would understate gas estimates.
+// It runs in simulation too: the cap is pure message shape, and skipping
+// the surcharge would understate gas estimates.
 type MultiSendDecorator struct {
 	cdc codec.Codec
 }

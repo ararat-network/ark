@@ -1,32 +1,29 @@
 package ante
 
 import (
+	"errors"
 	"fmt"
 
-	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
-	"github.com/ararat-network/ark/abci/lanes"
+	"github.com/ararat-network/ark/app/mempool"
 )
 
-// GovernancePrivilege is the priority lane's governance half: participation
-// messages, each vouched for by the first refusal x/gov's handler would make.
-// A vote carries the stake floor; a proposal, deposit, or cancellation must be
-// one x/gov would accept and its signer can fund. The checks mirror the
-// v0.54 handlers and move with them: a vouch that drifted looser would hand
-// the lane back to spam, one that drifted stricter would keep a valid
-// proposal out of a block.
-func GovernancePrivilege(staking *stakingkeeper.Keeper, bank bankkeeper.BaseKeeper, gov *govkeeper.Keeper) lanes.Privilege {
-	return lanes.Privilege{
+// GovernancePrivilege checks the stake or deposit prerequisites for priority.
+// Ordinary refusals leave the transaction in the normal lane. Handlers still
+// enforce execution validity, including prerequisites set by earlier messages.
+func GovernancePrivilege(staking *stakingkeeper.Keeper, bank bankkeeper.BaseKeeper, gov *govkeeper.Keeper) mempool.Privilege {
+	return mempool.Privilege{
+		Lane: mempool.LaneGovernance,
 		Msgs: []sdk.Msg{
 			&govv1.MsgSubmitProposal{},
 			&govv1.MsgDeposit{},
@@ -38,14 +35,19 @@ func GovernancePrivilege(staking *stakingkeeper.Keeper, bank bankkeeper.BaseKeep
 			&govv1beta1.MsgVote{},
 			&govv1beta1.MsgVoteWeighted{},
 		},
-		Vouch: func(ctx sdk.Context, msg sdk.Msg) error {
+		Vouch: func(ctx sdk.Context, msg sdk.Msg) (bool, error) {
 			switch m := msg.(type) {
-			case *govv1.MsgVote, *govv1.MsgVoteWeighted, *govv1beta1.MsgVote, *govv1beta1.MsgVoteWeighted:
-				return vouchVote(ctx, staking, msg)
+			case *govv1.MsgVote:
+				return vouchGovernanceVote(ctx, staking, gov, m.ProposalId, msg)
+			case *govv1.MsgVoteWeighted:
+				return vouchGovernanceVote(ctx, staking, gov, m.ProposalId, msg)
+			case *govv1beta1.MsgVote:
+				return vouchGovernanceVote(ctx, staking, gov, m.ProposalId, msg)
+			case *govv1beta1.MsgVoteWeighted:
+				return vouchGovernanceVote(ctx, staking, gov, m.ProposalId, msg)
 			case *govv1.MsgSubmitProposal:
 				return vouchSubmitProposal(ctx, bank, gov, m.Proposer, m.InitialDeposit, m.Expedited)
 			case *govv1beta1.MsgSubmitProposal:
-				// The legacy handler submits every proposal unexpedited.
 				return vouchSubmitProposal(ctx, bank, gov, m.Proposer, m.InitialDeposit, false)
 			case *govv1.MsgDeposit:
 				return vouchDeposit(ctx, bank, gov, m.ProposalId, m.Depositor, m.Amount)
@@ -54,158 +56,181 @@ func GovernancePrivilege(staking *stakingkeeper.Keeper, bank bankkeeper.BaseKeep
 			case *govv1.MsgCancelProposal:
 				return vouchCancelProposal(ctx, gov, m.ProposalId, m.Proposer)
 			default:
-				return errorsmod.Wrapf(errortypes.ErrInvalidRequest, "%s is not a governance message", sdk.MsgTypeURL(msg))
+				return false, errortypes.ErrInvalidRequest.Wrapf("%s is not a governance message", sdk.MsgTypeURL(msg))
 			}
 		},
 	}
 }
 
-// vouchSubmitProposal mirrors the handler's deposit checks: a valid initial
-// deposit in an accepted denomination, at least the minimum initial share of
-// the proposal's minimum deposit, and a proposer who can fund it.
-func vouchSubmitProposal(
-	ctx sdk.Context,
-	bank bankkeeper.BaseKeeper,
-	gov *govkeeper.Keeper,
-	proposer string,
-	initialDeposit sdk.Coins,
-	expedited bool,
-) error {
+func vouchGovernanceVote(ctx sdk.Context, staking *stakingkeeper.Keeper, gov *govkeeper.Keeper, proposalID uint64, msg sdk.Msg) (bool, error) {
+	proposal, found, err := findProposal(ctx, gov, proposalID)
+	if err != nil || !found {
+		return false, err
+	}
+	if proposal.Status != govv1.StatusVotingPeriod || proposal.VotingEndTime == nil || !ctx.BlockTime().Before(*proposal.VotingEndTime) {
+		return false, nil
+	}
+	if checked, _ := ctx.Value(votesCheckedKey{}).(bool); checked {
+		return true, nil
+	}
+	// Proposal selection also calls this without an ante vote-policy pass.
+	// Only the vote policy's ordinary refusals mean loss of priority.
+	err = vouchVote(ctx, staking, msg)
+	if errors.Is(err, errortypes.ErrUnauthorized) || errors.Is(err, errortypes.ErrInvalidAddress) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// vouchSubmitProposal checks x/gov's initial and per-deposit ratios before
+// affordability, using the same rounding as the SDK's private helpers.
+func vouchSubmitProposal(ctx sdk.Context, bank bankkeeper.BaseKeeper, gov *govkeeper.Keeper, proposer string, deposit sdk.Coins, expedited bool) (bool, error) {
 	addr, err := sdk.AccAddressFromBech32(proposer)
 	if err != nil {
-		return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return false, nil
 	}
 	params, err := gov.Params.Get(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if err := validateInitialDeposit(params, initialDeposit, expedited); err != nil {
-		return err
+	eligible, err := initialDepositEligible(params, deposit, expedited)
+	if err != nil || !eligible {
+		return false, err
 	}
-	if err := validateDepositDenom(params, initialDeposit); err != nil {
-		return err
+	if !depositDenomsEligible(params, deposit) {
+		return false, nil
 	}
-	return requireSpendable(ctx, bank, addr, initialDeposit)
+	eligible, err = depositRatioEligible(params, minDeposit(params, expedited), deposit)
+	if err != nil || !eligible {
+		return false, err
+	}
+	return depositSpendable(ctx, bank, addr, deposit)
 }
 
-// vouchDeposit mirrors AddDeposit: a live proposal, an accepted denomination,
-// and a depositor who can fund the amount.
-func vouchDeposit(
-	ctx sdk.Context,
-	bank bankkeeper.BaseKeeper,
-	gov *govkeeper.Keeper,
-	proposalID uint64,
-	depositor string,
-	amount sdk.Coins,
-) error {
+func vouchDeposit(ctx sdk.Context, bank bankkeeper.BaseKeeper, gov *govkeeper.Keeper, proposalID uint64, depositor string, amount sdk.Coins) (bool, error) {
 	addr, err := sdk.AccAddressFromBech32(depositor)
 	if err != nil {
-		return errorsmod.Wrap(errortypes.ErrInvalidAddress, err.Error())
+		return false, nil
 	}
-	proposal, err := liveProposal(ctx, gov, proposalID)
-	if err != nil {
-		return err
+	proposal, found, err := findProposal(ctx, gov, proposalID)
+	if err != nil || !found {
+		return false, err
 	}
 	if proposal.Status != govv1.StatusDepositPeriod && proposal.Status != govv1.StatusVotingPeriod {
-		return errorsmod.Wrapf(govtypes.ErrInactiveProposal, "%d", proposalID)
+		return false, nil
 	}
 	params, err := gov.Params.Get(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if err := validateDepositDenom(params, amount); err != nil {
-		return err
+	if !amount.IsValid() || !depositDenomsEligible(params, amount) {
+		return false, nil
 	}
-	return requireSpendable(ctx, bank, addr, amount)
+	eligible, err := depositRatioEligible(params, proposal.GetMinDepositFromParams(params), amount)
+	if err != nil || !eligible {
+		return false, err
+	}
+	return depositSpendable(ctx, bank, addr, amount)
 }
 
-// vouchCancelProposal mirrors CancelProposal: the proposal's own proposer,
-// while it is still in its deposit or voting period.
-func vouchCancelProposal(ctx sdk.Context, gov *govkeeper.Keeper, proposalID uint64, proposer string) error {
-	proposal, err := liveProposal(ctx, gov, proposalID)
-	if err != nil {
-		return err
+func vouchCancelProposal(ctx sdk.Context, gov *govkeeper.Keeper, proposalID uint64, proposer string) (bool, error) {
+	proposal, found, err := findProposal(ctx, gov, proposalID)
+	if err != nil || !found {
+		return false, err
 	}
-	if proposal.Proposer == "" {
-		return govtypes.ErrInvalidProposal.Wrapf("proposal %d doesn't have proposer %s, so cannot be canceled", proposalID, proposer)
-	}
-	if proposal.Proposer != proposer {
-		return govtypes.ErrInvalidProposer.Wrapf("invalid proposer %s", proposer)
+	if proposal.Proposer == "" || proposal.Proposer != proposer {
+		return false, nil
 	}
 	if proposal.Status != govv1.StatusDepositPeriod && proposal.Status != govv1.StatusVotingPeriod {
-		return govtypes.ErrInvalidProposal.Wrap("proposal should be in the deposit or voting period")
+		return false, nil
 	}
-	if proposal.VotingEndTime != nil && proposal.VotingEndTime.Before(ctx.BlockTime()) {
-		return govtypes.ErrVotingPeriodEnded.Wrapf("voting period is already ended for this proposal %d", proposalID)
-	}
-	return nil
+	return proposal.VotingEndTime == nil || !proposal.VotingEndTime.Before(ctx.BlockTime()), nil
 }
 
-// liveProposal reads a proposal, reporting a missing one the way x/gov's
-// handlers do: the store's own not-found error.
-func liveProposal(ctx sdk.Context, gov *govkeeper.Keeper, proposalID uint64) (govv1.Proposal, error) {
+// findProposal distinguishes ordinary absence from an unexpected store error.
+func findProposal(ctx sdk.Context, gov *govkeeper.Keeper, proposalID uint64) (govv1.Proposal, bool, error) {
 	proposal, err := gov.Proposals.Get(ctx, proposalID)
-	if err != nil {
-		return govv1.Proposal{}, fmt.Errorf("proposal %d: %w", proposalID, err)
+	if errors.Is(err, collections.ErrNotFound) {
+		return govv1.Proposal{}, false, nil
 	}
-	return proposal, nil
+	if err != nil {
+		return govv1.Proposal{}, false, fmt.Errorf("proposal %d: %w", proposalID, err)
+	}
+	return proposal, true, nil
 }
 
-// validateInitialDeposit is x/gov's rule of the same name: the initial
-// deposit covers the minimum initial ratio of the minimum deposit, expedited
-// or not, and a zero ratio asks nothing.
-func validateInitialDeposit(params govv1.Params, initialDeposit sdk.Coins, expedited bool) error {
-	if !initialDeposit.IsValid() || initialDeposit.IsAnyNegative() {
-		return errorsmod.Wrap(errortypes.ErrInvalidCoins, initialDeposit.String())
+func minDeposit(params govv1.Params, expedited bool) sdk.Coins {
+	if expedited {
+		return params.ExpeditedMinDeposit
+	}
+	return params.MinDeposit
+}
+
+// initialDepositEligible mirrors x/gov's initial ratio, including RoundInt.
+// Build the requirement separately to avoid mutating the params' coin slice.
+func initialDepositEligible(params govv1.Params, deposit sdk.Coins, expedited bool) (bool, error) {
+	if !deposit.IsValid() {
+		return false, nil
 	}
 	ratio, err := math.LegacyNewDecFromStr(params.MinInitialDepositRatio)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if ratio.IsZero() {
-		return nil
+		return true, nil
 	}
-	minDeposit := params.MinDeposit
-	if expedited {
-		minDeposit = params.ExpeditedMinDeposit
-	}
-	required := make(sdk.Coins, len(minDeposit))
-	for i, coin := range minDeposit {
+	minimum := minDeposit(params, expedited)
+	required := make(sdk.Coins, len(minimum))
+	for i, coin := range minimum {
 		required[i] = sdk.NewCoin(coin.Denom, math.LegacyNewDecFromInt(coin.Amount).Mul(ratio).RoundInt())
 	}
-	if !initialDeposit.IsAllGTE(required) {
-		return errorsmod.Wrapf(govtypes.ErrMinDepositTooSmall, "was (%s), need (%s)", initialDeposit, required)
-	}
-	return nil
+	return deposit.IsAllGTE(required), nil
 }
 
-// validateDepositDenom is x/gov's rule of the same name: every deposited
-// denomination is one the minimum deposit names.
-func validateDepositDenom(params govv1.Params, amount sdk.Coins) error {
-	accepted := make(map[string]struct{}, len(params.MinDeposit))
-	denoms := make([]string, 0, len(params.MinDeposit))
-	for _, coin := range params.MinDeposit {
-		accepted[coin.Denom] = struct{}{}
-		denoms = append(denoms, coin.Denom)
-	}
+func depositDenomsEligible(params govv1.Params, amount sdk.Coins) bool {
 	for _, coin := range amount {
-		if _, ok := accepted[coin.Denom]; !ok {
-			return errorsmod.Wrapf(
-				govtypes.ErrInvalidDepositDenom,
-				"deposited %s, but gov accepts only the following denom(s): %v",
-				amount,
-				denoms,
-			)
+		if found, _ := sdk.Coins(params.MinDeposit).Find(coin.Denom); !found {
+			return false
 		}
 	}
-	return nil
+	return true
 }
 
-// requireSpendable refuses a deposit its signer cannot fund, which is where
-// the handler's own transfer would fail.
-func requireSpendable(ctx sdk.Context, bank bankkeeper.BaseKeeper, addr sdk.AccAddress, amount sdk.Coins) error {
-	if !bank.SpendableCoins(ctx, addr).IsAllGTE(amount) {
-		return errorsmod.Wrapf(errortypes.ErrInsufficientFunds, "%s cannot fund a deposit of %s", addr, amount)
+// depositRatioEligible mirrors AddDeposit: unless the ratio is zero, at
+// least one accepted denomination must reach the truncated threshold.
+func depositRatioEligible(params govv1.Params, minimum, amount sdk.Coins) (bool, error) {
+	ratio, err := math.LegacyNewDecFromStr(params.MinDepositRatio)
+	if err != nil {
+		return false, err
 	}
-	return nil
+	if ratio.IsZero() {
+		return true, nil
+	}
+	for _, coin := range minimum {
+		threshold := sdk.NewCoin(coin.Denom, coin.Amount.ToLegacyDec().Mul(ratio).TruncateInt())
+		if found, deposit := amount.Find(coin.Denom); found && deposit.IsGTE(threshold) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// depositSpendable reads only requested denominations and excludes locked
+// coins. Missing balances are zero; unexpected store errors remain errors.
+// These reads do not reserve funds for pending deposits.
+func depositSpendable(ctx sdk.Context, bank bankkeeper.BaseKeeper, addr sdk.AccAddress, amount sdk.Coins) (bool, error) {
+	locked := bank.LockedCoins(ctx, addr)
+	for _, coin := range amount {
+		balance, err := bank.Balances.Get(ctx, collections.Join(addr, coin.Denom))
+		if errors.Is(err, collections.ErrNotFound) {
+			balance = math.ZeroInt()
+		} else if err != nil {
+			return false, err
+		}
+		unavailable := locked.AmountOf(coin.Denom)
+		if balance.LT(unavailable) || balance.Sub(unavailable).LT(coin.Amount) {
+			return false, nil
+		}
+	}
+	return true, nil
 }

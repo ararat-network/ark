@@ -1,6 +1,9 @@
 package ante
 
 import (
+	"errors"
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
@@ -39,6 +42,28 @@ func SetMinVoterStake(stake math.LegacyDec) {
 	minVoterStake = stake
 }
 
+// votesCheckedKey marks the current transaction's vote policy pass, avoiding
+// a second delegation walk when the priority decorator follows it.
+type votesCheckedKey struct{}
+
+type GovVoteDecorator struct {
+	cdc     codec.Codec
+	staking *stakingkeeper.Keeper
+}
+
+func NewGovVoteDecorator(cdc codec.Codec, staking *stakingkeeper.Keeper) GovVoteDecorator {
+	return GovVoteDecorator{cdc: cdc, staking: staking}
+}
+
+func (d GovVoteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	for _, msg := range tx.GetMsgs() {
+		if err := ValidateGovVoteMsg(ctx, d.cdc, d.staking, msg, 0); err != nil {
+			return ctx, err
+		}
+	}
+	return next(ctx.WithValue(votesCheckedKey{}, true), tx, simulate)
+}
+
 // ValidateGovVoteMsg refuses a governance vote whose voter stakes less than
 // minVoterStake, recursing through authz MsgExec so a wrapped vote cannot
 // slip past either seam that calls this: the ante for signed transactions,
@@ -46,6 +71,9 @@ func SetMinVoterStake(stake math.LegacyDec) {
 // interchain account dispatches. Votes a passed proposal executes are the one
 // path around it, and need no filter: they already won a governance vote.
 // Non-vote messages pass untouched.
+//
+// The floor is a consensus rule independent of lane eligibility: x/gov
+// does not enforce it, so GovVoteDecorator runs it at FinalizeBlock too.
 func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper.Keeper, msg sdk.Msg, depth int) error {
 	return walkAuthzExec(cdc, msg, depth, func(msg sdk.Msg) error {
 		return vouchVote(ctx, staking, msg)
@@ -77,8 +105,8 @@ func vouchVote(ctx sdk.Context, staking *stakingkeeper.Keeper, msg sdk.Msg) erro
 
 // validateVoterStake sums the voter's staked tokens across at most
 // maxVoterDelegations delegations, stopping early once the floor is met. A
-// delegation whose validator cannot be resolved counts nothing: skipping is
-// the conservative direction, and an ante error only rejects the transaction.
+// delegation whose validator is missing counts nothing. Malformed delegation
+// addresses and unexpected validator-read errors remain state errors.
 func validateVoterStake(ctx sdk.Context, staking *stakingkeeper.Keeper, voter sdk.AccAddress) error {
 	// A zero floor is off, not "any delegation clears it": an account holding
 	// no delegation at all has to pass too, and the walk below never would.
@@ -89,25 +117,34 @@ func validateVoterStake(ctx sdk.Context, staking *stakingkeeper.Keeper, voter sd
 	staked := math.LegacyZeroDec()
 	enough := false
 	checked := 0
+	var lookupErr error
 	err := staking.IterateDelegatorDelegations(ctx, voter, func(delegation stakingtypes.Delegation) bool {
+		checked++
 		valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
 		if err != nil {
-			return false
+			lookupErr = fmt.Errorf("decoding delegated validator address %q: %w", delegation.ValidatorAddress, err)
+			return true
 		}
 		validator, err := staking.GetValidator(ctx, valAddr)
+		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
+			return checked >= maxVoterDelegations
+		}
 		if err != nil {
-			return false
+			lookupErr = fmt.Errorf("reading delegated validator %s: %w", delegation.ValidatorAddress, err)
+			return true
 		}
 		staked = staked.Add(validator.TokensFromSharesTruncated(delegation.Shares))
 		if staked.GTE(minVoterStake) {
 			enough = true
 			return true
 		}
-		checked++
 		return checked >= maxVoterDelegations
 	})
 	if err != nil {
 		return err
+	}
+	if lookupErr != nil {
+		return lookupErr
 	}
 	if !enough {
 		return errorsmod.Wrapf(
