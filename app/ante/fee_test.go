@@ -13,6 +13,8 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/feegrant"
 
 	"github.com/ararat-network/ark/app/ante"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
@@ -522,19 +524,48 @@ func TestFeeDecoratorSimulationMovesWhatExecutionMoves(t *testing.T) {
 // paying transaction's transfer costs in its place, so the estimate never
 // runs short of the execution it sizes.
 func TestFeeDecoratorFeelessSimulationPaysForTheTransfer(t *testing.T) {
-	arkApp, ctx, tx := setupTreasuryAnteTest(t)
-	run := func(fee sdk.Coins, simulate bool) storetypes.Gas {
-		tx.fee = fee
-		cached, _ := ctx.CacheContext()
-		return gasOf(t, cached, func(ctx sdk.Context) error {
-			_, err := runFee(t, arkApp, ctx, tx, simulate)
-			return err
+	for _, tc := range []struct {
+		name      string
+		tip       bool
+		sponsored bool
+	}{
+		{name: "stable fee"},
+		{name: "stable fee and tip", tip: true},
+		{name: "sponsored stable fee", sponsored: true},
+		{name: "sponsored stable fee and tip", tip: true, sponsored: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			arkApp, ctx, tx := setupTreasuryAnteTest(t)
+			charged := tx.payer
+			if tc.sponsored {
+				charged = sdk.AccAddress(bytes.Repeat([]byte{4}, 20))
+				tx.granter = charged
+			}
+			// Both sides have balances with the decimal width of the 2^128
+			// quantity bound, including the collector's existing balances.
+			wide := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 127))
+			funds := sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, wide), sdk.NewCoin(chain.NoahBaseDenom, wide))
+			apptestutil.FundAccount(t, arkApp, ctx, charged, funds)
+			apptestutil.FundModule(t, arkApp, ctx, authtypes.FeeCollectorName, funds)
+			if tc.sponsored {
+				require.NoError(t, arkApp.FeeGrantKeeper.GrantAllowance(ctx, charged, tx.payer, &feegrant.BasicAllowance{SpendLimit: funds}))
+			}
+			fee := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 15))
+			if tc.tip {
+				fee = fee.Add(sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000))
+			}
+			run := func(fee sdk.Coins, simulate bool) storetypes.Gas {
+				tx.fee = fee
+				cached, _ := ctx.CacheContext()
+				return gasOf(t, cached, func(ctx sdk.Context) error {
+					_, err := runFee(t, arkApp, ctx, tx, simulate)
+					return err
+				})
+			}
+			executed, feeless := run(fee, false), run(nil, true)
+			require.GreaterOrEqual(t, feeless, executed)
 		})
 	}
-
-	executed := run(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 15)), false)
-	feeless := run(nil, true)
-	require.GreaterOrEqual(t, feeless, executed)
 }
 
 // A transaction that fails both the fee gate and the tax charge reports the

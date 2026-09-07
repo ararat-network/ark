@@ -35,18 +35,13 @@ import (
 // factory defines on every transaction command and never reads.
 const TipFlagUsage = "NOAH paid above the base fee for priority, e.g. 1000anoah"
 
-// DefaultGasAdjustment is what arkd stamps on every command carrying
-// --gas-adjustment, and the only correction any client applies. An estimate
-// tracks execution closely: Ark's fee decorator meters its gate under
-// simulation and charges a stand-in for the transfer a fee-less estimate
-// cannot make — which --gas auto always is, its gas limit being zero when
-// the estimate is built — and what remains is wasmd's counter, which skips
-// simulation, against the SDK's size decorator, which overcharges it.
-// TestGasEstimateMatchesExecution pins the worst ratio at just under one
-// and fails if this drifts short or loose. The margin above is for what no
-// estimate can see: state moving between the estimate and inclusion, a
-// vesting payer's dearer transfer, a wider balance. An explicit
-// --gas-adjustment overrides it.
+// DefaultGasAdjustment is arkd's default --gas-adjustment. Fee-less SDK
+// simulations use an allowance for the largest gas-fee settlement: a stable
+// fee plus a NOAH tip. Single-denomination estimates are more conservative;
+// simulations carrying a payable fee meter its actual transfer. The margin
+// also covers Wasm's execution-only counter and state changes between the
+// estimate and inclusion. TestGasEstimateMatchesExecution verifies both fee
+// shapes through finalisation. An explicit --gas-adjustment overrides this.
 const DefaultGasAdjustment = 1.15
 
 // PriceTransactions wraps a transaction command so its fee is built for it — the

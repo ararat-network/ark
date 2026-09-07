@@ -27,10 +27,12 @@ import (
 const AttributeKeyTip = "tip"
 
 // SimulatedFeeTransferGas stands in for the gas fee transfer a fee-less
-// simulation cannot make: the store traffic of a one-coin send to the fee
-// collector, at amounts on the 2^128 quantity bound, so a real transfer
-// costs no more.
-const SimulatedFeeTransferGas = 21_000
+// simulation cannot make. Settlement transfers at most two denominations:
+// one stable gas fee and a NOAH tip. The allowance covers that path with
+// balances at the 2^128 quantity bound. A simulation carrying a payable fee
+// meters the actual transfer instead; fee-less estimates are conservative
+// when the eventual fee uses only one denomination.
+const SimulatedFeeTransferGas = 38_000
 
 // useBaseFeeGate gates the consensus base fee.
 var useBaseFeeGate = true
