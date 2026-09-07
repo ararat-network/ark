@@ -105,7 +105,7 @@ var DefaultResolver = resolver.Config{
 	},
 }
 
-// Default returns the default standalone oracle runtime configuration.
+// Default returns the default sidecar runtime configuration.
 func Default() runtime.Config {
 	return runtime.Config{
 		UpdateInterval: DefaultUpdateInterval,

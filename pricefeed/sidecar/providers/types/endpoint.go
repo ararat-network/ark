@@ -5,10 +5,10 @@ import "errors"
 // Endpoint describes a provider endpoint that a fetcher can connect to.
 type Endpoint struct {
 	// URL is the endpoint URL used by the fetcher.
-	URL string `json:"url"`
+	URL string `mapstructure:"url"`
 
 	// Authentication holds optional endpoint authentication data.
-	Authentication Authentication `json:"authentication"`
+	Authentication Authentication `mapstructure:"authentication"`
 }
 
 // Validate performs validation of the provider endpoint.
@@ -23,10 +23,10 @@ func (e Endpoint) Validate() error {
 // Authentication holds optional endpoint authentication data.
 type Authentication struct {
 	// APIKey is the key sent to the provider when authentication is enabled.
-	APIKey string `json:"apiKey"`
+	APIKey string `mapstructure:"api_key"`
 
 	// APIKeyHeader is the header used to send the API key.
-	APIKeyHeader string `json:"apiKeyHeader"`
+	APIKeyHeader string `mapstructure:"api_key_header"`
 }
 
 // Enabled returns true if the authentication is fully configured.

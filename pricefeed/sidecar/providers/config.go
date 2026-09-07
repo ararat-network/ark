@@ -16,23 +16,23 @@ import (
 // Runtime config changes should build a replacement provider.
 type Config struct {
 	// Name is the provider name used in logs and metrics.
-	Name string `json:"name"`
+	Name string `mapstructure:"name"`
 	// TransportType identifies the transport backing the provider.
-	TransportType base.TransportType `json:"transportType"`
+	TransportType base.TransportType `mapstructure:"transport_type"`
 	// Markets maps canonical oracle pairs to provider-specific symbols.
-	Markets types.Markets `json:"markets"`
+	Markets types.Markets `mapstructure:"markets"`
 	// MaxPriceAge is the maximum age of a cached price accepted from this provider.
-	MaxPriceAge time.Duration `json:"maxPriceAge"`
+	MaxPriceAge time.Duration `mapstructure:"max_price_age"`
 	// MaxUnchangedAge bounds how long unchanged results may keep a price
 	// alive, measured from the last real observation. Zero means they
 	// cannot: a heartbeat certifies the connection, not the subscription,
 	// so extending on one is opt-in per venue.
-	MaxUnchangedAge time.Duration `json:"maxUnchangedAge"`
+	MaxUnchangedAge time.Duration `mapstructure:"max_unchanged_age"`
 
 	// API configures an HTTP API provider when TransportType is base.API.
-	API api.Config `json:"api"`
+	API api.Config `mapstructure:"api"`
 	// WebSocket configures a websocket provider when TransportType is base.WebSocket.
-	WebSocket websocket.Config `json:"websocket"`
+	WebSocket websocket.Config `mapstructure:"websocket"`
 }
 
 // Validate checks the provider identity, market mapping, and selected transport

@@ -48,7 +48,7 @@ func TestNewCachedPriceClient(t *testing.T) {
 				SidecarAddress: "127.0.0.1:1",
 				ClientTimeout:  time.Second,
 			},
-			wantErr: "price time to live",
+			wantErr: "price_ttl",
 		},
 	}
 

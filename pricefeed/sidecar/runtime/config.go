@@ -22,21 +22,21 @@ import (
 type Config struct {
 	// UpdateInterval is the interval at which cached provider prices are resolved
 	// into a new public price snapshot.
-	UpdateInterval time.Duration `json:"updateInterval"`
+	UpdateInterval time.Duration `mapstructure:"update_interval"`
 
 	// Providers is the set of providers that the oracle will fetch prices from, keyed by provider name.
-	Providers map[string]providers.Config `json:"providers"`
+	Providers map[string]providers.Config `mapstructure:"providers"`
 
 	// Resolver configures how provider pair prices are resolved into final feed prices.
-	Resolver resolver.Config `json:"resolver"`
+	Resolver resolver.Config `mapstructure:"resolver"`
 
 	// Client configures the chainstate feed query client.
-	Client chainstate.Config `json:"client"`
+	Client chainstate.Config `mapstructure:"client"`
 
 	// FallbackFeeds is used until feed polling produces its first on-chain
 	// snapshot. Later polling failures preserve the last on-chain snapshot instead
 	// of returning to these defaults.
-	FallbackFeeds []string `json:"fallbackFeeds"`
+	FallbackFeeds []string `mapstructure:"fallback_feeds"`
 }
 
 // Clone returns a runtime-owned copy of c, including nested maps and slices.

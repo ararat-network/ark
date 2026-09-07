@@ -14,28 +14,28 @@ import (
 // Build a replacement config instead of mutating Endpoints in place.
 type Config struct {
 	// Name is the name of the Fetcher that corresponds to this config.
-	Name string `json:"name"`
+	Name string `mapstructure:"name"`
 
 	// Timeout is the request timeout.
-	Timeout time.Duration `json:"timeout"`
+	Timeout time.Duration `mapstructure:"timeout"`
 
 	// Interval is the delay between polling cycles.
-	Interval time.Duration `json:"interval"`
+	Interval time.Duration `mapstructure:"interval"`
 
 	// RequestsPerSecond limits request rate. If zero, requests are not rate limited.
-	RequestsPerSecond int `json:"requestsPerSecond"`
+	RequestsPerSecond int `mapstructure:"requests_per_second"`
 
 	// Endpoints is a list of endpoints that the provider can query.
-	Endpoints []types.Endpoint `json:"endpoints"`
+	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// BatchSize is the maximum number of tickers in each provider-defined request
 	// group. If zero, each complete provider-defined group is queried in one request.
-	BatchSize int `json:"batchSize"`
+	BatchSize int `mapstructure:"batch_size"`
 
 	// MaxBlockHeightAge is the maximum time an on-chain data source may report the
 	// same block height before its data is considered stale. If zero, block height
 	// freshness is not checked by the provider-specific fetcher.
-	MaxBlockHeightAge time.Duration `json:"maxBlockHeightAge"`
+	MaxBlockHeightAge time.Duration `mapstructure:"max_block_height_age"`
 }
 
 // Validate performs validation of the API config.

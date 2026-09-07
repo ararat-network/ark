@@ -14,12 +14,12 @@ import (
 type Config struct {
 	// Routes maps feed denoms to alternate resolution paths. Missing or
 	// empty entries use the direct UNIT/NOAH route.
-	Routes map[string][]Route `json:"routes"`
+	Routes map[string][]Route `mapstructure:"routes"`
 
 	// BootstrapPrices supplies temporary route-leg prices when no provider has
 	// a fresh direct or inverse observation. Provider observations always take
 	// precedence, and each bootstrap price expires at its absolute deadline.
-	BootstrapPrices []BootstrapPrice `json:"bootstrapPrices"`
+	BootstrapPrices []BootstrapPrice `mapstructure:"bootstrap_prices"`
 }
 
 // Route is one named path from a feed's unit to NOAH. Its legs multiply to
@@ -29,20 +29,20 @@ type Config struct {
 // sample by the resolver.
 type Route struct {
 	// Name identifies this path in per-route metrics.
-	Name string `json:"name"`
+	Name string `mapstructure:"name"`
 
 	// Pairs are multiplied in order. A step may be satisfied by provider data
 	// for either the configured pair or its inverse.
-	Pairs []types.Pair `json:"pairs"`
+	Pairs []types.Pair `mapstructure:"pairs"`
 }
 
 // BootstrapPrice is an expiring, last-resort price for one route leg, stated
 // in the leg's orientation. Price is a decimal string so operator
 // configuration does not lose precision through float decoding.
 type BootstrapPrice struct {
-	Pair       types.Pair `json:"pair"`
-	Price      string     `json:"price"`
-	ValidUntil string     `json:"validUntil"`
+	Pair       types.Pair `mapstructure:"pair"`
+	Price      string     `mapstructure:"price"`
+	ValidUntil string     `mapstructure:"valid_until"`
 }
 
 // Clone returns a deep copy of c, including nested route slices.

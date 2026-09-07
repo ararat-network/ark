@@ -2,7 +2,6 @@ package sidecar
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net"
 	"os"
@@ -20,6 +19,7 @@ import (
 	"cosmossdk.io/log/v2"
 
 	"github.com/ararat-network/ark/pricefeed/api"
+	oracleconfig "github.com/ararat-network/ark/pricefeed/config"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
 	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
@@ -47,8 +47,8 @@ func TestReloadConfigLoadsConstructionPath(t *testing.T) {
 }
 
 func TestReloadConfigPreservesRuntimeAfterInvalidFile(t *testing.T) {
-	configPath := filepath.Join(t.TempDir(), "oracle.json")
-	require.NoError(t, os.WriteFile(configPath, []byte(`{"updateInterval":"0s"}`), 0o600))
+	configPath := filepath.Join(t.TempDir(), "oracle.toml")
+	require.NoError(t, os.WriteFile(configPath, []byte(`update_interval = "0s"`), 0o600))
 	oracle := newReloadTestOracle(t, newTestRuntimeConfig(), configPath)
 	startTestRuntime(t, oracle)
 	initial := requireOracleTick(t, oracle)
@@ -160,12 +160,12 @@ func (unavailableFeedsClient) Feeds() ([]string, error) {
 	return nil, errors.New("feeds unavailable")
 }
 
-func writeRuntimeConfig(t *testing.T, cfg any) string {
+func writeRuntimeConfig(t *testing.T, cfg runtime.Config) string {
 	t.Helper()
 
-	bz, err := json.Marshal(cfg)
+	bz, err := oracleconfig.Encode(cfg)
 	require.NoError(t, err)
-	path := filepath.Join(t.TempDir(), "oracle.json")
+	path := filepath.Join(t.TempDir(), "oracle.toml")
 	require.NoError(t, os.WriteFile(path, bz, 0o600))
 
 	return path

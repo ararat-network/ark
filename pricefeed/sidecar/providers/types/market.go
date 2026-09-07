@@ -10,9 +10,9 @@ import (
 // Market maps an exchange-rate pair to the provider symbol used to fetch its price.
 type Market struct {
 	// Pair is the internal id for a pair, for example USD/KRW.
-	Pair sidecartypes.Pair `json:"pair"`
+	Pair sidecartypes.Pair `mapstructure:"pair"`
 	// Symbol is the provider/API-facing market symbol, for example USDTUSD.
-	Symbol Ticker `json:"symbol"`
+	Symbol Ticker `mapstructure:"symbol"`
 }
 
 // Markets contains the configured pair-to-provider-symbol mappings for a provider.

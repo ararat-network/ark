@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"cosmossdk.io/log/v2"
+
 	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 )
 
@@ -28,11 +30,9 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "interval must be",
 		},
 		{
-			name: "missing address",
-			mutate: func(cfg *pricefeedclient.Config) {
-				cfg.SidecarAddress = " "
-			},
-			wantErr: "sidecar address",
+			name:    "blank address",
+			mutate:  func(cfg *pricefeedclient.Config) { cfg.SidecarAddress = " " },
+			wantErr: "sidecar address must not be empty",
 		},
 		{
 			name: "zero client timeout",
@@ -46,14 +46,14 @@ func TestConfigValidate(t *testing.T) {
 			mutate: func(cfg *pricefeedclient.Config) {
 				cfg.PriceTTL = 0
 			},
-			wantErr: "price time to live",
+			wantErr: "price_ttl",
 		},
 		{
 			name: "price ttl above maximum",
 			mutate: func(cfg *pricefeedclient.Config) {
 				cfg.PriceTTL = pricefeedclient.MaxPriceTTL + time.Nanosecond
 			},
-			wantErr: "price time to live",
+			wantErr: "price_ttl",
 		},
 		{
 			name: "zero interval",
@@ -93,55 +93,11 @@ func TestConfigValidate(t *testing.T) {
 	}
 }
 
-func TestReadConfigFromAppOptsRejectsExplicitInvalidValues(t *testing.T) {
-	tests := []struct {
-		name string
-		opts appOptions
-	}{
-		{
-			name: "empty address",
-			opts: appOptions{
-				"pricefeed.enabled":         true,
-				"pricefeed.sidecar_address": "",
-			},
-		},
-		{
-			name: "zero client timeout",
-			opts: appOptions{
-				"pricefeed.enabled":        true,
-				"pricefeed.client_timeout": "0s",
-			},
-		},
-		{
-			name: "zero price ttl",
-			opts: appOptions{
-				"pricefeed.enabled":   true,
-				"pricefeed.price_ttl": "0s",
-			},
-		},
-		{
-			name: "zero interval",
-			opts: appOptions{
-				"pricefeed.enabled":  true,
-				"pricefeed.interval": "0s",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := pricefeedclient.ReadConfigFromAppOpts(tt.opts)
-			require.Error(t, err)
-		})
-	}
-}
-
 func TestReadConfigFromAppOpts(t *testing.T) {
 	cfg, err := pricefeedclient.ReadConfigFromAppOpts(appOptions{
 		"pricefeed.enabled":         true,
 		"pricefeed.sidecar_address": "127.0.0.1:9090",
 		"pricefeed.client_timeout":  "2s",
-		"pricefeed.metrics_enabled": true,
 		"pricefeed.price_ttl":       "8s",
 		"pricefeed.interval":        "2s",
 	})
@@ -150,10 +106,64 @@ func TestReadConfigFromAppOpts(t *testing.T) {
 		Enabled:        true,
 		SidecarAddress: "127.0.0.1:9090",
 		ClientTimeout:  2 * time.Second,
-		MetricsEnabled: true,
 		PriceTTL:       8 * time.Second,
 		Interval:       2 * time.Second,
 	}, cfg)
+}
+
+func TestReadConfigFromAppOptsAbsentKeysDefault(t *testing.T) {
+	cfg, err := pricefeedclient.ReadConfigFromAppOpts(appOptions{})
+	require.NoError(t, err)
+	require.Equal(t, pricefeedclient.NewDefaultConfig(), cfg)
+}
+
+// The reader decodes and nothing more. What it refuses is a value of the
+// wrong type, and it names every such key at once.
+func TestReadConfigFromAppOptsRejectsMalformedValues(t *testing.T) {
+	tests := []struct {
+		name         string
+		opts         appOptions
+		errorSubstrs []string
+	}{
+		{
+			name:         "enabled not a bool",
+			opts:         appOptions{"pricefeed.enabled": "sometimes"},
+			errorSubstrs: []string{"pricefeed.enabled"},
+		},
+		{
+			name:         "interval not a duration",
+			opts:         appOptions{"pricefeed.interval": "soon"},
+			errorSubstrs: []string{"pricefeed.interval"},
+		},
+		{
+			name: "every malformed key reported",
+			opts: appOptions{
+				"pricefeed.client_timeout": "later",
+				"pricefeed.price_ttl":      "never",
+			},
+			errorSubstrs: []string{"pricefeed.client_timeout", "pricefeed.price_ttl"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := pricefeedclient.ReadConfigFromAppOpts(tt.opts)
+			require.Error(t, err)
+			for _, substr := range tt.errorSubstrs {
+				require.ErrorContains(t, err, substr)
+			}
+		})
+	}
+}
+
+// Out-of-range values pass the reader; NewClient is the backstop that
+// refuses them for the commands that build the app without starting it.
+func TestReadConfigFromAppOptsDoesNotValidate(t *testing.T) {
+	cfg, err := pricefeedclient.ReadConfigFromAppOpts(appOptions{"pricefeed.interval": "0s"})
+	require.NoError(t, err)
+
+	_, err = pricefeedclient.NewClient(log.NewNopLogger(), cfg)
+	require.ErrorContains(t, err, "interval must be")
 }
 
 type appOptions map[string]any

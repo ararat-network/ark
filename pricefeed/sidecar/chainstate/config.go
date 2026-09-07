@@ -10,13 +10,13 @@ import (
 // chain's oracle query service.
 type Config struct {
 	// Address is the oracle query service endpoint.
-	Address string `json:"address"`
+	Address string `mapstructure:"address"`
 
 	// Timeout caps each feed query.
-	Timeout time.Duration `json:"timeout"`
+	Timeout time.Duration `mapstructure:"timeout"`
 
 	// Interval controls the steady-state poll cadence and retry delay.
-	Interval time.Duration `json:"interval"`
+	Interval time.Duration `mapstructure:"interval"`
 }
 
 // Equal reports whether two configs would produce the same polling behaviour.

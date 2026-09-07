@@ -57,51 +57,51 @@ const (
 // Build a replacement config instead of mutating Endpoints in place.
 type Config struct {
 	// Name is the fetcher name used in logs and metrics.
-	Name string `json:"name"`
+	Name string `mapstructure:"name"`
 
 	// MaxBufferSize is the provider response channel capacity.
-	MaxBufferSize int `json:"maxBufferSize"`
+	MaxBufferSize int `mapstructure:"max_buffer_size"`
 
 	// ReconnectionTimeout is the required positive delay before reconnecting after
 	// a connection session fails.
-	ReconnectionTimeout time.Duration `json:"reconnectionTimeout"`
+	ReconnectionTimeout time.Duration `mapstructure:"reconnection_timeout"`
 
 	// PostConnectionTimeout is the delay after dial before sending subscription
 	// messages.
-	PostConnectionTimeout time.Duration `json:"postConnectionTimeout"`
+	PostConnectionTimeout time.Duration `mapstructure:"post_connection_timeout"`
 
 	// Endpoints are provider endpoints that may be selected for each connection
 	// attempt.
-	Endpoints []types.Endpoint `json:"endpoints"`
+	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// HandshakeTimeout is the maximum duration allowed for websocket dial and
 	// handshake.
-	HandshakeTimeout time.Duration `json:"handshakeTimeout"`
+	HandshakeTimeout time.Duration `mapstructure:"handshake_timeout"`
 
 	// EnableCompression asks the websocket client to negotiate per-message
 	// compression. The server may still decline compression.
-	EnableCompression bool `json:"enableCompression"`
+	EnableCompression bool `mapstructure:"enable_compression"`
 
 	// ReadTimeout is the timeout applied to each websocket read.
-	ReadTimeout time.Duration `json:"readTimeout"`
+	ReadTimeout time.Duration `mapstructure:"read_timeout"`
 
 	// WriteTimeout is the required positive timeout applied to each websocket write.
-	WriteTimeout time.Duration `json:"writeTimeout"`
+	WriteTimeout time.Duration `mapstructure:"write_timeout"`
 
 	// PingInterval is the heartbeat interval. If zero, heartbeat messages are not
 	// sent.
-	PingInterval time.Duration `json:"pingInterval"`
+	PingInterval time.Duration `mapstructure:"ping_interval"`
 
 	// WriteInterval is the delay between consecutive subscription writes.
-	WriteInterval time.Duration `json:"writeInterval"`
+	WriteInterval time.Duration `mapstructure:"write_interval"`
 
 	// MaxTickersPerConnection is the maximum number of tickers assigned to
 	// one websocket connection. If zero, all tickers share one connection.
-	MaxTickersPerConnection int `json:"maxTickersPerConnection"`
+	MaxTickersPerConnection int `mapstructure:"max_tickers_per_connection"`
 
 	// MaxSubscriptionsPerBatch is a provider-handler setting for the maximum
 	// number of subscriptions included in one subscription message.
-	MaxSubscriptionsPerBatch int `json:"maxSubscriptionsPerBatch"`
+	MaxSubscriptionsPerBatch int `mapstructure:"max_subscriptions_per_batch"`
 }
 
 // Validate performs validation of the websocket config.

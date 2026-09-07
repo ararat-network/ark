@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 )
 
 func TestLoadDecodesDurationStrings(t *testing.T) {
-	path := writeConfig(t, validConfigJSON)
+	path := writeConfig(t, validConfigTOML)
 
 	cfg, err := Load(path)
 
@@ -24,6 +25,7 @@ func TestLoadDecodesDurationStrings(t *testing.T) {
 	require.Equal(t, 1500*time.Millisecond, cfg.UpdateInterval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.Equal(t, []string{"ausd"}, cfg.FallbackFeeds)
+	require.Equal(t, "127.0.0.1:9090", cfg.Client.Address)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "USD/NOAH",
 		Price:      "0.25",
@@ -138,7 +140,7 @@ func TestLoadRejectsEmptyPath(t *testing.T) {
 }
 
 func TestLoadValidatesDecodedConfig(t *testing.T) {
-	path := writeConfig(t, `{"updateInterval":"0s"}`)
+	path := writeConfig(t, `update_interval = "0s"`)
 
 	_, err := Load(path)
 
@@ -148,40 +150,65 @@ func TestLoadValidatesDecodedConfig(t *testing.T) {
 func writeConfig(t *testing.T, contents string) string {
 	t.Helper()
 
-	path := filepath.Join(t.TempDir(), "oracle.json")
+	path := filepath.Join(t.TempDir(), "oracle.toml")
 	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
 
 	return path
 }
 
-const validConfigJSON = `{
-  "updateInterval": "1500ms",
-  "providers": {
-    "frankfurter_api": {
-      "name": "frankfurter_api",
-      "transportType": "api",
-      "maxPriceAge": "90s",
-      "markets": [{"pair": "NOAH/USD", "symbol": "NOAHUSD"}],
-      "api": {
-        "name": "frankfurter_api",
-        "timeout": "3s",
-        "interval": "1m",
-        "endpoints": [{"url": "https://api.frankfurter.dev/v2/rates"}],
-        "batchSize": 1
-      }
-    }
-  },
-  "resolver": {
-    "bootstrapPrices": [{
-      "pair": "USD/NOAH",
-      "price": "0.25",
-      "validUntil": "2030-01-01T00:00:00Z"
-    }]
-  },
-  "client": {
-    "address": "127.0.0.1:9090",
-    "timeout": "2s",
-    "interval": "5s"
-  },
-  "fallbackFeeds": ["ausd"]
-}`
+const validConfigTOML = `update_interval = "1500ms"
+fallback_feeds = ["ausd"]
+
+[client]
+address = "127.0.0.1:9090"
+timeout = "2s"
+interval = "5s"
+
+[providers.frankfurter_api]
+name = "frankfurter_api"
+transport_type = "api"
+max_price_age = "90s"
+markets = [{ pair = "NOAH/USD", symbol = "NOAHUSD" }]
+
+[providers.frankfurter_api.api]
+name = "frankfurter_api"
+timeout = "3s"
+interval = "1m"
+batch_size = 1
+
+[[providers.frankfurter_api.api.endpoints]]
+url = "https://api.frankfurter.dev/v2/rates"
+
+[[resolver.bootstrap_prices]]
+pair = "USD/NOAH"
+price = "0.25"
+valid_until = "2030-01-01T00:00:00Z"
+`
+
+func TestLoadRejectsUnknownKeys(t *testing.T) {
+	tests := []struct {
+		name     string
+		contents string
+	}{
+		{name: "top level", contents: validConfigTOML + "\nupdate_intreval = \"1s\"\n"},
+		{name: "nested table", contents: strings.Replace(validConfigTOML, "[client]", "[client]\ntimeuot = \"2s\"", 1)},
+		{name: "array of tables", contents: validConfigTOML + "\n[[resolver.bootstrap_prices]]\npair = \"USD/NOAH\"\nprice = \"1\"\nvalid_untl = \"2030-01-01T00:00:00Z\"\n"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := Load(writeConfig(t, tc.contents))
+
+			require.ErrorContains(t, err, "invalid keys")
+		})
+	}
+}
+
+func TestLoadIgnoresExtension(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "pricefeed")
+	require.NoError(t, os.WriteFile(path, []byte(validConfigTOML), 0o600))
+
+	cfg, err := Load(path)
+
+	require.NoError(t, err)
+	require.Equal(t, 1500*time.Millisecond, cfg.UpdateInterval)
+}
