@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/log/v2"
 
@@ -21,12 +23,19 @@ import (
 
 const maxPriceSnapshotEntries = 2 * oracletypes.MaxFeeds
 
+// pricesMethod is the RPC a sidecar has to serve to be one at all.
+const pricesMethod = "/ark.pricefeed.v1.PriceFeed/Prices"
+
 // Client polls the sidecar and serves its latest fresh price
 // snapshot to node-side callers without performing network I/O on the request
 // path.
 type Client struct {
 	logger log.Logger
 	config Config
+
+	// versions is the build version each sidecar last reported, by address.
+	// Only the poll goroutine touches it.
+	versions map[string]string
 
 	respMu sync.RWMutex
 	resp   *api.PricesResponse
@@ -43,8 +52,9 @@ func NewClient(logger log.Logger, cfg Config) (*Client, error) {
 	}
 
 	return &Client{
-		logger: logger.With(log.ModuleKey, "pricefeed-client"),
-		config: cfg,
+		logger:   logger.With(log.ModuleKey, "pricefeed-client"),
+		config:   cfg,
+		versions: make(map[string]string, 1),
 	}, nil
 }
 
@@ -114,6 +124,11 @@ func (c *Client) fetchPrices(ctx context.Context, rpc api.PriceFeedClient) {
 		err = validatePricesResponse(resp)
 	}
 	clientmetrics.RecordSidecarResponse(c.config.SidecarAddress, time.Since(start), err)
+	if status.Code(err) == codes.Unimplemented {
+		// The one status a sidecar of the wrong generation returns: it
+		// answers, but not this service. See pricefeed/doc.go.
+		err = fmt.Errorf("sidecar does not serve %s and is not compatible with this node: %w", pricesMethod, err)
+	}
 	if err != nil {
 		if ctx.Err() == nil {
 			c.logger.Error(
@@ -125,6 +140,7 @@ func (c *Client) fetchPrices(ctx context.Context, rpc api.PriceFeedClient) {
 		return
 	}
 
+	c.observeVersion(c.config.SidecarAddress, resp.Version)
 	clientmetrics.RecordSnapshotTimestamp(c.config.SidecarAddress, resp.Timestamp)
 
 	c.logger.Debug(
@@ -136,6 +152,17 @@ func (c *Client) fetchPrices(ctx context.Context, rpc api.PriceFeedClient) {
 	c.respMu.Lock()
 	c.resp = resp
 	c.respMu.Unlock()
+}
+
+// observeVersion logs a sidecar's build version when it first answers and
+// whenever it changes. The version is never a gate; see pricefeed/doc.go.
+func (c *Client) observeVersion(address, version string) {
+	previous, seen := c.versions[address]
+	if seen && previous == version {
+		return
+	}
+	c.versions[address] = version
+	c.logger.Info("sidecar version", "address", address, "version", version, "previous", previous)
 }
 
 func validatePricesResponse(resp *api.PricesResponse) error {
