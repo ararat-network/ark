@@ -97,9 +97,12 @@
 // because no governance authorization depends on a mandate.
 //
 // The priority mempool lane carries committee messages ahead of other traffic,
-// and admits one at CheckTx only if the module vouches for it: [Vouch] over the
-// module's exported AuthoriseCommittee, the same envelope check its handler
-// runs first, so the lane refuses nothing the handler would accept.
+// when every message qualifies. [Vouch] calls the module's AuthoriseCommittee,
+// the same appointment check its handler runs first. An inactive or mismatched
+// appointment rejects admission, as does a store error; submit only once the
+// appointment is active. Ante evaluates this after signature verification.
+// Mixed and authz transactions use the normal lane without priority vouches.
+// Handlers still enforce authorisation at the height the transaction lands.
 //
 // Expiry is lazy. There is no EndBlocker sweep and no stored active flag — a
 // mandate stops authorizing because [Envelope.IsActive] says so at the height

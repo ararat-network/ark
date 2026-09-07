@@ -17,19 +17,18 @@ type Message interface {
 	GetExpectedTerm() uint64
 }
 
-// Vouch adapts a module's committee authorisation, the exported check its
-// handlers run first, into the admission check the priority lane runs at
-// CheckTx. It refuses exactly what that check refuses and nothing more, so a
-// transaction the handler would accept is never kept out of a block.
-func Vouch[M any](authorise func(context.Context, string, uint64) (M, error)) func(sdk.Context, sdk.Msg) error {
-	return func(ctx sdk.Context, msg sdk.Msg) error {
+// Vouch adapts the module's AuthoriseCommittee check for committee admission.
+// A refusal rejects the transaction: committee actions cannot establish their
+// own appointment prerequisites. Storage and authorisation errors propagate.
+func Vouch[M any](authorise func(context.Context, string, uint64) (M, error)) func(sdk.Context, sdk.Msg) (bool, error) {
+	return func(ctx sdk.Context, msg sdk.Msg) (bool, error) {
 		committee, ok := msg.(Message)
 		if !ok {
-			return errorsmod.Wrapf(errortypes.ErrInvalidRequest, "%s carries no committee and term", sdk.MsgTypeURL(msg))
+			return false, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "%s carries no committee and term", sdk.MsgTypeURL(msg))
 		}
 		if _, err := authorise(ctx, committee.GetCommittee(), committee.GetExpectedTerm()); err != nil {
-			return errorsmod.Wrap(errortypes.ErrUnauthorized, err.Error())
+			return false, err
 		}
-		return nil
+		return true, nil
 	}
 }
