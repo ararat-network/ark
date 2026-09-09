@@ -1,6 +1,10 @@
 package types
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"net/url"
+)
 
 // Endpoint describes a provider endpoint that a fetcher can connect to.
 type Endpoint struct {
@@ -17,7 +21,26 @@ func (e Endpoint) Validate() error {
 		return errors.New("endpoint url cannot be empty")
 	}
 
+	u, err := url.Parse(e.URL)
+	if err != nil || u.Hostname() == "" || u.User != nil || u.Fragment != "" || u.Opaque != "" {
+		return errors.New("endpoint must be an absolute URL without user information or a fragment")
+	}
+	if u.Scheme != "https" && u.Scheme != "wss" {
+		return errors.New("provider endpoint requires https or wss")
+	}
 	return e.Authentication.Validate()
+}
+
+// ValidateScheme checks URL structure, authentication, and the fetcher's protocol.
+func (e Endpoint) ValidateScheme(scheme string) error {
+	if err := e.Validate(); err != nil {
+		return err
+	}
+	u, _ := url.Parse(e.URL) // Validate parsed it above.
+	if u.Scheme != scheme {
+		return fmt.Errorf("provider endpoint requires %s", scheme)
+	}
+	return nil
 }
 
 // Authentication holds optional endpoint authentication data.

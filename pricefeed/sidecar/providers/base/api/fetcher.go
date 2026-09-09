@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -222,6 +224,14 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 	req, err := http.NewRequestWithContext(requestCtx, f.method, url, nil)
 	if err != nil {
 		return types.Response{}, err
+	}
+
+	// A handler may add query parameters, but must not change the destination
+	// before endpoint credentials are attached.
+	origin, err := neturl.Parse(endpoint.URL)
+	if err != nil || req.URL.Scheme != "https" || origin.Scheme != req.URL.Scheme ||
+		!strings.EqualFold(req.URL.Host, origin.Host) || req.URL.User != nil || req.URL.Fragment != "" {
+		return types.Response{}, errors.New("provider request must retain its configured HTTPS origin")
 	}
 
 	for key, value := range f.headers {

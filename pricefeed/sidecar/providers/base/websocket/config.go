@@ -123,7 +123,7 @@ func (c *Config) Validate() error {
 	}
 
 	for i, e := range c.Endpoints {
-		if err := e.Validate(); err != nil {
+		if err := e.ValidateScheme("wss"); err != nil {
 			return fmt.Errorf("endpoint %d: %w", i, err)
 		}
 	}

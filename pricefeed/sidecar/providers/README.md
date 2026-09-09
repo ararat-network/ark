@@ -42,3 +42,11 @@ registration needed in the registry.
    `sidecar.WithRegistry` or `runtime.WithProviderRegistry`) for an out-of-tree provider.
 4. Add market mappings in the provider `providers.Config` used by callers.
 5. Add focused tests for parsing, request/message creation, and the fetcher boundary touched by the adapter.
+
+## Transport policy
+
+API endpoints require HTTPS; WebSocket endpoints require WSS. URL user information and fragments are
+refused. The registry supplies both fetchers with an HTTP client using standard certificate verification
+and refusing every redirect before a second request. Configure the provider's final URL directly.
+API handlers can construct paths and queries, but must retain the endpoint's HTTPS scheme and authority
+before credentials are attached. Tests use injected transports or locally trusted TLS servers.

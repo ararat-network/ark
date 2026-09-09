@@ -221,7 +221,7 @@ func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
 	handler := newMockDataHandler(t)
 	handler.EXPECT().
 		CreateURL(selectedEndpoint, tickers).
-		Return(testURL, nil)
+		Return(selectedEndpoint.URL, nil)
 	handler.EXPECT().
 		ParseResponse(tickers, gomock.Any()).
 		Return(expected)
@@ -351,7 +351,7 @@ func TestRunMapsClientErrorToUnresolvedResponse(t *testing.T) {
 	handler := newMockDataHandler(t)
 	handler.EXPECT().
 		CreateURL(cfg.Endpoints[0], tickers).
-		Return("https://example.invalid", nil)
+		Return(cfg.Endpoints[0].URL, nil)
 
 	fetcher, err := NewFetcher(cfg, &http.Client{
 		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
@@ -372,7 +372,7 @@ func TestRunReturnsContextErrorOnCancellation(t *testing.T) {
 	handler := newMockDataHandler(t)
 	handler.EXPECT().
 		CreateURL(cfg.Endpoints[0], tickers).
-		Return("https://example.invalid", nil)
+		Return(cfg.Endpoints[0].URL, nil)
 
 	requestStarted := make(chan struct{})
 
@@ -683,5 +683,24 @@ func apiConfig() Config {
 		Interval:  time.Hour,
 		Timeout:   time.Second,
 		Endpoints: []types.Endpoint{{URL: "https://provider.test"}},
+	}
+}
+
+func TestRunRefusesChangedRequestOriginBeforeSendingCredentials(t *testing.T) {
+	for _, destination := range []string{"http://provider.test/prices", "https://elsewhere.test/prices", "https://user:secret@provider.test/prices", "https://provider.test/prices#fragment"} {
+		t.Run(destination, func(t *testing.T) {
+			cfg := apiConfig()
+			cfg.Endpoints = []types.Endpoint{{URL: "https://provider.test/prices", Authentication: types.Authentication{APIKey: "dummy", APIKeyHeader: "X-API-Key"}}}
+			tickers := []types.Ticker{"ATOMUSD"}
+			handler := newMockDataHandler(t)
+			handler.EXPECT().CreateURL(cfg.Endpoints[0], tickers).Return(destination, nil)
+			fetcher, err := NewFetcher(cfg, &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+				t.Error("request must be refused before transport receives credentials")
+				return nil, errors.New("unexpected request")
+			})}, handler)
+			require.NoError(t, err)
+			_, err = runAPIOnce(fetcher, tickers)
+			require.ErrorContains(t, err, "retain its configured HTTPS origin")
+		})
 	}
 }

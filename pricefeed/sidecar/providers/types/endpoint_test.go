@@ -84,3 +84,25 @@ func TestFirstEndpoint(t *testing.T) {
 	_, err = FirstEndpoint(nil)
 	require.ErrorContains(t, err, "endpoints cannot be empty")
 }
+
+func TestEndpointRequiresSecureTransport(t *testing.T) {
+	for _, tc := range []struct {
+		url, scheme string
+		bad         bool
+	}{
+		{"https://provider.example/prices", "https", false},
+		{"wss://provider.example/prices", "wss", false},
+		{"http://provider.example/prices", "https", true},
+		{"ws://provider.example/prices", "wss", true},
+		{"wss://provider.example/prices", "https", true},
+		{"https://provider.example/prices", "wss", true},
+		{"//provider.example/prices", "https", true},
+		{"https:///prices", "https", true},
+		{"https://user:secret@provider.example/prices", "https", true},
+		{"https://provider.example/prices#fragment", "https", true},
+	} {
+		t.Run(tc.url+" as "+tc.scheme, func(t *testing.T) {
+			require.Equal(t, tc.bad, (Endpoint{URL: tc.url}).ValidateScheme(tc.scheme) != nil)
+		})
+	}
+}

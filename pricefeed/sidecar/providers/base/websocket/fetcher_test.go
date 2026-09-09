@@ -260,10 +260,11 @@ func TestRunPublishesSubscribeWriteErrorResponse(t *testing.T) {
 		}
 		close(closed)
 	})
-	cfg := websocketConfig(server.URL)
+	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
 	fetcher, err := basewebsocket.NewFetcher(
 		cfg,
 		handler,
+		basewebsocket.WithHTTPClient(server.Client()),
 		basewebsocket.WithDialFunc(func(ctx context.Context, url string, opts *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
 			conn, resp, err := coderwebsocket.Dial(ctx, url, opts)
 			if err != nil {
@@ -308,7 +309,7 @@ func TestRunPublishesHandledMessageAndWritesUpdate(t *testing.T) {
 	handler.EXPECT().CreateMessages(tickers).Return([][]byte{[]byte("subscribe")}, nil)
 	handler.EXPECT().HandleMessage([]byte("price")).Return(expected, [][]byte{[]byte("update")}, nil)
 
-	fetcher, err := basewebsocket.NewFetcher(websocketConfig(server.URL), handler)
+	fetcher, err := basewebsocket.NewFetcher(websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1)), handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	response, err := runUntilResponse(fetcher, tickers)
@@ -334,9 +335,9 @@ func TestRunReturnsErrorWhenReceivePanics(t *testing.T) {
 			panic("receive exploded")
 		})
 
-	cfg := websocketConfig(server.URL)
+	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
 	cfg.PingInterval = time.Hour
-	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
@@ -363,7 +364,7 @@ func TestRunSkipsParseErrorAndPublishesNextValidMessage(t *testing.T) {
 	handler.EXPECT().HandleMessage([]byte("bad")).Return(types.Response{}, nil, errors.New("parse failed"))
 	handler.EXPECT().HandleMessage([]byte("good")).Return(expected, nil, nil)
 
-	fetcher, err := basewebsocket.NewFetcher(websocketConfig(server.URL), handler)
+	fetcher, err := basewebsocket.NewFetcher(websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1)), handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	response, err := runUntilResponse(fetcher, tickers)
@@ -385,8 +386,8 @@ func TestRunPublishesUnresolvedResponseAfterReadError(t *testing.T) {
 	handler.EXPECT().Copy().Return(handler)
 	handler.EXPECT().CreateMessages(tickers).Return(nil, nil)
 
-	cfg := websocketConfig(server.URL)
-	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	response, err := runUntilResponse(fetcher, tickers)
@@ -417,10 +418,10 @@ func TestRunReturnsErrorWhenHeartbeatPanics(t *testing.T) {
 			panic("heartbeat exploded")
 		})
 
-	cfg := websocketConfig(server.URL)
+	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
 	cfg.PingInterval = time.Millisecond
 	cfg.ReadTimeout = time.Hour
-	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
@@ -445,9 +446,9 @@ func TestRunSendsHeartbeatMessages(t *testing.T) {
 	handler.EXPECT().CreateMessages(tickers).Return(nil, nil)
 	handler.EXPECT().HeartBeatMessages().Return([][]byte{[]byte("ping")}, nil).AnyTimes()
 
-	cfg := websocketConfig(server.URL)
+	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
 	cfg.PingInterval = time.Millisecond
-	fetcher, err := basewebsocket.NewFetcher(cfg, handler)
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -506,7 +507,7 @@ func websocketConfig(url string) basewebsocket.Config {
 		MaxTickersPerConnection:  basewebsocket.DefaultMaxTickersPerConnection,
 		MaxSubscriptionsPerBatch: basewebsocket.DefaultMaxSubscriptionsPerBatch,
 		Endpoints: []types.Endpoint{
-			{URL: "ws" + strings.TrimPrefix(url, "http")},
+			{URL: strings.Replace(url, "https://", "wss://", 1)},
 		},
 	}
 }
@@ -520,7 +521,7 @@ func websocketConfigWithEndpoints(endpoints []types.Endpoint) basewebsocket.Conf
 func websocketServer(t *testing.T, handle func(*coderwebsocket.Conn)) *httptest.Server {
 	t.Helper()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := coderwebsocket.Accept(w, r, nil)
 		if err != nil {
 			return

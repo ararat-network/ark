@@ -49,7 +49,7 @@ func (c *Config) Validate() error {
 	}
 
 	for _, e := range c.Endpoints {
-		if err := e.Validate(); err != nil {
+		if err := e.ValidateScheme("https"); err != nil {
 			return err
 		}
 	}

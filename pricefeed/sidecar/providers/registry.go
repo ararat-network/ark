@@ -3,7 +3,6 @@ package providers
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"cosmossdk.io/log/v2"
 
@@ -144,7 +143,7 @@ func (r *Registry) buildAPIFetcher(cfg Config, logger log.Logger) (*api.Fetcher,
 		return nil, err
 	}
 
-	client := &http.Client{}
+	client := newHTTPClient()
 
 	fetcher, err := api.NewFetcher(
 		cfg.API,
@@ -175,6 +174,7 @@ func (r *Registry) buildWebSocketFetcher(cfg Config, logger log.Logger) (*websoc
 		cfg.WebSocket,
 		dataHandler,
 		websocket.WithLogger(logger),
+		websocket.WithHTTPClient(newHTTPClient()),
 	)
 	if err != nil {
 		return nil, err
