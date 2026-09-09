@@ -1,6 +1,9 @@
 package sidecar
 
-import "github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+import (
+	"github.com/ararat-network/ark/pkg/tlsconfig"
+	"github.com/ararat-network/ark/pricefeed/sidecar/runtime"
+)
 
 const (
 	defaultServerAddress = "127.0.0.1:8080"
@@ -19,6 +22,9 @@ type Config struct {
 type ProcessConfig struct {
 	// ServerAddress is the public gRPC and HTTP gateway listen address.
 	ServerAddress string
+	// TLS selects the public listener transport. The zero value permits only
+	// local plaintext. The admin listener is loopback and stays plaintext.
+	TLS tlsconfig.Server
 	// AdminAddress enables the process-local administration service when non-empty.
 	// It must use a loopback IP address.
 	AdminAddress string

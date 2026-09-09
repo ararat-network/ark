@@ -16,6 +16,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 )
 
@@ -66,13 +67,7 @@ func startBufferedServer(
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- srv.serve(
-			ctx,
-			listener,
-			grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
-				return dial(ctx)
-			}),
-		)
+		errCh <- srv.serve(ctx, listener)
 	}()
 	t.Cleanup(func() {
 		cancel()
@@ -85,7 +80,7 @@ func startBufferedServer(
 func startTestServer(t *testing.T, service api.PriceFeedServer) *http.Client {
 	t.Helper()
 
-	srv, err := newServer(service, log.NewNopLogger(), "127.0.0.1:0")
+	srv, err := newServer(service, log.NewNopLogger(), "127.0.0.1:0", tlsconfig.Server{})
 	require.NoError(t, err)
 	client, cancel, errCh := startBufferedServer(t, srv)
 	t.Cleanup(func() {
@@ -179,14 +174,14 @@ func TestServerGatewayAppliesGRPCInterceptor(t *testing.T) {
 }
 
 func TestNewServerAcceptsEphemeralPort(t *testing.T) {
-	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0", tlsconfig.Server{})
 	require.NoError(t, err)
 
 	require.Equal(t, "127.0.0.1:0", srv.address)
 }
 
 func TestServerServeReturnsListenerError(t *testing.T) {
-	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0", tlsconfig.Server{})
 	require.NoError(t, err)
 	listener := bufconn.Listen(1024 * 1024)
 	require.NoError(t, listener.Close())
@@ -211,7 +206,7 @@ func TestServerServeStopsOnContextCancellation(t *testing.T) {
 	t.Cleanup(func() {
 		_ = httpSrv.Close()
 	})
-	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0", tlsconfig.Server{})
 	require.NoError(t, err)
 	srv.httpSrv = httpSrv
 
@@ -275,7 +270,7 @@ func TestServerServeForceClosesActiveRequestOnCancel(t *testing.T) {
 		_ = httpSrv.Close()
 	})
 
-	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0")
+	srv, err := newServer(&recordingOracleService{}, log.NewNopLogger(), "127.0.0.1:0", tlsconfig.Server{})
 	require.NoError(t, err)
 	srv.httpSrv = httpSrv
 	client, cancel, runErrCh := startBufferedServer(t, srv)
@@ -336,7 +331,7 @@ func TestServerServesInitialCommittedSnapshot(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- oracle.server.serve(ctx, listener, grpc.WithContextDialer(dialer))
+		errCh <- oracle.server.serve(ctx, listener)
 	}()
 
 	conn, err := grpc.NewClient(

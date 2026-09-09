@@ -72,7 +72,7 @@ func NewService(cfg Config, logger log.Logger, opts ...Option) (*Service, error)
 		runtimeConfigPath: process.RuntimeConfigPath,
 		logger:            logger.With("component", "oracle"),
 	}
-	server, err := newServer(o, logger, process.ServerAddress)
+	server, err := newServer(o, logger, process.ServerAddress, process.TLS)
 	if err != nil {
 		return nil, err
 	}
