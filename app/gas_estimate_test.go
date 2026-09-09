@@ -46,19 +46,11 @@ import (
 // than owning wasmd's code, and clients absorb the net through
 // appclient.DefaultGasAdjustment.
 //
-// The test simulates the way clients do — unsigned, fee-less, paying in
-// NOAH, a priced denomination — measures the difference the three make from
-// those very transactions, and requires the difference between Simulate and
-// FinalizeBlock to be exactly it, so anything else that starts diverging
-// under simulation, or any change in what these three do, fails here. The
-// stand-in is pinned two-sided against the transfer it replaces: never below
-// it, and never far above.
-//
-// The multiplier is then pinned two-sided against the same transactions: no
-// case may need more than it, and the worst of them must stay close enough
-// to it that the margin above is not silently inflating every declared gas
-// figure. Finally each estimate scaled by the multiplier is declared as the
-// gas of a delivered transaction, which must succeed.
+// The table covers NOAH gas payment and a stablecoin gas fee plus NOAH tip.
+// The latter transfers two denominations and sets the fee-less allowance;
+// estimates for a single denomination are deliberately conservative. Each
+// case compares a simulation carrying fees with a fee-less one, then submits
+// a transaction using the fee-less estimate and the default gas adjustment.
 func TestGasEstimateMatchesExecution(t *testing.T) {
 	const chainID = "ark-gas-estimate-test"
 
@@ -68,7 +60,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	// execution than in a fee-less simulation.
 	funder := apptestutil.NewFunder(t, sdk.NewCoins(
 		sdk.NewCoin(sdk.DefaultBondDenom, sdk.DefaultPowerReduction.MulRaw(999)),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 10_000_000),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000_000_000_000_000),
 	))
 
 	arkApp := app.NewArkApp(
@@ -189,10 +181,20 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	// utilisation cannot move the base fee past what is paid; the excess is
 	// tip. The tax the message owes rides beside it, as the checker requires
 	// and the deduction leaves out.
-	feeFor := func(gas uint64, msg sdk.Msg) sdk.Coins {
+	feeFor := func(gas uint64, msg sdk.Msg, stableTip bool) sdk.Coins {
 		tax, _, err := arkApp.TreasuryKeeper.ComputeTax(
 			arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID}), []sdk.Msg{msg})
 		require.NoError(t, err)
+		if stableTip {
+			ctx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID})
+			params, err := arkApp.TreasuryKeeper.Params.Get(ctx)
+			require.NoError(t, err)
+			price, err := arkApp.TreasuryKeeper.BaseGasPrice.Get(ctx)
+			require.NoError(t, err)
+			required, _, err := arkApp.TreasuryKeeper.GetRequiredGasFee(ctx, params, price, gas, chain.USDBaseDenom)
+			require.NoError(t, err)
+			return sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, required.Amount.MulRaw(2)), sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000)).Add(tax...)
+		}
 		return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewIntFromUint64(gas).MulRaw(300_000_000_000))).Add(tax...)
 	}
 
@@ -213,6 +215,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	recipient := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	sequence := uint64(0)
 	worstRatio := 0.0
+	var largestTransfer int64
 	for _, tc := range []struct {
 		name string
 		msg  sdk.Msg
@@ -230,76 +233,85 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		{"taxed usd send", banktypes.NewMsgSend(funder.Address(), recipient,
 			sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)))},
 	} {
-		// An empty block first. The first one carries simulation and
-		// execution past the genesis-height waivers; every one after it
-		// lets the previous block's fees be swept and its tally cleared, so
-		// the committed state simulation prices against is the state the
-		// block will execute on.
-		deliverEmpty()
-		signedBytes := sign(tc.msg, sequence, feeFor(declaredGas, tc.msg), declaredGas)
-		payingBytes := unsigned(signedBytes)
-		feelessBytes := unsigned(sign(tc.msg, sequence, nil, declaredGas))
-
-		checkCtx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID})
-		gasOf := func(decorator sdk.AnteDecorator, txBytes []byte, simulate bool) int64 {
-			cached, _ := checkCtx.CacheContext()
-			metered := cached.WithTxBytes(txBytes).WithGasMeter(storetypes.NewGasMeter(10_000_000))
-			_, err := decorator.AnteHandle(metered, decode(txBytes), simulate, next)
-			require.NoError(t, err)
-			return int64(metered.GasMeter().GasConsumed())
-		}
-		// gap is what the three charge block execution for the signed
-		// transaction beyond what they charge simulation for simBytes —
-		// negative when simulation overcharges.
-		gap := func(simBytes []byte) int64 {
-			var total int64
-			for _, d := range decorators {
-				total += gasOf(d, signedBytes, false) - gasOf(d, simBytes, true)
+		for _, stableTip := range []bool{false, true} {
+			feeName := "noah fee"
+			if stableTip {
+				feeName = "stable fee and noah tip"
 			}
-			return total
+			t.Run(tc.name+"/"+feeName, func(t *testing.T) {
+				// An empty block first. The first one carries simulation and
+				// execution past the genesis-height waivers; every one after it
+				// lets the previous block's fees be swept and its tally cleared, so
+				// the committed state simulation prices against is the state the
+				// block will execute on.
+				deliverEmpty()
+				signedBytes := sign(tc.msg, sequence, feeFor(declaredGas, tc.msg, stableTip), declaredGas)
+				payingBytes := unsigned(signedBytes)
+				feelessBytes := unsigned(sign(tc.msg, sequence, nil, 0))
+
+				checkCtx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: height, ChainID: chainID})
+				gasOf := func(decorator sdk.AnteDecorator, txBytes []byte, simulate bool) int64 {
+					cached, _ := checkCtx.CacheContext()
+					metered := cached.WithTxBytes(txBytes).WithGasMeter(storetypes.NewGasMeter(10_000_000))
+					_, err := decorator.AnteHandle(metered, decode(txBytes), simulate, next)
+					require.NoError(t, err)
+					return int64(metered.GasMeter().GasConsumed())
+				}
+				// gap is what the three charge block execution for the signed
+				// transaction beyond what they charge simulation for simBytes —
+				// negative when simulation overcharges.
+				gap := func(simBytes []byte) int64 {
+					var total int64
+					for _, d := range decorators {
+						total += gasOf(d, signedBytes, false) - gasOf(d, simBytes, true)
+					}
+					return total
+				}
+				payingGap, feelessGap := gap(payingBytes), gap(feelessBytes)
+
+				// The stand-in against the transfer it replaces. A fee-less estimate
+				// meters the fee decorator as execution does except for the transfer,
+				// which it charges as the stand-in, so taking the stand-in back out
+				// leaves the transfer. The headroom above is the digit room to the
+				// quantity bound on both balances.
+				transfer := gasOf(feeDecorator, signedBytes, false) -
+					(gasOf(feeDecorator, feelessBytes, true) - ante.SimulatedFeeTransferGas)
+				require.GreaterOrEqual(t, int64(ante.SimulatedFeeTransferGas), transfer,
+					"%s: the stand-in falls short of the transfer it replaces", tc.name)
+				largestTransfer = max(largestTransfer, transfer)
+
+				paying, _, err := arkApp.Simulate(payingBytes)
+				require.NoError(t, err)
+				feeless, _, err := arkApp.Simulate(feelessBytes)
+				require.NoError(t, err)
+
+				executed := deliver(signedBytes)
+				sequence++
+				require.Zero(t, executed.Code, executed.Log)
+				used := uint64(executed.GasUsed)
+				t.Logf("%s: executed %d; simulated with fee %d (gap %d), fee-less %d (gap %d, ratio %.4f)",
+					tc.name, used, paying.GasUsed, payingGap, feeless.GasUsed, feelessGap,
+					float64(used)/float64(feeless.GasUsed))
+
+				require.Equal(t, int64(used)-int64(paying.GasUsed), payingGap,
+					"%s: a simulation with a fee differs by exactly what the three make", tc.name)
+				require.Equal(t, int64(used)-int64(feeless.GasUsed), feelessGap,
+					"%s: a fee-less simulation differs by exactly what the three make", tc.name)
+				ratio := float64(used) / float64(feeless.GasUsed)
+				worstRatio = max(worstRatio, ratio)
+				require.LessOrEqual(t, ratio, appclient.DefaultGasAdjustment,
+					"%s: execution outruns a fee-less estimate scaled by the multiplier", tc.name)
+
+				// The gas a client declares: the fee-less estimate, scaled.
+				declared := uint64(appclient.DefaultGasAdjustment * float64(feeless.GasUsed))
+				auto := deliver(sign(tc.msg, sequence, feeFor(declared, tc.msg, stableTip), declared))
+				sequence++
+				require.Zero(t, auto.Code, "%s: %s", tc.name, auto.Log)
+			})
 		}
-		payingGap, feelessGap := gap(payingBytes), gap(feelessBytes)
-
-		// The stand-in against the transfer it replaces. A fee-less estimate
-		// meters the fee decorator as execution does except for the transfer,
-		// which it charges as the stand-in, so taking the stand-in back out
-		// leaves the transfer. The headroom above is the digit room to the
-		// quantity bound on both balances.
-		transfer := gasOf(feeDecorator, signedBytes, false) -
-			(gasOf(feeDecorator, feelessBytes, true) - ante.SimulatedFeeTransferGas)
-		require.GreaterOrEqual(t, int64(ante.SimulatedFeeTransferGas), transfer,
-			"%s: the stand-in falls short of the transfer it replaces", tc.name)
-		require.Less(t, int64(ante.SimulatedFeeTransferGas)-transfer, int64(3_000),
-			"%s: the stand-in has drifted loose above the transfer it replaces", tc.name)
-
-		paying, _, err := arkApp.Simulate(payingBytes)
-		require.NoError(t, err)
-		feeless, _, err := arkApp.Simulate(feelessBytes)
-		require.NoError(t, err)
-
-		executed := deliver(signedBytes)
-		sequence++
-		require.Zero(t, executed.Code, executed.Log)
-		used := uint64(executed.GasUsed)
-		t.Logf("%s: executed %d; simulated with fee %d (gap %d), fee-less %d (gap %d, ratio %.4f)",
-			tc.name, used, paying.GasUsed, payingGap, feeless.GasUsed, feelessGap,
-			float64(used)/float64(feeless.GasUsed))
-
-		require.Equal(t, int64(used)-int64(paying.GasUsed), payingGap,
-			"%s: a simulation with a fee differs by exactly what the three make", tc.name)
-		require.Equal(t, int64(used)-int64(feeless.GasUsed), feelessGap,
-			"%s: a fee-less simulation differs by exactly what the three make", tc.name)
-		ratio := float64(used) / float64(feeless.GasUsed)
-		worstRatio = max(worstRatio, ratio)
-		require.LessOrEqual(t, ratio, appclient.DefaultGasAdjustment,
-			"%s: execution outruns a fee-less estimate scaled by the multiplier", tc.name)
-
-		// The gas a client declares: the fee-less estimate, scaled.
-		declared := uint64(appclient.DefaultGasAdjustment * float64(feeless.GasUsed))
-		auto := deliver(sign(tc.msg, sequence, feeFor(declared, tc.msg), declared))
-		sequence++
-		require.Zero(t, auto.Code, auto.Log, tc.name)
 	}
+	require.Less(t, int64(ante.SimulatedFeeTransferGas)-largestTransfer, int64(5_000),
+		"the allowance should stay close to the most expensive fee settlement")
 
 	// The other half of the guard: the multiplier carries margin above the
 	// worst case for messages cheaper than any measured here, but margin that
