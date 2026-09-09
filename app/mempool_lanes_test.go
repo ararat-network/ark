@@ -17,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -30,8 +29,8 @@ import (
 
 // TestLaneMempoolOrdersCommitteeAndGovernanceFirst proves the wired mempool
 // drains the priority lane before any normal-lane fee, and fee order within a
-// lane, using real signed transactions. This checks the SDK index exposed by
-// Pool.Select; proposal assembly separately applies bounded lane service.
+// lane, using real signed transactions. This checks the shared scheduler through
+// Pool.Select; proposal assembly also supplies bounded gas and byte budgets.
 func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
@@ -99,7 +98,7 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 		// Per-subtest home: the Wasm VM locks its cache directory exclusively.
 		appOptions[flags.FlagHome] = t.TempDir()
 		if maxTxs != nil {
-			appOptions[server.FlagMempoolMaxTxs] = maxTxs
+			appOptions[mempool.MaxTxsKey] = maxTxs
 		}
 		return app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, appOptions)
 	}
@@ -155,10 +154,30 @@ func TestPoolCapacityNeverDisablesProposalVerification(t *testing.T) {
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
 	for _, capacity := range []int{0, 1, mempool.DefaultMaxTx} {
 		t.Run(fmt.Sprint(capacity), func(t *testing.T) {
-			handler := baseapp.NewDefaultProposalHandler(mempool.NewPool(capacity, arkApp.GetTxConfig().TxEncoder()), arkApp)
+			cfg := mempool.DefaultConfig()
+			cfg.MaxTxs = capacity
+			handler := baseapp.NewDefaultProposalHandler(mempool.NewPool(cfg, arkApp.GetTxConfig().TxEncoder()), arkApp)
 			response, err := handler.ProcessProposalHandler()(ctx, &cmtabci.RequestProcessProposal{Txs: [][]byte{[]byte("malformed transaction")}})
 			require.NoError(t, err)
 			require.Equal(t, cmtabci.ResponseProcessProposal_REJECT, response.Status)
 		})
 	}
+}
+
+func TestMempoolByteLimitsReachAdmission(t *testing.T) {
+	t.Run("configured bytes reach pool and CheckTx", func(t *testing.T) {
+		a := app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.AppOptionsMap{
+			flags.FlagHome:                 t.TempDir(),
+			mempool.MaxPoolBytesKey:        8000,
+			mempool.MaxTransactionBytesKey: 512,
+		})
+		t.Cleanup(func() { require.NoError(t, a.Close()) })
+		pool := a.Mempool().(*mempool.Pool)
+		require.True(t, pool.MayFit(mempool.LaneNormal, 7200))
+		require.False(t, pool.MayFit(mempool.LaneNormal, 7201))
+		result, err := a.CheckTx(&cmtabci.RequestCheckTx{Tx: make([]byte, 513)})
+		require.NoError(t, err)
+		require.NotZero(t, result.Code)
+		require.Contains(t, result.Log, "invalid transaction size")
+	})
 }

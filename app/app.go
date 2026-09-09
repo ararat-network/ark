@@ -225,11 +225,11 @@ func NewArkApp(
 	)
 
 	// Always install the lane pool so local sizing cannot change validation.
-	maxTxs, err := mempoolMaxTxs(appOpts)
+	poolConfig, err := mempoolConfig(appOpts)
 	if err != nil {
 		panic(err)
 	}
-	pool := mempool.NewPool(maxTxs, app.txConfig.TxEncoder())
+	pool := mempool.NewPool(poolConfig, app.txConfig.TxEncoder())
 	baseAppOptions = append(baseAppOptions, baseapp.SetMempool(pool))
 
 	app.App = appBuilder.Build(db, baseAppOptions...)

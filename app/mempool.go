@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 
 	"github.com/ararat-network/ark/app/ante"
@@ -38,22 +37,37 @@ func (app *ArkApp) newPrivileges() mempool.Set {
 	)
 }
 
-// mempoolMaxTxs reads the bounded count; zero selects the shipped default.
-// Disabling the pool is unsupported: the SDK's NoOp path also disables strict
-// proposal verification. Read this again at app construction for non-CLI users.
-func mempoolMaxTxs(appOpts servertypes.AppOptions) (int, error) {
-	value := appOpts.Get(server.FlagMempoolMaxTxs)
-	if value == nil {
-		return mempool.DefaultMaxTx, nil
+// mempoolConfig reads the existing app.toml count and config.toml byte keys.
+// Startup supplies CometBFT's resolved byte values; embedded callers that omit
+// them get the same defaults. Validate again here for non-CLI callers.
+func mempoolConfig(appOpts servertypes.AppOptions) (mempool.Config, error) {
+	cfg := mempool.DefaultConfig()
+	// Cast truncates floats. Parse integer text instead, including strings
+	// supplied by environment variables, and reject overflow before narrowing.
+	read := func(key string, fallback int64, bits int) (int64, error) {
+		value := appOpts.Get(key)
+		if value == nil {
+			return fallback, nil
+		}
+		n, err := strconv.ParseInt(fmt.Sprint(value), 10, bits)
+		if err != nil {
+			return 0, fmt.Errorf("%s must be an integer: %w", key, err)
+		}
+		return n, nil
 	}
-	// Cast rejects malformed strings but truncates floats. Accept only values
-	// whose text is an integer; app.toml and flags both use integer notation.
-	maxTxs, err := strconv.Atoi(fmt.Sprint(value))
+	count, err := read(mempool.MaxTxsKey, int64(cfg.MaxTxs), strconv.IntSize)
 	if err != nil {
-		return 0, fmt.Errorf("[mempool] max-txs must be an integer: %w", err)
+		return cfg, err
 	}
-	if err := mempool.ValidateMaxTx(maxTxs); err != nil {
-		return 0, err
+	cfg.MaxTxs = int(count)
+	cfg.MaxTxsBytes, err = read(mempool.MaxPoolBytesKey, cfg.MaxTxsBytes, 64)
+	if err != nil {
+		return cfg, err
 	}
-	return maxTxs, nil
+	txBytes, err := read(mempool.MaxTransactionBytesKey, int64(cfg.MaxTxBytes), strconv.IntSize)
+	if err != nil {
+		return cfg, err
+	}
+	cfg.MaxTxBytes = int(txBytes)
+	return cfg, cfg.Validate()
 }
