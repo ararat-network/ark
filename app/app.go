@@ -270,10 +270,10 @@ func NewArkApp(
 		wasmTxCounterStore,
 	))
 
-	app.SetPostHandler(ante.NewPostHandler(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper))
-
-	// Connect admission and proposal handling to the application.
+	// Connect admission and proposal handling to the application before the
+	// post chain, which ArkApp.SetPostHandler installs on both.
 	app.mempoolHandler = mempool.NewHandler(app.App, pool, app.txConfig.TxDecoder(), privileges)
+	app.SetPostHandler(ante.NewPostHandler(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper))
 
 	if err := app.setupOracleABCI(logger, appOpts); err != nil {
 		panic(err)

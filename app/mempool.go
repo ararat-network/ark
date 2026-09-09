@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
@@ -23,6 +24,13 @@ import (
 // require an explicit lane decision for every committee message.
 func (app *ArkApp) Privileges() mempool.Set {
 	return app.mempoolHandler.Privileges()
+}
+
+// SetPostHandler installs the post chain on BaseApp and on the admission
+// handler, whose recheck and proposal validation mirror RunTx.
+func (app *ArkApp) SetPostHandler(handler sdk.PostHandler) {
+	app.App.SetPostHandler(handler)
+	app.mempoolHandler.SetPostHandler(handler)
 }
 
 func (app *ArkApp) newPrivileges() mempool.Set {
