@@ -9,8 +9,9 @@ import (
 )
 
 // Update validates and serialises a config replacement with aggregation and
-// lifecycle transitions. Replacement providers are built before live state is
-// changed, so validation or construction errors leave the runtime unchanged.
+// lifecycle transitions. Replacement providers are built and the client's
+// files read before live state is changed, so validation, construction, and
+// file errors leave the runtime unchanged.
 func (r *Runtime) Update(cfg Config) error {
 	nextCfg := cfg.Clone()
 	if err := nextCfg.Validate(); err != nil {
@@ -35,6 +36,12 @@ func (r *Runtime) Update(cfg Config) error {
 	if err != nil {
 		return err
 	}
+	clientChanged := !oldCfg.Client.Equal(nextCfg.Client)
+	if clientChanged {
+		if err := r.client.Update(nextCfg.Client); err != nil {
+			return err
+		}
+	}
 
 	for _, managed := range plan.stop {
 		managed.stop()
@@ -53,16 +60,11 @@ func (r *Runtime) Update(cfg Config) error {
 	}
 
 	intervalChanged := oldCfg.UpdateInterval != nextCfg.UpdateInterval
-	clientChanged := !oldCfg.Client.Equal(nextCfg.Client)
 
 	r.mut.Lock()
 	r.cfg = nextCfg
 	r.feeds = append([]string(nil), nextFeeds...)
 	r.mut.Unlock()
-
-	if clientChanged {
-		r.client.Update(nextCfg.Client)
-	}
 
 	if mainCtx == nil || mainCtx.Err() != nil {
 		return nil

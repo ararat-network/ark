@@ -2,6 +2,7 @@ package runtime_test
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"sync"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
@@ -160,16 +162,24 @@ func TestUpdateConfigReturnsInvalidResolverErrorWithoutChangingConfig(t *testing
 	require.ErrorContains(t, err, "resolver denom \"akrw\" route \"bad-route\" resolves to \"USDT/USD\", want \"KRW/NOAH\"")
 }
 
-func TestUpdateConfigUpdatesFeedsClientConfig(t *testing.T) {
+// A client config whose files cannot be read fails the update before any
+// provider is touched, the way a provider that fails to build does, and the
+// config is not committed: the same update is a fresh one on retry.
+func TestUpdateConfigReturnsClientErrorWithoutCommitting(t *testing.T) {
 	cfg := testOracleConfig(map[string]providers.Config{
 		"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
 	})
 	newCfg := cfg
-	newCfg.Client.Interval = 10 * time.Millisecond
+	newCfg.Client.TLS = tlsconfig.Client{Mode: tlsconfig.TLS, CAFile: "absent.pem"}
 
 	ctrl := gomock.NewController(t)
 	mp := newMockProvider(t, ctrl, "unknown", testMarkets())
-	feedsClient, feedsRecorder := newRecordingChainStateClient(t, ctrl)
+	feedsClient := runtimetestutil.NewMockChainStateClient(ctrl)
+	expectFeedsLifecycle(feedsClient)
+	gomock.InOrder(
+		feedsClient.EXPECT().Update(newCfg.Client).Return(errors.New("oracle query connection: tls ca file")),
+		feedsClient.EXPECT().Update(newCfg.Client).Return(nil),
+	)
 	oracle, err := NewRuntime(
 		cfg,
 		withInitialProviders(mp.provider),
@@ -177,8 +187,43 @@ func TestUpdateConfigUpdatesFeedsClientConfig(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	err = oracle.Update(newCfg)
+
+	require.ErrorContains(t, err, "tls ca file")
 	require.NoError(t, oracle.Update(newCfg))
-	require.Equal(t, []chainstate.Config{newCfg.Client}, feedsRecorder.updateConfigs())
+}
+
+func TestUpdateConfigUpdatesFeedsClientConfig(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*chainstate.Config)
+	}{
+		{name: "interval", mutate: func(cfg *chainstate.Config) { cfg.Interval = 10 * time.Millisecond }},
+		{name: "address in cloned config", mutate: func(cfg *chainstate.Config) { cfg.Addresses[0] = "127.0.0.2:9090" }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := testOracleConfig(map[string]providers.Config{
+				"unknown": testUnknownAPIProviderConfig("unknown", testMarkets()),
+			})
+
+			ctrl := gomock.NewController(t)
+			mp := newMockProvider(t, ctrl, "unknown", testMarkets())
+			feedsClient, feedsRecorder := newRecordingChainStateClient(t, ctrl)
+			oracle, err := NewRuntime(
+				cfg,
+				withInitialProviders(mp.provider),
+				WithChainStateClient(feedsClient),
+			)
+			require.NoError(t, err)
+
+			originalAddress := cfg.Client.Addresses[0]
+			newCfg := cfg.Clone()
+			tc.mutate(&newCfg.Client)
+			require.NoError(t, oracle.Update(newCfg))
+			require.Equal(t, []chainstate.Config{newCfg.Client}, feedsRecorder.updateConfigs())
+			require.Equal(t, originalAddress, cfg.Client.Addresses[0])
+		})
+	}
 }
 
 func TestUpdateConfigRefreshesFallbackFeedsWhenNoFeedsHaveLoaded(t *testing.T) {

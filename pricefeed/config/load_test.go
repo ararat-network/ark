@@ -25,7 +25,7 @@ func TestLoadDecodesDurationStrings(t *testing.T) {
 	require.Equal(t, 1500*time.Millisecond, cfg.UpdateInterval)
 	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.Equal(t, []string{"ausd"}, cfg.FallbackFeeds)
-	require.Equal(t, "127.0.0.1:9090", cfg.Client.Address)
+	require.Equal(t, []string{"127.0.0.1:9090", "sentry.internal:9090"}, cfg.Client.Addresses)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "USD/NOAH",
 		Price:      "0.25",
@@ -160,9 +160,12 @@ const validConfigTOML = `update_interval = "1500ms"
 fallback_feeds = ["ausd"]
 
 [client]
-address = "127.0.0.1:9090"
+addresses = ["127.0.0.1:9090", "sentry.internal:9090"]
 timeout = "2s"
 interval = "5s"
+
+[client.tls]
+mode = "plaintext"
 
 [providers.frankfurter_api]
 name = "frankfurter_api"
@@ -191,7 +194,7 @@ func TestLoadRejectsUnknownKeys(t *testing.T) {
 		contents string
 	}{
 		{name: "top level", contents: validConfigTOML + "\nupdate_intreval = \"1s\"\n"},
-		{name: "nested table", contents: strings.Replace(validConfigTOML, "[client]", "[client]\ntimeuot = \"2s\"", 1)},
+		{name: "nested table", contents: strings.Replace(validConfigTOML, "[client.tls]", "[client.tls]\nca_fil = \"ca.pem\"", 1)},
 		{name: "array of tables", contents: validConfigTOML + "\n[[resolver.bootstrap_prices]]\npair = \"USD/NOAH\"\nprice = \"1\"\nvalid_untl = \"2030-01-01T00:00:00Z\"\n"},
 	}
 	for _, tc := range tests {

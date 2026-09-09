@@ -23,6 +23,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -32,9 +33,10 @@ func TestRunPollsImmediatelyAndCachesFeeds(t *testing.T) {
 	source := []string{"akrw", "ausd"}
 	query := newFakeQueryServer(feedResult(source))
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Hour,
 	})
 
 	cancel := startClient(t, client)
@@ -67,9 +69,10 @@ func TestRunCachesScheduledAdditionsForProviderWarmup(t *testing.T) {
 		},
 	})
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Hour,
 	})
 
 	cancel := startClient(t, client)
@@ -82,9 +85,10 @@ func TestRunCachesScheduledAdditionsForProviderWarmup(t *testing.T) {
 func TestRunBlocksUntilContextCancellation(t *testing.T) {
 	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Hour,
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -119,9 +123,10 @@ func TestRunLogsLifecycleAndInitialFeeds(t *testing.T) {
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
-			Address:  endpoint.address,
-			Timeout:  time.Second,
-			Interval: time.Hour,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{endpoint.address},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
 		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
@@ -143,9 +148,10 @@ func TestFeedsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
-			Address:  endpoint.address,
-			Timeout:  time.Second,
-			Interval: time.Hour,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{endpoint.address},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
 		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
@@ -168,9 +174,10 @@ func TestFeedsReturnsErrorBeforeFirstSuccessfulPoll(t *testing.T) {
 func TestRunCachesAuthoritativeEmptyFeeds(t *testing.T) {
 	query := newFakeQueryServer(feedResult([]string{}))
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Hour,
 	})
 
 	cancel := startClient(t, client)
@@ -187,9 +194,10 @@ func TestRunReplacesNonEmptyFeedsWithEmptySnapshot(t *testing.T) {
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Millisecond,
 	})
 
 	cancel := startClient(t, client)
@@ -211,9 +219,10 @@ func TestRunKeepsLastFeedsAfterRefreshFailure(t *testing.T) {
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Millisecond,
 	})
 
 	cancel := startClient(t, client)
@@ -238,9 +247,10 @@ func TestRunLogsRefreshFailureWhileKeepingLastFeeds(t *testing.T) {
 	endpoint := newTestQueryEndpoint(t, "bufnet", query)
 	client, err := NewClient(
 		Config{
-			Address:  endpoint.address,
-			Timeout:  time.Second,
-			Interval: time.Millisecond,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{endpoint.address},
+			Timeout:   time.Second,
+			Interval:  time.Millisecond,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
 		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
@@ -282,9 +292,10 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 		queryResult{err: errors.New("node unavailable")},
 	)
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Millisecond,
 	})
 
 	cancel := startClient(t, client)
@@ -304,17 +315,19 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 		if refreshes == nil {
 			return false
 		}
-		return chainStateCounterValue(refreshes, map[string]string{"status": "success"}) >= 1 &&
-			chainStateCounterValue(refreshes, map[string]string{"status": "error"}) >= 1
+		labels := map[string]string{"address": "passthrough:///bufnet"}
+		return chainStateCounterValue(refreshes, withStatus(labels, "success")) >= 1 &&
+			chainStateCounterValue(refreshes, withStatus(labels, "error")) >= 1
 	}, time.Second, time.Millisecond)
 }
 
 func TestRunCanRunAgainAfterContextCancellation(t *testing.T) {
 	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Hour,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Hour,
 	})
 
 	cancel := startClient(t, client)
@@ -330,24 +343,148 @@ func TestUpdateConfigAppliesIntervalChangeAfterNextTick(t *testing.T) {
 	query := newFakeQueryServer(feedResult([]string{"ausd"}))
 	originalInterval := 75 * time.Millisecond
 	client := newTestClient(t, query, Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: originalInterval,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  originalInterval,
 	})
 
 	cancel := startClient(t, client)
 	defer stopClient(cancel, client)
 
 	query.waitForCalls(t, 1)
-	client.Update(Config{
-		Address:  "passthrough:///bufnet",
-		Timeout:  time.Second,
-		Interval: time.Millisecond,
-	})
+	require.NoError(t, client.Update(Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///bufnet"},
+		Timeout:   time.Second,
+		Interval:  time.Millisecond,
+	}))
 
 	query.requireNoCalls(t, originalInterval/3)
 	query.waitForCalls(t, 1)
 	query.waitForCalls(t, 1)
+}
+
+func TestRunFailsOverToNextAddressWhenThePreferredNodeFails(t *testing.T) {
+	primary := newFakeQueryServer(queryResult{err: errors.New("primary unavailable")})
+	backup := newFakeQueryServer(feedResult([]string{"abackup"}))
+	primaryEndpoint := newTestQueryEndpoint(t, "primary", primary)
+	backupEndpoint := newTestQueryEndpoint(t, "backup", backup)
+
+	client, err := NewClient(
+		Config{
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{primaryEndpoint.address, backupEndpoint.address},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
+		},
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(primaryEndpoint, backupEndpoint))),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	primary.waitForCalls(t, 1)
+	backup.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"abackup"})
+}
+
+func TestRunStaysOnTheFailoverTargetAfterThePreferredNodeRecovers(t *testing.T) {
+	logs := &lockedBuffer{}
+	primary := newFakeQueryServer(
+		queryResult{err: errors.New("primary unavailable")},
+		feedResult([]string{"aprimary"}),
+	)
+	backup := newFakeQueryServer(feedResult([]string{"abackup"}))
+	primaryEndpoint := newTestQueryEndpoint(t, "primary", primary)
+	backupEndpoint := newTestQueryEndpoint(t, "backup", backup)
+
+	client, err := NewClient(
+		Config{
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{primaryEndpoint.address, backupEndpoint.address},
+			Timeout:   time.Second,
+			Interval:  time.Millisecond,
+		},
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(primaryEndpoint, backupEndpoint))),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	primary.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"abackup"})
+
+	// The preferred node is healthy again from its second call onward, but
+	// there is no fail-back: the sweep starts at the active endpoint, so the
+	// primary is never dialled again while the backup answers.
+	backup.waitForCalls(t, 2)
+	primary.requireNoCalls(t, 50*time.Millisecond)
+
+	got, err := client.Feeds()
+	require.NoError(t, err)
+	require.Equal(t, []string{"abackup"}, got)
+
+	require.Eventually(t, func() bool {
+		return strings.Contains(logs.String(), "failing over to chain node")
+	}, time.Second, time.Millisecond)
+}
+
+func TestUpdateConfigResetsTheActiveEndpointWhenAddressesChange(t *testing.T) {
+	tests := []struct {
+		name  string
+		order []int
+	}{
+		{name: "active index beyond shortened list", order: []int{0}},
+		{name: "active index still within shortened list", order: []int{2, 0}},
+		{name: "same length reorder", order: []int{2, 0, 1}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			primary := newFakeQueryServer(
+				queryResult{err: errors.New("primary unavailable")},
+				feedResult([]string{"aprimary"}),
+			)
+			backup := newFakeQueryServer(feedResult([]string{"abackup"}))
+			third := newFakeQueryServer(feedResult([]string{"athird"}))
+			endpoints := []testQueryEndpoint{
+				newTestQueryEndpoint(t, "primary", primary),
+				newTestQueryEndpoint(t, "backup", backup),
+				newTestQueryEndpoint(t, "third", third),
+			}
+			cfg := Config{
+				TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+				Addresses: []string{endpoints[0].address, endpoints[1].address, endpoints[2].address},
+				Timeout:   time.Second,
+				Interval:  75 * time.Millisecond,
+			}
+			client, err := NewClient(cfg,
+				withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoints...))),
+			)
+			require.NoError(t, err)
+
+			cancel := startClient(t, client)
+			defer stopClient(cancel, client)
+
+			primary.waitForCalls(t, 1)
+			requireEventuallyTargets(t, client, []string{"abackup"})
+
+			// Every replacement puts a different healthy node first. Retaining
+			// index 1 would either skip it or index beyond the new list.
+			cfg.Addresses = make([]string, len(tt.order))
+			for i, index := range tt.order {
+				cfg.Addresses[i] = endpoints[index].address
+			}
+			require.NoError(t, client.Update(cfg))
+
+			feeds := []string{"aprimary", "abackup", "athird"}
+			requireEventuallyTargets(t, client, []string{feeds[tt.order[0]]})
+		})
+	}
 }
 
 func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
@@ -359,9 +496,10 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 
 	client, err := NewClient(
 		Config{
-			Address:  firstEndpoint.address,
-			Timeout:  time.Second,
-			Interval: originalInterval,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{firstEndpoint.address},
+			Timeout:   time.Second,
+			Interval:  originalInterval,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
 	)
@@ -373,11 +511,12 @@ func TestUpdateConfigReconnectsWhenAddressChangesAfterNextTick(t *testing.T) {
 	firstQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"ausd"})
 
-	client.Update(Config{
-		Address:  secondEndpoint.address,
-		Timeout:  time.Second,
-		Interval: originalInterval,
-	})
+	require.NoError(t, client.Update(Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{secondEndpoint.address},
+		Timeout:   time.Second,
+		Interval:  originalInterval,
+	}))
 
 	secondQuery.requireNoCalls(t, originalInterval/3)
 	secondQuery.waitForCalls(t, 1)
@@ -393,9 +532,10 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 
 	client, err := NewClient(
 		Config{
-			Address:  firstEndpoint.address,
-			Timeout:  time.Second,
-			Interval: 75 * time.Millisecond,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{firstEndpoint.address},
+			Timeout:   time.Second,
+			Interval:  75 * time.Millisecond,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
 		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
@@ -408,11 +548,12 @@ func TestUpdateConfigLogsConfigChangeAndReconnect(t *testing.T) {
 	firstQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"ausd"})
 
-	client.Update(Config{
-		Address:  secondEndpoint.address,
-		Timeout:  2 * time.Second,
-		Interval: time.Millisecond,
-	})
+	require.NoError(t, client.Update(Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{secondEndpoint.address},
+		Timeout:   2 * time.Second,
+		Interval:  time.Millisecond,
+	}))
 
 	secondQuery.waitForCalls(t, 1)
 	requireEventuallyTargets(t, client, []string{"akrw"})
@@ -433,9 +574,10 @@ func TestUpdateConfigAllowsStaleFeedsFromPreviousAddressUntilNextPoll(t *testing
 
 	client, err := NewClient(
 		Config{
-			Address:  firstEndpoint.address,
-			Timeout:  time.Second,
-			Interval: originalInterval,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{firstEndpoint.address},
+			Timeout:   time.Second,
+			Interval:  originalInterval,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(firstEndpoint, secondEndpoint))),
 	)
@@ -445,11 +587,12 @@ func TestUpdateConfigAllowsStaleFeedsFromPreviousAddressUntilNextPoll(t *testing
 	defer stopClient(cancel, client)
 
 	firstQuery.waitForCalls(t, 1)
-	client.Update(Config{
-		Address:  secondEndpoint.address,
-		Timeout:  time.Second,
-		Interval: originalInterval,
-	})
+	require.NoError(t, client.Update(Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{secondEndpoint.address},
+		Timeout:   time.Second,
+		Interval:  originalInterval,
+	}))
 	firstQuery.release()
 
 	requireEventuallyTargets(t, client, []string{"ausd"})
@@ -464,15 +607,47 @@ func TestUpdateConfigAllowsStaleFeedsFromPreviousAddressUntilNextPoll(t *testing
 	requireEventuallyTargets(t, client, []string{"akrw"})
 }
 
-func TestConfigValidateRejectsInvalidConfig(t *testing.T) {
-	cfg := Config{
-		Address:  "",
-		Timeout:  time.Second,
-		Interval: time.Second,
+func TestConfigValidateRejectsInvalidAddresses(t *testing.T) {
+	valid := Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"first:9090", "second:9090"},
+		Timeout:   time.Second,
+		Interval:  time.Second,
 	}
-	err := cfg.Validate()
+	require.NoError(t, valid.Validate())
 
-	require.ErrorContains(t, err, "address")
+	testCases := []struct {
+		name      string
+		addresses []string
+		expErr    string
+	}{
+		{name: "no addresses", addresses: nil, expErr: "at least one address"},
+		{name: "empty list", addresses: []string{}, expErr: "at least one address"},
+		{
+			name:      "more than the maximum",
+			addresses: []string{"a:1", "b:2", "c:3", "d:4", "e:5"},
+			expErr:    fmt.Sprintf("at most %d", MaxAddresses),
+		},
+		{
+			name:      "blank entry",
+			addresses: []string{"first:9090", "   "},
+			expErr:    "addresses[1] must not be empty",
+		},
+		{
+			name:      "duplicate entry",
+			addresses: []string{"first:9090", "first:9090"},
+			expErr:    `addresses[1] repeats "first:9090"`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := valid
+			cfg.Addresses = tc.addresses
+
+			require.ErrorContains(t, cfg.Validate(), tc.expErr)
+		})
+	}
 }
 
 func TestNewClientRejectsMissingAddress(t *testing.T) {
@@ -722,6 +897,15 @@ func requireEventuallyTargets(
 		got, err := client.Feeds()
 		return err == nil && reflect.DeepEqual(want, got)
 	}, time.Second, time.Millisecond)
+}
+
+func withStatus(labels map[string]string, status string) map[string]string {
+	merged := make(map[string]string, len(labels)+1)
+	for key, value := range labels {
+		merged[key] = value
+	}
+	merged["status"] = status
+	return merged
 }
 
 func chainStateMetricFamily(families []*dto.MetricFamily, name string) *dto.MetricFamily {

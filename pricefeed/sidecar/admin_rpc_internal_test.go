@@ -89,7 +89,7 @@ func TestAdminServiceReloadsConfigOverGRPC(t *testing.T) {
 	})
 
 	conn, err := grpc.NewClient(
-		"passthrough:///oracle-admin",
+		"passthrough:///localhost:20196",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
@@ -154,7 +154,7 @@ func (unavailableFeedsClient) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (unavailableFeedsClient) Update(chainstate.Config) {}
+func (unavailableFeedsClient) Update(chainstate.Config) error { return nil }
 
 func (unavailableFeedsClient) Feeds() ([]string, error) {
 	return nil, errors.New("feeds unavailable")

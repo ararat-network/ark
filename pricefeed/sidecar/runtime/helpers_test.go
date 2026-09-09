@@ -12,6 +12,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
@@ -300,9 +301,10 @@ func testOracleConfig(providerCfgs map[string]providers.Config) Config {
 		UpdateInterval: time.Second,
 		Providers:      providerCfgs,
 		Client: chainstate.Config{
-			Address:  "passthrough:///feeds",
-			Timeout:  time.Second,
-			Interval: time.Second,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///feeds"},
+			Timeout:   time.Second,
+			Interval:  time.Second,
 		},
 		FallbackFeeds: []string{"ausd", "akrw"},
 	}

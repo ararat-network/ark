@@ -8,13 +8,42 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func withDialOptions(opts ...grpc.DialOption) Option {
 	return func(c *Client) {
 		c.dialOptions = append(c.dialOptions, opts...)
+	}
+}
+
+func TestClientOwnsAddresses(t *testing.T) {
+	for _, update := range []bool{false, true} {
+		name := "construction"
+		if update {
+			name = "update"
+		}
+		t.Run(name, func(t *testing.T) {
+			cfg := Config{
+				Addresses: []string{"127.0.0.1:9090", "127.0.0.2:9090"},
+				Timeout:   time.Second,
+				Interval:  time.Second,
+			}
+			client, err := NewClient(cfg)
+			require.NoError(t, err)
+			if update {
+				cfg.Addresses = []string{"127.0.0.3:9090", "127.0.0.4:9090"}
+				require.NoError(t, client.Update(cfg))
+			}
+			want := append([]string(nil), cfg.Addresses...)
+
+			cfg.Addresses[0] = "remote.example:9090"
+			require.Equal(t, want, client.getConfig().Addresses)
+		})
 	}
 }
 
@@ -27,9 +56,10 @@ func TestRunReturnsContextCancellation(t *testing.T) {
 
 	client, err := NewClient(
 		Config{
-			Address:  "passthrough:///unused",
-			Timeout:  time.Hour,
-			Interval: time.Hour,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///unused"},
+			Timeout:   time.Hour,
+			Interval:  time.Hour,
 		},
 		withDialOptions(grpc.WithContextDialer(dialer)),
 	)
@@ -56,9 +86,10 @@ func TestRunPropagatesPollPanic(t *testing.T) {
 	allowPanic := make(chan struct{})
 	client, err := NewClient(
 		Config{
-			Address:  "passthrough:///unused",
-			Timeout:  time.Second,
-			Interval: time.Hour,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///unused"},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
 		},
 		withDialOptions(grpc.WithUnaryInterceptor(func(
 			context.Context,
@@ -98,9 +129,10 @@ func TestRunPropagatesPollPanic(t *testing.T) {
 
 func TestQueryFeedsRejectsOversizedEpochs(t *testing.T) {
 	client, err := NewClient(Config{
-		Address:  "passthrough:///unused",
-		Timeout:  time.Second,
-		Interval: time.Second,
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"passthrough:///unused"},
+		Timeout:   time.Second,
+		Interval:  time.Second,
 	})
 	require.NoError(t, err)
 
@@ -166,4 +198,38 @@ func TestWaitForRetryReturnsOnCancellation(t *testing.T) {
 	cancel()
 
 	require.ErrorIs(t, waitForRetry(ctx, time.Hour), context.Canceled)
+}
+
+// Cancellation ends the sweep: the second node is not tried once the first
+// attempt has seen it. The interceptor answers before any connection is made.
+func TestRefreshStopsSweepOnCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var targets []string
+	client, err := NewClient(
+		Config{
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///first", "passthrough:///second"},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
+		},
+		withDialOptions(grpc.WithUnaryInterceptor(func(
+			_ context.Context,
+			_ string,
+			_, _ any,
+			cc *grpc.ClientConn,
+			_ grpc.UnaryInvoker,
+			_ ...grpc.CallOption,
+		) error {
+			targets = append(targets, cc.Target())
+			cancel()
+			return status.Error(codes.Unavailable, "node unavailable")
+		})),
+	)
+	require.NoError(t, err)
+
+	err = client.Run(ctx)
+
+	require.ErrorIs(t, err, context.Canceled)
+	require.Equal(t, []string{"passthrough:///first"}, targets)
 }

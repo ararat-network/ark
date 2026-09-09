@@ -3,6 +3,7 @@ package runtime
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -52,6 +53,7 @@ func (c Config) Clone() Config {
 		}
 	}
 	cloned.Resolver = c.Resolver.Clone()
+	cloned.Client.Addresses = slices.Clone(c.Client.Addresses)
 	cloned.FallbackFeeds = append([]string(nil), c.FallbackFeeds...)
 
 	return cloned

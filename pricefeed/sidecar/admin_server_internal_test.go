@@ -41,7 +41,7 @@ func TestNewServiceRejectsUnsafeAdminConfig(t *testing.T) {
 			name: "invalid address",
 			processCfg: ProcessConfig{
 				AdminAddress:      "127.0.0.1",
-				RuntimeConfigPath: "oracle.json",
+				RuntimeConfigPath: "oracle.toml",
 			},
 			errMessage: "oracle admin server address",
 		},
@@ -56,7 +56,7 @@ func TestNewServiceRejectsUnsafeAdminConfig(t *testing.T) {
 			name: "non-loopback host",
 			processCfg: ProcessConfig{
 				AdminAddress:      "0.0.0.0:18081",
-				RuntimeConfigPath: "oracle.json",
+				RuntimeConfigPath: "oracle.toml",
 			},
 			errMessage: "must be a loopback IP address",
 		},
@@ -64,7 +64,7 @@ func TestNewServiceRejectsUnsafeAdminConfig(t *testing.T) {
 			name: "hostname is not accepted",
 			processCfg: ProcessConfig{
 				AdminAddress:      "localhost:18081",
-				RuntimeConfigPath: "oracle.json",
+				RuntimeConfigPath: "oracle.toml",
 			},
 			errMessage: "must be a loopback IP address",
 		},

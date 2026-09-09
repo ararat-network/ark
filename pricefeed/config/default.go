@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/api/currencybeacon"
@@ -112,9 +113,10 @@ func Default() runtime.Config {
 		Providers:      DefaultProviders,
 		Resolver:       DefaultResolver,
 		Client: chainstate.Config{
-			Address:  DefaultClientAddress,
-			Timeout:  DefaultClientTimeout,
-			Interval: DefaultClientInterval,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Local},
+			Addresses: []string{DefaultClientAddress},
+			Timeout:   DefaultClientTimeout,
+			Interval:  DefaultClientInterval,
 		},
 		FallbackFeeds: []string{
 			chain.USDBaseDenom,

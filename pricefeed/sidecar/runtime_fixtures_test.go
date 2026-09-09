@@ -12,6 +12,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
@@ -92,7 +93,7 @@ func (*staticChainStateClient) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (*staticChainStateClient) Update(chainstate.Config) {}
+func (*staticChainStateClient) Update(chainstate.Config) error { return nil }
 
 func (c *staticChainStateClient) Feeds() ([]string, error) {
 	return append([]string(nil), c.feeds...), nil
@@ -181,7 +182,7 @@ func newTestOracleFromRuntime(
 		runtimeConfigPath: process.RuntimeConfigPath,
 		logger:            logger.With("component", "oracle"),
 	}
-	oracle.server, err = newServer(oracle, logger, process.ServerAddress)
+	oracle.server, err = newServer(oracle, logger, process.ServerAddress, process.TLS)
 	require.NoError(t, err)
 	return oracle
 }
@@ -205,9 +206,10 @@ func newTestRuntimeConfig() runtimepkg.Config {
 			},
 		},
 		Client: chainstate.Config{
-			Address:  "passthrough:///feeds",
-			Timeout:  time.Second,
-			Interval: time.Hour,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///feeds"},
+			Timeout:   time.Second,
+			Interval:  time.Hour,
 		},
 		FallbackFeeds: []string{"ausd", "akrw"},
 	}
@@ -230,9 +232,10 @@ func testInternalRuntimeConfig() runtimepkg.Config {
 			providerCfg.Name: providerCfg,
 		},
 		Client: chainstate.Config{
-			Address:  "passthrough:///oracle",
-			Timeout:  time.Second,
-			Interval: time.Second,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///oracle"},
+			Timeout:   time.Second,
+			Interval:  time.Second,
 		},
 		FallbackFeeds: []string{"ausd"},
 	}

@@ -43,11 +43,23 @@ update_interval = {{ dur .UpdateInterval }}
 # Feeds served until the first on-chain feed registry snapshot arrives.
 fallback_feeds = {{ strs .FallbackFeeds }}
 
-# Chain node to read the feed registry from.
+# Chain nodes to read the feed registry from, in preference order, at most
+# four. The first that answers is polled until it fails; a sweep tries each
+# under timeout.
 [client]
-address = {{ str .Client.Address }}
+addresses = {{ strs .Client.Addresses }}
 timeout = {{ dur .Client.Timeout }}
 interval = {{ dur .Client.Interval }}
+
+# Local mode permits plaintext only on this host. Remote connections require
+# tls or explicit plaintext mode. TLS reaches a terminator before the node.
+# An empty CA file in TLS mode uses system roots; a bundle replaces them.
+[client.tls]
+mode = {{ str .Client.TLS.Mode }}
+ca_file = {{ str .Client.TLS.CAFile }}
+cert_file = {{ str .Client.TLS.CertFile }}
+key_file = {{ str .Client.TLS.KeyFile }}
+server_name = {{ str .Client.TLS.ServerName }}
 {{ range $name, $p := .Providers }}
 # The table name, name, and the transport's name must agree.
 [providers.{{ key $name }}]

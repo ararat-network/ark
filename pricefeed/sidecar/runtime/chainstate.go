@@ -13,7 +13,7 @@ var errChainStateClientExited = errors.New("chain state client exited without er
 // ChainStateClient fetches the current on-chain oracle feeds.
 type ChainStateClient interface {
 	Run(context.Context) error
-	Update(chainstate.Config)
+	Update(chainstate.Config) error
 	Feeds() ([]string, error)
 }
 

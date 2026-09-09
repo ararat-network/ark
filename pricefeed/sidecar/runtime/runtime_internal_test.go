@@ -11,6 +11,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/sidecar/chainstate"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
@@ -133,11 +134,13 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg.FallbackFeeds[0] = "akrw"
+	cfg.Client.Addresses[0] = "passthrough:///mutated"
 	constructionProviderCfg := cfg.Providers["logger-test"]
 	constructionProviderCfg.Markets[0].Symbol = "MUTATED"
 	cfg.Resolver.Routes["ausd"][0].Pairs[0] = "KRW/NOAH"
 	cfg.Resolver.BootstrapPrices[0].Price = "99"
 	require.Equal(t, []string{"ausd"}, oracle.feeds)
+	require.Equal(t, []string{"passthrough:///feeds"}, oracle.cfg.Client.Addresses)
 	require.Equal(t, providertypes.Ticker("NOAHUSD"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
 	require.Equal(t, sidecartypes.Pair("USD/NOAH"), oracle.cfg.Resolver.Routes["ausd"][0].Pairs[0])
 	require.Equal(t, "0.25", oracle.cfg.Resolver.BootstrapPrices[0].Price)
@@ -158,11 +161,13 @@ func TestRuntimeOwnsConstructionAndUpdateConfigs(t *testing.T) {
 	require.NoError(t, oracle.Update(nextCfg))
 
 	nextCfg.FallbackFeeds[0] = "ausd"
+	nextCfg.Client.Addresses[0] = "passthrough:///mutated"
 	nextProviderCfg = nextCfg.Providers["logger-test"]
 	nextProviderCfg.Markets[0].Symbol = "MUTATED"
 	nextCfg.Resolver.Routes["akrw"][0].Pairs[0] = "USD/NOAH"
 	nextCfg.Resolver.BootstrapPrices[0].Price = "99"
 	require.Equal(t, []string{"akrw"}, oracle.feeds)
+	require.Equal(t, []string{"passthrough:///feeds"}, oracle.cfg.Client.Addresses)
 	require.Equal(t, []providertypes.Ticker{"NOAHKRW"}, provider.GetTickers())
 	require.Equal(t, providertypes.Ticker("NOAHKRW"), oracle.cfg.Providers["logger-test"].Markets[0].Symbol)
 	require.Equal(t, sidecartypes.Pair("KRW/NOAH"), oracle.cfg.Resolver.Routes["akrw"][0].Pairs[0])
@@ -256,7 +261,7 @@ func testRuntimeLoggerConfig() Config {
 			Name:      "logger-test",
 			Timeout:   time.Second,
 			Interval:  time.Second,
-			Endpoints: []providertypes.Endpoint{{URL: "https://example.invalid/%s/%s"}},
+			Endpoints: []providertypes.Endpoint{{URL: "https://example.invalid/prices?base=%s&quote=%s"}},
 		},
 	}
 
@@ -266,9 +271,10 @@ func testRuntimeLoggerConfig() Config {
 			providerCfg.Name: providerCfg,
 		},
 		Client: chainstate.Config{
-			Address:  "passthrough:///feeds",
-			Timeout:  time.Second,
-			Interval: time.Second,
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{"passthrough:///feeds"},
+			Timeout:   time.Second,
+			Interval:  time.Second,
 		},
 		FallbackFeeds: []string{"ausd"},
 	}
