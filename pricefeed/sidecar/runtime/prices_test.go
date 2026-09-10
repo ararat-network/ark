@@ -127,12 +127,8 @@ func TestRunAppliesProviderSpecificMaxPriceAge(t *testing.T) {
 	requireOracleStopped(t, errCh)
 }
 
-// TestRunBoundsUnchangedResultsByLastObservation drives the same sequence
-// through three providers -- a real price thirty seconds ago, then an unchanged
-// refresh now -- under a ten-second MaxPriceAge. The refresh satisfies
-// MaxPriceAge for all three; only MaxUnchangedAge separates them. The snapshot
-// equalling the extended provider's price alone is a positive assertion that
-// zero cannot extend and that a set bound is enforced.
+// TestRunBoundsUnchangedResultsByLastObservation gives three providers a recent unchanged refresh
+// of an older observation. Only MaxUnchangedAge distinguishes which remains usable.
 func TestRunBoundsUnchangedResultsByLastObservation(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	markets := testMarkets()

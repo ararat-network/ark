@@ -17,11 +17,8 @@ import (
 	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
-// Prices returns the runtime's latest cached feed prices.
-//
-// This RPC does not fetch providers. It snapshots runtime cache state, projects
-// it into the generated transport shape, and leaves ongoing fetch work to the
-// runtime loop.
+// Prices projects the latest runtime cache into transport responses. Provider fetching belongs to
+// the runtime loop and never occurs in this RPC.
 func (o *Service) Prices(ctx context.Context, req *api.PricesRequest) (*api.PricesResponse, error) {
 	// check that the request is non-nil
 	if req == nil {
@@ -88,11 +85,8 @@ func (o *Service) Version(_ context.Context, _ *api.VersionRequest) (*api.Versio
 	return &api.VersionResponse{Version: Version()}, nil
 }
 
-// recoverUnaryPanic is the RPC boundary middleware.
-//
-// Panics in request handlers are returned as internal gRPC errors so one bad
-// request does not terminate the sidecar process. Normal handler errors are
-// mapped to explicit gRPC status codes before they leave the sidecar.
+// recoverUnaryPanic converts handler panics to internal gRPC errors at the request boundary,
+// preserving the sidecar process. Ordinary errors retain mapped status codes.
 func (s *server) recoverUnaryPanic(
 	ctx context.Context,
 	req any,

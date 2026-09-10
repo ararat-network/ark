@@ -19,11 +19,8 @@ import (
 
 var _ api.PriceFeedServer = (*Service)(nil)
 
-// Service owns the sidecar process and implements the generated RPC service.
-//
-// Runtime owns price fetching and cache state. The private server component owns
-// transport mechanics and calls back into Service through the generated service
-// interface.
+// Service owns sidecar lifecycle and implements the RPC interface. Runtime owns fetch/cache state;
+// the private server owns transports.
 type Service struct {
 	api.UnimplementedPriceFeedServer
 
@@ -92,11 +89,8 @@ func NewService(cfg Config, logger log.Logger, opts ...Option) (*Service, error)
 	return o, nil
 }
 
-// Run starts the runtime and serves the prepared transport stack.
-//
-// Run is a blocking, single-use lifecycle call. Parent cancellation or a child
-// failure stops both runtime and transport, and Run returns after both have
-// completed cleanup.
+// Run is blocking and single-use. Parent cancellation or child failure stops runtime and
+// transports; it returns only after both finish cleanup.
 func (o *Service) Run(ctx context.Context) error {
 	if ctx == nil {
 		return errors.New("context cannot be nil")

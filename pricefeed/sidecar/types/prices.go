@@ -45,12 +45,8 @@ type PriceSnapshot struct {
 	Timestamp time.Time
 }
 
-// PricesByFeed re-keys resolved UNIT/NOAH pair prices by feed denom. A
-// resolved price is already NOAH per one unit, so the projection copies it.
-// Only pairs whose denom is in feeds are projected, so an empty feed set —
-// the chain's authoritative signal that nothing is priced — projects nothing.
-// The resolver never emits a nil price; the skip is the backstop, since there
-// is nothing to copy.
+// PricesByFeed rekeys resolved UNIT/NOAH prices without inversion, retaining only requested feeds.
+// An empty authoritative feed set yields nothing; nil-price skipping is a defensive backstop.
 func PricesByFeed(prices Prices, feeds []string) FeedPrices {
 	active := make(map[string]struct{}, len(feeds))
 	for _, denom := range feeds {

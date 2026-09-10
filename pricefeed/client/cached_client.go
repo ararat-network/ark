@@ -101,11 +101,9 @@ func NewClient(logger log.Logger, cfg Config) (*Client, error) {
 	}, nil
 }
 
-// Run connects to the sidecars and polls prices until ctx is cancelled. A
-// disabled client parks until cancellation instead, dialling nothing, so both
-// configurations return when ctx ends. The caller owns cancellation and must
-// wait for Run to return before discarding c. Run must not be called
-// concurrently on the same client.
+// Run polls sidecars until cancellation; disabled clients wait without dialling. The caller must
+// cancel and join Run before discarding the client. Concurrent Run calls on one client are
+// unsupported.
 func (c *Client) Run(ctx context.Context) (err error) {
 	if ctx == nil {
 		return errors.New("context cannot be nil")
@@ -158,11 +156,8 @@ func (c *Client) poll(ctx context.Context, endpoints []endpoint) error {
 	}
 }
 
-// fetchPrices tries the active endpoint, then the rest in order, and caches
-// the first response that validates. The endpoint that answered becomes
-// active and stays so until it fails: there is no fail-back, so a flapping
-// preferred sidecar cannot bounce the client back and forth. Cancellation
-// ends the sweep.
+// fetchPrices tries the active endpoint then alternatives, caching the first valid response.
+// Success stays sticky until failure; cancellation stops the sweep.
 func (c *Client) fetchPrices(ctx context.Context, endpoints []endpoint) {
 	c.logger.Debug("fetching prices")
 

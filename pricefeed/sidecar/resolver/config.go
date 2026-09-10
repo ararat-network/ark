@@ -22,11 +22,8 @@ type Config struct {
 	BootstrapPrices []BootstrapPrice `mapstructure:"bootstrap_prices"`
 }
 
-// Route is one named path from a feed's unit to NOAH. Its legs multiply to
-// NOAH per one unit, the orientation the chain stores, so the resolved price
-// is the published price. Venues quote whichever way they quote: a leg is
-// satisfied by a provider observation in either orientation, normalised per
-// sample by the resolver.
+// Route names a path from a feed unit to NOAH. Its leg product is NOAH per unit; provider
+// observations in either direction are normalised by the resolver.
 type Route struct {
 	// Name identifies this path in configuration and validation errors.
 	Name string `mapstructure:"name"`

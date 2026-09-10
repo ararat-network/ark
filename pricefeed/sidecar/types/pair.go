@@ -8,11 +8,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// Pair identifies an oracle price pair in canonical BASE/QUOTE form: its price
-// is QUOTE units per one BASE, the way venues quote. A feed's output pair is
-// UNIT/NOAH, so a resolved price is NOAH per one unit of the feed's
-// denomination — the orientation the chain stores — with nothing to invert
-// after resolution.
+// Pair is canonical BASE/QUOTE, priced in QUOTE units per BASE. Feed outputs use UNIT/NOAH and
+// already match the chain's NOAH-per-unit orientation.
 type Pair string
 
 // NewPair returns a canonical pair from base and quote components.

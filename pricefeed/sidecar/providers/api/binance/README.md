@@ -32,3 +32,11 @@ See the [adapter contract](../README.md) and [provider development guide](../../
 ```sh
 go test ./pricefeed/sidecar/providers/api/binance
 ```
+
+## Response shape
+
+[response.go](response.go) decodes an array of symbol/price objects. Prices are decimal strings:
+
+```json
+[{"symbol":"LTCBTC","price":"4.00000200"},{"symbol":"ETHBTC","price":"0.07946600"}]
+```

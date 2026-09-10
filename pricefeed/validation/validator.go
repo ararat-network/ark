@@ -132,11 +132,8 @@ func (v *Validator) Run(ctx context.Context) (LivenessResults, error) {
 	return results, nil
 }
 
-// dropRemovedFeeds deletes liveness accounting for feeds that left the active
-// set. A removed feed is no longer part of what the deployment must serve, so
-// keeping its frozen counters — including misses charged between the on-chain
-// removal activating and this refresh observing it — would judge the
-// deployment against a stale requirement.
+// dropRemovedFeeds clears liveness counters for feeds no longer required, including misses accrued
+// before this refresh observed their removal.
 func (v *Validator) dropRemovedFeeds(activeFeeds []string, checkCounts, missingCounts map[string]int) {
 	active := make(map[string]struct{}, len(activeFeeds))
 	for _, denom := range activeFeeds {

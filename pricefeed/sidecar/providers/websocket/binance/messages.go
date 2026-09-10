@@ -37,24 +37,8 @@ const (
 	Separator = "@"
 )
 
-// SubscribeMessageRequest represents a subscribe message request. This is used to subscribe
-// to Binance websocket streams.
-//
-// Request
-//
-//	{
-//	  "method": "SUBSCRIBE",
-//	  "params": [
-//	    "btcusdt@aggTrade",
-//	    "btcusdt@depth"
-//	  ],
-//	  "id": 1
-//	}
-//
-// The ID field correlates subscription responses with requests. IDs are generated
-// sequentially per websocket handler.
-//
-// ref: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#live-subscribingunsubscribing-to-streams
+// SubscribeMessageRequest names streams to subscribe to. Sequential per-handler IDs correlate
+// acknowledgements; see README.md for wire examples and upstream references.
 type SubscribeMessageRequest struct {
 	// Method is the method type for the message.
 	Method string `json:"method"`
@@ -64,20 +48,8 @@ type SubscribeMessageRequest struct {
 	ID int64 `json:"id"`
 }
 
-// SubscribeMessageResponse represents a subscribe message response. This is used to determine
-// whether the subscription was (un)successful.
-//
-// Response
-//
-//	{
-//			"result": null,
-//			"id": 1
-//	}
-//
-// The ID field is used to uniquely identify the messages going back and forth, the same one sent in
-// the initial subscription. The result is null if the subscription was successful.
-//
-// ref: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#live-subscribingunsubscribing-to-streams
+// SubscribeMessageResponse matches its request by ID. A null result indicates successful
+// subscription; see README.md for the wire contract.
 type SubscribeMessageResponse struct {
 	// Result is the result of the subscription.
 	Result any `json:"result"`
@@ -90,30 +62,8 @@ func (m *SubscribeMessageResponse) IsEmpty() bool {
 	return m.ID == 0 && m.Result == nil
 }
 
-// StreamMessageResponse represents a stream message response. This is used to represent the
-// data that is received from the Binance websocket. All stream data will have a stream and
-// data field.
-//
-// # Response
-//
-//	{
-//		"stream": "btcusdt@aggTrade",
-//		"data": {
-//		  	"e": "aggTrade",
-//		  	"E": 1716915868145,
-//		  	"s": "BTCUSDT",
-//		  	"a": 3020757327,
-//		  	"p": "67734.00000000",
-//		  	"q": "0.00230000",
-//		  	"f": 3617006743,
-//		  	"l": 3617006743,
-//		  	"T": 1716915868145,
-//		  	"m": false,
-//		  	"M": true
-//			}
-//	 }
-//
-// ref: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#aggregate-trade-streams
+// StreamMessageResponse wraps combined-stream payloads with stream and data fields. See README.md
+// for supported stream shapes.
 type StreamMessageResponse struct {
 	// Stream is the stream type.
 	Stream string `json:"stream"`
@@ -128,26 +78,8 @@ func (m *StreamMessageResponse) GetStreamType() StreamType {
 	return StreamType(stream[1])
 }
 
-// AggregatedTradeMessageResponse represents an aggregated trade message response. This is used to
-// represent the aggregated trade data that is received from the Binance websocket.
-//
-// # Response
-//
-//	{
-//	  	"e": "aggTrade",    // Event type
-//	  	"E": 1672515782136, // Event time
-//	  	"s": "BNBBTC",      // Symbol
-//	  	"a": 12345,         // Aggregate trade ID
-//	  	"p": "0.001",       // Price
-//	  	"q": "100",         // Quantity
-//	  	"f": 100,           // First trade ID
-//	  	"l": 105,           // Last trade ID
-//	  	"T": 1672515782136, // Trade time
-//	  	"m": true,          // Is the buyer the market maker?
-//	 	"M": true           // Ignore
-//	}
-//
-// ref: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#aggregate-trade-streams
+// AggregatedTradeMessageResponse carries an aggregate trade; Price is the observation used by this
+// adapter. See README.md for the upstream message reference.
 type AggregatedTradeMessageResponse struct {
 	Data struct {
 		// Ticker is the symbol.
@@ -157,38 +89,8 @@ type AggregatedTradeMessageResponse struct {
 	} `json:"data"`
 }
 
-// TickerMessageResponse represents a ticker message response. This is used to represent the
-// ticker data that is received from the Binance websocket.
-//
-// # Response
-//
-//	{
-//			"e": "24hrTicker",  // Event type
-//			"E": 1672515782136, // Event time
-//			"s": "BNBBTC",      // Symbol
-//			"p": "0.0015",      // Price change
-//			"P": "250.00",      // Price change percent
-//			"w": "0.0018",      // Weighted average price
-//			"x": "0.0009",      // First trade(F)-1 price (first trade before the 24hr rolling window)
-//			"c": "0.0025",      // Last price
-//			"Q": "10",          // Last quantity
-//			"b": "0.0024",      // Best bid price
-//			"B": "10",          // Best bid quantity
-//			"a": "0.0026",      // Best ask price
-//			"A": "100",         // Best ask quantity
-//			"o": "0.0010",      // Open price
-//			"h": "0.0025",      // High price
-//			"l": "0.0010",      // Low price
-//			"v": "10000",       // Total traded base asset volume
-//			"q": "18",          // Total traded quote asset volume
-//			"O": 0,             // Statistics open time
-//			"C": 86400000,      // Statistics close time
-//			"F": 0,             // First trade ID
-//			"L": 18150,         // Last trade Id
-//			"n": 18151          // Total number of trades
-//	}
-//
-// ref: https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#individual-symbol-ticker-streams
+// TickerMessageResponse carries a rolling ticker observation. See README.md for the upstream field
+// reference.
 type TickerMessageResponse struct {
 	Data struct {
 		// Ticker is the symbol.

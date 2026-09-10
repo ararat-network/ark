@@ -49,14 +49,8 @@ func NewHandler(logger log.Logger, config websocket.Config) (websocket.DataHandl
 	}, nil
 }
 
-// HandleMessage is used to handle a message received from the data provider. The Binance websocket
-// API is expected to handle the following types of messages:
-//  1. SubscribeMessageResponse: This is a response to a subscription request. If the subscription
-//     was successful, the response will contain a nil result. If the subscription failed, a
-//     re-subscription message will be returned.
-//  2. StreamMessageResponse: This is a response to a stream message. The stream message contains
-//     the latest price of a ticker - either received when a trade is made or an automated price
-//     update is received.
+// HandleMessage handles subscription acknowledgements and aggregate-trade/ticker updates. Failed
+// subscriptions may return retry messages; price messages produce provider responses.
 func (h *Handler) HandleMessage(
 	message []byte,
 ) (types.Response, [][]byte, error) {
@@ -120,10 +114,8 @@ func (h *Handler) HandleMessage(
 	}
 }
 
-// CreateMessages is used to create a message to send to Binance. This is used to subscribe to
-// the given tickers. This is called when the connection to the data provider is first established.
-// Notably, the tickers have a unique identifier that is used to identify the messages going back
-// and forth. This unique identifier is the same one sent in the initial subscription.
+// CreateMessages subscribes to the requested tickers when a connection opens. The request ID
+// associates subscription acknowledgements with the outbound message.
 func (h *Handler) CreateMessages(
 	tickers []types.Ticker,
 ) ([][]byte, error) {

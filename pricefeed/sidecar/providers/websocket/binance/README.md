@@ -40,3 +40,20 @@ See the [adapter contract](../README.md) and [provider development guide](../../
 ```sh
 go test ./pricefeed/sidecar/providers/websocket/binance
 ```
+
+## Wire reference
+
+Subscription messages correlate a per-session sequential `id` with an acknowledgement whose `result` is null on
+success. Combined streams wrap the observation in `stream` and `data`:
+
+```json
+{"method":"SUBSCRIBE","params":["btcusdt@aggTrade"],"id":1}
+{"result":null,"id":1}
+{"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","s":"BTCUSDT","p":"67734.00000000"}}
+```
+
+The last example shows only the fields needed to identify a price. The complete upstream contracts are
+[subscription messages](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#live-subscribingunsubscribing-to-streams),
+[aggregate trades](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#aggregate-trade-streams),
+and [individual tickers](https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams#individual-symbol-ticker-streams).
+The Go structs in [messages.go](messages.go) define the fields this adapter decodes.

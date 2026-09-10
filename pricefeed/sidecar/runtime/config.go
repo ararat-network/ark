@@ -14,12 +14,8 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// Config defines the price runtime configuration. The runtime is configured
-// with price providers and a fallback feed set used until the on-chain feed
-// registry is available.
-//
-// Config values are treated as immutable after being passed to the runtime. Build
-// a replacement config instead of mutating nested maps or slices in place.
+// Config supplies providers and fallback feeds until chain state arrives. Treat nested maps and
+// slices as immutable after handoff; runtime updates require replacement configs.
 type Config struct {
 	// UpdateInterval is the interval at which cached provider prices are resolved
 	// into a new public price snapshot.

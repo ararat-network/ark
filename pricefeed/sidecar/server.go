@@ -136,12 +136,9 @@ func (s *server) run(ctx context.Context) (err error) {
 	return s.serve(ctx, ln)
 }
 
-// serve owns ln, wraps it in the listener's TLS when there is any, and serves
-// the public HTTP, gRPC, and gateway transport until ctx is cancelled or
-// serving fails. The gateway reaches the gRPC server through an in-memory
-// listener: the hop never leaves the process, so the public listener's TLS
-// does not cover it and a client-certificate requirement cannot lock the
-// gateway out.
+// serve owns the listener and public TLS transport until cancellation or failure. Gateway-to-gRPC
+// calls use an in-process listener, so public client-certificate requirements cannot block that
+// hop.
 func (s *server) serve(ctx context.Context, ln net.Listener) (err error) {
 	stopCertificates := s.material.Start(ctx, s.logger)
 	defer stopCertificates()

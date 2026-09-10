@@ -105,8 +105,8 @@ const (
 	keyTLSServerName    = "pricefeed.tls.server_name"
 )
 
-// keySidecarAddress is the key sidecar_addresses replaced. Refused rather
-// than ignored: an unknown key decodes silently to the default address.
+// keySidecarAddress is a forbidden configuration key. Explicit rejection prevents a misspelled or
+// unsupported setting from silently selecting the default address.
 const keySidecarAddress = "pricefeed.sidecar_address"
 
 // Config contains the application side price-feed configurations that must

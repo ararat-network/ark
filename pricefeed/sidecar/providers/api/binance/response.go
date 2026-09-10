@@ -6,20 +6,8 @@ import (
 )
 
 type (
-	// Response is the expected response returned by the Binance API.
-	// The response is json formatted.
-	// Response format:
-	//
-	//	[
-	//  {
-	//    "symbol": "LTCBTC",
-	//    "price": "4.00000200"
-	//  },
-	//  {
-	//    "symbol": "ETHBTC",
-	//    "price": "0.07946600"
-	//  }
-	// ].
+	// Response is the Binance ticker-price array of symbol/price objects. See README.md for the
+	// request and response shape.
 	Response []Data
 
 	// Data BinanceData is the data returned by the Binance API.

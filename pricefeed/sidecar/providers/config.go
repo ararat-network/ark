@@ -79,11 +79,8 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// Equal reports whether two configs can use the same runtime provider.
-//
-// Markets, MaxPriceAge, and MaxUnchangedAge are intentionally excluded because
-// all three are runtime policy changes that do not require rebuilding the
-// provider transport.
+// Equal checks transport reuse compatibility. Markets, MaxPriceAge, and MaxUnchangedAge are runtime
+// policies and do not require rebuilding a provider.
 func (c Config) Equal(other Config) bool {
 	if c.Name != other.Name || c.TransportType != other.TransportType {
 		return false

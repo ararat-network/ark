@@ -10,11 +10,9 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
-// ResolvePrices returns final pair prices for one complete provider snapshot. It
-// builds provider medians for the required route pairs after normalising
-// reciprocal observations, then uses active bootstrap prices only for route
-// pairs without provider samples. It resolves only requested feeds. Configured
-// routes are averaged; missing or empty routes use the direct UNIT/NOAH path.
+// ResolvePrices normalises observations and builds provider medians for requested feeds. Active
+// bootstrap values fill only missing provider pairs. It averages configured routes, using UNIT/NOAH
+// directly when routes are absent.
 func ResolvePrices(
 	ctx context.Context,
 	cfg Config,

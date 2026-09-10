@@ -52,17 +52,15 @@ func (r *Runtime) updatePriceSnapshot(ctx context.Context) {
 	sidecarmetrics.RecordTick(ctx)
 }
 
-// freshProviderPrices returns one provider's cached prices that are fresh enough
-// for the current aggregation tick.
-// providerFreshness is one provider's two freshness windows. maxPriceAge
-// bounds the age of the last message about a pair; maxUnchangedAge bounds
-// how far an unchanged refresh may carry a price past its last real
-// observation, and zero means not at all.
+// providerFreshness holds message-age and unchanged-price limits. maxPriceAge bounds the latest
+// refresh; maxUnchangedAge bounds extension beyond the last real observation, with zero allowing
+// none.
 type providerFreshness struct {
 	maxPriceAge     time.Duration
 	maxUnchangedAge time.Duration
 }
 
+// freshProviderPrices filters cached observations through both freshness windows.
 func (r *Runtime) freshProviderPrices(
 	ctx context.Context,
 	provider *base.Provider,

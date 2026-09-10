@@ -19,11 +19,8 @@ import (
 	sidecartypes "github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
 
-// The serve halves of both transports are covered against injected listeners;
-// what these hold is the run wrappers above them, which are the only place the
-// configured address becomes a bound socket. A wrapper that binds the wrong
-// address, or reports a bind failure as a clean shutdown, would leave a
-// process that starts and answers nothing.
+// These tests exercise wrappers that bind configured addresses, complementing injected-listener
+// serve tests. Incorrect binding or swallowed bind errors must not appear as successful startup.
 
 // freeLoopbackAddress returns a loopback address nothing is listening on, by
 // binding one and releasing it. A wrapper under test has to do its own
@@ -51,11 +48,8 @@ func heldLoopbackAddress(t *testing.T) string {
 	return ln.Addr().String()
 }
 
-// requireGRPCAnswers dials until the server answers or the deadline passes.
-// Binding and serving are not simultaneous, so a single attempt would race the
-// listener rather than prove anything about it. An application-level error is
-// an answer: what is under test is that something is serving the address, not
-// what it replies.
+// requireGRPCAnswers retries until serving begins or the deadline expires. Any application
+// response, including an error, proves the bound transport answers.
 func requireGRPCAnswers(t *testing.T, address string, call func(context.Context, *grpc.ClientConn) error) {
 	t.Helper()
 

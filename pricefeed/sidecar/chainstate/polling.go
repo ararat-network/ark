@@ -97,13 +97,9 @@ func (c *Client) poll(ctx context.Context, cfg Config, endpoints []endpoint) err
 	}
 }
 
-// refresh tries the active endpoint, then the rest in order, and commits the
-// first snapshot that answers. The endpoint that answered becomes active and
-// stays so until it fails: there is no fail-back, so a flapping preferred node
-// cannot bounce the client back and forth. A sweep in which every endpoint
-// fails logs a warning and preserves the previous snapshot, so the runtime
-// keeps using the last-known feed set with operator-visible refresh errors.
-// Cancellation ends the sweep.
+// refresh tries the active node then alternatives and commits the first successful snapshot.
+// Success is sticky; total failure logs a warning and retains the previous feed set. Cancellation
+// ends the sweep.
 func (c *Client) refresh(ctx context.Context, endpoints []endpoint) {
 	var errs []error
 	for offset := range endpoints {
@@ -152,11 +148,8 @@ func refreshStatus(err error) string {
 	return "success"
 }
 
-// queryFeeds performs one oracle query and unions the active feeds with every
-// scheduled addition before the caller stores them as the cached snapshot.
-// Warming an addition through its activation delay is what lets a capable fleet
-// price a new feed from its first active block; scheduled removals are excluded
-// because the feed is still active and already in the union.
+// queryFeeds unions active feeds with scheduled additions to warm providers before activation.
+// Pending removals are already represented by active membership.
 func (c *Client) queryFeeds(ctx context.Context, query oracletypes.QueryClient) ([]string, error) {
 	cfg := c.getConfig()
 	ctx, cancel := context.WithTimeout(ctx, cfg.Timeout)
