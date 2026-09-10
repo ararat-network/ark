@@ -13,12 +13,8 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// MsgSetClaimsMandateFactory appoints the Claims committee and states the
-// total it may pay out. The appointee is drawn from the simulation's own
-// accounts, so the committee is an address the run holds a key for.
-//
-// The span must cover the cancellation period: a shorter appointment could
-// submit no claim at all, because every closing height would land past expiry.
+// MsgSetClaimsMandateFactory appoints a simulation-owned signer and a gross claim limit. Its window
+// spans at least the cancellation period so submitted claims can close before expiry.
 func MsgSetClaimsMandateFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSetClaimsMandate] {
 	return func(
 		ctx context.Context,

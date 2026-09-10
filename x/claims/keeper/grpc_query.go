@@ -72,11 +72,8 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 	}, nil
 }
 
-// Balance queries the fund's custody balance and its encumbrance.
-//
-// These answer here rather than alongside the mandate because neither is
-// scoped to a term: the reservation spans the pending claims of every mandate
-// and survives replacement, while the allowance figures reset with it.
+// Balance reports custody and reservations across all terms. Mandate allowance is separate and
+// resets on replacement; pending reservations survive it.
 func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

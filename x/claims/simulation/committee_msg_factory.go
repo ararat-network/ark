@@ -40,11 +40,8 @@ func activeClaimsCommittee(
 	return mandate, committee, true
 }
 
-// MsgCommitteeSubmitClaimFactory books a committee claim against Insurance.
-// Two ceilings bind rather than one: what Insurance holds beyond its standing
-// reservations, and what the mandate still permits the committee to spend. The
-// claim must also close before the appointment expires, which the seeded
-// window leaves ample room for.
+// MsgCommitteeSubmitClaimFactory bounds claims by unreserved Insurance and remaining gross term
+// allowance. Closing must also precede mandate expiry.
 func MsgCommitteeSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeSubmitClaim] {
 	return func(
 		ctx context.Context,

@@ -9,11 +9,8 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// AuthoriseCommittee checks the signer against the live mandate, returning it
-// for the caller's own constraints: the exact signer, the exact term, and the
-// active window. Every committee handler runs it first, and the priority lane
-// vouches through it at CheckTx, so the lane refuses exactly what the
-// handlers refuse.
+// AuthoriseCommittee validates the exact signer, term, and active window for both committee
+// handlers and priority-lane eligibility. Callers enforce action-specific constraints.
 func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.ClaimsMandate, error) {
 	claimsMandate, err := k.ClaimsMandate.Get(ctx)
 	if err != nil {

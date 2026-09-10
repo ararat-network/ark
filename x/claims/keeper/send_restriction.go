@@ -8,16 +8,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// SendRestriction permits only positive anoah-only transfers into the Insurance
-// custody account. Transfers to every other recipient pass through unchanged.
-//
-// Claims owns this rather than Treasury because the account is Claims' own.
-// Insurance has no counterpart to Treasury's transfer-tax-collector exemption:
-// nothing routes non-NOAH residue here, and a claim is always paid in anoah.
-//
-// It is a keeper method so the guarded address is the one the constructor
-// resolved and asserted, rather than a second derivation by name that no
-// startup check can reach.
+// SendRestriction permits positive NOAH-only deposits to the verified Insurance custody address;
+// other recipients pass unchanged. Insurance has no transfer-tax-collector exemption.
 func (k Keeper) SendRestriction(
 	_ context.Context,
 	_ sdk.AccAddress,

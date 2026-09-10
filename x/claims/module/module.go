@@ -1,16 +1,6 @@
-// Package claims is Insurance: the custody, the mandate, and the record behind
-// every claim the protocol pays.
-//
-// It owns the claims_insurance account and its send restriction (NOAH alone),
-// the Claims mandate under which a committee submits within a fixed gross
-// term allowance and governance submits without one, the immutable claim
-// record, the reservation that encumbers each pending amount, and the shared
-// cancellation period. Claims settle from its EndBlocker, last in the block,
-// once their closing height passes; nothing pays out on a message.
-//
-// Treasury sizes the Insurance target; this module reports the capital it
-// recognises, balance less reservation, through one one-way interface. It
-// owns no tax, target, waterfall, valuation, or Reserve authority.
+// Package claims owns Insurance custody, claim records and reservations, committee allowance, and
+// automatic EndBlock settlement. Treasury owns the funding target and consumes recognised capital.
+// See x/claims/README.md for custody and authority boundaries.
 package claims
 
 import (
@@ -44,11 +34,8 @@ var (
 	_ appmodule.HasEndBlocker = AppModule{}
 )
 
-// AppModule implements an application module for the claims module.
-//
-// Submission and cancellation are transaction-driven; settlement is not. A
-// claim that outlives its cancellation period is paid by the EndBlocker, so
-// the module has per-block work but no BeginBlocker.
+// AppModule registers transaction-driven claim submission/cancellation and automatic due-claim
+// settlement in EndBlock. It has no BeginBlock work.
 type AppModule struct {
 	k *keeper.Keeper
 }

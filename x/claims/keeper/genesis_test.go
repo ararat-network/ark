@@ -207,11 +207,8 @@ func (s *KeeperTestSuite) TestRecognisedCapital() {
 	}
 }
 
-// TestRecognisedCapitalRefusesAnOverReservation pins the refusal standing
-// between corrupt reservation accounting and the expansion waterfall. The state
-// has to be written directly because no path through the module can reach it,
-// which is the point: were it ever reached, nothing downstream would notice a
-// fund reporting negative capital.
+// TestRecognisedCapitalRefusesAnOverReservation injects unreachable corrupt state and checks that
+// negative Insurance capital cannot enter Treasury's settlement waterfall.
 func (s *KeeperTestSuite) TestRecognisedCapitalRefusesAnOverReservation() {
 	s.SetupTest()
 	s.fundInsurance(100)

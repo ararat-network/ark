@@ -237,13 +237,9 @@ func (s *KeeperTestSuite) TestEndBlockerFailsBlockedRecipient() {
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 }
 
-// TestEndBlockerFailsInsuranceSelfPayment exercises the settlement path's
-// re-validation of the stored record, using the one rule a claim can violate
-// without Bank noticing: Insurance as its own recipient. Insurance is unblocked
-// by design and its send restriction admits anoah, so neither the blocked-list
-// check above nor the restriction below would stop the payment — it would
-// settle, leaving custody untouched while releasing the reservation and
-// reporting the claim paid. Only Claim.Validate refuses it.
+// TestEndBlockerFailsInsuranceSelfPayment checks Claim.Validate rejects Insurance as its own
+// recipient. Bank permits this address and denom, so only record validation prevents a false
+// payment with unchanged custody.
 func (s *KeeperTestSuite) TestEndBlockerFailsInsuranceSelfPayment() {
 	s.SetupTest()
 	s.setCancellationPeriod(5)

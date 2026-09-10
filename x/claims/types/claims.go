@@ -96,11 +96,8 @@ func (claim Claim) Validate() error {
 	if !claim.Amount.IsPositive() {
 		return errors.New("claim amount must be positive")
 	}
-	// One height covers every status. A pending claim's is the cancellation
-	// period's end and a settled one keeps that schedule, both of which strictly
-	// follow submission because the period is positive. A cancelled one's is the
-	// veto height, and a veto may land in the very block that submitted the
-	// claim.
+	// Pending and settled records retain a closing height strictly after submission. Cancelled
+	// records use the veto height, which may equal submission height.
 	if claim.Status == ClaimStatus_CLAIM_STATUS_CANCELLED {
 		if claim.ClosingHeight < claim.SubmittedHeight {
 			return errors.New("cancelled claim closing height cannot precede its submission height")

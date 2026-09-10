@@ -83,11 +83,8 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		return nil, errors.New("Claims committee must be distinct from the Claims authority")
 	}
 	if msg.Committee != "" {
-		// An appointment whose window has already closed could never act: the
-		// message would only advance the term, reset the allowance, and unseat
-		// the incumbent committee. Heights drift between drafting a proposal and
-		// executing it, so an elapsed window is a drafting failure to surface,
-		// not intent to honour.
+		// Reject already-expired appointments: they cannot act and would only displace the
+		// incumbent, advance the term, and reset allowance.
 		if height := uint64(sdkCtx.BlockHeight()); msg.ExpiryHeight <= height {
 			return nil, fmt.Errorf(
 				"Claims mandate expiry height %d is not after current height %d",

@@ -47,11 +47,8 @@ func GenClaimsMandate(r *rand.Rand, accounts []string) types.ClaimsMandate {
 	return appointment
 }
 
-// RandomisedGenState generates a valid, launch-only Claims genesis state. The
-// committee is appointed but no claims are seeded: every claim carries an
-// Insurance reservation that must be backed by a Bank balance this generator
-// does not control, so a random claim would produce genesis that InitGenesis
-// correctly refuses.
+// RandomisedGenState appoints a committee but seeds no claims. Pending claims require Bank-backed
+// reservations, whose funding this generator does not control.
 func RandomisedGenState(simState *module.SimulationState) {
 	var params types.Params
 	simState.AppParams.GetOrGenerate(

@@ -9,11 +9,8 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// The Claims committee signs its messages rather than proposing them, so a run
-// reaches this surface only when genesis appointed an address the run holds
-// and the window is open at this height. Both failures read as skips, so what
-// follows drives the pair from the state a run starts in: a claim submitted
-// and then withdrawn inside its cancellation window.
+// Committee factories require an owned signer and an open appointment window. These tests submit
+// and cancel from reachable genesis state so legitimate skips cannot hide unreachable operations.
 
 // appointCommittee installs the appointment the sim's own genesis generator
 // draws over the run's accounts.

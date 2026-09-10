@@ -9,14 +9,9 @@ import (
 const (
 	DefaultClaimCancellationPeriodBlocks = chain.BlocksPerWeek
 
-	// MaxClaimCancellationPeriodBlocks bounds the veto window at a year.
-	//
-	// The window is what stands between a submitted claim and a payable one, so
-	// a period no chain reaches does not make cancellation more generous — it
-	// makes every claim permanently unexecutable and freezes Insurance while
-	// the mandate still reads as configured. That is a governance deadlock with
-	// no error to find it by. A year is fifty-odd times the week-long default,
-	// well past any review a claim could honestly need.
+	// MaxClaimCancellationPeriodBlocks caps the veto window at a chain year, well above the
+	// week-long default, so valid policy cannot defer claims indefinitely while reserving
+	// Insurance.
 	MaxClaimCancellationPeriodBlocks = chain.BlocksPerYear
 )
 

@@ -28,12 +28,8 @@ type claimSubmission struct {
 	Amount              sdk.Coin
 }
 
-// submitClaim reserves one authorized claim against live Insurance coverage
-// without moving coins. The cancellation period comes from Claims params for
-// both origins; the core never reads the Claims mandate. A committee-origin
-// submission carries its mandate facts from the handler's window and term
-// checks: its closing height must not pass the mandate expiry and it
-// permanently consumes the current term allowance.
+// submitClaim reserves covered Insurance funds without transferring coins. Both origins use Claims
+// params; committee facts come from the handler and enforce expiry plus permanent gross term usage.
 func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, error) {
 	// The claim record stores both address strings, so they are canonicalised
 	// here — the single point where submissions of either origin become state —
@@ -96,12 +92,8 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 		if err != nil {
 			return 0, fmt.Errorf("adding Claims allowance usage: %w", err)
 		}
-		// The term allowance is gross and permanent, so the test is on what the
-		// term will have spent once this claim is counted, not on what is left.
-		// Usage never passes the limit on its own — every prior submission came
-		// through here, a replacement mandate resets it, and genesis rejects an
-		// import that exceeds it — so this is the only thing standing between a
-		// committee and an over-committed term.
+		// Term allowance is gross: every submission consumes it permanently. Submission and genesis
+		// enforce its limit; only mandate replacement resets usage.
 		if allowanceUsed.GT(sub.CommitteeClaimLimit.Amount) {
 			return 0, fmt.Errorf(
 				"claim amount %s takes Claims allowance usage to %s, past mandate limit %s",
@@ -211,22 +203,9 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 	return nil
 }
 
-// settleClaim brings one due claim to its terminal state. It pays the claim
-// when Insurance can and fails it when Insurance cannot: both are settlement,
-// and the sweep does not choose between them. EndBlocker is the only caller and
-// has already established that the claim is pending — the sweep owns the queue,
-// settlement owns the outcome.
-//
-// Payability is settled above the first write, and every check deciding it is a
-// read, so the refusing outcome acts on state no payment attempt has touched.
-// That is what keeps the two ways a payment can fail apart: a claim is failed
-// for a fact about the claim, while a store that will not answer fails the
-// block. Facts submission once established are re-tested rather than trusted,
-// because every one of them rides with the binary rather than with state: an
-// upgrade can block a recipient, stop an address parsing, or tighten the record
-// rules for a claim that sat pending across it, and none of that is worth a
-// halt. An error here is therefore always a store refusing to answer — never a
-// verdict on the claim.
+// settleClaim pays or terminally fails a due pending claim after read-only payability checks.
+// Record and recipient checks use current rules. Store, transfer, or event errors propagate;
+// unpayable claims release their reservations. See x/claims/README.md.
 func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 	if err != nil {
@@ -300,26 +279,8 @@ func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 	return nil
 }
 
-// failClaim is settlement's refusing outcome: it ends one due claim the chain
-// could not pay, releasing its reservation with it. A claim that will not be
-// paid must stop encumbering Insurance, which is the whole reason settlement
-// stopped needing a signer.
-//
-// Failure is terminal on the first attempt rather than retried. A blocked or
-// unparseable recipient is fixed for the life of a binary, so re-testing it at
-// a later height would re-run an identical check against an identical claim.
-// Coverage is the one input that could in principle recover, but submission
-// proved the claim covered and settlement is the only path that spends
-// Insurance, so a shortfall means the reservation accounting is wrong rather
-// than the fund being briefly light — a state to investigate, not to wait out.
-//
-// The record is deliberately not re-validated here. failClaim is the last
-// resort every unpayable claim must reach, and one of the facts that routes a
-// claim here is precisely that its stored record no longer satisfies the
-// current binary's rules; judging the record again would give the refusing
-// outcome something to refuse, and the only place left for that refusal to go
-// is a halted block. The flip itself needs no judgment: the sweep proved the
-// claim pending, and failing it changes the status alone.
+// failClaim marks an unpayable claim terminal and releases its reservation without retry. It must
+// not revalidate the record: invalid stored records are one reason settlement calls this fallback.
 func (k *Keeper) failClaim(ctx context.Context, claim types.Claim) error {
 	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
 	if err != nil {

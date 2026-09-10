@@ -76,3 +76,18 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 - [Insurance custody and claims policy](../../docs/design/ECONOMIC_DESIGN.md).
 - [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).
+
+## Settlement failure and custody invariants
+
+Settlement rechecks the recipient, coverage, and record under the current binary before its first write. An
+unparseable or blocked recipient, insufficient custody, or invalid record ends the claim as failed and releases its
+reservation. Failure is terminal: immutable recipient problems cannot heal within the same binary, and a custody
+shortfall indicates broken reservation accounting. The failure path does not revalidate a record whose invalidity
+may be why it was called. Failure details stay in node logs so error formatting is not part of the event contract.
+Store, transfer, and event errors still propagate as block errors.
+
+Recognised capital requires `reserved <= balance`. Submission and genesis enforce coverage; payment releases exactly
+what it sends; cancellation and failure release without sending. Insurance has no burner permission or other
+spending owner. The checked invariant prevents corrupt reservations from silently becoming a larger Treasury
+funding gap. Recipient payability is deliberately not an import condition: settlement can resolve a blocked recipient
+without making genesis depend on the binary's blocked-address set.

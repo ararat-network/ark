@@ -19,13 +19,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := data.Validate(); err != nil {
 		return fmt.Errorf("invalid Claims genesis state: %w", err)
 	}
-	// Whether a pending claim's recipient can still be paid is deliberately not
-	// asked here. A recipient can be blocked while its claim is pending, which
-	// is a state the chain already knows how to end — settlement re-tests it and
-	// fails the claim, releasing its reservation. Rejecting the import instead
-	// would make the same genesis file load under one binary and halt under
-	// another, since the blocked set comes from app wiring rather than from the
-	// file, and would leave an operator no remedy but to edit genesis by hand.
+	// Recipient payability is checked at settlement, not import. A pending claim with a blocked
+	// recipient remains importable and settles as failed with its reservation released.
 	moduleAccount := k.accountKeeper.GetModuleAccount(ctx, types.InsuranceName)
 	if moduleAccount == nil {
 		return fmt.Errorf("%s module account has not been set", types.InsuranceName)

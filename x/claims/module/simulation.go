@@ -14,11 +14,8 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	simulation.RandomisedGenState(simState)
 }
 
-// ProposalMsgsX registers only the generally safe parameter proposal. Every
-// other Claims message needs exact governed state — an appointed committee, a
-// covered Insurance balance, a pending claim inside its window — which random
-// single-key signing cannot produce, so they are covered by integration tests
-// instead.
+// ProposalMsgsX registers governance factories for parameters, mandate appointments, claim
+// submission, and cancellation. Committee transactions register in WeightedOperationsX.
 func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
 	reg.Add(weights.Get("msg_set_claims_mandate", 50), simulation.MsgSetClaimsMandateFactory(am.k))

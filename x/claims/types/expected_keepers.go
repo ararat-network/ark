@@ -24,11 +24,8 @@ type WasmKeeper interface {
 	HasContractInfo(ctx context.Context, address sdk.AccAddress) bool
 }
 
-// BankKeeper defines the custody and transfer functionality required by
-// Claims. Claims pays out of the Insurance account and never credits it: the
-// expansion waterfall that funds Insurance lives in Treasury, so no
-// module-to-module send is needed here. Claims deliberately has no mint or
-// burn dependency.
+// BankKeeper exposes Insurance custody reads and payouts only. Treasury owns funding transfers;
+// Claims has no mint or burn dependency.
 type BankKeeper interface {
 	BlockedAddr(addr sdk.AccAddress) bool
 	GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin
