@@ -34,12 +34,8 @@ func GenVoteThreshold(r *rand.Rand) math.LegacyDec {
 	return types.MinVoteThreshold.Add(math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3))
 }
 
-// GenExchangeRates prices every launch feed as of the genesis timestamp.
-//
-// The simulation has to seed these because it never runs the vote-extension
-// pipeline that produces them on a live chain. Without a rate the protocol
-// reference denomination is unpriced, so every Market conversion the simulation
-// generates fails on an unknown denom and Market goes effectively untested.
+// GenExchangeRates seeds every launch feed at genesis time. Simulation does not produce
+// vote-extension updates, so initial rates are needed to exercise Market conversions.
 func GenExchangeRates(r *rand.Rand, genTime time.Time) []types.ExchangeRate {
 	rates := make([]types.ExchangeRate, 0, len(types.DefaultFeedDenoms))
 	for _, denom := range types.DefaultFeedDenoms {

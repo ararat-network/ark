@@ -31,12 +31,9 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 }
 
-// MarketReferenceDenomKeeper re-denominates Market state held in reference units,
-// the base pool and its delta, when the protocol reference moves. Oracle owns
-// the replacement choice and the conversion rates — read once and fresh on both
-// sides — so executors never invent freshness policy of their own. The call
-// runs in the same transaction as the reference change and its error fails the
-// whole action.
+// MarketReferenceDenomKeeper rebases Market's pool and delta using the rate pair selected by
+// Oracle. The executor applies no independent freshness policy; errors abort the reference-change
+// transaction.
 type MarketReferenceDenomKeeper interface {
 	RebaseBasePool(ctx context.Context, from string, to string, rates RateSet) error
 }

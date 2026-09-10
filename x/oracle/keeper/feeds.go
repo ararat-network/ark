@@ -108,12 +108,9 @@ func (k Keeper) ScheduleFeedTransition(ctx context.Context, denom string, direct
 	return nil
 }
 
-// AdvanceFeeds promotes every due transition batch after the previous vote
-// height has been consumed. It must run after vote extensions are processed:
-// the tally for vote height V reads the fold at V, and promoting a batch due at
-// V before that read would validate votes against a set no validator could have
-// seen. Rates for removed feeds are pruned here; the oracle owns both the feed
-// registry and rate storage.
+// AdvanceFeeds promotes due batches only after processing the previous height's votes against their
+// signing epoch. It also prunes removed-feed rates; reversing this order invalidates
+// activation-boundary reports.
 func (k Keeper) AdvanceFeeds(ctx context.Context) error {
 	feeds, err := k.Feeds.Get(ctx)
 	if err != nil {

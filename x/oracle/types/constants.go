@@ -11,13 +11,8 @@ const (
 	// and represented in a validator's vote extension.
 	MaxFeeds = 256
 
-	// MaxEncodedVoteRateBytes bounds one vote-extension rate encoding: the
-	// minimal big-endian bytes of the raw price*10^18 magnitude. Sixteen
-	// bytes admits every raw value below 2^128 — prices to ~3.4*10^20 —
-	// matching the chain's other 2^128 domain caps while denying the range
-	// headroom the full LegacyDec encoding keeps. Vote-extension capacity
-	// limits derive from this bound, so changing it changes consensus
-	// acceptance.
+	// MaxEncodedVoteRateBytes caps minimal big-endian price*10^18 magnitudes at 16 bytes, admitting
+	// values below 2^128. Vote-extension capacity derives from this consensus bound.
 	MaxEncodedVoteRateBytes = 16
 
 	// InitialFeedVersion identifies the genesis feed epoch.
@@ -28,13 +23,9 @@ const (
 	FeedActivationDelayBlocks int64 = 2
 )
 
-// MaxExchangeRate is the largest rate the store holds, NOAH per one unit: the
-// magnitude MaxEncodedVoteRateBytes admits a direct report, held against
-// derived prices at the tally as well. Rates are what the halt-class folds
-// multiply a 2^128-capped quantity by — Reserve recognition, Treasury
-// liability — and a quantity at that cap times a rate at this one is ~10^59,
-// sixteen orders inside LegacyDec's ~10^77 ceiling, so those products stay
-// representable by construction rather than by the shape of a vote.
+// MaxExchangeRate bounds stored and derived NOAH-per-unit prices to the vote encoding range.
+// Multiplying a 2^128-capped quantity by this rate stays well inside LegacyDec range; see
+// x/oracle/README.md, "Rate orientation: NOAH per unit".
 var MaxExchangeRate = math.LegacyNewDecFromBigIntWithPrec(
 	new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*MaxEncodedVoteRateBytes), big.NewInt(1)),
 	math.LegacyPrecision,

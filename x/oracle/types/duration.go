@@ -9,12 +9,8 @@ import (
 	collcodec "cosmossdk.io/collections/codec"
 )
 
-// DurationValue codes a time.Duration collection value.
-//
-// Collections ships no duration codec, and neither substitute is honest. A
-// bare int64 loses the unit everywhere the value is read back as text, and
-// storing the generated ExchangeRateAgeOverride message would repeat the
-// denomination already held in the key, leaving two copies free to disagree.
+// DurationValue encodes time.Duration collection values and preserves duration units in textual
+// output.
 var DurationValue collcodec.ValueCodec[time.Duration] = durationValue{}
 
 type durationValue struct{}

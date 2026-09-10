@@ -32,11 +32,8 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	stakingKeeper types.StakingKeeper
 
-	// Market and Treasury already depend on x/oracle, so their reference
-	// rebase executors are injected after construction to avoid a dependency
-	// cycle. These are the only oracle-to-consumer edges and exist solely to
-	// re-denominate consumer reference-unit state atomically with a reference
-	// move.
+	// Reference rebase executors are wired after construction because Market and Treasury depend on
+	// Oracle. They re-denominate consumer state atomically with reference changes.
 	marketReferenceKeeper   types.MarketReferenceDenomKeeper
 	treasuryReferenceKeeper types.TreasuryReferenceDenomKeeper
 

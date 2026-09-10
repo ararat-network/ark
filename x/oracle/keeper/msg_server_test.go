@@ -13,11 +13,8 @@ import (
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
-// TestSetReferenceDenomBoundsTheOutgoingRate pins MaxOutgoingReferenceRate's
-// domain claim: a trillion NOAH per unit of the outgoing reference is the most
-// governance may state, and a rate past it is refused before anything is
-// read. First configuration has nothing to rebase, so the bound is the only
-// thing the rate meets here.
+// TestSetReferenceDenomBoundsTheOutgoingRate checks the governance rate cap before keeper reads,
+// including first configuration where no rebase occurs.
 func (s *KeeperTestSuite) TestSetReferenceDenomBoundsTheOutgoingRate() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 

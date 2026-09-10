@@ -84,11 +84,8 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 	return &types.QueryExchangeRatesResponse{ExchangeRates: readings}, nil
 }
 
-// unitsPerNoah is the stored rate read the other way round, derived for the
-// query alone: the chain never consumes it, so nothing here is state or
-// policy. A reciprocal below Dec precision — only a rate near MaxExchangeRate
-// produces one — reads as zero rather than failing a query that answered the
-// stored figure correctly.
+// unitsPerNoah is a query-only reciprocal of the stored rate. Values below decimal precision
+// display as zero without invalidating the stored-rate response.
 func unitsPerNoah(rate math.LegacyDec) math.LegacyDec {
 	if rate.IsNil() || !rate.IsPositive() {
 		return math.LegacyZeroDec()

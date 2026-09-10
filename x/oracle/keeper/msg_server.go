@@ -45,13 +45,8 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	return &types.MsgUpdateParamsResponse{}, nil
 }
 
-// AddFeed schedules one feed addition and states the feed's staleness window.
-//
-// Membership is scheduled first so that a denomination this chain will not
-// price, or one with a conflicting removal in flight, fails before any window
-// is written. Past that point the denomination is one the feed registry
-// accepts, whether this message is what admits it or it was already a member,
-// and the window applies either way.
+// AddFeed schedules feed membership, accepting already active or scheduled additions. Invalid
+// denominations and conflicting transitions fail.
 func (m msgServer) AddFeed(ctx context.Context, msg *types.MsgAddFeed) (*types.MsgAddFeedResponse, error) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	if err := sdk.ValidateAuthority(sdkCtx, m.k.authority, msg.Authority); err != nil {

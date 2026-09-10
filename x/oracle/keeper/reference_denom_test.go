@@ -202,11 +202,8 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRequiresPriceableOutgoingRa
 	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
-// TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing is the escape from the
-// boundary the test above pins: a supplied rate leaves the outgoing
-// denomination out of the priced set entirely, so the action no longer depends
-// on a feed the chain cannot read. The outgoing denomination is deliberately
-// left unpriced here — the move succeeding anyway is the assertion.
+// TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing checks that an explicit outgoing rate
+// permits a rebase without reading or pricing the outgoing feed.
 func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing() {
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
@@ -328,14 +325,8 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenom() {
 	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
 }
 
-// TestMsgSetReferenceDenomOutgoingRateValidation covers the two spellings of "no
-// override" and the two refusals: a rate that cannot mean anything, and one
-// past the domain cap.
-//
-// An unset decimal round-trips through amino JSON as zero, so absent and zero
-// have to resolve identically — otherwise a proposal would convert at a
-// different rate depending on how it reached the chain. Both fall through to
-// pricing the outgoing denomination like any other.
+// TestMsgSetReferenceDenomOutgoingRateValidation checks absent and zero overrides both use ordinary
+// pricing, including Amino round trips, and rejects negative or over-cap rates.
 func (s *KeeperTestSuite) TestMsgSetReferenceDenomOutgoingRateValidation() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 

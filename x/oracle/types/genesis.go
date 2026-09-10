@@ -56,15 +56,8 @@ func DefaultGenesisState() *GenesisState {
 	)
 }
 
-// DefaultFeedDenoms is the launch feed set, sorted unique as Feeds requires. A
-// feed is keyed by the denomination it prices, so naming the launch feeds after
-// their denominations keeps rate-store keys stable. This list was derived from
-// the oracle Tobin-tax parameter until that parameter was deleted; membership
-// itself has lived behind the asset registry since the feed decoupling.
-//
-// XDR is the one feed with no asset behind it: nothing is issued in it, but the
-// Treasury tax cap and the conversion pool are denominated in it, so the
-// reference needs a live feed the registry never asks for.
+// DefaultFeedDenoms is the sorted unique launch feed set. XDR prices the protocol reference without
+// a registered asset; other feeds use their asset denominations.
 var DefaultFeedDenoms = []string{
 	chain.AUDBaseDenom,
 	chain.CADBaseDenom,

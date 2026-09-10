@@ -19,28 +19,15 @@ func (k Keeper) GetRateSet(ctx context.Context, denoms ...string) (types.RateSet
 	return k.rateSet(ctx, false, denoms)
 }
 
-// GetAvailableRateSet returns fresh rates for whichever requested denoms have
-// them, omitting a denom whose rate is unknown or stale instead of failing the
-// whole set. Every result includes the NOAH identity rate. Callers that derive
-// one value per requested denom need the all-or-nothing GetRateSet; this
-// variant serves valuations that price what they can and leave the remainder
-// unvalued.
+// GetAvailableRateSet returns fresh requested rates plus NOAH identity, omitting unknown or stale
+// feeds. Use GetRateSet when every requested denomination must be priced.
 func (k Keeper) GetAvailableRateSet(ctx context.Context, denoms ...string) (types.RateSet, error) {
 	return k.rateSet(ctx, true, denoms)
 }
 
-// GetLastKnownRateSet returns the most recently stored rate for whichever
-// requested denoms have ever been priced, ignoring the freshness window that
-// GetRateSet and GetAvailableRateSet enforce. A denom the Oracle has never
-// priced is omitted, exactly as it is from the available set.
-//
-// This is for sizing an aggregate against supply already outstanding, never for
-// quoting a trade or minting against. The distinction is what the rate is used
-// to decide: a stale rate cannot say what one unit is worth to a counterparty
-// now, but it remains the best evidence of what a standing obligation is worth
-// relative to the others it shares a fund with, and dropping that supply from
-// such a total silently redistributes the fund toward whoever is transacting.
-// Every caller must be able to state which of the two it is doing.
+// GetLastKnownRateSet ignores freshness but omits never-priced denominations. It supports
+// accounting for outstanding supply only, never quotes, minting, or payments. Every set includes
+// NOAH identity.
 func (k Keeper) GetLastKnownRateSet(ctx context.Context, denoms ...string) (types.RateSet, error) {
 	rates := types.NewRateSet()
 	seen := map[string]struct{}{chain.NoahBaseDenom: {}}
@@ -70,30 +57,9 @@ func (k Keeper) GetLastKnownRateSet(ctx context.Context, denoms ...string) (type
 	return rates, nil
 }
 
-// GetRateSetWithin returns each requested denomination's rate under the
-// request's own staleness window, keyed by the requested denomination — the
-// available read's semantics, with the caller's window in place of the chain
-// default. A request whose feed is unknown, never priced, non-positive, or
-// older than its window is omitted, and the result carries the NOAH identity
-// like every rate set.
-//
-// Each denomination prices through the feed its own name derives: its prefix
-// when it is an external symbol, itself otherwise. The derivation happens
-// here, not in the caller, so a request cannot route a name to any series but
-// its own — two requests may name one series under different windows and
-// receive different verdicts, keyed apart by the names that asked.
-//
-// This is the one read that takes a window from the caller, and nothing
-// unjudged leaves through it: the verdict is applied here, under the window
-// stated in the request, so a consumer cannot fetch a rate and forget the
-// judgment. Everything without a window of its own keeps using GetRateSet and
-// GetAvailableRateSet; GetLastKnownRateSet keeps its separate fence for sizing
-// aggregates against outstanding supply.
-//
-// A non-positive window admits nothing rather than erroring: the windows are
-// governance inputs validated at their own write, and this read sits behind
-// arithmetic that settles every block, where a conservative zero is an answer
-// and an error is a halt.
+// GetRateSetWithin applies each request's window to its derived feed and keys results by requested
+// denomination. Unknown, non-positive, stale, or non-positive-window entries are omitted; NOAH
+// identity remains. See x/oracle/README.md for consumer freshness policy.
 func (k Keeper) GetRateSetWithin(ctx context.Context, requests []types.RateRequest) (types.RateSet, error) {
 	rates := types.NewRateSet()
 	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()

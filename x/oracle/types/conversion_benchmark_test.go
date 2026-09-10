@@ -13,12 +13,8 @@ import (
 
 var benchmarkConverted sdk.DecCoin
 
-// BenchmarkRateSetConvert separates the two shapes a conversion can take. Every
-// rate set carries the numeraire at one, and nearly every conversion the chain
-// performs has it on a leg — valuing supply, sizing a fund, quoting a NOAH pair,
-// paying a settlement entitlement — so the unit-rate cases are the path that
-// matters. The cross case is the control: neither leg is one, nothing is
-// skipped, and it is here to catch the skip's own guard becoming a cost.
+// BenchmarkRateSetConvert compares common unit-rate legs with cross conversions, exercising both
+// the identity shortcuts and their guard cost.
 func BenchmarkRateSetConvert(b *testing.B) {
 	rates := types.NewRateSetFrom(map[string]math.LegacyDec{
 		chain.USDBaseDenom: math.LegacyMustNewDecFromStr("1.234567890123456789"),

@@ -10,13 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
-// FeedReferentGuard reports the claims a consumer holds on a feed.
-//
-// Guards derive their answer from the consumer's own authoritative state at
-// call time; nothing is indexed here. That is the deliberate difference from
-// the deleted asset-lock pattern: an index needs a write on every consumer
-// transition and can drift from the state it summarises, while a derived check
-// costs one read on the rare governance path that removes a feed.
+// FeedReferentGuard derives a consumer's removal-blocking claims from its authoritative state at
+// query time, without a mirrored dependency index.
 type FeedReferentGuard interface {
 	// FeedReferents returns every claim the consumer holds on denom, or an
 	// empty slice when it holds none. A consumer with several reasons reports
@@ -25,36 +20,16 @@ type FeedReferentGuard interface {
 	FeedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error)
 }
 
-// SetFeedReferentGuards registers the complete removal-guard set. App wiring
-// owns the set and it holds exactly the foreign consumers that exist: today
-// x/asset, which answers for the registry, and x/reserve, which answers for
-// its credited and positioned holdings; a basket guard joins with its spec.
-// The protocol reference is not a guard — it is oracle's own state
-// and feedReferents checks it directly; that collector stays unexported so the
-// keeper cannot satisfy this interface and be registered against itself. One
-// entry per consumer, not per claim, because a consumer knows its own reasons.
-// Consumers depend on x/oracle, so the reverse edge is injected at wiring
-// rather than imported.
+// SetFeedReferentGuards installs the app-owned foreign-consumer guard set, one entry per consumer.
+// Oracle checks its own reference directly; post-construction wiring avoids reverse dependency
+// imports.
 func (k *Keeper) SetFeedReferentGuards(guards ...FeedReferentGuard) {
 	k.feedReferentGuards = guards
 }
 
-// feedReferents collects every claim on a feed. It is the single source of
-// truth for both the removal check and Query/FeedReferents, so what operators
-// inspect is exactly what governance is judged against.
-//
-// A denom with no feed is ErrFeedNotFound rather than an empty claim list.
-// There is nothing to hold a claim on, so asking the guards is pointless work,
-// and an empty answer would read as "safe to remove" for what is really a typo
-// or an already-removed feed. Adding and Removing both count as existing: an
-// asset awaiting activation legitimately pins a feed that has not activated
-// yet, and the referents of an in-flight removal are worth being able to ask
-// for.
-//
-// The protocol reference is oracle's own claim rather than a registered guard,
-// and it is reported first because it is the strongest: Market's pool and
-// Treasury's cap are denominated in that unit continuously, so removing its
-// feed would leave both priced against something the chain no longer observes.
+// feedReferents serves both removal validation and operator queries. Active and in-flight feeds
+// exist; absent feeds return ErrFeedNotFound. Oracle's reference claim precedes foreign-consumer
+// claims.
 func (k Keeper) feedReferents(ctx context.Context, denom string) ([]types.FeedReferent, error) {
 	phase, err := k.FeedPhase(ctx, denom)
 	if err != nil {
@@ -87,17 +62,8 @@ func (k Keeper) feedReferents(ctx context.Context, denom string) ([]types.FeedRe
 	return referents, nil
 }
 
-// requireFeedUnreferenced rejects removal of a feed a consumer still depends
-// on. Removal is recoverable but expensive: a re-added feed waits out the
-// activation delay and then re-warms freshness, and for the feed pricing the
-// protocol reference that stalls conversion chain-wide meanwhile.
-//
-// It also rejects removal of a feed that does not exist, inherited from the
-// collector. ScheduleFeedTransition would treat that as a no-op, which passes
-// a governance proposal that silently does nothing; a proposal naming a typo
-// or an already-removed feed should fail where it can be seen. Re-submitting
-// while a removal is still in flight stays idempotent — that feed is in phase
-// Removing, so it exists here and no-ops at scheduling as before.
+// requireFeedUnreferenced rejects absent feeds and any consumer claim. Repeated removal requests
+// remain idempotent while removal is in flight, but typos and already-removed feeds fail visibly.
 func (k Keeper) requireFeedUnreferenced(ctx context.Context, denom string) error {
 	referents, err := k.feedReferents(ctx, denom)
 	if err != nil {

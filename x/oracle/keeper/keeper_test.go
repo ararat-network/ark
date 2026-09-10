@@ -280,13 +280,8 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 	}, rates)
 }
 
-// TestGetRateSetWithinJudgesOneFeedPerRequest pins what replaced the per-feed
-// staleness override: the window travels in the request, the series is derived
-// from the requested name, and the verdict comes back under that name — so one
-// series can back a patient holding and be refused by a strict one in the same
-// block, keyed apart. Every consumer without a window of its own keeps taking
-// the chain default through the gate-enforcing reads, which is why the same
-// rate is refused there.
+// TestGetRateSetWithinJudgesOneFeedPerRequest checks derived feeds and independent caller windows,
+// with results keyed by requested symbols. Ordinary reads still enforce the chain default.
 func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -335,11 +330,8 @@ func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
 }
 
-// TestGetLastKnownRateSetIgnoresStalenessButNotAbsence pins the one difference
-// from the available set: a rate too old to transact at is still returned,
-// because the caller is sizing an aggregate over supply already outstanding
-// rather than quoting. A denom never priced stays absent — bypassing the
-// freshness gate is not licence to invent a rate where none was ever stored.
+// TestGetLastKnownRateSetIgnoresStalenessButNotAbsence checks stale observations remain available
+// for outstanding-supply accounting without inventing never-observed rates.
 func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)

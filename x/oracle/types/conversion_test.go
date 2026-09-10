@@ -137,15 +137,8 @@ func TestRateSetConvertUnderflowTruncatesToZero(t *testing.T) {
 	require.True(t, actual.Amount.IsZero())
 }
 
-// TestRateSetConvertAnswersUnconvertibleAsUnknown pins the consequence of
-// letting membership vouch for a denomination instead of a regular expression:
-// every denomination the set does not carry is answered the same way, whether it
-// is well formed, malformed, or empty. Conversion has no opinion on the shape of
-// a denomination it was never given a rate for.
-//
-// The identity case is included because it is the one that changed. An offer
-// denomination absent from the set is unknown even when it is also the ask, so
-// no denomination leaves Convert without having been proven a key.
+// TestRateSetConvertAnswersUnconvertibleAsUnknown checks every absent denomination fails alike,
+// including malformed keys and offer-equals-ask conversions.
 func TestRateSetConvertAnswersUnconvertibleAsUnknown(t *testing.T) {
 	rates := types.NewRateSetFrom(map[string]math.LegacyDec{
 		chain.USDBaseDenom: math.LegacyNewDec(2),
@@ -176,16 +169,8 @@ func TestRateSetConvertAnswersUnconvertibleAsUnknown(t *testing.T) {
 	}
 }
 
-// TestRateSetConvertUnitRateSkipMatchesApplied pins the equivalence the
-// unit-rate skip rests on. LegacyDec multiplies and divides by scaling to 10^18
-// and chopping back, so either operation against one divides evenly and returns
-// the operand untouched, which is what makes skipping it bit-identical to
-// applying it rather than an approximation of it. The skip fires on the leg
-// carrying the numeraire, so this reproduces the applied arithmetic in both
-// directions over the values most likely to expose a rounding difference: a rate
-// whose reciprocal does not terminate, an amount carrying all eighteen decimal
-// places, an amount wide enough to stress the intermediate product, and one at
-// the precision floor.
+// TestRateSetConvertUnitRateSkipMatchesApplied checks bit-identical multiplication/division by one
+// across repeating fractions, full precision, wide amounts, and the precision floor.
 func TestRateSetConvertUnitRateSkipMatchesApplied(t *testing.T) {
 	one := math.LegacyOneDec()
 

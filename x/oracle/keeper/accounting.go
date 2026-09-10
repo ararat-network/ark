@@ -16,14 +16,8 @@ import (
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
-// RecordVoteAccounting records reward weight and attendance for the validator
-// resolved from a consensus address. eligible is true when the block reached
-// the functioning threshold with this validator in the commit; participated
-// is true when the validator submitted a valid report pricing at least the
-// participation-threshold share of the target set. Participation on a
-// non-functioning (ineligible) block is
-// deliberately ignored rather than rejected: attendance is only ever credited
-// on functioning blocks. If the validator no longer resolves, accounting is
+// RecordVoteAccounting resolves a consensus address and records rewards plus eligible-block
+// attendance. Participation counts only when the block is eligible; unresolved validators are
 // skipped.
 func (k Keeper) RecordVoteAccounting(
 	ctx context.Context,
@@ -218,20 +212,9 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	return nil
 }
 
-// SettleAttendance jails validators whose attended share of eligible blocks
-// fell below the minimum attendance ratio. It never slashes stake: attendance
-// is set hygiene, not a safety fault. A zero MinAttendancePerWindow disables
-// jailing entirely — a deliberate governance off-switch.
-//
-// Every record is judged, however few eligible blocks it holds. MinAttendance-
-// PerWindow is the whole grace: a ratio is scale-free, so a validator present
-// for part of a window is held to the same share of the blocks it was actually
-// present for, and an eligible-block floor on top would silently soften the
-// ratio governance set. Fleet-wide outages are already absorbed upstream —
-// non-functioning blocks increment neither counter — so a sparse record means
-// the validator was absent while the fleet worked, which is exactly the signal
-// this settlement exists to act on. A record with EligibleBlocks == 0 (only
-// reachable by genesis import) passes on its own: required = ratio × 0 = 0.
+// SettleAttendance jails, never slashes, validators below the configured attended share of eligible
+// blocks. Zero disables jailing. Every record is judged without an extra minimum-block floor; zero
+// eligible blocks require zero attendance. See x/oracle/README.md.
 func (k Keeper) SettleAttendance(ctx context.Context, attendanceWindowBlocks uint64) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 

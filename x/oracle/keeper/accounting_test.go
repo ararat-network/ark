@@ -60,12 +60,9 @@ func (s *KeeperTestSuite) TestRecordVoteAccountingIneligibleZeroWeightIsNoOp() {
 	s.Require().Zero(attendanceEntries)
 }
 
-// TestRecordVoteAccountingIgnoresParticipationWithoutEligibility pins the
-// deliberate ignore semantics from plan amendment 2: a validator that
-// participates on a non-functioning (ineligible) block is neither rejected
-// nor credited. Both cases use a positive reward weight so the call proceeds
-// past the initial no-op guard and actually exercises the eligibility gate,
-// rather than short-circuiting before ever considering participation.
+// TestRecordVoteAccountingIgnoresParticipationWithoutEligibility checks non-functioning blocks earn
+// no attendance. Positive reward weight bypasses the no-op guard so the eligibility branch is
+// exercised.
 func (s *KeeperTestSuite) TestRecordVoteAccountingIgnoresParticipationWithoutEligibility() {
 	s.Run("no existing record stays absent", func() {
 		consAddr, validator := s.newBondedValidator(valAddr1)
@@ -427,13 +424,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 	}
 }
 
-// TestSettleAttendance pins the jail-only attendance settlement: no Slash
-// call exists on the mock at all, so any attempt to slash would fail to
-// compile, and every case below either arms Jail exactly once or leaves the
-// staking mock with no expectations (gomock fails the test on any
-// unexpected call, which is how the "no staking calls" cases are enforced).
-// Two cases also cover the abort paths: a generic validator-lookup error and
-// a jail failure, both propagated out as wrapped errors.
+// TestSettleAttendance checks jail-only outcomes and wrapped lookup/jail errors. The mock has no
+// Slash method and unexpected staking calls fail the test.
 func (s *KeeperTestSuite) TestSettleAttendance() {
 	tests := []struct {
 		name                   string
@@ -573,8 +565,8 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 			expectJail:     true,
 		},
 		{
-			// Window length no longer gates judgement at all; it only labels the
-			// emitted event. A lone eligible block is still a judged block.
+			// Window length labels the event but does not gate judgement. A lone eligible block is
+			// still judged.
 			name:                   "single eligible block is judged",
 			eligibleBlocks:         1,
 			attendedBlocks:         0,
@@ -646,14 +638,8 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 	}
 }
 
-// TestSettleAttendanceContinuesWalkAfterJailing pins that the jail branch of
-// the Attendance walk returns (false, nil), not (true, nil): the walk must
-// keep going and judge every remaining record instead of stopping after the
-// first jail. Both validators here are below threshold and each arms a
-// Validator+Jail pair; gomock's automatic expectation check at test cleanup
-// fails if the walk stops early, since the second pair would then go
-// uncalled. It also asserts both EventOracleJail events in walk order
-// (valAddr1 sorts before valAddr2), which no other test covers.
+// TestSettleAttendanceContinuesWalkAfterJailing checks every below-threshold validator is jailed
+// and events follow key order; the walk must not stop after its first jail.
 func (s *KeeperTestSuite) TestSettleAttendanceContinuesWalkAfterJailing() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)

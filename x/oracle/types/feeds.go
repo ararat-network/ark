@@ -34,11 +34,8 @@ func NewFeeds(denoms []string) Feeds {
 	}
 }
 
-// AtHeight returns the feed epoch validators must report for voteHeight. It
-// folds every transition that has activated by voteHeight into the active set,
-// advancing the version once per distinct activation height. Transitions
-// activating later are excluded, which is what lets a voter at height V and the
-// tally of V agree despite reading different committed states.
+// AtHeight derives the epoch for a vote height, folding activated transitions and advancing version
+// once per activation batch. Future transitions remain excluded so voters and later tallying agree.
 func (f Feeds) AtHeight(voteHeight int64) FeedSet {
 	// The value receiver is scratch space; the clone keeps the fold off the
 	// caller's active set.
@@ -60,11 +57,8 @@ func (f Feeds) AtHeight(voteHeight int64) FeedSet {
 	return FeedSet{Version: f.Version, Denoms: f.Denoms}
 }
 
-// ApplyTransition folds one transition into the active feed set in place,
-// keeping it sorted. The receiver's denoms are mutated, so callers holding a
-// set they must not disturb clone first. Version advancement stays with the
-// caller, since one version covers a whole activation batch. It is exported
-// because batch promotion in the keeper applies the same rule.
+// ApplyTransition mutates a sorted feed set in place. Clone before calling if the original must
+// survive. The caller advances the version once per activation batch.
 func (f *Feeds) ApplyTransition(transition FeedTransition) {
 	index, found := slices.BinarySearch(f.Denoms, transition.Denom)
 	switch {

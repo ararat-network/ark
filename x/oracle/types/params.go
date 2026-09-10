@@ -17,39 +17,19 @@ const (
 	DefaultRewardDistributionWindow = chain.BlocksPerYear // window for a year
 	DefaultMaxExchangeRateAge       = time.Minute
 
-	// MaxRewardWindow and MaxAttendanceWindow bound the two settlement
-	// cadences at a year. Neither feeds arithmetic that can overflow — both are
-	// moduli — but both are the only trigger their settlement has, so a period
-	// no chain reaches does not slow them down, it switches them off: rewards
-	// would never settle, and attendance would never grade, which is the
-	// deadman switch jailing depends on. A year is fifty-odd times the
-	// week-long defaults, so the bound refuses only values that were never a
-	// schedule.
+	// MaxRewardWindow and MaxAttendanceWindow cap settlement cadence at a chain year, keeping valid
+	// governance values finite and well above the week-long defaults.
 	MaxRewardWindow     = chain.BlocksPerYear
 	MaxAttendanceWindow = chain.BlocksPerYear
 
-	// MaxAllowedExchangeRateAge bounds the staleness window governance may set.
-	//
-	// This is the load-bearing one. MaxExchangeRateAge is the gate every
-	// freshness check measures against — conversion quotes, the liability
-	// partition's priced bucket, each recognition entry's own window — so a
-	// value large enough to never elapse does not loosen the gate, it removes
-	// it: every rate reads fresh forever, conversions quote on arbitrarily old
-	// prices, and the partition reports a fully priced aggregate it cannot
-	// support. Nothing errors, which is what makes it worth refusing at the
-	// write. Seven days is four orders of magnitude above the one-minute
-	// default and far beyond any outage a live feed should survive as "fresh".
+	// MaxAllowedExchangeRateAge caps the chain-default freshness window at seven days. It bounds
+	// ordinary rate reads; consumers using GetRateSetWithin validate their own windows separately.
 	MaxAllowedExchangeRateAge = 7 * 24 * time.Hour
 )
 
-// MaxOutgoingReferenceRate caps the governance-supplied rate a reference
-// re-point converts the outgoing unit at, NOAH per one unit of that
-// denomination. A domain cap with orders of magnitude of headroom rather than
-// a projection: the rate joins the handed set the consumers' rescale
-// multiplications read, and a trillion NOAH per unit of the outgoing
-// reference is eight orders past Terra's bottom. The other side needs no cap:
-// a rate is unrepresentable below one attonoah per unit, and a reference
-// worth 10^18 NOAH is not a quote governance will state.
+// MaxOutgoingReferenceRate caps an explicit governance rebase rate at one trillion NOAH per
+// outgoing unit. The domain bound constrains consumer rescale arithmetic without depending on
+// current state.
 var MaxOutgoingReferenceRate = math.LegacyNewDec(1_000_000_000_000)
 
 // Default parameter values
@@ -57,35 +37,17 @@ var (
 	MinVoteThreshold     = math.LegacyNewDecWithPrec(50, 2)                     // 50%
 	DefaultVoteThreshold = math.LegacyMustNewDecFromStr("0.666666666666666667") // > 2/3
 	DefaultRewardBand    = math.LegacyNewDecWithPrec(2, 2)                      // 2% (-1, 1)
-	// DefaultMinAttendancePerWindow is deliberately lenient, and the week-long
-	// DefaultAttendanceWindow above is part of the same choice: together they are
-	// the defence against correlated jailing when a target-set change outpaces
-	// sidecar rollouts. A dark validator passes by attending only the final
-	// ratio-share of the window, so the recovery span is (1 - ratio) × window —
-	// most of a week with these defaults. Tightening either parameter shrinks
-	// that span and must be weighed against rollout lag, not just individual
-	// hygiene.
+	// DefaultMinAttendancePerWindow and the week-long window allow recovery after coverage
+	// interruptions. A validator can satisfy the ratio by attending the final ratio-share of
+	// eligible blocks; tightening either parameter reduces that margin.
 	DefaultMinAttendancePerWindow = math.LegacyNewDecWithPrec(5, 2) // 5%
-	// MinFunctioningBlockThreshold floors FunctioningBlockThreshold at a
-	// majority. A block grades attendance only once participating power reaches
-	// the threshold, so a dark coalition holding more than the remaining share
-	// switches grading off entirely; flooring at a majority forces that
-	// coalition to be a majority itself. Going lower buys nothing back: the
-	// deadman would start charging validators for blocks a majority of the
-	// fleet could not price, which is the correlated-outage mass jailing the
-	// design exists to prevent. Governance may only raise this, trading
-	// sensitivity for forgiveness; MinAttendancePerWindow = 0 remains the
-	// direct way to switch jailing off.
+	// MinFunctioningBlockThreshold requires at least half of commit power to participate before
+	// grading attendance. Higher values forgive more degraded blocks; zero MinAttendancePerWindow
+	// separately disables jailing.
 	MinFunctioningBlockThreshold     = math.LegacyNewDecWithPrec(50, 2) // 50%
 	DefaultFunctioningBlockThreshold = MinFunctioningBlockThreshold
-	// MaxParticipationThreshold caps ParticipationThreshold at half the target
-	// set. The parameter is a deadman floor — the share of targets a report
-	// must price before it counts as participation at all — not a coverage
-	// mandate: coverage misses correlate through shared providers, so above a
-	// majority of targets the floor would let a split-fleet provider gap jail
-	// the affected half while the healthy half keeps blocks functioning.
-	// Coverage pressure belongs to per-target reward weight. Zero restores the
-	// single-positive-rate floor.
+	// MaxParticipationThreshold caps the attendance coverage floor at half the target set.
+	// Per-target rewards encourage fuller coverage; zero still requires one positive rate.
 	MaxParticipationThreshold = math.LegacyNewDecWithPrec(50, 2) // 50%
 	// DefaultParticipationThreshold asks a participating report to price a
 	// fifth of the target set: low enough that no live sidecar with a partial

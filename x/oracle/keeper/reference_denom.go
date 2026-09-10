@@ -30,12 +30,9 @@ func (k Keeper) GetReferenceDenom(ctx context.Context) (string, error) {
 	return referenceDenom, nil
 }
 
-// SetReferenceDenom re-points the protocol reference. Changing a configured
-// reference denom rebases consumer reference-unit state in the same transaction;
-// first configuration has nothing to rebase from.
-//
-// A non-nil outgoingRate is the rate the outgoing unit is converted out of,
-// replacing whatever the store holds. Nil reads the stored rate instead.
+// SetReferenceDenom changes the protocol reference and rebases existing consumer state atomically.
+// First configuration has no outgoing state. A non-nil outgoingRate replaces the stored rate; nil
+// requires a fresh read.
 func (k Keeper) SetReferenceDenom(ctx context.Context, referenceDenom string, outgoingRate math.LegacyDec) error {
 	// Clearing a configured reference is rejected for the same reason an empty
 	// one cannot be set: consumers hold state denominated in it.
@@ -96,25 +93,9 @@ func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 	return nil
 }
 
-// rebaseReferenceDenom re-denominates every consumer's reference-unit state. A
-// missing executor or executor error fails the whole action atomically, which
-// is the correct escalation: a half-rebased consumer prices against a
-// reference denom that no longer exists.
-//
-// The conversion pair is read once here and handed to both executors, so they
-// convert through identical rates and never invent freshness policy. Both
-// sides must be fresh. A successor the chain is not currently pricing is no
-// recovery at all, and a failed outgoing feed still carries its last
-// observation — present, wrong, and exactly the number a re-point exists to
-// escape — so reading it at any stored age would convert consumer state at a
-// dead price without saying so.
-//
-// A governance-supplied outgoingRate is how a re-point escapes an outgoing
-// feed the chain cannot price, and it replaces the store rather than filling
-// in behind it. Absent one, the outgoing rate is read fresh like any other: a
-// stale, pruned, or never-priced outgoing unit fails the action by name, and
-// governance resubmits stating the rate it means, so that conversion is voted
-// on rather than inherited.
+// rebaseReferenceDenom supplies one captured rate pair to both required executors. Both rates must
+// be fresh unless governance supplies the outgoing rate, which bypasses that feed read. Any
+// executor failure aborts the action; see x/oracle/README.md.
 func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string, outgoingRate math.LegacyDec) error {
 	if k.marketReferenceKeeper == nil || k.treasuryReferenceKeeper == nil {
 		return errorsmod.Wrapf(
