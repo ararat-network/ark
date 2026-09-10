@@ -73,8 +73,8 @@ func vouchGovernanceVote(ctx sdk.Context, staking *stakingkeeper.Keeper, gov *go
 	if checked, _ := ctx.Value(votesCheckedKey{}).(bool); checked {
 		return true, nil
 	}
-	// Proposal selection also calls this without an ante vote-policy pass.
-	// Only the vote policy's ordinary refusals mean loss of priority.
+	// Direct vouch callers may not have run the ante vote policy. Only its
+	// ordinary refusals mean loss of priority.
 	err = vouchVote(ctx, staking, msg)
 	if errors.Is(err, errortypes.ErrUnauthorized) || errors.Is(err, errortypes.ErrInvalidAddress) {
 		return false, nil

@@ -3,7 +3,6 @@ package app_test
 import (
 	"context"
 	"fmt"
-	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -62,7 +61,13 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	poorSend := admit(poorPriv, &banktypes.MsgSend{FromAddress: poorAddr, ToAddress: richAddr}, mempool.LaneNormal, 10)
 	vote := admit(votePriv, &govv1.MsgVote{ProposalId: 1, Voter: voteAddr, Option: govv1.VoteOption_VOTE_OPTION_YES}, mempool.LaneGovernance, 0)
 
-	order := mempool.SelectEntries(pool.Snapshot(), math.MaxUint64, 0, txConfig.TxEncoder(), func(mempool.Entry, int8) bool { return true })
+	var order [][]byte
+	pool.SelectBy(context.Background(), nil, func(tx sdk.Tx) bool {
+		bz, err := txConfig.TxEncoder()(tx)
+		require.NoError(t, err)
+		order = append(order, bz)
+		return true
+	})
 	require.Equal(t, [][]byte{vote, richSend, poorSend}, order, "priority lane drains first; fee still orders the normal lane")
 }
 

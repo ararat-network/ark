@@ -7,7 +7,7 @@ package mempool
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
-// Lane values identify independent admission reservations and service phases.
+// Lane values identify independent admission reservations and proposal service classes.
 const (
 	LaneNormal int8 = iota
 	LaneGovernance

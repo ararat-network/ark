@@ -1,8 +1,10 @@
 package mempool
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
+	"math"
 	"sync"
 
 	errorsmod "cosmossdk.io/errors"
@@ -19,11 +21,13 @@ var ErrCapacity = errorsmod.Register("lanes", 3, "lane admission capacity exhaus
 // Entry adds reservation metadata to a transaction held by the SDK index.
 // Size is the admitted wire length; proposals re-encode through the SDK.
 type Entry struct {
-	Tx   sdk.Tx
-	Key  [32]byte
-	Size int
-	Lane int8
-	Slot int8
+	Tx       sdk.Tx
+	Key      [32]byte
+	Size     int
+	Lane     int8
+	Slot     int8
+	Priority int64
+	key      senderNonce // SDK index identity, so proposals need not re-extract signers
 }
 
 type senderNonce struct {
@@ -31,12 +35,37 @@ type senderNonce struct {
 	nonce  uint64
 }
 
+// priority keeps lanes disjoint without compressing the SDK's int64 fee priority.
+// The SDK still owns nonce ordering and priority tie-breaking.
+type priority struct {
+	lane int8
+	fee  int64
+}
+
+func priorityConfig() sdkmempool.PriorityNonceMempoolConfig[priority] {
+	return sdkmempool.PriorityNonceMempoolConfig[priority]{
+		TxPriority: sdkmempool.TxPriority[priority]{
+			GetTxPriority: func(goCtx context.Context, _ sdk.Tx) priority {
+				ctx := sdk.UnwrapSDKContext(goCtx)
+				return priority{lane: Lane(ctx), fee: ctx.Priority()}
+			},
+			Compare: func(a, b priority) int {
+				if order := cmp.Compare(a.lane, b.lane); order != 0 {
+					return order
+				}
+				return cmp.Compare(a.fee, b.fee)
+			},
+			MinValue: priority{lane: LaneNormal, fee: math.MinInt64},
+		},
+	}
+}
+
 // Pool extends the SDK priority/nonce pool with count and byte reservations.
 // CometBFT's local client serialises ante admission with insertion. The mutex
 // protects metadata and SDK index updates; no ante handler runs under it.
 type Pool struct {
 	mu        sync.Mutex
-	index     *sdkmempool.PriorityNonceMempool[int64]
+	index     *sdkmempool.PriorityNonceMempool[priority]
 	entries   map[senderNonce]Entry
 	hashes    map[[32]byte]senderNonce
 	counts    [3]int
@@ -54,7 +83,7 @@ func NewPool(config Config) *Pool {
 		panic(err)
 	}
 	config.MaxTxs = config.Count()
-	cfg := sdkmempool.DefaultPriorityNonceMempoolConfig()
+	cfg := priorityConfig()
 	cfg.MaxTx = config.MaxTxs
 	p := &Pool{
 		index: sdkmempool.NewPriorityMempool(cfg), config: config,
@@ -132,7 +161,7 @@ func (p *Pool) Insert(goCtx context.Context, tx sdk.Tx) error {
 		p.sizes[old.Slot] -= int64(old.Size)
 		delete(p.hashes, old.Key)
 	}
-	entry := Entry{Tx: tx, Key: sha256.Sum256(ctx.TxBytes()), Size: len(ctx.TxBytes()), Lane: lane, Slot: slot}
+	entry := Entry{Tx: tx, Key: sha256.Sum256(ctx.TxBytes()), Size: len(ctx.TxBytes()), Lane: lane, Slot: slot, Priority: ctx.Priority(), key: key}
 	p.entries[key] = entry
 	p.hashes[entry.Key] = key
 	p.counts[slot]++

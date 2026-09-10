@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http/httptest"
 	"sync"
@@ -914,6 +915,45 @@ func TestProposalSDKParity(t *testing.T) {
 			res, err := left.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: req.Time, Hash: make([]byte, 32), Txs: l.Txs})
 			require.NoError(t, err)
 			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, res.Status)
+		})
+	}
+}
+
+// The SDK handler must accept blocks built with capped lanes, while retaining
+// its selected-sequence checks when a capped vote precedes an ordinary action.
+func TestProposalVoteCapPreservesSDKValidity(t *testing.T) {
+	for _, successor := range []bool{false, true} {
+		t.Run(fmt.Sprint(successor), func(t *testing.T) {
+			f := newAdmissionFixture(t, 1)
+			a := f.apps[0]
+			var want [][]byte
+			for seq := uint64(0); seq < 6; seq++ {
+				bz := signedPending(t, a, f.voter, seq, voteMsg(f.voter))
+				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+				require.NoError(t, err)
+				require.Zero(t, res.Code, res.Log)
+				if seq < 5 {
+					want = append(want, bz)
+				}
+			}
+			if successor {
+				bz := signedPending(t, a, f.voter, 6, sendMsg(f.voter))
+				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+				require.NoError(t, err)
+				require.Zero(t, res.Code, res.Log)
+			}
+			normal := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
+			res, err := a.CheckTx(&abci.RequestCheckTx{Tx: normal})
+			require.NoError(t, err)
+			require.Zero(t, res.Code, res.Log)
+			want = append(want, normal)
+			blockTime := admissionTime.Add(time.Second)
+			proposal, err := a.PrepareProposal(&abci.RequestPrepareProposal{Height: 2, Time: blockTime, MaxTxBytes: 1 << 20})
+			require.NoError(t, err)
+			require.Equal(t, want, proposal.Txs, "the sixth 1M-gas vote exceeds the 5M-gas allowance")
+			accepted, err := a.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: blockTime, Hash: make([]byte, 32), Txs: proposal.Txs})
+			require.NoError(t, err)
+			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, accepted.Status)
 		})
 	}
 }

@@ -33,9 +33,9 @@ const (
 	GovernanceAdmissionByteShare  = 500
 )
 
-// Block shares cap preferential proposal service, not total inclusion. Excess
-// and oversized transactions compete for ordinary service. Calibrate gas and
-// bytes separately against the emergency bundle and intended voting population.
+// Block shares cap service for transactions that fit their lane allowance.
+// An individual transaction larger than the entire allowance competes as normal
+// for this proposal; smaller transactions above the remaining allowance wait.
 const (
 	CommitteeBlockGasShare   = 500
 	GovernanceBlockGasShare  = 500
@@ -80,3 +80,6 @@ func (c Config) Validate() error {
 	}
 	return nil
 }
+
+//nolint:unparam // Count, byte and gas shares remain independently tunable constants.
+func fraction(n, bps uint64) uint64 { return n/10000*bps + n%10000*bps/10000 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"math/rand"
 	"testing"
 	"time"
@@ -283,4 +284,18 @@ func benchmarkPoolAdmission(b *testing.B, newPool func() sdkmempool.Mempool) {
 			}
 		})
 	}
+}
+
+func TestPoolPriorityBands(t *testing.T) {
+	t.Run("maximum normal fee cannot outrank a privileged lane", func(t *testing.T) {
+		p := newTestPool(100)
+		normal, vote, committee, richCommittee := fixtureTx(1), fixtureTx(2), fixtureTx(3), fixtureTx(4)
+		require.NoError(t, admit(p, LaneNormal, math.MaxInt64, normal))
+		require.NoError(t, admit(p, LaneGovernance, math.MaxInt64, vote))
+		require.NoError(t, admit(p, LaneCommittee, 0, committee))
+		require.NoError(t, admit(p, LaneCommittee, math.MaxInt64, richCommittee))
+		var got []sdk.Tx
+		p.SelectBy(context.Background(), nil, func(tx sdk.Tx) bool { got = append(got, tx); return true })
+		require.Equal(t, []sdk.Tx{richCommittee, committee, vote, normal}, got)
+	})
 }

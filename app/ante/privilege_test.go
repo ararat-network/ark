@@ -3,6 +3,7 @@ package ante_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -396,6 +397,48 @@ func TestDepositVouchDoesNotScanUnrelatedBalances(t *testing.T) {
 	}
 	require.Positive(t, before)
 	require.Equal(t, before, measure())
+}
+
+func TestGovernanceVotePriority(t *testing.T) {
+	arkApp, ctx, rich, poor := setupGovVoteTest(t)
+	ctx = ctx.WithBlockTime(time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC))
+	end := ctx.BlockTime().Add(time.Hour)
+	for _, tc := range []struct {
+		name     string
+		status   govv1.ProposalStatus
+		end      *time.Time
+		missing  bool
+		voter    sdk.AccAddress
+		eligible bool
+	}{
+		{"active", govv1.StatusVotingPeriod, &end, false, rich, true},
+		{"understaked", govv1.StatusVotingPeriod, &end, false, poor, false},
+		{"deposit period", govv1.StatusDepositPeriod, &end, false, rich, false},
+		{"missing end", govv1.StatusVotingPeriod, nil, false, rich, false},
+		{"missing proposal", govv1.StatusVotingPeriod, &end, true, rich, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NoError(t, arkApp.GovKeeper.Proposals.Set(ctx, 1, govv1.Proposal{Id: 1, Status: tc.status, VotingEndTime: tc.end}))
+			if tc.missing {
+				require.NoError(t, arkApp.GovKeeper.Proposals.Remove(ctx, 1))
+			}
+			for _, msg := range []sdk.Msg{
+				govv1.NewMsgVote(tc.voter, 1, govv1.OptionYes, ""),
+				govv1.NewMsgVoteWeighted(tc.voter, 1, govv1.WeightedVoteOptions{}, ""),
+				govv1beta1.NewMsgVote(tc.voter, 1, govv1beta1.OptionYes),
+				govv1beta1.NewMsgVoteWeighted(tc.voter, 1, govv1beta1.WeightedVoteOptions{}),
+			} {
+				t.Run(sdk.MsgTypeURL(msg), func(t *testing.T) {
+					eligible, err := arkApp.Privileges().Vouch(ctx, msg)
+					require.NoError(t, err)
+					require.Equal(t, tc.eligible, eligible)
+					eligible, err = arkApp.Privileges().Vouch(ctx.WithBlockTime(end), msg)
+					require.NoError(t, err)
+					require.False(t, eligible, "voting end is exclusive")
+				})
+			}
+		})
+	}
 }
 
 func TestVouchPreservesUnexpectedStoreErrors(t *testing.T) {
