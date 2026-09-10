@@ -79,11 +79,8 @@ func (q queryServer) Asset(ctx context.Context, req *types.QueryAssetRequest) (*
 	return &types.QueryAssetResponse{PricedAsset: priced}, nil
 }
 
-// Assets returns every registered asset.
-//
-// An unpriced member is reported as a verdict rather than as a query error,
-// because one stale feed says nothing about the rest of the registry. Only a
-// genuine fault fails the call.
+// Assets returns all registry entries with pricing verdicts. An unavailable feed makes only its
+// member unpriced; store or structural faults fail the query.
 func (q queryServer) Assets(ctx context.Context, req *types.QueryAssetsRequest) (*types.QueryAssetsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

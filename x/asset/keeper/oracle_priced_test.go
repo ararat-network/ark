@@ -84,9 +84,8 @@ func (s *KeeperTestSuite) TestOraclePricedDenomsHoldInsideLiveBoundary() {
 	s.requireOraclePricedDenoms(nil)
 }
 
-// TestOraclePricedDenomsGainOnRegistration pins membership to registration
-// itself. There is no longer a status between the two, so an asset joins the
-// live set in the block its registration executes.
+// TestOraclePricedDenomsGainOnRegistration checks that registration adds the asset to the
+// priced-live set in the same block.
 func (s *KeeperTestSuite) TestOraclePricedDenomsGainOnRegistration() {
 	asset := types.DefaultGenesisState().Assets[0]
 	s.requireOraclePricedDenoms(nil)

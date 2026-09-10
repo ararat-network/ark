@@ -143,11 +143,8 @@ func (s *KeeperTestSuite) TestRegisterAssetDerivesMetadata() {
 	s.Require().Equal("arkGOLD", stored.Metadata.Symbol)
 }
 
-// TestFinaliseRetirementRefusesActiveAsset pins the absence of a shortcut for a
-// registration governance regrets. Registration admits outright, so an unwanted
-// asset unwinds the way every other asset does — halt first, so redemption
-// stays open across the decision — rather than through a cancellation that
-// skipped the exit.
+// TestFinaliseRetirementRefusesActiveAsset checks that registration cannot bypass the
+// halt-and-retire lifecycle, even with zero supply.
 func (s *KeeperTestSuite) TestFinaliseRetirementRefusesActiveAsset() {
 	asset := types.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
@@ -207,9 +204,7 @@ func (s *KeeperTestSuite) TestBeginAndResumeIssuance() {
 		asset.Denom,
 		asset.Version+2,
 	))
-	// Resuming no longer consults feed state: retirement is immediate, so
-	// there is no "removal pending" window left to block on. The status
-	// precondition is the whole guard.
+	// Resuming requires the issuance-halted status and does not consult feed state.
 	s.Require().NoError(s.keeper.ResumeIssuance(
 		s.ctx,
 		asset.Denom,
@@ -506,15 +501,8 @@ func (s *KeeperTestSuite) TestFinaliseRetirementRejectsUnapprovableResidual() {
 	}
 }
 
-// TestRetirementIsTerminal pins the lifecycle's one irreversible act: nothing
-// leads out of RETIRED. Every transition is run against the same tombstone
-// rather than one apiece, so a new way back out fails here whichever status it
-// would have arrived from.
-//
-// No collaborator is primed, and that is part of what the test asserts: each
-// transition answers status before it reads supply or a feed phase, so a
-// tombstone is refused without anything else being consulted. A transition that
-// started reading first would fail here on an unexpected call.
+// TestRetirementIsTerminal checks every transition refuses the same retired tombstone before
+// querying supply or feed state. Unconfigured mocks enforce that ordering.
 func (s *KeeperTestSuite) TestRetirementIsTerminal() {
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_RETIRED

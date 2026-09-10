@@ -36,11 +36,8 @@ type BankKeeper interface {
 // the denomination it prices.
 type OracleKeeper interface {
 	GetAvailableRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
-	// GetLastKnownRateSet ignores the freshness window, so it answers only what
-	// a denomination was last worth — never what it may be transacted at. It
-	// backs the LastRate disclosure on an unavailable-feed verdict, which
-	// consumers totalling outstanding supply may read and consumers quoting or
-	// paying may not.
+	// GetLastKnownRateSet ignores freshness for outstanding-supply disclosure only. Its rates must
+	// not support quotes, minting, or payments.
 	GetLastKnownRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
 	FeedPhase(ctx context.Context, denom string) (oracletypes.FeedPhase, error)
 }

@@ -61,11 +61,8 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	return nil
 }
 
-// AuthoriseCommittee checks the signer against the live emergency mandate,
-// returning it for the caller's own constraints: the exact signer, the exact
-// term, and the active window. The suspension handler runs it first, and the
-// priority lane vouches through it at CheckTx, so the lane refuses exactly
-// what the handler refuses.
+// AuthoriseCommittee validates the exact signer, term, and active mandate window. The handler and
+// priority-lane eligibility share these checks; callers enforce action-specific constraints.
 func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.EmergencyMandate, error) {
 	emergencyMandate, err := k.EmergencyMandate.Get(ctx)
 	if err != nil {
@@ -78,17 +75,9 @@ func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expect
 	return emergencyMandate, nil
 }
 
-// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate,
-// checking the committee signer, the mandate window, the exact term, and the
-// one-suspension-per-asset-per-term bound. It is a pure status move: the
-// reference is a feed read, so an asset sharing the reference denomination
-// suspends while the unit keeps its price.
-//
-// Suspension is the committee's only power. Halting issuance contains nothing a
-// crisis cares about — the exit leg keeps converting at the full oracle rate —
-// so an emergency halt would pay full suspension latency in NOAH dilution while
-// signalling committee-confirmed distress through a door it left open. Halting
-// is wind-down policy, and policy runs at governance speed.
+// EmergencySuspendAsset applies suspension under the live committee mandate, once per asset per
+// term. It checks signer, window, and exact term; the feed and reference pricing remain intact. See
+// x/asset/README.md, "The emergency mandate".
 func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, denom string, expectedTerm uint64) error {
 	emergencyMandate, err := k.AuthoriseCommittee(ctx, committee, expectedTerm)
 	if err != nil {
@@ -121,13 +110,8 @@ func (k Keeper) EmergencySuspendAsset(ctx context.Context, committee string, den
 	if err := k.suspendAsset(ctx, asset); err != nil {
 		return err
 	}
-	// This is the only lifecycle transition that lands inside a block still
-	// being read: governance transitions execute in x/gov's EndBlocker, after
-	// every transaction, while the committee acts in an ordinary one. That once
-	// obliged consumers holding a block-scoped fold of the registry to be told,
-	// and Treasury's liability snapshot was such a consumer. None remains —
-	// Treasury values liability at the end of the block, from final state, so a
-	// suspension landing anywhere inside the block is simply seen.
+	// Committee suspension can occur during transaction execution. Treasury's EndBlock liability
+	// valuation reads the resulting final asset state.
 	if err := k.EmergencySuspensions.Set(ctx, denom); err != nil {
 		return fmt.Errorf("recording emergency suspension for asset %s: %w", denom, err)
 	}

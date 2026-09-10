@@ -12,11 +12,8 @@ import (
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
-// Every Asset transition is gated on the status its subject currently
-// occupies, so each factory reads the registry and declines when nothing sits
-// where it needs one. A simulation cannot distinguish that from a factory
-// whose status can never be occupied: both are skips. What follows pins each
-// transition from the status it accepts, and from one it does not.
+// Each lifecycle factory must emit messages from an accepted status and skip ineligible states.
+// Explicit fixtures distinguish unreachable factory output from legitimate simulation skips.
 
 func govAuthority() string {
 	return authtypes.NewModuleAddress(govtypes.ModuleName).String()
@@ -49,11 +46,8 @@ func TestPickAssetSelectsOnlyTheAcceptedStatuses(t *testing.T) {
 	})
 }
 
-// TestLifecycleFactoriesEmitAcceptedTransitions is the reachability proof: for
-// each factory, an asset is seeded in a status it accepts and the message it
-// emits is delivered through the keeper method the handler calls. The expected
-// version travels with it, so a factory reading a stale one would be refused
-// here rather than skipped forever in a run.
+// TestLifecycleFactoriesEmitAcceptedTransitions delivers each factory's message through its keeper
+// path, checking status eligibility and the current expected version.
 func TestLifecycleFactoriesEmitAcceptedTransitions(t *testing.T) {
 	tests := map[string]struct {
 		from   types.AssetStatus

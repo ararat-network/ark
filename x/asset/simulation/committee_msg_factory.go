@@ -10,13 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
-// MsgEmergencySuspendAssetFactory suspends an asset on the emergency
-// committee's own authority, without waiting for a governance vote.
-//
-// The power is one-shot per denomination per term, so a denomination already
-// suspended under this appointment is excluded rather than retried. Only an
-// asset the ordinary suspension path would accept qualifies, since the
-// emergency route reaches the same transition.
+// MsgEmergencySuspendAssetFactory selects a suspendable asset under the live committee mandate,
+// excluding denominations whose one suspension for the current term is spent.
 func MsgEmergencySuspendAssetFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgEmergencySuspendAsset] {
 	return func(
 		ctx context.Context,

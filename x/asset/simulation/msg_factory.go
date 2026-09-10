@@ -253,12 +253,9 @@ func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergenc
 	}
 }
 
-// MsgOpenSettlementFactory opens a settlement over an asset the handler would
-// accept one for: suspended or written off, with supply outstanding and no plan
-// standing. The rate stays in (0, 1]. The closing window is anchored well past
-// any run's length: the proposal executes some blocks after this draw and the
-// handler re-anchors activation to that height, so a window opening one block
-// after the draw could close before it activates and be refused.
+// MsgOpenSettlementFactory selects suspended or written-off assets with supply and no plan. Rates
+// stay in (0, 1]; closing is far enough beyond the draw to follow activation at delayed proposal
+// execution.
 func MsgOpenSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgOpenSettlement] {
 	return func(
 		ctx context.Context,
@@ -325,12 +322,9 @@ type retirement struct {
 	bound math.Int
 }
 
-// MsgFinaliseRetirementFactory retires an asset the handler would accept:
-// halted issuance may approve any residual at or above its supply, a
-// suspended asset only once supply is zero, and a written-off asset with a
-// zero bound since its residual is already disclosed. Halted issuance
-// sometimes approves more than its floor, so the bound is exercised as a
-// bound rather than only at its minimum.
+// MsgFinaliseRetirementFactory selects eligible assets: halted with a covering residual bound,
+// suspended with zero supply, or written-off with zero bound. Halted cases also exercise bounds
+// above the minimum.
 func MsgFinaliseRetirementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgFinaliseRetirement] {
 	return func(
 		ctx context.Context,

@@ -13,11 +13,8 @@ import (
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
-// GenEmergencyMandate appoints the emergency committee from the run's own
-// accounts and opens the window at the first block for longer than any run
-// lasts, so the committee surface is signable for the whole run. An
-// appointment the run cannot sign for, or one whose window opens after the run
-// ends, leaves that surface unexercised.
+// GenEmergencyMandate appoints an account the simulation can sign for and opens its window from the
+// first block beyond the expected run length.
 func GenEmergencyMandate(r *rand.Rand, accounts []string) types.EmergencyMandate {
 	if len(accounts) == 0 {
 		return types.DefaultEmergencyMandate()

@@ -44,14 +44,9 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 				)
 			}
 		}
-		// Feed existence lives in x/oracle, so it is a keeper-level rule rather
-		// than a GenesisState one. An oracle-priced asset must name an active
-		// feed, the same rule registration and recovery answer to: a launching
-		// chain lists its feeds directly in the active set, and the two-block
-		// activation delay is an artefact of runtime transitions alone, so import
-		// reaches the rule with nothing to wait for. A suspended, written-off, or
-		// retired asset may legitimately name a feed that does not exist yet or
-		// has since been removed.
+		// Oracle-priced genesis assets require active feeds, matching registration and recovery.
+		// Other lifecycle statuses may reference absent feeds. Feed existence requires keeper
+		// access and cannot be checked by GenesisState alone.
 		if asset.IsOraclePriced() {
 			if err := k.requireFeedActive(ctx, asset.Denom); err != nil {
 				return fmt.Errorf("invalid genesis asset %s: %w", asset.Denom, err)

@@ -149,13 +149,8 @@ func TestAutoCLIOptionsCoverAssetServices(t *testing.T) {
 		options.Tx.Service,
 	)
 
-	// The expected sets are read off the service descriptors rather than
-	// transcribed, so a new RPC fails this test until it is described here.
-	// That is what makes the assertion below a real pin on the committee's
-	// powers: a second committee-signed message cannot ship unnoticed.
-	// Suspension is the only lifecycle mutation reaching consensus outside
-	// x/gov's EndBlocker, so it is the only one that can land while a block is
-	// still executing.
+	// Service-descriptor assertions constrain committee authority to suspension. Unlike governance
+	// lifecycle changes in EndBlock, committee suspension may execute within a block.
 	require.Equal(
 		t,
 		serviceMethods(assetv1.Query_ServiceDesc),

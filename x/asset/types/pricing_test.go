@@ -137,11 +137,8 @@ func TestPriceVerdictFoldsStatusToVerdict(t *testing.T) {
 	}
 }
 
-// TestPriceVerdictIgnoresActivationHeight pins that a plan values suspended
-// supply from the block it opens, before redemption is open. Consumers that
-// care whether redemption may execute ask the activation-gated accessor; a
-// verdict that moved with activation would make them disagree for the length
-// of the delay.
+// TestPriceVerdictIgnoresActivationHeight checks that a settlement values supply from opening.
+// Redemption eligibility separately checks activation.
 func TestPriceVerdictIgnoresActivationHeight(t *testing.T) {
 	asset := types.Asset{
 		Denom:   pricingDenom,

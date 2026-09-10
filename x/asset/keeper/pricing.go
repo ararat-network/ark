@@ -12,16 +12,9 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// Pricings answers, for each denomination named, what it is worth in NOAH and
-// on whose authority — or the reason nothing stands behind it. It is the
-// registry's single valuation entry point: consumers apply policy to the
-// verdicts it returns — defer, disclose, zero, route — and never re-derive the
-// facts.
-//
-// Each entry carries the registry record too, where the denomination has one,
-// so a caller that needs the asset does not read a row the fold has already
-// read to price it. A denomination outside the registry, and the numeraire,
-// carry a verdict and no record.
+// Pricings returns records and pricing verdicts for requested denominations, plus NOAH.
+// Unregistered denominations and NOAH carry no asset record. Consumers apply their own policy to
+// unpriced verdicts.
 func (k Keeper) Pricings(ctx context.Context, denoms ...string) (types.AssetPricings, error) {
 	pricings := make(types.AssetPricings, len(denoms)+1)
 
@@ -60,19 +53,9 @@ func (k Keeper) Pricings(ctx context.Context, denoms ...string) (types.AssetPric
 	return pricings, nil
 }
 
-// PricedAssets prices every registered member, returning their denominations in
-// registry key order alongside the pricings map that holds the records and
-// verdicts. The order is returned separately because a map has none, and
-// callers that fold over the registry — the liability partition discloses
-// per-denomination exposure, the assets query lists it — must not vary with
-// Go's map iteration. It answers exactly as Pricings
-// does for a caller that named the whole registry, without that caller having
-// to list it first and hand the denominations back — which reads every record
-// twice, once to enumerate and once to price.
-//
-// Callers holding denominations rather than records — balances of a fee
-// collector, say, which may name a denomination outside the registry entirely —
-// want Pricings instead.
+// PricedAssets returns every registered asset's verdict and its denominations in registry key
+// order. Use the ordered list for deterministic folds; use Pricings when starting from specific
+// denominations.
 func (k Keeper) PricedAssets(ctx context.Context) ([]string, types.AssetPricings, error) {
 	listed, err := k.ListAssets(ctx)
 	if err != nil {
@@ -92,18 +75,8 @@ func (k Keeper) PricedAssets(ctx context.Context) ([]string, types.AssetPricings
 	return denoms, pricings, nil
 }
 
-// price is the fold both entry points share: it seeds the numeraire, captures
-// the rates the listed members need, reads the settlement plan of any suspended
-// one, and records a verdict for each. Only how the members were arrived at
-// differs above it, so the two entry points cannot drift on what a verdict
-// means.
-//
-// pricings is filled in place. The numeraire is seeded here because every
-// valuation flow carries it whatever named it, and no registered asset can
-// collide with it: ValidatePricedDenom refuses NOAH as an asset denomination.
-// The entry points contribute only what this fold cannot derive from the
-// records it is given — a verdict for a denomination the registry does not
-// list.
+// price fills the shared verdict map from asset records, captured rates, and settlement plans. It
+// seeds NOAH's identity rate; callers supply unregistered-denomination verdicts.
 func (k Keeper) price(
 	ctx context.Context,
 	listed []types.Asset,
@@ -153,16 +126,8 @@ func (k Keeper) price(
 	return k.attachLastKnownRates(ctx, unavailable, pricings)
 }
 
-// attachLastKnownRates fills LastRate on the verdicts the fold recorded as
-// feed-unavailable, which it names rather than rediscovering by rescanning the
-// map it just filled. It amends the verdicts rather than feeding PriceVerdict
-// so the verdict itself stays a pure function of status, rates, and plan, and
-// the extra store read still happens only in the degraded case that needs it —
-// a fully priced set hands over no denominations and asks the Oracle nothing.
-//
-// A denom the Oracle has never priced simply keeps a nil LastRate. That is the
-// honest answer: there is no evidence of what it was worth, and inventing one
-// would be worse than the exclusion it would paper over.
+// attachLastKnownRates enriches feed-unavailable verdicts without making them priced. Only degraded
+// denominations trigger the extra Oracle read; never-priced feeds retain nil LastRate.
 func (k Keeper) attachLastKnownRates(
 	ctx context.Context,
 	unavailable []string,

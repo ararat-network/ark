@@ -350,8 +350,7 @@ func (s *KeeperTestSuite) TestWriteOffAssetRejectsUnsafeState() {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(25)
 	assets := types.DefaultGenesisState().Assets
 
-	// Write-off no longer touches feed state, so nothing about a feed can
-	// block it: supply and status are the whole precondition set.
+	// Write-off depends on supply and status, without consulting feed state.
 	zeroSupply := assets[1]
 	zeroSupply.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
 	s.Require().NoError(s.keeper.Assets.Set(
@@ -400,13 +399,9 @@ func (s *KeeperTestSuite) TestWriteOffAssetRejectsUnsafeState() {
 	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 }
 
-// TestResolutionRecordsAccumulateAcrossVersions pins the (denom, version)
-// uniqueness the append guard relies on: an asset resolved twice keeps both
-// records, because the governance transitions between them advanced the
-// version. A retirement residual is never followed by a further record for
-// the same denom — residual supply makes the tombstone permanent — so
-// write-off then retirement is the only sequence that resolves one denom
-// twice.
+// TestResolutionRecordsAccumulateAcrossVersions checks unique (denom, version) records across
+// repeated resolution. Write-off followed by retirement preserves the earlier disclosure;
+// retirement is terminal.
 func (s *KeeperTestSuite) TestResolutionRecordsAccumulateAcrossVersions() {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(25)
 	asset := types.DefaultGenesisState().Assets[0]
@@ -476,10 +471,8 @@ func testSettlementActivationHeight() int64 {
 	return 10 + int64(types.DefaultSettlementActivationDelayBlocks)
 }
 
-// The announced window is now enforced against the one message that could
-// break it. Committing to a redemption period and then derecognizing inside it
-// is what this rejects; every other plan-ending path either restores pricing or
-// requires the supply already gone.
+// An active settlement plan prevents write-off inside its committed redemption window. Other
+// plan-ending paths restore pricing or require zero supply.
 func (s *KeeperTestSuite) TestWriteOffHonoursCommittedWindow() {
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED

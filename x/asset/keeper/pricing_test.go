@@ -99,12 +99,8 @@ func (s *KeeperTestSuite) TestPricingsAnswersNumeraireUnasked() {
 	s.Require().Equal(types.PriceSource_PRICE_SOURCE_NUMERAIRE, pricings[chain.NoahBaseDenom].Source)
 }
 
-// TestPricingsOmitsUnavailableFeeds pins that one member the Oracle cannot
-// price costs that member its rate and nothing more: the rest of the fold still
-// answers, and the caller sees which denomination could not be priced. The
-// verdict carries the last rate the Oracle stored for it, which keeps the
-// member countable in a total over outstanding supply while Priced stays false
-// so nothing quotes or pays against it.
+// TestPricingsOmitsUnavailableFeeds checks that stale feeds affect only their members. LastRate
+// remains available for outstanding-supply accounting while Priced stays false.
 func (s *KeeperTestSuite) TestPricingsOmitsUnavailableFeeds() {
 	s.seedPricingAsset(types.AssetStatus_ASSET_STATUS_ACTIVE)
 	priced := types.Asset{

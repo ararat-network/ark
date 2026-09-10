@@ -50,16 +50,9 @@ func (k Keeper) ActiveSettlementPlan(ctx context.Context, denom string) (types.S
 	return plan, true, nil
 }
 
-// OpenSettlement establishes a fixed one-way asset-to-NOAH redemption plan.
-//
-// Governance states the closing height and nothing else about timing: the plan
-// activates SettlementActivationDelayBlocks past this block. The delay is the
-// correction window and only governance benefits from it, so there is nothing
-// to gain by letting a proposal name a later activation — every block before it
-// is one where holders sit in a suspended asset they cannot redeem, against a
-// plan that can still be cancelled. Deriving it also keeps a proposal from
-// expiring: an absolute height chosen at drafting time falls inside the delay
-// if voting runs long, and the settlement then fails at execution.
+// OpenSettlement establishes fixed asset-to-NOAH redemption. Activation is derived from the
+// execution height and governed delay; governance supplies a closing height after activation. See
+// x/asset/README.md for the correction-window contract.
 func (k Keeper) OpenSettlement(
 	ctx context.Context,
 	denom string,
@@ -153,14 +146,9 @@ func (k Keeper) OpenSettlement(
 	return nil
 }
 
-// CancelSettlement removes a settlement plan that has not yet activated,
-// leaving the asset suspended.
-//
-// This is the whole of the correction window: the activation delay exists so a
-// mistaken plan can be withdrawn before it binds, and once holders can redeem
-// there is nothing here to withdraw. From activation onward a plan ends only by
-// RecoverAsset, FinaliseRetirement, or a WriteOffAsset past the announced
-// closing height — so no message shortens the window a holder was shown.
+// CancelSettlement removes only a not-yet-active plan and leaves the asset suspended. After
+// activation, the plan ends only through recovery, retirement, or write-off after its closing
+// height.
 func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVersion uint64) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
@@ -218,13 +206,8 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 	return nil
 }
 
-// WriteOffAsset derecognizes suspended exposure without modifying balances.
-//
-// It is the only act that can leave a holder with nothing, so it is the only
-// one the announced redemption window constrains. Every other plan-ending path
-// either restores pricing or requires the supply already gone; this one ends
-// the claim outright, which is why committing to a window and then writing off
-// immediately must not be expressible.
+// WriteOffAsset derecognises suspended exposure without changing balances. Any settlement's
+// earliest closing height must have passed before its redemption entitlement can end.
 func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion uint64) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
@@ -252,11 +235,8 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 		return err
 	}
 
-	// The commitment is hard and this is the one message that could break it.
-	// The closing height is validated to fall after activation, so a single
-	// comparison covers the not-yet-activated plan too: governance that wants
-	// to derecognize before holders could ever redeem cancels the plan first,
-	// inside the correction window built for exactly that.
+	// Closing follows activation, so this comparison also protects pending plans. Derecognition
+	// before activation requires cancelling the plan first.
 	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if hasPlan && blockHeight < plan.EarliestClosingHeight {
 		return errorsmod.Wrapf(
@@ -328,17 +308,9 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 	return nil
 }
 
-// validateResolutionRecord decides everything that could reject a derecognition
-// record: its own contents, and whether a record already occupies its version.
-//
-// It is separate from the write because its callers need it at a different
-// moment. Both derecognition paths advance the asset and close its settlement
-// plan before the record is stored, and within one keeper call there is no
-// cache context to unwind those writes, so a rejection discovered at the write
-// site would leave the asset moved and the plan closed by a message that
-// returned an error. Callers run this before their first write; nothing between
-// it and writeResolutionRecord can change its answer, because the record is
-// built whole beforehand and only these paths write this collection.
+// validateResolutionRecord checks contents and version uniqueness before any lifecycle or plan
+// writes. Keeper calls have no internal rollback; callers build the complete record first and
+// preserve it until writeResolutionRecord.
 func (k Keeper) validateResolutionRecord(ctx context.Context, record types.ResolutionRecord) error {
 	if err := record.Validate(); err != nil {
 		return errorsmod.Wrapf(

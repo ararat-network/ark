@@ -28,13 +28,9 @@ func (k Keeper) GetAsset(ctx context.Context, denom string) (types.Asset, error)
 	return asset, nil
 }
 
-// HasAsset reports whether denom is an Ark-issued asset, at any point in its
-// lifecycle.
-//
-// It answers membership alone, which is what a consumer enforcing D28 needs:
-// an Ark-issued denomination is permanently ineligible for capital credit
-// wherever it is held, and a written-off or retired asset is still Ark-issued.
-// Callers that care about a status ask for the record instead.
+// HasAsset reports permanent registry membership, including written-off and retired assets.
+// Membership excludes Ark-issued denominations from capital credit; callers needing lifecycle
+// status must read the record.
 func (k Keeper) HasAsset(ctx context.Context, denom string) (bool, error) {
 	registered, err := k.Assets.Has(ctx, denom)
 	if err != nil {
@@ -77,13 +73,8 @@ func (k Keeper) getAssetAtVersion(ctx context.Context, denom string, expectedVer
 	return asset, nil
 }
 
-// advanceAsset stores a governance mutation of an asset, advancing the
-// lifecycle version so that every governance change is visible to
-// expected_version. The caller builds the mutated asset — status, requested
-// completion, metadata — and this emits the status event for every advance,
-// including version-only ones where the status is unchanged, so that every
-// version bump is announced and consumers tracking expected_version need not
-// know which mutations happen to move status.
+// advanceAsset stores the caller's governance mutation, increments its lifecycle version, and emits
+// a status event even when only the version changes.
 func (k Keeper) advanceAsset(ctx context.Context, before types.Asset, after types.Asset) error {
 	after.Version = before.Version + 1
 	if err := k.Assets.Set(ctx, after.Denom, after); err != nil {

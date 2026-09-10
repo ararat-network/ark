@@ -10,11 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
-// The emergency surface is signed by an appointed committee rather than
-// proposed, so a run reaches it only when genesis appointed an address the run
-// holds a key for and the window is open at this height. Every one of those is
-// a skip when it fails, which is why the appointment generator is exercised
-// here alongside the factory that depends on it.
+// Committee simulation requires an appointed signer whose key is in the run and whose mandate
+// window is open. These tests exercise appointment generation and factory skip conditions together.
 
 // appointCommittee installs the appointment the sim's own genesis generator
 // draws, over the run's accounts.
@@ -31,11 +28,8 @@ func (f assetFixture) appointCommittee(t *testing.T) types.EmergencyMandate {
 	return mandate
 }
 
-// TestMsgEmergencySuspendAssetFactoryEmitsASuspensionTheCommitteeMaySign is
-// the reachability proof for the emergency route. It is the only Asset message
-// a committee signs, and the power is one-shot per denomination per term, so a
-// factory that failed to exclude a spent denomination would emit refusals for
-// the rest of the run.
+// TestMsgEmergencySuspendAssetFactoryEmitsASuspensionTheCommitteeMaySign checks reachable
+// authorised suspension and excludes denominations already used in the current term.
 func TestMsgEmergencySuspendAssetFactoryEmitsASuspensionTheCommitteeMaySign(t *testing.T) {
 	f := newAssetFixture(t)
 	mandate := f.appointCommittee(t)
