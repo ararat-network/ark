@@ -13,11 +13,9 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// requirePaperBurnable refuses every coin a committee may not destroy: NOAH,
-// non-registry denominations, and anything carrying recognition credit. The
-// credit refusal is unreachable — every registry member is a bare priced
-// denomination and every eligibility entry an external symbol, so no member
-// has a policy entry — and is kept because the burn is otherwise unbounded.
+// requirePaperBurnable permits only uncredited registry paper. Eligibility symbols and registry
+// denominations are disjoint, making the credit check unreachable; retain it as a backstop for this
+// otherwise unbounded burn.
 func (k *Keeper) requirePaperBurnable(ctx context.Context, amounts sdk.Coins) error {
 	for _, coin := range amounts {
 		// Subsumed by the membership test, and kept for the boundary it names:
@@ -53,11 +51,8 @@ func (k *Keeper) requirePaperBurnable(ctx context.Context, amounts sdk.Coins) er
 	return nil
 }
 
-// BurnableSurplus reports the NOAH a committee burn may destroy: recognised
-// capital above the fund's requirement, further bounded by what the account
-// can part with above the mandate's NOAH floor. An unavailable requirement is
-// an error rather than a zero, because a fund that cannot size its requirement
-// must not dispose of capital.
+// BurnableSurplus bounds NOAH disposal by both recognised capital above requirement and custody
+// above the mandate floor. An unavailable requirement is an error, never permission to burn.
 func (k Keeper) BurnableSurplus(ctx context.Context) (math.Int, error) {
 	if k.treasuryReader == nil {
 		return math.Int{}, errors.New("reserve capital requirement reader is not wired")

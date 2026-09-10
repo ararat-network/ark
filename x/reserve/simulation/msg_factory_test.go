@@ -271,11 +271,8 @@ func TestFundAndBurnFactories(t *testing.T) {
 	})
 }
 
-// deployPosition drives a committee deployment through the handler, which is
-// the only way a position comes into being. The governance factories below all
-// act on one, so before the first deployment lands every one of them skips
-// every draw — the state they were written for, and the state that hides a
-// factory which can never apply.
+// deployPosition creates the live position required by governance lifecycle factories through an
+// authorised committee deployment.
 func deployPosition(t *testing.T, f reserveFixture) *types.MsgCommitteeDeployResponse {
 	t.Helper()
 
@@ -287,11 +284,8 @@ func deployPosition(t *testing.T, f reserveFixture) *types.MsgCommitteeDeployRes
 	return deployed
 }
 
-// TestGovernanceLifecycleFactoriesActOnAnOpenPosition is the reachability
-// proof for the authority-signed half of the position surface. Each factory
-// duplicates a committee power, so what is at stake is not the transition but
-// the signer: an authority the handler refuses turns the whole governance
-// route into refused proposals a run still reports as successful.
+// TestGovernanceLifecycleFactoriesActOnAnOpenPosition checks that governance factories reach their
+// handlers with the correct authority signer and valid position state.
 func TestGovernanceLifecycleFactoriesActOnAnOpenPosition(t *testing.T) {
 	f := newReserveFixture(t, 1_000_000, withActiveCommittee())
 	deployed := deployPosition(t, f)

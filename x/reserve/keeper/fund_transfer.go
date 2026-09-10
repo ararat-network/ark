@@ -13,11 +13,9 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// transferToFund moves Reserve NOAH to another protocol fund on governance's
-// authority. The destination is chosen by the calling handler and never by the
-// request. It reads the live Reserve balance and nothing else — so it succeeds
-// while valuation is stale or incomplete — and it opens no position and
-// touches no allowance.
+// transferToFund moves Reserve NOAH to a handler-fixed protocol fund under governance authority. It
+// checks custody only, works with incomplete valuation, and changes neither positions nor
+// allowance.
 func (k *Keeper) transferToFund(
 	ctx context.Context,
 	authority string,
@@ -60,12 +58,8 @@ func (k *Keeper) transferToFund(
 	return nil
 }
 
-// committeeTransferToFund moves Reserve NOAH to an underfunded protocol fund
-// on the committee's own authority, and reports the shortfall left behind. The
-// destination and the bound that governs it are chosen together by the calling
-// handler and never by the request. Two bounds apply: the destination's
-// shortfall, which exhausts itself exactly at the target line, and the
-// mandate's NOAH floor, the same floor a deployment honours.
+// committeeTransferToFund fills a handler-selected fund shortfall within the mandate NOAH floor,
+// returning the remaining gap. The request cannot select the destination or valuation bound.
 func (k *Keeper) committeeTransferToFund(
 	ctx context.Context,
 	committee string,

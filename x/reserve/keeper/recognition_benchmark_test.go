@@ -35,13 +35,8 @@ type recognitionBenchFixture struct {
 	ctx    sdk.Context
 }
 
-// newRecognitionBenchFixture builds a Reserve keeper whose recognition inputs
-// pay realistic store costs: the policy and position walks run against a real
-// KV store, rate reads run through the real Oracle keeper, and the bank mock
-// serves balances from a mounted store so each read is metered like Bank's
-// own lookup. Positions are spread round-robin across the eligible
-// denominations, every denomination also holds an on-chain balance, and the
-// NOAH base is large enough that credits count rather than clipping to zero.
+// newRecognitionBenchFixture meters real KV policy, position, Oracle, and custody reads. Positions
+// span eligible denominations and a large NOAH base keeps recognition credits nonzero.
 func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *recognitionBenchFixture {
 	tb.Helper()
 
@@ -200,16 +195,9 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	return fix
 }
 
-// BenchmarkRecognisedCapital measures the fold conversion settlement pays once
-// per block that expanded: the policy walk, the open position walk, the balance
-// walk, one available-rate read per eligible denomination, and the recognition
-// solve. The gas/op metric is the same call's metered store cost. It is block
-// overhead now rather than a per-swap charge, so what it bounds is how much a
-// block pays however many conversions it settled.
-//
-// The axes are the two inputs operators actually grow: eligible denominations
-// (governance-bounded, ratio sum below one) and open positions
-// (committee-bounded, accumulating until closed).
+// BenchmarkRecognisedCapital measures expansion settlement's per-block recognition fold and gas,
+// varying eligibility count and open positions. It includes policy, position, balance, rate reads,
+// and the joint solve.
 func BenchmarkRecognisedCapital(b *testing.B) {
 	for _, bc := range []struct {
 		denoms    int

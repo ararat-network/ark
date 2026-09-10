@@ -138,12 +138,9 @@ func NewKeeper(
 	return k
 }
 
-// RecognisedCapital reports the Reserve capital counting toward its target,
-// satisfying Treasury's expected ReserveKeeper: the on-chain NOAH balance at
-// par, plus one credit per eligibility-listed asset, solved jointly against
-// every asset's cap ratio by SolveRecognition. A dark or stale feed, an
-// impairment, a zero haircut, or an absent entry each zero one asset's credit
-// and touch nothing else.
+// RecognisedCapital combines custody NOAH at par with jointly capped eligibility credits from
+// SolveRecognition. Missing, stale, impaired, zero-haircut, or unlisted assets contribute no
+// credit.
 func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	assets, err := k.AssetRecognitions(ctx)
 	if err != nil {

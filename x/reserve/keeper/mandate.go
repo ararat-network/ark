@@ -11,11 +11,9 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// AuthoriseCommittee checks the signer against the live mandate, returning it
-// for the caller's own constraints. The signer is deliberately not pre-parsed
-// for canonical spelling: the envelope canonicalises before comparing, so any
-// letter case of the appointed address is the same authenticated account.
-// Exported because the priority lane vouches through it at CheckTx.
+// AuthoriseCommittee validates live signer, term, and window for handlers and priority admission.
+// The shared envelope canonicalises addresses before comparison, so equivalent address case is
+// accepted.
 func (k *Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.ReserveMandate, error) {
 	reserveMandate, err := k.Mandate.Get(ctx)
 	if err != nil {

@@ -323,12 +323,8 @@ func (s *KeeperTestSuite) TestCommitteeFundBuffer() {
 		s.Require().ErrorContains(err, "cannot fund")
 	})
 
-	// The fast refill is exactly what an incomplete valuation must not take
-	// away: the Buffer drains through redemptions hardest while feeds are
-	// failing, and coverage keeps drawing it down against the same degraded
-	// aggregate. Treasury sizes this gap on what it could value and withholds
-	// only the burn bound, so the transfer goes through — the state that parks
-	// principal in the Reserve no longer freezes moving it back out.
+	// Incomplete valuation still permits Buffer refill against the shortfall Treasury can value.
+	// Only the Reserve disposal bound is unavailable.
 	s.Run("fills while valuation is incomplete", func() {
 		activeCommittee(1_000, 0, 400)
 		s.treasuryReader.requiredErr = errors.New("aggregate liability valuation is incomplete")

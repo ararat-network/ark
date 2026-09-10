@@ -77,13 +77,8 @@ func openPosition(
 	return candidates[testData.Rand().IntInRange(0, len(candidates))], true
 }
 
-// MsgCommitteeDeployFactory deploys Reserve NOAH against external custody,
-// which is what opens a position for every other committee message to act on.
-//
-// The movement is NOAH so the allowance applies and the balance guard is one
-// the factory can size; a deployment in another denomination would be bounded
-// by a holding this does not track. Half the headroom is left behind so a
-// second deployment in the same run still has room.
+// MsgCommitteeDeployFactory opens positions through NOAH deployment within allowance and balance
+// bounds. It uses half the available headroom so later deployments remain possible.
 func MsgCommitteeDeployFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeDeploy] {
 	return func(
 		ctx context.Context,

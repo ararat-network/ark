@@ -22,11 +22,8 @@ func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 	sdr[types.StoreKey] = simtypes.NewStoreDecoderFuncFromCollectionsSchema(am.k.Schema)
 }
 
-// ProposalMsgsX registers the Reserve governance surface for simulation.
-//
-// The position messages are here rather than absent: committee deployment opens
-// the positions they act on, so they reach their subjects instead of skipping
-// every draw.
+// ProposalMsgsX registers governance operations, including position actions made reachable by
+// committee deployments.
 func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_set_reserve_mandate", 100), simulation.MsgSetReserveMandateFactory())
 	reg.Add(weights.Get("msg_set_recognition_policy", 50), simulation.MsgSetRecognitionPolicyFactory(am.k))
@@ -56,11 +53,8 @@ func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Re
 	reg.Add(weights.Get("msg_committee_reverse_return", 15), simulation.MsgCommitteeReverseReturnFactory(am.k))
 }
 
-// WeightedOperations returns none: no Reserve message is user-signable. The
-// authority half is registered above as governance proposals; the committee
-// half needs a seat random single-key signing cannot hold, so the keeper tests
-// drive it against real wiring and the recognition arithmetic is fuzzed
-// directly in types.
+// WeightedOperations is empty because simulation uses ProposalMsgsX for governance and
+// WeightedOperationsX for committee-signed transactions.
 func (AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }

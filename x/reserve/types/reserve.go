@@ -17,20 +17,9 @@ import (
 // custodian account identifier — so it is capped rather than structured.
 const MaxReferenceLength = 512
 
-// MaxAttestedQuantity bounds one position's attested holding, and exists to
-// make the recognition fold safe by inspection rather than by projection.
-//
-// The quantity is a committee attestation about custody the chain cannot see,
-// so nothing else bounds it — and it is read every block by the fold Treasury
-// settles against, where an arithmetic failure is a halt rather than a refused
-// message. Two steps amplify it: the per-denomination sum over the open set,
-// and the credit conversion, which divides by a rate as small as 10^-18. With
-// the field under 2^128 the sum needs more than 2^128 positions to leave Int
-// range, and the conversion lands under 2^188, leaving sixty-eight bits of
-// headroom under the LegacyDec limit. The cap is far past any custody a
-// Reserve could attest — 2^128 base units is on the order of 10^20 whole units
-// at the eighteen-decimal convention — so it makes an absurd attestation
-// impossible rather than a sensible one difficult.
+// MaxAttestedQuantity caps each position at 2^128 base units before the block-time recognition
+// fold. Oracle's MaxExchangeRate bounds the conversion multiplier; checked aggregation and
+// conversion remain backstops. See x/reserve/README.md.
 var MaxAttestedQuantity = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
 // ReserveMandateLabel names the shared appointment envelope in Reserve errors.

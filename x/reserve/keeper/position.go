@@ -52,11 +52,8 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 	return position, nil
 }
 
-// requireDenomHoldable decides whether a position may name this denomination:
-// an external symbol is admissible by shape, but a bare denomination is
-// admissible only while it is actually registered. Membership is asked at the
-// write alone, so a stored position naming an asset that later retires stays
-// valid.
+// requireDenomHoldable accepts external symbols by shape and bare denominations by registry
+// membership. Permanent membership keeps positions valid after asset retirement.
 func (k *Keeper) requireDenomHoldable(ctx context.Context, denom string) error {
 	if _, isExternal := chain.ExternalFeed(denom); isExternal {
 		return nil
@@ -159,11 +156,8 @@ func (k *Keeper) executeDeployment(
 	return position.PositionId, entryID, nil
 }
 
-// resolveDeploymentPosition opens a new position or funds the named open one.
-//
-// The cost basis it records is the outflow's booked anoah value rather than the
-// coin itself, so an in-kind deployment lands on the same NOAH-denominated
-// basis a NOAH one does and Realised stays comparable across both.
+// resolveDeploymentPosition opens or funds an open position. It records outflow value in NOAH so
+// in-kind and NOAH deployments share a comparable cost basis.
 func (k *Keeper) resolveDeploymentPosition(ctx context.Context, msg *types.MsgCommitteeDeploy, booked math.Int) (types.Position, error) {
 	basis := chain.NoahCoin(booked)
 	if msg.PositionId == 0 {
@@ -193,12 +187,8 @@ func (k *Keeper) resolveDeploymentPosition(ctx context.Context, msg *types.MsgCo
 			msg.Acquired.Denom,
 		)
 	}
-	// Both sums are checked rather than taken through Coin.Add, which panics.
-	// The attestation arrives from the message bounded by nothing and is judged
-	// against MaxAttestedQuantity only by the Validate below, so the addition
-	// has to survive reaching it. The basis accumulates over the position's
-	// whole life exactly as Returned does: each outflow is bank-bounded, the sum
-	// of them is not.
+	// Check additions before validation: incoming attestations can exceed MaxAttestedQuantity, and
+	// cumulative lifetime basis can exceed a single Bank balance bound.
 	quantity, err := position.Quantity.Amount.SafeAdd(msg.Acquired.Amount)
 	if err != nil {
 		return types.Position{}, fmt.Errorf(
@@ -373,12 +363,8 @@ type positionCorrection struct {
 	Term uint64
 }
 
-// correctPosition restates a position and records what it corrected as a
-// ledger entry. The position is loaded from either store — a closed position
-// is history that should still read true — and the restated record goes back
-// where it came from, so a correction cannot reopen or retire a position. The
-// corrected entry must exist and belong to this position, keeping the mistake
-// readable beside its correction.
+// correctPosition restates a position in its existing open or closed store and journals the
+// correction. The referenced entry must belong to that position; correction cannot change status.
 func (k *Keeper) correctPosition(ctx context.Context, correction positionCorrection) (uint64, error) {
 	position, err := k.OpenPositions.Get(ctx, correction.PositionID)
 	closed := errors.Is(err, collections.ErrNotFound)
@@ -446,15 +432,9 @@ type returnReversal struct {
 	Term uint64
 }
 
-// reverseReturn undoes one return attribution and records the reversal as a
-// ledger entry, returning that entry. Attribution is the one recorded movement
-// whose linkage the chain cannot verify — Bank witnesses that coins arrived,
-// never which position they settle — so it is the only one needing a remedy.
-//
-// The reversed value is copied rather than re-derived: a re-priced reversal
-// would let a committee reverse and re-attribute one inflow across a rate move
-// and book the difference. The position is loaded from either store, because a
-// closed position's recovery should read as true afterwards as an open one's.
+// reverseReturn reverses an attribution in either position store and journals it. It subtracts the
+// original booked value, preventing rate movement from creating gains through reversal and
+// re-attribution.
 func (k *Keeper) reverseReturn(ctx context.Context, reversal returnReversal) (uint64, error) {
 	position, err := k.OpenPositions.Get(ctx, reversal.PositionID)
 	closed := errors.Is(err, collections.ErrNotFound)

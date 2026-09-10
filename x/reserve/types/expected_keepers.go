@@ -45,12 +45,9 @@ type AssetKeeper interface {
 	HasAsset(ctx context.Context, denom string) (bool, error)
 }
 
-// TreasuryCapitalReader reports the figures Treasury derives from its own
-// targets, which bound every committee act that moves capital. It is wired
-// after construction rather than injected, because Treasury already injects
-// this module and depinject cannot close that loop. All three methods refuse
-// under an incomplete aggregate valuation, because a target nobody can size
-// is not a bound.
+// TreasuryCapitalReader supplies the Reserve requirement and destination fund gaps.
+// Post-construction wiring avoids the Treasury/Reserve injection cycle. Incomplete valuation blocks
+// the disposal requirement; fund shortfalls use available liability.
 type TreasuryCapitalReader interface {
 	RequiredReserveCapital(ctx context.Context) (math.Int, error)
 	// RedemptionBufferShortfall reports how far the Buffer falls below its
@@ -62,13 +59,8 @@ type TreasuryCapitalReader interface {
 	InsuranceShortfall(ctx context.Context) (math.Int, error)
 }
 
-// OracleKeeper defines the pricing functionality required by Reserve. Proven
-// coin movements are priced at conversion grade through the all-or-nothing
-// read, because a movement derives exactly one value per denomination it names
-// and has no unvalued outcome to fall back to; recognition credit is priced
-// through the windowed read, one request per eligibility entry carrying the
-// entry's own denomination and tolerance. FeedPhase is asked at the policy
-// write alone.
+// OracleKeeper provides strict current rates for proven movements and per-entry freshness windows
+// for recognition. Policy writes require active underlying feeds.
 type OracleKeeper interface {
 	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
 	GetRateSetWithin(ctx context.Context, requests []oracletypes.RateRequest) (oracletypes.RateSet, error)

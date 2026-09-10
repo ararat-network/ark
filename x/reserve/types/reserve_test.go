@@ -216,13 +216,8 @@ func TestValidateReserveMandate(t *testing.T) {
 	}
 }
 
-// TestPositionValidateBoundsTheAttestation pins the domain cap the recognition
-// fold rests on. The quantity is a committee attestation about custody the
-// chain cannot see, and the fold reading it every block is Treasury's
-// settlement, where arithmetic that leaves range fails the block rather than
-// the message that wrote it. Both magnitudes below reached that fold before
-// the cap existed: the larger overflows the per-denomination sum, the smaller
-// overflows the credit conversion against a small rate.
+// TestPositionValidateBoundsTheAttestation checks that out-of-domain custody quantities are
+// rejected at the write, before EndBlock recognition arithmetic can consume them.
 func TestPositionValidateBoundsTheAttestation(t *testing.T) {
 	tests := []struct {
 		name      string

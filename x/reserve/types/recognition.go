@@ -15,11 +15,9 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// MaxRecognitionRateAge bounds the staleness window one entry may state. It
-// is a domain cap with orders of magnitude of headroom over any real
-// publication gap, because the fold this window feeds is halt-class
-// arithmetic running every block through Treasury settlement. It makes an
-// absurd window impossible, not a sensible one mandatory.
+// MaxRecognitionRateAge caps per-entry freshness windows with substantial headroom over publication
+// gaps. Recognition executes during block settlement, so valid inputs must keep its arithmetic
+// bounded.
 const MaxRecognitionRateAge = 30 * 24 * time.Hour
 
 // Validate validates one eligibility entry.
@@ -55,11 +53,9 @@ func (entry EligibilityEntry) Validate() error {
 	return nil
 }
 
-// GrantsCredit reports whether this entry can produce a nonzero recognition
-// credit; under a validated policy every stored entry does, since Validate
-// refuses a zero haircut and a zero cap ratio. It guards what the committee
-// may burn, and reads policy alone: an entry whose credit is currently zeroed
-// by a dark feed still grants credit.
+// GrantsCredit checks policy eligibility independently of current valuation. Valid entries have
+// positive haircut and cap; a stale feed does not grant the committee permission to burn credited
+// custody.
 func (entry EligibilityEntry) GrantsCredit() bool {
 	return entry.HaircutFactor.IsPositive() && entry.RecognitionCapRatio.IsPositive()
 }
@@ -95,14 +91,9 @@ func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
 	return nil
 }
 
-// RawCredit values gross base units of the entry's asset in anoah at the
-// set's rate and applies the haircut, deliberately un-clipped: it is one
-// asset's input to SolveRecognition, which owns the cap. The haircut lands
-// before the conversion, so the single multiplication falls on a quantity
-// whose bounds are whole base units, against a rate the store bounds at
-// MaxExchangeRate — which is what keeps the product representable for every
-// attestation Position.Validate admits. The caller owes a present rate: a
-// missing one is an error here, and a zero one credits nothing.
+// RawCredit haircuts gross base units, then values them in NOAH before cap solving. Whole-unit
+// quantity bounds and MaxExchangeRate keep the checked product representable. Missing rates fail;
+// zero rates credit nothing.
 func (entry EligibilityEntry) RawCredit(rates oracletypes.RateSet, gross math.Int) (math.LegacyDec, error) {
 	if gross.IsNil() || !gross.IsPositive() || !entry.HaircutFactor.IsPositive() {
 		return math.LegacyZeroDec(), nil
@@ -133,14 +124,9 @@ type RecognitionResult struct {
 	Credit  math.Int
 }
 
-// SolveRecognition resolves every cap ratio against the recognised total it
-// is a share of, returning one result per stake in input order. The total T
-// satisfies T = base + Σ min(raw, ratio × T); sorting by the clip threshold
-// raw ÷ ratio makes the clipped set a suffix, and the one consistent split
-// gives T = (base + Σ unclipped raw) ÷ (1 − Σ clipped ratios) in closed form.
-// Every step is checked LegacyDec arithmetic, so T is bounded by
-// base ÷ (1 − Σratios) and an unrepresentable operand is an error rather than
-// a saturated figure.
+// SolveRecognition solves T = base + sum(min(raw, ratio*T)) and returns credits in input order.
+// Checked decimal arithmetic and conservative flooring enforce the shared caps. See
+// x/reserve/README.md for the split algorithm and rounding invariant.
 func SolveRecognition(base math.Int, stakes []RecognitionStake) ([]RecognitionResult, error) {
 	results := make([]RecognitionResult, len(stakes))
 	for i := range results {
@@ -229,13 +215,9 @@ func SolveRecognition(base math.Int, stakes []RecognitionStake) ([]RecognitionRe
 		return held.GT(permitted), nil
 	}
 
-	// The scan advances while the first still-clipped stake fits inside its
-	// share of the candidate split and breaks at the first that does not. The
-	// unclipped side must NOT be re-checked: advancing past a stake already
-	// certifies its fit, and a re-fired comparison at a sub-quantum rounding
-	// tie would skip the break and run the scan to the permissive
-	// all-unclipped end — the one split the base bound does not survive. At
-	// k = len(solve) the break is unconditional, so the loop is total.
+	// Advance only while the first clipped stake fits. Do not recheck certified unclipped stakes:
+	// sub-quantum ties can bypass the correct split and violate the base bound. The final split
+	// terminates unconditionally.
 	denominator, numerator := math.LegacyOneDec(), baseValue
 	for k := 0; k <= len(solve); k++ {
 		var err error

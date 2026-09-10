@@ -63,9 +63,7 @@ func (s *KeeperTestSuite) TestPositionQueriesPartitionByStatus() {
 		s.Require().True(closedResp.Positions[0].IsClosed())
 	})
 
-	// Closing moves the record rather than flagging it, so the open store must
-	// no longer hold it at all — the property every open-set walk now relies on
-	// instead of a predicate.
+	// Closing moves the record out of the open store; open-set walks require no status predicate.
 	s.Run("closing removes the position from the open store", func() {
 		s.SetupTest()
 		_, closed := s.openAndClosed(committee, destination)
@@ -78,8 +76,7 @@ func (s *KeeperTestSuite) TestPositionQueriesPartitionByStatus() {
 		s.Require().True(held)
 	})
 
-	// This is what a reader uses in place of the removed count, so the total
-	// has to be the open set's size and not the whole record's.
+	// The total counts the open set, excluding closed records.
 	s.Run("a counting request totals one store", func() {
 		s.SetupTest()
 		open, _ := s.openAndClosed(committee, destination)

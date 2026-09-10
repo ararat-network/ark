@@ -265,11 +265,9 @@ func TestSolveRecognition(t *testing.T) {
 			want: []types.RecognitionResult{result(0, 0), result(0, 0)},
 		},
 		{
-			// A stake sitting within a quantum of exactly its share — the
-			// last four rounding digits are what put raw × denominator and
-			// ratio × numerator on opposite sides of half-even at consecutive
-			// splits. The solve must stay inside base ÷ (1 − Σratios) = 10M
-			// rather than running to the unclipped fallback.
+			// This sub-quantum split tie must preserve the 10M base-derived bound. Rounded
+			// cross-products differ across adjacent splits; accepting the all-unclipped fallback
+			// would violate it.
 			name: "holds the base bound at a sub-quantum tie",
 			base: 1_000_000,
 			stakes: []types.RecognitionStake{
@@ -387,12 +385,8 @@ func TestRawCredit(t *testing.T) {
 	})
 }
 
-// TestRawCreditRefusesAnAbsentRate pins the boundary the fold owns. An absent
-// rate is not answered here — it is an error, deliberately, because this
-// function converts and nothing can be converted through a rate it was never
-// given. A zero rate credits nothing: valuing in NOAH multiplies, so a unit
-// worth no NOAH is worth exactly that, which is also the verdict the
-// recognition fold gives a dark feed before it ever reaches this function.
+// TestRawCreditRefusesAnAbsentRate checks that missing rates fail conversion, while a zero rate
+// produces zero NOAH credit.
 func TestRawCreditRefusesAnAbsentRate(t *testing.T) {
 	entry := types.EligibilityEntry{
 		Denom:         creditDenom,

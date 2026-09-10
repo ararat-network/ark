@@ -11,13 +11,8 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// The committee surface is signed rather than proposed, so a run reaches it
-// only through these factories. Each reads live state and skips when its
-// precondition does not hold, and a simulation cannot tell a factory that
-// never applies from one that never could: both report as skips. What follows
-// therefore asserts reachability first — that from the state a run actually
-// starts in, every factory does produce a message its own handler accepts —
-// and the skip paths second.
+// Committee factories read live preconditions and may skip. These tests first prove each operation
+// is reachable from simulation state, then exercise skip paths.
 
 // requireActiveMandate returns the appointment the fixture installed, which
 // every committee message has to name.
@@ -31,12 +26,8 @@ func requireActiveMandate(t *testing.T, f reserveFixture) types.ReserveMandate {
 	return mandate
 }
 
-// TestCommitteeFactoriesDriveThePositionLifecycle is the reachability proof.
-// The factories are chained in the order a run would reach them — a deployment
-// opens the position the rest act on — and every message is delivered through
-// the handler it targets. A factory that has drifted out of its handler's
-// domain, or whose precondition no live state can satisfy, fails here rather
-// than quietly reporting a skip for the life of the nightly run.
+// TestCommitteeFactoriesDriveThePositionLifecycle chains accepted handler calls from deployment
+// onward, verifying each factory can reach the position state it requires.
 func TestCommitteeFactoriesDriveThePositionLifecycle(t *testing.T) {
 	f := newReserveFixture(t, 1_000_000, withActiveCommittee(), withTreasuryRequirement(math.ZeroInt()))
 	mandate := requireActiveMandate(t, f)

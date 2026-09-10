@@ -9,19 +9,13 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// FeedReferents implements the oracle module's FeedReferentGuard. The Reserve
-// raises two kinds of claim on a feed, both derived from its own state at call
-// time: every eligibility entry on the series, and every open position whose
-// holding the series prices. Each is reported so governance sees the blocker
-// in the removal proposal rather than discovering it later.
+// FeedReferents derives blockers from eligibility entries and open positions using each feed. It
+// reports every claim so governance can resolve dependencies before scheduling removal.
 func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]oracletypes.FeedReferent, error) {
 	var referents []oracletypes.FeedReferent
 
-	// External symbols are found by the series they derive rather than by
-	// their own key, because several may share one: `abtc-cb` and `abtc-osl`
-	// both pin feed `abtc`. Every entry raises a claim, with no
-	// credit-granting test: this guard gates an irreversible-in-practice act,
-	// so it fails closed.
+	// Match external symbols by their underlying series: multiple claims can pin one feed. Every
+	// eligibility entry blocks removal, even if it currently earns no credit.
 	if err := k.RecognitionPolicy.Walk(ctx, nil, func(symbol string, entry types.EligibilityEntry) (bool, error) {
 		feed, isExternal := chain.ExternalFeed(symbol)
 		if !isExternal || feed != denom {
@@ -92,11 +86,8 @@ func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]oracletypes.
 	return referents, nil
 }
 
-// validateExternalFeeds requires every listed external symbol's series to be
-// an active feed: an entry whose series no validator prices is a permanently
-// dark row in a fold Treasury settles against every block. Refusing every
-// non-Active phase keeps a stored entry's feed Active for as long as it is
-// stored, and keeps export and reimport symmetric.
+// validateExternalFeeds requires active feeds for all listed external symbols. Referent guards keep
+// those feeds active while entries remain, preserving export/import validity.
 func (k Keeper) validateExternalFeeds(ctx context.Context, entries []types.EligibilityEntry) error {
 	for _, entry := range entries {
 		feed, isExternal := chain.ExternalFeed(entry.Denom)

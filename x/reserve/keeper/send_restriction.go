@@ -11,12 +11,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// SendRestriction admits only positive coins of NOAH or an Ark-issued asset
-// into the strategic Reserve; transfers to every other recipient pass through
-// unchanged. It is a keeper method so the guarded address is the one the
-// constructor resolved from the account keeper and asserted. The sender is
-// deliberately unused: no sender is privileged, and admission is a question
-// about the coins alone.
+// SendRestriction admits positive NOAH or registered paper into the verified Reserve custody
+// account. Other recipients pass through; no sender has privileged admission.
 func (k *Keeper) SendRestriction(
 	ctx context.Context,
 	_ sdk.AccAddress,

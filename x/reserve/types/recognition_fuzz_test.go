@@ -71,17 +71,12 @@ func solveRecognitionExactly(base *big.Rat, stakes []types.RecognitionStake) *bi
 	return new(big.Rat).Quo(numerator, denominator)
 }
 
-// creditTolerance is the permitted gap between a solved credit and its exact
-// rational counterpart: the one rounded division producing T lands within a
-// quantum for the same split, a flipped split at a sub-quantum tie moves the
-// boundary credit by less than a quantum, and truncation to whole anoah adds
-// at most one on each side.
+// creditTolerance allows a decimal quantum for division or a split tie, plus whole-unit truncation
+// on both the solver and rational reference.
 var creditTolerance = math.NewInt(2)
 
-// FuzzSolveRecognition drives the closed-form solver against an exact big.Rat
-// oracle. The invariant that historically broke — a rounding tie steering the
-// scan to the permissive all-unclipped split, past the base ÷ (1 − Σratios)
-// bound — is asserted directly on every case.
+// FuzzSolveRecognition compares the solver with an exact big.Rat oracle. Rounding ties must not
+// select an all-unclipped split above base / (1 - sum of ratios).
 func FuzzSolveRecognition(f *testing.F) {
 	// A rounding-tie pair, a both-breach split, an unbreached correction, a
 	// zero base, and a lone breacher.
@@ -153,11 +148,8 @@ func FuzzSolveRecognition(f *testing.F) {
 	})
 }
 
-// recognitionCase deterministically expands fuzz bytes into bounded solver
-// inputs: up to six stakes, ratios rescaled so their sum stays at or below
-// 0.95 — clear of both the validated-policy bound and the amplification a
-// near-zero denominator would add to the tolerance analysis — and raws and
-// base inside the ranges real holdings occupy.
+// recognitionCase deterministically maps fuzz bytes to at most six stakes, with total ratios <=
+// 0.95 and bounded base/raw values. The denominator margin keeps rounding tolerance meaningful.
 func recognitionCase(data []byte) ([]types.RecognitionStake, math.Int) {
 	if len(data) < 9 {
 		return nil, math.Int{}

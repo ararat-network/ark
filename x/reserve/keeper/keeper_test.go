@@ -216,11 +216,8 @@ func (s *KeeperTestSuite) registerAsset(denom string) {
 	s.registeredAssets[denom] = true
 }
 
-// attest records external custody the way the chain can actually reach it: as
-// an open position. No external symbol can enter the Reserve's bank balance,
-// so seeding the account with one would exercise the fold through a door that
-// does not exist. The cost basis is a nominal one anoah: Validate only
-// requires it positive, and no fold reads it.
+// attest records external custody through an open position, its reachable state path. A nominal
+// positive NOAH basis satisfies validation; recognition does not read that basis.
 func (s *KeeperTestSuite) attest(denom string, amount int64) {
 	s.attestQuantity(denom, math.NewInt(amount))
 }

@@ -59,7 +59,7 @@ formula](../../docs/design/ECONOMIC_DESIGN.md#73-recognition) defines the financ
 The self-referential cap has a unique fixed point because the sum of policy ratios is strictly below one.
 Sort each asset's raw-credit-to-cap-ratio threshold; the clipped assets form a suffix. For each candidate suffix,
 solve total capital from the NOAH balance plus unclipped credit divided by one minus the clipped ratios. Comparisons
-use cross-multiplied integers, postponing division and flooring credits conservatively. The total is bounded by the
+use checked cross-multiplied decimals, postponing division and flooring credits conservatively. The total is bounded by the
 NOAH balance divided by one minus all ratios; attested quantities cannot enlarge that bound. No NOAH means no asset
 credit. A missing or stale feed gives zero credit and tightens neighbouring share ceilings, never a fallback valuation.
 
@@ -85,9 +85,8 @@ through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence 
 consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can serve conversion
 and reserve recognition with different tolerances.
 
-Feed guards derive two kinds of claims at read time: a credited eligibility entry, and an open position whose returns
-still need attribution. Custody-only entries do not claim a feed, while open positions do even without an eligibility
-entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
+Feed guards derive two kinds of claims at read time: every eligibility entry, and an open position whose returns
+still need attribution. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
 Bank custody admits NOAH and registered protocol paper, never external-shaped tokens: external holdings remain at
 attested destinations, and no native mint path produces those symbols.
 
@@ -127,3 +126,26 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 - [Reserve custody and recognition policy](../../docs/design/ECONOMIC_DESIGN.md).
 - [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).
+
+## Recognition arithmetic and action bounds
+
+The solver uses checked `LegacyDec` arithmetic. For a candidate split, the total is
+`(base + sum(unclipped raw)) / (1 - sum(clipped ratios))`; candidate comparisons cross-multiply decimal values.
+The scan advances while the first clipped stake fits its share. Already certified unclipped stakes are not rechecked:
+sub-quantum rounding ties could otherwise skip the correct split and admit the all-unclipped result beyond the base
+bound. The terminal split always stops the scan. Rational-reference fuzz tests include decimal rounding and final
+whole-unit truncation in their tolerance.
+
+`MaxAttestedQuantity` limits each position to 2^128 base units. NOAH valuation multiplies by the Oracle rate, bounded
+by `MaxExchangeRate`; it does not divide by a tiny rate. Per-denomination sums and products retain checked arithmetic
+because recognition errors during EndBlock fail the block. Boundary tests combine multiple capped attestations with
+the maximum rate. Policy and position validation reject invalid inputs before this block-time fold.
+
+Return reversals subtract the original booked value, including for closed positions. Repricing a reversal would allow
+rate changes to create gains by reversing and re-attributing one receipt. Deployment basis and consumed gross term
+allowance are not reversible. Corrections preserve a position's open or closed store and journal their target entry.
+
+Incomplete liability valuation prevents a Reserve surplus burn, but Buffer and Insurance refill still use the gaps
+Treasury can value. Fund transfers preserve the mandate's NOAH floor; governance transfers read custody only. Paper
+burns require registry membership and no recognition credit. Registry denominations and external eligibility symbols
+are disjoint, but the credit check remains a defensive bound on the committee's otherwise unbounded paper burn.

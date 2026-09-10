@@ -8,11 +8,9 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// InitGenesis validates and imports Reserve state. Non-NOAH balances are
-// permitted but must be registry members: Bank genesis writes balances
-// directly, so this is the only door the send restriction's rule does not
-// guard. Membership is permanent, so the rule cannot refuse a chain its own
-// export.
+// InitGenesis validates and imports Reserve state. Non-NOAH Bank custody must be registered paper
+// because genesis bypasses send restrictions; permanent registry membership preserves reimport
+// validity.
 func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
 	if data == nil {
 		return fmt.Errorf("reserve genesis state is nil")

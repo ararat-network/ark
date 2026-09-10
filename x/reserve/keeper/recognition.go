@@ -14,11 +14,8 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// AssetRecognitions returns one row per asset over the union of the
-// eligibility set and everything attested. Credits are solved jointly by
-// SolveRecognition rather than clipped independently, and an unusable rate
-// degrades its own row to zero. Rows are ordered by denomination so the fold
-// is deterministic.
+// AssetRecognitions returns denomination-ordered rows over eligibility and attestations.
+// SolveRecognition jointly caps credits; unusable rates zero only their own rows.
 func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition, error) {
 	entries := make(map[string]types.EligibilityEntry)
 	eligibleDenoms := make([]string, 0)
@@ -146,22 +143,15 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 	return assets, nil
 }
 
-// valueMovement prices one proven coin movement in anoah at this block's
-// rate, refusing rather than guessing when no usable rate exists. NOAH is par;
-// everything else converts through the rate set, which quotes NOAH per one
-// unit, so valuing in NOAH multiplies. The product is checked rather than
-// trusted: the store bounds a rate at MaxExchangeRate and a movement is a bank
-// balance, so overflow is unreachable, and the check is the backstop that
-// says so.
+// valueMovement prices proven movements in NOAH at current rates and rejects unpriced
+// denominations. Checked multiplication is a backstop: MaxExchangeRate and Bank quantity bounds
+// make overflow unreachable.
 func (k Keeper) valueMovement(ctx context.Context, coin sdk.Coin) (math.Int, error) {
 	if coin.Denom == chain.NoahBaseDenom {
 		return coin.Amount, nil
 	}
-	// The all-or-nothing read, not the available one: a movement derives
-	// exactly one value per denomination it names, and has no unvalued outcome
-	// to degrade to. Its typed refusal also separates a feed the Oracle has
-	// never priced from one that has gone dark, which a verdict re-derived from
-	// an omitted key cannot say.
+	// Require every movement denomination to be priced. The strict read preserves typed
+	// never-priced versus stale-feed errors instead of silently omitting value.
 	rates, err := k.oracleKeeper.GetRateSet(ctx, coin.Denom)
 	if err != nil {
 		return math.Int{}, fmt.Errorf(

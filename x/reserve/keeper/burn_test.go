@@ -65,11 +65,9 @@ func (s *KeeperTestSuite) TestBurnReserveAssets() {
 		s.Require().NoError(err)
 	})
 
-	// Credit-bearing custody is governance's to destroy, and this is the burn
-	// the committee is refused. Nothing is seeded into the account: a credited
-	// denomination is an external symbol, which no bank balance can hold, so
-	// what this pins is the handler's missing predicate rather than a live
-	// flow — governance burns by naming coins, and asks the policy nothing.
+	// Governance burns named coins without consulting recognition policy. External symbols cannot
+	// enter Bank custody, so this tests the authority predicate without constructing an unreachable
+	// balance.
 	s.Run("burns credit-bearing custody", func() {
 		s.SetupTest()
 		s.setPolicy(eligibility(testAsset, "1", "0.01"))
@@ -162,11 +160,8 @@ func (s *KeeperTestSuite) TestBurnReserveAssets() {
 	})
 }
 
-// TestCommitteeBurnPaper pins the line between committee and governance
-// burns. The committee may destroy only what satisfies both predicates: custody
-// the capital system already counts at nothing, so no burn of its can reduce
-// recognised capital, and the protocol's own paper, so every burn of its
-// strictly reduces what the protocol owes.
+// TestCommitteeBurnPaper checks both burn conditions: registry paper extinguishes protocol
+// liability, and zero recognition credit prevents loss of recognised capital.
 func (s *KeeperTestSuite) TestCommitteeBurnPaper() {
 	committee := testAddress(1)
 	destination := testAddress(2)
@@ -210,11 +205,8 @@ func (s *KeeperTestSuite) TestCommitteeBurnPaper() {
 		s.Require().NoError(err)
 	})
 
-	// External custody carries no liability to extinguish, so destroying it is
-	// pure loss however little credit it earns. The value-preserving exit is a
-	// sale off-chain, whose proceeds return through the position. Nothing is
-	// seeded: the refusal precedes every balance read, and no bank balance
-	// could carry an external symbol to seed.
+	// External custody has no protocol liability to extinguish. Its rejection precedes balance
+	// reads; no external-symbol Bank balance is reachable.
 	s.Run("refuses external custody, listed or not", func() {
 		tests := []struct {
 			name    string
@@ -419,12 +411,8 @@ func (s *KeeperTestSuite) TestCommitteeBurnSurplus() {
 		s.Require().Equal(math.NewInt(100), surplus)
 	})
 
-	// The condition that parks principal here is the condition that freezes
-	// disposal: a fund that cannot size its requirement must not dispose of
-	// capital against it. Only disposal freezes — the committee's transfers into
-	// the Buffer and Insurance keep working in this state, because moving
-	// capital between protocol funds survives a ceiling sized loose where
-	// destroying it does not.
+	// An unavailable Reserve requirement freezes disposal. Transfers into Buffer and Insurance
+	// remain possible against their available shortfall bounds.
 	s.Run("refuses while valuation is incomplete", func() {
 		activeCommittee(1_000, 0, 0)
 		s.treasuryReader.requiredErr = errors.New("aggregate liability valuation is incomplete")
@@ -558,17 +546,9 @@ func (s *KeeperTestSuite) TestRecognitionPolicyRefusesArkIssuedEntries() {
 		)
 	})
 
-	// An external symbol whose series is not an active feed is refused too,
-	// which is what makes the prefix derivation total: listing answers to the
-	// same active-feed rule asset registration does.
-	//
-	// Adding is refused for the reason registration refuses it — a series that
-	// has never printed a rate gives governance nothing to judge this entry's
-	// haircut, cap ratio, and staleness window against. Removing is refused for
-	// a stronger one: the feed guard has its only say when a removal is
-	// scheduled and AdvanceFeeds then promotes unconditionally, so admitting an
-	// entry mid-removal would seat a doomed series past a guard that has
-	// already run.
+	// Eligibility requires an active underlying feed. Adding feeds lack established observations;
+	// removing feeds have already passed their referent check and cannot acquire new dependants
+	// before promotion.
 	s.Run("refuses an external symbol whose series is not an active feed", func() {
 		for _, tc := range []struct {
 			name  string
@@ -589,10 +569,8 @@ func (s *KeeperTestSuite) TestRecognitionPolicyRefusesArkIssuedEntries() {
 				s.Require().ErrorContains(err, "not an active feed")
 				s.Require().Empty(s.policyDenoms())
 
-				// Genesis answers the same rule, so an import cannot seed a
-				// policy a live proposal could not write — which is what keeps
-				// export and reimport symmetric now that no running chain can
-				// reach the state.
+				// Genesis rejects policies that a live governance proposal cannot write, preserving
+				// export/import symmetry.
 				data := types.DefaultGenesisState()
 				data.RecognitionPolicy = []types.EligibilityEntry{eligibility(testAsset, "1", "0.1")}
 				s.Require().ErrorContains(

@@ -22,11 +22,8 @@ const (
 	simulatedMinimumNoahBalance = int64(0)
 )
 
-// GenReserveMandate appoints the Reserve committee from the run's own accounts
-// and opens the window at the first block for longer than any run lasts, so the
-// committee surface is signable for the whole run. A configured mandate must
-// allow a deployment and name somewhere to send it, so both come from the same
-// account set.
+// GenReserveMandate chooses a committee and deployment destination from simulation-owned accounts,
+// with an active window covering the expected run and a positive deployment allowance.
 func GenReserveMandate(r *rand.Rand, accounts []string) types.ReserveMandate {
 	if len(accounts) < 2 {
 		return types.DefaultReserveMandate()
@@ -46,11 +43,8 @@ func GenReserveMandate(r *rand.Rand, accounts []string) types.ReserveMandate {
 	return appointment
 }
 
-// RandomisedGenState keeps the valid default Reserve state and randomises only
-// the appointment. The rest stays as shipped for the reason the module states:
-// eligibility entries reference oracle feeds and recognised capital is read by
-// Treasury, which the sorted per-module generation order cannot provide. An
-// appointment references neither, so it is safe to draw here.
+// RandomisedGenState randomises only the appointment. Eligibility depends on Oracle state and
+// recognition feeds Treasury, so other defaults remain independent of module-generation order.
 func RandomisedGenState(simState *module.SimulationState) {
 	accounts := make([]string, 0, len(simState.Accounts))
 	for _, account := range simState.Accounts {

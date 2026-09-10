@@ -55,14 +55,8 @@ func MsgSetReserveMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetReserveMan
 	}
 }
 
-// MsgSetRecognitionPolicyFactory restates the standing recognition policy with
-// fresh terms.
-//
-// The denominations come from the policy already in state rather than from a
-// draw: an entry must name an external symbol whose feed is active, which is a
-// condition on Oracle state this cannot see, and the standing entries are the
-// set already known to satisfy it. A run whose policy is empty has nothing to
-// restate and skips.
+// MsgSetRecognitionPolicyFactory varies terms on existing eligible symbols, whose feeds are already
+// active. It skips an empty policy because it cannot validate newly drawn symbols against Oracle.
 func MsgSetRecognitionPolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSetRecognitionPolicy] {
 	return func(
 		ctx context.Context,

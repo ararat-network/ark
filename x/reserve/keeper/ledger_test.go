@@ -16,11 +16,9 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// testFeed is the series the test claim prices through; testAsset is the claim
-// symbol itself. They are spelled apart because the partition is the thing
-// under test: an eligibility entry and a position name the claim, while every
-// Oracle read names the feed. Ark-issued paper is spelled chain.USDBaseDenom,
-// a bare priced denomination admitted by registry membership.
+// testFeed identifies the priced series; testAsset identifies its external claim. Eligibility and
+// positions use the claim, Oracle reads use the feed, and registered Ark paper uses bare
+// denominations.
 const (
 	testFeed  = "abill"
 	testAsset = testFeed + "-x"
@@ -651,11 +649,8 @@ func (s *KeeperTestSuite) TestLedgerLifecycle() {
 	s.Require().ErrorContains(err, "getting open position")
 }
 
-// TestReturnAttributionValuation pins how recovery is crystallised: NOAH at
-// par, a priced in-kind return at the attribution-time feed rate, and a
-// feed-dark return refused outright rather than booked at a zero no correction
-// could later repair. The valuation is the keeper's arithmetic in every case,
-// never the committee's claim.
+// TestReturnAttributionValuation checks NOAH at par, in-kind value at attribution-time rates, and
+// rejection of dark feeds. The keeper computes booked value.
 func (s *KeeperTestSuite) TestReturnAttributionValuation() {
 	committee := testAddress(1)
 	destination := testAddress(2)
@@ -901,9 +896,7 @@ func (s *KeeperTestSuite) TestImpairmentAuthority() {
 		s.Require().Zero(entries[2].Term)
 	})
 
-	// Clearing restores the credit the impairment removed. This is the property
-	// the governance gate was protecting, and it is now the committee's to
-	// exercise, so it is pinned on the committee's path.
+	// Clearing impairment restores its credit through the committee-authorised path.
 	s.Run("clearing restores recognition credit", func() {
 		positionID := impairedPosition()
 		s.setPolicy(eligibility(testAsset, "1", "0.5"))
@@ -1334,19 +1327,15 @@ func (s *KeeperTestSuite) TestGenesisRoundTripRederivesAggregates() {
 		eligibility(xdrExternal, "1", "0.5"),
 	}, exported.RecognitionPolicy)
 
-	// A tampered position no longer agrees with the ledger it folds. This is
-	// the whole books-must-balance invariant: module-wide totals were only ever
-	// sums of these, so checking them proved nothing this does not.
+	// A tampered position disagrees with its ledger fold and violates the books-must-balance
+	// invariant.
 	tampered := *exported
 	tampered.OpenPositions[0].Deployed = noahCoin(999)
 	s.Require().ErrorContains(tampered.Validate(), "does not equal its ledger sum")
 }
 
-// TestGenesisRoundTripPreservesPositionStatus proves an export and reimport
-// puts every position back in the store it came from. Status is location now,
-// so an import that misrouted a closed position would not merely mislabel it —
-// recognition would credit history, and outstanding deployment would count a
-// position that has already settled.
+// TestGenesisRoundTripPreservesPositionStatus checks that open and closed positions return to their
+// respective stores. Misrouting history would change recognition and outstanding deployment.
 func (s *KeeperTestSuite) TestGenesisRoundTripPreservesPositionStatus() {
 	committee := testAddress(1)
 	destination := testAddress(2)
@@ -1386,13 +1375,8 @@ func (s *KeeperTestSuite) TestGenesisRoundTripPreservesPositionStatus() {
 	s.Require().Equal(outstandingBefore.OutstandingDeployed, outstandingAfter.OutstandingDeployed)
 }
 
-// TestGenesisRoundTripContinuesIdentifiers pins what the identifier sequences
-// carry across an export: the next ID to issue, not the last one issued. Both
-// neighbours export a genesis whose records are individually valid — an import
-// restoring one short reissues a live identifier onto a position that already
-// exists, and one long leaves a permanent gap. Neither is visible in the
-// exported records themselves, only in the first act after the import, so the
-// assertion has to be an act rather than a comparison of the two dumps.
+// TestGenesisRoundTripContinuesIdentifiers checks the first action after import uses the next
+// unissued ID, preventing both collisions and sequence gaps.
 func (s *KeeperTestSuite) TestGenesisRoundTripContinuesIdentifiers() {
 	committee := testAddress(1)
 	destination := testAddress(2)

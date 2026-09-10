@@ -21,11 +21,8 @@ import (
 // own.
 const testRateAge = time.Hour
 
-// xdrExternal and usdExternal are external symbols on the XDR and USD series.
-// They spell out
-// the partition the tests exercise: the series is what the Oracle prices and
-// what an Ark-issued asset would be named after, the external symbol is what
-// the Reserve lists and holds.
+// xdrExternal and usdExternal identify external claims; their prefixes identify the Oracle series.
+// Reserve lists and holds claims, while Oracle prices series.
 const (
 	xdrExternal = chain.XDRBaseDenom + "-x"
 	usdExternal = chain.USDBaseDenom + "-x"
@@ -66,11 +63,8 @@ func (s *KeeperTestSuite) policyDenoms() []string {
 	return denoms
 }
 
-// stubRates serves both Oracle reads from one mutable set; an absent key is a
-// dark feed on either read, refused outright by the all-or-nothing read and
-// omitted by the windowed one, as each really answers. Rates are served at age
-// zero, so staleness is exercised by stubRatesAtAge rather than accidentally by
-// every test that stubs a rate.
+// stubRates serves age-zero rates to both Oracle interfaces. Missing keys fail strict reads and are
+// omitted from available reads; stubRatesAtAge exercises staleness.
 func (s *KeeperTestSuite) stubRates(rates oracletypes.RateSet) {
 	s.stubRatesAtAge(rates, 0)
 }
@@ -384,12 +378,8 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	s.Require().Equal(math.NewInt(1_000+200+0), s.recognised())
 }
 
-// TestRecognitionDegradesToZeroNeverToStale pins the property with no
-// exception left in it: every rate comes from the Oracle, so a feed the Oracle
-// will not vouch for zeroes exactly one asset's credit while the rest keep
-// counting. There is no governance-supplied price to fall back to — a slow
-// feed is served by widening its staleness window in Oracle params, which
-// keeps the clock on the Oracle's side of the boundary.
+// TestRecognitionDegradesToZeroNeverToStale checks that an unavailable Oracle feed zeroes only its
+// asset's credit. There is no governance-price fallback.
 func (s *KeeperTestSuite) TestRecognitionDegradesToZeroNeverToStale() {
 	s.SetupTest()
 	s.fundReserve(1_000)
@@ -528,11 +518,8 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 	})
 }
 
-// TestRecognitionCouplesCeilingsConservatively pins the coupling the
-// self-reference introduces: losing one asset's feed shrinks the certificate,
-// and with it the ceiling of a neighbour whose own feed never blinked. The
-// coupling only ever shrinks credit, which is the direction every degradation
-// in this module must point.
+// TestRecognitionCouplesCeilingsConservatively checks that loss of one feed reduces total
+// recognition and can tighten other assets' share ceilings even when their feeds remain healthy.
 func (s *KeeperTestSuite) TestRecognitionCouplesCeilingsConservatively() {
 	s.SetupTest()
 	s.fundReserve(1_000)
@@ -587,20 +574,12 @@ func (s *KeeperTestSuite) TestRecognitionLeversOnlyTheProvableBase() {
 	})
 }
 
-// TestRecognitionSurvivesTheLargestAdmissibleAttestation pins the halt
-// MaxAttestedQuantity forecloses. RecognisedCapital runs inside Treasury's
-// settlement from Market's EndBlocker, so an error here fails the block rather
-// than a message — which makes "the fold errors" and "the chain stops" the
-// same outcome. The fold must therefore survive every attestation
-// Position.Validate admits, under the arithmetic that amplifies it most.
+// TestRecognitionSurvivesTheLargestAdmissibleAttestation exercises maximum accepted quantities and
+// rates in the EndBlock recognition path, where arithmetic failure would halt the block.
 func (s *KeeperTestSuite) TestRecognitionSurvivesTheLargestAdmissibleAttestation() {
 	s.SetupTest()
-	// Both amplifiers at once: two positions in one denomination, each at the
-	// cap, so the fold sums them; and the largest rate the Oracle store can
-	// hold, which is what turns a quantity into its largest credit — the
-	// conversion multiplies by the rate. The two caps are chosen together:
-	// 2^128 base units times a rate below 2^128 stays inside LegacyDec's
-	// 2^256 whole-number ceiling.
+	// Sum two maximum attestations and value them at MaxExchangeRate. NOAH valuation multiplies;
+	// the quantity and rate caps leave headroom under LegacyDec's whole-number bound.
 	s.stubRates(oracletypes.RateSet{testFeed: oracletypes.MaxExchangeRate})
 	s.setPolicy(eligibility(testAsset, "1", "0.5"))
 	s.attestQuantity(testAsset, types.MaxAttestedQuantity)
@@ -671,11 +650,8 @@ func (s *KeeperTestSuite) TestRecognitionTruncatesFractionalCredit() {
 	s.Require().Equal(math.NewInt(1_003), s.recognised())
 }
 
-// TestRecognisedCapitalDecomposesAttestedCustodyOnly pins what the
-// decomposition is a decomposition of. An attested holding outside the policy
-// is visible with zero credit, while member paper sitting in the account
-// raises no row at all. Neither case takes an Oracle read — the mock would
-// fail this test if the fold priced an unlisted asset.
+// TestRecognisedCapitalDecomposesAttestedCustodyOnly checks unlisted attestations appear with zero
+// credit, while Bank-held registry paper produces no row. Neither path queries Oracle.
 func (s *KeeperTestSuite) TestRecognisedCapitalDecomposesAttestedCustodyOnly() {
 	committee := testAddress(1)
 	destination := testAddress(2)
