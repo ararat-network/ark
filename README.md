@@ -1,32 +1,58 @@
 # Ark
 
-Ark is a Cosmos SDK blockchain with an asset registry, oracle price voting, market conversion, treasury policy,
-Insurance claims, strategic Reserve, and security committee. The `arkd` node and the off-chain `pricefeed` sidecar are
-separate binaries. [go.mod](go.mod) records the SDK version; [mise.toml](mise.toml) pins the development tools.
+[![Test](https://github.com/ararat-network/ark/actions/workflows/test.yml/badge.svg)](https://github.com/ararat-network/ark/actions/workflows/test.yml)
+[![Lint](https://github.com/ararat-network/ark/actions/workflows/lint.yml/badge.svg)](https://github.com/ararat-network/ark/actions/workflows/lint.yml)
+[![E2E](https://github.com/ararat-network/ark/actions/workflows/e2e.yml/badge.svg)](https://github.com/ararat-network/ark/actions/workflows/e2e.yml)
+[![Sims](https://github.com/ararat-network/ark/actions/workflows/sims.yml/badge.svg)](https://github.com/ararat-network/ark/actions/workflows/sims.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ararat-network/ark)](https://goreportcard.com/report/github.com/ararat-network/ark)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue?logo=go)](https://pkg.go.dev/github.com/ararat-network/ark)
 
-## Build and run locally
+Ark is a sovereign Cosmos SDK blockchain that converts its native asset, NOAH, into stablecoins and back at oracle
+prices, with a governed capital structure standing behind the stablecoin liability.
 
-From the repository root, with the pinned Go toolchain and the native dependencies required by Wasm available:
+## 🤔 Why should you be interested in Ark
 
-```sh
-make build
-make build-pricefeed
-./build/arkd --help
-./build/pricefeed --help
-```
+Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd`
+(Ark Daemon). Validators also run `pricefeed`, a separate off-chain sidecar that supplies the prices their nodes report
+in vote extensions. Ark interacts with other sovereign chains through [IBC](https://github.com/cosmos/ibc) and runs
+[CosmWasm](https://github.com/CosmWasm/wasmd) contracts.
 
-For a disposable Docker network with validators and sidecars, install Docker with Compose and run:
+What sets Ark apart is its economic model. There is no routine NOAH issuance: no mint module, no staking inflation, and
+no seigniorage. NOAH is minted and burned only inside stablecoin conversion, and three funds stand behind the
+stablecoins: a Redemption Buffer that recycles retained NOAH into redemptions, a strategic Reserve that governance can
+commit and a committee can deploy under a bounded mandate, and Insurance that pays covered losses through recorded
+claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
+holds every unbounded power; committees hold bounded, height-scoped mandates. To understand how funds and authority
+move, read the [economic design](docs/ECONOMIC_DESIGN.md).
 
-```sh
-make localnet-start
-make localnet-liveness
-make localnet-stop
-```
+## Documentation
 
-`localnet-start` rebuilds and recreates the localnet homes, replacing the previous localnet state. Read the
-[localnet guide](contrib/localnet/README.md) for topology, data paths, ports, and rehearsals. For host-based setup,
-configuration, joining a network, and upgrades, use [node operations](docs/NODE_OPERATIONS.md) and
-[pricefeed operations](docs/PRICEFEED_OPERATIONS.md).
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
+by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
+responding, integrating clients, future direction, and the decision record. Each subsystem's README owns its own
+behaviour, design, and development guidance; the [repository map](#repository-map) links them.
+
+### Additional resources
+
+**For node operators:** [Node operations](docs/NODE_OPERATIONS.md) covers building `arkd`, configuring a home, joining
+an existing network, and upgrading. [Process monitoring](docs/PROCESS_MONITORING.md) covers scraping the node and
+sidecar, and [protocol monitoring](docs/PROTOCOL_MONITORING.md) covers chain-state signals and alert calibration.
+
+**For validators:** Each validator reports prices through vote extensions, so it runs a `pricefeed` sidecar beside its
+node. [Pricefeed operations](docs/PRICEFEED_OPERATIONS.md) covers the two-way node/sidecar setup, TLS, reload, and
+failover; the [oracle module](x/oracle/README.md) explains attendance and reward settlement. Every validator also
+follows the [upgrade binary policy](docs/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never downloads binaries.
+
+**For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool,
+so read [validator and Oracle funding](docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding) before delegating.
+
+**For governance participants and committees:** [Governance operations](docs/GOVERNANCE_OPERATIONS.md) covers
+proposals, service permissions, and appointments. The [economic committee runbook](docs/ECONOMIC_COMMITTEE_RUNBOOK.md)
+and [emergency submission runbook](docs/EMERGENCY_SUBMISSION_RUNBOOK.md) cover bounded policy changes and emergency
+transactions.
+
+**For client integrators:** [Client fee construction](docs/CLIENT_FEES.md) explains signed fee declarations,
+simulation, and failure handling for external transaction builders.
 
 ## Repository map
 
@@ -45,8 +71,49 @@ On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Mar
 [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and
 [Treasury](x/treasury/README.md).
 
-## Documentation and contributing
+## Build and run locally
 
-The [documentation index](docs/README.md) links protocol design, integration guides, operations, and future work.
-Follow its [placement rule](docs/README.md#documentation-placement-rule) and the [repository guidelines](AGENTS.md).
-Start verification with the affected package tests; [tests/README.md](tests/README.md) explains broader checks.
+[go.mod](go.mod) records the SDK version; [mise.toml](mise.toml) pins the development tools. From the repository root,
+with the pinned Go toolchain and the native dependencies required by Wasm available:
+
+```sh
+make build
+make build-pricefeed
+./build/arkd --help
+./build/pricefeed --help
+```
+
+## Testnet
+
+Until a public network launches, run one locally. The Docker localnet wires validators and their sidecars together;
+install Docker with Compose and run:
+
+```sh
+make localnet-start
+make localnet-liveness
+make localnet-stop
+```
+
+`localnet-start` rebuilds and recreates the localnet homes, replacing the previous localnet state. Read the
+[localnet guide](contrib/localnet/README.md) for topology, data paths, ports, state sync, and rehearsals. For a single
+validator on the host without Docker, or a testnet assembled by several developers, follow the
+[disposable host testnet](docs/NODE_OPERATIONS.md#disposable-host-testnet) and
+[manual assembly](docs/NODE_OPERATIONS.md#manually-assembling-a-testnet) sections of node operations.
+
+## Genesis and relaunch
+
+Ark launches from a clean genesis as `ark-1`. The curated launch artefact is
+[app/genesis/genesis.json](app/genesis/genesis.json); [Genesis](docs/GENESIS.md) records each setting, its status, and
+the decision behind it. Do not treat `arkd init` defaults as the launch policy. A relaunch takes a new chain ID and
+starts from `arkd export`, which is a continuation export: heights stay absolute and the exported genesis starts at the
+next height, so every height-anchored record resumes as it is. Zero-height export is refused on purpose. See
+[upgrades and relaunch](docs/NODE_OPERATIONS.md#upgrades-and-relaunch).
+
+## Contributing
+
+[AGENTS.md](AGENTS.md) holds the repository guidelines: Cosmos SDK conventions, arithmetic rules, proto generation,
+collections patterns, and testing conventions. Start verification with the affected package tests;
+[tests/README.md](tests/README.md) maps each kind of change to its checks, and [contrib](contrib/README.md) holds the
+images, localnet, probes, and rehearsals. Documentation follows the
+[placement rule](docs/README.md#documentation-placement-rule): one authoritative home per subject, linked from
+everywhere else.
