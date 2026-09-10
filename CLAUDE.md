@@ -73,8 +73,8 @@ app/mempool/    # Pending transactions, lane eligibility, admission limits, and 
   size limits in `abci/codec`.
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
   `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
-- The node-to-sidecar compatibility rule lives in `pricefeed/doc.go`: additive changes only within
-  `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
+- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
+  within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
   through `pkg/tlsconfig` and their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via `.goreleaser.pricefeed.yml`.
 
 ## Cosmos SDK Conventions
@@ -126,7 +126,7 @@ These are consensus rules, not style. All three were violated in reviewed code b
   multiplies and `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a *price* of the
   reference unit (the exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the
   two units passed in the opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity
-  by it stay representable. (D75–D77, `docs/DESIGN_NOTES.md` §1.4.)
+  by it stay representable. (D75–D77, `x/oracle/README.md` §1.4.)
 
 The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
 outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The
@@ -143,6 +143,10 @@ Keep the backstop even when it is provably unreachable, and say so in a comment 
 - Do NOT add Co-Authored-By lines to commit messages.
 
 ## General Rules
+
+- Follow the [documentation placement rule](docs/README.md#documentation-placement-rule): READMEs own subsystem
+  behaviour, design, and development; `docs/` owns cross-subsystem explanations and reader workflows. Keep one
+  authoritative home per subject and link to it elsewhere.
 
 - Before making any changes, first outline exactly what files you'll modify and what the changes will be. Show the key
   diffs. Wait for approval before editing. This is especially important for proto files, keeper/module wiring, and
