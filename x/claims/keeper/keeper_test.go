@@ -103,11 +103,14 @@ func (s *KeeperTestSuite) SetupTest() {
 		}).
 		AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	s.keeper = keeper.NewKeeper(
 		s.cdc,
 		runtime.NewKVStoreService(key),
 		s.authority,
 		s.accountKeeper,
+		wasmKeeper,
 		s.bankKeeper,
 	)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))

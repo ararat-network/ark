@@ -88,6 +88,11 @@ func (s *stubAccountKeeper) GetAccount(_ context.Context, addr sdk.AccAddress) s
 	return s.accounts[addr.String()]
 }
 
+// stubWasmKeeper answers for a contract store holding no code.
+type stubWasmKeeper struct{}
+
+func (stubWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool { return false }
+
 // stubUpgradeKeeper serves one optional pending plan.
 type stubUpgradeKeeper struct {
 	plan *upgradetypes.Plan
@@ -138,7 +143,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	s.committee = authtypes.NewModuleAddress("security-committee").String()
 
-	s.keeper = keeper.NewKeeper(cdc, storeService, s.authority, s.router, s.account, s.upgrade)
+	s.keeper = keeper.NewKeeper(cdc, storeService, s.authority, s.router, s.account, stubWasmKeeper{}, s.upgrade)
 
 	s.Require().NoError(s.keeper.Mandate.Set(s.ctx, types.DefaultSecurityMandate()))
 	s.Require().NoError(s.keeper.CommitteePlan.Set(s.ctx, types.CommitteePlan{}))

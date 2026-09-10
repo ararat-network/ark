@@ -44,7 +44,7 @@
 //		return nil, err
 //	}
 //	if !env.IsDisabled() {
-//		env.Observe(k.accountKeeper.GetAccount(ctx, committee))
+//		env.Observe(k.accountKeeper.GetAccount(ctx, committee), k.wasmKeeper.HasContractInfo(ctx, committee))
 //	}
 //	updated := types.NewDisabled<Name>Mandate(env.Term)
 //	updated.Envelope = env
@@ -71,11 +71,12 @@
 // A committee is an ordinary account, so a threshold multisig composes at the
 // account layer and nothing here gates on one. What appointment does record is
 // [Envelope.Observe]: what the chain could prove about the account, classified
-// by [Shape] from the account the module resolved. An address is opaque, so
-// without this nothing on chain answers "is this committee still 3-of-5" — the
-// address commits to that K-of-N, but only the appointment is placed to read it
-// and write it down. The shape authorises nothing, and a zeroed one is a
-// committee whose backing could not be established rather than one refused.
+// by [Shape] from the account the module resolved and the contract store's
+// answer for the address. An address is opaque, so without this nothing on
+// chain answers "is this committee still 3-of-5" — the address commits to that
+// K-of-N, but only the appointment is placed to read it and write it down. The
+// shape authorises nothing, and a zeroed one is a committee whose backing
+// could not be established rather than one refused.
 //
 // # Account backing and dispatch
 //
@@ -85,14 +86,33 @@
 // requires the dispatched signer to be the calling contract. Each path still
 // reaches the same module-owned term and window checks. Membership, weights,
 // and tallies therefore need no native committee module: the mandate is the
-// charter, while account backing and staff delegation have separate lifecycles.
+// charter, while account backing and any delegation from it have lifecycles
+// of their own. That cuts both ways: an authz grant or a role inside a
+// contract outlives the term it was made under and lets one key act under a
+// shape recorded for a quorum, which is why governance operations says not to
+// make one.
 //
 // Shape records what was provable at appointment, not a continuously observed
 // organisation chart. A simple-key multisig address commits to its threshold
-// and members. A contract address does not commit to an immutable signing rule:
-// migration or membership changes may alter it. A keyless shape makes no claim
-// about contract membership, and must not be extended to record a mutable
-// threshold as though it were fixed for the term.
+// and members. A contract commits to no signing rule — governance can migrate
+// any contract, admin or not, and a membership contract edits its own state —
+// so the contract shape records the kind alone, which the module reads from
+// the contract store because the account is a bare BaseAccount either way. Do
+// not extend it with a threshold or code hash as though either were fixed for
+// the term, and do not re-observe at action time: that would catch a
+// migration but not a membership edit, and would turn observation into
+// authorisation. A contract acts by dispatching the committee message itself,
+// from a transaction some proposer signs, so its actions ride the normal lane
+// and never the committee lane.
+//
+// Backings not taken: MPC/TSS, whose one ordinary key hides quorum
+// attribution and whose resharing changes membership without a visible term
+// advance; x/group, for its dependency and licensing burden and its public
+// voting window; a native committee module, which makes every personnel
+// change protocol state. Emergency mandates keep off-chain multisig
+// deliberation, because a public proposal names its target before it takes
+// effect. All of this concerns committee authority, not the independent
+// signing needs of an external custody provider.
 //
 // # Replacing
 //

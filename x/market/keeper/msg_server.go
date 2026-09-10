@@ -147,7 +147,10 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 	}
 	// A disabling has no committee to look up.
 	if !envelope.IsDisabled() {
-		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
+		envelope.Observe(
+			m.k.accountKeeper.GetAccount(ctx, committeeAddress),
+			m.k.wasmKeeper.HasContractInfo(ctx, committeeAddress),
+		)
 	}
 
 	updated := types.NewDisabledConversionMandate(envelope.Term)

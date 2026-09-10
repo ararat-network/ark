@@ -18,13 +18,18 @@ var multisigTypeURL = "/" + proto.MessageName(&kmultisig.LegacyAminoPubKey{})
 
 // Shape classifies one committee account, taking the account rather than the
 // store it came from so this package still reads no module state. A nil
-// account is an address holding no account at all.
+// account is an address holding no account at all. contract is the contract
+// store's answer for the address, the one fact the account cannot show: a
+// contract's account is a bare BaseAccount. It only ever refines KEYLESS,
+// because a contract's account never gains a key — no registered key type
+// hashes to a contract address, and Wasmd refuses to instantiate over a keyed
+// account.
 //
 // Classification is total. The interface registry closes the set of key types
 // — one it does not know cannot decode into an account — so every account the
 // chain can hold lands on exactly one kind, and a type this binary predates
 // lands on OTHER rather than being read as a shape it is not.
-func Shape(account sdk.AccountI) CommitteeShape {
+func Shape(account sdk.AccountI, contract bool) CommitteeShape {
 	if account == nil {
 		return CommitteeShape{KeyKind: CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT}
 	}
@@ -37,6 +42,9 @@ func Shape(account sdk.AccountI) CommitteeShape {
 	switch key := account.GetPubKey().(type) {
 	case nil:
 		shape.KeyKind = CommitteeKeyKind_COMMITTEE_KEY_KIND_KEYLESS
+		if contract {
+			shape.KeyKind = CommitteeKeyKind_COMMITTEE_KEY_KIND_CONTRACT
+		}
 	case *authtypes.ModuleCredential:
 		shape.KeyKind = CommitteeKeyKind_COMMITTEE_KEY_KIND_MODULE
 		if key != nil {

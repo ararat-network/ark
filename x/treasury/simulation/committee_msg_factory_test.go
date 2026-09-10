@@ -67,12 +67,15 @@ func newCommitteeFixture(t *testing.T, seed int64) committeeFixture {
 		AnyTimes()
 	accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		runtime.NewTransientStoreService(transientKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		testutil.NewMockBankKeeper(ctrl),
 		testutil.NewMockOracleKeeper(ctrl),
 		testutil.NewMockAssetKeeper(ctrl),

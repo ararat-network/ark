@@ -67,6 +67,9 @@ func (e Envelope) Validate() error {
 	if e.CommitteeShape.Threshold > e.CommitteeShape.MemberCount {
 		return errors.New("committee threshold cannot exceed the member count")
 	}
+	if e.CommitteeShape.MemberCount != 0 && e.CommitteeShape.KeyKind != CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG {
+		return errors.New("committee threshold and member count belong to a multisig shape")
+	}
 
 	return nil
 }
@@ -126,16 +129,19 @@ func Next(
 }
 
 // Observe records what the chain can prove about this appointment's committee,
-// from the account the module resolved for it. A disabled envelope observes
-// nothing, keeping the canonical disabled shape zero. [Shape] does the
-// classifying, so this package still reads no module state.
+// from the account the module resolved for it and the contract store's answer
+// for its address. A disabled envelope observes nothing, keeping the canonical
+// disabled shape zero. [Shape] does the classifying, so this package still
+// reads no module state.
 //
-// This runs at appointment and never again, which is sound because the
-// committee address is the hash of the key it commits to: the account named by
-// an appointment cannot come to require fewer signatures than it did when
-// governance appointed it. Nothing here gates an action — the shape is the
-// record of who holds delegated power, for the operators and indexers reading
-// it, not a second authorization.
+// This runs at appointment and never again. For a key-backed account that is
+// sound because the address is the hash of the key it commits to: the account
+// cannot come to require fewer signatures than it did when governance
+// appointed it. A contract commits to no signing rule — migration or a
+// membership change alters it without a term advance — which is why its shape
+// records the kind and nothing mutable. Nothing here gates an action — the
+// shape is the record of who holds delegated power, for the operators and
+// indexers reading it, not a second authorization.
 //
 // Embedders promote this method rather than shadowing it, so calling it on the
 // assembled mandate records the shape on the envelope it wraps.
@@ -144,7 +150,7 @@ func Next(
 // account is the module's half, so this is the one thing that can be mispaired
 // — and a shape describing some other address, in the field whose whole purpose
 // is naming what backs this committee, is worse than no shape at all.
-func (e *Envelope) Observe(account sdk.AccountI) {
+func (e *Envelope) Observe(account sdk.AccountI, contract bool) {
 	if e.IsDisabled() {
 		return
 	}
@@ -152,7 +158,7 @@ func (e *Envelope) Observe(account sdk.AccountI) {
 		e.CommitteeShape = CommitteeShape{}
 		return
 	}
-	e.CommitteeShape = Shape(account)
+	e.CommitteeShape = Shape(account, contract)
 }
 
 // RequireTerm checks the exact term a committee message must carry. Term is

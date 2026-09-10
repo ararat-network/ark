@@ -27,7 +27,10 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	}
 	// A disabling has no committee to look up.
 	if !envelope.IsDisabled() {
-		envelope.Observe(k.accountKeeper.GetAccount(ctx, committeeAddress))
+		envelope.Observe(
+			k.accountKeeper.GetAccount(ctx, committeeAddress),
+			k.wasmKeeper.HasContractInfo(ctx, committeeAddress),
+		)
 	}
 
 	// The mandate carries no fields of its own, so the derived envelope is the

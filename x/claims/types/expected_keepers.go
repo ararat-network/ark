@@ -18,6 +18,12 @@ type AccountKeeper interface {
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 }
 
+// WasmKeeper answers whether the contract store holds code at an address,
+// the one fact about a committee an appointment cannot read off the account.
+type WasmKeeper interface {
+	HasContractInfo(ctx context.Context, address sdk.AccAddress) bool
+}
+
 // BankKeeper defines the custody and transfer functionality required by
 // Claims. Claims pays out of the Insurance account and never credits it: the
 // expansion waterfall that funds Insurance lives in Treasury, so no

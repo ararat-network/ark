@@ -22,6 +22,7 @@ type Keeper struct {
 	router       baseapp.MessageRouter
 
 	accountKeeper types.AccountKeeper
+	wasmKeeper    types.WasmKeeper
 	upgradeKeeper types.UpgradeKeeper
 
 	Schema collections.Schema
@@ -37,6 +38,7 @@ func NewKeeper(
 	authority string,
 	router baseapp.MessageRouter,
 	accountKeeper types.AccountKeeper,
+	wasmKeeper types.WasmKeeper,
 	upgradeKeeper types.UpgradeKeeper,
 ) *Keeper {
 	sb := collections.NewSchemaBuilder(storeService)
@@ -46,6 +48,7 @@ func NewKeeper(
 		authority:     authority,
 		router:        router,
 		accountKeeper: accountKeeper,
+		wasmKeeper:    wasmKeeper,
 		upgradeKeeper: upgradeKeeper,
 		Mandate: collections.NewItem(
 			sb,

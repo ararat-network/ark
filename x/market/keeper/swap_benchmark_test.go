@@ -123,12 +123,15 @@ func benchmarkMarketKeeper(
 	marketAccountKeeper := markettestutil.NewMockAccountKeeper(ctrl)
 	marketAccountKeeper.EXPECT().GetModuleAddress(markettypes.ModuleName).
 		Return(authtypes.NewModuleAddress(markettypes.ModuleName))
+	wasmKeeper := markettestutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	keeper := NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(marketKey),
 		runtime.NewTransientStoreService(marketTransientKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		marketAccountKeeper,
+		wasmKeeper,
 		markettestutil.NewMockBankKeeper(ctrl),
 		oracleKeeper,
 		markettestutil.NewMockTreasuryKeeper(ctrl),

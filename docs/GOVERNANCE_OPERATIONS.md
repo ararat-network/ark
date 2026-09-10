@@ -91,7 +91,8 @@ multisig can be appointed through the same message; its key should already be re
 its backing. Replacing the address or reappointing it advances the term and re-records shape. The existing multisig
 integration tests exercise real ante authentication; no native committee module is needed.
 
-1. Prepare the root account and its independent gas funding. Inspect what the current shape query can establish.
+1. Prepare the root account and its independent gas funding. Know what appointment will record: a key-backed
+   account's kind and K-of-N, a contract only that it is one.
 2. Draft the domain's `MsgSet*Mandate` with activation/expiry and its policy bounds, allowance, floor, or destinations.
 3. After execution, verify the emitted appointment and query state, including term and shape. Construct actions for
    that exact term and send only while the appointment is active.
@@ -102,6 +103,25 @@ For Security and Asset emergency mandates, use threshold signatures collected of
 would disclose the target during deliberation; ordinary public transaction propagation can still expose a signed act,
 so the [emergency submission runbook](EMERGENCY_SUBMISSION_RUNBOOK.md) remains relevant.
 
-Routine staff authz and deliberative cw3/cw4 roots remain deferred behind the tests and observation preconditions in
-[future changes](FUTURE_CHANGES.md#5-committee-account-evolution). Their risks are not solved by Wasmd being installed.
+A CosmWasm contract can hold a deliberative mandate through the same message, for a committee that wants weighted
+membership, visible proposals and votes, and a root address that survives personnel changes; the candidate is a
+cw3-flex-multisig root over cw4-group membership. Appointment records it as a contract and nothing more. It acts by
+dispatching the committee message itself from a `MsgExecuteContract` a proposer signs: Wasmd refuses the dispatch
+unless the message names the contract, and the module authorises term and window as for a signed transaction. The
+proposer supplies `expected_term`, so a replacement while the contract is still voting fails the execution; no
+mandate query is on the contract accept list to spare it that guard. No such root is deployed or appointed yet.
+Before proposing the first one:
+
+- Choose and review the cw3/cw4 code, and cite the checksum the review covered in the proposal. The shape never
+  records code or membership: the membership contract edits its own state, the admin migrates the code, and
+  governance can migrate, sudo, or re-admin any contract whether or not it has an admin, none of which advances the
+  term. Replacement is the remedy for a root that changes under its term.
+- Confirm the contract's admin is governance or cleared, and that the membership contract's admin is the root itself.
+- Fix who may propose on the root and who funds its gas; the executing transaction is theirs, not the committee's.
+- Accept that its transactions ride the normal lane, never the committee lane: the lane classifier sees a
+  `MsgExecuteContract`. That is tolerable for a deliberative mandate and one more reason emergency mandates stay on
+  off-chain multisigs.
+- Do not grant `x/authz` authority over committee messages, and do not build solo-officer roles into the root.
+  Either is delegation state that outlives the term and lets one key act under a shape recorded for a quorum.
+
 Other engineering follow-ups are tracked in [future changes](FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).

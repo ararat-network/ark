@@ -38,6 +38,7 @@ type ModuleInputs struct {
 	MsgServiceRouter baseapp.MessageRouter
 
 	AccountKeeper types.AccountKeeper
+	WasmKeeper    types.WasmKeeper
 	UpgradeKeeper types.UpgradeKeeper
 }
 
@@ -55,6 +56,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		in.MsgServiceRouter,
 		in.AccountKeeper,
+		in.WasmKeeper,
 		in.UpgradeKeeper,
 	)
 

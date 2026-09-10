@@ -220,13 +220,19 @@ newly listed query path carry the annotation, and is its response shape one you 
 committee acts within that window under a term; expiry is lazy.
 
 **Assumptions.** A committee is an ordinary account, so its multisig threshold lives at the account layer,
-and the chain records the shape it observed at appointment. Governance holds every unbounded path and can
-replace or disable any committee. A committee's transactions may need to reach a block during an incident,
-which is what the priority lane and the emergency submission runbook are for.
+and the chain records the shape it observed at appointment. A contract may hold a deliberative mandate; the
+chain records that it is one and nothing about its code or membership, which its admin, its membership
+contract, or governance can change without a term advance. Governance holds every unbounded path, including
+Wasmd's authority policy over every contract, and can replace or disable any committee. A committee's
+transactions may need to reach a block during an incident, which is what the priority lane and the
+emergency submission runbook are for.
 
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
 on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds.
-Committee actions dispatch through the module's own message router, so every target re-validates.
+Committee actions dispatch through the module's own message router, so every target re-validates. A
+contract acts by dispatching the committee message from a proposer-signed `MsgExecuteContract`: Wasmd
+checks the message names the contract, the policy router taxes it, the module re-validates term and
+window, and the transaction rides the normal lane.
 
 **Review questions.** Does a new committee power have a bound the mandate states? Is its message in the
 lane and the gate? Does the runbook still describe how it reaches a block under congestion?

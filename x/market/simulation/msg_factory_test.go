@@ -319,12 +319,15 @@ func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixt
 		}).
 		AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	marketKeeper := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		runtime.NewTransientStoreService(transientKey),
 		gov.String(),
 		accountKeeper,
+		wasmKeeper,
 		testutil.NewMockBankKeeper(ctrl),
 		oracleKeeper,
 		testutil.NewMockTreasuryKeeper(ctrl),

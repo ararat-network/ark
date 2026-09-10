@@ -81,12 +81,15 @@ func (s *KeeperTestSuite) SetupTest() {
 	// Required by NewKeeper's panic guard
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	s.keeper = keeper.NewKeeper(
 		cdc,
 		storeService,
 		transientStoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		bankKeeper,
 		oracleKeeper,
 		treasuryKeeper,

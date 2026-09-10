@@ -11,13 +11,15 @@ option go_package = "github.com/ararat-network/ark/pkg/mandate";
 // set of key types is closed by the interface registry — an unregistered key
 // cannot decode into an account — so every account the chain can hold maps to
 // exactly one value here, with OTHER absorbing a type this binary predates.
+// CONTRACT alone is read from the contract store rather than the account.
 enum CommitteeKeyKind {
   // COMMITTEE_KEY_KIND_UNSPECIFIED is the disabled mandate's zero shape.
   COMMITTEE_KEY_KIND_UNSPECIFIED = 0;
   // COMMITTEE_KEY_KIND_ABSENT is an address holding no account.
   COMMITTEE_KEY_KIND_ABSENT = 1;
-  // COMMITTEE_KEY_KIND_KEYLESS is an account with no registered key: an unused
-  // key pair, a contract, an interchain account, or a module account.
+  // COMMITTEE_KEY_KIND_KEYLESS is an account with no registered key and no
+  // contract behind it: an unused key pair, a derived account whose type does
+  // not name it, or a bare funded address.
   COMMITTEE_KEY_KIND_KEYLESS = 2;
   // COMMITTEE_KEY_KIND_SINGLE is one simple key.
   COMMITTEE_KEY_KIND_SINGLE = 3;
@@ -29,6 +31,9 @@ enum CommitteeKeyKind {
   // COMMITTEE_KEY_KIND_OTHER is a registered key type this binary predates,
   // which must not be read as any of the shapes above.
   COMMITTEE_KEY_KIND_OTHER = 6;
+  // COMMITTEE_KEY_KIND_CONTRACT is a CosmWasm contract, authorising by its
+  // code. Which code is not recorded: migration can replace it within a term.
+  COMMITTEE_KEY_KIND_CONTRACT = 7;
 }
 
 // CommitteeShape is what the chain could prove about the committee account at
@@ -68,8 +73,9 @@ message Envelope {
   // act, forming a half-open window with activation_height.
   uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
   // committee_shape is what the chain proved about the committee account when
-  // it was appointed. The address is the hash of the key it commits to, so a
-  // shape observed at appointment cannot go stale within the term.
+  // it was appointed. A key-backed address commits to its key, so that shape
+  // cannot go stale within the term. A contract's shape names only the kind:
+  // its code and membership can change without a term advance.
   CommitteeShape committee_shape = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true

@@ -24,6 +24,7 @@ type Keeper struct {
 	reserveAddress sdk.AccAddress
 
 	accountKeeper types.AccountKeeper
+	wasmKeeper    types.WasmKeeper
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
 	assetKeeper   types.AssetKeeper
@@ -50,6 +51,7 @@ func NewKeeper(
 	storeService store.KVStoreService,
 	authority string,
 	accountKeeper types.AccountKeeper,
+	wasmKeeper types.WasmKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 	assetKeeper types.AssetKeeper,
@@ -65,6 +67,7 @@ func NewKeeper(
 		authority:      authority,
 		reserveAddress: reserveAddress,
 		accountKeeper:  accountKeeper,
+		wasmKeeper:     wasmKeeper,
 		bankKeeper:     bankKeeper,
 		oracleKeeper:   oracleKeeper,
 		assetKeeper:    assetKeeper,

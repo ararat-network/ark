@@ -10,13 +10,13 @@
 package testutil
 
 import (
-	types "github.com/ararat-network/ark/x/asset/types"
-	types0 "github.com/ararat-network/ark/x/market/types"
-	types1 "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
 	math "cosmossdk.io/math"
+	types "github.com/ararat-network/ark/x/asset/types"
+	types0 "github.com/ararat-network/ark/x/market/types"
+	types1 "github.com/ararat-network/ark/x/oracle/types"
 	types2 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -85,6 +85,44 @@ func (m *MockAccountKeeper) GetModuleAddress(name string) types2.AccAddress {
 func (mr *MockAccountKeeperMockRecorder) GetModuleAddress(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModuleAddress", reflect.TypeOf((*MockAccountKeeper)(nil).GetModuleAddress), name)
+}
+
+// MockWasmKeeper is a mock of WasmKeeper interface.
+type MockWasmKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockWasmKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockWasmKeeperMockRecorder is the mock recorder for MockWasmKeeper.
+type MockWasmKeeperMockRecorder struct {
+	mock *MockWasmKeeper
+}
+
+// NewMockWasmKeeper creates a new mock instance.
+func NewMockWasmKeeper(ctrl *gomock.Controller) *MockWasmKeeper {
+	mock := &MockWasmKeeper{ctrl: ctrl}
+	mock.recorder = &MockWasmKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockWasmKeeper) EXPECT() *MockWasmKeeperMockRecorder {
+	return m.recorder
+}
+
+// HasContractInfo mocks base method.
+func (m *MockWasmKeeper) HasContractInfo(ctx context.Context, address types2.AccAddress) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasContractInfo", ctx, address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasContractInfo indicates an expected call of HasContractInfo.
+func (mr *MockWasmKeeperMockRecorder) HasContractInfo(ctx, address any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasContractInfo", reflect.TypeOf((*MockWasmKeeper)(nil).HasContractInfo), ctx, address)
 }
 
 // MockBankKeeper is a mock of BankKeeper interface.

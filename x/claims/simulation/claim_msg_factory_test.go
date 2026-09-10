@@ -72,11 +72,14 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 		AnyTimes()
 	bankKeeper.EXPECT().BlockedAddr(gomock.Any()).Return(false).AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		bankKeeper,
 	)
 	require.NoError(t, k.Params.Set(ctx, types.DefaultParams()))

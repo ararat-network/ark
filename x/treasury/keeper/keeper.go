@@ -27,6 +27,7 @@ type Keeper struct {
 	authority             string
 
 	accountKeeper types.AccountKeeper
+	wasmKeeper    types.WasmKeeper
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
 	assetKeeper   types.AssetKeeper
@@ -77,6 +78,7 @@ func NewKeeper(
 	transientStoreService store.TransientStoreService,
 	authority string,
 	accountKeeper types.AccountKeeper,
+	wasmKeeper types.WasmKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 	assetKeeper types.AssetKeeper,
@@ -117,6 +119,7 @@ func NewKeeper(
 		transientStoreService: transientStoreService,
 		authority:             authority,
 		accountKeeper:         accountKeeper,
+		wasmKeeper:            wasmKeeper,
 		bankKeeper:            bankKeeper,
 		oracleKeeper:          oracleKeeper,
 		assetKeeper:           assetKeeper,

@@ -71,11 +71,14 @@ func newAssetFixture(t *testing.T) assetFixture {
 	// a freshly drawn simulation address is.
 	accounts := testutil.NewMockAccountKeeper(ctrl)
 	accounts.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accounts,
+		wasmKeeper,
 		bank,
 		oracle,
 	)

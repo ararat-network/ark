@@ -200,12 +200,15 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 	}
 	treasuryBankKeeper.EXPECT().GetAllBalances(gomock.Any(), gomock.Any()).Return(fees).AnyTimes()
 
+	wasmKeeper := treasurytestutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	keeper := treasurykeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(treasuryKey),
 		runtime.NewTransientStoreService(transientKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		treasuryAccountKeeper,
+		wasmKeeper,
 		treasuryBankKeeper,
 		oracleKeeper,
 		benchAssetKeeper{denoms: denoms},

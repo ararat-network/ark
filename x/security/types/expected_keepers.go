@@ -18,6 +18,12 @@ type AccountKeeper interface {
 	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 }
 
+// WasmKeeper answers whether the contract store holds code at an address,
+// the one fact about a committee an appointment cannot read off the account.
+type WasmKeeper interface {
+	HasContractInfo(ctx context.Context, address sdk.AccAddress) bool
+}
+
 // UpgradeKeeper reads the single pending upgrade plan, which decides whether a
 // committee schedule replaces its own plan or displaces a governance one.
 type UpgradeKeeper interface {

@@ -35,6 +35,7 @@ type ModuleInputs struct {
 	TransientStoreService store.TransientStoreService
 
 	AccountKeeper types.AccountKeeper
+	WasmKeeper    types.WasmKeeper
 	BankKeeper    types.BankKeeper
 	OracleKeeper  types.OracleKeeper
 	AssetKeeper   types.AssetKeeper
@@ -65,6 +66,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.TransientStoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		in.AccountKeeper,
+		in.WasmKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,
 		in.AssetKeeper,

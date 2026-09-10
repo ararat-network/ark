@@ -58,9 +58,10 @@ func TestShape(t *testing.T) {
 	first, second, third := simpleKey(t), simpleKey(t), simpleKey(t)
 
 	tests := []struct {
-		name    string
-		account func(*testing.T) sdk.AccountI
-		want    mandate.CommitteeShape
+		name     string
+		account  func(*testing.T) sdk.AccountI
+		contract bool
+		want     mandate.CommitteeShape
 	}{
 		{
 			name:    "no account at the address",
@@ -78,6 +79,38 @@ func TestShape(t *testing.T) {
 			want: mandate.CommitteeShape{
 				AccountType: baseAccountType,
 				KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_KEYLESS,
+			},
+		},
+		{
+			name: "contract behind a keyless account",
+			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
+				return accountWithKey(t, nil)
+			},
+			contract: true,
+			want: mandate.CommitteeShape{
+				AccountType: baseAccountType,
+				KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_CONTRACT,
+			},
+		},
+		{
+			name:     "absent account outranks the contract store",
+			account:  func(*testing.T) sdk.AccountI { return nil },
+			contract: true,
+			want: mandate.CommitteeShape{
+				KeyKind: mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT,
+			},
+		},
+		{
+			name: "contract store never refines a keyed account",
+			account: func(t *testing.T) sdk.AccountI {
+				t.Helper()
+				return accountWithKey(t, first)
+			},
+			contract: true,
+			want: mandate.CommitteeShape{
+				AccountType: baseAccountType,
+				KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_SINGLE,
 			},
 		},
 		{
@@ -241,7 +274,7 @@ func TestShape(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			require.Equal(t, test.want, mandate.Shape(test.account(t)))
+			require.Equal(t, test.want, mandate.Shape(test.account(t), test.contract))
 		})
 	}
 }
@@ -259,7 +292,7 @@ func TestObserve(t *testing.T) {
 			ActivationHeight: 1,
 			ExpiryHeight:     100,
 		}
-		envelope.Observe(account)
+		envelope.Observe(account, false)
 
 		require.Equal(t, mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG, envelope.CommitteeShape.KeyKind)
 		require.Equal(t, uint32(2), envelope.CommitteeShape.Threshold)
@@ -274,7 +307,7 @@ func TestObserve(t *testing.T) {
 			ActivationHeight: 1,
 			ExpiryHeight:     100,
 		}
-		envelope.Observe(account)
+		envelope.Observe(account, false)
 
 		require.True(t, envelope.CommitteeShape.IsZero())
 		require.NoError(t, envelope.Validate())
@@ -282,9 +315,26 @@ func TestObserve(t *testing.T) {
 
 	t.Run("disabled appointment observes nothing", func(t *testing.T) {
 		envelope := mandate.Disabled(7)
-		envelope.Observe(account)
+		envelope.Observe(account, false)
 
 		require.True(t, envelope.CommitteeShape.IsZero())
+		require.NoError(t, envelope.Validate())
+	})
+
+	t.Run("contract committee records the contract kind", func(t *testing.T) {
+		contract := authtypes.NewBaseAccount(sdk.AccAddress(make([]byte, 32)), nil, 0, 0)
+		envelope := mandate.Envelope{
+			Term:             1,
+			Committee:        contract.GetAddress().String(),
+			ActivationHeight: 1,
+			ExpiryHeight:     100,
+		}
+		envelope.Observe(contract, true)
+
+		require.Equal(t, mandate.CommitteeShape{
+			AccountType: baseAccountType,
+			KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_CONTRACT,
+		}, envelope.CommitteeShape)
 		require.NoError(t, envelope.Validate())
 	})
 }
@@ -344,6 +394,18 @@ func TestEnvelopeValidateCommitteeShape(t *testing.T) {
 				return envelope
 			},
 			wantErr: "committee threshold cannot exceed the member count",
+		},
+		{
+			name: "threshold and member count under a single-key shape",
+			envelope: func() mandate.Envelope {
+				envelope := live()
+				envelope.CommitteeShape.KeyKind = mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_SINGLE
+				envelope.CommitteeShape.Threshold = 2
+				envelope.CommitteeShape.MemberCount = 3
+
+				return envelope
+			},
+			wantErr: "committee threshold and member count belong to a multisig shape",
 		},
 		{
 			name: "unclassified committee is accepted as unknown",

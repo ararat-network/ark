@@ -34,6 +34,7 @@ type ModuleInputs struct {
 	StoreService store.KVStoreService
 
 	AccountKeeper types.AccountKeeper
+	WasmKeeper    types.WasmKeeper
 	BankKeeper    types.BankKeeper
 	OracleKeeper  types.OracleKeeper
 }
@@ -53,6 +54,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.StoreService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		in.AccountKeeper,
+		in.WasmKeeper,
 		in.BankKeeper,
 		in.OracleKeeper,
 	)

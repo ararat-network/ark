@@ -54,12 +54,15 @@ func (s *AccumulatorTestSuite) SetupTest() {
 	accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	s.keeper = NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		runtime.NewTransientStoreService(transientKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		testutil.NewMockBankKeeper(ctrl),
 		testutil.NewMockOracleKeeper(ctrl),
 		testutil.NewMockTreasuryKeeper(ctrl),

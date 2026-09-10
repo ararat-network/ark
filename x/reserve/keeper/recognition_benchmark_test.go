@@ -146,11 +146,14 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 			return balances
 		}).AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	keeper := reservekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(reserveKey),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		bankKeeper,
 		oracleKeeper,
 		testutil.NewMockAssetKeeper(ctrl),

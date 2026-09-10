@@ -15,6 +15,7 @@ type Keeper struct {
 	storeService  store.KVStoreService
 	authority     string
 	accountKeeper types.AccountKeeper
+	wasmKeeper    types.WasmKeeper
 	bankKeeper    types.BankKeeper
 	oracleKeeper  types.OracleKeeper
 
@@ -33,6 +34,7 @@ func NewKeeper(
 	storeService store.KVStoreService,
 	authority string,
 	accountKeeper types.AccountKeeper,
+	wasmKeeper types.WasmKeeper,
 	bankKeeper types.BankKeeper,
 	oracleKeeper types.OracleKeeper,
 ) *Keeper {
@@ -42,6 +44,7 @@ func NewKeeper(
 		storeService:  storeService,
 		authority:     authority,
 		accountKeeper: accountKeeper,
+		wasmKeeper:    wasmKeeper,
 		bankKeeper:    bankKeeper,
 		oracleKeeper:  oracleKeeper,
 		Params: collections.NewItem(

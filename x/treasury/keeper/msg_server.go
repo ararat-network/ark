@@ -76,7 +76,10 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 	}
 	// A disabling has no committee to look up.
 	if !envelope.IsDisabled() {
-		envelope.Observe(m.k.accountKeeper.GetAccount(ctx, committeeAddress))
+		envelope.Observe(
+			m.k.accountKeeper.GetAccount(ctx, committeeAddress),
+			m.k.wasmKeeper.HasContractInfo(ctx, committeeAddress),
+		)
 	}
 	updated := types.NewDisabledEconomicMandate(envelope.Term)
 	updated.Envelope = envelope

@@ -283,12 +283,15 @@ func (s *KeeperTestSuite) SetupTest() {
 		}).
 		AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	s.keeper = keeper.NewKeeper(
 		s.cdc,
 		storeService,
 		transientStoreService,
 		s.authority,
 		s.accountKeeper,
+		wasmKeeper,
 		s.bankKeeper,
 		s.oracleKeeper,
 		s.assetKeeper,

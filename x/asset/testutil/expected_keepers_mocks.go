@@ -10,10 +10,10 @@
 package testutil
 
 import (
-	types "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
+	types "github.com/ararat-network/ark/x/oracle/types"
 	types0 "github.com/cosmos/cosmos-sdk/types"
 	types1 "github.com/cosmos/cosmos-sdk/x/bank/types"
 	gomock "go.uber.org/mock/gomock"
@@ -55,6 +55,44 @@ func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types0.AccAddre
 func (mr *MockAccountKeeperMockRecorder) GetAccount(ctx, addr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).GetAccount), ctx, addr)
+}
+
+// MockWasmKeeper is a mock of WasmKeeper interface.
+type MockWasmKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockWasmKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockWasmKeeperMockRecorder is the mock recorder for MockWasmKeeper.
+type MockWasmKeeperMockRecorder struct {
+	mock *MockWasmKeeper
+}
+
+// NewMockWasmKeeper creates a new mock instance.
+func NewMockWasmKeeper(ctrl *gomock.Controller) *MockWasmKeeper {
+	mock := &MockWasmKeeper{ctrl: ctrl}
+	mock.recorder = &MockWasmKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockWasmKeeper) EXPECT() *MockWasmKeeperMockRecorder {
+	return m.recorder
+}
+
+// HasContractInfo mocks base method.
+func (m *MockWasmKeeper) HasContractInfo(ctx context.Context, address types0.AccAddress) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasContractInfo", ctx, address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasContractInfo indicates an expected call of HasContractInfo.
+func (mr *MockWasmKeeperMockRecorder) HasContractInfo(ctx, address any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasContractInfo", reflect.TypeOf((*MockWasmKeeper)(nil).HasContractInfo), ctx, address)
 }
 
 // MockBankKeeper is a mock of BankKeeper interface.

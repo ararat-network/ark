@@ -90,11 +90,14 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
 	oracleKeeper.EXPECT().FeedPhase(gomock.Any(), gomock.Any()).Return(oracletypes.FeedPhaseActive, nil).AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
+		wasmKeeper,
 		bankKeeper,
 		oracleKeeper,
 		testutil.NewMockAssetKeeper(ctrl),

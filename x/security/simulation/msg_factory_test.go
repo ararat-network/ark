@@ -50,12 +50,15 @@ func TestMsgSetSecurityMandateFactory(t *testing.T) {
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
 	accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		baseapp.NewMsgServiceRouter(),
 		accountKeeper,
+		wasmKeeper,
 		testutil.NewMockUpgradeKeeper(ctrl),
 	)
 	require.NoError(t, k.Mandate.Set(ctx, types.DefaultSecurityMandate()))

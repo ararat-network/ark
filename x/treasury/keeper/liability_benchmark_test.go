@@ -131,12 +131,15 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 	// benchmark hands the keeper a registry listing every seeded denom as
 	// ACTIVE: the measured path walks it, reads each supply, and captures one
 	// rate set for the whole membership.
+	wasmKeeper := treasurytestutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	keeper := treasurykeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(treasuryKey),
 		transientService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		treasuryAccountKeeper,
+		wasmKeeper,
 		treasuryBankKeeper,
 		oracleKeeper,
 		benchAssetKeeper{denoms: denoms},

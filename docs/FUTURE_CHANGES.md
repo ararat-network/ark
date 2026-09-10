@@ -10,7 +10,6 @@ available through existing messages and relayer procedures.
 - [2. Enable Block-STM](#2-enable-block-stm)
 - [3. Basket index assets](#3-basket-index-assets)
 - [4. Capital and protocol follow-ups](#4-capital-and-protocol-follow-ups)
-- [5. Committee account evolution](#5-committee-account-evolution)
 - [Protocol monitoring tooling](#protocol-monitoring-tooling)
 
 ## 1. Upgrade to Cosmos SDK v0.55
@@ -224,51 +223,6 @@ per-order and aggregate bounds in `abci/codec`, a separate verification boundary
 Honest ExtendVote handlers attach only self-verified orders, and VerifyVoteExtension must accept everything they emit.
 Invalid/stale orders must skip without halting; state-failure handling needs an explicit audit. Require a coordinated,
 two-phase rollout rather than treating this as a local mempool setting.
-
-## 5. Committee account evolution
-
-The current appointment and signer invariants live in [pkg/mandate](../pkg/mandate/doc.go). Governance-only operation
-and ordinary single-key/multisig appointments need no new module; their procedure lives in
-[governance operations](GOVERNANCE_OPERATIONS.md#6-committee-appointments). The outstanding stages below are optional.
-
-### Staff delegation through authz
-
-Trigger: routine deliberative committee work becomes frequent enough that convening the root is a bottleneck.
-`x/authz` is wired, but before adopting it add an app integration test that grants a committee message type to an
-officer, executes `MsgExec`, and checks success, missing/expired grants, and a wrong `expected_term`. The inner
-committee signer still identifies the root, and the module still authorises its term and active window. A production
-change needed solely to make that dispatch work is evidence to investigate the signer invariant.
-
-Grants are keyed by grantee, granter, and type URL with time expiry; mandate terms do not revoke them. Reappointing
-the same root can therefore carry old staff grants into a new charter. Resolve this structurally before adoption:
-confine grants to deliberative powers with an explicitly accepted surviving-grant scope, or use delegation state that
-resets on a new term. A manual revoke-at-muster procedure alone is insufficient. Security powers and emergency asset
-suspension remain outside this delegation scheme.
-
-### Deliberative contract committees
-
-Trigger: a deliberative mandate needs weighted membership, visible proposals/votes, and a stable root across personnel
-changes. Wasmd and its app integration already exist; do not treat their installation or deletion of the old
-`x/wasm/exported` shim as outstanding work. No cw3/cw4 root appointment is established by that integration.
-
-The candidate is a cw3-flex-multisig root with cw4-group membership. Before appointment, resolve the observation gap:
-`CommitteeShape` sees account/pubkey shape, so a contract represented as a keyless BaseAccount is indistinguishable
-from an ordinary account whose key is not registered. Recheck the pinned Wasmd account representation and design an
-honest way for governance to identify what it is appointing. Do not fill the immutable K-of-N observation with a
-contract's mutable threshold; migration and membership updates could invalidate it. Record only immutable facts or
-explicitly design re-observation.
-
-Test contract-signed committee dispatch through the real app, including signer mismatch, stale term, expiry, and
-contract failure. The proposer supplies `expected_term`; a term change while the contract votes should fail execution,
-without adding a mandate query to the contract accept list merely to avoid that guard. Resolve migration/admin and
-membership authority before deploying and appointing the root. Whether an observation change needs schema or consensus
-changes depends on that design; no blanket migration-free promise follows from using one address.
-
-Emergency mandates retain off-chain multisig deliberation: a public proposal names its target before it takes effect.
-MPC/TSS was rejected as committee backing because its ordinary key hides quorum attribution and resharing can change
-membership without a visible term advance. `x/group` was rejected for its dependency/licensing burden and public
-voting window; a native committee module was rejected because it makes every personnel change protocol state.
-These decisions concern committee authority, not the independent signing needs of an external custody provider.
 
 ## Protocol monitoring tooling
 

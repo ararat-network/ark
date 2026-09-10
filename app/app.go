@@ -172,6 +172,11 @@ func NewArkApp(
 			depinject.Supply(
 				appOpts, // supply the application options
 				logger,  // supply the logger
+				// The appointing modules read the contract store through
+				// this pointer. The contract runtime is built after depinject
+				// (setupWasm), so the field is empty here and filled before
+				// any appointment can run.
+				&app.WasmKeeper,
 			),
 		)
 	)

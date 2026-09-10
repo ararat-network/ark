@@ -17,6 +17,12 @@ type AccountKeeper interface {
 	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 }
 
+// WasmKeeper answers whether the contract store holds code at an address,
+// the one fact about a committee an appointment cannot read off the account.
+type WasmKeeper interface {
+	HasContractInfo(ctx context.Context, address sdk.AccAddress) bool
+}
+
 // BankKeeper defines the supply and metadata functionality required by Asset.
 type BankKeeper interface {
 	GetSupply(ctx context.Context, denom string) sdk.Coin

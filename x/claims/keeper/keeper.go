@@ -24,6 +24,7 @@ type Keeper struct {
 	authority    string
 
 	accountKeeper types.AccountKeeper
+	wasmKeeper    types.WasmKeeper
 	bankKeeper    types.BankKeeper
 
 	// insuranceAddress is the custody account's address, captured once at
@@ -53,6 +54,7 @@ func NewKeeper(
 	storeService store.KVStoreService,
 	authority string,
 	accountKeeper types.AccountKeeper,
+	wasmKeeper types.WasmKeeper,
 	bankKeeper types.BankKeeper,
 ) *Keeper {
 	insuranceAddress := accountKeeper.GetModuleAddress(types.InsuranceName)
@@ -66,6 +68,7 @@ func NewKeeper(
 		storeService:     storeService,
 		authority:        authority,
 		accountKeeper:    accountKeeper,
+		wasmKeeper:       wasmKeeper,
 		bankKeeper:       bankKeeper,
 		insuranceAddress: insuranceAddress,
 		Params: collections.NewItem(

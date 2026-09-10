@@ -67,11 +67,14 @@ func (s *KeeperTestSuite) SetupTest() {
 	// Committee accounts default to absent, which an appointment records as the
 	// shape it observed rather than refusing.
 	s.accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
+	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	s.keeper = keeper.NewKeeper(
 		cdc,
 		storeService,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		s.accountKeeper,
+		wasmKeeper,
 		s.bankKeeper,
 		s.oracleKeeper,
 	)
