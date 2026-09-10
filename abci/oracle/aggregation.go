@@ -35,11 +35,8 @@ type validatorScore struct {
 	participated bool
 }
 
-// aggregateOracleVotes groups submitted oracle rates by supported denom,
-// selects a reference denom from the denoms that meet raw and overlap quorum,
-// computes weighted-median exchange rates, and returns validator accounting:
-// per-validator reward weight and participation, plus the fleet-wide
-// functioningBlock flag that gates attendance eligibility.
+// aggregateOracleVotes computes quorum-qualified median prices, validator
+// reward weights and participation, and the functioning-block verdict.
 // targetDenoms must be in canonical lexical order.
 func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms []string) aggregationResult {
 	result := aggregationResult{
@@ -65,12 +62,8 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		return result
 	}
 
-	// requiredPositiveRates is the participation floor: how many distinct
-	// targets a report must price before it counts as participation. Rates are
-	// unique per target by decode validation, so counting rates counts targets.
-	// The floor of one keeps a zero threshold exactly the single-positive-rate
-	// rule, and the threshold cap of one half by param validation keeps the
-	// floor a deadman switch rather than a coverage mandate.
+	// Participation requires at least one positive rate and the ceiling of the
+	// configured target fraction. Decode validation makes target rates unique.
 	requiredPositiveRates := params.ParticipationThreshold.
 		MulInt64(int64(len(targetDenoms))).
 		Ceil().
@@ -79,14 +72,9 @@ func aggregateOracleVotes(votes []Vote, params oracletypes.Params, targetDenoms 
 		requiredPositiveRates = 1
 	}
 
-	// This pass computes three outputs in one iteration over votes: it counts
-	// positive reports per target so each ballot can allocate exactly enough
-	// space without geometric slice growth, it marks each validator whose
-	// positive-rate count reaches the participation floor as participated, and
-	// it sums participating power across the fleet for the functioning-block
-	// check below. Below-floor reports must stay out of participating power:
-	// that coupling is what lets a fleet-wide coverage collapse switch grading
-	// off instead of jailing the affected validators.
+	// Count rates for exact ballot allocation and mark participating validators.
+	// Only reports meeting the floor contribute to functioning-block power;
+	// see README.md, "Participation and functioning blocks".
 	positiveRateCounts := make([]int, len(targetDenoms))
 	var participatingPower int64
 	for validatorIndex, vote := range votes {

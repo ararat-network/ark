@@ -134,13 +134,10 @@ func ValidateVoteExtension(
 	return rates, nil
 }
 
-// GetOracleVotes decodes the injected extended commit info from the proposal
-// and returns one Vote per validator entry. Invalid individual payloads yield
-// nil Rates and are treated like empty reports: the validator still counts
-// toward total commit power and accrues attendance eligibility on functioning
-// blocks, without making block finalisation fail. They are flagged Invalid so
-// telemetry can separate them from plain absences. Extended-commit envelope
-// errors remain fatal.
+// GetOracleVotes returns one Vote per injected commit entry. Invalid payloads
+// set Invalid with nil Rates; their validators remain in commit accounting.
+// Extended-commit envelope errors are returned to the caller.
+// See README.md, "Vote extraction" and "Participation and functioning blocks".
 func GetOracleVotes(
 	proposal [][]byte,
 	feeds oracletypes.FeedSet,

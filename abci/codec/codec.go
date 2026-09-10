@@ -13,11 +13,9 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// The vote-extension byte limit derives from the domain bounds, so the codec
-// admits exactly the payloads validation could accept and padding of any kind
-// gains nothing: duplicate-key wire entries do not fit under the limit. Every
-// constant below is consensus-relevant through VerifyVoteExtension acceptance
-// and moves in lockstep with the domain bounds it derives from.
+// Vote-extension wire limits derive from the accepted rate and target bounds.
+// These constants affect consensus acceptance; see abci/oracle/README.md,
+// "Encoding boundary", for their relationship to domain validation.
 const (
 	// rateEntryFramingBytes is the protobuf framing around one Rates map
 	// entry: entry tag+length, key tag+length, and value tag+length, each one

@@ -196,11 +196,8 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 	require.Equal(t, []bool{true, true, true}, keeper.attended)
 }
 
-// TestPreblockConsumesVoteExtensionsBeforePromotingFeeds pins the
-// consume-before-promote ordering the correctness argument depends on. If
-// promotion ran first, the tally for vote height V would validate extensions
-// against a set no validator could have seen, and every report would be
-// rejected on a version mismatch exactly at an activation height.
+// TestPreblockConsumesVoteExtensionsBeforePromotingFeeds checks that reports
+// are validated against their signing epoch before feed promotion removes it.
 func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 	const activationVoteHeight int64 = 12
 

@@ -17,13 +17,8 @@ import (
 	"github.com/ararat-network/ark/abci/voteextension"
 )
 
-// Handler is responsible primarily for:
-//  1. Filling a proposal with transactions.
-//  2. Injecting vote extensions into the proposal (if vote extensions are enabled).
-//  3. Verifying that the injected extended commit is complete and authenticated.
-//
-// The proposal handler validates that the injected commit matches consensus and
-// contains a super-majority of valid vote-extension signatures for the current block.
+// Handler wraps transaction proposal selection and validation with extended
+// commit injection, consensus matching, and signature-quorum authentication.
 type Handler struct {
 	// prepareProposalHandler fills a proposal with transactions.
 	prepareProposalHandler sdk.PrepareProposalHandler
@@ -48,12 +43,10 @@ func NewHandler(
 	}
 }
 
-// PrepareProposalHandler returns a PrepareProposalHandler that will be called
-// by base app when a new block proposal is requested. The PrepareProposalHandler
-// will first fill the proposal with transactions. Then, if vote extensions are
-// enabled, the handler will inject the extended commit info into the proposal.
-// If the protobuf-encoded extended commit exceeds the request's MaxTxBytes
-// budget, this handler will fail.
+// PrepareProposalHandler reserves extended-commit bytes before transaction
+// selection and prepends the commit to the result when extensions are enabled.
+// It fails if the commit exceeds MaxTxBytes; selector errors yield a commit-only
+// proposal when extensions are enabled.
 func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *cmtabci.RequestPrepareProposal) (resp *cmtabci.ResponsePrepareProposal, err error) {
 		start := time.Now()
@@ -146,6 +139,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 					)
 				}
 
+				// Preserve authenticated oracle reports when transaction selection fails.
 				return &cmtabci.ResponsePrepareProposal{Txs: [][]byte{extInfoBz}}, nil
 			}
 
@@ -189,7 +183,6 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 			)
 		}()
 
-		// this should never happen, but just in case
 		resp, err = func() (resp *cmtabci.ResponseProcessProposal, err error) {
 			if req == nil {
 				err = fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.ProcessProposal)

@@ -476,12 +476,8 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 			"azzz": math.LegacyNewDec(10),
 		}),
 		newTestVote(extremeVoter, 10, map[string]math.LegacyDec{
-			// Vote rates are bounded to MaxEncodedVoteRateBytes, so no
-			// transported pair can overflow a cross-rate quotient; the
-			// reachable unrepresentable case is a quotient that rounds to
-			// zero: the smallest reference report over the largest
-			// permitted target report. The overflow arm stays covered by
-			// the ballot-level cross-rate tests.
+			// Transport bounds prevent quotient overflow, but the smallest reference
+			// rate divided by the largest target rate rounds to zero.
 			"aaaa": math.LegacySmallestDec(),
 			"azzz": math.LegacyNewDecFromBigIntWithPrec(
 				new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 8*oracletypes.MaxEncodedVoteRateBytes), big.NewInt(1)),
@@ -501,13 +497,8 @@ func TestAggregateOracleVotesSkipsUnrepresentableCrossRateObservation(t *testing
 	require.Equal(t, uint64(1), keeper.attendedCounts[consKey(extremeVoter)])
 }
 
-// TestAggregateOracleVotesOmitsDerivedPriceAboveStoreBound pins the one way
-// a price can leave the bound every report is held to: the cross rate rounds
-// at eighteen decimals, and dividing the reference median by a cross that
-// rounded down lands above the largest report that produced it. Here a target
-// reported exactly at MaxExchangeRate against a reference of 1500 gives a
-// cross of ~4.4e-18, rounded to 4e-18, and a derived price of 3.75e20 —
-// above the bound, so the target is omitted rather than stored.
+// TestAggregateOracleVotesOmitsDerivedPriceAboveStoreBound checks that
+// cross-rate rounding cannot publish a price above MaxExchangeRate.
 func TestAggregateOracleVotesOmitsDerivedPriceAboveStoreBound(t *testing.T) {
 	votes := []testVote{
 		newTestVote([]byte{1}, 1, map[string]math.LegacyDec{

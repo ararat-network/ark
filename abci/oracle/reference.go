@@ -87,11 +87,8 @@ func selectReference(passing []int, ballots []ballot, thresholdPower int64) []pr
 		}
 
 		median := crossTally.weightedMedian()
-		// A derived price is held to the bound a direct report is held to.
-		// The reference median is itself a report, so it is inside the bound
-		// already; the quotient can leave it, and a price the store's
-		// consumers cannot multiply by is omitted like one they cannot
-		// represent.
+		// Cross-rate rounding can produce a price above the direct-report bound.
+		// Omit it so stored prices remain safe for consumer arithmetic.
 		price, err := decimal.Quo(referenceMedian, median)
 		if err != nil || !price.IsPositive() || price.GT(oracletypes.MaxExchangeRate) {
 			continue
@@ -107,11 +104,9 @@ func selectReference(passing []int, ballots []ballot, thresholdPower int64) []pr
 	return tallies
 }
 
-// scoreReferences ranks each passing target by raw quorum overlap. A qualifying
-// overlap is only an upper bound: checked cross-rate conversion may later
-// discard unusable observations. Source ballots are assembled in validator
-// order, so equal voter/power sequences prove that every pair has the same
-// overlap.
+// scoreReferences ranks passing targets by raw quorum overlap. Checked
+// cross-rate conversion may discard observations, so raw overlap is an upper
+// bound on usable power.
 func scoreReferences(passing []int, ballots []ballot, thresholdPower int64) []referenceScore {
 	scores := make([]referenceScore, len(passing))
 	for i, targetIndex := range passing {
@@ -123,6 +118,7 @@ func scoreReferences(passing []int, ballots []ballot, thresholdPower int64) []re
 		}
 	}
 
+	// Equal validator-ordered voter/power sequences imply equal pairwise overlap.
 	if passingBallotsShareSupport(passing, ballots) {
 		sharedPower := ballots[passing[0]].power
 		overlapPower := math.NewInt(sharedPower).MulRaw(int64(len(passing) - 1))

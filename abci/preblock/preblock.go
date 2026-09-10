@@ -56,8 +56,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 				return &sdk.ResponsePreBlock{}, fmt.Errorf("%w for %s", abcitypes.ErrNilRequest, abcimetrics.PreBlock)
 			}
 
-			// call module manager's PreBlocker first in case there is changes made on upgrades
-			// that can modify state and lead to serialisation/deserialisation issues
+			// Apply module upgrades before reading oracle state under its current schema.
 			wrappedStart := time.Now()
 			response, err = mm.PreBlock(ctx)
 			wrappedPreBlockLatency = time.Since(wrappedStart)
@@ -66,13 +65,8 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			}
 
 			if voteextension.VoteExtensionsAvailable(ctx) {
-				// Decode vote extensions and apply prices to state. This must run
-				// before AdvanceFeeds: the injected votes were signed for height
-				// req.Height-1 and validate against the feed epoch
-				// AtHeight(req.Height-1), which an advance due at req.Height folds
-				// away. Advancing first would reject every report with a version
-				// mismatch exactly at an activation height. This ordering is a
-				// consensus invariant, not an implementation detail.
+				// Consume the previous height's reports before AdvanceFeeds discards
+				// their signing epoch. See abci/README.md, "Preblock order".
 				err = abcioracle.ProcessVoteExtensions(ctx, h.oracleKeeper, req)
 				if err != nil {
 					return response, err

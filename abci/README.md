@@ -37,7 +37,11 @@ budget, and prepends the metadata exactly once. The wrapped selector never sees 
 
 `ProcessProposal` checks the injected commit against consensus last-commit information, validator flags, signatures, and
 quorum before delegating ordinary transaction validation. It does not rewrite the authenticated commit based on the
-quality of individual oracle reports. [Mempool policy](../app/mempool/README.md#admission-service-and-sdk-behaviour)
+quality of individual oracle reports. If the wrapped transaction selector fails while vote extensions are enabled,
+preparation returns a commit-only proposal so authenticated oracle reports remain available. An extended commit that
+exceeds the proposal byte budget is an error.
+
+[Mempool policy](../app/mempool/README.md#admission-service-and-sdk-behaviour)
 explains ordinary transaction service and proposal-local lane budgets after this envelope is reserved.
 
 ## Preblock order

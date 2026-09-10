@@ -53,11 +53,9 @@ func NewHandler(
 	}
 }
 
-// ExtendVoteHandler returns a handler that extends votes with oracle price
-// reports. Individual sidecar rates that fail to decode are dropped from the
-// report one denom at a time; if oracle data cannot be fetched, validated, or
-// encoded at all, the handler returns an empty vote extension to preserve
-// liveness.
+// ExtendVoteHandler builds an oracle report, omitting undecodable rates.
+// Operational failures yield an empty extension to preserve liveness; malformed
+// requests and panics return errors.
 func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 	return func(ctx sdk.Context, req *cmtabci.RequestExtendVote) (resp *cmtabci.ResponseExtendVote, err error) {
 		start := time.Now()
@@ -139,12 +137,8 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			if !ok {
 				continue
 			}
-			// The failure domain of a sidecar rate is one denom, so one
-			// undecodable or oversized rate must not abort the whole report: it
-			// is dropped exactly like an omitted target and the remaining
-			// reports still submit. The sidecar omits unpriced targets and the
-			// compact encoding admits only positive rates, so omission is the
-			// only abstention.
+			// An invalid rate omits only its denom; other rates remain reportable.
+			// Omission is the wire format's only abstention.
 			if _, rateErr := abcioracle.DecodeVoteRate(rawRate); rateErr != nil {
 				dropped = append(dropped, denom)
 				continue

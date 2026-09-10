@@ -127,6 +127,12 @@ unrepresentable, non-positive, or above `MaxExchangeRate` — the magnitude a di
 encoding. The reference median is itself a report, so only the quotient can leave that bound, and a price the
 store's consumers cannot multiply a capped quantity by is omitted like one they cannot represent.
 
+A boundary example uses a reference report of 1500 and a target report at `MaxExchangeRate`: the cross rate rounds
+from approximately `4.4e-18` to `4e-18`, yielding a derived target price of `3.75e20`, above the store bound.
+Transport-bounded inputs cannot overflow a cross-rate quotient, but a smallest-positive reference report divided by
+a largest-permitted target report can round to zero. Aggregation tests cover these cases; ballot tests also exercise
+the checked quotient overflow path.
+
 ### Accuracy Scoring
 
 Only priced tallies are accuracy-scored. A validator earns one reward target when its tally rate is inside the inclusive
