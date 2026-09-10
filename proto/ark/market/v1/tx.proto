@@ -66,11 +66,8 @@ message MsgSwap {
     (amino.dont_omitempty) = true
   ];
   string ask_denom = 3;
-  // minimum_receive is the optional minimum ask-denom coin the trader
-  // accepts; the swap fails if the final output is lower. The zero coin means
-  // the trader accepts market execution — absence is the only spelling of
-  // that intent, so a denominated zero is rejected as a probable caller bug
-  // rather than read as a second way to opt out.
+  // minimum_receive optionally bounds the final ask-denom output. The empty coin accepts market
+  // execution; a denominated zero is invalid.
   cosmos.base.v1beta1.Coin minimum_receive = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -79,8 +76,14 @@ message MsgSwap {
 
 // MsgSwapResponse defines the Msg/Swap response type.
 message MsgSwapResponse {
-  cosmos.base.v1beta1.Coin swap_coin = 1 [(gogoproto.nullable) = false];
-  cosmos.base.v1beta1.DecCoin swap_fee = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgSwapSend represents a message to swap coin and send all result coin to
@@ -96,11 +99,8 @@ message MsgSwapSend {
     (amino.dont_omitempty) = true
   ];
   string ask_denom = 4;
-  // minimum_receive is the optional minimum ask-denom coin the sender
-  // accepts; the swap fails if the final output is lower. The zero coin means
-  // the sender accepts market execution — absence is the only spelling of
-  // that intent, so a denominated zero is rejected as a probable caller bug
-  // rather than read as a second way to opt out.
+  // minimum_receive optionally bounds the final ask-denom output. The empty coin accepts market
+  // execution; a denominated zero is invalid.
   cosmos.base.v1beta1.Coin minimum_receive = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -109,8 +109,14 @@ message MsgSwapSend {
 
 // MsgSwapSendResponse defines the Msg/SwapSend response type.
 message MsgSwapSendResponse {
-  cosmos.base.v1beta1.Coin swap_coin = 1 [(gogoproto.nullable) = false];
-  cosmos.base.v1beta1.DecCoin swap_fee = 2 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin swap_coin = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.DecCoin swap_fee = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
@@ -122,12 +128,8 @@ message MsgUpdateParams {
   // overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
-  // params defines the x/market parameters to update.
-  //
-  // NOTE: All parameters must be supplied. The conversion dials are not here:
-  // pool depth, the recovery period, and the stability-spread floor are
-  // committee-delegable, so they move through MsgUpdatePolicy and never through
-  // this whole-object replacement.
+  // params replaces all Market parameters. Conversion depth, recovery period, and spread floor are
+  // separate and change only through MsgUpdatePolicy or committee policy updates.
   Params params = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -138,11 +140,8 @@ message MsgUpdateParams {
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
 
-// MsgSettle redeems a suspended asset against its governance-approved
-// settlement plan: asset to NOAH only, at the plan rate, burning the offer.
-// This is the suspended holder's exit, so it is signed by the holder rather
-// than by governance, and the plan rate never reaches ordinary routing or
-// reverse issuance.
+// MsgSettle lets a holder burn a suspended asset for NOAH at its active settlement plan rate. This
+// one-way entitlement cannot price ordinary swaps or reverse issuance.
 message MsgSettle {
   option (cosmos.msg.v1.signer) = "trader";
   option (amino.name) = "ark/market/MsgSettle";
@@ -156,14 +155,14 @@ message MsgSettle {
 
 // MsgSettleResponse defines the Msg/Settle response type.
 message MsgSettleResponse {
-  cosmos.base.v1beta1.Coin redeemed_coin = 1 [(gogoproto.nullable) = false];
+  cosmos.base.v1beta1.Coin redeemed_coin = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
-// MsgSetTobinTaxOverride creates or replaces one per-denomination Tobin
-// exception. The denomination must identify a registered asset — PENDING
-// counts, so a listing proposal can set the override before the asset ever
-// goes live — because a dangling override fails silently: the protection it
-// was written for would simply not exist on the real denomination.
+// MsgSetTobinTaxOverride creates or replaces an override for a registered asset. Registry
+// membership is required so a misspelled denomination cannot create an ineffective policy entry.
 message MsgSetTobinTaxOverride {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/market/MsgSetTobinTaxOverride";
@@ -202,14 +201,8 @@ message MsgRemoveTobinTaxOverride {
 // MsgRemoveTobinTaxOverride.
 message MsgRemoveTobinTaxOverrideResponse {}
 
-// MsgSetConversionMandate is the governance request for a complete conversion
-// committee replacement. An empty committee disables the mandate; Market
-// derives the next term on chain.
-//
-// Both bounds must be denominated in the live pool unit. A corridor in any
-// other denomination could never authorise an action, and a mandate that cannot
-// act is discovered when the committee musters — the worst moment to find out —
-// so appointment rejects it instead.
+// MsgSetConversionMandate replaces the committee appointment and derives its next term on chain. An
+// empty committee disables it. Enabled policy bounds must use the live pool denomination.
 message MsgSetConversionMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/market/MsgSetConversionMandate";
@@ -226,12 +219,8 @@ message MsgSetConversionMandate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // max_tobin_tax is the upper edge of the committee's Tobin band for this
-  // appointment; the lower edge is Params.default_tobin_tax. An enabled
-  // appointment states the cap explicitly like every other bound — zero, not
-  // omission, is how a capacity-only committee is spelled. (On the wire the
-  // two are the same bytes; the distinction binds genesis files and direct
-  // callers.)
+  // max_tobin_tax is the explicit upper bound of the committee band; Params.default_tobin_tax is
+  // its lower bound. Zero delegates no Tobin authority.
   string max_tobin_tax = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -284,17 +273,9 @@ message MsgCommitteeUpdatePolicy {
 // MsgCommitteeUpdatePolicy.
 message MsgCommitteeUpdatePolicyResponse {}
 
-// MsgCommitteeSetTobinTax creates or replaces one per-denomination Tobin
-// override as the conversion committee. The new rate must fall in
-// [Params.default_tobin_tax, mandate.max_tobin_tax] — a band with a
-// governance-owned edge at each end, the same shape as the policy corridor —
-// so the committee may widen a denomination's oracle-staleness buffer during an
-// incident and narrow it again once the incident passes, without either edge
-// moving.
-//
-// Only governance may take a denomination below the default or return it to
-// tracking the default, through MsgSetTobinTaxOverride and
-// MsgRemoveTobinTaxOverride.
+// MsgCommitteeSetTobinTax sets a registered denomination's override within
+// [Params.default_tobin_tax, mandate.max_tobin_tax]. Only governance may set below-default rates or
+// remove an override.
 message MsgCommitteeSetTobinTax {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/market/MsgCommitteeSetTobinTax";

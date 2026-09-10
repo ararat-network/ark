@@ -17,9 +17,6 @@ service Msg {
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
   // RegisterAsset registers a new governance-managed Bank asset.
   rpc RegisterAsset(MsgRegisterAsset) returns (MsgRegisterAssetResponse) {}
-  // The AmendRegistration RPC was removed with the mutable metadata it
-  // amended, and the ActivateAsset RPC with the pending status it ended;
-  // both names stay burned.
   // HaltIssuance stops new issuance for an active asset.
   rpc HaltIssuance(MsgHaltIssuance) returns (MsgHaltIssuanceResponse) {}
   // ResumeIssuance returns an issuance-halted asset to active status.
@@ -40,18 +37,10 @@ service Msg {
   // FinaliseRetirement retires an asset within its approved residual bound.
   // Retirement is terminal: there is no RPC back out of it.
   rpc FinaliseRetirement(MsgFinaliseRetirement) returns (MsgFinaliseRetirementResponse) {}
-  // The ReactivateAsset RPC was removed with the comeback it offered; the name
-  // stays burned. A retired tombstone is final, and the two reversible pairs
-  // the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
-  // SuspendAsset/RecoverAsset for distress — are what an asset that might
-  // return uses instead.
   // SetEmergencyMandate replaces or disables the emergency committee mandate.
   rpc SetEmergencyMandate(MsgSetEmergencyMandate) returns (MsgSetEmergencyMandateResponse) {}
-  // EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-  // It is the committee's only power: halting issuance contains nothing, so it
-  // stays a governance act.
-  // Suspension is a pure status move: an asset sharing the reference
-  // denomination suspends freely while the feed keeps pricing.
+  // EmergencySuspendAsset applies suspension under a live mandate. It changes asset status only,
+  // leaving the feed and protocol reference pricing intact.
   rpc EmergencySuspendAsset(MsgEmergencySuspendAsset) returns (MsgEmergencySuspendAssetResponse) {}
 }
 
@@ -87,11 +76,6 @@ message MsgRegisterAsset {
 
 // MsgRegisterAssetResponse is the response type for MsgRegisterAsset.
 message MsgRegisterAssetResponse {}
-
-// The MsgAmendRegistration and MsgAmendRegistrationResponse messages were
-// removed with the mutable metadata they carried, and MsgActivateAsset and
-// MsgActivateAssetResponse with the pending status they ended; all four names
-// stay burned.
 
 // MsgHaltIssuance immediately stops new issuance for an active asset while
 // preserving pricing, liability accounting, transfers, and redemption.
@@ -153,11 +137,8 @@ message MsgOpenSettlement {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // earliest_closing_height commits to holders that redemption stays open at
-  // least until that height. It is the only height governance states: the plan
-  // activates SettlementActivationDelayBlocks after this message executes, and
-  // this height must fall after that activation. A settlement always carries a
-  // redemption window, and WriteOffAsset is refused before it.
+  // earliest_closing_height must follow the derived activation height and commits to a redemption
+  // window. WriteOffAsset is refused before this height.
   int64 earliest_closing_height = 5 [(amino.dont_omitempty) = true];
 }
 
@@ -211,13 +192,9 @@ message MsgWriteOffAsset {
 // MsgWriteOffAssetResponse is the response type for MsgWriteOffAsset.
 message MsgWriteOffAssetResponse {}
 
-// MsgFinaliseRetirement retires a settlement-free asset. Retirement never
-// consults the protocol reference: a tombstone's feed is the feed layer's
-// concern, and the referent guard pins a referenced feed against removal.
-//
-// It is the lifecycle's only irreversible act, and it spends the denomination
-// permanently: the tombstone keeps the registry entry and the Bank metadata,
-// both of which registration refuses to collide with.
+// MsgFinaliseRetirement permanently retires an asset within its status-specific residual bound and
+// closes any settlement. Registry and Bank metadata remain, preventing denomination reuse.
+// Retirement does not remove the feed.
 message MsgFinaliseRetirement {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgFinaliseRetirement";
@@ -225,12 +202,9 @@ message MsgFinaliseRetirement {
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string denom = 2;
   uint64 expected_version = 3 [(amino.dont_omitempty) = true];
-  // max_residual_supply bounds the outstanding supply governance approves
-  // derecognizing. From ISSUANCE_HALTED, where redemption has been
-  // continuously available, it may be positive and a matching
-  // RETIREMENT_RESIDUAL record discloses the actual residual. From every
-  // other source it must be zero: positive SUSPENDED residual must go through
-  // WriteOffAsset, which names the derecognition honestly.
+  // max_residual_supply bounds derecognition from ISSUANCE_HALTED; a positive actual residual
+  // creates a RETIREMENT_RESIDUAL record. Other statuses require a zero bound. Positive SUSPENDED
+  // supply requires WriteOffAsset.
   string max_residual_supply = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -242,13 +216,6 @@ message MsgFinaliseRetirement {
 // MsgFinaliseRetirementResponse is the response type for
 // MsgFinaliseRetirement.
 message MsgFinaliseRetirementResponse {}
-
-// MsgReactivateAsset and MsgReactivateAssetResponse were removed with the
-// ReactivateAsset RPC; their names stay burned.
-
-// MsgSetReference and MsgSetReferenceResponse moved to ark.oracle.v1 with the
-// protocol reference itself, where they are MsgSetReferenceDenom; their names
-// stay burned here.
 
 // MsgSetEmergencyMandate replaces or disables the emergency committee
 // appointment. Every replacement advances the term and clears recorded per-term
@@ -269,12 +236,9 @@ message MsgSetEmergencyMandate {
 // MsgSetEmergencyMandate.
 message MsgSetEmergencyMandateResponse {}
 
-// MsgEmergencySuspendAsset applies SuspendAsset semantics under a live
-// mandate. Committee messages carry the exact current term instead of an
-// expected asset version: the term is the staleness guard, and status
-// preconditions still apply. It is a pure status move: peg failure of an asset
-// and failure of its unit's price data are different axes, so an asset sharing
-// the reference denomination suspends while the feed keeps pricing.
+// MsgEmergencySuspendAsset suspends under the exact live mandate term, with ordinary status
+// preconditions and per-term usage limits. The term guards staleness; suspension leaves the feed
+// running.
 message MsgEmergencySuspendAsset {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/asset/MsgEmergencySuspendAsset";

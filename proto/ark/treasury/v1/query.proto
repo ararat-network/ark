@@ -222,24 +222,12 @@ message QueryComputeTaxResponse {
 // QueryFundStatusRequest is the request type for Query/FundStatus.
 message QueryFundStatusRequest {}
 
-// QueryFundStatusResponse is the response type for Query/FundStatus.
-// Liability reporting is partitioned by asset lifecycle status. The response
-// always answers: each valued bucket carries what this block could price, and
-// every exclusion from it is enumerated beside it, so a partial total is never
-// silently short.
-//
-// The valuation is complete exactly when untrusted_suspended_supply and
-// stale_member_supply are both empty. written_off_exposure does not bear on it,
-// because a write-off extinguishes the obligation rather than leaving it
-// unvalued. Callers must check those two lists before reading any target below:
-// an incomplete valuation understates outstanding exposure, so every target is
-// reported as zero rather than sized off a basis known to be short.
+// QueryFundStatusResponse partitions valued liability and excluded supply. Nonempty
+// stale_member_supply or untrusted_suspended_supply marks incompleteness and zeroes reported
+// targets. Written-off exposure is derecognised and does not affect completeness.
 message QueryFundStatusResponse {
-  // What this block could value, in descending order of the rate behind it.
-  // Every liability figure is member supply converted to anoah, carried as a
-  // DecCoin because a conversion rarely lands on a whole unit; the supply lists
-  // further down stay in each member's own denomination. Fields 1 through 3 are
-  // the addends of field 4.
+  // Liability buckets are NOAH DecCoins; supply disclosures retain native denominations.
+  // Priced, settlement, and stale-priced liability sum to nominal_liability.
 
   // priced_liability values ACTIVE and ISSUANCE_HALTED supply at fresh Oracle
   // rates. It excludes any member listed in stale_member_supply.
@@ -253,37 +241,27 @@ message QueryFundStatusResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // stale_priced_liability values stale_member_supply at the last rate the
-  // Oracle stored for each denomination. It is reported apart from
-  // priced_liability because the rate behind it failed the freshness gate: good
-  // enough to keep a standing obligation in the total that redemption coverage
-  // divides by, never good enough to size a fund target on — which is why a
-  // non-empty stale_member_supply zeroes every target below. It is zero
-  // whenever that list is empty, and excludes any member the Oracle has never
-  // priced, for which no last rate exists.
+  // stale_priced_liability values stale members at their last observed rates, excluding
+  // never-priced feeds. It retains outstanding obligations in nominal liability without supporting
+  // fresh quotes or complete fund targets.
   cosmos.base.v1beta1.DecCoin stale_priced_liability = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // nominal_liability is the sum of the three above: the claimable aggregate
-  // this block could value, and the denominator redemption coverage divides by.
-  // It is always reported, so a partial total is visible rather than withheld;
-  // whether it also covers every recognised liability — which is what the
-  // targets below require — is what the exclusion lists below answer.
+  // nominal_liability sums priced, committed, and stale-priced liability before self-held netting.
+  // It remains visible when incomplete; exclusion lists identify the gaps.
   cosmos.base.v1beta1.DecCoin nominal_liability = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // self_held_supply lists the strategic Reserve's balances of members the
-  // aggregate above counts: supply inside the claimable total from which no
-  // claim can arrive, because the Reserve cannot present it for redemption and
-  // only a committee act can return it to circulation. A member outside the
-  // counted buckets — written off, retired, untrusted, or never priced —
-  // appears here no more than it appears in the total.
+  // self_held_supply lists Reserve-held members counted in nominal liability. These balances cannot
+  // reach redemption directly and are netted from flow calculations. Uncounted lifecycle or
+  // never-priced supply is excluded.
   repeated cosmos.base.v1beta1.Coin self_held_supply = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // self_held_liability values self_held_supply at exactly the rate the
   // aggregate valued it — fresh, settlement, or last known, whichever branch
@@ -293,11 +271,9 @@ message QueryFundStatusResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // net_liability is nominal_liability less self_held_liability: the claims
-  // that can actually arrive. It is what redemption coverage divides by and
-  // what the expansion waterfall sizes fund gaps against, while every bound on
-  // a committee act stays on the nominal figure — a bound must not loosen on a
-  // state the actor it bounds can reverse at will.
+  // net_liability is nominal liability minus self-held liability. Expansion gaps use it; redemption
+  // coverage adds retired value to reconstruct its pre-burn basis. Committee bounds use nominal
+  // liability because the committee can return self-held paper to circulation.
   cosmos.base.v1beta1.DecCoin net_liability = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -307,24 +283,22 @@ message QueryFundStatusResponse {
   // feed is transient, a suspension holds until settlement, a write-off is
   // final. The first two zero every target; the third does not.
 
-  // stale_member_supply is ACTIVE or ISSUANCE_HALTED supply the Oracle could
-  // not price this block: recognised liability whose feed is stale or absent,
-  // so priced_liability excludes it. Unlike the two lists below it is expected
-  // to be transient, and a returning feed moves the same supply back into the
-  // priced bucket without any lifecycle action. Because the obligation is
-  // untouched, this supply is still counted in the nominal total at its last
-  // known rate — see stale_priced_liability — rather than dropped from it.
+  // stale_member_supply lists ACTIVE or ISSUANCE_HALTED supply without fresh rates. Last-known
+  // rates contribute stale-priced liability where available; a fresh observation restores ordinary
+  // pricing without a lifecycle change.
   repeated cosmos.base.v1beta1.Coin stale_member_supply = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // untrusted_suspended_supply is SUSPENDED supply with no open settlement:
   // explicit exposure, never zero, valuable by no honest rate.
   repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 9 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // written_off_exposure is derecognised supply, disclosed but excluded from
   // recognised liability. It does not make the valuation incomplete.
@@ -333,20 +307,9 @@ message QueryFundStatusResponse {
     (amino.dont_omitempty) = true
   ];
 
-  // Each fund's recognised capital against the requirements Treasury sizes for
-  // it, one triplet per fund. Committee-operated funds report what their own
-  // operator recognises, which is not the module account balance.
-  //
-  // Every *_target is sized against nominal_liability: it is the requirement
-  // that bounds what a committee may burn or transfer, and it counts self-held
-  // paper as if already re-issued, because the committee it bounds can re-issue
-  // it at will. Every *_net_target is the same ratio against net_liability —
-  // the gap the expansion waterfall will actually fill — sitting below its
-  // nominal-sized twin by the fund's ratio times self_held_liability, so the
-  // parked paper's effect on routing is legible without the reader knowing the
-  // policy ratios. The two coincide whenever the Reserve holds none of the
-  // protocol's own paper, and every target of either basis is zero while the
-  // valuation is incomplete.
+  // Fund capital is compared with exposure-adjusted nominal *_target values for committee bounds
+  // and net *_net_target values for expansion routing. Both target families are zero when valuation
+  // is incomplete. Committee-operated funds report recognised capital, not raw custody.
 
   cosmos.base.v1beta1.Coin redemption_buffer_balance = 11 [
     (gogoproto.nullable) = false,
@@ -393,12 +356,8 @@ message QueryFundStatusResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // exposure_multiplier is what every target above was scaled by. Without it
-  // the response cannot be reconciled — no target equals its ratio times the
-  // liability beside it — so this is the bridge term between the two, on both
-  // target families. It is one whenever the risk model is inert, which is its
-  // launch configuration. The draw is not scaled by it: redemption coverage
-  // divides by nominal_liability exactly as reported.
+  // exposure_multiplier scales both target families and is one when the risk model is inert. It
+  // does not scale redemption coverage, whose basis is raw net liability plus retired value.
   string exposure_multiplier = 21 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

@@ -2671,12 +2671,8 @@ func (x *EventClaimCancelled) GetCancelledBy() ClaimAuthority {
 	return ClaimAuthority_CLAIM_AUTHORITY_UNSPECIFIED
 }
 
-// EventClaimFailed records that the chain could not pay a claim that came due,
-// releasing its reservation and ending it unpaid.
-//
-// It carries no reason. The cause is a chain-generated error, and putting one
-// in state or in a consensus-visible field would make error-message formatting
-// consensus-critical; it goes to the node log instead, where drift is harmless.
+// EventClaimFailed records terminal non-payment and reservation release. Failure details are node
+// logs only, keeping error formatting outside consensus-visible fields.
 type EventClaimFailed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -41,13 +41,9 @@ type QueryClient interface {
 	ExchangeRates(ctx context.Context, in *QueryExchangeRatesRequest, opts ...grpc.CallOption) (*QueryExchangeRatesResponse, error)
 	// Feeds returns the active feed set and scheduled transitions.
 	Feeds(ctx context.Context, in *QueryFeedsRequest, opts ...grpc.CallOption) (*QueryFeedsResponse, error)
-	// FeedReferents returns every consumer claim currently pinning a feed, as
-	// MsgRemoveFeed would see them. Returns NotFound for a denom with no active
-	// or in-flight feed.
-	//
-	// Deliberately not module_query_safe: referent descriptions are consumer-
-	// owned prose for operators, and whitelisting them for wasm and ICQ would
-	// make rewording a claim a state-machine-breaking change.
+	// FeedReferents returns removal-blocking consumer claims, or NotFound for an absent feed. It is
+	// not module_query_safe: descriptions are operator-facing prose whose wording is outside the
+	// consensus query contract.
 	FeedReferents(ctx context.Context, in *QueryFeedReferentsRequest, opts ...grpc.CallOption) (*QueryFeedReferentsResponse, error)
 	// ReferenceDenom returns the denomination whose feed is the shared protocol
 	// reference unit.
@@ -160,13 +156,9 @@ type QueryServer interface {
 	ExchangeRates(context.Context, *QueryExchangeRatesRequest) (*QueryExchangeRatesResponse, error)
 	// Feeds returns the active feed set and scheduled transitions.
 	Feeds(context.Context, *QueryFeedsRequest) (*QueryFeedsResponse, error)
-	// FeedReferents returns every consumer claim currently pinning a feed, as
-	// MsgRemoveFeed would see them. Returns NotFound for a denom with no active
-	// or in-flight feed.
-	//
-	// Deliberately not module_query_safe: referent descriptions are consumer-
-	// owned prose for operators, and whitelisting them for wasm and ICQ would
-	// make rewording a claim a state-machine-breaking change.
+	// FeedReferents returns removal-blocking consumer claims, or NotFound for an absent feed. It is
+	// not module_query_safe: descriptions are operator-facing prose whose wording is outside the
+	// consensus query contract.
 	FeedReferents(context.Context, *QueryFeedReferentsRequest) (*QueryFeedReferentsResponse, error)
 	// ReferenceDenom returns the denomination whose feed is the shared protocol
 	// reference unit.

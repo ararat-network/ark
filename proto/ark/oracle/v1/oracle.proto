@@ -40,32 +40,25 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // max_exchange_rate_age is the maximum elapsed block time since an exchange
-  // rate was last written before it is considered stale. It is the default for
-  // every denomination without an entry in max_exchange_rate_age_overrides.
+  // max_exchange_rate_age bounds elapsed block time since the last rate update for ordinary
+  // reads. Consumers using GetRateSetWithin supply their own freshness windows.
   google.protobuf.Duration max_exchange_rate_age = 7 [
     (gogoproto.nullable) = false,
     (gogoproto.stdduration) = true,
     (amino.dont_omitempty) = true
   ];
-  // functioning_block_threshold is the minimum share of total commit power that
-  // must participate before a block grades attendance. Must be at least 50
-  // percent: governance may only make grading more forgiving, never harsher,
-  // because a threshold below a majority grades blocks that a majority could
-  // not price and turns a correlated outage into mass jailing.
+  // functioning_block_threshold is the minimum participating share of commit power required to
+  // grade attendance, bounded to [0.5, 1]. Higher thresholds make grading more forgiving during
+  // correlated outages.
   string functioning_block_threshold = 8 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // participation_threshold is the minimum share of the vote-height target set
-  // a report must price with positive rates before it counts as participation,
-  // for both attendance and the functioning-block gate. Zero keeps the floor
-  // of a single positive rate. Capped at 50 percent: attendance is a deadman
-  // switch, and above a majority of targets it would become a coverage mandate
-  // that turns shared-provider gaps into correlated jailing; coverage pressure
-  // belongs to per-target rewards.
+  // participation_threshold is the positive-rate share of vote-height targets required for
+  // attendance and functioning-block power. Zero still requires one rate; the maximum is 0.5.
+  // Coverage beyond this floor is rewarded per target.
   string participation_threshold = 9 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -74,28 +67,12 @@ message Params {
   ];
 }
 
-// Per-feed staleness windows lived here until 2026-08-09. They rested on the
-// premise that how long a rate stays meaningful is a property of the feed
-// rather than of the consumer reading it, which held while every feed had one
-// consumer class. Feed sharing splits the premise in two: cadence — how often a
-// series publishes, when its market closes — is indeed a feed fact and stays
-// with the timestamps below, but tolerance — how old a rate may be and still
-// back a decision — is the consumer's risk policy, and one window cannot answer
-// for a conversion mint and a Reserve holding at once. Consumers holding a
-// window of their own now state it per request through GetRateSetWithin, each
-// verdict answered under the request's own key; every other consumer takes
-// Params.max_exchange_rate_age, which is the conversion-grade default and the
-// only window the Oracle keeps.
-
 // Feeds defines the materialised active feed set and any scheduled per-feed
 // transitions not yet activated. The feed set for a vote height is the active
 // set folded with every transition whose activation height has arrived.
 message Feeds {
-  // denoms is the sorted unique active feed set. A feed is keyed by the
-  // denomination it prices: the feed registry and the asset registry share one
-  // identifier namespace, so a feed for a listed asset is keyed by that
-  // asset's denomination and a feed priced ahead of listing is keyed by the
-  // denomination it will carry.
+  // denoms is the sorted, unique active feed set. Feeds use the denominations they price, whether
+  // or not those denominations are registered assets.
   repeated string denoms = 1;
   // version advances once per activation batch.
   uint64 version = 2 [(amino.dont_omitempty) = true];
@@ -139,11 +116,9 @@ enum FeedDirection {
   FEED_DIRECTION_REMOVE = 2;
 }
 
-// Attendance counts a validator's functioning-block presence within the
-// active attendance window. A block is eligible for a validator when it was in
-// the commit and fleet participating power reached the functioning threshold;
-// it is attended when the validator also submitted a valid report pricing at
-// least the participation-threshold share of the target set.
+// Attendance counts eligible and attended functioning blocks in the current window. A commit
+// validator is eligible when fleet participation meets the threshold and attended when its own
+// report meets the target-coverage floor.
 message Attendance {
   uint64 eligible_blocks = 1;
   uint64 attended_blocks = 2;

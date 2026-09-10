@@ -979,11 +979,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// SecurityMandate stores one governance-created, height-scoped security
-// committee appointment. An empty committee identifies a disabled mandate;
-// term still increases on replacement so previously prepared committee
-// transactions cannot become valid again. An enabled appointment holds every
-// power the module delegates — code and connectivity repair, never funds.
+// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// Empty committee disables it; every replacement advances the term.
 type SecurityMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1020,11 +1017,8 @@ func (x *SecurityMandate) GetEnvelope() *v1.Envelope {
 	return nil
 }
 
-// CommitteePlan records the upgrade plan the committee last scheduled, which
-// is how the module tells its own plan from a governance one: x/upgrade holds
-// a single plan and records no author. The record is trusted only while it
-// still matches the pending plan on both name and height, so anything stale
-// reads as "not ours".
+// CommitteePlan identifies the last committee-scheduled upgrade by name and height. It proves
+// ownership only while both match x/upgrade's pending plan.
 type CommitteePlan struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

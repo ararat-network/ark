@@ -25,11 +25,8 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// SecurityMandate stores one governance-created, height-scoped security
-// committee appointment. An empty committee identifies a disabled mandate;
-// term still increases on replacement so previously prepared committee
-// transactions cannot become valid again. An enabled appointment holds every
-// power the module delegates — code and connectivity repair, never funds.
+// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// Empty committee disables it; every replacement advances the term.
 type SecurityMandate struct {
 	// envelope carries the shared term, committee, and half-open height window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
@@ -68,11 +65,8 @@ func (m *SecurityMandate) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_SecurityMandate proto.InternalMessageInfo
 
-// CommitteePlan records the upgrade plan the committee last scheduled, which
-// is how the module tells its own plan from a governance one: x/upgrade holds
-// a single plan and records no author. The record is trusted only while it
-// still matches the pending plan on both name and height, so anything stale
-// reads as "not ours".
+// CommitteePlan identifies the last committee-scheduled upgrade by name and height. It proves
+// ownership only while both match x/upgrade's pending plan.
 type CommitteePlan struct {
 	Name   string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Height int64  `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`

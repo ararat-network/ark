@@ -24,8 +24,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// GenesisState defines the asset module's genesis state. The protocol
-// reference moved to ark.oracle.v1's genesis with the reference itself.
+// GenesisState defines Asset state. Oracle genesis owns the protocol reference denomination.
 type GenesisState struct {
 	// params carries the governance-owned module parameters.
 	Params            Params             `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`

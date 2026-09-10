@@ -31,11 +31,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Msg defines the claims module's message service.
-//
-// There is no execution message. A claim that survives its cancellation period
-// is settled by the chain in EndBlock, so payment needs no signer and cannot
-// stall on one.
+// Msg defines Claims submission, cancellation, and governance operations. Due claims settle
+// automatically in EndBlock without an execution message or signer.
 type MsgClient interface {
 	// UpdateParams updates the governance-owned claims parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
@@ -128,11 +125,8 @@ func (c *msgClient) CommitteeCancelClaim(ctx context.Context, in *MsgCommitteeCa
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
 //
-// Msg defines the claims module's message service.
-//
-// There is no execution message. A claim that survives its cancellation period
-// is settled by the chain in EndBlock, so payment needs no signer and cannot
-// stall on one.
+// Msg defines Claims submission, cancellation, and governance operations. Due claims settle
+// automatically in EndBlock without an execution message or signer.
 type MsgServer interface {
 	// UpdateParams updates the governance-owned claims parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)

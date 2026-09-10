@@ -38,11 +38,8 @@ const (
 	AssetStatus_ASSET_STATUS_UNSPECIFIED AssetStatus = 0
 	// ASSET_STATUS_ACTIVE identifies an asset available for normal policy use.
 	AssetStatus_ASSET_STATUS_ACTIVE AssetStatus = 1
-	// ASSET_STATUS_ISSUANCE_HALTED identifies an asset for which new issuance
-	// has stopped while existing supply remains priced, transferable, and
-	// redeemable. The status carries no intent: an asset winding down toward
-	// retirement and one that has just completed emergency recovery are both
-	// ISSUANCE_HALTED.
+	// ASSET_STATUS_ISSUANCE_HALTED stops new issuance while existing supply remains priced,
+	// transferable, and redeemable. Both wind-down and recovered assets use this status.
 	AssetStatus_ASSET_STATUS_ISSUANCE_HALTED AssetStatus = 2
 	// ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
 	// economic operations are disabled without erasing holder balances or
@@ -213,19 +210,9 @@ func (ResolutionKind) EnumDescriptor() ([]byte, []int) {
 
 // Params defines the parameters for the asset module.
 type Params struct {
-	// settlement_activation_delay_blocks is the distance between opening a
-	// settlement plan and the height it activates. It is the designed
-	// correction window: an activated plan commits holders to a
-	// redemption rate and cannot be closed early, so the only remedy for a
-	// mistaken plan is cancelling it before it goes live, and this delay is the
-	// room governance has to notice and pass CancelSettlement.
-	//
-	// It is governed rather than fixed because the window it has to outlast is
-	// itself governed. The value only means anything relative to how long a
-	// proposal currently takes to land, and x/gov's voting period moves without
-	// consulting x/asset — a delay that was ample at launch silently stops being
-	// a correction window at all if voting slows. Treasury's claim cancellation
-	// period is the same quantity for claims and is likewise a parameter.
+	// settlement_activation_delay_blocks is the correction window between plan opening and
+	// activation. Governance can cancel only before activation; the delay must allow time for a
+	// correcting proposal. Existing plans retain their stored activation height.
 	SettlementActivationDelayBlocks uint64 `protobuf:"varint,1,opt,name=settlement_activation_delay_blocks,json=settlementActivationDelayBlocks,proto3" json:"settlement_activation_delay_blocks,omitempty"`
 }
 
@@ -351,17 +338,11 @@ type SettlementPlan struct {
 	// redemption_rate is the positive number of NOAH paid per one unit of the
 	// settled asset, the same orientation as oracle exchange rates.
 	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
-	// activation_height is the first block height at which redemption is
-	// permitted. It is derived when the plan opens, as
-	// Params.SettlementActivationDelayBlocks past the opening height, and stored
-	// rather than recomputed on read so a later parameter change cannot move
-	// terms holders have already been shown.
+	// activation_height is the opening height plus SettlementActivationDelayBlocks. It is stored so
+	// later parameter changes cannot alter the plan's terms.
 	ActivationHeight int64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	// earliest_closing_height is the hard commitment to holders: redemption
-	// stays open at least until this height. It is mandatory, is fixed for the
-	// plan's whole life, and is read by exactly one message — WriteOffAsset,
-	// which is refused before it. Reaching it never closes settlement
-	// automatically.
+	// earliest_closing_height is the mandatory, immutable holder redemption deadline. WriteOffAsset
+	// is refused before it; reaching it does not close settlement automatically.
 	EarliestClosingHeight int64 `protobuf:"varint,4,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
 	// opened_height records the block height at which governance stored these
 	// terms.
@@ -429,33 +410,18 @@ func (m *SettlementPlan) GetOpenedHeight() int64 {
 	return 0
 }
 
-// PricedAsset is the registry's answer about one denomination: the record,
-// where the denomination has one, and the pricing verdict, which every
-// denomination has — what the protocol values it at and on whose authority, or
-// the reason nothing stands behind it. Consumers apply policy to verdicts —
-// defer, disclose, zero, route — and never re-derive the facts.
-//
-// Exactly one of source and reason is set. A denomination the registry does not
-// list — and the numeraire, which is priced by definition rather than by
-// registration — carries a verdict and no record, which is why nothing reads
-// asset without having established the denomination is a member.
-//
-// A verdict answers for the asset registry alone: a denomination priced by some
-// other authority, such as a reserve or basket feed the registry does not list,
-// is UNRECOGNISED here, which is the honest answer rather than a gap, and that
-// authority produces its own verdicts for consumers to merge.
+// PricedAsset pairs a pricing verdict with its registry record, if any. Exactly one of source and
+// reason is set. NOAH and unregistered denominations have no record; external pricing authorities
+// supply their own verdicts. See x/asset/README.md, "Consumer pricing views".
 type PricedAsset struct {
 	Asset Asset `protobuf:"bytes,1,opt,name=asset,proto3" json:"asset"`
 	// rate is unset unless the denomination is priced. Read source before acting
 	// on it: a settlement rate is a standing governance commitment, not a market
 	// quote, and the two must not be conflated.
 	Rate *cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=rate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"rate,omitempty"`
-	// last_rate is the most recent rate the Oracle stored for a denomination
-	// whose feed is currently unavailable, and is unset for every other verdict.
-	// It is evidence about supply already outstanding, not a price: it failed the
-	// freshness gate, so the verdict stays unpriced and nothing may be quoted,
-	// minted, or paid against it. Consumers that size an aggregate over standing
-	// obligations may read it; consumers that quote, mint, or pay must not.
+	// last_rate is the last observed rate for an unavailable feed and is otherwise unset. It supports
+	// aggregates over outstanding obligations only; the verdict remains unpriced and cannot support
+	// quotes, minting, or payment.
 	LastRate *cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=last_rate,json=lastRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"last_rate,omitempty"`
 	Source   PriceSource                  `protobuf:"varint,4,opt,name=source,proto3,enum=ark.asset.v1.PriceSource" json:"source,omitempty"`
 	Reason   UnpricedReason               `protobuf:"varint,5,opt,name=reason,proto3,enum=ark.asset.v1.UnpricedReason" json:"reason,omitempty"`
@@ -520,12 +486,8 @@ func (m *PricedAsset) GetReason() UnpricedReason {
 // reinterprets an earlier record.
 type ResolutionRecord struct {
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
-	// version is the asset version in effect when governance derecognised the
-	// obligation. Every derecognition is a governance act that advances the
-	// version and records the advanced value; nothing else appends a record, so
-	// there is no path that files one against an unchanged version.
-	// (denom, version) is unique, and an append is rejected rather than
-	// overwriting a record.
+	// version is the advanced asset version at governance derecognition. Records are unique by
+	// (denom, version); duplicate appends are rejected.
 	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	// resolution_height is the block height at which the record was appended.
 	ResolutionHeight  int64       `protobuf:"varint,3,opt,name=resolution_height,json=resolutionHeight,proto3" json:"resolution_height,omitempty"`
@@ -612,11 +574,8 @@ func (m *ResolutionRecord) GetKind() ResolutionKind {
 	return ResolutionKind_RESOLUTION_KIND_UNSPECIFIED
 }
 
-// EmergencyMandate stores the governance-appointed committee that may suspend
-// an asset in minutes and restore nothing. Suspension is its only power, so
-// there is no action dimension to name: containment is the whole mandate. It
-// carries exactly the shared appointment envelope; consumed per-term
-// suspensions are separate state keyed by denomination alone.
+// EmergencyMandate appoints a committee whose sole power is asset suspension. It carries the shared
+// appointment envelope; per-term suspension usage is separate state keyed by denomination.
 type EmergencyMandate struct {
 	// envelope carries the shared term, committee, and half-open height window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`

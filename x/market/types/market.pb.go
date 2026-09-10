@@ -28,12 +28,8 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// Params defines the parameters for the market module.
-//
-// The conversion dials moved to ConversionPolicy when they became
-// committee-delegable: params are replaced whole by MsgUpdateParams, so leaving
-// them here would let a governance proposal drafted from a stale copy silently
-// revert a committee's emergency resize.
+// Params contains governance-owned Market parameters. Committee-delegable conversion dials live in
+// ConversionPolicy and are unaffected by whole-object parameter updates.
 type Params struct {
 	// default_tobin_tax is the spread applied to conversion between two
 	// denominations for every asset without an override. Rates are governance
@@ -75,38 +71,18 @@ func (m *Params) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
-// ConversionPolicy is the complete set of NOAH-pair conversion dials delegated
-// to the conversion committee. Together they define one pricing curve: depth
-// and the recovery period set how much conversion the protocol absorbs before
-// the spread widens, and the floor sets what every conversion pays no matter
-// how small. This is the policy a depeg response reaches for.
-//
-// The floor lives here rather than in Params because depth-shrink is not a
-// substitute for it. The constant-product spread scales with the offer against
-// the pool, so it vanishes as the offer does: below the floor every conversion
-// pays exactly the floor, at any depth. A committee that can only tighten depth
-// can raise what a sized conversion costs while a stream of small ones keeps
-// clearing at the launch floor — which is the shape of stale-rate arbitrage.
-// Delegating both closes that gap and lets one message shrink depth and lift
-// the floor together, instead of leaving a window between two.
-//
-// The pool is denominated in the protocol reference. Its unit moves only when
-// governance re-points that reference, through RebaseBasePool, never through a
-// policy update from either entry point.
+// ConversionPolicy defines NOAH-pair depth, recovery period, and spread floor as one curve. The
+// pool uses the protocol reference unit; only reference rebasing changes that unit. See
+// x/market/README.md for policy and authority boundaries.
 type ConversionPolicy struct {
 	// base_pool defines the denomination-labelled virtual-pool depth.
 	BasePool types.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool"`
 	// pool_recovery_period is the number of blocks over which the pool delta
 	// decays back to the base depth.
 	PoolRecoveryPeriod uint64 `protobuf:"varint,2,opt,name=pool_recovery_period,json=poolRecoveryPeriod,proto3" json:"pool_recovery_period,omitempty"`
-	// min_stability_spread is the floor under the constant-product spread on
-	// every NOAH pair. It is dimensionless, so unlike depth it means the same
-	// thing before and after a reference re-point.
-	//
-	// It is also the transfer tax's floor. NOAH is untaxed and MsgSwap is
-	// exempt, so a tax rate above the floor a committee can reach — the
-	// corridor minimum, not this live value — is dodged by converting through
-	// NOAH (D81).
+	// min_stability_spread is the dimensionless floor on every NOAH-pair spread. Transfer tax is
+	// bounded by the reachable corridor floor so routing untaxed swaps through NOAH cannot evade a
+	// higher transfer rate.
 	MinStabilitySpread cosmossdk_io_math.LegacyDec `protobuf:"bytes,3,opt,name=min_stability_spread,json=minStabilitySpread,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_stability_spread"`
 }
 
@@ -157,57 +133,17 @@ func (m *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 	return 0
 }
 
-// ConversionMandate stores one governance-created, bounded committee
-// appointment over conversion policy: a corridor over ConversionPolicy and a
-// cap on Tobin raises. An empty committee identifies a disabled mandate; term
-// still increases on replacement so previously prepared committee transactions
-// cannot become valid again.
-//
-// The corridor bounds every field of ConversionPolicy, including the spread
-// floor, and both edges are inclusive. Direction is governance's to choose
-// rather than the type's: appointing a minimum equal to the live floor
-// delegates a raise-only power, and equal bounds pin a field outright. That is
-// strictly more expressive than a hardcoded ratchet, and it is available
-// because the corridor already delegates friction in both directions — raising
-// depth lowers the spread a sized conversion pays just as lowering the floor
-// does.
-//
-// The bounds are denominated in the pool unit that was live when governance
-// appointed the committee. A reference re-pointing leaves them untouched, which
-// strands the mandate until governance re-appoints it: converting a delegated
-// corridor at one instant's rate would produce bounds no proposal ever
-// contained, so the appointment fails closed instead. The floor strands with
-// the rest even though it carries no unit, and that is deliberate: what floor
-// is prudent depends on how deep the pool is, so a re-denomination is exactly
-// when both halves of the curve want re-reviewing together. Tobin power is the
-// deliberate exception, because a per-denomination buffer has nothing to do
-// with the pool's unit.
+// ConversionMandate appoints a committee within inclusive policy bounds and a Tobin cap.
+// Replacement advances the term; an empty committee disables it. Policy authority requires corridor
+// and pool units to match; Tobin authority is independent. See x/market/README.md.
 type ConversionMandate struct {
 	// envelope carries the shared term, committee, and half-open height window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
 	MinimumPolicy    ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy"`
 	MaximumPolicy    ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy"`
-	// max_tobin_tax is the upper edge of the band the committee may set any
-	// registered denomination's Tobin rate within. The lower edge is
-	// Params.default_tobin_tax, so governance owns both ends exactly as it owns
-	// both ends of the policy corridor, and the committee moves freely between
-	// them — including back down, which is what lets it retire its own emergency
-	// rate without waiting for a proposal.
-	//
-	// The band's floor is the default rather than the denomination's current
-	// rate, which means the committee can lower a sparse override governance set
-	// above the default. That is deliberate: the two writers share one override
-	// map and the chain cannot tell whose rate an entry is, so a floor at the
-	// current rate does not protect governance's overrides — it just makes every
-	// committee action permanent until a proposal lands. Naming the default
-	// instead keeps the committee inside a band governance chose, and leaves it
-	// able to undo itself. Returning a denomination to tracking the default,
-	// rather than pinning it at that value, stays governance-only through
-	// RemoveTobinTaxOverride.
-	//
-	// Zero delegates no Tobin power, which keeps a capacity-only committee
-	// expressible and is the appointment to reach for when this band is not
-	// wanted at all.
+	// max_tobin_tax caps committee rates above Params.default_tobin_tax, including changes to
+	// governance-written overrides. Zero disables Tobin authority. Only governance removes an
+	// override to resume tracking the default.
 	MaxTobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=max_tobin_tax,json=maxTobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"max_tobin_tax"`
 }
 
@@ -258,11 +194,8 @@ func (m *ConversionMandate) GetMaximumPolicy() ConversionPolicy {
 	return ConversionPolicy{}
 }
 
-// TobinTaxOverride is one sparse per-denomination exception to the default
-// Tobin rate. Overrides exist for markets whose plausible oracle error between
-// updates exceeds the default — an illiquid or gap-prone listing warrants a
-// raise, because the Tobin tax is the buffer against oracle-staleness
-// arbitrage. They are policy annotations on members, never membership.
+// TobinTaxOverride is a sparse exception to the default rate for a registered denomination,
+// providing an asset-specific oracle-staleness buffer. It does not establish membership.
 type TobinTaxOverride struct {
 	Denom    string                      `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	TobinTax cosmossdk_io_math.LegacyDec `protobuf:"bytes,2,opt,name=tobin_tax,json=tobinTax,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"tobin_tax"`

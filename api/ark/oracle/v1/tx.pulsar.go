@@ -3543,12 +3543,8 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgAddFeed schedules one feed addition.
-//
-// The message is declarative: it says what the feed set should be, not what to
-// change. A denom already active or already scheduled to join is not an error —
-// membership is simply satisfied — so re-sending it is how governance
-// re-approves a feed.
+// MsgAddFeed schedules membership in the active feed set. Already active or scheduled additions are
+// idempotent.
 type MsgAddFeed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3698,11 +3694,8 @@ func (*MsgRemoveFeedResponse) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
-// MsgSetReferenceDenom re-points the shared protocol reference denomination.
-// Changing a non-empty reference denom rebases Market and Treasury
-// reference-unit state atomically in the same transaction. Clearing a
-// configured reference denom is rejected: consumers hold state denominated in
-// it.
+// MsgSetReferenceDenom changes the shared reference and atomically rebases Market and Treasury
+// state. An established reference cannot be cleared.
 type MsgSetReferenceDenom struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3711,21 +3704,9 @@ type MsgSetReferenceDenom struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// reference_denom keys the feed the reference unit is priced from.
 	ReferenceDenom string `protobuf:"bytes,2,opt,name=reference_denom,json=referenceDenom,proto3" json:"reference_denom,omitempty"`
-	// outgoing_rate overrides the rate the outgoing reference denom is converted
-	// out of, in NOAH per one unit of that denomination — the same orientation
-	// as every oracle rate. Absent means price the outgoing denomination like any
-	// other, under the ordinary freshness rule, which is the ordinary path for
-	// adopting a better reference while both feeds are healthy.
-	//
-	// Two situations need it, and both are the emergency this message exists
-	// for. A reference denom the chain has never priced cannot be converted out
-	// of at all, which leaves the pool denominated in a unit no swap can read and
-	// no proposal can move. And a reference denom whose feed has failed carries
-	// only a last-observed rate the freshness rule now rejects, so the rebase has
-	// nothing to convert at. Supplying the rate drops the outgoing denomination
-	// from the priced set entirely rather than filling in behind a failed read:
-	// the conversion becomes something governance states and votes on, instead
-	// of a number inherited from a feed nobody trusts.
+	// outgoing_rate optionally supplies NOAH per outgoing-reference unit, replacing its Oracle read
+	// entirely. Absent or zero uses the ordinary fresh rate. An explicit rate permits rebasing from
+	// an unpriced or stale outgoing feed; the successor still requires fresh pricing.
 	OutgoingRate string `protobuf:"bytes,3,opt,name=outgoing_rate,json=outgoingRate,proto3" json:"outgoing_rate,omitempty"`
 }
 

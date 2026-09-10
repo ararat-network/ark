@@ -30,19 +30,9 @@ message Params {
   // reward_funding_window initialises each new funding countdown.
   uint64 reward_funding_window = 3 [(amino.dont_omitempty) = true];
 
-  // The exposure multiplier's machinery (D72): the instrument that measures
-  // risk, the cadence it runs on, and the rails bounding how far and how fast
-  // the response may move. The three indicator weights it serves are
-  // EconomicPolicy, because those are stance and these are not — a decay
-  // defines what the series means and a series folded under one memory is not
-  // recoverable by restoring the old value, while the cap and the step are the
-  // bounds a delegated weight is safe inside, so handing them to the same
-  // holder would defeat them.
-  //
-  // Each bound is a domain cap in Validate, not a projection over live state:
-  // the multiplier is folded and applied inside block hooks, where a checked
-  // arithmetic error and a panic are the same outcome, so the defence is
-  // refusing the value at the write.
+  // Exposure sampling cadence, decay, cap, and step limits are governance parameters; indicator
+  // weights belong to EconomicPolicy. Domain validation bounds block-hook arithmetic and constrains
+  // delegated policy. See x/treasury/README.md.
 
   // volatility_decay is the per-block EWMA retention for the variance
   // series, in [0, 1). A value at or above one would never forget a sample.
@@ -115,14 +105,9 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // transfer_tax_rate is the share of every taxable stable transfer charged
-  // to the fee payer, in [0, 1]. Zero disables the tax without touching the
-  // cap map (D44). Governance-owned rather than a committee lever because
-  // D78 makes it part of the fee every wallet signs: a raise refuses every
-  // in-flight transfer, so it moves only behind a voting period (D80).
-  //
-  // Held at or below the conversion spread floor a committee can reach, or
-  // converting through untaxed NOAH costs less than paying it (D81).
+  // transfer_tax_rate is the governance-set taxable transfer share in [0, 1]; zero disables tax
+  // without clearing factors. It cannot exceed the reachable conversion spread floor, preventing
+  // untaxed NOAH routing from bypassing a higher transfer charge.
   string transfer_tax_rate = 12 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -178,23 +163,16 @@ message ExposureState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // flow_ratio is the flow indicator behind the last applied update:
-  // flow_pressure over the net liability that update sized against. Kept
-  // beside liability_ratio because neither survives in the live series — the
-  // net liability both divided by has since moved. Zero when that update
-  // found no positive net liability.
+  // flow_ratio stores the last refresh's flow pressure divided by its net liability basis. It is
+  // zero for a non-positive basis and remains separate from continuously changing samples.
   string flow_ratio = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // last_refresh_height is the block liability_ratio, flow_ratio, and
-  // multiplier were computed at, and the only thing separating them from the
-  // live series in fields 1-3. Zero means no refresh has been applied yet. It
-  // is chain-relative: an exported state carries the old chain's height, so a
-  // reader comparing it against a restarted chain sees a refresh in the future
-  // rather than a stale one.
+  // last_refresh_height identifies the block that produced liability_ratio, flow_ratio, and
+  // multiplier. Zero means no refresh. Continuation exports preserve this absolute height.
   uint64 last_refresh_height = 7 [(amino.dont_omitempty) = true];
 }
 
@@ -225,29 +203,21 @@ message EconomicPolicy {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string insurance_target_ratio = 7 [
+  string insurance_target_ratio = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
 
-  // The exposure multiplier's three indicator weights (D72). They sit here
-  // rather than in Params because each states how much extra capital a unit of
-  // risk should demand, which is the same kind of lever as the three target
-  // ratios above and modifies exactly them. Zeroing one switches its indicator
-  // off and the multiplier decays back within hours, so the whole set is as
-  // reversible as the ratios it scales. The instrument behind them — the decay
-  // windows, the cap, the step limit, the cadence — stays in Params, which is
-  // what bounds how far and how fast this delegation can move anything.
-  //
-  // Every weight is zero in the disabled launch policy, which pins the
-  // multiplier at one.
+  // Exposure weights set extra capital demand per risk indicator. Params owns the sampling
+  // instrument and movement bounds. Zero launch weights keep the multiplier at one; disabled
+  // indicators cease contributing to the target.
 
   // liability_ratio_weight scales net liability over circulating NOAH: the
   // dilution term, and the one indicator that states directly how reflexive a
   // redemption is.
-  string liability_ratio_weight = 8 [
+  string liability_ratio_weight = 6 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -255,14 +225,14 @@ message EconomicPolicy {
   ];
   // volatility_weight scales annualised realised volatility of the protocol
   // reference rate.
-  string volatility_weight = 9 [
+  string volatility_weight = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
   // flow_weight scales redemption flow pressure as a share of net liability.
-  string flow_weight = 10 [
+  string flow_weight = 8 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -329,12 +299,9 @@ message TaxCap {
   ];
 }
 
-// ConversionFactor is one denomination's stored cross rate from the protocol
-// reference unit — base units of the denomination per one base unit of the
-// reference — refreshed every block the oracle can serve it and kept at its
-// last derived value when it cannot. Presence of an entry is what makes a
-// denomination taxable; the per-denomination tax cap is derived from it at
-// read time as reference_tax_cap × factor.
+// ConversionFactor stores denomination units per reference unit. Fresh observations refresh it;
+// unavailable rates retain its last value. Tax caps derive as reference_tax_cap * factor for
+// eligible members; NOAH factors support gas pricing but never taxation.
 message ConversionFactor {
   string denom = 1;
   // factor is strictly positive: an underivable arrival is seeded at one,

@@ -7,11 +7,8 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/security/types";
 
-// SecurityMandate stores one governance-created, height-scoped security
-// committee appointment. An empty committee identifies a disabled mandate;
-// term still increases on replacement so previously prepared committee
-// transactions cannot become valid again. An enabled appointment holds every
-// power the module delegates — code and connectivity repair, never funds.
+// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// Empty committee disables it; every replacement advances the term.
 message SecurityMandate {
   // envelope carries the shared term, committee, and half-open height window.
   ark.mandate.v1.Envelope envelope = 1 [
@@ -21,11 +18,8 @@ message SecurityMandate {
   ];
 }
 
-// CommitteePlan records the upgrade plan the committee last scheduled, which
-// is how the module tells its own plan from a governance one: x/upgrade holds
-// a single plan and records no author. The record is trusted only while it
-// still matches the pending plan on both name and height, so anything stale
-// reads as "not ours".
+// CommitteePlan identifies the last committee-scheduled upgrade by name and height. It proves
+// ownership only while both match x/upgrade's pending plan.
 message CommitteePlan {
   string name = 1;
   int64 height = 2 [(amino.dont_omitempty) = true];

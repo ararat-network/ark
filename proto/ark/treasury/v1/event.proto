@@ -10,11 +10,8 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/treasury/types";
 
-// EventConversionFactorsRefreshed reports the factors a write pass changed —
-// the per-block refresh, or the reference re-point's rescale. It carries
-// changed values only, unlike its per-pass predecessor: the refresh runs
-// every block, so a re-derivation to the held value is the steady state and
-// reporting it would be constant noise.
+// EventConversionFactorsRefreshed reports only factors changed by a block refresh or reference
+// rebase. Unchanged derivations emit no entries.
 message EventConversionFactorsRefreshed {
   repeated ConversionFactor conversion_factors = 1 [
     (gogoproto.nullable) = false,
@@ -71,27 +68,24 @@ message EventUnpricedTransferTaxRouted {
   repeated cosmos.base.v1beta1.Coin moved = 1 [
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
   ];
   repeated cosmos.base.v1beta1.Coin deferred = 2 [
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
     (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins"
   ];
 }
 
-// EventLiabilityIncomplete discloses a liability valuation that could not
-// cover every recognised liability, and is emitted only in that degraded
-// state. At least one of the two supply lists below is non-empty and is the
-// reason. Conversion settlement emits it once for the block's own valuation,
-// and a committee bound sized on the degraded aggregate emits it again inside
-// the transaction that acted on it, so a block can carry several.
+// EventLiabilityIncomplete discloses stale member or untrusted suspended supply. Conversion
+// settlement emits it for a degraded valuation; committee actions using degraded bounds may emit
+// additional events in the same block.
 message EventLiabilityIncomplete {
-  // claimable_liability is the aggregate that can currently redeem, in anoah.
-  // It is the denominator redemption coverage divides by, and the basis a
-  // committee transfer into an underfunded fund is bounded by. What it does
-  // not support is sizing a bound on destroying capital, which is withheld
-  // entirely while this fires.
+  // claimable_liability is the valued nominal aggregate in NOAH, before self-held netting. It can
+  // bound fund refills, but incomplete valuation cannot authorise capital destruction. Redemption
+  // coverage separately uses net liability plus retired value.
   cosmos.base.v1beta1.DecCoin claimable_liability = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -102,31 +96,22 @@ message EventLiabilityIncomplete {
   repeated cosmos.base.v1beta1.Coin stale_member_supply = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // untrusted_suspended_supply is SUSPENDED supply with no settlement plan,
   // valuable by no honest rate and so outside the aggregate entirely.
   repeated cosmos.base.v1beta1.Coin untrusted_suspended_supply = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (amino.encoding) = "legacy_coins"
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 }
 
-// EventExpansionAllocated records one block's realised expansion allocation,
-// emitted once from conversion settlement in Market's EndBlocker. Every figure
-// is an aggregate over the block's expansions: their principal is placed
-// together against one liability valuation, so no per-conversion split exists
-// to report, and the individual conversions are visible as Market swap events.
-//
-// Valuation completeness is not carried here. Settlement discloses a degraded
-// valuation through EventLiabilityIncomplete before it allocates, so the same
-// block already says whether these credits were sized against targets at all.
-//
-// The credits and the overflow burn sum to the block's gross expansion offer,
-// spread and dust included: nothing burns in the conversion itself (D6), and
-// Market's swap event discloses each conversion's spread in the output
-// denomination.
+// EventExpansionAllocated reports the block's realised allocation. Credits plus overflow burn equal
+// gross expansion offers, including spread and dust. Market swap events describe individual trades;
+// EventLiabilityIncomplete separately discloses degraded valuation.
 message EventExpansionAllocated {
   string denom = 1;
   string redemption_buffer_credit = 2 [
@@ -155,11 +140,8 @@ message EventExpansionAllocated {
   ];
 }
 
-// EventRedemptionBufferDrawn records one block's redemption-buffer draw,
-// emitted once from conversion settlement. payment is the aggregate the Buffer
-// funded across every redemption in the block, sized by one coverage ratio; it
-// is paid to Market and burned there against output already minted, rather
-// than paid to any trader.
+// EventRedemptionBufferDrawn reports aggregate block coverage. The Buffer pays Market, which burns
+// it against NOAH already minted to traders; no trader receives this transfer directly.
 message EventRedemptionBufferDrawn {
   string denom = 1;
   string payment = 2 [
@@ -170,16 +152,8 @@ message EventRedemptionBufferDrawn {
   ];
 }
 
-// EventExposureRefreshed records one completed refresh of the exposure
-// multiplier, with every input behind it. It is emitted per refresh rather than
-// per change — a refresh that leaves the multiplier where it was still says the
-// indicators were read and what they said — and never per sample, since
-// sampling runs every block and would bury the periods that moved the number.
-//
-// uncapped_multiplier is the composite before the step limit and the cap, so an
-// operator can see how hard the guardrails are binding — a multiplier sitting
-// at the cap for many periods reads very differently from one that arrived
-// there once.
+// EventExposureRefreshed reports every completed multiplier refresh, even if unchanged, but not
+// individual samples. uncapped_multiplier exposes demand before step and cap limits.
 message EventExposureRefreshed {
   string previous_multiplier = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",

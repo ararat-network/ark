@@ -2072,11 +2072,9 @@ func (x *Params) GetClaimCancellationPeriodBlocks() uint64 {
 	return 0
 }
 
-// ClaimsMandate stores one governance-created, height-scoped Claims committee
-// appointment and the fixed gross claim limit delegated to that committee for
-// the term. An empty committee identifies a disabled mandate; term still
-// increases on replacement so old committee transactions cannot become valid
-// again.
+// ClaimsMandate appoints a height-scoped committee with a fixed gross term allowance. An empty
+// committee disables it; every replacement advances the term to invalidate older committee
+// transactions.
 type ClaimsMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

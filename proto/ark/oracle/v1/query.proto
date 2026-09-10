@@ -30,13 +30,9 @@ service Query {
     option (google.api.http).get = "/ark/oracle/v1/feeds";
   }
 
-  // FeedReferents returns every consumer claim currently pinning a feed, as
-  // MsgRemoveFeed would see them. Returns NotFound for a denom with no active
-  // or in-flight feed.
-  //
-  // Deliberately not module_query_safe: referent descriptions are consumer-
-  // owned prose for operators, and whitelisting them for wasm and ICQ would
-  // make rewording a claim a state-machine-breaking change.
+  // FeedReferents returns removal-blocking consumer claims, or NotFound for an absent feed. It is
+  // not module_query_safe: descriptions are operator-facing prose whose wording is outside the
+  // consensus query contract.
   rpc FeedReferents(QueryFeedReferentsRequest) returns (QueryFeedReferentsResponse) {
     option (google.api.http).get = "/ark/oracle/v1/feeds/{denom}/referents";
   }

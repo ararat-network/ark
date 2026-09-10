@@ -525,11 +525,8 @@ type MsgOpenSettlement struct {
 	// redemption_rate is the positive number of NOAH paid per one unit of the
 	// settled asset, the same orientation as oracle exchange rates.
 	RedemptionRate cosmossdk_io_math.LegacyDec `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"redemption_rate"`
-	// earliest_closing_height commits to holders that redemption stays open at
-	// least until that height. It is the only height governance states: the plan
-	// activates SettlementActivationDelayBlocks after this message executes, and
-	// this height must fall after that activation. A settlement always carries a
-	// redemption window, and WriteOffAsset is refused before it.
+	// earliest_closing_height must follow the derived activation height and commits to a redemption
+	// window. WriteOffAsset is refused before this height.
 	EarliestClosingHeight int64 `protobuf:"varint,5,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
 }
 
@@ -933,23 +930,16 @@ func (m *MsgWriteOffAssetResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgWriteOffAssetResponse proto.InternalMessageInfo
 
-// MsgFinaliseRetirement retires a settlement-free asset. Retirement never
-// consults the protocol reference: a tombstone's feed is the feed layer's
-// concern, and the referent guard pins a referenced feed against removal.
-//
-// It is the lifecycle's only irreversible act, and it spends the denomination
-// permanently: the tombstone keeps the registry entry and the Bank metadata,
-// both of which registration refuses to collide with.
+// MsgFinaliseRetirement permanently retires an asset within its status-specific residual bound and
+// closes any settlement. Registry and Bank metadata remain, preventing denomination reuse.
+// Retirement does not remove the feed.
 type MsgFinaliseRetirement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// max_residual_supply bounds the outstanding supply governance approves
-	// derecognizing. From ISSUANCE_HALTED, where redemption has been
-	// continuously available, it may be positive and a matching
-	// RETIREMENT_RESIDUAL record discloses the actual residual. From every
-	// other source it must be zero: positive SUSPENDED residual must go through
-	// WriteOffAsset, which names the derecognition honestly.
+	// max_residual_supply bounds derecognition from ISSUANCE_HALTED; a positive actual residual
+	// creates a RETIREMENT_RESIDUAL record. Other statuses require a zero bound. Positive SUSPENDED
+	// supply requires WriteOffAsset.
 	MaxResidualSupply cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=max_residual_supply,json=maxResidualSupply,proto3,customtype=cosmossdk.io/math.Int" json:"max_residual_supply"`
 }
 
@@ -1156,12 +1146,9 @@ func (m *MsgSetEmergencyMandateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgSetEmergencyMandateResponse proto.InternalMessageInfo
 
-// MsgEmergencySuspendAsset applies SuspendAsset semantics under a live
-// mandate. Committee messages carry the exact current term instead of an
-// expected asset version: the term is the staleness guard, and status
-// preconditions still apply. It is a pure status move: peg failure of an asset
-// and failure of its unit's price data are different axes, so an asset sharing
-// the reference denomination suspends while the feed keeps pricing.
+// MsgEmergencySuspendAsset suspends under the exact live mandate term, with ordinary status
+// preconditions and per-term usage limits. The term guards staleness; suspension leaves the feed
+// running.
 type MsgEmergencySuspendAsset struct {
 	Committee    string `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
 	Denom        string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
@@ -1380,9 +1367,6 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error)
-	// The AmendRegistration RPC was removed with the mutable metadata it
-	// amended, and the ActivateAsset RPC with the pending status it ended;
-	// both names stay burned.
 	// HaltIssuance stops new issuance for an active asset.
 	HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error)
 	// ResumeIssuance returns an issuance-halted asset to active status.
@@ -1403,18 +1387,10 @@ type MsgClient interface {
 	// FinaliseRetirement retires an asset within its approved residual bound.
 	// Retirement is terminal: there is no RPC back out of it.
 	FinaliseRetirement(ctx context.Context, in *MsgFinaliseRetirement, opts ...grpc.CallOption) (*MsgFinaliseRetirementResponse, error)
-	// The ReactivateAsset RPC was removed with the comeback it offered; the name
-	// stays burned. A retired tombstone is final, and the two reversible pairs
-	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
-	// SuspendAsset/RecoverAsset for distress — are what an asset that might
-	// return uses instead.
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error)
-	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the committee's only power: halting issuance contains nothing, so it
-	// stays a governance act.
-	// Suspension is a pure status move: an asset sharing the reference
-	// denomination suspends freely while the feed keeps pricing.
+	// EmergencySuspendAsset applies suspension under a live mandate. It changes asset status only,
+	// leaving the feed and protocol reference pricing intact.
 	EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error)
 }
 
@@ -1540,9 +1516,6 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(context.Context, *MsgRegisterAsset) (*MsgRegisterAssetResponse, error)
-	// The AmendRegistration RPC was removed with the mutable metadata it
-	// amended, and the ActivateAsset RPC with the pending status it ended;
-	// both names stay burned.
 	// HaltIssuance stops new issuance for an active asset.
 	HaltIssuance(context.Context, *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error)
 	// ResumeIssuance returns an issuance-halted asset to active status.
@@ -1563,18 +1536,10 @@ type MsgServer interface {
 	// FinaliseRetirement retires an asset within its approved residual bound.
 	// Retirement is terminal: there is no RPC back out of it.
 	FinaliseRetirement(context.Context, *MsgFinaliseRetirement) (*MsgFinaliseRetirementResponse, error)
-	// The ReactivateAsset RPC was removed with the comeback it offered; the name
-	// stays burned. A retired tombstone is final, and the two reversible pairs
-	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
-	// SuspendAsset/RecoverAsset for distress — are what an asset that might
-	// return uses instead.
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error)
-	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the committee's only power: halting issuance contains nothing, so it
-	// stays a governance act.
-	// Suspension is a pure status move: an asset sharing the reference
-	// denomination suspends freely while the feed keeps pricing.
+	// EmergencySuspendAsset applies suspension under a live mandate. It changes asset status only,
+	// leaving the feed and protocol reference pricing intact.
 	EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error)
 }
 

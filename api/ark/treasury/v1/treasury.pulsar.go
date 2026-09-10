@@ -2374,28 +2374,28 @@ func (x *fastReflection_EconomicPolicy) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.FlowWeight)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FlowWeight)))
 			i--
-			dAtA[i] = 0x52
+			dAtA[i] = 0x42
 		}
 		if len(x.VolatilityWeight) > 0 {
 			i -= len(x.VolatilityWeight)
 			copy(dAtA[i:], x.VolatilityWeight)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.VolatilityWeight)))
 			i--
-			dAtA[i] = 0x4a
+			dAtA[i] = 0x3a
 		}
 		if len(x.LiabilityRatioWeight) > 0 {
 			i -= len(x.LiabilityRatioWeight)
 			copy(dAtA[i:], x.LiabilityRatioWeight)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.LiabilityRatioWeight)))
 			i--
-			dAtA[i] = 0x42
+			dAtA[i] = 0x32
 		}
 		if len(x.InsuranceTargetRatio) > 0 {
 			i -= len(x.InsuranceTargetRatio)
 			copy(dAtA[i:], x.InsuranceTargetRatio)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.InsuranceTargetRatio)))
 			i--
-			dAtA[i] = 0x3a
+			dAtA[i] = 0x2a
 		}
 		if len(x.StrategicReserveTargetRatio) > 0 {
 			i -= len(x.StrategicReserveTargetRatio)
@@ -2602,7 +2602,7 @@ func (x *fastReflection_EconomicPolicy) ProtoMethods() *protoiface.Methods {
 				}
 				x.StrategicReserveTargetRatio = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 7:
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field InsuranceTargetRatio", wireType)
 				}
@@ -2634,7 +2634,7 @@ func (x *fastReflection_EconomicPolicy) ProtoMethods() *protoiface.Methods {
 				}
 				x.InsuranceTargetRatio = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 8:
+			case 6:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LiabilityRatioWeight", wireType)
 				}
@@ -2666,7 +2666,7 @@ func (x *fastReflection_EconomicPolicy) ProtoMethods() *protoiface.Methods {
 				}
 				x.LiabilityRatioWeight = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 9:
+			case 7:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VolatilityWeight", wireType)
 				}
@@ -2698,7 +2698,7 @@ func (x *fastReflection_EconomicPolicy) ProtoMethods() *protoiface.Methods {
 				}
 				x.VolatilityWeight = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 10:
+			case 8:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FlowWeight", wireType)
 				}
@@ -6045,14 +6045,9 @@ type Params struct {
 	// reference_denom base units per gas unit. Positive: a zero floor would
 	// let sustained empty blocks decay gas to free.
 	MinBaseGasPrice string `protobuf:"bytes,11,opt,name=min_base_gas_price,json=minBaseGasPrice,proto3" json:"min_base_gas_price,omitempty"`
-	// transfer_tax_rate is the share of every taxable stable transfer charged
-	// to the fee payer, in [0, 1]. Zero disables the tax without touching the
-	// cap map (D44). Governance-owned rather than a committee lever because
-	// D78 makes it part of the fee every wallet signs: a raise refuses every
-	// in-flight transfer, so it moves only behind a voting period (D80).
-	//
-	// Held at or below the conversion spread floor a committee can reach, or
-	// converting through untaxed NOAH costs less than paying it (D81).
+	// transfer_tax_rate is the governance-set taxable transfer share in [0, 1]; zero disables tax
+	// without clearing factors. It cannot exceed the reachable conversion spread floor, preventing
+	// untaxed NOAH routing from bypassing a higher transfer charge.
 	TransferTaxRate string `protobuf:"bytes,12,opt,name=transfer_tax_rate,json=transferTaxRate,proto3" json:"transfer_tax_rate,omitempty"`
 }
 
@@ -6186,18 +6181,11 @@ type ExposureState struct {
 	LiabilityRatio string `protobuf:"bytes,4,opt,name=liability_ratio,json=liabilityRatio,proto3" json:"liability_ratio,omitempty"`
 	// multiplier is what target consumers currently scale by, at least one.
 	Multiplier string `protobuf:"bytes,5,opt,name=multiplier,proto3" json:"multiplier,omitempty"`
-	// flow_ratio is the flow indicator behind the last applied update:
-	// flow_pressure over the net liability that update sized against. Kept
-	// beside liability_ratio because neither survives in the live series — the
-	// net liability both divided by has since moved. Zero when that update
-	// found no positive net liability.
+	// flow_ratio stores the last refresh's flow pressure divided by its net liability basis. It is
+	// zero for a non-positive basis and remains separate from continuously changing samples.
 	FlowRatio string `protobuf:"bytes,6,opt,name=flow_ratio,json=flowRatio,proto3" json:"flow_ratio,omitempty"`
-	// last_refresh_height is the block liability_ratio, flow_ratio, and
-	// multiplier were computed at, and the only thing separating them from the
-	// live series in fields 1-3. Zero means no refresh has been applied yet. It
-	// is chain-relative: an exported state carries the old chain's height, so a
-	// reader comparing it against a restarted chain sees a refresh in the future
-	// rather than a stale one.
+	// last_refresh_height identifies the block that produced liability_ratio, flow_ratio, and
+	// multiplier. Zero means no refresh. Continuation exports preserve this absolute height.
 	LastRefreshHeight uint64 `protobuf:"varint,7,opt,name=last_refresh_height,json=lastRefreshHeight,proto3" json:"last_refresh_height,omitempty"`
 }
 
@@ -6281,16 +6269,16 @@ type EconomicPolicy struct {
 	OracleBlockRewardTarget     string `protobuf:"bytes,2,opt,name=oracle_block_reward_target,json=oracleBlockRewardTarget,proto3" json:"oracle_block_reward_target,omitempty"`
 	RedemptionBufferTargetRatio string `protobuf:"bytes,3,opt,name=redemption_buffer_target_ratio,json=redemptionBufferTargetRatio,proto3" json:"redemption_buffer_target_ratio,omitempty"`
 	StrategicReserveTargetRatio string `protobuf:"bytes,4,opt,name=strategic_reserve_target_ratio,json=strategicReserveTargetRatio,proto3" json:"strategic_reserve_target_ratio,omitempty"`
-	InsuranceTargetRatio        string `protobuf:"bytes,7,opt,name=insurance_target_ratio,json=insuranceTargetRatio,proto3" json:"insurance_target_ratio,omitempty"`
+	InsuranceTargetRatio        string `protobuf:"bytes,5,opt,name=insurance_target_ratio,json=insuranceTargetRatio,proto3" json:"insurance_target_ratio,omitempty"`
 	// liability_ratio_weight scales net liability over circulating NOAH: the
 	// dilution term, and the one indicator that states directly how reflexive a
 	// redemption is.
-	LiabilityRatioWeight string `protobuf:"bytes,8,opt,name=liability_ratio_weight,json=liabilityRatioWeight,proto3" json:"liability_ratio_weight,omitempty"`
+	LiabilityRatioWeight string `protobuf:"bytes,6,opt,name=liability_ratio_weight,json=liabilityRatioWeight,proto3" json:"liability_ratio_weight,omitempty"`
 	// volatility_weight scales annualised realised volatility of the protocol
 	// reference rate.
-	VolatilityWeight string `protobuf:"bytes,9,opt,name=volatility_weight,json=volatilityWeight,proto3" json:"volatility_weight,omitempty"`
+	VolatilityWeight string `protobuf:"bytes,7,opt,name=volatility_weight,json=volatilityWeight,proto3" json:"volatility_weight,omitempty"`
 	// flow_weight scales redemption flow pressure as a share of net liability.
-	FlowWeight string `protobuf:"bytes,10,opt,name=flow_weight,json=flowWeight,proto3" json:"flow_weight,omitempty"`
+	FlowWeight string `protobuf:"bytes,8,opt,name=flow_weight,json=flowWeight,proto3" json:"flow_weight,omitempty"`
 }
 
 func (x *EconomicPolicy) Reset() {
@@ -6533,12 +6521,9 @@ func (x *TaxCap) GetTaxCap() string {
 	return ""
 }
 
-// ConversionFactor is one denomination's stored cross rate from the protocol
-// reference unit — base units of the denomination per one base unit of the
-// reference — refreshed every block the oracle can serve it and kept at its
-// last derived value when it cannot. Presence of an entry is what makes a
-// denomination taxable; the per-denomination tax cap is derived from it at
-// read time as reference_tax_cap × factor.
+// ConversionFactor stores denomination units per reference unit. Fresh observations refresh it;
+// unavailable rates retain its last value. Tax caps derive as reference_tax_cap * factor for
+// eligible members; NOAH factors support gas pricing but never taxation.
 type ConversionFactor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6855,26 +6840,26 @@ var file_ark_treasury_v1_treasury_proto_rawDesc = []byte{
 	0x74, 0x65, 0x67, 0x69, 0x63, 0x52, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x54, 0x61, 0x72, 0x67,
 	0x65, 0x74, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x12, 0x6c, 0x0a, 0x16, 0x69, 0x6e, 0x73, 0x75, 0x72,
 	0x61, 0x6e, 0x63, 0x65, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x72, 0x61, 0x74, 0x69,
-	0x6f, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x6f, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
 	0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
 	0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
 	0x14, 0x69, 0x6e, 0x73, 0x75, 0x72, 0x61, 0x6e, 0x63, 0x65, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74,
 	0x52, 0x61, 0x74, 0x69, 0x6f, 0x12, 0x6c, 0x0a, 0x16, 0x6c, 0x69, 0x61, 0x62, 0x69, 0x6c, 0x69,
 	0x74, 0x79, 0x5f, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63,
+	0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
 	0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x6c,
 	0x69, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x61, 0x74, 0x69, 0x6f, 0x57, 0x65, 0x69,
 	0x67, 0x68, 0x74, 0x12, 0x63, 0x0a, 0x11, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69, 0x74,
-	0x79, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
+	0x79, 0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36,
 	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
 	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
 	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
 	0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x76, 0x6f, 0x6c, 0x61, 0x74, 0x69, 0x6c, 0x69,
 	0x74, 0x79, 0x57, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x57, 0x0a, 0x0b, 0x66, 0x6c, 0x6f, 0x77,
-	0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8,
+	0x5f, 0x77, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8,
 	0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
 	0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44,
 	0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63,

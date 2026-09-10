@@ -238,9 +238,9 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 		wantPriced      string
 		wantSettlement  string
 		wantStale       string
-		wantUntrusted   []sdk.Coin
+		wantUntrusted   sdk.Coins
 		wantWrittenOff  []types.WrittenOffExposure
-		wantStaleSupply []sdk.Coin
+		wantStaleSupply sdk.Coins
 	}{
 		{
 			name: "all active supply is oracle-priced",

@@ -17,11 +17,8 @@ enum AssetStatus {
   ASSET_STATUS_UNSPECIFIED = 0;
   // ASSET_STATUS_ACTIVE identifies an asset available for normal policy use.
   ASSET_STATUS_ACTIVE = 1;
-  // ASSET_STATUS_ISSUANCE_HALTED identifies an asset for which new issuance
-  // has stopped while existing supply remains priced, transferable, and
-  // redeemable. The status carries no intent: an asset winding down toward
-  // retirement and one that has just completed emergency recovery are both
-  // ISSUANCE_HALTED.
+  // ASSET_STATUS_ISSUANCE_HALTED stops new issuance while existing supply remains priced,
+  // transferable, and redeemable. Both wind-down and recovered assets use this status.
   ASSET_STATUS_ISSUANCE_HALTED = 2;
   // ASSET_STATUS_SUSPENDED identifies an asset whose ordinary protocol
   // economic operations are disabled without erasing holder balances or
@@ -95,19 +92,9 @@ message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/asset/Params";
 
-  // settlement_activation_delay_blocks is the distance between opening a
-  // settlement plan and the height it activates. It is the designed
-  // correction window: an activated plan commits holders to a
-  // redemption rate and cannot be closed early, so the only remedy for a
-  // mistaken plan is cancelling it before it goes live, and this delay is the
-  // room governance has to notice and pass CancelSettlement.
-  //
-  // It is governed rather than fixed because the window it has to outlast is
-  // itself governed. The value only means anything relative to how long a
-  // proposal currently takes to land, and x/gov's voting period moves without
-  // consulting x/asset — a delay that was ample at launch silently stops being
-  // a correction window at all if voting slows. Treasury's claim cancellation
-  // period is the same quantity for claims and is likewise a parameter.
+  // settlement_activation_delay_blocks is the correction window between plan opening and
+  // activation. Governance can cancel only before activation; the delay must allow time for a
+  // correcting proposal. Existing plans retain their stored activation height.
   uint64 settlement_activation_delay_blocks = 1 [(amino.dont_omitempty) = true];
 }
 
@@ -127,17 +114,6 @@ message Asset {
   uint64 version = 4 [(amino.dont_omitempty) = true];
 }
 
-// The OracleTargets, OracleTargetTransition, and OracleTargetDirection
-// definitions moved to ark.oracle.v1 as the feed registry when price
-// observations were decoupled from asset lifecycle; their names stay burned
-// here. An asset's price feed is keyed by its own denomination, so there is
-// no separate price source to name.
-
-// ReferenceState followed them to ark.oracle.v1, where it is a plain
-// reference_denom string rather than a message: every rule the protocol
-// reference denom has is a feed rule, so the feed registry owns it. The name
-// stays burned here.
-
 // SettlementPlan defines a governance-approved one-way asset-to-NOAH
 // redemption rate.
 message SettlementPlan {
@@ -151,42 +127,20 @@ message SettlementPlan {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // activation_height is the first block height at which redemption is
-  // permitted. It is derived when the plan opens, as
-  // Params.SettlementActivationDelayBlocks past the opening height, and stored
-  // rather than recomputed on read so a later parameter change cannot move
-  // terms holders have already been shown.
+  // activation_height is the opening height plus SettlementActivationDelayBlocks. It is stored so
+  // later parameter changes cannot alter the plan's terms.
   int64 activation_height = 3 [(amino.dont_omitempty) = true];
-  // earliest_closing_height is the hard commitment to holders: redemption
-  // stays open at least until this height. It is mandatory, is fixed for the
-  // plan's whole life, and is read by exactly one message — WriteOffAsset,
-  // which is refused before it. Reaching it never closes settlement
-  // automatically.
+  // earliest_closing_height is the mandatory, immutable holder redemption deadline. WriteOffAsset
+  // is refused before it; reaching it does not close settlement automatically.
   int64 earliest_closing_height = 4 [(amino.dont_omitempty) = true];
   // opened_height records the block height at which governance stored these
   // terms.
   int64 opened_height = 5 [(amino.dont_omitempty) = true];
 }
 
-// AssetPricing was folded into PricedAsset: it had exactly one embedding site
-// and no standalone use, so the nesting bought a level of indirection and no
-// reuse. Its name stays burned here.
-
-// PricedAsset is the registry's answer about one denomination: the record,
-// where the denomination has one, and the pricing verdict, which every
-// denomination has — what the protocol values it at and on whose authority, or
-// the reason nothing stands behind it. Consumers apply policy to verdicts —
-// defer, disclose, zero, route — and never re-derive the facts.
-//
-// Exactly one of source and reason is set. A denomination the registry does not
-// list — and the numeraire, which is priced by definition rather than by
-// registration — carries a verdict and no record, which is why nothing reads
-// asset without having established the denomination is a member.
-//
-// A verdict answers for the asset registry alone: a denomination priced by some
-// other authority, such as a reserve or basket feed the registry does not list,
-// is UNRECOGNISED here, which is the honest answer rather than a gap, and that
-// authority produces its own verdicts for consumers to merge.
+// PricedAsset pairs a pricing verdict with its registry record, if any. Exactly one of source and
+// reason is set. NOAH and unregistered denominations have no record; external pricing authorities
+// supply their own verdicts. See x/asset/README.md, "Consumer pricing views".
 message PricedAsset {
   Asset asset = 1 [
     (gogoproto.nullable) = false,
@@ -199,12 +153,9 @@ message PricedAsset {
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec"
   ];
-  // last_rate is the most recent rate the Oracle stored for a denomination
-  // whose feed is currently unavailable, and is unset for every other verdict.
-  // It is evidence about supply already outstanding, not a price: it failed the
-  // freshness gate, so the verdict stays unpriced and nothing may be quoted,
-  // minted, or paid against it. Consumers that size an aggregate over standing
-  // obligations may read it; consumers that quote, mint, or pay must not.
+  // last_rate is the last observed rate for an unavailable feed and is otherwise unset. It supports
+  // aggregates over outstanding obligations only; the verdict remains unpriced and cannot support
+  // quotes, minting, or payment.
   string last_rate = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec"
@@ -218,12 +169,8 @@ message PricedAsset {
 // reinterprets an earlier record.
 message ResolutionRecord {
   string denom = 1;
-  // version is the asset version in effect when governance derecognised the
-  // obligation. Every derecognition is a governance act that advances the
-  // version and records the advanced value; nothing else appends a record, so
-  // there is no path that files one against an unchanged version.
-  // (denom, version) is unique, and an append is rejected rather than
-  // overwriting a record.
+  // version is the advanced asset version at governance derecognition. Records are unique by
+  // (denom, version); duplicate appends are rejected.
   uint64 version = 2 [(amino.dont_omitempty) = true];
   // resolution_height is the block height at which the record was appended.
   int64 resolution_height = 3 [(amino.dont_omitempty) = true];
@@ -238,11 +185,8 @@ message ResolutionRecord {
   ResolutionKind kind = 6 [(amino.dont_omitempty) = true];
 }
 
-// EmergencyMandate stores the governance-appointed committee that may suspend
-// an asset in minutes and restore nothing. Suspension is its only power, so
-// there is no action dimension to name: containment is the whole mandate. It
-// carries exactly the shared appointment envelope; consumed per-term
-// suspensions are separate state keyed by denomination alone.
+// EmergencyMandate appoints a committee whose sole power is asset suspension. It carries the shared
+// appointment envelope; per-term suspension usage is separate state keyed by denomination.
 message EmergencyMandate {
   // envelope carries the shared term, committee, and half-open height window.
   ark.mandate.v1.Envelope envelope = 1 [

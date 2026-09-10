@@ -25,11 +25,9 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// CommitteeKeyKind names what backs authorisation for a committee account. The
-// set of key types is closed by the interface registry — an unregistered key
-// cannot decode into an account — so every account the chain can hold maps to
-// exactly one value here, with OTHER absorbing a type this binary predates.
-// CONTRACT alone is read from the contract store rather than the account.
+// CommitteeKeyKind records observable account backing. Registered key types map to known kinds;
+// OTHER covers unclassified keys. CONTRACT requires a contract-store check because its account is
+// otherwise keyless.
 type CommitteeKeyKind int32
 
 const (

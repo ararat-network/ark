@@ -52,11 +52,9 @@ message Params {
   uint64 claim_cancellation_period_blocks = 1 [(amino.dont_omitempty) = true];
 }
 
-// ClaimsMandate stores one governance-created, height-scoped Claims committee
-// appointment and the fixed gross claim limit delegated to that committee for
-// the term. An empty committee identifies a disabled mandate; term still
-// increases on replacement so old committee transactions cannot become valid
-// again.
+// ClaimsMandate appoints a height-scoped committee with a fixed gross term allowance. An empty
+// committee disables it; every replacement advances the term to invalidate older committee
+// transactions.
 message ClaimsMandate {
   // envelope carries the shared term, committee, and half-open height window.
   ark.mandate.v1.Envelope envelope = 1 [

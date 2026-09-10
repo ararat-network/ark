@@ -43,9 +43,6 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(ctx context.Context, in *MsgRegisterAsset, opts ...grpc.CallOption) (*MsgRegisterAssetResponse, error)
-	// The AmendRegistration RPC was removed with the mutable metadata it
-	// amended, and the ActivateAsset RPC with the pending status it ended;
-	// both names stay burned.
 	// HaltIssuance stops new issuance for an active asset.
 	HaltIssuance(ctx context.Context, in *MsgHaltIssuance, opts ...grpc.CallOption) (*MsgHaltIssuanceResponse, error)
 	// ResumeIssuance returns an issuance-halted asset to active status.
@@ -66,18 +63,10 @@ type MsgClient interface {
 	// FinaliseRetirement retires an asset within its approved residual bound.
 	// Retirement is terminal: there is no RPC back out of it.
 	FinaliseRetirement(ctx context.Context, in *MsgFinaliseRetirement, opts ...grpc.CallOption) (*MsgFinaliseRetirementResponse, error)
-	// The ReactivateAsset RPC was removed with the comeback it offered; the name
-	// stays burned. A retired tombstone is final, and the two reversible pairs
-	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
-	// SuspendAsset/RecoverAsset for distress — are what an asset that might
-	// return uses instead.
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(ctx context.Context, in *MsgSetEmergencyMandate, opts ...grpc.CallOption) (*MsgSetEmergencyMandateResponse, error)
-	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the committee's only power: halting issuance contains nothing, so it
-	// stays a governance act.
-	// Suspension is a pure status move: an asset sharing the reference
-	// denomination suspends freely while the feed keeps pricing.
+	// EmergencySuspendAsset applies suspension under a live mandate. It changes asset status only,
+	// leaving the feed and protocol reference pricing intact.
 	EmergencySuspendAsset(ctx context.Context, in *MsgEmergencySuspendAsset, opts ...grpc.CallOption) (*MsgEmergencySuspendAssetResponse, error)
 }
 
@@ -219,9 +208,6 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// RegisterAsset registers a new governance-managed Bank asset.
 	RegisterAsset(context.Context, *MsgRegisterAsset) (*MsgRegisterAssetResponse, error)
-	// The AmendRegistration RPC was removed with the mutable metadata it
-	// amended, and the ActivateAsset RPC with the pending status it ended;
-	// both names stay burned.
 	// HaltIssuance stops new issuance for an active asset.
 	HaltIssuance(context.Context, *MsgHaltIssuance) (*MsgHaltIssuanceResponse, error)
 	// ResumeIssuance returns an issuance-halted asset to active status.
@@ -242,18 +228,10 @@ type MsgServer interface {
 	// FinaliseRetirement retires an asset within its approved residual bound.
 	// Retirement is terminal: there is no RPC back out of it.
 	FinaliseRetirement(context.Context, *MsgFinaliseRetirement) (*MsgFinaliseRetirementResponse, error)
-	// The ReactivateAsset RPC was removed with the comeback it offered; the name
-	// stays burned. A retired tombstone is final, and the two reversible pairs
-	// the lifecycle already has — HaltIssuance/ResumeIssuance for a pause,
-	// SuspendAsset/RecoverAsset for distress — are what an asset that might
-	// return uses instead.
 	// SetEmergencyMandate replaces or disables the emergency committee mandate.
 	SetEmergencyMandate(context.Context, *MsgSetEmergencyMandate) (*MsgSetEmergencyMandateResponse, error)
-	// EmergencySuspendAsset applies SuspendAsset semantics under a live mandate.
-	// It is the committee's only power: halting issuance contains nothing, so it
-	// stays a governance act.
-	// Suspension is a pure status move: an asset sharing the reference
-	// denomination suspends freely while the feed keeps pricing.
+	// EmergencySuspendAsset applies suspension under a live mandate. It changes asset status only,
+	// leaving the feed and protocol reference pricing intact.
 	EmergencySuspendAsset(context.Context, *MsgEmergencySuspendAsset) (*MsgEmergencySuspendAssetResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }

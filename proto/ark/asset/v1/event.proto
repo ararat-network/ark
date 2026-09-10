@@ -25,13 +25,6 @@ message EventAssetStatusChanged {
   uint64 version = 4 [(amino.dont_omitempty) = true];
 }
 
-// The EventRegistrationAmended event was removed with the amendment it
-// reported; its name stays burned.
-
-// The EventOracleTargetTransitionScheduled and EventOracleTargetsActivated
-// events moved to ark.oracle.v1 with the feed registry; their names stay
-// burned here.
-
 // EventSettlementOpened is emitted when governance stores settlement terms.
 message EventSettlementOpened {
   SettlementPlan settlement_plan = 1 [
@@ -91,6 +84,3 @@ message EventEmergencySuspended {
   // version is the asset version produced by the suspension.
   uint64 version = 3 [(amino.dont_omitempty) = true];
 }
-
-// EventReferenceUpdated moved to ark.oracle.v1 with the protocol reference
-// itself, where it is EventReferenceDenomUpdated; its name stays burned here.

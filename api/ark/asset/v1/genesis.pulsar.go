@@ -1079,8 +1079,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// GenesisState defines the asset module's genesis state. The protocol
-// reference moved to ark.oracle.v1's genesis with the reference itself.
+// GenesisState defines Asset state. Oracle genesis owns the protocol reference denomination.
 type GenesisState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

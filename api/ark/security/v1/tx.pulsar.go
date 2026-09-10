@@ -3832,12 +3832,8 @@ func (*MsgSetSecurityMandateResponse) Descriptor() ([]byte, []int) {
 	return file_ark_security_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgCommitteePlanUpgrade schedules an emergency upgrade plan as the security
-// committee, carrying the expected term so a transaction prepared against a
-// replaced appointment fails rather than applying under a mandate its signers
-// never saw. The committee may replace only its own pending plan: x/upgrade
-// overwrites its single slot silently, so scheduling over a governance plan
-// would displace a decision the chain already voted on.
+// MsgCommitteePlanUpgrade schedules under the exact live mandate term. The committee may replace
+// only its own pending plan; governance plans are protected.
 type MsgCommitteePlanUpgrade struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

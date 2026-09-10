@@ -37,9 +37,30 @@ The [Makefile](../Makefile) pins the proto-builder image. It mounts the workspac
 `make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files.
 
 Run focused module/transport tests, `git diff --check`, and a build appropriate to the changed surface. Do not run
-generation for a prose-only edit. `make proto-check-breaking` compares schemas against the configured main branch and
-requires access to that source. [Pricefeed compatibility](../docs/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility)
+generation for Markdown-only edits; regenerate when schema comments change so Go documentation stays in sync. `make proto-check-breaking` compares schemas against the configured main branch and
+requires access to that source. [Pricefeed compatibility](../docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility)
 constrains changes to the independently released node–sidecar service.
 
 Protocol semantics live in [docs/](../docs/README.md); fields and local contracts belong in schema comments. The
 [application map](../app/README.md) and module READMEs explain how generated services are wired.
+
+## Compatibility names and tags
+
+Do not reuse names retired from `ark.asset.v1`, even though protobuf cannot reserve top-level message or RPC names:
+
+- Pricing wrapper: `AssetPricing`; `PricedAsset` carries the pricing fields directly.
+- Feed registry types: `OracleTargets`, `OracleTargetTransition`, `OracleTargetDirection`.
+- Reference types and services: `ReferenceState`, `MsgSetReference`, `MsgSetReferenceResponse`,
+  `QueryReferenceRequest`, `QueryReferenceResponse`, the `Reference` query, and `EventReferenceUpdated`.
+- Lifecycle services: `AmendRegistration`, `ActivateAsset`, `ReactivateAsset`, `MsgReactivateAsset`, and
+  `MsgReactivateAssetResponse`, `MsgAmendRegistration`, `MsgAmendRegistrationResponse`, `MsgActivateAsset`, and
+  `MsgActivateAssetResponse`.
+- Feed queries and events: `OracleTargets`, `EventOracleTargetTransitionScheduled`, and `EventOracleTargetsActivated`.
+- Metadata event: `EventRegistrationAmended`.
+
+Oracle owns the feed registry and reference denomination. Its current reference services are `ReferenceDenom` and
+`SetReferenceDenom`; Asset uses the feed keyed by its own denomination. The unavailable names above remain distinct
+from those current contracts.
+
+`ark.oracle.v1.GenesisState` field 8 carried per-feed staleness windows. Consumer-specific `GetRateSetWithin` windows
+and the default `Params.max_exchange_rate_age` govern freshness; keep the retired field number unavailable for reuse.

@@ -78,23 +78,16 @@ type Params struct {
 	// min_attendance_per_window is the minimum attended/eligible ratio over one
 	// attendance window before a validator is jailed. Zero disables jailing.
 	MinAttendancePerWindow cosmossdk_io_math.LegacyDec `protobuf:"bytes,6,opt,name=min_attendance_per_window,json=minAttendancePerWindow,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"min_attendance_per_window"`
-	// max_exchange_rate_age is the maximum elapsed block time since an exchange
-	// rate was last written before it is considered stale. It is the default for
-	// every denomination without an entry in max_exchange_rate_age_overrides.
+	// max_exchange_rate_age bounds elapsed block time since the last rate update for ordinary
+	// reads. Consumers using GetRateSetWithin supply their own freshness windows.
 	MaxExchangeRateAge time.Duration `protobuf:"bytes,7,opt,name=max_exchange_rate_age,json=maxExchangeRateAge,proto3,stdduration" json:"max_exchange_rate_age"`
-	// functioning_block_threshold is the minimum share of total commit power that
-	// must participate before a block grades attendance. Must be at least 50
-	// percent: governance may only make grading more forgiving, never harsher,
-	// because a threshold below a majority grades blocks that a majority could
-	// not price and turns a correlated outage into mass jailing.
+	// functioning_block_threshold is the minimum participating share of commit power required to
+	// grade attendance, bounded to [0.5, 1]. Higher thresholds make grading more forgiving during
+	// correlated outages.
 	FunctioningBlockThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,8,opt,name=functioning_block_threshold,json=functioningBlockThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"functioning_block_threshold"`
-	// participation_threshold is the minimum share of the vote-height target set
-	// a report must price with positive rates before it counts as participation,
-	// for both attendance and the functioning-block gate. Zero keeps the floor
-	// of a single positive rate. Capped at 50 percent: attendance is a deadman
-	// switch, and above a majority of targets it would become a coverage mandate
-	// that turns shared-provider gaps into correlated jailing; coverage pressure
-	// belongs to per-target rewards.
+	// participation_threshold is the positive-rate share of vote-height targets required for
+	// attendance and functioning-block power. Zero still requires one rate; the maximum is 0.5.
+	// Coverage beyond this floor is rewarded per target.
 	ParticipationThreshold cosmossdk_io_math.LegacyDec `protobuf:"bytes,9,opt,name=participation_threshold,json=participationThreshold,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"participation_threshold"`
 }
 
@@ -163,11 +156,8 @@ func (m *Params) GetMaxExchangeRateAge() time.Duration {
 // transitions not yet activated. The feed set for a vote height is the active
 // set folded with every transition whose activation height has arrived.
 type Feeds struct {
-	// denoms is the sorted unique active feed set. A feed is keyed by the
-	// denomination it prices: the feed registry and the asset registry share one
-	// identifier namespace, so a feed for a listed asset is keyed by that
-	// asset's denomination and a feed priced ahead of listing is keyed by the
-	// denomination it will carry.
+	// denoms is the sorted, unique active feed set. Feeds use the denominations they price, whether
+	// or not those denominations are registered assets.
 	Denoms []string `protobuf:"bytes,1,rep,name=denoms,proto3" json:"denoms,omitempty"`
 	// version advances once per activation batch.
 	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
@@ -351,11 +341,9 @@ func (m *FeedReferent) GetReferent() string {
 	return ""
 }
 
-// Attendance counts a validator's functioning-block presence within the
-// active attendance window. A block is eligible for a validator when it was in
-// the commit and fleet participating power reached the functioning threshold;
-// it is attended when the validator also submitted a valid report pricing at
-// least the participation-threshold share of the target set.
+// Attendance counts eligible and attended functioning blocks in the current window. A commit
+// validator is eligible when fleet participation meets the threshold and attended when its own
+// report meets the target-coverage floor.
 type Attendance struct {
 	EligibleBlocks uint64 `protobuf:"varint,1,opt,name=eligible_blocks,json=eligibleBlocks,proto3" json:"eligible_blocks,omitempty"`
 	AttendedBlocks uint64 `protobuf:"varint,2,opt,name=attended_blocks,json=attendedBlocks,proto3" json:"attended_blocks,omitempty"`

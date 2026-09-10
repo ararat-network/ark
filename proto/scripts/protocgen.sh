@@ -23,12 +23,8 @@ done
 
 cd ..
 
-# move proto files to the right places
-#
-# gocosmos generates files based on go_package into a directory tree starting
-# from the module path. For go_package = "github.com/ararat-network/ark/x/market/types",
-# the output lands in github.com/ararat-network/ark/x/market/types/ relative to
-# the `out` directory (repo root). We need to move these into the actual repo structure.
+# Move gocosmos output from the go_package module-path tree into repository-relative package
+# directories.
 if [ -d "github.com" ]; then
   cp -r github.com/ararat-network/ark/* ./
   rm -rf github.com

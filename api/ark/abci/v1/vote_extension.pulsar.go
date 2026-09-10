@@ -742,12 +742,9 @@ type OracleVoteExtension struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// rates maps a valid oracle denom to its reported exchange rate, NOAH per
-	// one unit of the denom.
-	//
-	// Each value is the minimal big-endian encoding of the strictly positive
-	// raw value price*10^18: never empty, never a leading zero byte. An
-	// unpriced denom is omitted; omission is the only abstention.
+	// rates maps denoms to NOAH-per-unit prices, encoded as minimal big-endian
+	// positive integers scaled by 10^18, without leading zero bytes.
+	// Unpriced denoms are omitted; omission is the only abstention.
 	Rates map[string][]byte `protobuf:"bytes,1,rep,name=rates,proto3" json:"rates,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// target_version identifies the on-chain vote-target epoch used to build
 	// this report.

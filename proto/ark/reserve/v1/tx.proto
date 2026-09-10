@@ -149,11 +149,8 @@ message MsgFundBuffer {
 // Reserve transfer.
 message MsgFundBufferResponse {}
 
-// MsgFundInsurance defines one governance-authorised strategic Reserve
-// transfer to Insurance. It is the Buffer transfer's twin, with the same
-// rigidity: source, destination, and denomination are fixed in keeper code,
-// and the request carries no recipient, purpose selector, asset selector, or
-// call data.
+// MsgFundInsurance authorises a Reserve-to-Insurance NOAH transfer. Source, destination, and
+// denomination are fixed by the keeper; the request supplies no routing or call data.
 message MsgFundInsurance {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgFundInsurance";
@@ -251,14 +248,9 @@ message MsgClosePositionResponse {
   uint64 entry_id = 1 [(amino.dont_omitempty) = true];
 }
 
-// MsgReverseReturn undoes one return attribution as the governance authority,
-// subtracting the value that attribution booked.
-//
-// Attribution is the one recorded movement whose position linkage the chain
-// cannot verify — Bank witnesses that coins arrived, never which position they
-// settle — so it is the only one needing a remedy. The deployed leg stays
-// uncorrectable: restating it would desynchronise the allowance it consumed.
-// Unlike the committee twin, this still works while no mandate is live.
+// MsgReverseReturn reverses a return attribution at its original booked value, even without a live
+// mandate. Bank proves receipt but not position linkage; deployment basis and consumed allowance
+// are not reversible.
 message MsgReverseReturn {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/reserve/MsgReverseReturn";
@@ -287,7 +279,8 @@ message MsgBurnReserveAssets {
   repeated cosmos.base.v1beta1.Coin amounts = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (amino.encoding) = "legacy_coins"
   ];
   // minimum_reserve_balance is a per-proposal stale-state guard on the NOAH
   // component, not a global protocol floor. Governance may burn to zero by
@@ -508,18 +501,17 @@ message MsgCommitteeBurnPaper {
   repeated cosmos.base.v1beta1.Coin amounts = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
-    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins",
+    (amino.encoding) = "legacy_coins"
   ];
 }
 
 // MsgCommitteeBurnPaperResponse is the response for a paper burn.
 message MsgCommitteeBurnPaperResponse {}
 
-// MsgCommitteeBurnSurplus destroys Reserve NOAH the fund does not need. The
-// keeper computes the bound — min(recognised capital - required capital,
-// balance - mandate floor) — and each burn reduces recognised capital one for
-// one, so the power exhausts itself exactly at the target line. The committee
-// chooses timing, not size.
+// MsgCommitteeBurnSurplus burns keeper-sized NOAH surplus: min(recognised capital minus
+// requirement, balance minus mandate floor). The committee chooses timing; the bound reaches zero
+// at the target.
 message MsgCommitteeBurnSurplus {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeBurnSurplus";

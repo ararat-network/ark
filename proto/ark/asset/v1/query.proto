@@ -31,9 +31,6 @@ service Query {
     option (google.api.http).get = "/ark/asset/v1/assets";
   }
 
-  // The Reference RPC moved to ark.oracle.v1 with the protocol reference
-  // itself, where it is ReferenceDenom; its name stays burned here.
-
   // SettlementPlan returns the active settlement plan for one asset.
   rpc SettlementPlan(QuerySettlementPlanRequest) returns (QuerySettlementPlanResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -88,13 +85,6 @@ message QueryAssetsResponse {
     (amino.dont_omitempty) = true
   ];
 }
-
-// QueryReferenceRequest and QueryReferenceResponse moved to ark.oracle.v1 with
-// the protocol reference itself, where they are QueryReferenceDenomRequest and
-// QueryReferenceDenomResponse; their names stay burned here.
-
-// The Query/OracleTargets RPC moved to ark.oracle.v1 Query/Feeds with the feed
-// registry; its name stays burned here.
 
 // QuerySettlementPlanRequest is the request type for Query/SettlementPlan.
 message QuerySettlementPlanRequest {

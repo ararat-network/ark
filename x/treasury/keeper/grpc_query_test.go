@@ -535,7 +535,7 @@ func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplet
 			s.Require().NoError(err)
 			s.Require().True(response.PricedLiability.IsZero())
 			s.Require().Equal(
-				[]sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
+				sdk.Coins{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
 				response.UntrustedSuspendedSupply,
 			)
 			// Zero recognised liability yields zero targets: the report never

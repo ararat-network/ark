@@ -39,11 +39,9 @@ type GenesisState struct {
 	Accounting        Accounting         `protobuf:"bytes,5,opt,name=accounting,proto3" json:"accounting"`
 	// feeds seeds the active feed set and scheduled transitions.
 	Feeds Feeds `protobuf:"bytes,6,opt,name=feeds,proto3" json:"feeds"`
-	// reference_denom keys the feed whose unit prices Market's base pool and
-	// denominates Treasury's reference tax cap. It names a feed, not necessarily
-	// a listed asset: both consumers read a rate, so an asset sharing the
-	// denomination may suspend while the feed keeps pricing. Empty only before
-	// first configuration; a configured reference is re-pointed, never cleared.
+	// reference_denom identifies the feed unit used by Market's pool and Treasury's tax cap. It need
+	// not be a registered asset. Empty is allowed only before first configuration; an established
+	// reference cannot be cleared.
 	ReferenceDenom string `protobuf:"bytes,7,opt,name=reference_denom,json=referenceDenom,proto3" json:"reference_denom,omitempty"`
 }
 

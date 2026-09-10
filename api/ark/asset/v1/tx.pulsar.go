@@ -11230,11 +11230,8 @@ type MsgOpenSettlement struct {
 	// redemption_rate is the positive number of NOAH paid per one unit of the
 	// settled asset, the same orientation as oracle exchange rates.
 	RedemptionRate string `protobuf:"bytes,4,opt,name=redemption_rate,json=redemptionRate,proto3" json:"redemption_rate,omitempty"`
-	// earliest_closing_height commits to holders that redemption stays open at
-	// least until that height. It is the only height governance states: the plan
-	// activates SettlementActivationDelayBlocks after this message executes, and
-	// this height must fall after that activation. A settlement always carries a
-	// redemption window, and WriteOffAsset is refused before it.
+	// earliest_closing_height must follow the derived activation height and commits to a redemption
+	// window. WriteOffAsset is refused before this height.
 	EarliestClosingHeight int64 `protobuf:"varint,5,opt,name=earliest_closing_height,json=earliestClosingHeight,proto3" json:"earliest_closing_height,omitempty"`
 }
 
@@ -11565,13 +11562,9 @@ func (*MsgWriteOffAssetResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
-// MsgFinaliseRetirement retires a settlement-free asset. Retirement never
-// consults the protocol reference: a tombstone's feed is the feed layer's
-// concern, and the referent guard pins a referenced feed against removal.
-//
-// It is the lifecycle's only irreversible act, and it spends the denomination
-// permanently: the tombstone keeps the registry entry and the Bank metadata,
-// both of which registration refuses to collide with.
+// MsgFinaliseRetirement permanently retires an asset within its status-specific residual bound and
+// closes any settlement. Registry and Bank metadata remain, preventing denomination reuse.
+// Retirement does not remove the feed.
 type MsgFinaliseRetirement struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11580,12 +11573,9 @@ type MsgFinaliseRetirement struct {
 	Authority       string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Denom           string `protobuf:"bytes,2,opt,name=denom,proto3" json:"denom,omitempty"`
 	ExpectedVersion uint64 `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
-	// max_residual_supply bounds the outstanding supply governance approves
-	// derecognizing. From ISSUANCE_HALTED, where redemption has been
-	// continuously available, it may be positive and a matching
-	// RETIREMENT_RESIDUAL record discloses the actual residual. From every
-	// other source it must be zero: positive SUSPENDED residual must go through
-	// WriteOffAsset, which names the derecognition honestly.
+	// max_residual_supply bounds derecognition from ISSUANCE_HALTED; a positive actual residual
+	// creates a RETIREMENT_RESIDUAL record. Other statuses require a zero bound. Positive SUSPENDED
+	// supply requires WriteOffAsset.
 	MaxResidualSupply string `protobuf:"bytes,4,opt,name=max_residual_supply,json=maxResidualSupply,proto3" json:"max_residual_supply,omitempty"`
 }
 
@@ -11757,12 +11747,9 @@ func (*MsgSetEmergencyMandateResponse) Descriptor() ([]byte, []int) {
 	return file_ark_asset_v1_tx_proto_rawDescGZIP(), []int{21}
 }
 
-// MsgEmergencySuspendAsset applies SuspendAsset semantics under a live
-// mandate. Committee messages carry the exact current term instead of an
-// expected asset version: the term is the staleness guard, and status
-// preconditions still apply. It is a pure status move: peg failure of an asset
-// and failure of its unit's price data are different axes, so an asset sharing
-// the reference denomination suspends while the feed keeps pricing.
+// MsgEmergencySuspendAsset suspends under the exact live mandate term, with ordinary status
+// preconditions and per-term usage limits. The term guards staleness; suspension leaves the feed
+// running.
 type MsgEmergencySuspendAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

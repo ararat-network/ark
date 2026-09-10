@@ -4352,11 +4352,9 @@ type EligibilityEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// denom keys the entry; one entry per claim. It is an external symbol —
-	// `<feed>-<tag>`, such as `axau-lbma` — never a bare denomination, so an
-	// Ark-issued asset or the NOAH base denomination cannot be listed. The tag
-	// distinguishes claims that price through one feed, each carrying its own
-	// haircut, cap, and window.
+	// denom uniquely identifies an external claim as <feed>-<tag>, such as axau-lbma. Claims sharing
+	// a feed retain independent haircuts, caps, and windows. Bare Ark denominations and NOAH are not
+	// eligible symbols.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	// haircut_factor in (0, 1] scales the feed value. Strictly positive: an
 	// entry granting no credit is refused rather than stored.

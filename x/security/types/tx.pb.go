@@ -141,12 +141,8 @@ func (m *MsgSetSecurityMandateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgSetSecurityMandateResponse proto.InternalMessageInfo
 
-// MsgCommitteePlanUpgrade schedules an emergency upgrade plan as the security
-// committee, carrying the expected term so a transaction prepared against a
-// replaced appointment fails rather than applying under a mandate its signers
-// never saw. The committee may replace only its own pending plan: x/upgrade
-// overwrites its single slot silently, so scheduling over a governance plan
-// would displace a decision the chain already voted on.
+// MsgCommitteePlanUpgrade schedules under the exact live mandate term. The committee may replace
+// only its own pending plan; governance plans are protected.
 type MsgCommitteePlanUpgrade struct {
 	Committee    string `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
 	ExpectedTerm uint64 `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`

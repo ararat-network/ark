@@ -1,6 +1,7 @@
 syntax = "proto3";
 package ark.pricefeed.v1;
 
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
@@ -29,12 +30,16 @@ message PricesResponse {
   // Prices maps a feed denom to the minimal big-endian encoding of its
   // strictly positive raw price*10^18, where the price is NOAH per one unit
   // of the feed's denomination. Unpriced feeds are omitted.
-  map<string, bytes> prices = 1 [(gogoproto.nullable) = false];
+  map<string, bytes> prices = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 
   // Timestamp defines the timestamp of the prices.
   google.protobuf.Timestamp timestamp = 2 [
     (gogoproto.nullable) = false,
-    (gogoproto.stdtime) = true
+    (gogoproto.stdtime) = true,
+    (amino.dont_omitempty) = true
   ];
 
   // Version defines the version of the price-feed service that provided the
