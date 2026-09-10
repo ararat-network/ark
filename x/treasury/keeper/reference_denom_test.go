@@ -136,11 +136,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 	})
 }
 
-// TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit pins the degrade at a unit
-// change: a positive cap whose conversion truncates below one base unit lands
-// at one — the tightest finite ceiling — because zero is the explicit
-// uncapped sentinel, and refusing outright would wedge the reference re-point
-// on a rate pair no retry can mend.
+// TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit checks a positive converted cap below one
+// becomes the tightest finite ceiling, never the zero uncapped sentinel.
 func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(100)
@@ -165,11 +162,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() 
 	})
 }
 
-// TestRebaseReferenceStateUnrepresentableRescaleHoldsThatFactor pins the
-// per-member degrade for a product past the Dec domain: the member whose
-// factor cannot be re-expressed holds its old-unit value — refresh's own
-// degrade for the same figure — while every fitting entry, NOAH included,
-// still moves and the re-point itself proceeds.
+// TestRebaseReferenceStateUnrepresentableRescaleHoldsThatFactor checks overflowing entries retain
+// their held value while fitting entries rebase and the reference change succeeds.
 func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsThatFactor() {
 	// A 10^60 factor times the 10^18 cross leaves the Dec domain, while the
 	// inverse unit cross stays exactly the smallest representable positive, so
@@ -260,11 +254,8 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFailuresPreserveState() {
 		errorIs   error
 	}{
 		{
-			// x/asset owns the destination, so a `from` that disagrees with
-			// Treasury's own cap denomination means the two modules disagree
-			// about what unit the cap is in. Halting the proposal beats
-			// silently capping tax in a unit the chain no longer prices
-			// conversion in.
+			// Oracle owns the reference change. A from-unit mismatch with Treasury's cap indicates
+			// inconsistent state and must fail before silently reinterpreting the cap.
 			name:      "from disagrees with the cap denomination",
 			from:      chain.USDBaseDenom,
 			to:        chain.KRWBaseDenom,

@@ -13,20 +13,12 @@ const (
 	DefaultReferenceDenom      = chain.XDRBaseDenom
 	DefaultRewardFundingWindow = chain.BlocksPerWeek
 
-	// DefaultExposureRefreshPeriodBlocks recomputes the multiplier hourly. The
-	// cadence is a judgement about the fastest stress worth tracking: a
-	// Terra-speed run unfolds over days, so an hour resolves it many times over,
-	// while a shorter period spends state writes resolving noise the decay
-	// windows are there to absorb.
+	// DefaultExposureRefreshPeriodBlocks sets hourly multiplier recomputation; per-block EWMA
+	// sampling continues between refreshes.
 	DefaultExposureRefreshPeriodBlocks = chain.BlocksPerHour
 
-	// MaxRewardFundingWindow bounds how many blocks one funding window accrues
-	// over. Together with EconomicPolicy's MaxBlockRewardTarget it is what
-	// makes the accrual safe by inspection: the two ceilings multiply to a
-	// whole-window total ninety-five bits under the Int limit, so no sequence
-	// of blocks can overflow the running targets. A window of 2^32 blocks is
-	// some seven centuries at this chain's block time, so the bound refuses
-	// only values that were never a schedule.
+	// MaxRewardFundingWindow caps accrual at 2^32 blocks. Combined with MaxBlockRewardTarget, it
+	// leaves 95 bits of Int headroom for each whole-window target.
 	MaxRewardFundingWindow = 1 << 32
 
 	// MaxExposureRefreshPeriodBlocks bounds the cadence at a year. A period
@@ -37,22 +29,12 @@ const (
 )
 
 var (
-	// MaxExposureMultiplierCap bounds both the multiplier ceiling and the
-	// per-update step. It is a domain cap with orders of magnitude of headroom
-	// rather than a projection over live state: the composite is folded and
-	// applied inside block hooks, where a checked arithmetic error and a panic
-	// are the same outcome — the block fails — so the defence has to be
-	// refusing the value at the write, where a human is in the loop. A million
-	// is far past any defensible setting.
+	// MaxExposureMultiplierCap bounds both multiplier cap and update step before block-hook
+	// arithmetic. The one-million domain cap is independent of live state.
 	MaxExposureMultiplierCap = math.LegacyNewDec(1_000_000)
 
-	// DefaultExposureVolatilityDecay retains variance with a half-life of about
-	// 13,863 blocks — roughly a day. Volatility is a regime rather than an
-	// event, and a day's memory outlasts a single bad hour without carrying a
-	// month-old panic into today's target. It and DefaultExposureFlowDecay are
-	// per-block EWMA retentions rather than half-lives because the fold applies
-	// them directly, and deriving one from the other on chain would need a
-	// logarithm LegacyDec does not have.
+	// DefaultExposureVolatilityDecay is per-block EWMA retention with a roughly 13,863-block
+	// half-life. The fold uses retention directly, avoiding on-chain logarithms.
 	DefaultExposureVolatilityDecay = math.LegacyMustNewDecFromStr("0.99995")
 	// DefaultExposureFlowDecay retains flow pressure with a half-life of about
 	// 602 blocks — roughly an hour. Flow is the fastest of the three signals and
@@ -81,35 +63,20 @@ var (
 	// observing before tightening.
 	DefaultBaseFeeAdjustmentRate = math.LegacyMustNewDecFromStr("0.025")
 
-	// DefaultMinBaseGasPrice is the resting price of gas in reference base
-	// units per gas unit. The reference is atto-scaled (10^18 per XDR), and
-	// 10^11 is Terra Classic's posted gas price in the same unit — 0.1018 usdr
-	// per gas at six decimals — carried to eighteen: a 200k-gas transfer rests
-	// at 0.02 XDR, the fee band Terra ran in production. Governance tunes from
-	// here after observation.
+	// DefaultMinBaseGasPrice is 10^11 reference base units per gas. With eighteen-decimal XDR
+	// units, a 200,000-gas transaction costs 0.02 XDR at this floor.
 	DefaultMinBaseGasPrice = math.LegacyNewDec(100_000_000_000)
 
-	// MaxBaseGasPrice bounds the governance floor and is the saturation
-	// ceiling the controller clamps the live price to. A clamp rather than an
-	// error because the update runs in EndBlock, where a checked arithmetic
-	// failure and a panic are the same outcome — congestion past representable
-	// range holds here instead of failing a block. One whole reference unit
-	// per gas unit — ten million times the resting price, an hour of
-	// sustained full blocks at the default rate — is saturation in every
-	// practical sense, and a uint64 of gas at this ceiling still sits some
-	// twenty orders of magnitude inside the Dec domain, which is what keeps
-	// the requirement arithmetic's overflow backstops unreachable.
+	// MaxBaseGasPrice caps the governance floor and saturates the live controller at one reference
+	// unit per gas. Checked requirement arithmetic remains a backstop; price saturation does not
+	// fail EndBlock.
 	MaxBaseGasPrice = math.LegacyNewDec(1_000_000_000_000_000_000)
 	// MaxBaseFeeAdjustmentRate caps the per-block move at a doubling.
 	MaxBaseFeeAdjustmentRate = math.LegacyOneDec()
 )
 
-// DefaultParams returns the safe launch defaults for Treasury.
-//
-// The reference tax cap launches at one base unit — the tightest finite
-// ceiling — rather than zero, which is the explicit uncapped sentinel: an
-// unconfigured chain should clamp the transfer tax to dust, not leave it
-// unbounded, and governance opts into either a real ceiling or none.
+// DefaultParams uses a one-base-unit reference tax cap, the tightest finite ceiling. Zero
+// explicitly means uncapped taxation.
 func DefaultParams() Params {
 	return Params{
 		ReferenceDenom:              DefaultReferenceDenom,

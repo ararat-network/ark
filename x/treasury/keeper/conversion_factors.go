@@ -17,13 +17,9 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// refreshConversionFactors re-derives the factor table from whatever rates
-// this block can serve, every block: a member with a servable rate is
-// re-derived, one without keeps the factor it was last derived with — its
-// outstanding supply stays transferable and taxable — and an uncovered
-// arrival is seeded at one so it is taxable the block it is minted. Running
-// every block is what retired the cadence machinery: every block is the
-// retry, so no boundary, pending flag, or owed judgement exists.
+// refreshConversionFactors updates derivable member cross-rates each block, retains unavailable
+// factors, and seeds uncovered members at one. This keeps outstanding member transfers taxable
+// during feed outages.
 func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 	if err != nil {
@@ -66,13 +62,9 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 			if err == nil && converted.Amount.IsPositive() {
 				factor = converted.Amount
 			} else {
-				// No servable rate this block — a dark feed, or a cross the
-				// block's rates cannot represent, which is a property of a
-				// rate pair redrawn every block and never Treasury's error. A
-				// held factor is kept untouched; an uncovered arrival is
-				// seeded at one, because Market mints a member against its
-				// own feed alone, so coverage cannot wait for whichever rate
-				// this derivation is missing.
+				// Retain held factors when feeds or cross-rates are unavailable. Seed uncovered
+				// members at one because their minting eligibility does not require the reference
+				// rate needed for this cross.
 				held, err := k.ConversionFactors.Has(ctx, denom)
 				if err != nil {
 					return fmt.Errorf("checking conversion factor for %s: %w", denom, err)
@@ -97,14 +89,9 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 		}
 	}
 
-	// The numeraire's own cross — NOAH units per reference unit, which is the
-	// reference rate itself in the store's orientation — derives in the same
-	// pass into the same table; GetTaxCap excludes it from the tax
-	// base by denomination. It needs no arrival seed like a member's: a
-	// member can be minted at any height and must be taxable that block,
-	// while genesis makes the NOAH cross mandatory, so until the first
-	// servable reference rate the fee gate prices NOAH from that seed —
-	// the one denomination a launching chain can pay with.
+	// Store NOAH units per reference unit alongside member factors, excluding NOAH from tax in
+	// GetTaxCap. NOAH has no arrival seed; genesis supplies its initial factor until a live
+	// reference rate refreshes it.
 	converted, err := rates.Convert(one, chain.NoahBaseDenom)
 	if err != nil && !isUnusableRateInput(err) {
 		return fmt.Errorf("deriving the NOAH conversion factor: %w", err)
@@ -141,21 +128,9 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	return nil
 }
 
-// rescaleConversionFactors re-expresses every stored factor in the new
-// reference unit. A factor is member units per one reference unit, so the
-// whole table rescales by a single cross — old-reference units per
-// new-reference unit — rather than per-member rates: the next block's refresh
-// re-derives every servable member from live rates anyway, and the uniform
-// rescale is what keeps a dark member's kept factor meaning what it meant,
-// in the new unit, until its feed returns.
-//
-// An unservable cross keeps the table untouched: the same degrade class as
-// the cap floor in RebaseReferenceState, chosen over wedging the re-point on
-// a rate pair no retry can mend. A product past the Dec domain holds that
-// entry alone — refresh's own degrade for the same figure — since a dark
-// member that fits has only this rescale to move it. Servable members mend
-// next block; dark ones stay priced in the old unit until their feed
-// returns, which the derived cap inherits.
+// rescaleConversionFactors converts stored crosses uniformly into new reference units. An unusable
+// cross preserves the table; an overflowing product preserves only that entry. Fresh members
+// recover on refresh, while dark entries retain their old-unit values. See x/treasury/README.md.
 func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	// A per-reference figure rebases like the exposure anchor, not like a
 	// quantity: the new unit is the offer (D76).

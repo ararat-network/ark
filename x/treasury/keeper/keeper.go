@@ -34,22 +34,15 @@ type Keeper struct {
 	claimsKeeper  types.ClaimsKeeper
 	reserveKeeper types.ReserveKeeper
 
-	// fundAddresses is the custody set SendRestriction guards, keyed by raw
-	// address bytes. It is built from the same FundAccountNames() walk that
-	// asserts registration, so a fund cannot be declared reachable and left
-	// unguarded: an address the account keeper does not know is a panic here,
-	// never a silently empty entry in a hand-written map.
+	// fundAddresses maps verified custody accounts by raw address bytes. The same FundAccountNames
+	// walk checks registration and installs send guards, preventing an unguarded declared fund.
 	fundAddresses map[string]struct{}
 
 	Schema collections.Schema
 	Params collections.Item[types.Params]
-	// ConversionFactors holds every derived cross rate from the protocol
-	// reference — each member's and, once first derivable, NOAH's — refreshed
-	// every block the oracle can serve it and kept at its last derived value
-	// when it cannot. The tax base is every entry except NOAH's: GetTaxCap
-	// owns that exclusion, and nothing stores a resolved cap. Membership
-	// drift needs no flag: the registry is ground truth, re-read every block,
-	// and every block is the retry.
+	// ConversionFactors stores denomination units per reference unit, refreshing derivable values
+	// and retaining unavailable ones. GetTaxCap excludes NOAH and derives caps at read time; each
+	// block rechecks registry membership.
 	ConversionFactors collections.Map[string, types.ConversionFactor]
 	RewardFunding     collections.Item[types.RewardFundingState]
 	EconomicMandate   collections.Item[types.EconomicMandate]
@@ -59,11 +52,8 @@ type Keeper struct {
 	// multiplier itself. Sampling writes it every block from settlement;
 	// application rewrites it on the governed period.
 	ExposureState collections.Item[types.ExposureState]
-	// ExposureRefreshPending records that a recomputation is owed because a
-	// cadence boundary passed without one succeeding, on the same terms as
-	// TaxCapRefreshPending: the boundary is an instant, so a period that
-	// elapsed while liability could not be valued stays owed rather than being
-	// forgiven, and every later block retries until it lands.
+	// ExposureRefreshPending retains an owed cadence update when inputs are unavailable. Each later
+	// block retries until refresh succeeds.
 	ExposureRefreshPending collections.Item[bool]
 	// BaseGasPrice is the base-fee controller's live price in reference base
 	// units per gas unit: the fee gate reads it at ante, the EndBlock update

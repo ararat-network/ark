@@ -8,21 +8,9 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// SendRestriction permits only positive anoah-only transfers into a Treasury
-// custody account, with no sender exemptions. Transfers to every other
-// recipient pass through unchanged.
-//
-// Insurance and the strategic Reserve are absent from the guarded set: each
-// belongs to the module whose committee operates it, and each registers its
-// own restriction.
-//
-// It is a keeper method for the same reason the Reserve's is, though the
-// dependency is weaker: the guarded addresses come from the constructor's
-// FundAccountNames() walk rather than from a second list derived by name in a
-// package variable. Deriving them by name cannot be checked — an unregistered
-// or misspelled name still yields a well-formed address, one that matches no
-// account and silently guards nothing — whereas the account keeper answers nil
-// and the constructor panics at startup.
+// SendRestriction guards verified Treasury fund addresses with positive NOAH-only deposits and no
+// sender exemptions. Other recipients pass unchanged; Claims and Reserve own their separate custody
+// guards.
 func (k Keeper) SendRestriction(
 	_ context.Context,
 	_ sdk.AccAddress,

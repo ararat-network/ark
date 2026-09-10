@@ -317,11 +317,8 @@ func (s *KeeperTestSuite) TestQueryComputeTaxBaseSumsPrincipal() {
 	)
 }
 
-// TestQueryComputeTaxDecodesForItself pins what makes the query safe to ask
-// from any client: a message arrives as bytes under a type URL and is decoded
-// here into the registered type, so one built dynamically — as autocli builds
-// them — is walked like any other. The Any carries no cached value, as one
-// off the wire does not.
+// TestQueryComputeTaxDecodesForItself checks uncached wire Any messages decode through the
+// registered codec, including dynamically constructed client messages.
 func (s *KeeperTestSuite) TestQueryComputeTaxDecodesForItself() {
 	from := sdk.AccAddress{1}
 	to := sdk.AccAddress{2}
@@ -429,11 +426,8 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
 
 func (s *KeeperTestSuite) TestQueryFundStatus() {
 	s.setAssets()
-	// Both committee-operated funds report through their own keeper rather than
-	// through a Bank stub: Treasury asks each operator, never the account.
-	// Insurance holds 40 with 7 encumbered by pending claims, which x/claims
-	// reports as 33 recognised — the encumbered 7 is claims state, served by its
-	// own Query/ClaimsMandate, and Treasury never sees it.
+	// Treasury reads each operator's recognised capital. Claims reports 33 from custody 40 less
+	// reservations 7; reservation details belong to its Balance query.
 	s.setInsuranceRecognised(33)
 	s.setReserveRecognised(30)
 	balances := map[string]int64{
@@ -498,11 +492,8 @@ func (s *KeeperTestSuite) TestQueryFundStatusComputesTargetsFromRecognisedLiabil
 	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 25), response.InsuranceTarget)
 }
 
-// TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete pins that an
-// incomplete valuation is not a query error, which would blind operators
-// during exactly the stress that makes valuation incomplete. The query always
-// answers with the partition that explains the gap — real balances beside
-// zero targets that claim nothing.
+// TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete checks incomplete pricing returns
+// disclosed liability gaps and real balances beside zero targets.
 func (s *KeeperTestSuite) TestQueryFundStatusAlwaysAnswersWhenValuationIncomplete() {
 	tests := []struct {
 		name      string
@@ -580,11 +571,8 @@ func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
 	s.Require().Equal(funding, response.RewardFunding)
 }
 
-// TestQueryExposureStatusReportsStoredRisk pins the query as stored state plus
-// the one derived figure, folding no registry — which is what keeps it
-// answerable when FundStatus is expensive or its targets are zeroed by an
-// incomplete valuation. The strict mocks carry that assertion: no supply or
-// balance expectation is set here.
+// TestQueryExposureStatusReportsStoredRisk checks stored-state reporting without supply, balance,
+// or registry reads.
 func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	state := treasurytypes.DefaultExposureState()
 	// A variance of one annualises to the square root of a year in blocks,
@@ -611,11 +599,8 @@ func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	s.Require().Equal(expected, response.AnnualisedVolatility)
 }
 
-// TestQueryFundStatusReportsScaledTargetsAndMultiplier pins the response as
-// self-reconcilable: every target is scaled, and the multiplier that scaled
-// them is reported beside the liability, so a reader can recover the policy
-// ratio from what is on the wire. Without the field the response reads as a
-// contradiction — targets that are not their ratio times the liability shown.
+// TestQueryFundStatusReportsScaledTargetsAndMultiplier checks target values reconcile with the
+// reported liability bases, policy ratios, and exposure multiplier.
 func (s *KeeperTestSuite) TestQueryFundStatusReportsScaledTargetsAndMultiplier() {
 	policy := treasurytypes.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")

@@ -51,11 +51,8 @@ func RandomisedEconomicPolicy(r *rand.Rand) types.EconomicPolicy {
 	return policy
 }
 
-// GenEconomicMandate appoints the economic-policy committee from the run's own
-// accounts and opens the window at the first block for longer than any run
-// lasts, so the committee surface is signable for the whole run. The corridor
-// runs from the zero policy to a drawn one, which leaves the committee somewhere
-// to move rather than a single admissible policy.
+// GenEconomicMandate appoints a simulation-owned committee for the expected run, with a corridor
+// from zero to a generated policy so delegated updates have room to vary.
 func GenEconomicMandate(r *rand.Rand, accounts []string) types.EconomicMandate {
 	if len(accounts) == 0 {
 		return types.DefaultEconomicMandate()

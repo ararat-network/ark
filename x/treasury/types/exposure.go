@@ -25,11 +25,8 @@ func DefaultExposureState() ExposureState {
 // is not checked here: it lives in Params, and a state imported beside a
 // lowered cap is clamped by the next update rather than refused at genesis.
 func (s ExposureState) Validate() error {
-	// Four figures with a floor and no ceiling: a price, an absolute NOAH
-	// quantity, and two ratios whose numerators and denominators are all
-	// unbounded. The variance below is the one with two ends, so it is checked
-	// apart from them rather than carrying a ceiling column no other row would
-	// fill.
+	// Price, NOAH flow, and the two ratios require non-negative values without field-specific
+	// ceilings. Variance has a [0, 1] range and is validated separately.
 	for _, field := range []struct {
 		name  string
 		value math.LegacyDec

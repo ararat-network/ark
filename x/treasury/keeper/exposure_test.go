@@ -313,11 +313,8 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	s.Require().True(state.VolatilityVariance.IsZero())
 }
 
-// TestExposureRebasedAnchorRecordsNoReturnWithoutAMove pins the rebase from
-// the sampler's side: an anchor equal to the live reference price,
-// re-expressed in the new unit, meets that unit's live price next block and
-// records no return. A rebase by the wrong factor would record the square of
-// the cross as a market move here.
+// TestExposureRebasedAnchorRecordsNoReturnWithoutAMove checks a correctly rebased anchor meets the
+// new unit's live price without recording a spurious market return.
 func (s *KeeperTestSuite) TestExposureRebasedAnchorRecordsNoReturnWithoutAMove() {
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 	s.settleEmpty()

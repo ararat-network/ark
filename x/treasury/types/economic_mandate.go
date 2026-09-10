@@ -57,16 +57,8 @@ func (mandate EconomicMandate) Validate() error {
 	return nil
 }
 
-// ValidatePolicy checks a committee policy against every mandate bound.
-//
-// Two tables, split only by the type each bound compares. Every lever is
-// clamped identically — inside [minimum, maximum], inclusive at both ends — so
-// the rule lives once and each lever is a row naming itself; Dec and Int need
-// separate tables because only their comparison differs.
-//
-// A lever missing from these tables is a lever the committee may set freely,
-// which is why adding one is a row rather than a block: the omission would be
-// invisible in a wall of near-identical conditionals.
+// ValidatePolicy checks every delegated lever within inclusive bounds. Decimal and integer fields
+// use separate tables; every new lever must be listed so it cannot escape corridor validation.
 func (mandate EconomicMandate) ValidatePolicy(policy EconomicPolicy) error {
 	minimum, maximum := mandate.MinimumPolicy, mandate.MaximumPolicy
 

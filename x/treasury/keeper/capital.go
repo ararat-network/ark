@@ -10,14 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// RequiredReserveCapital reports the capital the strategic Reserve is owed
-// against current exposure, satisfying x/reserve's TreasuryCapitalReader. It is
-// the requirement side of §7.2: a number, never a decision, and only the fund
-// acts on the difference.
-//
-// It requires a complete valuation, because every incompleteness that still
-// yields a number can understate the aggregate — which understates the
-// requirement and overstates the surplus a committee may burn.
+// RequiredReserveCapital sizes the nominal exposure requirement for Reserve burns. Incomplete
+// valuation fails because an understated requirement would overstate disposable surplus.
 func (k Keeper) RequiredReserveCapital(ctx context.Context) (math.Int, error) {
 	targets, err := k.grossFundTargets(ctx, true)
 	if err != nil {
@@ -26,12 +20,8 @@ func (k Keeper) RequiredReserveCapital(ctx context.Context) (math.Int, error) {
 	return targets.Reserve, nil
 }
 
-// RedemptionBufferShortfall reports how far the Redemption Buffer falls below
-// its target, bounding a committee transfer into it. The Buffer has no operator
-// to ask, so Treasury reads its balance directly.
-//
-// It sizes on whatever the block could value, because the coverage draw spends
-// the Buffer against this same aggregate however incomplete it is.
+// RedemptionBufferShortfall bounds committee refill using available nominal liability and the
+// Buffer's direct custody balance. Incomplete valuation does not disable refill.
 func (k Keeper) RedemptionBufferShortfall(ctx context.Context) (math.Int, error) {
 	targets, err := k.grossFundTargets(ctx, false)
 	if err != nil {
@@ -40,11 +30,8 @@ func (k Keeper) RedemptionBufferShortfall(ctx context.Context) (math.Int, error)
 	return shortfall(targets.Buffer, k.getBalance(ctx, types.RedemptionBufferName)), nil
 }
 
-// InsuranceShortfall reports how far Insurance falls below its target,
-// bounding a committee transfer into it. Insurance reports its own recognised
-// capital (§7.2), which an approved pending claim already encumbers, so sizing
-// the gap against the raw balance would understate it by the claims Insurance
-// has promised to pay.
+// InsuranceShortfall bounds committee refill against recognised Insurance capital, which excludes
+// pending claims, rather than raw custody.
 func (k Keeper) InsuranceShortfall(ctx context.Context) (math.Int, error) {
 	targets, err := k.grossFundTargets(ctx, false)
 	if err != nil {
@@ -57,17 +44,9 @@ func (k Keeper) InsuranceShortfall(ctx context.Context) (math.Int, error) {
 	return shortfall(targets.Insurance, balance), nil
 }
 
-// grossFundTargets sizes all three fund targets against the recognised basis a
-// committee act is bounded by, folding the registry live and reading no fund
-// balance. Every caller is a committee message, so the fold is metered against
-// the gas that message pays.
-//
-// Whether an incomplete valuation is fatal belongs to the caller, because the
-// two kinds are exposed in opposite directions: an incomplete aggregate can
-// land either side of the truth, which a bound on destroying capital cannot
-// survive in the low direction, while a bound on moving capital between
-// protocol funds is exposed only in the high one, where the money stays
-// protocol capital and the mandate floor still binds.
+// grossFundTargets folds live nominal liability without reading fund balances. Callers choose
+// whether incompleteness is fatal: disposal requires completeness, while bounded transfers between
+// protocol funds may proceed with disclosure.
 func (k Keeper) grossFundTargets(ctx context.Context, requireComplete bool) (types.FundTargetSet, error) {
 	partition, err := k.liabilityPartitionValue(ctx)
 	if err != nil {
@@ -89,14 +68,9 @@ func (k Keeper) grossFundTargets(ctx context.Context, requireComplete bool) (typ
 	if err != nil {
 		return types.FundTargetSet{}, fmt.Errorf("getting economic policy: %w", err)
 	}
-	// Committee bounds scale with the same multiplier the waterfall uses, and
-	// every direction it moves them is the conservative one: a higher Reserve
-	// requirement shrinks the surplus a committee may burn, and higher Buffer
-	// and Insurance targets widen the shortfalls bounding transfers into them.
-	// The rule this section states — that a bound must not loosen on state the
-	// bounded actor can reverse — is untouched, because the multiplier is
-	// protocol-computed from supply, oracle rates, and settled flow, none of
-	// which a committee can set.
+	// Apply the same exposure multiplier as expansion routing. Higher requirements reduce burnable
+	// surplus and widen fund-refill gaps; nominal liability prevents self-held paper from loosening
+	// committee bounds.
 	basis, err := k.exposureAdjusted(ctx, gross)
 	if err != nil {
 		return types.FundTargetSet{}, err

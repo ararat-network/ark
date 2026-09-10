@@ -32,12 +32,9 @@ type liabilityPartition struct {
 	complete bool
 }
 
-// recognised is the claimable aggregate — every liability the block could put
-// a number against — and the denominator redemption coverage divides by. A
-// member with an unavailable feed counts at its last known rate, because
-// dropping it would pay its holders' coverage share away during the outage.
-// Write-offs and untrusted suspensions are genuinely outside: the obligation
-// or the protocol's rate is withdrawn, not merely unevidenced.
+// recognised sums priced, settlement-priced, and last-known-rate liability before self-held
+// netting. Written-off and untrusted suspended exposure stays outside; stale obligations remain
+// counted where evidence exists.
 func (p liabilityPartition) recognised() (math.LegacyDec, error) {
 	valued, err := decimal.Add(p.priced, p.settlement)
 	if err != nil {
@@ -46,14 +43,9 @@ func (p liabilityPartition) recognised() (math.LegacyDec, error) {
 	return decimal.Add(valued, p.stale)
 }
 
-// net is recognised less what the strategic Reserve holds of it: the claims
-// that can actually arrive, since Reserve-held paper has no holder and only a
-// committee act returns it to circulation. Committee bounds keep recognised —
-// the committee they constrain can re-issue that paper by deploying it, so a
-// bound on net would move on state its own subject controls. The subtraction
-// cannot go negative — selfHeld accrues only in branches that counted the same
-// supply at the same rate, and a balance never exceeds its supply — so the
-// check is a backstop.
+// net subtracts Reserve-held liability for flow calculations; committee bounds retain recognised
+// liability. Matching membership and rates plus balance <= supply make a negative result
+// unreachable; the checked error remains a backstop.
 func (p liabilityPartition) net() (math.LegacyDec, error) {
 	recognised, err := p.recognised()
 	if err != nil {
@@ -162,15 +154,9 @@ func (k Keeper) liabilityPartitionValue(ctx context.Context) (liabilityPartition
 	return partition, nil
 }
 
-// discloseIncompleteValuation announces a valuation that could not cover every
-// recognised liability, naming the supply behind the qualification.
-//
-// Its consumers call it rather than the fold, because the fold cannot know
-// whether a caller will spend against the figure or merely look at it.
-// Settlement announces the block's own valuation; a committee bound announces
-// the one its ceiling was sized on, inside the transaction that acted on it and
-// discarded with it if the act then fails. The event therefore means "capital
-// moved against a qualified figure", never "someone asked".
+// discloseIncompleteValuation records excluded supply for settlement or a committee action using
+// degraded bounds. Queries report the partition without emitting events; failed transactions
+// discard their disclosure.
 func (k Keeper) discloseIncompleteValuation(ctx context.Context, partition liabilityPartition) error {
 	claimable, err := partition.recognised()
 	if err != nil {
@@ -187,11 +173,8 @@ func (k Keeper) discloseIncompleteValuation(ctx context.Context, partition liabi
 	return nil
 }
 
-// accrueSelfHeld records what the strategic Reserve holds of a member the
-// caller's branch just counted, valued through that branch's own conversion —
-// called per counted branch so the netting can never disagree with the
-// counting in membership or rate. A zero balance records nothing, so the list
-// names only what the Reserve holds.
+// accrueSelfHeld values Reserve custody using the same branch, membership, and rate as counted
+// liability. Zero holdings create no disclosure row.
 func (k Keeper) accrueSelfHeld(
 	ctx context.Context,
 	partition *liabilityPartition,

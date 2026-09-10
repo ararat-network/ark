@@ -65,11 +65,8 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	s.Require().Equal(uint64(2), storedFunding.BlocksRemaining)
 }
 
-// TestMsgUpdateParamsBoundsTheFundingWindow covers the window's own ceiling,
-// which with the per-block target cap is what keeps a window's accrual
-// representable. The check is local to Params.Validate, so it does not consult
-// the live policy or the open window — a window length is admissible or not on
-// its own terms.
+// TestMsgUpdateParamsBoundsTheFundingWindow checks the context-free window cap that combines with
+// the reward-target cap to bound accrual arithmetic.
 func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
 	currentParams := types.DefaultParams()
 	currentParams.RewardFundingWindow = 1
@@ -87,11 +84,8 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
 	s.Require().Equal(currentParams, stored)
 }
 
-// TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy pins what the domain
-// caps bought. A window this long under targets this large was refused before,
-// by a validation that multiplied the two out at every write; the ceilings on
-// each field make the product safe without the projection, so the pair is now
-// simply admissible.
+// TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy checks independent domain caps admit the
+// largest supported window and reward targets together.
 func (s *KeeperTestSuite) TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy() {
 	policy := types.DefaultEconomicPolicy()
 	policy.ValidatorBlockRewardTarget = types.MaxBlockRewardTarget
@@ -111,11 +105,8 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy()
 	s.Require().Equal(candidate, stored)
 }
 
-// TestMsgUpdateParamsRepricesCapsWithoutRebuild pins the derive-at-read
-// contract at the governance call site: a reference amount change stores the
-// params and nothing else — no rate capture, no factor writes, no event —
-// because every derived cap re-prices the moment the params land, the zero
-// sentinel included.
+// TestMsgUpdateParamsRepricesCapsWithoutRebuild checks a reference-cap amount change updates
+// derived reads immediately without rate capture, factor writes, or refresh events.
 func (s *KeeperTestSuite) TestMsgUpdateParamsRepricesCapsWithoutRebuild() {
 	s.setBlockHeight(42)
 	current := types.DefaultParams()
@@ -190,11 +181,8 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyBoundsTheBlockRewardTargets() {
 	s.Require().True(types.DefaultEconomicPolicy().Equal(stored))
 }
 
-// TestMsgUpdatePolicyIgnoresTheOpenFundingWindow pins the property the swap to
-// domain caps was for: a policy's admissibility no longer depends on how far
-// the current window has already accrued. The same candidate that is accepted
-// here would have been refused mid-window before, which made a governance value
-// valid or not according to when it was proposed.
+// TestMsgUpdatePolicyIgnoresTheOpenFundingWindow checks policy validity depends on domain bounds,
+// not accrued live-window state.
 func (s *KeeperTestSuite) TestMsgUpdatePolicyIgnoresTheOpenFundingWindow() {
 	params := types.DefaultParams()
 	params.RewardFundingWindow = types.MaxRewardFundingWindow
@@ -380,10 +368,8 @@ func (s *KeeperTestSuite) TestEconomicMandateAuthorityAndRoleSeparation() {
 	message.Committee = committee
 	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().NoError(err)
-	// The other half of this property — that one address may hold both the
-	// economic and Claims mandates, because the roles are separated from the
-	// Treasury authority rather than from each other — now spans two modules
-	// and is asserted in app/claims_test.go.
+	// An address may hold both Economic and Claims mandates: each role is separated from Treasury
+	// authority, but not from the other role. app/claims_test.go checks the cross-module case.
 }
 
 func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {

@@ -72,12 +72,8 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
 }
 
-// TestInitGenesisSeedsFactorsAtOne pins the launch path: a genesis shipping
-// no factors seeds every member at one — a fresh chain holds no rates at
-// InitChain, so there is no conversion to refuse, and the strict oracle mock
-// carries that assertion. The derived cap is then the unconverted reference
-// amount until the first block's pass re-derives from real rates, and a zero
-// reference derives the uncapped sentinel through the same seeds.
+// TestInitGenesisSeedsFactorsAtOne checks default member factors require no Oracle reads and derive
+// the reference cap unchanged until refresh, including the uncapped zero sentinel.
 func (s *KeeperTestSuite) TestInitGenesisSeedsFactorsAtOne() {
 	genesis := types.DefaultGenesisState()
 	genesis.Params.ReferenceTaxCap = math.NewInt(100)
@@ -133,11 +129,8 @@ func (s *KeeperTestSuite) TestInitGenesisRequiresConfiguredMatchingReferenceDeno
 	}
 }
 
-// TestInitGenesisAcceptsMembersWithoutFactors pins the import contract loose
-// on the member side: a member holding no factor is the gap an arrival opens
-// until the next BeginBlocker covers it, and an export taken inside that gap
-// must remain importable, arriving with the member untaxed exactly as it was
-// on the exporting chain; the next block's pass covers it either way.
+// TestInitGenesisAcceptsMembersWithoutFactors checks exports during the registration-to-refresh gap
+// remain importable. Missing factors remain untaxed until the next refresh.
 func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	s.setAssets(chain.XDRBaseDenom, chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
@@ -164,12 +157,8 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	s.Require().Error(err)
 }
 
-// TestInitGenesisAcceptsFactorsBeyondOraclePricing pins the import contract
-// loose on the oracle-priced side. A factor kept after its member leaves the
-// oracle-priced set is the expected shape of an export taken after a
-// departure; rejecting it would refuse the chain its own exported state.
-// Departure is a lifecycle status, never a missing registry row, so both
-// denoms are still members here.
+// TestInitGenesisAcceptsFactorsBeyondOraclePricing checks factors remain importable after lifecycle
+// changes remove Oracle pricing. Registry membership itself is permanent.
 func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	s.setAssets(chain.USDBaseDenom)
 	// akrw has departed the oracle-priced set — written off, its row permanent —
@@ -195,12 +184,8 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	s.Require().Error(err)
 }
 
-// TestInitGenesisRefusesFactorsForNonMembers pins where the loose import
-// stops: the factor set is the tax base, so one naming a denomination the
-// protocol never issued would have the chain collect tax that settlement can
-// never price and never move — it would defer in the collector permanently.
-// No real export carries such a factor, because runtime derivation walks the
-// registry and rows are permanent, so refusing it costs no round trip.
+// TestInitGenesisRefusesFactorsForNonMembers rejects factors that could tax unregistered
+// denominations whose residue settlement cannot value.
 func (s *KeeperTestSuite) TestInitGenesisRefusesFactorsForNonMembers() {
 	s.setAssets(chain.USDBaseDenom)
 	genesis := types.DefaultGenesisState()
@@ -215,13 +200,9 @@ func (s *KeeperTestSuite) TestInitGenesisRefusesFactorsForNonMembers() {
 	)
 }
 
-// TestInitGenesisCollectorBalanceAdmission pins the rule on seeded collector
-// custody. The collector is not NOAH-only — an export taken mid-window carries
-// that window's member tax — but it can only ever legitimately hold what tax
-// is collected in, and tax is collected only in capped denominations, which
-// are members. Bank writes genesis balances directly and every runtime door is
-// closed (blocked address; the one inbound path is the ante routing), so this
-// is the only place the rule can be stated.
+// TestInitGenesisCollectorBalanceAdmission permits member-tax residue across exports while
+// rejecting unsupported custody. Genesis must enforce this because Bank import bypasses runtime
+// restrictions.
 func (s *KeeperTestSuite) TestInitGenesisCollectorBalanceAdmission() {
 	s.Run("admits NOAH and member tax", func() {
 		s.SetupTest()

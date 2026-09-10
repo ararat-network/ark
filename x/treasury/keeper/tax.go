@@ -55,13 +55,8 @@ func (k Keeper) ComputeTaxWithParams(ctx context.Context, params types.Params, m
 // taxOn sums every input into the base and, at a positive rate, applies the
 // rate to each under its cap.
 func (k Keeper) taxOn(ctx context.Context, params types.Params, inputs []sdk.Coins) (tax, base sdk.Coins, err error) {
-	// The tax base is the cap set: a denomination is taxed exactly when
-	// Treasury holds a cap for it. Caps are derived from oracle-priced
-	// membership and then kept, so lifecycle status governs what a cap is
-	// worth and never whether transfers of outstanding supply are taxed —
-	// suspended, written-off, and retirement-residual supply all still move
-	// between holders, and a transfer tax that exempted them would price
-	// distress below ordinary money.
+	// Stored member factors define the tax base across lifecycle changes. Outstanding suspended,
+	// written-off, and retired supply remains taxable; NOAH is excluded by GetTaxCap.
 	caps := make(map[string]math.Int)
 	taxTotals, baseTotals := coinTotals{}, coinTotals{}
 	for _, input := range inputs {
@@ -78,12 +73,9 @@ func (k Keeper) taxOn(ctx context.Context, params types.Params, inputs []sdk.Coi
 				var err error
 				cap, err = k.taxCap(ctx, params, principal.Denom)
 				if errors.Is(err, collections.ErrNotFound) {
-					// No factor has ever been derived for this denomination:
-					// it is outside the registry, or a member whose first
-					// refresh has not landed. Untaxed either way, because
-					// taxing uncapped would be unbounded and rejecting would
-					// let a dark oracle block transfers. A nil entry memoises
-					// the miss for the rest of the transaction.
+					// No factor means untaxed, including a newly registered member before refresh.
+					// Cache the miss for this transaction so missing pricing cannot block
+					// transfers.
 					cap = math.Int{}
 				} else if err != nil {
 					return nil, nil, fmt.Errorf("getting tax cap for denom %s: %w", principal.Denom, err)
@@ -233,15 +225,9 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 		if typed == nil {
 			return fmt.Errorf("nil IBC v2 send packet message")
 		}
-		// The raw v2 send is MsgTransfer's second door onto the same outbound
-		// leg: the transfer app checks the payload sender against this signer
-		// and escrows through the same SendTransfer. The source port selects
-		// the app, so only transfer payloads carry principal — Wasm v2 ports
-		// and GMP move no coins. Decoding through the module's own decoder
-		// with the module's own arguments keeps the two verdicts identical, so
-		// whatever it escrows is what this prices. Each payload is its own
-		// input (D17), though ValidateBasic holds the count at one on both the
-		// tx and router paths today.
+		// Raw IBC v2 transfer payloads expose the same principal as MsgTransfer. Decode with the
+		// transfer module's own arguments; Wasm and GMP ports move no coins here. Each payload is a
+		// separate tax input.
 		for i, payload := range typed.Payloads {
 			if payload.SourcePort != ibctransfertypes.PortID {
 				continue

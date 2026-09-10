@@ -32,23 +32,13 @@ func NewGenesisState(
 	}
 }
 
-// defaultUSDPerXDR converts the dollar-stated placeholder into the table's
-// unit. The IMF cross was 1.3709 on 2026-09-02, rounded up because the factor
-// sizes a fee requirement. XDR drifts a percent or two a year against the
-// dollar, and the seed governs gas only until the first reference rate, so
-// the snapshot needs no upkeep.
+// defaultUSDPerXDR is the upward-rounded bootstrap dollar/XDR cross used only until live reference
+// pricing replaces the seed.
 var defaultUSDPerXDR = math.LegacyMustNewDecFromStr("1.371")
 
-// DefaultNoahConversionFactor seeds the numeraire's cross, NOAH base units
-// per reference base unit — the orientation every oracle rate carries, so the
-// first reference rate replaces it verbatim — so gas is payable in NOAH from
-// the first block.
-// Nothing else is: a member factor needs a rate to exist, and the reference
-// is a unit of account nobody holds. It is chain.BootstrapNoahPerUSD in XDR
-// terms — dollars per XDR times NOAH per dollar — so the gas seed and the
-// oracle's first NOAH price agree; a launch genesis overrides it with the
-// opening price, and the first reference rate re-derives it. Rounded up for
-// the same reason as the cross.
+// DefaultNoahConversionFactor seeds NOAH-per-reference gas pricing from BootstrapNoahPerUSD and the
+// bootstrap XDR cross, rounded upward. Launch genesis may set the opening price; the first usable
+// reference observation refreshes it.
 var DefaultNoahConversionFactor = defaultUSDPerXDR.MulRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerUSD))
 
 // DefaultGenesisState returns the safe, unconfigured Treasury genesis state:
@@ -142,11 +132,8 @@ func (gs GenesisState) Validate() error {
 			!gs.RewardFunding.ValidatorFeeValue.IsZero()) {
 		return errors.New("empty reward funding window must use the default state")
 	}
-	// An imported window arrives mid-accrual rather than being reached one
-	// block at a time, so the ceiling the accrual gets from MaxBlockRewardTarget
-	// has to be imposed here directly. The bound is a whole window's worth of
-	// either target, which is the most the running state could legitimately
-	// hold.
+	// Imported target accrual must fit the maximum whole-window total. Import cannot rely on the
+	// per-block write checks that bound a running chain.
 	maxAccrued := MaxBlockRewardTarget.Mul(math.NewIntFromUint64(MaxRewardFundingWindow))
 	for _, accrued := range []struct {
 		name  string

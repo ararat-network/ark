@@ -96,7 +96,8 @@ a unit change would look like a market return. [Protocol monitoring](../../docs/
 
 One `ConversionFactors` table serves fee prices and tax caps. BeginBlock refreshes a member with a servable rate,
 retains an existing factor through an outage, and seeds a new unpriceable member at one. The reference has an identity
-factor; NOAH has no usable row until a reference rate is available. A reference change atomically rebases the table,
+factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
+retains it until a live cross is available. A reference change atomically rebases the table,
 cap, base-fee floor, and live price, so a cap update applies uniformly without a delayed per-member refresh.
 
 Storing FX factors rather than final fee prices lets an oracle outage freeze FX while the base-fee congestion
@@ -159,3 +160,27 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 - [Client fee construction](../../docs/clients/CLIENT_FEES.md).
 - [Protocol-state monitoring](../../docs/operations/PROTOCOL_MONITORING.md).
 - [Application wiring](../../app/README.md).
+
+## Arithmetic and degraded-state contracts
+
+Coverage multiplies output by Buffer custody before dividing by post-burn net liability plus retired value. Forming
+the ratio first would amplify its rounding error by the output and could draw above custody. The decimal operation
+can land one base unit above an exact rational floor when the true result lies within half a quantum below an integer;
+whole-unit output and custody bounds still hold exactly. The fuzz reference allows only that one-unit difference and
+asserts both bounds without tolerance. The exposure multiplier never changes this payment denominator.
+
+Reward-window target and duration caps bound accrual independently of live state. Checked additions remain backstops.
+Scarce subsidy is split after checked multiplication and integer division; flooring Oracle's share leaves the validator
+remainder so the two spend exactly the pool. A priced reward conversion that leaves the arithmetic domain fails the
+block rather than distributing from a partial sum.
+
+Unpriced transfer tax follows its asset verdict: written-off and retired residue moves to Reserve; stale members and
+untrusted suspended holdings wait in the collector. Unrecognised collector custody is excluded by runtime and genesis
+rules, but the fallback still defers it safely. Unrecognised coins in the ordinary fee collector can occur and value at
+zero. Claim and Reserve custody guards remain owned by those modules.
+
+Reference rebasing uses one old-to-new cross for held conversion factors. An unusable cross retains the table; a product
+outside the decimal domain retains that entry alone. Fresh members recover on the next refresh; unavailable members
+keep their held value until their feed returns. Positive tax ceilings that truncate below one become one, never the
+zero uncapped sentinel. The exposure price anchor converts by the reciprocal quantity factor; an unconvertible anchor
+is discarded and reseeded on a later sample so observation state cannot veto the reference change.

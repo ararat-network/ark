@@ -58,11 +58,8 @@ func (s *KeeperTestSuite) TestCapitalReadsReportTargetGaps() {
 	}
 }
 
-// TestBurnBoundRefusesIncompleteValuation pins the one figure that still
-// becomes unavailable. Every way an incomplete valuation still returns a number
-// can understate the aggregate, which understates the requirement and overstates
-// the surplus a committee may destroy — so this bound withholds rather than
-// letting a burn size itself on a figure that can only err loose.
+// TestBurnBoundRefusesIncompleteValuation checks that incomplete liability cannot understate
+// required capital and over-authorise Reserve disposal.
 func (s *KeeperTestSuite) TestBurnBoundRefusesIncompleteValuation() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -77,12 +74,8 @@ func (s *KeeperTestSuite) TestBurnBoundRefusesIncompleteValuation() {
 	s.requireNoTypedEvent(&types.EventLiabilityIncomplete{})
 }
 
-// TestFundTransferBoundsSizeOnIncompleteValuation pins the other half of the
-// split. Both transfer bounds keep answering while the valuation is degraded,
-// because the act they bound only moves capital between protocol funds — and
-// because the coverage draw is concurrently spending the Buffer against this
-// very aggregate, so gating the refill on completeness would leave the drain
-// running while the fast response went dark.
+// TestFundTransferBoundsSizeOnIncompleteValuation checks Buffer and Insurance refills remain
+// available during degraded valuation while their bounds and mandate floor apply.
 func (s *KeeperTestSuite) TestFundTransferBoundsSizeOnIncompleteValuation() {
 	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
@@ -124,11 +117,8 @@ func (s *KeeperTestSuite) TestFundTransferBoundsSizeOnIncompleteValuation() {
 	})
 }
 
-// TestFundTransferBoundsDropNeverPricedSupply pins the direction the tolerant
-// path errs in when there is no rate at all to count by. The supply leaves the
-// aggregate outright, which shrinks the target and the gap with it: the bound
-// under-fills rather than over-fills, which is the safe way for a transfer
-// ceiling to be wrong.
+// TestFundTransferBoundsDropNeverPricedSupply checks absent rates shrink the refill target and gap,
+// causing conservative under-filling.
 func (s *KeeperTestSuite) TestFundTransferBoundsDropNeverPricedSupply() {
 	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
@@ -167,13 +157,8 @@ func usdSettlementPlan() assettypes.SettlementPlan {
 	}
 }
 
-// TestSelfHeldPaperMovesFlowsButNotCommitteeBounds pins the basis split that
-// makes netting safe. Ark-issued paper parked in the strategic Reserve nets out
-// of the flows — redemption coverage and the waterfall's fund gaps — because no
-// claim can arrive from it. It stays inside every bound on a committee act,
-// because the committee those bounds constrain can deploy that paper straight
-// back into circulation: a bound that loosened when its own subject parked
-// paper would be no bound at all.
+// TestSelfHeldPaperMovesFlowsButNotCommitteeBounds checks Reserve paper reduces net flow liability
+// but remains in nominal committee bounds, since the committee can return it to circulation.
 func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")
@@ -210,11 +195,8 @@ func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(15), insuranceGap)
 
-	// The flow reads net. Coverage is the Buffer over the claims that can
-	// actually arrive: the basis is the net 80 plus the 40 the block retired,
-	// so 20/120 of a 40-NOAH output draws 6. On the gross basis of 100 the
-	// denominator would have been 140 and the draw 5 — the difference is the
-	// parked paper's coverage share returning to real holders.
+	// Coverage uses net 80 plus retired 40: floor(20 * 40 / 120) = 6. Including self-held paper
+	// would use 140 and pay only 5.
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
 		gomock.Any(), types.RedemptionBufferName, markettypes.ModuleName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 6)),
@@ -229,15 +211,8 @@ func (s *KeeperTestSuite) TestSelfHeldPaperMovesFlowsButNotCommitteeBounds() {
 	s.Require().Equal(math.NewInt(6), burn)
 }
 
-// TestCommitteeBoundsScaleWithExposure pins the multiplier's reach into
-// x/reserve. Every direction it moves a bound is the conservative one: the
-// Reserve requirement rises, which shrinks the surplus a committee may burn,
-// and the two fund shortfalls rise, which widens the transfers a committee may
-// make into the funds that absorb a run.
-//
-// The bound stays legitimate because the multiplier is protocol-computed from
-// supply, oracle rates, and settled flow — none of which the bounded committee
-// can set — so this does not loosen a bound on state its actor can reverse.
+// TestCommitteeBoundsScaleWithExposure checks the protocol multiplier raises Reserve requirements
+// and Buffer/Insurance refill gaps while preserving nominal committee-bound accounting.
 func (s *KeeperTestSuite) TestCommitteeBoundsScaleWithExposure() {
 	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")

@@ -23,26 +23,12 @@ import (
 // Dec so the square root below takes one argument rather than composing two.
 var blocksPerYear = math.LegacyNewDec(int64(chain.BlocksPerYear))
 
-// maxReturn bounds one volatility sample. A block-to-block return outside
-// [-1, 1] is a rate discontinuity rather than a market move — a feed returning
-// after an outage, or a denomination redefined underneath the reference — and
-// admitting it would let one such event dominate a series that is supposed to
-// describe ordinary variation. Clamping also bounds the variance series to
-// [0, 1] by induction, which is what keeps annualised volatility inside the
-// representable domain without a further check.
+// maxReturn clamps volatility samples to [-1, 1], limiting feed discontinuities. Squared samples
+// and convex EWMA weights keep variance in [0, 1], bounding annualised volatility.
 var maxReturn = math.LegacyOneDec()
 
-// sampleExposure folds this block's observations into the two running series.
-// It runs first in SettleConversions, before the totals are validated or
-// tested for emptiness: an idle block still decays flow toward zero and still
-// records a price, so the series describe elapsed time rather than elapsed
-// activity, and a chain that stops converting does not freeze its risk estimate
-// at whatever the last busy block saw.
-//
-// The totals are read but never trusted for arithmetic beyond a subtraction
-// bounded at zero. Validate runs immediately after and fails the block on
-// anything malformed, so the fold cannot act on a figure settlement then
-// rejects.
+// sampleExposure updates risk series before conversion-total guards so idle blocks still decay flow
+// and observe prices. Malformed totals fail subsequent validation and cannot commit the sample.
 func (k Keeper) sampleExposure(ctx context.Context, totals markettypes.ConversionTotals) error {
 	state, err := k.getExposureState(ctx)
 	if err != nil {
@@ -66,14 +52,8 @@ func (k Keeper) sampleExposure(ctx context.Context, totals markettypes.Conversio
 	return nil
 }
 
-// sampleVolatility folds one squared return into the variance series.
-//
-// A reference the Oracle cannot price this block is skipped rather than
-// treated as a zero return: an absent rate is absent evidence, and recording
-// calm because the feed went dark would understate risk during exactly the
-// outage that suggests it. The stored price is left untouched, so the return
-// resumes across the gap when the feed returns — measuring the move that
-// actually happened rather than pretending the gap did not.
+// sampleVolatility skips unavailable reference observations without changing the anchor or
+// recording false calm. A returning feed measures the move across the gap.
 func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState, params types.Params) error {
 	reference, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
@@ -127,14 +107,8 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 	return nil
 }
 
-// sampleFlow folds this block's net redemption value into the flow series.
-//
-// Only the redemption side counts, and only its excess over expansion: what
-// the indicator is for is one-directional pressure, and a block whose
-// expansions matched its redemptions exerted none. The figure stays absolute
-// NOAH rather than a ratio, because dividing here would fix it against the
-// liability of the block it was sampled in, and a series spanning hours would
-// then mix denominators. The division happens once, at application.
+// sampleFlow tracks positive redemption value net of expansion in absolute NOAH. Liability
+// normalisation occurs at refresh so the EWMA does not mix historical denominators.
 func sampleFlow(state *types.ExposureState, params types.Params, totals markettypes.ConversionTotals) error {
 	sample := math.LegacyZeroDec()
 	if !totals.RedeemedValue.IsNil() && totals.RedeemedValue.IsPositive() {
@@ -159,11 +133,8 @@ func sampleFlow(state *types.ExposureState, params types.Params, totals marketty
 	return nil
 }
 
-// ewma folds one sample into a running series: decay * previous + (1 - decay) *
-// sample. Validation keeps decay in [0, 1), so both weights are non-negative
-// and sum to one, and the result stays inside the convex hull of the two
-// inputs — which is what bounds the variance series once its samples are
-// clamped.
+// ewma computes decay*previous + (1-decay)*sample. Validated decay in [0, 1) keeps the result
+// within the inputs' convex hull.
 func ewma(previous, sample, decay math.LegacyDec) (math.LegacyDec, error) {
 	retained, err := decimal.Mul(previous, decay)
 	if err != nil {
@@ -180,15 +151,8 @@ func ewma(previous, sample, decay math.LegacyDec) (math.LegacyDec, error) {
 	return decimal.Add(retained, contributed)
 }
 
-// refreshExposure recomputes the multiplier when the cadence is due or an
-// earlier attempt is owed. It runs from BeginBlocker, after the block's other
-// Treasury work, and reads one bool on every block that is neither.
-//
-// An update that cannot be computed raises the owed flag and returns: the
-// cadence boundary is an instant, so a period that passes while liability
-// cannot be valued would otherwise be forgiven and the multiplier would hold a
-// figure from before the conditions that made valuation fail. Only inputs are
-// treated this way. A store or codec fault still fails the block.
+// refreshExposure runs at cadence or retries an owed update from BeginBlock. Unavailable inputs
+// retain the owed flag; store and codec faults propagate. Off-cadence blocks read only the flag.
 func (k Keeper) refreshExposure(ctx context.Context) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -238,12 +202,8 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 		}
 		return false, err
 	}
-	// The net basis, matching the waterfall: paper the Reserve holds raises no
-	// claim, so counting it would report leverage the protocol does not carry.
-	// An incomplete partition is used as it stands rather than skipped — it
-	// understates exposure, which understates the multiplier, and a risk model
-	// that switched off during partial information would be blindest exactly
-	// when an asset has just failed.
+	// Use net liability, excluding Reserve-held paper that cannot claim redemption. Partial
+	// valuation still feeds the model; missing information must not disable risk updates.
 	net, err := partition.net()
 	if err != nil {
 		return false, err
@@ -323,25 +283,9 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 	return true, nil
 }
 
-// composeMultiplier folds the three surcharges into one factor. The weights
-// arrive from EconomicPolicy and the saturation ceiling from Params, which is
-// the split that makes the delegation safe: the committee sets how much each
-// measurement is worth, and governance alone sets how far the answer may go.
-//
-// Each term is
-// one plus a weighted indicator, so a zero weight contributes exactly one and
-// switches its indicator off without disturbing the others; all three zero
-// gives one, which is the launch configuration and reproduces unscaled targets.
-//
-// It returns no error, deliberately. Arithmetic leaving the representable
-// domain saturates at the cap rather than failing: the caller is a
-// BeginBlocker, where a checked error and a panic are the same outcome — the
-// block fails — and the honest reading of an
-// unrepresentable composite is that risk is past anything the model can
-// measure, which is what the cap already means. The parameter domain caps make
-// this unreachable in practice: three weights bounded by MaxExposureWeight
-// against indicators bounded by supply, one, and the annualisation constant
-// cannot approach the Dec limit. It is kept as the loud backstop behind them.
+// composeMultiplier multiplies weighted indicator surcharges within the governance cap. Zero
+// weights contribute one. Overflow saturates at the cap as a liveness backstop behind
+// domain-bounded weights and indicators; see x/treasury/README.md.
 func composeMultiplier(policy types.EconomicPolicy, ceiling math.LegacyDec, ratio, volatility, flow math.LegacyDec) math.LegacyDec {
 	multiplier := math.LegacyOneDec()
 	for _, term := range []struct {
@@ -409,15 +353,8 @@ func annualisedVolatility(variance math.LegacyDec) (math.LegacyDec, error) {
 	return volatility, nil
 }
 
-// circulatingNoah is total NOAH supply less every balance held by a protocol
-// fund. The four accounts hold NOAH that no one can sell, so counting it would
-// overstate the market capitalisation the liability ratio measures against and
-// report the protocol as less levered than it is.
-//
-// Raw balances, deliberately, where the waterfall asks each fund what it
-// recognises: recognised capital includes haircut credit for external assets
-// the Reserve holds (D58), which is not circulating NOAH and would subtract
-// something that was never in the supply figure to begin with.
+// circulatingNoah subtracts raw NOAH balances in protocol funds from total supply. Recognised
+// capital is unsuitable because it includes external-asset credits absent from NOAH supply.
 func (k Keeper) circulatingNoah(ctx context.Context) (math.Int, error) {
 	circulating := k.bankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount
 	for _, moduleName := range []string{
@@ -436,19 +373,9 @@ func (k Keeper) circulatingNoah(ctx context.Context) (math.Int, error) {
 	return circulating, nil
 }
 
-// exposureAdjusted scales a liability basis by the current multiplier. It is
-// the one entry point every requirement-family consumer uses, so what the
-// multiplier reaches is decided here rather than at each call site.
-//
-// Two consumers deliberately do not call it. The redemption draw divides by the
-// raw basis, because scaling a payment denominator rations the exits the Buffer
-// exists to fund (D73), and the multiplier's own liability ratio reads the raw
-// basis, because a controller feeding its output back into its input would
-// compound.
-//
-// Rounding is up, per the direction rule: this figure sizes a requirement, and
-// a requirement that rounds down asks for less capital than the model called
-// for.
+// exposureAdjusted rounds a liability requirement upward by the current multiplier. Redemption
+// payments and the model's own liability ratio use the raw basis to avoid exit rationing or
+// feedback compounding.
 func (k Keeper) exposureAdjusted(ctx context.Context, basis math.LegacyDec) (math.LegacyDec, error) {
 	state, err := k.getExposureState(ctx)
 	if err != nil {
@@ -468,24 +395,9 @@ func (k Keeper) exposureAdjusted(ctx context.Context, basis math.LegacyDec) (mat
 	return scaled, nil
 }
 
-// rescaleReferencePrice re-expresses the stored reference price when governance
-// re-points the protocol reference. Without it the next block would read a
-// price in the new unit against an anchor in the old one and record the unit
-// change as a market move — a spurious return whose size is the cross rate
-// itself, which is exactly the kind of discontinuity the sample clamp exists to
-// blunt and should never be asked to absorb.
-//
-// The anchor is a price — NOAH per one unit of the outgoing reference — not a
-// quantity of that unit, so it moves by the reciprocal of the factor a
-// quantity moves by: p × rate[to] / rate[from] (D76). Convert computes exactly
-// that when its arguments are given in the opposite order to this function's,
-// which is why they are reversed below rather than by mistake. The reversal is
-// the whole operation, and straightening it out would record the square of the
-// cross rate as a market move.
-//
-// The three other stored figures need no adjustment: variance and the
-// multiplier are dimensionless, and flow pressure is NOAH-valued, which no
-// reference move touches.
+// rescaleReferencePrice converts the stored price anchor by the reciprocal of a quantity's rebase:
+// p * rate[to] / rate[from]. Convert therefore receives reversed denominations. Variance,
+// multiplier, and NOAH flow are unit-independent; see x/treasury/README.md.
 func (k Keeper) rescaleReferencePrice(ctx context.Context, from, to string, rates oracletypes.RateSet) error {
 	state, err := k.getExposureState(ctx)
 	if err != nil {
@@ -500,12 +412,8 @@ func (k Keeper) rescaleReferencePrice(ctx context.Context, from, to string, rate
 
 	rebased, err := rates.Convert(sdk.NewDecCoinFromDec(to, state.LastReferencePrice), from)
 	if err != nil {
-		// The anchor is dropped rather than the transition failed: a reference
-		// move is governance re-pointing the unit every rate is quoted in, and
-		// refusing it because one risk-model anchor could not be converted
-		// would let an observational series veto an economic decision. The next
-		// block records a price in the new unit and the series resumes one
-		// sample later.
+		// Drop an unconvertible observational anchor rather than block the reference change. The
+		// next usable price seeds the new unit before return sampling resumes.
 		k.Logger(ctx).Warn(
 			"dropping exposure reference anchor across reference move",
 			"from", from,

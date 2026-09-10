@@ -334,13 +334,8 @@ func (s *KeeperTestSuite) TestSettleRewardFundingDefersSuspendedTax() {
 	})
 }
 
-// TestSettleRewardFundingPricesSettlingTaxAtPlanRate pins the settlement rate:
-// a suspended asset carrying a governance-committed redemption rate
-// is priced by that rate, so its tax funds targets and splits between
-// validators and the Oracle like any priced denomination rather than
-// deferring. The plan is deliberately unactivated, pinning the decision to
-// read the commitment rather than its activation height — the same reading the
-// liability partition takes.
+// TestSettleRewardFundingPricesSettlingTaxAtPlanRate checks committed settlement rates fund rewards
+// even before redemption activates, matching liability valuation.
 func (s *KeeperTestSuite) TestSettleRewardFundingPricesSettlingTaxAtPlanRate() {
 	s.setBlockHeight(2)
 	s.setRewardFunding(rewardFunding(1, 5, 3, 0))
@@ -399,11 +394,8 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingValuesSettlingFeesAtPlanRate() 
 	s.Require().Equal(math.NewInt(13), funding.ValidatorFeeValue)
 }
 
-// TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero pins the per-denom
-// skip: an oracle-priced member whose feed is stale is omitted from the available
-// rate set, so its fees count as zero while the priced remainder still
-// accrues. Dust of a stale-feed member in the fee collector must not suppress
-// a whole window's top-ups.
+// TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero checks stale fee coins do not suppress
+// accrual from priced denominations or the window's top-ups.
 func (s *KeeperTestSuite) TestUpdateRewardFundingCountsUnpricedFeeDenomsAsZero() {
 	s.setBlockHeight(2)
 	validatorFees := sdk.NewCoins(
@@ -478,11 +470,8 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingFailsBlockWhenCrossBlockSumOver
 	s.Require().ErrorContains(err, "adding validator fee value")
 }
 
-// TestSettleRewardFundingDefersStaleMemberTaxAndStillTopsUp pins settlement
-// when the whole tax balance belongs to a stale-feed member: the coins wait in
-// the collector for a window that can price them, and the window still
-// settles — both shortfalls are paid from the subsidy pool instead of being
-// skipped.
+// TestSettleRewardFundingDefersStaleMemberTaxAndStillTopsUp checks stale tax remains in custody
+// while the window settles both subsidy shortfalls.
 func (s *KeeperTestSuite) TestSettleRewardFundingDefersStaleMemberTaxAndStillTopsUp() {
 	funding := rewardFunding(0, 1, 1, 0)
 	transferTax := sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 4))

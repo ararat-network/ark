@@ -23,11 +23,8 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	}
 }
 
-// MsgSetEconomicMandateFactory appoints the economic-policy committee and
-// states the corridor it may move policy within. The bounds are set identical:
-// a corridor's width is the committee's freedom, which only the committee
-// messages exercise, so simulation states a well-formed one rather than a wide
-// one.
+// MsgSetEconomicMandateFactory creates a valid appointment with identical policy bounds. Committee
+// factories exercise corridor width separately.
 func MsgSetEconomicMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEconomicMandate] {
 	return func(
 		_ context.Context,

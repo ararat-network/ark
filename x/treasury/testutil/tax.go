@@ -12,10 +12,8 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// SetDerivedTaxCap gives one denomination a derived tax cap of exactly the
-// given amount: the reference amount pins to one base unit and the conversion
-// factor carries the value, so several denominations hold distinct caps side
-// by side.
+// SetDerivedTaxCap fixes the reference cap at one and stores the requested cap
+// as its denomination factor, allowing independent per-denomination fixtures.
 //
 //nolint:revive // tb leads every test helper here, as it does in app.Setup.
 func SetDerivedTaxCap(tb testing.TB, k *keeper.Keeper, ctx context.Context, denom string, amount math.Int) {

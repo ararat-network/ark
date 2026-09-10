@@ -11,15 +11,9 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// RebaseReferenceState re-expresses Treasury's reference-denominated state when
-// governance re-points the protocol reference: the tax cap, the base-fee floor
-// and live gas price, the conversion factors, and the exposure model's price
-// anchor.
-//
-// Each travels with the cap because all are figures quoted in the old
-// unit that keep their meaning only if converted in the same transaction the
-// unit changes. Leaving it would make the next block read a new-unit price
-// against an old-unit anchor and record the cross rate as a market move.
+// RebaseReferenceState converts the tax cap, base-fee floor and live price, conversion factors, and
+// exposure price anchor in the reference-change transaction. Every stored old-unit value must
+// retain its meaning.
 func (k Keeper) RebaseReferenceState(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {

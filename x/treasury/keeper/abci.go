@@ -7,14 +7,8 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// BeginBlocker refreshes the conversion-factor table from this block's rates,
-// so the block's transactions tax under the rates its own vote extensions
-// applied.
-//
-// It no longer values liability. Conversion settlement is the only consumer of
-// the aggregate that runs every block, and it runs at the end of one, where the
-// valuation it needs can be built from final state — so an idle block now folds
-// the registry not at all, and a busy one folds it exactly once.
+// BeginBlocker refreshes conversion factors from PreBlock-applied rates. Liability valuation
+// belongs to active conversion settlement in EndBlock, so this hook performs no liability fold.
 func (k Keeper) BeginBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.BeginBlock)()
 
@@ -29,13 +23,8 @@ func (k Keeper) BeginBlocker(ctx context.Context) error {
 	return k.refreshExposure(ctx)
 }
 
-// EndBlocker advances the reward-funding window and runs the base-fee
-// controller's update. Both are end-of-block reads by construction: the fee
-// collector holds this block's own fees here — Distribution sweeps it at the
-// next block's start, allocating any settlement top-up with them — so each
-// block's accrual values the fees it earned; and the gas tally the controller
-// reads is written by the ante as the block's transactions execute and clears
-// at commit, so no other hook ever sees it complete.
+// EndBlocker accrues and settles reward funding from this block's fees, then updates the base fee
+// from its complete gas tally. Distribution consumes funded fees at the next block's start.
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 

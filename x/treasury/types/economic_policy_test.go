@@ -132,14 +132,8 @@ func TestExposureWeightValidation(t *testing.T) {
 	}
 }
 
-// TestRewardTargetCapsLeaveWindowHeadroom is why the two caps exist in the
-// shape they do. They replaced a validation that projected the whole window's
-// arithmetic at every write of params or policy: a projection has to be
-// re-derived by every future writer of every input it reads, and its verdict
-// moves with live state, where a cap is a fact about one field checked where
-// that field is validated. That trade only holds if the caps' product clears
-// the integer ceiling with room to spare — both targets, every block of the
-// longest admissible window.
+// TestRewardTargetCapsLeaveWindowHeadroom checks both maximum targets across the longest valid
+// funding window remain safely within Int range.
 func TestRewardTargetCapsLeaveWindowHeadroom(t *testing.T) {
 	perBlock, err := types.MaxBlockRewardTarget.SafeAdd(types.MaxBlockRewardTarget)
 	require.NoError(t, err)

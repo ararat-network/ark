@@ -118,19 +118,16 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		}).AnyTimes()
 	treasuryBankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
 		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
-	// The partition now asks what the strategic Reserve holds of every counted
-	// member (D66); an empty Reserve keeps the measured path the gross fold
-	// while still paying the per-member balance read the netting added.
+	// An empty Reserve keeps the measured liability fold gross while retaining the per-member
+	// balance reads required for netting.
 	treasuryBankKeeper.EXPECT().GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, denom string) sdk.Coin {
 			return sdk.NewCoin(denom, math.ZeroInt())
 		}).AnyTimes()
 
 	transientService := runtime.NewTransientStoreService(transientKey)
-	// The liability scan is now a fold over the asset registry, so the
-	// benchmark hands the keeper a registry listing every seeded denom as
-	// ACTIVE: the measured path walks it, reads each supply, and captures one
-	// rate set for the whole membership.
+	// The benchmark registers every seeded denomination as ACTIVE. The liability fold walks the
+	// registry, reads each supply, and captures one rate set for the membership.
 	wasmKeeper := treasurytestutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
 	keeper := treasurykeeper.NewKeeper(

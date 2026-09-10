@@ -219,11 +219,8 @@ func TestGenesisConversionFactorValidation(t *testing.T) {
 	}
 }
 
-// TestGenesisRewardFundingValidation covers both halves of what an imported
-// window must satisfy: the shape rules, and the whole-window ceiling. An import
-// arrives mid-accrual rather than being reached one block at a time, so it
-// cannot inherit the bound the per-block accrual gets from MaxBlockRewardTarget,
-// and that ceiling has to be imposed here directly.
+// TestGenesisRewardFundingValidation checks record shape and maximum whole-window accrual for
+// imported funding state.
 func TestGenesisRewardFundingValidation(t *testing.T) {
 	overAccrued := types.MaxBlockRewardTarget.
 		Mul(math.NewIntFromUint64(types.MaxRewardFundingWindow)).

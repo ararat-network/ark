@@ -7,28 +7,14 @@ import (
 	"cosmossdk.io/math"
 )
 
-// MaxBlockRewardTarget bounds either per-block reward target, and exists to
-// make the window accrual safe by inspection rather than by projection.
-//
-// Reward targets accumulate one block at a time for a whole funding window, so
-// without a ceiling their sum is bounded only by the integer type — which put
-// the burden on a validation that had to re-prove, at every write of params or
-// policy, that the current state plus this policy over the remaining blocks
-// would still fit. A ceiling on the field itself replaces that: with both
-// targets under 2^128 and the window under MaxRewardFundingWindow, a whole
-// window accrues at most 2^161, leaving ninety-five bits of headroom under the
-// Int limit. The cap is far past economic reality — 2^128 anoah is on the order
-// of 10^20 NOAH in a single block — so it constrains nothing governance would
-// ever want, and refuses at the write what would otherwise fail a block.
+// MaxBlockRewardTarget caps each per-block target at 2^128. Combined with MaxRewardFundingWindow,
+// accrual remains below 2^161 with 95 bits of Int headroom. Validate at writes so block-time sums
+// cannot receive unbounded policy inputs.
 var MaxBlockRewardTarget = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
-// MaxExposureWeight bounds each indicator weight. Like MaxBlockRewardTarget it
-// is a domain cap rather than a projection: the composite is folded and applied
-// inside block hooks, where a checked arithmetic error and a panic are the same
-// outcome, so the defence has to be refusing the value at the write. A million
-// is far past any defensible setting — a liability-ratio weight of one already
-// means a fund holding as much as the liability itself doubles its target — and
-// exists to keep the arithmetic provably in range, not to express a view.
+// MaxExposureWeight caps each indicator weight at one million before block-hook composition. It is
+// an arithmetic domain bound; governance's multiplier cap and step limit constrain delegated
+// effects.
 var MaxExposureWeight = math.LegacyNewDec(1_000_000)
 
 // DefaultEconomicPolicy returns the disabled launch policy values.
@@ -45,15 +31,8 @@ func DefaultEconomicPolicy() EconomicPolicy {
 	}
 }
 
-// Validate performs context-free validation of one reversible policy.
-//
-// Three tables, because the levers fall into three shapes and the shape is what
-// the bound means. A share is a fraction of something, so exceeding one is not
-// a large value but an incoherent one. A reward target is an absolute per-block
-// amount whose ceiling exists so a whole window's accrual stays in range. A
-// weight is a multiplier on an indicator, unbounded in principle and capped
-// only to keep the composite representable. A new lever joins whichever table
-// states its bound, or brings a fourth.
+// Validate checks policy fields by domain: shares in [0, 1], bounded absolute reward targets, and
+// bounded non-negative indicator weights. Validation depends on the candidate alone.
 func (policy EconomicPolicy) Validate() error {
 	for _, share := range []struct {
 		name  string
@@ -100,12 +79,8 @@ func (policy EconomicPolicy) Validate() error {
 		}
 	}
 
-	// The exposure weights. Each states how much extra capital a unit of its
-	// indicator should demand, so zero is meaningful — it is the launch value,
-	// and the way one indicator is switched off without disturbing the others —
-	// and the only ceiling is MaxExposureWeight, the domain cap that keeps the
-	// composite in range. What a weight is safe inside is the multiplier cap and
-	// step limit, which live in Params and stay with governance.
+	// Zero exposure weights disable individual indicators. MaxExposureWeight bounds arithmetic;
+	// Params retains governance control of the multiplier cap and step limit.
 	for _, weight := range []struct {
 		name  string
 		value math.LegacyDec
@@ -140,19 +115,9 @@ type FundTargetSet struct {
 	Insurance math.Int
 }
 
-// FundTargets sizes every fund target against one liability basis.
-//
-// Rounding is up at both steps, because a target sizes a requirement rather
-// than a payment: MulRoundUp keeps the product from shedding a fraction of a
-// base unit, and Ceil turns whatever fraction remains into the whole unit a
-// fund has to actually hold. A target rounded down would call a fund full while
-// it was a base unit short of its own rule.
-//
-// The basis is taken rather than derived because one policy implies two
-// different sets, and which one is correct depends on the question. What bounds
-// a committee act is sized against gross liability, since the committee can
-// re-issue the paper its own fund holds; what the next expansion fills is sized
-// against net, since no claim arrives from that paper (D67).
+// FundTargets uses MulRoundUp then Ceil so fractional requirements never report an underfunded fund
+// as full. Callers supply nominal liability for committee bounds or net liability for expansion
+// gaps.
 func (policy EconomicPolicy) FundTargets(liabilityNoah math.LegacyDec) FundTargetSet {
 	return FundTargetSet{
 		Buffer:    policy.RedemptionBufferTargetRatio.MulRoundUp(liabilityNoah).Ceil().TruncateInt(),

@@ -172,10 +172,8 @@ func (s *KeeperTestSuite) TestSettleConversionsWaterfallsPrincipalOnce() {
 	})
 }
 
-// TestSettleConversionsParksWholeBlockOnIncompleteValuation covers the degraded
-// mode at its new scope: one unpriced member parks every conversion's
-// principal, where per-swap settlement would have waterfalled the ones that ran
-// before the failure.
+// TestSettleConversionsParksWholeBlockOnIncompleteValuation checks that one unpriced member parks
+// every conversion's principal.
 func (s *KeeperTestSuite) TestSettleConversionsParksWholeBlockOnIncompleteValuation() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -361,15 +359,8 @@ func (s *KeeperTestSuite) setMultiplier(multiplier string) {
 	s.Require().NoError(s.keeper.ExposureState.Set(s.ctx, state))
 }
 
-// TestSettleConversionsLeavesDrawUnscaledByExposure is the D73 pin, and the one
-// test standing between this design and its opposite. The multiplier reaches
-// the targets and must not reach the coverage basis: dividing a payment
-// denominator by it would ration the exits the Buffer exists to fund, exactly
-// during the stress that raises it.
-//
-// The block redeems only, so no target is consulted and the draw is the whole
-// of what settlement does. The payment is therefore byte-identical to the
-// unscaled case.
+// TestSettleConversionsLeavesDrawUnscaledByExposure checks redemption-only payment is identical at
+// every multiplier. Exposure scales capital requirements, never the payment denominator.
 func (s *KeeperTestSuite) TestSettleConversionsLeavesDrawUnscaledByExposure() {
 	s.setMultiplier("4")
 	s.setAssets(chain.USDBaseDenom)

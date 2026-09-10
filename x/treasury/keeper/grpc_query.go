@@ -163,11 +163,9 @@ func (q queryServer) GasPrice(ctx context.Context, req *types.QueryGasPriceReque
 	return &types.QueryGasPriceResponse{GasPrice: row}, nil
 }
 
-// GasPrices reports the complete fee-denomination price sheet: the reference
-// row — the base price at the identity factor — in its own field, and every
-// other accepted denomination, NOAH among them, listed in denomination order.
-// The list order is presentation only. A denomination whose price is
-// unrepresentable is omitted — the sheet lists what the gate would accept.
+// GasPrices returns reference identity separately and other accepted denominations, including NOAH,
+// in key order. Unrepresentable prices are omitted; presentation order does not set fee-payment
+// priority.
 func (q queryServer) GasPrices(ctx context.Context, req *types.QueryGasPricesRequest) (*types.QueryGasPricesResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -231,14 +229,9 @@ func (q queryServer) ComputeTax(ctx context.Context, req *types.QueryComputeTaxR
 	return &types.QueryComputeTaxResponse{Tax: tax, TaxBase: base}, nil
 }
 
-// FundStatus queries live Treasury balances, the partitioned liability report,
-// and fund targets. It always answers, because hiding the report during exactly
-// the stress that makes valuation incomplete would blind operators when they
-// most need it: an incomplete valuation still reports the claimable aggregate
-// beside the partition explaining what it excludes, with every target zero
-// rather than a guess. It is also the one caller that builds a partition
-// without disclosing a degraded one, since a query reports a partition rather
-// than recording one.
+// FundStatus reports balances, liability buckets, exclusions, and both target bases. Incomplete
+// valuation returns a report with zero targets instead of an error. Queries emit no
+// degraded-valuation event; store and arithmetic errors still fail.
 func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusRequest) (*types.QueryFundStatusResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -260,18 +253,9 @@ func (q queryServer) FundStatus(ctx context.Context, req *types.QueryFundStatusR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "getting treasury fund status: %v", err)
 	}
-	// Targets are the one consumer that needs the complete figure. An
-	// incomplete partition understates outstanding exposure, and sizing a
-	// target off it would call for less capital exactly when an asset has just
-	// failed, so a zero basis reports real balances beside targets that claim
-	// nothing.
-	//
-	// Both bases are reported rather than one. The query decides nothing, and
-	// the two answer different operational questions: the nominal-sized targets
-	// are what bounds a committee burn or transfer right now, while the
-	// net-sized ones are where the next expansion will route. Publishing one
-	// would leave the other derivable only by a reader who knew the policy
-	// ratios and the netting rule.
+	// Report nominal targets for committee bounds and net targets for expansion routing. Incomplete
+	// valuation zeroes both reported target families while preserving balances and liability
+	// disclosures.
 	targetBasis, gapBasis := math.LegacyZeroDec(), math.LegacyZeroDec()
 	if partition.complete {
 		targetBasis, gapBasis = claimable, net
@@ -346,12 +330,8 @@ func (q queryServer) RewardFunding(ctx context.Context, req *types.QueryRewardFu
 	return &types.QueryRewardFundingResponse{RewardFunding: funding}, nil
 }
 
-// ExposureStatus queries the risk state behind the fund-target multiplier.
-//
-// It is served from stored state alone and folds no registry, which is what
-// keeps it answerable when FundStatus is expensive or its targets are zeroed by
-// an incomplete valuation: the multiplier is a property of the risk series, not
-// of whether this block could price every member.
+// ExposureStatus reads stored risk state without a registry fold, remaining independent of
+// FundStatus valuation completeness.
 func (q queryServer) ExposureStatus(ctx context.Context, req *types.QueryExposureStatusRequest) (*types.QueryExposureStatusResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

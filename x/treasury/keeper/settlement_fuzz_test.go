@@ -36,22 +36,9 @@ func ratCoverageDraw(liability, redeemed, buffer, output *big.Int) *big.Int {
 	return new(big.Int).Quo(drawn.Num(), drawn.Denom())
 }
 
-// FuzzSettlementCoverageMatchesExactArithmetic pins the one calculation in
-// settlement that divides, against the exact rational answer.
-//
-// The draw multiplies the output by the Buffer before dividing by the basis, so
-// the only rounding is the last place of the final quantity: the result is the
-// exact floored share, or one anoah above it when the true share sits within
-// half an ulp below a whole number. That single anoah is the whole difference
-// between this and a fused multiply-divide, which would need a primitive
-// neither cosmossdk.io/math nor pkg/decimal provides.
-//
-// The order matters more than the width. Forming the ratio first would round an
-// intermediate against its own bound of one, and the output would amplify that
-// into a draw above the Buffer — a block nothing corrupted, failing settlement.
-// The last seed below is such a block: the whole float redeems while the Buffer
-// sits one anoah short of the basis. Both bounds are therefore asserted
-// exactly, never within a tolerance.
+// FuzzSettlementCoverageMatchesExactArithmetic compares multiply-before-divide coverage with a
+// rational reference. Decimal rounding permits at most one extra base unit; output and custody
+// bounds must hold exactly. See x/treasury/README.md for the tolerance.
 func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 	f.Add(int64(100), int64(25), int64(40), int64(10), int64(0))
 	f.Add(int64(0), int64(1), int64(1), int64(1), int64(1_000))
@@ -82,11 +69,8 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 		}
 
 		suite := newSettlementFuzzSuite(t, supply, buffer)
-		// The exposure multiplier, swept across its whole domain. The draw must
-		// not move with it (D73): the multiplier scales requirement bases, and
-		// the coverage basis is a payment denominator. The rational oracle below
-		// does not take it as an argument at all, which is the assertion — every
-		// bound holds identically at a multiplier of one and of four.
+		// Sweep the exposure multiplier to verify it never changes coverage payments. The rational
+		// reference intentionally omits it.
 		suite.setFuzzMultiplier(multiplierMilli)
 		drawn, err := suite.keeper.SettleConversions(suite.ctx, markettypes.ConversionTotals{
 			GrossOffer:        math.ZeroInt(),

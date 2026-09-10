@@ -21,12 +21,8 @@ import (
 // rather than a collection because one block-lived scalar is not a schema.
 var blockGasTallyKey = []byte{0}
 
-// TallyBlockGas adds one transaction's declared gas to the block's tally. The
-// ante calls it in execution mode for every transaction that cleared the fee
-// gate, and a transaction failing later in the ante reverts the write with
-// everything else — so the tally reads as the block's paid-for gas. The sum
-// saturates rather than erroring: it feeds a ratio, and a block absurd enough
-// to overflow a uint64 of gas is pinned at full.
+// TallyBlockGas records declared gas after fee acceptance; later ante failure rolls it back. The
+// uint64 sum saturates instead of failing, yielding full utilisation for the controller.
 func (k Keeper) TallyBlockGas(ctx context.Context, gasLimit uint64) error {
 	kv := k.transientStoreService.OpenTransientStore(ctx)
 	stored, err := kv.Get(blockGasTallyKey)
@@ -45,15 +41,9 @@ func (k Keeper) TallyBlockGas(ctx context.Context, gasLimit uint64) error {
 	return nil
 }
 
-// GetRequiredGasFee derives the fee the gate requires for one declared gas
-// limit in one denomination: ceil(price × gasLimit × factor). It rounds up
-// because it sizes a requirement, and this is the one place the requirement
-// arithmetic lives — every consumer prices through it. The caller supplies
-// params and the live base price, so one read of each prices every
-// denomination in a fee. The factor it priced with rides along so the ante's
-// tip normalisation divides by the same cross the gate multiplied by. A
-// denomination with no gas factor returns collections.ErrNotFound: not an
-// accepted fee denom.
+// GetRequiredGasFee returns ceil(price * gasLimit * factor) and the same factor used for tip
+// normalisation. Callers reuse params and price reads across denominations. Missing factors return
+// collections.ErrNotFound.
 func (k Keeper) GetRequiredGasFee(
 	ctx context.Context,
 	params types.Params,
@@ -82,20 +72,9 @@ func (k Keeper) GetRequiredGasFee(
 	return sdk.NewCoin(denom, converted.Ceil().TruncateInt()), factor, nil
 }
 
-// updateBaseGasPrice is the base-fee controller's per-block step, run in
-// EndBlock while the block's tally is still alive:
-//
-//	next = current × (1 + clamp(rate × (tally − target×maxGas) / (target×maxGas), ±rate))
-//
-// clamped into [MinBaseGasPrice, MaxBaseGasPrice]. The delta clamp is what
-// makes the rate parameter mean "largest move per block" for every target,
-// not only the half-full one. The update reads gas units alone — no oracle
-// input anywhere — so the anti-stuffing ratchet compounds through any oracle
-// outage.
-//
-// An unbounded block (MaxGas −1) leaves utilisation undefined and a zero rate
-// has nowhere to move: both hold the price. The clamp still runs, so a
-// governance floor raised above a held price binds the same block.
+// updateBaseGasPrice adjusts the fee from gas utilisation within the per-block rate limit and
+// governance bounds. Unbounded gas or zero adjustment holds the price before clamping. No Oracle
+// read is required; see x/treasury/README.md for the controller formula.
 func (k Keeper) updateBaseGasPrice(ctx context.Context) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -120,11 +99,8 @@ func (k Keeper) updateBaseGasPrice(ctx context.Context) error {
 		}
 		tally := math.LegacyNewDecFromInt(math.NewIntFromUint64(sdk.BigEndianToUint64(tallyBytes)))
 
-		// The pivot is the gas level the price holds at. Deviation is scaled
-		// by the rate before the one division, so the ratio forms on the
-		// outermost step (multiply before divide); the pivot is positive
-		// because Validate keeps the target above zero and the guard keeps
-		// MaxGas positive.
+		// Scale deviation before division to avoid intermediate rounding. The pivot is positive
+		// because target validation and the MaxGas guard exclude zero.
 		pivot := params.BaseFeeTargetUtilisation.MulInt64(maxGas)
 		scaled, err := decimal.Mul(params.BaseFeeAdjustmentRate, tally.Sub(pivot))
 		if err != nil {
@@ -170,14 +146,9 @@ func (k Keeper) updateBaseGasPrice(ctx context.Context) error {
 	return nil
 }
 
-// rescaleBaseFee re-expresses the controller's reference-quoted figures when
-// the reference re-points: it returns the converted governance floor for the
-// caller's single params write and rescales the live price item itself. One
-// old-reference unit priced in new units re-quotes a per-gas price by
-// multiplication. Conversion failure fails the re-point, like the cap
-// conversion beside it: the handed set prices both legs by the caller's
-// contract, so an unservable cross is a broken invariant rather than an
-// outage to degrade through.
+// rescaleBaseFee converts the live gas price and returns the converted governance floor for the
+// caller's params write. The supplied rate pair prices both reference units; conversion failure
+// aborts the rebase.
 func (k Keeper) rescaleBaseFee(ctx context.Context, params types.Params, to string, rates oracletypes.RateSet) (math.LegacyDec, error) {
 	unit, err := rates.Convert(sdk.NewDecCoin(params.ReferenceDenom, math.OneInt()), to)
 	if err != nil {
@@ -233,12 +204,8 @@ func convertGasPrice(price, unit math.LegacyDec) math.LegacyDec {
 	return converted
 }
 
-// gasFactor resolves one denomination's gas-pricing cross — denom units per
-// reference unit — and the height it was derived at: identity for the
-// reference itself, at height zero because an identity cross cannot go
-// stale; the factor table for everything else, NOAH included.
-// collections.ErrNotFound is the refusal verdict: a denomination with no
-// cross is not an accepted fee denom.
+// gasFactor returns reference identity at height zero or a stored denomination cross and derivation
+// height, including NOAH. Missing crosses return collections.ErrNotFound and cannot pay gas.
 func (k Keeper) gasFactor(ctx context.Context, reference, denom string) (math.LegacyDec, uint64, error) {
 	if denom == reference {
 		return math.LegacyOneDec(), 0, nil

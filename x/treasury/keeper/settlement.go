@@ -16,16 +16,9 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// SettleConversions settles one block's recorded conversion flow and returns
-// the NOAH Market must burn to finish it: §7's waterfall and coverage draw,
-// run once per block from Market's EndBlocker. Every mint and burn the block
-// performed has already landed, so liability is valued once against final
-// state and no conversion's position in the block changes its placement.
-//
-// Errors are settlement-fatal, because Market's EndBlocker has no transaction
-// left to abort: what reaches this path is state corruption or an arithmetic
-// impossibility, while a valuation that could not cover every recognised
-// liability parks and discloses rather than failing.
+// SettleConversions allocates one block's recorded flow against final liability and returns the
+// NOAH Market must burn. Incomplete valuation parks expansion funds with disclosure; store and
+// arithmetic failures propagate to EndBlock. See x/treasury/README.md.
 func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.ConversionTotals) (math.Int, error) {
 	// Ahead of both guards below, because the risk series measure elapsed time
 	// rather than elapsed activity: an idle block still decays flow and still
@@ -79,11 +72,8 @@ func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.Conver
 // principal and spread alike (D6) — down the fund waterfall and returns what
 // overflowed every funded target.
 func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, partition liabilityPartition) (math.Int, error) {
-	// An incomplete aggregate cannot answer what capital a fund is owed, so the
-	// whole block's offer parks in the Reserve. That stays revisable — the
-	// Reserve's Buffer commitment is authority-gated and reads only its own
-	// balance (§6.4) — where principal committed to the Buffer is not, and
-	// principal burned is less so.
+	// Park the entire offer in Reserve when liability is incomplete. Governance can later redirect
+	// that custody; premature Buffer allocation or burning is less reversible.
 	bufferCredit := math.ZeroInt()
 	reserveCredit := offer
 	insuranceCredit := math.ZeroInt()
@@ -171,19 +161,11 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, 
 	return overflowBurn, nil
 }
 
-// drawRedemptionCoverage funds the Buffer's coverage share of everything the
-// block redeemed, and returns what Market must burn against output it has
-// already minted. It never reads the completeness flag, because the claimable
-// aggregate already excludes the supply that cannot redeem — a suspension
-// elsewhere raises coverage for healthy exits rather than switching the Buffer
-// off during the contagion it was built for.
+// drawRedemptionCoverage funds aggregate redemption output from the Buffer and returns Market's
+// compensating burn. It uses available net liability even when valuation is incomplete.
 func (k Keeper) drawRedemptionCoverage(ctx context.Context, totals markettypes.ConversionTotals, partition liabilityPartition) (math.Int, error) {
-	// Coverage divides the Buffer across the claims that could arrive when the
-	// block's redemptions quoted, so the basis is pre-burn liability: the scan
-	// runs after those burns, and adding the retired value back reconstructs it.
-	// Reserve-held paper stays out, as it does for every flow — the Reserve has
-	// no path to Market, so counting it would pay real holders' shares away to a
-	// claimant that never arrives.
+	// Add retired value to post-burn net liability to reconstruct the coverage basis. Reserve-held
+	// paper remains excluded because it cannot directly redeem.
 	net, err := partition.net()
 	if err != nil {
 		return math.Int{}, err
@@ -199,13 +181,9 @@ func (k Keeper) drawRedemptionCoverage(ctx context.Context, totals markettypes.C
 		)
 	}
 
-	// The Buffer's share of the output, multiplied before it is divided, which
-	// is the safety property rather than a preference: forming the ratio first
-	// would round an intermediate against its own bound of one, and the output
-	// would then amplify that into a draw above the balance it is paid from.
-	// Multiplying leaves one rounding on a whole-anoah quantity, and monotone
-	// rounding cannot cross an exactly-representable bound, so both checks below
-	// hold however the last place falls.
+	// Multiply output by Buffer before dividing by the basis. Rounding a ratio first can amplify
+	// error past custody; one final rounding on a whole-NOAH quantity preserves both bounds. See
+	// x/treasury/README.md.
 	bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 	share, err := totals.RedemptionOutput.SafeMul(bufferBalance)
 	if err != nil {
@@ -218,11 +196,8 @@ func (k Keeper) drawRedemptionCoverage(ctx context.Context, totals markettypes.C
 	// Coverage caps at one: a Buffer at least the size of the claims against it
 	// funds the whole output and no more.
 	drawn := math.MinInt(totals.RedemptionOutput, covered.TruncateInt())
-	// Unreachable: the block's output never exceeds the basis
-	// (ConversionTotals.Validate bounds it by the redeemed value inside it), so
-	// the share never exceeds the Buffer and one monotone rounding cannot lift it
-	// past a whole-anoah bound. Checked anyway, as the last point before the
-	// Buffer is debited.
+	// Unreachable: validated output <= retired value <= basis, so the rounded share cannot exceed
+	// whole-unit Buffer custody. Retain the check immediately before debit.
 	if drawn.GT(bufferBalance) {
 		return math.Int{}, fmt.Errorf(
 			"buffer draw %s exceeds the Buffer balance %s",

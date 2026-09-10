@@ -118,11 +118,8 @@ func (s *KeeperTestSuite) TestLiabilityFeedOutageLeavesCoverageUnchanged() {
 	s.requireLiabilityValuation(math.LegacyNewDec(200), false)
 }
 
-// TestLiabilityRecognisesSettlementPricedSupply proves the fold carries
-// suspended supply at its settlement plan's committed rate — including a plan
-// that has not reached its activation height, because the plan read is
-// deliberately ungated — so a suspended denomination leaves the valuation
-// complete without any oracle rate behind it.
+// TestLiabilityRecognisesSettlementPricedSupply checks committed plan rates value suspended supply
+// before redemption activation, without an Oracle rate.
 func (s *KeeperTestSuite) TestLiabilityRecognisesSettlementPricedSupply() {
 	s.setAssets()
 	s.seedAsset(chain.USDBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
@@ -134,12 +131,8 @@ func (s *KeeperTestSuite) TestLiabilityRecognisesSettlementPricedSupply() {
 	s.requireLiabilityValuation(math.LegacyNewDec(200), true)
 }
 
-// TestLiabilityCountsDustSupplyAtItsWorth pins measurement semantics for the
-// priced partition: a hyperinflated member's supply is counted at exactly what
-// it is worth, however little. Valuing in NOAH multiplies, so a whole-unit
-// supply at the smallest representable rate cannot underflow — the aggregate
-// carries the dust rather than dropping it or marking itself unavailable, and
-// one hyperinflated denomination cannot disable settlement chain-wide.
+// TestLiabilityCountsDustSupplyAtItsWorth checks decimal NOAH valuation retains tiny positive
+// supply value without marking the partition incomplete.
 func (s *KeeperTestSuite) TestLiabilityCountsDustSupplyAtItsWorth() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -154,17 +147,9 @@ func (s *KeeperTestSuite) TestLiabilityCountsDustSupplyAtItsWorth() {
 	s.requireLiabilityValuation(math.LegacyNewDec(100).Add(math.LegacySmallestDec()), true)
 }
 
-// TestLiabilityFailsOnUnrepresentableConversion pins arithmetic out of range as
-// a hard failure rather than an incomplete valuation. A member the partition
-// prices, whose supply at its rate leaves Dec range, is state past the
-// supported domain: unlike a missing rate it does not return on the next block,
-// so reporting it as unavailable would retire the Buffer permanently behind a
-// flag that fires for benign reasons. Incompleteness is reserved for exposure
-// no honest rate could value.
-//
-// Reaching settlement, this fails the block. That is the halt class the
-// deferred design accepts: the arithmetic is unreachable through any conversion
-// a trader can make, and settling on a figure known to be wrong is worse.
+// TestLiabilityFailsOnUnrepresentableConversion checks arithmetic outside the supported domain
+// fails rather than appearing as missing pricing. Such an error propagates as a block failure
+// during settlement.
 func (s *KeeperTestSuite) TestLiabilityFailsOnUnrepresentableConversion() {
 	s.setAssets(chain.USDBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -185,11 +170,8 @@ func (s *KeeperTestSuite) TestLiabilityFailsOnUnrepresentableConversion() {
 	s.Require().ErrorIs(err, oracletypes.ErrConversionOutOfRange)
 }
 
-// TestLiabilityExcludesUnpricedMemberFromClaimable pins settlement under
-// partial information: the stale member is excluded from the claimable
-// aggregate, and the block's draw funds healthy exits at coverage of that
-// aggregate — a smaller denominator than the complete one, so a lapse elsewhere
-// raises per-exit funding instead of switching the Buffer off.
+// TestLiabilityExcludesUnpricedMemberFromClaimable checks a member with no usable or last-known
+// rate is disclosed but excluded from the coverage basis.
 func (s *KeeperTestSuite) TestLiabilityExcludesUnpricedMemberFromClaimable() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -373,11 +355,8 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
 		},
 		{
-			// The same lapse, but the Oracle still holds what akrw was worth.
-			// The supply stays disclosed and the flag stays false — no fresh
-			// rate stood behind it — while the nominal total keeps counting it,
-			// so an operator sees the obligation rather than a total that
-			// quietly shrank by 80.
+			// A last-known rate keeps the stale member's 80 in nominal liability while its supply
+			// remains disclosed and valuation remains incomplete.
 			name: "a stale member with a rate on record is valued apart",
 			seed: func() {
 				s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
@@ -394,11 +373,8 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			wantStaleSupply: []sdk.Coin{sdk.NewInt64Coin(chain.KRWBaseDenom, 40)},
 		},
 		{
-			// Same shape with the stale member at the other end of the
-			// registry's key order. The priced total must not depend on where
-			// the lapse falls in the walk — the failure the removed
-			// short-circuit would have reintroduced, silently dropping every
-			// member enumerated after it.
+			// Place the stale member later in key order to check unavailable pricing does not
+			// short-circuit the remaining registry fold.
 			name: "the priced total ignores where the stale member sorts",
 			seed: func() {
 				s.setAssets(chain.KRWBaseDenom, chain.USDBaseDenom)
@@ -465,13 +441,9 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 			s.Require().Equal(test.wantWrittenOff, response.WrittenOffExposure)
 			s.Require().Equal(test.wantStaleSupply, response.StaleMemberSupply)
 
-			// The claimable aggregate is priced plus settlement-priced plus
-			// stale-priced, and is reported whether or not it covers every
-			// recognised liability: it is the denominator redemption coverage
-			// divides by, so an incomplete valuation must still disclose it
-			// rather than report a zero that no draw uses. The two exclusion
-			// lists asserted above are what qualify it — both empty is what
-			// says the valuation covered everything recognised.
+			// Nominal liability includes priced, settlement-priced, and stale-priced buckets even
+			// when incomplete. Both exclusion lists qualify the total; coverage separately nets
+			// self-held supply and restores retired value.
 			s.Require().Equal(
 				sdk.NewDecCoinFromDec(chain.NoahBaseDenom, wantPriced.Add(wantSettlement).Add(wantStale)),
 				response.NominalLiability,
@@ -480,12 +452,8 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 	}
 }
 
-// TestLiabilityNetsSelfHeldSupply pins the netting the two bases exist for.
-// Ark-issued paper the strategic Reserve holds is inside the claimable
-// aggregate and inside no claim anyone can present: the Reserve has no path to
-// Market, and only a committee act returns it to circulation. Flows therefore
-// divide by the net figure while every bound on a committee act keeps the gross
-// one.
+// TestLiabilityNetsSelfHeldSupply checks Reserve-held paper remains in nominal committee bounds but
+// is subtracted from the liability basis used by flows.
 func (s *KeeperTestSuite) TestLiabilityNetsSelfHeldSupply() {
 	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
 	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
@@ -526,12 +494,8 @@ func (s *KeeperTestSuite) TestLiabilityNetsSelfHeldOnlyForCountedSupply() {
 	s.requireNetLiabilityValuation(math.LegacyNewDec(100), math.LegacyNewDec(25), false)
 }
 
-// TestFundStatusReportsBothTargetBases pins that the status query publishes the
-// split rather than picking a side. The nominal-sized targets are what bounds a
-// committee burn or transfer; the net-sized ones are where the next expansion
-// will route. A reader given only one could recover the other only by knowing
-// the policy ratios and the netting rule, so both are reported and each pair
-// differs by exactly that fund's ratio times the self-held liability.
+// TestFundStatusReportsBothTargetBases checks nominal committee targets and net expansion targets
+// are both reported and differ by the scaled value of self-held liability.
 func (s *KeeperTestSuite) TestFundStatusReportsBothTargetBases() {
 	policy := types.DefaultEconomicPolicy()
 	policy.RedemptionBufferTargetRatio = math.LegacyMustNewDecFromStr("0.5")

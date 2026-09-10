@@ -33,11 +33,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// benchAssetKeeper reports a fixed denomination set as ACTIVE assets so
-// benchmarks measure the membership-driven paths — the cap refresh's
-// denom comparison and the registry-fold liability scan — without mock
-// bookkeeping in the hot loop. The reference matches the default params' cap
-// denomination, which the refresh insists on.
+// benchAssetKeeper exposes fixed ACTIVE membership without mock bookkeeping in measured loops. Its
+// reference matches the cap denomination required by refresh.
 type benchAssetKeeper struct {
 	denoms []string
 }

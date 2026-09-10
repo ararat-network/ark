@@ -26,16 +26,8 @@ func (s *KeeperTestSuite) TestEndBlockerAccruesRewardFundingFromTheFirstBlock() 
 	s.Require().Equal(types.DefaultRewardFundingWindow-1, funding.BlocksRemaining)
 }
 
-// TestBeginBlockerValuesNoLiability pins the scan that left this hook. The
-// aggregate has exactly one consumer that runs every block — conversion
-// settlement — and it runs at the end of one, where the figure can be built
-// from final state. So BeginBlock values nothing, an idle block folds the
-// registry not at all, and arithmetic that used to fail the block while priming
-// can no longer reach it.
-//
-// The registry holds supply that overflowed the conversion under the old
-// priming, and no supply read is stubbed at all: the mock fails the test on any
-// call, which is what asserts the fold is gone rather than merely quiet.
+// TestBeginBlockerValuesNoLiability checks that factor refresh never reads supply or folds
+// liability, even with values that would fail valuation.
 func (s *KeeperTestSuite) TestBeginBlockerValuesNoLiability() {
 	s.setBlockHeight(2)
 	s.setAssets(chain.USDBaseDenom)
@@ -260,12 +252,8 @@ func (s *KeeperTestSuite) TestBeginBlockerCapturesReferenceWhenNotAMember() {
 	s.Require().Error(err)
 }
 
-// TestBeginBlockerStoresLopsidedFactorDerivingUncapped pins the degrade for a
-// hyper-lopsided rate: the factor itself is representable and stored, and the
-// derived cap — whose true value exceeds the decimal domain — reads as the
-// uncapped sentinel. A ceiling too large to express is no ceiling; the old
-// seed-at-reference degrade imposed one many orders of magnitude tighter than
-// policy asked for.
+// TestBeginBlockerStoresLopsidedFactorDerivingUncapped checks a representable cross-rate is
+// retained while an unrepresentable derived tax ceiling uses the uncapped sentinel.
 func (s *KeeperTestSuite) TestBeginBlockerStoresLopsidedFactorDerivingUncapped() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
@@ -341,11 +329,8 @@ func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
 	s.Require().Equal(math.NewInt(1_000_000), usdCap)
 }
 
-// TestBeginBlockerDerivesNoahCrossWithoutSeeding pins the numeraire's
-// difference from the members: no servable reference rate means no entry —
-// NOAH is refused as a fee denom rather than seeded, because nothing forces
-// gas to be paid in it — and the first real rate creates the entry in the
-// table, excluded from the tax base by GetTaxCap alone.
+// TestBeginBlockerDerivesNoahCrossWithoutSeeding checks NOAH receives a fee factor only from a
+// usable reference rate. GetTaxCap excludes it from taxation.
 func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 	s.setBlockHeight(1)
 	s.setAssets(chain.USDBaseDenom)

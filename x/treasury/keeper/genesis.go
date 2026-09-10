@@ -28,11 +28,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("economic-policy committee must be distinct from Treasury authority")
 	}
 
-	// The reference tax cap and Market's base pool are the same unit by
-	// design, permanently: the protocol reference. A treasury genesis whose
-	// cap disagrees with the configured reference is not a launchable
-	// configuration. x/oracle imports before x/treasury, so the reference is
-	// already in state here.
+	// ReferenceTaxCap must use the protocol reference denomination. Oracle imports first, making
+	// the configured reference available for this check.
 	referenceDenom, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
 		return fmt.Errorf("getting protocol reference: %w", err)
@@ -65,11 +62,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if err != nil {
 			return fmt.Errorf("getting oracle-priced denominations: %w", err)
 		}
-		// Seeded, not derived: a fresh genesis holds no rates by construction,
-		// so every member starts at a factor of one rather than a conversion
-		// no rate can serve. The seed is the same value the refresh uses for
-		// an arrival it cannot derive, and the first block's pass re-derives
-		// it from real rates.
+		// Seed member factors at one without reading Oracle rates, matching uncovered runtime
+		// arrivals. The next refresh derives usable crosses from live observations.
 		for _, denom := range denoms {
 			factors = append(factors, types.ConversionFactor{
 				Denom:  denom,
@@ -77,23 +71,9 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			})
 		}
 	}
-	// A supplied factor set stays loose in one direction only: a member holding
-	// no factor is the gap an arrival opens until the next BeginBlocker covers
-	// it, so an export taken inside that window still imports. Factors are not
-	// checked against live rates either — a kept factor is anchored to the rate
-	// it was last derived under.
-	//
-	// Every factor denomination but NOAH's must name a registry member, because
-	// the factor set minus the numeraire is the tax base: a factor is the one
-	// thing that makes a denomination taxable, so one naming a never-member
-	// would have the chain collect tax it can never settle. Such coins verdict UNRECOGNISED, and settlement defers what
-	// it cannot price rather than moving it, so they would accumulate in the
-	// collector permanently.
-	//
-	// This refuses nothing a real export carries. A cap outliving its member's
-	// departure is exactly what the refresh is built to keep — but departure is
-	// a lifecycle status, not a loss of membership, and registry rows are never
-	// deleted, so a kept cap still names a member here.
+	// Supplied factors may omit members awaiting refresh and need not match live rates. Every
+	// non-NOAH factor must name a permanent registry member, keeping taxation within settleable
+	// assets and preserving export/import validity.
 	for _, factor := range factors {
 		// The numeraire's entry is fee-pricing state, excluded from the tax
 		// base in GetTaxCap, and deliberately never a registry member.
@@ -130,17 +110,8 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		}
 	}
 
-	// The collector is held to a weaker rule than the funds above, because it
-	// is not a fund: an export taken mid-window carries the member tax that
-	// window collected, and NOAH-only would refuse a chain its own export. What
-	// it is held to is what the collector can ever legitimately contain — tax,
-	// which is collected only in capped denominations, and those are members by
-	// the rule above.
-	//
-	// Bank writes genesis balances directly, so this is the only place the rule
-	// can be stated. Nothing at runtime can reach the account: it is a blocked
-	// address, which stops every user send and every IBC delivery, and the one
-	// inbound path is the ante handler routing tax out of the fee collector.
+	// The blocked tax collector may hold registered member tax across windows, so genesis permits
+	// that residue. Validate deposits here because Bank genesis bypasses runtime send restrictions.
 	collector := k.accountKeeper.GetModuleAccount(ctx, types.TransferTaxCollectorName)
 	if collector == nil {
 		return fmt.Errorf("%s module account has not been set", types.TransferTaxCollectorName)

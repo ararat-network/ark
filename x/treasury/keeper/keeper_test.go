@@ -61,19 +61,14 @@ type KeeperTestSuite struct {
 	// balance stubs those funds used before they moved out.
 	insuranceRecognised math.Int
 	reserveRecognised   math.Int
-	// reserveHoldings is what the strategic Reserve holds of registry members,
-	// which nets out of the claimable aggregate for flows. It is empty by
-	// default, so a test that never parks protocol paper sees gross and net
-	// agree and keeps its old shape.
+	// reserveHoldings contains the strategic Reserve balances netted from flow liability. It is
+	// empty by default, so gross and net liability agree unless the test parks protocol paper.
 	reserveHoldings       sdk.Coins
 	transientStoreService store.TransientStoreService
 	commitMultiStore      storetypes.CommitMultiStore
 
-	// assets is the mock asset registry every AssetKeeper answer derives from.
-	// SetupTest seeds the historical suite denominations as ACTIVE so tests
-	// that never bend membership keep their old fixtures; a test that cares
-	// about the registry replaces it with setAssets or bends one entry with
-	// seedAsset.
+	// assets backs every mock registry response. SetupTest seeds ACTIVE fixtures;
+	// membership-specific tests replace them with setAssets or seedAsset.
 	assets map[string]assettypes.Asset
 	// plans backs SettlementPlan lookups. The stored plan is served whether or
 	// not it has activated — mirroring the keeper's deliberately ungated read.
@@ -414,10 +409,7 @@ func (s *KeeperTestSuite) setTransferTaxRate(rate math.LegacyDec) {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 }
 
-// beginBlock runs BeginBlocker. The indirection is the seam tests share: when
-// BeginBlocker grows a per-block concern the suite can absorb here, its call
-// sites stay untouched. The zero-supply fallback that used to live here went
-// with liability priming, which BeginBlocker no longer performs.
+// beginBlock runs BeginBlocker through the shared keeper-test fixture.
 func (s *KeeperTestSuite) beginBlock() error {
 	return s.keeper.BeginBlocker(s.ctx)
 }

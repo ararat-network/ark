@@ -633,11 +633,8 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsErrorWhenAggregateIsOutOfRange() 
 	s.Require().ErrorIs(err, types.ErrTaxOutOfRange)
 }
 
-// TestComputeTaxTaxesDistressedDenominations proves lifecycle status is not a
-// tax exemption. Suspended, written-off, and retired supply all remain
-// transferable — retirement can even leave a residual — so exempting them
-// would price distressed money below ordinary money for the one operation
-// holders can still perform with it.
+// TestComputeTaxTaxesDistressedDenominations checks transferable suspended, written-off, and
+// retired residual supply retains its tax treatment.
 func (s *KeeperTestSuite) TestComputeTaxTaxesDistressedDenominations() {
 	source := authtypes.NewModuleAddress("tax-source").String()
 	statuses := []assettypes.AssetStatus{

@@ -162,11 +162,8 @@ func (s *KeeperTestSuite) gasPricing() (types.Params, math.LegacyDec) {
 	return params, price
 }
 
-// TestGetRequiredGasFeePricesEveryAcceptedSource pins the one requirement
-// seam over its two factor sources: identity for the reference, the table
-// for everything else, NOAH included — and refusal by absence otherwise,
-// NOAH before derivation included. The returned factor is the cross the
-// requirement priced with, which the ante's tip normalisation divides by.
+// TestGetRequiredGasFeePricesEveryAcceptedSource checks reference identity, stored member/NOAH
+// factors, and refusal by absence. The returned factor must match the priced requirement.
 func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 	params, price := s.gasPricing()
 
