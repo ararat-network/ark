@@ -44,8 +44,11 @@ These are separate from in-memory Go tests and require their stated disposable e
 ## CI map
 
 [Go tests](../.github/workflows/test.yml), [lint](../.github/workflows/lint.yml),
-[simulations](../.github/workflows/sims.yml), [localnet](../.github/workflows/localnet.yml), and
-[upgrades](../.github/workflows/upgrade.yml) define their current triggers and gates.
+[simulations](../.github/workflows/sims.yml), [localnet](../.github/workflows/localnet.yml),
+[e2e](../.github/workflows/e2e.yml), and [upgrades](../.github/workflows/upgrade.yml) define their current triggers and
+gates. The e2e suites run per pull request on the working tree; nightly they start on the latest release image and
+upgrade to the working tree first, so a release-to-release migration is rehearsed against every suite. The nightly
+workflows file one issue per workflow on failure through [nightly-failure.yml](../.github/workflows/nightly-failure.yml).
 [CodeQL](../.github/workflows/codeql.yml) and [vulnerability scanning](../.github/workflows/vulncheck.yml) provide security
 checks; `make vulncheck` runs the reachable-call scanner locally. Image publication is configured separately in
 [docker-push.yml](../.github/workflows/docker-push.yml); [THREAT_MODEL.md](../docs/THREAT_MODEL.md) owns release trust.

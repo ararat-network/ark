@@ -1,0 +1,139 @@
+# End-to-end suites: the built arkd image on a real network under
+# interchaintest, driven through its CLI, REST, and RPC, with Hermes between
+# two chains. tests/e2e is its own module, so `go test ./...` at the root
+# never sees it; the vet job keeps it compiling on every change and the
+# suites run per pull request, one job per package.
+#
+# Nightly, the suites start on the latest release image and upgrade to the
+# working tree first, so a release-to-release migration is rehearsed against
+# every module's behaviour rather than only the applied-plan query.
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # 05:00 UTC daily, after the upgrade rehearsal.
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      old_version:
+        description: "Release tag to start on and upgrade from (empty: no upgrade)"
+        required: false
+        type: string
+      upgrade_name:
+        description: "Plan the working tree registers (empty: binary swap)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: tests/e2e/go.mod
+          cache-dependency-path: tests/e2e/go.sum
+
+      - run: make test-e2e-vet
+
+  suites:
+    needs: vet
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [delegator, ibc, validator, integrator]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Version stamps
+        id: stamps
+        run: |
+          echo "version=$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build ark/arkd
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: contrib/images/arkd-env/Dockerfile
+          load: true
+          tags: ark/arkd:latest
+          build-args: |
+            VERSION=${{ steps.stamps.outputs.version }}
+            COMMIT=${{ steps.stamps.outputs.commit }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The old image is the last release, pulled from ghcr and retagged
+      # beside the local build so one repository name serves both versions.
+      - name: Old image and plan
+        id: old
+        env:
+          REPOSITORY: ghcr.io/${{ github.repository }}
+          INPUT_OLD_VERSION: ${{ inputs.old_version }}
+          INPUT_UPGRADE_NAME: ${{ inputs.upgrade_name }}
+        run: |
+          old="$INPUT_OLD_VERSION"
+          plan="$INPUT_UPGRADE_NAME"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            old=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
+            plan=$(ls -d app/upgrade/v* 2>/dev/null | sed 's|.*/||' | sort -V | tail -1)
+          fi
+          if [ -n "$old" ]; then
+            docker pull "$REPOSITORY:$old"
+            docker tag "$REPOSITORY:$old" "ark/arkd:$old"
+            echo "starting on $old, upgrading with plan '${plan:-none (binary swap)}'" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no old image; running on the working tree alone" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "version=$old" >> "$GITHUB_OUTPUT"
+          echo "plan=$plan" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: tests/e2e/go.mod
+          cache-dependency-path: tests/e2e/go.sum
+
+      - name: Run ${{ matrix.package }}
+        env:
+          TEST_IMAGE_NAME: ark/arkd
+          TEST_IMAGE_VERSION: latest
+          TEST_OLD_IMAGE_VERSION: ${{ steps.old.outputs.version }}
+          TEST_UPGRADE_NAME: ${{ steps.old.outputs.plan }}
+        run: make test-e2e E2E_PACKAGES=./${{ matrix.package }}/...
+
+      - name: Container logs
+        if: failure()
+        run: |
+          for c in $(docker ps -aq); do
+            echo "=== $(docker inspect --format '{{.Name}}' "$c")"
+            docker logs --tail 100 "$c" 2>&1 || true
+          done
+
+  report:
+    needs: suites
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: E2E
