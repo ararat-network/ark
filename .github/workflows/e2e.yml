@@ -84,6 +84,8 @@ jobs:
 
       # The old image is the last release, pulled from ghcr and retagged
       # beside the local build so one repository name serves both versions.
+      # The plan is named for its app/upgrade/v<N> package, the convention
+      # app/upgrade/README.md states and the upgrade rehearsal relies on too.
       - name: Old image and plan
         id: old
         env:

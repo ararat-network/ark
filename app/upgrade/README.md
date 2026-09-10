@@ -6,7 +6,9 @@ The live registry is [app/upgrades.go](../upgrades.go).
 
 ## Adding an upgrade
 
-1. Copy the template to `app/upgrade/v<N>` for the actual release and rename its package and plan name.
+1. Copy the template to `app/upgrade/v<N>` for the actual release and rename its package and plan name to `v<N>`.
+   The upgrade rehearsal and the nightly e2e workflow schedule the newest such directory's name as the plan, and
+   `TestUpgradesAreNamedForTheirPackage` in [app/upgrades_test.go](../upgrades_test.go) holds the two together.
 2. Give `Build` exactly the keepers the migration needs. Keep one-shot state changes before or after `RunMigrations`
    according to whether they require the old or new schema.
 3. Register a builder in `pendingUpgrades` in `app/upgrades.go`; include the store changes in the same descriptor.
