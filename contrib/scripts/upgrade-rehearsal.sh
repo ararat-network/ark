@@ -120,6 +120,8 @@ cosmovisor run start --home "$HOME_DIR" > "$WORK/node.log" 2>&1 &
 NODE_PID=$!
 
 height() { curl -sf "$RPC/status" | jq -r '.result.sync_info.latest_block_height // empty' 2>/dev/null; }
+# q <args...>: queries through the rehearsal home, so no client.toml elsewhere redirects it.
+q() { "$OLD_BINARY" q "$@" --home "$HOME_DIR" --output json; }
 
 # wait_for <seconds> <command...>: polls once a second until the command succeeds.
 wait_for() {
@@ -151,9 +153,9 @@ tx() {
     return 1
   fi
   hash=$(echo "$out" | jq -r .txhash)
-  tx_included() { "$OLD_BINARY" q tx "$hash" --output json; }
+  tx_included() { q tx "$hash"; }
   wait_for 30 tx_included || { echo "tx $hash was not included" >&2; return 1; }
-  result=$("$OLD_BINARY" q tx "$hash" --output json)
+  result=$(q tx "$hash")
   if [ "$(echo "$result" | jq -r .code)" != "0" ]; then
     echo "$result" | jq -r .raw_log >&2
     return 1
@@ -165,11 +167,11 @@ echo "proposing $UPGRADE_NAME at height $UPGRADE_HEIGHT with deposit $DEPOSIT"
 tx upgrade software-upgrade "$UPGRADE_NAME" \
   --upgrade-height "$UPGRADE_HEIGHT" --upgrade-info rehearsal --no-validate \
   --title "rehearse $UPGRADE_NAME" --summary "upgrade rehearsal" --deposit "$DEPOSIT"
-PROPOSAL=$("$OLD_BINARY" q gov proposals --output json | jq -r '.proposals[-1].id')
+PROPOSAL=$(q gov proposals | jq -r '.proposals[-1].id')
 echo "voting yes on proposal $PROPOSAL"
 tx gov vote "$PROPOSAL" yes
 
-proposal_status() { "$OLD_BINARY" q gov proposal "$PROPOSAL" --output json | jq -r '.proposal.status'; }
+proposal_status() { q gov proposal "$PROPOSAL" | jq -r '.proposal.status'; }
 while :; do
   status=$(proposal_status)
   case "$status" in

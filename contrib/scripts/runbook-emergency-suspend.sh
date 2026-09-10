@@ -115,7 +115,11 @@ echo "accepted txhash=$txhash"
 
 step "not visible on public mempools"
 for node in $PUBLIC_NODES; do
-  for b64 in $(curl -sf "http://$node:26657/unconfirmed_txs" | jq -r '.result.txs[]? // empty'); do
+  # CometBFT pages at most 100; a total past the page would hide a tail.
+  pending=$(curl -sf "http://$node:26657/unconfirmed_txs?limit=100") || fail "cannot read $node's mempool"
+  [ "$(printf '%s' "$pending" | jq -r '.result.total')" = "$(printf '%s' "$pending" | jq -r '.result.n_txs')" ] \
+    || fail "$node holds more pending transactions than one page shows"
+  for b64 in $(printf '%s' "$pending" | jq -r '.result.txs[]? // empty'); do
     [ "$(tx_hash_of "$b64")" != "$txhash" ] || fail "transaction leaked to $node's mempool"
   done
   echo "$node: absent"

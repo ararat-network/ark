@@ -35,7 +35,7 @@ while [ "$i" -lt "$VALIDATORS" ]; do
   sed -i \
     -e '/^\[api\]/,/^\[/ s|^address = .*|address = "tcp://0.0.0.0:1317"|' \
     -e '/^\[grpc\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9090"|' \
-    -e '/^\[pricefeed\]/,/^\[/ s|^enabled = .*|enabled = "true"|' \
+    -e '/^\[pricefeed\]/,/^\[/ s|^enabled = .*|enabled = true|' \
     -e '/^\[pricefeed\]/,/^\[/ s|^sidecar_addresses = .*|sidecar_addresses = ["pricefeed'"$i"':8080"]|' \
     -e '/^\[pricefeed\.tls\]/,/^\[/ s|^mode = .*|mode = "plaintext"|' \
     -e '/^\[prometheus\]/,/^\[/ s|^enabled = .*|enabled = true|' \

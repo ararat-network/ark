@@ -16,10 +16,6 @@ if [ ! -f "$HOME_DIR/config/genesis.json" ]; then
   chain_id=$(jq -r .chain_id "$SOURCE/config/genesis.json")
   arkd init sync0 --chain-id "$chain_id" --home "$HOME_DIR" > /dev/null
   cp "$SOURCE/config/genesis.json" "$HOME_DIR/config/genesis.json"
-  # Match the validators' fee floor; `arkd init` leaves it empty and start
-  # refuses that.
-  min_gas=$(sed -n 's/^minimum-gas-prices = "\(.*\)"/\1/p' "$SOURCE/config/app.toml")
-  sed -i "s|^minimum-gas-prices = .*|minimum-gas-prices = \"$min_gas\"|" "$HOME_DIR/config/app.toml"
   # The peers live on a private subnet; strict routability would refuse them.
   sed -i '/^\[p2p\]/,/^\[/ s|^addr_book_strict = .*|addr_book_strict = false|' "$HOME_DIR/config/config.toml"
 fi
@@ -42,7 +38,8 @@ done
 
 peer_id=$(printf '%s' "$status" | jq -r '.result.node_info.id')
 trust_height=$((latest - 5))
-trust_hash=$(curl -sf "$SNAPSHOT_RPC/block?height=$trust_height" | jq -r '.result.block_id.hash')
+trust_hash=$(curl -sf "$SNAPSHOT_RPC/block?height=$trust_height" | jq -r '.result.block_id.hash // empty')
+[ -n "$trust_hash" ] || { echo "sync0: no block hash for height $trust_height from $SNAPSHOT_RPC" >&2; exit 1; }
 echo "sync0: trust height $trust_height hash $trust_hash, rpc $RPC_SERVERS, peer $peer_id@$PEER"
 
 # Written into config.toml rather than exported: the SDK prefixes config env
