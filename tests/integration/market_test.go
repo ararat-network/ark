@@ -79,9 +79,8 @@ func TestSwapGatedByAssetLifecycle(t *testing.T) {
 	})
 }
 
-// TestTobinOverrideAppliesToSpread shows the rate reaching an actual quote,
-// which is the only thing that proves Market's own policy replaced Oracle's
-// list rather than merely being stored beside it.
+// TestTobinOverrideAppliesToSpread checks that Market's stored Tobin override determines the spread
+// in an executed quote.
 func TestTobinOverrideAppliesToSpread(t *testing.T) {
 	f := newActivationFixture(t)
 	msgServer := marketkeeper.NewMsgServerImpl(f.app.MarketKeeper)
@@ -125,12 +124,9 @@ func TestTobinOverrideAppliesToSpread(t *testing.T) {
 	})
 }
 
-// TestSettlementRedeemsAtPlanRate covers the whole exit: a holder of a
-// suspended asset redeems at the rate governance committed to, while ordinary
-// conversion for the same denomination stays refused. The settlement plan is
-// seeded directly because its activation delay is a day of blocks — that delay
-// is asset-module policy with its own coverage, and what matters here is that
-// Market honours the plan rather than the oracle.
+// TestSettlementRedeemsAtPlanRate checks holder redemption at the committed plan rate while
+// ordinary swaps remain forbidden. The fixture seeds an active plan; Asset tests own the activation
+// delay.
 func TestSettlementRedeemsAtPlanRate(t *testing.T) {
 	f := newActivationFixture(t)
 	marketMsgServer := marketkeeper.NewMsgServerImpl(f.app.MarketKeeper)
@@ -247,11 +243,8 @@ func TestBasePoolDenomPinnedToReference(t *testing.T) {
 	})
 }
 
-// TestCapacityCommitteeResizesWithinCorridor is the emergency path end to end
-// through real wiring: governance appoints a bounded committee, the committee
-// deepens the pool and shortens recovery in one message the way a depeg response
-// would, a candidate past the corridor is refused, and governance keeps an
-// unbounded override throughout.
+// TestCapacityCommitteeResizesWithinCorridor checks real governance appointment, accepted bounded
+// updates, rejected over-corridor policy, and governance's unrestricted override.
 func TestCapacityCommitteeResizesWithinCorridor(t *testing.T) {
 	f := newActivationFixture(t)
 	msgServer := marketkeeper.NewMsgServerImpl(f.app.MarketKeeper)
@@ -465,12 +458,8 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 	})
 }
 
-// TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport exercises a pool
-// re-denomination through the executor that now owns it. The pool's unit is the
-// protocol reference, so the transition arrives from x/asset rather than from
-// Market's own parameters — but everything downstream must be unchanged by the
-// change of unit: quotes identical, the pool gap carried across, and the new
-// unit surviving export.
+// TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport checks Oracle-directed reference rebasing
+// preserves quotes, proportional pool delta, and exported units.
 func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewNextBlockContext(cmtproto.Header{

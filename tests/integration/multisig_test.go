@@ -37,11 +37,8 @@ import (
 
 const treasuryMultisigChainID = "ark-treasury-multisig-test"
 
-// What every transaction here declares, and what the committee holds to pay
-// it with. The default base gas price prices this gas limit at exactly
-// multisigFeeAmount, so the declared fee is the requirement rather than a
-// figure above it: the ante charges what gas costs, never the declaration, so
-// a case that must fail on funds starves the balance instead of overdeclaring.
+// The declared multisig fee equals the default gas requirement. Insufficient-funds cases reduce
+// custody, since excess declaration alone is not charged.
 const (
 	multisigGasLimit            = 2_000_000
 	multisigFeeAmount           = 200_000_000_000_000_000

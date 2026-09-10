@@ -15,11 +15,8 @@ type EndpointsSuite struct {
 	*chainsuite.Suite
 }
 
-// TestAPIEndpoints is the REST surface integrators read: the SDK routes
-// operators and explorers depend on, and every route Ark's modules register
-// whose argument exists at genesis. The settlement plan and the tax cap by
-// denomination are left out: no launch genesis holds an asset in settlement
-// or a tax cap, and both answer not found until one does.
+// TestAPIEndpoints checks SDK and Ark REST routes supported by the genesis fixture. State-dependent
+// routes without matching fixture records are omitted.
 func (s *EndpointsSuite) TestAPIEndpoints() {
 	wallets := s.Chain.ValidatorWallets
 	tests := []struct {

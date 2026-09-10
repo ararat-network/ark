@@ -25,12 +25,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// TestSuspensionSettlementAndRecovery runs the whole failure path on one listed
-// asset: suspension is a status move on a claim, and the reference unit's price
-// data is a different axis entirely — so ReferenceState, Market's base pool,
-// and Treasury's cap must all sit still while an asset fails, settles, and
-// recovers. The reference denomination itself carries no listed asset, which is
-// what makes that separation structural rather than merely observed.
+// TestSuspensionSettlementAndRecovery checks asset distress and resolution leave the separate
+// protocol reference, Market pool unit, and Treasury cap unchanged.
 func TestSuspensionSettlementAndRecovery(t *testing.T) {
 	f := newActivationFixture(t)
 	marketMsgServer := marketkeeper.NewMsgServerImpl(f.app.MarketKeeper)
@@ -322,15 +318,8 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 	})
 }
 
-// TestRecoveryRequiresAnActiveFeed isolates the other half of the recovery
-// gate. The plan gate is covered above on the reference-carrying asset; this
-// uses a separate suspended asset so the fixture can take one feed down without
-// taking the protocol reference's price data with it.
-//
-// A suspended asset holds no claim on its feed, so governance may legitimately
-// retire it. Recovery then has nothing to price against, and because the
-// transition takes effect immediately a scheduled re-addition is not enough:
-// an adding feed has no rate yet.
+// TestRecoveryRequiresAnActiveFeed checks immediate recovery rejects absent or merely adding feeds.
+// A separate asset permits feed removal without disturbing the protocol reference.
 func TestRecoveryRequiresAnActiveFeed(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
@@ -536,13 +525,8 @@ func TestWriteOffAndReinstatement(t *testing.T) {
 	})
 }
 
-// TestEmergencyMandateSingleProposal drives the committee path end to end: a
-// signer who is not the governance authority moving consensus-visible state
-// under a live mandate. The keeper suite owns the rejection matrix; what is only
-// provable here is that the emergency route reaches the same semantics as
-// governance, and that no suspension stirs the reference machinery — the
-// reference denom denominates Market's base pool and Treasury's cap, and it names a
-// feed no asset is listed against.
+// TestEmergencyMandateSingleProposal exercises committee suspension through real wiring, with
+// governance-equivalent status effects and unchanged reference state.
 func TestEmergencyMandateSingleProposal(t *testing.T) {
 	f := newActivationFixture(t)
 	assetMsgServer := assetkeeper.NewMsgServerImpl(f.app.AssetKeeper)
@@ -735,18 +719,9 @@ func TestEmergencyMandateSingleProposal(t *testing.T) {
 	})
 }
 
-// TestEmergencySuspensionIsSeenByBlockSettlement pins what the committee's
-// ordering freedom costs now. Governance transitions execute in x/gov's
-// EndBlocker, after every reader, but the committee acts in an ordinary
-// transaction, so a suspension can land ahead of an expansion in the same
-// block. Under per-conversion settlement that expansion would have sized
-// targets and burned the remainder against whatever valuation it happened to
-// find — both irreversible, in the block an asset just failed.
-//
-// Deferring settlement removes the ordering from the question entirely: the
-// block's only valuation is taken after both acts, so the suspension is seen
-// however the transactions fell, the whole block's principal parks, and the
-// degradation is disclosed once.
+// TestEmergencySuspensionIsSeenByBlockSettlement checks transaction-time suspension appears in
+// final liability regardless of within-block order, parking the block's expansion principal with
+// one disclosure.
 func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	f := newActivationFixture(t)
 	assetMsgServer := assetkeeper.NewMsgServerImpl(f.app.AssetKeeper)
@@ -789,14 +764,8 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 		require.True(t, valuationComplete(status))
 	})
 
-	// Both acts in one block: the committee suspends, then a NOAH offer expands,
-	// and settlement runs at the end of it.
-	//
-	// This is the hazard the deferred design removes rather than manages. There
-	// is no valuation taken before the suspension for the expansion to be placed
-	// against: the only fold happens after both acts have landed, so the
-	// suspension is simply seen, with nothing to invalidate and no ordering
-	// within the block that could hide it.
+	// Suspend and expand in one block. EndBlock values their combined final state, so no
+	// pre-suspension valuation can hide the degraded asset.
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := assetMsgServer.EmergencySuspendAsset(ctx, &assettypes.MsgEmergencySuspendAsset{
 			Committee:    committee,

@@ -241,9 +241,8 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 		arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.EURBaseDenom),
 	)
 
-	// Insurance is named separately: it is no longer a Treasury fund account,
-	// but its restriction admits the same positive anoah-only deposit, and the
-	// withdrawal below needs it funded.
+	// Insurance has its own positive-NOAH-only deposit restriction. This deposit funds the
+	// withdrawal below.
 	fundedAccounts := append(treasurytypes.FundAccountNames(), claimstypes.InsuranceName)
 	for _, moduleName := range fundedAccounts {
 		require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
@@ -270,13 +269,8 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 	require.Equal(t, eurSupply, arkApp.BankKeeper.GetSupply(ctx, chain.EURBaseDenom))
 }
 
-// TestTreasurySettlementRoutesWrittenOffTaxToReserve drives a reward-funding
-// settlement through the real Bank keeper while the collector holds tax of a
-// written-off asset. The routing crosses the Treasury send restriction with
-// non-NOAH coins, so this must run against the real restriction wiring: keeper
-// tests mock Bank and structurally cannot catch a restriction rejecting the
-// module's own settlement transfer, which would fail EndBlock and halt the
-// chain.
+// TestTreasurySettlementRoutesWrittenOffTaxToReserve checks non-NOAH residue passes real Bank
+// restrictions during reward settlement, a boundary mocked keeper tests cannot exercise.
 func TestTreasurySettlementRoutesWrittenOffTaxToReserve(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 2})
@@ -581,17 +575,8 @@ func executeTreasuryProposal(
 	return ctx, proposal
 }
 
-// TestTreasuryLaunchesWithExposureModelInert pins the guarantee the whole
-// risk-scaling design rests on: a chain standing up from default genesis
-// carries a multiplier of one, so every fund target is exactly its policy ratio
-// against liability and the model changes nothing until governance votes a
-// weight positive.
-//
-// It is asserted end to end rather than in the types package because that is
-// where it can silently break — a default that never reaches state, a genesis
-// path that skips the item, a keeper that reads something else — and because
-// every other treasury and app test's expectations are only valid while it
-// holds.
+// TestTreasuryLaunchesWithExposureModelInert checks default genesis installs multiplier one through
+// real keeper wiring, leaving targets unscaled until governance enables risk weights.
 func TestTreasuryLaunchesWithExposureModelInert(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{

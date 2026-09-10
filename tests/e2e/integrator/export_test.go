@@ -23,11 +23,8 @@ import (
 const relauncherMnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon " +
 	"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
 
-// ExportSuite stops a chain, exports it, and relaunches the export under a
-// new chain ID with the same validator keys. Ark's export continues at the
-// next height rather than restarting at zero, so what is checked is that
-// the relaunch resumes: same validator set, balances intact, transactions
-// accepted, and the oracle pipeline reporting again from the resumed height.
+// ExportSuite relaunches exported state under a new chain ID with the same keys and next absolute
+// height, checking validators, balances, transactions, and resumed oracle reporting.
 type ExportSuite struct {
 	*chainsuite.Suite
 }

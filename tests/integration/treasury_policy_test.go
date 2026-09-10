@@ -32,11 +32,9 @@ import (
 // conversion 1:1, which keeps the re-point arithmetic assertable by eye.
 var fixtureRate = math.LegacyNewDecWithPrec(1, 2)
 
-// TestLiabilityPartitionTracksLifecycle drives one asset through the statuses
-// the partition classifies and reads FundStatus at each step. The report is
-// the substance: suspension without a plan must make the total unavailable
-// rather than silently dropping the exposure, and a plan must move the same
-// supply into settlement-priced recognition at the committed rate.
+// TestLiabilityPartitionTracksLifecycle checks lifecycle changes appear in FundStatus: untrusted
+// suspension marks incompleteness, and a settlement plan restores valued liability at its committed
+// rate.
 func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 	f := newActivationFixture(t)
 	marketMsgServer := marketkeeper.NewMsgServerImpl(f.app.MarketKeeper)
@@ -143,12 +141,8 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 	})
 }
 
-// TestReferenceRepointRebasesPoolAndCap is the Phase 5 completion criterion:
-// with both executors wired, one MsgSetReferenceDenom re-denominates Market's base
-// pool and Treasury's reference tax cap in the same transaction. The fixture
-// prices every feed identically, so the conversion is 1:1 and only the units
-// move — which is exactly the claim: a re-denomination changes unit, never
-// stance.
+// TestReferenceRepointRebasesPoolAndCap checks both wired executors re-denominate pool and cap
+// atomically. Equal fixture rates isolate unit changes from amount changes.
 func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
@@ -291,11 +285,8 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 	})
 }
 
-// TestTaxCapsFollowMembershipEpoch pins the epoch machinery end to end: a
-// lifecycle transition that changes the oracle-priced set bumps the version in
-// preblock, and the next BeginBlocker re-derives the caps for the new
-// membership without any per-block store walk — leaving the departed
-// denomination's cap where it stands, because its supply is still moving.
+// TestTaxCapsFollowMembershipEpoch checks BeginBlock factor refresh follows current oracle-priced
+// membership while retaining factors for departed members' transferable supply.
 func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 	f := newActivationFixture(t)
 
@@ -354,11 +345,8 @@ type phase3AIntegrationResult struct {
 	endingDelta  math.LegacyDec
 }
 
-// TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer pins
-// the claimable denominator end to end: the unpriced dust member is excluded
-// from the aggregate and disclosed rather than switching the Buffer off, and
-// since it cannot itself redeem, the healthy redemption's funding is identical
-// to the fully priced run in everything but the audit flag.
+// TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer checks a never-priced dust
+// member is disclosed without disabling healthy redemption coverage.
 func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *testing.T) {
 	complete := runPhase3AIntegrationRedemption(t, true)
 	incomplete := runPhase3AIntegrationRedemption(t, false)
@@ -408,12 +396,8 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 		apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(missingRateSupply))
 	}
 
-	// The mints above stand in for supply that existed before this block. They
-	// bypass Market, and nothing has to be primed for them to count: settlement
-	// values the registry at the end of the block, so it sees them the same way
-	// it sees supply the block's own conversions created. In the incomplete case
-	// that fold is also what excludes the rateless KRW dust from the claimable
-	// aggregate and marks the valuation incomplete.
+	// Seeded supply represents prior-block holdings. EndBlock reads it directly; never-priced KRW
+	// dust is disclosed and excluded without requiring cached-state priming.
 	bufferSeed := math.NewInt(250_000_000_000)
 	apptestutil.FundModule(
 		t,

@@ -49,12 +49,9 @@ const (
 	GasPrices     = ""
 	GasAdjustment = 2.0
 
-	// RelayerGasPrices is what Hermes declares per gas; it does not price
-	// through arkd. Ark's fee floor is Treasury's live base gas price, not a
-	// node setting: at genesis it is MinBaseGasPrice (1e11 reference base
-	// units) times the NOAH cross (1.371), so this is about seven times the
-	// floor. VerifyGasPrices checks it against the chain's sheet at setup, so
-	// a change to either constant fails loudly rather than as fee refusals.
+	// RelayerGasPrices is Hermes' fee declaration, independent of arkd pricing. VerifyGasPrices
+	// checks it against Treasury's live sheet during setup so inadequate defaults fail before
+	// relaying.
 	RelayerGasPrices = "1000000000000" + Denom
 
 	// BlockTime is what interchaintest sets timeout_commit to.
@@ -110,11 +107,8 @@ func NOAHCoin(n int64) string {
 	return NOAH(n).String() + Denom
 }
 
-// DefaultGenesisAmounts funds each validator account with ValidatorFunds and
-// self-delegates a descending share. On the four-validator chains the suites
-// use, the first two hold under two thirds of the power, and the rest hold
-// over two thirds without the largest, so any one validator can stop without
-// a halt.
+// DefaultGenesisAmounts funds validators and assigns descending self-delegations. Four-validator
+// fixtures retain over two-thirds power after any single validator stops.
 func DefaultGenesisAmounts(denom string) func(i int) (sdk.Coin, sdk.Coin) {
 	return func(i int) (sdk.Coin, sdk.Coin) {
 		stakes := []int64{3000, 2900, 2200, 1000, 700, 400}

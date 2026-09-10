@@ -31,16 +31,8 @@ import (
 // series, the claim names the custody the fund attests to.
 const goldExternal = goldDenom + "-x"
 
-// TestReserveCommitteeTransferBoundIsTreasurys proves the wiring both unit
-// suites have to stub: x/reserve's tests supply the shortfall from a fake
-// reader, and x/treasury's tests compute it with no committee in sight. Only
-// here do the real keepers meet, so only here can the bound a committee is
-// actually held to be shown to come from Treasury's live targets rather than
-// from anything the Reserve believes about itself.
-//
-// It also pins the complementarity the two transfer channels are built on: the
-// committee's bounded message and governance's unbounded one against the same
-// state, one stopping at the target line and the other not.
+// TestReserveCommitteeTransferBoundIsTreasurys checks real Reserve actions use Treasury's live
+// shortfall, contrasting bounded committee refill with governance transfer on the same state.
 func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
@@ -185,15 +177,8 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	require.True(t, used.IsZero())
 }
 
-// TestReserveFeedGuardBlocksRemoval proves the Reserve is actually registered
-// as a feed-removal guard, which nothing inside x/reserve can show: the module
-// only answers when asked, and app wiring owns the guard set.
-//
-// It runs against a denomination that has a feed but no asset record, so the
-// only consumer that can object is the Reserve. That is also the only shape
-// D62 permits for a credited entry — an Ark-issued denomination may never be
-// credited — so the isolation the test needs and the rule the policy enforces
-// are the same constraint.
+// TestReserveFeedGuardBlocksRemoval checks app wiring registers Reserve's guard. The external feed
+// has no Asset record, isolating Reserve as the sole foreign blocker.
 func TestReserveFeedGuardBlocksRemoval(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
@@ -260,17 +245,8 @@ func TestReserveFeedGuardBlocksRemoval(t *testing.T) {
 	})
 }
 
-// TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure covers the
-// Reserve's other feed claim, and the deadlock it used to create.
-//
-// An open position blocks removal of its denomination's feed, because a return
-// cannot be attributed without one. Closure is what
-// releases that claim — and closure was committee-only, so an asset wind-down
-// begun after a mandate was revoked would have required appointing a fresh
-// committee for the sole purpose of closing dead positions before the feed
-// could ever be retired. Governance holding the closure removes that
-// dependency, and this proves the release lands through the real oracle guard
-// rather than only in the referent list.
+// TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure checks governance can close a position
+// and release its real Oracle feed guard without appointing a committee.
 func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
@@ -335,8 +311,7 @@ func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 		require.ErrorContains(t, err, "open position")
 	})
 
-	// Governance revokes the mandate. This is the state that used to deadlock:
-	// nobody is appointed, and the only actor who could close is gone.
+	// Governance revokes the mandate, leaving no appointed committee to close the position.
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := reserveMsgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
 			Authority: authority,
@@ -363,23 +338,9 @@ func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 	})
 }
 
-// TestReserveAndMarketValueARateIdentically pins the one property no unit suite
-// can hold: that two modules read the same oracle rate the same way round.
-//
-// Every oracle rate quotes NOAH per one unit of its asset, so valuing that
-// asset in NOAH multiplies (D75; before the flip it divided). The Market has
-// always converted through RateSet.Convert; the Reserve once re-derived the
-// arithmetic locally the other way round, which made every figure it
-// published the reciprocal of the truth —
-// recognised capital, deployment cost bases, crystallised recoveries. Nothing
-// caught it, because no test made the two modules answer the same question.
-// This one does, and it fails loudly if either side flips again.
-//
-// The two legs must use different denominations, which is not a weakness of the
-// test but a rule of the chain: D28 bars Ark-issued paper from the recognition
-// policy, and the Market converts registry members only, so no single
-// denomination is both recognisable and convertible. What can be shared is the
-// rate, and the rate is what the orientation is a fact about.
+// TestReserveAndMarketValueARateIdentically checks both modules multiply by NOAH-per-unit rates.
+// Distinct external and registered denominations share the same rate because one denomination
+// cannot be both recognisable and convertible.
 func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
@@ -390,11 +351,8 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	marketQuery := marketkeeper.NewQueryServerImpl(arkApp.MarketKeeper)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	// externalAsset stands in for what a Reserve actually holds: a claim on a
-	// series the protocol did not issue, named `<feed>-<tag>` so the books say
-	// which instrument it is. Four to the NOAH — a quarter of a NOAH per unit,
-	// a rate below one — is where the two orientations diverge most visibly:
-	// the same quantity is worth a quarter as much multiplied as it is divided.
+	// externalAsset is an external claim priced at 0.25 NOAH per unit, making inverted-rate
+	// valuation visibly different from multiplication.
 	const (
 		externalFeed  = "aext"
 		externalAsset = externalFeed + "-x"
@@ -438,11 +396,8 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	base := math.NewInt(1_000_000_000)
 	seed := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, base))
 	apptestutil.FundModule(t, arkApp, ctx, reservetypes.StrategicReserveName, seed)
-	// The external holding is attested, as every external holding is (D59):
-	// custody the chain cannot see, carried as an open position's quantity and
-	// priced by the fold through the series the symbol derives. No bank coin is
-	// involved — an external symbol has no mint path, and the send restriction
-	// would refuse one at the door.
+	// External custody is attested in an open position and priced through its derived feed. No Bank
+	// coin is involved; Reserve admission rejects external symbols.
 	require.NoError(t, arkApp.ReserveKeeper.OpenPositions.Set(ctx, 1, reservetypes.Position{
 		PositionId:     1,
 		Quantity:       sdk.NewCoin(externalAsset, quantity),

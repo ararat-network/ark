@@ -32,8 +32,7 @@ func TestAssetActivationGenesis(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, assettypes.AssetStatus_ASSET_STATUS_ACTIVE, asset.Status)
 
-		// Asset is the sole owner of native-denom Bank metadata now that oracle
-		// no longer registers it alongside Tobin entries.
+		// Asset owns Bank metadata for its registered denominations.
 		metadata, found := f.app.BankKeeper.GetDenomMetaData(ctx, expected.Denom)
 		require.True(t, found, "bank metadata for %s", expected.Denom)
 		require.Equal(t, expected.Metadata, metadata)
@@ -99,11 +98,8 @@ func TestFeedRemovalGuardedByLiveAssets(t *testing.T) {
 	require.NotContains(t, feeds.Denoms, goldDenom)
 }
 
-// TestFeedRemovalGuardedByProtocolReferenceDenom pins the reference denom's only
-// protection. The launch reference denomination carries no listed asset at all,
-// so the feed layer's referent guard is the single thing holding its feed: if
-// that guard did not hold, Market's base pool and Treasury's cap would end up
-// denominated in a unit the chain no longer observes.
+// TestFeedRemovalGuardedByProtocolReferenceDenom checks Oracle's reference claim pins an
+// unregistered denomination's feed used by Market and Treasury.
 func TestFeedRemovalGuardedByProtocolReferenceDenom(t *testing.T) {
 	f := newActivationFixture(t)
 	msgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
@@ -223,12 +219,8 @@ func TestAssetRegistrationRequiresAFeed(t *testing.T) {
 	})
 }
 
-// TestAssetLifecycleActivationThroughRetirement walks one newly registered
-// commodity from an empty denomination to a tombstone, asserting at each step
-// what crosses a module boundary: what Bank owns, when consensus completes an
-// activation, when Treasury starts taxing, what Market permits, and what the
-// feed layer releases. The single-module transitions inside each step are the
-// keeper suite's business; this is about the seams holding in sequence.
+// TestAssetLifecycleActivationThroughRetirement checks Bank metadata, feed activation, taxation,
+// conversion eligibility, and feed release across a commodity's complete lifecycle.
 func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)

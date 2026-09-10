@@ -29,11 +29,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// valuationComplete reports whether FundStatus valued every recognised
-// liability this block, which is what makes its targets meaningful rather than
-// zeroes that claim nothing. The response carries no flag for this: the two
-// exclusion lists are the answer. A write-off is deliberately not among them,
-// because it extinguishes the obligation rather than leaving it unvalued.
+// valuationComplete checks FundStatus's stale-member and untrusted-suspension lists. Write-offs do
+// not count as gaps because they extinguish the obligation.
 func valuationComplete(status *treasurytypes.QueryFundStatusResponse) bool {
 	return len(status.UntrustedSuspendedSupply) == 0 && len(status.StaleMemberSupply) == 0
 }
@@ -144,15 +141,8 @@ func (f *activationFixture) readCtx() sdk.Context {
 	})
 }
 
-// nextBlock runs one full block. From height 2 on, the validator reports a
-// rate for every feed in the epoch it voted against, so every block carries
-// consensus evidence.
-//
-// tx, when set, runs against the incoming block's state before that block
-// executes. That is where a message accepted in the previous block leaves the
-// chain: after the previous preblock, before this one. Placing keeper calls
-// anywhere else would let a block's own preblock observe work that, on a real
-// chain, had not happened yet.
+// nextBlock drives a full block with prior-epoch vote evidence from height two. Optional tx keeper
+// writes use the incoming block context before execution, matching state visible to its PreBlock.
 func (f *activationFixture) nextBlock(tx func(sdk.Context)) {
 	f.t.Helper()
 

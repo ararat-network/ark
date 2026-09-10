@@ -35,18 +35,9 @@ type settlementLedger struct {
 	output        math.Int
 }
 
-// TestBlockSettlementMatchesSequentialPlacement is the parity check the cutover
-// rests on. It drives a normal block — several expansions and several
-// redemptions, interleaved — and then restates settlement independently from
-// the quotes those conversions produced: value each output, waterfall the total
-// against end-of-block liability, price coverage on the reconstructed pre-burn
-// basis, and check every balance the block should have moved.
-//
-// The restatement is deliberately a second implementation rather than a call
-// back into the keeper. What it proves is that placing the block's principal
-// once, against one valuation, lands the same funds in the same accounts as
-// walking the conversions in order would have — which is the claim that makes
-// deferring settlement safe rather than merely cheaper.
+// TestBlockSettlementMatchesSequentialPlacement independently reconstructs block allocation from
+// quotes, final liability, and pre-burn coverage. It checks all resulting fund balances without
+// calling the keeper's allocation calculation.
 func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
@@ -239,19 +230,9 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		"coverage is a share of the output and never more than all of it")
 }
 
-// TestBlockSettlementParksEveryConversionOnMidBlockDegradation pins the scope
-// the deferred design gives the degraded mode. A feed going dark part-way
-// through a block used to affect only the conversions that came after it: the
-// ones before had already sized targets and burned their remainder against a
-// valuation that still called itself complete. Settling once means the block
-// has one verdict, so every conversion in it — including those quoted while the
-// feed was still live — parks in the Reserve, the fund whose allocation an
-// operator can still revise.
-//
-// The coverage draw is deliberately not switched off with it. The aggregate
-// already excludes supply that cannot redeem, so a failure elsewhere raises the
-// share healthy exits receive rather than closing the exit during the contagion
-// the Buffer exists for.
+// TestBlockSettlementParksEveryConversionOnMidBlockDegradation checks one final valuation parks all
+// expansion principal, including earlier quotes, while healthy redemption coverage remains
+// available.
 func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
