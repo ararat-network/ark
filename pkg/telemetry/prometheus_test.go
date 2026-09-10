@@ -2,15 +2,73 @@ package telemetry
 
 import (
 	"context"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/sync/errgroup"
 )
+
+// TestServeScrapeServesUntilCancelled runs the loop both binaries' endpoints
+// share: the registry is scrapeable until ctx ends, then the listener and
+// the provider are gone.
+func TestServeScrapeServesUntilCancelled(t *testing.T) {
+	registry := prometheus.NewRegistry()
+	provider, err := NewPrometheusProvider("oracle", registry)
+	require.NoError(t, err)
+	counter, err := provider.Meter("ark/test").Int64Counter("ark.test.scrapes")
+	require.NoError(t, err)
+	counter.Add(context.Background(), 1)
+
+	address := freeLoopbackAddress(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	var g errgroup.Group
+	ServeScrape(ctx, &g, address, registry, provider, nil)
+
+	require.Contains(t, scrapeEventually(t, "http://"+address+"/metrics"), "ark_test_scrapes_total 1")
+
+	cancel()
+	require.NoError(t, g.Wait())
+	_, err = http.Get("http://" + address + "/metrics") //nolint:noctx // the listener is closed; this must fail
+	require.Error(t, err)
+}
+
+// freeLoopbackAddress returns a loopback address nothing is listening on.
+func freeLoopbackAddress(t *testing.T) string {
+	t.Helper()
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	address := ln.Addr().String()
+	require.NoError(t, ln.Close())
+	return address
+}
+
+// scrapeEventually returns the body once url answers, within the deadline.
+func scrapeEventually(t *testing.T, url string) string {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		resp, err := http.Get(url) //nolint:noctx // the deadline bounds the loop
+		if err == nil {
+			body, readErr := io.ReadAll(resp.Body)
+			_ = resp.Body.Close()
+			require.NoError(t, readErr)
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			return string(body)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("%s never answered: %v", url, err)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
 
 func TestNewPrometheusProviderExportsInstrument(t *testing.T) {
 	registry := prometheus.NewRegistry()

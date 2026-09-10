@@ -13,9 +13,15 @@ import (
 	"cosmossdk.io/log/v2"
 )
 
-// DefaultReadHeaderTimeout bounds how long an auxiliary server waits for a
-// request header before dropping the connection.
-const DefaultReadHeaderTimeout = 3 * time.Second
+const (
+	// DefaultReadHeaderTimeout bounds how long an auxiliary server waits for a
+	// request header before dropping the connection.
+	DefaultReadHeaderTimeout = 3 * time.Second
+
+	// DefaultShutdownTimeout bounds a meter provider's final flush once the
+	// endpoint exporting it has stopped.
+	DefaultShutdownTimeout = 5 * time.Second
+)
 
 // RunHTTPServer creates and owns the listener for an auxiliary HTTP endpoint
 // and serves until ctx is cancelled. It closes the listener even if

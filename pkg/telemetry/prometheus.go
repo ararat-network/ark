@@ -5,6 +5,7 @@
 package telemetry
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,16 +17,14 @@ import (
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"golang.org/x/sync/errgroup"
+
+	"cosmossdk.io/log/v2"
 )
 
-// NewPrometheusProvider returns a MeterProvider exporting through registerer,
-// with service.name, service.version, and attrs as its resource. The registerer is explicit
-// because it decides which scrape endpoint the metrics land on: CometBFT and
-// the SDK's legacy sink both own the default registry, so arkd passes its own.
-//
-// Scope labels are left off. Every Ark instrument is unique under its "ark."
-// prefix, so otel_scope_name would repeat the name on every series and
-// otel_scope_version, with no meter versioned, would always be empty.
+// NewPrometheusProvider exports through the explicit registry with service name, version, and
+// supplied resource attributes. Scope labels are omitted because Ark instrument names are unique
+// and meters are unversioned.
 func NewPrometheusProvider(
 	serviceName string,
 	registerer prometheus.Registerer,
@@ -59,4 +58,24 @@ func NewPrometheusProvider(
 // PrometheusHandler serves gatherer in the Prometheus exposition format.
 func PrometheusHandler(gatherer prometheus.Gatherer) http.Handler {
 	return promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
+}
+
+// ServeScrape serves gatherer at address under g until ctx ends, then shuts
+// provider down. A listener that cannot bind fails g, as the SDK's own
+// listeners do.
+func ServeScrape(
+	ctx context.Context,
+	g *errgroup.Group,
+	address string,
+	gatherer prometheus.Gatherer,
+	provider *sdkmetric.MeterProvider,
+	logger log.Logger,
+) {
+	g.Go(func() error {
+		serveErr := RunHTTPServer(ctx, address, PrometheusHandler(gatherer), logger, "prometheus metrics")
+
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+		defer cancel()
+		return errors.Join(serveErr, provider.Shutdown(shutdownCtx))
+	})
 }

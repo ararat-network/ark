@@ -2,7 +2,8 @@ package telemetry
 
 import (
 	"fmt"
-	"net"
+
+	"github.com/ararat-network/ark/pkg/grpcconn"
 )
 
 const (
@@ -10,11 +11,8 @@ const (
 	DefaultPrometheusAddress = "localhost:9464"
 )
 
-// PrometheusConfigTemplate is the app.toml section for the application's
-// scrape endpoint. Distinct from CometBFT's [instrumentation] endpoint in
-// config.toml, which serves consensus metrics, and from the legacy
-// [telemetry] section, whose go-metrics bridge lands on this endpoint when
-// metrics-sink is "otel".
+// PrometheusConfigTemplate configures the application scrape endpoint in app.toml. It is separate
+// from CometBFT instrumentation; the SDK telemetry bridge exports here when metrics-sink is otel.
 const PrometheusConfigTemplate = `
 
 ###############################################################################
@@ -49,7 +47,7 @@ func DefaultPrometheusConfig() PrometheusConfig {
 
 // Validate checks the address is a host:port pair a listener can bind.
 func (c PrometheusConfig) Validate() error {
-	if _, _, err := net.SplitHostPort(c.Address); err != nil {
+	if _, _, err := grpcconn.ListenAddress(c.Address); err != nil {
 		return fmt.Errorf("address must be host:port: %w", err)
 	}
 	return nil
