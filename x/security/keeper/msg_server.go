@@ -170,11 +170,8 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 	return &types.MsgCommitteePlanUpgradeResponse{}, nil
 }
 
-// CommitteeCancelUpgrade cancels the pending upgrade plan as the exact
-// appointed committee, during the active term and window. Only a plan this
-// module recorded scheduling qualifies: cancelling a governance plan would
-// clear the slot and let the committee schedule over a decision the chain
-// voted on.
+// CommitteeCancelUpgrade requires the live committee term/window and a pending plan recorded as
+// committee-owned. Governance plans cannot be cancelled through this path.
 func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCommitteeCancelUpgrade) (*types.MsgCommitteeCancelUpgradeResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee cancel upgrade message")

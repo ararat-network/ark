@@ -43,12 +43,8 @@ func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecuri
 	}, nil
 }
 
-// CommitteePlan returns the recorded committee upgrade plan and whether it
-// still describes the plan pending in x/upgrade.
-//
-// The second field is the one that matters operationally: a record alone says
-// nothing, because governance may have replaced or cancelled the plan since,
-// and the module treats a record that no longer matches as no record at all.
+// CommitteePlan returns the recorded plan and whether it still matches x/upgrade's pending plan. A
+// stale record grants no committee authority.
 func (q queryServer) CommitteePlan(ctx context.Context, req *types.QueryCommitteePlanRequest) (*types.QueryCommitteePlanResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

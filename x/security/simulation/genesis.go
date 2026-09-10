@@ -16,11 +16,8 @@ import (
 // Simulation parameter constants
 const securityMandateKey = "security_mandate"
 
-// GenSecurityMandate appoints the committee from the run's own accounts, so
-// the simulation holds the key that signs for it, and opens the window at the
-// first block for longer than any run lasts. Both are deliberate: an
-// appointment the run cannot sign for, or one whose window opens after the run
-// ends, leaves the committee surface unexercised.
+// GenSecurityMandate appoints a simulation-owned signer with a window covering the expected run,
+// yielding a valid reachable appointment.
 func GenSecurityMandate(r *rand.Rand, accounts []string) types.SecurityMandate {
 	if len(accounts) == 0 {
 		return types.DefaultSecurityMandate()

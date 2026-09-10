@@ -1,12 +1,6 @@
-// Package security gives the chain a security committee with a bounded fast
-// path over the standard modules' emergency surface: upgrade scheduling and
-// cancellation, IBC client recovery, and door-closing halts.
-//
-// The charter is code and connectivity repair, never funds. The module owns a
-// mandate and a committee plan and nothing else: no account, params, hooks, or
-// blockers. Each power dispatches a self-constructed upstream message through
-// the message router with the effective authority injected, so the committee
-// can only do what governance could, sooner.
+// Package security delegates bounded upgrade, IBC recovery, and halt actions to a committee. It
+// owns no funds or block hooks. Constructed upstream messages retain target-module validation; see
+// x/security/README.md.
 package security
 
 import (
@@ -39,11 +33,8 @@ var (
 	_ appmodule.AppModule = AppModule{}
 )
 
-// AppModule implements an application module for the security module.
-//
-// It has no begin or end blocker: every power it delegates is exercised by a
-// committee transaction, and the appointment window is read at the height the
-// transaction lands rather than swept for.
+// AppModule exposes transaction-driven security powers with no BeginBlocker or EndBlocker. Each
+// transaction checks its mandate window at execution height.
 type AppModule struct {
 	k *keeper.Keeper
 }

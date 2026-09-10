@@ -10,11 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/security/types"
 )
 
-// Keeper of the security store. It owns almost no state — the powers it
-// delegates land in x/upgrade and IBC core — so it stores only the appointment
-// and which pending upgrade plan the committee scheduled. Writes travel back
-// out through the message router, so each target applies its own validation
-// and re-checks the chain authority.
+// Keeper stores the security mandate and committee plan ownership. Actions dispatch through the
+// message router so upstream modules enforce validation and effective authority.
 type Keeper struct {
 	cdc          codec.BinaryCodec
 	storeService store.KVStoreService

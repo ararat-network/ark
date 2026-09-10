@@ -15,11 +15,8 @@ import (
 // out whose plan holds the upgrade slot, then dispatch the upstream message as
 // the chain authority.
 
-// AuthoriseCommittee runs the check every committee action shares: the exact
-// signer, the exact term, and the active window. It returns the live mandate
-// so a caller can record the acting term. Exported because the priority lane
-// vouches through it at CheckTx, so the lane refuses exactly what the
-// handlers refuse first.
+// AuthoriseCommittee checks exact signer, term, and active window, returning the live mandate.
+// Handlers and priority-lane admission share these checks.
 func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.SecurityMandate, error) {
 	securityMandate, err := k.Mandate.Get(ctx)
 	if err != nil {
@@ -51,11 +48,8 @@ func (k Keeper) pendingUpgradePlan(ctx context.Context) (upgradetypes.Plan, bool
 	return plan, true, nil
 }
 
-// isCommitteePlan reports whether the pending plan is the committee's own, by
-// matching this module's record against it on both name and height. Anything
-// stale therefore reads as governance's, which is the conservative direction:
-// the committee is told to wait rather than reaching a plan the chain voted
-// for.
+// isCommitteePlan matches pending plan name and height against the committee record. Any mismatch
+// is treated as governance-owned and cannot be replaced or cancelled by the committee.
 func (k Keeper) isCommitteePlan(ctx context.Context, plan upgradetypes.Plan) (bool, error) {
 	record, err := k.CommitteePlan.Get(ctx)
 	if err != nil {
@@ -65,12 +59,8 @@ func (k Keeper) isCommitteePlan(ctx context.Context, plan upgradetypes.Plan) (bo
 	return record.Matches(plan.Name, plan.Height), nil
 }
 
-// effectiveAuthority resolves the address a dispatched message must be signed
-// by, mirroring sdk.ValidateAuthority exactly: consensus params first when they
-// name an authority, the module's own fallback otherwise. Resolving it any
-// other way would not create a privilege — every target re-validates the
-// signer — but would break every committee power on a chain that has rotated
-// its authority.
+// effectiveAuthority follows sdk.ValidateAuthority: use consensus authority when present, otherwise
+// the module fallback. Targets independently validate the injected signer.
 func (k Keeper) effectiveAuthority(ctx context.Context) string {
 	consensusParams := sdk.UnwrapSDKContext(ctx).ConsensusParams()
 	if consensusParams.Authority != nil && consensusParams.Authority.Authority != "" {
