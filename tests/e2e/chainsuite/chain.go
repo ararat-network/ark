@@ -3,8 +3,8 @@ package chainsuite
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,15 +50,20 @@ func chainFromCosmosChain(cosmosChain *cosmos.CosmosChain, relayerWallet ibc.Wal
 	return c, nil
 }
 
-// PrepareSpec finishes a spec once a context exists: the price-feed wiring
-// needs the logger and the container names interchaintest assigns.
-func PrepareSpec(ctx context.Context, spec *interchaintest.ChainSpec) {
-	if len(spec.SidecarConfigs) == 0 {
-		return
+// chainConfig is spec's config for one chain: its own copies of what a
+// running chain writes to, so a spec can start a second chain from the same
+// point. UpgradeVersion moves the image in place, and the price-feed hook
+// needs the logger and container names that exist only once a context does.
+func chainConfig(ctx context.Context, spec *interchaintest.ChainSpec) ibc.ChainConfig {
+	cfg := spec.ChainConfig
+	cfg.Images = slices.Clone(cfg.Images)
+	cfg.SidecarConfigs = slices.Clone(cfg.SidecarConfigs)
+	if len(cfg.SidecarConfigs) == 0 {
+		return cfg
 	}
-	inner := spec.PreGenesis
+	inner := cfg.PreGenesis
 	log := GetLogger(ctx)
-	spec.PreGenesis = func(c ibc.Chain) error {
+	cfg.PreGenesis = func(c ibc.Chain) error {
 		if inner != nil {
 			if err := inner(c); err != nil {
 				return err
@@ -66,13 +71,13 @@ func PrepareSpec(ctx context.Context, spec *interchaintest.ChainSpec) {
 		}
 		return WirePriceFeed(ctx, log, c.(*cosmos.CosmosChain))
 	}
+	return cfg
 }
 
 // NewCosmosChain builds the chain straight from the spec's config. The
 // builtin factory would refuse an empty GasPrices, and empty is what lets
 // arkd price its own transactions.
 func NewCosmosChain(ctx context.Context, testName interchaintest.TestName, spec *interchaintest.ChainSpec) *cosmos.CosmosChain {
-	PrepareSpec(ctx, spec)
 	validators, fullNodes := 1, 0
 	if spec.NumValidators != nil {
 		validators = *spec.NumValidators
@@ -80,7 +85,7 @@ func NewCosmosChain(ctx context.Context, testName interchaintest.TestName, spec 
 	if spec.NumFullNodes != nil {
 		fullNodes = *spec.NumFullNodes
 	}
-	return cosmos.NewCosmosChain(testName.Name(), spec.ChainConfig, validators, fullNodes, GetLogger(ctx))
+	return cosmos.NewCosmosChain(testName.Name(), chainConfig(ctx, spec), validators, fullNodes, GetLogger(ctx))
 }
 
 // CreateChain starts one chain from spec and funds a relayer wallet on it.
@@ -96,7 +101,10 @@ func CreateChain(ctx context.Context, testName interchaintest.TestName, spec *in
 		Denom:   cosmosChain.Config().Denom,
 		Amount:  NOAH(ValidatorFunds),
 	})
-	dockerClient, dockerNetwork := GetDockerContext(ctx)
+	dockerClient, dockerNetwork, err := GetDockerContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if err := ic.Build(ctx, GetRelayerExecReporter(ctx), interchaintest.InterchainBuildOptions{
 		Client:    dockerClient,
 		NetworkID: dockerNetwork,
@@ -267,6 +275,16 @@ func (c *Chain) ReplaceImagesAndRestart(ctx context.Context, version string) err
 		return err
 	}
 	c.UpgradeVersion(ctx, c.GetNode().DockerClient, c.GetNode().Image.Repository, version)
+	// UpgradeVersion moves the nodes alone. The sidecars come from the same
+	// image and are recreated from their own record when the nodes start.
+	for _, node := range c.Nodes() {
+		for _, sidecar := range node.Sidecars {
+			sidecar.Image.Version = version
+		}
+	}
+	for _, sidecar := range c.Sidecars {
+		sidecar.Image.Version = version
+	}
 	if err := c.StartAllNodes(ctx); err != nil {
 		return err
 	}
@@ -305,24 +323,63 @@ func (c *Chain) Upgrade(ctx context.Context, upgradeName, version string) error 
 	return c.ReplaceImagesAndRestart(ctx, version)
 }
 
-// WaitForHalt expects the chain to stop within a block of haltHeight.
+// UpgradeToImageUnderTest moves the chain from env's old image to the one
+// under test: through governance when a plan is named, as a coordinated
+// binary swap when not. Without an old image there is nothing to move from
+// and the chain stays as it is.
+func (c *Chain) UpgradeToImageUnderTest(ctx context.Context, env Environment) error {
+	log := GetLogger(ctx).Sugar()
+	if env.OldImageVersion == "" {
+		log.Info("no TEST_OLD_IMAGE_VERSION; running on the image under test without an upgrade")
+		return nil
+	}
+	if env.UpgradeName == "" {
+		log.Infof("Swapping %s for %s without a plan", env.OldImageVersion, env.ImageVersion)
+		return c.ReplaceImagesAndRestart(ctx, env.ImageVersion)
+	}
+	log.Infof("Upgrade %s from %s to %s", env.UpgradeName, env.OldImageVersion, env.ImageVersion)
+	if err := c.Upgrade(ctx, env.UpgradeName, env.ImageVersion); err != nil {
+		return err
+	}
+	applied, err := c.UpgradeQueryAppliedPlan(ctx, env.UpgradeName)
+	if err != nil {
+		return err
+	}
+	if applied.Height <= 0 {
+		return fmt.Errorf("plan %s was not applied", env.UpgradeName)
+	}
+	return nil
+}
+
+// WaitForHalt expects the chain to stop at haltHeight: the node reports
+// that height or the one before it, depending on whether the block store
+// took the block the application refused, and nothing after.
 func (c *Chain) WaitForHalt(ctx context.Context, haltHeight int64) error {
 	height, err := c.Height(ctx)
 	if err != nil {
 		return err
 	}
+	if height >= haltHeight {
+		return fmt.Errorf("height %d is already at halt height %d", height, haltHeight)
+	}
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(haltHeight-height+10)*BlockTime)
 	defer cancel()
+	// Asking for more blocks than the halt allows means the timeout is the
+	// expected outcome; any other result is a chain that did not halt or a
+	// node that stopped answering.
 	err = testutil.WaitForBlocks(timeoutCtx, int(haltHeight-height)+3, c)
-	if err == nil || timeoutCtx.Err() == nil {
-		return errors.New("chain should not produce blocks after the halt height")
+	if err == nil {
+		return fmt.Errorf("chain produced blocks past halt height %d", haltHeight)
+	}
+	if timeoutCtx.Err() == nil {
+		return fmt.Errorf("waiting for the halt at %d: %w", haltHeight, err)
 	}
 	height, err = c.Height(ctx)
 	if err != nil {
 		return err
 	}
-	if height-haltHeight > 1 {
-		return fmt.Errorf("height %d is not within one block of halt height %d; chain is not halted", height, haltHeight)
+	if height < haltHeight-1 || height > haltHeight {
+		return fmt.Errorf("height %d is not halt height %d or the block before it; the chain stalled elsewhere", height, haltHeight)
 	}
 	return nil
 }
@@ -432,7 +489,7 @@ func (c *Chain) ExchangeRates(ctx context.Context) (map[string]string, error) {
 	}
 	rates := map[string]string{}
 	for _, rate := range gjson.GetBytes(stdout, "exchange_rates").Array() {
-		rates[rate.Get("denom").String()] = rate.Get("amount").String()
+		rates[rate.Get("denom").String()] = rate.Get("exchange_rate").String()
 	}
 	return rates, nil
 }

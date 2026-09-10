@@ -15,7 +15,9 @@ import (
 const walletFunds = 1_000
 
 // Suite is two ark chains, A and B, linked by Hermes over a transfer
-// channel, with a funded wallet on each.
+// channel, with a funded wallet on each. When the environment names an old
+// image, both chains upgrade to the one under test after the link, so the
+// clients, connection, and channel cross the migration.
 type Suite struct {
 	suite.Suite
 	Env     chainsuite.Environment
@@ -52,6 +54,7 @@ func (s *Suite) SetupSuite() {
 			return nil
 		})
 	s.Require().NoError(err)
+	s.upgradeChains()
 
 	s.WalletA = s.fundedWallet(s.ChainA, "trader")
 	s.WalletB = s.fundedWallet(s.ChainB, "trader")
@@ -71,4 +74,19 @@ func (s *Suite) fundedWallet(chain *chainsuite.Chain, name string) ibc.Wallet {
 		Amount:  chainsuite.NOAH(walletFunds),
 	}))
 	return wallet
+}
+
+// upgradeChains moves both chains to the image under test with Hermes
+// stopped, and starts it again over the path it built before.
+func (s *Suite) upgradeChains() {
+	if s.Env.OldImageVersion == "" {
+		return
+	}
+	ctx := s.GetContext()
+	rep := chainsuite.GetRelayerExecReporter(ctx)
+	s.Require().NoError(s.Relayer.StopRelayer(ctx, rep))
+	for _, chain := range []*chainsuite.Chain{s.ChainA, s.ChainB} {
+		s.Require().NoError(chain.UpgradeToImageUnderTest(ctx, s.Env))
+	}
+	s.Require().NoError(s.Relayer.StartRelayer(ctx, rep, chainsuite.TransferPath))
 }

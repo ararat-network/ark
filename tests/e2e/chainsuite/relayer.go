@@ -15,14 +15,17 @@ type Relayer struct {
 	ibc.Relayer
 }
 
-func NewRelayer(ctx context.Context, testName interchaintest.TestName) *Relayer {
-	dockerClient, dockerNetwork := GetDockerContext(ctx)
+func NewRelayer(ctx context.Context, testName interchaintest.TestName) (*Relayer, error) {
+	dockerClient, dockerNetwork, err := GetDockerContext(ctx)
+	if err != nil {
+		return nil, err
+	}
 	rly := interchaintest.NewBuiltinRelayerFactory(
 		ibc.Hermes,
 		GetLogger(ctx),
 		relayer.CustomDockerImage(HermesRepository, HermesVersion, HermesUIDGID),
 	).Build(testName, dockerClient, dockerNetwork)
-	return &Relayer{Relayer: rly}
+	return &Relayer{Relayer: rly}, nil
 }
 
 // SetupChainKeys tells Hermes about chain and restores its funded wallet.

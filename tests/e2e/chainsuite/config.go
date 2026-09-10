@@ -111,11 +111,13 @@ func NOAHCoin(n int64) string {
 }
 
 // DefaultGenesisAmounts funds each validator account with ValidatorFunds and
-// self-delegates a descending share, so the first two hold under two
-// thirds of the power and any one validator can stop without a halt.
+// self-delegates a descending share. On the four-validator chains the suites
+// use, the first two hold under two thirds of the power, and the rest hold
+// over two thirds without the largest, so any one validator can stop without
+// a halt.
 func DefaultGenesisAmounts(denom string) func(i int) (sdk.Coin, sdk.Coin) {
 	return func(i int) (sdk.Coin, sdk.Coin) {
-		stakes := []int64{3000, 2900, 2000, 1000, 700, 400}
+		stakes := []int64{3000, 2900, 2200, 1000, 700, 400}
 		if i >= len(stakes) {
 			panic("chain has more validators than DefaultGenesisAmounts funds")
 		}
@@ -174,9 +176,15 @@ func Image(env Environment, version string) ibc.DockerImage {
 	}
 }
 
-// DefaultChainSpec is one ark validator with a price-feed sidecar.
+// DefaultChainSpec is one ark validator with a price-feed sidecar, booting
+// on the version a suite starts from.
 func DefaultChainSpec(env Environment) *interchaintest.ChainSpec {
-	version := env.StartVersion()
+	return ChainSpecAt(env, env.StartVersion())
+}
+
+// ChainSpecAt is DefaultChainSpec on a named image version, for a chain
+// started after the suite has moved to the image under test.
+func ChainSpecAt(env Environment, version string) *interchaintest.ChainSpec {
 	decimals := CoinDecimals
 	cfg := ibc.ChainConfig{
 		Type:           "cosmos",

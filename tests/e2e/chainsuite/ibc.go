@@ -48,7 +48,10 @@ func CreateLinkedChains(
 			Amount:  NOAH(ValidatorFunds),
 		})
 	}
-	dockerClient, dockerNetwork := GetDockerContext(ctx)
+	dockerClient, dockerNetwork, err := GetDockerContext(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	rep := GetRelayerExecReporter(ctx)
 	if err := ic.Build(ctx, rep, interchaintest.InterchainBuildOptions{
 		Client:    dockerClient,
@@ -72,7 +75,10 @@ func CreateLinkedChains(
 		}
 	}
 
-	rly := NewRelayer(ctx, testName)
+	rly, err := NewRelayer(ctx, testName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	for _, c := range []*Chain{chainA, chainB} {
 		if err := rly.SetupChainKeys(ctx, c); err != nil {
 			return nil, nil, nil, err

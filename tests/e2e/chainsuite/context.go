@@ -2,6 +2,7 @@ package chainsuite
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,9 +30,13 @@ func WithDockerContext(ctx context.Context, d *dockerContext) context.Context {
 	return context.WithValue(ctx, dockerKey{}, d)
 }
 
-func GetDockerContext(ctx context.Context) (*client.Client, string) {
-	d, _ := ctx.Value(dockerKey{}).(*dockerContext)
-	return d.Client, d.NetworkID
+// GetDockerContext is the Docker client and network NewSuiteContext set up.
+func GetDockerContext(ctx context.Context) (*client.Client, string, error) {
+	d, ok := ctx.Value(dockerKey{}).(*dockerContext)
+	if !ok {
+		return nil, "", errors.New("context carries no Docker setup; it was not made by NewSuiteContext")
+	}
+	return d.Client, d.NetworkID, nil
 }
 
 func WithTestReporter(ctx context.Context, r *testreporter.Reporter) context.Context {

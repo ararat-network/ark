@@ -9,11 +9,10 @@ import (
 // Suite creates a chain for its tests, upgrading it first when asked.
 type Suite struct {
 	suite.Suite
-	Config  SuiteConfig
-	Env     Environment
-	Chain   *Chain
-	Relayer *Relayer
-	ctx     context.Context
+	Config SuiteConfig
+	Env    Environment
+	Chain  *Chain
+	ctx    context.Context
 	// name is the test the Docker resources are labelled with, which is what
 	// the cleanup at the end of that test removes. A chain a subtest creates
 	// must carry it too, or its containers outlive the suite.
@@ -67,28 +66,8 @@ func (s *Suite) GetContext() context.Context {
 	return s.ctx
 }
 
-// UpgradeChain moves the chain from the old image to the one under test:
-// through governance when a plan is named, as a coordinated binary swap
-// when not. Without an old image there is nothing to move from.
+// UpgradeChain moves the chain to the image under test when the environment
+// names an old one to start from.
 func (s *Suite) UpgradeChain() {
-	if s.Env.OldImageVersion == "" {
-		s.T().Log("no TEST_OLD_IMAGE_VERSION; running on the image under test without an upgrade")
-		return
-	}
-	log := GetLogger(s.GetContext()).Sugar()
-	if s.Env.UpgradeName == "" {
-		log.Infof("Swapping %s for %s without a plan", s.Env.OldImageVersion, s.Env.ImageVersion)
-		s.Require().NoError(s.Chain.ReplaceImagesAndRestart(s.GetContext(), s.Env.ImageVersion))
-	} else {
-		log.Infof("Upgrade %s from %s to %s", s.Env.UpgradeName, s.Env.OldImageVersion, s.Env.ImageVersion)
-		s.Require().NoError(s.Chain.Upgrade(s.GetContext(), s.Env.UpgradeName, s.Env.ImageVersion))
-		applied, err := s.Chain.UpgradeQueryAppliedPlan(s.GetContext(), s.Env.UpgradeName)
-		s.Require().NoError(err)
-		s.Require().Positive(applied.Height, "plan %s was not applied", s.Env.UpgradeName)
-	}
-	if s.Relayer != nil {
-		rep := GetRelayerExecReporter(s.GetContext())
-		s.Require().NoError(s.Relayer.StopRelayer(s.GetContext(), rep))
-		s.Require().NoError(s.Relayer.StartRelayer(s.GetContext(), rep))
-	}
+	s.Require().NoError(s.Chain.UpgradeToImageUnderTest(s.GetContext(), s.Env))
 }
