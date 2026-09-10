@@ -6,11 +6,12 @@ owning module; a shared package should not acquire keeper dependencies merely to
 | Package | Owns | Read next |
 | --- | --- | --- |
 | [chain](chain/) | Chain units, denomination grammar, metadata, addresses, and block constants. | [denom.go](chain/denom.go), [coins.go](chain/coins.go) |
-| [decimal](decimal/) | Checked `LegacyDec` arithmetic. | [Package contract](decimal/legacy_dec.go) |
+| [decimal](decimal/) | Checked `LegacyDec` arithmetic. | [Package contract](decimal/README.md) |
 | [encoding](encoding/) | Compact per-value decimal encoding. | [legacy_dec.go](encoding/legacy_dec.go) |
+| [fsutil](fsutil/) | Atomic, synced file replacement for the config files both binaries write. | [replace.go](fsutil/replace.go) |
 | [grpcconn](grpcconn/) | gRPC transport preparation, endpoint locality, connections and cleanup. | [Package contract](grpcconn/grpcconn.go) |
 | [tlsconfig](tlsconfig/) | TLS file loading and reloadable identity material. | [tlsconfig.go](tlsconfig/tlsconfig.go), [material.go](tlsconfig/material.go) |
-| [mandate](mandate/) | Shared appointment envelope and bounded delegation checks. | [Package guide](mandate/doc.go) |
+| [mandate](mandate/) | Shared appointment envelope and bounded delegation checks. | [Package guide](mandate/README.md) |
 | [metrics](metrics/) | Small metric types and module method instrumentation. | [metrics.go](metrics/metrics.go) |
 | [telemetry](telemetry/README.md) | Process telemetry startup and export integration. | [Developer guide](telemetry/README.md) |
 

@@ -29,12 +29,9 @@ var checkedOps = []struct {
 // checked operations must reject.
 const maxFuzzOperandBytes = 40
 
-// FuzzCheckedArithmeticMatchesLegacyDec asserts the contract this package rests
-// on: for operands LegacyDec can represent, a checked operation returns exactly
-// what the stock operation returns, and reports an error exactly where the stock
-// operation panics. The seed corpus alone covers both sides of every fast-path
-// bound and the rounding ties on both paths, so ordinary `go test` runs it; the
-// -fuzz flag then explores the space between those points.
+// FuzzCheckedArithmeticMatchesLegacyDec checks identical results or error-versus-panic outcomes.
+// The ordinary seed run covers fast-path boundaries and rounding ties; fuzzing explores additional
+// operands.
 func FuzzCheckedArithmeticMatchesLegacyDec(f *testing.F) {
 	addFuzzSeeds(f)
 

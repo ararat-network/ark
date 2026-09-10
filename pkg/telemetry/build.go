@@ -17,11 +17,8 @@ const (
 	shortRevisionLength = 12
 )
 
-// BuildVersion identifies this process's build. It is the SDK version ldflag
-// when the build set one, otherwise what the Go toolchain embedded: the module
-// version for installed builds, the VCS revision for source-tree ones. Both
-// binaries carry it on target_info as service.version, and the sidecar
-// reports the same string over its RPC.
+// BuildVersion prefers the SDK build ldflag, then embedded module version or VCS revision. Both
+// binaries expose it as service.version; the sidecar RPC reports the same value.
 func BuildVersion() string {
 	if v := strings.TrimSpace(version.Version); v != "" {
 		return v

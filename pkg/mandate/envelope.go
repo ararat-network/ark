@@ -32,11 +32,8 @@ func (e Envelope) IsActive(height uint64) bool {
 	return e.ActivationHeight <= height && height < e.ExpiryHeight
 }
 
-// Validate checks either a canonical disabled envelope or one complete
-// committee appointment. Allowances, usage, and every committee power remain
-// owned by the embedding mandate, which names itself when wrapping these
-// errors. Embedders shadow this method with their own Validate, so they must
-// call it through the Envelope field.
+// Validate checks canonical disabled or complete enabled envelopes. Embedding mandates own payload
+// validation and must call Envelope.Validate explicitly when shadowing this method.
 func (e Envelope) Validate() error {
 	if e.IsDisabled() {
 		if e.ActivationHeight != 0 || e.ExpiryHeight != 0 {
@@ -83,22 +80,9 @@ func (e Envelope) NextTerm() (uint64, error) {
 	return e.Term + 1, nil
 }
 
-// Next derives the successor appointment envelope from the current one: the
-// canonical disabled envelope when committee is empty, otherwise the complete
-// appointment at the advanced term. Every replacement advances the term, so a
-// disablement retains its successor term too. The committee is stored in its
-// canonical spelling whatever letter case the message carried, so everything
-// downstream — Validate, authority-distinctness checks, events — reads one
-// spelling. The decoded committee is handed back with it — nil for a
-// disablement — because canonicalising already decoded it, and a caller that
-// needs the account would otherwise re-parse a spelling this function just
-// produced, carrying an error branch that cannot be reached.
-//
-// Next owns derivation only. Judgment of the assembled appointment stays with
-// the embedding mandate, whose Validate is the single guardian for every entry
-// point — genesis import reaches state without passing here — and which names
-// itself when wrapping envelope errors. Callers must validate the mandate they
-// assemble around this envelope.
+// Next derives the advanced-term envelope, canonicalises the committee, and returns its decoded
+// address or nil when disabled. It does not validate the assembled module mandate; callers must do
+// so before storing it.
 func Next(
 	current Envelope,
 	committee string,
@@ -128,28 +112,9 @@ func Next(
 	}, address, nil
 }
 
-// Observe records what the chain can prove about this appointment's committee,
-// from the account the module resolved for it and the contract store's answer
-// for its address. A disabled envelope observes nothing, keeping the canonical
-// disabled shape zero. [Shape] does the classifying, so this package still
-// reads no module state.
-//
-// This runs at appointment and never again. For a key-backed account that is
-// sound because the address is the hash of the key it commits to: the account
-// cannot come to require fewer signatures than it did when governance
-// appointed it. A contract commits to no signing rule — migration or a
-// membership change alters it without a term advance — which is why its shape
-// records the kind and nothing mutable. Nothing here gates an action — the
-// shape is the record of who holds delegated power, for the operators and
-// indexers reading it, not a second authorization.
-//
-// Embedders promote this method rather than shadowing it, so calling it on the
-// assembled mandate records the shape on the envelope it wraps.
-//
-// An account that is not the appointed committee records nothing. Resolving the
-// account is the module's half, so this is the one thing that can be mispaired
-// — and a shape describing some other address, in the field whose whole purpose
-// is naming what backs this committee, is worse than no shape at all.
+// Observe records provable account backing at appointment without authorising actions. Disabled or
+// mismatched accounts retain no shape. Contract shape records only its kind because membership and
+// code may change; see README.md.
 func (e *Envelope) Observe(account sdk.AccountI, contract bool) {
 	if e.IsDisabled() {
 		return
@@ -171,16 +136,8 @@ func (e Envelope) RequireTerm(expected uint64) error {
 	return nil
 }
 
-// Authorise checks one committee action against the appointment: the exact
-// signer, the exact term, then the active window. Term precedes window so a
-// stale committee transaction reports the staleness that produced it rather
-// than whichever window it straddles. Everything beyond the appointment —
-// usage bounds, policy corridors, status preconditions — stays with the
-// embedding mandate, which names itself when wrapping these errors.
-//
-// The signer is compared in canonical spelling because the stored committee is
-// canonical while the ante handler authenticates a signer by decoded bytes, so
-// any letter case of the appointed address is the same authenticated account.
+// Authorise checks canonical signer, exact term, then active window, so stale transactions report
+// term mismatch first. Embedded mandates enforce usage, corridors, and status preconditions.
 func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) error {
 	if e.IsDisabled() {
 		return errors.New("signer is not the exact appointed committee")

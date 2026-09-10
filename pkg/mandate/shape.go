@@ -16,19 +16,9 @@ import (
 // classification independent of whether an interface registry was on hand.
 var multisigTypeURL = "/" + proto.MessageName(&kmultisig.LegacyAminoPubKey{})
 
-// Shape classifies one committee account, taking the account rather than the
-// store it came from so this package still reads no module state. A nil
-// account is an address holding no account at all. contract is the contract
-// store's answer for the address, the one fact the account cannot show: a
-// contract's account is a bare BaseAccount. It only ever refines KEYLESS,
-// because a contract's account never gains a key — no registered key type
-// hashes to a contract address, and Wasmd refuses to instantiate over a keyed
-// account.
-//
-// Classification is total. The interface registry closes the set of key types
-// — one it does not know cannot decode into an account — so every account the
-// chain can hold lands on exactly one kind, and a type this binary predates
-// lands on OTHER rather than being read as a shape it is not.
+// Shape classifies a supplied account without store access. contract refines only keyless accounts
+// because contract backing is not visible in BaseAccount. Nil accounts and unknown key types
+// receive their explicit fallback kinds.
 func Shape(account sdk.AccountI, contract bool) CommitteeShape {
 	if account == nil {
 		return CommitteeShape{KeyKind: CommitteeKeyKind_COMMITTEE_KEY_KIND_ABSENT}
@@ -62,11 +52,8 @@ func Shape(account sdk.AccountI, contract bool) CommitteeShape {
 	return shape
 }
 
-// verifiedMultisig reports the K-of-N a multisig provably requires, and zeroes
-// for one whose members do not each contribute an independent signature. A
-// repeated member multiplies one holder's weight, and a nested multisig can
-// re-list a key already counted, so neither is the K-of-N it reads as — and a
-// threshold recorded from either would be the observation lying.
+// verifiedMultisig reports K-of-N only for independent member signatures. Repeated or nested
+// members return zero thresholds because they cannot prove the apparent quorum.
 func verifiedMultisig(key *kmultisig.LegacyAminoPubKey) (uint32, uint32) {
 	if key == nil {
 		return 0, 0

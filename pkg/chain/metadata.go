@@ -23,28 +23,9 @@ func NoahMetadata() banktypes.Metadata {
 	}
 }
 
-// NativeAssetMetadata returns the canonical Bank metadata for a priced Ark
-// asset. Every field is a function of the denomination, which is what lets
-// registration derive the metadata rather than accept it: an identity that
-// cannot be misspelled never needs correcting, so the record is immutable by
-// construction rather than by a lifecycle rule.
-//
-// The denomination must already satisfy ValidatePricedDenom; the display unit
-// is its base-unit prefix removed, which that rule guarantees is non-empty.
-//
-// The description names no asset class deliberately. One derivation serves
-// every registered asset — a tokenized commodity registers exactly as a
-// stablecoin does, because the axis the registry records is convertibility and
-// nothing else — and the record it writes is permanent: retirement keeps the
-// Bank metadata as a tombstone and registration refuses to collide with it, so
-// a description that classified would misdescribe assets forever with no
-// message able to correct it.
-//
-// The symbol carries the brand as a lowercase prefix in the crvUSD form rather
-// than Terra's chain-initial suffix: every USD-plus-one-letter ticker is taken,
-// and USDA alone has three live issuers. The name keeps Terra's marketing form,
-// TerraUSD to ArkUSD; it is the string explorers and the chain registry will
-// carry, so it is the brand and nothing else.
+// NativeAssetMetadata derives immutable Bank metadata from a validated priced denomination. Display
+// units strip the base prefix; descriptions are asset-class neutral. Retirement retains metadata
+// and prevents denomination reuse.
 func NativeAssetMetadata(denom string) banktypes.Metadata {
 	display := denom[1:]
 

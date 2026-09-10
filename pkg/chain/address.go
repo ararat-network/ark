@@ -30,12 +30,8 @@ func ParseCanonicalValidatorAddress(field, value string) (sdk.ValAddress, error)
 	return address, nil
 }
 
-// CanonicaliseAccountAddress returns value in its canonical spelling, accepting
-// any letter case bech32 allows. Transaction inputs reaching state pass through
-// here, so state holds only this spelling — which is what keeps the canonical
-// checks above true of everything already at rest. Callers that only need the
-// decoded bytes parse directly instead; there is nothing to canonicalise about
-// an address that is never rendered back to a string.
+// CanonicaliseAccountAddress accepts valid Bech32 letter case and returns canonical stored
+// spelling. Callers needing only bytes should parse directly.
 func CanonicaliseAccountAddress(field, value string) (string, error) {
 	address, err := sdk.AccAddressFromBech32(value)
 	if err != nil {

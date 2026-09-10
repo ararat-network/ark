@@ -8,9 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// pricedDenomPattern is the rule isPricedDenom replaced, kept here as the
-// specification the scan is checked against. pricedDenomShape is the source of
-// both, so a change to the rule that forgets this test cannot compile past it.
+// pricedDenomPattern expresses the grammar used to check isPricedDenom. Both derive from
+// pricedDenomShape so the scanner and specification share one rule.
 var pricedDenomPattern = regexp.MustCompile(pricedDenomShape)
 
 // differentialAlphabet spans every equivalence class the pattern distinguishes:
@@ -19,11 +18,8 @@ var pricedDenomPattern = regexp.MustCompile(pricedDenomShape)
 // and a byte that cannot begin a rune.
 var differentialAlphabet = []byte{'a', 'z', 'b', '0', '9', 'A', '/', '.', '-', ' ', 0x80, 0xff}
 
-// TestIsPricedDenomMatchesPatternExhaustively checks the scan against the
-// pattern over every string up to four bytes drawn from differentialAlphabet.
-// Four is past both edges the rule has below the length bound — the prefix and
-// the two-character minimum — so every disagreement about shape is reachable
-// here, and TestIsPricedDenomMatchesPatternAtLengthBounds covers the other end.
+// TestIsPricedDenomMatchesPatternExhaustively compares scan and pattern across strings up to four
+// bytes. Separate length-bound tests cover the upper edge.
 func TestIsPricedDenomMatchesPatternExhaustively(t *testing.T) {
 	var checked int
 	var candidate []byte
@@ -107,12 +103,8 @@ func externalShaped(denom string) bool {
 	return feed != NoahBaseDenom
 }
 
-// TestExternalRuleMatchesPatternExhaustively walks every string up to five bytes
-// over an alphabet including the separator, which is one byte past the shortest
-// external symbol the rule admits (`aXX-X`), so every disagreement about shape is
-// reachable. Both entry points are checked against the one pattern, which is
-// what keeps the scanner ExternalFeed uses and the errors ValidateExternalDenom
-// reports from ever disagreeing about what an external symbol is.
+// TestExternalRuleMatchesPatternExhaustively compares both entry points with the same grammar over
+// strings up to five bytes, including separators and the minimum valid shape.
 func TestExternalRuleMatchesPatternExhaustively(t *testing.T) {
 	alphabet := []byte{'a', 'z', '0', '-', 'A', '.', 'n'}
 

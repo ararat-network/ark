@@ -41,25 +41,13 @@ const MaxPricedDenomBytes = 16
 // denomination too, which is what lets rates travel as DecCoins.
 const minPricedDenomBytes = 3
 
-// pricedDenomShape states the rule isPricedDenom enforces, in the notation the
-// rule was written in. It is carried for error messages and documentation only:
-// the match itself is a byte scan, because ValidatePricedDenom sits on
-// per-block and per-transaction paths where the regexp engine costs an order of
-// magnitude more than the comparison it is performing.
+// pricedDenomShape documents the canonical grammar for errors. isPricedDenom implements it as an
+// ASCII byte scan on transaction and block paths.
 const pricedDenomShape = `^a[a-z0-9]{2,15}$`
 
-// isPricedDenom bounds a priced denomination to a short lowercase alphanumeric
-// symbol behind the base-unit prefix, as pricedDenomShape describes. It is
-// deliberately tighter than the SDK's denomination charset: a denomination is
-// also the key of the oracle feed pricing it, so admitting punctuation here
-// would produce denominations that could never carry a feed.
-//
-// Scanning bytes decides the shape exactly rather than approximately. The
-// character class is ASCII-only, so a denomination that matches has one byte
-// per character and its byte length is its length; any byte outside the class,
-// including every byte of a multi-byte or malformed rune, is rejected here for
-// the same reason the pattern rejects it. denom_internal_test.go holds the
-// pattern and asserts the two agree.
+// isPricedDenom enforces pricedDenomShape as an exact ASCII byte scan. Non-ASCII and malformed
+// UTF-8 bytes fail the same character rules. Differential tests compare it with the documented
+// pattern.
 func isPricedDenom(denom string) bool {
 	if len(denom) < minPricedDenomBytes || len(denom) > MaxPricedDenomBytes {
 		return false
@@ -76,16 +64,8 @@ func isPricedDenom(denom string) bool {
 	return true
 }
 
-// ValidatePricedDenom validates denom as a canonical Ark-native denomination
-// the protocol prices in NOAH.
-//
-// This is the one denomination rule the chain has, because everything that
-// validates a denomination is validating something that must be able to carry
-// a feed: a registered asset, a settlement plan or write-off record for one, a
-// Tobin entry, a tax cap, a resolver route, the protocol reference. The
-// numeraire is excluded for the reason it has no feed — NOAH is not priced, it
-// is what prices everything else. Code that legitimately handles NOAH compares
-// against NoahBaseDenom directly rather than validating.
+// ValidatePricedDenom accepts canonical Ark feed/asset denominations and excludes NOAH, the
+// numeraire. Callers supporting NOAH handle NoahBaseDenom explicitly.
 func ValidatePricedDenom(denom string) error {
 	if !isPricedDenom(denom) {
 		return fmt.Errorf(
@@ -101,11 +81,8 @@ func ValidatePricedDenom(denom string) error {
 	return nil
 }
 
-// ExternalSeparator divides an external symbol's feed prefix from its tag. It is the
-// one byte the priced-denom rule has never admitted, which is what makes the
-// external and Ark-issued namespaces disjoint by shape rather than by state: no
-// registration can accept a name containing it, and no eligibility entry may
-// omit it.
+// ExternalSeparator separates a claim's feed prefix and tag. Priced denominations forbid it while
+// external symbols require it, keeping the namespaces disjoint by shape.
 const ExternalSeparator = "-"
 
 // MaxExternalTagBytes bounds the tag distinguishing external symbols that price through one
@@ -138,18 +115,9 @@ func isExternalTag(tag string) bool {
 	return true
 }
 
-// ExternalFeed returns the feed key an external symbol prices through — the prefix
-// before the separator — and reports whether denom is external-shaped at all.
-//
-// The derivation is unconditional: an external symbol names its series in its own
-// text, for every reader, forever. It is never resolved against what feeds or
-// assets happen to exist, because a conditional resolution would silently
-// re-point every external symbol on a series the moment a feed appeared, which is the
-// class of hazard the partition exists to remove.
-//
-// Many external symbols may share one feed. Two custodians holding the same
-// instrument are two symbols — different counterparty risk, so different
-// haircuts — over one series the validators vote once.
+// ExternalFeed derives an external symbol's feed prefix solely from its name and reports whether
+// the shape is valid. Multiple custody claims may share a series; lookup state cannot redirect
+// them.
 func ExternalFeed(denom string) (string, bool) {
 	feed, tag, found := strings.Cut(denom, ExternalSeparator)
 	if !found || !isExternalTag(tag) {
@@ -165,24 +133,9 @@ func ExternalFeed(denom string) (string, bool) {
 	return feed, true
 }
 
-// ValidateExternalDenom validates denom as an external symbol: an external holding the
-// Reserve attests to, named `<feed>-<tag>`.
-//
-// This is the second and last denomination rule the chain has, and it is
-// bounded to one module by construction: an external symbol keys an eligibility
-// entry, a position, and the custody either accounts for.
-//
-// What it can never be is protocol paper. The priced shape refuses the
-// separator, so an external symbol cannot be registered, and conversion — the only
-// native mint path — mints registry members alone. It can still travel as an
-// SDK denomination, whose charset does admit the separator, so custody the
-// chain does hold under such a name is ordinary bank state, counted beside the
-// attested holdings rather than instead of them.
-//
-// The prefix rule is ValidatePricedDenom itself rather than a copy of it, so a
-// external symbol's feed key is a legal feed key by construction and every refusal the
-// priced rule makes — the numeraire, punctuation, the length bound — is made
-// here in the same words.
+// ValidateExternalDenom accepts <feed>-<tag> symbols for Reserve positions and eligibility. The
+// prefix follows ValidatePricedDenom; the separator prevents native asset registration. External
+// symbols are not admitted to Reserve Bank custody.
 func ValidateExternalDenom(denom string) error {
 	feed, tag, found := strings.Cut(denom, ExternalSeparator)
 	if !found {

@@ -59,11 +59,9 @@ func NewGoMetricsSink(ctx context.Context, meter metric.Meter, config ...GoMetri
 	return s
 }
 
-// SanitiseInstrumentName maps a go-metrics key onto a valid OTel instrument
-// name: an ASCII letter first, then ASCII letters, digits, '_', '.', '-'
-// and '/', at most 255 characters. Characters that cannot open a name are
-// dropped until one can, every later invalid byte becomes '_', and a key
-// holding no letter at all becomes "unnamed".
+// SanitiseInstrumentName produces an OTel name up to 255 ASCII characters: a letter first, then
+// letters, digits, _, ., -, or /. It drops invalid leading bytes, replaces later invalid bytes with
+// _, and uses unnamed if no letter exists.
 func SanitiseInstrumentName(key string) string {
 	var b strings.Builder
 	for i := 0; i < len(key) && b.Len() < maxInstrumentNameLen; i++ {

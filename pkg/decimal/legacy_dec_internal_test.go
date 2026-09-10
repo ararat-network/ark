@@ -9,12 +9,8 @@ import (
 	"cosmossdk.io/math"
 )
 
-// TestFastPathBoundsStayWithinLegacyDecRange re-derives the fast-path operand
-// bounds against the live cosmossdk.io/math range rather than trusting the
-// comments that justify them. Each case builds the widest operands its bound
-// admits and hands them to unchecked LegacyDec: if a math release ever narrowed
-// the valid range, or a bound were widened past what the range allows, the
-// resulting overflow surfaces here instead of in a block.
+// TestFastPathBoundsStayWithinLegacyDecRange applies maximum fast-path operands to unchecked SDK
+// arithmetic, validating the bounds against the installed math implementation.
 func TestFastPathBoundsStayWithinLegacyDecRange(t *testing.T) {
 	// LegacyDec's range stops just below 2^256 * 10^18, so an operand any wider
 	// than this is rejected before a fast path can see it. Every case caps its
