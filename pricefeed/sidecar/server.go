@@ -60,11 +60,8 @@ func newServer(
 		logger = log.NewNopLogger()
 	}
 	logger = logger.With("component", "transport")
-	host, port, err := net.SplitHostPort(strings.TrimSpace(address))
+	host, port, err := grpcconn.ListenAddress(address)
 	if err != nil {
-		return nil, fmt.Errorf("oracle server address: %w", err)
-	}
-	if _, err := net.LookupPort("tcp", port); err != nil {
 		return nil, fmt.Errorf("oracle server address: %w", err)
 	}
 	if err := grpcconn.ValidateTargets(tlsFiles.Mode, address); err != nil {

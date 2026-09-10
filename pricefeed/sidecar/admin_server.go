@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,6 +12,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/grpcconn"
 	"github.com/ararat-network/ark/pricefeed/api"
 	sidecarinternal "github.com/ararat-network/ark/pricefeed/sidecar/internal"
 )
@@ -37,15 +37,8 @@ func newAdminServer(svc *Service, logger log.Logger, address string) (*adminServ
 		logger = log.NewNopLogger()
 	}
 
-	host, port, err := net.SplitHostPort(strings.TrimSpace(address))
+	host, port, err := grpcconn.LoopbackListenAddress(address)
 	if err != nil {
-		return nil, fmt.Errorf("oracle admin server address: %w", err)
-	}
-	ip := net.ParseIP(host)
-	if ip == nil || !ip.IsLoopback() {
-		return nil, fmt.Errorf("oracle admin host %q must be a loopback IP address", host)
-	}
-	if _, err := net.LookupPort("tcp", port); err != nil {
 		return nil, fmt.Errorf("oracle admin server address: %w", err)
 	}
 
