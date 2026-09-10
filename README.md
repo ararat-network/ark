@@ -114,6 +114,13 @@ ID and starts from `arkd export`, which is a continuation export: heights stay a
 at the next height, so every height-anchored record resumes as it is. Zero-height export is refused on purpose. See
 [upgrades and relaunch](docs/operations/NODE_OPERATIONS.md#upgrades-and-relaunch).
 
+## Contact
+
+For questions, feedback, or collaboration:
+
+- Twitter / X: `@Chitpole0`
+- Email: `chitpole@proton.me`
+
 ## Contributing
 
 [AGENTS.md](AGENTS.md) holds the repository guidelines: Cosmos SDK conventions, arithmetic rules, proto generation,
