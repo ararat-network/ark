@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"flag"
 	"io"
 	"net"
 	"net/http"
@@ -9,42 +10,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
+	chainstatemetrics "github.com/ararat-network/ark/pricefeed/sidecar/chainstate/metrics"
+	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
+	apimetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api/metrics"
+	providermetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
+	wsmetrics "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket/metrics"
+	providertypes "github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
-// offlineOracleConfigJSON is validOracleConfigJSON with every endpoint pointed
-// somewhere unroutable and every interval pushed past the test's lifetime, so
-// a sidecar started from it reaches its serving state without leaving the
-// machine.
-func offlineOracleConfigJSON() string {
-	return `{
-		"updateInterval": "1h",
-		"providers": {
-			"frankfurter_api": {
-				"name": "frankfurter_api",
-				"transportType": "api",
-				"maxPriceAge": "90s",
-				"markets": [
-					{"pair": "NOAH/USD", "symbol": "NOAHUSD"}
-				],
-				"api": {
-					"name": "frankfurter_api",
-					"timeout": "1s",
-					"interval": "1h",
-					"endpoints": [{"url": "https://localhost.invalid/rates"}],
-					"batchSize": 1
-				}
-			}
-		},
-		"resolver": {},
-		"client": {
-			"address": "passthrough:///feeds",
-			"timeout": "1s",
-			"interval": "1h"
-		},
-		"fallbackFeeds": ["ausd"]
-	}`
-}
+var updateGolden = flag.Bool("update-golden", false, "rewrite the exported-series golden file")
 
 // freeLoopbackAddress returns a loopback address nothing is listening on.
 // runService binds its own listeners, so the addresses have to be released
@@ -95,21 +73,53 @@ func quietStartOptions(t *testing.T) startOptions {
 }
 
 func TestRunServiceRejectsInvalidLogLevel(t *testing.T) {
-	err := runService(context.Background(), writeOracleConfig(t, offlineOracleConfigJSON()), startOptions{
+	err := runService(context.Background(), writeConfig(t, offlineConfigTOML()), startOptions{
 		logLevel: "chatty",
 	})
 
 	require.Error(t, err)
 }
 
+// The refusals land before the config is read or anything listens: the config
+// path does not exist.
+func TestRunServiceRefusesUnsafeProcessAddresses(t *testing.T) {
+	tests := []struct {
+		name    string
+		mutate  func(*startOptions)
+		wantErr string
+	}{
+		{
+			name:    "pprof off loopback",
+			mutate:  func(o *startOptions) { o.pprof, o.pprofAddress = true, "0.0.0.0:0" },
+			wantErr: `pprof address: host "0.0.0.0" must be a loopback`,
+		},
+		{
+			name:    "metrics without a port",
+			mutate:  func(o *startOptions) { o.metrics, o.metricsAddress = true, "127.0.0.1" },
+			wantErr: "metrics address: address 127.0.0.1: missing port",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			options := quietStartOptions(t)
+			tt.mutate(&options)
+
+			err := runService(context.Background(), filepath.Join(t.TempDir(), "absent.toml"), options)
+
+			require.ErrorContains(t, err, tt.wantErr)
+		})
+	}
+}
+
 func TestRunServiceReportsAnUnreadableConfig(t *testing.T) {
-	err := runService(context.Background(), filepath.Join(t.TempDir(), "absent.json"), quietStartOptions(t))
+	err := runService(context.Background(), filepath.Join(t.TempDir(), "absent.toml"), quietStartOptions(t))
 
 	require.Error(t, err)
 }
 
 func TestRunServiceReportsAnInvalidConfig(t *testing.T) {
-	err := runService(context.Background(), writeOracleConfig(t, `{"updateInterval": "0s"}`), quietStartOptions(t))
+	err := runService(context.Background(), writeConfig(t, `update_interval = "0s"`), quietStartOptions(t))
 
 	require.Error(t, err)
 }
@@ -132,11 +142,17 @@ func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- runService(ctx, writeOracleConfig(t, offlineOracleConfigJSON()), options)
+		errCh <- runService(ctx, writeConfig(t, offlineConfigTOML()), options)
 	}()
 
 	requireHTTPOK(t, "http://"+metricsAddress+"/metrics")
 	requireHTTPOK(t, "http://"+pprofAddress+"/debug/pprof/")
+
+	// Every Ark series the sidecar exports, by name, type, and label keys: the
+	// contract dashboards and alert rules elsewhere are written to. Checked
+	// here because the meters are bound to this process's one provider.
+	recordEverySidecarSeries(ctx)
+	telemetrytest.RequireGolden(t, prometheus.DefaultGatherer, telemetrytest.ArkSeries, filepath.Join("testdata", "exported_series.txt"), *updateGolden)
 
 	cancel()
 
@@ -148,9 +164,23 @@ func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 	}
 }
 
-func TestPrometheusTelemetryIsInertWhenAbsent(t *testing.T) {
-	var absent *prometheusTelemetry
-
-	require.Nil(t, absent.Handler())
-	require.NoError(t, absent.Shutdown(context.Background()))
+// recordEverySidecarSeries records once through each of the sidecar's meters,
+// so every instrument has a series to export.
+func recordEverySidecarSeries(ctx context.Context) {
+	sidecarmetrics.RecordTick(ctx)
+	sidecarmetrics.PublishAggregationSnapshot(sidecarmetrics.AggregationSnapshot{
+		Prices:       map[string]float64{"NOAH/USD": 1},
+		SampleCounts: map[string]int64{"NOAH/USD": 1},
+	})
+	sidecarmetrics.RecordBootstrapPriceUse(ctx, "NOAH/USD")
+	sidecarmetrics.RecordMissingPrice(ctx, "ausd")
+	sidecarmetrics.RecordSkippedSample(ctx, "provider", "NOAH/USD", sidecarmetrics.SkipReasonStale)
+	sidecarmetrics.RecordRPC(ctx, "/ark.pricefeed.v1.PriceFeed/Prices", "OK")
+	chainstatemetrics.RecordRefresh(ctx, "127.0.0.1:1", "success")
+	providermetrics.RecordResponse(ctx, "provider", providertypes.Ticker("NOAHUSD"), providertypes.OK)
+	wsmetrics.RecordConnectionEvent(ctx, "provider", wsmetrics.ConnectionEventHealthy)
+	wsmetrics.RecordConnectionEvent(ctx, "provider", wsmetrics.ConnectionEventReconnect)
+	wsmetrics.RecordParseError(ctx, "provider")
+	wsmetrics.RecordWriteError(ctx, "provider", wsmetrics.WriteOperationSubscribe)
+	apimetrics.RecordRequest(ctx, "provider", time.Millisecond, &http.Response{StatusCode: http.StatusOK}, nil)
 }

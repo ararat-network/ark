@@ -5,20 +5,29 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/grpcconn"
 	"github.com/ararat-network/ark/pkg/telemetry"
-	oracleconfig "github.com/ararat-network/ark/pricefeed/config"
+	"github.com/ararat-network/ark/pkg/tlsconfig"
+	"github.com/ararat-network/ark/pricefeed/config"
 	"github.com/ararat-network/ark/pricefeed/sidecar"
 )
 
 const (
+	// serviceName labels this process's logs and metrics alike, so the two
+	// join on one name.
+	serviceName = "pricefeed"
+
+	// telemetryShutdownTimeout bounds the meter provider's final flush after
+	// the process endpoints have stopped.
+	telemetryShutdownTimeout = 5 * time.Second
+
 	defaultAddress        = "127.0.0.1:8080"
 	defaultAdminAddress   = "127.0.0.1:8081"
 	defaultLogLevel       = "info"
@@ -40,6 +49,7 @@ const (
 
 type startOptions struct {
 	address        string
+	tls            tlsconfig.Server
 	adminAddress   string
 	metrics        bool
 	metricsAddress string
@@ -63,7 +73,7 @@ func newStartCmd(configPath *string) *cobra.Command {
 
 	startCmd := &cobra.Command{
 		Use:   "start",
-		Short: "Run the price oracle.",
+		Short: "Run the price-feed sidecar.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runService(cmd.Context(), *configPath, options)
@@ -71,12 +81,18 @@ func newStartCmd(configPath *string) *cobra.Command {
 	}
 
 	flags := startCmd.Flags()
-	flags.StringVar(&options.address, flagAddress, options.address, "Oracle gRPC listen address.")
-	flags.StringVar(&options.adminAddress, flagAdminAddress, options.adminAddress, "Loopback admin gRPC listen address.")
+	flags.StringVar(&options.address, flagAddress, options.address, "Public gRPC and HTTP gateway listen address.")
+	addServerTLSFlags(flags, &options.tls)
+	flags.StringVar(
+		&options.adminAddress,
+		flagAdminAddress,
+		options.adminAddress,
+		"Loopback admin gRPC listen address; empty disables the admin service.",
+	)
 	flags.BoolVar(&options.metrics, flagMetrics, options.metrics, "Enable Prometheus metrics.")
 	flags.StringVar(&options.metricsAddress, flagMetricsAddress, options.metricsAddress, "Prometheus metrics listen address.")
 	flags.BoolVar(&options.pprof, flagPprof, options.pprof, "Enable pprof.")
-	flags.StringVar(&options.pprofAddress, flagPprofAddress, options.pprofAddress, "Pprof listen address.")
+	flags.StringVar(&options.pprofAddress, flagPprofAddress, options.pprofAddress, "Pprof listen address; loopback only.")
 	flags.StringVar(&options.logLevel, flagLogLevel, options.logLevel, "Log level (debug, info, warn, error, disabled).")
 	flags.BoolVar(&options.logJSON, flagLogJSON, options.logJSON, "Emit JSON logs.")
 
@@ -84,34 +100,41 @@ func newStartCmd(configPath *string) *cobra.Command {
 }
 
 // runService runs the sidecar and its optional process-owned HTTP endpoints in
-// the foreground. It blocks until cancellation or a component failure, then
-// waits for every component to finish cleanup before returning.
-func runService(parentCtx context.Context, configPath string, options startOptions) (err error) {
-	if parentCtx == nil {
-		parentCtx = context.Background()
-	}
-
+// the foreground. It blocks until ctx ends or a component fails, then waits
+// for every component to finish cleanup before returning.
+func runService(ctx context.Context, configPath string, options startOptions) (err error) {
 	logger, err := newLogger(options.logLevel, options.logJSON)
 	if err != nil {
 		return err
 	}
+	// The process endpoints are checked before the config is read or anything
+	// listens. pprof exposes process internals, so it stays on loopback; the
+	// admin listener applies the same rule where it is built.
+	if options.pprof {
+		if _, _, err := grpcconn.LoopbackListenAddress(options.pprofAddress); err != nil {
+			return fmt.Errorf("pprof address: %w", err)
+		}
+	}
+	if options.metrics {
+		if _, _, err := grpcconn.ListenAddress(options.metricsAddress); err != nil {
+			return fmt.Errorf("metrics address: %w", err)
+		}
+	}
 
-	runtimeCfg, err := oracleconfig.Load(configPath)
+	runtimeCfg, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}
-
-	signalCtx, stopSignals := signal.NotifyContext(parentCtx, os.Interrupt, syscall.SIGTERM)
-	defer stopSignals()
 
 	// Retain the source path so the admin service can reload the same config
 	// file without accepting replacement runtime config over RPC.
 	processCfg := sidecar.ProcessConfig{
 		ServerAddress:     options.address,
+		TLS:               options.tls,
 		AdminAddress:      options.adminAddress,
 		RuntimeConfigPath: configPath,
 	}
-	oracle, err := sidecar.NewService(
+	svc, err := sidecar.NewService(
 		sidecar.Config{
 			Runtime: runtimeCfg,
 			Process: processCfg,
@@ -119,20 +142,17 @@ func runService(parentCtx context.Context, configPath string, options startOptio
 		logger,
 	)
 	if err != nil {
-		return fmt.Errorf("creating oracle sidecar: %w", err)
+		return fmt.Errorf("creating sidecar: %w", err)
 	}
 
-	group, groupCtx := errgroup.WithContext(signalCtx)
+	group, groupCtx := errgroup.WithContext(ctx)
 	if options.metrics {
-		prometheus, err := initPrometheus("oracle")
+		prometheus, err := initPrometheus()
 		if err != nil {
-			return fmt.Errorf("initialising oracle prometheus telemetry: %w", err)
+			return fmt.Errorf("initialising prometheus telemetry: %w", err)
 		}
 		defer func() {
-			shutdownCtx, cancel := context.WithTimeout(
-				context.Background(),
-				sidecar.DefaultServerReadHeaderTimeout,
-			)
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), telemetryShutdownTimeout)
 			defer cancel()
 
 			err = errors.Join(err, prometheus.Shutdown(shutdownCtx))
@@ -162,10 +182,10 @@ func runService(parentCtx context.Context, configPath string, options startOptio
 	}
 
 	group.Go(func() error {
-		return oracle.Run(groupCtx)
+		return svc.Run(groupCtx)
 	})
 
-	logger.Info("starting oracle sidecar", "address", options.address)
+	logger.Info("starting sidecar", "address", options.address, "tls", options.tls.Enabled())
 	return group.Wait()
 }
 
@@ -183,5 +203,5 @@ func newLogger(level string, jsonOutput bool) (log.Logger, error) {
 		opts = append(opts, log.OutputJSONOption())
 	}
 
-	return log.NewLogger(os.Stderr, opts...).With("service", "oracle_sidecar"), nil
+	return log.NewLogger(os.Stderr, opts...).With("service", serviceName), nil
 }

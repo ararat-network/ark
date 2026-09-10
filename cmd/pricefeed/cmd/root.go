@@ -11,9 +11,11 @@ import (
 )
 
 const (
+	// The sidecar keeps its own directory under the home rather than sharing
+	// the node's config/, which holds the consensus key.
 	defaultHomeDir      = ".ark"
 	defaultPricefeedDir = "pricefeed"
-	defaultConfigFile   = "config.json"
+	defaultConfigFile   = "pricefeed.toml"
 
 	flagConfig = "config"
 )
@@ -38,7 +40,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(
 		newStartCmd(&configPath),
 		newPricesCmd(),
-		newValidateCmd(),
+		newCheckCmd(),
 		newInitCmd(&configPath),
 		newConfigCmd(&configPath),
 		newVersionCmd(),
@@ -59,7 +61,7 @@ func defaultConfigPath() string {
 func newVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Print the version of the oracle.",
+		Short: "Print the sidecar build version.",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, _ []string) {
 			fmt.Fprintln(cmd.OutOrStdout(), sidecar.Version())

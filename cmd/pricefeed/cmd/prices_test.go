@@ -16,17 +16,15 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 )
 
-func TestRootCmdExposesPricesCommand(t *testing.T) {
-	cmd := NewRootCmd()
+func TestPricesCmdOwnsFlags(t *testing.T) {
+	flags := newPricesCmd().Flags()
 
-	pricesCmd, _, err := cmd.Find([]string{"prices"})
-	require.NoError(t, err)
-	require.Equal(t, "prices", pricesCmd.Name())
-	require.Equal(t, defaultAddress, pricesCmd.Flags().Lookup(flagAddress).DefValue)
-	require.Equal(t, defaultPricesOutput, pricesCmd.Flags().Lookup(flagOutput).DefValue)
+	require.Equal(t, defaultAddress, flags.Lookup(flagAddress).DefValue)
+	require.Equal(t, defaultPricesOutput, flags.Lookup(flagOutput).DefValue)
 }
 
 func TestPricesCmdRejectsArgumentsAndUnsupportedOutput(t *testing.T) {
@@ -49,11 +47,11 @@ func TestPricesCmdRejectsArgumentsAndUnsupportedOutput(t *testing.T) {
 	})
 }
 
-func TestFetchPricesCallsOracleEndpoint(t *testing.T) {
+func TestFetchPricesCallsSidecar(t *testing.T) {
 	listener := bufconn.Listen(1024 * 1024)
 	server := grpc.NewServer()
-	oracleServer := &pricesPriceFeedServer{response: pricesResponse(t)}
-	api.RegisterPriceFeedServer(server, oracleServer)
+	sidecarServer := &pricesPriceFeedServer{response: pricesResponse(t)}
+	api.RegisterPriceFeedServer(server, sidecarServer)
 	go func() {
 		_ = server.Serve(listener)
 	}()
@@ -64,22 +62,25 @@ func TestFetchPricesCallsOracleEndpoint(t *testing.T) {
 
 	resp, err := fetchPrices(
 		context.Background(),
-		"passthrough:///oracle-prices",
+		"passthrough:///localhost:20321",
+		tlsconfig.Client{},
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
 		}),
 	)
 
 	require.NoError(t, err)
-	require.True(t, oracleServer.called)
-	require.Equal(t, oracleServer.response, resp)
+	require.True(t, sidecarServer.called)
+	require.Equal(t, sidecarServer.response, resp)
 }
 
 func TestWritePricesTableSortsDenoms(t *testing.T) {
 	resp := pricesResponse(t)
+	view, err := newPricesView(resp, resp.Timestamp.Add(2*time.Second))
+	require.NoError(t, err)
 	out := new(bytes.Buffer)
 
-	err := writePrices(out, resp, pricesOutputTable, resp.Timestamp.Add(2*time.Second))
+	err = writePricesTable(out, view)
 
 	require.NoError(t, err)
 	output := out.String()
@@ -92,9 +93,11 @@ func TestWritePricesTableSortsDenoms(t *testing.T) {
 
 func TestWritePricesJSONUsesDecodedPrices(t *testing.T) {
 	resp := pricesResponse(t)
+	view, err := newPricesView(resp, resp.Timestamp.Add(2*time.Second))
+	require.NoError(t, err)
 	out := new(bytes.Buffer)
 
-	err := writePrices(out, resp, pricesOutputJSON, resp.Timestamp.Add(2*time.Second))
+	err = writePricesJSON(out, view)
 
 	require.NoError(t, err)
 	var got pricesView
@@ -110,15 +113,10 @@ func TestWritePricesJSONUsesDecodedPrices(t *testing.T) {
 	}, got)
 }
 
-func TestWritePricesRejectsMalformedPrice(t *testing.T) {
-	err := writePrices(
-		new(bytes.Buffer),
-		&api.PricesResponse{Prices: map[string][]byte{"ausd": {0x00, 0x01}}},
-		pricesOutputTable,
-		time.Now(),
-	)
+func TestNewPricesViewRejectsMalformedPrice(t *testing.T) {
+	_, err := newPricesView(&api.PricesResponse{Prices: map[string][]byte{"ausd": {0x00, 0x01}}}, time.Now())
 
-	require.ErrorContains(t, err, `decoding oracle price "ausd"`)
+	require.ErrorContains(t, err, `decoding price "ausd"`)
 }
 
 func TestPriceSnapshotAgeIsUnknownForZeroTimestamp(t *testing.T) {

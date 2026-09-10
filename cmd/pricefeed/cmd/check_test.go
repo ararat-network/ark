@@ -22,26 +22,26 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-func TestValidateCmdOwnsValidationFlags(t *testing.T) {
-	cmd := newValidateCmd()
+func TestCheckCmdOwnsFlags(t *testing.T) {
+	flags := newCheckCmd().Flags()
 	defaults := validation.DefaultConfig()
 
-	require.Equal(t, defaultSidecarAddress, cmd.Flags().Lookup(flagSidecarAddress).DefValue)
-	require.Equal(t, defaultChainAddress, cmd.Flags().Lookup(flagChainAddress).DefValue)
-	require.Equal(t, defaults.BurnInPeriod.String(), cmd.Flags().Lookup(flagBurnInPeriod).DefValue)
-	require.Equal(t, defaults.ValidationPeriod.String(), cmd.Flags().Lookup(flagValidationPeriod).DefValue)
-	require.Equal(t, defaults.MaxResponseAge.String(), cmd.Flags().Lookup(flagMaxResponseAge).DefValue)
-	require.Equal(t, defaults.MaxFutureSkew.String(), cmd.Flags().Lookup(flagMaxFutureSkew).DefValue)
-	require.Equal(t, defaults.RequestTimeout.String(), cmd.Flags().Lookup(flagRequestTimeout).DefValue)
-	require.Equal(t, defaults.FeedRefreshInterval.String(), cmd.Flags().Lookup(flagFeedRefreshInterval).DefValue)
-	require.Equal(t, "1000", cmd.Flags().Lookup(flagNumChecks).DefValue)
-	require.Equal(t, "99", cmd.Flags().Lookup(flagRequiredPriceLivenessPercent).DefValue)
+	require.Equal(t, defaultAddress, flags.Lookup(flagAddress).DefValue)
+	require.Equal(t, defaultChainAddress, flags.Lookup(flagChainAddress).DefValue)
+	require.Equal(t, defaults.BurnInPeriod.String(), flags.Lookup(flagBurnInPeriod).DefValue)
+	require.Equal(t, defaults.ValidationPeriod.String(), flags.Lookup(flagValidationPeriod).DefValue)
+	require.Equal(t, defaults.MaxResponseAge.String(), flags.Lookup(flagMaxResponseAge).DefValue)
+	require.Equal(t, defaults.MaxFutureSkew.String(), flags.Lookup(flagMaxFutureSkew).DefValue)
+	require.Equal(t, defaults.RequestTimeout.String(), flags.Lookup(flagRequestTimeout).DefValue)
+	require.Equal(t, defaults.FeedRefreshInterval.String(), flags.Lookup(flagFeedRefreshInterval).DefValue)
+	require.Equal(t, "1000", flags.Lookup(flagNumChecks).DefValue)
+	require.Equal(t, "99", flags.Lookup(flagRequiredPriceLivenessPercent).DefValue)
 }
 
-func TestValidateCmdPrintsResultsBeforeReturningFailure(t *testing.T) {
+func TestWriteCheckOutcomePrintsResultsBeforeReturningFailure(t *testing.T) {
 	out := new(bytes.Buffer)
 
-	err := writeValidationOutcome(
+	err := writeCheckOutcome(
 		out,
 		validation.LivenessResults{
 			"ausd": 100,
@@ -50,45 +50,45 @@ func TestValidateCmdPrintsResultsBeforeReturningFailure(t *testing.T) {
 		errors.New("akrw below threshold"),
 	)
 
-	require.ErrorContains(t, err, "oracle validation failed")
-	require.Equal(t, "oracle validation results:\nakrw: 50.00%\nausd: 100.00%\n", out.String())
+	require.ErrorContains(t, err, "check failed")
+	require.Equal(t, "liveness results:\nakrw: 50.00%\nausd: 100.00%\n", out.String())
 }
 
-func TestValidateCmdPrintsSuccess(t *testing.T) {
+func TestWriteCheckOutcomePrintsSuccess(t *testing.T) {
 	out := new(bytes.Buffer)
 
-	err := writeValidationOutcome(
+	err := writeCheckOutcome(
 		out,
 		validation.LivenessResults{"ausd": 100},
 		nil,
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, "oracle validation results:\nausd: 100.00%\noracle validation passed\n", out.String())
+	require.Equal(t, "liveness results:\nausd: 100.00%\ncheck passed\n", out.String())
 }
 
-func TestValidateCmdPrintsDisabledState(t *testing.T) {
+func TestWriteCheckOutcomePrintsDisabledState(t *testing.T) {
 	out := new(bytes.Buffer)
 
-	err := writeValidationOutcome(
+	err := writeCheckOutcome(
 		out,
 		nil,
 		fmt.Errorf("load initial active feeds: %w", validation.ErrNoActiveFeeds),
 	)
 
 	require.NoError(t, err)
-	require.Equal(t, "oracle validation skipped: no active feeds (oracle voting disabled)\n", out.String())
+	require.Equal(t, "check skipped: no active feeds (oracle voting disabled)\n", out.String())
 }
 
-func TestRunValidationUsesExternalRPCs(t *testing.T) {
+func TestRunCheckUsesExternalRPCs(t *testing.T) {
 	rawPrice, err := encoding.EncodeCompactLegacyDec(math.LegacyNewDec(1))
 	require.NoError(t, err)
 
-	oracleServer := &validationPriceFeedServer{rawPrice: rawPrice}
-	queryServer := &validationQueryServer{denoms: []string{"ausd"}}
+	sidecarServer := &checkPriceFeedServer{rawPrice: rawPrice}
+	queryServer := &checkQueryServer{denoms: []string{"ausd"}}
 	listener := bufconn.Listen(1024 * 1024)
 	server := grpc.NewServer()
-	api.RegisterPriceFeedServer(server, oracleServer)
+	api.RegisterPriceFeedServer(server, sidecarServer)
 	oracletypes.RegisterQueryServer(server, queryServer)
 	go func() {
 		_ = server.Serve(listener)
@@ -104,13 +104,13 @@ func TestRunValidationUsesExternalRPCs(t *testing.T) {
 	cfg.NumChecks = 1
 	cfg.FeedRefreshInterval = time.Hour
 	cfg.RequestTimeout = 100 * time.Millisecond
-	results, err := runValidation(
+	results, err := runCheck(
 		context.Background(),
 		log.NewNopLogger(),
-		validateOptions{
-			sidecarAddress: "passthrough:///oracle-validation",
-			chainAddress:   "passthrough:///chain-validation",
-			cfg:            cfg,
+		checkOptions{
+			address:      "passthrough:///localhost:20742",
+			chainAddress: "passthrough:///localhost:20627",
+			cfg:          cfg,
 		},
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
@@ -119,29 +119,29 @@ func TestRunValidationUsesExternalRPCs(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, validation.LivenessResults{"ausd": 100}, results)
-	require.True(t, oracleServer.called)
+	require.True(t, sidecarServer.called)
 	require.True(t, queryServer.called)
 }
 
-func TestRunValidationRejectsEmptyAddresses(t *testing.T) {
+func TestRunCheckRejectsEmptyAddresses(t *testing.T) {
 	tests := []struct {
 		name    string
-		options validateOptions
+		options checkOptions
 		wantErr string
 	}{
 		{
-			name: "oracle address",
-			options: validateOptions{
+			name: "sidecar address",
+			options: checkOptions{
 				chainAddress: defaultChainAddress,
 				cfg:          validation.DefaultConfig(),
 			},
-			wantErr: "oracle address cannot be empty",
+			wantErr: "sidecar address cannot be empty",
 		},
 		{
 			name: "chain address",
-			options: validateOptions{
-				sidecarAddress: defaultSidecarAddress,
-				cfg:            validation.DefaultConfig(),
+			options: checkOptions{
+				address: defaultAddress,
+				cfg:     validation.DefaultConfig(),
 			},
 			wantErr: "chain address cannot be empty",
 		},
@@ -149,7 +149,7 @@ func TestRunValidationRejectsEmptyAddresses(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := runValidation(context.Background(), log.NewNopLogger(), tt.options)
+			results, err := runCheck(context.Background(), log.NewNopLogger(), tt.options)
 
 			require.Nil(t, results)
 			require.ErrorContains(t, err, tt.wantErr)
@@ -157,14 +157,14 @@ func TestRunValidationRejectsEmptyAddresses(t *testing.T) {
 	}
 }
 
-type validationPriceFeedServer struct {
+type checkPriceFeedServer struct {
 	api.UnimplementedPriceFeedServer
 
 	rawPrice []byte
 	called   bool
 }
 
-func (s *validationPriceFeedServer) Prices(
+func (s *checkPriceFeedServer) Prices(
 	context.Context,
 	*api.PricesRequest,
 ) (*api.PricesResponse, error) {
@@ -175,14 +175,14 @@ func (s *validationPriceFeedServer) Prices(
 	}, nil
 }
 
-type validationQueryServer struct {
+type checkQueryServer struct {
 	oracletypes.UnimplementedQueryServer
 
 	denoms []string
 	called bool
 }
 
-func (s *validationQueryServer) Feeds(
+func (s *checkQueryServer) Feeds(
 	context.Context,
 	*oracletypes.QueryFeedsRequest,
 ) (*oracletypes.QueryFeedsResponse, error) {

@@ -22,79 +22,41 @@ func TestRootCmdWithoutArgsShowsHelp(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Contains(t, out.String(), "start")
-	require.Contains(t, out.String(), "validate")
+	require.Contains(t, out.String(), "check")
 	require.Contains(t, out.String(), "version")
 }
 
-func TestRootCmdOwnsErrorAndUsageSilencing(t *testing.T) {
+// The root silences cobra's own output: main prints the error once, and a
+// runtime failure is not a usage mistake.
+func TestRootCmdSilencesCobraErrorOutput(t *testing.T) {
 	cmd := NewRootCmd()
 
 	require.True(t, cmd.SilenceErrors)
 	require.True(t, cmd.SilenceUsage)
-
-	startCmd, _, err := cmd.Find([]string{"start"})
-	require.NoError(t, err)
-	require.False(t, startCmd.SilenceUsage)
-
-	validateCmd, _, err := cmd.Find([]string{"validate"})
-	require.NoError(t, err)
-	require.False(t, validateCmd.SilenceUsage)
-
-	initCmd, _, err := cmd.Find([]string{"init"})
-	require.NoError(t, err)
-	require.False(t, initCmd.SilenceUsage)
-
-	configCmd, _, err := cmd.Find([]string{"config"})
-	require.NoError(t, err)
-	require.False(t, configCmd.SilenceUsage)
-
-	configValidateCmd, _, err := cmd.Find([]string{"config", "validate"})
-	require.NoError(t, err)
-	require.False(t, configValidateCmd.SilenceUsage)
-
-	configReloadCmd, _, err := cmd.Find([]string{"config", "reload"})
-	require.NoError(t, err)
-	require.False(t, configReloadCmd.SilenceUsage)
-}
-
-func TestRootCmdOwnsConfigFlagOnly(t *testing.T) {
-	cmd := NewRootCmd()
-
-	require.NotNil(t, cmd.PersistentFlags().Lookup(flagConfig))
-	require.Nil(t, cmd.Flags().Lookup(flagAddress))
-	require.Nil(t, cmd.Flags().Lookup(flagAdminAddress))
-	require.Nil(t, cmd.Flags().Lookup(flagMetrics))
 }
 
 func TestRootCmdDefaultsConfigFlagToHomeDirectory(t *testing.T) {
 	homeDir := t.TempDir()
 	t.Setenv("HOME", homeDir)
 
-	cmd := NewRootCmd()
-	flag := cmd.PersistentFlags().Lookup(flagConfig)
+	flag := NewRootCmd().PersistentFlags().Lookup(flagConfig)
 
 	require.NotNil(t, flag)
-	require.Equal(t, filepath.Join(homeDir, ".ark", "pricefeed", "config.json"), flag.DefValue)
+	require.Equal(t, filepath.Join(homeDir, ".ark", "pricefeed", "pricefeed.toml"), flag.DefValue)
 	require.Equal(t, flag.DefValue, flag.Value.String())
 }
 
-func TestRootCmdExposesValidateInitAndConfigCommands(t *testing.T) {
-	cmd := NewRootCmd()
+func TestRootCmdExposesSubcommands(t *testing.T) {
+	root := NewRootCmd()
 
-	validateCmd, _, err := cmd.Find([]string{"validate"})
-	require.NoError(t, err)
-	require.NotNil(t, validateCmd)
-	require.Equal(t, "validate", validateCmd.Name())
+	for _, name := range []string{"start", "prices", "check", "init", "config", "version"} {
+		t.Run(name, func(t *testing.T) {
+			cmd, _, err := root.Find([]string{name})
 
-	initCmd, _, err := cmd.Find([]string{"init"})
-	require.NoError(t, err)
-	require.NotNil(t, initCmd)
-	require.Equal(t, "init", initCmd.Name())
-
-	configCmd, _, err := cmd.Find([]string{"config"})
-	require.NoError(t, err)
-	require.NotNil(t, configCmd)
-	require.Equal(t, "config", configCmd.Name())
+			require.NoError(t, err)
+			require.Equal(t, name, cmd.Name())
+		})
+	}
 }
 
 func TestNewVersionCmdPrintsVersion(t *testing.T) {

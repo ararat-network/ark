@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"net"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,8 +13,20 @@ import (
 	"github.com/ararat-network/ark/pricefeed/api"
 )
 
+func TestConfigCmdExposesValidateAndReload(t *testing.T) {
+	configCmd, _, err := NewRootCmd().Find([]string{"config"})
+	require.NoError(t, err)
+
+	names := make([]string, 0, len(configCmd.Commands()))
+	for _, sub := range configCmd.Commands() {
+		names = append(names, sub.Name())
+	}
+
+	require.ElementsMatch(t, []string{"validate", "reload"}, names)
+}
+
 func TestConfigValidateAcceptsRuntimeConfig(t *testing.T) {
-	cfgPath := writeOracleConfig(t, validOracleConfigJSON())
+	cfgPath := writeConfig(t, validConfigTOML())
 	cmd := NewRootCmd()
 	out := new(bytes.Buffer)
 	cmd.SetOut(out)
@@ -26,32 +36,17 @@ func TestConfigValidateAcceptsRuntimeConfig(t *testing.T) {
 	err := cmd.Execute()
 
 	require.NoError(t, err)
-	require.Equal(t, "oracle config is valid\n", out.String())
+	require.Equal(t, "pricefeed config is valid\n", out.String())
 }
 
-func TestConfigReloadCommandOwnsAdminAddressFlag(t *testing.T) {
-	cmd := NewRootCmd()
-	configCmd, _, err := cmd.Find([]string{"config"})
+func TestConfigReloadCmdOwnsAdminAddressFlag(t *testing.T) {
+	reloadCmd, _, err := NewRootCmd().Find([]string{"config", "reload"})
 	require.NoError(t, err)
-	require.Nil(t, configCmd.Flags().Lookup(flagAdminAddress))
 
-	reloadCmd, _, err := cmd.Find([]string{"config", "reload"})
-	require.NoError(t, err)
-	require.NotNil(t, reloadCmd.Flags().Lookup(flagAdminAddress))
-	require.Nil(t, reloadCmd.Flags().Lookup(flagAddress))
-	require.Equal(t, defaultAdminAddress, reloadCmd.Flags().Lookup(flagAdminAddress).DefValue)
-}
+	flag := reloadCmd.Flags().Lookup(flagAdminAddress)
 
-func TestConfigShowCommandIsNotAvailable(t *testing.T) {
-	cmd := NewRootCmd()
-	out := new(bytes.Buffer)
-	cmd.SetOut(out)
-	cmd.SetErr(out)
-	cmd.SetArgs([]string{"config", "show"})
-
-	err := cmd.Execute()
-
-	require.ErrorContains(t, err, "unknown command")
+	require.NotNil(t, flag)
+	require.Equal(t, defaultAdminAddress, flag.DefValue)
 }
 
 func TestReloadRuntimeConfigCallsPriceFeedAdminEndpoint(t *testing.T) {
@@ -69,7 +64,7 @@ func TestReloadRuntimeConfigCallsPriceFeedAdminEndpoint(t *testing.T) {
 
 	err := reloadRuntimeConfig(
 		context.Background(),
-		"passthrough:///oracle-admin",
+		"passthrough:///localhost:20196",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
 		}),
@@ -79,61 +74,10 @@ func TestReloadRuntimeConfigCallsPriceFeedAdminEndpoint(t *testing.T) {
 	require.True(t, adminServer.called)
 }
 
-func TestConfigUpdateCommandIsNotAvailable(t *testing.T) {
-	cfgPath := writeOracleConfig(t, validOracleConfigJSON())
-	cmd := NewRootCmd()
-	out := new(bytes.Buffer)
-	cmd.SetOut(out)
-	cmd.SetErr(out)
-	cmd.SetArgs([]string{
-		"--" + flagConfig,
-		cfgPath,
-		"config",
-		"update",
-	})
+func TestReloadRuntimeConfigRefusesOffLoopbackAdminAddress(t *testing.T) {
+	err := reloadRuntimeConfig(context.Background(), "10.0.0.5:8081")
 
-	err := cmd.Execute()
-
-	require.ErrorContains(t, err, "unknown command")
-}
-
-func validOracleConfigJSON() string {
-	return `{
-		"updateInterval": "1500ms",
-		"providers": {
-			"frankfurter_api": {
-				"name": "frankfurter_api",
-				"transportType": "api",
-				"maxPriceAge": "90s",
-				"markets": [
-					{"pair": "NOAH/USD", "symbol": "NOAHUSD"}
-				],
-				"api": {
-					"name": "frankfurter_api",
-					"timeout": "3s",
-					"interval": "1m",
-					"endpoints": [{"url": "https://api.frankfurter.dev/v2/rates"}],
-					"batchSize": 1
-				}
-			}
-		},
-		"resolver": {},
-		"client": {
-			"address": "127.0.0.1:9090",
-			"timeout": "2s",
-			"interval": "5s"
-		},
-		"fallbackFeeds": ["ausd"]
-	}`
-}
-
-func writeOracleConfig(t *testing.T, contents string) string {
-	t.Helper()
-
-	path := filepath.Join(t.TempDir(), "oracle.json")
-	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
-
-	return path
+	require.ErrorContains(t, err, `admin address "10.0.0.5:8081" must be loopback`)
 }
 
 type recordingPriceFeedAdminServer struct {

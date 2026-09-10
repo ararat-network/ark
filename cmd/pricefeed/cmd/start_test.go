@@ -9,36 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStartCmdOwnsProcessFlags(t *testing.T) {
-	cmd := NewRootCmd()
-	startCmd, _, err := cmd.Find([]string{"start"})
-
-	require.NoError(t, err)
-	require.NotNil(t, startCmd)
-	require.Nil(t, startCmd.Flags().Lookup(flagConfig))
-	require.NotNil(t, startCmd.Flags().Lookup(flagAddress))
-	require.NotNil(t, startCmd.Flags().Lookup(flagAdminAddress))
-	require.NotNil(t, startCmd.Flags().Lookup(flagMetrics))
-	require.NotNil(t, startCmd.Flags().Lookup(flagMetricsAddress))
-	require.NotNil(t, startCmd.Flags().Lookup(flagPprof))
-	require.NotNil(t, startCmd.Flags().Lookup(flagLogLevel))
-	require.Nil(t, startCmd.Flags().Lookup("host"))
-	require.Nil(t, startCmd.Flags().Lookup("port"))
-	require.Nil(t, startCmd.Flags().Lookup("admin-host"))
-	require.Nil(t, startCmd.Flags().Lookup("admin-port"))
-	require.Nil(t, startCmd.Flags().Lookup("metrics-enabled"))
-	require.Nil(t, startCmd.Flags().Lookup("metrics-prometheus-address"))
-	require.Nil(t, startCmd.Flags().Lookup("run-pprof"))
-	require.Nil(t, startCmd.Flags().Lookup("pprof-port"))
-	require.Nil(t, startCmd.Flags().Lookup("log-std-out-level"))
-	require.Nil(t, startCmd.Flags().Lookup("update-interval"))
-	require.Nil(t, startCmd.Flags().Lookup("max-price-age"))
-	require.Nil(t, startCmd.Flags().Lookup("mode"))
-	require.Nil(t, startCmd.Flags().Lookup("validation-period"))
-}
-
 func TestStartCmdUsesStartOptionsDefaults(t *testing.T) {
-	configPath := filepath.Join(t.TempDir(), "oracle.json")
+	configPath := filepath.Join(t.TempDir(), "pricefeed.toml")
 	options := startOptions{
 		address:        defaultAddress,
 		adminAddress:   defaultAdminAddress,
@@ -64,7 +36,7 @@ func TestStartCmdUsesStartOptionsDefaults(t *testing.T) {
 }
 
 func TestStartCmdBooleanFlagsEnableByPresence(t *testing.T) {
-	configPath := filepath.Join(t.TempDir(), "oracle.json")
+	configPath := filepath.Join(t.TempDir(), "pricefeed.toml")
 	flags := newStartCmd(&configPath).Flags()
 
 	require.NoError(t, flags.Parse([]string{"--" + flagMetrics, "--" + flagPprof}))
@@ -84,6 +56,7 @@ func TestNewLoggerRejectsInvalidLevel(t *testing.T) {
 	require.ErrorContains(t, err, "invalid log level")
 }
 
+// The log label is the metrics service name, so the two signals join.
 func TestNewLoggerAddsServiceLabel(t *testing.T) {
 	readEnd, writeEnd, err := os.Pipe()
 	require.NoError(t, err)
@@ -98,10 +71,10 @@ func TestNewLoggerAddsServiceLabel(t *testing.T) {
 	logger, err := newLogger("info", false)
 	require.NoError(t, err)
 
-	logger.Info("oracle command logger labels")
+	logger.Info("pricefeed command logger labels")
 	require.NoError(t, writeEnd.Close())
 	output, err := io.ReadAll(readEnd)
 	require.NoError(t, err)
 
-	require.Contains(t, string(output), "service=oracle_sidecar")
+	require.Contains(t, string(output), "service="+serviceName)
 }

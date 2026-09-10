@@ -20,7 +20,7 @@ type prometheusTelemetry struct {
 // initPrometheus installs the provider globally so subsystem metrics created
 // through the OpenTelemetry API are exported by this process. The sidecar
 // owns the default registry, so its Go and process collectors ride along.
-func initPrometheus(serviceName string) (*prometheusTelemetry, error) {
+func initPrometheus() (*prometheusTelemetry, error) {
 	provider, err := telemetry.NewPrometheusProvider(serviceName, prometheus.DefaultRegisterer)
 	if err != nil {
 		return nil, err
@@ -34,16 +34,10 @@ func initPrometheus(serviceName string) (*prometheusTelemetry, error) {
 }
 
 func (t *prometheusTelemetry) Handler() http.Handler {
-	if t == nil {
-		return nil
-	}
 	return t.handler
 }
 
 func (t *prometheusTelemetry) Shutdown(ctx context.Context) error {
-	if t == nil {
-		return nil
-	}
 	return t.provider.Shutdown(ctx)
 }
 
