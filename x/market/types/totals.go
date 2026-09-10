@@ -6,18 +6,9 @@ import (
 	"cosmossdk.io/math"
 )
 
-// ConversionTotals is one block's recorded conversion flow: the facts Market
-// hands Treasury to settle. Market owns them because Market produced them —
-// every figure here is one its own quote already stood behind — and Treasury
-// owns what they are worth against the block's liability, which is the one
-// thing no conversion can tell it.
-//
-// Only what settlement actually decides is carried. Every value is priced at
-// the rate its own conversion quoted, so nothing here needs a rate set to
-// interpret and settlement performs no conversion at all.
-//
-// Every field is an aggregate over the block, so a zero is ordinary: a block
-// may hold only expansions, only redemptions, or neither.
+// ConversionTotals carries block-aggregated NOAH flow at each conversion's quoted rate. Treasury
+// allocates it against final liability without repricing individual conversions. Zero fields are
+// valid for idle or one-sided blocks.
 type ConversionTotals struct {
 	// GrossOffer is the NOAH this block's expansions took in, spread included.
 	// It is what the waterfall places (D6): principal and premium alike go to
@@ -30,12 +21,8 @@ type ConversionTotals struct {
 	EligiblePrincipal math.Int
 	// RedemptionOutput is the NOAH minted across both redemption paths.
 	RedemptionOutput math.Int
-	// RedeemedValue is the NOAH value of the stable supply those redemptions
-	// burned. Both paths accumulate here on the same terms even though their
-	// rates come from different places — the oracle set for a quoted
-	// redemption, the plan's own committed rate for a settled one — because
-	// what settlement divides by is the value, never the supply that carried
-	// it.
+	// RedeemedValue is the NOAH value of burned stable supply, using Oracle rates for swaps and
+	// committed plan rates for settlement redemptions.
 	RedeemedValue math.LegacyDec
 }
 
@@ -75,11 +62,8 @@ func (t ConversionTotals) Validate() error {
 			t.GrossOffer,
 		)
 	}
-	// Redemption output cannot outvalue the liability it retired. This is the
-	// bound that keeps the coverage draw inside the Buffer: the draw is a
-	// fraction of the output, the fraction is the Buffer over a basis that
-	// contains this value, so an output within it can never draw more than the
-	// Buffer holds.
+	// Output cannot exceed retired liability value. Since the coverage denominator includes that
+	// value, this bound keeps the proportional draw within the Buffer balance.
 	if math.LegacyNewDecFromInt(t.RedemptionOutput).GT(t.RedeemedValue) {
 		return fmt.Errorf(
 			"redemption output %s exceeds the redeemed liability %s",

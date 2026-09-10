@@ -97,12 +97,8 @@ func TestValidateGenesisState(t *testing.T) {
 			expectErr: "disabled conversion mandate must use identical zero bounds",
 		},
 		{
-			// This is the shape a reference re-point leaves behind: the pool
-			// rebased into the new unit, the corridor still in the unit
-			// governance appointed it in. It is a state the chain reaches on its
-			// own and therefore has to be able to restart from, so genesis
-			// accepts it. The corridor authorises nothing until governance
-			// re-appoints, which is what makes accepting it safe.
+			// A rebased pool with an unchanged corridor is a valid export/import state. The
+			// mismatched mandate grants no policy authority.
 			name: "enabled mandate stranded off the genesis pool unit",
 			mutate: func(gs *types.GenesisState) {
 				bound := types.ConversionPolicy{

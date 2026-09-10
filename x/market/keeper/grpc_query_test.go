@@ -254,11 +254,8 @@ func (s *KeeperTestSuite) TestQueryPool() {
 	}
 }
 
-// TestQueryTobinTax covers rate resolution: an override governs, its absence
-// inherits the default, and a zero override is honoured rather than read as no
-// entry at all — the one rate where a falsy value could be mistaken for absence
-// and silently answer the nonzero default.
-// Each case works on its own denomination, so none depends on another's state.
+// TestQueryTobinTax checks override precedence, default inheritance, and explicit zero overrides
+// independently per denomination.
 func (s *KeeperTestSuite) TestQueryTobinTax() {
 	tests := []struct {
 		name       string
@@ -328,11 +325,8 @@ func (s *KeeperTestSuite) TestQueryTobinTax() {
 	}
 }
 
-// TestQueryTobinTaxOverrides asserts the order is by key: genesis export reads
-// the same walk, so a non-deterministic order there would produce a different
-// export on every node. The empty case is asserted only as empty — proto3 omits
-// an empty repeated field, so the keeper's non-nil slice arrives as null however
-// it was built, and the distinction is only observable in-process.
+// TestQueryTobinTaxOverrides checks deterministic key order shared with genesis export. Empty
+// results are tested by length because proto3 does not preserve nil versus empty slices.
 func (s *KeeperTestSuite) TestQueryTobinTaxOverrides() {
 	res, err := s.queryClient.TobinTaxOverrides(s.ctx, &types.QueryTobinTaxOverridesRequest{})
 	s.Require().NoError(err)

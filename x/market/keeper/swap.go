@@ -18,11 +18,8 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// swapQuote is the complete answer to one conversion: what the trader receives,
-// what it costs, the rates it was priced at, and the pool state it leaves
-// behind. Settlement executes this and computes nothing further.
-//
-// It is execution-local and is never persisted.
+// swapQuote holds one execution-local quote: output, fee, captured rates, and resulting pool state.
+// It is never persisted.
 type swapQuote struct {
 	swapCoin sdk.Coin
 	swapFee  sdk.DecCoin
@@ -36,14 +33,9 @@ type swapQuote struct {
 	updatedArkPoolDelta math.LegacyDec
 }
 
-// Swap quotes and settles one conversion, delivering the output to receiver.
-// It is the only way to execute a conversion: quoting and settling are split
-// internally, but nothing outside this method may hold a quote and settle it,
-// which is what keeps the eligibility gates in quoteSwap unskippable.
-//
-// A zero-valued minimumReceive means the trader set no floor. A set one must be
-// denominated in the ask denom and is enforced between quote and settlement, so
-// a crossed floor costs the trader nothing but gas.
+// Swap quotes and executes a conversion to receiver through mandatory eligibility gates. An
+// optional positive ask-denom minimum is checked before settlement; a crossed floor costs only
+// transaction gas.
 func (k Keeper) Swap(
 	ctx context.Context,
 	trader sdk.AccAddress,
@@ -83,15 +75,8 @@ func (k Keeper) Swap(
 	return quote.swapCoin, quote.swapFee, nil
 }
 
-// validateMinimumReceive reports whether the trader set an output floor.
-//
-// The floor is optional: the zero coin means the trader accepts market
-// execution, which is a legitimate intent with exactly one spelling — absence.
-// A denominated zero stays invalid rather than reading as a second way to opt
-// out, because a floor of nothing is a computed value of zero protection,
-// which is far more likely a caller bug than a choice. When a floor is set it
-// must be positive and in the ask denomination: a floor in any other unit
-// would compare unlike quantities and enforce nothing.
+// validateMinimumReceive accepts only the empty coin as no floor. A supplied floor must be positive
+// and use the ask denomination; denominated zero is invalid.
 func validateMinimumReceive(minimumReceive sdk.Coin, askDenom string) (bool, error) {
 	if minimumReceive.Denom == "" && (minimumReceive.Amount.IsNil() || minimumReceive.Amount.IsZero()) {
 		return false, nil
@@ -174,14 +159,9 @@ func (k Keeper) quoteStablePair(ctx context.Context, offerDecCoin sdk.DecCoin, a
 	return swapQuote{swapCoin: swapCoin, swapFee: swapFee, rates: rates}, nil
 }
 
-// quoteNoahPair prices either direction of a NOAH pair against the virtual
-// constant-product pools, and returns the pool gap the swap leaves behind.
-//
-// The spread is what the trade costs the pool: the offer is expressed in
-// base-pool units, run through the constant product, and the shortfall against
-// a frictionless fill becomes the spread, floored at the policy's
-// MinStabilitySpread. Depth, recovery, and that floor are one policy object, so
-// pricing a NOAH pair reads conversion state and nothing else.
+// quoteNoahPair computes constant-product slippage in reference-pool units, applies
+// MinStabilitySpread, and returns the resulting pool delta. Depth, recovery, and floor come from
+// one policy.
 func (k Keeper) quoteNoahPair(ctx context.Context, offerDecCoin sdk.DecCoin, askDenom string) (swapQuote, error) {
 	capacity, err := k.ConversionPolicy.Get(ctx)
 	if err != nil {
@@ -338,12 +318,8 @@ func (k Keeper) settleSwap(
 		return errorsmod.Wrapf(err, "sending offer coins %s from trader %s to module", offerCoins, trader)
 	}
 
-	// An expansion keeps its whole offer in module custody for the block's
-	// settlement: spread and principal alike go down the waterfall (D6), so
-	// nothing burns here. A redemption burns the offer outright and mints the
-	// whole quoted output; the Buffer's share of it is burned back at
-	// settlement, so the trader is paid the same either way and no conversion
-	// waits on a valuation.
+	// Expansion retains the whole NOAH offer for EndBlock allocation. Redemption burns the offered
+	// asset and mints the quoted NOAH immediately; settlement later burns the Buffer-funded share.
 	burned := offerCoin
 	minted := quote.swapCoin
 	if offerCoin.Denom == chain.NoahBaseDenom {
@@ -404,24 +380,9 @@ func marketRateError(err error) error {
 	return err
 }
 
-// requireConvertible enforces the lifecycle gate on both legs of a conversion.
-//
-// This gate, not the absence of a rate, is the whole of suspension's
-// containment here: a suspended feed keeps running and its stored rate stays
-// fresh, so the Oracle would price a suspended denomination on request. Quotes
-// therefore read raw rates rather than registry pricing verdicts, which would
-// hand back a settlement-backed rate for exactly the denominations this refuses
-// — conversion asks what the market says, settlement asks what governance
-// committed, and keeping the swap path unable to see plan rates is what keeps
-// the two from merging. The status check must stay mandatory and ahead of
-// every rate read.
-//
-// The asymmetry is the point: an offer may be ISSUANCE_HALTED because halting
-// issuance is meant to preserve every exit — holders keep converting out — while
-// an ask must be ACTIVE because producing more of a denomination governance has
-// stopped issuing is exactly what the halt forbids. NOAH is the numeraire and
-// has no registry entry, so it is always convertible; every other status is
-// excluded, which is what makes suspension a containment tool.
+// requireConvertible checks status before any rate read: offers may be ACTIVE or ISSUANCE_HALTED,
+// asks must be ACTIVE, and NOAH needs no registry entry. This keeps suspended assets and settlement
+// rates outside ordinary swaps. See x/market/README.md.
 func (k Keeper) requireConvertible(ctx context.Context, offerDenom, askDenom string) error {
 	if offerDenom != chain.NoahBaseDenom {
 		offerAsset, err := k.assetKeeper.GetAsset(ctx, offerDenom)

@@ -11,20 +11,9 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// EndBlocker settles the block's conversions and then replenishes the pools.
-//
-// Settlement runs first and runs here rather than inside each conversion: every
-// mint and burn the block performed has landed, so Treasury values liability
-// once against final state and places the whole block's principal against that
-// one figure. Market leads the EndBlock order for the same reason the ordering
-// note in app config gives — every later actor must see settled funds.
-//
-// An error fails the block. There is no transaction left to abort by the time
-// settlement runs, and every condition a conversion could cause was refused when
-// it was recorded, so what remains is state corruption or an arithmetic
-// impossibility. A valuation that could not cover every recognised liability is
-// not one of them: Treasury parks the principal and discloses, and the block
-// continues.
+// EndBlocker settles accumulated conversions against final liability, then replenishes pools.
+// Market must lead other EndBlock mutations. Incomplete valuation parks principal; state or
+// arithmetic errors fail the block. See x/market/README.md.
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 

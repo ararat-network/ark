@@ -16,12 +16,8 @@ import (
 const (
 	DefaultPoolRecoveryPeriod = chain.BlocksPerDay // 14,400
 
-	// MaxPoolRecoveryPeriod bounds the recovery span at a year. The period is a
-	// divisor: each block returns delta/period toward zero, so a span long
-	// enough that the quotient truncates to nothing does not slow recovery, it
-	// stops it, and the pool keeps an imbalance for good. Since the delta is
-	// what makes sustained one-way flow expensive (D3), that turns the spread's
-	// memory into a permanent state rather than a decaying one.
+	// MaxPoolRecoveryPeriod caps recovery at a chain year. Excessive divisors can truncate small
+	// delta recovery to zero, leaving persistent spread pressure.
 	MaxPoolRecoveryPeriod = chain.BlocksPerYear
 )
 
@@ -113,15 +109,8 @@ func equalOrBothNil(a, b math.LegacyDec) bool {
 	return a.Equal(b)
 }
 
-// IsZero reports whether the policy carries no unit, no depth, no recovery
-// period, and no spread floor — the exact payload a disabled mandate holds.
-//
-// An unset decimal reads as false rather than as zero. Nil is not a value the
-// caller wrote, and the sentinel exists to have one spelling, so a policy that
-// omits a decimal is not the zero policy — it is not yet a policy. Answering it
-// leniently would matter, because this is the whole judgment the disabled
-// branch gets: a zero base pool is the one policy ConversionPolicy.Validate
-// refuses, so nothing else validates the payload there.
+// IsZero recognises the exact disabled policy: no unit, zero depth, recovery, and spread. Unset
+// decimals are invalid because this predicate is the disabled mandate's payload validation.
 func (policy ConversionPolicy) IsZero() bool {
 	if policy.BasePool.Denom != "" || policy.PoolRecoveryPeriod != 0 {
 		return false

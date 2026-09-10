@@ -18,13 +18,8 @@ func testCapacityCommittee() string {
 	return authtypes.NewModuleAddress("capacity-committee").String()
 }
 
-// conversionBounds returns a corridor around the launch depth: half to double,
-// with the recovery period allowed to shorten to a quarter day. Halving the
-// period and deepening the pool together is the historical depeg response.
-//
-// The spread floor is bounded raise-only, which is how governance is expected
-// to delegate it: the minimum is the live floor, so the committee can lift the
-// floor up to four times launch but never below where it already stands.
+// conversionBounds permits half-to-double launch depth, recovery down to a quarter day, and a
+// spread floor from its live value to four times launch.
 func conversionBounds() (types.ConversionPolicy, types.ConversionPolicy) {
 	launch := types.DefaultConversionPolicy()
 	minimum := types.ConversionPolicy{
@@ -59,11 +54,8 @@ func enabledConversionMandate() types.ConversionMandate {
 	return appointment
 }
 
-// TestConversionMandateIsActive covers both halves of the mandate's shadowed
-// predicate: the envelope window, and the corridor sharing the live pool's
-// unit. The second half is what a strand takes away and a re-point back
-// restores, so the pure function is pinned at every boundary the keeper flows
-// exercise.
+// TestConversionMandateIsActive checks both the envelope window and agreement between corridor and
+// live pool denominations, including stranding and revival.
 func TestConversionMandateIsActive(t *testing.T) {
 	appointment := enabledConversionMandate()
 	live := types.DefaultConversionPolicy()
@@ -292,11 +284,8 @@ func TestValidateConversionMandateTobinCap(t *testing.T) {
 			expectErr: "invalid conversion mandate Tobin cap: tobin tax must be set",
 		},
 		{
-			// Omission is not a spelling of zero on either branch. The sentinel
-			// stores an unset cap as zero, so nothing downstream would see the
-			// difference — which is the reason to refuse it here, where the
-			// difference between a delegation zeroed and a field never written
-			// is still visible.
+			// Unset caps are invalid on both branches. Explicit zero disables Tobin authority;
+			// omission is not the canonical sentinel.
 			name:      "nil Tobin cap on the disabled sentinel",
 			mandate:   types.DefaultConversionMandate,
 			mutate:    func(m *types.ConversionMandate) { m.MaxTobinTax = math.LegacyDec{} },
@@ -386,11 +375,9 @@ func TestConversionMandateValidateTobinCandidate(t *testing.T) {
 			expectErr:    "conversion mandate delegates no Tobin power",
 		},
 		{
-			// The corner that makes the zero-cap check authorization rather than
-			// redundancy: with a zero default, a zero candidate satisfies both
-			// band edges, so without the explicit check a capacity-only committee
-			// could write a zero override and pin the denomination against a
-			// later default raise.
+			// A zero Tobin cap must disable authority even when default and candidate are zero;
+			// otherwise a capacity-only committee could pin an override against later default
+			// increases.
 			name:         "capacity-only mandate with a zero default",
 			mandate:      powerless,
 			defaultTobin: math.LegacyZeroDec(),

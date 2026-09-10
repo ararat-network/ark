@@ -14,16 +14,8 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// Settle redeems a suspended asset against its governance-approved settlement
-// plan: asset to NOAH, at the plan rate, burning what it takes in.
-//
-// This is a separate path from conversion rather than a special case of it,
-// because the two answer different questions. Conversion asks what the market
-// says a denomination is worth; settlement asks what governance committed to
-// pay holders of a denomination the market can no longer price honestly. Giving
-// the plan rate its own entry point is what keeps it out of ordinary routing —
-// nothing can reach it through a swap, and it can never mint the failed asset
-// back into existence.
+// Settle burns a suspended asset for NOAH at its active governance settlement rate. This holder
+// redemption is separate from swaps and cannot issue the settled asset.
 func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk.Coin) (sdk.Coin, error) {
 	if err := offerCoin.Validate(); err != nil {
 		return sdk.Coin{}, fmt.Errorf("invalid settlement offer: %w", err)
@@ -56,15 +48,8 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offerCoin sdk
 		return sdk.Coin{}, errorsmod.Wrap(types.ErrNoActiveSettlement, offerCoin.Denom)
 	}
 
-	// Treasury converts the redeemed asset through whatever rates it is handed,
-	// so it is handed the plan's. The oracle rate is deliberately not read: a
-	// suspended asset's market price is exactly what stopped being trustworthy,
-	// and passing the committed rate is what makes the resulting liability
-	// accounting settlement-priced rather than a fiction.
-	//
-	// The plan rate needs no adjustment to serve as a rate set: it is quoted in
-	// NOAH per one unit like every oracle rate, so it drops in beside the
-	// numeraire carried at one.
+	// Value redeemed liability at the committed plan rate, never the suspended asset's Oracle rate.
+	// Both quote NOAH per asset unit, with NOAH itself at one.
 	planRates := oracletypes.NewRateSet()
 	planRates[plan.Denom] = plan.RedemptionRate
 

@@ -388,20 +388,8 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 	s.Require().True(math.LegacyNewDec(20_000).Equal(response.SwapFee.Amount))
 }
 
-// TestSwapQuoteRefusesSwapsThatRoundToZero covers the two ways a NOAH-pair
-// quote can be left with nothing to pay out.
-//
-// The first is the boundary that bounds the spread at all: an offer too small
-// to move the pool by one representable unit leaves the constant product
-// returning no ask amount, so the whole offer is charged as spread. A spread
-// above one would drive the payout negative rather than to zero, which is why
-// it cannot happen — both divisions round to nearest at the same precision, and
-// the smallest representable offer is twice the largest rounding residue, so
-// the ask amount is never negative and the spread never exceeds one. Exactly
-// one is reachable, and it must refuse rather than pay zero.
-//
-// The second is the ordinary one-unit swap, where a spread well under one still
-// truncates the entire payout away.
+// TestSwapQuoteRefusesSwapsThatRoundToZero covers a tiny offer with unit spread and an ordinary
+// small payout lost to integer truncation. Neither may produce a successful zero-output swap.
 func (s *KeeperTestSuite) TestSwapQuoteRefusesSwapsThatRoundToZero() {
 	// The base-pool leg prices at the smallest representable rate, so one unit
 	// offered converts to 1e-18 base-pool units — below the pool's own smallest

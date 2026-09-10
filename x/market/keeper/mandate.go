@@ -9,11 +9,8 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// AuthoriseCommittee checks the signer against the live conversion mandate,
-// returning it for the caller's own constraints: the exact signer, the exact
-// term, and the active window. Every committee handler runs it first, and the
-// priority lane vouches through it at CheckTx, so the lane refuses exactly
-// what the handlers refuse.
+// AuthoriseCommittee checks exact signer, term, and active window for handlers and priority
+// admission. Callers enforce the policy corridor or Tobin action bounds.
 func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.ConversionMandate, error) {
 	conversionMandate, err := k.ConversionMandate.Get(ctx)
 	if err != nil {

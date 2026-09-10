@@ -32,11 +32,8 @@ func (f marketFixture) appointCommittee(t *testing.T) types.ConversionMandate {
 	return mandate
 }
 
-// TestMsgCommitteeUpdatePolicyFactoryStaysInsideTheCorridor is the
-// reachability proof for the delegated policy power. The corridor is what the
-// committee may move within, and a draw outside it is refused by the handler
-// rather than skipped, so a run would report delivered messages that changed
-// nothing.
+// TestMsgCommitteeUpdatePolicyFactoryStaysInsideTheCorridor checks that generated committee
+// policies are reachable and accepted within mandate bounds.
 func TestMsgCommitteeUpdatePolicyFactoryStaysInsideTheCorridor(t *testing.T) {
 	for seed := range int64(factorySeeds) {
 		f := newMarketFixture(t, seed+1)

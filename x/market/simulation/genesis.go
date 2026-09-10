@@ -43,11 +43,8 @@ func GenMinSpread(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(1, 2).Add(math.LegacyNewDecWithPrec(int64(r.Intn(100)), 3))
 }
 
-// GenConversionMandate appoints the conversion committee from the run's own
-// accounts and opens the window at the first block for longer than any run
-// lasts, so the committee surface is signable for the whole run. The corridor
-// spans the drawn policy rather than pinning it, and the Tobin cap is positive,
-// which leaves the committee somewhere to move.
+// GenConversionMandate appoints a simulation-owned signer for the expected run, with a corridor
+// around the generated policy and positive Tobin capacity.
 func GenConversionMandate(r *rand.Rand, accounts []string, policy types.ConversionPolicy) types.ConversionMandate {
 	if len(accounts) == 0 {
 		return types.DefaultConversionMandate()

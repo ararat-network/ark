@@ -142,11 +142,8 @@ func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 	s.Require().True(totals.EligiblePrincipal.IsZero())
 }
 
-// TestExpansionRejections covers what a conversion is still refused for once the
-// swap path's own guarantees are taken as given. The last is the one that
-// matters to settlement: an output worth more than the offer that bought it
-// would record principal never taken into custody, and is refused where it
-// happens rather than surviving into a block total.
+// TestExpansionRejections checks accumulator-specific refusals, including minted value above the
+// NOAH offer received in custody.
 func (s *AccumulatorTestSuite) TestExpansionRejections() {
 	testCases := []struct {
 		name   string

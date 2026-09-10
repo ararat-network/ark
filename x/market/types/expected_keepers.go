@@ -51,14 +51,8 @@ type AssetKeeper interface {
 // TreasuryKeeper defines the allocation and liability accounting required by
 // Market settlement.
 type TreasuryKeeper interface {
-	// SettleConversions places one block's recorded conversion flow and returns
-	// the NOAH Market must burn to finish it: principal that overflowed every
-	// funded target, plus the Buffer's coverage of output already minted.
-	//
-	// It is called once, from Market's EndBlocker, after every conversion in the
-	// block has minted, burned, and paid its trader. Market never learns how
-	// Treasury split the principal between the funds, so settlement cannot
-	// branch on economic policy; Treasury never learns which conversions
-	// produced the totals, so allocation cannot favour one.
+	// SettleConversions allocates one block's recorded NOAH flow and returns overflow plus Buffer
+	// coverage for Market to burn. Called once in EndBlock after traders are paid, it exposes
+	// neither per-conversion details nor fund allocation back to Market.
 	SettleConversions(ctx context.Context, totals ConversionTotals) (math.Int, error)
 }

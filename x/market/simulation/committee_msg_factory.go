@@ -10,11 +10,8 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// activeConversionCommittee resolves the appointed committee when the mandate
-// is active at this height and the run holds its key. Every committee factory
-// starts here, and a skip is the norm rather than a fault: an appointment may
-// have expired, or been restored from an export naming an address this run
-// never held.
+// activeConversionCommittee requires an active mandate and a signer key owned by the run. Expired
+// or externally appointed committees cause a normal simulation skip.
 func activeConversionCommittee(
 	ctx context.Context,
 	k *keeper.Keeper,

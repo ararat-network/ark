@@ -12,15 +12,9 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// applyConversionPolicy validates one already-authorized conversion candidate
-// against live pool state and stores it.
-//
-// Both entry points converge here — governance unbounded, committee inside its
-// corridor — so neither can reach the pool without the denomination guard, the
-// delta rescale, and the effective-pool check. Depth is a claim about how much
-// conversion the protocol absorbs before the spread widens, and the accumulated
-// delta is measured against that depth, so a resize carries the delta with it:
-// the gap keeps its proportion instead of silently meaning something new.
+// applyConversionPolicy validates an authorised policy against live pool state, rescales the delta
+// proportionally with depth, and stores it. Both governance and committee paths enforce
+// denomination and effective-pool checks.
 func (k Keeper) applyConversionPolicy(ctx context.Context, policy types.ConversionPolicy) error {
 	if err := policy.Validate(); err != nil {
 		return err

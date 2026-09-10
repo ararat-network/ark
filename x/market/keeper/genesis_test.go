@@ -68,11 +68,8 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 	s.Require().ErrorContains(err, "module account has not been set")
 }
 
-// TestInitGenesis_ReferenceMismatchPreservesState covers the reference agreement
-// InitGenesis insists on. The virtual pool prices conversion in the protocol
-// reference unit, so a pool denominated in anything else is not a launchable
-// configuration — and x/asset imports first, which is what makes the reference
-// readable here at all.
+// TestInitGenesis_ReferenceMismatchPreservesState checks the pool denomination matches the protocol
+// reference imported by Oracle before Market initialisation.
 func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 	referenceErr := errors.New("asset reference unavailable")
 	tests := []struct {

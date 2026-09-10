@@ -163,13 +163,8 @@ func (m conversionTotalsMatcher) String() string {
 	)
 }
 
-// requireSettledTotals drives the EndBlocker and asserts what Market hands
-// Treasury. The accumulators are unexported block-local state, so the settle
-// call is where a test observes what the block's conversions actually recorded.
-//
-// It clears the accumulators afterwards, standing in for the transient store
-// reset a real block boundary performs. The suite's context outlives one block,
-// so without it a later case would settle its predecessor's conversions too.
+// requireSettledTotals observes conversion accumulators through the Treasury call, then clears them
+// to emulate a block boundary because the suite context reuses transient state.
 func (s *KeeperTestSuite) requireSettledTotals(expected types.ConversionTotals) {
 	s.treasuryKeeper.EXPECT().
 		SettleConversions(gomock.Any(), conversionTotalsMatcher{expected: expected}).

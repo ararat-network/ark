@@ -59,8 +59,9 @@ owns the ordered reappointment procedure.
 
 Conversions record `EligiblePrincipal`, `RedemptionOutput`, and `RedeemedValue` in transient state, all in NOAH at
 each conversion's own quoted rate. Checked additions and the output-versus-retired-value bound fail the transaction
-that violates them. Cross-asset conversions record no NOAH flow. Spreads burn immediately; quoted redemption output
-is minted immediately. Only fund allocation and the compensating burn wait for settlement.
+that violates them. Cross-asset conversions record no NOAH flow: they burn the whole offer and mint only the post-spread output.
+NOAH expansion retains the whole offer for settlement; redemption burns the offered asset and immediately mints
+the post-spread NOAH output. Only fund allocation and the compensating burn wait for settlement.
 
 Market's EndBlocker sends one `ConversionTotals` to Treasury, burns the returned amount from Market custody, then
 replenishes its virtual pool. The call needs no rate set: conversions already recorded valued facts. It runs for idle
@@ -100,3 +101,17 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 - [Conversion and settlement policy](../../docs/design/ECONOMIC_DESIGN.md).
 - [Asset eligibility](../asset/README.md).
 - [Application wiring](../../app/README.md).
+
+## Local quote and admission contracts
+
+A swap minimum is either the empty coin or a positive ask-denomination amount. A denominated zero is rejected.
+The floor is checked before any settlement writes. A quote that loses its entire payout to spread or integer
+truncation is refused; very small virtual-pool offers can reach a spread of exactly one.
+
+NOAH-pair spread is the constant-product shortfall from a frictionless fill, bounded below by the policy floor.
+A tiny trade can remain at that floor regardless of depth, which is why committee bounds include the floor alongside
+depth and recovery. Transfer-tax policy must respect the reachable corridor floor, not just its current value.
+
+A stranded corridor becomes usable again if the reference returns to its denomination while the original term and
+window remain valid. Genesis therefore accepts mismatched units. The Tobin band applies to the shared override map,
+including governance-written entries; only governance can remove an override to resume tracking the default.

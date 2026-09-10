@@ -32,18 +32,9 @@ func NewDisabledConversionMandate(term uint64) ConversionMandate {
 	}
 }
 
-// Validate validates either a disabled mandate or one complete bounded
-// committee appointment.
-//
-// The bound checks sit inside the enabled branch rather than ahead of it,
-// unlike Treasury's equivalent: a market pool must be positive, so the zero
-// bounds a disabled mandate carries are the one pair ConversionPolicy.Validate
-// refuses. The disabled branch therefore carries the whole judgment of the
-// sentinel, which is why an unset decimal fails it: every sibling mandate
-// refuses one through the payload validation it runs before branching, and here
-// that refusal lives in ConversionPolicy.IsZero and in the Tobin cap's own
-// check. Envelope.Validate is reached through the field because this method
-// shadows the promoted one.
+// Validate checks the envelope and either complete enabled bounds or the exact disabled sentinel.
+// Disabled zero pools cannot pass ordinary policy validation, so IsZero and the Tobin check must
+// also reject unset decimals.
 func (conversionMandate ConversionMandate) Validate() error {
 	if err := conversionMandate.Envelope.Validate(); err != nil {
 		return fmt.Errorf("%s: %w", ConversionMandateLabel, err)

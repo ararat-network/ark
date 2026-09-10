@@ -232,13 +232,8 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 	return &types.MsgUpdatePolicyResponse{}, nil
 }
 
-// CommitteeUpdatePolicy applies one complete capacity update as the
-// exact appointed committee, during the active term and window, with every
-// field inside the mandate's corridor.
-//
-// This is the emergency path: resizing depth and the recovery period is the
-// peg-defence action a depeg reaches for, and a governance voting period is
-// longer than the window in which it matters.
+// CommitteeUpdatePolicy applies a complete conversion policy under the live committee term and
+// window, with every field inside its approved corridor.
 func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgCommitteeUpdatePolicy) (*types.MsgCommitteeUpdatePolicyResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee update conversion policy message")

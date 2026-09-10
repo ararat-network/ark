@@ -104,11 +104,8 @@ func oracleRateSetForRebase() oracletypes.RateSet {
 	}
 }
 
-// candidateInsideCorridor is a genuine emergency response: twice the depth, a
-// quarter of the recovery period, and double the spread floor, all inside the
-// seeded corridor. Lifting the floor alongside depth is the point of carrying
-// them in one policy — a sized conversion and a dust-sized one both get dearer
-// in the same message.
+// candidateInsideCorridor changes depth, recovery period, and spread floor together within the
+// seeded mandate bounds.
 func candidateInsideCorridor() types.ConversionPolicy {
 	return types.ConversionPolicy{
 		BasePool:           xdrBasePool(livePool().MulInt64(2)),
@@ -243,14 +240,8 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 	}
 }
 
-// TestExportAfterRebaseRoundTrips pins the property the genesis cross-check
-// used to break: a chain must be able to restart from its own export.
-//
-// A reference re-point rebases the pool and strands the corridor in the old
-// unit, so every export taken between that re-point and the next re-appointment
-// carries a mandate denominated off the pool. Genesis therefore has to accept
-// that shape — rejecting it made a reachable state un-startable, which surfaces
-// only when an operator tries to restart from an export they already took.
+// TestExportAfterRebaseRoundTrips checks import accepts a reachable stranded mandate: pool rebasing
+// changes its unit while the approved corridor retains its own.
 func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 	appointment := s.seedLiveConversionMandate()
 	s.Require().False(appointment.IsDisabled())
@@ -281,11 +272,8 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
 }
 
-// TestStrandedMandateIsNotActive pins the other half of a strand: the window
-// stays open, so anything reading the appointment must consult the live pool
-// before claiming the fast path is available. The mandate's IsActive demands
-// the live policy for exactly that reason; window-only semantics survive on
-// the Envelope field.
+// TestStrandedMandateIsNotActive checks that policy authority requires matching live pool units as
+// well as an open window. Envelope activity alone does not grant policy authority.
 func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 	appointment := s.seedLiveConversionMandate()
 	live, err := s.keeper.ConversionPolicy.Get(s.ctx)
@@ -334,14 +322,8 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 	s.Require().True(res.Active)
 }
 
-// TestRebaseBackRevivesAStrandedMandate pins that stranding is a property of
-// the units disagreeing, not a one-way door. A re-point that returns the
-// reference to the unit a stranded corridor is written in makes that
-// appointment usable again, untouched and on its original term.
-//
-// It matters beyond the curiosity: anything deciding whether an appointment is
-// stranded has to compare the two denominations rather than assume a re-point
-// always diverges them, or it reports a revival as a loss.
+// TestRebaseBackRevivesAStrandedMandate checks that returning to the corridor's denomination
+// restores its usability under the same term and remaining window.
 func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	appointment := s.seedLiveConversionMandate()
 	s.Require().Equal(chain.XDRBaseDenom, appointment.MinimumPolicy.BasePool.Denom)
@@ -567,11 +549,8 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsInvalidCandidates() {
 	}
 }
 
-// TestMsgUpdatePolicyRejectsBasePoolDenomChange pins the ownership
-// boundary. The pool is denominated in the protocol reference, which x/asset
-// owns, so its unit moves only through MsgSetReferenceDenom and the RebaseBasePool
-// call that follows. Accepting a denomination here would let Market re-anchor
-// behind the reference's back and leave Treasury's cap in a different unit.
+// TestMsgUpdatePolicyRejectsBasePoolDenomChange checks that only Oracle reference changes rebase
+// the pool. Policy updates cannot independently change its unit.
 func (s *KeeperTestSuite) TestMsgUpdatePolicyRejectsBasePoolDenomChange() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	tests := []struct {
@@ -896,12 +875,8 @@ func (s *KeeperTestSuite) TestGovernanceCapacityPathIgnoresCorridor() {
 	s.Require().Equal(beyondCorridor, stored)
 }
 
-// TestRebaseStrandsConversionMandate is the reference-change decision in one test:
-// the pool is converted because its number would otherwise mean something new,
-// while the corridor keeps the unit governance approved it in. The committee is
-// therefore suspended — a candidate in either unit fails — until governance
-// re-appoints with bounds it has actually reviewed. Converting the corridor
-// automatically would invent bounds no proposal ever contained.
+// TestRebaseStrandsConversionMandate checks pool conversion preserves its meaning while approved
+// corridor units remain fixed. A mismatched corridor cannot authorise policy updates.
 func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 	appointment := s.seedLiveConversionMandate()
 
@@ -955,11 +930,8 @@ func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 	s.Require().NoError(err)
 }
 
-// TestMsgUpdateParamsLeavesCapacityAlone pins the reason the conversion dials
-// left Params: a governance params replacement drafted from a stale copy must
-// not be able to revert a committee's emergency retune. The raised spread floor
-// is the case that motivated moving it — a stale copy carrying the launch floor
-// would otherwise undo a committee raise as a side effect of a Tobin change.
+// TestMsgUpdateParamsLeavesCapacityAlone checks that whole-object Params replacement cannot alter
+// committee-delegable conversion policy.
 func (s *KeeperTestSuite) TestMsgUpdateParamsLeavesCapacityAlone() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	resized := types.DefaultConversionPolicy()
@@ -1063,11 +1035,8 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxAppliesAndUnwinds() {
 	requireStored(types.DefaultTobinTax)
 }
 
-// TestCommitteeSetTobinTaxReachesGovernanceOverride pins the consequence of the
-// floor being the default: the two writers share one override map and the chain
-// cannot tell whose entry it is reading, so a committee inside its band may
-// lower a sparse override governance set above the default. Restoring it is a
-// proposal, and the cap still binds absolutely.
+// TestCommitteeSetTobinTaxReachesGovernanceOverride checks committee authority over the shared
+// override map within its governance-set band, including lowering a governance-written override.
 func (s *KeeperTestSuite) TestCommitteeSetTobinTaxReachesGovernanceOverride() {
 	appointment := s.seedLiveTobinMandate(tobinCapForTest())
 

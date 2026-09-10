@@ -14,15 +14,8 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// The block's conversion accumulators. Each key holds a running total that the
-// EndBlocker reads once and hands to Treasury; the transient store resets with
-// the block, so nothing here is ever cleared by hand and an absent key is
-// simply a block that has not seen that kind of conversion yet.
-//
-// Every total is already in NOAH, and holds only what settlement decides. The
-// supply behind a redemption is absent because settlement divides by what was
-// redeemed and credits what was minted, and no denomination answers either
-// question.
+// Transient NOAH totals accumulate expansion and redemption facts for EndBlock settlement. The
+// store resets each block; an absent key means no contribution of that kind.
 var (
 	eligiblePrincipalKey = []byte{0x01}
 	redemptionOutputKey  = []byte{0x02}
@@ -30,30 +23,17 @@ var (
 	grossOfferKey        = []byte{0x04}
 )
 
-// recordExpansion books one expansion: the gross NOAH offer the waterfall
-// places (D6), and the NOAH value of the stable supply it minted, which is
-// what liability grew by and what the flow indicator reads.
-//
-// Preconditions the swap path has already established, and this does not
-// restate: the offer is NOAH because settleSwap's branch tested it, the offer is
-// a valid positive coin because quoteSwap refused anything else, and the output
-// is a valid positive coin because applySpread refuses a quote that truncates to
-// nothing.
-//
-// The valuation happens here, at the rate this conversion quoted, so the
-// truncation lands once per conversion exactly as per-conversion settlement
-// produced it.
+// recordExpansion accumulates gross NOAH offered and the quoted NOAH value of minted stable supply.
+// The swap path guarantees valid positive coins and a NOAH offer; valuation truncates once per
+// conversion.
 func (k Keeper) recordExpansion(ctx context.Context, offer sdk.Coin, output sdk.Coin, rates oracletypes.RateSet) error {
 	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(output), chain.NoahBaseDenom)
 	if err != nil {
 		return fmt.Errorf("valuing stable output: %w", err)
 	}
 	eligible := converted.Amount.TruncateInt()
-	// The bound no caller can have established, because it is a fact about the
-	// rate rather than about the coins: an output worth more than the offer that
-	// bought it would record principal the conversion never took custody of. It
-	// is refused before anything is recorded, so a bad quote fails its own
-	// transaction.
+	// Reject minted value above custody received before recording totals, so a bad quote fails its
+	// transaction rather than block settlement.
 	if eligible.GT(offer.Amount) {
 		return fmt.Errorf(
 			"stable output value %s exceeds gross offer %s",
@@ -71,20 +51,9 @@ func (k Keeper) recordExpansion(ctx context.Context, offer sdk.Coin, output sdk.
 	return nil
 }
 
-// recordRedemption accumulates one redemption: the NOAH value of the stable
-// supply it burned, and the NOAH it minted against that value.
-//
-// Both redemption paths arrive here already valued, because settlement asks the
-// same two questions of each and only the rate behind the value differs — a
-// quoted redemption carries the oracle set's, a settled one the redemption
-// plan's own committed rate, which never appears in the oracle set at all. That
-// difference stays with the caller holding the rate, which is why nothing here
-// takes a rate set: a total that merely sums what its callers decided has no
-// business re-deciding it.
-//
-// The bound between the two is checked here rather than at settlement so a
-// conversion that minted more than it retired fails its own transaction. It is
-// what ultimately keeps the coverage draw inside the Buffer.
+// recordRedemption accumulates burned liability value and NOAH minted. Callers value ordinary and
+// settlement redemptions at their respective rates. Rejecting mint above retired value here bounds
+// the later coverage draw.
 func (k Keeper) recordRedemption(ctx context.Context, redeemedValue math.LegacyDec, output math.Int) error {
 	if math.LegacyNewDecFromInt(output).GT(redeemedValue) {
 		return fmt.Errorf("NOAH output %s exceeds redeemed liability %s", output, redeemedValue)
@@ -127,11 +96,8 @@ func (k Keeper) conversionTotals(ctx context.Context) (types.ConversionTotals, e
 	}, nil
 }
 
-// addInt folds a delta into a running integer total. The addition is checked
-// rather than trusted to fit: every input is bounded by a conversion Market
-// already settled, but the sum over a block has no such bound of its own, and
-// an overflow discovered here fails the transaction that caused it instead of
-// the block that has to settle it.
+// addInt checks running-total addition so overflow fails the contributing transaction, before
+// EndBlock consumes the total. Individual conversion bounds do not bound the whole block sum.
 func (k Keeper) addInt(ctx context.Context, key []byte, delta math.Int) error {
 	current, err := k.readInt(ctx, key)
 	if err != nil {

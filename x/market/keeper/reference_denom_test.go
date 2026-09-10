@@ -73,11 +73,8 @@ func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 }
 
 func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
-	// The handed set never carries a staleness or internal-lookup error the way
-	// the old GetRateSet call could: x/asset decides freshness when it captures
-	// the pair. What the new contract can produce is a missing rate — Convert
-	// reports ErrUnknownDenom, which Market maps to ErrNoEffectivePrice — and an
-	// internal conversion failure, which must pass through unmapped.
+	// Asset captures freshness in the supplied rate set. Missing rates map ErrUnknownDenom to
+	// ErrNoEffectivePrice; internal conversion errors propagate unchanged.
 	tests := []struct {
 		name       string
 		from       string

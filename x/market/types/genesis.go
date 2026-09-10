@@ -26,12 +26,8 @@ func NewGenesisState(
 	}
 }
 
-// DefaultGenesisState returns raw genesis raw message for testing.
-//
-// The launch set carries no override. Terra's factoring seeded one for MNT at
-// eight times the default, an illiquidity premium; every asset Ark launches
-// with is a top-15 currency, so the default rate covers all of them and the
-// override map stays a governance tool rather than a launch value.
+// DefaultGenesisState returns the default Market state with no per-denomination Tobin overrides.
+// All assets inherit the default until an override is set.
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{
 		ArkPoolDelta:      math.LegacyZeroDec(),
@@ -63,17 +59,9 @@ func (gs GenesisState) Validate() error {
 	if err := gs.ConversionMandate.Validate(); err != nil {
 		return err
 	}
-	// The corridor is deliberately not required to share the pool's
-	// denomination. A reference re-point rebases the pool and leaves the bounds
-	// in the unit governance appointed them in, so a chain exported between that
-	// re-point and the next re-appointment carries exactly this mismatch — and a
-	// chain must be able to start from its own export. Requiring the two to
-	// agree here would assert the one invariant the rebase is designed to break.
-	//
-	// Nothing is lost by accepting it: ValidatePolicy refuses every candidate
-	// while the units disagree, so a stranded corridor authorises nothing until
-	// governance re-appoints. Genesis already admits the other shape of
-	// un-actable mandate — one whose window has closed — for the same reason.
+	// Genesis permits corridor/pool denomination mismatch because reference rebasing creates that
+	// reachable state. Policy updates remain unauthorised until units match again; expiry likewise
+	// does not make an export invalid.
 
 	// Overrides are a sparse map in storage, so genesis carries them in
 	// deterministic order: sorted by unique denomination.

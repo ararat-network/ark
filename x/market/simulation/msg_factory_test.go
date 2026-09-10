@@ -88,12 +88,8 @@ func TestGovernanceFactoriesSkipWithoutGovAccount(t *testing.T) {
 	})
 }
 
-// TestSwapFactoriesEmitQuotablePairs is the regression guard the swap half
-// needs most. Every failure path in these factories is a silent skip, so a
-// factory that stopped producing messages would leave a simulation reporting
-// success over an empty run. It also pins the pair shape: randomDenomPairX
-// routes through NOAH in one direction or the other, never NOAH to NOAH, which
-// quoteSwap refuses as recursive.
+// TestSwapFactoriesEmitQuotablePairs checks factories emit usable NOAH pairs instead of silently
+// skipping all draws. Recursive NOAH-to-NOAH pairs are excluded.
 func TestSwapFactoriesEmitQuotablePairs(t *testing.T) {
 	t.Run("swap", func(t *testing.T) {
 		for seed := int64(0); seed < factorySeeds; seed++ {

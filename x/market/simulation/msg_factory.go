@@ -129,13 +129,8 @@ func MsgUpdatePolicyFactory() simsx.SimMsgFactoryFn[*types.MsgUpdatePolicy] {
 	}
 }
 
-// randomDenomPairX picks a random offer/ask denom pair from available exchange rates.
-// quotable skips the operation unless the chain would price this swap now. The
-// registry says a denomination is priceable; it does not say the Oracle holds a
-// rate fresh enough to price it this block. A simulation casts no vote
-// extensions, so its genesis rates never refresh and every one of them ages out
-// of a run long enough to reach the staleness window — past which a generated
-// swap only ever fails.
+// randomDenomPairX draws available rate pairs; quotable rejects swaps the live chain cannot price.
+// Simulation emits no vote extensions, so genesis rates eventually expire and swaps then skip.
 func quotable(
 	ctx context.Context,
 	querier types.QueryServer,

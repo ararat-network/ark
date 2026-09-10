@@ -355,14 +355,8 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 	}
 }
 
-// TestMsgSwapExpansionFeeReconcilesWithRecordedResidual pins that the fee the
-// trader is told about and the residual settlement places are the same money.
-// The quote applies the spread to the frictionless gross, so the offer less the
-// NOAH value of the output equals the fee's NOAH value to within the one base
-// unit eligible principal truncates. A quote that priced its output from the
-// pool directly would leave conservation intact and silently understate the
-// disclosed fee, which is what this catches. The rate is deliberately not one,
-// so every conversion between the two denominations rounds.
+// TestMsgSwapExpansionFeeReconcilesWithRecordedResidual checks disclosed fee equals offer minus
+// minted value within one base unit of truncation. A non-unit rate exercises denomination rounding.
 func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual() {
 	capacity := types.DefaultConversionPolicy()
 	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
@@ -668,10 +662,8 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	consensusAuthority := authtypes.NewModuleAddress("consensus").String()
 
-	// Every case starts from the default params and bends one field, so the
-	// submitted message is always valid apart from the thing under test — the
-	// default Tobin rate included, since an unset one now fails validation on its
-	// own.
+	// Each case mutates default params so only the field under test is invalid. The default Tobin
+	// rate keeps the independent rate validation satisfied.
 	tests := []struct {
 		name        string
 		setup       func()
