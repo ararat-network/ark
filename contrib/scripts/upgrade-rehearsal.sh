@@ -49,7 +49,7 @@ trap cleanup EXIT INT TERM
 # is serving.
 build_arkd() {
   go build -trimpath -o "$1" \
-    -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$(git describe --tags --always --dirty) \
+    -ldflags "-X github.com/cosmos/cosmos-sdk/version.Version=$(git describe --tags --match 'v[0-9]*' --always --dirty) \
       -X github.com/cosmos/cosmos-sdk/version.Commit=$(git rev-parse HEAD)" \
     ./cmd/arkd
 }

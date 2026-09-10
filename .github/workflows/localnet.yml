@@ -28,7 +28,8 @@ jobs:
       - name: Version stamps
         id: stamps
         run: |
-          echo "version=$(git describe --tags --always --dirty)" >> "$GITHUB_OUTPUT"
+          echo "version=$(git describe --tags --match 'v[0-9]*' --always --dirty)" >> "$GITHUB_OUTPUT"
+          echo "pricefeed_version=$(git describe --tags --match 'pricefeed/v[0-9]*' --always --dirty | sed 's|^pricefeed/||')" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -42,6 +43,7 @@ jobs:
           tags: ark/arkd
           build-args: |
             VERSION=${{ steps.stamps.outputs.version }}
+            PRICEFEED_VERSION=${{ steps.stamps.outputs.pricefeed_version }}
             COMMIT=${{ steps.stamps.outputs.commit }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

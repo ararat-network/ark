@@ -29,15 +29,15 @@ RUN go mod download
 
 COPY . .
 ARG VERSION
+ARG PRICEFEED_VERSION
 ARG COMMIT
-# Same tags and link flags as the release builds in .goreleaser.yml.
+# Same tags and link flags as the release builds in .goreleaser.yml and
+# .goreleaser.pricefeed.yml.
 RUN BUILD_TAGS=netgo,ledger,muslc \
     LDFLAGS='-w -s -linkmode=external -extldflags "-Wl,-z,muslsymversions -static"' \
     make build VERSION="${VERSION}" COMMIT="${COMMIT}"
 RUN file build/arkd | grep -q "statically linked"
-RUN CGO_ENABLED=0 go build -trimpath -mod=readonly -tags netgo \
-    -ldflags "-w -s -X github.com/cosmos/cosmos-sdk/version.Version=${VERSION} -X github.com/cosmos/cosmos-sdk/version.Commit=${COMMIT}" \
-    -o build/pricefeed ./cmd/pricefeed
+RUN LDFLAGS='-w -s' make build-pricefeed PRICEFEED_VERSION="${PRICEFEED_VERSION}" COMMIT="${COMMIT}"
 
 FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce
 RUN apk add --no-cache ca-certificates curl jq \
@@ -46,7 +46,8 @@ RUN apk add --no-cache ca-certificates curl jq \
 COPY --from=builder /work/build/arkd /work/build/pricefeed /usr/local/bin/
 COPY --chmod=755 contrib/images/arkd-env/wrapper.sh /usr/local/bin/wrapper.sh
 
-# Pins the SDK config-registry key; see README "Recommended node environment".
+# Pins the SDK config-registry key; see docs/operations/NODE_OPERATIONS.md
+# "Configuration and process environment".
 ENV COSMOS_SDK_CONFIG_SCOPE=arkd
 EXPOSE 26656 26657 1317 9090 9464 8080
 STOPSIGNAL SIGTERM

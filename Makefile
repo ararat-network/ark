@@ -24,6 +24,7 @@ BUILD_FLAGS := -tags "$(BUILD_TAGS)" -mod=readonly -trimpath -ldflags '$(strip $
 
 pricefeedLdflags = -X github.com/cosmos/cosmos-sdk/version.Version=$(PRICEFEED_VERSION) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
+pricefeedLdflags += $(LDFLAGS)
 
 build:
 	@go build $(BUILD_FLAGS) -o build/arkd ./cmd/arkd
