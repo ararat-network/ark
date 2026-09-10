@@ -77,6 +77,23 @@
 // and write it down. The shape authorises nothing, and a zeroed one is a
 // committee whose backing could not be established rather than one refused.
 //
+// # Account backing and dispatch
+//
+// Authorisation checks the message's committee signer field, never its key
+// shape. Direct transactions authenticate that field in ante; authz dispatch
+// derives the granter from the message signer and checks its grant; Wasmd
+// requires the dispatched signer to be the calling contract. Each path still
+// reaches the same module-owned term and window checks. Membership, weights,
+// and tallies therefore need no native committee module: the mandate is the
+// charter, while account backing and staff delegation have separate lifecycles.
+//
+// Shape records what was provable at appointment, not a continuously observed
+// organisation chart. A simple-key multisig address commits to its threshold
+// and members. A contract address does not commit to an immutable signing rule:
+// migration or membership changes may alter it. A keyless shape makes no claim
+// about contract membership, and must not be extended to record a mutable
+// threshold as though it were fixed for the term.
+//
 // # Replacing
 //
 // Replacement advances the term, which is what makes term-scoped usage
