@@ -1,5 +1,6 @@
 // Package grpcconn prepares the price feed's gRPC client transport, owns shared
-// connection cleanup, and checks endpoint locality for the local-mode policy.
+// connection cleanup, checks endpoint locality for the local-mode policy, and
+// validates the addresses its processes listen on.
 package grpcconn
 
 import (
@@ -135,4 +136,31 @@ func RemotePlaintext(c tlsconfig.Client, targets ...string) []string {
 		}
 	}
 	return remote
+}
+
+// ListenAddress checks address is a host:port pair a listener can bind and
+// returns its parts.
+func ListenAddress(address string) (string, string, error) {
+	host, port, err := net.SplitHostPort(strings.TrimSpace(address))
+	if err != nil {
+		return "", "", err
+	}
+	if _, err := net.LookupPort("tcp", port); err != nil {
+		return "", "", err
+	}
+	return host, port, nil
+}
+
+// LoopbackListenAddress is ListenAddress for an endpoint that must stay on
+// the host. It wants a loopback IP literal: Loopback judges what a client
+// dials, but a listener binds whatever a name resolves to.
+func LoopbackListenAddress(address string) (string, string, error) {
+	host, port, err := ListenAddress(address)
+	if err != nil {
+		return "", "", err
+	}
+	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
+		return "", "", fmt.Errorf("host %q must be a loopback IP address", host)
+	}
+	return host, port, nil
 }

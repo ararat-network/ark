@@ -131,3 +131,55 @@ func TestValidateTargets(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) { require.Equal(t, tc.bad, grpcconn.ValidateTargets(tc.mode, tc.targets...) != nil) })
 	}
 }
+
+func TestListenAddress(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		address  string
+		wantHost string
+		wantPort string
+		wantErr  string
+	}{
+		{name: "loopback", address: "127.0.0.1:9091", wantHost: "127.0.0.1", wantPort: "9091"},
+		{name: "wildcard", address: ":9091", wantPort: "9091"},
+		{name: "trimmed bracketed ipv6", address: " [::1]:0 ", wantHost: "::1", wantPort: "0"},
+		{name: "no port", address: "127.0.0.1", wantErr: "missing port"},
+		{name: "port out of range", address: "127.0.0.1:70000", wantErr: "invalid port"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			host, port, err := grpcconn.ListenAddress(tc.address)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.wantHost, host)
+			require.Equal(t, tc.wantPort, port)
+		})
+	}
+}
+
+func TestLoopbackListenAddress(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		address string
+		wantErr string
+	}{
+		{name: "ipv4 loopback", address: "127.0.0.1:6060"},
+		{name: "ipv6 loopback", address: "[::1]:6060"},
+		{name: "wildcard", address: "0.0.0.0:6060", wantErr: `host "0.0.0.0" must be a loopback IP address`},
+		{name: "public address", address: "10.0.0.5:6060", wantErr: "must be a loopback"},
+		{name: "host name", address: "localhost:6060", wantErr: "must be a loopback"},
+		{name: "empty host", address: ":6060", wantErr: "must be a loopback"},
+		{name: "no port", address: "127.0.0.1", wantErr: "missing port"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, err := grpcconn.LoopbackListenAddress(tc.address)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
