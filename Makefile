@@ -120,14 +120,18 @@ test-sim-benchmark:
 ###                                Linting                                  ###
 ###############################################################################
 
+# tests/e2e is its own module, so ./... at the root never reaches it.
 lint:
 	@golangci-lint run ./...
+	@cd tests/e2e && golangci-lint run ./...
 
 lint-fix:
 	@golangci-lint run ./... --fix
+	@cd tests/e2e && golangci-lint run ./... --fix
 
 format:
 	@golangci-lint fmt
+	@cd tests/e2e && golangci-lint fmt
 
 ###############################################################################
 ###                                Security                                 ###
