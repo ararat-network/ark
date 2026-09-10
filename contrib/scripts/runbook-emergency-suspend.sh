@@ -1,13 +1,6 @@
 #!/bin/sh
-# Drives docs/EMERGENCY_SUBMISSION_RUNBOOK.md against the Compose localnet and
-# asserts its rehearsal checklist: offline 3-of-4 multisig ceremony, dry-run
-# and broadcast through the dark carrier, no leak to public mempools,
-# top-of-block inclusion in a carrier-proposed block with
-# EventEmergencySuspended, sub-floor fee rejected at CheckTx.
-#
-# Runs inside ark/arkd on the localnet network via `make localnet-runbook`.
-# Each term allows one suspension per asset, so a rerun picks the next
-# ACTIVE asset unless DENOM is set.
+# Rehearse offline multisig emergency submission through the localnet carrier, checking fee refusal,
+# privacy, and inclusion. Each rerun needs an unused active asset for the term; see README.md.
 set -eu
 
 DATA=${DATA:-/data}
@@ -104,11 +97,8 @@ ceremony "$fees" "$WORK/signed.json"
 echo "assembled $WORK/signed.json"
 
 step "preflight against the carrier"
-# Not the runbook's `--dry-run`: that mode cannot open the keyring, so the
-# client simulates with a single-key placeholder that the chain rejects once
-# the committee account carries its multisig key. `tx simulate --gas auto`
-# is the form that reads the multisig key and builds a K-signature
-# placeholder. Simulation runs through the carrier's RPC and leaks nothing.
+# Use tx simulate --gas auto to load the multisig key and construct its K-signature placeholder.
+# --dry-run cannot access the keyring. Simulation stays on the private carrier RPC.
 estimate=$(arkd tx simulate "$WORK/unsigned.json" --from committee --gas auto \
   --chain-id "$CHAIN_ID" --node "$CARRIER_RPC" $KEYRING --output json 2>/dev/null \
   | jq -r '.gas_info.gas_used // empty')

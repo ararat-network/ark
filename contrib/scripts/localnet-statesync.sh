@@ -1,11 +1,6 @@
 #!/bin/sh
-# Polls the state-sync client until it has caught up, or fails after
-# ITERATIONS polls. Catching up alone proves too little: a node that replayed
-# the chain from genesis also reports caught up. The proof that state sync ran
-# is an earliest block above the first, which only a snapshot restore leaves
-# behind.
-#
-#   contrib/scripts/localnet-statesync.sh <iterations> <sleep-seconds> <rpc-url>
+# Require catch-up plus an earliest block above genesis, proving snapshot restore rather than
+# replay. Usage and poll arguments: see README.md.
 set -u
 
 if [ "$#" -ne 3 ]; then

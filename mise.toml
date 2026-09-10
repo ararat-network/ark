@@ -1,23 +1,11 @@
-# The single declaration of the toolchain this repository is built, linted,
-# and scanned with. CI installs from this file via jdx/mise-action, so a
-# shell and a workflow run the same binaries.
-#
-# go is also declared in go.mod, where the directive is the module's minimum
-# rather than a pin; keep the two in step. Workflows that need only Go read
-# go.mod directly.
-#
-# golangci-lint and govulncheck are pinned because both are compiled against
-# a specific Go, and one built against an older major panics parsing newer
-# sources. Both of these are built with go1.27.
+# Pin the shared local/CI toolchain here and keep Go aligned with go.mod. Scanners must support that
+# Go version; Go-only workflows read go.mod directly.
 [tools]
 go = "1.27.1"
 golangci-lint = "2.13.2"
 # goreleaser reads one tag per run and its tag handling has shifted between
 # minors, so `make release-pricefeed` is pinned to what it was written against.
 goreleaser = "2.18.0"
-# The registry entry, aqua:golang/vuln/govulncheck, is a go_install package
-# that mise's aqua backend cannot install -- it errors and points here. That
-# suits this tool anyway: building from source compiles it against the Go
-# pinned above, and a scanner built against an older major cannot parse
-# newer sources.
+# Install govulncheck from source with the pinned Go toolchain so it can parse this module's
+# sources. The aqua entry delegates installation to the Go backend.
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.7.0"

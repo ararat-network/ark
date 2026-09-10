@@ -1,8 +1,5 @@
-# Four validators, each paired with its own price-feed sidecar. Homes come
-# from `make localnet-init`, which connects the public validator mesh through
-# a dedicated sentry to the carrier on its separate network.
-# node1..3 and their sidecars carry the "multi" profile: without it only node0
-# starts, which is the single-validator shape `VALIDATORS=1` generates.
+# Each validator has a sidecar; make localnet-init prepares homes and the sentry/carrier mesh. The
+# multi profile adds node1..3; without it, node0 matches VALIDATORS=1.
 name: ark-localnet
 
 x-arkd: &arkd

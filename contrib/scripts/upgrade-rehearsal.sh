@@ -1,19 +1,6 @@
 #!/bin/sh
-# Rehearses a coordinated upgrade the way a validator runs one: a single-node
-# chain on the old binary under cosmovisor, a software-upgrade proposal that
-# passes, the halt at the upgrade height, and cosmovisor switching to the new
-# binary, which must register the plan in app/upgrades.go.
-#
-# Environment:
-#   UPGRADE_NAME   plan name; defaults to the newest app/upgrade/v* package
-#   OLD_REF        git ref the old binary is built from; defaults to the
-#                  latest release tag, or HEAD before the first release
-#   OLD_BINARY     use this arkd as the old binary instead of building one
-#   NEW_BINARY     use this arkd as the new binary instead of the working tree
-#   UPGRADE_DELAY  blocks between the proposal and the upgrade height (default 50)
-#   WORK           scratch directory (default build/upgrade-rehearsal)
-#
-# Homes, binaries, and the node log stay under WORK for inspection.
+# Run an old-binary chain under cosmovisor through a governance upgrade to the registered new plan.
+# Configuration, environment variables, and scratch outputs are documented in README.md.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -100,14 +87,9 @@ export COSMOS_SDK_CONFIG_SCOPE=arkd
 HOME_DIR=$WORK/testnet/node0/arkd
 GENESIS=$HOME_DIR/config/genesis.json
 
-# Short voting so the proposal passes well before the upgrade height, vote
-# extensions on as in production, and noop telemetry for old refs that still
-# write the Prometheus pull config the SDK cannot start.
-#
-# The base-fee gate accepts a denomination only once Treasury holds a
-# conversion factor for it, and NOAH's derives from the oracle's reference
-# rate, which this sidecar-less node never sees. The default genesis now
-# seeds NOAH's factor; the unit factor here covers old refs that predate it.
+# Use short voting, enabled vote extensions, and noop telemetry for the sidecar-free rehearsal.
+# Supply a NOAH fee factor for any input genesis lacking one; the chain cannot derive it without
+# live reference prices.
 jq '.app_state.gov.params.voting_period = "20s"
   | .app_state.gov.params.expedited_voting_period = "10s"
   | .consensus.params.abci.vote_extensions_enable_height = "1"

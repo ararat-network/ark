@@ -1,12 +1,5 @@
-# End-to-end suites: the built arkd image on a real network under
-# interchaintest, driven through its CLI, REST, and RPC, with Hermes between
-# two chains. tests/e2e is its own module, so `go test ./...` at the root
-# never sees it; the vet job keeps it compiling on every change and the
-# suites run per pull request, one job per package.
-#
-# Nightly, the suites start on the latest release image and upgrade to the
-# working tree first, so a release-to-release migration is rehearsed against
-# every module's behaviour rather than only the applied-plan query.
+# Run real-network e2e packages from their separate Go module. Pull requests test the working image;
+# nightly runs upgrade from the latest release first. See tests/e2e/README.md.
 name: E2E
 
 on:

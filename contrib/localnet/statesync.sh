@@ -1,9 +1,6 @@
 #!/bin/sh
-# Entrypoint for sync0, the "statesync" profile's non-validator. It builds a
-# fresh home from the localnet genesis, waits for node0 to have committed a
-# snapshot height, takes its trust anchor from node0's RPC, and starts with
-# state sync on. CometBFT only state-syncs an empty store, so restarting a
-# synced node just continues from its own state.
+# Start sync0 from localnet genesis using node0's committed snapshot trust anchor. Existing stores
+# resume normally; CometBFT state sync requires an empty store. See README.md.
 set -eu
 
 DATA=${DATA:-/data}

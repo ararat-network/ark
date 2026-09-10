@@ -129,3 +129,15 @@ collections patterns, and testing conventions. Start verification with the affec
 images, localnet, probes, and rehearsals. Documentation follows the
 [placement rule](docs/README.md#documentation-placement-rule): one authoritative home per subject, linked from
 everywhere else.
+
+## Release builds
+
+The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
+[Chain configuration](.goreleaser.yml) builds static Linux binaries inside a musl container with
+`x86_64-linux-musl-gcc`, `aarch64-linux-musl-gcc`, and matching `libwasmvm_muslc.<arch>.a` libraries for the wasmvm
+version in go.mod. Set `GORELEASER_CURRENT_TAG` to the chain tag on HEAD so a sidecar tag on the same commit cannot be
+selected. macOS uses source builds.
+
+`make release-pricefeed` checks a clean tree and the sidecar tag on HEAD, selects it explicitly, then skips GoReleaser's
+bare-semver validation. The [sidecar configuration](.goreleaser.pricefeed.yml) derives version strings from `.Tag` and
+cross-compiles without cgo. Neither release command is part of ordinary verification.

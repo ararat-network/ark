@@ -1,10 +1,6 @@
 #!/bin/sh
-# Polls one node until it has passed NUM_BLOCKS and the oracle holds at least
-# one exchange rate, or fails after ITERATIONS polls. Height alone proves too
-# little: a validator whose sidecar is down votes empty extensions and the
-# chain stays live with no rates.
-#
-#   contrib/scripts/localnet-liveness.sh <iterations> <sleep-seconds> <num-blocks> <rpc-url> <api-url>
+# Require progress beyond NUM_BLOCKS and at least one Oracle rate within ITERATIONS polls. Height
+# alone permits empty vote extensions. Usage: see README.md.
 set -u
 
 if [ "$#" -ne 5 ]; then

@@ -2,21 +2,9 @@ version: 2
 
 project_name: arkd
 
-# arkd links libwasmvm through cgo, so it is released as a static musl
-# binary and only for linux — the wasmd/Osmosis pattern. This config must
-# run inside a musl container that provides x86_64-linux-musl-gcc,
-# aarch64-linux-musl-gcc, and the libwasmvm_muslc.<arch>.a static
-# libraries for the wasmvm version in go.mod, staged where the linker
-# finds them. macOS developers build from source with `make install`.
-#
-# CI may export CMT_VERSION (go list -m github.com/cometbft/cometbft)
-# to stamp the CometBFT version the way `make build` does.
-#
-# This config releases arkd alone, from vX.Y.Z tags. The price-feed sidecar
-# releases separately from pricefeed/vX.Y.Z tags through
-# .goreleaser.pricefeed.yml. Run this one with GORELEASER_CURRENT_TAG set to
-# the vX.Y.Z tag on HEAD, so a sidecar tag on the same commit is never the
-# one goreleaser picks.
+# Release arkd from vX.Y.Z inside a musl container with matching wasmvm static libraries.
+# GORELEASER_CURRENT_TAG selects the chain tag explicitly; sidecar releases use their own config.
+# See README.md, "Release builds".
 
 release:
   name_template: "{{ .Tag }}"

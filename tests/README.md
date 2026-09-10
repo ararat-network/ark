@@ -58,3 +58,13 @@ Apply keeper writes through `NewNextBlockContext` before driving `FinalizeBlock`
 flushes the finalise branch inside `FinalizeBlock`; a keeper write after that call can be discarded and can make a
 fixture imply state was visible earlier than it was on chain. Height-sensitive query assertions should call a query
 server with the intended context; `baseapp.NewQueryServerTestHelper` captures its context at construction.
+
+## Static analysis boundaries
+
+CodeQL includes divide-by-zero and Cosmos SDK-specific consensus checks alongside the standard Go suite. Its query
+references are pinned and kept aligned with the CLI shipped by the action. Generated Go remains in extraction and
+call/dataflow analysis, but the action filters alerts anchored in generated files. A local CLI run does not reproduce
+those action-side path filters; compare findings with that distinction in mind, not against a fixed historical count.
+
+govulncheck reports reachable vulnerable calls. It uses the pinned toolchain and runs outside the merge gate because
+some findings have no upstream fix; findings still require review.

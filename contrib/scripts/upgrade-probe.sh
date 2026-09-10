@@ -1,12 +1,6 @@
 #!/bin/sh
-# Polls one node through a coordinated upgrade. Passes once the chain reports
-# the plan as applied and has committed blocks beyond it; fails if the chain
-# sails past the upgrade height without applying it, or when the polls run
-# out. The applied-plan query is the signal rather than the version string,
-# because rehearsing uncommitted work builds old and new from the same
-# `git describe` output.
-#
-#   contrib/scripts/upgrade-probe.sh <iterations> <sleep-seconds> <upgrade-height> <plan-name> <rpc-url> <api-url>
+# Require the plan to be applied and blocks to advance beyond its height. Applied-plan state
+# distinguishes binaries with identical version strings. Poll arguments: see README.md.
 set -u
 
 if [ "$#" -ne 6 ]; then

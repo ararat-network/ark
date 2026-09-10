@@ -1,14 +1,5 @@
-# Coordinated upgrade rehearsal: a single-node chain on the old binary under
-# cosmovisor, a software-upgrade proposal that passes, the halt at the upgrade
-# height, and cosmovisor switching to the new binary.
-#
-# The rehearsal needs a plan to rehearse. Until the first app/upgrade/v* package
-# lands there is none, and the job reports that rather than failing: the point
-# of adding it now is that the cosmovisor path starts being exercised on the
-# commit that introduces an upgrade, not on the one that remembers to wire CI.
-#
-# Nightly rather than per pull request: it builds two binaries and drives fifty
-# blocks through a real gov vote, which is minutes of wall clock.
+# Nightly cosmovisor rehearsal builds old/new binaries and runs a governance upgrade. Without a
+# registered app/upgrade/v* package, it reports no plan to rehearse. See contrib/scripts/README.md.
 name: Upgrade
 
 on:

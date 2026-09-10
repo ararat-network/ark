@@ -43,11 +43,8 @@ clean:
 ###                                Release                                 ###
 ###############################################################################
 
-# The sidecar releases from the pricefeed/vX.Y.Z tag on HEAD. goreleaser
-# reads one tag per run and cannot parse the prefix as semver, so the target
-# names the tag and skips goreleaser's validation after doing that
-# validation itself: a tag on HEAD and a clean tree. arkd's own release runs
-# .goreleaser.yml inside the musl container, as its header says.
+# Release the sidecar tag on HEAD after checking the tag and clean tree. Explicit tag selection and
+# validation skip support the pricefeed/vX.Y.Z prefix; see README.md, "Release builds".
 release-pricefeed:
 	@tag=$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null); \
 	test -n "$$tag" || { echo "HEAD carries no pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
@@ -71,11 +68,8 @@ test-cover:
 ###                               End to end                                ###
 ###############################################################################
 
-# tests/e2e is its own module: interchaintest drives the ark/arkd image on a
-# real Docker network. Build the image first (localnet-build-env tags it
-# ark/arkd:latest, the default TEST_IMAGE_NAME and TEST_IMAGE_VERSION). One
-# package at a time: every suite spawns its own chain, and packages in
-# parallel would contend for the Docker host.
+# E2e tests use a separate module and the built ark/arkd image. Run packages serially because each
+# starts a Docker chain; see tests/e2e/README.md.
 E2E_PACKAGES ?= ./...
 # E2E_RUN narrows to one suite, e.g. E2E_RUN=TestTransactions.
 E2E_RUN ?=
@@ -137,13 +131,8 @@ format:
 ###                                Security                                 ###
 ###############################################################################
 
-# govulncheck reports only vulnerabilities on reachable call paths, so its
-# findings are ones this code can actually hit rather than every advisory
-# touching a module in go.mod. It is not a merge gate: some findings have no
-# fixed version upstream, and a permanently red gate stops being read.
-#
-# The binary comes from the pinned toolchain, like golangci-lint above: an
-# unpinned scanner can turn the nightly red on its own release.
+# Run the pinned reachable-call vulnerability scanner. Findings are reviewed outside the merge gate
+# because some lack upstream fixes; see tests/README.md.
 vulncheck:
 	@govulncheck ./...
 

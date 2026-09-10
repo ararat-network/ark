@@ -1,8 +1,5 @@
-# Static analysis. The query selection is deliberately wider than the default:
-# CWE-369 divide-by-zero is pulled in because a division that faults inside a
-# Begin- or EndBlocker halts the chain, and the cosmos-sdk pack carries checks
-# for SDK-specific hazards a generic Go scanner has no concept of, such as
-# non-deterministic map iteration reaching consensus state.
+# Static analysis includes divide-by-zero and Cosmos SDK consensus checks in addition to the default
+# Go suite. See tests/README.md for query selection and generated-file filtering.
 name: CodeQL
 
 on:
@@ -39,11 +36,8 @@ jobs:
         with:
           languages: go
           config-file: ./.github/codeql/config.yml
-          # Every external reference is pinned. Queries are code that runs in
-          # CI, and the cosmos-sdk pack is third-party and last published in
-          # December 2023, so an unpinned reference is a dependency that can
-          # change without a pull request. The query tag tracks the CLI the
-          # action ships; bump both together.
+          # Pin external queries and align the query tag with the action's CLI version. Query code
+          # is part of the CI dependency boundary.
           queries: >-
             +security-and-quality,
             github/codeql/go/ql/src/experimental/CWE-369/DivideByZero.ql@codeql-cli/v2.26.4,
