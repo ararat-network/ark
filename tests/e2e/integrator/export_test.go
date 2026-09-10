@@ -56,18 +56,13 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 	s.Require().Equal(fmt.Sprint(height+1), gjson.Get(exported, "initial_height").String(),
 		"a continuation export starts at the next height")
 
-	// The export must carry the ABCI consensus params: without the vote
-	// extension enable height a relaunch runs with extensions off and the
-	// oracle never prices again. The SDK's export command builds the
-	// consensus block field by field and leaves ABCI out, so this fails until
-	// arkd's export writes it; the relaunch below restores it the way an
-	// operator would have to, so the rest of the relaunch is still checked.
-	s.Assert().Equal("1", gjson.Get(exported, "consensus.params.abci.vote_extensions_enable_height").String(),
+	// The export carries the ABCI consensus params the SDK's own export
+	// drops: without the vote extension enable height a relaunch runs with
+	// extensions off and the oracle never prices again.
+	s.Require().Equal("1", gjson.Get(exported, "consensus.params.abci.vote_extensions_enable_height").String(),
 		"arkd export dropped consensus.params.abci.vote_extensions_enable_height")
 	newChainID := s.Chain.Config().ChainID + "-relaunch"
 	genesis, err := sjson.Set(exported, "chain_id", newChainID)
-	s.Require().NoError(err)
-	genesis, err = sjson.Set(genesis, "consensus.params.abci.vote_extensions_enable_height", "1")
 	s.Require().NoError(err)
 	// The export keeps the original genesis time. The state it carries is
 	// later than that: the oracle refuses a genesis rate stamped after the
@@ -75,7 +70,9 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 	genesis, err = sjson.Set(genesis, "genesis_time", time.Now().UTC().Format(time.RFC3339Nano))
 	s.Require().NoError(err)
 
-	spec := chainsuite.DefaultChainSpec(s.Env)
+	// The relaunch runs the image under test: a nightly upgrade has moved
+	// the chain past the old one, and the export carries that state.
+	spec := chainsuite.ChainSpecAt(s.Env, s.Env.ImageVersion)
 	spec.NumValidators = &chainsuite.FourValidators
 	spec.ChainID = newChainID
 	spec.ModifyGenesis = func(ibc.ChainConfig, []byte) ([]byte, error) {

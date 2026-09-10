@@ -1,7 +1,6 @@
 package delegator_test
 
 import (
-	"fmt"
 	"path"
 	"strconv"
 	"strings"
@@ -211,10 +210,3 @@ func TestTransactions(t *testing.T) {
 	})}}
 	suite.Run(t, s)
 }
-
-// txAmount is the figure the bank tests move, as a coin string.
-func txAmount(noah int64) string {
-	return fmt.Sprintf("%s%s", chainsuite.NOAH(noah), chainsuite.Denom)
-}
-
-var _ = txAmount

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-	"github.com/tidwall/gjson"
 
 	"github.com/ararat-network/ark/tests/e2e/chainsuite"
 )
@@ -17,9 +16,10 @@ type EndpointsSuite struct {
 }
 
 // TestAPIEndpoints is the REST surface integrators read: the SDK routes
-// operators and explorers depend on, and every parameterless route Ark's
-// modules register plus the parameterised ones whose argument exists at
-// genesis.
+// operators and explorers depend on, and every route Ark's modules register
+// whose argument exists at genesis. The settlement plan and the tax cap by
+// denomination are left out: no launch genesis holds an asset in settlement
+// or a tax cap, and both answer not found until one does.
 func (s *EndpointsSuite) TestAPIEndpoints() {
 	wallets := s.Chain.ValidatorWallets
 	tests := []struct {
@@ -61,6 +61,7 @@ func (s *EndpointsSuite) TestAPIEndpoints() {
 
 		{name: "asset_assets", path: "/ark/asset/v1/assets", key: "priced_assets"},
 		{name: "asset_asset", path: "/ark/asset/v1/assets/ausd", key: "priced_asset"},
+		{name: "asset_resolutions", path: "/ark/asset/v1/assets/ausd/resolutions", key: "resolution_records"},
 		{name: "asset_emergency_mandate", path: "/ark/asset/v1/emergency_mandate", key: "mandate"},
 		{name: "asset_params", path: "/ark/asset/v1/params", key: "params"},
 		{name: "claims_balance", path: "/ark/claims/v1/balance", key: "balance"},
@@ -71,12 +72,15 @@ func (s *EndpointsSuite) TestAPIEndpoints() {
 		{name: "market_conversion_policy", path: "/ark/market/v1/conversion_policy", key: "conversion_policy"},
 		{name: "market_params", path: "/ark/market/v1/params", key: "params"},
 		{name: "market_pool", path: "/ark/market/v1/pool", key: "base_pool"},
+		{name: "market_tobin_tax", path: "/ark/market/v1/tobin_tax/ausd", key: "tobin_tax"},
 		{name: "market_tobin_tax_overrides", path: "/ark/market/v1/tobin_tax_overrides", key: "tobin_tax_overrides"},
 		{name: "oracle_exchange_rates", path: "/ark/oracle/v1/denoms/exchange_rates", key: "exchange_rates"},
 		{name: "oracle_feeds", path: "/ark/oracle/v1/feeds", key: "feeds"},
+		{name: "oracle_feed_referents", path: "/ark/oracle/v1/feeds/ausd/referents", key: "referents"},
 		{name: "oracle_params", path: "/ark/oracle/v1/params", key: "params"},
 		{name: "oracle_reference_denom", path: "/ark/oracle/v1/reference_denom", key: "reference_denom"},
 		{name: "oracle_attendance", path: "/ark/oracle/v1/validators/" + wallets[0].ValoperAddress + "/attendance", key: "attendance"},
+		{name: "oracle_reward_weight", path: "/ark/oracle/v1/validators/" + wallets[0].ValoperAddress + "/reward_weight", key: "reward_weight"},
 		{name: "reserve_balance", path: "/ark/reserve/v1/balance", key: "balance"},
 		{name: "reserve_closed_positions", path: "/ark/reserve/v1/closed_positions", key: "positions"},
 		{name: "reserve_ledger", path: "/ark/reserve/v1/ledger", key: "ledger"},
@@ -158,7 +162,6 @@ func (s *EndpointsSuite) TestVoteExtensionsInBlock() {
 	votes, err := s.Chain.VoteExtensions(s.GetContext(), 0)
 	s.Require().NoError(err)
 	s.Require().Len(votes, len(s.Chain.Validators))
-	_ = gjson.Result{}
 }
 
 func TestEndpoints(t *testing.T) {

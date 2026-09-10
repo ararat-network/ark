@@ -29,6 +29,7 @@ import (
 const (
 	cometMetricsPort = "26660"
 	appMetricsPort   = "9464"
+	peersGauge       = "cometbft_p2p_peers"
 )
 
 type ConfigSuite struct {
@@ -116,7 +117,9 @@ func (s *ConfigSuite) TestPeerLimit() {
 	s.Require().NoError(s.enablePrometheus())
 	metrics, err := s.metrics(0, cometMetricsPort)
 	s.Require().NoError(err)
-	s.Require().Equal(float64(3), metrics["cometbft_p2p_peers"].GetMetric()[0].GetGauge().GetValue())
+	count, ok := gauge(metrics, peersGauge)
+	s.Require().True(ok, "validator 0 serves no %s gauge", peersGauge)
+	s.Require().Equal(float64(3), count)
 
 	peers := s.Chain.Nodes().PeerString(s.GetContext())
 	peerList := strings.Split(peers, ",")
@@ -146,21 +149,23 @@ func (s *ConfigSuite) TestPeerLimit() {
 	s.Require().EventuallyWithT(func(c *assert.CollectT) {
 		metrics, err = s.metrics(0, cometMetricsPort)
 		assert.NoError(c, err)
-		assert.Equal(c, float64(2), metrics["cometbft_p2p_peers"].GetMetric()[0].GetGauge().GetValue())
+		count, ok := gauge(metrics, peersGauge)
+		assert.True(c, ok, "validator 0 serves no %s gauge", peersGauge)
+		assert.Equal(c, float64(2), count)
 	}, 3*time.Minute, 10*time.Second)
 
 	foundZero := false
 	for i := 1; i < len(s.Chain.Validators); i++ {
 		metrics, err = s.metrics(i, cometMetricsPort)
 		s.Require().NoError(err)
-		metric := metrics["cometbft_p2p_peers"].GetMetric()
-		if (len(metric) == 0 || metric[0].GetGauge().GetValue() == float64(0)) && !foundZero {
+		count, ok := gauge(metrics, peersGauge)
+		if (!ok || count == 0) && !foundZero {
 			// The one validator 0 refused.
 			foundZero = true
 			continue
 		}
-		s.Require().GreaterOrEqual(len(metric), 1)
-		s.Require().GreaterOrEqual(metric[0].GetGauge().GetValue(), float64(1))
+		s.Require().True(ok, "validator %d serves no %s gauge", i, peersGauge)
+		s.Require().GreaterOrEqual(count, float64(1))
 	}
 }
 
@@ -271,6 +276,16 @@ func (s *ConfigSuite) metrics(nodeIdx int, port string) (map[string]*dto.MetricF
 	}
 	var parser expfmt.TextParser
 	return parser.TextToMetricFamilies(bytes.NewBuffer(stdout))
+}
+
+// gauge is the value of name's first gauge in families, and whether the
+// family carries one.
+func gauge(families map[string]*dto.MetricFamily, name string) (float64, bool) {
+	family, ok := families[name]
+	if !ok || len(family.GetMetric()) == 0 {
+		return 0, false
+	}
+	return family.GetMetric()[0].GetGauge().GetValue(), true
 }
 
 // smokeTestTx is a bank send through validator 0 proving it still serves.
