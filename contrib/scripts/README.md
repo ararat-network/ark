@@ -31,7 +31,7 @@ versioned handler when that tree contains only `template/`.
 | Environment | Meaning |
 | --- | --- |
 | `UPGRADE_NAME` | Registered plan name; otherwise inferred from the newest `app/upgrade/v*` directory. |
-| `OLD_REF` | Git ref used to build the old binary; defaults to HEAD. |
+| `OLD_REF` | Git ref used to build the old binary; defaults to the latest `v*` release tag, or HEAD before the first release. |
 | `OLD_BINARY`, `NEW_BINARY` | Supply binaries instead of building the corresponding version. |
 | `UPGRADE_DELAY` | Blocks from proposal to scheduled upgrade. |
 | `WORK` | Scratch homes, binaries and logs; defaults to `build/upgrade-rehearsal`. Use a disposable path. |

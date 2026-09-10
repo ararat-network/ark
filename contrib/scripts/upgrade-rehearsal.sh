@@ -6,7 +6,8 @@
 #
 # Environment:
 #   UPGRADE_NAME   plan name; defaults to the newest app/upgrade/v* package
-#   OLD_REF        git ref the old binary is built from (default HEAD)
+#   OLD_REF        git ref the old binary is built from; defaults to the
+#                  latest release tag, or HEAD before the first release
 #   OLD_BINARY     use this arkd as the old binary instead of building one
 #   NEW_BINARY     use this arkd as the new binary instead of the working tree
 #   UPGRADE_DELAY  blocks between the proposal and the upgrade height (default 50)
@@ -19,7 +20,10 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$ROOT"
 
 WORK=${WORK:-$ROOT/build/upgrade-rehearsal}
-OLD_REF=${OLD_REF:-HEAD}
+# The old binary is the last release when there is one: that is the binary
+# validators run, and a rehearsal from HEAD would only ever migrate state HEAD
+# itself wrote. Before the first release there is nothing but HEAD.
+OLD_REF=${OLD_REF:-$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || echo HEAD)}
 UPGRADE_DELAY=${UPGRADE_DELAY:-50}
 COSMOVISOR_VERSION=${COSMOVISOR_VERSION:-v1.7.3}
 CHAIN_ID=ark-rehearsal
