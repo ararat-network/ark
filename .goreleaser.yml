@@ -2,57 +2,32 @@ version: 2
 
 project_name: arkd
 
-# Release arkd from vX.Y.Z inside a musl container with matching wasmvm static libraries.
-# GORELEASER_CURRENT_TAG selects the chain tag explicitly; sidecar releases use their own config.
-# See README.md, "Release builds".
+# Release arkd from vX.Y.Z through make release, inside a musl container that provides the cross
+# toolchains and both wasmvm static archives; the before hook holds the archives to the version and
+# digests recorded in contrib/images/arkd-env/Dockerfile. See README.md, "Release builds".
 
 release:
   name_template: "{{ .Tag }}"
+  prerelease: auto
 
 before:
   hooks:
     - go mod verify
+    - contrib/scripts/check-wasmvm-libs.sh
 
 builds:
-  - id: arkd-amd64
+  - id: arkd
     main: ./cmd/arkd
     binary: arkd
     goos:
       - linux
     goarch:
       - amd64
-    env:
-      - CGO_ENABLED=1
-      - CC=x86_64-linux-musl-gcc
-    flags:
-      - -trimpath
-      - -mod=readonly
-    tags:
-      - netgo
-      - ledger
-      - muslc
-    ldflags:
-      # version.Name and version.AppName are chain identity, set in
-      # app/config.go rather than stamped here.
-      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
-      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
-      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc"'
-      - '-X github.com/cometbft/cometbft/version.TMCoreSemVer={{ envOrDefault "CMT_VERSION" "" }}'
-      - "-w"
-      - "-s"
-      - "-linkmode=external"
-      - '-extldflags "-Wl,-z,muslsymversions -static"'
-
-  - id: arkd-arm64
-    main: ./cmd/arkd
-    binary: arkd
-    goos:
-      - linux
-    goarch:
       - arm64
     env:
       - CGO_ENABLED=1
-      - CC=aarch64-linux-musl-gcc
+      - 'CC={{ if eq .Arch "arm64" }}aarch64-linux-musl-gcc{{ else }}x86_64-linux-musl-gcc{{ end }}'
+    mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
       - -mod=readonly
@@ -61,20 +36,19 @@ builds:
       - ledger
       - muslc
     ldflags:
-      - "-X github.com/cosmos/cosmos-sdk/version.Version={{ .Version }}"
-      - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
-      - '-X "github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc"'
-      - '-X github.com/cometbft/cometbft/version.TMCoreSemVer={{ envOrDefault "CMT_VERSION" "" }}'
-      - "-w"
-      - "-s"
-      - "-linkmode=external"
+      # version.Name and version.AppName are chain identity, set in app/config.go.
+      - -X github.com/cosmos/cosmos-sdk/version.Version=v{{ .Version }}
+      - -X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}
+      - -X github.com/cosmos/cosmos-sdk/version.BuildTags=netgo,ledger,muslc
+      - -w
+      - -s
+      - -linkmode=external
       - '-extldflags "-Wl,-z,muslsymversions -static"'
 
 archives:
   - id: arkd
     ids:
-      - arkd-amd64
-      - arkd-arm64
+      - arkd
     name_template: "arkd-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - README.md

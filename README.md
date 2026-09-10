@@ -132,11 +132,14 @@ everywhere else.
 
 ## Release builds
 
-The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
-[Chain configuration](.goreleaser.yml) builds static Linux binaries inside a musl container with
-`x86_64-linux-musl-gcc`, `aarch64-linux-musl-gcc`, and matching `libwasmvm_muslc.<arch>.a` libraries for the wasmvm
-version in go.mod. Set `GORELEASER_CURRENT_TAG` to the chain tag on HEAD so a sidecar tag on the same commit cannot be
-selected. macOS uses source builds.
+The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`. A tag with a
+pre-release suffix such as `-rc1` publishes as a GitHub pre-release, and only chain releases are marked latest.
+
+`make release` checks a clean tree and the chain tag on HEAD, selects it explicitly, and runs the
+[chain configuration](.goreleaser.yml), which builds static Linux binaries for amd64 and arm64. It runs inside a musl
+container that provides `x86_64-linux-musl-gcc`, `aarch64-linux-musl-gcc`, and both `libwasmvm_muslc.<arch>.a`
+archives on the default library path; the before hook refuses to build unless the archives match the wasmvm version in
+go.mod and the digests recorded in the [image Dockerfile](contrib/images/arkd-env/Dockerfile). macOS uses source builds.
 
 `make release-pricefeed` checks a clean tree and the sidecar tag on HEAD, selects it explicitly, then skips GoReleaser's
 bare-semver validation. The [sidecar configuration](.goreleaser.pricefeed.yml) derives version strings from `.Tag` and

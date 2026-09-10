@@ -241,10 +241,11 @@ lane and the gate? Does the runbook still describe how it reaches a block under 
 
 **What crosses.** Source becomes the binaries validators run.
 
-**Controls.** `go mod verify` before every release; the wasmvm static library is fetched by pinned version
-and checked against a recorded digest; CI actions are pinned, the mise action by commit; dependabot,
-nightly govulncheck, and CodeQL run; goreleaser is pinned in `mise.toml`. The sidecar releases from its
-own tag line so a chain release never carries an unreviewed sidecar change, or the reverse.
+**Controls.** `go mod verify` before every release; the wasmvm static archives are pinned by version and
+digest in the image Dockerfile, and both the image build and the chain release's before hook check the
+archives against them; CI actions are pinned, the mise action by commit; dependabot, nightly govulncheck,
+and CodeQL run; goreleaser is pinned in `mise.toml`. The sidecar releases from its own tag line so a chain
+release never carries an unreviewed sidecar change, or the reverse.
 
 **Review questions.** Are the remaining actions pinned by commit rather than major tag? Does a release
 run from a clean tree at a tag on `HEAD`?

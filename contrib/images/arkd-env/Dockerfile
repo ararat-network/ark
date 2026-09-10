@@ -12,7 +12,8 @@ RUN apk add --no-cache build-base git file linux-headers eudev-dev
 # libwasmvm static archives. wasmvm's muslc link directive resolves
 # -lwasmvm_muslc.<arch> from the default library path, so the files keep
 # their release names. Bump the three ARGs together with the go.mod
-# requirement; the grep below fails the build when they drift.
+# requirement; the grep below fails the build when they drift, and
+# contrib/scripts/check-wasmvm-libs.sh holds release builds to the same ARGs.
 ARG WASMVM_VERSION=v3.0.7
 ARG WASMVM_SHA256_AARCH64=ef3e3125e1ce588a9bc698f695a1a4793432b9903a0928018c0d7872e874cc97
 ARG WASMVM_SHA256_X86_64=49ecd70da281b6ee08b31770a54bb529d1de96b3e54013e025df9f0c39fff7f4

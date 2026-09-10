@@ -12,6 +12,7 @@ Run host commands from the repository root. Host probes use `curl` and `jq`; the
 | [localnet-fill-mempool.sh](localnet-fill-mempool.sh) | Internal helper of saturation rehearsal | Submits fee-paying normal transactions while consensus is held; checks admission overflow and empty carrier storage. |
 | [localnet-saturation.sh](localnet-saturation.sh) | `make localnet-saturation` | Pauses node1/node2, fills the public pool, submits privately, resumes consensus, and checks inclusion. |
 | [upgrade-rehearsal.sh](upgrade-rehearsal.sh) | `make upgrade-rehearsal` | Builds/selects old and new binaries, starts a temporary cosmovisor node, submits an upgrade, observes halt/switch, and runs the upgrade probe. |
+| [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | goreleaser before hook of `make release`; `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |
 
 ## Emergency and saturation fixtures
 

@@ -8,6 +8,9 @@ project_name: pricefeed
 
 release:
   name_template: "{{ .Tag }}"
+  prerelease: auto
+  # Chain releases stay the repository's latest.
+  make_latest: false
 
 before:
   hooks:
@@ -25,13 +28,15 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=0
+    mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
       - -mod=readonly
     tags:
       - netgo
     ldflags:
-      - '-X github.com/cosmos/cosmos-sdk/version.Version={{ trimprefix .Tag "pricefeed/" }}'
+      # A snapshot stamps its snapshot version; a release stamps the tag's own version.
+      - '-X github.com/cosmos/cosmos-sdk/version.Version={{ if .IsSnapshot }}v{{ .Version }}{{ else }}{{ trimprefix .Tag "pricefeed/" }}{{ end }}'
       - "-X github.com/cosmos/cosmos-sdk/version.Commit={{ .Commit }}"
       - "-w"
       - "-s"
