@@ -68,6 +68,29 @@ test-cover:
 	@go test -mod=readonly -covermode=atomic -coverprofile=coverage.out ./...
 
 ###############################################################################
+###                               End to end                                ###
+###############################################################################
+
+# tests/e2e is its own module: interchaintest drives the ark/arkd image on a
+# real Docker network. Build the image first (localnet-build-env tags it
+# ark/arkd:latest, the default TEST_IMAGE_NAME and TEST_IMAGE_VERSION). One
+# package at a time: every suite spawns its own chain, and packages in
+# parallel would contend for the Docker host.
+E2E_PACKAGES ?= ./...
+# E2E_RUN narrows to one suite, e.g. E2E_RUN=TestTransactions.
+E2E_RUN ?=
+# The Go Docker client dials DOCKER_HOST or /var/run/docker.sock; it does not
+# read the CLI's context, which is where OrbStack and Colima put their socket.
+DOCKER_HOST ?= $(shell $(DOCKER) context inspect --format '{{(index .Endpoints "docker").Host}}' 2>/dev/null)
+export DOCKER_HOST
+test-e2e:
+	@cd tests/e2e && go test -mod=readonly -v -p 1 -count=1 -timeout 90m $(if $(E2E_RUN),-run '$(E2E_RUN)',) $(E2E_PACKAGES)
+
+# Compiles the suites without Docker, so the module cannot rot between runs.
+test-e2e-vet:
+	@cd tests/e2e && go vet ./...
+
+###############################################################################
 ###                               Simulation                                ###
 ###############################################################################
 
@@ -224,7 +247,7 @@ localnet-statesync:
 upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
-.PHONY: build build-pricefeed install clean release-pricefeed test test-race test-cover \
+.PHONY: build build-pricefeed install clean release-pricefeed test test-race test-cover test-e2e test-e2e-vet \
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \

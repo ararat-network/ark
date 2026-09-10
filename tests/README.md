@@ -1,7 +1,10 @@
 # Testing Ark
 
-Most tests live beside the implementation. This directory holds cross-module scenarios using the real application;
-[fixture_test.go](integration/fixture_test.go) constructs funded validators, drives blocks, and supplies oracle reports.
+Most tests live beside the implementation. This directory holds two tiers above them: [integration](integration/)
+runs cross-module scenarios in-process against the real application, with [fixture_test.go](integration/fixture_test.go)
+constructing funded validators, driving blocks, and supplying oracle reports; [e2e](e2e/README.md) runs the built
+`arkd` image on a Docker network under interchaintest, driven through the CLI, REST, and RPC, with Hermes between two
+chains. The e2e tree is its own Go module and needs Docker; see its README for the packages and the variables.
 
 ## Choose the scope
 
@@ -12,6 +15,7 @@ Run commands from the repository root using the toolchain in [mise.toml](../mise
 | One module | `go test ./x/<module>/...` |
 | Ante or pending pool | `go test ./app/ante/... ./app/mempool/...`, then relevant `./app` tests |
 | Application wiring or cross-module behaviour | `go test ./app/... ./tests/integration/...` |
+| CLI, node configuration, relayer, export, or anything a validator or integrator runs against a live node | `make test-e2e-vet`, then the matching package under `make test-e2e E2E_PACKAGES=./<package>/...` |
 | Pricefeed runtime or transport | Focused packages under `./pricefeed/...` and affected `./cmd/pricefeed/cmd` tests |
 | Shared primitive | Its `./pkg/<name>/...` tests and affected callers |
 | Repository-wide verification | `make test`, `make lint`, and `go build ./...` |
