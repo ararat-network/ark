@@ -84,9 +84,9 @@ func TestAppConstructs(t *testing.T) {
 
 // TestAppDoesNotMeterBlockGas pins the deliberate absence of
 // baseapp.EnableBlockGasMeter: ten txs each declaring the entire MaxGas budget
-// all execute, because the app applies no cumulative bound at DeliverTx. Comet's
-// proposal-level max_gas gate and the per-tx meters are the only limits, and
-// re-adding the meter would foreclose block-stm — see docs/BLOCK_EXECUTION.md.
+// all execute, because the app applies no cumulative bound at DeliverTx. The
+// SDK proposal handlers enforce max_gas before acceptance; per-tx meters bound
+// execution. See app/README.md, Block gas-meter policy.
 func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	const chainID = "ark-block-gas-test"
 

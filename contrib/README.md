@@ -1,61 +1,17 @@
-# contrib
+# Contributor tooling
 
-Operational tooling that is neither the chain binary nor its tests. Build
-tooling stays in `proto/scripts`; Go code stays in the module tree.
+This tree contains container images, disposable local networks, and operational probes/rehearsals. Go code and its tests
+stay with their packages; protobuf build scripts stay under [proto/](../proto/README.md).
 
-- `images/` — Dockerfiles. `make -C contrib/images arkd-env` builds `ark/arkd`:
-  static musl `arkd` and `pricefeed` binaries on Alpine, running as `nonroot`
-  (uid 1025) with `COSMOS_SDK_CONFIG_SCOPE` pinned.
-- `localnet/` — the Docker Compose localnet: four validators, each paired
-  with its own price-feed sidecar, plus the init script that generates their
-  homes under `.testnets/`. Driven by `make localnet-start`, `localnet-stop`,
-  and `localnet-liveness`. Node N exposes RPC on `26657+10N`, REST on
-  `1317+N`, gRPC on `9090+N`, application metrics on `9464+N`, and CometBFT
-  metrics on `26660+10N`. The init
-  script also seats a 3-of-4 multisig emergency committee in the asset
-  module's mandate, keyring under `.testnets/committee`, and makes the last
-  validator a dark carrier on a separate Docker network. Its sole P2P path is
-  `carrier-sentry`; both disable transaction broadcast and PEX, so public
-  transaction gossip cannot fill the carrier. Carrier host ports bind only to
-  loopback. The rehearsal service joins both networks; production uses a VPN
-  and multiple dedicated sentries. `ARK_LOCALNET_DATA` can select a disposable
-  home directory instead of `.testnets/`. node0 also
-  keeps snapshots every 20 blocks, and `sync0`, behind the `statesync`
-  profile, is a non-validator that bootstraps from them: start it with
-  `docker compose -f contrib/localnet/docker-compose.yml --profile multi
-  --profile statesync up -d`, then check `/status` on `26697`. A node
-  that really state-synced reports an `earliest_block_height` well above 1;
-  one that replayed from genesis reports 1. `make localnet-stop` removes it
-  with the rest.
-- `scripts/` — probes and drivers run against a live network.
-  `localnet-liveness.sh` polls a node until it has passed a block height and
-  the oracle holds an exchange rate. `runbook-emergency-suspend.sh` (driven
-  by `make localnet-runbook`) rehearses `docs/EMERGENCY_SUBMISSION_RUNBOOK.md`
-  against the localnet: offline 3-of-4 signing ceremony, sub-floor fee
-  rejected at CheckTx, dry-run and broadcast through the dark carrier, no
-  leak to public mempools, inclusion at the top of a carrier-proposed block
-  with `EventEmergencySuspended`, asset suspended. `upgrade-rehearsal.sh` (driven by
-  `make upgrade-rehearsal`) runs a coordinated upgrade on one node under
-  cosmovisor: old binary from a git ref, proposal, halt, switch to the new
-  binary; `upgrade-probe.sh` is the assertion it ends with, and stands alone
-  for CI.
+| Directory | Purpose |
+| --- | --- |
+| [images/](images/) | Image Makefile, Dockerfile, and process wrapper. |
+| [localnet/](localnet/README.md) | Compose topology, generated homes, ports, and start/stop/state-sync workflow. |
+| [scripts/](scripts/README.md) | Liveness probes, emergency submission/saturation drivers, and upgrade rehearsal. |
 
-`.testnets/` is bind-mounted into containers running as uid 1025.
-`make localnet-init` makes the directory world-writable and wipes the
-previous run from inside a container, so a Linux host needs no manual
-ownership fixes. Docker Desktop maps ownership for you anyway.
+From the root, `make -C contrib/images arkd-env` builds `ark/arkd` with static musl `arkd` and `pricefeed` binaries on
+Alpine. [The Dockerfile](images/arkd-env/Dockerfile) and [wrapper](images/arkd-env/wrapper.sh) define its non-root user
+(uid 1025) and process environment. [docker-push.yml](../.github/workflows/docker-push.yml) owns image publication.
 
-CI: `.github/workflows/localnet.yml` builds the image, runs the localnet,
-and asserts liveness and the runbook on every pull request;
-`docker-push.yml` publishes the image to ghcr on releases and nightly.
-
-Planned addition: `audits/` for third-party reports.
-
-A bounded saturation rehearsal is available on a disposable four-validator
-network: `make localnet-start PUBLIC_MEMPOOL_SIZE=32`, wait for
-`make localnet-liveness`, then run `make localnet-saturation`. It temporarily
-pauses two validators, fills node0's public pool with fee-paying transactions,
-checks overflow rejection and an empty carrier pool, submits the emergency
-transaction privately, then resumes consensus and verifies inclusion. This
-tests gossip isolation and admission under a full public pool; it is not a
-throughput benchmark or proof against sustained qualified spam.
+Start with the [localnet guide](localnet/README.md) for an end-to-end developer environment. Production operational policy
+belongs in [docs/](../docs/README.md); rehearsal scripts exercise those policies using disposable keys, balances, and homes.

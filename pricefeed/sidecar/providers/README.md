@@ -20,19 +20,11 @@ packages under `api/` and `websocket/` should stay focused on exchange-specific 
 - `types/` contains shared provider values such as tickers, endpoints, markets, responses, and errors.
 - `providertest/` contains helpers for tests that need runnable provider instances.
 
-## Runtime Boundary
+## Runtime boundary
 
-Provider adapters do not own provider lifecycle. They implement the data-handling boundary consumed by the shared
-fetchers:
-
-- API adapters implement `api.DataHandler` by constructing request URLs and parsing HTTP responses.
-- WebSocket adapters implement `websocket.DataHandler` by constructing subscription messages, handling incoming
-  messages, creating heartbeat messages when needed, and returning an independent handler from `Copy()` for each
-  connection session.
-
-`base.Provider` owns ticker resolution, response ingestion, cached prices, runtime updates, and the fetch loop. Keep new
-provider-specific exchange behavior in `api/<provider>/` or `websocket/<provider>/`, and add only the handler-factory
-registration needed in the registry.
+[base/README.md](base/README.md) owns provider/cache/fetcher lifecycle. [API adapters](api/README.md) and
+[WebSocket adapters](websocket/README.md) own their distinct extension contracts. Keep exchange-specific requests,
+messages, and parsing in adapters, and lifecycle machinery in shared fetchers.
 
 ## Adding a Provider
 
@@ -43,10 +35,27 @@ registration needed in the registry.
 4. Add market mappings in the provider `providers.Config` used by callers.
 5. Add focused tests for parsing, request/message creation, and the fetcher boundary touched by the adapter.
 
-## Transport policy
+## Testing
 
-API endpoints require HTTPS; WebSocket endpoints require WSS. URL user information and fragments are
-refused. The registry supplies both fetchers with an HTTP client using standard certificate verification
-and refusing every redirect before a second request. Configure the provider's final URL directly.
-API handlers can construct paths and queries, but must retain the endpoint's HTTPS scheme and authority
-before credentials are attached. Tests use injected transports or locally trusted TLS servers.
+Use focused parser/request tests for an adapter and the [shared fetcher tests](base/README.md) for lifecycle changes.
+From the root, run `go test ./pricefeed/sidecar/providers/...` for the whole provider tree.
+
+[providertest](providertest/provider.go) samples a real provider lifecycle built by the caller. For example, inside a
+Go test with a configured registry entry:
+
+```go
+registry := providers.DefaultRegistry()
+results, err := providertest.Run(ctx, func(context.Context) (*base.Provider, error) {
+    return registry.NewProvider(cfg, cfg.Markets, logger)
+}, providertest.DefaultProviderTestConfig())
+```
+
+Here `cfg` is a validated provider configuration and `logger` is the caller-supplied logger; construction is defined in [registry.go](registry.go).
+`RunProvider` runs `provider.Run(ctx)`, samples its copied prices, then cancels and waits for cleanup. Test builders and
+stub fetchers can supply fake providers without registering a production fake exchange. Network sampling is a manual
+integration check; deterministic unit tests should inject responses or local transports.
+
+## Related policy
+
+[Pricefeed operations](../../../docs/PRICEFEED_OPERATIONS.md) owns endpoint security, TLS, configuration, and releases.
+[The sidecar guide](../README.md) maps service ownership. [Process monitoring](../../../docs/PROCESS_MONITORING.md) owns metric interpretation.

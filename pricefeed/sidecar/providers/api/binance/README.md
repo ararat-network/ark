@@ -2,14 +2,7 @@
 
 The Binance API provider fetches spot prices from Binance's public ticker price endpoint.
 
-Current defaults live in `config.go`:
-
-- Provider name: `binance_api`
-- Transport: `api`
-- Endpoint template: `https://api.binance.com/api/v3/ticker/price?symbols=%s%s%s`
-- Default polling interval: `750ms`
-- Default request timeout: `3s`
-- API key: not required
+[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 
@@ -32,4 +25,10 @@ Useful Binance endpoints when checking market support:
 ```sh
 curl https://api.binance.com/api/v3/exchangeInfo
 curl 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'
+```
+
+See the [adapter contract](../README.md) and [provider development guide](../../README.md). Run the package tests from the repository root:
+
+```sh
+go test ./pricefeed/sidecar/providers/api/binance
 ```

@@ -1,15 +1,16 @@
-# ABCI Oracle Processing
+# ABCI oracle processing
 
-The oracle package owns the fixed oracle protocol used after proposal data reaches preblock. It decodes injected vote
-extension data, aggregates validator reports, writes exchange rates, and updates validator accounting.
+This package implements extraction, aggregation, scoring, and price application for the fixed oracle protocol.
+This README owns quorum, participation, reference selection, median arithmetic, and reward weights. [The ABCI guide](../README.md) owns hook ordering; [x/oracle](../../x/oracle/README.md) owns persistent state.
 
-## Vote Extraction
+
+[Vote extraction](#vote-extraction) · [Participation](#participation-and-functioning-blocks) · [Aggregation](#report-aggregation) · [Implementation](#ballot-representation) · [Price application](#price-application) · [Verification](#verification)
+
+## Vote extraction
 
 `GetOracleVotes` reads the encoded extended commit info from the first injected proposal transaction, validates and
 decodes each validator vote extension into domain rates, and returns one `Vote` per validator entry. Empty vote
-extensions become empty reports; undecodable and semantically invalid payloads become invalid reports. Consensus grades
-both exactly like an absent report — the validator still counts toward total commit power and still accrues attendance
-eligibility on a functioning block — while telemetry keeps empty and invalid reports distinguishable. The authenticated extended commit itself is never
+extensions become empty reports; undecodable and semantically invalid payloads become invalid reports. Telemetry keeps empty and invalid reports distinguishable; their treatment is specified below. The authenticated extended commit itself is never
 rewritten. A decoded, target-version-matched extension is marked as a valid report even when it contains only a subset of
 the canonical targets.
 
@@ -18,30 +19,7 @@ denoms against the canonical target state required for its vote height. It retur
 canonical target index, so consensus aggregation does not repeat rate decoding or denom lookup. `ParseVoteExtension`
 exposes the state-independent parsing step for historical inspection, where the matching target epoch is unavailable.
 
-## Aggregation
-
-### Ballot Construction And Raw Quorum
-
-Aggregation receives lexically ordered canonical targets and already decoded, target-indexed rates. Each source ballot
-stores its positive reports in validator order and also keeps a dense validator-indexed rate view for constant-time
-overlap lookup. A nil dense rate means that the validator did not submit a positive report for that target.
-
-Ballots are assembled in two passes. The first pass counts positive reports per target. The second fills an exactly
-sized vote slice for each target ballot. This avoids geometric slice growth without reserving a full validator-sized
-vote slice for every configured target.
-
-Total commit power includes every validator entry, including empty, absent, and invalid oracle reports. Positive reports
-contribute their validator's power to the corresponding raw ballot. Raw quorum is:
-
-```text
-threshold power = ceil(VoteThreshold * total commit power)
-```
-
-The ceiling prevents fractional power requirements from rounding down. A non-positive submitted rate is an abstention: it
-adds no ballot power and earns no score weight. A target that does not reach raw quorum is simply left unpriced; no
-separate unavailability signal exists, so an omitted target and an abstained target are equivalent.
-
-### Participation And Attendance
+## Participation and functioning blocks
 
 There is no per-block fault accounting. A validator *participates* in a block when its valid report prices enough
 distinct targets with positive rates to reach the participation floor:
@@ -50,7 +28,7 @@ distinct targets with positive rates to reach the participation floor:
 required rates = max(1, ceil(participation_threshold * canonical targets))
 ```
 
-Abstentions, omissions, empty reports, and invalid reports never count toward the floor. Non-participation is not itself
+Omissions, empty reports, and invalid reports never count toward the floor. Non-participation is not itself
 penalised for the block, and reward scoring stays independent of it: a below-floor report still earns band-gated rewards
 for the targets it does price.
 
@@ -82,24 +60,31 @@ minority outage would otherwise grade every block against the same operators. It
 `vote_threshold`: reusing the price-quorum parameter would let a coalition of `1 - vote_threshold` disable attendance
 accounting by going dark, and would silently retune jailing whenever price quorum is tuned for price safety.
 
-Attendance drives only the oracle module's periodic settlement, which jails — never slashes — validators whose attended
-share of eligible blocks falls below `min_attendance_per_window`. Accuracy and coverage incentives come entirely from
-band-gated rewards, not from this counter.
+Attendance counters and jailing settle in [x/oracle](../../x/oracle/README.md#11-attendance-settlement).
 
-Every record is judged at settlement, however few eligible blocks it holds. `min_attendance_per_window` is the whole
-grace: a ratio is scale-free, so a validator present for part of a window is held to the same share of the blocks it was
-actually present for, and an eligible-block floor on top would silently soften the ratio governance set. Correlated
-outages need no such floor, because non-functioning blocks never reach the record in the first place — which means a
-sparse record is evidence the validator was absent while the fleet worked, not evidence that grading is unsafe.
+## Report aggregation
 
-Newly activated targets get no special grading: attendance is unconditional per window, by decision. Rollout slack comes
-from layers that already exist — the sidecar prices scheduled targets throughout their pending window, pricing the
-surviving targets keeps a validator above the participation floor unless one activation batch more than doubles the
-target set (the worst case at the 50% threshold cap; the 20% default tolerates a 5x expansion), a majority unable to
-participate grades nobody, and the windowed ratio leaves a lagging
-operator most of a window to ship provider support. The deliberately accepted residual is a validator pricing nothing
-for the better part of a window while a majority prices: it is jailed at settlement, which also restores quorum by
-shrinking total power toward the capable share.
+### Report validity
+
+An authenticated extended commit is not rewritten to remove missing or malformed oracle reports. Empty reports and
+invalid decoded payloads still leave the validator in total commit power. A valid report matches the vote height's exact
+target version and may contain only a subset of canonical targets. Invalid or missing reports earn no report participation
+or reward weight; attendance eligibility still depends on the functioning-block gate.
+
+[Vote-extension handlers](../README.md#vote-extension-handlers) define the reporting and verification failure policy.
+
+### Raw quorum
+
+Total commit power includes every validator entry, including empty, absent, and invalid oracle reports. Positive reports
+contribute their validator's power to the corresponding raw ballot. Raw quorum is:
+
+```text
+threshold power = ceil(VoteThreshold * total commit power)
+```
+
+The ceiling prevents fractional power requirements from rounding down. Only positive rates contribute ballot power or score weight. The compact wire decoder accepts positive values;
+omission is the wire-level abstention, while defensive aggregation also excludes non-positive values. A target that does not reach raw quorum is simply left unpriced; no
+separate unavailability signal exists, so an omitted target and an abstained target are equivalent.
 
 ### Reference Selection
 
@@ -110,10 +95,6 @@ reference. Reference selection ranks candidates by:
 2. Sum of qualifying overlap power across those targets.
 3. Raw positive-report power for the reference target.
 4. Canonical target index, which is lexical denom order.
-
-Selection scores raw overlap for every candidate. When all passing ballots contain the same validator and power sequence,
-a shared-support fast path proves every pair's overlap without scanning each pair. Otherwise, pairwise overlap is
-computed from the dense validator-indexed rates.
 
 The strongest overlap score selects one reference, which is evaluated once. Its priced tallies are retained for scoring
 rather than building its cross ballots again.
@@ -169,7 +150,14 @@ reward weight = validator voting power * rewarded target count
 This is equivalent to adding the same proposal-validated voting power once per rewarded target, but avoids repeated
 arbitrary-precision additions.
 
-### Implementation Optimisations
+## Ballot representation
+
+Canonical targets arrive in lexical order, with each report already decoded into target-indexed rates. Source ballots
+hold positive votes in validator order and a dense validator-indexed view for overlap lookup. Count-then-fill construction
+sizes the positive-vote slices exactly. When ballots share the same voter/power sequence, the shared-support path avoids
+repeated pairwise scans. The winning reference's cross ballots and medians are retained for scoring.
+
+## Implementation optimisations
 
 The implementation combines the protocol arithmetic above with optimisations that reduce repeated work and temporary
 allocation while preserving those rules:
@@ -198,7 +186,7 @@ Let `V` be validator entries, `T` configured targets, `P` passing targets, and `
 The configured target limit bounds these costs. The benchmark suite includes the maximum-target cases so changes to the
 algorithm or capacity are measured together.
 
-## Price Application
+## Price application
 
 `ProcessVoteExtensions` coordinates the preblock oracle writes and returns only an error:
 
@@ -208,9 +196,11 @@ algorithm or capacity are measured together.
 4. Write exchange rates with events in lexical denom order.
 5. Record reward weight, block eligibility, and participation for every commit validator in commit-validator order.
 
-The preblock package calls this function with its oracle keeper and handles the ABCI lifecycle around it.
+The preblock package calls this function before feed promotion. A target omitted by the tally receives no new rate;
+consumers apply the keeper's freshness policy to its stored rate. Reward funding and payout are specified in
+[economic design](../../docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding).
 
-## Encoding Boundary
+## Encoding boundary
 
 `oracle_votes.go` enforces vote-extension rate cardinality, target membership, and the vote-rate size bound before
 decoding each `LegacyDec` value through `pkg/encoding`. Vote rates are prices, so `MaxEncodedVoteRateBytes` sits far
@@ -218,7 +208,10 @@ below the state-level encoding bound, and the codec's wire and decoded limits de
 the payloads this validation could accept, so wire padding — oversized rates, duplicate map keys, stored-block zlib —
 buys an attacker nothing.
 
-## Internal Values
+Aggregate wire/decompression bounds belong to [abci/codec](../codec/codec.go); per-value codecs belong to
+[pkg/encoding](../../pkg/encoding/legacy_dec.go). These are separate from feed cardinality and `MaxExchangeRate`.
+
+## Internal values
 
 Aggregation values live in this package because they are working state for the fixed oracle protocol:
 
@@ -230,3 +223,10 @@ Aggregation values live in this package because they are working state for the f
 
 The shared `abci/types` oracle keeper error lets preblock and vote-extension boundaries classify state-access and
 mutation failures consistently.
+
+## Verification
+
+From the repository root, run `go test ./abci/oracle/...`. Extraction, aggregation, accounting calls, and deterministic
+ordering have focused tests. Run `go test ./abci/oracle -run '^$' -bench . -benchmem` when changing algorithm cost;
+the benchmarks distinguish sparse/full targets and identical/different validator support. Cross-module accounting changes
+also need the relevant `./x/oracle/...` and `./app` tests.

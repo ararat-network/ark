@@ -229,8 +229,8 @@ func (c *Client) fetchFrom(ctx context.Context, ep endpoint) (*api.PricesRespons
 	}
 	clientmetrics.RecordSidecarResponse(ep.address, time.Since(start), err)
 	if status.Code(err) == codes.Unimplemented {
-		// The one status a sidecar of the wrong generation returns: it
-		// answers, but not this service. See pricefeed/doc.go.
+		// The sidecar answers but does not implement the required service or RPC.
+		// See docs/PRICEFEED_OPERATIONS.md, "Node–sidecar compatibility".
 		err = fmt.Errorf("sidecar does not serve %s and is not compatible with this node: %w", pricesMethod, err)
 	}
 	if err != nil {
@@ -240,7 +240,8 @@ func (c *Client) fetchFrom(ctx context.Context, ep endpoint) (*api.PricesRespons
 }
 
 // observeVersion logs a sidecar's build version when it first answers and
-// whenever it changes. The version is never a gate; see pricefeed/doc.go.
+// whenever it changes. The version is never a gate; see docs/PRICEFEED_OPERATIONS.md,
+// "Node–sidecar compatibility".
 func (c *Client) observeVersion(address, version string) {
 	previous, seen := c.versions[address]
 	if seen && previous == version {

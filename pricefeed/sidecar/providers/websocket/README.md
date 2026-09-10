@@ -22,3 +22,5 @@ session, such as subscription IDs or symbol caches, belongs in the copied handle
 ## Supported Providers
 
 - [Binance](./binance/README.md) subscribes to spot aggregate trade and ticker streams.
+
+See [shared fetcher lifecycle](../base/README.md) and [provider construction/testing](../README.md).

@@ -11,6 +11,7 @@ parsing.
 
 API adapters implement `api.DataHandler`:
 
+- `BatchTickers(tickers, batchSize)` groups tickers into independently fetched requests.
 - `CreateURL(endpoint, tickers)` builds the request URL for the selected endpoint and requested tickers.
 - `ParseResponse(tickers, response)` returns resolved prices and unresolved errors for exactly the request tickers.
 
@@ -20,8 +21,10 @@ shared fetcher. Endpoint authentication belongs in config; adapters should not h
 ## Supported Providers
 
 - [Binance](./binance/README.md) fetches spot ticker prices from Binance's public REST API.
-- CurrencyBeacon fetches fiat exchange rates from CurrencyBeacon's REST API. Requires an API key, sent as
+- [CurrencyBeacon](currencybeacon/README.md) fetches fiat exchange rates from CurrencyBeacon's REST API. Requires an API key, sent as
   `Authorization: Bearer <key>` via endpoint authentication.
-- Frankfurter fetches fiat exchange rates from Frankfurter's public REST API.
-- Open Exchange Rates fetches fiat exchange rates from the Open Exchange Rates REST API. Requires an app ID, sent as
+- [Frankfurter](frankfurter/README.md) fetches fiat exchange rates from Frankfurter's public REST API.
+- [Open Exchange Rates](openexchangerates/README.md) fetches fiat exchange rates from the Open Exchange Rates REST API. Requires an app ID, sent as
   `Authorization: Token <app_id>` via endpoint authentication.
+
+Shared fetcher lifecycle is documented in [base](../base/README.md); [provider construction](../README.md) owns registration and testing.

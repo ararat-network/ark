@@ -1,3 +1,9 @@
+// Package app assembles the Ark chain's modules and keepers, installs
+// transaction admission and consensus handlers, and wires IBC, GMP,
+// and CosmWasm execution through the chain's execution policy.
+//
+// It also owns application genesis, continuation export, and upgrades.
+// Its integration tests exercise behaviour across module boundaries.
 package app
 
 import (

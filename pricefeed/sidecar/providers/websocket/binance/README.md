@@ -2,15 +2,7 @@
 
 The Binance WebSocket provider subscribes to Binance spot streams and publishes price updates as provider responses.
 
-Current defaults live in `config.go`:
-
-- Provider name: `binance_ws`
-- Transport: `websocket`
-- Endpoint: `wss://stream.binance.com/stream`
-- Default max tickers per connection: `40`
-- Default write interval: `300ms`
-- Default handshake timeout: `20s`
-- API key: not required
+[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 
@@ -41,4 +33,10 @@ Useful Binance endpoints when checking market support:
 ```sh
 curl https://api.binance.com/api/v3/exchangeInfo
 curl 'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT'
+```
+
+See the [adapter contract](../README.md) and [provider development guide](../../README.md). Run the package tests from the repository root:
+
+```sh
+go test ./pricefeed/sidecar/providers/websocket/binance
 ```
