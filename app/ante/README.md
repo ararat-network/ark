@@ -60,3 +60,18 @@ relevant tests under `./app`. Keep local rollback and ordering reasoning beside 
 
 [Client fee construction](../../docs/clients/CLIENT_FEES.md), [economic policy](../../docs/design/ECONOMIC_DESIGN.md), and
 [mempool policy](../mempool/README.md#admission-service-and-sdk-behaviour) own the externally meaningful rules; this README maps their implementation.
+
+## Context setup and message guards
+
+Wasm decorators immediately follow SDK context setup. The transaction counter supplies the per-block index used
+in contract address derivation. Wrapping another SDK setup around them would reset their gas meter; the explicit
+chain retains SDK decorator order while allowing this insertion.
+
+Signed messages and execution-generated dispatches share bounded authz leaf traversal, the one-NOAH explicit
+vote stake floor, and the MultiSend guard. Governance proposal execution uses the underlying router. Lane
+eligibility is separate from message validity; an ineligible governance transaction can still execute normally.
+
+MultiSend allows at most 500 outputs and charges `300 * outputs²` gas in addition to Bank's linear cost.
+At 500 outputs the surcharge is 75 million gas, roughly 84 million including Bank's output cost, beneath the
+launch 100-million block budget. The recipient cap therefore binds before gas at launch; changing the block gas
+budget can change that relationship. The surcharge dominates the approximate linear cost around 60 outputs.

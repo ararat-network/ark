@@ -22,12 +22,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// TestFeeDecoratorEnforcesTheConsensusFloor pins the fee gate's contract:
-// the reference-denom fee must cover ceil(BaseGasPrice × gas) and is charged
-// exactly that, excess never leaves the payer and buys no rank, and another
-// accepted denomination is held to its own converted requirement. The
-// transaction carries no taxable message, so nothing but the base fee
-// reaches the fee collector.
+// TestFeeDecoratorEnforcesTheConsensusFloor checks ceiling-rounded base fees in accepted
+// denominations. Stable-fee excess remains with the payer and grants no priority.
 func TestFeeDecoratorEnforcesTheConsensusFloor(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	tx.msgs = nil
@@ -73,11 +69,8 @@ func TestFeeDecoratorEnforcesTheConsensusFloor(t *testing.T) {
 	require.Equal(t, math.NewInt(980_000), arkApp.BankKeeper.GetBalance(r.cached, tx.payer, chain.XDRBaseDenom).Amount)
 }
 
-// TestFeeDecoratorHoldsTheFeeToTheDeclaredTax pins the declaration: the
-// fee covers the tax coin for coin or is refused before anything is
-// deducted, what remains is a ceiling charged at the requirement, the tax
-// reaches its collector, and neither the tax nor a stable leg's excess buys
-// rank.
+// TestFeeDecoratorHoldsTheFeeToTheDeclaredTax checks coin-for-coin tax coverage before deduction.
+// Tax reaches its collector; tax and stable-fee excess grant no priority.
 func TestFeeDecoratorHoldsTheFeeToTheDeclaredTax(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	// The fixture send owes 10ausd. 200k gas at the 0.1 price needs 20,000
@@ -256,11 +249,8 @@ func TestGasPrioritySaturates(t *testing.T) {
 	require.Equal(t, int64(stdmath.MaxInt64), ante.GasPriority(huge, 1))
 }
 
-// TestFeeDecoratorAcceptsAnyCoveringDenom pins the 2b gate under D80: a fee
-// satisfies when any single leg covers its own converted requirement,
-// unaccepted denominations are tax-only ceilings rather than fatal, a stable
-// leg is charged the requirement alone, and a NOAH leg is charged whole with
-// its remainder ranked in reference units per gas.
+// TestFeeDecoratorAcceptsAnyCoveringDenom checks that one accepted leg covers the base fee. Other
+// denominations cover tax only; stable excess remains uncharged, while the NOAH remainder is a tip.
 func TestFeeDecoratorAcceptsAnyCoveringDenom(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Set(ctx, chain.USDBaseDenom, treasurytypes.ConversionFactor{
@@ -317,11 +307,8 @@ func TestFeeDecoratorAcceptsAnyCoveringDenom(t *testing.T) {
 	require.Equal(t, int64(1), r.handed.Priority())
 }
 
-// TestFeeDecoratorRanksOnlyTheNoahTip pins D80: a stable leg's excess is
-// never charged and never ranks, a NOAH leg beside a covering stable leg is
-// charged whole as the tip and ranks through NOAH's factor, NOAH pays the
-// base fee only when no stable leg covers it, and an unpriced NOAH leg is
-// refused.
+// TestFeeDecoratorRanksOnlyTheNoahTip checks that only the NOAH remainder buys priority. Stable-fee
+// excess is uncharged; an unpriced NOAH leg fails.
 func TestFeeDecoratorRanksOnlyTheNoahTip(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Set(ctx, chain.NoahBaseDenom, treasurytypes.ConversionFactor{
@@ -401,13 +388,9 @@ func TestFeeDecoratorRanksOnlyTheNoahTip(t *testing.T) {
 	})
 }
 
-// TestFeeDecoratorReadsAFeeTwoWays pins the two readings of a fee that
-// arrives as decoded Coins, which nothing sorts or dedupes. The leg that pays
-// the base fee follows the payer's own order, while the tax and the NOAH leg
-// are read by denomination, which a binary search over unsorted coins gets
-// wrong. Validating a sorted copy is what makes the second reading sound
-// without refusing the first: a repeated denomination, a zero leg or a junk
-// denom still fails.
+// TestFeeDecoratorReadsAFeeTwoWays checks payer-order gas selection and denomination-based tax/NOAH
+// lookup. Validation sorts a copy and rejects repeated denominations, zero legs, and invalid
+// denominations.
 func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	for _, denom := range []string{chain.USDBaseDenom, chain.KRWBaseDenom} {
@@ -484,12 +467,9 @@ func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 	})
 }
 
-// TestFeeDecoratorSimulationMovesWhatExecutionMoves pins the estimate: a
-// declared fee is deducted under simulation exactly as in execution — the
-// tax set aside by the ante and charged by the post, the base fee to the fee
-// collector, the slack left with the payer — and the gate's reads are made
-// without being enforced, so the balances agree and so does the gas. Each
-// run gets its own discarded cache.
+// TestFeeDecoratorSimulationMovesWhatExecutionMoves checks equal fee transfers, tax collection,
+// balances, and gas on independent discarded caches. Simulation reads the fee gate without
+// enforcing it.
 func TestFeeDecoratorSimulationMovesWhatExecutionMoves(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	type outcome struct {

@@ -34,17 +34,9 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// TestTransferTaxChargesOnlySuccessfulTransactions pins D82 through admission,
-// recheck, proposals, and FinalizeBlock: a signed transaction pays tax exactly
-// when its messages succeed. One whose message fails — a send to a blocked
-// address — pays the gas fee and nothing else; one whose messages leave the
-// payer short of the tax fails at the charge, pays the gas fee, and moves no
-// principal; one that succeeds pays both. A granter is charged on the same
-// terms, and the allowance records what left the granter and nothing more:
-// the gas fee on a failed transaction, gas fee and tax on a successful one.
-// The last case is what charging after the messages makes possible rather
-// than merely fairer: a transfer whose tax the payer cannot afford until an
-// earlier message in the same transaction has funded it.
+// TestTransferTaxChargesOnlySuccessfulTransactions checks admission through finalisation: failed
+// messages or tax collection retain gas only; success charges gas and tax. Feegrant usage matches
+// committed charges, and messages may fund their own eventual tax.
 func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 	const chainID = "ark-transfer-tax-test"
 
@@ -316,12 +308,9 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 	})
 
 	t.Run("a transfer the messages fund is taxed rather than refused", func(t *testing.T) {
-		// The payer holds none of the taxed denomination when the ante runs
-		// and acquires it from the very message that owes the tax, pulling
-		// the funder's coins under an authz grant as the transaction's fee
-		// payer. The charge reads the balance the messages left, so this is
-		// taxed and succeeds; an affordability check in the ante would read
-		// the balance before them and refuse it.
+		// The payer acquires its tax denomination through the authz transfer itself. Post
+		// collection reads the resulting balance, allowing a transaction that a pre-execution
+		// affordability check would reject.
 		payer := secp256k1.GenPrivKey()
 		payerAddr := sdk.AccAddress(payer.PubKey().Address())
 		authorisation, err := authz.NewMsgGrant(funder.Address(), payerAddr,

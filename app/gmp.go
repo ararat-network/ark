@@ -20,16 +20,9 @@ func GMPModuleBasics() module.BasicManager {
 	return module.NewBasicManager(gmp.NewAppModuleBasic(gmp.AppModule{}))
 }
 
-// setupGMP registers the ICS-27 v2 general message passing store and keeper.
-//
-// GMP lets a remote caller execute SDK messages here through an account this
-// chain derives for it. That account is an ordinary account with no standing
-// authority: it may do exactly what its own balance and grants allow, and the
-// keeper refuses any message whose signer is not that account before routing it.
-//
-// It runs after setupWasm and before setupIBCRoutes, because it takes the same
-// policy router the contract runtime does and its route joins the v2
-// router the latter builds.
+// setupGMP constructs ICS-27 v2 general message passing after Wasm and before IBC routes. Derived
+// accounts have only their balances and grants; the keeper authenticates their signers before the
+// shared policy router.
 func (app *ArkApp) setupGMP() error {
 	gmpKey := storetypes.NewKVStoreKey(gmptypes.StoreKey)
 	if err := app.RegisterStores(gmpKey); err != nil {

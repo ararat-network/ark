@@ -8,22 +8,12 @@ import (
 	"github.com/ararat-network/ark/app/upgrade"
 )
 
-// Upgrades lists the coordinated upgrades this binary can execute —
-// normally one or none — as builders, because a handler closes over live app
-// state no package-level literal can reach. The only registration a release
-// edits:
-//
-//	func(app *ArkApp) upgrade.Upgrade {
-//		return v2.Build(app.ModuleManager, app.Configurator())
-//	},
-//
-// with the keepers the migration touches appended to Build's signature.
+// Upgrades lists the coordinated upgrade builders registered by this binary. Builders receive live
+// app state for their handlers; see upgrade/README.md for the registration workflow.
 var Upgrades []func(*ArkApp) upgrade.Upgrade
 
-// setupUpgrades wires every upgrade pendingUpgrades lists: the handler run at
-// the upgrade height, and the store loader applied on the restart into it.
-// Fixed machinery: a release edits only the list above and its own
-// app/upgrade/v<N> package.
+// setupUpgrades registers Upgrades handlers and installs the matching store loader
+// for a scheduled restart.
 func (app *ArkApp) setupUpgrades() error {
 	pending := make([]upgrade.Upgrade, len(Upgrades))
 	for i, build := range Upgrades {

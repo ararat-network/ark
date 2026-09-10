@@ -27,12 +27,8 @@ const (
 	Bech32PrefixConsPub = Bech32PrefixConsAddr + sdk.PrefixPublic
 )
 
-// AddressVerifier ark address verifier.
-//
-// Twenty bytes is every key-derived and module address on the chain. Thirty-two
-// is what CosmWasm derives a contract address to, both the classic and the
-// predictable form, so refusing that length rejects every message naming a
-// contract and makes the runtime unusable rather than merely restricted.
+// AddressVerifier accepts 20-byte key/module addresses and 32-byte CosmWasm contract addresses,
+// including predictable contract addresses.
 var AddressVerifier = func(bz []byte) error {
 	switch n := len(bz); n {
 	case 20, 32:

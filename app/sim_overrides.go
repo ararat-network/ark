@@ -18,23 +18,9 @@ import (
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 )
 
-// authSimModule narrows upstream's auth parameter proposal to the ranges
-// upstream itself generates at genesis.
-//
-// The SDK is inconsistent about these five fields: its genesis generator draws
-// each from a realistic band, while its proposal generator draws every one from
-// [1, 1000). A drawn value far outside the genesis band does not merely stress
-// the chain, it makes ordinary unrelated transactions undeliverable — a memo
-// limit of 9 characters refuses transactions the simulator itself composes, and
-// a per-byte cost in the hundreds prices wasmd's fixed ~257KB code upload out of
-// the fixed 10M gas every simulated transaction is signed with. One undelivered
-// transaction fails the run, so the suite becomes sensitive to where each module
-// sits in the shared random stream, and adding or reweighting any operation
-// anywhere re-rolls it.
-//
-// Taking the genesis bands is not a narrowing of coverage so much as a choice
-// between two of upstream's own answers: these are the values it calls
-// realistic for the very same parameters.
+// authSimModule samples auth parameter proposals within the SDK genesis bands so simulated
+// transactions remain deliverable. See README.md, "Simulation fixtures", for the harness
+// constraints.
 type authSimModule struct {
 	auth.AppModule
 }
@@ -71,18 +57,8 @@ func authParamsFactory() simsx.SimMsgFactoryFn[*authtypes.MsgUpdateParams] {
 // a run exercises the guards rather than exhausting the balance immediately.
 const simulatedFundBalance = int64(1_000_000_000_000_000)
 
-// bankSimModule seeds the protocol funds that hold custody balances.
-//
-// Nothing else can put them there. The Reserve and Insurance module accounts
-// are funded on a live chain by settlement and by governance transfers, and in
-// a simulation neither arises: the transfer messages draw from the very balance
-// they would establish, so the funding path is circular and every message that
-// spends from a fund skips for the whole run. Seeding the balances is what lets
-// the Reserve deploy, and a deployment is what opens the positions the rest of
-// the committee surface acts on.
-//
-// Supply moves with the balances because bank's genesis states both, and its
-// invariant holds them equal.
+// bankSimModule seeds Reserve and Insurance custody balances so simulation can exercise funded
+// operations. Genesis supply increases by the same amount to preserve Bank's invariant.
 type bankSimModule struct {
 	bank.AppModule
 

@@ -685,7 +685,7 @@ func TestAdmissionExecutionModes(t *testing.T) {
 	_, err = a.Commit()
 	require.NoError(t, err)
 	require.Equal(t, 1, pool.CountTx(), "commit resets check state; CometBFT rechecks pending transactions next")
-	// CometBFT now drives the SDK recheck, including ante.
+	// CometBFT drives the SDK recheck, including ante.
 	res, err := a.CheckTx(&abci.RequestCheckTx{Tx: proposalBytes(t, a, pool.Snapshot()[0]), Type: abci.CheckTxType_Recheck})
 	require.NoError(t, err)
 	require.Zero(t, res.Code, res.Log)

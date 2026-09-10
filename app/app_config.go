@@ -118,12 +118,8 @@ var (
 		wasmtypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
-		// We allow the following module accounts to receive funds:
-		// govtypes.ModuleName,
-		// treasurytypes.SubsidyPoolName,
-		// treasurytypes.RedemptionBufferName,
-		// reservetypes.StrategicReserveName,
-		// claimstypes.InsuranceName,
+		// Gov, Subsidy, Redemption Buffer, Strategic Reserve, and Insurance accounts accept direct
+		// funding and are absent from this blocklist.
 	}
 
 	ModuleConfig = []*appv1alpha1.ModuleConfig{
@@ -136,13 +132,8 @@ var (
 					upgradetypes.ModuleName,
 					authtypes.ModuleName,
 				},
-				// During begin block slashing happens after distr.BeginBlocker so that
-				// there is nothing left over in the validator fee pool, so as to keep the
-				// CanWithdrawInvariant invariant.
-				// NOTE: staking module is required if HistoricalEntries param > 0
-				// NOTE: treasury leads because its reward-funding window must advance
-				// before distribution consumes the previous block's fees. A module
-				// added ahead of it must not touch that window.
+				// Distribution precedes slashing to preserve CanWithdrawInvariant. Staking records
+				// historical entries when configured.
 				BeginBlockers: []string{
 					// The SDK spine leads and keeps upstream's one documented
 					// invariant: slashing after distr, so nothing is left in the
@@ -151,23 +142,16 @@ var (
 					slashingtypes.ModuleName,
 					evidencetypes.ModuleName,
 					stakingtypes.ModuleName,
-					// The tail carries no ordering intent. Treasury's factor and
-					// exposure refreshes read PreBlock-applied rates; it led while
-					// reward funding lived here and had to beat Distribution's
-					// sweep, but that job moved to the EndBlocker.
+					// These modules have no relative ordering requirement. Treasury
+					// refreshes factors and exposure from PreBlock-applied rates.
 					ibcexported.ModuleName,
 					ratelimittypes.ModuleName,
 					authz.ModuleName,
 					treasurytypes.ModuleName,
 				},
-				// NOTE: market leads because its EndBlocker executes the block's
-				// conversion settlement through Treasury before any other EndBlock
-				// actor moves state. Settlement must value liability under the
-				// lifecycle regime the block's swaps quoted under, and every later
-				// actor — governance enacting transitions, Claims paying due
-				// claims — must see settled funds, which is what per-conversion
-				// settlement gave them. A module added ahead of it must move
-				// neither member supply, fund balances, nor asset lifecycle state.
+				// Market settles conversions before other EndBlockers change supply, fund balances,
+				// or asset lifecycle. Later modules must observe settled funds under the regime
+				// used by this block's swaps.
 				EndBlockers: []string{
 					markettypes.ModuleName,
 					// Bank's EndBlocker only flushes virtual-account credits, which
@@ -176,12 +160,8 @@ var (
 					// ordering intent.
 					banktypes.ModuleName,
 					govtypes.ModuleName,
-					// Treasury settles the reward-funding window — minting any
-					// top-up into the fee collector for the next block's
-					// allocation — and runs the base-fee update. After gov, so
-					// a fee-param change enacted this block applies at the same
-					// settlement; after market, whose must-lead rule the fund
-					// moves would otherwise break.
+					// Treasury funds the next block's rewards and updates the base fee after Market
+					// settlement and any governance fee-parameter changes.
 					treasurytypes.ModuleName,
 					// Oracle jails ahead of staking so an attendance jail is in
 					// this block's validator-set update rather than the next
@@ -190,11 +170,8 @@ var (
 					oracletypes.ModuleName,
 					stakingtypes.ModuleName,
 					feegrant.ModuleName,
-					// Claims settles last so a governance cancellation executed
-					// by the gov EndBlocker above is already recorded. The
-					// ordering is a readability choice, not a correctness one:
-					// cancellation is refused from the executable height on, so
-					// the veto window and the sweep cannot both take a claim.
+					// Claims sweeps after governance. The cancellation cutoff independently
+					// prevents a claim from being both vetoable and executable.
 					claimstypes.ModuleName,
 				},
 				OverrideStoreKeys: []*runtimev1alpha1.StoreKeyConfig{
@@ -348,19 +325,9 @@ var (
 	AppConfig = depinject.Configs(appconfig.Compose(&appv1alpha1.Config{
 		Modules: ModuleConfig,
 	}),
-		// x/claims and x/reserve both satisfy the recognised-capital method set
-		// Treasury expects, so depinject cannot resolve its two inputs by
-		// scanning provided types. These bindings are what disambiguate them;
-		// the named interfaces cannot do it alone, because Go interfaces are
-		// structural.
-		//
-		// They belong here rather than beside NewArkApp's own Configs call:
-		// anything that injects from AppConfig hits the same ambiguity, so the
-		// resolution has to travel with the module set.
-		//
-		// depinject names a type as "<pkgPath>/<Go type string>", which is why
-		// the interface carries its package twice and the pointer keeps its
-		// star inside the name.
+		// Explicit bindings distinguish Claims and Reserve despite their shared recognised-capital
+		// method set. They travel with AppConfig for every injector. depinject type names use
+		// "<pkgPath>/<Go type string>", including the pointer star.
 		depinject.BindInterface(
 			"github.com/ararat-network/ark/x/treasury/types/types.ClaimsKeeper",
 			"github.com/ararat-network/ark/x/claims/keeper/*keeper.Keeper",

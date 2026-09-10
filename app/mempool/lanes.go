@@ -1,8 +1,6 @@
-// Package mempool owns Ark's pending transactions, authenticated lane eligibility,
-// reserved admission, and preferential block selection over the SDK priority
-// pool. CometBFT owns gossip, dedupe and recheck scheduling.
-// Ordering is local proposer policy; ProcessProposal verifies transaction
-// validity independently of local capacity.
+// Package mempool owns pending transactions, authenticated lanes, reserved admission, and local
+// proposal ordering. CometBFT owns gossip, deduplication, and recheck scheduling. ProcessProposal
+// validates independently of local capacity.
 package mempool
 
 import sdk "github.com/cosmos/cosmos-sdk/types"

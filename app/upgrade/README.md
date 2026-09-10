@@ -11,7 +11,7 @@ The live registry is [app/upgrades.go](../upgrades.go).
    `TestUpgradesAreNamedForTheirPackage` in [app/upgrades_test.go](../upgrades_test.go) holds the two together.
 2. Give `Build` exactly the keepers the migration needs. Keep one-shot state changes before or after `RunMigrations`
    according to whether they require the old or new schema.
-3. Register a builder in `pendingUpgrades` in `app/upgrades.go`; include the store changes in the same descriptor.
+3. Register a builder in `Upgrades` in `app/upgrades.go`; include the store changes in the same descriptor.
 4. Extend the migration test to prove the intended state transition. Run `go test ./app/upgrade/...` and relevant app tests.
 5. Use the [upgrade rehearsal](../../contrib/scripts/README.md#upgrade-rehearsal) with an old binary and the newly registered plan.
 

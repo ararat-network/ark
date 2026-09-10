@@ -100,3 +100,18 @@ From the repository root, run `go test ./app/...` for application changes. Integ
 [tests/integration/](../tests/README.md); simulation commands and prerequisites are in the [test guide](../tests/README.md).
 [testutil/](testutil/) supplies app, validator, funding, genesis, and IBC fixtures. Embedded contract fixtures and their
 wrapper live in [testdata/contracts.go](testdata/contracts.go). Use `go build ./...` before claiming repository-wide compilation.
+
+## Simulation fixtures
+
+[sim_overrides.go](sim_overrides.go) samples auth parameter proposals from the SDK's genesis ranges. The SDK's
+broader proposal ranges can make its own fixed-gas transactions undeliverable: short memo limits reject generated
+memos, and high byte costs exhaust the 10-million gas limit on Wasm uploads. The simulation process bypasses
+fee and governance-vote stake gates because its random fees and voters cannot satisfy these consensus rules.
+
+Reserve and Insurance receive seeded custody balances, with Bank supply increased equally. This makes deployments,
+positions, and claims reachable without a circular dependency on transfers from initially empty funds. Imported
+simulation genesis uses the newest exported oracle timestamp so rates do not appear dated after genesis.
+
+Gas-estimate tests compare payable and fee-less simulation with finalisation for both NOAH-only and stable-plus-tip
+fees. Wasm's counter skips simulation and SDK signature-size estimation differs from signed execution; the client gas
+adjustment covers those differences. Fixtures omit random memos so unrelated gas cannot dilute the measured ratio.

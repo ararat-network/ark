@@ -98,12 +98,8 @@ func TestTransferTaxDecoratorExecutionModes(t *testing.T) {
 	}
 }
 
-// TestTransferTaxDecoratorChargesNothingOnFailure pins D82 at the seam: a
-// transaction whose messages failed reaches the post decorator with success
-// false and is not taxed — the gas fee the ante moved is all that moved,
-// and a granter's allowance has been drawn for the gas fee alone. BaseApp
-// discards the post's branch on failure anyway; this pins that the decorator
-// itself charges nothing, so the outcome does not rest on the discard.
+// TestTransferTaxDecoratorChargesNothingOnFailure checks that success=false causes no tax transfer
+// or tax allowance draw, independently of BaseApp's later branch discard.
 func TestTransferTaxDecoratorChargesNothingOnFailure(t *testing.T) {
 	t.Run("payer", func(t *testing.T) {
 		arkApp, ctx, tx := setupTreasuryAnteTest(t)
@@ -161,12 +157,8 @@ func TestTransferTaxDecoratorFailsADrainedPayer(t *testing.T) {
 	require.Equal(t, "1ausd", collected(arkApp, ctx, r.cached, feeCollector).String())
 }
 
-// TestTransferTaxDecoratorChargesTheFigureItIsHanded pins the seam between
-// the halves: the post charges the tax on the context and nothing else. A
-// figure the ante priced as nothing — genesis, or messages that owe none —
-// is handed on without an event; a context carrying no figure at all is the
-// post chain running without the ante, and fails the transaction rather than
-// letting it through untaxed.
+// TestTransferTaxDecoratorChargesTheFigureItIsHanded checks that post collects the context tax
+// without recomputation. Explicit zero emits no event; missing context fails execution.
 func TestTransferTaxDecoratorChargesTheFigureItIsHanded(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 

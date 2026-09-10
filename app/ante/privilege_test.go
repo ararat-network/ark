@@ -239,11 +239,8 @@ func legacySubmit(t *testing.T, who sdk.AccAddress, deposit sdk.Coins) *govv1bet
 	return msg
 }
 
-// requireHandlerAgrees runs msg through x/gov's own handler on a discarded
-// branch and requires it to accept exactly when the vouch did, so the copy
-// in gov.go cannot drift from the handler unseen. Errors are not compared:
-// the vouch is the bond alone, and a refusal the handler makes that the
-// vouch does not is only ever one that costs nothing to satisfy.
+// requireHandlerAgrees compares governance eligibility with x/gov execution on a discarded branch.
+// Fixtures satisfy non-bond requirements; error text is not compared.
 func requireHandlerAgrees(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, msg sdk.Msg, eligible bool) {
 	t.Helper()
 	handler := arkApp.MsgServiceRouter().Handler(msg)
@@ -253,12 +250,8 @@ func requireHandlerAgrees(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, msg
 	require.Equal(t, execErr == nil, eligible, "vouch said %v, handler said %v", eligible, execErr)
 }
 
-// The governance vouches are x/gov's own bond rules: a deposit the signer
-// can fund, in an accepted denomination, meeting the initial and per-deposit
-// ratios; a live proposal for a deposit; the proposal's own proposer for a
-// cancellation. Every case also runs through x/gov's handler, which has to
-// agree, so each is complete in the fields the vouch ignores: metadata on a
-// v1 proposal, content on a legacy one.
+// Governance eligibility follows x/gov's deposit, balance, live-proposal, and proposer rules. Each
+// fixture satisfies unrelated handler requirements so execution can verify the eligibility verdict.
 func TestGovernanceVouch(t *testing.T) {
 	arkApp, ctx, proposer, params, proposalID := setupProposalTest(t)
 	set := arkApp.Privileges()

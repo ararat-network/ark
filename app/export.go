@@ -12,16 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
-// ExportAppStateAndValidators exports the state of the application for a
-// genesis file. The export continues the chain: heights stay absolute and the
-// genesis starts at the next height, so every height-anchored record — mandate
-// windows, claim schedules, settlement plans, oracle windows — resumes where
-// it was.
-//
-// Zero-height export is refused. It would re-express every stored height for
-// a chain restarting at one, which CometBFT has not required since genesis
-// gained an initial height, and a partial re-expression imports cleanly while
-// silently reopening windows the old chain had closed.
+// ExportAppStateAndValidators exports a continuation genesis at the next absolute height,
+// preserving height-anchored windows and schedules. Zero-height export is refused.
 func (app *ArkApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAddrs, modulesToExport []string) (servertypes.ExportedApp, error) {
 	if forZeroHeight {
 		return servertypes.ExportedApp{}, errors.New(
@@ -70,14 +62,8 @@ func (app *ArkApp) ExportAppStateAndValidators(forZeroHeight bool, jailAllowedAd
 	}, nil
 }
 
-// trimValidators jails every validator off the allow list and applies the
-// resulting set change, so a relaunch seats only the validators committed to
-// it. This is the one relaunch problem no in-place fork can solve: producing
-// the block that would run the fork needs the two-thirds that are missing.
-// Jailing is not slashing — nothing sets a jailed-until time, so a trimmed
-// validator that returns unjails at once, and its delegations stay in place.
-// An entry naming no validator is refused rather than ignored, because a typo
-// there would jail the validator it meant to keep.
+// trimValidators jails validators outside the relaunch allowlist and applies the set change.
+// Delegations remain and returning validators can unjail; unknown allowlist entries are errors.
 func (app *ArkApp) trimValidators(ctx sdk.Context, allowedAddrs []string) error {
 	allowed := make(map[string]struct{}, len(allowedAddrs))
 	for _, addr := range allowedAddrs {

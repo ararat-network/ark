@@ -146,16 +146,9 @@ func (app *ArkApp) setupIBCKeepers() error {
 // runs after setupWasm, so the contract handlers are in hand when the routers
 // are built.
 func (app *ArkApp) setupIBCRoutes() error {
-	// One handler serves three roles: the native contract channel route below,
-	// and the contract keeper behind callbacks on both transfer stacks. Wasmd
-	// supplies the callback authorisation and gas rules; Ark chooses only where
-	// in each stack the middleware sits.
-	//
-	// The tax contract needs no wiring of its own here and holds either way.
-	// Delivering a callback moves no funds, so the calculator extracts nothing
-	// from it and it is not a taxable transfer; whatever the woken contract then
-	// dispatches is an ordinary execution-generated message and is charged by
-	// the policy router the Wasm keeper already holds (D42, D47).
+	// The same Wasm handler serves native contract channels and both transfer callback stacks.
+	// Wasmd enforces callback authorisation and gas; execution-generated dispatches pay tax through
+	// the policy router.
 	wasmIBCHandler := wasm.NewIBCHandler(
 		app.WasmKeeper,
 		app.IBCKeeper.ChannelKeeper,
@@ -164,12 +157,8 @@ func (app *ArkApp) setupIBCRoutes() error {
 	)
 
 	ibcRouter := porttypes.NewRouter()
-	// Base is innermost and each Next wraps outward, so the inbound order is
-	// rate limit, packet forward, callbacks, transfer. Callbacks sits directly
-	// over transfer because a callback is a consequence of a delivered transfer:
-	// it must not run for a packet the rate limiter or a forward hop rejected,
-	// and a forwarded hop is a continuation rather than a delivery to this
-	// chain, so it carries no callback of its own.
+	// Inbound order is rate limit, packet forward, callbacks, transfer. Callbacks apply to locally
+	// delivered transfers, not rejected packets or forwarded hops.
 	transferStack := porttypes.NewIBCStackBuilder(app.IBCKeeper.ChannelKeeper)
 	transferStack.Base(transfer.NewIBCModule(app.TransferKeeper)).
 		Next(ibccallbacks.NewIBCMiddleware(wasmIBCHandler, wasm.DefaultMaxIBCCallbackGas)).

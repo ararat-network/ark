@@ -24,13 +24,8 @@ var (
 	_ icatypes.MessageRouter   = executionPolicyRouter{}
 )
 
-// executionPolicyRouter builds the one execution router every dispatch
-// surface shares: contracts, the accounts GMP derives for a remote caller
-// (D48), and interchain accounts under the ICA host. Each authenticates its
-// own sender before routing — Wasmd against the contract, GMP against the
-// derived account, the ICA host against the channel's interchain account — so
-// by the time the router runs the signer is provably the party to charge, and
-// no surface needs its own policy path.
+// executionPolicyRouter shares message policy across contracts, GMP-derived accounts, and ICA
+// accounts. Each dispatch surface authenticates its sender before consulting the router.
 func (app *ArkApp) executionPolicyRouter() executionPolicyRouter {
 	return executionPolicyRouter{
 		inner:    app.MsgServiceRouter(),
@@ -41,19 +36,9 @@ func (app *ArkApp) executionPolicyRouter() executionPolicyRouter {
 	}
 }
 
-// executionPolicyRouter is the execution-path twin of the ante chain: it
-// applies the message policies ante applies to signed transactions — the
-// gov-vote stake floor, the MultiSend fan-out guard, and the transfer tax —
-// to messages a contract, derived account, or interchain account dispatches.
-//
-// It wraps the router rather than Wasmd's messenger so it sees the SDK message
-// Wasmd's own encoder produced, which is what keeps a second message model out
-// of Ark (D41, D43). It owns no rate or cap arithmetic: every figure comes
-// from the ante package's validators and Treasury's canonical calculator.
-//
-// Only execution-generated messages reach it. Signed top-level messages route
-// through BaseApp's own router and stay ante-owned, so nothing is checked or
-// taxed twice.
+// executionPolicyRouter applies ante message policies and Treasury's tax calculator to
+// execution-generated SDK messages. Signed top-level messages use BaseApp's router, so they are not
+// checked or taxed twice.
 type executionPolicyRouter struct {
 	inner    wasmkeeper.MessageRouter
 	treasury *treasurykeeper.Keeper
@@ -81,11 +66,8 @@ func (r executionPolicyRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 		if err := ante.ValidateMultiSendMsg(ctx, r.cdc, req, 0); err != nil {
 			return nil, err
 		}
-		// Tax first. It makes principal plus tax the effective requirement, so
-		// an underfunded contract fails before any recipient output moves. A
-		// failure here or below unwinds both together: Wasmd dispatches inside
-		// a cached store, so the rollback D42 requires is where this sits, not
-		// something this function performs.
+		// Charge tax before principal so the dispatch requires both. The caller's cached execution
+		// branch rolls back tax and message writes together on failure.
 		if err := r.collectTax(ctx, req); err != nil {
 			return nil, err
 		}
@@ -104,11 +86,8 @@ func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
 		return nil
 	}
 
-	// The payer is the message's signer. Every surface has already refused a
-	// message whose signers are not exactly its authenticated account — the
-	// contract, the derived account, the interchain account — and does so
-	// before consulting this router, so the signer is the party to charge by
-	// construction and needs no separate plumbing.
+	// Each dispatch surface authenticates all message signers against its contract, derived
+	// account, or interchain account before routing. That signer is therefore the tax payer.
 	signers, _, err := r.cdc.GetMsgV1Signers(msg)
 	if err != nil {
 		return fmt.Errorf("resolving execution-generated tax payer: %w", err)

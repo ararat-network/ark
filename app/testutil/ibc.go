@@ -23,13 +23,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// NewIBCCoordinator returns an ibc-go coordinator whose every chain is an Ark
-// application, for driving packets between two Ark chains through the real
-// client, connection, and channel handshakes.
-//
-// Each chain gets its own home, because the Wasm VM locks its cache
-// directory. The coordinator signs through the ante chain with a fee the
-// consensus base fee would refuse, so the gate is off for the test.
+// NewIBCCoordinator builds Ark chains with real IBC handshakes and separate homes for Wasm cache
+// locks. Its SDK-generated fees require the test-only consensus fee gate bypass.
 func NewIBCCoordinator(t *testing.T, chains int) *ibctesting.Coordinator {
 	t.Helper()
 

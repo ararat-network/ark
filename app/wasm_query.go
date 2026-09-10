@@ -10,20 +10,9 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// acceptedQueries is the set of gRPC query paths contracts may reach, each with
-// the response it decodes into. Hand-written, as Osmosis, Neutron, Juno, and
-// Archway keep theirs: a contract reading a value makes it an input to
-// consensus and freezes the response shape for the life of the chain, so
-// listing is a review rather than an annotation. Every entry must also be
-// annotated module_query_safe, which the tests check.
-//
-// The launch list is what a contract needs to price and route a conversion or
-// a transfer: the tax estimate D43 asks for (D74) and the caps and gas prices
-// behind it, the Oracle rates and reference unit, Market's quote, pool, and
-// policy, and the asset registry. Mandates, ledgers, positions, fund status,
-// exposure, rewards, attendance, feeds, and settlement plans stay unlisted:
-// widening later is additive, narrowing breaks every contract that read the
-// path.
+// acceptedQueries lists the consensus-safe gRPC paths available to contracts and their response
+// types. Every entry requires module_query_safe. Adding a path expands the contract API; removing
+// one can break deployed contracts. See README.md for the accepted surface.
 func acceptedQueries() wasmkeeper.AcceptedQueries {
 	return wasmkeeper.AcceptedQueries{
 		"/ark.treasury.v1.Query/ComputeTax": func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },

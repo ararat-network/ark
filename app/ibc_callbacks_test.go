@@ -26,11 +26,9 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// callbacksFixture is two Ark chains joined by a transfer channel, with the
-// ibc-callbacks contract on both and the reflect contract on A. The
-// callbacks contract sends ICS-20 transfers that ask for callbacks to itself
-// and counts what comes back; the reflect contract sends transfers with any
-// memo the test writes, for the malformed and misdirected cases.
+// callbacksFixture joins two Ark chains with callback contracts and a reflect contract on A.
+// Callback contracts count transfer callbacks; reflect supplies arbitrary memos for invalid and
+// misdirected cases.
 type callbacksFixture struct {
 	coord          *ibctesting.Coordinator
 	path           *ibctesting.Path

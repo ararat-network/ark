@@ -127,12 +127,8 @@ func TestLightClientRoutes(t *testing.T) {
 	require.Error(t, err, "unwired client type must not route")
 }
 
-// TestIBCWiring asserts the transfer stack's shape — that rate limiting sits
-// outermost, with the callbacks middleware beneath it. These drive a packet
-// through that stack instead, which is the only thing that shows the order is
-// load-bearing rather than merely declared: a limiter that ran after the
-// transfer would mint the voucher before refusing the packet, and a structural
-// assertion cannot tell the difference.
+// Packet tests verify that rate limiting rejects transfers before voucher minting or callbacks,
+// beyond the structural assertions in TestIBCWiring.
 
 const (
 	// The counterparty's side of the transfer channel, and ours.

@@ -33,29 +33,9 @@ func transferTaxFromContext(ctx sdk.Context) (sdk.Coins, bool) {
 	return tax, ok
 }
 
-// TransferTaxDecorator is the post half of the fee mechanism: it charges the
-// transfer tax FeeDecorator priced, held the declared fee to, and handed on
-// through the context, once the messages have run, and only when they
-// succeeded. BaseApp runs the post chain on the messages' own branch —
-// written with them, discarded with them — so the charge commits with the
-// transfer that owes it and a transaction that fails is never taxed, on the
-// terms the execution policy router already charges a contract's dispatches
-// (D42, D82). A payer or granter that cannot cover the tax once the messages
-// have moved what they move fails the transaction here; BaseApp then
-// discards the messages and keeps the ante's gas charge, so the transfer
-// does not happen and the gas that ran it is paid.
-//
-// The figure is the ante's, not a second computation: the same number the
-// signed fee was held to, so the charge cannot exceed the declaration by
-// construction. A context carrying no figure is a wiring fault — the post
-// chain running without FeeDecorator — and fails the transaction rather than
-// letting a transfer through untaxed. The ante hands on a zero tax at height
-// zero, so genesis charges nothing here without a rule of its own.
-// Admission and proposal verification skip collection because they do not
-// execute messages. Simulation includes it to estimate the execution cost.
-//
-// A granter bears the tax as they bear the gas fee, through a draw on the
-// allowance for the tax alone.
+// TransferTaxDecorator collects FeeDecorator's declared tax after successful messages, on their
+// cache branch. Missing tax context or an unaffordable charge fails execution; admission and
+// proposal checks skip collection. See README.md for rollback, simulation, and feegrant rules.
 type TransferTaxDecorator struct {
 	accountKeeper  sdkante.AccountKeeper
 	bankKeeper     authtypes.BankKeeper

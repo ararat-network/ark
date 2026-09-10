@@ -22,16 +22,8 @@ import (
 // the voter counts as under-staked rather than the check unbounded.
 const maxVoterDelegations = 100
 
-// minVoterStake is the stake floor for casting a governance vote, the spam
-// defence the Hub adopted after zero-stake accounts blanketed proposals with
-// vote transactions. Compiled in like the priority lane set: it decides what
-// enters blocks, so a node-local knob would fragment mempools.
-//
-// One NOAH, mirroring the Hub's one ATOM. The floor never binds for
-// validators or for delegators inheriting their validator's vote; it falls
-// entirely on delegators overriding that vote, so it is sized to be trivial
-// for any individual delegator. That condition is the policy, not the
-// constant: if a whole NOAH ever becomes a serious position, "1" has expired.
+// minVoterStake is the consensus governance-vote spam floor of one NOAH. It applies to explicit
+// votes, not inherited validator votes; node-local configuration cannot change block validity.
 var minVoterStake = math.LegacyNewDecFromInt(chain.NativeBaseAmount(1))
 
 // SetMinVoterStake overrides the floor, and zero disables the check outright.
@@ -64,16 +56,9 @@ func (d GovVoteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, 
 	return next(ctx.WithValue(votesCheckedKey{}, true), tx, simulate)
 }
 
-// ValidateGovVoteMsg refuses a governance vote whose voter stakes less than
-// minVoterStake, recursing through authz MsgExec so a wrapped vote cannot
-// slip past either seam that calls this: the ante for signed transactions,
-// and the policy router for messages a contract, derived account, or
-// interchain account dispatches. Votes a passed proposal executes are the one
-// path around it, and need no filter: they already won a governance vote.
-// Non-vote messages pass untouched.
-//
-// The floor is a consensus rule independent of lane eligibility: x/gov
-// does not enforce it, so GovVoteDecorator runs it at FinalizeBlock too.
+// ValidateGovVoteMsg enforces minVoterStake on explicit votes, including authz leaves, at both
+// signed and execution-generated message boundaries. Non-vote messages pass through. Governance
+// proposal execution uses the underlying router.
 func ValidateGovVoteMsg(ctx sdk.Context, cdc codec.Codec, staking *stakingkeeper.Keeper, msg sdk.Msg, depth int) error {
 	return walkAuthzExec(cdc, msg, depth, func(msg sdk.Msg) error {
 		return vouchVote(ctx, staking, msg)

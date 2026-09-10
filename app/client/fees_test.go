@@ -98,12 +98,8 @@ func connect(t *testing.T, chain *fakeChain) sdkclient.Context {
 	return sdkclient.Context{GRPCClient: conn}
 }
 
-// TestPricing pins the pricing's two halves: what the chain is asked about
-// a transaction, and the declaration priced from it against its gas — the
-// chain's tax beside the gas fee the command priced, or one from the sheet:
-// the reference row without a payer, else the first denomination in the
-// recorded order whose spendable balance covers the declaration, every stable
-// leg lifted and NOAH exact. Offline there is no chain to ask.
+// TestPricing checks tax queries and gas declarations from explicit prices or the sheet, including
+// payer balances, stable headroom, exact NOAH, and offline behaviour.
 func TestPricing(t *testing.T) {
 	sender := sdk.AccAddress("sender")
 	msg := banktypes.NewMsgSend(
@@ -249,12 +245,8 @@ func TestPricing(t *testing.T) {
 	})
 }
 
-// TestPickFeeDenom pins the recorded fee-denomination walk: the denominations
-// the transaction moves first, NOAH, the reference, then the rest of the sheet —
-// each candidate needing a price row and a spendable balance covering the
-// lifted gas fee and tax plus whatever of the transfer leaves the same
-// account. The reference rides beside the sheet as its own row, never a list
-// entry.
+// TestPickFeeDenom checks candidate order and coverage of padded fees plus same-payer principal.
+// The reference price is a separate row, not a sheet entry.
 func TestPickFeeDenom(t *testing.T) {
 	reference := treasurytypes.GasPrice{Denom: "axdr", GasPrice: math.LegacyMustNewDecFromStr("0.1")}
 	sheet := []treasurytypes.GasPrice{

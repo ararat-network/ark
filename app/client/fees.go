@@ -17,12 +17,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// DefaultFeeHeadroom is declared above the chain's figure on every stable
-// fee leg. The leg is a ceiling (D80): the chain charges the exact tax and
-// base fee under it and the rest never leaves the account, so the headroom
-// costs nothing and survives what moves between building and inclusion —
-// the base fee by at most 2.5% a block, a capped tax with the oracle rate.
-// NOAH gets none: its leg is charged whole, so headroom there is a tip.
+// DefaultFeeHeadroom pads stable fee ceilings for price movement before inclusion. Unused stable
+// fees remain with the payer. NOAH receives no headroom because its entire leg is charged.
 var DefaultFeeHeadroom = math.LegacyMustNewDecFromStr("1.1")
 
 // withHeadroom sizes the declaration for every leg of a priced fee.
@@ -102,12 +98,9 @@ type feeQuote struct {
 	hasPayer    bool
 }
 
-// quoteFee asks the chain what msgs owe and what payer can spend; sends says
-// whether payer is also the account the messages draw on, so the transfer
-// counts against the same balance. fromSheet says whether the gas leg is the
-// client's to price; a command that priced its own gas needs neither the
-// sheet nor the balances. Offline there is no chain to ask, and a fee short
-// of the tax is refused, so the fee has to be declared.
+// quoteFee queries tax and spendable balances. sends includes principal in the payer's requirement;
+// fromSheet selects chain-priced gas. Caller-priced gas skips sheet and balance reads. Offline
+// callers must declare fees.
 func quoteFee(clientCtx sdkclient.Context, msgs []sdk.Msg, payer sdk.AccAddress, sends, fromSheet bool) (feeQuote, error) {
 	if clientCtx.Offline {
 		return feeQuote{}, errors.New("offline, the transfer tax cannot be priced; provide --fees")
@@ -147,13 +140,8 @@ func quoteFee(clientCtx sdkclient.Context, msgs []sdk.Msg, payer sdk.AccAddress,
 	return quote, nil
 }
 
-// price is the declaration for a settled gas figure: the chain's tax, gas
-// from gasFee when the command priced it or from the quote when not, every
-// stable leg lifted, NOAH exact, tip added whole. The tax is the figure the
-// ante holds the fee to, so the signer sees the whole charge in the fee they
-// sign and is never taxed past it. The breakdown returned is the finished
-// declaration: Fee always carries Tip. A zero gas prices nothing but the tip,
-// as a factory without a gas figure declares no gas.
+// price combines tax, caller- or sheet-priced gas, stable-leg headroom, and the NOAH tip. Fee
+// includes Tip; NOAH is unpadded. Zero gas declares only the tip.
 func (q feeQuote) price(gas uint64, gasFee, tip sdk.Coins) (FeeBreakdown, error) {
 	if gas == 0 {
 		return FeeBreakdown{Tip: tip, Fee: tip}, nil
@@ -175,12 +163,8 @@ func (q feeQuote) price(gas uint64, gasFee, tip sdk.Coins) (FeeBreakdown, error)
 	}, nil
 }
 
-// computeTax is the chain's own figure for what msgs owe, from the same
-// calculator the ante holds the fee to, beside the principal it taxed: the
-// denominations the transaction is already moving, which the fee prefers to
-// ride. The messages travel as the bytes the chain decodes for itself, so
-// what the command built them as — autocli builds dynamic ones — is no
-// concern here.
+// computeTax queries Treasury's canonical tax calculator using encoded messages and returns the
+// taxable principal alongside the tax. Principal denominations are preferred for gas payment.
 func computeTax(clientCtx sdkclient.Context, msgs []sdk.Msg) (tax, transferred sdk.Coins, err error) {
 	packed := make([]*codectypes.Any, len(msgs))
 	for i, msg := range msgs {
@@ -224,15 +208,9 @@ func (q feeQuote) gasFee(gas uint64) (sdk.Coins, error) {
 	return sdk.NewCoins(fee), nil
 }
 
-// pickFeeDenom walks the fee-denomination candidates in the recorded order —
-// the denominations the transaction moves, NOAH, the reference, then the rest
-// of the sheet — and takes the first that is priced with a spendable balance
-// covering the declaration — gas fee and tax lifted by the headroom, NOAH
-// exact — plus whatever of the transfer leaves the same account. The
-// reference arrives as its own row beside the sheet and joins the price map,
-// so a transferred reference amount still prices through the first tier. The
-// coin returned is the gas portion alone, unlifted; the caller adds the tax
-// and lifts.
+// pickFeeDenom selects the first priced, affordable candidate: transfer denominations, NOAH,
+// reference, then remaining sheet rows. Coverage includes padded fees and any principal from the
+// same payer. It returns unpadded gas only; the caller adds tax and headroom.
 func (q feeQuote) pickFeeDenom(gasLimit math.LegacyDec) (sdk.Coin, bool) {
 	rows := make(map[string]treasurytypes.GasPrice, len(q.sheet)+1)
 	for _, row := range q.sheet {

@@ -28,11 +28,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// sdkRun is a module transaction command's RunE: it builds its messages and
-// hands them to the SDK. That handover is the whole of what a transaction
-// command does, and going through it rather than mimicking it is what pins
-// the seam — the factory reaching TxConfig.NewTxBuilder — to the SDK arkd
-// builds against.
+// sdkRun exercises the SDK transaction factory through a command's RunE, including its call to the
+// wrapped TxConfig.NewTxBuilder.
 type sdkRun struct {
 	txConfig sdkclient.TxConfig
 	msgs     []sdk.Msg

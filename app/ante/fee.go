@@ -26,12 +26,9 @@ import (
 // above the base fee.
 const AttributeKeyTip = "tip"
 
-// SimulatedFeeTransferGas stands in for the gas fee transfer a fee-less
-// simulation cannot make. Settlement transfers at most two denominations:
-// one stable gas fee and a NOAH tip. The allowance covers that path with
-// balances at the 2^128 quantity bound. A simulation carrying a payable fee
-// meters the actual transfer instead; fee-less estimates are conservative
-// when the eventual fee uses only one denomination.
+// SimulatedFeeTransferGas covers fee-less simulation's unexecuted gas-fee transfer: a stable fee
+// plus NOAH tip at the 2^128 balance bound. Payable fees meter their actual transfer; see
+// README.md.
 const SimulatedFeeTransferGas = 38_000
 
 // useBaseFeeGate gates the consensus base fee.
@@ -51,33 +48,9 @@ func BaseFeeGate() bool {
 	return useBaseFeeGate
 }
 
-// FeeDecorator prices the transfer tax a transaction's messages owe, holds
-// the declared fee to it, settles the fee by denomination against Treasury's
-// consensus base fee, and deducts the base fee and the NOAH tip to the fee
-// collector on the ante's cache branch. It replaces the SDK's
-// DeductFeeDecorator.
-//
-// The fee is a ceiling and the tip is NOAH. A leg in any other denomination
-// is charged the exact tax it declares, plus ceil(BaseGasPrice × gas limit ×
-// factor) if it is the first leg in denomination order whose slack above the
-// tax covers it; the rest never leaves the payer. The NOAH leg is charged
-// whole: base fee if no stable leg covered it, remainder tip. A fee short of
-// the tax is refused before anything is deducted. The tax itself is charged
-// by TransferTaxDecorator after the messages; the figure priced here rides
-// the context, so the charge is the declaration's own number and the tax is
-// computed once.
-//
-// Under simulation, and in the harness with the gate off, nothing is refused
-// on fee grounds: the settlement's reads are made and not enforced, and a
-// fee-less estimate consumes SimulatedFeeTransferGas for the transfer it
-// cannot make. Height zero waives tax and gate alike.
-//
-// A fee granter bears base fee, tip and tax together, each drawn on the
-// allowance as it is charged. A grant that will not cover a charge fails the
-// transaction rather than falling back to the payer.
-//
-// Priority is the tip in reference units per gas unit, through the factor
-// NOAH is priced with.
+// FeeDecorator checks the signed tax ceiling, settles the consensus gas fee and NOAH tip, and
+// carries the tax amount to TransferTaxDecorator. The granter, if present, bears all charges. See
+// README.md and docs/clients/CLIENT_FEES.md for settlement and simulation rules.
 type FeeDecorator struct {
 	accountKeeper  sdkante.AccountKeeper
 	bankKeeper     authtypes.BankKeeper
@@ -150,11 +123,9 @@ type settlement struct {
 	priority int64
 }
 
-// settle partitions the fee by denomination and prices it. Enforcing, it
-// refuses before anything moves: a fee short of the tax, a fee no leg can
-// cover the base fee from. Not enforcing, it refuses nothing on fee grounds,
-// settles what it can, and still makes the reads execution makes. A NOAH leg
-// the table cannot price is refused either way: broken state, not a fee.
+// settle prices and partitions the fee. Enforcement rejects insufficient tax or base-fee coverage
+// before deduction; simulation performs the same reads without those refusals. An unpriceable NOAH
+// leg fails in either mode.
 func (d FeeDecorator) settle(
 	ctx sdk.Context, params treasurytypes.Params, feeTx sdk.FeeTx, tax sdk.Coins, enforce bool,
 ) (settlement, error) {
@@ -328,11 +299,8 @@ func (d FeeDecorator) deduct(ctx sdk.Context, feeTx sdk.FeeTx, settled settlemen
 	return nil
 }
 
-// chargedAccount resolves who a transaction's charges come from: the fee
-// payer, or the granter when one is named and differs, in which case each
-// charge is also a draw on the granter's allowance. app/client's payerOf
-// resolves the same account for the declaration; the two are a pair, and a
-// rule changed in one is wrong in the other.
+// chargedAccount resolves the fee payer or sponsoring granter. Each sponsored charge draws the
+// granter's allowance. Account resolution must agree with app/client.payerOf.
 func chargedAccount(feeTx sdk.FeeTx) (deductFrom, payer sdk.AccAddress, sponsored bool) {
 	payer = sdk.AccAddress(feeTx.FeePayer())
 	deductFrom = payer

@@ -6,11 +6,9 @@ import (
 	"github.com/ararat-network/ark/app/mempool"
 )
 
-// PrivilegeDecorator assigns priority after signatures have been verified.
-// Governance ineligibility keeps a transaction in the normal lane; its messages
-// may establish each other's prerequisites when they execute in order.
-// Committee candidates must pass mandate authorisation. Mixed and authz
-// transactions use the normal lane without priority checks.
+// PrivilegeDecorator assigns lanes after signature verification. Ineligible governance messages
+// stay normal; committee candidates require mandate authorisation. Mixed and authz transactions use
+// the normal lane.
 type PrivilegeDecorator struct{ set mempool.Set }
 
 func NewPrivilegeDecorator(set mempool.Set) PrivilegeDecorator {

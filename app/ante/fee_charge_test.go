@@ -17,13 +17,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// TestFeeDecoratorChargesFeePayer pins the fixture: rate 0.1 on a 100 send
-// is ten, declared within the fee of fifteen. The base fee of one reaches
-// the fee collector from the ante, the tax its collector from the post, the
-// four of slack stay with the payer, and each half names what it moved on
-// its own tx event: the ante the fee and its payer, never the tax, since an
-// ante event outlives a failed transaction, which pays none; the post the
-// tax and its payer.
+// TestFeeDecoratorChargesFeePayer checks that base fee 1 and tax 10 leave 4 of the declared 15 with
+// the payer. Ante and post events identify their separate charges.
 func TestFeeDecoratorChargesFeePayer(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 
@@ -73,11 +68,9 @@ func TestFeeDecoratorRefusesAnUnknownPayer(t *testing.T) {
 	require.ErrorContains(t, r.err, "does not exist")
 }
 
-// TestFeeDecoratorAcceptsTransfersOfUncappedDenom proves the fee path has no
-// cap-derivation dependency left: a denomination Treasury holds no cap for is
-// untaxed and its transfer is accepted, so a stalled cap refresh can never
-// reject an otherwise valid transaction. Gas rides the reference here, since
-// the dropped factor prices ausd for neither.
+// TestFeeDecoratorAcceptsTransfersOfUncappedDenom checks that uncapped denominations transfer
+// without tax. The reference denomination pays gas when the transferred denomination has no fee
+// factor.
 func TestFeeDecoratorAcceptsTransfersOfUncappedDenom(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	require.NoError(t, arkApp.TreasuryKeeper.ConversionFactors.Remove(ctx, chain.USDBaseDenom))
@@ -107,11 +100,8 @@ func TestFeeDecoratorChargesVestingAccountFunding(t *testing.T) {
 	require.Equal(t, "10ausd", r.tax)
 }
 
-// A granter sponsors the base fee and tax together — the charge, not the
-// ceiling — each drawn on the allowance as it is charged: the base fee by
-// the ante, the tax by the post once the messages have succeeded, so the
-// allowance records exactly what left the granter at every step. The payer
-// is untouched, and each event names the granter.
+// The granter pays base fee in ante and tax in post. Allowance draws and events match those
+// charges; the payer's balance is unchanged.
 func TestFeeDecoratorChargesGranterWhenSet(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))
@@ -163,11 +153,8 @@ func TestFeeDecoratorStrictWhenGrantExcludesTaxDenom(t *testing.T) {
 	require.Equal(t, math.NewInt(20), usdBalance(arkApp, r.cached, tx.payer))
 }
 
-// TestFeeDecoratorRefusesAGrantShortOfTheTax pins where a grant too small
-// for both charges fails: not in the ante, which draws only the base fee it
-// charges, but at the tax charge after the messages. The base fee stays
-// drawn and charged, as it does for any transaction whose messages fail;
-// nothing is taxed.
+// TestFeeDecoratorRefusesAGrantShortOfTheTax checks that a failed post-tax draw retains the ante
+// gas charge and its allowance draw, with no tax collected.
 func TestFeeDecoratorRefusesAGrantShortOfTheTax(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	granter := sdk.AccAddress(bytes.Repeat([]byte{3}, 20))

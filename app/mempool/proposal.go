@@ -26,17 +26,9 @@ func (p proposalPool) SelectBy(ctx context.Context, txs [][]byte, visit func(sdk
 	p.index.SelectBy(ctx, txs, visit)
 }
 
-// PrepareProposalHandler assigns proposal-local service lanes, then delegates
-// the entire transaction-selection loop to the SDK. The oracle wrapper has
-// already subtracted its bytes. Only actions larger than a full lane allowance
-// move to ordinary fee competition; exhausting a lane does not permit overflow.
-//
-// Entries past a lane's allowance in pool order stay out of the index: the SDK
-// verifies every candidate it iterates before the selector can decline it, so
-// a saturated lane would otherwise cost one signature check per pending entry.
-// An ordered sender's later entries wait with the first one left out, as they
-// cannot execute before it. The selector remains the authority; an entry that
-// fails verification leaves its share unused for this proposal.
+// PrepareProposalHandler assigns proposal-local lanes and delegates selection to the SDK after
+// oracle-byte reservation. Saturated lanes and nonce successors wait; only transactions larger than
+// a full lane allowance use ordinary priority. See README.md for index and selector accounting.
 func (p *Pool) PrepareProposalHandler(app baseapp.ProposalTxVerifier) sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error) {
 		if req.MaxTxBytes <= 0 {

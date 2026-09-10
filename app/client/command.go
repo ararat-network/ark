@@ -1,16 +1,6 @@
-// Package client builds the fee arkd declares, so no command has to. A
-// transaction command is wrapped once at registration (PriceTransactions) and
-// runs unchanged; what is replaced for the length of that run is the TxConfig
-// it builds through, and the builders it hands out settle their own fee when
-// the transaction they built is first read.
-//
-// The two halves: command.go is the wrapping — flags, the substituted
-// TxConfig and builder, the account the fee is drawn on — and fees.go is what
-// a fee costs, which is the chain's own tax figure and gas priced off the
-// posted sheet against what the payer can spend.
-//
-// cmd/arkd is the only caller. It also takes DefaultGasAdjustment and
-// TipFlagUsage from here, which are the flag defaults the wrapping assumes.
+// Package client prices arkd transactions through wrapped TxConfig builders. Commands retain SDK
+// signing and broadcast flow; fees are settled on the builder's first transaction read. See
+// docs/clients/CLIENT_FEES.md for declaration rules.
 package client
 
 import (
@@ -35,24 +25,14 @@ import (
 // factory defines on every transaction command and never reads.
 const TipFlagUsage = "NOAH paid above the base fee for priority, e.g. 1000anoah"
 
-// DefaultGasAdjustment is arkd's default --gas-adjustment. Fee-less SDK
-// simulations use an allowance for the largest gas-fee settlement: a stable
-// fee plus a NOAH tip. Single-denomination estimates are more conservative;
-// simulations carrying a payable fee meter its actual transfer. The margin
-// also covers Wasm's execution-only counter and state changes between the
-// estimate and inclusion. TestGasEstimateMatchesExecution verifies both fee
-// shapes through finalisation. An explicit --gas-adjustment overrides this.
+// DefaultGasAdjustment covers simulation/execution differences and state movement before inclusion.
+// Fee-less simulation includes the largest fee-transfer allowance. An explicit --gas-adjustment
+// overrides this margin; TestGasEstimateMatchesExecution checks both fee shapes.
 const DefaultGasAdjustment = 1.15
 
-// PriceTransactions wraps a transaction command so its fee is built for it — the
-// chain's tax on the messages, gas from --gas-prices or the sheet, headroom
-// on every stable leg, a NOAH tip from --tip — without the command knowing.
-// The command runs once, as written; what is replaced is the TxConfig it
-// builds through. Every transaction the SDK's factory builds comes from
-// TxConfig.NewTxBuilder, and a builder holds all the fee needs: the
-// messages, the settled gas, the payer. The parts of the fee are printed to
-// stderr ahead of the SDK's confirmation, which shows the fee as one figure.
-// An explicit --fees is left as declared, with the tip added.
+// PriceTransactions wraps transaction builders to declare tax, gas, stable-fee headroom, and the
+// NOAH tip. It prints a breakdown before SDK confirmation. Explicit --fees remain caller-declared,
+// with the tip added.
 func PriceTransactions(cmd *cobra.Command) {
 	run := cmd.RunE
 	if run == nil {
@@ -73,11 +53,8 @@ func PriceTransactions(cmd *cobra.Command) {
 	}
 }
 
-// pricer is the policy one command's transactions are priced under, read
-// from its flags: --fees leaves the declaration as it is and adds the tip,
-// --gas-prices makes the gas leg the SDK's, --offline has no chain to ask.
-// The queries go over the stored context, which knows the node and needs no
-// keyring: a transaction names its own payer.
+// pricer holds one command's fee policy and query context. Explicit --fees retain the declaration
+// plus tip; --gas-prices supplies the gas leg; offline mode cannot query chain state.
 type pricer struct {
 	clientCtx sdkclient.Context
 	out       io.Writer
@@ -108,11 +85,8 @@ func newPricer(cmd *cobra.Command, stored sdkclient.Context) (*pricer, error) {
 // none to return.
 type refusal struct{ err error }
 
-// settling runs the command with that refusal turned back into an error. A
-// fee is settled where a built transaction is first read — the confirmation,
-// the sign bytes, the generate-only print — and each of those precedes
-// signing and broadcast, so unwinding through them cannot leave a
-// transaction half sent.
+// settling converts pricing refusal into a command error. Settlement occurs on the first
+// transaction read, before signing or broadcast, so refusal cannot leave a partly sent transaction.
 func (p *pricer) settling(run func() error) (err error) {
 	defer func() {
 		raised := recover()
@@ -147,12 +121,8 @@ func (p *pricer) price(tx authsigning.Tx) (sdk.Coins, error) {
 	return priced.Fee, nil
 }
 
-// payerOf is the account the fee is drawn on — the granter when there is
-// one, else the payer the transaction names or its first signer — and
-// whether that is the first signer, the account the messages draw on, so the
-// transfer counts against the same balance. app/ante's chargedAccount
-// resolves the same account for the charge; the two are a pair, and a rule
-// changed in one is wrong in the other.
+// payerOf resolves the granter, explicit payer, or first signer, and reports whether that account
+// also funds message transfers. Resolution must agree with app/ante.chargedAccount.
 func payerOf(tx authsigning.Tx) (payer sdk.AccAddress, sends bool) {
 	if granter := tx.FeeGranter(); len(granter) > 0 {
 		return granter, false

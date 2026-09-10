@@ -19,11 +19,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// A contract can hold a deliberative mandate with no chain change: it
-// dispatches the committee message itself, Wasmd refuses the dispatch unless
-// the message names the contract, and the module then authorises term and
-// window as it would for a signed transaction. These tests pin that path, the
-// shape appointment records for it, and the lane it does not get.
+// Contracts may hold deliberative mandates. Wasmd authenticates the contract signer before module
+// term/window checks; these tests cover dispatch, appointment, and normal-lane classification.
 
 // economicCorridor is a mandate corridor wide enough to hold committeePolicy.
 func economicCorridor() (treasurytypes.EconomicPolicy, treasurytypes.EconomicPolicy) {

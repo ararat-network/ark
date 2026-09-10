@@ -36,21 +36,9 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// TestGasEstimateMatchesExecution pins the policy on gas estimates. Ark's
-// decorators charge simulation what they charge block execution: the fee
-// decorator makes its gate's reads without enforcing them and, when the
-// estimate carries no fee, consumes SimulatedFeeTransferGas for the transfer
-// it cannot make. Two imported decorators do not: wasmd's counter skips
-// simulation outright, and the SDK's size decorator overcharges simulation
-// for a stand-in signature larger than the real one. Ark accepts both rather
-// than owning wasmd's code, and clients absorb the net through
-// appclient.DefaultGasAdjustment.
-//
-// The table covers NOAH gas payment and a stablecoin gas fee plus NOAH tip.
-// The latter transfers two denominations and sets the fee-less allowance;
-// estimates for a single denomination are deliberately conservative. Each
-// case compares a simulation carrying fees with a fee-less one, then submits
-// a transaction using the fee-less estimate and the default gas adjustment.
+// TestGasEstimateMatchesExecution compares payable and fee-less simulation with finalisation for
+// NOAH and stable-plus-tip fees. The default gas adjustment covers Wasm counter and signature-size
+// differences; the allowance covers the two-denomination fee transfer.
 func TestGasEstimateMatchesExecution(t *testing.T) {
 	const chainID = "ark-gas-estimate-test"
 
@@ -115,11 +103,8 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 	}
 
 	txConfig := arkApp.GetTxConfig()
-	// sign builds the transaction, varying only what the case under test
-	// varies. Hand-rolled rather than GenSignedMockTx because that attaches a
-	// random memo, and a memo is execution gas the estimate also sees: it
-	// dilutes the ratio pinned below, understating the worst case by about
-	// 0.03. A real transaction carries none.
+	// Use a fixed transaction without a random memo so unrelated byte gas cannot dilute the
+	// simulation-to-execution ratio.
 	sign := func(msg sdk.Msg, sequence uint64, fee sdk.Coins, gas uint64) []byte {
 		signMode, err := authsigning.APISignModeToInternal(txConfig.SignModeHandler().DefaultMode())
 		require.NoError(t, err)
@@ -198,12 +183,8 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewIntFromUint64(gas).MulRaw(300_000_000_000))).Add(tax...)
 	}
 
-	// The decorators whose simulation differs from execution, measured from
-	// the very transactions under test on the state simulation sees: what
-	// each charges in block execution for the signed transaction, less what
-	// it charges in simulation for the unsigned one. The size decorator is
-	// part of it: simulation prices a stand-in signature while the unsigned
-	// bytes lack the real one.
+	// Measure each differing decorator's execution charge minus its simulation charge. The size
+	// decorator prices a stand-in signature while unsigned bytes omit the real one.
 	feeDecorator := ante.NewFeeDecorator(arkApp.AccountKeeper, arkApp.BankKeeper, arkApp.FeeGrantKeeper, arkApp.TreasuryKeeper)
 	decorators := []sdk.AnteDecorator{
 		wasmkeeper.NewCountTXDecorator(runtime.NewKVStoreService(arkApp.GetKey(wasmtypes.StoreKey))),
@@ -239,11 +220,8 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 				feeName = "stable fee and noah tip"
 			}
 			t.Run(tc.name+"/"+feeName, func(t *testing.T) {
-				// An empty block first. The first one carries simulation and
-				// execution past the genesis-height waivers; every one after it
-				// lets the previous block's fees be swept and its tally cleared, so
-				// the committed state simulation prices against is the state the
-				// block will execute on.
+				// An empty block passes genesis waivers, sweeps prior fees, and clears their tally
+				// so simulation and execution price the same committed state.
 				deliverEmpty()
 				signedBytes := sign(tc.msg, sequence, feeFor(declaredGas, tc.msg, stableTip), declaredGas)
 				payingBytes := unsigned(signedBytes)
@@ -269,11 +247,8 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 				}
 				payingGap, feelessGap := gap(payingBytes), gap(feelessBytes)
 
-				// The stand-in against the transfer it replaces. A fee-less estimate
-				// meters the fee decorator as execution does except for the transfer,
-				// which it charges as the stand-in, so taking the stand-in back out
-				// leaves the transfer. The headroom above is the digit room to the
-				// quantity bound on both balances.
+				// Subtract the simulated allowance to isolate the fee transfer's actual gas cost.
+				// Headroom accounts for balance digit growth to the quantity bound.
 				transfer := gasOf(feeDecorator, signedBytes, false) -
 					(gasOf(feeDecorator, feelessBytes, true) - ante.SimulatedFeeTransferGas)
 				require.GreaterOrEqual(t, int64(ante.SimulatedFeeTransferGas), transfer,

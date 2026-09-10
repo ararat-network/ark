@@ -3,11 +3,8 @@ package testdata
 
 import _ "embed"
 
-// ibcCallbacksWasm is the CosmWasm ibc-callbacks example contract, release
-// v2.2.2 (sha256 541506d4…84af, matching the release's checksums.txt). It
-// exports ibc_source_callback and ibc_destination_callback, which no
-// contract Wasmd ships does, and requires only the iterator and stargate
-// capabilities.
+// ibcCallbacksWasm embeds CosmWasm ibc-callbacks v2.2.2 (sha256 541506d4…84af).
+// It exports source/destination callbacks and needs iterator and stargate.
 //
 //go:embed ibc_callbacks.wasm
 var ibcCallbacksWasm []byte

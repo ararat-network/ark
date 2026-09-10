@@ -75,14 +75,8 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 	return basics, cdc
 }
 
-// TestCLIAndAppGenesisAgree pins the property every genesis generator rests on:
-// `arkd init`, testnet init-files, the app, and the sims all compose from one
-// BasicManager, so a module or default added for one reaches all of them.
-//
-// The failure it guards is silent. A chain-specific default applied above the
-// composition — post-processing an assembled map rather than overriding the
-// module's own basic — is invisible to whichever callers do not run that code,
-// and the genesis they emit differs from the one every test asserts against.
+// TestCLIAndAppGenesisAgree checks that CLI, application, and simulation genesis use the same
+// module basics and defaults.
 func TestCLIAndAppGenesisAgree(t *testing.T) {
 	arkApp := app.NewArkApp(
 		log.NewTestLogger(t),
@@ -142,12 +136,8 @@ func TestDefaultGenesisSetsGovDeposits(t *testing.T) {
 	)
 }
 
-// TestInitGenesisFollowsRegistryDependencies pins the init order the asset
-// registry imposes. Asset genesis checks every oracle-priced asset's feed
-// against the Oracle registry, and Treasury and Reserve genesis check their
-// denoms against the asset registry, so each must find the registry it reads
-// already imported. A wrong order fails InitChain loudly rather than silently;
-// the pin is so the failure names the wiring instead of a genesis file.
+// TestInitGenesisFollowsRegistryDependencies checks Oracle before Asset, then Asset before Treasury
+// and Reserve, so each genesis importer can validate against its dependency registry.
 func TestInitGenesisFollowsRegistryDependencies(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderInitGenesis
@@ -157,11 +147,8 @@ func TestInitGenesisFollowsRegistryDependencies(t *testing.T) {
 	requireOrderBefore(t, order, assettypes.ModuleName, reservetypes.ModuleName)
 }
 
-// launchGenesisPath is the reviewed artefact a network starts from. The tests
-// below are what let it be data rather than code: they parse it, validate it
-// with the manager `arkd genesis validate` uses, and boot a chain from it, so
-// an SDK upgrade or a hand edit that breaks it fails here instead of on a
-// validator at launch.
+// launchGenesisPath identifies the reviewed network genesis. Tests validate it through the CLI's
+// manager and boot it with a funded validator.
 const launchGenesisPath = "genesis/genesis.json"
 
 // launchGenesis loads the artefact and its app state.
@@ -194,10 +181,8 @@ func TestLaunchGenesisIsValid(t *testing.T) {
 	require.NoError(t, basics.ValidateGenesis(cdc, txConfig, state))
 }
 
-// TestLaunchGenesisCarriesArkEconomics pins the launch values that used to be
-// genesis defaults: distribution's community tax is zero, and the native unit
-// carries its metadata. They are asserted against the artefact because the
-// artefact is now their only carrier — `arkd init` emits SDK defaults.
+// TestLaunchGenesisCarriesArkEconomics checks the launch artefact: zero Distribution community tax
+// and native-unit metadata. arkd init emits SDK defaults.
 func TestLaunchGenesisCarriesArkEconomics(t *testing.T) {
 	_, state := launchGenesis(t)
 	_, cdc := cliBasicManager(t)
@@ -302,15 +287,9 @@ func TestLaunchGenesisBoots(t *testing.T) {
 	require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
 }
 
-// The hub ships shut behind one switch: an empty allowed-client list. Every
-// IBC surface starts with a client — connections and channels, ICS-20 and ICA
-// on channels, v2 counterparties, and on those GMP and a contract's own
-// channels — so with no client type admitted nothing can be created and no
-// packet can arrive or leave. The transfer and ICA flags are off as well, so
-// the vote that admits 07-tendermint opens client creation and nothing more.
-// ibc-go's defaults open every one of these, so the artefact is their only
-// carrier and this pins it. The 08-wasm checksum half is pinned by
-// TestWasmLightClientGenesisShipsEmpty.
+// The launch genesis disables all IBC client types and separately disables transfer and ICA.
+// Admitting a client type alone therefore opens only client creation; Wasm client checksums remain
+// empty.
 func TestLaunchGenesisHoldsTheHubShut(t *testing.T) {
 	_, state := launchGenesis(t)
 	_, cdc := cliBasicManager(t)
@@ -335,23 +314,16 @@ func TestLaunchGenesisHoldsTheHubShut(t *testing.T) {
 	require.NotContains(t, state, "mint", "Ark has no mint module (D1)")
 }
 
-// Oracle rates arrive through vote extensions, and the pipeline treats an
-// enable height of zero as disabled, so a launch genesis that left the SDK
-// default would never price anything. The testnet command and the upgrade
-// rehearsal both enable them from the first height; this pins the artefact to
-// the same.
+// The launch genesis enables vote extensions from the first height so oracle pricing is available.
+// Zero disables the pipeline.
 func TestLaunchGenesisEnablesVoteExtensions(t *testing.T) {
 	appGenesis, _ := launchGenesis(t)
 	require.EqualValues(t, 1, appGenesis.Consensus.Params.ABCI.VoteExtensionsEnableHeight)
 }
 
-// The contract runtime ships open: anyone may upload and instantiate from
-// height one. What bounds a contract is the policy router charging its tax at
-// dispatch, the accept list fixing what it may read, and the empty client
-// allowlist leaving its IBC channels unopenable. Wasmd's default says the same,
-// so the pin here is against a hand edit that shuts the runtime by accident,
-// and against the artefact carrying code or contracts, which a fresh chain
-// must not.
+// The launch genesis permits contract upload and instantiation from height one and contains no
+// deployed code or contracts. Execution policy, query restrictions, and the empty IBC client
+// allowlist bound the runtime.
 func TestWasmGenesisShipsOpen(t *testing.T) {
 	_, appState := launchGenesis(t)
 	require.NotNil(t, appState[wasmtypes.ModuleName], "wasm genesis must be present")

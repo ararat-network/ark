@@ -82,11 +82,9 @@ func TestAppConstructs(t *testing.T) {
 	)
 }
 
-// TestAppDoesNotMeterBlockGas pins the deliberate absence of
-// baseapp.EnableBlockGasMeter: ten txs each declaring the entire MaxGas budget
-// all execute, because the app applies no cumulative bound at DeliverTx. The
-// SDK proposal handlers enforce max_gas before acceptance; per-tx meters bound
-// execution. See app/README.md, Block gas-meter policy.
+// TestAppDoesNotMeterBlockGas checks the absence of a cumulative execution gas meter. SDK proposal
+// handlers enforce max_gas and per-transaction meters bound execution; see README.md, "Block
+// gas-meter policy".
 func TestAppDoesNotMeterBlockGas(t *testing.T) {
 	const chainID = "ark-block-gas-test"
 
@@ -233,11 +231,8 @@ func TestProtoAnnotations(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestAddressCodecsAgreeWithSDKConfig pins that the codecs depinject derives
-// from the auth prefix encode every address class exactly as the sealed
-// sdk.Config does. config.go seals the params prefixes; the runtime derives
-// the validator and consensus prefixes from the auth one. The two are wired
-// independently, so only this keeps them from drifting.
+// TestAddressCodecsAgreeWithSDKConfig checks that depinject codecs and sealed SDK configuration
+// encode every account, validator, and consensus address class identically.
 func TestAddressCodecsAgreeWithSDKConfig(t *testing.T) {
 	var (
 		addrCodec address.Codec
@@ -382,19 +377,8 @@ func requireOrderBefore(t *testing.T, order []string, first, second string) {
 	require.Less(t, firstIndex, secondIndex, "%s must run before %s", first, second)
 }
 
-// TestMarketSettlesBeforeEveryOtherEndBlocker pins the ordering conversion
-// settlement depends on.
-//
-// Market's EndBlocker is where the block's conversions are valued and placed,
-// so it has to run under the lifecycle regime the block's swaps quoted under
-// and before anything else moves the state it settles against. Governance
-// enacts lifecycle transitions in its EndBlocker and Claims pays due claims out
-// of Insurance in its own; either running first would settle the block against
-// a registry or a fund balance that its conversions never saw.
-//
-// The order is app wiring rather than anything the keepers can enforce, which
-// is why it is pinned here: a reordering compiles, passes every module's tests,
-// and changes the economics on every node at once.
+// TestMarketSettlesBeforeEveryOtherEndBlocker checks that conversion settlement precedes changes to
+// the lifecycle, supply, and fund balances its valuation reads.
 func TestMarketSettlesBeforeEveryOtherEndBlocker(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderEndBlockers
@@ -417,12 +401,8 @@ func TestMarketSettlesBeforeEveryOtherEndBlocker(t *testing.T) {
 	}
 }
 
-// TestDistributionLeadsSlashingInBeginBlockers pins the one ordering the
-// BeginBlock list still owes anyone: upstream's documented invariant that
-// slashing runs after distribution, so nothing is left in the validator fee
-// pool when it does. Treasury's old lead slot is gone with its reason — the
-// reward-funding window now advances in the EndBlocker, where the collector
-// holds the block's own fees.
+// TestDistributionLeadsSlashingInBeginBlockers checks the SDK requirement that distribution empties
+// the validator fee pool before slashing.
 func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	requireOrderBefore(
@@ -433,12 +413,9 @@ func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
 	)
 }
 
-// TestOracleJailsBeforeStakingEmitsValidatorUpdates pins the EndBlock order an
-// attendance jail relies on. Oracle jails in its EndBlocker and staking emits
-// the block's validator-set update in its own, so Oracle ahead of staking puts
-// the jail in this block's update; behind it, the jailed validator signs one
-// more block. Gov stays ahead of Oracle so a live attendance-ratio change
-// applies at the same settlement.
+// TestOracleJailsBeforeStakingEmitsValidatorUpdates checks that attendance jails affect this
+// block's validator update. Governance precedes Oracle so parameter changes apply at the same
+// settlement.
 func TestOracleJailsBeforeStakingEmitsValidatorUpdates(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderEndBlockers

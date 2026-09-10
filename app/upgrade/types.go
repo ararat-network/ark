@@ -1,9 +1,5 @@
-// Package upgrade holds the value a coordinated upgrade hands the app: plan
-// name, store changes, and handler coupled as one value, so registering one
-// half without the other is impossible. Version packages under
-// app/upgrade/v<N> build it; app/upgrades.go's pendingUpgrades var lists the
-// builders. This file is fixed: an upgrade's dependencies travel through its
-// own Build signature, never through a shared type here.
+// Package upgrade couples plan name, store changes, and handler in one descriptor. Versioned
+// builders receive their own dependencies and are registered in app.Upgrades; see README.md.
 package upgrade
 
 import (

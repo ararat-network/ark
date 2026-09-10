@@ -39,12 +39,9 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// arkModuleQuerySafePaths is every Ark query the protos declare safe to serve
-// in-consensus. The ICA host derives its MsgModuleQuerySafe allow list from
-// this annotation inside ibc-go, with no chain-side override, so the set is
-// consensus-reachable today. It is checked in so that widening it is a
-// reviewable diff rather than a side effect of adding an RPC. The Wasm accept
-// list is separate and hand-written (app/wasm_query.go).
+// arkModuleQuerySafePaths records all Ark RPCs annotated for consensus queries, including ICA host
+// access. Explicit expectations make annotation changes reviewable; the Wasm accept list is
+// separate.
 var arkModuleQuerySafePaths = []string{
 	"/ark.asset.v1.Query/Asset",
 	"/ark.asset.v1.Query/Assets",
@@ -137,9 +134,8 @@ func moduleQuerySafe(arkApp *app.ArkApp, path string) (*icahosttypes.MsgModuleQu
 	})
 }
 
-// The annotated set must match the protos exactly. A diff here means an RPC was
-// added, removed, or had its annotation changed, and the ICA-reachable surface
-// moved with it.
+// The annotated RPC set must exactly match the proto definitions, keeping the ICA-reachable query
+// surface explicit.
 func TestModuleQuerySafePathsMatchTheProtos(t *testing.T) {
 	require.Equal(t, arkModuleQuerySafePaths, arkPathsOnly(moduleQuerySafePaths()))
 }
@@ -177,13 +173,8 @@ func TestModuleQuerySafePathsRoute(t *testing.T) {
 	}
 }
 
-// A smoke test for gross non-determinism: the same query against the same state
-// must answer identically. Go randomises map iteration on every range, so a
-// response assembled from a map diverges here quickly.
-//
-// It is a guard, not a proof. Zero-value requests do not reach the populated
-// paths where ordering matters most, and it cannot see a query reading
-// node-local state, which is the same on repeat by definition.
+// Repeated identical queries expose map-order nondeterminism. This smoke test cannot prove
+// determinism for populated paths or detect stable node-local inputs.
 func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})

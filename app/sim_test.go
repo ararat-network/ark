@@ -54,16 +54,8 @@ func init() {
 	flag.BoolVar(&FlagEnableStreamingValue, "EnableStreaming", false, "Enable streaming service")
 }
 
-// TestMain switches off the two consensus rules the simulation cannot satisfy,
-// for every entry point in this file.
-//
-// The harness draws each transaction's fee uniformly from the sender's
-// spendable balance, so it cannot be told what a transaction owes and
-// eventually offers nothing at all; and it picks governance voters at random,
-// so it cannot be told to stake them. Neither is a figure genesis can tune —
-// the fee requirement ceils to at least one base unit under every valid
-// parameter, and an unstaked voter is refused by construction. The Hub turns
-// off its own fee market and vote floor here for the same reasons.
+// TestMain disables the consensus fee and vote-stake gates for the simulation harness, whose random
+// fees and voters cannot satisfy them. These bypasses apply only to this test process.
 func TestMain(m *testing.M) {
 	ante.SetBaseFeeGate(false)
 	ante.SetMinVoterStake(math.LegacyZeroDec())
@@ -148,11 +140,7 @@ func TestAppImportExport(t *testing.T) {
 	})
 }
 
-// Scenario:
-//
-//	Start a fresh node and run n blocks, export state
-//	set up a new node instance, Init chain from exported genesis
-//	run new instance for n blocks
+// Run a fresh chain, export after n blocks, then import its state and run another n blocks.
 func TestAppSimulationAfterImport(t *testing.T) {
 	simsx.Run(t, NewArkApp, setupStateFactory, func(tb testing.TB, ti simsx.TestInstance[*ArkApp], accs []simtypes.Account) {
 		tb.Helper()
@@ -198,15 +186,8 @@ func IsEmptyValidatorSetErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "validator set is empty after InitGenesis")
 }
 
-// exportedRateTime is the newest rate timestamp the exported state carries,
-// which is the block the export was taken at as closely as the state records
-// it.
-//
-// The SDK's import tests leave the genesis block time at its zero value, which
-// no SDK module reads. Ark's Oracle does: it refuses a genesis rate stamped
-// after the genesis block time, and every exported rate is stamped with the
-// simulated time it was applied at. So the import has to be told when the
-// state it is importing came from.
+// exportedRateTime returns the newest exported oracle timestamp for the imported genesis block
+// time. Oracle genesis rejects rates dated after that time.
 func exportedRateTime(tb testing.TB, cdc codec.Codec, genesisState map[string]json.RawMessage) time.Time {
 	tb.Helper()
 

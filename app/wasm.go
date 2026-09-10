@@ -25,14 +25,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
-// WasmModuleBasics returns the stateless Wasm module needed by command and
-// genesis construction, which run without constructing an ArkApp instance.
-//
-// The basics carry wasmd's own default genesis, which opens upload and
-// instantiation to everybody, and the launch genesis keeps that: the runtime
-// is open from height one. The posture lives in app/genesis/genesis.json, not
-// in code defaults; a genesis generated from these defaults is a scratch
-// genesis.
+// WasmModuleBasics supplies stateless defaults for CLI and genesis construction without an ArkApp.
+// Wasmd defaults permit public upload and instantiation; reviewed launch policy lives in
+// genesis/genesis.json.
 func WasmModuleBasics() module.BasicManager {
 	return module.NewBasicManager(wasm.AppModuleBasic{})
 }
@@ -43,18 +38,9 @@ func WasmModuleBasics() module.BasicManager {
 // never read from a file; absent, the counters are not exported.
 const WasmVMCacheMetricsRegistererOpt = "ark.wasm.vm-cache-metrics-registerer"
 
-// setupWasm registers the Wasm store and constructs the contract runtime. It
-// runs between setupIBCKeepers and setupIBCRoutes: the keeper needs the channel
-// keepers, and its contract IBC handlers must be in hand when the routers are
-// built. It returns the node config and the Wasm store service for the ante
-// chain: the store backs the per-block transaction count that makes
-// an instantiated contract's address deterministic.
-//
-// The runtime ships open. What bounds a contract is the policy router, which
-// charges execution-generated tax at dispatch; the accept list, which fixes
-// what it may read; and the IBC client allowlist, empty at launch, which
-// leaves its channels on both stacks unopenable until governance admits a
-// client type.
+// setupWasm constructs the contract runtime after IBC keepers and before routes. It returns the
+// node config and counter store for ante handling. Execution policy, the query accept list, and IBC
+// client policy bound contract capabilities.
 func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConfig, store.KVStoreService, error) {
 	wasmKey := storetypes.NewKVStoreKey(wasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmKey); err != nil {
@@ -112,7 +98,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		app.AccountKeeper,
 		app.BankKeeper,
 		app.MsgServiceRouter(),
-		// No legacy param subspace; Ark has never had one, as with x/auth.
+		// Ark has no legacy Wasm parameter subspace.
 		nil,
 	)); err != nil {
 		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("register Wasm module: %w", err)
@@ -132,19 +118,9 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	return nodeConfig, wasmStoreService, nil
 }
 
-// setupWasmLightClient registers the 08-wasm store and constructs the keeper
-// that hosts Wasm IBC light clients, so a counterparty on non-CometBFT
-// consensus can be verified without a binary upgrade. It runs after
-// setupIBCKeepers, which built the client keeper it registers against; its
-// light-client route joins the client router in setupIBCRoutes.
-//
-// It ships inert: the launch genesis carries no
-// client code, uploading it is authority-gated to governance, and the only
-// query surface beyond the module's stargate defaults is the BLS12-381
-// verifier below, pure deterministic crypto with no state access. The VM
-// is its own instance with the module's defaults — iterator capability only,
-// data under <home>/ibc_08-wasm_client_data — because light-client code is
-// consensus verification logic with a narrower contract than x/wasm's.
+// setupWasmLightClient constructs the governance-controlled 08-wasm client keeper after IBC
+// keepers. Its separate VM uses iterator capability and deterministic BLS12-381 queries; launch
+// genesis contains no client code. See README.md for runtime boundaries.
 func (app *ArkApp) setupWasmLightClient(appOpts servertypes.AppOptions) error {
 	wasmClientKey := storetypes.NewKVStoreKey(ibcwasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmClientKey); err != nil {

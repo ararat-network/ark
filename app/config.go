@@ -22,11 +22,9 @@ func init() {
 	// submission is rejected outright; matches the Cosmos Hub's 10%.
 	govv1.DefaultMinInitialDepositRatio = math.LegacyNewDecWithPrec(1, 1)
 
-	// sdk.KeyringServiceName reads version.Name, and on the os, pass, and
-	// kwallet backends that name is the credential store's service label. Unset,
-	// it falls back to "cosmos" and files Ark keys under another chain's name.
-	// Set here rather than only through ldflags because `go build` and `go test`
-	// pass none, and a service rename later leaves stored keys unreachable.
+	// version.Name is the keyring service label on os, pass, and kwallet backends. Set it here so
+	// plain builds and tests use Ark's credential namespace; changing it leaves existing keys under
+	// the old label.
 	version.Name = Name
 	version.AppName = Name + "d"
 

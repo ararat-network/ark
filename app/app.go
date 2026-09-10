@@ -1,9 +1,6 @@
-// Package app assembles the Ark chain's modules and keepers, installs
-// transaction admission and consensus handlers, and wires IBC, GMP,
-// and CosmWasm execution through the chain's execution policy.
-//
-// It also owns application genesis, continuation export, and upgrades.
-// Its integration tests exercise behaviour across module boundaries.
+// Package app assembles Ark's modules, transaction and consensus handlers, and execution policy for
+// IBC, GMP, and CosmWasm. It owns application genesis, continuation export, upgrades, and
+// cross-module integration tests.
 package app
 
 import (
@@ -209,12 +206,8 @@ func NewArkApp(
 		panic(err)
 	}
 
-	// The feed-removal guard set is wiring-owned and holds exactly the foreign
-	// consumers that exist: x/asset answers for a live asset's claim on its own
-	// feed, and x/reserve for a credited eligibility entry or an open position
-	// whose return attribution the feed's removal would strand. The
-	// protocol reference is x/oracle's own state and needs no guard. A basket
-	// guard joins here with its spec.
+	// Feed-removal guards cover foreign consumers: Asset's live assets and Reserve's credited
+	// eligibility or open positions. Oracle guards its own reference denomination.
 	app.OracleKeeper.SetFeedReferentGuards(app.AssetKeeper, app.ReserveKeeper)
 
 	// Both reference-unit executors exist from this line on, so a reference
@@ -328,12 +321,8 @@ func NewArkApp(
 		}
 	}
 
-	// The simulation manager gathers every module that opts into simulation,
-	// in sorted-name order so runs are seed-deterministic. It must be built
-	// after the hand-wired RegisterModules calls above, or those modules'
-	// store decoders silently drop out of simulation runs. Auth is overridden
-	// because the depinject-built module carries no account generator, and the
-	// simulator needs RandomGenesisAccounts to seed each run.
+	// Build simulation after manual module registration so every module contributes store decoders.
+	// Sorted names preserve seed determinism; the auth override supplies RandomGenesisAccounts.
 	overrideModules := map[string]module.AppModuleSimulation{
 		authtypes.ModuleName: authSimModule{
 			auth.NewAppModule(app.appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, nil),

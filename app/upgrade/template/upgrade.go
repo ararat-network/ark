@@ -1,10 +1,5 @@
-// Package template is the scaffold for a coordinated upgrade, compiled but
-// never imported, so the shape stays checked between upgrades. To ship
-// upgrade v<N>: copy this directory to app/upgrade/v<N>, rename the package
-// and plan name to the release tag, fill in the migration, and list a
-// builder closure calling Build in app/upgrades.go's pendingUpgrades var.
-// The release after the upgrade executes deletes the package and the list
-// entry; git history is the archive.
+// Package template is a compiled, unregistered coordinated-upgrade scaffold. See
+// app/upgrade/README.md for version packages, migration implementation, and registration.
 package template
 
 import (
