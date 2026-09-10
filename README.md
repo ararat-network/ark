@@ -10,11 +10,11 @@
 Ark is a sovereign Cosmos SDK blockchain that converts its native asset, NOAH, into stablecoins and back at oracle
 prices, with a governed capital structure standing behind the stablecoin liability.
 
-## 🤔 Why should you be interested in Ark
+## Why should you be interested in Ark
 
-Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd`
-(Ark Daemon). Validators also run `pricefeed`, a separate off-chain sidecar that supplies the prices their nodes report
-in vote extensions. Ark interacts with other sovereign chains through [IBC](https://github.com/cosmos/ibc) and runs
+Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd` (Ark
+Daemon). Validators also run `pricefeed`, a separate off-chain sidecar that supplies the prices their nodes report in
+vote extensions. Ark interacts with other sovereign chains through [IBC](https://github.com/cosmos/ibc) and runs
 [CosmWasm](https://github.com/CosmWasm/wasmd) contracts.
 
 What sets Ark apart is its economic model. There is no routine NOAH issuance: no mint module, no staking inflation, and
@@ -25,12 +25,14 @@ claims. Validators and the oracle are funded from a fixed transfer tax and a gen
 holds every unbounded power; committees hold bounded, height-scoped mandates. To understand how funds and authority
 move, read the [economic design](docs/ECONOMIC_DESIGN.md).
 
+The [manifesto](docs/MANIFESTO.pdf), *The Revolution Begins Within*, sets out the purpose that design serves.
+
 ## Documentation
 
-Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
-by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
-responding, integrating clients, future direction, and the decision record. Each subsystem's README owns its own
-behaviour, design, and development guidance; the [repository map](#repository-map) links them.
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides by
+reading path: understanding the chain, launching a network, operating and monitoring services, governing and responding,
+integrating clients, future direction, and the decision record. Each subsystem's README owns its own behaviour, design,
+and development guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 
@@ -43,29 +45,29 @@ node. [Pricefeed operations](docs/PRICEFEED_OPERATIONS.md) covers the two-way no
 failover; the [oracle module](x/oracle/README.md) explains attendance and reward settlement. Every validator also
 follows the [upgrade binary policy](docs/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never downloads binaries.
 
-**For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool,
-so read [validator and Oracle funding](docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding) before delegating.
+**For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
+read [validator and Oracle funding](docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding) before delegating.
 
-**For governance participants and committees:** [Governance operations](docs/GOVERNANCE_OPERATIONS.md) covers
-proposals, service permissions, and appointments. The [economic committee runbook](docs/ECONOMIC_COMMITTEE_RUNBOOK.md)
-and [emergency submission runbook](docs/EMERGENCY_SUBMISSION_RUNBOOK.md) cover bounded policy changes and emergency
+**For governance participants and committees:** [Governance operations](docs/GOVERNANCE_OPERATIONS.md) covers proposals,
+service permissions, and appointments. The [economic committee runbook](docs/ECONOMIC_COMMITTEE_RUNBOOK.md) and
+[emergency submission runbook](docs/EMERGENCY_SUBMISSION_RUNBOOK.md) cover bounded policy changes and emergency
 transactions.
 
-**For client integrators:** [Client fee construction](docs/CLIENT_FEES.md) explains signed fee declarations,
-simulation, and failure handling for external transaction builders.
+**For client integrators:** [Client fee construction](docs/CLIENT_FEES.md) explains signed fee declarations, simulation,
+and failure handling for external transaction builders.
 
 ## Repository map
 
-| Directory | Entry point |
-| --- | --- |
-| [app](app/README.md) | Application wiring, transaction hooks, mempool, IBC/Wasm, and upgrades. |
-| [abci](abci/README.md) | Oracle vote extensions, proposal envelope, preblock, and aggregation implementation. |
-| [pricefeed](pricefeed/README.md) | Node-side cached client and off-chain sidecar/provider pipeline. |
-| [cmd/arkd](cmd/arkd/README.md), [cmd/pricefeed](cmd/pricefeed/README.md) | Binary startup and CLI ownership. |
-| [pkg](pkg/README.md) | Shared arithmetic, encoding, transport, mandates, and telemetry. |
-| [proto](proto/README.md) | Handwritten schemas and dual generation. `api/` contains generated runtime API code. |
-| [tests](tests/README.md) | Test map, integration fixtures, simulations, and CI. |
-| [contrib](contrib/README.md) | Images, localnet, probes, and operational rehearsals. |
+| Directory                                                                | Entry point                                                                          |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [app](app/README.md)                                                     | Application wiring, transaction hooks, mempool, IBC/Wasm, and upgrades.              |
+| [abci](abci/README.md)                                                   | Oracle vote extensions, proposal envelope, preblock, and aggregation implementation. |
+| [pricefeed](pricefeed/README.md)                                         | Node-side cached client and off-chain sidecar/provider pipeline.                     |
+| [cmd/arkd](cmd/arkd/README.md), [cmd/pricefeed](cmd/pricefeed/README.md) | Binary startup and CLI ownership.                                                    |
+| [pkg](pkg/README.md)                                                     | Shared arithmetic, encoding, transport, mandates, and telemetry.                     |
+| [proto](proto/README.md)                                                 | Handwritten schemas and dual generation. `api/` contains generated runtime API code. |
+| [tests](tests/README.md)                                                 | Test map, integration fixtures, simulations, and CI.                                 |
+| [contrib](contrib/README.md)                                             | Images, localnet, probes, and operational rehearsals.                                |
 
 On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Market](x/market/README.md),
 [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and

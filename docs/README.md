@@ -6,6 +6,8 @@ maintain that boundary.
 
 ## Understand the chain
 
+- [Manifesto](MANIFESTO.pdf): "The Revolution Begins Within", the founding statement on intelligence, love, nature,
+  technology, and the future we choose.
 - [Economic design](ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
 - [Threat model](THREAT_MODEL.md): trust boundaries, assumptions, controls, and security review questions.
 
