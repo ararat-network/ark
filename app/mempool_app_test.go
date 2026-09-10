@@ -1,7 +1,6 @@
 package app_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"math/rand"
@@ -10,17 +9,23 @@ import (
 	"testing"
 	"time"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/protobuf/encoding/protowire"
 
+	abcicli "github.com/cometbft/cometbft/abci/client"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtcfg "github.com/cometbft/cometbft/config"
+	cmtsync "github.com/cometbft/cometbft/libs/sync"
 	cmtpool "github.com/cometbft/cometbft/mempool"
 	"github.com/cometbft/cometbft/p2p"
+	"github.com/cometbft/cometbft/proxy"
 	rpccore "github.com/cometbft/cometbft/rpc/core"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"cosmossdk.io/log/v2"
 	"cosmossdk.io/math"
@@ -28,10 +33,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/server"
 	sim "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	txsigning "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -145,7 +152,7 @@ func TestAdmissionAtomicCapacity(t *testing.T) {
 		before := a.BankKeeper.GetBalance(ctx, f.normal.Address(), chain.XDRBaseDenom)
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, abci.CodeTypeRetry, res.Code)
+		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
 		require.Equal(t, uint64(18), a.AccountKeeper.GetAccount(ctx, f.normal.Address()).GetSequence())
 		require.Equal(t, before, a.BankKeeper.GetBalance(ctx, f.normal.Address(), chain.XDRBaseDenom))
 		for _, test := range []struct {
@@ -157,7 +164,7 @@ func TestAdmissionAtomicCapacity(t *testing.T) {
 			require.NoError(t, err)
 			require.Zero(t, res.Code, res.Log)
 		}
-		counts, _ := a.Mempool().(*mempool.Pool).Usage()
+		counts, _ := a.Pool().Usage()
 		require.Equal(t, [3]int{18, 1, 1}, counts)
 	})
 }
@@ -185,7 +192,7 @@ func TestAdmissionAuthenticatesBeforeReserving(t *testing.T) {
 			if !tc.forged {
 				require.Contains(t, res.Log, "term mismatch")
 			}
-			counts, _ := a.Mempool().(*mempool.Pool).Usage()
+			counts, _ := a.Pool().Usage()
 			require.Equal(t, [3]int{}, counts)
 			require.Zero(t, a.AccountKeeper.GetAccount(ctx, f.committee.Address()).GetSequence())
 			require.Equal(t, balance, a.BankKeeper.GetBalance(ctx, f.committee.Address(), chain.XDRBaseDenom))
@@ -197,27 +204,67 @@ func TestAdmissionAuthenticatesBeforeReserving(t *testing.T) {
 	}
 }
 
-type reactorClient struct{ abci.Application }
+// peerHeight stands in for the consensus reactor's peer state, which the
+// mempool reactor consults before gossiping to a peer.
+type peerHeight int64
 
-func (reactorClient) Flush(context.Context) error { return nil }
+func (h peerHeight) GetHeight() int64 { return int64(h) }
 
-func TestAppModePublicPropagation(t *testing.T) {
+type heightReactor struct{ p2p.BaseReactor }
+
+func newHeightReactor() *heightReactor {
+	r := &heightReactor{}
+	r.BaseReactor = *p2p.NewBaseReactor("HEIGHT", r)
+	return r
+}
+
+func (*heightReactor) GetChannels() []*p2p.ChannelDescriptor { return nil }
+
+func (*heightReactor) InitPeer(peer p2p.Peer) p2p.Peer {
+	peer.Set(cmttypes.PeerStateKey, peerHeight(1))
+	return peer
+}
+
+// newClist mirrors an app behind CometBFT's flood mempool as a node would.
+func newClist(t *testing.T, a *app.ArkApp, size int) *cmtpool.CListMempool {
+	t.Helper()
+	cfg := cmtcfg.DefaultMempoolConfig()
+	cfg.Size = size
+	client := abcicli.NewLocalClient(new(cmtsync.Mutex), server.NewCometABCIWrapper(a))
+	return cmtpool.NewCListMempool(cfg, proxy.NewAppConnMempool(client, proxy.NopMetrics()), 1)
+}
+
+// checkTx submits through the list, as RPC and peers do, and returns the app's response.
+func checkTx(t *testing.T, mp *cmtpool.CListMempool, bz []byte) (*abci.ResponseCheckTx, error) {
+	t.Helper()
+	var res *abci.ResponseCheckTx
+	err := mp.CheckTx(bz, func(r *abci.ResponseCheckTx) { res = r }, cmtpool.TxInfo{})
+	return res, err
+}
+
+func TestFloodModePublicPropagation(t *testing.T) {
 	t.Run("RPC admission gossips through saturated peers to another proposer", func(t *testing.T) {
 		f := newAdmissionFixture(t, 3)
-		fillNormal(t, f)
-		var pools []*cmtpool.AppMempool
-		var reactors []*cmtpool.AppReactor
+		var pools []*cmtpool.CListMempool
+		var reactors []*cmtpool.Reactor
 		for _, a := range f.apps {
-			cfg := cmtcfg.DefaultMempoolConfig()
-			cfg.Type = cmtcfg.MempoolTypeApp
-			cfg.Size = 1
-			cfg.ReapInterval = 20 * time.Millisecond
-			cfg.ReapMaxBytes = 4096
-			mp := cmtpool.NewAppMempool(cfg, reactorClient{server.NewCometABCIWrapper(a)})
+			mp := newClist(t, a, 20)
 			pools = append(pools, mp)
-			reactors = append(reactors, cmtpool.NewAppReactor(cfg, mp, false))
+			reactors = append(reactors, cmtpool.NewReactor(cmtcfg.DefaultMempoolConfig(), mp, false))
 		}
-		switches := p2p.MakeConnectedSwitches(cmtcfg.TestConfig().P2P, 3, func(i int, s *p2p.Switch) *p2p.Switch { s.AddReactor("MEMPOOL", reactors[i]); return s }, p2p.Connect2Switches)
+		for seq := uint64(0); seq < 18; seq++ {
+			bz := signedPending(t, f.apps[0], f.normal, seq, sendMsg(f.normal))
+			for _, mp := range pools {
+				res, err := checkTx(t, mp, bz)
+				require.NoError(t, err)
+				require.Zero(t, res.Code, res.Log)
+			}
+		}
+		switches := p2p.MakeConnectedSwitches(cmtcfg.TestConfig().P2P, 3, func(i int, s *p2p.Switch) *p2p.Switch {
+			s.AddReactor("HEIGHT", newHeightReactor())
+			s.AddReactor("MEMPOOL", reactors[i])
+			return s
+		}, p2p.Connect2Switches)
 		t.Cleanup(func() {
 			for _, s := range switches {
 				require.NoError(t, s.Stop())
@@ -234,33 +281,44 @@ func TestAppModePublicPropagation(t *testing.T) {
 		}
 		require.Eventually(t, func() bool {
 			for _, a := range f.apps {
-				p := a.Mempool().(*mempool.Pool)
+				p := a.Pool()
 				if !p.Has(vote) || !p.Has(committee) {
 					return false
 				}
 			}
 			return true
 		}, 10*time.Second, 20*time.Millisecond)
+		for i, mp := range pools {
+			require.Equal(t, f.apps[i].Pool().CountTx(), mp.Size(), "the list mirrors the pool")
+		}
 		proposer := f.apps[2]
 		proposal, err := proposer.PrepareProposal(&abci.RequestPrepareProposal{Height: 2, Time: admissionTime.Add(6 * time.Second), MaxTxBytes: 1 << 20})
 		require.NoError(t, err)
-		require.GreaterOrEqual(t, len(proposal.Txs), 2)
+		require.Equal(t, 20, len(proposal.Txs))
 		require.Equal(t, committee, proposal.Txs[0], "committee action fits its preferential gas and byte budgets")
 		require.Equal(t, vote, proposal.Txs[1], "vote fits the reduced governance budgets before ordinary traffic")
+		// Include the privileged pair and the first normal transactions, leaving
+		// the rest for CometBFT's recheck to confirm against the rebuilt pool.
+		block := proposal.Txs[:5]
 		for _, a := range f.apps {
-			res, err := a.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: admissionTime.Add(6 * time.Second), Txs: proposal.Txs})
+			res, err := a.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: admissionTime.Add(6 * time.Second), Txs: block})
 			require.NoError(t, err)
 			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, res.Status)
 		}
-		for _, a := range f.apps {
-			res, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(6 * time.Second), Txs: proposal.Txs})
+		for i, a := range f.apps {
+			res, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(6 * time.Second), Txs: block})
 			require.NoError(t, err)
 			for _, result := range res.TxResults {
 				require.Zero(t, result.Code, result.Log)
 			}
+			// Consensus holds the list locked across Commit and its update.
+			pools[i].Lock()
 			_, err = a.Commit()
 			require.NoError(t, err)
-			require.Zero(t, a.Mempool().CountTx())
+			require.NoError(t, pools[i].Update(2, cmttypes.ToTxs(block), res.TxResults, nil, nil))
+			pools[i].Unlock()
+			require.Equal(t, 15, a.Pool().CountTx())
+			require.Equal(t, 15, pools[i].Size(), "SDK recheck keeps the list mirrored")
 			plan, err := a.UpgradeKeeper.GetUpgradePlan(a.GetContextForCheckTx(nil))
 			require.NoError(t, err)
 			require.Equal(t, int64(100), plan.Height)
@@ -268,114 +326,91 @@ func TestAppModePublicPropagation(t *testing.T) {
 	})
 }
 
-func TestConcurrentAdmissionAndCommit(t *testing.T) {
-	t.Run("state reset and admission are fenced", func(t *testing.T) {
-		f := newAdmissionFixture(t, 1)
-		a := f.apps[0]
-		bz := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-		var wg sync.WaitGroup
-		for i := 0; i < 12; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for j := 0; j < 5; j++ {
-					_, _ = a.CheckTx(&abci.RequestCheckTx{Tx: bz})
-					_, _ = a.ReapTxs(&abci.RequestReapTxs{MaxBytes: 4096})
-				}
-			}()
-		}
-		_, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(6 * time.Second)})
-		require.NoError(t, err)
-		_, err = a.Commit()
-		require.NoError(t, err)
-		wg.Wait()
-		require.Equal(t, 1, a.Mempool().CountTx())
-	})
-}
+// Rechecks revalidate pending votes through SDK ante without changing the
+// priority or reservation assigned at insertion, matching SDK index behaviour.
+func TestRecheckPreservesInsertionPriority(t *testing.T) {
+	f := newAdmissionFixture(t, 1)
+	a := f.apps[0]
+	fillNormal(t, f)
+	vote := signedPending(t, a, f.voter, 0, voteMsg(f.voter))
+	res, err := a.CheckTx(&abci.RequestCheckTx{Tx: vote})
+	require.NoError(t, err)
+	require.Zero(t, res.Code, res.Log)
+	pool := a.Pool()
+	counts, _ := pool.Usage()
+	require.Equal(t, [3]int{18, 1, 0}, counts)
 
-func TestGossipRotationAcrossCommit(t *testing.T) {
-	for _, included := range []bool{false, true} {
-		name := "empty block"
-		if included {
-			name = "committed predecessor"
-		}
-		t.Run(name, func(t *testing.T) {
-			f := newAdmissionFixture(t, 1)
-			a := f.apps[0]
-			var txs [][]byte
-			for seq := uint64(0); seq < 3; seq++ {
-				bz := signedPending(t, a, f.normal, seq, sendMsg(f.normal))
-				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
-				require.NoError(t, err)
-				require.Zero(t, res.Code, res.Log)
-				txs = append(txs, bz)
-			}
-			pool := a.Mempool().(*mempool.Pool)
-			now := admissionTime
-			batchBytes := uint64(len(txs[0]) + 10)
-			for i := 0; i < 2; i++ {
-				require.Equal(t, [][]byte{txs[i]}, pool.Gossip(batchBytes, 0, now))
-			}
-			before := pool.Snapshot()
-			var committed [][]byte
-			if included {
-				committed = txs[:1]
-			}
-			_, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(time.Second), Txs: committed})
-			require.NoError(t, err)
-			_, err = a.Commit()
-			require.NoError(t, err)
-			after := pool.Snapshot()
-			require.Len(t, after, len(before)-len(committed))
-			for i, e := range after {
-				old := before[i+len(committed)]
-				require.Equal(t, old.Key, e.Key)
-				require.Equal(t, old.Added, e.Added)
-				require.Equal(t, old.LastGossip, e.LastGossip)
-			}
-			require.Equal(t, [][]byte{txs[2]}, pool.Gossip(batchBytes, 0, now.Add(time.Second)))
-			require.Empty(t, pool.Gossip(batchBytes, 0, now.Add(2*time.Second)))
-			require.Equal(t, [][]byte{after[0].Bytes}, pool.Gossip(batchBytes, 0, now.Add(5*time.Second)))
-		})
+	_, err = a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(48 * time.Hour)})
+	require.NoError(t, err)
+	_, err = a.Commit()
+	require.NoError(t, err)
+	require.True(t, pool.Has(vote), "a lane shift must not evict a surviving transaction")
+	counts, _ = pool.Usage()
+	require.Equal(t, [3]int{18, 1, 0}, counts, "SDK recheck does not reprioritise existing entries")
+	for _, e := range pool.Snapshot() {
+		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: proposalBytes(t, a, e), Type: abci.CheckTxType_Recheck})
+		require.NoError(t, err)
+		require.Zero(t, res.Code, res.Log)
 	}
+
+	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.normal, 18, sendMsg(f.normal))})
+	require.NoError(t, err)
+	require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, "normal admission waits for the overflow to drain")
+	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.committee, 0, committeeMsg(f.committee))})
+	require.NoError(t, err)
+	require.Zero(t, res.Code, res.Log)
+	require.Equal(t, 20, pool.CountTx())
 }
 
-func TestPeerSequenceRetry(t *testing.T) {
-	t.Run("rebroadcast repairs a missing predecessor while RPC keeps its error", func(t *testing.T) {
-		f := newAdmissionFixture(t, 1)
-		a := f.apps[0]
-		first := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-		next := signedPending(t, a, f.normal, 1, sendMsg(f.normal))
-		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: next})
-		require.NoError(t, err)
-		require.Equal(t, sdkerrors.ErrWrongSequence.ABCICode(), res.Code)
-		require.Equal(t, sdkerrors.ErrWrongSequence.Codespace(), res.Codespace)
-		peer, err := a.InsertTx(&abci.RequestInsertTx{Tx: next})
-		require.NoError(t, err)
-		require.Equal(t, abci.CodeTypeRetry, peer.Code)
-		require.Zero(t, a.Mempool().CountTx())
+// Ark keeps no lock of its own: CometBFT's local ABCI client serialises
+// admission and rechecks with the block lifecycle.
+func TestConcurrentAdmissionAndCommit(t *testing.T) {
+	f := newAdmissionFixture(t, 1)
+	a := f.apps[0]
+	client := abcicli.NewLocalClient(new(cmtsync.Mutex), server.NewCometABCIWrapper(a))
+	bz := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
+	var wg sync.WaitGroup
+	for i := 0; i < 12; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 5; j++ {
+				_, _ = client.CheckTx(context.Background(), &abci.RequestCheckTx{Tx: bz})
+			}
+		}()
+	}
+	_, err := client.FinalizeBlock(context.Background(), &abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(6 * time.Second)})
+	require.NoError(t, err)
+	_, err = client.Commit(context.Background(), &abci.RequestCommit{})
+	require.NoError(t, err)
+	wg.Wait()
+	require.LessOrEqual(t, a.Pool().CountTx(), 1)
+	counts, _ := a.Pool().Usage()
+	require.Equal(t, a.Pool().CountTx(), counts[0]+counts[1]+counts[2])
+}
 
-		cfg := cmtcfg.DefaultMempoolConfig()
-		cfg.Type = cmtcfg.MempoolTypeApp
-		cfg.CheckTxRetryDelay = time.Millisecond
-		mp := cmtpool.NewAppMempool(cfg, reactorClient{server.NewCometABCIWrapper(a)})
-		require.Error(t, mp.InsertTx(next))
-		require.NoError(t, mp.InsertTx(first))
-		require.Eventually(t, func() bool { return mp.InsertTx(next) == nil }, time.Second, time.Millisecond)
-		require.Equal(t, 2, a.Mempool().CountTx())
-	})
-	t.Run("invalid signatures remain non-retryable", func(t *testing.T) {
-		f := newAdmissionFixture(t, 1)
-		a := f.apps[0]
-		signer := f.normal
-		signer.Key = f.committee.Key
-		bz := signedPending(t, a, signer, 0, sendMsg(f.normal))
-		res, err := a.InsertTx(&abci.RequestInsertTx{Tx: bz})
-		require.NoError(t, err)
-		require.NotZero(t, res.Code)
-		require.Less(t, res.Code, abci.CodeTypeRetry)
-		require.Zero(t, a.Mempool().CountTx())
-	})
+// CometBFT's list forgets a rejected transaction, so a successor that arrived
+// before its predecessor is admitted on resubmission, and the list mirrors the pool.
+func TestListForgetsRejectedSuccessor(t *testing.T) {
+	f := newAdmissionFixture(t, 1)
+	a := f.apps[0]
+	mp := newClist(t, a, 20)
+	first := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
+	next := signedPending(t, a, f.normal, 1, sendMsg(f.normal))
+	res, err := checkTx(t, mp, next)
+	require.NoError(t, err)
+	require.Equal(t, sdkerrors.ErrWrongSequence.ABCICode(), res.Code)
+	require.Equal(t, sdkerrors.ErrWrongSequence.Codespace(), res.Codespace)
+	require.Zero(t, mp.Size())
+	res, err = checkTx(t, mp, first)
+	require.NoError(t, err)
+	require.Zero(t, res.Code, res.Log)
+	res, err = checkTx(t, mp, next)
+	require.NoError(t, err)
+	require.Zero(t, res.Code, res.Log)
+	require.Equal(t, 2, mp.Size())
+	require.Equal(t, 2, a.Pool().CountTx())
+	require.ErrorIs(t, mp.CheckTx(first, nil, cmtpool.TxInfo{}), cmtpool.ErrTxInCache)
 }
 
 func TestMempoolMetricLifecycle(t *testing.T) {
@@ -390,7 +425,7 @@ func TestMempoolMetricLifecycle(t *testing.T) {
 		t.Helper()
 		families, err := registry.Gather()
 		require.NoError(t, err)
-		counts, sizes := a.Mempool().(*mempool.Pool).Usage()
+		counts, sizes := a.Pool().Usage()
 		require.Equal(t, want, counts[0])
 		found := 0
 		for _, family := range families {
@@ -432,10 +467,6 @@ func TestMempoolMetricLifecycle(t *testing.T) {
 		require.NoError(t, err)
 		check(t, 1)
 	})
-	t.Run("snapshot reset", func(t *testing.T) {
-		_, _ = a.ApplySnapshotChunk(&abci.RequestApplySnapshotChunk{})
-		check(t, 0)
-	})
 }
 
 func signedUnordered(t *testing.T, a *app.ArkApp, seq uint64, timeout time.Time, memo string, signers ...apptest.Funder) []byte {
@@ -474,7 +505,7 @@ func TestUnorderedMempoolLifecycle(t *testing.T) {
 	t.Run("mixed transactions preserve replay protection through commit and recheck", func(t *testing.T) {
 		f := newAdmissionFixture(t, 1)
 		a := f.apps[0]
-		pool := a.Mempool().(*mempool.Pool)
+		pool := a.Pool()
 		ordered := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
 		later := admissionTime.Add(2 * time.Minute)
 		earlier := admissionTime.Add(time.Minute)
@@ -487,7 +518,7 @@ func TestUnorderedMempoolLifecycle(t *testing.T) {
 			require.Equal(t, uint64(1), a.AccountKeeper.GetAccount(a.GetContextForCheckTx(nil), f.normal.Address()).GetSequence())
 		}
 		before := pool.Snapshot()
-		require.Greater(t, before[1].Fee, before[0].Fee)
+		require.Len(t, before, 3)
 		commit := func(height int64, txs [][]byte) {
 			t.Helper()
 			hash := make([]byte, 32)
@@ -509,11 +540,14 @@ func TestUnorderedMempoolLifecycle(t *testing.T) {
 		require.Len(t, after, 3)
 		for i := range before {
 			require.Equal(t, before[i].Key, after[i].Key)
-			require.Equal(t, before[i].Added, after[i].Added)
 		}
 		proposal, err := a.PrepareProposal(&abci.RequestPrepareProposal{Height: 3, Time: admissionTime.Add(3 * time.Second), MaxTxBytes: 1 << 20})
 		require.NoError(t, err)
-		require.Equal(t, [][]byte{u1, u2, ordered}, proposal.Txs, "unordered timestamps do not impose sender ordering")
+		var expected [][]byte
+		for _, e := range before {
+			expected = append(expected, proposalBytes(t, a, e))
+		}
+		require.Equal(t, expected, proposal.Txs, "proposal follows SDK priority/nonce order")
 		commit(3, [][]byte{u1})
 		require.Equal(t, 2, pool.CountTx())
 		conflict := signedUnordered(t, a, 0, later, "different bytes with a committed nonce", f.normal)
@@ -523,7 +557,7 @@ func TestUnorderedMempoolLifecycle(t *testing.T) {
 		require.Contains(t, res.Log, "already used timeout")
 		proposal, err = a.PrepareProposal(&abci.RequestPrepareProposal{Height: 4, Time: admissionTime.Add(4 * time.Second), MaxTxBytes: 1 << 20})
 		require.NoError(t, err)
-		require.Equal(t, [][]byte{u2, ordered}, proposal.Txs)
+		require.ElementsMatch(t, [][]byte{u2, ordered}, proposal.Txs)
 		commit(4, proposal.Txs)
 		require.Zero(t, pool.CountTx())
 		require.Equal(t, uint64(1), a.AccountKeeper.GetAccount(a.GetContextForCheckTx(nil), f.normal.Address()).GetSequence())
@@ -554,7 +588,7 @@ func TestUnorderedMempoolValidation(t *testing.T) {
 			} else {
 				require.NotZero(t, res.Code)
 				require.Contains(t, res.Log, tc.want)
-				require.Zero(t, a.Mempool().CountTx())
+				require.Zero(t, a.Pool().CountTx())
 			}
 			require.Zero(t, a.AccountKeeper.GetAccount(a.GetContextForCheckTx(nil), f.normal.Address()).GetSequence())
 		})
@@ -590,13 +624,13 @@ func TestUnorderedMempoolValidation(t *testing.T) {
 		balance := a.BankKeeper.GetAllBalances(ctx, f.normal.Address())
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, abci.CodeTypeRetry, res.Code)
+		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
 		has, err := a.AccountKeeper.ContainsUnorderedNonce(ctx, f.normal.Address(), timeout)
 		require.NoError(t, err)
 		require.False(t, has)
 		require.Equal(t, balance, a.BankKeeper.GetAllBalances(ctx, f.normal.Address()))
-		pool := a.Mempool().(*mempool.Pool)
-		pool.RemoveBytes(pool.Snapshot()[0].Bytes)
+		pool := a.Pool()
+		require.NoError(t, pool.Remove(pool.Snapshot()[0].Tx))
 		res, err = a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
 		require.Zero(t, res.Code, res.Log)
@@ -613,7 +647,10 @@ func TestUnorderedMempoolValidation(t *testing.T) {
 		require.NoError(t, err)
 		_, err = a.Commit()
 		require.NoError(t, err)
-		require.Zero(t, a.Mempool().CountTx())
+		res, err = a.CheckTx(&abci.RequestCheckTx{Tx: bz, Type: abci.CheckTxType_Recheck})
+		require.NoError(t, err)
+		require.NotZero(t, res.Code)
+		require.Zero(t, a.Pool().CountTx())
 		has, err := a.AccountKeeper.ContainsUnorderedNonce(a.GetContextForCheckTx(nil), f.normal.Address(), timeout)
 		require.NoError(t, err)
 		require.False(t, has)
@@ -621,265 +658,124 @@ func TestUnorderedMempoolValidation(t *testing.T) {
 }
 
 func TestAdmissionExecutionModes(t *testing.T) {
-	for _, peer := range []bool{false, true} {
-		name := "RPC"
-		if peer {
-			name = "peer"
-		}
-		t.Run(name, func(t *testing.T) {
-			type observation struct {
-				mode           sdk.ExecMode
-				check, recheck bool
-			}
-			var observed []observation
-			f := newAdmissionFixture(t, 1, func(a *app.ArkApp) {
-				next := a.AnteHandler()
-				a.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
-					observed = append(observed, observation{ctx.ExecMode(), ctx.IsCheckTx(), ctx.IsReCheckTx()})
-					return next(ctx, tx, simulate)
-				})
-			})
-			a := f.apps[0]
-			pool := a.Mempool().(*mempool.Pool)
-			handler := a
-			admit := func(seq uint64) {
-				t.Helper()
-				bz := signedPending(t, a, f.normal, seq, sendMsg(f.normal))
-				if peer {
-					res, err := handler.InsertTx(&abci.RequestInsertTx{Tx: bz})
-					require.NoError(t, err)
-					require.Zero(t, res.Code)
-				} else {
-					res, err := handler.CheckTx(&abci.RequestCheckTx{Tx: bz})
-					require.NoError(t, err)
-					require.Zero(t, res.Code, res.Log)
-				}
-			}
-			admit(0)
-			_, err := handler.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(time.Second)})
-			require.NoError(t, err)
-			_, err = handler.Commit()
-			require.NoError(t, err)
-			require.Equal(t, 1, pool.CountTx(), "internal recheck retains the pending transaction")
-			admit(1)
-			require.Equal(t, []observation{
-				{sdk.ExecModeCheck, true, false},
-				{sdk.ExecModeReCheck, true, true},
-				{sdk.ExecModeCheck, true, false},
-			}, observed)
-			require.Equal(t, 2, pool.CountTx())
-		})
+	type observation struct {
+		mode           sdk.ExecMode
+		check, recheck bool
 	}
-}
-
-func TestAdmissionRejectsExternalRecheck(t *testing.T) {
-	for _, tc := range []struct {
-		name                      string
-		pending, unordered, full  bool
-		malformed, empty, unknown bool
-	}{
-		{name: "new ordered transaction"},
-		{name: "pending ordered transaction", pending: true},
-		{name: "new unordered transaction", unordered: true},
-		{name: "pending unordered transaction", pending: true, unordered: true},
-		{name: "full pool", full: true},
-		{name: "malformed transaction", malformed: true},
-		{name: "empty transaction", empty: true},
-		{name: "unknown request type", unknown: true, malformed: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			f := newAdmissionFixture(t, 1)
-			a := f.apps[0]
-			seq := uint64(0)
-			if tc.full {
-				fillNormal(t, f)
-				seq = 18
-			}
-			timeout := admissionTime.Add(time.Minute)
-			bz := signedPending(t, a, f.normal, seq, sendMsg(f.normal))
-			if tc.unordered {
-				bz = signedUnordered(t, a, 0, timeout, "external recheck", f.normal)
-			}
-			if tc.pending {
-				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
-				require.NoError(t, err)
-				require.Zero(t, res.Code, res.Log)
-			}
-			if tc.malformed {
-				bz = []byte{0xff}
-			}
-			if tc.empty {
-				bz = nil
-			}
-			pool := a.Mempool().(*mempool.Pool)
-			before := pool.Snapshot()
-			counts, sizes := pool.Usage()
-			ctx := a.GetContextForCheckTx(nil)
-			balance := a.BankKeeper.GetAllBalances(ctx, f.normal.Address())
-			sequence := a.AccountKeeper.GetAccount(ctx, f.normal.Address()).GetSequence()
-			nonce, err := a.AccountKeeper.ContainsUnorderedNonce(ctx, f.normal.Address(), timeout)
-			require.NoError(t, err)
-			requestType := abci.CheckTxType_Recheck
-			want := sdkerrors.ErrNotSupported
-			message := "external recheck is unsupported"
-			if tc.unknown {
-				requestType = abci.CheckTxType(99)
-				want = sdkerrors.ErrInvalidRequest
-				message = "unknown CheckTx type"
-			}
-			res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz, Type: requestType})
-			require.NoError(t, err)
-			require.Equal(t, want.ABCICode(), res.Code)
-			require.Equal(t, want.Codespace(), res.Codespace)
-			require.Contains(t, res.Log, message)
-			require.Zero(t, res.GasWanted)
-			require.Zero(t, res.GasUsed)
-			require.Equal(t, before, pool.Snapshot())
-			afterCounts, afterSizes := pool.Usage()
-			require.Equal(t, counts, afterCounts)
-			require.Equal(t, sizes, afterSizes)
-			require.Equal(t, balance, a.BankKeeper.GetAllBalances(ctx, f.normal.Address()))
-			require.Equal(t, sequence, a.AccountKeeper.GetAccount(ctx, f.normal.Address()).GetSequence())
-			afterNonce, err := a.AccountKeeper.ContainsUnorderedNonce(ctx, f.normal.Address(), timeout)
-			require.NoError(t, err)
-			require.Equal(t, nonce, afterNonce)
+	var observed []observation
+	f := newAdmissionFixture(t, 1, func(a *app.ArkApp) {
+		next := a.AnteHandler()
+		a.SetAnteHandler(func(ctx sdk.Context, tx sdk.Tx, simulate bool) (sdk.Context, error) {
+			observed = append(observed, observation{ctx.ExecMode(), ctx.IsCheckTx(), ctx.IsReCheckTx()})
+			return next(ctx, tx, simulate)
 		})
-	}
-}
-
-func TestAdmissionRollsBackPostHandlerFailure(t *testing.T) {
-	for _, unordered := range []bool{false, true} {
-		name := "ordered"
-		if unordered {
-			name = "unordered"
-		}
-		t.Run(name, func(t *testing.T) {
-			var target []byte
-			fail := true
-			calls := 0
-			var inspect func(sdk.Context)
-			f := newAdmissionFixture(t, 1, func(a *app.ArkApp) {
-				next := ante.NewPostHandler(a.AccountKeeper, a.BankKeeper, a.FeeGrantKeeper)
-				a.SetPostHandler(func(ctx sdk.Context, tx sdk.Tx, simulate, success bool) (sdk.Context, error) {
-					if ctx.ExecMode() == sdk.ExecModeCheck && bytes.Equal(ctx.TxBytes(), target) {
-						calls++
-						require.True(t, success)
-						require.True(t, a.Mempool().(*mempool.Pool).Has(target), "SDK inserted before post-handler execution")
-						inspect(ctx)
-						if fail {
-							return ctx, sdkerrors.ErrInvalidRequest.Wrap("post-handler failure")
-						}
-					}
-					return next(ctx, tx, simulate, success)
-				})
-			})
-			a := f.apps[0]
-			pool := a.Mempool().(*mempool.Pool)
-			existing := signedPending(t, a, f.voter, 0, voteMsg(f.voter))
-			res, err := a.CheckTx(&abci.RequestCheckTx{Tx: existing})
-			require.NoError(t, err)
-			require.Zero(t, res.Code, res.Log)
-			timeout := admissionTime.Add(time.Minute)
-			target = signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-			if unordered {
-				target = signedUnordered(t, a, 0, timeout, "late failure", f.normal)
-			}
-			before := pool.Snapshot()
-			counts, sizes := pool.Usage()
-			parent := a.GetContextForCheckTx(nil)
-			balance := a.BankKeeper.GetAllBalances(parent, f.normal.Address())
-			inspect = func(ctx sdk.Context) {
-				require.NotEqual(t, balance, a.BankKeeper.GetAllBalances(ctx, f.normal.Address()), "ante fees exist in the SDK branch")
-				require.Equal(t, balance, a.BankKeeper.GetAllBalances(parent, f.normal.Address()), "parent state remains unchanged")
-			}
-			res, err = a.CheckTx(&abci.RequestCheckTx{Tx: target})
-			require.NoError(t, err)
-			require.Equal(t, sdkerrors.ErrInvalidRequest.ABCICode(), res.Code)
-			require.Contains(t, res.Log, "post-handler failure")
-			require.Positive(t, res.GasUsed)
-			require.Equal(t, before, pool.Snapshot())
-			c, b := pool.Usage()
-			require.Equal(t, counts, c)
-			require.Equal(t, sizes, b)
-			require.Equal(t, balance, a.BankKeeper.GetAllBalances(parent, f.normal.Address()))
-			require.Zero(t, a.AccountKeeper.GetAccount(parent, f.normal.Address()).GetSequence())
-			has, err := a.AccountKeeper.ContainsUnorderedNonce(parent, f.normal.Address(), timeout)
-			require.NoError(t, err)
-			require.False(t, has)
-			fail = false
-			res, err = a.CheckTx(&abci.RequestCheckTx{Tx: target})
-			require.NoError(t, err)
-			require.Zero(t, res.Code, res.Log)
-			require.True(t, pool.Has(target))
-			require.True(t, pool.Has(existing))
-			require.Equal(t, 2, calls)
-			require.NotEqual(t, balance, a.BankKeeper.GetAllBalances(parent, f.normal.Address()))
-			res, err = a.CheckTx(&abci.RequestCheckTx{Tx: target})
-			require.NoError(t, err)
-			require.Equal(t, abci.CodeTypeRetry, res.Code)
-			require.Equal(t, 2, calls, "duplicates never reach SDK execution or rollback")
-			require.True(t, pool.Has(target))
-		})
-	}
-}
-
-// Recheck and proposal verification mirror RunTx past ante: the post chain
-// runs on a discarded branch and a failure there rejects, as at admission.
-// Storage and proposal space are reserved only once it passes.
-func TestPendingValidationRunsPostHandler(t *testing.T) {
-	newFixture := func(t *testing.T, match func(sdk.Context) bool, target *[]byte, calls *int) admissionFixture {
+	})
+	a := f.apps[0]
+	pool := a.Pool()
+	admit := func(seq uint64) {
 		t.Helper()
-		return newAdmissionFixture(t, 1, func(a *app.ArkApp) {
-			next := ante.NewPostHandler(a.AccountKeeper, a.BankKeeper, a.FeeGrantKeeper)
-			a.SetPostHandler(func(ctx sdk.Context, tx sdk.Tx, simulate, success bool) (sdk.Context, error) {
-				if match(ctx) && bytes.Equal(ctx.TxBytes(), *target) {
-					*calls++
-					require.True(t, success)
-					require.False(t, simulate)
-					return ctx, sdkerrors.ErrInvalidRequest.Wrap("post-handler failure")
-				}
-				return next(ctx, tx, simulate, success)
-			})
-		})
-	}
-	t.Run("recheck", func(t *testing.T) {
-		var target []byte
-		calls := 0
-		f := newFixture(t, func(ctx sdk.Context) bool { return ctx.IsReCheckTx() }, &target, &calls)
-		a := f.apps[0]
-		pool := a.Mempool().(*mempool.Pool)
-		target = signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: target})
+		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.normal, seq, sendMsg(f.normal))})
 		require.NoError(t, err)
 		require.Zero(t, res.Code, res.Log)
-		require.True(t, pool.Has(target))
-		_, err = a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(time.Second)})
-		require.NoError(t, err)
-		_, err = a.Commit()
-		require.NoError(t, err)
-		require.Equal(t, 1, calls)
-		require.False(t, pool.Has(target), "a post-chain failure on recheck retires the transaction")
-		require.Zero(t, a.AccountKeeper.GetAccount(a.GetContextForCheckTx(nil), f.normal.Address()).GetSequence(), "a failed recheck keeps no ante writes")
-	})
-	t.Run("proposal", func(t *testing.T) {
-		var target []byte
-		calls := 0
-		f := newFixture(t, func(ctx sdk.Context) bool { return ctx.ExecMode() == sdk.ExecModePrepareProposal }, &target, &calls)
-		a := f.apps[0]
-		pool := a.Mempool().(*mempool.Pool)
-		other := signedPending(t, a, f.voter, 0, sendMsg(f.voter))
-		target = signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-		for _, bz := range [][]byte{other, target} {
-			res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
-			require.NoError(t, err)
-			require.Zero(t, res.Code, res.Log)
-		}
-		proposal, err := a.PrepareProposal(&abci.RequestPrepareProposal{Height: 2, Time: admissionTime.Add(time.Second), MaxTxBytes: 1 << 20})
-		require.NoError(t, err)
-		require.Equal(t, 1, calls)
-		require.Equal(t, [][]byte{other}, proposal.Txs, "a post-chain failure in proposal verification skips the candidate")
-		require.True(t, pool.Has(target), "skipped candidates stay pending until recheck")
-	})
+	}
+	admit(0)
+	_, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(time.Second)})
+	require.NoError(t, err)
+	_, err = a.Commit()
+	require.NoError(t, err)
+	require.Equal(t, 1, pool.CountTx(), "commit resets check state; CometBFT rechecks pending transactions next")
+	// CometBFT now drives the SDK recheck, including ante.
+	res, err := a.CheckTx(&abci.RequestCheckTx{Tx: proposalBytes(t, a, pool.Snapshot()[0]), Type: abci.CheckTxType_Recheck})
+	require.NoError(t, err)
+	require.Zero(t, res.Code, res.Log)
+	admit(1)
+	require.Equal(t, []observation{
+		{sdk.ExecModeCheck, true, false},
+		{sdk.ExecModeReCheck, true, true},
+		{sdk.ExecModeCheck, true, false},
+	}, observed)
+	require.Equal(t, 2, pool.CountTx())
+}
+
+// proposalBytes re-encodes a pending entry as proposals do.
+func proposalBytes(t *testing.T, a *app.ArkApp, e mempool.Entry) []byte {
+	t.Helper()
+	bz, err := a.TxEncode(e.Tx)
+	require.NoError(t, err)
+	return bz
+}
+
+// sdkReference installs the unmodified SDK pool and Ark's ordinary ante chain,
+// without the reservation wrapper. Fixtures call it before sealing BaseApp.
+func sdkReference(a *app.ArkApp) {
+	a.SetMempool(sdkmempool.DefaultPriorityMempool())
+	a.SetAnteHandler(ante.NewAnteHandler(a.AppCodec(), a.GetTxConfig(), a.AccountKeeper, a.BankKeeper,
+		a.FeeGrantKeeper, a.StakingKeeper, a.TreasuryKeeper, a.Privileges(), a.IBCKeeper,
+		a.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), runtime.NewKVStoreService(a.GetKey(wasmtypes.StoreKey))))
+	a.SetPrepareCheckStater(nil)
+	handler := baseapp.NewDefaultProposalHandler(a.Mempool(), a)
+	a.SetPrepareProposal(handler.PrepareProposalHandler())
+	a.SetProcessProposal(handler.ProcessProposalHandler())
+}
+
+func TestCheckTxSDKResponseParity(t *testing.T) {
+	for _, name := range []string{"fresh", "duplicate", "recheck", "malformed", "unknown type", "post failure", "unordered post failure"} {
+		t.Run(name, func(t *testing.T) {
+			configured := 0
+			f := newAdmissionFixture(t, 2, func(a *app.ArkApp) {
+				if configured == 1 {
+					sdkReference(a)
+				}
+				configured++
+				if name == "post failure" || name == "unordered post failure" {
+					a.SetPostHandler(func(ctx sdk.Context, _ sdk.Tx, _, _ bool) (sdk.Context, error) {
+						if ctx.ExecMode() == sdk.ExecModeCheck {
+							return ctx, sdkerrors.ErrInvalidRequest.Wrap("post-handler failure")
+						}
+						return ctx, nil
+					})
+				}
+			})
+			left, right := f.apps[0], f.apps[1]
+			// Both use the same ante policy; the reference uses the unwrapped SDK
+			// pool. The transactions stay below every reservation limit.
+
+			bz := signedPending(t, left, f.normal, 0, sendMsg(f.normal))
+			if name == "unordered post failure" {
+				bz = signedUnordered(t, left, 0, admissionTime.Add(time.Minute), "late failure", f.normal)
+			}
+			req := &abci.RequestCheckTx{Tx: bz}
+			if name == "malformed" {
+				req.Tx = []byte{0xff}
+			}
+			if name == "unknown type" {
+				req.Type = abci.CheckTxType(99)
+			}
+			if name == "recheck" {
+				req.Type = abci.CheckTxType_Recheck
+			}
+			l, le := left.CheckTx(req)
+			r, re := right.App.CheckTx(req)
+			require.Equal(t, re, le)
+			require.Equal(t, r, l)
+			if name == "duplicate" {
+				l, le = left.CheckTx(req)
+				r, re = right.App.CheckTx(req)
+				require.Equal(t, re, le)
+				require.Equal(t, r, l)
+			}
+			lc, rc := left.GetContextForCheckTx(nil), right.GetContextForCheckTx(nil)
+			require.Equal(t, right.BankKeeper.GetAllBalances(rc, f.normal.Address()), left.BankKeeper.GetAllBalances(lc, f.normal.Address()))
+			require.Equal(t, right.AccountKeeper.GetAccount(rc, f.normal.Address()).GetSequence(), left.AccountKeeper.GetAccount(lc, f.normal.Address()).GetSequence())
+			require.Equal(t, right.Mempool().CountTx(), left.Pool().CountTx())
+			if name == "unordered post failure" {
+				lh, le := left.AccountKeeper.ContainsUnorderedNonce(lc, f.normal.Address(), admissionTime.Add(time.Minute))
+				rh, re := right.AccountKeeper.ContainsUnorderedNonce(rc, f.normal.Address(), admissionTime.Add(time.Minute))
+				require.Equal(t, re, le)
+				require.Equal(t, rh, lh, "late failures retain exactly the SDK replay-state semantics")
+			}
+		})
+	}
 }
 
 func TestAdmissionSDKCapacityRollback(t *testing.T) {
@@ -897,14 +793,14 @@ func TestAdmissionSDKCapacityRollback(t *testing.T) {
 		msg := voteMsg(f.voter).(*gov.MsgVote)
 		msg.ProposalId = 999 // Valid vote envelope, but no proposal exists to grant reserved priority.
 		bz := signedPending(t, a, f.voter, 0, msg)
-		pool := a.Mempool().(*mempool.Pool)
+		pool := a.Pool()
 		before := pool.Snapshot()
 		ctx := a.GetContextForCheckTx(nil)
 		balance := a.BankKeeper.GetAllBalances(ctx, f.voter.Address())
 		callsBefore := calls
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, abci.CodeTypeRetry, res.Code, res.Log)
+		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
 		require.Greater(t, calls, callsBefore, "candidate capacity allowed real SDK ante execution")
 		require.Equal(t, before, pool.Snapshot())
 		require.Zero(t, a.AccountKeeper.GetAccount(ctx, f.voter.Address()).GetSequence())
@@ -913,11 +809,17 @@ func TestAdmissionSDKCapacityRollback(t *testing.T) {
 }
 
 // Keep the SDK runtime as the reference for fresh admission. Both apps use the
-// same Ark ante chain; local overload and external recheck have separate policies.
+// same Ark ante chain; local overload has its own refusal code.
 func TestAdmissionSDKParity(t *testing.T) {
 	for _, kind := range []string{"normal", "governance", "committee", "future sequence", "bad signature", "bad committee term", "unordered", "expired unordered"} {
 		t.Run(kind, func(t *testing.T) {
-			f := newAdmissionFixture(t, 2)
+			configured := 0
+			f := newAdmissionFixture(t, 2, func(a *app.ArkApp) {
+				if configured == 1 {
+					sdkReference(a)
+				}
+				configured++
+			})
 			signer := f.normal
 			msg := sendMsg(signer)
 			seq := uint64(0)
@@ -950,7 +852,7 @@ func TestAdmissionSDKParity(t *testing.T) {
 			upstream, err := f.apps[1].App.CheckTx(&abci.RequestCheckTx{Tx: bz})
 			require.NoError(t, err)
 			require.Equal(t, upstream, custom)
-			require.Equal(t, f.apps[1].Mempool().CountTx(), f.apps[0].Mempool().CountTx())
+			require.Equal(t, upstream.Code == 0, f.apps[0].Pool().CountTx() == 1, "the pool admits exactly what the SDK accepted")
 			for _, account := range []apptest.Funder{f.normal, f.voter, f.committee} {
 				left, right := f.apps[0], f.apps[1]
 				lc, rc := left.GetContextForCheckTx(nil), right.GetContextForCheckTx(nil)
@@ -959,4 +861,105 @@ func TestAdmissionSDKParity(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProposalSDKParity(t *testing.T) {
+	for _, name := range []string{"fee ties", "mixed ordered and unordered", "byte limit", "SDK encoding"} {
+		t.Run(name, func(t *testing.T) {
+			configured := 0
+			f := newAdmissionFixture(t, 2, func(a *app.ArkApp) {
+				if configured == 1 {
+					sdkReference(a)
+				}
+				configured++
+			})
+			left, right := f.apps[0], f.apps[1]
+			for seq := uint64(0); seq < 3; seq++ {
+				for _, signer := range []apptest.Funder{f.normal, f.voter, f.committee} {
+					bz := signedPending(t, left, signer, seq, sendMsg(signer))
+					if name == "SDK encoding" {
+						// The decoder accepts a repeated body field; the SDK encoder
+						// emits the effective body once when building the proposal.
+						_, _, n := protowire.ConsumeField(bz)
+						require.Positive(t, n)
+						bz = append(append([]byte(nil), bz[:n]...), bz...)
+					}
+					for _, a := range f.apps {
+						res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+						require.NoError(t, err)
+						require.Zero(t, res.Code, res.Log)
+					}
+				}
+			}
+			if name == "mixed ordered and unordered" {
+				for i := range 3 {
+					bz := signedUnordered(t, left, 0, admissionTime.Add(time.Duration(i+1)*time.Minute), "unordered", f.normal)
+					for _, a := range f.apps {
+						res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+						require.NoError(t, err)
+						require.Zero(t, res.Code, res.Log)
+					}
+				}
+			}
+			maxBytes := int64(1 << 20)
+			if name == "byte limit" {
+				maxBytes = 1100
+			}
+			req := &abci.RequestPrepareProposal{Height: 2, Time: admissionTime.Add(time.Second), MaxTxBytes: maxBytes}
+			l, le := left.PrepareProposal(req)
+			r, re := right.PrepareProposal(req)
+			require.NoError(t, le)
+			require.NoError(t, re)
+			require.Equal(t, r.Txs, l.Txs)
+			res, err := left.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: req.Time, Hash: make([]byte, 32), Txs: l.Txs})
+			require.NoError(t, err)
+			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, res.Status)
+		})
+	}
+}
+
+func TestReservedHeadroomSurvivesFinalizeUntilCometUpdate(t *testing.T) {
+	t.Run("normal traffic cannot use storage still held by the flood list", func(t *testing.T) {
+		f := newAdmissionFixture(t, 1)
+		a := f.apps[0]
+		mp := newClist(t, a, 20)
+		var first []byte
+		for seq := uint64(0); seq < 18; seq++ {
+			bz := signedPending(t, a, f.normal, seq, sendMsg(f.normal))
+			if seq == 0 {
+				first = bz
+			}
+			res, err := checkTx(t, mp, bz)
+			require.NoError(t, err)
+			require.Zero(t, res.Code, res.Log)
+		}
+		block, err := a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(time.Second), Txs: [][]byte{first}})
+		require.NoError(t, err)
+		require.Zero(t, block.TxResults[0].Code)
+		require.Equal(t, 18, mp.Size())
+		require.Equal(t, 18, a.Pool().CountTx())
+		res, err := checkTx(t, mp, signedPending(t, a, f.normal, 18, sendMsg(f.normal)))
+		require.NoError(t, err)
+		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code)
+		for _, entry := range []struct {
+			signer apptest.Funder
+			msg    sdk.Msg
+		}{{f.voter, voteMsg(f.voter)}, {f.committee, committeeMsg(f.committee)}} {
+			res, err = checkTx(t, mp, signedPending(t, a, entry.signer, 0, entry.msg))
+			require.NoError(t, err)
+			require.Zero(t, res.Code, res.Log)
+		}
+		require.Equal(t, 20, mp.Size())
+		mp.Lock()
+		_, err = a.Commit()
+		require.NoError(t, err)
+		err = mp.Update(2, cmttypes.Txs{first}, block.TxResults, nil, nil)
+		mp.Unlock()
+		require.NoError(t, err)
+		require.Equal(t, 19, mp.Size())
+		require.Equal(t, 19, a.Pool().CountTx())
+		res, err = checkTx(t, mp, signedPending(t, a, f.normal, 18, sendMsg(f.normal)))
+		require.NoError(t, err)
+		require.Zero(t, res.Code, res.Log)
+	})
 }

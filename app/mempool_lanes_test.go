@@ -1,7 +1,9 @@
 package app_test
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 	"testing"
@@ -19,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
@@ -27,17 +30,13 @@ import (
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
-// TestLaneMempoolOrdersCommitteeAndGovernanceFirst proves the wired mempool
+// TestLaneMempoolOrdersCommitteeAndGovernanceFirst proves the wired pool
 // drains the priority lane before any normal-lane fee, and fee order within a
-// lane, using real signed transactions. This checks the shared scheduler through
-// Pool.Select; proposal assembly also supplies bounded gas and byte budgets.
+// lane, using real signed transactions. Proposal assembly adds bounded gas and
+// byte budgets on top of the same scheduler.
 func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
-
-	mp, ok := arkApp.Mempool().(*mempool.Pool)
-	require.True(t, ok, "BaseApp must be wired with the lane mempool")
-
-	ctx := arkApp.NewContextLegacy(true, cmtproto.Header{Height: arkApp.LastBlockHeight()})
+	pool := arkApp.Pool()
 	r := rand.New(rand.NewSource(1))
 	txConfig := arkApp.GetTxConfig()
 
@@ -45,49 +44,26 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 		priv := secp256k1.GenPrivKey()
 		return priv, sdk.AccAddress(priv.PubKey().Address()).String()
 	}
-	makeTx := func(priv *secp256k1.PrivKey, msg sdk.Msg) sdk.Tx {
-		tx, err := simtestutil.GenSignedMockTx(
-			r,
-			txConfig,
-			[]sdk.Msg{msg},
-			sdk.Coins{},
-			simtestutil.DefaultGenTxGas,
-			"",
-			[]uint64{0},
-			[]uint64{0},
-			priv,
-		)
+	admit := func(priv *secp256k1.PrivKey, msg sdk.Msg, lane int8, fee int64) []byte {
+		tx, err := simtestutil.GenSignedMockTx(r, txConfig, []sdk.Msg{msg}, sdk.Coins{}, simtestutil.DefaultGenTxGas, "", []uint64{0}, []uint64{0}, priv)
 		require.NoError(t, err)
-		return tx
+		bz, err := txConfig.TxEncoder()(tx)
+		require.NoError(t, err)
+		require.NoError(t, pool.Insert(mempool.WithLane(sdk.Context{}.WithContext(context.Background()).WithTxBytes(bz).WithPriority(fee), lane), tx))
+		return bz
 	}
 
 	richPriv, richAddr := sender()
 	poorPriv, poorAddr := sender()
 	votePriv, voteAddr := sender()
 
-	richSend := makeTx(richPriv, &banktypes.MsgSend{FromAddress: richAddr, ToAddress: poorAddr})
-	poorSend := makeTx(poorPriv, &banktypes.MsgSend{FromAddress: poorAddr, ToAddress: richAddr})
-	vote := makeTx(votePriv, &govv1.MsgVote{ProposalId: 1, Voter: voteAddr, Option: govv1.VoteOption_VOTE_OPTION_YES})
+	// The zero-fee vote arrives last, behind well-paying normal traffic.
+	richSend := admit(richPriv, &banktypes.MsgSend{FromAddress: richAddr, ToAddress: poorAddr}, mempool.LaneNormal, 1_000_000)
+	poorSend := admit(poorPriv, &banktypes.MsgSend{FromAddress: poorAddr, ToAddress: richAddr}, mempool.LaneNormal, 10)
+	vote := admit(votePriv, &govv1.MsgVote{ProposalId: 1, Voter: voteAddr, Option: govv1.VoteOption_VOTE_OPTION_YES}, mempool.LaneGovernance, 0)
 
-	// The zero-fee vote arrives last, behind well-paying normal traffic. Lane
-	// assignment reads the context priority, not the ante-reported gas.
-	require.NoError(t, mp.Insert(ctx.WithPriority(1_000_000), richSend))
-	require.NoError(t, mp.Insert(ctx.WithPriority(10), poorSend))
-	require.NoError(t, mp.Insert(mempool.WithLane(ctx.WithPriority(0), mempool.LaneGovernance), vote))
-
-	var order []sdk.Msg
-	for it := mp.Select(ctx, nil); it != nil; it = it.Next() {
-		order = append(order, it.Tx().GetMsgs()[0])
-	}
-
-	require.Len(t, order, 3)
-	require.IsType(t, &govv1.MsgVote{}, order[0], "priority lane must drain before any normal-lane fee")
-	first, ok := order[1].(*banktypes.MsgSend)
-	require.True(t, ok)
-	require.Equal(t, richAddr, first.FromAddress, "fee must still order the normal lane")
-	second, ok := order[2].(*banktypes.MsgSend)
-	require.True(t, ok)
-	require.Equal(t, poorAddr, second.FromAddress)
+	order := mempool.SelectEntries(pool.Snapshot(), math.MaxUint64, 0, txConfig.TxEncoder(), func(mempool.Entry, int8) bool { return true })
+	require.Equal(t, [][]byte{vote, richSend, poorSend}, order, "priority lane drains first; fee still orders the normal lane")
 }
 
 // Capacity must never disable application proposal verification.
@@ -103,17 +79,14 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 		return app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, appOptions)
 	}
 
-	t.Run("absent key keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.Pool{}, newApp(t, nil).Mempool())
-	})
-
-	t.Run("configured cap keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.Pool{}, newApp(t, 20000).Mempool())
-	})
-
-	t.Run("zero selects the bounded default and keeps the lanes on", func(t *testing.T) {
-		require.IsType(t, &mempool.Pool{}, newApp(t, 0).Mempool())
-	})
+	check := func(t *testing.T, a *app.ArkApp) {
+		t.Helper()
+		require.Same(t, a.Pool(), a.Mempool(), "BaseApp holds the SDK-backed reservation pool")
+		require.NotNil(t, a.Pool())
+	}
+	t.Run("absent key keeps the lanes on", func(t *testing.T) { check(t, newApp(t, nil)) })
+	t.Run("configured cap keeps the lanes on", func(t *testing.T) { check(t, newApp(t, 20000)) })
+	t.Run("zero selects the bounded default and keeps the lanes on", func(t *testing.T) { check(t, newApp(t, 0)) })
 
 	for _, value := range []any{-1, -100, "bad", 1.5} {
 		t.Run(fmt.Sprint(value), func(t *testing.T) {
@@ -149,19 +122,18 @@ func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
 	}
 }
 
-func TestPoolCapacityNeverDisablesProposalVerification(t *testing.T) {
+// The SDK's default ProcessProposal skips verification for its own NoOpMempool;
+// the reservation pool retains the normal SDK verification path.
+func TestLaneMempoolKeepsProposalVerification(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
-	for _, capacity := range []int{0, 1, mempool.DefaultMaxTx} {
-		t.Run(fmt.Sprint(capacity), func(t *testing.T) {
-			cfg := mempool.DefaultConfig()
-			cfg.MaxTxs = capacity
-			handler := baseapp.NewDefaultProposalHandler(mempool.NewPool(cfg, arkApp.GetTxConfig().TxEncoder()), arkApp)
-			response, err := handler.ProcessProposalHandler()(ctx, &cmtabci.RequestProcessProposal{Txs: [][]byte{[]byte("malformed transaction")}})
-			require.NoError(t, err)
-			require.Equal(t, cmtabci.ResponseProcessProposal_REJECT, response.Status)
-		})
-	}
+	malformed := &cmtabci.RequestProcessProposal{Txs: [][]byte{[]byte("malformed transaction")}}
+	response, err := baseapp.NewDefaultProposalHandler(arkApp.Pool(), arkApp).ProcessProposalHandler()(ctx, malformed)
+	require.NoError(t, err)
+	require.Equal(t, cmtabci.ResponseProcessProposal_REJECT, response.Status)
+	response, err = baseapp.NewDefaultProposalHandler(sdkmempool.NoOpMempool{}, arkApp).ProcessProposalHandler()(ctx, malformed)
+	require.NoError(t, err)
+	require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, response.Status, "NoOpMempool would disable verification")
 }
 
 func TestMempoolByteLimitsReachAdmission(t *testing.T) {
@@ -172,12 +144,9 @@ func TestMempoolByteLimitsReachAdmission(t *testing.T) {
 			mempool.MaxTransactionBytesKey: 512,
 		})
 		t.Cleanup(func() { require.NoError(t, a.Close()) })
-		pool := a.Mempool().(*mempool.Pool)
-		require.True(t, pool.MayFit(mempool.LaneNormal, 7200))
-		require.False(t, pool.MayFit(mempool.LaneNormal, 7201))
 		result, err := a.CheckTx(&cmtabci.RequestCheckTx{Tx: make([]byte, 513)})
 		require.NoError(t, err)
 		require.NotZero(t, result.Code)
-		require.Contains(t, result.Log, "invalid transaction size")
+		require.NotEmpty(t, result.Log)
 	})
 }

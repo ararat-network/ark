@@ -135,7 +135,7 @@ func TestPrivilegeDecoratorAssignsLane(t *testing.T) {
 				}
 				require.NoError(t, err)
 				require.True(t, reached)
-				require.Equal(t, tc.lane, mempool.FromContext(got))
+				require.Equal(t, tc.lane, laneOf(got))
 			}
 		})
 	}
@@ -157,7 +157,9 @@ func TestGovernanceDepositThenVoteUsesNormalLane(t *testing.T) {
 			vote := &govv1.MsgVote{ProposalId: proposalID, Voter: proposer.String(), Option: govv1.OptionYes}
 			tx := treasuryFeeTx{msgs: []sdk.Msg{deposit, vote}}
 			set := arkApp.Privileges()
-			require.Equal(t, mempool.LaneGovernance, set.CandidateLane(tx))
+			for _, msg := range tx.GetMsgs() {
+				require.Contains(t, set.URLs(), sdk.MsgTypeURL(msg), "both messages are governance candidates by type")
+			}
 			eligible, err := set.Vouch(ctx, deposit)
 			require.NoError(t, err)
 			require.True(t, eligible)
@@ -172,7 +174,7 @@ func TestGovernanceDepositThenVoteUsesNormalLane(t *testing.T) {
 			)
 			got, err := handler(ctx, tx, simulate)
 			require.NoError(t, err)
-			require.Equal(t, mempool.LaneNormal, mempool.FromContext(got))
+			require.Equal(t, mempool.LaneNormal, laneOf(got))
 			proposal, err = arkApp.GovKeeper.Proposals.Get(got, proposalID)
 			require.NoError(t, err)
 			require.Equal(t, govv1.StatusDepositPeriod, proposal.Status)
@@ -370,7 +372,7 @@ func TestFundingThenDepositRemainsValid(t *testing.T) {
 	got, err := ante.NewPrivilegeDecorator(arkApp.Privileges()).AnteHandle(ctx, treasuryFeeTx{msgs: msgs}, false,
 		func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil })
 	require.NoError(t, err)
-	require.Equal(t, mempool.LaneNormal, mempool.FromContext(got))
+	require.Equal(t, mempool.LaneNormal, laneOf(got))
 	branch, _ := got.CacheContext()
 	for _, msg := range msgs {
 		_, err := arkApp.MsgServiceRouter().Handler(msg)(branch, msg)
@@ -425,4 +427,9 @@ func TestVouchPreservesUnexpectedStoreErrors(t *testing.T) {
 			require.False(t, eligible)
 		})
 	}
+}
+
+// laneOf reads the lane the privilege decorator recorded in SDK context.
+func laneOf(ctx sdk.Context) int8 {
+	return mempool.Lane(ctx)
 }

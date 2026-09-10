@@ -90,7 +90,8 @@ var (
 type ArkApp struct {
 	*runtime.App
 
-	mempoolHandler *mempool.Handler
+	lanePool   *mempool.Pool
+	privileges mempool.Set
 
 	legacyAmino       *codec.LegacyAmino
 	appCodec          codec.Codec
@@ -229,8 +230,8 @@ func NewArkApp(
 	if err != nil {
 		panic(err)
 	}
-	pool := mempool.NewPool(poolConfig, app.txConfig.TxEncoder())
-	baseAppOptions = append(baseAppOptions, baseapp.SetMempool(pool))
+	app.lanePool = mempool.NewPool(poolConfig)
+	baseAppOptions = append(baseAppOptions, baseapp.SetMempool(app.lanePool))
 
 	app.App = appBuilder.Build(db, baseAppOptions...)
 
@@ -254,8 +255,8 @@ func NewArkApp(
 	}
 
 	// Install transaction validation and execution handlers.
-	privileges := app.newPrivileges()
-	app.SetAnteHandler(ante.NewAnteHandler(
+	app.privileges = app.newPrivileges()
+	app.SetAnteHandler(app.lanePool.WithReservations(ante.NewAnteHandler(
 		app.appCodec,
 		app.txConfig,
 		app.AccountKeeper,
@@ -263,16 +264,14 @@ func NewArkApp(
 		app.FeeGrantKeeper,
 		app.StakingKeeper,
 		app.TreasuryKeeper,
-		privileges,
+		app.privileges,
 		app.IBCKeeper,
 		app.WasmKeeper.GetGasRegister(),
 		wasmNodeConfig,
 		wasmTxCounterStore,
-	))
+	)))
 
-	// Connect admission and proposal handling to the application before the
-	// post chain, which ArkApp.SetPostHandler installs on both.
-	app.mempoolHandler = mempool.NewHandler(app.App, pool, app.txConfig.TxDecoder(), privileges)
+	app.SetPrepareCheckStater(app.lanePool.PrepareCheckState)
 	app.SetPostHandler(ante.NewPostHandler(app.AccountKeeper, app.BankKeeper, app.FeeGrantKeeper))
 
 	if err := app.setupOracleABCI(logger, appOpts); err != nil {
@@ -369,7 +368,7 @@ func (app *ArkApp) RunPriceFeed(ctx context.Context) error {
 // here: the start command's errgroup cancels it before app cleanup runs.
 func (app *ArkApp) Close() error {
 	app.closeOnce.Do(func() {
-		app.closeErr = app.mempoolHandler.Close()
+		app.closeErr = app.App.Close()
 	})
 
 	return app.closeErr

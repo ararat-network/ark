@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -35,6 +36,16 @@ func TestConfigValidate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestConfigCount(t *testing.T) {
+	for _, tc := range []struct{ maxTxs, want int }{{0, DefaultMaxTx}, {7, 7}, {MaxTxLimit, MaxTxLimit}} {
+		t.Run(fmt.Sprint(tc.maxTxs), func(t *testing.T) {
+			cfg := DefaultConfig()
+			cfg.MaxTxs = tc.maxTxs
+			require.Equal(t, tc.want, cfg.Count())
 		})
 	}
 }

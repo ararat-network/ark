@@ -256,12 +256,13 @@ func TestPrivilegeVouchRunsAfterSignatureVerification(t *testing.T) {
 				sigs[0].Data.(*signing.SingleSignatureData).Signature[0] ^= 1
 				require.NoError(t, builder.SetSignatures(sigs...))
 			}
-			branch, _ := f.ctx.WithIsSigverifyTx(true).CacheContext()
+			// Fresh admission carries the authenticated lane in the ante context.
+			branch, _ := f.ctx.WithIsSigverifyTx(true).WithExecMode(sdk.ExecModeCheck).CacheContext()
 			got, err := handler(branch, builder.GetTx(), false)
 			if valid {
 				require.NoError(t, err)
 				require.Equal(t, 1, calls)
-				require.Equal(t, mempool.LaneGovernance, mempool.FromContext(got))
+				require.Equal(t, mempool.LaneGovernance, laneOf(got))
 			} else {
 				require.ErrorContains(t, err, "signature verification failed")
 				require.Zero(t, calls)

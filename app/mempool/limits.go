@@ -15,8 +15,7 @@ const (
 	// Zero max-txs in app.toml selects this default, not an unbounded pool.
 	DefaultMaxTx = 5000
 
-	// Byte defaults match config.toml. Ark owns the pool budget in app mode;
-	// CometBFT and Ark both enforce the per-transaction limit.
+	// Byte defaults match config.toml; CometBFT and Ark enforce both limits.
 	DefaultMaxPoolBytes        int64 = 64 << 20
 	DefaultMaxTransactionBytes       = 1 << 20
 
@@ -44,15 +43,6 @@ const (
 	GovernanceBlockByteShare = 500
 )
 
-// Gossip shares apply to each outgoing batch, independently of block service
-// and admission. The gas share applies only when the caller sets a gas budget.
-const (
-	CommitteeGossipGasShare   = 500
-	GovernanceGossipGasShare  = 500
-	CommitteeGossipByteShare  = 500
-	GovernanceGossipByteShare = 500
-)
-
 // Config contains node-local admission limits, never consensus validity rules.
 type Config struct {
 	MaxTxs      int   `mapstructure:"max-txs"`
@@ -66,6 +56,15 @@ func DefaultConfig() Config {
 		MaxTxsBytes: DefaultMaxPoolBytes,
 		MaxTxBytes:  DefaultMaxTransactionBytes,
 	}
+}
+
+// Count is the pool size; zero max-txs selects the default. CometBFT's list
+// must hold at least this many, which the start command enforces.
+func (c Config) Count() int {
+	if c.MaxTxs == 0 {
+		return DefaultMaxTx
+	}
+	return c.MaxTxs
 }
 
 func (c Config) Validate() error {

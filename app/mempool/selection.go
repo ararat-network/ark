@@ -1,156 +1,128 @@
 package mempool
 
 import (
-	"container/heap"
-	"fmt"
-
 	cmttypes "github.com/cometbft/cometbft/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	gov "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	legacygov "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 )
 
-// serviceShares supplies independent resource shares for one scheduling use.
-type serviceShares struct {
-	bytes uint64
-	gas   uint64
-}
+type serviceShares struct{ bytes, gas uint64 }
 
-// SelectEntries gives each privileged class bounded service, then lets all
-// remaining transactions compete by fee. verify is called only after resource
-// and predecessor checks, with the service lane being used. It must commit state
-// only for accepted transactions. A refused privileged candidate can be retried
-// in the normal phase, where loss of eligibility does not imply invalidity.
-func SelectEntries(entries []Entry, maxBytes, maxGas uint64, verify func(Entry, int8) bool) [][]byte {
+// SelectEntries allocates bounded preferential service over an SDK-ordered
+// snapshot, then offers all remaining entries ordinary service. verify applies
+// SDK validation, including every signer's sequence, before accepting an entry.
+func SelectEntries(entries []Entry, maxBytes, maxGas uint64, encode sdk.TxEncoder, verify func(Entry, int8) bool) [][]byte {
 	return selectEntries(entries, maxBytes, maxGas, [3]serviceShares{
 		LaneCommittee:  {bytes: CommitteeBlockByteShare, gas: CommitteeBlockGasShare},
 		LaneGovernance: {bytes: GovernanceBlockByteShare, gas: GovernanceBlockGasShare},
-	}, proposalLess, verify)
+	}, encode, verify)
 }
 
-func selectEntries(entries []Entry, maxBytes, maxGas uint64, shares [3]serviceShares, less func(*Entry, *Entry) bool, verify func(Entry, int8) bool) [][]byte {
+func selectEntries(entries []Entry, maxBytes, maxGas uint64, shares [3]serviceShares, encode sdk.TxEncoder, verify func(Entry, int8) bool) [][]byte {
 	var usedBytes, usedGas uint64
 	selected := make(map[[32]byte]bool)
-	protectedVotes := make(map[string]bool)
-	schedule := newNonceSchedule(entries)
+	failed := make(map[[32]byte]bool)
 	var out [][]byte
+	encoded := make([][]byte, len(entries))
+	selectedSequences := make(map[string]uint64)
 	for _, lane := range []int8{LaneCommittee, LaneGovernance, LaneNormal} {
-		// Set this phase's total and per-sender resource budgets.
 		limitBytes, limitGas := maxBytes, maxGas
 		if lane != LaneNormal {
 			limitBytes = fraction(maxBytes, shares[lane].bytes)
-			if maxGas > 0 {
-				limitGas = fraction(maxGas, shares[lane].gas)
-			}
+			limitGas = fraction(maxGas, shares[lane].gas)
 		}
 		var laneBytes, laneGas uint64
-		senderBytes := make(map[string]uint64)
-		senderGas := make(map[string]uint64)
-
-		// Seed the queue with eligible transactions whose predecessors are selected.
-		queue := &readyHeap{entries: entries, less: less}
-		queued := make([]bool, len(entries))
-		enqueue := func(i int) {
-			e := entries[i]
-			if !queued[i] && !selected[e.Key] && (lane == LaneNormal || e.Lane == lane) && schedule.ready(e) {
-				queued[i] = true
-				heap.Push(queue, i)
+		blocked := make(map[string]bool)
+		for i, e := range entries {
+			if selected[e.Key] {
+				continue
 			}
-		}
-		for i := range entries {
-			enqueue(i)
-		}
-
-		// Check preference and resource limits before running caller validation.
-		for queue.Len() > 0 {
-			e := entries[heap.Pop(queue).(int)]
-			if lane == LaneGovernance {
-				seen := make(map[string]bool)
-				repeat := false
-				for _, key := range voteKeys(e) {
-					if protectedVotes[key] || seen[key] {
-						repeat = true
-					}
-					seen[key] = true
+			signers, err := sdkmempool.NewDefaultSignerExtractionAdapter().GetSigners(e.Tx)
+			if err != nil || len(signers) == 0 {
+				continue
+			} // Indexed entries have valid signer metadata.
+			unordered := false
+			if tx, ok := e.Tx.(sdk.TxWithUnordered); ok {
+				unordered = tx.GetUnordered()
+			}
+			// A phase must not pull an ordered successor past a predecessor
+			// it skipped. The SDK snapshot already orders each primary sender.
+			skip := func() {
+				if !unordered && lane != LaneNormal {
+					blocked[string(signers[0].Signer)] = true
 				}
-				if repeat {
+			}
+			if failed[e.Key] || (!unordered && blocked[string(signers[0].Signer)]) || (lane != LaneNormal && e.Lane != lane) {
+				skip()
+				continue
+			}
+			// Match SDK proposal handling for every signer already selected.
+			// A verified but unselected ordinary transaction also establishes its
+			// expected sequence below, as in the SDK default proposal handler.
+			contiguous := true
+			if !unordered {
+				for _, signer := range signers {
+					if seq, ok := selectedSequences[string(signer.Signer)]; ok && seq+1 != signer.Sequence {
+						contiguous = false
+						break
+					}
+				}
+			}
+			if !contiguous {
+				skip()
+				continue
+			}
+			// Encode only candidates reached by selection, once across all phases.
+			// The SDK encoding defines proposal bytes; admission retains wire bytes.
+			if encoded[i] == nil {
+				encoded[i], err = encode(e.Tx)
+				if err != nil {
+					failed[e.Key] = true
+					skip()
 					continue
 				}
 			}
-			bytes := uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{e.Bytes}))
-			gasTx, ok := e.Tx.(sdk.FeeTx)
-			if !ok {
-				continue
-			}
-			gas := gasTx.GetGas()
-			if bytes > maxBytes-usedBytes || bytes > limitBytes-laneBytes {
-				continue
-			}
-			if maxGas > 0 && (gas > maxGas-usedGas || gas > limitGas-laneGas) {
-				continue
-			}
-			sender := string(e.Key[:])
-			if len(e.Signers) > 0 {
-				sender = string(e.Signers[0].Signer)
-			}
-			// Each sender receives at most a quarter of preferential
-			// service. Larger actions and additional messages still
-			// compete in the ordinary phase.
-			if lane != LaneNormal && (bytes > limitBytes/4-senderBytes[sender] || (maxGas > 0 && gas > limitGas/4-senderGas[sender])) {
+			size := uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{encoded[i]}))
+			gas := e.Tx.(sdk.FeeTx).GetGas()
+			fits := size <= maxBytes-usedBytes && size <= limitBytes-laneBytes &&
+				(maxGas == 0 || (gas <= maxGas-usedGas && gas <= limitGas-laneGas))
+			// Preferential phases must leave skipped candidates untouched for a
+			// later phase. Ordinary service retains SDK verification-before-filtering.
+			if lane != LaneNormal && !fits {
+				skip()
 				continue
 			}
 			if !verify(e, lane) {
+				failed[e.Key] = true
+				skip()
 				continue
 			}
-
-			// Charge accepted transactions and release their nonce successors.
-			selected[e.Key] = true
-			if lane == LaneGovernance {
-				for _, key := range voteKeys(e) {
-					protectedVotes[key] = true
+			if !unordered {
+				for _, signer := range signers {
+					key := string(signer.Signer)
+					if fits {
+						selectedSequences[key] = signer.Sequence
+					} else if _, ok := selectedSequences[key]; !ok {
+						selectedSequences[key] = signer.Sequence - 1
+					}
 				}
 			}
-			usedBytes += bytes
+			if !fits {
+				continue
+			}
+			selected[e.Key] = true
+			usedBytes += size
 			usedGas += gas
-			laneBytes += bytes
+			laneBytes += size
 			laneGas += gas
-			senderBytes[sender] += bytes
-			senderGas[sender] += gas
-			out = append(out, e.Bytes)
-			for _, i := range schedule.release(e) {
-				enqueue(i)
+			out = append(out, encoded[i])
+			if usedBytes == maxBytes || (maxGas > 0 && usedGas == maxGas) {
+				return out
 			}
 		}
 	}
 	return out
 }
 
-// fraction cannot overflow even when the caller supplies MaxUint64.
-func fraction(n, bps uint64) uint64 {
-	return n/10000*bps + n%10000*bps/10000
-}
-
-func voteKeys(e Entry) []string {
-	var out []string
-	for _, msg := range e.Tx.GetMsgs() {
-		switch m := msg.(type) {
-		case *gov.MsgVote:
-			out = append(out, fmt.Sprintf("%d/%s", m.ProposalId, m.Voter))
-		case *gov.MsgVoteWeighted:
-			out = append(out, fmt.Sprintf("%d/%s", m.ProposalId, m.Voter))
-		case *legacygov.MsgVote:
-			out = append(out, fmt.Sprintf("%d/%s", m.ProposalId, m.Voter))
-		case *legacygov.MsgVoteWeighted:
-			out = append(out, fmt.Sprintf("%d/%s", m.ProposalId, m.Voter))
-		}
-	}
-	return out
-}
-
-func proposalLess(x, y *Entry) bool {
-	if x.Fee != y.Fee {
-		return x.Fee > y.Fee
-	}
-	return arrivalLess(x, y)
-}
+func fraction(n, bps uint64) uint64 { return n/10000*bps + n%10000*bps/10000 }

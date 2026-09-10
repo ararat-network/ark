@@ -40,8 +40,8 @@ while [ "$i" -le "$size" ]; do
   if [ "$i" -lt "$size" ]; then
     [ "$(printf '%s' "$resp" | jq -r '.code // empty')" = 0 ] || fail "fill transaction $i: $resp"
   else
-    # Application overload is retryable; it does not commit fee or sequence state.
-    printf '%s' "$resp" | jq -e '.codespace == "lanes" and .code == 32000' > /dev/null \
+    # A full pool answers Ark's capacity code without committing fee or sequence state.
+    printf '%s' "$resp" | jq -e '.codespace == "lanes" and .code == 3' > /dev/null \
       || fail "public node did not reject at capacity: $resp"
   fi
   i=$((i + 1))
@@ -51,5 +51,7 @@ sleep 3
 public=$(curl -sf http://node0:9464/metrics | awk '/^ark_mempool_transactions\{/ && /lane="normal"/ { n += $NF } END { print n+0 }')
 private=$(curl -sf "http://$CARRIER:9464/metrics" | awk '/^ark_mempool_transactions\{/ { n += $NF } END { print n+0 }')
 [ "$public" -eq "$size" ] || fail "public pool has $public transactions, expected $size"
+mirrored=$(curl -sf http://node0:26657/num_unconfirmed_txs | jq -r '.result.n_txs')
+[ "$mirrored" -eq "$size" ] || fail "CometBFT's list holds $mirrored transactions, expected the pool's $size"
 [ "$private" -eq 0 ] || fail "public gossip filled $private carrier slots"
 echo "public pool full ($public), overflow rejected, carrier pool empty"

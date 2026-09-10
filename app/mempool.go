@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	servertypes "github.com/cosmos/cosmos-sdk/server/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+
+	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
 	"github.com/ararat-network/ark/pkg/mandate"
@@ -23,14 +25,35 @@ import (
 // governance execution never transits the mempool. Registry coverage tests
 // require an explicit lane decision for every committee message.
 func (app *ArkApp) Privileges() mempool.Set {
-	return app.mempoolHandler.Privileges()
+	return app.privileges
 }
 
-// SetPostHandler installs the post chain on BaseApp and on the admission
-// handler, whose recheck and proposal validation mirror RunTx.
-func (app *ArkApp) SetPostHandler(handler sdk.PostHandler) {
-	app.App.SetPostHandler(handler)
-	app.mempoolHandler.SetPostHandler(handler)
+// Pool is the pending pool behind CometBFT's list.
+func (app *ArkApp) Pool() *mempool.Pool {
+	return app.lanePool
+}
+
+// CheckTx observes the SDK response without changing validation or recheck.
+func (app *ArkApp) CheckTx(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error) {
+	res, err := app.App.CheckTx(req)
+	status := "invalid"
+	if err == nil && res != nil && res.Code == 0 {
+		status = "accepted"
+	} else if res != nil && res.Codespace == mempool.ErrCapacity.Codespace() && res.Code == mempool.ErrCapacity.ABCICode() {
+		status = "full"
+	}
+	abcimetrics.RecordAdmission(status)
+	return res, err
+}
+
+// FinalizeBlock records the block's transactions for committed storage release;
+// removing them here is unsafe under optimistic execution.
+func (app *ArkApp) FinalizeBlock(req *abci.RequestFinalizeBlock) (*abci.ResponseFinalizeBlock, error) {
+	res, err := app.App.FinalizeBlock(req)
+	if err == nil {
+		app.lanePool.Finalised(req.Txs)
+	}
+	return res, err
 }
 
 func (app *ArkApp) newPrivileges() mempool.Set {

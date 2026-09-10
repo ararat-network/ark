@@ -89,7 +89,9 @@ func TestClassify(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.want, tc.set.CandidateLane(stubTx{msgs: tc.msgs}))
+			got, err := tc.set.Classify(sdk.Context{}, stubTx{msgs: tc.msgs})
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -102,7 +104,7 @@ func TestSetURLsCopiesMembership(t *testing.T) {
 	require.Contains(t, urls, sdk.MsgTypeURL(&govv1.MsgVote{}))
 
 	delete(urls, sdk.MsgTypeURL(&govv1.MsgVote{}))
-	require.True(t, set.Has(&govv1.MsgVote{}), "URLs must not alias the set")
+	require.Contains(t, set.URLs(), sdk.MsgTypeURL(&govv1.MsgVote{}), "URLs must not alias the set")
 }
 
 func TestVouchAndClassify(t *testing.T) {

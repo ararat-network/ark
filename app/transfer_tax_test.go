@@ -114,7 +114,7 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 			return finalise(nil)
 		}
 		finalise(nil)
-		require.Equal(t, len(txs), arkApp.Mempool().CountTx(), "recheck must retain pending transactions")
+		require.Equal(t, len(txs), arkApp.Pool().CountTx(), "recheck must retain pending transactions")
 		proposal, err := arkApp.PrepareProposal(&cmtabci.RequestPrepareProposal{
 			Height: height + 1, Time: blockTime(height + 1), MaxTxBytes: 1 << 20,
 		})
@@ -126,7 +126,7 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, verified.Status)
 		results := finalise(proposal.Txs)
-		require.Zero(t, arkApp.Mempool().CountTx())
+		require.Zero(t, arkApp.Pool().CountTx())
 		return results
 	}
 	committed := func() sdk.Context {

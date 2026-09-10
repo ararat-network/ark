@@ -33,7 +33,7 @@ func (app *ArkApp) setupOracleABCI(logger log.Logger, appOpts servertypes.AppOpt
 
 	defaultProposalHandler := baseapp.NewDefaultProposalHandler(app.Mempool(), app)
 	proposalHandler := proposals.NewHandler(
-		app.mempoolHandler.PrepareProposalHandler,
+		app.lanePool.PrepareProposalHandler(app),
 		defaultProposalHandler.ProcessProposalHandler(),
 		app.StakingKeeper,
 	)
