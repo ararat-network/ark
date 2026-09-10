@@ -1,0 +1,40 @@
+# Called by the nightly workflows when they fail: keeps one open issue per
+# workflow, commenting the run on it rather than filing a new one each night,
+# through the workflow token rather than a webhook secret.
+name: Nightly failure
+
+on:
+  workflow_call:
+    inputs:
+      workflow:
+        description: "The failing workflow's name"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: File or update the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Nightly ${{ inputs.workflow }} failed"
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          gh label create nightly-failure --description "A scheduled workflow failed" --color B60205 2>/dev/null || true
+          number=$(gh issue list --label nightly-failure --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+          body="Run: $RUN_URL
+          Commit: $SHA"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$TITLE" --label nightly-failure --body "$body"
+          fi

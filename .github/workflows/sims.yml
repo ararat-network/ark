@@ -40,3 +40,13 @@ jobs:
           cache: true
 
       - run: make ${{ matrix.target }}
+
+  report:
+    needs: sim
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: Sims

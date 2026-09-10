@@ -59,3 +59,13 @@ jobs:
       - name: Node log
         if: failure()
         run: tail -200 build/upgrade-rehearsal/node.log || true
+
+  report:
+    needs: rehearsal
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: Upgrade
