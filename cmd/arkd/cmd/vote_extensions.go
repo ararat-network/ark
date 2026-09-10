@@ -2,17 +2,19 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
-	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/spf13/cobra"
+
+	cmttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"ark/abci/codec"
-	abcioracle "ark/abci/oracle"
+	"github.com/ararat-network/ark/abci/codec"
+	abcioracle "github.com/ararat-network/ark/abci/oracle"
 )
 
 type voteExtensionsOutput struct {
@@ -29,7 +31,7 @@ type voteExtensionOutput struct {
 	Rates            map[string]string `json:"rates"`
 }
 
-func voteExtensionsCommand() *cobra.Command {
+func newVoteExtensionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vote-extensions [block-height]",
 		Short: "Inspect oracle vote extensions retained in a committed block",
@@ -66,7 +68,7 @@ func runVoteExtensions(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("query committed block: %w", err)
 	}
 	if result == nil || result.Block == nil {
-		return fmt.Errorf("query committed block: node returned an empty block response")
+		return errors.New("query committed block: node returned an empty block response")
 	}
 
 	output, err := inspectVoteExtensions(result.Block)
@@ -94,13 +96,13 @@ func voteExtensionsBlockHeight(cmd *cobra.Command, args []string, queryHeight in
 			return nil, fmt.Errorf("parse block height %q: %w", args[0], err)
 		}
 		if parsed <= 0 {
-			return nil, fmt.Errorf("block height must be positive")
+			return nil, errors.New("block height must be positive")
 		}
 		height = parsed
 	}
 
 	if height < 0 {
-		return nil, fmt.Errorf("block height must be positive")
+		return nil, errors.New("block height must be positive")
 	}
 	if height == 0 {
 		return nil, nil
@@ -111,7 +113,7 @@ func voteExtensionsBlockHeight(cmd *cobra.Command, args []string, queryHeight in
 
 func inspectVoteExtensions(block *cmttypes.Block) (voteExtensionsOutput, error) {
 	if block.Height <= 0 {
-		return voteExtensionsOutput{}, fmt.Errorf("source block height must be positive")
+		return voteExtensionsOutput{}, errors.New("source block height must be positive")
 	}
 	if len(block.Txs) == 0 {
 		return voteExtensionsOutput{}, fmt.Errorf("source block %d contains no vote-extension metadata", block.Height)

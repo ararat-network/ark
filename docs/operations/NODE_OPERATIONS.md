@@ -23,7 +23,7 @@ For a local developer validator, use a fresh directory and the test keyring back
 
 ```sh
 ARK_TESTNET_DIR=$(mktemp -d)
-./build/arkd testnet init-files --validator-count 1   --output-dir "$ARK_TESTNET_DIR" --chain-id ark-local   --node-daemon-home arkd --keyring-backend test   --single-host --starting-ip-address 127.0.0.1
+./build/arkd testnet init-files --validator-count 1   --output-dir "$ARK_TESTNET_DIR" --chain-id ark-local   --keyring-backend test --single-host --starting-ip-address 127.0.0.1
 ./build/arkd genesis validate --home "$ARK_TESTNET_DIR/node0/arkd"
 COSMOS_SDK_CONFIG_SCOPE=arkd ./build/arkd start --home "$ARK_TESTNET_DIR/node0/arkd"
 ```
@@ -35,7 +35,6 @@ Use a fresh directory for another run; do not reset an existing validator home a
 
 For multiple developers, generate the intended validator count and host addresses, distribute each validator's own home,
 and agree on a single genesis. `--single-host` is for separate ports on one machine; omit it when using distinct hosts.
-The generator's `--node-daemon-home` defaults to `simd`, so set it explicitly to `arkd` as above.
 
 ## Manually assembling a testnet
 
@@ -65,9 +64,11 @@ Validator admission on an existing chain uses its staking transaction process ra
 
 The default home is `~/.ark`; `--home` selects another. `config.toml` controls CometBFT, `app.toml` the application/server,
 and `client.toml` CLI defaults. Use `arkd config diff` to compare app settings with this binary's defaults and
-`arkd config migrate --stdout` to inspect a migration before writing. `arkd config set app <key> <value>` changes an existing
-app key; it does not create missing keys or edit arbitrary CometBFT settings. Use `--help` for each command's path options.
-[Mempool policy](../app/mempool/README.md#admission-service-and-sdk-behaviour) explains the coupled CometBFT/application admission configuration.
+`arkd config migrate --stdout` to inspect a migration before writing. `arkd config set <app|config|client> <key> <value>`
+changes an existing key in that file, app.toml against the validation start applies and config.toml against CometBFT's;
+it does not create missing keys, which migrate adds. `arkd config validate [app|config|client]` runs those checks over a
+file alone. Both take a path to a `.toml` file in place of the name. Use `--help` for each command's options.
+[Mempool policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour) explains the coupled CometBFT/application admission configuration.
 
 Set this in every long-running node's service/container environment:
 

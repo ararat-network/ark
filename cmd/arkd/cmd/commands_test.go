@@ -22,18 +22,15 @@ import (
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 )
 
-// The export semantics themselves are pinned in app/export_test.go, against
-// ExportAppStateAndValidators. What these hold is the layer above it: the
-// command wrapper that turns --height, --for-zero-height, and
-// --jail-allowed-addrs into that call, and builds the app the call runs on.
-// A wrapper that drops an argument exports the wrong chain, and the app-level
-// tests would still pass.
+// These tests cover newApp and the export wrapper: app construction from the server's options, and
+// the forwarding of height, zero-height, and validator-allowlist flags. app/export_test.go covers the
+// export semantics.
 
 const testChainID = "ark-commands-test"
 
-// newTestAppOptions builds the viper appExport insists on, populated with the
-// keys DefaultBaseappOptions reads. Its snapshot store is created under home,
-// so home has to be writable and per-test.
+// newTestAppOptions builds app options populated with the keys
+// DefaultBaseappOptions reads. Its snapshot store is created under home, so
+// home has to be writable and per-test.
 func newTestAppOptions(t *testing.T, home string) *viper.Viper {
 	t.Helper()
 
@@ -103,20 +100,6 @@ func TestNewAppTakesTheChainIDFromGenesis(t *testing.T) {
 	t.Cleanup(func() { _ = application.Close() })
 
 	require.Equal(t, "ark-from-genesis", application.(*app.ArkApp).ChainID())
-}
-
-func TestAppExportRefusesNonViperOptions(t *testing.T) {
-	_, err := appExport(
-		log.NewNopLogger(),
-		dbm.NewMemDB(),
-		-1,
-		false,
-		nil,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-		nil,
-	)
-
-	require.ErrorContains(t, err, "appOpts is not viper.Viper")
 }
 
 // TestAppExportContinuesFromTheLatestHeight holds the -1 case to the same

@@ -7,20 +7,21 @@ import (
 	"strconv"
 	"testing"
 
-	cometabci "github.com/cometbft/cometbft/abci/types"
+	"github.com/stretchr/testify/require"
+
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
-	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
-	"ark/abci/codec"
-	vetypes "ark/abci/voteextension/types"
-	arkencoding "ark/pkg/encoding"
+	"github.com/ararat-network/ark/abci/codec"
+	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	"github.com/ararat-network/ark/pkg/encoding"
 )
 
 func TestVoteExtensionsBlockHeight(t *testing.T) {
@@ -73,7 +74,7 @@ func TestVoteExtensionsBlockHeight(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := voteExtensionsCommand()
+			cmd := newVoteExtensionsCmd()
 			if tc.setHeight {
 				require.NoError(t, cmd.Flags().Set(flags.FlagHeight, stringHeight(tc.queryHeight)))
 			}
@@ -103,6 +104,7 @@ func TestInspectVoteExtensions(t *testing.T) {
 			name:  "decoded extensions",
 			block: validBlock,
 			check: func(t *testing.T, got voteExtensionsOutput) {
+				t.Helper()
 				require.Equal(t, int64(42), got.SourceBlockHeight)
 				require.Equal(t, int64(41), got.VoteHeight)
 				require.Equal(t, int32(2), got.Round)
@@ -188,7 +190,7 @@ func TestVoteExtensionsCommand(t *testing.T) {
 				WithClient(node).
 				WithOutput(&output).
 				WithOutputFormat(flags.OutputFormatJSON)
-			cmd := voteExtensionsCommand()
+			cmd := newVoteExtensionsCmd()
 			cmd.SetContext(context.Background())
 			require.NoError(t, client.SetCmdClientContext(cmd, clientCtx))
 
@@ -215,7 +217,7 @@ func TestVoteExtensionsCommandRegistration(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			found, args, err := queryCommand().Find(tc.path)
+			found, args, err := newQueryCmd().Find(tc.path)
 			require.NoError(t, err)
 			require.Empty(t, args)
 			require.Equal(t, "vote-extensions", found.Name())
@@ -226,22 +228,22 @@ func TestVoteExtensionsCommandRegistration(t *testing.T) {
 func voteExtensionsTestBlock(t *testing.T, height int64) *cmttypes.Block {
 	t.Helper()
 
-	rate, err := arkencoding.EncodeLegacyDec(math.LegacyMustNewDecFromStr("1.25"))
+	rate, err := encoding.EncodeCompactLegacyDec(math.LegacyMustNewDecFromStr("1.25"))
 	require.NoError(t, err)
 	voteExtension, err := codec.EncodeVoteExtension(vetypes.OracleVoteExtension{
 		Rates: map[string][]byte{"ausd": rate},
 	})
 	require.NoError(t, err)
-	extendedCommit, err := codec.EncodeExtendedCommit(cometabci.ExtendedCommitInfo{
+	extendedCommit, err := codec.EncodeExtendedCommit(cmtabci.ExtendedCommitInfo{
 		Round: 2,
-		Votes: []cometabci.ExtendedVoteInfo{
+		Votes: []cmtabci.ExtendedVoteInfo{
 			{
-				Validator:     cometabci.Validator{Address: []byte{0x01, 0x02}, Power: 100},
+				Validator:     cmtabci.Validator{Address: []byte{0x01, 0x02}, Power: 100},
 				VoteExtension: voteExtension,
 				BlockIdFlag:   cmtproto.BlockIDFlagCommit,
 			},
 			{
-				Validator:   cometabci.Validator{Address: []byte{0x03, 0x04}, Power: 50},
+				Validator:   cmtabci.Validator{Address: []byte{0x03, 0x04}, Power: 50},
 				BlockIdFlag: cmtproto.BlockIDFlagAbsent,
 			},
 		},

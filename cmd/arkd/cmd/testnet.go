@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cmtconfig "github.com/cometbft/cometbft/config"
+	cmtcfg "github.com/cometbft/cometbft/config"
 	cmttime "github.com/cometbft/cometbft/types/time"
 
 	"cosmossdk.io/math"
@@ -19,13 +19,13 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/tx"
+	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
-	srvconfig "github.com/cosmos/cosmos-sdk/server/config"
-	"github.com/cosmos/cosmos-sdk/testutil"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
+	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -37,11 +37,11 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"ark/app"
-	oracleclient "ark/oracle/client"
+	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/telemetry"
 )
 
-var (
+const (
 	flagNodeDirPrefix     = "node-dir-prefix"
 	flagNumValidators     = "validator-count"
 	flagOutputDir         = "output-dir"
@@ -56,6 +56,24 @@ var (
 	flagStakingDenom      = "staking-denom"
 	flagCommitTimeout     = "commit-timeout"
 	flagSingleHost        = "single-host"
+
+	defaultNumValidators     = 4
+	defaultOutputDir         = "./.testnets"
+	defaultNodeDirPrefix     = "node"
+	defaultStartingIPAddress = "192.168.0.1"
+	defaultListenIPAddress   = "0.0.0.0"
+	defaultEnableLogging     = false
+	defaultPrintMnemonic     = true
+	defaultSingleHost        = false
+)
+
+// The in-process testnet's listen addresses, on the same ports init-files
+// hands each node.
+var (
+	defaultMinGasPrices = fmt.Sprintf("6000000%s", sdk.DefaultBondDenom)
+	defaultRPCAddress   = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPort)
+	defaultAPIAddress   = fmt.Sprintf("tcp://0.0.0.0:%d", apiPort)
+	defaultGRPCAddress  = fmt.Sprintf("0.0.0.0:%d", grpcPort)
 )
 
 type initArgs struct {
@@ -87,33 +105,44 @@ type startArgs struct {
 	timeoutCommit time.Duration
 }
 
-func addTestnetFlagsToCmd(cmd *cobra.Command) {
-	cmd.Flags().IntP(flagNumValidators, "v", 4, "Number of validators to initialise the testnet with")
-	cmd.Flags().StringP(flagOutputDir, "o", "./.testnets", "Directory to store initialization data for the testnet")
-	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("6000000%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
-	cmd.Flags().String(flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+// validatorCount reads --validator-count and refuses what no testnet can
+// have; a negative count would panic the slice allocation below.
+func validatorCount(cmd *cobra.Command) (int, error) {
+	count, _ := cmd.Flags().GetInt(flagNumValidators)
+	if count < 1 {
+		return 0, fmt.Errorf("--%s must be at least 1, got %d", flagNumValidators, count)
+	}
+	return count, nil
 }
 
-// NewTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialise
+func addTestnetFlagsToCmd(cmd *cobra.Command) {
+	cmd.Flags().IntP(flagNumValidators, "v", defaultNumValidators, "Number of validators to initialise the testnet with")
+	cmd.Flags().StringP(flagOutputDir, "o", defaultOutputDir, "Directory to store initialization data for the testnet")
+	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
+	cmd.Flags().String(server.FlagMinGasPrices, defaultMinGasPrices, "Minimum gas prices to accept for transactions; all fees in a tx must meet this minimum (e.g. 0.01anoah,0.001ausd)")
+	cmd.Flags().String(flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().Duration(flagCommitTimeout, defaultCommitTimeout, "Time to wait after a block commit before starting on the new height")
+}
+
+// newTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialise
 // validator configuration files for running a multi-validator testnet in a separate process
-func NewTestnetCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+func newTestnetCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	testnetCmd := &cobra.Command{
 		Use:                        "testnet",
-		Short:                      "subcommands for starting or configuring local testnets",
+		Short:                      "Subcommands for starting or configuring local testnets",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
 
-	testnetCmd.AddCommand(testnetStartCmd())
-	testnetCmd.AddCommand(testnetInitFilesCmd(mm, genBalIterator))
+	testnetCmd.AddCommand(newTestnetStartCmd())
+	testnetCmd.AddCommand(newTestnetInitFilesCmd(mm, genBalIterator))
 
 	return testnetCmd
 }
 
-// testnetInitFilesCmd returns a cmd to initialise all files for CometBFT testnet and application
-func testnetInitFilesCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+// newTestnetInitFilesCmd returns a cmd to initialise all files for CometBFT testnet and application
+func newTestnetInitFilesCmd(mm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init-files",
 		Short: "Initialise config directories & files for a multi-validator testnet running locally via separate processes (e.g. Docker Compose or similar)",
@@ -129,6 +158,10 @@ Example:
 	%s testnet init-files --validator-count 4 --output-dir ./.testnets --starting-ip-address 192.168.10.2
 	`, version.AppName),
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			numValidators, err := validatorCount(cmd)
+			if err != nil {
+				return err
+			}
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
@@ -137,7 +170,7 @@ Example:
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			config := serverCtx.Config
 
-			args := initArgs{}
+			args := initArgs{numValidators: numValidators}
 			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
 			args.keyringBackend, _ = cmd.Flags().GetString(flags.FlagKeyringBackend)
 			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
@@ -146,7 +179,6 @@ Example:
 			args.nodeDaemonHome, _ = cmd.Flags().GetString(flagNodeDaemonHome)
 			args.startingIPAddress, _ = cmd.Flags().GetString(flagStartingIPAddress)
 			args.listenIPAddress, _ = cmd.Flags().GetString(flagListenIPAddress)
-			args.numValidators, _ = cmd.Flags().GetInt(flagNumValidators)
 			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
 			args.bondTokenDenom, _ = cmd.Flags().GetString(flagStakingDenom)
 			args.singleMachine, _ = cmd.Flags().GetBool(flagSingleHost)
@@ -160,20 +192,19 @@ Example:
 	}
 
 	addTestnetFlagsToCmd(cmd)
-	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
-	cmd.Flags().String(flagNodeDaemonHome, "simd", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagStartingIPAddress, "192.168.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
-	cmd.Flags().String(flagListenIPAddress, "0.0.0.0", "TCP or UNIX socket IP address for the RPC server to listen on")
+	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
+	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
+	cmd.Flags().String(flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
 	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|test)")
-	cmd.Flags().Duration(flagCommitTimeout, 5*time.Second, "Time to wait after a block commit before starting on the new height")
-	cmd.Flags().Bool(flagSingleHost, false, "Cluster runs on a single host machine with different ports")
-	cmd.Flags().String(flagStakingDenom, sdk.DefaultBondDenom, "Default staking token denominator")
+	cmd.Flags().Bool(flagSingleHost, defaultSingleHost, "Cluster runs on a single host machine with different ports")
+	cmd.Flags().String(flagStakingDenom, sdk.DefaultBondDenom, "Default staking token denomination")
 
 	return cmd
 }
 
-// testnetStartCmd returns a cmd to start multi validator in-process testnet
-func testnetStartCmd() *cobra.Command {
+// newTestnetStartCmd returns a cmd to start multi validator in-process testnet
+func newTestnetStartCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Launch an in-process multi-validator testnet",
@@ -182,14 +213,17 @@ and generate a directory for each validator populated with necessary
 configuration files (private validator, genesis, config, etc.).
 
 Example:
-	%s testnet --validator-count 4 --output-dir ./.testnets
+	%s testnet start --validator-count 4 --output-dir ./.testnets
 	`, version.AppName),
-		RunE: func(cmd *cobra.Command, _ []string) (err error) {
-			args := startArgs{}
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			numValidators, err := validatorCount(cmd)
+			if err != nil {
+				return err
+			}
+			args := startArgs{numValidators: numValidators}
 			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
 			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
 			args.minGasPrices, _ = cmd.Flags().GetString(server.FlagMinGasPrices)
-			args.numValidators, _ = cmd.Flags().GetInt(flagNumValidators)
 			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
 			args.enableLogging, _ = cmd.Flags().GetBool(flagEnableLogging)
 			args.rpcAddress, _ = cmd.Flags().GetString(flagRPCAddress)
@@ -203,21 +237,34 @@ Example:
 	}
 
 	addTestnetFlagsToCmd(cmd)
-	cmd.Flags().Bool(flagEnableLogging, false, "Enable INFO logging of CometBFT validator nodes")
-	cmd.Flags().String(flagRPCAddress, "tcp://0.0.0.0:26657", "the RPC address to listen on")
-	cmd.Flags().String(flagAPIAddress, "tcp://0.0.0.0:1317", "the address to listen on for REST API")
-	cmd.Flags().String(flagGRPCAddress, "0.0.0.0:9090", "the gRPC server address to listen on")
-	cmd.Flags().Bool(flagPrintMnemonic, true, "print mnemonic of first validator to stdout for manual testing")
+	cmd.Flags().Bool(flagEnableLogging, defaultEnableLogging, "Enable INFO logging of CometBFT validator nodes")
+	cmd.Flags().String(flagRPCAddress, defaultRPCAddress, "the RPC address to listen on")
+	cmd.Flags().String(flagAPIAddress, defaultAPIAddress, "the address to listen on for REST API")
+	cmd.Flags().String(flagGRPCAddress, defaultGRPCAddress, "the gRPC server address to listen on")
+	cmd.Flags().Bool(flagPrintMnemonic, defaultPrintMnemonic, "print mnemonic of first validator to stdout for manual testing")
 	return cmd
 }
 
 const nodeDirPerm = 0o755
 
+// Listener ports. A single-host testnet offsets each by the node index, with
+// P2P moved off the RPC range so the two never meet.
+const (
+	rpcPort           = 26657
+	p2pPort           = 26656
+	singleHostP2PPort = 16656
+	apiPort           = 1317
+	grpcPort          = 9090
+	pprofPort         = 6060
+	cometMetricsPort  = 27780
+	metricsPort       = 9464
+)
+
 // initTestnetFiles initialises testnet files for a testnet to be run in a separate process
 func initTestnetFiles(
 	clientCtx client.Context,
 	cmd *cobra.Command,
-	nodeConfig *cmtconfig.Config,
+	nodeConfig *cmtcfg.Config,
 	mm module.BasicManager,
 	genBalIterator banktypes.GenesisBalancesIterator,
 	args initArgs,
@@ -228,7 +275,7 @@ func initTestnetFiles(
 	nodeIDs := make([]string, args.numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, args.numValidators)
 
-	appConfig := srvconfig.DefaultConfig()
+	appConfig := defaultAppConfig()
 	appConfig.MinGasPrices = args.minGasPrices
 	appConfig.API.Enable = true
 	// Cosmos SDK v0.54 still emits some metrics through its deprecated wrappers.
@@ -241,28 +288,25 @@ func initTestnetFiles(
 		genBalances []banktypes.Balance
 		genFiles    []string
 	)
-	const (
-		rpcPort          = 26657
-		apiPort          = 1317
-		grpcPort         = 9090
-		pprofListen      = 6060
-		prometheusListen = 27780
-		otelListen       = 9464
-	)
-	p2pPortStart := 26656
+	p2pPortStart := p2pPort
+	if args.singleMachine {
+		p2pPortStart = singleHostP2PPort
+		nodeConfig.P2P.AddrBookStrict = false
+		nodeConfig.P2P.PexReactor = false
+		nodeConfig.P2P.AllowDuplicateIP = true
+	}
+	// CometBFT's own metrics, the third surface in docs/operations/PROCESS_MONITORING.md §1,
+	// on its default :26660 unless the single-host layout offsets it in
+	// collectGenFiles.
+	nodeConfig.Instrumentation.Prometheus = true
+	serverconfig.SetConfigTemplate(appConfigTemplate)
 
 	inBuf := bufio.NewReader(cmd.InOrStdin())
 	// generate private keys, node IDs, and initial transactions
-	for i := 0; i < args.numValidators; i++ {
+	for i := range args.numValidators {
 		var portOffset int
 		if args.singleMachine {
 			portOffset = i
-			p2pPortStart = 16656 // use different start point to not conflict with rpc port
-			nodeConfig.P2P.AddrBookStrict = false
-			nodeConfig.P2P.PexReactor = false
-			nodeConfig.P2P.AllowDuplicateIP = true
-			nodeConfig.Instrumentation.PrometheusListenAddr = fmt.Sprintf(":%d", prometheusListen+portOffset)
-			nodeConfig.RPC.PprofListenAddress = fmt.Sprintf("localhost:%d", pprofListen+portOffset)
 			appConfig.API.Address = fmt.Sprintf("tcp://0.0.0.0:%d", apiPort+portOffset)
 			appConfig.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", grpcPort+portOffset)
 		}
@@ -270,14 +314,12 @@ func initTestnetFiles(
 		nodeDirName := fmt.Sprintf("%s%d", args.nodeDirPrefix, i)
 		nodeDir := filepath.Join(args.outputDir, nodeDirName, args.nodeDaemonHome)
 		gentxsDir := filepath.Join(args.outputDir, "gentxs")
-		otelPort := otelListen + portOffset
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.Moniker = nodeDirName
 		nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://%s:%d", args.listenIPAddress, rpcPort+portOffset)
 
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
-			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 		var (
@@ -289,14 +331,12 @@ func initTestnetFiles(
 		} else {
 			ip, err = getIP(i, args.startingIPAddress)
 			if err != nil {
-				_ = os.RemoveAll(args.outputDir)
 				return err
 			}
 		}
 
 		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(nodeConfig)
 		if err != nil {
-			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 
@@ -314,9 +354,8 @@ func initTestnetFiles(
 			return err
 		}
 
-		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, "", true, algo)
+		addr, secret, err := sdktestutil.GenerateSaveCoinKey(kb, nodeDirName, "", true, algo)
 		if err != nil {
-			_ = os.RemoveAll(args.outputDir)
 			return err
 		}
 
@@ -328,7 +367,7 @@ func initTestnetFiles(
 		}
 
 		// save private key seed words
-		if err := writeFile(fmt.Sprintf("%v.json", "key_seed"), nodeDir, cliPrint); err != nil {
+		if err := writeFile("key_seed.json", nodeDir, cliPrint); err != nil {
 			return err
 		}
 
@@ -364,14 +403,14 @@ func initTestnetFiles(
 
 		txBuilder.SetMemo(memo)
 
-		txFactory := tx.Factory{}
+		txFactory := clienttx.Factory{}
 		txFactory = txFactory.
 			WithChainID(args.chainID).
 			WithMemo(memo).
 			WithKeybase(kb).
 			WithTxConfig(clientCtx.TxConfig)
 
-		if err := tx.Sign(cmd.Context(), txFactory, nodeDirName, txBuilder, true); err != nil {
+		if err := clienttx.Sign(cmd.Context(), txFactory, nodeDirName, txBuilder, true); err != nil {
 			return err
 		}
 
@@ -384,18 +423,17 @@ func initTestnetFiles(
 			return err
 		}
 
-		srvconfig.SetConfigTemplate(srvconfig.DefaultConfigTemplate + oracleclient.DefaultConfigTemplate)
+		// Any interface: the nodes are scraped from outside their container.
+		appConfig.Prometheus = telemetry.PrometheusConfig{
+			Enabled: true,
+			Address: fmt.Sprintf("0.0.0.0:%d", metricsPort+portOffset),
+		}
+		serverconfig.WriteConfigFile(filepath.Join(nodeDir, "config", "app.toml"), appConfig)
 
-		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config", "app.toml"), arkAppConfig{
-			Config: *appConfig,
-			Oracle: oracleclient.NewDefaultConfig(),
-		})
-
-		if err := writeFile(
-			"otel.yaml",
-			filepath.Join(nodeDir, "config"),
-			testnetOtelConfig(args.chainID, nodeDirName, otelPort),
-		); err != nil {
+		// Empty selects noop telemetry, as `arkd init` writes. The otelconf
+		// release cosmos-sdk v0.54 pins dropped the Prometheus pull reader,
+		// so the scrape endpoint comes from [prometheus] above, not this file.
+		if err := writeFile("otel.yaml", filepath.Join(nodeDir, "config"), nil); err != nil {
 			return err
 		}
 	}
@@ -407,13 +445,13 @@ func initTestnetFiles(
 	err := collectGenFiles(
 		clientCtx, nodeConfig, args.chainID, nodeIDs, valPubKeys, args.numValidators,
 		args.outputDir, args.nodeDirPrefix, args.nodeDaemonHome, genBalIterator,
-		rpcPort, p2pPortStart, args.singleMachine,
+		p2pPortStart, args.singleMachine,
 	)
 	if err != nil {
 		return err
 	}
 	for _, genFile := range genFiles {
-		if err := setGenesisGovernanceAuthority(genFile); err != nil {
+		if err := finaliseGenesisConsensusParams(genFile); err != nil {
 			return err
 		}
 	}
@@ -469,24 +507,28 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context,
-	nodeConfig *cmtconfig.Config,
+	nodeConfig *cmtcfg.Config,
 	chainID string,
 	nodeIDs []string,
 	valPubKeys []cryptotypes.PubKey,
 	numValidators int,
 	outputDir, nodeDirPrefix, nodeDaemonHome string,
 	genBalIterator banktypes.GenesisBalancesIterator,
-	rpcPortStart, p2pPortStart int,
+	p2pPortStart int,
 	singleMachine bool,
 ) error {
 	var appState json.RawMessage
 	genTime := cmttime.Now()
 
 	for i := range numValidators {
+		// GenAppStateFromConfig writes config.toml, so the per-node listeners
+		// are set here: set in initTestnetFiles, the last node's would win.
 		if singleMachine {
 			portOffset := i
-			nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPortStart+portOffset)
+			nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", rpcPort+portOffset)
 			nodeConfig.P2P.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", p2pPortStart+portOffset)
+			nodeConfig.RPC.PprofListenAddress = fmt.Sprintf("localhost:%d", pprofPort+portOffset)
+			nodeConfig.Instrumentation.PrometheusListenAddr = fmt.Sprintf(":%d", cometMetricsPort+portOffset)
 		}
 
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
@@ -534,7 +576,10 @@ func collectGenFiles(
 	return nil
 }
 
-func setGenesisGovernanceAuthority(genFile string) error {
+// finaliseGenesisConsensusParams sets what module genesis cannot reach: the
+// governance authority, and vote extensions from height 1, which oracle votes
+// ride on.
+func finaliseGenesisConsensusParams(genFile string) error {
 	genesis, err := genutiltypes.AppGenesisFromFile(genFile)
 	if err != nil {
 		return fmt.Errorf("reading generated genesis %s: %w", genFile, err)
@@ -544,6 +589,7 @@ func setGenesisGovernanceAuthority(genFile string) error {
 	}
 
 	genesis.Consensus.Params.Authority.Authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	genesis.Consensus.Params.ABCI.VoteExtensionsEnableHeight = 1
 	if err := genesis.SaveAs(genFile); err != nil {
 		return fmt.Errorf("saving generated genesis %s: %w", genFile, err)
 	}
@@ -561,15 +607,21 @@ func getIP(i int, startingIPAddr string) (ip string, err error) {
 	return calculateIP(startingIPAddr, i)
 }
 
+// maxOctet is the largest value the final IPv4 octet can hold.
+const maxOctet = 255
+
 func calculateIP(ip string, i int) (string, error) {
 	ipv4 := net.ParseIP(ip).To4()
 	if ipv4 == nil {
 		return "", fmt.Errorf("%v: non ipv4 address", ip)
 	}
-
-	for range i {
-		ipv4[3]++
+	// Refusing the carry keeps every node inside the operator's chosen /24.
+	// Incrementing the octet in a loop instead wraps it silently, which hands
+	// two validators the same address and a peer list that cannot converge.
+	if i < 0 || int(ipv4[3])+i > maxOctet {
+		return "", fmt.Errorf("%s: offset %d overflows the last octet", ip, i)
 	}
+	ipv4[3] += byte(i)
 
 	return ipv4.String(), nil
 }
@@ -588,38 +640,9 @@ func writeFile(name, dir string, contents []byte) error {
 	return nil
 }
 
-const testnetOtelConfigTemplate = `file_format: "1.0-rc.3"
-resource:
-  attributes:
-    - name: service.name
-      value: "arkd"
-    - name: service.instance.id
-      value: %q
-    - name: ark.chain.id
-      value: %q
-
-meter_provider:
-  readers:
-    - pull:
-        exporter:
-          prometheus/development:
-            host: "0.0.0.0"
-            port: %d
-            with_resource_constant_labels:
-              include:
-                - service.name
-                - service.instance.id
-                - ark.chain.id
-`
-
-func testnetOtelConfig(chainID, nodeName string, prometheusPort int) []byte {
-	serviceInstanceID := chainID + "/" + nodeName
-	return fmt.Appendf(nil, testnetOtelConfigTemplate, serviceInstanceID, chainID, prometheusPort)
-}
-
 // startTestnet starts an in-process testnet
 func startTestnet(cmd *cobra.Command, args startArgs) error {
-	networkConfig := network.DefaultConfig(app.NewTestNetworkFixture)
+	networkConfig := network.DefaultConfig(apptestutil.NewTestNetworkFixture)
 
 	// Default networkConfig.ChainID is random, and we should only override it if chainID provided
 	// is non-empty
@@ -637,7 +660,7 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 	networkConfig.TimeoutCommit = args.timeoutCommit
 	networkLogger := network.NewCLILogger(cmd)
 
-	baseDir := fmt.Sprintf("%s/%s", args.outputDir, networkConfig.ChainID)
+	baseDir := filepath.Join(args.outputDir, networkConfig.ChainID)
 	if _, err := os.Stat(baseDir); !os.IsNotExist(err) {
 		return fmt.Errorf(
 			"testnets directory already exists for chain-id '%s': %s, please remove or select a new --chain-id",

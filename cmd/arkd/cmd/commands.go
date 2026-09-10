@@ -2,19 +2,13 @@ package cmd
 
 import (
 	"errors"
-	"math"
-	"math/big"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	cmtcfg "github.com/cometbft/cometbft/config"
 	cmtcli "github.com/cometbft/cometbft/libs/cli"
 
 	"cosmossdk.io/log/v2"
-	sdkmath "cosmossdk.io/math"
-	confixcmd "cosmossdk.io/tools/confix/cmd"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -23,65 +17,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/client/snapshot"
 	"github.com/cosmos/cosmos-sdk/server"
-	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
-	"ark/app"
-	oracleclient "ark/oracle/client"
-	"ark/pkg/decimal"
+	"github.com/ararat-network/ark/app"
 )
-
-type arkAppConfig struct {
-	serverconfig.Config
-	Oracle oracleclient.Config
-}
-
-var (
-	maximumGasLimit   = sdkmath.LegacyNewDecFromInt(sdkmath.NewIntFromUint64(math.MaxUint64))
-	maximumCoinAmount = sdkmath.LegacyNewDecFromBigInt(
-		new(big.Int).Sub(
-			new(big.Int).Lsh(big.NewInt(1), sdkmath.MaxBitLen),
-			big.NewInt(1),
-		),
-	)
-)
-
-// initCometBFTConfig helps to override default CometBFT Config values.
-// return cmtcfg.DefaultConfig if no custom configuration is required for the application.
-func initCometBFTConfig() *cmtcfg.Config {
-	cfg := cmtcfg.DefaultConfig()
-
-	// these values put a higher strain on node memory
-	// cfg.P2P.MaxNumInboundPeers = 100
-	// cfg.P2P.MaxNumOutboundPeers = 40
-
-	return cfg
-}
-
-// initAppConfig helps to override default appConfig template and configs.
-// return "", nil if no custom configuration is required for the application.
-func initAppConfig() (string, any) {
-	srvCfg := serverconfig.DefaultConfig()
-	srvCfg.MinGasPrices = "0anoah"
-	// TODO: look into other default configs I might want
-
-	return serverconfig.DefaultConfigTemplate + oracleclient.DefaultConfigTemplate, arkAppConfig{
-		Config: *srvCfg,
-		Oracle: oracleclient.NewDefaultConfig(),
-	}
-}
 
 func initRootCmd(
 	rootCmd *cobra.Command,
 	txConfig client.TxConfig,
 	basicManager module.BasicManager,
-	ibcModuleBasics module.BasicManager,
+	manualBasics module.BasicManager,
 ) {
 	cfg := sdk.GetConfig()
 	cfg.Seal()
@@ -89,69 +39,37 @@ func initRootCmd(
 	rootCmd.AddCommand(
 		genutilcli.InitCmd(basicManager, app.DefaultNodeHome),
 		cmtcli.NewCompletionCmd(rootCmd, true),
-		NewTestnetCmd(basicManager, banktypes.GenesisBalancesIterator{}),
+		newTestnetCmd(basicManager, banktypes.GenesisBalancesIterator{}),
 		debug.Cmd(),
-		confixcmd.ConfigCommand(),
+		newConfigCmd(),
 		pruning.Cmd(newApp, app.DefaultNodeHome),
 		snapshot.Cmd(newApp),
 	)
 
-	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+	run := &startRun{}
+	server.AddCommandsWithStartCmdOptions(rootCmd, app.DefaultNodeHome, run.createApp, appExport, server.StartCmdOptions{
+		PostSetup:           run.postSetup,
+		PostSetupStandalone: run.postSetup,
+	})
+	adjustStartCommand(rootCmd, run)
+	adjustExportCommand(rootCmd, appExport)
 
-	queryCmd := queryCommand()
-	txCmd := txCommand()
-	ibcModuleBasics.AddQueryCommands(queryCmd)
-	ibcModuleBasics.AddTxCommands(txCmd)
+	queryCmd := newQueryCmd()
+	txCmd := newTxCmd()
+	manualBasics.AddQueryCommands(queryCmd)
+	manualBasics.AddTxCommands(txCmd)
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
 		server.StatusCommand(),
-		genesisCommand(txConfig, basicManager),
+		genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome),
 		queryCmd,
 		txCmd,
 		keys.Commands(),
 	)
 }
 
-func addModuleInitFlags(startCmd *cobra.Command) {
-	startCmd.PreRunE = func(cmd *cobra.Command, _ []string) error {
-		serverCtx := server.GetServerContextFromCmd(cmd)
-		return validateMinGasPrices(serverCtx.Viper.GetString(server.FlagMinGasPrices))
-	}
-}
-
-func validateMinGasPrices(value string) error {
-	minGasPrices, err := sdk.ParseDecCoins(value)
-	if err != nil {
-		return sdkerrors.ErrAppConfig.Wrapf("invalid minimum gas prices: %v", err)
-	}
-
-	for _, gasPrice := range minGasPrices {
-		// A transaction gas limit is a uint64. Checking the largest possible
-		// value makes the ante calculation safe for every transaction.
-		requiredFee, err := decimal.Mul(gasPrice.Amount, maximumGasLimit)
-		if err != nil || requiredFee.GT(maximumCoinAmount) {
-			return sdkerrors.ErrAppConfig.Wrapf(
-				"minimum gas price %s is too large to multiply by the maximum gas limit",
-				gasPrice,
-			)
-		}
-	}
-
-	return nil
-}
-
-// genesisCommand builds genesis-related `arkd genesis` command. Users may provide application specific commands as a parameter
-func genesisCommand(txConfig client.TxConfig, basicManager module.BasicManager, cmds ...*cobra.Command) *cobra.Command {
-	cmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
-
-	for _, subCmd := range cmds {
-		cmd.AddCommand(subCmd)
-	}
-	return cmd
-}
-
-func queryCommand() *cobra.Command {
+func newQueryCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "query",
 		Aliases:                    []string{"q"},
@@ -162,7 +80,7 @@ func queryCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		voteExtensionsCommand(),
+		newVoteExtensionsCmd(),
 		rpc.ValidatorCommand(),
 		rpc.WaitTxCmd(),
 		server.QueryBlockCmd(),
@@ -175,7 +93,11 @@ func queryCommand() *cobra.Command {
 	return cmd
 }
 
-func txCommand() *cobra.Command {
+// manualFeesAnnotation marks a tx command whose fee dressTxCommands leaves alone: it
+// carries a finished transaction rather than building one.
+const manualFeesAnnotation = "ark.fees"
+
+func newTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        "tx",
 		Short:                      "Transactions subcommands",
@@ -195,6 +117,12 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 	)
+	for _, utility := range cmd.Commands() {
+		if utility.Annotations == nil {
+			utility.Annotations = map[string]string{}
+		}
+		utility.Annotations[manualFeesAnnotation] = "manual"
+	}
 
 	return cmd
 }
@@ -223,15 +151,6 @@ func appExport(
 	appOpts servertypes.AppOptions,
 	modulesToExport []string,
 ) (servertypes.ExportedApp, error) {
-	viperAppOpts, ok := appOpts.(*viper.Viper)
-	if !ok {
-		return servertypes.ExportedApp{}, errors.New("appOpts is not viper.Viper")
-	}
-
-	// overwrite the FlagInvCheckPeriod
-	viperAppOpts.Set(server.FlagInvCheckPeriod, 1)
-	appOpts = viperAppOpts
-
 	var arkApp *app.ArkApp
 	if height != -1 {
 		arkApp = app.NewArkApp(logger, db, false, appOpts)

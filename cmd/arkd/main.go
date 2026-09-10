@@ -8,8 +8,8 @@ import (
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"ark/app"
-	"ark/cmd/arkd/cmd"
+	"github.com/ararat-network/ark/app"
+	"github.com/ararat-network/ark/cmd/arkd/cmd"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 func run() int {
 	rootCmd := cmd.NewRootCmd()
 	if err := svrcmd.Execute(rootCmd, clientv2helpers.EnvPrefix, app.DefaultNodeHome); err != nil {
-		fmt.Fprintln(rootCmd.OutOrStderr(), err)
+		fmt.Fprintln(rootCmd.ErrOrStderr(), err)
 		return 1
 	}
 

@@ -127,7 +127,7 @@ with it:
 - The same sink with `[prometheus]` off leaves those series with nowhere to go but otel.yaml's `meter_provider`.
   `start` warns.
 - `prometheus-retention-time` is not carried over. The legacy Prometheus fan-out behind it is what `[prometheus]`
-  replaces.
+  replaces; set beside the otel sink, `start` warns.
 
 **Legacy metric migration.** Query paths no longer become instrument names. Completed ABCI queries export
 `ark_sdk_query_duration_milliseconds{route}`; its `_count` series counts requests. The route is a registered
