@@ -1,27 +1,28 @@
-# Post-Launch Operations
+# Governance operations
 
-- Status: recorded 2026-09-06. Every step here is a governance vote or a relayer action on a chain that has launched;
-  none is code.
-- Companions: `docs/GENESIS.md` holds every setting fixed at genesis and the launch review.
-  `docs/TREASURY_REDESIGN_PLAN.md` §20 and §21 are the design record behind the capital operations in §5; `Dnn`
-  references are rows of its register.
+For governance proposal authors, committee appointers, and relayers coordinating network changes. This guide covers
+opening interchain services, contract permissions, appointments, and economic operations throughout the network's life.
+[Genesis](GENESIS.md) owns launch values; [economic design](ECONOMIC_DESIGN.md) owns financial rules;
+[economic decisions](ECONOMIC_DECISIONS.md) owns the D/P history.
 
-Governance signs every message below unless a row says otherwise. Type URLs are given so a proposal can be drafted
-from this page; each is the `Msg` under the package named.
+Governance signs each message unless its row names another signer. Before submission, query current parameters and
+authority, preserve fields a whole-object update retains, and check the stated dependencies. After execution, query
+the resulting state and verify the intended route or appointment before proceeding to a dependent step. If a step
+fails, re-read state and correct the proposal; do not enable a dependent service to bypass an unmet prerequisite.
 
-## 1. What is post-launch, and why
+## 1. Launch defaults and ongoing changes
 
 One thing is post-launch by nature: an IBC channel is a handshake with a live counterparty, so channels and everything
 that rides on them cannot exist in a fresh genesis. Rate limits are keyed by channel or client ID, so they follow the
 channels, and the plan makes limits a precondition for the transfer flags (D46), so the flags follow the limits.
 
-Everything else was a choice, and it was made the same way for every surface: a genesis value is permanent and a
-parameter vote is reversible, so a surface is opened by vote and closed by nothing. The launch artefact therefore ships
-the hub shut behind one switch, the empty allowed-client list, and the contract runtime open (D45 as amended, §16.3 of
-the plan). What that leaves for after launch is the table of contents of this document.
+Other initial permissions are launch choices that later governance can change. The launch artefact ships
+the hub shut behind one switch, the empty allowed-client list, and the contract runtime open (D45 as amended,
+`docs/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or appointments are needed.
 
-Not here, because it is genesis: the economic levers, the three committee appointments, the Wasm permissions and query
-accept list, and the first external asset if it is decided before launch (`docs/GENESIS.md` §12).
+Initial economic values, committee appointments, and permissions belong in [genesis](GENESIS.md#12-open-decisions)
+when chosen before launch. The same roles and permissions may be changed later through the procedures below; the
+contract query accept list remains a code change rather than a governance parameter.
 
 ## 2. Opening the hub
 
@@ -44,10 +45,9 @@ Two surfaces have no flag of their own and are held shut only by step 1:
 - **GMP.** A remote chain executes SDK messages here through an account the chain derives for it. The module has no
   params; its only message is the outbound `SendCall`. The derived account is an ordinary account with no standing
   authority, it can do only what its own balance allows, and every message it executes runs through the policy router
-  and pays execution tax on a contract's terms (D48). Covered end to end in `app/gmp_relay_test.go`.
+  and pays execution tax on a contract's terms (D48).
 - **Contract channels.** A contract with IBC entry points may open its own channels on either stack. Callback delivery
-  into contracts on both chains, and the failure and gas-cap semantics at each callback stage, are covered in
-  `app/ibc_callbacks_test.go`.
+  follows the callback and gas rules described in [application integration](../app/README.md#ibc-and-wasm-integration).
 
 Neither needs a further vote once the client type is admitted, which is why step 1 is the decision to open the hub and
 not merely a preliminary.
@@ -72,30 +72,36 @@ widening it is a coordinated binary upgrade.
 
 | Operation | Message | Signer | Notes |
 | --- | --- | --- | --- |
-| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. The first appointment is the trigger for Stage 1 of the committee-realisation record. |
+| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §6 for account backing and appointment review. |
 | Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. There is no global floor, cap, or trigger: each proposal states its own (D27). |
 | Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor (D81). The cap is denominated in the reference unit; zero means uncapped. |
-| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/superpowers/specs/2026-08-10-exposure-observability.md`). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
+| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
 | Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, cap ratio, staleness window), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity (D59). The Reserve account never holds an external token (D70, amended). |
 | Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClosePosition`, and the governance corrections | committee; governance | The one-committee mandate (D56, D57); governance corrects records, clears impairment, and owns the recognition policy. |
 | Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority (D61). The surplus bound is Treasury's required capital, which needs a complete valuation. |
 
-## 6. Deferred, each on a stated trigger
+## 6. Committee appointments
 
-- **Per-fund exposure model.** Retired as Phase 6. Under NOAH-only custody every fund's exposure has liability as its
-  only base, so the launch ratios are the model. Revisit only if a fund carries material risk that does not scale with
-  liability.
-- **Recognised-capital block cache.** Deferred behind a cadence benchmark beside the existing liability one, at
-  realistic position counts.
-- **What sits behind a committee address.** Stages 1 to 3 of
-  `docs/superpowers/specs/2026-08-11-committee-realisation-design.md`, each on its trigger; operational, not chain work,
-  until Stage 3.
+Default mandates are disabled. Governance can operate without a committee; appointment delegates a bounded faster
+path and never becomes a prerequisite for governance's own messages. Choose appointments from incident exposure,
+not chain age: security response may need a fast path before the deliberative mandates do.
 
-## 7. Will not be built
+An ordinary single-key account can be appointed, with its concentration recorded by `CommitteeShape`. A threshold
+multisig can be appointed through the same message; its key should already be registered so governance can observe
+its backing. Replacing the address or reappointing it advances the term and re-records shape. The existing multisig
+integration tests exercise real ante authentication; no native committee module is needed.
 
-Recorded so nobody re-proposes them:
+1. Prepare the root account and its independent gas funding. Inspect what the current shape query can establish.
+2. Draft the domain's `MsgSet*Mandate` with activation/expiry and its policy bounds, allowance, floor, or destinations.
+3. After execution, verify the emitted appointment and query state, including term and shape. Construct actions for
+   that exact term and send only while the appointment is active.
+4. At replacement, review outstanding claims and positions as well as term usage. Pending commitments outlive terms;
+   replacing the charter does not erase their custody or history.
 
-- On-chain custody of an external token in the Reserve account; the send restriction's refusal is permanent (D70).
-- A typed Reserve deployment adapter; attestation with bounded references is the permanent evidence model (D59).
-- A residual-mint limiter (P2), a Treasury Reserve-transfer history query, a wildcard ICA host allowlist, and IBC Hooks
-  short of a concrete requirement for Osmosis-compatible memo semantics.
+For Security and Asset emergency mandates, use threshold signatures collected off-chain. A public voting contract
+would disclose the target during deliberation; ordinary public transaction propagation can still expose a signed act,
+so the [emergency submission runbook](EMERGENCY_SUBMISSION_RUNBOOK.md) remains relevant.
+
+Routine staff authz and deliberative cw3/cw4 roots remain deferred behind the tests and observation preconditions in
+[future changes](FUTURE_CHANGES.md#5-committee-account-evolution). Their risks are not solved by Wasmd being installed.
+Other engineering follow-ups are tracked in [future changes](FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).

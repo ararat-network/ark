@@ -1,41 +1,27 @@
 # Ark First-Party Tooling Direction
 
-## Status and purpose
-
-This document records a general direction for Ark's user and developer tooling. It is intended to guide product and architecture decisions without prescribing a complete implementation plan, delivery schedule, or package layout.
+For product and integration contributors. This document records a proposed direction for Ark's user and developer tooling. It is intended to guide product and architecture decisions without prescribing a complete implementation plan, delivery schedule, or package layout.
 
 The current direction is to make Ark easy to use through a coherent, first-party, Cosmos-native toolchain rather than adopting EVM compatibility primarily to inherit MetaMask, Solidity, or EVM explorer support. EVM compatibility can be reconsidered if Ark later has a concrete need to host EVM applications or reach EVM-native developers, but it should not be the default answer to a tooling problem.
 
 Ark already has useful foundations for this direction: Cosmos SDK protobuf and gRPC APIs, gRPC-gateway support, direct and textual signing modes, the `ark` Bech32 prefix, and BIP-44 coin type `330`. The main challenge is to turn those protocol capabilities into a dependable product surface.
 
-## The model established by Terra
+## Contents
 
-Terra did not achieve a cohesive user experience by making the chain itself imitate Ethereum. It assembled an integrated stack around a sovereign Cosmos SDK chain and made the pieces feel like one product.
+- [Design precedent](#design-precedent)
+- [Recommended direction for Ark](#recommended-direction-for-ark)
+- [Ownership boundaries](#ownership-boundaries)
+- [Important considerations](#important-considerations)
+- [Directional sequencing](#directional-sequencing)
+- [Decision checkpoints](#decision-checkpoints)
+- [Non-goals](#non-goals)
 
-The exact components and boundaries changed over Terra's lifetime, but the model broadly included:
+## Design precedent
 
-| Layer | Terra-era example | Responsibility |
-| --- | --- | --- |
-| Protocol | Terra Core | Consensus, accounts, transactions, staking, governance, market and treasury logic, and contract execution |
-| Node API | LCD, RPC, and later gRPC-style APIs | Canonical access to chain queries, simulation, transaction broadcast, and block data |
-| Client SDK | Terra.js | Typed messages, queries, transaction construction, signing support, and common chain abstractions |
-| Dapp connection | Wallet Provider | A consistent way for applications to discover wallets, request accounts, and submit transactions |
-| First-party wallet | Terra Station | Key management and complete user workflows for transfers, staking, governance, swaps, and contracts |
-| Indexed data | FCD and related services | Searchable transaction history, account activity, analytics, and other derived views that are inefficient to obtain from a node directly |
-| Explorer | Finder | Human-readable blocks, transactions, accounts, validators, and contracts |
-| Local development | LocalTerra | A repeatable local network and developer environment |
-| Contract ecosystem | CosmWasm tooling and integrations | Contract deployment, querying, execution, schema-driven development, and wallet presentation |
-
-The important lesson is not the names of those products. It is the division of responsibility:
-
-- The chain remained the authority for balances, fees, policy, and state transitions.
-- The SDK translated protocol APIs into application-friendly operations.
-- The wallet combined secure signing with complete user journeys.
-- The indexer made historical and cross-entity data convenient, but did not become authoritative state.
-- The explorer made transactions legible enough for users and operators to verify independently.
-- Shared network metadata kept wallets, dapps, explorers, and infrastructure aligned.
-
-This gave Terra a strong identity without requiring every application team to solve basic chain integration independently.
+Terra's useful precedent is separation of responsibility: the chain owns state and validation, a client SDK exposes
+those interfaces, wallets own signing and user workflows, indexers derive history, explorers make it inspectable,
+and shared network metadata connects the products. Ark should use that division of responsibility without inheriting
+an obsolete package layout or fee assumption.
 
 ## Recommended direction for Ark
 
@@ -138,7 +124,7 @@ The following boundaries should remain clear as the stack grows:
 | --- | --- | --- |
 | `arkd` | Canonical state, validation, policy, execution, and protocol queries | A product-specific UI backend |
 | Network registry | Shared public configuration and asset metadata | A second source of chain state |
-| Ark SDK | Encoding, querying, transaction workflows, decoding, and formatting | An independent implementation of monetary or market policy |
+| Ark SDK | Encoding, querying, transaction workflows, decoding, and formatting | An independent implementation of economic or market policy |
 | Wallet kit | Dapp-to-wallet session and request protocol | A key store or an Ark-specific policy engine |
 | Ark wallet | Key custody, signing consent, and reference user workflows | The authority for balances, quotes, or transaction success |
 | Indexer | Replayable historical and searchable derived data | Consensus state or an irreplaceable ledger |
@@ -165,6 +151,11 @@ Ark-specific economics make simulation and transaction explanation especially im
 - simulation estimates from values guaranteed by transaction validation.
 
 Values derived from mutable chain state should be accompanied by the relevant height or expiration assumption. Clients must handle the possibility that state changes between simulation and inclusion.
+
+Use [client fee construction](CLIENT_FEES.md) as the transaction contract. Products must show the declared maximum,
+explain the gas/tax split, choose explicit headroom, and handle a refusal after state changes. Do not turn arkd's
+current gas adjustment or denomination preference into a protocol requirement; those choices are documented with the
+[CLI implementation](../cmd/arkd/README.md#cli-fee-completion).
 
 ### Message and event compatibility
 
