@@ -23,7 +23,7 @@ import (
 )
 
 func TestCheckCmdOwnsFlags(t *testing.T) {
-	flags := newCheckCmd().Flags()
+	flags := newCheckCmd(&rootOptions{}).Flags()
 	defaults := validation.DefaultConfig()
 
 	require.Equal(t, defaultAddress, flags.Lookup(flagAddress).DefValue)

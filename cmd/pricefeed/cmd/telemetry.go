@@ -8,37 +8,51 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"golang.org/x/sync/errgroup"
+
+	"cosmossdk.io/log/v2"
 
 	"github.com/ararat-network/ark/pkg/telemetry"
 )
 
-type prometheusTelemetry struct {
+// prometheusEndpoint is the sidecar's scrape endpoint: the default registry
+// and the provider exporting into it.
+type prometheusEndpoint struct {
+	address  string
 	provider *sdkmetric.MeterProvider
-	handler  http.Handler
 }
 
-// initPrometheus installs the provider globally so subsystem metrics created
-// through the OpenTelemetry API are exported by this process. The sidecar
-// owns the default registry, so its Go and process collectors ride along.
-func initPrometheus() (*prometheusTelemetry, error) {
+// newPrometheusEndpoint returns the configured endpoint or nil when disabled.
+// The sidecar owns the default registry, so its Go and process collectors
+// ride along.
+func newPrometheusEndpoint(enabled bool, address string) (*prometheusEndpoint, error) {
+	if !enabled {
+		return nil, nil
+	}
+
 	provider, err := telemetry.NewPrometheusProvider(serviceName, prometheus.DefaultRegisterer)
 	if err != nil {
 		return nil, err
 	}
 
-	otel.SetMeterProvider(provider)
-	return &prometheusTelemetry{
-		provider: provider,
-		handler:  telemetry.PrometheusHandler(prometheus.DefaultGatherer),
-	}, nil
+	return &prometheusEndpoint{address: address, provider: provider}, nil
 }
 
-func (t *prometheusTelemetry) Handler() http.Handler {
-	return t.handler
+// install sets the global provider, so subsystem metrics created through the
+// OpenTelemetry API are exported by this process.
+func (e *prometheusEndpoint) install() {
+	if e == nil {
+		return
+	}
+	otel.SetMeterProvider(e.provider)
 }
 
-func (t *prometheusTelemetry) Shutdown(ctx context.Context) error {
-	return t.provider.Shutdown(ctx)
+// serve runs the scrape endpoint under g.
+func (e *prometheusEndpoint) serve(ctx context.Context, g *errgroup.Group, logger log.Logger) {
+	if e == nil {
+		return
+	}
+	telemetry.ServeScrape(ctx, g, e.address, prometheus.DefaultGatherer, e.provider, logger)
 }
 
 // newPprofHandler uses a private mux so the pprof endpoint cannot expose

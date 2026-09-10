@@ -42,7 +42,7 @@ type checkOptions struct {
 	cfg          validation.Config
 }
 
-func newCheckCmd() *cobra.Command {
+func newCheckCmd(root *rootOptions) *cobra.Command {
 	options := checkOptions{
 		address:      defaultAddress,
 		chainAddress: defaultChainAddress,
@@ -51,15 +51,10 @@ func newCheckCmd() *cobra.Command {
 
 	checkCmd := &cobra.Command{
 		Use:   "check",
-		Short: "Check a running sidecar's price liveness against the chain's feed set.",
+		Short: "Check a running sidecar's price liveness against the chain's feed set",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			logger, err := newLogger(defaultLogLevel, defaultLogJSON)
-			if err != nil {
-				return err
-			}
-
-			results, checkErr := runCheck(cmd.Context(), logger, options)
+			results, checkErr := runCheck(cmd.Context(), root.logger, options)
 			return writeCheckOutcome(cmd.OutOrStdout(), results, checkErr)
 		},
 	}

@@ -29,7 +29,7 @@ func TestInitCmdWritesDefaultRuntimeConfig(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 }
 
-func TestInitCmdRefusesToOverwriteWithoutForce(t *testing.T) {
+func TestInitCmdRefusesToOverwriteWithoutTheFlag(t *testing.T) {
 	cfgPath := writeConfig(t, validConfigTOML())
 	cmd := NewRootCmd()
 	out := new(bytes.Buffer)
@@ -44,11 +44,11 @@ func TestInitCmdRefusesToOverwriteWithoutForce(t *testing.T) {
 
 // A pre-existing file's mode is replaced along with its contents, and the
 // temporary file the replacement went through is gone.
-func TestInitCmdForceReplacesFileOwnerOnly(t *testing.T) {
+func TestInitCmdOverwriteReplacesFileOwnerOnly(t *testing.T) {
 	cfgPath := writeConfig(t, validConfigTOML())
 	require.NoError(t, os.Chmod(cfgPath, 0o644))
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--" + flagConfig, cfgPath, "init", "--" + flagForce})
+	cmd.SetArgs([]string{"--" + flagConfig, cfgPath, "init", "--" + flagOverwrite})
 
 	err := cmd.Execute()
 

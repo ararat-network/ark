@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"bytes"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -46,6 +48,39 @@ func TestRootCmdDefaultsConfigFlagToHomeDirectory(t *testing.T) {
 	require.Equal(t, flag.DefValue, flag.Value.String())
 }
 
+func TestRootCmdDefaultsLogFlags(t *testing.T) {
+	flags := NewRootCmd().PersistentFlags()
+
+	require.Equal(t, defaultLogLevel, flags.Lookup(flagLogLevel).DefValue)
+	require.Equal(t, defaultLogFormat, flags.Lookup(flagLogFormat).DefValue)
+}
+
+// The logger is built before any command runs, so a bad log flag fails even
+// a command that never logs.
+func TestRootCmdRejectsInvalidLogFlags(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{name: "level", args: []string{"--" + flagLogLevel, "chatty", "version"}, wantErr: "invalid log level"},
+		{name: "format", args: []string{"--" + flagLogFormat, "yaml", "version"}, wantErr: `unsupported log format "yaml"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := NewRootCmd()
+			cmd.SetOut(io.Discard)
+			cmd.SetErr(io.Discard)
+			cmd.SetArgs(tt.args)
+
+			err := cmd.Execute()
+
+			require.ErrorContains(t, err, tt.wantErr)
+		})
+	}
+}
+
 func TestRootCmdExposesSubcommands(t *testing.T) {
 	root := NewRootCmd()
 
@@ -57,6 +92,43 @@ func TestRootCmdExposesSubcommands(t *testing.T) {
 			require.Equal(t, name, cmd.Name())
 		})
 	}
+}
+
+func TestNewLoggerRejectsInvalidLevel(t *testing.T) {
+	logger, err := newLogger("not-a-level", logFormatPlain)
+
+	require.Nil(t, logger)
+	require.ErrorContains(t, err, "invalid log level")
+}
+
+func TestNewLoggerRejectsUnknownFormat(t *testing.T) {
+	logger, err := newLogger(defaultLogLevel, "yaml")
+
+	require.Nil(t, logger)
+	require.ErrorContains(t, err, `unsupported log format "yaml"`)
+}
+
+// The log label is the metrics service name, so the two signals join.
+func TestNewLoggerAddsServiceLabel(t *testing.T) {
+	readEnd, writeEnd, err := os.Pipe()
+	require.NoError(t, err)
+	oldStderr := os.Stderr
+	os.Stderr = writeEnd
+	t.Cleanup(func() {
+		os.Stderr = oldStderr
+		_ = readEnd.Close()
+		_ = writeEnd.Close()
+	})
+
+	logger, err := newLogger(defaultLogLevel, logFormatPlain)
+	require.NoError(t, err)
+
+	logger.Info("pricefeed command logger labels")
+	require.NoError(t, writeEnd.Close())
+	output, err := io.ReadAll(readEnd)
+	require.NoError(t, err)
+
+	require.Contains(t, string(output), "service="+serviceName)
 }
 
 func TestNewVersionCmdPrintsVersion(t *testing.T) {

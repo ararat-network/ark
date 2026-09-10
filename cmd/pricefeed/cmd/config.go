@@ -14,10 +14,10 @@ import (
 	"github.com/ararat-network/ark/pricefeed/config"
 )
 
-func newConfigCmd(configPath *string) *cobra.Command {
+func newConfigCmd(root *rootOptions) *cobra.Command {
 	configCmd := &cobra.Command{
 		Use:   "config",
-		Short: "Manage the sidecar config file.",
+		Short: "Manage the sidecar config file",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
@@ -25,20 +25,20 @@ func newConfigCmd(configPath *string) *cobra.Command {
 	}
 
 	configCmd.AddCommand(
-		newConfigValidateCmd(configPath),
+		newConfigValidateCmd(root),
 		newConfigReloadCmd(),
 	)
 
 	return configCmd
 }
 
-func newConfigValidateCmd(configPath *string) *cobra.Command {
+func newConfigValidateCmd(root *rootOptions) *cobra.Command {
 	return &cobra.Command{
 		Use:   "validate",
-		Short: "Validate the sidecar config file.",
+		Short: "Validate the sidecar config file",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if _, err := config.Load(*configPath); err != nil {
+			if _, err := config.Load(root.configPath); err != nil {
 				return err
 			}
 
@@ -53,7 +53,7 @@ func newConfigReloadCmd() *cobra.Command {
 
 	reloadCmd := &cobra.Command{
 		Use:   "reload",
-		Short: "Reload the running sidecar's config file.",
+		Short: "Reload the running sidecar's config file",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := reloadRuntimeConfig(cmd.Context(), adminAddress); err != nil {

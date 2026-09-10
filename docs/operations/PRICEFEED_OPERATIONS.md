@@ -15,7 +15,7 @@ make build-pricefeed
 ./build/pricefeed start
 ```
 
-`init` refuses an existing config unless `--force` is supplied. Review the generated provider credentials, market mappings,
+`init` refuses an existing config unless `--overwrite` is supplied. Review the generated provider credentials, market mappings,
 routes, and bootstrap expiry before starting. Defaults include placeholder credentials for providers that need them;
 a structurally valid file does not prove that every requested feed can be priced. Defaults live in
 [pricefeed/config/default.go](../../pricefeed/config/default.go).

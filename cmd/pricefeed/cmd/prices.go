@@ -51,7 +51,7 @@ func newPricesCmd() *cobra.Command {
 
 	pricesCmd := &cobra.Command{
 		Use:   "prices",
-		Short: "Print the sidecar's latest price snapshot.",
+		Short: "Print the sidecar's latest price snapshot",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return runPrices(cmd.Context(), cmd.OutOrStdout(), options)

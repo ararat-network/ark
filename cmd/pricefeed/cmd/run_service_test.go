@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	"cosmossdk.io/log/v2"
+
 	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	chainstatemetrics "github.com/ararat-network/ark/pricefeed/sidecar/chainstate/metrics"
 	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
@@ -60,24 +62,23 @@ func requireHTTPOK(t *testing.T, url string) {
 	}
 }
 
-// quietStartOptions serves on ephemeral ports and logs only failures, so
-// concurrent tests never contend for the command's fixed defaults. The admin
-// transport stays off: its own run wrapper is covered where it lives.
+// quietStartOptions serves on ephemeral ports, so concurrent tests never
+// contend for the command's fixed defaults. The admin transport stays off:
+// its own run wrapper is covered where it lives.
 func quietStartOptions(t *testing.T) startOptions {
 	t.Helper()
 
-	return startOptions{
-		address:  freeLoopbackAddress(t),
-		logLevel: "error",
-	}
+	return startOptions{address: freeLoopbackAddress(t)}
 }
 
-func TestRunServiceRejectsInvalidLogLevel(t *testing.T) {
-	err := runService(context.Background(), writeConfig(t, offlineConfigTOML()), startOptions{
-		logLevel: "chatty",
-	})
+// quietLogger logs only failures.
+func quietLogger(t *testing.T) log.Logger {
+	t.Helper()
 
-	require.Error(t, err)
+	logger, err := newLogger("error", logFormatPlain)
+	require.NoError(t, err)
+
+	return logger
 }
 
 // The refusals land before the config is read or anything listens: the config
@@ -105,7 +106,7 @@ func TestRunServiceRefusesUnsafeProcessAddresses(t *testing.T) {
 			options := quietStartOptions(t)
 			tt.mutate(&options)
 
-			err := runService(context.Background(), filepath.Join(t.TempDir(), "absent.toml"), options)
+			err := runService(context.Background(), quietLogger(t), filepath.Join(t.TempDir(), "absent.toml"), options)
 
 			require.ErrorContains(t, err, tt.wantErr)
 		})
@@ -113,22 +114,20 @@ func TestRunServiceRefusesUnsafeProcessAddresses(t *testing.T) {
 }
 
 func TestRunServiceReportsAnUnreadableConfig(t *testing.T) {
-	err := runService(context.Background(), filepath.Join(t.TempDir(), "absent.toml"), quietStartOptions(t))
+	err := runService(context.Background(), quietLogger(t), filepath.Join(t.TempDir(), "absent.toml"), quietStartOptions(t))
 
 	require.Error(t, err)
 }
 
 func TestRunServiceReportsAnInvalidConfig(t *testing.T) {
-	err := runService(context.Background(), writeConfig(t, `update_interval = "0s"`), quietStartOptions(t))
+	err := runService(context.Background(), quietLogger(t), writeConfig(t, `update_interval = "0s"`), quietStartOptions(t))
 
 	require.Error(t, err)
 }
 
-// TestRunServiceServesItsProcessEndpointsUntilCancelled is the one place the
-// process-owned HTTP endpoints are stood up the way `pricefeed start` does it.
-// It is also the only call to initPrometheus in this package: the exporter
-// registers a collector on the default registry, which a second call could not
-// repeat.
+// TestRunServiceServesItsProcessEndpointsUntilCancelled exercises production endpoint startup. It
+// is this package's only enabled newPrometheusEndpoint call because the default registry cannot
+// register its collector twice.
 func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 	metricsAddress := freeLoopbackAddress(t)
 	pprofAddress := freeLoopbackAddress(t)
@@ -142,7 +141,7 @@ func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- runService(ctx, writeConfig(t, offlineConfigTOML()), options)
+		errCh <- runService(ctx, quietLogger(t), writeConfig(t, offlineConfigTOML()), options)
 	}()
 
 	requireHTTPOK(t, "http://"+metricsAddress+"/metrics")

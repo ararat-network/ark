@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -20,22 +17,12 @@ import (
 )
 
 const (
-	// serviceName labels this process's logs and metrics alike, so the two
-	// join on one name.
-	serviceName = "pricefeed"
-
-	// telemetryShutdownTimeout bounds the meter provider's final flush after
-	// the process endpoints have stopped.
-	telemetryShutdownTimeout = 5 * time.Second
-
 	defaultAddress        = "127.0.0.1:8080"
 	defaultAdminAddress   = "127.0.0.1:8081"
-	defaultLogLevel       = "info"
 	defaultMetrics        = false
 	defaultMetricsAddress = "127.0.0.1:9091"
 	defaultPprof          = false
 	defaultPprofAddress   = "127.0.0.1:6060"
-	defaultLogJSON        = false
 
 	flagAddress        = "address"
 	flagAdminAddress   = "admin-address"
@@ -43,8 +30,6 @@ const (
 	flagMetricsAddress = "metrics-address"
 	flagPprof          = "pprof"
 	flagPprofAddress   = "pprof-address"
-	flagLogLevel       = "log-level"
-	flagLogJSON        = "log-json"
 )
 
 type startOptions struct {
@@ -55,11 +40,9 @@ type startOptions struct {
 	metricsAddress string
 	pprof          bool
 	pprofAddress   string
-	logLevel       string
-	logJSON        bool
 }
 
-func newStartCmd(configPath *string) *cobra.Command {
+func newStartCmd(root *rootOptions) *cobra.Command {
 	options := startOptions{
 		address:        defaultAddress,
 		adminAddress:   defaultAdminAddress,
@@ -67,16 +50,14 @@ func newStartCmd(configPath *string) *cobra.Command {
 		metricsAddress: defaultMetricsAddress,
 		pprof:          defaultPprof,
 		pprofAddress:   defaultPprofAddress,
-		logLevel:       defaultLogLevel,
-		logJSON:        defaultLogJSON,
 	}
 
 	startCmd := &cobra.Command{
 		Use:   "start",
-		Short: "Run the price-feed sidecar.",
+		Short: "Run the price-feed sidecar",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runService(cmd.Context(), *configPath, options)
+			return runService(cmd.Context(), root.logger, root.configPath, options)
 		},
 	}
 
@@ -93,8 +74,6 @@ func newStartCmd(configPath *string) *cobra.Command {
 	flags.StringVar(&options.metricsAddress, flagMetricsAddress, options.metricsAddress, "Prometheus metrics listen address.")
 	flags.BoolVar(&options.pprof, flagPprof, options.pprof, "Enable pprof.")
 	flags.StringVar(&options.pprofAddress, flagPprofAddress, options.pprofAddress, "Pprof listen address; loopback only.")
-	flags.StringVar(&options.logLevel, flagLogLevel, options.logLevel, "Log level (debug, info, warn, error, disabled).")
-	flags.BoolVar(&options.logJSON, flagLogJSON, options.logJSON, "Emit JSON logs.")
 
 	return startCmd
 }
@@ -102,11 +81,7 @@ func newStartCmd(configPath *string) *cobra.Command {
 // runService runs the sidecar and its optional process-owned HTTP endpoints in
 // the foreground. It blocks until ctx ends or a component fails, then waits
 // for every component to finish cleanup before returning.
-func runService(ctx context.Context, configPath string, options startOptions) (err error) {
-	logger, err := newLogger(options.logLevel, options.logJSON)
-	if err != nil {
-		return err
-	}
+func runService(ctx context.Context, logger log.Logger, configPath string, options startOptions) error {
 	// The process endpoints are checked before the config is read or anything
 	// listens. pprof exposes process internals, so it stays on loopback; the
 	// admin listener applies the same rule where it is built.
@@ -145,30 +120,14 @@ func runService(ctx context.Context, configPath string, options startOptions) (e
 		return fmt.Errorf("creating sidecar: %w", err)
 	}
 
-	group, groupCtx := errgroup.WithContext(ctx)
-	if options.metrics {
-		prometheus, err := initPrometheus()
-		if err != nil {
-			return fmt.Errorf("initialising prometheus telemetry: %w", err)
-		}
-		defer func() {
-			shutdownCtx, cancel := context.WithTimeout(context.Background(), telemetryShutdownTimeout)
-			defer cancel()
-
-			err = errors.Join(err, prometheus.Shutdown(shutdownCtx))
-		}()
-
-		group.Go(func() error {
-			return telemetry.RunHTTPServer(
-				groupCtx,
-				options.metricsAddress,
-				prometheus.Handler(),
-				logger,
-				"prometheus metrics",
-			)
-		})
+	endpoint, err := newPrometheusEndpoint(options.metrics, options.metricsAddress)
+	if err != nil {
+		return fmt.Errorf("initialising prometheus telemetry: %w", err)
 	}
+	endpoint.install()
 
+	group, groupCtx := errgroup.WithContext(ctx)
+	endpoint.serve(groupCtx, group, logger)
 	if options.pprof {
 		group.Go(func() error {
 			return telemetry.RunHTTPServer(
@@ -180,28 +139,10 @@ func runService(ctx context.Context, configPath string, options startOptions) (e
 			)
 		})
 	}
-
 	group.Go(func() error {
 		return svc.Run(groupCtx)
 	})
 
 	logger.Info("starting sidecar", "address", options.address, "tls", options.tls.Enabled())
 	return group.Wait()
-}
-
-func newLogger(level string, jsonOutput bool) (log.Logger, error) {
-	filter, err := log.ParseLogLevel(level)
-	if err != nil {
-		return nil, err
-	}
-
-	opts := []log.Option{
-		log.FilterOption(filter),
-		log.ColorOption(false),
-	}
-	if jsonOutput {
-		opts = append(opts, log.OutputJSONOption())
-	}
-
-	return log.NewLogger(os.Stderr, opts...).With("service", serviceName), nil
 }
