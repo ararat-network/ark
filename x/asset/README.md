@@ -25,7 +25,7 @@ This module owns the registry and lifecycle of governance-managed Bank assets ot
 
 `Assets`, `SettlementPlans`, `ResolutionRecords`, `EmergencyMandate`, and `EmergencySuspensions` are declared with the schema in `keeper/keeper.go`. The module has no block hook: transitions execute through messages. Oracle feed promotion does not complete asset transitions.
 
-D-numbers refer to the [economic decision register](../../docs/ECONOMIC_DECISIONS.md).
+D-numbers refer to the [economic decision register](../../docs/design/ECONOMIC_DECISIONS.md).
 
 ## 1. The registry in one page
 
@@ -325,7 +325,7 @@ records to those verdicts; one unpriced asset leaves its own rate empty without 
 A settlement rate never enters ordinary `RateSet` conversion.
 
 Market applies asymmetric offer/ask eligibility; Treasury applies the liability partition. Their contracts live in
-[Market](../market/README.md#conversion-policy) and [economic design](../../docs/ECONOMIC_DESIGN.md#71-the-liability-partition).
+[Market](../market/README.md#conversion-policy) and [economic design](../../docs/design/ECONOMIC_DESIGN.md#71-the-liability-partition).
 There is no bundled record-plus-rate API: consumers already own their admission rules and may need a reference feed
 that is not a registered asset. There is no consumer-written membership or lock index to keep in sync.
 
@@ -347,7 +347,7 @@ keeper because the feed registry is `x/oracle` state, which is why the init orde
 treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a written-off asset's current version and
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
 suspension naming a registered asset. The launch set is the ten stablecoins in `pkg/chain/denom.go`, all `ACTIVE` at
-version one (`docs/GENESIS.md` §9).
+version one (`docs/governance/GENESIS.md` §9).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow
@@ -402,5 +402,5 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Liability and conversion policy](../../docs/ECONOMIC_DESIGN.md).
+- [Liability and conversion policy](../../docs/design/ECONOMIC_DESIGN.md).
 - [Application wiring](../../app/README.md).

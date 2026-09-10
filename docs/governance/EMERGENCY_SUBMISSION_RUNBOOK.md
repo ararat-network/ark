@@ -25,7 +25,7 @@ account without pending normal transactions to avoid a nonce dependency.
 ## Preconditions
 
 Use an active mandate and current term, funded signing account, healthy private carriers, and a rehearsed multisig
-workflow. Operators must have the [upgrade binary policy](NODE_OPERATIONS.md#upgrade-binary-policy) in place before
+workflow. Operators must have the [upgrade binary policy](../operations/NODE_OPERATIONS.md#upgrade-binary-policy) in place before
 an incident. The submission procedure below verifies CheckTx and inclusion separately and defines carrier fallback.
 
 ## Carrier roster
@@ -179,7 +179,7 @@ against arbitrary Sybil traffic, unavailable network links, or censoring propose
 ## Committee upgrades
 
 The security committee can schedule its upgrade through the same signing and submission process. Every operator
-must already follow the [standing upgrade binary policy](NODE_OPERATIONS.md#upgrade-binary-policy): automatic binary
+must already follow the [standing upgrade binary policy](../operations/NODE_OPERATIONS.md#upgrade-binary-policy): automatic binary
 downloads stay disabled, and operators independently build or verify the executable. Scheduling a halt does not
 approve the binary named by the plan.
 

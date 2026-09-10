@@ -226,7 +226,7 @@ localnet-stop:
 localnet-liveness:
 	@contrib/scripts/localnet-liveness.sh 90 2 5 http://localhost:26657 http://localhost:1317
 
-# Drive docs/EMERGENCY_SUBMISSION_RUNBOOK.md against the running localnet:
+# Drive docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md against the running localnet:
 # offline multisig ceremony, dark-carrier submission, leak and inclusion
 # checks. Needs the four-validator shape: the carrier is the last node and
 # the leak check reads the others' mempools.

@@ -2,8 +2,8 @@
 
 This reference explains Ark's current economic model: ownership, custody, conversion flows, liability, capital targets,
 fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds and authority move.
-[Decision history](ECONOMIC_DECISIONS.md) owns D/P records; [genesis](GENESIS.md) owns launch settings;
-[governance operations](GOVERNANCE_OPERATIONS.md) owns the procedures for changing them.
+[Decision history](ECONOMIC_DECISIONS.md) owns D/P records; [genesis](../governance/GENESIS.md) owns launch settings;
+[governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing them.
 
 ## Contents
 
@@ -95,8 +95,8 @@ keeps unconditional settlement with a continuous proportional minting response i
 
 Read terminology, ownership, and custody before the conversion and funding flows. The sections below describe the
 current economic contract. [Economic decisions](ECONOMIC_DECISIONS.md) preserves the D/P records and their amendments;
-[genesis](GENESIS.md#12-open-decisions) owns pending launch values. Local implementation and rationale live in the
-[subsystem READMEs](../app/README.md#module-entry-points).
+[genesis](../governance/GENESIS.md#12-open-decisions) owns pending launch values. Local implementation and rationale live in the
+[subsystem READMEs](../../app/README.md#module-entry-points).
 
 ## 3. Terminology
 
@@ -204,7 +204,7 @@ bound its own burns and commitments (D54, D55). No module holds debit authority 
 
 ## 5. Accounts and custody
 
-The module accounts, their permissions, and their inbound rules are tabulated in `docs/GENESIS.md` §3. The rules that
+The module accounts, their permissions, and their inbound rules are tabulated in `docs/governance/GENESIS.md` §3. The rules that
 produce that table:
 
 - Only Market holds `Minter`, and it also holds `Burner` for settlement. `strategic_reserve` holds `Burner`, never
@@ -394,7 +394,7 @@ in the governance proposal.
 
 Treasury values the stablecoin liability directly in NOAH (D24), once per block that converts and on every read of
 `FundStatus`, never from a cache (D39). The registry decides what counts and how (`x/asset/README.md`,
-[Treasury valuation](../x/treasury/README.md#liability-and-capital-reads)):
+[Treasury valuation](../../x/treasury/README.md#liability-and-capital-reads)):
 
 | Bucket | Supply | Valued at |
 | --- | --- | --- |
@@ -513,9 +513,9 @@ mandate's floor; those bounds size on whatever the block could value, because th
 where the money stays protocol capital. The exposure multiplier tightens all of them: a higher requirement shrinks the
 burnable surplus and widens the shortfalls, and `m` is protocol-computed state no committee can move (D72).
 
-What each ratio literally sets, and what to choose it from, is tabulated in `docs/GENESIS.md` §12. Under NOAH-only
+What each ratio literally sets, and what to choose it from, is tabulated in `docs/governance/GENESIS.md` §12. Under NOAH-only
 custody every fund's exposure has liability as its only base, which is why the ratios are the exposure model and no
-per-fund model exists; its revisit trigger is in [future changes](FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
+per-fund model exists; its revisit trigger is in [future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
 
 ## 8. Transfer tax
 
@@ -616,7 +616,7 @@ but skip tax collection and tax allowance draws. Finalisation and simulation che
 a tax failure reverts those messages and keeps the gas fee. Nothing is escrowed or returned. Feegrant draws the gas fee at the ante and the tax at the charge, so
 an allowance is never charged for a tax a failed transaction did not pay.
 
-Gas is priced by Treasury's base-fee controller, not by node-local minimum gas prices ([Treasury fee controller](../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
+Gas is priced by Treasury's base-fee controller, not by node-local minimum gas prices ([Treasury fee controller](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
 The base gas price, held in the reference unit and floored at `min_base_gas_price`, moves each block toward a target
 block utilisation by at most `base_fee_adjustment_rate`, and each accepted fee denomination prices through its
 conversion factor. The ante chain itself is assembled in `app/ante/ante.go` rather than by the SDK's constructor,
@@ -718,8 +718,8 @@ smoothing horizon for scores.
 
 Conversion settlement precedes governance lifecycle changes and later fund movements. Reward funding values each
 block's earned fees before Distribution consumes them at the next block's start; Oracle funding bypasses Distribution.
-The [application lifecycle](../app/README.md#block-lifecycle) owns hook ordering, and
-[Treasury](../x/treasury/README.md#reward-funding-and-genesis) owns funding-window mechanics.
+The [application lifecycle](../../app/README.md#block-lifecycle) owns hook ordering, and
+[Treasury](../../x/treasury/README.md#reward-funding-and-genesis) owns funding-window mechanics.
 
 ## 10. Authority and reporting
 
@@ -768,8 +768,8 @@ absences are decisions: no fund has a deposit message, since Bank rails and the 
 message settles a claim, since the chain does it; and no message withdraws from the Reserve to an arbitrary recipient,
 since every Reserve debit is a fixed commitment, a bounded deployment, or a burn.
 
-Appointment, staleness, and module-specific bounds are documented by the [module READMEs](../app/README.md#module-entry-points)
-and the [shared mandate package](../pkg/mandate/doc.go). The claim and Reserve flows are specified in §6.6 and §7.3;
+Appointment, staleness, and module-specific bounds are documented by the [module READMEs](../../app/README.md#module-entry-points)
+and the [shared mandate package](../../pkg/mandate/doc.go). The claim and Reserve flows are specified in §6.6 and §7.3;
 their financial bounds remain in §7.5.
 
 ### 10.3 Reporting
@@ -777,7 +777,7 @@ their financial bounds remain in §7.5.
 `FundStatus` reports gross, self-held, and net liability, disclosures, both target families, and the multiplier; it
 never combines distinct funds into a single backing figure (D19). Insurance capital is balance less reservation.
 Funding accounting remains readable without current Oracle prices. Module query schemas and their READMEs define the
-exact API; [protocol monitoring](PROTOCOL_MONITORING.md) defines the operational interpretation of those surfaces.
+exact API; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) defines the operational interpretation of those surfaces.
 
 Deposits, commitments, and burns emit no module event: Bank's canonical transfer and burn events already record
 sender, recipient, and coins, and the signed message is the authorisation. Every Treasury liability figure in a query
@@ -805,14 +805,14 @@ Every transfer adapter on the chain implements one contract (D40 to D42):
 ### 11.2 The hub
 
 Ark supports both ICS-20 routes, packet forwarding, callbacks, ICA, GMP, and a dormant Wasm light client.
-The [application README](../app/README.md#ibc-and-wasm-integration) owns the exact stack, routing, and excluded integrations.
+The [application README](../../app/README.md#ibc-and-wasm-integration) owns the exact stack, routing, and excluded integrations.
 
 The hub ships shut behind one switch. The launch allowed-client list is empty, so no client, connection, channel, v2
 counterparty, or packet of any kind can exist until governance admits `07-tendermint`; the ICS-20 flags and both ICA
 sides are off as well, so that vote opens client creation and nothing more (D45 as amended). One switch was chosen
 because two surfaces have no flag of their own: GMP, whose derived accounts are ordinary accounts that pay execution
 tax on a contract's terms, and a contract's own IBC channels on either stack. Opening the hub is a governance sequence
-recorded in `docs/GOVERNANCE_OPERATIONS.md` §2: admit the client type, let relayers open routes, set rate limits per denomination
+recorded in `docs/governance/GOVERNANCE_OPERATIONS.md` §2: admit the client type, let relayers open routes, set rate limits per denomination
 and route, then flip the transfer flags.
 
 A packet-forwarded hop is continuation of the original transfer and takes no second tax; the raw v2 `MsgSendPacket` is
@@ -828,8 +828,8 @@ prevents contract channels. Contracts use the execution-tax contract above; gene
 contract as signer. The query accept list exposes a deliberately bounded deterministic API whose admitted response
 shapes are consensus inputs. Widening it requires a coordinated binary upgrade, not a parameter vote.
 
-[Application integration](../app/README.md#ibc-and-wasm-integration) owns runtime wiring, query registration, callbacks,
-and address handling; [governance operations](GOVERNANCE_OPERATIONS.md#4-the-contract-runtime) owns permissions.
+[Application integration](../../app/README.md#ibc-and-wasm-integration) owns runtime wiring, query registration, callbacks,
+and address handling; [governance operations](../governance/GOVERNANCE_OPERATIONS.md#4-the-contract-runtime) owns permissions.
 
 Under `Nobody`, governance could still upload, since Wasmd hands the authority its own permission policy; the choice
 to open the runtime removes a lock on everyone else, not on governance.
@@ -837,8 +837,8 @@ to open the runtime removes a lock on everyone else, not on governance.
 ## 12. Related references
 
 - [Economic decisions](ECONOMIC_DECISIONS.md): preserved rationale, rejected choices, and amendments.
-- [Genesis](GENESIS.md): launch settings, open values, and validation.
-- [Governance operations](GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.
-- [Future changes](FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
-- [Application module map](../app/README.md#module-entry-points): state, API schemas, and subsystem development.
-- [Ante/post handling](../app/ante/README.md) and [IBC/Wasm integration](../app/README.md#ibc-and-wasm-integration): execution enforcement.
+- [Genesis](../governance/GENESIS.md): launch settings, open values, and validation.
+- [Governance operations](../governance/GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.
+- [Future changes](../direction/FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
+- [Application module map](../../app/README.md#module-entry-points): state, API schemas, and subsystem development.
+- [Ante/post handling](../../app/ante/README.md) and [IBC/Wasm integration](../../app/README.md#ibc-and-wasm-integration): execution enforcement.

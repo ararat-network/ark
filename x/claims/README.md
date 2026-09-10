@@ -36,7 +36,7 @@ period. Raising the period later does not make param validation depend on mandat
 remain the backstop.
 
 The due-claim index drives EndBlock settlement without an execute message. Records preserve paid, cancelled, and
-failed outcomes plus cancelling authority. [Economic design](../../docs/ECONOMIC_DESIGN.md#66-insurance-claims) owns
+failed outcomes plus cancelling authority. [Economic design](../../docs/design/ECONOMIC_DESIGN.md#66-insurance-claims) owns
 fund-flow and authorisation policy. `ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports
 custody/reservation across all terms. The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
 
@@ -73,6 +73,6 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Insurance custody and claims policy](../../docs/ECONOMIC_DESIGN.md).
-- [Committee operations](../../docs/ECONOMIC_COMMITTEE_RUNBOOK.md).
+- [Insurance custody and claims policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).

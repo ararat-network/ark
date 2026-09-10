@@ -57,5 +57,5 @@ integration check; deterministic unit tests should inject responses or local tra
 
 ## Related policy
 
-[Pricefeed operations](../../../docs/PRICEFEED_OPERATIONS.md) owns endpoint security, TLS, configuration, and releases.
-[The sidecar guide](../README.md) maps service ownership. [Process monitoring](../../../docs/PROCESS_MONITORING.md) owns metric interpretation.
+[Pricefeed operations](../../../docs/operations/PRICEFEED_OPERATIONS.md) owns endpoint security, TLS, configuration, and releases.
+[The sidecar guide](../README.md) maps service ownership. [Process monitoring](../../../docs/operations/PROCESS_MONITORING.md) owns metric interpretation.

@@ -4,8 +4,8 @@ For node and sidecar operators: configure scrape/export surfaces, interpret proc
 Protocol-state signals live in [protocol monitoring](PROTOCOL_MONITORING.md).
 
 This note says which file owns which telemetry, what `arkd start` checks about them, and what an empty otel.yaml
-means. [Node startup](../cmd/arkd/README.md#telemetry-startup) owns integration details;
-[shared telemetry](../pkg/telemetry/README.md) owns exporter and bridge implementation.
+means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integration details;
+[shared telemetry](../../pkg/telemetry/README.md) owns exporter and bridge implementation.
 
 ## Contents
 
@@ -60,7 +60,7 @@ What the endpoint carries when enabled:
   optional retention exclusions belong in Prometheus scrape configuration.
 
 **Exported series are a contract.** Names and label keys are consumed by external dashboards and alerts.
-Intentional renames require query migration. The [telemetry development guide](../pkg/telemetry/README.md#exported-series-contract)
+Intentional renames require query migration. The [telemetry development guide](../../pkg/telemetry/README.md#exported-series-contract)
 owns fixture verification and regeneration; operators should review the series diff when adopting a release.
 
 The endpoint's `target_info` series carries `service_name="arkd"`, `service_version="<build>"`,
@@ -154,18 +154,18 @@ The node-side client that polls it is part of the node, and its meters appear on
 
 ## 6. Configuration ownership
 
-[Node telemetry startup](../cmd/arkd/README.md#telemetry-startup) explains why the application scrape endpoint and the
+[Node telemetry startup](../../cmd/arkd/README.md#telemetry-startup) explains why the application scrape endpoint and the
 SDK's declarative export configuration have separate owners. Use the configuration rules above when operating them.
 
 ## 7. Local example
 
-[Localnet topology and ports](../contrib/localnet/README.md#topology-and-ports) lists each validator's scrape endpoints
+[Localnet topology and ports](../../contrib/localnet/README.md#topology-and-ports) lists each validator's scrape endpoints
 and generated settings. Use the application endpoint for node metrics and the instrumentation endpoint for consensus.
 
 ## 8. What to watch
 
 Conditions only. The PromQL, the thresholds, and who gets paged live with the dashboards outside this repository
-and cite these IDs. The A-series in `docs/PROTOCOL_MONITORING.md` watches protocol state through queries and events;
+and cite these IDs. The A-series in `docs/operations/PROTOCOL_MONITORING.md` watches protocol state through queries and events;
 this section watches the node and its sidecar as processes, through the exported-series contract linked in §2.
 Names below are the exported form.
 
@@ -337,7 +337,7 @@ and the other handlers propagate their original panic unchanged.
 ### 8.4 Thresholds
 
 N1's grace, N5's trickle, N7's fraction of block time, and every window above are placeholders, to be set from the
-first weeks of data the way `docs/PROTOCOL_MONITORING.md` §2.8 sets its own. The parameter names in the conditions are the
+first weeks of data the way `docs/operations/PROTOCOL_MONITORING.md` §2.8 sets its own. The parameter names in the conditions are the
 oracle module's, so a governance change to any of them moves the corresponding rule.
 
 ## Application mempool occupancy

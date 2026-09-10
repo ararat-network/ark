@@ -18,7 +18,7 @@ market mappings must preserve the configured identity and the intended retained-
 
 API and WebSocket fetchers consume adapter contracts documented in [API providers](../api/README.md) and
 [WebSocket providers](../websocket/README.md). Adapters own exchange requests/messages and parsing; they do not start a
-second polling or reconnect loop. Endpoint transport/security policy is in [pricefeed operations](../../../../docs/PRICEFEED_OPERATIONS.md).
+second polling or reconnect loop. Endpoint transport/security policy is in [pricefeed operations](../../../../docs/operations/PRICEFEED_OPERATIONS.md).
 
 Run `go test ./pricefeed/sidecar/providers/base/...` from the root. Use injected fetchers/handlers and local TLS servers
 for deterministic tests. Child `testutil/` packages contain generated mocks. For end-to-end provider lifecycle sampling,

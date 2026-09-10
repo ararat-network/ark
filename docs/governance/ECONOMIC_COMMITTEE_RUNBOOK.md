@@ -1,7 +1,7 @@
 # Economic committee runbook
 
 For Treasury and Reserve committees sizing bounded economic actions, and governance coordinating a conversion-mandate
-reference change. This guide owns action selection and preflight; [protocol monitoring](PROTOCOL_MONITORING.md) owns
+reference change. This guide owns action selection and preflight; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
 alert conditions and diagnosis. Security incident delivery lives in the [emergency runbook](EMERGENCY_SUBMISSION_RUNBOOK.md).
 
 **Why this exists.** Three of the committee's bounds — what it may burn, what it may move into the Redemption
@@ -11,8 +11,8 @@ mandate. A proposal that was correctly sized when it was drafted can fail on sub
 Reserve having changed. That is the mechanism working as designed, and this document is how a committee learns
 it somewhere calm rather than from a rejected transaction.
 
-Monitoring is `docs/PROTOCOL_MONITORING.md`; §5 below answers its alerts by ID. The governance message table is
-`docs/GOVERNANCE_OPERATIONS.md` §5, and the mechanism itself is [local design](../x/treasury/README.md#exposure-sampling-and-refresh).
+Monitoring is `docs/operations/PROTOCOL_MONITORING.md`; §5 below answers its alerts by ID. The governance message table is
+`docs/governance/GOVERNANCE_OPERATIONS.md` §5, and the mechanism itself is [local design](../../x/treasury/README.md#exposure-sampling-and-refresh).
 
 Before any action, query the live appointment and its term/window, the relevant policy, balances, and bounds. After
 inclusion, verify transaction success and the resulting policy or custody state. A simulation is a preflight against
@@ -90,7 +90,7 @@ penalise the fund for doing the thing it exists to do.
 
 ## 5. Answering the alerts
 
-Conditions and diagnostics are in `docs/PROTOCOL_MONITORING.md` §2.4. What follows is only the decision.
+Conditions and diagnostics are in `docs/operations/PROTOCOL_MONITORING.md` §2.4. What follows is only the decision.
 
 **A1 — multiplier pinned at the cap.** Decide deliberately, by governance vote: raise `multiplier_cap`, or
 accept that the model is saturated and act on the underlying exposure directly. Do not raise the cap
@@ -124,4 +124,4 @@ bracket the live rebased depth; review that explicitly.
 The old corridor is not silently reinterpreted in new units. Treasury's corridor has no denomination and requires no
 corresponding appointment; its reference-valued state rebases atomically. Query fresh incoming pricing and either
 fresh outgoing pricing or the explicitly governed outgoing-rate override under
-[Oracle's reference contract](../x/oracle/README.md#13-protocol-reference-denom).
+[Oracle's reference contract](../../x/oracle/README.md#13-protocol-reference-denom).

@@ -34,7 +34,7 @@ rather than making Asset write Market state. A new denomination cannot inherit a
 Ordinary conversion accepts `ACTIVE` or `ISSUANCE_HALTED` offers and only `ACTIVE` asks. Status gates precede rate
 reads, and issuance rechecks status at minting. Settlement redemption is a separate holder-signed `MsgSettle`:
 `SUSPENDED`, an activated plan, asset-to-NOAH only. It uses the plan's committed rate, never the virtual pool or an
-ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/ECONOMIC_DESIGN.md#6-conversion-flows).
+ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/design/ECONOMIC_DESIGN.md#6-conversion-flows).
 
 ## Conversion mandate
 
@@ -52,7 +52,7 @@ a Treasury-to-Market write dependency.
 
 Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the
 unit. The mandate corridor is not rebased silently: its old denomination closes committee policy updates until
-reappointment; the dimensionless Tobin cap survives. The [committee runbook](../../docs/ECONOMIC_COMMITTEE_RUNBOOK.md#reference-change-and-conversion-mandate)
+reappointment; the dimensionless Tobin cap survives. The [committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#reference-change-and-conversion-mandate)
 owns the ordered reappointment procedure.
 
 ## Block settlement and failure boundaries
@@ -97,6 +97,6 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Conversion and settlement policy](../../docs/ECONOMIC_DESIGN.md).
+- [Conversion and settlement policy](../../docs/design/ECONOMIC_DESIGN.md).
 - [Asset eligibility](../asset/README.md).
 - [Application wiring](../../app/README.md).

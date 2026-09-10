@@ -1,12 +1,12 @@
 # Node operations
 
-This guide covers building, configuring, and operating `arkd`. [Launch genesis](GENESIS.md) owns launch policy;
+This guide covers building, configuring, and operating `arkd`. [Launch genesis](../governance/GENESIS.md) owns launch policy;
 [pricefeed operations](PRICEFEED_OPERATIONS.md) owns the validator's sidecar; [process monitoring](PROCESS_MONITORING.md) owns monitoring.
 Commands below run from the repository root unless another working directory is stated.
 
 ## Build
 
-Use the toolchain pinned in [mise.toml](../mise.toml), with the host's Wasm/native build prerequisites available:
+Use the toolchain pinned in [mise.toml](../../mise.toml), with the host's Wasm/native build prerequisites available:
 
 ```sh
 make build
@@ -15,7 +15,7 @@ make build
 ```
 
 `make build` stamps version/commit metadata. `go build -o build/arkd ./cmd/arkd` also builds the node, without those
-Makefile version flags. Container builds are available through [contributor tooling](../contrib/README.md).
+Makefile version flags. Container builds are available through [contributor tooling](../../contrib/README.md).
 
 ## Disposable host testnet
 
@@ -30,7 +30,7 @@ COSMOS_SDK_CONFIG_SCOPE=arkd ./build/arkd start --home "$ARK_TESTNET_DIR/node0/a
 
 The generator creates genesis, validator keys and accounts; its test keyring is for disposable development. It does not
 launch a pricefeed process. Configure and run a [sidecar](PRICEFEED_OPERATIONS.md) to produce oracle prices, or use the
-[Docker localnet](../contrib/localnet/README.md), which wires the processes together. Stop the foreground node with Ctrl-C.
+[Docker localnet](../../contrib/localnet/README.md), which wires the processes together. Stop the foreground node with Ctrl-C.
 Use a fresh directory for another run; do not reset an existing validator home as a setup step.
 
 For multiple developers, generate the intended validator count and host addresses, distribute each validator's own home,
@@ -58,7 +58,7 @@ starting a different genesis as a workaround.
 
 Initialise a fresh home with the network's chain ID, replace its generated genesis with the network's verified genesis,
 and configure the network's peers and sync method. Run `arkd genesis validate --home <home>` before startup. Do not treat
-`arkd init` defaults as the curated launch policy: the launch artefact is [app/genesis/genesis.json](../app/genesis/genesis.json).
+`arkd init` defaults as the curated launch policy: the launch artefact is [app/genesis/genesis.json](../../app/genesis/genesis.json).
 Validator admission on an existing chain uses its staking transaction process rather than a new genesis gentx.
 
 ## Configuration and process environment
@@ -80,7 +80,7 @@ so address parsing does not depend on a hostname-derived lookup changing while t
 
 ## Upgrades and relaunch
 
-[Upgrade authoring](../app/upgrade/README.md) and the [rehearsal](../contrib/scripts/README.md#upgrade-rehearsal)
+[Upgrade authoring](../../app/upgrade/README.md) and the [rehearsal](../../contrib/scripts/README.md#upgrade-rehearsal)
 cover implementation and validation. Follow the standing policy below before either a routine or emergency upgrade.
 
 Independent RPC nodes can be upgraded in rotation to preserve service availability. A single validator's restart can
@@ -119,5 +119,5 @@ delegated executable-selection authority that the standing policy excludes.
 Before the halt, verify the plan name, height, expected build, and installed binary with the agreed release process.
 After restart, confirm the expected version, block progression, and the node's signing or RPC role. If the build or
 plan disagrees, keep the node stopped and resolve the mismatch with the network's upgrade coordination; do not enable
-automatic downloads as a recovery shortcut. Follow the [emergency runbook](EMERGENCY_SUBMISSION_RUNBOOK.md) for private
+automatic downloads as a recovery shortcut. Follow the [emergency runbook](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md) for private
 committee submission, not for deciding which executable to trust.

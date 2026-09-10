@@ -1,7 +1,7 @@
 # Future Changes
 
 For contributors considering deferred code and dependency changes. Each item distinguishes shipped foundations from
-unimplemented work and states its revisit trigger. [Governance operations](GOVERNANCE_OPERATIONS.md) owns actions
+unimplemented work and states its revisit trigger. [Governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns actions
 available through existing messages and relayer procedures.
 
 ## Contents
@@ -38,7 +38,7 @@ paths against the versions selected for the upgrade.
 
 ### 2.1. Keep the block gas meter off
 
-Ark's current gas-meter policy is recorded in [Block gas-meter policy](../app/README.md#block-gas-meter-policy). The meter is mutually
+Ark's current gas-meter policy is recorded in [Block gas-meter policy](../../app/README.md#block-gas-meter-policy). The meter is mutually
 exclusive with Block-STM, in a way that can split a network. `SetBlockSTMTxRunner` panics if the meter is still enabled,
 and v0.55's `blockexec.Apply` force-disables the meter on that node whenever `block-executor = "block-stm"` is selected.
 Since the executor is per-node operator configuration, a chain that ships with the meter enabled and a validator who
@@ -94,7 +94,7 @@ contention costs throughput, not correctness. Ark's known serialization points, 
   key on every Wasm transaction. Every Wasm transaction in a block therefore conflicts with every other one.
 - **Fee deduction and the transfer-tax charge.** Every fee-paying transaction touches the fee collector in the ante
   and, when taxed, the tax collector in the post handler. This is the broadest conflict set in the chain and it scales
-  with block fullness. The finalisation-only tax collection amendment in [tax commitment](../app/ante/README.md#transfer-tax-commitment-and-rollback) leaves this
+  with block fullness. The finalisation-only tax collection amendment in [tax commitment](../../app/ante/README.md#transfer-tax-commitment-and-rollback) leaves this
   conflict set unchanged.
 - **Market swaps.** Transactions against a shared pool serialize against each other by construction. Independent
   denominations parallelize.
@@ -204,14 +204,14 @@ These are deferred engineering changes, not current subsystem contracts.
 | Machine-authored Reserve evidence | A concrete chain-verifiable venue exists. Design which individual journal facts can be proven; do not claim a channel acknowledgement proves off-chain custody. |
 
 Recognition's 30-day maximum age and 12-character external tag remain reviewable before launch if operational evidence
-requires different bounds. Exposure weights/cap calibration belongs to [protocol monitoring](PROTOCOL_MONITORING.md) and
-[governance operations](GOVERNANCE_OPERATIONS.md); fee-controller and voting-floor launch choices belong to [genesis](GENESIS.md).
+requires different bounds. Exposure weights/cap calibration belongs to [protocol monitoring](../operations/PROTOCOL_MONITORING.md) and
+[governance operations](../governance/GOVERNANCE_OPERATIONS.md); fee-controller and voting-floor launch choices belong to [genesis](../governance/GENESIS.md).
 
 ### Vote-extension-carried emergency orders
 
 Status: deferred. Revisit if searcher/MEV infrastructure appears, one block of pre-suspension extraction becomes
 catastrophic, the validator set outgrows the private-carrier trust model, or front-running can invalidate an action.
-The current [submission runbook](EMERGENCY_SUBMISSION_RUNBOOK.md) remains the operating procedure.
+The current [submission runbook](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md) remains the operating procedure.
 
 The proposed stronger transport puts signed orders in vote extensions. If carriers hold more than a third of stake,
 a valid injected commit cannot exclude every carrier; a valid order can then execute in the next preblock rather than
@@ -228,7 +228,7 @@ two-phase rollout rather than treating this as a local mempool setting.
 
 Status: the protocol queries and typed events exist; the dedicated collector, indexer integration, and dashboard are
 not delivered by this repository. Trigger: an operator is deploying protocol-state monitoring and choosing alert
-thresholds. [Protocol monitoring](PROTOCOL_MONITORING.md#27-collection-requirements) owns polling cadence, indexed
+thresholds. [Protocol monitoring](../operations/PROTOCOL_MONITORING.md#27-collection-requirements) owns polling cadence, indexed
 events, retained history, panels, and calibration requirements. Implement those requirements without duplicating
 consensus state in keeper metrics. Hosting, on-call ownership, and page thresholds remain operational decisions.
 

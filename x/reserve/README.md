@@ -42,8 +42,8 @@ or loss is returned minus deployed at closure. Governance corrections cannot rew
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism, since opening requires a
 real allowance-consuming deployment. No deployment veto window exists; governance pre-approves payees and prices its
-veto budget through the term allowance. The [economic custody model](../../docs/ECONOMIC_DESIGN.md#73-recognition)
-and [action bounds](../../docs/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
+veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
+and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
 haircuts, caps, and fresh rates; outflows remain allowance-, floor-, and destination-bounded. The permanent journal
@@ -54,7 +54,7 @@ typed deployment adapters cannot prove a custodian's wire-transfer holdings.
 
 `RecognisedCapital` is a local read, not a stored valuation. It folds open, unimpaired positions under governance's
 eligibility policy, valuing quantity through Oracle and applying haircut and share caps. The [economic recognition
-formula](../../docs/ECONOMIC_DESIGN.md#73-recognition) defines the financial meaning of those caps.
+formula](../../docs/design/ECONOMIC_DESIGN.md#73-recognition) defines the financial meaning of those caps.
 
 The self-referential cap has a unique fixed point because the sum of policy ratios is strictly below one.
 Sort each asset's raw-credit-to-cap-ratio threshold; the clipped assets form a suffix. For each candidate suffix,
@@ -124,6 +124,6 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Reserve custody and recognition policy](../../docs/ECONOMIC_DESIGN.md).
-- [Committee operations](../../docs/ECONOMIC_COMMITTEE_RUNBOOK.md).
+- [Reserve custody and recognition policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).

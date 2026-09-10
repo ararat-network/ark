@@ -47,7 +47,7 @@ Charging tax in ante and refunding in post was rejected because failed messages 
 messages in the router loses the outer fee granter. Recomputing in post duplicates metered work and weakens the
 identity between declaration and charge. This is deferred collection, with no escrow or refund.
 Execution-generated messages use the [policy router](../README.md#ibc-and-wasm-integration), whose tax and transfer
-share the dispatch cache. Later IBC timeouts retain the tax under the [economic transfer contract](../../docs/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
+share the dispatch cache. Later IBC timeouts retain the tax under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
 
 Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
 the two-denomination stable-base-fee plus NOAH-tip path conservatively; a simulation with a payable fee meters its
@@ -58,5 +58,5 @@ actual transfer. The tax post handler still runs during simulation so its transf
 From the root, run `go test ./app/ante/...`. For fees, execution-generated messages, or lane integration, also run the
 relevant tests under `./app`. Keep local rollback and ordering reasoning beside the decorator that enforces it.
 
-[Client fee construction](../../docs/CLIENT_FEES.md), [economic policy](../../docs/ECONOMIC_DESIGN.md), and
+[Client fee construction](../../docs/clients/CLIENT_FEES.md), [economic policy](../../docs/design/ECONOMIC_DESIGN.md), and
 [mempool policy](../mempool/README.md#admission-service-and-sdk-behaviour) own the externally meaningful rules; this README maps their implementation.

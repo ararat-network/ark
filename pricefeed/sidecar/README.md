@@ -27,5 +27,5 @@ node's active/scheduled feeds. [Providers](providers/README.md) construct exchan
 
 Run `go test ./pricefeed/sidecar/...` from the root for the subtree, or `go test ./pricefeed/sidecar` for service tests.
 Transport tests exercise public/admin listeners, cancellation, TLS and malformed requests. Deployment and reload commands
-are in [PRICEFEED_OPERATIONS.md](../../docs/PRICEFEED_OPERATIONS.md); update the [threat model](../../docs/THREAT_MODEL.md)
+are in [PRICEFEED_OPERATIONS.md](../../docs/operations/PRICEFEED_OPERATIONS.md); update the [threat model](../../docs/design/THREAT_MODEL.md)
 when adding a listener or inbound parser.

@@ -90,6 +90,6 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Authority and trust boundaries](../../docs/THREAT_MODEL.md).
-- [Submission and upgrade operations](../../docs/EMERGENCY_SUBMISSION_RUNBOOK.md).
+- [Authority and trust boundaries](../../docs/design/THREAT_MODEL.md).
+- [Submission and upgrade operations](../../docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md).
 - [Application wiring](../../app/README.md).

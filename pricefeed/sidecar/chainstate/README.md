@@ -17,5 +17,5 @@ cause a reconnect; timing-only changes keep current material. Do not share calle
 [Runtime](../runtime/README.md) owns this client's run and consumes its snapshots.
 
 Run `go test ./pricefeed/sidecar/chainstate/...` from the root. Tests cover startup, last-good state, empty snapshots,
-failover, config replacement, and TLS. [Pricefeed operations](../../../docs/PRICEFEED_OPERATIONS.md) owns deployment;
-[PROCESS_MONITORING.md](../../../docs/PROCESS_MONITORING.md) owns refresh/failover metric interpretation.
+failover, config replacement, and TLS. [Pricefeed operations](../../../docs/operations/PRICEFEED_OPERATIONS.md) owns deployment;
+[PROCESS_MONITORING.md](../../../docs/operations/PROCESS_MONITORING.md) owns refresh/failover metric interpretation.

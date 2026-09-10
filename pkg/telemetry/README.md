@@ -1,7 +1,7 @@
 # Telemetry integration
 
 This package owns process-level telemetry setup. Subsystems define their own instruments; startup code decides which
-registries and exporters serve them. [PROCESS_MONITORING.md](../../docs/PROCESS_MONITORING.md) owns operator configuration, scrape
+registries and exporters serve them. [PROCESS_MONITORING.md](../../docs/operations/PROCESS_MONITORING.md) owns operator configuration, scrape
 surfaces, and series interpretation.
 
 ## Code map
@@ -15,14 +15,14 @@ surfaces, and series interpretation.
 
 The node's startup adapter is [cmd/arkd/cmd/telemetry.go](../../cmd/arkd/cmd/telemetry.go); the sidecar's is
 [cmd/pricefeed/cmd/telemetry.go](../../cmd/pricefeed/cmd/telemetry.go). Keep their lifecycle wiring with the process that
-owns shutdown. Protocol-state observability through queries/events is described separately in [PROTOCOL_MONITORING.md](../../docs/PROTOCOL_MONITORING.md).
+owns shutdown. Protocol-state observability through queries/events is described separately in [PROTOCOL_MONITORING.md](../../docs/operations/PROTOCOL_MONITORING.md).
 
 ## Legacy bridge
 
 The SDK's go-metrics bridge can panic on query-path instrument names. `gometrics.go` instead routes completed ABCI
 queries into one bounded route-labelled histogram and sanitises other keys with kind separation and a digest of the
 original NUL-separated components. The instrument cache is bounded; existing names keep recording when new names
-are dropped at capacity. Query routes do not consume that cache. [Process monitoring](../../docs/PROCESS_MONITORING.md#4-the-legacy-telemetry-bridge)
+are dropped at capacity. Query routes do not consume that cache. [Process monitoring](../../docs/operations/PROCESS_MONITORING.md#4-the-legacy-telemetry-bridge)
 owns the exact exported names, limits, labels, and dashboard migration rules.
 
 Keep process-specific registry selection and SDK initialisation in the [node adapter](../../cmd/arkd/README.md#telemetry-startup)

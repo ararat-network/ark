@@ -38,13 +38,13 @@ interfaces are explicitly bound to the intended keepers in app depinject configu
 Treasury's economic mandate carries minimum/maximum policies around the shared envelope. Governance replaces any
 structurally valid policy independently of the mandate; the committee replaces the whole lever set only inside its
 active term and corridor. Stance belongs in `EconomicPolicy`; controller machinery and domain caps belong in
-`Params`. The cross-module authority rules remain in [economic design](../../docs/ECONOMIC_DESIGN.md#102-role-separation).
+`Params`. The cross-module authority rules remain in [economic design](../../docs/design/ECONOMIC_DESIGN.md#102-role-separation).
 
 ## Liability and capital reads
 
 The asset registry supplies lifecycle membership and pricing verdicts. Treasury has no enrolment set or
 stable-versus-commodity classifier. Each member's gross and Reserve-held supply use the same valuation branch, so
-netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/ECONOMIC_DESIGN.md#71-the-liability-partition)
+netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/design/ECONOMIC_DESIGN.md#71-the-liability-partition)
 owns the status treatment and gross-versus-net basis rule.
 
 `FundStatus` reports that partition, disclosures, both target families, and the multiplier; incomplete valuation
@@ -83,14 +83,14 @@ Circulating NOAH excludes the raw NOAH balances in the four custody accounts, no
 capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
 Returns are clamped before variance accumulation. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
-The [economic model](../../docs/ECONOMIC_DESIGN.md#72-targets-and-the-exposure-multiplier) owns the indicator and target
+The [economic model](../../docs/design/ECONOMIC_DESIGN.md#72-targets-and-the-exposure-multiplier) owns the indicator and target
 formulas. Requirements use the multiplier; payment denominators and the controller's own liability input do not.
 Scaling the draw would double-count a signal already reflected in Buffer retention and make payout depend on exit timing.
 
 Peg deviation is absent because the feeds observe reference series against NOAH, not each issued token's market
 price. Vote dispersion was rejected as a substitute: it measures reporting disagreement and is minority-influenceable.
 Reference rebasing treats the exposure anchor as a price, using the reciprocal direction from quantities; otherwise
-a unit change would look like a market return. [Protocol monitoring](../../docs/PROTOCOL_MONITORING.md) owns monitoring and calibration.
+a unit change would look like a market return. [Protocol monitoring](../../docs/operations/PROTOCOL_MONITORING.md) owns monitoring and calibration.
 
 ## Conversion factors and dynamic fees
 
@@ -111,25 +111,25 @@ next_price = clamp(current_price * (1 + delta), min_base_gas_price, MaxBaseGasPr
 ```
 
 An unbounded block or zero adjustment rate holds the price before applying its bounds. The signed-fee contract lives
-in [economic design](../../docs/ECONOMIC_DESIGN.md#85-the-fee-declaration-settlement-charge).
+in [economic design](../../docs/design/ECONOMIC_DESIGN.md#85-the-fee-declaration-settlement-charge).
 A separate fee-market dependency and refund escrow were rejected: Ark needs its multi-denomination price contract
 and standard SDK fee commitment semantics, without maintaining a fork of an incompatible fee module.
 
 `GasPrices` exposes the reference row separately from the denomination-sorted rows; clients must not infer the
 reference from list position. `ComputeTax` uses the consensus calculator and distinguishes malformed inputs,
-missing caps, unrepresentable totals, and internal failures. [Client fee construction](../../docs/CLIENT_FEES.md)
+missing caps, unrepresentable totals, and internal failures. [Client fee construction](../../docs/clients/CLIENT_FEES.md)
 owns the integration algorithm; [arkd](../../cmd/arkd/README.md#cli-fee-completion) owns its denomination preference.
 
 ## Reward funding and genesis
 
 `advanceRewardFunding` owns the countdown, accrual, due-window settlement, and atomic reset in EndBlock.
 The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
-at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding contract](../../docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding)
+at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding contract](../../docs/design/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding)
 owns the split, rounding, and depletion behaviour.
 
 Genesis imports the stored state listed above; Bank genesis supplies custody. Treasury validates NOAH-only fund
 balances because genesis bypasses runtime send restrictions, and validates its reference unit against Oracle.
-Factors may exist for members not yet priced. [Launch genesis](../../docs/GENESIS.md) owns actual settings.
+Factors may exist for members not yet priced. [Launch genesis](../../docs/governance/GENESIS.md) owns actual settings.
 
 ## Development
 
@@ -155,7 +155,7 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Economic policy and custody](../../docs/ECONOMIC_DESIGN.md).
-- [Client fee construction](../../docs/CLIENT_FEES.md).
-- [Protocol-state monitoring](../../docs/PROTOCOL_MONITORING.md).
+- [Economic policy and custody](../../docs/design/ECONOMIC_DESIGN.md).
+- [Client fee construction](../../docs/clients/CLIENT_FEES.md).
+- [Protocol-state monitoring](../../docs/operations/PROTOCOL_MONITORING.md).
 - [Application wiring](../../app/README.md).

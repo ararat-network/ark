@@ -206,7 +206,7 @@ outage to consumer rebases, and transient outages could repeatedly switch the un
 ### 1.4 Rate orientation: NOAH per unit
 
 Implemented 2026-09-02 (D75–D77); D77 amended 2026-09-03. The [repository arithmetic rules](../../AGENTS.md#arithmetic-rules) state the orientation beside rounding requirements.
-D75–D77 name entries in the [economic decision register](../../docs/ECONOMIC_DECISIONS.md).
+D75–D77 name entries in the [economic decision register](../../docs/design/ECONOMIC_DECISIONS.md).
 The rejected approaches below explain the adopted orientation.
 
 **Problem.** Rates were stored as units of the feed's denomination per one NOAH, Terra Classic's
@@ -289,5 +289,5 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Reward funding](../../docs/ECONOMIC_DESIGN.md).
+- [Reward funding](../../docs/design/ECONOMIC_DESIGN.md).
 - [Application wiring](../../app/README.md).

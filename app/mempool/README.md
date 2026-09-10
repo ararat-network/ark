@@ -3,7 +3,7 @@
 `Pool` wraps the SDK priority/nonce index with authenticated lane reservations and original-wire-byte accounting.
 CometBFT's flood mempool owns gossip, duplicate tracking, RPC broadcast, and recheck scheduling.
 This README owns lane eligibility, reservations, operating limits, and proposal policy.
-[Node operations](../../docs/NODE_OPERATIONS.md) covers setup; [telemetry](../../docs/PROCESS_MONITORING.md) covers monitoring.
+[Node operations](../../docs/operations/NODE_OPERATIONS.md) covers setup; [telemetry](../../docs/operations/PROCESS_MONITORING.md) covers monitoring.
 
 ## Code map
 
@@ -141,4 +141,4 @@ The package tests cover reservation accounting, selector budgets, rollback, and 
 ABCI lifecycle and public propagation. Run focused race checks when changing concurrent access. Compare normal traffic
 against the SDK's behaviour before introducing a custom scheduling or validation path.
 
-[Process monitoring](../../docs/PROCESS_MONITORING.md) explains occupancy metrics; [ABCI](../../abci/README.md) documents the oracle envelope.
+[Process monitoring](../../docs/operations/PROCESS_MONITORING.md) explains occupancy metrics; [ABCI](../../abci/README.md) documents the oracle envelope.

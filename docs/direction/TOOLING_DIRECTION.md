@@ -152,10 +152,10 @@ Ark-specific economics make simulation and transaction explanation especially im
 
 Values derived from mutable chain state should be accompanied by the relevant height or expiration assumption. Clients must handle the possibility that state changes between simulation and inclusion.
 
-Use [client fee construction](CLIENT_FEES.md) as the transaction contract. Products must show the declared maximum,
+Use [client fee construction](../clients/CLIENT_FEES.md) as the transaction contract. Products must show the declared maximum,
 explain the gas/tax split, choose explicit headroom, and handle a refusal after state changes. Do not turn arkd's
 current gas adjustment or denomination preference into a protocol requirement; those choices are documented with the
-[CLI implementation](../cmd/arkd/README.md#cli-fee-completion).
+[CLI implementation](../../cmd/arkd/README.md#cli-fee-completion).
 
 ### Message and event compatibility
 

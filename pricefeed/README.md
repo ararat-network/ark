@@ -15,7 +15,7 @@ The [pricefeed binary](../cmd/pricefeed/README.md) owns CLI startup and process 
 connects the cached node client to [ABCI](../abci/README.md); [x/oracle](../x/oracle/README.md) owns on-chain feed/rate state.
 Sidecar domain values live under `sidecar/types`; transport-generated types stay under `api`.
 
-[Pricefeed operations](../docs/PRICEFEED_OPERATIONS.md) owns configuration, deployment, independent releases, and the
+[Pricefeed operations](../docs/operations/PRICEFEED_OPERATIONS.md) owns configuration, deployment, independent releases, and the
 single node–sidecar compatibility contract. [Oracle design](../x/oracle/README.md) owns consensus rate semantics.
 
 For local changes run focused `go test ./pricefeed/<package>/...` from the root. `go test ./pricefeed/...` covers the

@@ -198,7 +198,7 @@ algorithm or capacity are measured together.
 
 The preblock package calls this function before feed promotion. A target omitted by the tally receives no new rate;
 consumers apply the keeper's freshness policy to its stored rate. Reward funding and payout are specified in
-[economic design](../../docs/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding).
+[economic design](../../docs/design/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding).
 
 ## Encoding boundary
 

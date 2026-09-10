@@ -1,8 +1,8 @@
 # Pricefeed operations
 
 The node polls the sidecar for prices; the sidecar polls a chain node for oracle feed membership. Each connection has its
-own configuration. [Implementation map](../pricefeed/README.md), [oracle protocol](../x/oracle/README.md),
-[monitoring](PROCESS_MONITORING.md), and [trust boundaries](THREAT_MODEL.md) cover the adjacent concerns.
+own configuration. [Implementation map](../../pricefeed/README.md), [oracle protocol](../../x/oracle/README.md),
+[monitoring](PROCESS_MONITORING.md), and [trust boundaries](../design/THREAT_MODEL.md) cover the adjacent concerns.
 
 ## Local setup
 
@@ -18,7 +18,7 @@ make build-pricefeed
 `init` refuses an existing config unless `--force` is supplied. Review the generated provider credentials, market mappings,
 routes, and bootstrap expiry before starting. Defaults include placeholder credentials for providers that need them;
 a structurally valid file does not prove that every requested feed can be priced. Defaults live in
-[pricefeed/config/default.go](../pricefeed/config/default.go).
+[pricefeed/config/default.go](../../pricefeed/config/default.go).
 
 In the node's `config/app.toml`, enable its client and select the sidecar addresses. For a sidecar on the same host:
 

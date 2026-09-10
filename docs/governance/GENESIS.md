@@ -3,7 +3,7 @@
 - Status: policy settled, economic values pending (P1, P4); last updated 2026-09-06
 - Artefact: `app/genesis/genesis.json`, data rather than a generator. `app/genesis_test.go` is its build check: it
   validates the file with the manager `arkd genesis validate` uses, boots a chain from it, and pins the launch policy.
-- Decisions: the `Dnn` references below are entries in [economic decisions](ECONOMIC_DECISIONS.md); the
+- Decisions: the `Dnn` references below are entries in [economic decisions](../design/ECONOMIC_DECISIONS.md); the
   register stays the log, this document records what each setting is and why.
 
 Every table reads Setting, Value, Status, Why. Status is one of **Decided** (a register row or design record fixed it),
@@ -65,7 +65,7 @@ the launch genesis starts with a zero `ArkPoolDelta`.
 | `chain_id` | `ark-1` | Pending | Placeholder. Choose the launch identifier; a later relaunch takes a new one. |
 | `genesis_time` | `0001-01-01T00:00:00Z` | Pending | Set at launch. |
 | `initial_height` | `1` | Decided | A fresh chain starts at one; continuation exports start at the next height. |
-| `consensus.block.max_gas` | `100000000` | Decided | The base-fee controller measures block utilisation against this budget; without a finite `max_gas` its guard held the price at the floor forever ([local design](../x/treasury/README.md#conversion-factors-and-dynamic-fees)). |
+| `consensus.block.max_gas` | `100000000` | Decided | The base-fee controller measures block utilisation against this budget; without a finite `max_gas` its guard held the price at the floor forever ([local design](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)). |
 | `consensus.block.max_bytes` | `22020096` | Default | SDK default. |
 | `consensus.abci.vote_extensions_enable_height` | `1` | Decided | Oracle rates arrive through vote extensions; `abci/voteextension.VoteExtensionsAvailable` treats zero as disabled, so no rate would ever be applied. `arkd testnet` and the upgrade rehearsal both set one. Pinned by `TestLaunchGenesisEnablesVoteExtensions`. |
 | `consensus.evidence` | 100,000 blocks, 48 h, 1 MiB | Default | SDK defaults. |
@@ -106,7 +106,7 @@ Params (governance-owned, `x/treasury/types/params.go`):
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `reference_denom` | `axdr` | Decided | The reference unit for the tax cap and gas pricing, independent of Market's pool unit (D21); it needs a feed, not registry membership. |
-| `reference_tax_cap` | `1` | Pending (P1) | Placeholder. One base unit caps every taxed input at one base unit; zero is uncapped; the real figure is chosen with the rate. Per-denomination caps derive from it through the conversion-factor table (`docs/ECONOMIC_DESIGN.md` §8.4). |
+| `reference_tax_cap` | `1` | Pending (P1) | Placeholder. One base unit caps every taxed input at one base unit; zero is uncapped; the real figure is chosen with the rate. Per-denomination caps derive from it through the conversion-factor table (`docs/design/ECONOMIC_DESIGN.md` §8.4). |
 | `transfer_tax_rate` | `0` | Pending (P1) | No tax collected while zero, so the Oracle target is met from subsidy alone. A rate is governance's because it is part of the fee every wallet signs (D80) and must stay at or below the 2% spread floor (D81). |
 | `reward_funding_window` | `100800` | Decided | One chain week of settlement observations (D34). Bounded at 2^32 so the accrual cannot overflow. |
 | `exposure_refresh_period_blocks` | `600` | Default | Hourly recompute of the multiplier; a Terra-speed run unfolds over days. |
@@ -143,7 +143,7 @@ Economic policy (the committee's levers, all zero):
 | `conversion_policy.min_stability_spread` | `0.02` | Default | Terra Classic's default. The transfer tax may not exceed it (D81). |
 | `conversion_policy.pool_recovery_period` | `14400` | Default | A day, Terra Classic's default; each block returns delta divided by period toward zero. |
 | `ark_pool_delta` | `0` | Decided | The launch pool starts balanced, in the pool unit. |
-| `params.default_tobin_tax` | `0.0025` | Decided | Parity with the Oracle-side rates it replaced ([local design](../x/market/README.md#conversion-policy)). |
+| `params.default_tobin_tax` | `0.0025` | Decided | Parity with the Oracle-side rates it replaced ([local design](../../x/market/README.md#conversion-policy)). |
 | `tobin_tax_overrides` | none | Decided | The one override the design note anticipated was for `amnt`, which is not a launch asset. |
 | `conversion_mandate` | empty | Pending (P4) | A committee may move policy inside a governance corridor and a Tobin band; optional at launch. |
 
@@ -159,7 +159,7 @@ Economic policy (the committee's levers, all zero):
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `mandate` | empty | Decided | At launch governance alone moves Reserve NOAH, through the fixed Reserve-to-Buffer message; the committee is appointed when a deployment is approved (`docs/GOVERNANCE_OPERATIONS.md` §5). |
+| `mandate` | empty | Decided | At launch governance alone moves Reserve NOAH, through the fixed Reserve-to-Buffer message; the committee is appointed when a deployment is approved (`docs/governance/GOVERNANCE_OPERATIONS.md` §5). |
 | `recognition_policy` | empty | Decided | NOAH-only custody counts at par; an eligibility entry arrives with the first attested external asset (D58, D69). |
 | `params` | empty | Default | The module has no launch parameters. |
 
@@ -201,25 +201,25 @@ Economic policy (the committee's levers, all zero):
 | `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, quorum 33.4%, threshold 50%, veto 33.4%, veto deposits burned) | SDK defaults | Default | Unreviewed; a two-day voting period also bounds how fast an emergency parameter change lands. |
 | `slashing.params` (100-block window, 50% signed, 10 min jail, 5% double-sign, 1% downtime) | SDK defaults | Default | Unreviewed; a 100-block window is ten minutes at this block time. |
 | `mint` | absent | Decided | D1. |
-| `security` | empty mandate and plan | Decided | The security committee is appointed after launch ([local design](../x/security/README.md#powers-and-rationale)). |
+| `security` | empty mandate and plan | Decided | The security committee is appointed after launch ([local design](../../x/security/README.md#powers-and-rationale)). |
 | `upgrade`, `evidence`, `feegrant`, `authz`, `vesting`, `genutil` | empty | Default | Gentxs are collected at launch. |
 
 ## 11. IBC, interchain accounts, and CosmWasm
 
 IBC ships installed and shut behind one switch, an empty allowed-client list; the contract runtime ships open (decided
 2026-09-06). Opening IBC is a governance sequence: admit `07-tendermint`, configure rate limits for every route (D46),
-then the transfer flags. The activation tests are complete (`docs/ECONOMIC_DESIGN.md` §11).
+then the transfer flags. The activation tests are complete (`docs/design/ECONOMIC_DESIGN.md` §11).
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `ibc.client_genesis.params.allowed_clients` | `[]` | Decided | No client type at launch. Every IBC surface starts with a client, so this one switch holds channels, ICS-20, ICA, GMP, and contract channels shut; governance admits `07-tendermint` when it opens the hub. `09-localhost` and `08-wasm` stay unavailable (D45, D50, amended 2026-09-06). |
 | `ibc.connection_genesis.params.max_expected_time_per_block` | `30s` | Default | ibc-go default. |
-| `transfer.params.send_enabled`, `receive_enabled` | `false`, `false` | Decided | Off until the tax, recipient-restriction, and rate-limit gates are live on a real route (D45, `docs/ECONOMIC_DESIGN.md` §11.2). |
-| `interchainaccounts.controller_genesis_state.params.controller_enabled` | `false` | Decided | Launched disabled (`docs/ECONOMIC_DESIGN.md` §11.2). |
-| `interchainaccounts.host_genesis_state.params` | `host_enabled: false`, `allow_messages: []` | Decided | Activation names explicit type URLs, never the wildcard (`docs/ECONOMIC_DESIGN.md` §11.2). |
+| `transfer.params.send_enabled`, `receive_enabled` | `false`, `false` | Decided | Off until the tax, recipient-restriction, and rate-limit gates are live on a real route (D45, `docs/design/ECONOMIC_DESIGN.md` §11.2). |
+| `interchainaccounts.controller_genesis_state.params.controller_enabled` | `false` | Decided | Launched disabled (`docs/design/ECONOMIC_DESIGN.md` §11.2). |
+| `interchainaccounts.host_genesis_state.params` | `host_enabled: false`, `allow_messages: []` | Decided | Activation names explicit type URLs, never the wildcard (`docs/design/ECONOMIC_DESIGN.md` §11.2). |
 | `ratelimit` | no limits, hourly epoch | Default | Limits are governance-set per denomination and channel before a route opens (D46). |
 | `packetfowardmiddleware` | no in-flight packets | Default | Classic-only forwarding (D46). |
-| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open (2026-09-06): the tax seams are in place, the accept list is populated, and the empty client allowlist leaves contract channels unopenable (`docs/ECONOMIC_DESIGN.md` §11.3). |
+| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open (2026-09-06): the tax seams are in place, the accept list is populated, and the empty client allowlist leaves contract channels unopenable (`docs/design/ECONOMIC_DESIGN.md` §11.3). |
 | `08-wasm.contracts` | empty | Decided | No light-client checksums at launch (D50). |
 | `gmp.ics27_accounts` | empty | Decided | Derived accounts are created on first use. |
 | `07-tendermint` | no state | Decided | No client exists, and none can until governance admits the type. |
@@ -247,7 +247,7 @@ artefact, validated and booted by its tests, and reviewed against §13.
 | Chain ID and genesis time | top level | |
 
 What each ratio sets, and what to choose it from. Under NOAH-only custody every fund's exposure has liability as its
-only base, so these ratios are the exposure model. [Future changes](FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups)
+only base, so these ratios are the exposure model. [Future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups)
 records the trigger for revisiting a separate per-fund model:
 
 | Ratio | What it literally sets | Choose it from |

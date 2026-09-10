@@ -16,7 +16,7 @@ module-account permissions, blocked addresses, and lifecycle order. Check [go.mo
 - [oracle.go](oracle.go) installs the [ABCI hooks](../abci/README.md) over the node-side [price client](../pricefeed/client/README.md).
 - [upgrades.go](upgrades.go) and [upgrade/](upgrade/README.md) register upgrade handlers and store changes.
 - [export.go](export.go) owns continuation export. [genesis/genesis.json](genesis/genesis.json) is the curated launch artefact;
-  [GENESIS.md](../docs/GENESIS.md) owns its settings and rationale.
+  [GENESIS.md](../docs/governance/GENESIS.md) owns its settings and rationale.
 
 ## Block lifecycle
 
@@ -31,7 +31,7 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
    so attendance jails affect that block's validator-set update. Claims settles after governance cancellations.
 
 Asset lifecycle transitions are message-driven. The ABCI wrapper does not complete asset transitions or prime Treasury
-liability. [Economic design](../docs/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
+liability. [Economic design](../docs/design/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
 
 ## Block gas-meter policy
 
@@ -57,7 +57,7 @@ and [Treasury](../x/treasury/README.md) each document their behaviour, rationale
 
 ## IBC and Wasm integration
 
-Decision IDs below refer to the [economic decision register](../docs/ECONOMIC_DECISIONS.md).
+Decision IDs below refer to the [economic decision register](../docs/design/ECONOMIC_DECISIONS.md).
 Ark is built as an interchain hub on `ibc-go` v11 (D45): IBC core, ICS-20 on both the Classic and the v2 route
 sharing one transfer keeper, the 07-Tendermint client, packet forwarding on Classic, governance rate limiting on both
 routes, callbacks on both routes as the transfer-and-call mechanism, ICA controller and host, ICS-27 v2 general message
@@ -69,7 +69,7 @@ registration hooks beside the depinject-wired modules, in `app/ibc.go`.
 
 [ibc.go](ibc.go) owns the manual IBC registration and middleware order; [wasm.go](wasm.go) constructs the contract
 runtime; [gmp.go](gmp.go) installs general message passing. Verify dependency versions in [go.mod](../go.mod).
-The [governance guide](../docs/GOVERNANCE_OPERATIONS.md) owns opening the hub and setting permissions.
+The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns opening the hub and setting permissions.
 
 - **The policy router**, which wraps the SDK message router handed to Wasmd and to the GMP keeper. It receives the
   exact SDK message Wasmd's canonical encoder produces, prices it, charges the dispatching account, and calls the
@@ -91,7 +91,7 @@ The [governance guide](../docs/GOVERNANCE_OPERATIONS.md) owns opening the hub an
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
-The [economic transfer contract](../docs/ECONOMIC_DESIGN.md#111-the-execution-tax-contract) owns who pays tax and when
+The [economic transfer contract](../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract) owns who pays tax and when
 it remains payable. These adapters enforce that contract at distinct signed-message and generated-message boundaries.
 
 ## Verification

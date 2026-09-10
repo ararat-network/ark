@@ -1,7 +1,7 @@
 # Economic decisions
 
 This is Ark's economic decision history. [Economic design](ECONOMIC_DESIGN.md) describes the current contract;
-[launch genesis](GENESIS.md) owns the unresolved launch values and appointments. D/P identifiers are stable citation
+[launch genesis](../governance/GENESIS.md) owns the unresolved launch values and appointments. D/P identifiers are stable citation
 keys, not implementation stages or a claim that every recorded mechanism still exists.
 
 The recorded text and original statuses are preserved below, including amendments. Historical section numbers and
@@ -11,7 +11,7 @@ When amending a decision, retain its prior text and link its replacement rather 
 
 D80 was assigned to two entries in the source register. Both are retained under [D80](#d80), with separate subheadings;
 neither is renumbered. Its original "Proposed" label records history, not the current fee contract's implementation status.
-The fee contract is described in [client fee construction](CLIENT_FEES.md).
+The fee contract is described in [client fee construction](../clients/CLIENT_FEES.md).
 
 ## Find a decision
 
@@ -588,7 +588,7 @@ therefore not a subject of the decomposition, and the fold no longer reads accou
 **Recorded status:** Confirmed.
 
 No adapter or evidence-upgrade machinery ([Reserve evidence
-model](../x/reserve/README.md#mandate-custody-and-journal)) is planned. Evidence upgrades can verify only value
+model](../../x/reserve/README.md#mandate-custody-and-journal)) is planned. Evidence upgrades can verify only value
 that routes through chain-visible machinery — an IBC acknowledgement proves delivery over a channel, a contract
 read proves wasm state — and the Reserve's plausible asset universe is custodian-held off-chain instruments reached
 by wire transfer, which none of that can ever see. Manual committee attestation with bounded references is
@@ -596,7 +596,7 @@ therefore the permanent evidence model, not an interim one; the same-chain case 
 asset in the Reserve account is bank custody the recognition fold prices directly. The journal's append-only design
 keeps this reversible without migration: machine-authored entries could later land beside committee-authored ones
 if a chain-verifiable venue ever became real, but that requires its own spec and the [first-asset governance
-gate](GOVERNANCE_OPERATIONS.md#5-ark-governance-operations). Closes §12's adapter machinery beyond the D57 narrowing.
+gate](../governance/GOVERNANCE_OPERATIONS.md#5-ark-governance-operations). Closes §12's adapter machinery beyond the D57 narrowing.
 
 ## D60
 
@@ -618,7 +618,7 @@ and the Reserve's tolerance moves to each eligibility entry.
 
 ## D61
 
-**Lifecycle:** The burn roles remain; the parked-principal accounting call in the recorded text is retired. Read the [current Reserve contract](../x/reserve/README.md#mandate-custody-and-journal).
+**Lifecycle:** The burn roles remain; the parked-principal accounting call in the recorded text is retired. Read the [current Reserve contract](../../x/reserve/README.md#mandate-custody-and-journal).
 
 **Recorded status:** Confirmed.
 
@@ -776,7 +776,7 @@ journal becomes permanently unambiguous about which instrument its history names
 provides, because closed history raises no claim. An external symbol can never be protocol paper — not registrable
 by shape, and conversion mints registry members alone — while custody the chain does hold under such a name stays
 ordinary bank state the fold counts; an off-chain NOAH holding is unrepresentable via the prefix rule. Implemented
-2026-08-09; see [external-symbol rationale](../x/reserve/README.md#external-symbols-and-freshness).
+2026-08-09; see [external-symbol rationale](../../x/reserve/README.md#external-symbols-and-freshness).
 
 ## D70
 
@@ -1046,7 +1046,7 @@ then revert, rather than being refused before they run; and feegrant emits two u
 transaction. An upfront tax affordability check, in ante or a post rehearsal, can refuse transactions execution
 would have funded and repeats balance and allowance work without reserving either. Transactions that remain unable
 to pay tax may enter blocks, fail execution, and pay gas with their sequence consumed. Rationale in §8.5 and [tax
-commitment rationale](../app/ante/README.md#transfer-tax-commitment-and-rollback).
+commitment rationale](../../app/ante/README.md#transfer-tax-commitment-and-rollback).
 
 ## P1
 
@@ -1073,7 +1073,7 @@ threshold; retain the submitted expectation in the transaction and emit the old 
 
 ## P4
 
-**Lifecycle:** Open launch appointments are maintained in [GENESIS.md](GENESIS.md#12-open-decisions); the recorded Treasury parameter name predates [D54](#d54).
+**Lifecycle:** Open launch appointments are maintained in [GENESIS.md](../governance/GENESIS.md#12-open-decisions); the recorded Treasury parameter name predates [D54](#d54).
 
 **Recorded status:** Pending before launch.
 
@@ -1084,4 +1084,4 @@ shared cancellation-period Treasury param, fixed gross committee claim limit, an
 
 The curated `vote_extensions_enable_height` was corrected from zero to one on 2026-09-06. Zero disables the oracle
 vote-extension path. This is a configuration correction, not a new D-numbered economic decision. The current setting
-and its verification live in [genesis](GENESIS.md#2-chain-and-consensus).
+and its verification live in [genesis](../governance/GENESIS.md#2-chain-and-consensus).

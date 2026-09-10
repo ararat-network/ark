@@ -41,5 +41,5 @@ before running it. Read the script before selecting a reused `WORK` directory: i
 preserves outputs for inspection. It installs cosmovisor into its tooling location when needed.
 The final applied-plan query is authoritative for the rehearsal; a version string can be identical for two uncommitted builds.
 
-[Node operations](../../docs/NODE_OPERATIONS.md) and the [emergency runbook](../../docs/EMERGENCY_SUBMISSION_RUNBOOK.md)
+[Node operations](../../docs/operations/NODE_OPERATIONS.md) and the [emergency runbook](../../docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md)
 own production procedures; [tests](../../tests/README.md) maps the CI and in-memory verification layers.

@@ -16,14 +16,14 @@ timestamp is checked at acceptance and again when served, so a cached response c
 polling fails. Responses are copied across the cache/caller boundary.
 
 The sidecar build version is observed for operators and never used as a compatibility gate. The authoritative
-[compatibility and failover guidance](../../docs/PRICEFEED_OPERATIONS.md) explains what operators configure and what a
+[compatibility and failover guidance](../../docs/operations/PRICEFEED_OPERATIONS.md) explains what operators configure and what a
 rolling sidecar replacement can preserve.
 
 ## Integration and tests
 
 [app/oracle.go](../../app/oracle.go) constructs the client; the node start command owns its run lifecycle.
 [ABCI vote extensions](../../abci/README.md#vote-extension-handlers) use it with their own request timeout.
-[metrics/](metrics/) owns client instruments; [PROCESS_MONITORING.md](../../docs/PROCESS_MONITORING.md) explains their interpretation.
+[metrics/](metrics/) owns client instruments; [PROCESS_MONITORING.md](../../docs/operations/PROCESS_MONITORING.md) explains their interpretation.
 
 From the root, run `go test ./pricefeed/client/...`. Cache, timestamp, failover, TLS and snapshot-ownership tests live
 beside `cached_client.go`; also run affected `./app` or `./cmd/arkd/cmd` tests when startup integration changes.

@@ -74,7 +74,7 @@ per loaded transport, and changing their contents at the same path requires rest
 to new handshakes only; existing sessions are not revoked.
 Snapshots are bounded to twice `MaxFeeds` entries and to the compact encoding's byte limit per price,
 refused past `price_ttl` and past a five-second clock skew. The sidecar's build version is logged and exported and
-never gated on; the service contract is described in [Node–sidecar compatibility](PRICEFEED_OPERATIONS.md#nodesidecar-compatibility).
+never gated on; the service contract is described in [Node–sidecar compatibility](../operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility).
 
 **Review questions.** Is the sidecar on another host, and is TLS mode selected under `[pricefeed.tls]`? Does the node hold
 a client certificate if the sidecar requires one? Does anything read the network on the vote path?
@@ -126,7 +126,7 @@ on one validator, which is why the default is loopback.
 **Controls.** The admin listener and pprof are refused off a loopback IP. Both metrics listeners are off by
 default, default to loopback when on, and are configurable and documented as such. Only `arkd start` opens
 the node's, and a listener that cannot bind stops the node rather than leaving it running unobserved. The
-node's registry is its own, so the endpoint carries exactly what `docs/PROCESS_MONITORING.md` §2 lists and
+node's registry is its own, so the endpoint carries exactly what `docs/operations/PROCESS_MONITORING.md` §2 lists and
 nothing CometBFT or the legacy bridge registers elsewhere. ABCI query paths are also a metrics input, even when
 routing rejects the request. The go-metrics bridge maps them to fixed instruments and registered-route or fixed
 category labels, collapsing other paths to `unknown`. Separate legacy namespaces by instrument kind and a digest

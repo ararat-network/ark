@@ -2,8 +2,8 @@
 
 For governance proposal authors, committee appointers, and relayers coordinating network changes. This guide covers
 opening interchain services, contract permissions, appointments, and economic operations throughout the network's life.
-[Genesis](GENESIS.md) owns launch values; [economic design](ECONOMIC_DESIGN.md) owns financial rules;
-[economic decisions](ECONOMIC_DECISIONS.md) owns the D/P history.
+[Genesis](GENESIS.md) owns launch values; [economic design](../design/ECONOMIC_DESIGN.md) owns financial rules;
+[economic decisions](../design/ECONOMIC_DECISIONS.md) owns the D/P history.
 
 Governance signs each message unless its row names another signer. Before submission, query current parameters and
 authority, preserve fields a whole-object update retains, and check the stated dependencies. After execution, query
@@ -18,7 +18,7 @@ channels, and the plan makes limits a precondition for the transfer flags (D46),
 
 Other initial permissions are launch choices that later governance can change. The launch artefact ships
 the hub shut behind one switch, the empty allowed-client list, and the contract runtime open (D45 as amended,
-`docs/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or appointments are needed.
+`docs/design/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or appointments are needed.
 
 Initial economic values, committee appointments, and permissions belong in [genesis](GENESIS.md#12-open-decisions)
 when chosen before launch. The same roles and permissions may be changed later through the procedures below; the
@@ -47,7 +47,7 @@ Two surfaces have no flag of their own and are held shut only by step 1:
   authority, it can do only what its own balance allows, and every message it executes runs through the policy router
   and pays execution tax on a contract's terms (D48).
 - **Contract channels.** A contract with IBC entry points may open its own channels on either stack. Callback delivery
-  follows the callback and gas rules described in [application integration](../app/README.md#ibc-and-wasm-integration).
+  follows the callback and gas rules described in [application integration](../../app/README.md#ibc-and-wasm-integration).
 
 Neither needs a further vote once the client type is admitted, which is why step 1 is the decision to open the hub and
 not merely a preliminary.
@@ -75,7 +75,7 @@ widening it is a coordinated binary upgrade.
 | Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §6 for account backing and appointment review. |
 | Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. There is no global floor, cap, or trigger: each proposal states its own (D27). |
 | Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor (D81). The cap is denominated in the reference unit; zero means uncapped. |
-| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
+| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/operations/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
 | Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, cap ratio, staleness window), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity (D59). The Reserve account never holds an external token (D70, amended). |
 | Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClosePosition`, and the governance corrections | committee; governance | The one-committee mandate (D56, D57); governance corrects records, clears impairment, and owns the recognition policy. |
 | Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority (D61). The surplus bound is Treasury's required capital, which needs a complete valuation. |
@@ -124,4 +124,4 @@ Before proposing the first one:
 - Do not grant `x/authz` authority over committee messages, and do not build solo-officer roles into the root.
   Either is delegation state that outlives the term and lets one key act under a shape recorded for a quorum.
 
-Other engineering follow-ups are tracked in [future changes](FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
+Other engineering follow-ups are tracked in [future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).

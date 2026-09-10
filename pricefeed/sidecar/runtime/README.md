@@ -20,7 +20,7 @@ state for owned provider runs, including retained providers whose markets change
 must not mutate maps retained by runtime. Preserve these boundaries when changing config slices or shared maps.
 
 [Chain-state client](../chainstate/README.md), [shared providers](../providers/base/README.md), and
-[resolver](../resolver/README.md) document their independent contracts. [Pricefeed operations](../../../docs/PRICEFEED_OPERATIONS.md)
+[resolver](../resolver/README.md) document their independent contracts. [Pricefeed operations](../../../docs/operations/PRICEFEED_OPERATIONS.md)
 explains what can reload and which process settings require restart.
 
 Run `go test ./pricefeed/sidecar/runtime/...` from the root. Lifecycle, update, feed reconciliation, and snapshot tests use

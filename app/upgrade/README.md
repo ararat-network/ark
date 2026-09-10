@@ -18,6 +18,6 @@ The live registry is [app/upgrades.go](../upgrades.go).
 After an upgrade has executed, the following release removes its handler package and registry entry; git history retains
 it. An empty registry is valid. The template's presence does not mean there is a scheduled or registered upgrade.
 
-[Node operations](../../docs/NODE_OPERATIONS.md) describes deployment and continuation export.
-[The emergency runbook](../../docs/EMERGENCY_SUBMISSION_RUNBOOK.md#committee-upgrades) describes committee scheduling and
+[Node operations](../../docs/operations/NODE_OPERATIONS.md) describes deployment and continuation export.
+[The emergency runbook](../../docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md#committee-upgrades) describes committee scheduling and
 operator binary custody. Scheduling a plan does not install a binary on an operator's behalf.

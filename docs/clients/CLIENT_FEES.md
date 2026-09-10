@@ -152,7 +152,7 @@ Treat this list as orientation and `ComputeTax` as the answer. The list moves; t
 ## 7. Client policy choices
 
 The chain publishes tax and gas-price requirements; each client chooses headroom, gas adjustment, and fee denomination.
-Those choices are not consensus rules. [arkd's reference implementation](../cmd/arkd/README.md#cli-fee-completion)
+Those choices are not consensus rules. [arkd's reference implementation](../../cmd/arkd/README.md#cli-fee-completion)
 documents its defaults and selection behaviour alongside the command code.
 
 ## 8. Why there is no `EstimateFee` RPC

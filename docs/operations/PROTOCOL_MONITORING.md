@@ -2,16 +2,16 @@
 
 For network operators and economic committees: collect protocol-state signals, calibrate alerts, and diagnose changes.
 Coverage currently centres on exposure and capital. This guide specifies monitoring requirements;
-[future changes](FUTURE_CHANGES.md#protocol-monitoring-tooling) tracks delivery of the required tooling.
+[future changes](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling) tracks delivery of the required tooling.
 
 This note says what to watch in Ark's own state: which query answers a question, which event carries it, what
 should wake someone, and what should not.
 
-It does not cover node or process health. `docs/PROCESS_MONITORING.md` owns that seam — the `[prometheus]` scrape
+It does not cover node or process health. `docs/operations/PROCESS_MONITORING.md` owns that seam — the `[prometheus]` scrape
 endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the machine. This document is about
 what the chain believes.
 
-Responses live in `docs/ECONOMIC_COMMITTEE_RUNBOOK.md`, keyed by the alert IDs used here. The split: an alert states a
+Responses live in `docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md`, keyed by the alert IDs used here. The split: an alert states a
 condition, why it matters, and the first thing to look at; the runbook states what a committee or governance
 then decides. Writing the decision into both is how the two drift apart.
 
@@ -40,7 +40,7 @@ example.
 
 ## 2. Exposure multiplier
 
-Covers D72 and D73, implemented in `x/treasury` ([local design](../x/treasury/README.md#exposure-sampling-and-refresh)).
+Covers D72 and D73, implemented in `x/treasury` ([local design](../../x/treasury/README.md#exposure-sampling-and-refresh)).
 
 The multiplier is a controller nobody watches by default. It ships inert — every weight zero, `m = 1` — so
 nothing it does is visible until a weight is voted positive, and after that its whole effect is a number that
@@ -57,8 +57,8 @@ update. This is the calibration window, and it is the whole reason the design sh
 The work in Phase A is to learn the calm-state distribution of the three indicators on this chain — not to alert
 on them. Collect at least a few weeks of `ExposureStatus`, then choose weights so that a calm reading composes
 to roughly 1.0–1.1 and a genuinely stressed one approaches the cap. Weights chosen from priors rather than from
-this data are guesses; [P1](ECONOMIC_DECISIONS.md#p1) treats them as a launch calibration decision for exactly
-this reason, and `docs/GOVERNANCE_OPERATIONS.md` §5 gates the activation message on this window having produced numbers.
+this data are guesses; [P1](../design/ECONOMIC_DECISIONS.md#p1) treats them as a launch calibration decision for exactly
+this reason, and `docs/governance/GOVERNANCE_OPERATIONS.md` §5 gates the activation message on this window having produced numbers.
 
 Panel 2 of the dashboard (§2.6) is the instrument. Building it is not preparation for calibration; it is the
 calibration.
@@ -224,7 +224,7 @@ In Phase A the same page shows panel 1 flat at one.
   attribution.
 
 The collector must preserve these semantics regardless of its implementation. Delivery status lives in
-[future changes](FUTURE_CHANGES.md#protocol-monitoring-tooling).
+[future changes](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling).
 
 ### 2.8 Calibration and operational ownership
 
@@ -235,13 +235,13 @@ The collector must preserve these semantics regardless of its implementation. De
    retained. If that proves awkward, downgrade A5 to a plain surplus-crossed-zero notification; the committee
    still learns what it needs to.
 4. **A5 is an indicator, not the execution bound.** It tracks recognised capital against the Reserve target.
-   The [economic committee runbook](ECONOMIC_COMMITTEE_RUNBOOK.md#2-before-drafting-a-burn) also applies the mandate's
+   The [economic committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#2-before-drafting-a-burn) also applies the mandate's
    NOAH floor when sizing a transaction. Retain that distinction; a positive capital surplus alone does not authorise
-   a burn. A proposed bound query is tracked with [future tooling](FUTURE_CHANGES.md#protocol-monitoring-tooling).
+   a burn. A proposed bound query is tracked with [future tooling](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling).
 
 ## 3. Other subsystems
 
 The process side of oracle attendance and price-feed liveness, what this node signs and what its sidecar serves,
-is `docs/PROCESS_MONITORING.md` §8, read from the scrape endpoints rather than from state. The protocol side of both,
+is `docs/operations/PROCESS_MONITORING.md` §8, read from the scrape endpoints rather than from state. The protocol side of both,
 and market conversion health, still have on-chain state and typed events that would fit the shape of §2; they get
 sections here when someone needs them, rather than a document each.

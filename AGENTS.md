@@ -73,7 +73,7 @@ app/mempool/    # Pending transactions, lane eligibility, admission limits, and 
   size limits in `abci/codec`.
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
   `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
-- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
+- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
   within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files through `pkg/tlsconfig` and
   their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via
   `.goreleaser.pricefeed.yml`.
@@ -156,7 +156,7 @@ the backstop even when it is provably unreachable, and say so in a comment namin
   deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
-- `docs/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a message
+- `docs/design/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a message
   type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation

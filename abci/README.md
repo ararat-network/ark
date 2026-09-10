@@ -56,4 +56,4 @@ its own BeginBlock refreshes and end-of-block valuation/settlement.
 From the root, run `go test ./abci/...`. Hook tests cover disabled/enabled boundaries, proposal validation, and the feed
 activation ordering; oracle tests cover aggregation separately. For application wiring changes also run relevant `./app`
 tests. [x/oracle](../x/oracle/README.md) documents keeper state and
-[PROCESS_MONITORING.md](../docs/PROCESS_MONITORING.md) interprets metrics.
+[PROCESS_MONITORING.md](../docs/operations/PROCESS_MONITORING.md) interprets metrics.

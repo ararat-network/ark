@@ -16,7 +16,7 @@ owning module; a shared package should not acquire keeper dependencies merely to
 
 Primitive encoding limits belong in `encoding`; aggregate vote-extension limits belong in [abci/codec](../abci/codec/).
 TLS loading does not start an independent daemon: the connection owner starts and stops identity rotation with its own
-lifecycle. [Pricefeed operations](../docs/PRICEFEED_OPERATIONS.md) owns transport deployment and compatibility policy.
+lifecycle. [Pricefeed operations](../docs/operations/PRICEFEED_OPERATIONS.md) owns transport deployment and compatibility policy.
 
 Run focused tests from the root, for example `go test ./pkg/tlsconfig/... ./pkg/grpcconn/...` for transport changes or
 `go test ./pkg/decimal/... ./pkg/encoding/...` for arithmetic/encoding. Check affected callers too when a shared contract
