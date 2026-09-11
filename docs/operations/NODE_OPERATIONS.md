@@ -37,6 +37,11 @@ Use a fresh directory for another run; do not reset an existing validator home a
 For multiple developers, generate the intended validator count and host addresses, distribute each validator's own home,
 and agree on a single genesis. `--single-host` is for separate ports on one machine; omit it when using distinct hosts.
 
+Each generated home carries a `client.toml` with its chain ID, keyring backend, key name, and node address, so client
+commands against it need none of those as flags. `arkd testnet start` runs the same network inside one process; its
+commit timeout must leave the first block inside the SDK network's five-second start budget, which its one-second
+default does.
+
 ## Manually assembling a testnet
 
 When validators create their own keys, each participant initialises a fresh home with the agreed chain ID using

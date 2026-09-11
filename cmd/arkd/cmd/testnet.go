@@ -57,14 +57,20 @@ const (
 	flagStartingIPAddress = "starting-ip-address"
 	flagListenIPAddress   = "listen-ip-address"
 	flagEnableLogging     = "enable-logging"
-	flagGRPCAddress       = "grpc.address"
-	flagRPCAddress        = "rpc.address"
-	flagAPIAddress        = "api.address"
 	flagPrintMnemonic     = "print-mnemonic"
 	flagStakingDenom      = "staking-denom"
 	flagCommitTimeout     = "commit-timeout"
 	flagSingleHost        = "single-host"
 	flagGenesis           = "genesis"
+
+	// The root pre-run binds every flag to the home's app.toml under the
+	// flag's name: an unset flag takes the file's value, and on a fresh home
+	// the flag's default is written into the file. These settings therefore
+	// carry names no app.toml key has, unlike the SDK's flags for the same.
+	flagMinGasPrices = "min-gas-prices"
+	flagGRPCAddress  = "grpc-address"
+	flagRPCAddress   = "rpc-address"
+	flagAPIAddress   = "api-address"
 
 	defaultNumValidators     = 4
 	defaultOutputDir         = "./.testnets"
@@ -74,6 +80,15 @@ const (
 	defaultEnableLogging     = false
 	defaultPrintMnemonic     = true
 	defaultSingleHost        = false
+)
+
+// The in-process network's first block has to land within five seconds:
+// network.New polls that long for it and then fails, and the block lands one
+// commit timeout after the validators start. The default sits well inside the
+// budget and a timeout near it is refused.
+const (
+	defaultInProcessCommitTimeout = time.Second
+	maxInProcessCommitTimeout     = 4 * time.Second
 )
 
 // The in-process testnet's listen addresses, on the same ports init-files
@@ -125,13 +140,13 @@ func validatorCount(cmd *cobra.Command) (int, error) {
 	return count, nil
 }
 
-func addTestnetFlagsToCmd(cmd *cobra.Command) {
+func addTestnetFlagsToCmd(cmd *cobra.Command, commitTimeout time.Duration) {
 	cmd.Flags().IntP(flagNumValidators, "v", defaultNumValidators, "Number of validators to initialise the testnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", defaultOutputDir, "Directory to store initialization data for the testnet")
 	cmd.Flags().String(flags.FlagChainID, "", "genesis file chain-id, if left blank will be randomly created")
-	cmd.Flags().String(server.FlagMinGasPrices, defaultMinGasPrices, "Minimum gas prices to accept for transactions; all fees in a tx must meet this minimum (e.g. 0.01anoah,0.001ausd)")
+	cmd.Flags().String(flagMinGasPrices, defaultMinGasPrices, "Minimum gas prices each node accepts for transactions; all fees in a tx must meet this minimum (e.g. 0.01anoah,0.001ausd)")
 	cmd.Flags().String(flags.FlagKeyType, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().Duration(flagCommitTimeout, defaultCommitTimeout, "Time to wait after a block commit before starting on the new height")
+	cmd.Flags().Duration(flagCommitTimeout, commitTimeout, "Time to wait after a block commit before starting on the new height")
 }
 
 // newTestnetCmd creates a root testnet command with subcommands to run an in-process testnet or initialise
@@ -184,7 +199,7 @@ Example:
 			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
 			args.keyringBackend, _ = cmd.Flags().GetString(flags.FlagKeyringBackend)
 			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
-			args.minGasPrices, _ = cmd.Flags().GetString(server.FlagMinGasPrices)
+			args.minGasPrices, _ = cmd.Flags().GetString(flagMinGasPrices)
 			args.nodeDirPrefix, _ = cmd.Flags().GetString(flagNodeDirPrefix)
 			args.nodeDaemonHome, _ = cmd.Flags().GetString(flagNodeDaemonHome)
 			args.startingIPAddress, _ = cmd.Flags().GetString(flagStartingIPAddress)
@@ -202,7 +217,7 @@ Example:
 		},
 	}
 
-	addTestnetFlagsToCmd(cmd)
+	addTestnetFlagsToCmd(cmd, defaultCommitTimeout)
 	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
 	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, and its chain ID is the default")
 	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
@@ -235,7 +250,7 @@ Example:
 			args := startArgs{numValidators: numValidators}
 			args.outputDir, _ = cmd.Flags().GetString(flagOutputDir)
 			args.chainID, _ = cmd.Flags().GetString(flags.FlagChainID)
-			args.minGasPrices, _ = cmd.Flags().GetString(server.FlagMinGasPrices)
+			args.minGasPrices, _ = cmd.Flags().GetString(flagMinGasPrices)
 			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
 			args.enableLogging, _ = cmd.Flags().GetBool(flagEnableLogging)
 			args.rpcAddress, _ = cmd.Flags().GetString(flagRPCAddress)
@@ -248,7 +263,7 @@ Example:
 		},
 	}
 
-	addTestnetFlagsToCmd(cmd)
+	addTestnetFlagsToCmd(cmd, defaultInProcessCommitTimeout)
 	cmd.Flags().Bool(flagEnableLogging, defaultEnableLogging, "Enable INFO logging of CometBFT validator nodes")
 	cmd.Flags().String(flagRPCAddress, defaultRPCAddress, "the RPC address to listen on")
 	cmd.Flags().String(flagAPIAddress, defaultAPIAddress, "the address to listen on for REST API")
@@ -391,6 +406,14 @@ func initTestnetFiles(
 
 		// save private key seed words
 		if err := writeFile("key_seed.json", nodeDir, cliPrint); err != nil {
+			return err
+		}
+
+		// The SDK writes client.toml lazily and with its defaults, so every
+		// client command against the home would need the chain ID, keyring,
+		// key, and node as flags.
+		clientToml := fmt.Sprintf(clientConfigTemplate, args.chainID, args.keyringBackend, nodeDirName, rpcPort+portOffset)
+		if err := writeFile("client.toml", filepath.Join(nodeDir, "config"), []byte(clientToml)); err != nil {
 			return err
 		}
 
@@ -689,8 +712,21 @@ func writeFile(name, dir string, contents []byte) error {
 	return nil
 }
 
-// startTestnet starts an in-process testnet
-func startTestnet(cmd *cobra.Command, args startArgs) error {
+// inProcessNetworkConfig is the in-process network for args, once the
+// process can run one: the commit timeout leaves the first block inside
+// network.New's budget, and the SDK's app.toml template is back in place.
+func inProcessNetworkConfig(args startArgs) (network.Config, error) {
+	if args.timeoutCommit > maxInProcessCommitTimeout {
+		return network.Config{}, fmt.Errorf(
+			"--%s %s is above %s: the in-process network fails unless its first block lands within five seconds of starting",
+			flagCommitTimeout, args.timeoutCommit, maxInProcessCommitTimeout,
+		)
+	}
+	// network.New writes each validator's app.toml from the SDK's own config
+	// type. The root pre-run installs Ark's template when it creates a missing
+	// app.toml, and Ark's template does not render the SDK's type.
+	serverconfig.SetConfigTemplate(serverconfig.DefaultConfigTemplate)
+
 	networkConfig := network.DefaultConfig(apptestutil.NewTestNetworkFixture)
 
 	// Default networkConfig.ChainID is random, and we should only override it if chainID provided
@@ -707,6 +743,15 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 	networkConfig.GRPCAddress = args.grpcAddress
 	networkConfig.PrintMnemonic = args.printMnemonic
 	networkConfig.TimeoutCommit = args.timeoutCommit
+	return networkConfig, nil
+}
+
+// startTestnet starts an in-process testnet
+func startTestnet(cmd *cobra.Command, args startArgs) error {
+	networkConfig, err := inProcessNetworkConfig(args)
+	if err != nil {
+		return err
+	}
 	networkLogger := network.NewCLILogger(cmd)
 
 	baseDir := filepath.Join(args.outputDir, networkConfig.ChainID)
@@ -732,6 +777,29 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 
 	return nil
 }
+
+// clientConfigTemplate is the SDK's client.toml, which the SDK renders only
+// with its defaults: chain ID, keyring backend, default key, and node.
+const clientConfigTemplate = `# This is a TOML config file.
+# For more information, see https://github.com/toml-lang/toml
+
+###############################################################################
+###                           Client Configuration                            ###
+###############################################################################
+
+# The network chain ID
+chain-id = "%s"
+# The keyring's backend, where the keys are stored (os|file|kwallet|pass|test|memory)
+keyring-backend = "%s"
+# Default key name, if set, defines the default key to use for signing transaction when the --from flag is not specified
+keyring-default-keyname = "%s"
+# CLI output format (text|json)
+output = "text"
+# <host>:<port> to CometBFT RPC interface for this chain
+node = "tcp://localhost:%d"
+# Transaction broadcasting mode (sync|async)
+broadcast-mode = "sync"
+`
 
 // seatGentx is a seat's self-delegation: the whole locked grant at the
 // artefact's commission floor, with a 20% ceiling and a 1% daily change.

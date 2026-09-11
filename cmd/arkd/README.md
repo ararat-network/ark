@@ -11,7 +11,7 @@ registers genesis, query, transaction, server, and export commands and construct
 | `export` — [cmd/export.go](cmd/export.go) | The continuation genesis. |
 | `genesis add-validator-seat` — [cmd/add_validator_seat.go](cmd/add_validator_seat.go) | One equal validator seat granted from the community pool at assembly; the edit itself is [app/genesis](../../app/genesis/seat.go). |
 | `query vote-extensions` — [cmd/vote_extensions.go](cmd/vote_extensions.go) | The oracle votes retained in a committed block. |
-| `testnet start/init-files` — [cmd/testnet.go](cmd/testnet.go) | Testnet file generation, from code defaults or from a curated artefact with `--genesis`, and the in-process testnet. |
+| `testnet start/init-files` — [cmd/testnet.go](cmd/testnet.go) | Testnet file generation, from code defaults or from a curated artefact with `--genesis`, each home with a client.toml naming its chain, keyring, key, and node, and the in-process testnet. Its flags carry names no app.toml key has: the root pre-run copies app.toml onto flags of the same name, and a flag's default into a fresh home's app.toml. |
 | [cmd/root.go](cmd/root.go), [cmd/commands.go](cmd/commands.go) | Root command, client context, AutoCLI tree, transaction-command dressing, command registration, and app construction. |
 | [cmd/config.go](cmd/config.go), [cmd/otel.go](cmd/otel.go), [cmd/telemetry.go](cmd/telemetry.go) | app.toml as a typed file with its template and validation, config.toml's defaults, the otel.yaml read, and the Prometheus endpoint. |
 

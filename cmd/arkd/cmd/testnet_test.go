@@ -12,8 +12,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
@@ -24,6 +26,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectestutil "github.com/cosmos/cosmos-sdk/codec/testutil"
 	"github.com/cosmos/cosmos-sdk/server"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
@@ -99,7 +102,7 @@ func TestTestnetCmd(t *testing.T) {
 	ctx = context.WithValue(ctx, server.ServerContextKey, serverCtx)
 	ctx = context.WithValue(ctx, client.ClientContextKey, &clientCtx)
 	cmd := newTestnetInitFilesCmd(moduleBasic, banktypes.GenesisBalancesIterator{})
-	require.Equal(t, "6000000anoah", cmd.Flags().Lookup(server.FlagMinGasPrices).DefValue)
+	require.Equal(t, "6000000anoah", cmd.Flags().Lookup(flagMinGasPrices).DefValue)
 	cmd.SetArgs([]string{
 		fmt.Sprintf("--%s=test", flags.FlagKeyringBackend),
 		fmt.Sprintf("--%s=%s", flags.FlagChainID, chainID),
@@ -122,6 +125,16 @@ func TestTestnetCmd(t *testing.T) {
 	node1AppConfig, err := os.ReadFile(filepath.Join(home, "node1", "arkd", "config", "app.toml"))
 	require.NoError(t, err)
 	require.Contains(t, string(node1AppConfig), `address = "0.0.0.0:9465"`)
+
+	// Each home's client.toml names its chain, keyring, key, and node.
+	clientConfig := readFile(t, filepath.Join(node0ConfigDir, "client.toml"))
+	require.Contains(t, clientConfig, fmt.Sprintf("chain-id = %q", chainID))
+	require.Contains(t, clientConfig, `keyring-backend = "test"`)
+	require.Contains(t, clientConfig, `keyring-default-keyname = "node0"`)
+	require.Contains(t, clientConfig, `node = "tcp://localhost:26657"`)
+	node1ClientConfig := readFile(t, filepath.Join(home, "node1", "arkd", "config", "client.toml"))
+	require.Contains(t, node1ClientConfig, `keyring-default-keyname = "node1"`)
+	require.Contains(t, node1ClientConfig, `node = "tcp://localhost:26658"`)
 
 	expectedAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	for i := range 2 {
@@ -157,13 +170,56 @@ func TestTestnetCmd(t *testing.T) {
 }
 
 // Both testnet commands take --commit-timeout: start read it without
-// registering it and ran the in-process network with none.
+// registering it and ran the in-process network with none. init-files hands
+// nodes the node default; the in-process network needs its first block
+// inside network.New's five-second budget.
 func TestTestnetCommandsRegisterCommitTimeout(t *testing.T) {
-	for _, cmd := range []*cobra.Command{newTestnetStartCmd(), newTestnetInitFilesCmd(nil, banktypes.GenesisBalancesIterator{})} {
+	for cmd, want := range map[*cobra.Command]string{
+		newTestnetStartCmd(): "1s",
+		newTestnetInitFilesCmd(nil, banktypes.GenesisBalancesIterator{}): "5s",
+	} {
 		flag := cmd.Flags().Lookup(flagCommitTimeout)
 		require.NotNil(t, flag, cmd.Name())
-		require.Equal(t, "5s", flag.DefValue, cmd.Name())
+		require.Equal(t, want, flag.DefValue, cmd.Name())
 	}
+}
+
+// The root pre-run binds every flag to the home's app.toml under the flag's
+// name, both ways: init-files used to write the home's minimum-gas-prices into
+// every node and a fresh home used to take the flag's default. No testnet
+// flag may share a key with app.toml.
+func TestTestnetFlagsShareNoAppConfigKey(t *testing.T) {
+	keys := map[string]bool{}
+	for _, key := range viperFromTOML(t, renderAppTOML(t, appConfigTemplate)).AllKeys() {
+		keys[key] = true
+	}
+	require.True(t, keys["minimum-gas-prices"])
+	require.True(t, keys["api.address"])
+	for _, cmd := range []*cobra.Command{newTestnetStartCmd(), newTestnetInitFilesCmd(nil, banktypes.GenesisBalancesIterator{})} {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			require.Falsef(t, keys[f.Name], "%s --%s shares its name with an app.toml key", cmd.Name(), f.Name)
+		})
+	}
+}
+
+// The in-process network refuses a commit timeout its first block cannot
+// beat, and renders the SDK's app.toml again after the root pre-run has
+// installed Ark's template.
+func TestInProcessNetworkConfig(t *testing.T) {
+	t.Cleanup(func() { serverconfig.SetConfigTemplate(appConfigTemplate) })
+
+	_, err := inProcessNetworkConfig(startArgs{numValidators: 1, timeoutCommit: 5 * time.Second})
+	require.ErrorContains(t, err, "within five seconds")
+
+	serverconfig.SetConfigTemplate(appConfigTemplate)
+	cfg, err := inProcessNetworkConfig(startArgs{numValidators: 1, timeoutCommit: time.Second, chainID: "in-process"})
+	require.NoError(t, err)
+	require.Equal(t, "in-process", cfg.ChainID)
+	require.Equal(t, time.Second, cfg.TimeoutCommit)
+	// What network.New does for each validator, and what panicked before.
+	require.NotPanics(t, func() {
+		serverconfig.WriteConfigFile(filepath.Join(t.TempDir(), "app.toml"), serverconfig.DefaultConfig())
+	})
 }
 
 // A count below one is refused before anything is read or written; a
