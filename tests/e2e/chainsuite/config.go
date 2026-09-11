@@ -60,10 +60,10 @@ const (
 	GovVotingPeriod          = 40 * time.Second
 	GovExpeditedVotingPeriod = 20 * time.Second
 	GovDepositPeriod         = 60 * time.Second
-	// GovDeposit and GovExpeditedDeposit clear their floors with room: the
-	// default minimum deposit is 10 NOAH and the expedited one five times that.
+	// GovDeposit and GovExpeditedDeposit are the artefact's floors, 1,000 and
+	// 5,000 NOAH; a proposal opens with a tenth of the floor.
 	GovDeposit          = 1000
-	GovExpeditedDeposit = 60
+	GovExpeditedDeposit = 5000
 
 	SlashingWindow       = 20
 	DowntimeJailDuration = 20 * time.Second
@@ -74,6 +74,15 @@ const (
 	// UpgradeDelta is the number of blocks between an upgrade proposal and
 	// its height: enough for the vote to pass under GovVotingPeriod.
 	UpgradeDelta = 35
+
+	// SeatGrantNoah and SeatFloatNoah are the locked grant and liquid float
+	// every seat holds, in whole NOAH, mirrored from pkg/chain/launch.go.
+	SeatGrantNoah = 5_000_000
+	SeatFloatNoah = 300_000
+	// SeatValidatorShare and SeatOracleShare are one seat's per-block reward
+	// shares in base units, mirrored from the same file.
+	SeatValidatorShare = "17500000000000000"
+	SeatOracleShare    = "7500000000000000"
 
 	// ValidatorFunds is each validator account's genesis balance, in NOAH.
 	ValidatorFunds = 10_000
@@ -139,7 +148,8 @@ func DefaultAppToml() testutil.Toml {
 
 // DefaultGenesis shortens governance and slashing windows to what a test can
 // wait for and enables vote extensions from the first block, as
-// `arkd testnet init-files` does.
+// `arkd testnet init-files` does. It is applied over the testnet artefact
+// (ArtefactGenesis), so everything it does not name is the launch economics.
 func DefaultGenesis() []cosmos.GenesisKV {
 	return []cosmos.GenesisKV{
 		cosmos.NewGenesisKV("app_state.gov.params.voting_period", GovVotingPeriod.String()),
@@ -198,7 +208,7 @@ func ChainSpecAt(env Environment, version string) *interchaintest.ChainSpec {
 			"config/config.toml": DefaultConfigToml(),
 			"config/app.toml":    DefaultAppToml(),
 		},
-		ModifyGenesis:        cosmos.ModifyGenesis(DefaultGenesis()),
+		ModifyGenesis:        ArtefactGenesis(DefaultGenesis()),
 		ModifyGenesisAmounts: DefaultGenesisAmounts(Denom),
 	}
 	if env.PriceFeed {
@@ -252,7 +262,7 @@ func (c SuiteConfig) Merge(other SuiteConfig) SuiteConfig {
 	c.UpgradeOnSetup = other.UpgradeOnSetup
 	c.Scope = other.Scope
 	if len(other.GenesisOverrides) > 0 {
-		c.ChainSpec.ModifyGenesis = cosmos.ModifyGenesis(
+		c.ChainSpec.ModifyGenesis = ArtefactGenesis(
 			append(DefaultGenesis(), other.GenesisOverrides...),
 		)
 	}

@@ -361,7 +361,8 @@ changed: the same supply, seats, economics, slashing, oracle thresholds, shut hu
 `TestTestnetGenesisDerivesFromLaunch` applies the list below to the launch file and requires equality module by
 module, so the two cannot drift, and the validity and both boot tests run over both files. Seats are granted with the
 same command (§12); faucet and test accounts are added with `arkd genesis add-genesis-account`, and a testnet supply
-above a billion is acceptable.
+above a billion is acceptable. The Docker localnet and the e2e suites run every chain on this artefact
+([localnet](../../contrib/localnet/README.md), [e2e](../../tests/e2e/README.md)).
 
 | Setting | Launch | Testnet | Why |
 | --- | --- | --- | --- |

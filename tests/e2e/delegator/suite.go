@@ -14,7 +14,7 @@ import (
 
 // WalletFunds is each delegator wallet's balance in NOAH: enough to delegate
 // past a validator's power and still pay for every transaction.
-const WalletFunds = 5_000
+const WalletFunds = 12_000
 
 // Suite is a chain with three funded wallets on its first node.
 type Suite struct {

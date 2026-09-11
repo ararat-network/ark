@@ -18,6 +18,11 @@ make test-e2e E2E_PACKAGES=./delegator/...
 most of an hour. The Makefile exports the Docker CLI context's endpoint as `DOCKER_HOST`, which the Go client needs on
 OrbStack and Colima.
 
+Every chain runs the testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json): `chainsuite.ArtefactGenesis`
+lays its consensus block and module states over the genesis interchaintest generates, keeping interchaintest's
+accounts and gentxs and merging the bank ledger, then applies the suite's short windows. Validators are ordinary bonded
+accounts on the launch economics, not seats; the gov suite admits a seat through the governance proposal.
+
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `TEST_IMAGE_NAME` | `ark/arkd` | Image repository; `TEST_DOCKER_REGISTRY` prefixes it. |
