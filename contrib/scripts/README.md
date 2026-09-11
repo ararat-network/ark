@@ -12,7 +12,16 @@ Run host commands from the repository root. Host probes use `curl` and `jq`; the
 | [localnet-fill-mempool.sh](localnet-fill-mempool.sh) | Internal helper of saturation rehearsal | Submits fee-paying normal transactions while consensus is held; checks admission overflow and empty carrier storage. |
 | [localnet-saturation.sh](localnet-saturation.sh) | `make localnet-saturation` | Pauses node1/node2, fills the public pool, submits privately, resumes consensus, and checks inclusion. |
 | [upgrade-rehearsal.sh](upgrade-rehearsal.sh) | `make upgrade-rehearsal` | Builds/selects old and new binaries, starts a temporary cosmovisor node, submits an upgrade, observes halt/switch, and runs the upgrade probe. |
-| [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | goreleaser before hook of `make release`; `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |
+| [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | Standalone node's container builder; `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |
+| [release-build.py](release-build.py) | GoReleaser node build tool; `ARK_RELEASE_SOURCE` names the verified application source bundle | Builds the committed export in the requested Linux platform's container, verifies binary/runtime source identity, and writes GoReleaser's binary plus runtime source assets under `build/source/`. Does not publish. |
+
+[release-assets.py](release-assets.py) stages the exact binary/source/SBOM asset matrix and checks
+its checksums before signing and after upload. It refuses missing, extra, tampered or symlinked
+assets and never publishes. [Release verification](../../docs/operations/RELEASE_VERIFICATION.md)
+owns the signed-draft workflow and consumer instructions.
+
+[Licensing and corresponding source](../../THIRD_PARTY_NOTICES.md) owns release source
+coverage, verification, download and retention procedures.
 
 ## Emergency and saturation fixtures
 
@@ -33,6 +42,7 @@ versioned handler when that tree contains only `template/`.
 | --- | --- |
 | `UPGRADE_NAME` | Registered plan name; otherwise inferred from the newest `app/upgrade/v*` directory. |
 | `OLD_REF` | Git ref used to build the old binary; defaults to the latest `v*` release tag, or HEAD before the first release. |
+| `GENESIS` | Curated genesis the old binary generates the node from; defaults to `app/genesis/testnet.json`. An old release without `--genesis` generates from its defaults instead. |
 | `OLD_BINARY`, `NEW_BINARY` | Supply binaries instead of building the corresponding version. |
 | `UPGRADE_DELAY` | Blocks from proposal to scheduled upgrade. |
 | `WORK` | Scratch homes, binaries and logs; defaults to `build/upgrade-rehearsal`. Use a disposable path. |
