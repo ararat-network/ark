@@ -20,6 +20,7 @@ maintain that boundary.
 ## Operate services
 
 - [Node operations](operations/NODE_OPERATIONS.md): build, testnet setup, network joining, configuration, upgrades, and relaunch.
+- [Release verification](operations/RELEASE_VERIFICATION.md): verify container origin, revision, digest and signed dependency inventory before use.
 - [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): two-way node/sidecar setup, TLS, reload, failover, and independent releases.
 
 ## Monitor the network

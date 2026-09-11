@@ -248,10 +248,79 @@ lane and the gate? Does the runbook still describe how it reaches a block under 
 **What crosses.** Source becomes the binaries validators run.
 
 **Controls.** `go mod verify` before every release; the wasmvm static archives are pinned by version and
-digest in the image Dockerfile, and both the image build and the chain release's before hook check the
+digest in the image Dockerfile, and both the image build and the standalone node's container builder check the
 archives against them; CI actions are pinned, the mise action by commit; dependabot, nightly govulncheck,
 and CodeQL run; goreleaser is pinned in `mise.toml`. The sidecar releases from its own tag line so a chain
 release never carries an unreviewed sidecar change, or the reverse.
+Release source packaging exports a fixed committed tree, refuses tracked changes
+and a moving HEAD, verifies Go module checksums, and includes native dependencies.
+Source verification rebuilds in fresh containers with networking disabled before
+publication. Published images use that exported tree and carry their source bundle
+and notices. Source bundles exclude Git history and untracked local files. An
+offline build proves source availability, not licence compatibility, source
+provenance, or bit-for-bit reproducibility; dependency changes still need review.
+
+The distribution image also bundles OS sources. The collector reads the runtime
+stage's actual APK database and resolves the node's linker inputs to builder APK
+owners; missing or unknown mappings fail the build. It retrieves aports recipes at
+the package-recorded commits from the official Alpine repository, verifies recipe
+versions and upstream source checksums, and preserves patches, configurations and
+notices. APKBUILD is executable shell code: evaluate it only in the separate
+unprivileged collection stage, with no build secrets or host mounts. Its network
+access is a release supply-chain boundary; commit and checksum matching do not
+prove upstream code is benign. The resulting OS archive and package manifest are
+included in every published distribution image. Offline archive verification checks
+local source coverage and integrity, not OS rebuild reproducibility.
+
+Standalone node releases use GoReleaser's custom build-tool boundary. The adapter
+accepts the intended target, command and output path, verifies the committed
+application archive, and forwards GoReleaser's build arguments without shell
+evaluation to that platform's container compiler. Only the exported source and
+normalised build request enter its context; host Git history, credentials and
+release tokens are excluded. The builder records the actual linked APK inputs.
+The adapter verifies ELF architecture/static linkage, revision, binary hash and
+runtime-source identity before returning a binary to GoReleaser. Runtime source
+collection retains the same unprivileged recipe boundary as image publication.
+These hashes bind build outputs together; independent signing/attestation and
+native-hardware runtime validation remain separate controls.
+
+Image publication uploads the distribution image by digest, generates an SPDX SBOM
+with pinned Syft, and signs provenance and SBOM attestations with the GitHub workflow's
+OIDC identity. It verifies both registry attestations against the repository, workflow,
+source revision and ref before promoting release/nightly tags. BuildKit also emits
+maximum-detail provenance. On the current Free plan, publication is paused while the
+repository is private because GitHub attestations are unavailable there. Failed runs
+can leave untagged image data or attestations in the registry; a digest upload is not
+private staging. Tag promotion is not atomic across multiple tags.
+The scanner inventories the distribution image; it does not prove complete discovery
+of statically linked native dependencies. Retain the corresponding-source manifests
+for those dependencies. Signed claims establish origin and integrity, not absence of
+vulnerabilities or reproducibility. The publishing job and every tool running in it
+remain trusted: it holds package-write and OIDC permissions. Consumer verification
+and failure handling live in [release verification](../operations/RELEASE_VERIFICATION.md).
+
+Standalone binary release drafts are built in GitHub Actions from an existing tag
+at a reviewed `main` ancestor. Local release targets only package. Per-archive SPDX
+inventories and the full attached source set are checksummed; an exact asset-matrix
+check refuses missing, extra, symlinked or mismatched files. OIDC provenance signs
+each archive, SPDX document, checksum and source/notice file. The workflow downloads
+its draft and verifies every signed asset against the selected repository, workflow,
+source revision and tag before marking it ready for human publication. It does not
+overwrite existing releases or publish drafts automatically. The GoReleaser/Syft
+toolchain and QEMU helper are pinned; the hosted job remains a trusted build/signing
+boundary with contents-write, OIDC and attestation permissions. Native-hardware
+runtime validation and complete static native dependency discovery remain separate
+checks. Consumer verification is required even after draft review because assets and
+tags can otherwise be changed by a maintainer with sufficient access.
+
+Publication requires effective GitHub settings as well as checked-in workflows.
+Protect `main` with required pull requests, passing CI and resolved conversations;
+apply these rules to administrators and block force pushes and deletion. Required
+checks must run on every pull request, including documentation-only changes.
+Maintainer accounts must use 2FA. Require full commit-SHA pins for Actions, retain
+read-only default tokens, and require approval for all external fork workflows.
+Review fork code before approval; approval itself does not make it trustworthy.
+These settings live outside Git and must be verified separately before publication.
 
 **Review questions.** Are the remaining actions pinned by commit rather than major tag? Does a release
 run from a clean tree at a tag on `HEAD`?
