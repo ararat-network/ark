@@ -45,6 +45,8 @@ type ModuleInputs struct {
 	// interface to its concrete keeper with depinject.BindInterface.
 	ClaimsKeeper  types.ClaimsKeeper
 	ReserveKeeper types.ReserveKeeper
+	// DistributionKeeper receives returned subsidy.
+	DistributionKeeper types.DistributionKeeper
 }
 
 type ModuleOutputs struct {
@@ -72,6 +74,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.AssetKeeper,
 		in.ClaimsKeeper,
 		in.ReserveKeeper,
+		in.DistributionKeeper,
 	)
 
 	m := NewAppModule(k)

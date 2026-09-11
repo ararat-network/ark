@@ -3,12 +3,15 @@ package keeper_test
 import (
 	"bytes"
 
+	"go.uber.org/mock/gomock"
+
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
@@ -482,4 +485,53 @@ func (s *KeeperTestSuite) setConversionFactors(factors ...types.ConversionFactor
 	for _, factor := range factors {
 		s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, factor.Denom, factor))
 	}
+}
+
+// TestMsgReturnSubsidy pins the stale-state guard, the fixed endpoints, and
+// the event: only governance moves the pool, only NOAH, only into the
+// community pool, and never below the minimum the proposal stated.
+func (s *KeeperTestSuite) TestMsgReturnSubsidy() {
+	subsidy := authtypes.NewModuleAddress(types.SubsidyPoolName)
+	s.bankKeeper.EXPECT().
+		GetBalance(gomock.Any(), subsidy, chain.NoahBaseDenom).
+		Return(chain.NoahCoin(math.NewInt(100))).
+		AnyTimes()
+	returnMsg := func(amount, minimum int64) *types.MsgReturnSubsidy {
+		return &types.MsgReturnSubsidy{
+			Authority:             s.authority,
+			Amount:                chain.NoahCoin(math.NewInt(amount)),
+			MinimumSubsidyBalance: chain.NoahCoin(math.NewInt(minimum)),
+		}
+	}
+
+	_, err := s.msgServer.ReturnSubsidy(s.ctx, returnMsg(50, 60))
+	s.Require().ErrorContains(err, "balance 100 cannot return 50anoah while retaining 60anoah")
+	_, err = s.msgServer.ReturnSubsidy(s.ctx, returnMsg(101, 0))
+	s.Require().ErrorContains(err, "cannot return 101anoah")
+	_, err = s.msgServer.ReturnSubsidy(s.ctx, returnMsg(0, 0))
+	s.Require().ErrorContains(err, "must be positive")
+	wrongDenom := returnMsg(10, 0)
+	wrongDenom.Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 10)
+	_, err = s.msgServer.ReturnSubsidy(s.ctx, wrongDenom)
+	s.Require().ErrorContains(err, "return amount")
+	unauthorised := returnMsg(10, 0)
+	unauthorised.Authority = sdk.AccAddress(bytes.Repeat([]byte{7}, 20)).String()
+	_, err = s.msgServer.ReturnSubsidy(s.ctx, unauthorised)
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+	s.requireNoTypedEvent(&types.EventSubsidyReturned{
+		Denom:     chain.NoahBaseDenom,
+		Amount:    math.ZeroInt(),
+		Remaining: math.ZeroInt(),
+	})
+
+	s.distributionKeeper.EXPECT().
+		FundCommunityPool(gomock.Any(), chain.NoahCoins(math.NewInt(40)), subsidy).
+		Return(nil)
+	_, err = s.msgServer.ReturnSubsidy(s.ctx, returnMsg(40, 60))
+	s.Require().NoError(err)
+	s.requireTypedEvent(&types.EventSubsidyReturned{
+		Denom:     chain.NoahBaseDenom,
+		Amount:    math.NewInt(40),
+		Remaining: math.NewInt(60),
+	})
 }

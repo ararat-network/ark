@@ -131,6 +131,18 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 // CommitteeUpdatePolicy applies one complete reversible policy update
 // as the exact appointed committee, during the active term and window, with
 // every field inside the mandate's bounds.
+// ReturnSubsidy moves idle subsidy NOAH into the community pool as governance.
+func (m msgServer) ReturnSubsidy(ctx context.Context, msg *types.MsgReturnSubsidy) (*types.MsgReturnSubsidyResponse, error) {
+	if msg == nil {
+		return nil, fmt.Errorf("nil return subsidy message")
+	}
+	if err := m.k.ReturnSubsidy(ctx, msg.Authority, msg.Amount, msg.MinimumSubsidyBalance); err != nil {
+		return nil, err
+	}
+
+	return &types.MsgReturnSubsidyResponse{}, nil
+}
+
 func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgCommitteeUpdatePolicy) (*types.MsgCommitteeUpdatePolicyResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee update economic-policy message")

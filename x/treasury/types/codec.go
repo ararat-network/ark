@@ -15,6 +15,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgSetEconomicMandate{}, "ark/treasury/MsgSetEconomicMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdatePolicy{}, "ark/treasury/MsgUpdatePolicy")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeUpdatePolicy{}, "ark/treasury/MsgCommitteeUpdatePolicy")
+	legacy.RegisterAminoMsg(cdc, &MsgReturnSubsidy{}, "ark/treasury/MsgReturnSubsidy")
 }
 
 // RegisterInterfaces registers Treasury messages as sdk.Msg implementations.
@@ -25,6 +26,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgSetEconomicMandate{},
 		&MsgUpdatePolicy{},
 		&MsgCommitteeUpdatePolicy{},
+		&MsgReturnSubsidy{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

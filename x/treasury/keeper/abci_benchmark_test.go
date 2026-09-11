@@ -211,6 +211,7 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 		benchAssetKeeper{denoms: denoms},
 		stubFund{},
 		stubFund{},
+		nil, // no subsidy return in the benchmark
 	)
 	if err := keeper.Params.Set(ctx, treasurytypes.DefaultParams()); err != nil {
 		b.Fatal(err)

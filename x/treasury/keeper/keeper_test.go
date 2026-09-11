@@ -55,6 +55,8 @@ type KeeperTestSuite struct {
 	assetKeeper   *testutil.MockAssetKeeper
 	claimsKeeper  *testutil.MockClaimsKeeper
 	reserveKeeper *testutil.MockReserveKeeper
+	// distributionKeeper is strict: only the subsidy return reaches it.
+	distributionKeeper *testutil.MockDistributionKeeper
 	// insuranceRecognised and reserveRecognised are what the two funds report.
 	// Both default to zero so a test that never funds either keeps its old
 	// shape; a test that does calls the matching setter. These replace the Bank
@@ -131,6 +133,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.assetKeeper = testutil.NewMockAssetKeeper(ctrl)
 	s.claimsKeeper = testutil.NewMockClaimsKeeper(ctrl)
 	s.reserveKeeper = testutil.NewMockReserveKeeper(ctrl)
+	s.distributionKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.insuranceRecognised = math.ZeroInt()
 	s.reserveRecognised = math.ZeroInt()
 	s.claimsKeeper.EXPECT().
@@ -292,6 +295,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.assetKeeper,
 		s.claimsKeeper,
 		s.reserveKeeper,
+		s.distributionKeeper,
 	)
 	// The baseline zeroes the launch default's one-unit reference cap: an
 	// uncapped set rebuilds rate-free, keeping the strict oracle mock quiet

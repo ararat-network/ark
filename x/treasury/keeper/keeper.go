@@ -33,6 +33,9 @@ type Keeper struct {
 	assetKeeper   types.AssetKeeper
 	claimsKeeper  types.ClaimsKeeper
 	reserveKeeper types.ReserveKeeper
+	// distributionKeeper receives returned subsidy; nothing else in Treasury
+	// touches the community pool.
+	distributionKeeper types.DistributionKeeper
 
 	// fundAddresses maps verified custody accounts by raw address bytes. The same FundAccountNames
 	// walk checks registration and installs send guards, preventing an unguarded declared fund.
@@ -74,6 +77,7 @@ func NewKeeper(
 	assetKeeper types.AssetKeeper,
 	claimsKeeper types.ClaimsKeeper,
 	reserveKeeper types.ReserveKeeper,
+	distributionKeeper types.DistributionKeeper,
 ) *Keeper {
 	fundNames := types.FundAccountNames()
 	fundAddresses := make(map[string]struct{}, len(fundNames))
@@ -115,6 +119,7 @@ func NewKeeper(
 		assetKeeper:           assetKeeper,
 		claimsKeeper:          claimsKeeper,
 		reserveKeeper:         reserveKeeper,
+		distributionKeeper:    distributionKeeper,
 		fundAddresses:         fundAddresses,
 		Params: collections.NewItem(
 			sb,

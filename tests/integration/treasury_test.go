@@ -15,6 +15,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -615,4 +616,46 @@ func TestTreasuryLaunchesWithExposureModelInert(t *testing.T) {
 	required, err := arkApp.TreasuryKeeper.RequiredReserveCapital(ctx)
 	require.NoError(t, err)
 	require.True(t, required.IsZero())
+}
+
+// TestTreasuryGovernanceReturnsSubsidy runs a subsidy return through a real
+// proposal: the pool falls, the community pool and its module balance rise by
+// the same amount, and supply is unchanged. A second proposal breaching its
+// own minimum fails at execution and moves nothing.
+func TestTreasuryGovernanceReturnsSubsidy(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
+	voter := treasuryGovernanceVoter(t, arkApp, ctx)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	subsidy := authtypes.NewModuleAddress(treasurytypes.SubsidyPoolName)
+	distribution := authtypes.NewModuleAddress(distrtypes.ModuleName)
+	apptestutil.FundModule(t, arkApp, ctx, treasurytypes.SubsidyPoolName, sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 100)))
+	supplyBefore := arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom)
+	distributionBefore := arkApp.BankKeeper.GetBalance(ctx, distribution, chain.NoahBaseDenom).Amount
+	feePoolBefore, err := arkApp.DistrKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	communityBefore := feePoolBefore.CommunityPool.AmountOf(chain.NoahBaseDenom)
+
+	ctx, proposal := executeTreasuryProposal(t, arkApp, ctx, voter, &treasurytypes.MsgReturnSubsidy{
+		Authority:             authority,
+		Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 40),
+		MinimumSubsidyBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 60),
+	})
+	require.Equal(t, govv1.StatusPassed, proposal.Status)
+	require.Equal(t, "/ark.treasury.v1.MsgReturnSubsidy", proposal.Messages[0].TypeUrl)
+	require.Equal(t, math.NewInt(60), arkApp.BankKeeper.GetBalance(ctx, subsidy, chain.NoahBaseDenom).Amount)
+	require.Equal(t, distributionBefore.AddRaw(40), arkApp.BankKeeper.GetBalance(ctx, distribution, chain.NoahBaseDenom).Amount)
+	feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	require.True(t, communityBefore.Add(math.LegacyNewDec(40)).Equal(feePool.CommunityPool.AmountOf(chain.NoahBaseDenom)))
+	require.Equal(t, supplyBefore, arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom))
+
+	ctx, proposal = executeTreasuryProposal(t, arkApp, ctx, voter, &treasurytypes.MsgReturnSubsidy{
+		Authority:             authority,
+		Amount:                sdk.NewInt64Coin(chain.NoahBaseDenom, 30),
+		MinimumSubsidyBalance: sdk.NewInt64Coin(chain.NoahBaseDenom, 40),
+	})
+	require.Equal(t, govv1.StatusFailed, proposal.Status)
+	require.Equal(t, math.NewInt(60), arkApp.BankKeeper.GetBalance(ctx, subsidy, chain.NoahBaseDenom).Amount)
+	require.Equal(t, supplyBefore, arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom))
 }

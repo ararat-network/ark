@@ -142,6 +142,7 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		benchAssetKeeper{denoms: denoms},
 		stubFund{},
 		stubFund{},
+		nil, // no subsidy return in the benchmark
 	)
 
 	return &liabilityBenchFixture{

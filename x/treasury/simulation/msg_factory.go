@@ -3,8 +3,12 @@ package simulation
 import (
 	"context"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 
+	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/treasury/keeper"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -72,6 +76,33 @@ func MsgUpdatePolicyFactory() simsx.SimMsgFactoryFn[*types.MsgUpdatePolicy] {
 		return nil, &types.MsgUpdatePolicy{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			Policy:    RandomisedEconomicPolicy(testData.Rand().Rand),
+		}
+	}
+}
+
+// MsgReturnSubsidyFactory returns a random share of the subsidy pool to the
+// community pool with a zero minimum, and skips while the pool is empty.
+func MsgReturnSubsidyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgReturnSubsidy] {
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgReturnSubsidy) {
+		balance := k.SubsidyPoolBalance(ctx)
+		if !balance.IsPositive() {
+			reporter.Skip("subsidy pool is empty")
+			return nil, nil
+		}
+		amount, err := testData.Rand().PositiveSDKIntInRange(math.OneInt(), balance)
+		if err != nil {
+			reporter.Skipf("choosing a return amount: %v", err)
+			return nil, nil
+		}
+
+		return nil, &types.MsgReturnSubsidy{
+			Authority:             testData.ModuleAccountAddress(reporter, "gov"),
+			Amount:                chain.NoahCoin(amount),
+			MinimumSubsidyBalance: chain.NoahCoin(math.ZeroInt()),
 		}
 	}
 }

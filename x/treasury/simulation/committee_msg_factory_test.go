@@ -40,6 +40,8 @@ type committeeFixture struct {
 	reporter  *simsx.BasicSimulationReporter
 	accounts  []simtypes.Account
 	rand      *rand.Rand
+	// bankKeeper is strict; a factory that reads a balance states it.
+	bankKeeper *testutil.MockBankKeeper
 }
 
 // newCommitteeFixture builds a real Treasury keeper over mocks at height 10,
@@ -69,6 +71,7 @@ func newCommitteeFixture(t *testing.T, seed int64) committeeFixture {
 
 	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+	bankKeeper := testutil.NewMockBankKeeper(ctrl)
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
@@ -76,11 +79,12 @@ func newCommitteeFixture(t *testing.T, seed int64) committeeFixture {
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		accountKeeper,
 		wasmKeeper,
-		testutil.NewMockBankKeeper(ctrl),
+		bankKeeper,
 		testutil.NewMockOracleKeeper(ctrl),
 		testutil.NewMockAssetKeeper(ctrl),
 		testutil.NewMockClaimsKeeper(ctrl),
 		testutil.NewMockReserveKeeper(ctrl),
+		testutil.NewMockDistributionKeeper(ctrl),
 	)
 	require.NoError(t, k.Params.Set(ctx, types.DefaultParams()))
 	require.NoError(t, k.EconomicPolicy.Set(ctx, types.DefaultEconomicPolicy()))
@@ -98,13 +102,14 @@ func newCommitteeFixture(t *testing.T, seed int64) committeeFixture {
 	)
 
 	return committeeFixture{
-		ctx:       ctx,
-		keeper:    k,
-		msgServer: keeper.NewMsgServerImpl(k),
-		testData:  testData,
-		reporter:  simsx.NewBasicSimulationReporter(),
-		accounts:  accounts,
-		rand:      r,
+		ctx:        ctx,
+		keeper:     k,
+		msgServer:  keeper.NewMsgServerImpl(k),
+		testData:   testData,
+		reporter:   simsx.NewBasicSimulationReporter(),
+		accounts:   accounts,
+		rand:       r,
+		bankKeeper: bankKeeper,
 	}
 }
 

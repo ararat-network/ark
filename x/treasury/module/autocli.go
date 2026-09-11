@@ -134,6 +134,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					GovProposal: true,
 				},
 				{
+					RpcMethod:   "ReturnSubsidy",
+					Use:         "return-subsidy-proposal",
+					Short:       "Submit a governance proposal to return idle subsidy NOAH to the community pool",
+					GovProposal: true,
+				},
+				{
 					RpcMethod: "CommitteeUpdatePolicy",
 					Use:       "committee-update-policy",
 					Short:     "Update reversible Treasury policy as the economic-policy committee",

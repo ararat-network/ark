@@ -49,6 +49,13 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 }
 
+// DistributionKeeper credits the community pool. FundCommunityPool moves the
+// coins and records them in the fee pool in one call, the only way a balance
+// becomes governance-spendable.
+type DistributionKeeper interface {
+	FundCommunityPool(ctx context.Context, amount sdk.Coins, sender sdk.AccAddress) error
+}
+
 // OracleKeeper supplies rates and the protocol reference. Available-rate reads let factor refresh
 // defer unavailable crosses; Asset owns membership and valuation verdicts.
 type OracleKeeper interface {
