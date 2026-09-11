@@ -91,7 +91,7 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 		require.False(t, valuationComplete(status))
 		require.True(t, status.PricedLiability.Amount.IsZero())
 		require.True(t, status.NominalLiability.Amount.IsZero())
-		require.Equal(t, []sdk.Coin{sdk.NewCoin(chain.KRWBaseDenom, acquired.Amount)}, status.UntrustedSuspendedSupply)
+		require.Equal(t, sdk.NewCoins(sdk.NewCoin(chain.KRWBaseDenom, acquired.Amount)), status.UntrustedSuspendedSupply)
 		require.True(t, status.RedemptionBufferTarget.Amount.IsZero())
 	})
 

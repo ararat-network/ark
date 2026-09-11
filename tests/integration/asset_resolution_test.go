@@ -104,7 +104,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.False(t, valuationComplete(status))
 		require.Equal(
 			t,
-			[]sdk.Coin{sdk.NewCoin(chain.USDBaseDenom, acquired.Amount)},
+			sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, acquired.Amount)),
 			status.UntrustedSuspendedSupply,
 		)
 	})
