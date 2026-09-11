@@ -20,9 +20,11 @@ Other initial permissions are launch choices that later governance can change. T
 the hub shut behind one switch, the empty allowed-client list, and the contract runtime open (D45 as amended,
 `docs/design/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or appointments are needed.
 
-Initial economic values, committee appointments, and permissions belong in [genesis](GENESIS.md#12-open-decisions)
-when chosen before launch. The same roles and permissions may be changed later through the procedures below; the
-contract query accept list remains a code change rather than a governance parameter.
+Initial economic values and permissions are fixed in [genesis](GENESIS.md); committee appointments follow its
+[first-cycle sequence](GENESIS.md#13-committee-appointments), and validator seats its
+[admission procedure](GENESIS.md#3-accounts-supply-and-validator-seats). The same roles and permissions may be changed
+later through the procedures below; the contract query accept list remains a code change rather than a governance
+parameter.
 
 ## 2. Opening the hub
 

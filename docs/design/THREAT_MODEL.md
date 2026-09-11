@@ -227,6 +227,11 @@ Wasmd's authority policy over every contract, and can replace or disable any com
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 
+**Launch supply.** Most NOAH starts in the community pool and every validator seat holds the same locked grant, so
+governance is one seat one vote and the only control over the pool is its own tally: half the seats voting, two
+thirds agreeing. Until the pool is distributed this is a proof-of-authority trust model, and admitting a seat is
+itself a governance act ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats)).
+
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
 on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds.
 Committee actions dispatch through the module's own message router, so every target re-validates. A

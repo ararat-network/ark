@@ -1050,7 +1050,7 @@ commitment rationale](../../app/ante/README.md#transfer-tax-commitment-and-rollb
 
 ## P1
 
-**Recorded status:** Pending before launch.
+**Recorded status:** Decided 2026-09-11; every value is recorded with its reasoning in [GENESIS.md](../governance/GENESIS.md).
 
 Choose launch tax rate, reference cap Coin, three target ratios, subsidies, genesis fund balances, and the D72
 exposure weights (zero at launch keeps `m` at one and the targets unscaled).
@@ -1073,9 +1073,10 @@ threshold; retain the submitted expectation in the transaction and emit the old 
 
 ## P4
 
-**Lifecycle:** Open launch appointments are maintained in [GENESIS.md](../governance/GENESIS.md#12-open-decisions); the recorded Treasury parameter name predates [D54](#d54).
+**Lifecycle:** The recorded Treasury parameter name predates [D54](#d54).
 
-**Recorded status:** Pending before launch.
+**Recorded status:** Decided 2026-09-11: no committee is appointed in genesis. Appointments follow the first-cycle
+sequence in [GENESIS.md](../governance/GENESIS.md#13-committee-appointments), and the committee corridors are set there.
 
 Choose the launch economic-policy committee and bounds, Claims committee multisig and appointment window, the
 shared cancellation-period Treasury param, fixed gross committee claim limit, and operational fee funding.

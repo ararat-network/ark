@@ -95,7 +95,7 @@ keeps unconditional settlement with a continuous proportional minting response i
 
 Read terminology, ownership, and custody before the conversion and funding flows. The sections below describe the
 current economic contract. [Economic decisions](ECONOMIC_DECISIONS.md) preserves the D/P records and their amendments;
-[genesis](../governance/GENESIS.md#12-open-decisions) owns pending launch values. Local implementation and rationale live in the
+[genesis](../governance/GENESIS.md) owns the launch values. Local implementation and rationale live in the
 [subsystem READMEs](../../app/README.md#module-entry-points).
 
 ## 3. Terminology
