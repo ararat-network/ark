@@ -44,21 +44,34 @@ clean:
 ###                                Release                                 ###
 ###############################################################################
 
-# Release the chain tag on HEAD after checking the tag and clean tree; goreleaser validates both
-# again and its before hook checks the wasmvm archives. See README.md, "Release builds".
-release:
-	@tag=$$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null); \
-	test -n "$$tag" || { echo "HEAD carries no vX.Y.Z tag" >&2; exit 1; }; \
-	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
-	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean
+SOURCE_KIND ?= arkd
+SOURCE_BUNDLE = build/source/$(SOURCE_KIND)-source-$(COMMIT).tar.gz
 
-# Release the sidecar tag on HEAD after checking the tag and clean tree. Explicit tag selection and
+source-bundle:
+	@python3 contrib/scripts/package-source.py --kind $(SOURCE_KIND) --output $(SOURCE_BUNDLE)
+
+verify-source:
+	@contrib/scripts/verify-source.sh $(SOURCE_BUNDLE) $(SOURCE_KIND)
+
+# Package the chain tag on HEAD without publishing. CI supplies the selected tag;
+# local callers default to an exact chain tag. See README.md, "Release builds".
+release:
+	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null)}; \
+	test -n "$$tag" || { echo "HEAD carries no vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = arkd || exit 1; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
+	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
+	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish --parallelism=1 --timeout=5h
+
+# Package the sidecar tag on HEAD without publishing. Explicit tag selection and
 # validation skip support the pricefeed/vX.Y.Z prefix; see README.md, "Release builds".
 release-pricefeed:
-	@tag=$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null); \
+	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = pricefeed || exit 1; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
 	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
-	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=validate -f .goreleaser.pricefeed.yml
+	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish,validate --parallelism=1 --timeout=5h -f .goreleaser.pricefeed.yml
 
 ###############################################################################
 ###                                 Tests                                   ###
@@ -250,7 +263,7 @@ localnet-statesync:
 upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
-.PHONY: build build-pricefeed install clean release release-pricefeed test test-race test-cover test-e2e test-e2e-vet \
+.PHONY: build build-pricefeed install clean release release-pricefeed source-bundle verify-source test test-race test-cover test-e2e test-e2e-vet \
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \

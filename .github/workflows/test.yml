@@ -56,3 +56,18 @@ jobs:
 
       - name: Compile the sims-tagged tests
         run: go vet -tags sims ./app/
+
+  release-tooling:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - name: Test source packaging and release boundaries
+        run: |
+          python3 -B contrib/scripts/package_source_test.py
+          python3 -B contrib/scripts/package_os_source_test.py
+          python3 -B contrib/scripts/release_build_test.py
+          python3 -B contrib/scripts/release_assets_test.py

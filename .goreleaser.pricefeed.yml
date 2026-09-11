@@ -2,7 +2,7 @@ version: 2
 
 project_name: pricefeed
 
-# Release the pure-Go sidecar from pricefeed/vX.Y.Z through make release-pricefeed. Templates use
+# Package the pure-Go sidecar from pricefeed/vX.Y.Z through make release-pricefeed. Templates use
 # .Tag because prefixed tags require explicit selection and validated skip handling. See README.md,
 # "Release builds".
 
@@ -11,10 +11,20 @@ release:
   prerelease: auto
   # Chain releases stay the repository's latest.
   make_latest: false
+  header: |
+    Ark-authored source is Apache-2.0; third-party components retain their licences.
+    Corresponding source and notices are attached as pricefeed-source-{{ .FullCommit }}*.tar.gz.
+  extra_files: &source_files
+    - glob: build/source/pricefeed-source-{{ .FullCommit }}.tar.gz
+    - glob: build/source/pricefeed-source-{{ .FullCommit }}.tar.gz.sha256
+    - glob: build/source/pricefeed-source-{{ .FullCommit }}-notices.tar.gz
 
 before:
   hooks:
     - go mod verify
+    - python3 -B contrib/scripts/package_source_test.py
+    - python3 contrib/scripts/package-source.py --kind pricefeed --output build/source/pricefeed-source-{{ .FullCommit }}.tar.gz
+    - contrib/scripts/verify-source.sh build/source/pricefeed-source-{{ .FullCommit }}.tar.gz pricefeed
 
 builds:
   - id: pricefeed
@@ -48,10 +58,22 @@ archives:
     name_template: 'pricefeed-{{ trimprefix .Tag "pricefeed/v" }}-{{ .Os }}-{{ .Arch }}'
     files:
       - README.md
+      - LICENSE
+      - COPYING
+      - NOTICE
+      - THIRD_PARTY_NOTICES.md
+      - build/source/pricefeed-source-{{ .FullCommit }}-notices.tar.gz
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.spdx.json"
+    args: ["$artifact", "--output", "spdx-json=$document"]
 
 checksum:
   name_template: 'SHA256SUMS-pricefeed-{{ trimprefix .Tag "pricefeed/v" }}.txt'
   algorithm: sha256
+  extra_files: *source_files
 
 snapshot:
   version_template: '{{ trimprefix .Tag "pricefeed/v" }}-snapshot-{{ .ShortCommit }}'

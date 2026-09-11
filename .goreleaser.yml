@@ -2,21 +2,38 @@ version: 2
 
 project_name: arkd
 
-# Release arkd from vX.Y.Z through make release, inside a musl container that provides the cross
-# toolchains and both wasmvm static archives; the before hook holds the archives to the version and
-# digests recorded in contrib/images/arkd-env/Dockerfile. See README.md, "Release builds".
+# Package arkd from vX.Y.Z through make release. The build tool uses each architecture's
+# compiler in the pinned container base and verifies matching runtime sources before returning
+# the binary to GoReleaser. See README.md, "Release builds".
 
 release:
   name_template: "{{ .Tag }}"
   prerelease: auto
+  header: |
+    The combined arkd executable is distributed under GPLv3; Ark-authored source is Apache-2.0.
+    Corresponding source and third-party notices are attached as arkd-source-{{ .FullCommit }}*.tar.gz.
+    Linked system-runtime sources and notices are attached as arkd-runtime-source-{{ .FullCommit }}-linux-ARCH*.
+    Download the source bundle rather than GitHub's source-only archive.
+  extra_files: &source_files
+    - glob: build/source/arkd-source-{{ .FullCommit }}.tar.gz
+    - glob: build/source/arkd-source-{{ .FullCommit }}.tar.gz.sha256
+    - glob: build/source/arkd-source-{{ .FullCommit }}-notices.tar.gz
+    - glob: build/source/arkd-runtime-source-{{ .FullCommit }}-linux-*.tar.gz
+    - glob: build/source/arkd-runtime-source-{{ .FullCommit }}-linux-*.tar.gz.sha256
+    - glob: build/source/arkd-runtime-source-{{ .FullCommit }}-linux-*.json
 
 before:
   hooks:
     - go mod verify
-    - contrib/scripts/check-wasmvm-libs.sh
+    - python3 -B contrib/scripts/package_source_test.py
+    - python3 -B contrib/scripts/package_os_source_test.py
+    - python3 -B contrib/scripts/release_build_test.py
+    - python3 contrib/scripts/package-source.py --kind arkd --output build/source/arkd-source-{{ .FullCommit }}.tar.gz
+    - contrib/scripts/verify-source.sh build/source/arkd-source-{{ .FullCommit }}.tar.gz arkd
 
 builds:
   - id: arkd
+    tool: ./contrib/scripts/release-build.py
     main: ./cmd/arkd
     binary: arkd
     goos:
@@ -26,7 +43,7 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=1
-      - 'CC={{ if eq .Arch "arm64" }}aarch64-linux-musl-gcc{{ else }}x86_64-linux-musl-gcc{{ end }}'
+      - 'ARK_RELEASE_SOURCE=build/source/arkd-source-{{ .FullCommit }}.tar.gz'
     mod_timestamp: "{{ .CommitTimestamp }}"
     flags:
       - -trimpath
@@ -43,7 +60,7 @@ builds:
       - -w
       - -s
       - -linkmode=external
-      - '-extldflags "-Wl,-z,muslsymversions -static"'
+      - '-extldflags "-Wl,-z,muslsymversions -Wl,-Map,/work/build/release.link-map -static"'
 
 archives:
   - id: arkd
@@ -52,10 +69,25 @@ archives:
     name_template: "arkd-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
     files:
       - README.md
+      - LICENSE
+      - COPYING
+      - NOTICE
+      - THIRD_PARTY_NOTICES.md
+      - build/source/arkd-source-{{ .FullCommit }}-notices.tar.gz
+      - build/source/arkd-runtime-source-{{ .FullCommit }}-linux-{{ .Arch }}-manifest.json
+      - build/source/arkd-runtime-source-{{ .FullCommit }}-linux-{{ .Arch }}-build.json
+      - build/source/arkd-runtime-source-{{ .FullCommit }}-linux-{{ .Arch }}-notices.tar.gz
+
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ArtifactName }}.spdx.json"
+    args: ["$artifact", "--output", "spdx-json=$document"]
 
 checksum:
   name_template: "SHA256SUMS-{{ .Version }}.txt"
   algorithm: sha256
+  extra_files: *source_files
 
 snapshot:
   version_template: "{{ .Version }}-snapshot-{{ .ShortCommit }}"

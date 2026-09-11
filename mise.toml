@@ -6,6 +6,8 @@ golangci-lint = "2.13.2"
 # goreleaser reads one tag per run and its tag handling has shifted between
 # minors, so `make release-pricefeed` is pinned to what it was written against.
 goreleaser = "2.18.0"
+# Generates per-archive SPDX inventories for standalone release packaging.
+syft = "1.51.1"
 # Install govulncheck from source with the pinned Go toolchain so it can parse this module's
 # sources. The aqua entry delegates installation to the Go backend.
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.7.0"
