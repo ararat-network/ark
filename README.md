@@ -123,6 +123,8 @@ For questions, feedback, or collaboration:
 - Twitter / X: `@Chitpole0`
 - Email: `chitpole@proton.me`
 
+For security vulnerabilities, follow the [security policy](SECURITY.md) to report privately.
+
 ## Contributing
 
 [AGENTS.md](AGENTS.md) holds the repository guidelines: Cosmos SDK conventions, arithmetic rules, proto generation,
