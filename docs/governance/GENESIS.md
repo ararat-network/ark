@@ -35,6 +35,7 @@ of every `arkd init` default.
 - [12. Assembly sequence](#12-assembly-sequence)
 - [13. Committee appointments](#13-committee-appointments)
 - [14. Review before launch](#14-review-before-launch)
+- [15. Testnet artefact](#15-testnet-artefact)
 
 ## 1. Rules the artefact follows
 
@@ -352,3 +353,26 @@ Confirm by hand at assembly:
 - Every gentx self-delegates the whole grant at a commission of at least 5%.
 - The NOAH factor still reflects the opening price.
 - The chain ID and the genesis time are final and the published hash matches.
+
+## 15. Testnet artefact
+
+`app/genesis/testnet.json`, chain ID `ark-testnet-1`, is the launch artefact with time compressed and nothing else
+changed: the same supply, seats, economics, slashing, oracle thresholds, shut hub, and open contract runtime.
+`TestTestnetGenesisDerivesFromLaunch` applies the list below to the launch file and requires equality module by
+module, so the two cannot drift, and the validity and both boot tests run over both files. Seats are granted with the
+same command (§12); faucet and test accounts are added with `arkd genesis add-genesis-account`, and a testnet supply
+above a billion is acceptable.
+
+| Setting | Launch | Testnet | Why |
+| --- | --- | --- | --- |
+| `chain_id` | `ark-1` | `ark-testnet-1` | |
+| `gov.params` voting, expedited, deposit period | 2 d, 1 d, 2 d | 1 h, 30 min, 1 h | A proposal a day, with time to gather a small set's votes. The deposits stay at 1,000 and 5,000 NOAH. |
+| `asset.params.settlement_activation_delay_blocks` | `43200` | `1200`, 2 h | Outlasts the vote, the launch rule. |
+| `claims.params.claim_cancellation_period_blocks` | `100800` | `2400`, 4 h | A veto window that fits a vote plus its deposit period. |
+| `staking.params.unbonding_time` | 21 d | 1 d | An unbonding completes inside a test day. |
+| `consensus.evidence` age | `302400`, 21 d | `14400`, 1 d | Equals unbonding, the launch rule. |
+| `treasury.params.reward_funding_window` | `100800` | `14400` | Daily settlement, so subsidy and tax flows are observable. |
+| `oracle` `reward_window`, `attendance_window`, and their `accounting` copies | `100800` | `14400` | Daily. |
+| `oracle` `reward_distribution_window`, and its `accounting` copy | `1310400` | `100800` | Keeps the payout smoothing at a seventh a window. |
+
+The production slashing set and the one-minute rate age are kept so their real behaviour is exercised.

@@ -103,7 +103,9 @@ make localnet-stop
 [localnet guide](contrib/localnet/README.md) for topology, data paths, ports, state sync, and rehearsals. For a single
 validator on the host without Docker, or a testnet assembled by several developers, follow the
 [disposable host testnet](docs/operations/NODE_OPERATIONS.md#disposable-host-testnet) and
-[manual assembly](docs/operations/NODE_OPERATIONS.md#manually-assembling-a-testnet) sections of node operations.
+[manual assembly](docs/operations/NODE_OPERATIONS.md#manually-assembling-a-testnet) sections of node operations. A
+shared testnet starts from the curated artefact [app/genesis/testnet.json](app/genesis/testnet.json), the launch genesis
+with its windows compressed ([genesis §15](docs/governance/GENESIS.md#15-testnet-artefact)).
 
 ## Genesis and relaunch
 

@@ -42,10 +42,13 @@ When validators create their own keys, each participant initialises a fresh home
 `arkd init <moniker> --chain-id <chain-id> --home <home>`, then creates its own key with `arkd keys add <name> --home <home>`.
 Keep each participant's mnemonic and private validator key local to that participant.
 
-Add the agreed account balances with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`, then create
-each validator's gentx with `arkd genesis gentx <name> <bond-amount>anoah --chain-id <chain-id> --home <home>`.
-Amounts are base units and must cover the bond and intended transactions; use the chain's denomination, `anoah`.
-The coordinator assembles the complete account allocations and all gentxs under `config/gentx`, runs
+The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
+copied over `config/genesis.json`, and grants each validator's seat with
+`arkd genesis add-validator-seat <address> --home <home>` ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
+are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
+`arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
+the whole locked grant at the commission floor. The coordinator collects all gentxs under `config/gentx`, runs
 `arkd genesis collect-gentxs --home <home>`, validates the resulting genesis, and distributes the same final file to everyone.
 
 In each `config/config.toml`, set `[p2p] persistent_peers` to the intended `<node-id>@<host>:<p2p-port>` peers. Obtain the
