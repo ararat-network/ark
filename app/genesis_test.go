@@ -169,15 +169,19 @@ func TestInitGenesisFollowsRegistryDependencies(t *testing.T) {
 	requireOrderBefore(t, order, assettypes.ModuleName, reservetypes.ModuleName)
 }
 
-// launchGenesisPath identifies the reviewed network genesis. Tests validate it through the CLI's
-// manager and boot it with a funded validator.
-const launchGenesisPath = "genesis/genesis.json"
+// launchGenesisPath identifies the reviewed network genesis and
+// testnetGenesisPath its time-compressed derivation. Tests validate both
+// through the CLI's manager and boot both with a funded validator.
+const (
+	launchGenesisPath  = "genesis/genesis.json"
+	testnetGenesisPath = "genesis/testnet.json"
+)
 
-// launchGenesis loads the artefact and its app state.
-func launchGenesis(t *testing.T) (*genutiltypes.AppGenesis, map[string]json.RawMessage) {
+// loadGenesis loads an artefact and its app state.
+func loadGenesis(t *testing.T, path string) (*genutiltypes.AppGenesis, map[string]json.RawMessage) {
 	t.Helper()
 
-	appGenesis, err := genutiltypes.AppGenesisFromFile(launchGenesisPath)
+	appGenesis, err := genutiltypes.AppGenesisFromFile(path)
 	require.NoError(t, err)
 
 	var state map[string]json.RawMessage
@@ -186,21 +190,39 @@ func launchGenesis(t *testing.T) (*genutiltypes.AppGenesis, map[string]json.RawM
 	return appGenesis, state
 }
 
-// TestLaunchGenesisIsValid runs the artefact through the validation
+// launchGenesis loads the launch artefact.
+func launchGenesis(t *testing.T) (*genutiltypes.AppGenesis, map[string]json.RawMessage) {
+	t.Helper()
+	return loadGenesis(t, launchGenesisPath)
+}
+
+// artefacts lists the curated files the validity and boot tests run over.
+func artefacts() []struct{ name, path string } {
+	return []struct{ name, path string }{
+		{"launch", launchGenesisPath},
+		{"testnet", testnetGenesisPath},
+	}
+}
+
+// TestLaunchGenesisIsValid runs each artefact through the validation
 // `arkd genesis validate` would apply: the CLI basic manager over every
 // module's slice, plus the genesis doc's own checks.
 func TestLaunchGenesisIsValid(t *testing.T) {
-	appGenesis, state := launchGenesis(t)
-	require.NoError(t, appGenesis.ValidateAndComplete())
+	for _, artefact := range artefacts() {
+		t.Run(artefact.name, func(t *testing.T) {
+			appGenesis, state := loadGenesis(t, artefact.path)
+			require.NoError(t, appGenesis.ValidateAndComplete())
 
-	basics, cdc := cliBasicManager(t)
-	var txConfig client.TxConfig
-	require.NoError(t, depinject.Inject(
-		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{})),
-		&txConfig,
-	))
+			basics, cdc := cliBasicManager(t)
+			var txConfig client.TxConfig
+			require.NoError(t, depinject.Inject(
+				depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{})),
+				&txConfig,
+			))
 
-	require.NoError(t, basics.ValidateGenesis(cdc, txConfig, state))
+			require.NoError(t, basics.ValidateGenesis(cdc, txConfig, state))
+		})
+	}
 }
 
 // TestLaunchGenesisCarriesArkEconomics checks the launch artefact: zero Distribution community tax
@@ -232,84 +254,88 @@ func TestLaunchGenesisCarriesArkEconomics(t *testing.T) {
 // first block must execute, and the artefact's economics must be the state the
 // chain is left holding.
 func TestLaunchGenesisBoots(t *testing.T) {
-	appGenesis, state := launchGenesis(t)
-	want := chain.NoahMetadata()
+	for _, artefact := range artefacts() {
+		t.Run(artefact.name, func(t *testing.T) {
+			appGenesis, state := loadGenesis(t, artefact.path)
+			want := chain.NoahMetadata()
 
-	privVal := mock.NewPV()
-	pubKey, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(pubKey, 1)})
+			privVal := mock.NewPV()
+			pubKey, err := privVal.GetPubKey()
+			require.NoError(t, err)
+			valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(pubKey, 1)})
 
-	senderPrivKey := secp256k1.GenPrivKey()
-	acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
-	balance := banktypes.Balance{
-		Address: acc.GetAddress().String(),
-		Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, chain.NativeBaseAmount(100_000_000))),
+			senderPrivKey := secp256k1.GenPrivKey()
+			acc := authtypes.NewBaseAccount(senderPrivKey.PubKey().Address().Bytes(), senderPrivKey.PubKey(), 0, 0)
+			balance := banktypes.Balance{
+				Address: acc.GetAddress().String(),
+				Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, chain.NativeBaseAmount(100_000_000))),
+			}
+
+			arkApp := app.NewArkApp(
+				log.NewTestLogger(t),
+				dbm.NewMemDB(),
+				true,
+				simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+			)
+			artefactBank := banktypes.GetGenesisStateFromAppState(arkApp.AppCodec(), state)
+			state, err = simtestutil.GenesisStateWithValSet(arkApp.AppCodec(), state, valSet, []authtypes.GenesisAccount{acc}, balance)
+			require.NoError(t, err)
+			// GenesisStateWithValSet rebuilds bank genesis around the test balances,
+			// dropping the artefact's metadata and supply ledger; restore both, or
+			// Distribution finds no balance behind its community pool and panics.
+			var bankGenesis banktypes.GenesisState
+			arkApp.AppCodec().MustUnmarshalJSON(state[banktypes.ModuleName], &bankGenesis)
+			bankGenesis.DenomMetadata = artefactBank.DenomMetadata
+			bankGenesis.Balances = append(bankGenesis.Balances, artefactBank.Balances...)
+			bankGenesis.Supply = bankGenesis.Supply.Add(artefactBank.Supply...)
+			state[banktypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&bankGenesis)
+			stateBytes, err := json.Marshal(state)
+			require.NoError(t, err)
+
+			consensusParams := appGenesis.Consensus.Params.ToProto()
+			_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+				Validators:      []cmtabci.ValidatorUpdate{},
+				ConsensusParams: &consensusParams,
+				AppStateBytes:   stateBytes,
+			})
+			require.NoError(t, err)
+
+			_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+				Height:             arkApp.LastBlockHeight() + 1,
+				Hash:               arkApp.LastCommitID().Hash,
+				NextValidatorsHash: valSet.Hash(),
+			})
+			require.NoError(t, err)
+			_, err = arkApp.Commit()
+			require.NoError(t, err)
+
+			ctx := arkApp.NewContext(true)
+			distrParams, err := arkApp.DistrKeeper.Params.Get(ctx)
+			require.NoError(t, err)
+			require.True(t, distrParams.CommunityTax.IsZero())
+			metadata, found := arkApp.BankKeeper.GetDenomMetaData(ctx, chain.NoahBaseDenom)
+			require.True(t, found)
+			require.JSONEq(t,
+				string(arkApp.AppCodec().MustMarshalJSON(&want)),
+				string(arkApp.AppCodec().MustMarshalJSON(&metadata)),
+			)
+
+			// The IBC and Wasm modules are registered by hand, outside depinject, so
+			// a module whose InitGenesis the wiring skipped would boot on its code
+			// defaults — which open every IBC surface the artefact shuts.
+			require.Empty(t, arkApp.IBCKeeper.ClientKeeper.GetParams(ctx).AllowedClients)
+			transferParams := arkApp.TransferKeeper.GetParams(ctx)
+			require.False(t, transferParams.SendEnabled)
+			require.False(t, transferParams.ReceiveEnabled)
+			require.False(t, arkApp.ICAControllerKeeper.GetParams(ctx).ControllerEnabled)
+			hostParams := arkApp.ICAHostKeeper.GetParams(ctx)
+			require.False(t, hostParams.HostEnabled)
+			require.Empty(t, hostParams.AllowMessages)
+			wasmParams := arkApp.WasmKeeper.GetParams(ctx)
+			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.CodeUploadAccess.Permission)
+			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
+		})
 	}
-
-	arkApp := app.NewArkApp(
-		log.NewTestLogger(t),
-		dbm.NewMemDB(),
-		true,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-	)
-	artefactBank := banktypes.GetGenesisStateFromAppState(arkApp.AppCodec(), state)
-	state, err = simtestutil.GenesisStateWithValSet(arkApp.AppCodec(), state, valSet, []authtypes.GenesisAccount{acc}, balance)
-	require.NoError(t, err)
-	// GenesisStateWithValSet rebuilds bank genesis around the test balances,
-	// dropping the artefact's metadata and supply ledger; restore both, or
-	// Distribution finds no balance behind its community pool and panics.
-	var bankGenesis banktypes.GenesisState
-	arkApp.AppCodec().MustUnmarshalJSON(state[banktypes.ModuleName], &bankGenesis)
-	bankGenesis.DenomMetadata = artefactBank.DenomMetadata
-	bankGenesis.Balances = append(bankGenesis.Balances, artefactBank.Balances...)
-	bankGenesis.Supply = bankGenesis.Supply.Add(artefactBank.Supply...)
-	state[banktypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&bankGenesis)
-	stateBytes, err := json.Marshal(state)
-	require.NoError(t, err)
-
-	consensusParams := appGenesis.Consensus.Params.ToProto()
-	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
-		Validators:      []cmtabci.ValidatorUpdate{},
-		ConsensusParams: &consensusParams,
-		AppStateBytes:   stateBytes,
-	})
-	require.NoError(t, err)
-
-	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
-		Height:             arkApp.LastBlockHeight() + 1,
-		Hash:               arkApp.LastCommitID().Hash,
-		NextValidatorsHash: valSet.Hash(),
-	})
-	require.NoError(t, err)
-	_, err = arkApp.Commit()
-	require.NoError(t, err)
-
-	ctx := arkApp.NewContext(true)
-	distrParams, err := arkApp.DistrKeeper.Params.Get(ctx)
-	require.NoError(t, err)
-	require.True(t, distrParams.CommunityTax.IsZero())
-	metadata, found := arkApp.BankKeeper.GetDenomMetaData(ctx, chain.NoahBaseDenom)
-	require.True(t, found)
-	require.JSONEq(t,
-		string(arkApp.AppCodec().MustMarshalJSON(&want)),
-		string(arkApp.AppCodec().MustMarshalJSON(&metadata)),
-	)
-
-	// The IBC and Wasm modules are registered by hand, outside depinject, so
-	// a module whose InitGenesis the wiring skipped would boot on its code
-	// defaults — which open every IBC surface the artefact shuts.
-	require.Empty(t, arkApp.IBCKeeper.ClientKeeper.GetParams(ctx).AllowedClients)
-	transferParams := arkApp.TransferKeeper.GetParams(ctx)
-	require.False(t, transferParams.SendEnabled)
-	require.False(t, transferParams.ReceiveEnabled)
-	require.False(t, arkApp.ICAControllerKeeper.GetParams(ctx).ControllerEnabled)
-	hostParams := arkApp.ICAHostKeeper.GetParams(ctx)
-	require.False(t, hostParams.HostEnabled)
-	require.Empty(t, hostParams.AllowMessages)
-	wasmParams := arkApp.WasmKeeper.GetParams(ctx)
-	require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.CodeUploadAccess.Permission)
-	require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
 }
 
 // The launch genesis disables all IBC client types and separately disables transfer and ICA.
@@ -545,98 +571,168 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 // grant. Locked coins cannot pay fees; the gentx pays none at height zero and
 // the float pays afterwards.
 func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
-	appGenesis, state := launchGenesis(t)
+	for _, artefact := range artefacts() {
+		t.Run(artefact.name, func(t *testing.T) {
+			appGenesis, state := loadGenesis(t, artefact.path)
+			arkApp := app.NewArkApp(
+				log.NewTestLogger(t),
+				dbm.NewMemDB(),
+				true,
+				simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+				baseapp.SetChainID(appGenesis.ChainID),
+			)
+			cdc := arkApp.AppCodec()
+			txConfig := arkApp.TxConfig()
 
-	arkApp := app.NewArkApp(
-		log.NewTestLogger(t),
-		dbm.NewMemDB(),
-		true,
-		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
-		baseapp.SetChainID(appGenesis.ChainID),
-	)
-	cdc := arkApp.AppCodec()
-	txConfig := arkApp.TxConfig()
+			// The operator key lives in a keyring so the gentx signs as arkd does.
+			kr := keyring.NewInMemory(cdc)
+			record, _, err := kr.NewMnemonic("seat", keyring.English, sdk.FullFundraiserPath, keyring.DefaultBIP39Passphrase, hd.Secp256k1)
+			require.NoError(t, err)
+			operator, err := record.GetAddress()
+			require.NoError(t, err)
 
-	// The operator key lives in a keyring so the gentx signs as arkd does.
-	kr := keyring.NewInMemory(cdc)
-	record, _, err := kr.NewMnemonic("seat", keyring.English, sdk.FullFundraiserPath, keyring.DefaultBIP39Passphrase, hd.Secp256k1)
-	require.NoError(t, err)
-	operator, err := record.GetAddress()
-	require.NoError(t, err)
+			locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
+			float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
+			require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator))
 
-	locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
-	float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
-	require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator))
+			privVal := mock.NewPV()
+			consPub, err := privVal.GetPubKey()
+			require.NoError(t, err)
+			consPubKey, err := cryptocodec.FromCmtPubKeyInterface(consPub)
+			require.NoError(t, err)
+			createValidator, err := stakingtypes.NewMsgCreateValidator(
+				sdk.ValAddress(operator).String(),
+				consPubKey,
+				sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)),
+				stakingtypes.NewDescription("seat", "", "", "", ""),
+				stakingtypes.NewCommissionRates(
+					math.LegacyMustNewDecFromStr("0.05"),
+					math.LegacyMustNewDecFromStr("0.2"),
+					math.LegacyMustNewDecFromStr("0.01"),
+				),
+				math.OneInt(),
+			)
+			require.NoError(t, err)
+			txBuilder := txConfig.NewTxBuilder()
+			require.NoError(t, txBuilder.SetMsgs(createValidator))
+			factory := clienttx.Factory{}.WithChainID(appGenesis.ChainID).WithKeybase(kr).WithTxConfig(txConfig)
+			require.NoError(t, clienttx.Sign(context.Background(), factory, "seat", txBuilder, true))
+			gentx, err := txConfig.TxJSONEncoder()(txBuilder.GetTx())
+			require.NoError(t, err)
+			state[genutiltypes.ModuleName] = cdc.MustMarshalJSON(&genutiltypes.GenesisState{GenTxs: []json.RawMessage{gentx}})
 
-	privVal := mock.NewPV()
-	consPub, err := privVal.GetPubKey()
-	require.NoError(t, err)
-	consPubKey, err := cryptocodec.FromCmtPubKeyInterface(consPub)
-	require.NoError(t, err)
-	createValidator, err := stakingtypes.NewMsgCreateValidator(
-		sdk.ValAddress(operator).String(),
-		consPubKey,
-		sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)),
-		stakingtypes.NewDescription("seat", "", "", "", ""),
-		stakingtypes.NewCommissionRates(
-			math.LegacyMustNewDecFromStr("0.05"),
-			math.LegacyMustNewDecFromStr("0.2"),
-			math.LegacyMustNewDecFromStr("0.01"),
-		),
-		math.OneInt(),
-	)
-	require.NoError(t, err)
-	txBuilder := txConfig.NewTxBuilder()
-	require.NoError(t, txBuilder.SetMsgs(createValidator))
-	factory := clienttx.Factory{}.WithChainID(appGenesis.ChainID).WithKeybase(kr).WithTxConfig(txConfig)
-	require.NoError(t, clienttx.Sign(context.Background(), factory, "seat", txBuilder, true))
-	gentx, err := txConfig.TxJSONEncoder()(txBuilder.GetTx())
-	require.NoError(t, err)
-	state[genutiltypes.ModuleName] = cdc.MustMarshalJSON(&genutiltypes.GenesisState{GenTxs: []json.RawMessage{gentx}})
+			stateBytes, err := json.Marshal(state)
+			require.NoError(t, err)
+			consensusParams := appGenesis.Consensus.Params.ToProto()
+			_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+				ChainId:         appGenesis.ChainID,
+				Validators:      []cmtabci.ValidatorUpdate{},
+				ConsensusParams: &consensusParams,
+				AppStateBytes:   stateBytes,
+			})
+			require.NoError(t, err)
 
-	stateBytes, err := json.Marshal(state)
-	require.NoError(t, err)
-	consensusParams := appGenesis.Consensus.Params.ToProto()
-	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
-		ChainId:         appGenesis.ChainID,
-		Validators:      []cmtabci.ValidatorUpdate{},
-		ConsensusParams: &consensusParams,
-		AppStateBytes:   stateBytes,
-	})
-	require.NoError(t, err)
+			valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, chain.SeatGrantNoah)})
+			_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+				Height:             arkApp.LastBlockHeight() + 1,
+				Hash:               arkApp.LastCommitID().Hash,
+				NextValidatorsHash: valSet.Hash(),
+			})
+			require.NoError(t, err)
+			_, err = arkApp.Commit()
+			require.NoError(t, err)
 
-	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, chain.SeatGrantNoah)})
-	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
-		Height:             arkApp.LastBlockHeight() + 1,
-		Hash:               arkApp.LastCommitID().Hash,
-		NextValidatorsHash: valSet.Hash(),
-	})
-	require.NoError(t, err)
-	_, err = arkApp.Commit()
-	require.NoError(t, err)
+			ctx := arkApp.NewContext(true)
+			validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
+			require.NoError(t, err)
+			require.True(t, validator.IsBonded())
+			require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
 
-	ctx := arkApp.NewContext(true)
-	validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
-	require.NoError(t, err)
-	require.True(t, validator.IsBonded())
-	require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
+			account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.PermanentLockedAccount)
+			require.True(t, ok, "the seat stays a permanently locked account")
+			require.Equal(t, locked, account.OriginalVesting)
+			require.Equal(t, locked, account.DelegatedVesting, "the whole grant is staked")
+			require.Equal(t, float, arkApp.BankKeeper.SpendableCoins(ctx, operator), "only the float is spendable")
 
-	account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.PermanentLockedAccount)
-	require.True(t, ok, "the seat stays a permanently locked account")
-	require.Equal(t, locked, account.OriginalVesting)
-	require.Equal(t, locked, account.DelegatedVesting, "the whole grant is staked")
-	require.Equal(t, float, arkApp.BankKeeper.SpendableCoins(ctx, operator), "only the float is spendable")
+			feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
+			require.NoError(t, err)
+			require.Equal(t,
+				math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(chain.SeatGrantNoah+chain.SeatFloatNoah))),
+				feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
+			)
+			require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)
 
-	feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
-	require.NoError(t, err)
-	require.Equal(t,
-		math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(chain.SeatGrantNoah+chain.SeatFloatNoah))),
-		feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
-	)
-	require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)
+			policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
+			require.NoError(t, err)
+			require.Equal(t, chain.SeatValidatorShare, policy.ValidatorBlockRewardTarget, "one seat, one share")
+			require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
+		})
+	}
+}
 
-	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
-	require.NoError(t, err)
-	require.Equal(t, chain.SeatValidatorShare, policy.ValidatorBlockRewardTarget, "one seat, one share")
-	require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
+// testnetOverrides is the whole difference between the testnet artefact and
+// the launch artefact: time compressed so a governance cycle, an unbonding, a
+// settlement, and an oracle payout each complete inside a test day, and
+// nothing else. Mirrored in docs/governance/GENESIS.md §15.
+func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state map[string]json.RawMessage) {
+	launch.ChainID = "ark-testnet-1"
+	launch.Consensus.Params.Evidence.MaxAgeNumBlocks = int64(chain.BlocksPerDay)
+	launch.Consensus.Params.Evidence.MaxAgeDuration = 24 * time.Hour
+
+	var govGenesis govv1.GenesisState
+	cdc.MustUnmarshalJSON(state[govtypes.ModuleName], &govGenesis)
+	voting, expedited, deposit := time.Hour, 30*time.Minute, time.Hour
+	govGenesis.Params.VotingPeriod = &voting
+	govGenesis.Params.ExpeditedVotingPeriod = &expedited
+	govGenesis.Params.MaxDepositPeriod = &deposit
+	state[govtypes.ModuleName] = cdc.MustMarshalJSON(&govGenesis)
+
+	var assetGenesis assettypes.GenesisState
+	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
+	assetGenesis.Params.SettlementActivationDelayBlocks = 2 * chain.BlocksPerHour
+	state[assettypes.ModuleName] = cdc.MustMarshalJSON(&assetGenesis)
+
+	var claimsGenesis claimstypes.GenesisState
+	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
+	claimsGenesis.Params.ClaimCancellationPeriodBlocks = 4 * chain.BlocksPerHour
+	state[claimstypes.ModuleName] = cdc.MustMarshalJSON(&claimsGenesis)
+
+	var stakingGenesis stakingtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[stakingtypes.ModuleName], &stakingGenesis)
+	stakingGenesis.Params.UnbondingTime = 24 * time.Hour
+	state[stakingtypes.ModuleName] = cdc.MustMarshalJSON(&stakingGenesis)
+
+	var treasuryGenesis treasurytypes.GenesisState
+	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
+	treasuryGenesis.Params.RewardFundingWindow = chain.BlocksPerDay
+	state[treasurytypes.ModuleName] = cdc.MustMarshalJSON(&treasuryGenesis)
+
+	var oracleGenesis oracletypes.GenesisState
+	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
+	oracleGenesis.Params.RewardWindow = chain.BlocksPerDay
+	oracleGenesis.Params.AttendanceWindow = chain.BlocksPerDay
+	oracleGenesis.Params.RewardDistributionWindow = chain.BlocksPerWeek
+	oracleGenesis.Accounting.RewardWindow = chain.BlocksPerDay
+	oracleGenesis.Accounting.AttendanceWindow = chain.BlocksPerDay
+	oracleGenesis.Accounting.RewardDistributionWindow = chain.BlocksPerWeek
+	state[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracleGenesis)
+}
+
+// TestTestnetGenesisDerivesFromLaunch pins the testnet artefact to the launch
+// artefact plus testnetOverrides, module by module, so the two cannot drift.
+func TestTestnetGenesisDerivesFromLaunch(t *testing.T) {
+	launch, launchState := launchGenesis(t)
+	testnet, testnetState := loadGenesis(t, testnetGenesisPath)
+	_, cdc := cliBasicManager(t)
+
+	testnetOverrides(cdc, launch, launchState)
+
+	require.Equal(t, launch.ChainID, testnet.ChainID)
+	require.Equal(t, launch.GenesisTime, testnet.GenesisTime)
+	require.Equal(t, launch.InitialHeight, testnet.InitialHeight)
+	require.Equal(t, launch.Consensus.Params, testnet.Consensus.Params)
+	require.Equal(t, slices.Sorted(maps.Keys(launchState)), slices.Sorted(maps.Keys(testnetState)))
+	for module, want := range launchState {
+		require.JSONEq(t, string(want), string(testnetState[module]), module)
+	}
 }
