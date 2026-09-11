@@ -160,8 +160,8 @@ Economic policy (the committee's levers once appointed, §13):
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `validator_block_reward_target` | 0.0175 NOAH a block per seat; `262500000000000000` for fifteen seats | Assembly | Scaled to the seat count when the seats are added, and raised by one share per admission. Met from gas first, then tax above the oracle floor, then subsidy (D10, D11). |
-| `oracle_block_reward_target` | 0.0075 NOAH a block per seat; `112500000000000000` for fifteen seats | Assembly | Protected first out of tax (D11). The oracle lane is the only performance-weighted income, paid by band-gated accuracy, and the lane every tax residual flows to, so 30% of the floor keeps a half-accuracy operator 15% poorer without deferring most of a seat's income behind the oracle payout window (§8). |
+| `validator_block_reward_target` | `0` in the artefact; 0.0175 NOAH a block per seat, `17500000000000000`, added by each seat | Assembly | Every seat adds its share at assembly and every admission adds another, so the target is the seat count times the share by construction. Met from gas first, then tax above the oracle floor, then subsidy (D10, D11). |
+| `oracle_block_reward_target` | `0` in the artefact; 0.0075 NOAH a block per seat, `7500000000000000`, added by each seat | Assembly | Protected first out of tax (D11). The oracle lane is the only performance-weighted income, paid by band-gated accuracy, and the lane every tax residual flows to, so 30% of the floor keeps a half-accuracy operator 15% poorer without deferring most of a seat's income behind the oracle payout window (§8). |
 | `redemption_buffer_target_ratio` | `0.30` | Decided | Each redemption pays 30% from inventory and mints 70% (D4), and that share holds through a run (D73). |
 | `strategic_reserve_target_ratio` | `0.15` | Decided | With the Buffer, a 45% coverage ceiling when everything is committed, 22.5% after NOAH halves. |
 | `insurance_target_ratio` | `0.05` | Decided | No loss history; a tail margin so the fund builds at all. |
@@ -292,18 +292,17 @@ then the transfer flags. The activation tests are complete (`docs/design/ECONOMI
 
 The artefact is the reviewed base; assembly adds the seats and the time and changes nothing else.
 
-1. **Seats.** For each genesis validator, add a permanently locked account at the operator address with 5,000,000
-   NOAH locked and a 5,300,000 NOAH balance, subtract 5,300,000 NOAH from both the Distribution balance and
-   `fee_pool.community_pool`, and leave supply untouched. The SDK's `add-genesis-account` cannot write a permanently
-   locked account; until an `arkd genesis add-validator-seat` command lands, this is a reviewed JSON edit, and
-   `TestLaunchGenesisBootsLockedSeat` is the shape it must match.
-2. **Targets.** Set both reward targets to the seat count times the per-seat share (§4): `17500000000000000` and
-   `7500000000000000` per seat.
-3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
+1. **Seats.** For each genesis validator run `arkd genesis add-validator-seat <operator-address>` against the file.
+   It writes a permanently locked account at the operator with 5,000,000 NOAH locked and a 5,300,000 NOAH balance,
+   subtracts 5,300,000 NOAH from both the Distribution balance and `fee_pool.community_pool`, raises both reward
+   targets by one seat's share, and leaves supply untouched. It refuses an operator already present and a pool that
+   cannot fund the seat, and writes nothing unless every edited module validates. The seat policy is fixed in
+   `pkg/chain/launch.go`; `TestLaunchGenesisBootsLockedSeat` boots what it writes.
+2. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
    5,000,000 NOAH grant with commission at or above 5%. The gentx pays no fee at height zero.
-4. **Collect and time.** Collect the gentxs, set `genesis_time` to a weekday hour, in UTC, when every validator's
+3. **Collect and time.** Collect the gentxs, set `genesis_time` to a weekday hour, in UTC, when every validator's
    region is awake and at least 48 hours after the file is published.
-5. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
+4. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
    verify the hash before starting. The chain starts itself at `genesis_time` once more than two thirds of the seats
    are online: 7 of 10, 11 of 15.
 
@@ -337,8 +336,8 @@ ratio between half and one and a half times the defensive set, with Insurance ca
 ## 14. Review before launch
 
 `app/genesis_test.go` pins: validity under the CLI's manager; a boot with a validator set and one funded account; a
-boot from a permanently locked seat whose gentx self-delegates the grant, with the pool reduced by the grant and
-supply unchanged; the consensus authority and evidence bounds; the staking, slashing, and gov values in §10; the
+boot from a seat the seat command's own function granted, whose gentx self-delegates the grant, with the pool reduced
+by the grant, supply unchanged, and both targets at one share; the consensus authority and evidence bounds; the staking, slashing, and gov values in §10; the
 supply ledger and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
 value in §4, §5, §8, and §9; the empty allowed-client list, both ICS-20 flags, both ICA sides, the empty host
 allowlist, and the open contract runtime, read back from the keepers after the first block; the absence of `mint`; no
@@ -348,7 +347,8 @@ Confirm by hand at assembly:
 
 - Each seat's locked amount is 5,000,000 NOAH, its balance 5,300,000, and the pool and fee-pool entries are reduced
   by exactly the seats' total; supply is still 1,000,000,000 NOAH.
-- Both reward targets equal the seat count times the per-seat share.
+- Both reward targets equal the seat count times the per-seat share, which the seat command guarantees when nothing
+  else has edited them.
 - Every gentx self-delegates the whole grant at a commission of at least 5%.
 - The NOAH factor still reflects the opening price.
 - The chain ID and the genesis time are final and the published hash matches.

@@ -9,6 +9,7 @@ registers genesis, query, transaction, server, and export commands and construct
 | `start` — [cmd/start.go](cmd/start.go) | The start command's hooks: app.toml validation, the metrics endpoint, and the price-feed client. |
 | `config migrate/diff/set/validate` — [cmd/config_command.go](cmd/config_command.go) | app.toml upkeep against this binary's template, and the validation start applies over a file alone. |
 | `export` — [cmd/export.go](cmd/export.go) | The continuation genesis. |
+| `genesis add-validator-seat` — [cmd/add_validator_seat.go](cmd/add_validator_seat.go) | One equal validator seat granted from the community pool at assembly; the edit itself is [app/genesis](../../app/genesis/seat.go). |
 | `query vote-extensions` — [cmd/vote_extensions.go](cmd/vote_extensions.go) | The oracle votes retained in a committed block. |
 | `testnet start/init-files` — [cmd/testnet.go](cmd/testnet.go) | Testnet file generation and the in-process testnet. |
 | [cmd/root.go](cmd/root.go), [cmd/commands.go](cmd/commands.go) | Root command, client context, AutoCLI tree, transaction-command dressing, command registration, and app construction. |
