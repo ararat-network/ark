@@ -58,6 +58,13 @@ func initRootCmd(
 	})
 	adjustStartCommand(rootCmd, run)
 	adjustExportCommand(rootCmd, appExport)
+	// AddCommandsWithStartCmdOptions drops what AddCommands carries, the
+	// per-module store hashes at a height for diagnosing an app-hash mismatch,
+	// and the SDK's in-place testnet does not survive vote extensions.
+	rootCmd.AddCommand(
+		server.ModuleHashByHeightQuery(newApp),
+		newInPlaceTestnetCmd(run, txConfig.SigningContext().AddressCodec()),
+	)
 
 	queryCmd := newQueryCmd()
 	txCmd := newTxCmd()

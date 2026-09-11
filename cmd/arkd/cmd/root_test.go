@@ -170,3 +170,20 @@ func TestTxCommandsDefaultGasAdjustment(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, query.Flags().Lookup(flags.FlagGasAdjustment))
 }
+
+// TestServerCommandsRegistered pins the SDK server commands the tree carries
+// beyond what AddCommandsWithStartCmdOptions adds on its own.
+func TestServerCommandsRegistered(t *testing.T) {
+	rootCmd := NewRootCmd()
+	for _, path := range [][]string{
+		{"module-hash-by-height"},
+		{"in-place-testnet"},
+		{"rollback"},
+		{"comet", "bootstrap-state"},
+	} {
+		cmd, args, err := rootCmd.Find(path)
+		require.NoError(t, err, path)
+		require.Empty(t, args, path)
+		require.Equal(t, path[len(path)-1], cmd.Name(), path)
+	}
+}

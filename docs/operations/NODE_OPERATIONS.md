@@ -42,6 +42,12 @@ commands against it need none of those as flags. `arkd testnet start` runs the s
 commit timeout must leave the first block inside the SDK network's five-second start budget, which its one-second
 default does.
 
+To test against real state, copy a node's home and run `arkd in-place-testnet <new-chain-id> <operator-address> --home
+<copy>`: every validator is replaced by one bonded at the operator with the copy's consensus key, CometBFT's validator
+set and last commit are rewritten to match, and the node starts under the new chain ID. `--trigger-testnet-upgrade
+<name>` runs an upgrade handler in the first block. The copy's data folder is rewritten for good; the plain `start`
+command resumes it afterwards.
+
 ## Manually assembling a testnet
 
 When validators create their own keys, each participant initialises a fresh home with the agreed chain ID using
@@ -101,6 +107,10 @@ compatible code. Do not run the same validator signing key concurrently in old a
 at the next height with a new chain ID for relaunch. Zero-height export is refused. `--jail-allowed-addrs` limits the exported
 validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help` for
 height and output options, and validate the exported genesis before the coordinated relaunch.
+
+A node that stops on an app-hash mismatch reports which module store differs with `arkd module-hash-by-height <height>
+--home <home>`, run against the stopped node's data; compare the hashes with those from a node that stayed in
+consensus.
 
 ### Upgrade binary policy
 

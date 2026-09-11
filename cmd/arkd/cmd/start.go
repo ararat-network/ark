@@ -31,6 +31,9 @@ type startRun struct {
 	cfg      arkAppConfig
 	endpoint *prometheusEndpoint
 	app      *app.ArkApp
+	svrCtx   *server.Context
+	// testnet is set by in-place-testnet for its app creator.
+	testnet *inPlaceTestnetArgs
 }
 
 // adjustStartCommand runs preRun after the SDK start command's own PreRunE.
@@ -39,20 +42,26 @@ func adjustStartCommand(rootCmd *cobra.Command, run *startRun) {
 	if err != nil {
 		panic(err)
 	}
-	prev := startCmd.PreRunE
-	startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+	run.wrapPreRun(startCmd)
+}
+
+// wrapPreRun runs preRun after cmd's own PreRunE.
+func (r *startRun) wrapPreRun(cmd *cobra.Command) {
+	prev := cmd.PreRunE
+	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		if prev != nil {
 			if err := prev(cmd, args); err != nil {
 				return err
 			}
 		}
-		return run.preRun(cmd)
+		return r.preRun(cmd)
 	}
 }
 
 func (r *startRun) preRun(cmd *cobra.Command) error {
 	var err error
-	r.cfg, r.endpoint, err = prepareStart(server.GetServerContextFromCmd(cmd))
+	r.svrCtx = server.GetServerContextFromCmd(cmd)
+	r.cfg, r.endpoint, err = prepareStart(r.svrCtx)
 	if err != nil {
 		return err
 	}
