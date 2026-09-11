@@ -128,3 +128,66 @@ Before proposing the first one:
   Either is delegation state that outlives the term and lets one key act under a shape recorded for a quorum.
 
 Other engineering follow-ups are tracked in [future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
+
+## 7. Seat admission
+
+Every validator holds the same permanently locked grant, so admitting one is a governance act that grants it
+([genesis §3](GENESIS.md#3-accounts-supply-and-validator-seats)). One proposal executes four messages as the gov
+account, in this order, and reverts whole if any fails:
+
+1. `MsgCommunityPoolSpend` of the 5,000,000 NOAH grant to the gov account itself.
+2. `MsgCreatePermanentLockedAccount` of that grant from gov to the operator's address, which must not exist yet: a
+   send to it first would create a plain account and the locked account could no longer be made.
+3. `MsgCommunityPoolSpend` of the 300,000 NOAH float to the operator, whose account now exists.
+4. `MsgUpdatePolicy` carrying the whole current economic policy with both reward targets raised by one seat's share,
+   `17500000000000000` and `7500000000000000` base units (`pkg/chain/launch.go`).
+
+Read the current policy first with `arkd query treasury economic-policy`; the update replaces every field, so copy
+them and change only the two targets. With `GOV` as the gov module address and `OPERATOR` as the new seat:
+
+```json
+{
+  "title": "Admit validator seat: <moniker>",
+  "summary": "Grants the equal seat to <moniker> and raises both reward targets by one share.",
+  "metadata": "",
+  "deposit": "1000000000000000000000anoah",
+  "messages": [
+    {
+      "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+      "authority": "GOV",
+      "recipient": "GOV",
+      "amount": [{"denom": "anoah", "amount": "5000000000000000000000000"}]
+    },
+    {
+      "@type": "/cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccount",
+      "from_address": "GOV",
+      "to_address": "OPERATOR",
+      "amount": [{"denom": "anoah", "amount": "5000000000000000000000000"}]
+    },
+    {
+      "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+      "authority": "GOV",
+      "recipient": "OPERATOR",
+      "amount": [{"denom": "anoah", "amount": "300000000000000000000000"}]
+    },
+    {
+      "@type": "/ark.treasury.v1.MsgUpdatePolicy",
+      "authority": "GOV",
+      "policy": {
+        "validator_block_reward_target": "<current + 17500000000000000>",
+        "oracle_block_reward_target": "<current + 7500000000000000>",
+        "redemption_buffer_target_ratio": "<current>",
+        "strategic_reserve_target_ratio": "<current>",
+        "insurance_target_ratio": "<current>",
+        "liability_ratio_weight": "<current>",
+        "volatility_weight": "<current>",
+        "flow_weight": "<current>"
+      }
+    }
+  ]
+}
+```
+
+Submit it with `arkd tx gov submit-proposal <file>`. After it passes, the operator sends create-validator bonding the
+whole grant at a commission of at least the 5% floor; the float pays its fees. The e2e gov suite submits this exact
+proposal and checks the account, the balance, and the targets, so the template is executed, not only written.

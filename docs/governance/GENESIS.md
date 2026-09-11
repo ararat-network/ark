@@ -135,8 +135,8 @@ on proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#27-gov
 Admitting a seat after launch is one proposal executing, as the gov account, a community pool spend to gov, a
 `MsgCreatePermanentLockedAccount` of the grant to the operator's fresh address, a liquid spend of the float, and a
 `MsgUpdatePolicy` raising both reward targets by one seat's share. The operator then sends create-validator with
-commission at or above the floor. Governance operations [§6](GOVERNANCE_OPERATIONS.md#6-committee-appointments)
-owns the procedure text for appointments; this is the seat procedure.
+commission at or above the floor. Governance operations [§7](GOVERNANCE_OPERATIONS.md#7-seat-admission) carries the
+proposal template, which the e2e gov suite executes.
 
 ## 4. Treasury
 
