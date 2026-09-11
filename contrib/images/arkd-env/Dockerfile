@@ -48,7 +48,7 @@ FROM builder-base AS release-builder
 RUN contrib/scripts/check-wasmvm-libs.sh \
  && python3 contrib/scripts/release-build.py --inside
 
-FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce AS runtime
+FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS runtime
 RUN apk add --no-cache ca-certificates curl jq \
  && addgroup -g 1025 nonroot \
  && adduser -D -u 1025 -G nonroot nonroot
@@ -68,7 +68,7 @@ CMD ["start"]
 
 # Collect against the exact runtime and builder outputs, never a second apk resolution.
 # Recipe execution has no host mounts, build secrets, or root privileges.
-FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce AS source-tools
+FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS source-tools
 RUN apk add --no-cache python3 git abuild xz zstd bzip2 curl spdx-licenses-text \
  && adduser -D collector && mkdir /output && chown collector /output
 COPY contrib/scripts/package-os-source.py /collector.py
