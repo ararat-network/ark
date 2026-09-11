@@ -45,7 +45,7 @@ jobs:
             github/codeql/go/ql/src/experimental/InconsistentCode/DeferInLoop.ql@codeql-cli/v2.26.4
           packs: +crypto-com/cosmos-sdk-codeql@0.0.8
 
-      - uses: github/codeql-action/autobuild@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
+      - uses: github/codeql-action/autobuild@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
