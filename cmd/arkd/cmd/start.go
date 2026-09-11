@@ -133,6 +133,9 @@ func prepareStart(svrCtx *server.Context) (arkAppConfig, *prometheusEndpoint, er
 	for _, section := range absentSections(svrCtx.Viper) {
 		svrCtx.Logger.Info("app.toml has no section; its defaults apply", "section", section)
 	}
+	if !cfg.PriceFeed.Enabled {
+		svrCtx.Logger.Warn("app.toml [pricefeed] is disabled; a validator on this node abstains from every oracle vote")
+	}
 	if cfg.unroutedGoMetrics() {
 		svrCtx.Logger.Warn("telemetry.metrics-sink is otel but [prometheus] is disabled; go-metrics series reach only what otel.yaml exports")
 	}

@@ -561,3 +561,14 @@ func TestCachedPriceClientSweepStopsOnCancellation(t *testing.T) {
 	_, err := client.Prices(context.Background(), &api.PricesRequest{})
 	require.EqualError(t, err, "no prices fetched from the sidecar yet")
 }
+
+func TestCachedPriceClientPricesDisabled(t *testing.T) {
+	cfg := validClientConfig()
+	cfg.Enabled = false
+	client, err := NewClient(log.NewNopLogger(), cfg)
+	require.NoError(t, err)
+
+	resp, err := client.Prices(context.Background(), &api.PricesRequest{})
+	require.ErrorIs(t, err, ErrDisabled)
+	require.Nil(t, resp)
+}

@@ -35,7 +35,8 @@ mode = "local"
 ```
 
 Edit the existing tables rather than adding duplicate TOML tables. These are node boot settings and take effect after an
-`arkd` restart. Enable the node's gRPC query server and point the sidecar's `[client] addresses` at it; the generated
+`arkd` restart. With `enabled = false`, which `arkd init` writes, `start` warns once and a validator on the node abstains
+from every oracle vote; the vote handler notes each abstention at Info rather than as a failure. Enable the node's gRPC query server and point the sidecar's `[client] addresses` at it; the generated
 sidecar file defaults to `127.0.0.1:9090`. Keep the remaining validated generated settings unless you need to change them.
 
 With both processes running:

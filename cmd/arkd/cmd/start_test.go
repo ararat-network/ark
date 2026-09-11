@@ -1,15 +1,19 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
+
+	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -210,4 +214,26 @@ func TestMempoolByteConfigAlignment(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The default app.toml disables the price-feed client; a validator running
+// on it abstains from every oracle vote, which start says once rather than
+// the vote handler saying it every block.
+func TestPrepareStartWarnsWhenPriceFeedIsDisabled(t *testing.T) {
+	var logs bytes.Buffer
+	svrCtx := server.NewContext(viper.New(), cmtcfg.DefaultConfig(), log.NewLogger(&logs, log.ColorOption(false)))
+	svrCtx.Viper.Set(server.FlagMinGasPrices, "0anoah")
+
+	cfg, _, err := prepareStart(svrCtx)
+	require.NoError(t, err)
+	require.False(t, cfg.PriceFeed.Enabled)
+	require.Contains(t, logs.String(), "[pricefeed] is disabled")
+
+	logs.Reset()
+	svrCtx.Viper.Set("pricefeed.enabled", true)
+	svrCtx.Viper.Set("pricefeed.sidecar_addresses", []string{"localhost:1"})
+	cfg, _, err = prepareStart(svrCtx)
+	require.NoError(t, err)
+	require.True(t, cfg.PriceFeed.Enabled)
+	require.NotContains(t, logs.String(), "[pricefeed] is disabled")
 }

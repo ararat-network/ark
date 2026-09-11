@@ -19,6 +19,7 @@ import (
 	abcitypes "github.com/ararat-network/ark/abci/types"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	"github.com/ararat-network/ark/pricefeed/api"
+	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 )
 
 // Handler extends local votes with oracle price reports. If
@@ -88,9 +89,14 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			}
 			oraclemetrics.RecordVoteCoverage(priced, targets, dropped)
 			if err != nil {
-				if req == nil {
+				switch {
+				case req == nil:
 					h.logger.Error("extend vote handler failed", "err", err)
-				} else {
+				case errors.Is(err, pricefeedclient.ErrDisabled):
+					// The operator's choice, made in app.toml [pricefeed]; the
+					// node abstains from this vote and every one after it.
+					h.logger.Info("abstaining from the oracle vote: price-feed client disabled", "height", req.Height)
+				default:
 					h.logger.Error("extend vote handler failed", "height", req.Height, "err", err)
 				}
 			}

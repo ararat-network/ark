@@ -268,6 +268,11 @@ func validatePricesResponse(resp *api.PricesResponse) error {
 	return nil
 }
 
+// ErrDisabled is what a client with [pricefeed] enabled = false answers: it
+// dials no sidecar, so it holds no prices. The caller distinguishes an
+// operator's choice from a sidecar it cannot reach.
+var ErrDisabled = errors.New("price-feed client disabled by configuration")
+
 // Prices returns the latest cached price snapshot. The snapshot timestamp is
 // supplied by the sidecar and must be fresh enough for node-side use.
 func (c *Client) Prices(
@@ -280,6 +285,9 @@ func (c *Client) Prices(
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
+	}
+	if !c.config.Enabled {
+		return nil, ErrDisabled
 	}
 
 	c.respMu.RLock()

@@ -1,6 +1,7 @@
 package voteextension_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"github.com/ararat-network/ark/abci/voteextension"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
 	"github.com/ararat-network/ark/pricefeed/api"
+	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -519,4 +521,27 @@ func labelValue(labels []*dto.LabelPair, name string) string {
 		}
 	}
 	return ""
+}
+
+// A client disabled in app.toml is the operator's choice: the vote is an
+// empty extension, the handler returns no error, and the log is one line
+// at Info rather than a failure every block.
+func TestExtendVoteHandlerDisabledClientAbstainsQuietly(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	oracleClient := abcitestutil.NewMockPriceFeedClient(ctrl)
+	oracleKeeper := abcitestutil.NewMockOracleKeeper(ctrl)
+	req := &cmtabci.RequestExtendVote{Height: 10}
+	oracleKeeper.EXPECT().GetFeeds(gomock.Any(), req.Height).Return(oracletypes.FeedSet{Version: oracletypes.InitialFeedVersion, Denoms: []string{"ausd"}}, nil)
+	oracleClient.EXPECT().Prices(gomock.Any(), &api.PricesRequest{}).Return(nil, pricefeedclient.ErrDisabled)
+
+	var logs bytes.Buffer
+	logger := log.NewLogger(&logs, log.ColorOption(false))
+	handler := voteextension.NewHandler(logger, oracleClient, oracleKeeper, time.Second).ExtendVoteHandler()
+
+	resp, err := handler(newVoteExtensionContext(10, 2), req)
+	require.NoError(t, err)
+	require.Empty(t, resp.VoteExtension)
+	require.Contains(t, logs.String(), "INF")
+	require.Contains(t, logs.String(), "price-feed client disabled")
+	require.NotContains(t, logs.String(), "ERR")
 }
