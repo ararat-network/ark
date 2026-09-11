@@ -240,7 +240,7 @@ func TestAddressCodecsAgreeWithSDKConfig(t *testing.T) {
 		consCodec runtime.ConsensusAddressCodec
 	)
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{})),
 		&addrCodec, &valCodec, &consCodec,
 	))
 

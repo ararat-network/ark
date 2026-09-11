@@ -150,7 +150,8 @@ An `Asset` carries no pending-transition state. Every status change is a governa
 precondition and takes effect in the block it executes, so nothing is in progress between blocks and no automatic path
 moves an asset. Metadata is stored rather than derived on read, so an exported genesis describes itself and Bank's
 record cannot drift from the registry's, and it is validated against the derivation, so the stored copy is the
-derivation or the state is invalid.
+derivation or the state is invalid. The description names the currency from a table in `pkg/chain`; because the check
+runs at every import, a table entry is added only before its denomination is registered and never changed after.
 
 Feed membership is not asset state. `x/oracle` owns the `Feeds` registry, its version, and its transition records, moved
 by `MsgAddFeed` and `MsgRemoveFeed`; a feed must be Active before an asset may register under its denomination, so the

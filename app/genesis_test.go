@@ -1,10 +1,12 @@
 package app_test
 
 import (
+	"context"
 	"encoding/json"
 	"maps"
 	"slices"
 	"testing"
+	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -21,29 +23,48 @@ import (
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
+
+// unwiredWasmKeeper stands in for the contract store the CLI graph never
+// builds, as cmd/arkd does: no appointment can run through a basic manager.
+type unwiredWasmKeeper struct{}
+
+func (unwiredWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool {
+	panic("contract store read from a graph with no state")
+}
 
 // cliBasicManager rebuilds the manager the arkd commands generate genesis
 // from: the depinject-resolved set, plus the IBC, Wasm, and GMP basics
@@ -57,7 +78,7 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 		cdc    codec.Codec
 	)
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{})),
 		&basics,
 		&cdc,
 	))
@@ -126,12 +147,12 @@ func TestDefaultGenesisSetsGovDeposits(t *testing.T) {
 	require.NotNil(t, govGenesis.Params)
 	require.Equal(
 		t,
-		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(10))),
+		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1000))),
 		sdk.Coins(govGenesis.Params.MinDeposit),
 	)
 	require.Equal(
 		t,
-		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(50))),
+		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(5000))),
 		sdk.Coins(govGenesis.Params.ExpeditedMinDeposit),
 	)
 }
@@ -174,7 +195,7 @@ func TestLaunchGenesisIsValid(t *testing.T) {
 	basics, cdc := cliBasicManager(t)
 	var txConfig client.TxConfig
 	require.NoError(t, depinject.Inject(
-		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger())),
+		depinject.Configs(app.AppConfig, depinject.Supply(log.NewNopLogger(), unwiredWasmKeeper{})),
 		&txConfig,
 	))
 
@@ -235,10 +256,13 @@ func TestLaunchGenesisBoots(t *testing.T) {
 	state, err = simtestutil.GenesisStateWithValSet(arkApp.AppCodec(), state, valSet, []authtypes.GenesisAccount{acc}, balance)
 	require.NoError(t, err)
 	// GenesisStateWithValSet rebuilds bank genesis around the test balances,
-	// dropping the artefact's metadata; restore it before boot.
+	// dropping the artefact's metadata and supply ledger; restore both, or
+	// Distribution finds no balance behind its community pool and panics.
 	var bankGenesis banktypes.GenesisState
 	arkApp.AppCodec().MustUnmarshalJSON(state[banktypes.ModuleName], &bankGenesis)
 	bankGenesis.DenomMetadata = artefactBank.DenomMetadata
+	bankGenesis.Balances = append(bankGenesis.Balances, artefactBank.Balances...)
+	bankGenesis.Supply = bankGenesis.Supply.Add(artefactBank.Supply...)
 	state[banktypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&bankGenesis)
 	stateBytes, err := json.Marshal(state)
 	require.NoError(t, err)
@@ -348,4 +372,301 @@ func TestWasmLightClientGenesisShipsEmpty(t *testing.T) {
 	var state ibcwasmtypes.GenesisState
 	require.NoError(t, json.Unmarshal(appState[ibcwasmtypes.ModuleName], &state))
 	require.Empty(t, state.Contracts, "launch genesis carries no light-client code")
+}
+
+// Launch supply model, mirrored in docs/governance/GENESIS.md §3 and §12. The
+// artefact carries the whole community pool; assembly moves one seat's grant
+// and float out of it per validator and scales both reward targets by the
+// seat count.
+const (
+	launchSeats             = 15
+	launchTotalSupplyNoah   = 1_000_000_000
+	launchSubsidyNoah       = 100_000_000
+	launchReserveNoah       = 50_000_000
+	launchBufferNoah        = 10_000_000
+	launchInsuranceNoah     = 5_000_000
+	launchCommunityPoolNoah = 835_000_000
+	seatLockedNoah          = 5_000_000
+	seatFloatNoah           = 300_000
+)
+
+// Per-seat reward shares: 0.025 NOAH a block split 70/30, in base units.
+var (
+	seatValidatorShare = math.NewInt(17_500_000_000_000_000)
+	seatOracleShare    = math.NewInt(7_500_000_000_000_000)
+)
+
+func noah(whole int64) math.Int { return chain.NativeBaseAmount(whole) }
+
+// TestLaunchGenesisPinsChainParams pins the consensus and SDK-module values
+// the launch review decided, each beside the coupling that fixed it.
+func TestLaunchGenesisPinsChainParams(t *testing.T) {
+	appGenesis, state := launchGenesis(t)
+	_, cdc := cliBasicManager(t)
+
+	consensus := appGenesis.Consensus.Params
+	require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), consensus.Authority.Authority,
+		"chain authority is stated once, in consensus params")
+
+	var stakingGenesis stakingtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[stakingtypes.ModuleName], &stakingGenesis)
+	unbonding := stakingGenesis.Params.UnbondingTime
+	require.Equal(t, 21*24*time.Hour, unbonding)
+	// Evidence expires only once both bounds are exceeded, so each must reach
+	// the unbonding period or a double-sign outlives its stake's exposure.
+	require.EqualValues(t, 21*chain.BlocksPerDay, consensus.Evidence.MaxAgeNumBlocks)
+	require.Equal(t, unbonding, consensus.Evidence.MaxAgeDuration)
+	require.EqualValues(t, 100, stakingGenesis.Params.MaxValidators)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), stakingGenesis.Params.MinCommissionRate)
+
+	var slashingGenesis slashingtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[slashingtypes.ModuleName], &slashingGenesis)
+	require.EqualValues(t, 10_000, slashingGenesis.Params.SignedBlocksWindow)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), slashingGenesis.Params.MinSignedPerWindow)
+	require.Equal(t, 10*time.Minute, slashingGenesis.Params.DowntimeJailDuration)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.0001"), slashingGenesis.Params.SlashFractionDowntime)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), slashingGenesis.Params.SlashFractionDoubleSign)
+
+	var govGenesis govv1.GenesisState
+	cdc.MustUnmarshalJSON(state[govtypes.ModuleName], &govGenesis)
+	require.Equal(t, sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(1_000))), sdk.Coins(govGenesis.Params.MinDeposit))
+	require.Equal(t, sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(5_000))), sdk.Coins(govGenesis.Params.ExpeditedMinDeposit))
+	// Equal seats make governance one validator one vote, and the pool it
+	// guards holds most of the supply: half the set must vote and two thirds
+	// of the votes must agree.
+	require.Equal(t, "0.500000000000000000", govGenesis.Params.Quorum)
+	require.Equal(t, "0.667000000000000000", govGenesis.Params.Threshold)
+	require.Equal(t, "0.750000000000000000", govGenesis.Params.ExpeditedThreshold, "the SDK requires it above the regular threshold")
+	require.Equal(t, "0.334000000000000000", govGenesis.Params.VetoThreshold)
+	require.Equal(t, 48*time.Hour, *govGenesis.Params.VotingPeriod)
+	require.Equal(t, 24*time.Hour, *govGenesis.Params.ExpeditedVotingPeriod)
+
+	var authGenesis authtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authGenesis)
+	require.EqualValues(t, 7, authGenesis.Params.TxSigLimit, "committee multisigs hold at most seven member keys")
+	require.Empty(t, authGenesis.Accounts, "seats are added at assembly and committees appointed after launch")
+}
+
+// TestLaunchGenesisSupplyLedger pins the billion-NOAH supply and its
+// allocation: four fund seeds as plain balances and the rest in the community
+// pool, whose fee-pool entry must match the module balance or Distribution's
+// InitGenesis panics.
+func TestLaunchGenesisSupplyLedger(t *testing.T) {
+	_, state := launchGenesis(t)
+	_, cdc := cliBasicManager(t)
+
+	bankGenesis := banktypes.GetGenesisStateFromAppState(cdc, state)
+	want := map[string]math.Int{
+		authtypes.NewModuleAddress(treasurytypes.SubsidyPoolName).String():      noah(launchSubsidyNoah),
+		authtypes.NewModuleAddress(reservetypes.StrategicReserveName).String():  noah(launchReserveNoah),
+		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName).String(): noah(launchBufferNoah),
+		authtypes.NewModuleAddress(claimstypes.InsuranceName).String():          noah(launchInsuranceNoah),
+		authtypes.NewModuleAddress(distrtypes.ModuleName).String():              noah(launchCommunityPoolNoah),
+	}
+	require.Len(t, bankGenesis.Balances, len(want))
+	total := math.ZeroInt()
+	for _, balance := range bankGenesis.Balances {
+		amount, known := want[balance.Address]
+		require.True(t, known, balance.Address)
+		require.Equal(t, sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, amount)), balance.Coins, balance.Address)
+		total = total.Add(amount)
+	}
+	require.Equal(t, noah(launchTotalSupplyNoah), total)
+	require.Equal(t, sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, total)), bankGenesis.Supply)
+
+	var distrGenesis distrtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrGenesis)
+	require.Equal(t,
+		sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(launchCommunityPoolNoah))),
+		distrGenesis.FeePool.CommunityPool,
+	)
+}
+
+// TestLaunchGenesisPinsArkEconomics pins the launch values of the Ark modules.
+func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
+	_, state := launchGenesis(t)
+	_, cdc := cliBasicManager(t)
+
+	var treasuryGenesis treasurytypes.GenesisState
+	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
+	params := treasuryGenesis.Params
+	require.Equal(t, chain.XDRBaseDenom, params.ReferenceDenom)
+	require.Equal(t, noah(1_000), params.ReferenceTaxCap, "1,000 XDR: proportional up to 200,000 XDR at 0.5%")
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.005"), params.TransferTaxRate)
+	require.Equal(t, math.LegacyNewDec(2), params.MultiplierCap, "ratios summing to 0.5 reach full retention at 2")
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.1"), params.MultiplierMaxStep)
+
+	policy := treasuryGenesis.EconomicPolicy
+	require.Equal(t, seatValidatorShare.MulRaw(launchSeats), policy.ValidatorBlockRewardTarget)
+	require.Equal(t, seatOracleShare.MulRaw(launchSeats), policy.OracleBlockRewardTarget)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.30"), policy.RedemptionBufferTargetRatio)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.15"), policy.StrategicReserveTargetRatio)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), policy.InsuranceTargetRatio)
+	require.True(t, policy.LiabilityRatioWeight.IsZero() && policy.VolatilityWeight.IsZero() && policy.FlowWeight.IsZero(),
+		"weights stay zero until the calibration window (D72)")
+
+	require.Len(t, treasuryGenesis.ConversionFactors, 1)
+	require.Equal(t, chain.NoahBaseDenom, treasuryGenesis.ConversionFactors[0].Denom)
+	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), treasuryGenesis.ConversionFactors[0].Factor,
+		"NOAH opens at 1 USD with XDR at 1.371 USD; the first axdr rate replaces it")
+
+	var marketGenesis markettypes.GenesisState
+	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
+	conversion := marketGenesis.ConversionPolicy
+	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(5_000_000))), conversion.BasePool)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.02"), conversion.MinStabilitySpread)
+	require.Equal(t, chain.BlocksPerDay, conversion.PoolRecoveryPeriod)
+	require.Equal(t, math.LegacyMustNewDecFromStr("0.0025"), marketGenesis.Params.DefaultTobinTax)
+	require.True(t, params.TransferTaxRate.LTE(conversion.MinStabilitySpread), "tax at or below the spread floor (D81)")
+
+	var oracleGenesis oracletypes.GenesisState
+	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
+	require.Equal(t, chain.BlocksPerWeek, oracleGenesis.Params.RewardWindow)
+	require.Equal(t, 13*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
+		"a quarter: steady subsidy inflow needs no year of smoothing")
+	require.Equal(t, oracleGenesis.Params.RewardDistributionWindow, oracleGenesis.Accounting.RewardDistributionWindow)
+
+	var assetGenesis assettypes.GenesisState
+	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
+	require.Equal(t, 3*chain.BlocksPerDay, assetGenesis.Params.SettlementActivationDelayBlocks, "outlasts the two-day vote")
+	currencies := map[string]string{
+		chain.AUDBaseDenom: "Australian dollar",
+		chain.CADBaseDenom: "Canadian dollar",
+		chain.CNYBaseDenom: "Chinese yuan",
+		chain.EURBaseDenom: "euro",
+		chain.GBPBaseDenom: "pound sterling",
+		chain.JPYBaseDenom: "Japanese yen",
+		chain.KRWBaseDenom: "South Korean won",
+		chain.MXNBaseDenom: "Mexican peso",
+		chain.SGDBaseDenom: "Singapore dollar",
+		chain.USDBaseDenom: "United States dollar",
+	}
+	require.Len(t, assetGenesis.Assets, len(currencies))
+	for _, asset := range assetGenesis.Assets {
+		require.Equal(t, "An Ark currency tracking the "+currencies[asset.Denom]+".", asset.Metadata.Description, asset.Denom)
+	}
+}
+
+// TestLaunchGenesisBootsLockedSeat boots the artefact the way assembly builds
+// it: one validator seat as a permanently locked account whose gentx
+// self-delegates the locked grant, with grant and float moved out of the
+// community pool. Locked coins cannot pay fees; the gentx pays none at height
+// zero and the float pays afterwards.
+func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
+	appGenesis, state := launchGenesis(t)
+
+	arkApp := app.NewArkApp(
+		log.NewTestLogger(t),
+		dbm.NewMemDB(),
+		true,
+		simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
+		baseapp.SetChainID(appGenesis.ChainID),
+	)
+	cdc := arkApp.AppCodec()
+	txConfig := arkApp.TxConfig()
+
+	// The operator key lives in a keyring so the gentx signs as arkd does.
+	kr := keyring.NewInMemory(cdc)
+	record, _, err := kr.NewMnemonic("seat", keyring.English, sdk.FullFundraiserPath, keyring.DefaultBIP39Passphrase, hd.Secp256k1)
+	require.NoError(t, err)
+	operator, err := record.GetAddress()
+	require.NoError(t, err)
+	operatorPub, err := record.GetPubKey()
+	require.NoError(t, err)
+
+	locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(seatLockedNoah)))
+	float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(seatFloatNoah)))
+	grant := locked.Add(float...)
+	seat, err := vestingtypes.NewPermanentLockedAccount(authtypes.NewBaseAccount(operator, operatorPub, 0, 0), locked)
+	require.NoError(t, err)
+
+	var authGenesis authtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authGenesis)
+	packed, err := authtypes.PackAccounts([]authtypes.GenesisAccount{seat})
+	require.NoError(t, err)
+	authGenesis.Accounts = append(authGenesis.Accounts, packed...)
+	state[authtypes.ModuleName] = cdc.MustMarshalJSON(&authGenesis)
+
+	// The grant comes out of the community pool, so supply is unchanged.
+	bankGenesis := banktypes.GetGenesisStateFromAppState(cdc, state)
+	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
+	for i := range bankGenesis.Balances {
+		if bankGenesis.Balances[i].Address == pool {
+			bankGenesis.Balances[i].Coins = bankGenesis.Balances[i].Coins.Sub(grant...)
+		}
+	}
+	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{Address: operator.String(), Coins: grant})
+	state[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
+
+	var distrGenesis distrtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrGenesis)
+	distrGenesis.FeePool.CommunityPool = distrGenesis.FeePool.CommunityPool.Sub(sdk.NewDecCoinsFromCoins(grant...))
+	state[distrtypes.ModuleName] = cdc.MustMarshalJSON(&distrGenesis)
+
+	privVal := mock.NewPV()
+	consPub, err := privVal.GetPubKey()
+	require.NoError(t, err)
+	consPubKey, err := cryptocodec.FromCmtPubKeyInterface(consPub)
+	require.NoError(t, err)
+	createValidator, err := stakingtypes.NewMsgCreateValidator(
+		sdk.ValAddress(operator).String(),
+		consPubKey,
+		sdk.NewCoin(chain.NoahBaseDenom, noah(seatLockedNoah)),
+		stakingtypes.NewDescription("seat", "", "", "", ""),
+		stakingtypes.NewCommissionRates(
+			math.LegacyMustNewDecFromStr("0.05"),
+			math.LegacyMustNewDecFromStr("0.2"),
+			math.LegacyMustNewDecFromStr("0.01"),
+		),
+		math.OneInt(),
+	)
+	require.NoError(t, err)
+	txBuilder := txConfig.NewTxBuilder()
+	require.NoError(t, txBuilder.SetMsgs(createValidator))
+	factory := clienttx.Factory{}.WithChainID(appGenesis.ChainID).WithKeybase(kr).WithTxConfig(txConfig)
+	require.NoError(t, clienttx.Sign(context.Background(), factory, "seat", txBuilder, true))
+	gentx, err := txConfig.TxJSONEncoder()(txBuilder.GetTx())
+	require.NoError(t, err)
+	state[genutiltypes.ModuleName] = cdc.MustMarshalJSON(&genutiltypes.GenesisState{GenTxs: []json.RawMessage{gentx}})
+
+	stateBytes, err := json.Marshal(state)
+	require.NoError(t, err)
+	consensusParams := appGenesis.Consensus.Params.ToProto()
+	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+		ChainId:         appGenesis.ChainID,
+		Validators:      []cmtabci.ValidatorUpdate{},
+		ConsensusParams: &consensusParams,
+		AppStateBytes:   stateBytes,
+	})
+	require.NoError(t, err)
+
+	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, seatLockedNoah)})
+	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+		Height:             arkApp.LastBlockHeight() + 1,
+		Hash:               arkApp.LastCommitID().Hash,
+		NextValidatorsHash: valSet.Hash(),
+	})
+	require.NoError(t, err)
+	_, err = arkApp.Commit()
+	require.NoError(t, err)
+
+	ctx := arkApp.NewContext(true)
+	validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
+	require.NoError(t, err)
+	require.True(t, validator.IsBonded())
+	require.Equal(t, noah(seatLockedNoah), validator.Tokens)
+
+	account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.PermanentLockedAccount)
+	require.True(t, ok, "the seat stays a permanently locked account")
+	require.Equal(t, locked, account.OriginalVesting)
+	require.Equal(t, locked, account.DelegatedVesting, "the whole grant is staked")
+	require.Equal(t, float, arkApp.BankKeeper.SpendableCoins(ctx, operator), "only the float is spendable")
+
+	feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
+	require.NoError(t, err)
+	require.Equal(t,
+		math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(seatLockedNoah+seatFloatNoah))),
+		feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
+	)
+	require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)
 }

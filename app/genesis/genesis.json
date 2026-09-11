@@ -24,7 +24,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Australian dollar.",
             "display": "aud",
             "name": "ArkAUD",
             "symbol": "arkAUD",
@@ -50,7 +50,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Canadian dollar.",
             "display": "cad",
             "name": "ArkCAD",
             "symbol": "arkCAD",
@@ -76,7 +76,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Chinese yuan.",
             "display": "cny",
             "name": "ArkCNY",
             "symbol": "arkCNY",
@@ -102,7 +102,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the euro.",
             "display": "eur",
             "name": "ArkEUR",
             "symbol": "arkEUR",
@@ -128,7 +128,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the pound sterling.",
             "display": "gbp",
             "name": "ArkGBP",
             "symbol": "arkGBP",
@@ -154,7 +154,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Japanese yen.",
             "display": "jpy",
             "name": "ArkJPY",
             "symbol": "arkJPY",
@@ -180,7 +180,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the South Korean won.",
             "display": "krw",
             "name": "ArkKRW",
             "symbol": "arkKRW",
@@ -206,7 +206,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Mexican peso.",
             "display": "mxn",
             "name": "ArkMXN",
             "symbol": "arkMXN",
@@ -232,7 +232,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the Singapore dollar.",
             "display": "sgd",
             "name": "ArkSGD",
             "symbol": "arkSGD",
@@ -258,7 +258,7 @@
                 "exponent": 18
               }
             ],
-            "description": "A native asset of Ark Icarus.",
+            "description": "An Ark currency tracking the United States dollar.",
             "display": "usd",
             "name": "ArkUSD",
             "symbol": "arkUSD",
@@ -286,7 +286,7 @@
       },
       "emergency_suspensions": [],
       "params": {
-        "settlement_activation_delay_blocks": "14400"
+        "settlement_activation_delay_blocks": "43200"
       },
       "resolution_records": [],
       "settlement_plans": []
@@ -305,7 +305,53 @@
       "authorization": []
     },
     "bank": {
-      "balances": [],
+      "balances": [
+        {
+          "address": "ark14sc6kwk6n83cr9hndw3ftd2c5qyxkhnx9y5ak8",
+          "coins": [
+            {
+              "amount": "50000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
+          "address": "ark15h9kmms28g7vv2jhm6lxcm7swvx8unz47ezh5x",
+          "coins": [
+            {
+              "amount": "10000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
+          "address": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
+          "coins": [
+            {
+              "amount": "835000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
+          "address": "ark1lwwrlt2u49q28ncvv8ax6qnzge0ady4lh6tg5a",
+          "coins": [
+            {
+              "amount": "100000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
+          "address": "ark1m6v6phrm6e83w55uhxkluq3y6eyxx7udqu9kvk",
+          "coins": [
+            {
+              "amount": "5000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        }
+      ],
       "denom_metadata": [
         {
           "base": "anoah",
@@ -334,7 +380,12 @@
         "send_enabled": []
       },
       "send_enabled": [],
-      "supply": []
+      "supply": [
+        {
+          "amount": "1000000000000000000000000000",
+          "denom": "anoah"
+        }
+      ]
     },
     "claims": {
       "claims": [],
@@ -369,7 +420,12 @@
       "delegator_starting_infos": [],
       "delegator_withdraw_infos": [],
       "fee_pool": {
-        "community_pool": []
+        "community_pool": [
+          {
+            "amount": "835000000000000000000000000.000000000000000000",
+            "denom": "anoah"
+          }
+        ]
       },
       "outstanding_rewards": [],
       "params": {
@@ -406,16 +462,16 @@
         "burn_vote_veto": true,
         "expedited_min_deposit": [
           {
-            "amount": "50000000000000000000",
+            "amount": "5000000000000000000000",
             "denom": "anoah"
           }
         ],
-        "expedited_threshold": "0.667000000000000000",
+        "expedited_threshold": "0.750000000000000000",
         "expedited_voting_period": "86400s",
         "max_deposit_period": "172800s",
         "min_deposit": [
           {
-            "amount": "10000000000000000000",
+            "amount": "1000000000000000000000",
             "denom": "anoah"
           }
         ],
@@ -423,8 +479,8 @@
         "min_initial_deposit_ratio": "0.100000000000000000",
         "proposal_cancel_dest": "",
         "proposal_cancel_ratio": "0.500000000000000000",
-        "quorum": "0.334000000000000000",
-        "threshold": "0.500000000000000000",
+        "quorum": "0.500000000000000000",
+        "threshold": "0.667000000000000000",
         "veto_threshold": "0.334000000000000000",
         "voting_period": "172800s"
       },
@@ -529,7 +585,7 @@
       },
       "conversion_policy": {
         "base_pool": {
-          "amount": "1000000000000000000000000.000000000000000000",
+          "amount": "5000000000000000000000000.000000000000000000",
           "denom": "axdr"
         },
         "min_stability_spread": "0.020000000000000000",
@@ -544,7 +600,7 @@
       "accounting": {
         "attendance_window": "100800",
         "attendance_window_start_height": "0",
-        "reward_distribution_window": "5256000",
+        "reward_distribution_window": "1310400",
         "reward_window": "100800",
         "reward_window_start_height": "0"
       },
@@ -574,7 +630,7 @@
         "min_attendance_per_window": "0.050000000000000000",
         "participation_threshold": "0.200000000000000000",
         "reward_band": "0.020000000000000000",
-        "reward_distribution_window": "5256000",
+        "reward_distribution_window": "1310400",
         "reward_window": "100800",
         "vote_threshold": "0.666666666666666667"
       },
@@ -660,10 +716,10 @@
       "missed_blocks": [],
       "params": {
         "downtime_jail_duration": "600s",
-        "min_signed_per_window": "0.500000000000000000",
-        "signed_blocks_window": "100",
+        "min_signed_per_window": "0.050000000000000000",
+        "signed_blocks_window": "10000",
         "slash_fraction_double_sign": "0.050000000000000000",
-        "slash_fraction_downtime": "0.010000000000000000"
+        "slash_fraction_downtime": "0.000100000000000000"
       },
       "signing_infos": []
     },
@@ -677,7 +733,7 @@
         "historical_entries": 10000,
         "max_entries": 7,
         "max_validators": 100,
-        "min_commission_rate": "0.000000000000000000",
+        "min_commission_rate": "0.050000000000000000",
         "unbonding_time": "1814400s"
       },
       "redelegations": [],
@@ -749,12 +805,12 @@
       },
       "economic_policy": {
         "flow_weight": "0.000000000000000000",
-        "insurance_target_ratio": "0.000000000000000000",
+        "insurance_target_ratio": "0.050000000000000000",
         "liability_ratio_weight": "0.000000000000000000",
-        "oracle_block_reward_target": "0",
-        "redemption_buffer_target_ratio": "0.000000000000000000",
-        "strategic_reserve_target_ratio": "0.000000000000000000",
-        "validator_block_reward_target": "0",
+        "oracle_block_reward_target": "112500000000000000",
+        "redemption_buffer_target_ratio": "0.300000000000000000",
+        "strategic_reserve_target_ratio": "0.150000000000000000",
+        "validator_block_reward_target": "262500000000000000",
         "volatility_weight": "0.000000000000000000"
       },
       "params": {
@@ -763,12 +819,12 @@
         "exposure_refresh_period_blocks": "600",
         "flow_decay": "0.998850000000000000",
         "min_base_gas_price": "100000000000.000000000000000000",
-        "multiplier_cap": "4.000000000000000000",
-        "multiplier_max_step": "0.250000000000000000",
+        "multiplier_cap": "2.000000000000000000",
+        "multiplier_max_step": "0.100000000000000000",
         "reference_denom": "axdr",
-        "reference_tax_cap": "1",
+        "reference_tax_cap": "1000000000000000000000",
         "reward_funding_window": "100800",
-        "transfer_tax_rate": "0.000000000000000000",
+        "transfer_tax_rate": "0.005000000000000000",
         "volatility_decay": "0.999950000000000000"
       },
       "reward_funding": {
@@ -801,15 +857,15 @@
         "vote_extensions_enable_height": "1"
       },
       "authority": {
-        "authority": ""
+        "authority": "ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn"
       },
       "block": {
         "max_bytes": "22020096",
         "max_gas": "100000000"
       },
       "evidence": {
-        "max_age_duration": "172800000000000",
-        "max_age_num_blocks": "100000",
+        "max_age_duration": "1814400000000000",
+        "max_age_num_blocks": "302400",
         "max_bytes": "1048576"
       },
       "validator": {
