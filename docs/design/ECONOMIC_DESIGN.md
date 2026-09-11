@@ -130,7 +130,10 @@ is NOAH never issued and stays unissued.
 The `treasury_subsidy_pool` account's NOAH. Seeded at genesis, it has no mint permission and covers only the aggregate
 gap between organic validator and Oracle funding and the accumulated per-block targets at each completed funding
 window. Anyone may extend it by sending `anoah`; a deposit changes neither total supply nor the targets, only how long
-coverage lasts. There is no refill, target balance, refund, withdrawal, or conversion path (D9, D25).
+coverage lasts. There is no refill, target balance, refund, or conversion path (D9, D25). Governance alone may return
+idle balance to the community pool through `MsgReturnSubsidy`, which names an amount and a minimum remaining balance
+and fails if the return would leave less; there is no floor parameter, automatic sweep, or committee power over it
+(D83).
 
 ### 3.6 Redemption Buffer
 

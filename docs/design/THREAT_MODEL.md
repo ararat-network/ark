@@ -223,7 +223,8 @@ committee acts within that window under a term; expiry is lazy.
 and the chain records the shape it observed at appointment. A contract may hold a deliberative mandate; the
 chain records that it is one and nothing about its code or membership, which its admin, its membership
 contract, or governance can change without a term advance. Governance holds every unbounded path, including
-Wasmd's authority policy over every contract, and can replace or disable any committee. A committee's
+Wasmd's authority policy over every contract, the return of subsidy NOAH to the community pool through a
+fixed-endpoint message with a per-proposal minimum (D83), and can replace or disable any committee. A committee's
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 

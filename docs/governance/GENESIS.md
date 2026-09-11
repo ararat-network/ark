@@ -108,7 +108,7 @@ the community pool, which governance spends by vote.
 
 | Balance | NOAH | Share | Status | Why |
 | --- | --- | --- | --- | --- |
-| `treasury_subsidy_pool` | 100,000,000 | 10% | Decided | The payroll fund for the life of the chain: at the per-seat income below it runs 50 years for fifteen seats and 7.5 years for a hundred, before any gas or tax. Drawn only by settlement, never by vote. |
+| `treasury_subsidy_pool` | 100,000,000 | 10% | Decided | The payroll fund for the life of the chain: at the per-seat income below it runs 50 years for fifteen seats and 7.5 years for a hundred, before any gas or tax. Drawn by settlement; governance may raise the targets or return idle balance to the community pool through `MsgReturnSubsidy` (D83). |
 | `strategic_reserve` | 50,000,000 | 5% | Decided | Governance's intervention capacity through the first growth phase; commitments to the Buffer and surplus burns are its only exits. |
 | `treasury_redemption_buffer` | 10,000,000 | 1% | Decided | Full coverage on the first 10M NOAH of liability, so early redemptions pay from inventory rather than minting. |
 | `claims_insurance` | 5,000,000 | 0.5% | Decided | The only claims capacity until the waterfall reaches Insurance, which is last in line. |

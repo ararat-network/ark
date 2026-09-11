@@ -18,6 +18,7 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 | [keeper/gas_pricing.go](keeper/gas_pricing.go) | Base-fee control. |
 | [keeper/reward_funding.go](keeper/reward_funding.go) | Reward-funding window settlement. |
 | [keeper/reference_denom.go](keeper/reference_denom.go) | Reference-unit rebasing. |
+| [keeper/subsidy.go](keeper/subsidy.go) | Governance return of subsidy to the community pool. |
 
 [keeper/keeper.go](keeper/keeper.go) declares the collections and narrow keeper dependencies.
 [msg_server.go](keeper/msg_server.go) and [grpc_query.go](keeper/grpc_query.go) are the transaction/query boundaries;
@@ -26,7 +27,9 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 
 ## State and integration
 
-`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes conversion factors and exposure on its cadence. EndBlock advances reward funding and updates the base gas price. Conversion settlement values liability from final state; there is no preblock liability-priming call. Follow the current ordering in `app/app_config.go` when editing these paths.
+`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes conversion factors and exposure on its cadence. EndBlock advances reward funding and updates the base gas price. Conversion settlement values liability from final state; there is no preblock liability-priming call. The subsidy
+pool's only outflows are the window settlement and `MsgReturnSubsidy`, a governance return into Distribution's
+community pool that fails if it would leave less than the minimum the proposal stated (D83). Follow the current ordering in `app/app_config.go` when editing these paths.
 
 ## Stored state and ownership
 
