@@ -23,6 +23,7 @@ const (
 	Msg_SetEconomicMandate_FullMethodName    = "/ark.treasury.v1.Msg/SetEconomicMandate"
 	Msg_UpdatePolicy_FullMethodName          = "/ark.treasury.v1.Msg/UpdatePolicy"
 	Msg_CommitteeUpdatePolicy_FullMethodName = "/ark.treasury.v1.Msg/CommitteeUpdatePolicy"
+	Msg_ReturnSubsidy_FullMethodName         = "/ark.treasury.v1.Msg/ReturnSubsidy"
 )
 
 // MsgClient is the client API for Msg service.
@@ -42,6 +43,9 @@ type MsgClient interface {
 	// CommitteeUpdatePolicy applies one complete reversible policy
 	// candidate as the economic-policy committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeUpdatePolicy, opts ...grpc.CallOption) (*MsgCommitteeUpdatePolicyResponse, error)
+	// ReturnSubsidy moves idle subsidy NOAH into the community pool as the
+	// governance authority.
+	ReturnSubsidy(ctx context.Context, in *MsgReturnSubsidy, opts ...grpc.CallOption) (*MsgReturnSubsidyResponse, error)
 }
 
 type msgClient struct {
@@ -92,6 +96,16 @@ func (c *msgClient) CommitteeUpdatePolicy(ctx context.Context, in *MsgCommitteeU
 	return out, nil
 }
 
+func (c *msgClient) ReturnSubsidy(ctx context.Context, in *MsgReturnSubsidy, opts ...grpc.CallOption) (*MsgReturnSubsidyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgReturnSubsidyResponse)
+	err := c.cc.Invoke(ctx, Msg_ReturnSubsidy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -109,6 +123,9 @@ type MsgServer interface {
 	// CommitteeUpdatePolicy applies one complete reversible policy
 	// candidate as the economic-policy committee, inside its mandate bounds.
 	CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error)
+	// ReturnSubsidy moves idle subsidy NOAH into the community pool as the
+	// governance authority.
+	ReturnSubsidy(context.Context, *MsgReturnSubsidy) (*MsgReturnSubsidyResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -130,6 +147,9 @@ func (UnimplementedMsgServer) UpdatePolicy(context.Context, *MsgUpdatePolicy) (*
 }
 func (UnimplementedMsgServer) CommitteeUpdatePolicy(context.Context, *MsgCommitteeUpdatePolicy) (*MsgCommitteeUpdatePolicyResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeUpdatePolicy not implemented")
+}
+func (UnimplementedMsgServer) ReturnSubsidy(context.Context, *MsgReturnSubsidy) (*MsgReturnSubsidyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReturnSubsidy not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -224,6 +244,24 @@ func _Msg_CommitteeUpdatePolicy_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_ReturnSubsidy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReturnSubsidy)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ReturnSubsidy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ReturnSubsidy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ReturnSubsidy(ctx, req.(*MsgReturnSubsidy))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -246,6 +284,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CommitteeUpdatePolicy",
 			Handler:    _Msg_CommitteeUpdatePolicy_Handler,
+		},
+		{
+			MethodName: "ReturnSubsidy",
+			Handler:    _Msg_ReturnSubsidy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

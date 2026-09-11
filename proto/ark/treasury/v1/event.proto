@@ -239,3 +239,22 @@ message EventBaseGasPriceUpdated {
     (amino.dont_omitempty) = true
   ];
 }
+
+// EventSubsidyReturned is emitted when governance returns subsidy NOAH to the
+// community pool.
+message EventSubsidyReturned {
+  string denom = 1;
+  string amount = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // remaining is the subsidy pool balance after the return.
+  string remaining = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
