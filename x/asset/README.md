@@ -241,7 +241,8 @@ messages except the one committee message in §9.
   Activation is derived from the governed delay, because the delay is a correction window that benefits governance
   alone while holders wait unable to redeem, and a proposed absolute height would fall inside the delay if a vote ran
   long. The delay is a parameter because the window it must outlast, the voting period, moves without consulting the
-  module; it defaults to a day of blocks, is refused at zero, and is capped at a year, past which it is a standing ban.
+  module; it defaults to three days of blocks, a two-day vote with a day's margin, is refused at zero, and is capped at a
+  year, past which it is a standing ban.
   It is read once, at opening, so changing it never reaches terms holders were shown. No term is ever amended: a
   mutable rate would make the maximum entitlement unknowable and redemption timing strategic.
 - **`CancelSettlement`** requires the plan not to have activated, removes it, and leaves the asset `SUSPENDED`. It is

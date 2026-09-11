@@ -71,6 +71,6 @@ func TestParamsValidate(t *testing.T) {
 
 func TestDefaultParamsValues(t *testing.T) {
 	params := assettypes.DefaultParams()
-	require.Equal(t, chain.BlocksPerDay, params.SettlementActivationDelayBlocks)
+	require.Equal(t, 3*chain.BlocksPerDay, params.SettlementActivationDelayBlocks)
 	require.NoError(t, params.Validate())
 }

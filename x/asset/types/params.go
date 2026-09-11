@@ -6,9 +6,10 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// DefaultSettlementActivationDelayBlocks allows a day of blocks for governance correction before
-// settlement binds. Governance must size this window against its voting period.
-const DefaultSettlementActivationDelayBlocks = chain.BlocksPerDay
+// DefaultSettlementActivationDelayBlocks allows three days of blocks for governance correction
+// before settlement binds: a two-day voting period with a day's margin. Governance must keep
+// this window longer than its voting period.
+const DefaultSettlementActivationDelayBlocks = 3 * chain.BlocksPerDay
 
 // MaxSettlementActivationDelayBlocks caps the correction window at a chain year. Height addition
 // still requires overflow checking near the int64 limit.
