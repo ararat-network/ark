@@ -20,6 +20,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -37,7 +38,9 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
+	arkgenesis "github.com/ararat-network/ark/app/genesis"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/telemetry"
 )
 
@@ -56,6 +59,7 @@ const (
 	flagStakingDenom      = "staking-denom"
 	flagCommitTimeout     = "commit-timeout"
 	flagSingleHost        = "single-host"
+	flagGenesis           = "genesis"
 
 	defaultNumValidators     = 4
 	defaultOutputDir         = "./.testnets"
@@ -89,6 +93,7 @@ type initArgs struct {
 	listenIPAddress   string
 	singleMachine     bool
 	bondTokenDenom    string
+	genesisFile       string
 }
 
 type startArgs struct {
@@ -182,6 +187,7 @@ Example:
 			args.algo, _ = cmd.Flags().GetString(flags.FlagKeyType)
 			args.bondTokenDenom, _ = cmd.Flags().GetString(flagStakingDenom)
 			args.singleMachine, _ = cmd.Flags().GetBool(flagSingleHost)
+			args.genesisFile, _ = cmd.Flags().GetString(flagGenesis)
 			config.Consensus.TimeoutCommit, err = cmd.Flags().GetDuration(flagCommitTimeout)
 			if err != nil {
 				return err
@@ -193,6 +199,7 @@ Example:
 
 	addTestnetFlagsToCmd(cmd)
 	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
+	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, and its chain ID is the default")
 	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
@@ -269,6 +276,16 @@ func initTestnetFiles(
 	genBalIterator banktypes.GenesisBalancesIterator,
 	args initArgs,
 ) error {
+	var base *genutiltypes.AppGenesis
+	if args.genesisFile != "" {
+		var err error
+		if base, err = genutiltypes.AppGenesisFromFile(args.genesisFile); err != nil {
+			return fmt.Errorf("reading base genesis %s: %w", args.genesisFile, err)
+		}
+		if args.chainID == "" {
+			args.chainID = base.ChainID
+		}
+	}
 	if args.chainID == "" {
 		args.chainID = "chain-" + unsafe.Str(6)
 	}
@@ -286,6 +303,7 @@ func initTestnetFiles(
 	var (
 		genAccounts []authtypes.GenesisAccount
 		genBalances []banktypes.Balance
+		seats       []sdk.AccAddress
 		genFiles    []string
 	)
 	p2pPortStart := p2pPort
@@ -371,25 +389,31 @@ func initTestnetFiles(
 			return err
 		}
 
-		accTokens := sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)
-		accStakingTokens := sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)
-		coins := sdk.Coins{
-			sdk.NewCoin("testtoken", accTokens),
-			sdk.NewCoin(args.bondTokenDenom, accStakingTokens),
+		// From code defaults each validator holds test balances and bonds a
+		// token; from an artefact it is a seat, bonding its whole locked
+		// grant at the artefact's commission floor.
+		bond := sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction))
+		commission := stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec())
+		if base != nil {
+			seats = append(seats, addr)
+			if bond, commission, err = seatGentx(clientCtx.Codec, base); err != nil {
+				return err
+			}
+		} else {
+			coins := sdk.Coins{
+				sdk.NewCoin("testtoken", sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)),
+				sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)),
+			}
+			genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
+			genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
 		}
 
-		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
-		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
-
-		valAddr := sdk.ValAddress(addr)
-		valStr := valAddr.String()
-		valTokens := sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction)
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
-			valStr,
+			sdk.ValAddress(addr).String(),
 			valPubKeys[i],
-			sdk.NewCoin(args.bondTokenDenom, valTokens),
+			bond,
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
-			stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec()),
+			commission,
 			math.OneInt(),
 		)
 		if err != nil {
@@ -438,7 +462,7 @@ func initTestnetFiles(
 		}
 	}
 
-	if err := initGenFiles(clientCtx, mm, args.chainID, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mm, args.chainID, base, seats, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
 		return err
 	}
 
@@ -451,7 +475,7 @@ func initTestnetFiles(
 		return err
 	}
 	for _, genFile := range genFiles {
-		if err := finaliseGenesisConsensusParams(genFile); err != nil {
+		if err := finaliseGenesisConsensusParams(genFile, base); err != nil {
 			return err
 		}
 	}
@@ -462,9 +486,23 @@ func initTestnetFiles(
 
 func initGenFiles(
 	clientCtx client.Context, mm module.BasicManager, chainID string,
+	base *genutiltypes.AppGenesis, seats []sdk.AccAddress,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, numValidators int,
 ) error {
+	if base != nil {
+		appGenesis, err := seatedGenesis(clientCtx.Codec, base, chainID, seats)
+		if err != nil {
+			return err
+		}
+		for i := range numValidators {
+			if err := appGenesis.SaveAs(genFiles[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
 	appGenState := mm.DefaultGenesis(clientCtx.Codec)
 
 	// set the accounts in the genesis state
@@ -579,13 +617,19 @@ func collectGenFiles(
 // finaliseGenesisConsensusParams sets what module genesis cannot reach: the
 // governance authority, and vote extensions from height 1, which oracle votes
 // ride on.
-func finaliseGenesisConsensusParams(genFile string) error {
+func finaliseGenesisConsensusParams(genFile string, base *genutiltypes.AppGenesis) error {
 	genesis, err := genutiltypes.AppGenesisFromFile(genFile)
 	if err != nil {
 		return fmt.Errorf("reading generated genesis %s: %w", genFile, err)
 	}
 	if genesis.Consensus == nil || genesis.Consensus.Params == nil {
 		return fmt.Errorf("generated genesis %s has no consensus params", genFile)
+	}
+	// Collection rebuilt the file with default consensus params; an
+	// artefact's block, evidence age and gas budget included, goes back first.
+	if base != nil && base.Consensus != nil && base.Consensus.Params != nil {
+		params := *base.Consensus.Params
+		genesis.Consensus.Params = &params
 	}
 
 	genesis.Consensus.Params.Authority.Authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
@@ -682,4 +726,44 @@ func startTestnet(cmd *cobra.Command, args startArgs) error {
 	testnet.Cleanup()
 
 	return nil
+}
+
+// seatGentx is a seat's self-delegation: the whole locked grant at the
+// artefact's commission floor, with a 20% ceiling and a 1% daily change.
+func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakingtypes.CommissionRates, error) {
+	var appState map[string]json.RawMessage
+	if err := json.Unmarshal(base.AppState, &appState); err != nil {
+		return sdk.Coin{}, stakingtypes.CommissionRates{}, fmt.Errorf("unmarshal base app state: %w", err)
+	}
+	var stakingGenesis stakingtypes.GenesisState
+	if err := cdc.UnmarshalJSON(appState[stakingtypes.ModuleName], &stakingGenesis); err != nil {
+		return sdk.Coin{}, stakingtypes.CommissionRates{}, fmt.Errorf("unmarshal base staking genesis: %w", err)
+	}
+	floor := stakingGenesis.Params.MinCommissionRate
+	ceiling := math.LegacyMaxDec(floor, math.LegacyMustNewDecFromStr("0.2"))
+	return sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)),
+		stakingtypes.NewCommissionRates(floor, ceiling, math.LegacyMustNewDecFromStr("0.01")),
+		nil
+}
+
+// seatedGenesis is the artefact under chainID with one seat granted per
+// validator; its consensus block is kept as written.
+func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID string, seats []sdk.AccAddress) (*genutiltypes.AppGenesis, error) {
+	var appState map[string]json.RawMessage
+	if err := json.Unmarshal(base.AppState, &appState); err != nil {
+		return nil, fmt.Errorf("unmarshal base app state: %w", err)
+	}
+	for _, seat := range seats {
+		if err := arkgenesis.AddValidatorSeat(cdc, appState, seat); err != nil {
+			return nil, fmt.Errorf("seating %s: %w", seat, err)
+		}
+	}
+	appStateJSON, err := json.MarshalIndent(appState, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal seated app state: %w", err)
+	}
+	seated := *base
+	seated.ChainID = chainID
+	seated.AppState = appStateJSON
+	return &seated, nil
 }
