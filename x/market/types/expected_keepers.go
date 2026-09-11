@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/market/types/expected_keepers.go.
+// Modified for Ark: keeper interfaces for the modern module boundaries.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package types
 
 import (

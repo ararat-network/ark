@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, service/metrics/types.go.
+// Modified for Ark: ABCI method and outcome labels.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package metrics
 
 const notImplemented = "not_implemented"

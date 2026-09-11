@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/types/errors.go.
+// Modified for Ark: chain-specific error definitions.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package types
 
 import (

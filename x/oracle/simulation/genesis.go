@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Terra Classic, x/oracle/simulation/genesis.go.
+// Modified for Ark: SDK integration and oracle parameter generation.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package simulation
 
 // DONTCOVER

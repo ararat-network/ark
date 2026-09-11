@@ -4,6 +4,11 @@
 // - protoc             (unknown)
 // source: ark/oracle/v1/query.proto
 
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of proto/terra/oracle/v1beta1/query.proto.
+// Modified for Ark: oracle schema and modern SDK integration.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package oraclev1
 
 import (

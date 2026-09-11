@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/types/ballot.go.
+// Modified for Ark: split ballot storage, median, and cross-rate processing.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package oracle
 
 import (

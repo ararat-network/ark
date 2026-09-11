@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Gaia, tests/interchain/chainsuite/context.go.
+// Modified for Ark: suite context setup and missing-Docker handling.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package chainsuite
 
 import (

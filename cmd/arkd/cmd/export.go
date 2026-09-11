@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, server/export.go.
+// Modified for Ark: continuation export and consensus-parameter preservation.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package cmd
 
 import (

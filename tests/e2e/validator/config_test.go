@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Gaia, tests/interchain/validator/config_test.go.
+// Modified for Ark: validator configuration fixtures and assertions.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package validator_test holds the suites that change a validator's node
 // configuration or break a validator, so each test gets its own chain.
 package validator_test

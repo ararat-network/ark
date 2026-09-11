@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, providers/base/websocket/errors/ws_query_handler.go.
+// Modified for Ark: websocket session and handler errors.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package websocket
 
 import "errors"

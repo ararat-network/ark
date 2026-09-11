@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, simapp/simd/cmd/testnet.go.
+// Modified for Ark: testnet configuration, genesis, and node setup.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package cmd
 
 import (

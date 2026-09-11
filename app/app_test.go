@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, simapp/app_test.go and simapp/testutil_network_test.go.
+// Modified for Ark: application fixtures and chain-specific assertions.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package app_test
 
 import (

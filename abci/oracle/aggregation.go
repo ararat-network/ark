@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/types/ballot.go.
+// Modified for Ark: vote-extension aggregation and validator accounting.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package oracle
 
 import (

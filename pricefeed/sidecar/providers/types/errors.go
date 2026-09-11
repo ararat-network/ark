@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, providers/types/errors.go.
+// Modified for Ark: provider error classification and reporting.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package types
 
 import (

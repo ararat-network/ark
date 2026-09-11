@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/market/keeper/swap.go.
+// Modified for Ark: conversion quoting, eligibility, and settlement.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package keeper
 
 import (

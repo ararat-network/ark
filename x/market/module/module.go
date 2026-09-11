@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/market/module.go.
+// Modified for Ark: modern SDK module registration and lifecycle.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package market quotes and executes asset conversions and settlement redemptions, owns virtual
 // pools and Tobin policy, and records block flow for Treasury allocation. A committee may adjust
 // conversion policy within its mandate. See x/market/README.md.

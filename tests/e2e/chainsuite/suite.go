@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Gaia, tests/interchain/chainsuite/suite.go.
+// Modified for Ark: chain lifecycle and test setup.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package chainsuite
 
 import (

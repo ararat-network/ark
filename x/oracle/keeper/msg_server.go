@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/keeper/msg_server.go.
+// Modified for Ark: message handling and authority checks.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package keeper
 
 import (

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Gaia, tests/interchain/integrator/endpoints_test.go.
+// Modified for Ark: endpoint coverage and response assertions.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package integrator_test holds what explorers, wallets, and relaunch
 // operators depend on: the endpoints a node serves and an export that boots.
 package integrator_test

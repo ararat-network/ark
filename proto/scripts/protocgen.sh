@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# SPDX-License-Identifier: Apache-2.0
+# Adapted from Cosmos SDK, scripts/protocgen.sh.
+# Modified for Ark: schema selection, output paths, and dual generation.
+# See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 # Run from the repo root inside the proto-builder image the Makefile pins:
 #   make proto-gen
 

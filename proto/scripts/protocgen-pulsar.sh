@@ -7,3 +7,6 @@ find ./api -empty -type d -delete 2>/dev/null || true
 
 echo "Generating API module"
 (cd proto; buf generate --template buf.gen.yaml)
+
+# Keep schema attribution prominent in generated Pulsar and gateway files.
+sh ./proto/scripts/protocgen-notices.sh

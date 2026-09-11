@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, tests/e2e/distribution/config.go.
+// Modified for Ark: module configuration and chain execution order.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package app
 
 import (

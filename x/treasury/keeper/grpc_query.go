@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/treasury/keeper/querier.go.
+// Modified for Ark: modern query handlers and chain-specific state.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package keeper
 
 import (

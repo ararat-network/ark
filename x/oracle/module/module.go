@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/module.go.
+// Modified for Ark: modern SDK module registration and lifecycle.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package oracle owns consensus rates, feed epochs, the protocol reference, validator attendance,
 // and reward accounting. ABCI preblock applies NOAH-per-unit rates; consumers guard feed removal.
 // Feeds create no asset liability. See x/oracle/README.md.

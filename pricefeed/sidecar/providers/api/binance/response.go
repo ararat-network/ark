@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, providers/apis/binance/utils.go.
+// Modified for Ark: response types and provider package integration.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package binance
 
 import (

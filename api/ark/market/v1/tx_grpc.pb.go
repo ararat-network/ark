@@ -4,6 +4,11 @@
 // - protoc             (unknown)
 // source: ark/market/v1/tx.proto
 
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of proto/terra/market/v1beta1/tx.proto.
+// Modified for Ark: market schema and modern SDK integration.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package marketv1
 
 import (

@@ -1,5 +1,10 @@
 //go:build sims
 
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, simapp/sim_bench_test.go.
+// Modified for Ark: application setup and simulation configuration.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package app
 
 import (

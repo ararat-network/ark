@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, providers/websockets/binance/messages.go.
+// Modified for Ark: websocket message types and validation.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package binance
 
 import (

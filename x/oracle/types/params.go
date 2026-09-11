@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/oracle/types/params.go.
+// Modified for Ark: parameter ownership, defaults, and validation.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package types
 
 import (

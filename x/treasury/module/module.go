@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Originates from Ark's Terra Classic port of x/treasury/module.go.
+// Modified for Ark: modern SDK module registration and lifecycle.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package treasury owns tax and fees, reward funding, liability valuation, fund targets, exposure,
 // and conversion-flow allocation. It reads lifecycle and recognised capital from their owners and
 // delegates mint/burn execution to Market. See x/treasury/README.md.

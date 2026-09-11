@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Gaia, app/export.go.
+// Modified for Ark: continuation export and validator allowlist handling.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package app
 
 import (

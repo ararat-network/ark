@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Cosmos SDK, simapp/app.go.
+// Modified for Ark: module wiring and application lifecycle integration.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 // Package app assembles Ark's modules, transaction and consensus handlers, and execution policy for
 // IBC, GMP, and CosmWasm. It owns application genesis, continuation export, upgrades, and
 // cross-module integration tests.

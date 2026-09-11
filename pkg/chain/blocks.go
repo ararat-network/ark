@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Terra Classic, types/util/blocks.go.
+// Modified for Ark: context handling and anchored block periods.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package chain
 
 import (

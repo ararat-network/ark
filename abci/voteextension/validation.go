@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+// Adapted from Connect, abci/ve/utils.go.
+// Modified for Ark: SDK validation integration and commit checks.
+// See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
+
 package voteextension
 
 import (
