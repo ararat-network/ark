@@ -48,6 +48,7 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/app"
+	arkgenesis "github.com/ararat-network/ark/app/genesis"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
@@ -374,26 +375,17 @@ func TestWasmLightClientGenesisShipsEmpty(t *testing.T) {
 	require.Empty(t, state.Contracts, "launch genesis carries no light-client code")
 }
 
-// Launch supply model, mirrored in docs/governance/GENESIS.md §3 and §12. The
-// artefact carries the whole community pool; assembly moves one seat's grant
-// and float out of it per validator and scales both reward targets by the
-// seat count.
+// Launch supply ledger, mirrored in docs/governance/GENESIS.md §3. The
+// artefact carries the whole community pool and zero reward targets; each
+// seat assembly adds moves its grant and float out of the pool and adds one
+// seat's share to both targets (app/genesis).
 const (
-	launchSeats             = 15
 	launchTotalSupplyNoah   = 1_000_000_000
 	launchSubsidyNoah       = 100_000_000
 	launchReserveNoah       = 50_000_000
 	launchBufferNoah        = 10_000_000
 	launchInsuranceNoah     = 5_000_000
 	launchCommunityPoolNoah = 835_000_000
-	seatLockedNoah          = 5_000_000
-	seatFloatNoah           = 300_000
-)
-
-// Per-seat reward shares: 0.025 NOAH a block split 70/30, in base units.
-var (
-	seatValidatorShare = math.NewInt(17_500_000_000_000_000)
-	seatOracleShare    = math.NewInt(7_500_000_000_000_000)
 )
 
 func noah(whole int64) math.Int { return chain.NativeBaseAmount(whole) }
@@ -497,8 +489,8 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.1"), params.MultiplierMaxStep)
 
 	policy := treasuryGenesis.EconomicPolicy
-	require.Equal(t, seatValidatorShare.MulRaw(launchSeats), policy.ValidatorBlockRewardTarget)
-	require.Equal(t, seatOracleShare.MulRaw(launchSeats), policy.OracleBlockRewardTarget)
+	require.True(t, policy.ValidatorBlockRewardTarget.IsZero() && policy.OracleBlockRewardTarget.IsZero(),
+		"targets start at zero; every seat adds its share")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.30"), policy.RedemptionBufferTargetRatio)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.15"), policy.StrategicReserveTargetRatio)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), policy.InsuranceTargetRatio)
@@ -548,10 +540,10 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 }
 
 // TestLaunchGenesisBootsLockedSeat boots the artefact the way assembly builds
-// it: one validator seat as a permanently locked account whose gentx
-// self-delegates the locked grant, with grant and float moved out of the
-// community pool. Locked coins cannot pay fees; the gentx pays none at height
-// zero and the float pays afterwards.
+// it: one seat granted by arkgenesis.AddValidatorSeat, the function behind
+// arkd genesis add-validator-seat, whose gentx self-delegates the locked
+// grant. Locked coins cannot pay fees; the gentx pays none at height zero and
+// the float pays afterwards.
 func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	appGenesis, state := launchGenesis(t)
 
@@ -571,37 +563,10 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	require.NoError(t, err)
 	operator, err := record.GetAddress()
 	require.NoError(t, err)
-	operatorPub, err := record.GetPubKey()
-	require.NoError(t, err)
 
-	locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(seatLockedNoah)))
-	float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(seatFloatNoah)))
-	grant := locked.Add(float...)
-	seat, err := vestingtypes.NewPermanentLockedAccount(authtypes.NewBaseAccount(operator, operatorPub, 0, 0), locked)
-	require.NoError(t, err)
-
-	var authGenesis authtypes.GenesisState
-	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authGenesis)
-	packed, err := authtypes.PackAccounts([]authtypes.GenesisAccount{seat})
-	require.NoError(t, err)
-	authGenesis.Accounts = append(authGenesis.Accounts, packed...)
-	state[authtypes.ModuleName] = cdc.MustMarshalJSON(&authGenesis)
-
-	// The grant comes out of the community pool, so supply is unchanged.
-	bankGenesis := banktypes.GetGenesisStateFromAppState(cdc, state)
-	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
-	for i := range bankGenesis.Balances {
-		if bankGenesis.Balances[i].Address == pool {
-			bankGenesis.Balances[i].Coins = bankGenesis.Balances[i].Coins.Sub(grant...)
-		}
-	}
-	bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{Address: operator.String(), Coins: grant})
-	state[banktypes.ModuleName] = cdc.MustMarshalJSON(bankGenesis)
-
-	var distrGenesis distrtypes.GenesisState
-	cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrGenesis)
-	distrGenesis.FeePool.CommunityPool = distrGenesis.FeePool.CommunityPool.Sub(sdk.NewDecCoinsFromCoins(grant...))
-	state[distrtypes.ModuleName] = cdc.MustMarshalJSON(&distrGenesis)
+	locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
+	float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
+	require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator))
 
 	privVal := mock.NewPV()
 	consPub, err := privVal.GetPubKey()
@@ -611,7 +576,7 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	createValidator, err := stakingtypes.NewMsgCreateValidator(
 		sdk.ValAddress(operator).String(),
 		consPubKey,
-		sdk.NewCoin(chain.NoahBaseDenom, noah(seatLockedNoah)),
+		sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)),
 		stakingtypes.NewDescription("seat", "", "", "", ""),
 		stakingtypes.NewCommissionRates(
 			math.LegacyMustNewDecFromStr("0.05"),
@@ -640,7 +605,7 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, seatLockedNoah)})
+	valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, chain.SeatGrantNoah)})
 	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             arkApp.LastBlockHeight() + 1,
 		Hash:               arkApp.LastCommitID().Hash,
@@ -654,7 +619,7 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
 	require.NoError(t, err)
 	require.True(t, validator.IsBonded())
-	require.Equal(t, noah(seatLockedNoah), validator.Tokens)
+	require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
 
 	account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.PermanentLockedAccount)
 	require.True(t, ok, "the seat stays a permanently locked account")
@@ -665,8 +630,13 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 	feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
 	require.NoError(t, err)
 	require.Equal(t,
-		math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(seatLockedNoah+seatFloatNoah))),
+		math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(chain.SeatGrantNoah+chain.SeatFloatNoah))),
 		feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
 	)
 	require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)
+
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain.SeatValidatorShare, policy.ValidatorBlockRewardTarget, "one seat, one share")
+	require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
 }

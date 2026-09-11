@@ -807,10 +807,10 @@
         "flow_weight": "0.000000000000000000",
         "insurance_target_ratio": "0.050000000000000000",
         "liability_ratio_weight": "0.000000000000000000",
-        "oracle_block_reward_target": "112500000000000000",
+        "oracle_block_reward_target": "0",
         "redemption_buffer_target_ratio": "0.300000000000000000",
         "strategic_reserve_target_ratio": "0.150000000000000000",
-        "validator_block_reward_target": "262500000000000000",
+        "validator_block_reward_target": "0",
         "volatility_weight": "0.000000000000000000"
       },
       "params": {
