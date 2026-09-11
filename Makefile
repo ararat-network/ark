@@ -207,6 +207,7 @@ localnet-init: localnet-check
 	@mkdir -p "$(ARK_LOCALNET_DATA)" && chmod 0777 "$(ARK_LOCALNET_DATA)"
 	$(DOCKER) run --rm -e VALIDATORS=$(VALIDATORS) -e PUBLIC_MEMPOOL_SIZE=$(PUBLIC_MEMPOOL_SIZE) -v "$(ARK_LOCALNET_DATA):/data" \
 		-v $(CURDIR)/contrib/localnet/init.sh:/init.sh:ro \
+		-v $(CURDIR)/app/genesis/testnet.json:/genesis/testnet.json:ro \
 		--entrypoint sh $(localnetImage) /init.sh
 
 localnet-up: localnet-check

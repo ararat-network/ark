@@ -23,12 +23,13 @@ For a local developer validator, use a fresh directory and the test keyring back
 
 ```sh
 ARK_TESTNET_DIR=$(mktemp -d)
-./build/arkd testnet init-files --validator-count 1   --output-dir "$ARK_TESTNET_DIR" --chain-id ark-local   --keyring-backend test --single-host --starting-ip-address 127.0.0.1
+./build/arkd testnet init-files --genesis app/genesis/testnet.json --validator-count 1   --output-dir "$ARK_TESTNET_DIR" --chain-id ark-local   --keyring-backend test --single-host --starting-ip-address 127.0.0.1
 ./build/arkd genesis validate --home "$ARK_TESTNET_DIR/node0/arkd"
 COSMOS_SDK_CONFIG_SCOPE=arkd ./build/arkd start --home "$ARK_TESTNET_DIR/node0/arkd"
 ```
 
-The generator creates genesis, validator keys and accounts; its test keyring is for disposable development. It does not
+The generator starts from the testnet artefact and grants each validator a seat from its community pool; without
+`--genesis` it generates from code defaults instead. Its test keyring is for disposable development. It does not
 launch a pricefeed process. Configure and run a [sidecar](PRICEFEED_OPERATIONS.md) to produce oracle prices, or use the
 [Docker localnet](../../contrib/localnet/README.md), which wires the processes together. Stop the foreground node with Ctrl-C.
 Use a fresh directory for another run; do not reset an existing validator home as a setup step.

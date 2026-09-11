@@ -1,10 +1,12 @@
 #!/bin/sh
 # Generates the Compose localnet under /data: one arkd home per validator and
-# one price-feed config each. Runs inside ark/arkd via `make localnet-init`.
+# one price-feed config each, from the testnet artefact with every validator
+# seated from its community pool. Runs inside ark/arkd via `make localnet-init`.
 set -eu
 
 VALIDATORS=${VALIDATORS:-4}
 CHAIN_ID=${CHAIN_ID:-localark}
+GENESIS=${GENESIS:-/genesis/testnet.json}
 STARTING_IP=${STARTING_IP:-192.168.10.2}
 DATA=${DATA:-/data}
 PUBLIC_MEMPOOL_SIZE=${PUBLIC_MEMPOOL_SIZE:-5000}
@@ -16,6 +18,7 @@ CARRIER=$((VALIDATORS - 1))
 rm -rf "$DATA"/* "$DATA"/.[!.]* 2>/dev/null || true
 
 arkd testnet init-files \
+  --genesis "$GENESIS" \
   --validator-count "$VALIDATORS" \
   --output-dir "$DATA" \
   --chain-id "$CHAIN_ID" \
