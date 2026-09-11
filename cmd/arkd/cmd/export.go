@@ -62,7 +62,13 @@ func runExport(cmd *cobra.Command, exporter servertypes.AppExporter) error {
 	modulesToExport, _ := cmd.Flags().GetStringSlice(server.FlagModulesToExport)
 	outputDocument, _ := cmd.Flags().GetString(flags.FlagOutputDocument)
 
-	exported, err := exporter(serverCtx.Logger, db, height, forZeroHeight, jailAllowedAddrs, serverCtx.Viper, modulesToExport)
+	// The server logger shares stdout with the genesis; the export logs to
+	// stderr so that a redirected stdout is the document alone.
+	logger, err := server.CreateSDKLogger(serverCtx, cmd.ErrOrStderr())
+	if err != nil {
+		return err
+	}
+	exported, err := exporter(logger, db, height, forZeroHeight, jailAllowedAddrs, serverCtx.Viper, modulesToExport)
 	if err != nil {
 		return fmt.Errorf("error exporting state: %w", err)
 	}

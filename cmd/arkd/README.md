@@ -18,7 +18,8 @@ registers genesis, query, transaction, server, and export commands and construct
 
 The start command validates local configuration before constructing the app and owns running its pricefeed client.
 [app/](../../app/README.md) owns keeper wiring and consensus lifecycle. Export delegates to the app's continuation export and
-writes the whole consensus block, the ABCI parameters the SDK's own export drops included; zero-height export is refused. [Node operations](../../docs/operations/NODE_OPERATIONS.md) owns commands for operators and
+writes the whole consensus block, the ABCI parameters the SDK's own export drops included; zero-height export is refused.
+Its app logs to stderr, so a redirected stdout is the genesis alone. [Node operations](../../docs/operations/NODE_OPERATIONS.md) owns commands for operators and
 [client fees](../../docs/clients/CLIENT_FEES.md) owns fee construction.
 
 ## CLI fee completion
