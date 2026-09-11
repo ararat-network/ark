@@ -62,7 +62,7 @@ const (
 	GovDepositPeriod         = 60 * time.Second
 	// GovDeposit and GovExpeditedDeposit clear their floors with room: the
 	// default minimum deposit is 10 NOAH and the expedited one five times that.
-	GovDeposit          = 20
+	GovDeposit          = 1000
 	GovExpeditedDeposit = 60
 
 	SlashingWindow       = 20

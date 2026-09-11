@@ -14,7 +14,7 @@ import (
 func init() {
 	sdk.DefaultBondDenom = chain.NoahBaseDenom
 	sdk.DefaultPowerReduction = chain.NativeBaseAmount(1)
-	govv1.DefaultMinDepositTokens = chain.NativeBaseAmount(10)
+	govv1.DefaultMinDepositTokens = chain.NativeBaseAmount(1000)
 	govv1.DefaultMinExpeditedDepositTokens = govv1.DefaultMinDepositTokens.MulRaw(
 		govv1.DefaultMinExpeditedDepositTokensRatio,
 	)
