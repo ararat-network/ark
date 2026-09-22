@@ -829,10 +829,8 @@ func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID strin
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
 		return nil, fmt.Errorf("unmarshal base app state: %w", err)
 	}
-	for _, seat := range seats {
-		if err := arkgenesis.AddValidatorSeat(cdc, appState, seat, genTime); err != nil {
-			return nil, fmt.Errorf("seating %s: %w", seat, err)
-		}
+	if err := arkgenesis.AddValidatorSeats(cdc, appState, seats, genTime); err != nil {
+		return nil, err
 	}
 	appStateJSON, err := json.MarshalIndent(appState, "", "  ")
 	if err != nil {

@@ -1,11 +1,12 @@
 // Package genesis owns the launch artefact beside it, genesis.json, and the
-// one edit assembly makes to it: granting a validator seat.
+// one edit assembly makes to it: granting the validator seats.
 package genesis
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -19,20 +20,37 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// AddValidatorSeat grants one equal validator seat in appState: a continuous
-// vesting account at operator holding chain.SeatGrantNoah, vesting from
-// chain.SeatVestingCliffYears to chain.SeatVestingEndYears after genesisTime,
-// a liquid float of chain.SeatFloatNoah beside it, both moved out of the
-// community pool, and both reward targets raised by one seat's share. Supply
-// is unchanged. It refuses an unset genesis time, an operator already holding
-// an account or balance, and a pool that cannot fund the seat, and writes
-// nothing unless every edited module passes its own validation.
-func AddValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, genesisTime time.Time) error {
-	if len(operator) == 0 {
-		return errors.New("operator address must be set")
+// AddValidatorSeats grants one equal validator seat per operator in appState:
+// a continuous vesting account at the operator holding chain.SeatGrantNoah,
+// vesting from chain.SeatVestingCliffYears to chain.SeatVestingEndYears after
+// genesisTime, a liquid float of chain.SeatFloatNoah beside it, both moved out
+// of the community pool, and both reward targets raised by one seat's share.
+// Supply is unchanged. It refuses an unset genesis time, an operator already
+// holding an account or balance, and a pool that cannot fund the seats, and
+// writes nothing unless every seat and every edited module passes its own
+// validation.
+func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, genesisTime time.Time) error {
+	if len(operators) == 0 {
+		return errors.New("at least one operator address must be set")
 	}
 	if genesisTime.IsZero() {
-		return errors.New("genesis time must be set before a seat is granted: the seat vests from it")
+		return errors.New("genesis time must be set before the seats are granted: they vest from it")
+	}
+	seated := maps.Clone(appState)
+	for _, operator := range operators {
+		if err := addValidatorSeat(cdc, seated, operator, genesisTime); err != nil {
+			return fmt.Errorf("seat %s: %w", operator, err)
+		}
+	}
+	maps.Copy(appState, seated)
+	return nil
+}
+
+// addValidatorSeat grants one seat, writing nothing unless every edited
+// module passes its own validation.
+func addValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, genesisTime time.Time) error {
+	if len(operator) == 0 {
+		return errors.New("operator address must be set")
 	}
 	grant := noahCoins(chain.SeatGrantNoah)
 	seat := grant.Add(noahCoins(chain.SeatFloatNoah)...)

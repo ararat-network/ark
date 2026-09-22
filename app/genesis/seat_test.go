@@ -53,7 +53,7 @@ func operatorAddress() sdk.AccAddress {
 // genesisTime is a launch time the seats vest from.
 var genesisTime = time.Date(2027, time.January, 4, 12, 0, 0, 0, time.UTC)
 
-func TestAddValidatorSeat(t *testing.T) {
+func TestAddValidatorSeats(t *testing.T) {
 	cdc := seatCodec()
 	state := artefactState(t)
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
@@ -61,8 +61,7 @@ func TestAddValidatorSeat(t *testing.T) {
 	seat := grant.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatFloatNoah)))
 	first, second := operatorAddress(), operatorAddress()
 
-	require.NoError(t, genesis.AddValidatorSeat(cdc, state, first, genesisTime))
-	require.NoError(t, genesis.AddValidatorSeat(cdc, state, second, genesisTime))
+	require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{first, second}, genesisTime))
 
 	var authState authtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
@@ -113,7 +112,7 @@ func TestAddValidatorSeat(t *testing.T) {
 	require.Equal(t, chain.SeatOracleShare.MulRaw(2), treasuryState.EconomicPolicy.OracleBlockRewardTarget)
 }
 
-func TestAddValidatorSeatRefusals(t *testing.T) {
+func TestAddValidatorSeatsRefusals(t *testing.T) {
 	cdc := seatCodec()
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
 	taken := operatorAddress()
@@ -121,16 +120,22 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 	tests := []struct {
 		name      string
 		mutate    func(state map[string]json.RawMessage)
-		operator  sdk.AccAddress
+		operators []sdk.AccAddress
 		unsetTime bool
 		errPhrase string
 	}{
 		{
 			name: "operator already seated",
 			mutate: func(state map[string]json.RawMessage) {
-				require.NoError(t, genesis.AddValidatorSeat(cdc, state, taken, genesisTime))
+				require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{taken}, genesisTime))
 			},
-			operator:  taken,
+			operators: []sdk.AccAddress{taken},
+			errPhrase: "already holds an account",
+		},
+		{
+			name:      "operator repeated in one grant",
+			mutate:    func(map[string]json.RawMessage) {},
+			operators: []sdk.AccAddress{operatorAddress(), taken, taken},
 			errPhrase: "already holds an account",
 		},
 		{
@@ -145,7 +150,7 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 				bankState.Supply = bankState.Supply.Add(sdk.NewCoin(chain.NoahBaseDenom, math.OneInt()))
 				state[banktypes.ModuleName] = cdc.MustMarshalJSON(&bankState)
 			},
-			operator:  taken,
+			operators: []sdk.AccAddress{operatorAddress(), taken},
 			errPhrase: "already holds a balance",
 		},
 		{
@@ -164,25 +169,31 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 				}
 				state[banktypes.ModuleName] = cdc.MustMarshalJSON(&bankState)
 			},
-			operator:  operatorAddress(),
+			operators: []sdk.AccAddress{operatorAddress()},
 			errPhrase: "short of the",
 		},
 		{
 			name:      "missing module state",
 			mutate:    func(state map[string]json.RawMessage) { delete(state, treasurytypes.ModuleName) },
-			operator:  operatorAddress(),
+			operators: []sdk.AccAddress{operatorAddress()},
 			errPhrase: "carries no treasury state",
+		},
+		{
+			name:      "no operators",
+			mutate:    func(map[string]json.RawMessage) {},
+			operators: nil,
+			errPhrase: "at least one operator address must be set",
 		},
 		{
 			name:      "empty operator",
 			mutate:    func(map[string]json.RawMessage) {},
-			operator:  nil,
+			operators: []sdk.AccAddress{nil},
 			errPhrase: "operator address must be set",
 		},
 		{
 			name:      "unset genesis time",
 			mutate:    func(map[string]json.RawMessage) {},
-			operator:  operatorAddress(),
+			operators: []sdk.AccAddress{operatorAddress()},
 			unsetTime: true,
 			errPhrase: "genesis time must be set",
 		},
@@ -201,10 +212,11 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 			if tt.unsetTime {
 				at = time.Time{}
 			}
-			err := genesis.AddValidatorSeat(cdc, state, tt.operator, at)
+			err := genesis.AddValidatorSeats(cdc, state, tt.operators, at)
 			require.ErrorContains(t, err, tt.errPhrase)
+			require.Len(t, state, len(before))
 			for module, raw := range state {
-				require.Equal(t, before[module], string(raw), "%s is untouched by a refused seat", module)
+				require.Equal(t, before[module], string(raw), "%s is untouched by a refused grant", module)
 			}
 		})
 	}

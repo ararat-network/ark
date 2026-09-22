@@ -46,13 +46,13 @@ func clientCodec(t *testing.T) codec.Codec {
 	return clientCtx.Codec
 }
 
-// TestAddValidatorSeatCmd grants two seats on a copy of the launch artefact
-// and reads each result back: the vesting account on its window, the
-// balances, the fee pool, the targets, and an unchanged supply. The
-// artefact carries no genesis time, so the first seat sets it and later ones
-// vest from it; a seat without one, a different time, and a repeated
-// operator are refused with the file untouched, and the result validates.
-func TestAddValidatorSeatCmd(t *testing.T) {
+// TestAddValidatorSeatsCmd grants two seats in one run on a copy of the
+// launch artefact and reads the result back: each vesting account on its
+// window, the balances, the fee pool, the targets, and an unchanged supply.
+// The artefact carries no genesis time, so seating before assembly sets it is
+// refused; so are a seated operator, a grant one of whose later seats fails,
+// and a bad address, each with the file untouched, and the result validates.
+func TestAddValidatorSeatsCmd(t *testing.T) {
 	home := t.TempDir()
 	genesisFile := filepath.Join(home, "config", "genesis.json")
 	require.NoError(t, os.MkdirAll(filepath.Dir(genesisFile), 0o755))
@@ -87,6 +87,7 @@ func TestAddValidatorSeatCmd(t *testing.T) {
 		secp256k1.GenPrivKey().PubKey().Address().Bytes(),
 		secp256k1.GenPrivKey().PubKey().Address().Bytes(),
 	}
+	seats := int64(len(operators))
 	genesisTime := time.Date(2027, time.January, 4, 12, 0, 0, 0, time.UTC)
 	untouched := func(t *testing.T, run func() error, errPhrase string) {
 		t.Helper()
@@ -95,57 +96,56 @@ func TestAddValidatorSeatCmd(t *testing.T) {
 		require.ErrorContains(t, run(), errPhrase)
 		after, err := os.ReadFile(genesisFile)
 		require.NoError(t, err)
-		require.Equal(t, before, after, "a refused seat leaves the file untouched")
+		require.Equal(t, before, after, "a refused grant leaves the file untouched")
 	}
-	untouched(t, func() error { return run("genesis", "add-validator-seat", operators[0].String()) }, "genesis_time is unset")
+	untouched(t, func() error { return run("genesis", "add-validator-seats", operators[0].String()) }, "genesis time must be set")
 
-	for i, operator := range operators {
-		args := []string{"genesis", "add-validator-seat", operator.String()}
-		if i == 0 {
-			args = append(args, fmt.Sprintf("--%s=%s", flagGenesisTime, genesisTime.Format(time.RFC3339)))
-		}
-		require.NoError(t, run(args...))
-		state := load()
-		seats := int64(i + 1)
+	// Assembly sets the time in the file before seating.
+	appGenesis, err := genutiltypes.AppGenesisFromFile(genesisFile)
+	require.NoError(t, err)
+	appGenesis.GenesisTime = genesisTime
+	require.NoError(t, appGenesis.SaveAs(genesisFile))
 
-		appGenesis, err := genutiltypes.AppGenesisFromFile(genesisFile)
-		require.NoError(t, err)
-		require.True(t, genesisTime.Equal(appGenesis.GenesisTime), "the first seat set the time; later ones keep it")
+	require.NoError(t, run("genesis", "add-validator-seats", operators[0].String(), operators[1].String()))
+	state := load()
+	appGenesis, err = genutiltypes.AppGenesisFromFile(genesisFile)
+	require.NoError(t, err)
+	require.True(t, genesisTime.Equal(appGenesis.GenesisTime), "seating keeps the time")
 
-		var authState authtypes.GenesisState
-		cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
-		accounts, err := authtypes.UnpackAccounts(authState.Accounts)
-		require.NoError(t, err)
-		require.Len(t, accounts, int(seats))
+	var authState authtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
+	accounts, err := authtypes.UnpackAccounts(authState.Accounts)
+	require.NoError(t, err)
+	require.Len(t, accounts, int(seats))
+	bankState := banktypes.GetGenesisStateFromAppState(cdc, state)
+	for _, operator := range operators {
 		vesting, ok := accounts[slicesIndexAccount(t, accounts, operator)].(*vestingtypes.ContinuousVestingAccount)
 		require.True(t, ok, "the seat is a continuous vesting account")
 		require.Equal(t, grant, vesting.OriginalVesting)
 		require.Equal(t, genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(), vesting.StartTime)
 		require.Equal(t, genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(), vesting.EndTime)
-
-		bankState := banktypes.GetGenesisStateFromAppState(cdc, state)
 		require.Equal(t, seat, bankState.Balances[slicesIndex(t, bankState.Balances, operator.String())].Coins)
-		poolNow := bankState.Balances[slicesIndex(t, bankState.Balances, pool)].Coins
-		require.Equal(t, poolStart.Sub(seat.MulInt(math.NewInt(seats))...), poolNow)
-		require.Equal(t, supply, bankState.Supply, "supply is unchanged")
-
-		var distrState distrtypes.GenesisState
-		cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrState)
-		require.Equal(t, sdk.NewDecCoinsFromCoins(poolNow...), distrState.FeePool.CommunityPool,
-			"the fee pool still equals the module balance")
-
-		var treasuryState treasurytypes.GenesisState
-		cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryState)
-		require.Equal(t, chain.SeatValidatorShare.MulRaw(seats), treasuryState.EconomicPolicy.ValidatorBlockRewardTarget)
-		require.Equal(t, chain.SeatOracleShare.MulRaw(seats), treasuryState.EconomicPolicy.OracleBlockRewardTarget)
 	}
+	poolNow := bankState.Balances[slicesIndex(t, bankState.Balances, pool)].Coins
+	require.Equal(t, poolStart.Sub(seat.MulInt(math.NewInt(seats))...), poolNow)
+	require.Equal(t, supply, bankState.Supply, "supply is unchanged")
 
-	untouched(t, func() error { return run("genesis", "add-validator-seat", operators[0].String()) }, "already holds an account")
+	var distrState distrtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrState)
+	require.Equal(t, sdk.NewDecCoinsFromCoins(poolNow...), distrState.FeePool.CommunityPool,
+		"the fee pool still equals the module balance")
+
+	var treasuryState treasurytypes.GenesisState
+	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryState)
+	require.Equal(t, chain.SeatValidatorShare.MulRaw(seats), treasuryState.EconomicPolicy.ValidatorBlockRewardTarget)
+	require.Equal(t, chain.SeatOracleShare.MulRaw(seats), treasuryState.EconomicPolicy.OracleBlockRewardTarget)
+
 	third := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address().Bytes())
+	untouched(t, func() error { return run("genesis", "add-validator-seats", operators[0].String()) }, "already holds an account")
 	untouched(t, func() error {
-		return run("genesis", "add-validator-seat", third.String(),
-			fmt.Sprintf("--%s=%s", flagGenesisTime, genesisTime.Add(time.Hour).Format(time.RFC3339)))
-	}, "every seat vests from the same time")
+		return run("genesis", "add-validator-seats", third.String(), operators[1].String())
+	}, "already holds an account")
+	untouched(t, func() error { return run("genesis", "add-validator-seats", third.String(), "ark1notanaddress") }, "parse operator address")
 
 	require.NoError(t, run("genesis", "validate"))
 }

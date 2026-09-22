@@ -566,8 +566,8 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 }
 
 // TestLaunchGenesisBootsVestingSeat boots the artefact the way assembly
-// builds it: one seat granted by arkgenesis.AddValidatorSeat, the function
-// behind arkd genesis add-validator-seat, whose gentx self-delegates the
+// builds it: one seat granted by arkgenesis.AddValidatorSeats, the function
+// behind arkd genesis add-validator-seats, whose gentx self-delegates the
 // grant while none of it has vested. Unvested coins cannot pay fees; the
 // gentx pays none at height zero and the float pays afterwards.
 func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
@@ -594,7 +594,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 
 			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
 			float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
-			require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator, genesisTime))
+			require.NoError(t, arkgenesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{operator}, genesisTime))
 
 			privVal := mock.NewPV()
 			consPub, err := privVal.GetPubKey()

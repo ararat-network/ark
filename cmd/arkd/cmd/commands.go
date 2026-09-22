@@ -73,7 +73,7 @@ func initRootCmd(
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	genesisCmd := genutilcli.Commands(txConfig, basicManager, app.DefaultNodeHome)
-	genesisCmd.AddCommand(newAddValidatorSeatCmd(app.DefaultNodeHome, txConfig.SigningContext().AddressCodec()))
+	genesisCmd.AddCommand(newAddValidatorSeatsCmd(app.DefaultNodeHome, txConfig.SigningContext().AddressCodec()))
 
 	rootCmd.AddCommand(
 		server.StatusCommand(),
