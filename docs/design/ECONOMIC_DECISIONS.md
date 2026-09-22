@@ -1121,7 +1121,13 @@ governance-set number of members per window, so a stolen registrar key costs a w
 tranche before a vote replaces it, and a grant too small to give every vesting period a coin is refused where it is
 set rather than dispatched to a chain that rejects it. Amended again 2026-09-22: the founder's first 5M, the one grant
 paid outside the contract by a proposal naming an address, goes through it under the bloc rule like every seat
-holder's, and the field that restated pay outside the contract is gone with nothing left to restate.
+holder's, and the field that restated pay outside the contract is gone with nothing left to restate. Amended
+2026-09-23: a member grant is no longer a vesting account but a stream the contract holds, the tenth sent at
+registration and the rest paid by bank send as each month elapses, because a vesting account has no clawback and a
+sybil found after registration would still collect the whole grant; the registrar can suspend a member's pay and
+nothing more, governance cancels in batches with the rest staying in the tranche, and a void lifts a stolen registrar's
+suspensions in one write. The dusted-address rejection went with the vesting message, since a send lands in an
+existing account.
 
 ## P1
 

@@ -139,10 +139,33 @@ instantiate message carried the plan's figures: `arkd query wasm code-info <code
 `arkd query wasm contract-state smart <contract> '{"config":{}}'`.
 
 **A member tranche** is one message, the pool spend to the contract. The registrar, set at instantiation or by the
-sudo below, then issues grants as members are admitted; nothing about a member appears in a proposal. The contract
-issues at most the window's members, 250 in any seven days at launch, each registration counting for seven days from its
-block; a compromised registrar is replaced by an expedited `set_registrar`, and the window bounds what the old key can
-issue meanwhile.
+sudo below, then opens grants as members are admitted, the tenth sent at once and the rest paid month by month to
+anyone's `release_members`; nothing about a member appears in a proposal. The contract issues at most the window's
+members, 250 in any seven days at launch, each registration counting for seven days from its block; a compromised
+registrar is replaced by an expedited `set_registrar`, and the window bounds what the old key can issue meanwhile.
+Since the old key can also have suspended members, the same proposal carries `void_suspensions` for it, which lifts
+everything it suspended in one write; the new registrar then suspends the genuine cases again.
+
+**A faked member** is suspended by the registrar, `suspend_members`, which stops the pay and moves nothing, and
+cancelled by governance, batched by month or by step. The cancel pays what had elapsed by the suspension and leaves
+the rest in the contract as unallocated, so it seats the next member from the same tranche without a proposal.
+
+```json
+{
+  "title": "Cancel members found by the member process",
+  "summary": "<how they were found>",
+  "metadata": "",
+  "deposit": "1000000000000000000000anoah",
+  "messages": [
+    {
+      "@type": "/cosmwasm.wasm.v1.MsgSudoContract",
+      "authority": "GOV",
+      "contract": "CONTRACT",
+      "msg": {"cancel_members": {"addresses": ["ADDRESS", "..."]}}
+    }
+  ]
+}
+```
 
 ```json
 {
@@ -195,11 +218,20 @@ either fails; the reasoning for the band goes in the summary.
 ```
 
 The other sudo calls take the same shape with `set_registrar`, `set_issuance_limit`, `set_member_grant`,
-`set_controller`, `cancel_grant`, or `return_unallocated` in `msg`. After execution, read the contract back:
-`{"totals":{}}` for what the tranche holds, `{"grant":{"id":N}}` for a grant, `{"releasable":{"id":N}}` for what
-the rules allow now. Anyone may then send `{"release":{"id":N}}` once the grantee has registered a fresh address.
+`set_fee_allowance`, `add_stream`, `set_controller`, `cancel_grant`, `reinstate_members`, `void_suspensions`, or
+`return_unallocated` in `msg`. After execution, read the contract back: `{"totals":{}}` for what the tranche holds,
+`{"grant":{"id":N}}` for a grant, `{"releasable":{"id":N}}` for what the rules allow now, and
+`{"member":{"address":"..."}}` for a member's record and what is due. Anyone may then send `{"release":{"id":N}}`
+once the grantee has registered a fresh address, or `{"release_members":{"addresses":[...]}}` for up to a hundred
+members, which the app does in the member's own transaction.
 
 **A grant to a seat holder** is the same proposal with `seat_holder` true, the grantee abstaining. The bloc rule
 releases nothing to a seat holder until public bonded stake passes the block line
 ([plan §4](DISTRIBUTION_PLAN.md#4-distribution)), so the grant escrows whole and anyone releases it, tranche by
 tranche, as bonded stake grows.
+
+**A pay stream** is the spend followed by `add_stream`, the same shape without `seat_holder`, on the plan's schedule of
+twenty-four monthly periods: `[{"length": 2628000, "parts": 1}, "... 24 entries"]`. The contract holds the stream and
+pays each month to the hire once it has elapsed, by `{"release":{"id":N}}` from anyone; `{"releasable":{"id":N}}` shows
+the months elapsed and paid and when the next falls due. A `cancel_grant` on a stream pays the months that have elapsed,
+which anyone could have released before the vote executed, and returns the rest to the pool.
