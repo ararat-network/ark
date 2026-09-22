@@ -13,3 +13,15 @@ var ibcCallbacksWasm []byte
 func IBCCallbacksContractWasm() []byte {
 	return ibcCallbacksWasm
 }
+
+// grantWasm embeds the grant contract from contracts/grant: the optimizer
+// build `make contracts-optimize` writes, the bytes a store proposal cites.
+// It needs stargate and cosmwasm_2_1.
+//
+//go:embed grant.wasm
+var grantWasm []byte
+
+// GrantContractWasm returns the grant contract.
+func GrantContractWasm() []byte {
+	return grantWasm
+}

@@ -101,7 +101,9 @@ it remains payable. These adapters enforce that contract at distinct signed-mess
 From the repository root, run `go test ./app/...` for application changes. Integration scenarios live under
 [tests/integration/](../tests/README.md); simulation commands and prerequisites are in the [test guide](../tests/README.md).
 [testutil/](testutil/) supplies app, validator, funding, genesis, and IBC fixtures. Embedded contract fixtures and their
-wrapper live in [testdata/contracts.go](testdata/contracts.go). Use `go build ./...` before claiming repository-wide compilation.
+wrapper live in [testdata/contracts.go](testdata/contracts.go); the grant contract's wasm there is the build of
+[contracts/grant](../contracts/grant/README.md), refreshed by `make contracts-optimize`. Use `go build ./...` before claiming
+repository-wide compilation.
 
 ## Simulation fixtures
 
