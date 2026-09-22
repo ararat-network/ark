@@ -17,7 +17,7 @@ maintain that boundary.
 
 - [Genesis](governance/GENESIS.md): curated launch settings, unresolved values and appointments, and final validation.
 - [Distribution plan](governance/DISTRIBUTION_PLAN.md): the 60/40 member and contributor split of the community pool as
-  four-year vesting grants, with measured caps and gates, handing governance to the public.
+  vesting grants, with measured caps and gates, handing governance to the public.
 
 ## Operate services
 
