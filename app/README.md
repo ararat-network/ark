@@ -78,13 +78,15 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns opening
   nothing keeps in sync (D74). Impersonation is closed by Wasmd itself, which rejects a dispatched message whose signer
   is not the contract.
 - **The query accept list** in `app/wasm_query.go`, hand-written as Osmosis, Neutron, Juno, and Archway keep theirs,
-  because Wasmd ships no permissive default and a permissive list leaks nondeterministic reads into consensus. A path
-  is listed only if it is annotated `module_query_safe`, which a test enforces, and listing says something further:
-  its response shape is frozen for the life of the chain, because a value a contract reads is an input to consensus.
-  Widening the list is a coordinated binary upgrade, never a vote. It carries fourteen paths: what a contract needs to
-  price and route a conversion or a transfer, the tax estimate and the caps and gas prices behind it, the Oracle rates
-  and reference unit, Market's quote, pool, policy, and Tobin tax, and the asset registry. The ICA host derives its own
-  allowlist from the same annotation inside ibc-go, so the two surfaces are separate by construction.
+  because Wasmd ships no permissive default and a permissive list leaks nondeterministic reads into consensus. A path is
+  listed only if it is annotated `module_query_safe`, which a test enforces, and listing says something further: its
+  response shape is frozen for the life of the chain, because a value a contract reads is an input to consensus.
+  Widening the list is a coordinated binary upgrade, never a vote. It carries forty-eight paths: the thirty-four the SDK
+  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and fourteen
+  of Ark's own: what a contract needs to price and route a conversion or a transfer, the tax estimate and the caps and
+  gas prices behind it, the Oracle rates and reference unit, Market's quote, pool, policy, and Tobin tax, and the asset
+  registry. The ICA host derives its own allowlist from the same annotation inside ibc-go, so the two surfaces are
+  separate by construction.
 - **Callbacks** on both ICS-20 stacks deliver source, acknowledgement, timeout, and destination callbacks into
   contracts under ibc-go's gas cap and authorisation rules: a destination callback failure fails the receive, while
   acknowledgement and timeout callback failures follow the non-blocking lifecycle and undo no protocol bookkeeping.

@@ -203,11 +203,12 @@ own operator/access-control trust boundary, not a prerequisite for public govern
 Messages a contract, an interchain account, or a GMP-derived account dispatches never see the ante; the
 policy router in `app/execution_policy_router.go` charges their transfer tax at dispatch. What a contract
 may read is the accept list in `app/wasm_query.go`: a query path a contract can reach is an input to
-consensus, so the list admits only paths annotated `module_query_safe` and freezes each listed response
-shape for the life of the chain. The contract runtime is open from launch: upload and instantiation are
-permissionless, so a contract is an untrusted input bounded by exactly those two seams, and by the IBC
-client allowlist, empty at launch, which leaves the channels a contract could open unopenable until
-governance admits a client type.
+consensus, so the list admits only paths annotated `module_query_safe`, the SDK's own auth, bank, and
+staking set whole and Ark's by hand (D85), and freezes each listed response shape for the life of the
+chain. The contract runtime is open from launch: upload and instantiation are permissionless, so a
+contract is an untrusted input bounded by exactly those two seams, and by the IBC client allowlist, empty
+at launch, which leaves the channels a contract could open unopenable until governance admits a client
+type.
 
 **Review questions.** Does a new privileged message join a privilege, with its module's own check as the
 vouch, and is that vouch a bounded number of reads rather than the handler? Does a new policy walk authz?

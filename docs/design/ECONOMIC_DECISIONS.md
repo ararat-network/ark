@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D83: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83).
+- D72–D85: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D85](#d85).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1063,6 +1063,20 @@ revenue sufficient reads targets governance sets, and every flow between funds i
 power: the return is fiscal, as the tax rate is (D80). Governance already reached the pool in one direction by
 raising the targets, so the message adds a bounded, auditable exit rather than a new class of access. D9 and D25
 stand.
+
+## D85
+
+**Recorded status:** Decided 2026-09-22. Amends the accept-list practice recorded in [D74](#d74).
+
+The contract query accept list admits every query the SDK annotates `module_query_safe` for auth, bank, and staking,
+thirty-four paths, beside the fourteen hand-written Ark entries. The annotation is upstream's review, and the test
+that requires it of every entry stands; the hand-written review is for Ark's own modules, whose response shapes Ark
+freezes by listing them. Distribution, gov, and slashing carry no annotation in the pinned SDK and stay out until
+upstream annotates them. Why: the grant escrow in the [distribution plan](../governance/DISTRIBUTION_PLAN.md) reads
+total bonded stake through the staking pool query, and a list widened one path at a time for each contract need would
+re-review what upstream already has. Wasmd's native bank, staking, and distribution queriers were already on; the
+listed paths add what they lack: the pool total, both modules' params, unbonding and redelegation views, historical
+info, spendable balances, send-enabled, and account lookups. D74 stands.
 
 ## P1
 

@@ -201,7 +201,7 @@ func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	annotated := moduleQuerySafePaths()
-	require.Len(t, app.AcceptedQueries(), 14, "the launch list is fourteen paths; widening is a review")
+	require.Len(t, app.AcceptedQueries(), 48, "fourteen Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
 
 	for path, response := range app.AcceptedQueries() {
 		t.Run(path, func(t *testing.T) {
