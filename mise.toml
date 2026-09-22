@@ -6,6 +6,10 @@ golangci-lint = "2.13.2"
 # goreleaser reads one tag per run and its tag handling has shifted between
 # minors, so `make release-pricefeed` is pinned to what it was written against.
 goreleaser = "2.18.0"
+# The grant contract under contracts/ builds with the pinned Rust and the wasm target; the
+# optimizer image pins the same Rust, so a newer one is not used: its wasm defaults (bulk memory)
+# are outside what the chain's wasmvm accepts.
+rust = { version = "1.86.0", targets = "wasm32-unknown-unknown" }
 # Generates per-archive SPDX inventories for standalone release packaging.
 syft = "1.51.1"
 # Install govulncheck from source with the pinned Go toolchain so it can parse this module's

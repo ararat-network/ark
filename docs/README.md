@@ -52,6 +52,7 @@ maintain that boundary.
 ## Find subsystem documentation
 
 - [Application](../app/README.md), [ante/post handling](../app/ante/README.md), and [mempool](../app/mempool/README.md).
+- [Contracts](../contracts/README.md): the workspace and the [grant contract](../contracts/grant/README.md).
 - [Asset](../x/asset/README.md), [Oracle](../x/oracle/README.md), [Market](../x/market/README.md),
   [Treasury](../x/treasury/README.md), [Claims](../x/claims/README.md), [Reserve](../x/reserve/README.md),
   and [Security](../x/security/README.md).

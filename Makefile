@@ -133,6 +133,36 @@ test-sim-benchmark:
 	@go test ./app -failfast -mod=readonly -timeout 24h -tags=sims -benchmem -run ^$$ -bench BenchmarkFullAppSimulation -NumBlocks=100 -BlockSize=200
 
 ###############################################################################
+###                               Contracts                                 ###
+###############################################################################
+
+# The contracts workspace builds with the Rust mise pins. `contracts-build` is the local check;
+# `contracts-optimize` is the reproducible build a store proposal cites, needs Docker, and refreshes
+# the artefact the application tests embed, so the tests run the bytes the chain would store.
+CONTRACT_CAPABILITIES := iterator,staking,stargate,cosmwasm_1_1,cosmwasm_1_2,cosmwasm_1_3,cosmwasm_1_4,cosmwasm_2_0,cosmwasm_2_1,cosmwasm_2_2,ibc2
+
+contracts-test:
+	@cd contracts && cargo test
+
+contracts-lint:
+	@cd contracts && cargo fmt --check && cargo clippy --all-targets -- -D warnings
+
+contracts-build:
+	@cd contracts && cargo build --release --lib --target wasm32-unknown-unknown
+	@cosmwasm-check --available-capabilities $(CONTRACT_CAPABILITIES) contracts/target/wasm32-unknown-unknown/release/ark_grant.wasm
+
+contracts-optimize:
+	@docker run --rm -v "$(CURDIR)/contracts":/code \
+		--mount type=volume,source=ark-contracts-cache,target=/target \
+		--mount type=volume,source=ark-contracts-registry,target=/usr/local/cargo/registry \
+		cosmwasm/optimizer:0.17.0 ./grant
+	@cosmwasm-check --available-capabilities $(CONTRACT_CAPABILITIES) contracts/artifacts/ark_grant.wasm
+	@cp contracts/artifacts/ark_grant.wasm app/testdata/grant.wasm
+	@cat contracts/artifacts/checksums.txt
+
+contracts: contracts-lint contracts-test contracts-build
+
+###############################################################################
 ###                                Linting                                  ###
 ###############################################################################
 
@@ -264,6 +294,7 @@ upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
 .PHONY: build build-pricefeed install clean release release-pricefeed source-bundle verify-source test test-race test-cover test-e2e test-e2e-vet \
+	contracts contracts-test contracts-lint contracts-build contracts-optimize \
 	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
 	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \

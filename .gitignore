@@ -15,3 +15,7 @@
 
 # Fuzz crashers, written by `go test -fuzz`. Promote them to f.Add seeds instead.
 **/testdata/fuzz/
+
+# Rust build output of the contracts workspace.
+contracts/target/
+contracts/artifacts/

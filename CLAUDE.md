@@ -53,6 +53,7 @@ proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
 app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
+contracts/      # CosmWasm contracts the chain's processes use (grant: member grants and contributor escrow)
 ```
 
 ## Oracle, Price Feed, And ABCI Boundaries
@@ -205,6 +206,8 @@ string field_name = N [
 - Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
   change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
   verification, report the exact blocker.
+- Contracts: `make contracts` lints, tests, builds, and validates the wasm under `contracts/`; `make contracts-optimize`
+  (Docker) is the reproducible build that refreshes the checked-in `app/testdata/grant.wasm`, which CI verifies
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`
