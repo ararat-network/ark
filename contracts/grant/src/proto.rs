@@ -63,8 +63,8 @@ pub fn create_vesting_account(
     )
 }
 
-/// grant_fee_allowance gives a member a basic allowance from the contract so
-/// their first delegation can pay its gas.
+/// grant_fee_allowance gives a tranche account a basic allowance from the
+/// contract so its first delegation can pay its gas.
 pub fn grant_fee_allowance(
     contract: &str,
     grantee: &str,

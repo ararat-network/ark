@@ -1,26 +1,28 @@
 use cosmwasm_std::{
-    entry_point, from_json, to_json_binary, Addr, Binary, Deps, DepsMut, Env, Event, MessageInfo,
-    Order, Reply, Response, StdResult, SubMsg, SubMsgResult, Uint128,
+    coins, entry_point, from_json, to_json_binary, Addr, BankMsg, Binary, CosmosMsg, Deps, DepsMut,
+    Env, Event, MessageInfo, Order, Reply, Response, StdResult, Storage, SubMsg, SubMsgResult,
+    Uint128,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{
     ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceEntry, IssuanceResponse,
-    MemberResponse, MemberStatus, MigrateMsg, PersonResponse, QueryMsg, ReleasableResponse,
-    SudoMsg, TotalsResponse,
+    Kind, Member, MemberResponse, MigrateMsg, PersonResponse, QueryMsg, ReleasableResponse, Rule,
+    SudoMsg, Suspension, TotalsResponse,
 };
 use crate::proto;
 use crate::rules;
 use crate::state::{
-    Config, Grant, Pending, Person, CONFIG, CONTRIBUTORS_PAID, ESCROWED, GRANTS, ISSUANCE, MEMBERS,
-    MEMBERS_ISSUED, MEMBERS_REJECTED, NEXT_ID, PERSONS, REPLY_SEQ,
+    Config, Grant, Pending, Person, CONFIG, CONTRIBUTORS_PAID, ESCROWED, FEES_PROMISED,
+    FEES_RESERVED, GRANTS, ISSUANCE, MEMBERS, MEMBERS_CANCELLED, MEMBERS_ISSUED, MEMBERS_PAID,
+    NEXT_ID, PERSONS, REPLY_SEQ, VOIDED,
 };
 
 const CONTRACT_NAME: &str = "crates.io:ark-grant";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// MAX_BATCH bounds one registration call.
+/// MAX_BATCH bounds one call over member addresses.
 pub const MAX_BATCH: usize = 100;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -65,9 +67,12 @@ pub fn instantiate(
     )?;
     NEXT_ID.save(deps.storage, &1)?;
     ESCROWED.save(deps.storage, &Uint128::zero())?;
+    FEES_PROMISED.save(deps.storage, &Uint128::zero())?;
+    FEES_RESERVED.save(deps.storage, &Uint128::zero())?;
     CONTRIBUTORS_PAID.save(deps.storage, &Uint128::zero())?;
+    MEMBERS_PAID.save(deps.storage, &Uint128::zero())?;
     MEMBERS_ISSUED.save(deps.storage, &0)?;
-    MEMBERS_REJECTED.save(deps.storage, &0)?;
+    MEMBERS_CANCELLED.save(deps.storage, &0)?;
     REPLY_SEQ.save(deps.storage, &0)?;
     Ok(Response::new().add_attribute("action", "instantiate"))
 }
@@ -87,6 +92,12 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::RegisterMembers { addresses } => register_members(deps, env, info, addresses),
+        ExecuteMsg::ReleaseMembers { addresses } => release_members(deps, env, addresses),
+        ExecuteMsg::SuspendMembers { addresses } => suspend_members(deps, env, info, addresses),
+        ExecuteMsg::ReinstateMembers { addresses } => {
+            registrar_only(&CONFIG.load(deps.storage)?, &info)?;
+            reinstate_members(deps, addresses)
+        }
         ExecuteMsg::SetReleaseAddress { id, address } => {
             set_release_address(deps, info, id, address)
         }
@@ -135,11 +146,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
                     .add_attribute("window_seconds", limit.window_seconds.to_string()),
             ))
         }
-        SudoMsg::SetMemberGrant {
-            amount,
-            schedule,
-            fee_allowance,
-        } => {
+        SudoMsg::SetMemberGrant { amount, schedule } => {
             if amount.is_zero() {
                 return Err(ContractError::ZeroAmount);
             }
@@ -148,11 +155,19 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
             CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
                 c.member_grant = amount;
                 c.member_schedule = schedule;
-                c.fee_allowance = fee_allowance;
                 Ok(c)
             })?;
             Ok(Response::new().add_event(
                 Event::new("ark-grant/member_grant_set").add_attribute("amount", amount),
+            ))
+        }
+        SudoMsg::SetFeeAllowance { amount } => {
+            CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
+                c.fee_allowance = amount;
+                Ok(c)
+            })?;
+            Ok(Response::new().add_event(
+                Event::new("ark-grant/fee_allowance_set").add_attribute("amount", amount),
             ))
         }
         SudoMsg::AddGrant {
@@ -161,6 +176,11 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
             schedule,
             seat_holder,
         } => add_grant(deps, env, grantee, amount, schedule, seat_holder),
+        SudoMsg::AddStream {
+            grantee,
+            amount,
+            schedule,
+        } => add_stream(deps, env, grantee, amount, schedule),
         SudoMsg::SetController {
             grantee,
             controller,
@@ -172,6 +192,17 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
             set_controller(deps, grantee, person, controller)
         }
         SudoMsg::CancelGrant { id } => cancel_grant(deps, env, id),
+        SudoMsg::CancelMembers { addresses } => cancel_members(deps, env, addresses),
+        SudoMsg::ReinstateMembers { addresses } => reinstate_members(deps, addresses),
+        SudoMsg::VoidSuspensions { registrar } => {
+            let registrar = deps.api.addr_validate(&registrar)?;
+            VOIDED.save(deps.storage, &registrar, &env.block.height)?;
+            Ok(Response::new().add_event(
+                Event::new("ark-grant/suspensions_voided")
+                    .add_attribute("registrar", registrar.as_str())
+                    .add_attribute("height", env.block.height.to_string()),
+            ))
+        }
         SudoMsg::ReturnUnallocated { amount } => {
             if amount.is_zero() {
                 return Err(ContractError::ZeroAmount);
@@ -201,44 +232,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         from_json(&msg.payload).map_err(|_| ContractError::UnknownReply(msg.id))?;
     let config = CONFIG.load(deps.storage)?;
     match (pending, msg.result) {
-        (Pending::Member { address }, SubMsgResult::Ok(_)) => {
-            MEMBERS.save(
-                deps.storage,
-                &address,
-                &MemberStatus::Issued {
-                    height: env.block.height,
-                },
-            )?;
-            MEMBERS_ISSUED.update(deps.storage, |n| -> StdResult<_> { Ok(n + 1) })?;
-            let mut response = Response::new().add_event(
-                Event::new("ark-grant/member_issued").add_attribute("address", address.as_str()),
-            );
-            if !config.fee_allowance.is_zero() {
-                response = response.add_message(proto::grant_fee_allowance(
-                    env.contract.address.as_str(),
-                    address.as_str(),
-                    &config.denom,
-                    config.fee_allowance,
-                ));
-            }
-            Ok(response)
-        }
-        (Pending::Member { address }, SubMsgResult::Err(error)) => {
-            MEMBERS.save(
-                deps.storage,
-                &address,
-                &MemberStatus::Rejected {
-                    height: env.block.height,
-                    error: error.clone(),
-                },
-            )?;
-            MEMBERS_REJECTED.update(deps.storage, |n| -> StdResult<_> { Ok(n + 1) })?;
-            Ok(Response::new().add_event(
-                Event::new("ark-grant/member_rejected")
-                    .add_attribute("address", address.as_str())
-                    .add_attribute("error", error),
-            ))
-        }
         (
             Pending::Tranche {
                 id,
@@ -248,9 +241,30 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             SubMsgResult::Ok(_),
         ) => {
             let mut grant = GRANTS.load(deps.storage, id)?;
+            // Only tranche() carries this payload, for ownership grants.
+            let Kind::Ownership {
+                fee_reserve: reserve,
+                ..
+            } = grant.kind
+            else {
+                return Err(ContractError::NotOwnership(id));
+            };
             grant.released = grant.released.checked_add(amount)?;
             grant.remaining = grant.remaining.checked_sub(amount)?;
-            grant.release_address = None;
+            // The tranche's gas is the grant's own reserve, so a raised
+            // allowance does not reach a grant reserved at the old rate. The
+            // last tranche returns what the reserve did not need.
+            let gas = config.fee_allowance.min(reserve);
+            let reserve = reserve.checked_sub(gas)?;
+            let unused = if grant.remaining.is_zero() {
+                reserve
+            } else {
+                Uint128::zero()
+            };
+            grant.kind = Kind::Ownership {
+                fee_reserve: reserve.checked_sub(unused)?,
+                release_address: None,
+            };
             GRANTS.save(deps.storage, id, &grant)?;
             PERSONS.update(
                 deps.storage,
@@ -268,18 +282,43 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             CONTRIBUTORS_PAID.update(deps.storage, |t| -> Result<_, ContractError> {
                 Ok(t.checked_add(amount)?)
             })?;
-            Ok(Response::new().add_event(
-                Event::new("ark-grant/released")
-                    .add_attribute("id", id.to_string())
-                    .add_attribute("address", address.as_str())
-                    .add_attribute("amount", amount)
-                    .add_attribute("remaining", grant.remaining),
-            ))
+            FEES_RESERVED.update(deps.storage, |r| -> Result<_, ContractError> {
+                Ok(r.checked_sub(gas)?.checked_sub(unused)?)
+            })?;
+            let mut response = Response::new()
+                .add_event(
+                    Event::new("ark-grant/released")
+                        .add_attribute("id", id.to_string())
+                        .add_attribute("address", address.as_str())
+                        .add_attribute("amount", amount)
+                        .add_attribute("remaining", grant.remaining)
+                        .add_attribute("gas_returned", unused),
+                )
+                .add_messages(promise_allowance(
+                    deps.storage,
+                    &config,
+                    &env,
+                    &address,
+                    gas,
+                )?);
+            if !unused.is_zero() {
+                response = response.add_message(proto::fund_community_pool(
+                    env.contract.address.as_str(),
+                    &config.denom,
+                    unused,
+                ));
+            }
+            Ok(response)
         }
         (Pending::Tranche { id, address, .. }, SubMsgResult::Err(error)) => {
             GRANTS.update(deps.storage, id, |g| -> Result<_, ContractError> {
                 let mut g = g.ok_or(ContractError::GrantNotFound(id))?;
-                g.release_address = None;
+                if let Kind::Ownership {
+                    release_address, ..
+                } = &mut g.kind
+                {
+                    *release_address = None;
+                }
                 Ok(g)
             })?;
             Ok(Response::new().add_event(
@@ -329,7 +368,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             let config = CONFIG.load(deps.storage)?;
             let grant = GRANTS.load(deps.storage, id)?;
             let person = PERSONS.load(deps.storage, &grant.grantee)?;
-            let r = releasable(deps, &config, &grant, &person)
+            let r = releasable(deps, &env, &config, &grant, &person)
                 .map_err(|e| cosmwasm_std::StdError::generic_err(e.to_string()))?;
             to_json_binary(&r)
         }
@@ -340,19 +379,50 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .query_balance(env.contract.address, &config.denom)?
                 .amount;
             let escrowed = ESCROWED.load(deps.storage)?;
+            let fees_reserved = FEES_RESERVED.load(deps.storage)?;
+            let fees_promised = FEES_PROMISED.load(deps.storage)?;
             to_json_binary(&TotalsResponse {
                 balance,
-                unallocated: balance.saturating_sub(escrowed),
+                unallocated: balance
+                    .saturating_sub(escrowed)
+                    .saturating_sub(fees_reserved)
+                    .saturating_sub(fees_promised),
                 escrowed,
+                fees_reserved,
+                fees_promised,
                 contributors_paid: CONTRIBUTORS_PAID.load(deps.storage)?,
+                members_paid: MEMBERS_PAID.load(deps.storage)?,
                 members_issued: MEMBERS_ISSUED.load(deps.storage)?,
-                members_rejected: MEMBERS_REJECTED.load(deps.storage)?,
+                members_cancelled: MEMBERS_CANCELLED.load(deps.storage)?,
             })
         }
         QueryMsg::Member { address } => {
             let address = deps.api.addr_validate(&address)?;
+            let Some(mut m) = MEMBERS.may_load(deps.storage, &address)? else {
+                return to_json_binary(&MemberResponse {
+                    member: None,
+                    releasable: Uint128::zero(),
+                    elapsed: 0,
+                    next_at: None,
+                });
+            };
+            let suspended = suspension(deps.storage, &m)?;
+            m.suspended = suspended.clone();
+            let until = suspended
+                .as_ref()
+                .map_or(env.block.time.seconds(), |s| s.at);
+            let (elapsed, next_at) = rules::elapsed(&m.schedule, m.start, until);
+            let releasable = if m.cancelled || m.remaining.is_zero() || suspended.is_some() {
+                Uint128::zero()
+            } else {
+                rules::accrued(m.amount, &m.schedule, m.paid, elapsed)
+                    .map_err(|e| cosmwasm_std::StdError::generic_err(e.to_string()))?
+            };
             to_json_binary(&MemberResponse {
-                status: MEMBERS.may_load(deps.storage, &address)?,
+                member: Some(m),
+                releasable,
+                elapsed,
+                next_at,
             })
         }
         QueryMsg::Issuance {} => {
@@ -396,18 +466,29 @@ fn grant_response(g: Grant) -> GrantResponse {
         released: g.released,
         remaining: g.remaining,
         schedule: g.schedule,
-        release_address: g.release_address,
         cancelled: g.cancelled,
+        kind: g.kind,
     }
 }
 
 /// unallocated is the balance not yet promised to a grant.
-fn unallocated(deps: Deps, env: &Env, config: &Config) -> Result<Uint128, ContractError> {
+/// free is the balance beyond what grants hold, their coins and their gas:
+/// what a grant may draw, since it arrives with its own spend.
+fn free(deps: Deps, env: &Env, config: &Config) -> Result<Uint128, ContractError> {
     let balance = deps
         .querier
         .query_balance(env.contract.address.clone(), &config.denom)?
         .amount;
-    Ok(balance.saturating_sub(ESCROWED.load(deps.storage)?))
+    Ok(balance
+        .saturating_sub(ESCROWED.load(deps.storage)?)
+        .saturating_sub(FEES_RESERVED.load(deps.storage)?))
+}
+
+/// unallocated is free less the gas promised: what registration may issue
+/// and governance may return. A promise stays counted once drawn, so this
+/// reads low by the gas members have spent.
+fn unallocated(deps: Deps, env: &Env, config: &Config) -> Result<Uint128, ContractError> {
+    Ok(free(deps, env, config)?.saturating_sub(FEES_PROMISED.load(deps.storage)?))
 }
 
 /// own is everything counted against a person: the seat if they hold one
@@ -425,6 +506,65 @@ fn next_reply_id(deps: &mut DepsMut) -> StdResult<u64> {
     REPLY_SEQ.update(deps.storage, |n| -> StdResult<_> { Ok(n + 1) })
 }
 
+/// registrar_only admits the configured registrar and nobody else.
+fn registrar_only(config: &Config, info: &MessageInfo) -> Result<(), ContractError> {
+    match &config.registrar {
+        Some(r) if *r == info.sender => Ok(()),
+        _ => Err(ContractError::Unauthorized("not the registrar".into())),
+    }
+}
+
+/// batch validates one call's addresses: some, at most MAX_BATCH.
+fn batch(deps: Deps, addresses: &[String]) -> Result<Vec<Addr>, ContractError> {
+    if addresses.is_empty() {
+        return Err(ContractError::EmptyBatch);
+    }
+    if addresses.len() > MAX_BATCH {
+        return Err(ContractError::BatchTooLarge(addresses.len(), MAX_BATCH));
+    }
+    addresses
+        .iter()
+        .map(|a| Ok(deps.api.addr_validate(a)?))
+        .collect()
+}
+
+/// suspension is a member's suspension as the contract treats it: none once
+/// the registrar that made it has been voided up to its height.
+fn suspension(storage: &dyn Storage, member: &Member) -> StdResult<Option<Suspension>> {
+    let Some(s) = &member.suspended else {
+        return Ok(None);
+    };
+    Ok(match VOIDED.may_load(storage, &s.by)? {
+        Some(voided) if s.height <= voided => None,
+        _ => Some(s.clone()),
+    })
+}
+
+/// live_member is a member that can still be paid.
+fn live_member(storage: &dyn Storage, address: &Addr) -> Result<Member, ContractError> {
+    let m = MEMBERS
+        .may_load(storage, address)?
+        .ok_or_else(|| ContractError::MemberNotFound(address.to_string()))?;
+    if m.cancelled {
+        return Err(ContractError::MemberCancelled(address.to_string()));
+    }
+    if m.remaining.is_zero() {
+        return Err(ContractError::MemberPaidOut(address.to_string()));
+    }
+    Ok(m)
+}
+
+/// settle_members moves the totals for member pay that has left escrow.
+fn settle_members(storage: &mut dyn Storage, amount: Uint128) -> Result<(), ContractError> {
+    ESCROWED.update(storage, |e| -> Result<_, ContractError> {
+        Ok(e.checked_sub(amount)?)
+    })?;
+    MEMBERS_PAID.update(storage, |p| -> Result<_, ContractError> {
+        Ok(p.checked_add(amount)?)
+    })?;
+    Ok(())
+}
+
 fn register_members(
     deps: DepsMut,
     env: Env,
@@ -432,27 +572,16 @@ fn register_members(
     addresses: Vec<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    match &config.registrar {
-        Some(r) if *r == info.sender => {}
-        _ => return Err(ContractError::Unauthorized("not the registrar".into())),
-    }
-    if addresses.is_empty() {
-        return Err(ContractError::EmptyBatch);
-    }
-    if addresses.len() > MAX_BATCH {
-        return Err(ContractError::BatchTooLarge(addresses.len(), MAX_BATCH));
-    }
+    registrar_only(&config, &info)?;
     // Addresses first, so a bad batch is reported as such before its cost.
-    let mut members = Vec::with_capacity(addresses.len());
-    for raw in &addresses {
-        let address = deps.api.addr_validate(raw)?;
-        if MEMBERS.has(deps.storage, &address) || members.contains(&address) {
+    let members = batch(deps.as_ref(), &addresses)?;
+    for (i, address) in members.iter().enumerate() {
+        if MEMBERS.has(deps.storage, address) || members[..i].contains(address) {
             return Err(ContractError::MemberExists(address.to_string()));
         }
-        members.push(address);
     }
     // The window bounds what a registrar key can issue before governance can
-    // replace it; attempted registrations count, whatever their outcome.
+    // replace it.
     let now = env.block.time.seconds();
     let mut entries = issuance_window(deps.storage, &env, &config)?;
     let requested = members.len() as u64;
@@ -484,41 +613,198 @@ fn register_members(
         }),
     }
     ISSUANCE.save(deps.storage, &entries)?;
-    let needed = config
-        .member_grant
-        .checked_mul(Uint128::new(members.len() as u128))?;
+    let count = Uint128::new(members.len() as u128);
+    let needed = config.member_grant.checked_mul(count)?;
     let available = unallocated(deps.as_ref(), &env, &config)?;
     if needed > available {
         return Err(ContractError::Unallocated { available, needed });
     }
 
-    let amounts = rules::split(config.member_grant, &config.member_schedule)?;
-    let start = now as i64;
-    let mut deps = deps;
+    // The first period pays at registration whatever its length: a fresh
+    // address has nothing to pay the gas for a claim with.
+    let upfront = rules::split(config.member_grant, &config.member_schedule)?[0];
     let mut response = Response::new().add_attribute("action", "register_members");
-    for address in members {
-        // Recorded now so nothing between dispatch and reply can register it
-        // again; the reply overwrites it with the outcome.
+    for address in &members {
         MEMBERS.save(
             deps.storage,
-            &address,
-            &MemberStatus::Rejected {
-                height: env.block.height,
-                error: "pending".into(),
+            address,
+            &Member {
+                start: now,
+                amount: config.member_grant,
+                schedule: config.member_schedule.clone(),
+                released: upfront,
+                remaining: config.member_grant.checked_sub(upfront)?,
+                paid: 1,
+                suspended: None,
+                cancelled: false,
             },
         )?;
-        let msg = proto::create_vesting_account(
-            env.contract.address.as_str(),
-            address.as_str(),
-            &config.denom,
-            start,
-            &config.member_schedule,
-            &amounts,
-        );
-        let id = next_reply_id(&mut deps)?;
-        let payload = to_json_binary(&Pending::Member { address })?;
-        response = response.add_submessage(SubMsg::reply_always(msg, id).with_payload(payload));
+        response = response
+            .add_message(send(&config, address, upfront))
+            .add_event(
+                Event::new("ark-grant/member_issued")
+                    .add_attribute("address", address.as_str())
+                    .add_attribute("paid", upfront),
+            );
     }
+    let paid = upfront.checked_mul(count)?;
+    ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
+        Ok(e.checked_add(needed.checked_sub(paid)?)?)
+    })?;
+    MEMBERS_PAID.update(deps.storage, |p| -> Result<_, ContractError> {
+        Ok(p.checked_add(paid)?)
+    })?;
+    MEMBERS_ISSUED.update(deps.storage, |n| -> StdResult<_> {
+        Ok(n + members.len() as u64)
+    })?;
+    Ok(response)
+}
+
+/// release_members pays each address the periods elapsed since it was last
+/// paid, by anyone. A member with nothing to pay is skipped rather than
+/// refused, so a cranker can sweep a roll; a batch that pays nobody fails.
+fn release_members(
+    deps: DepsMut,
+    env: Env,
+    addresses: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let now = env.block.time.seconds();
+    let mut total = Uint128::zero();
+    let mut response = Response::new().add_attribute("action", "release_members");
+    for address in batch(deps.as_ref(), &addresses)? {
+        let mut m = MEMBERS
+            .may_load(deps.storage, &address)?
+            .ok_or_else(|| ContractError::MemberNotFound(address.to_string()))?;
+        if m.cancelled || m.remaining.is_zero() || suspension(deps.storage, &m)?.is_some() {
+            continue;
+        }
+        let (elapsed, _) = rules::elapsed(&m.schedule, m.start, now);
+        let amount = rules::accrued(m.amount, &m.schedule, m.paid, elapsed)?;
+        if amount.is_zero() {
+            continue;
+        }
+        let periods = elapsed - m.paid;
+        m.released = m.released.checked_add(amount)?;
+        m.remaining = m.remaining.checked_sub(amount)?;
+        m.paid = elapsed;
+        MEMBERS.save(deps.storage, &address, &m)?;
+        total = total.checked_add(amount)?;
+        response = response
+            .add_message(send(&config, &address, amount))
+            .add_event(
+                Event::new("ark-grant/member_paid")
+                    .add_attribute("address", address.as_str())
+                    .add_attribute("amount", amount)
+                    .add_attribute("periods", periods.to_string())
+                    .add_attribute("remaining", m.remaining),
+            );
+    }
+    if total.is_zero() {
+        return Err(ContractError::NothingDue);
+    }
+    settle_members(deps.storage, total)?;
+    Ok(response)
+}
+
+/// suspend_members stops each address's pay, registrar only. The earliest
+/// suspension stands: a later one would move what a cancel settles.
+fn suspend_members(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    addresses: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    registrar_only(&config, &info)?;
+    let mut response = Response::new().add_attribute("action", "suspend_members");
+    for address in batch(deps.as_ref(), &addresses)? {
+        let mut m = live_member(deps.storage, &address)?;
+        if suspension(deps.storage, &m)?.is_some() {
+            return Err(ContractError::MemberSuspended(address.to_string()));
+        }
+        m.suspended = Some(Suspension {
+            at: env.block.time.seconds(),
+            height: env.block.height,
+            by: info.sender.clone(),
+        });
+        MEMBERS.save(deps.storage, &address, &m)?;
+        response = response.add_event(
+            Event::new("ark-grant/member_suspended").add_attribute("address", address.as_str()),
+        );
+    }
+    Ok(response)
+}
+
+/// reinstate_members lifts each address's suspension; the next release pays
+/// everything elapsed meanwhile. The caller has checked who asks.
+fn reinstate_members(deps: DepsMut, addresses: Vec<String>) -> Result<Response, ContractError> {
+    let mut response = Response::new().add_attribute("action", "reinstate_members");
+    for address in batch(deps.as_ref(), &addresses)? {
+        let mut m = live_member(deps.storage, &address)?;
+        if suspension(deps.storage, &m)?.is_none() {
+            return Err(ContractError::MemberNotSuspended(address.to_string()));
+        }
+        m.suspended = None;
+        MEMBERS.save(deps.storage, &address, &m)?;
+        response = response.add_event(
+            Event::new("ark-grant/member_reinstated").add_attribute("address", address.as_str()),
+        );
+    }
+    Ok(response)
+}
+
+/// cancel_members ends each address's grant. What had elapsed is the
+/// member's, since anyone could have released it before the vote executed,
+/// up to a suspension, after which nobody could. The rest leaves escrow and
+/// stays in the balance: it is the tranche's again, for the next member.
+fn cancel_members(
+    deps: DepsMut,
+    env: Env,
+    addresses: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let now = env.block.time.seconds();
+    let mut settled = Uint128::zero();
+    let mut returned = Uint128::zero();
+    let mut response = Response::new().add_attribute("action", "cancel_members");
+    let members = batch(deps.as_ref(), &addresses)?;
+    for address in &members {
+        let mut m = MEMBERS
+            .may_load(deps.storage, address)?
+            .ok_or_else(|| ContractError::MemberNotFound(address.to_string()))?;
+        if m.cancelled {
+            return Err(ContractError::MemberCancelled(address.to_string()));
+        }
+        let until = suspension(deps.storage, &m)?.map_or(now, |s| s.at);
+        let (elapsed, _) = rules::elapsed(&m.schedule, m.start, until);
+        let pay = rules::accrued(m.amount, &m.schedule, m.paid, elapsed)?;
+        if !pay.is_zero() {
+            m.released = m.released.checked_add(pay)?;
+            m.remaining = m.remaining.checked_sub(pay)?;
+            m.paid = elapsed;
+            response = response.add_message(send(&config, address, pay));
+        }
+        let rest = m.remaining;
+        m.remaining = Uint128::zero();
+        m.cancelled = true;
+        MEMBERS.save(deps.storage, address, &m)?;
+        settled = settled.checked_add(pay)?;
+        returned = returned.checked_add(rest)?;
+        response = response.add_event(
+            Event::new("ark-grant/member_cancelled")
+                .add_attribute("address", address.as_str())
+                .add_attribute("settled", pay)
+                .add_attribute("returned", rest),
+        );
+    }
+    settle_members(deps.storage, settled)?;
+    ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
+        Ok(e.checked_sub(returned)?)
+    })?;
+    MEMBERS_CANCELLED.update(deps.storage, |n| -> StdResult<_> {
+        Ok(n + members.len() as u64)
+    })?;
     Ok(response)
 }
 
@@ -542,7 +828,12 @@ fn set_release_address(
         return Err(ContractError::Exhausted(id));
     }
     let address = deps.api.addr_validate(&address)?;
-    grant.release_address = Some(address.clone());
+    match &mut grant.kind {
+        Kind::Ownership {
+            release_address, ..
+        } => *release_address = Some(address.clone()),
+        Kind::Stream { payee, .. } => *payee = address.clone(),
+    }
     GRANTS.save(deps.storage, id, &grant)?;
     Ok(Response::new().add_event(
         Event::new("ark-grant/release_address_set")
@@ -580,12 +871,13 @@ fn add_grant(
     }
     rules::validate_schedule(&schedule)?;
     let config = CONFIG.load(deps.storage)?;
-    let available = unallocated(deps.as_ref(), &env, &config)?;
-    if amount > available {
-        return Err(ContractError::Unallocated {
-            available,
-            needed: amount,
-        });
+    // Grant and gas against free, not unallocated: a grant arrives with its
+    // own spend, so promised gas is no floor a proposal can trip on.
+    let gas = rules::fee_reserve(amount, config.cap.unit, config.fee_allowance)?;
+    let needed = amount.checked_add(gas)?;
+    let available = free(deps.as_ref(), &env, &config)?;
+    if needed > available {
+        return Err(ContractError::Unallocated { available, needed });
     }
     let grantee = deps.api.addr_validate(&grantee)?;
 
@@ -613,12 +905,18 @@ fn add_grant(
         released: Uint128::zero(),
         remaining: amount,
         schedule,
-        release_address: Some(grantee.clone()),
         cancelled: false,
+        kind: Kind::Ownership {
+            fee_reserve: gas,
+            release_address: Some(grantee.clone()),
+        },
     };
     GRANTS.save(deps.storage, id, &grant)?;
     ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
         Ok(e.checked_add(amount)?)
+    })?;
+    FEES_RESERVED.update(deps.storage, |r| -> Result<_, ContractError> {
+        Ok(r.checked_add(gas)?)
     })?;
 
     let mut response = Response::new().add_event(
@@ -626,11 +924,12 @@ fn add_grant(
             .add_attribute("id", id.to_string())
             .add_attribute("grantee", grantee.as_str())
             .add_attribute("amount", amount)
+            .add_attribute("gas", gas)
             .add_attribute("seat_holder", seat_holder.to_string()),
     );
     // The first tranche pays now if the rules allow one; a grant with no
     // room yet simply waits in escrow.
-    let r = releasable(deps.as_ref(), &config, &grant, &person)?;
+    let r = releasable(deps.as_ref(), &env, &config, &grant, &person)?;
     if !r.amount.is_zero() {
         let (sub, event) = tranche(&mut deps, &env, &config, &grant, &grantee, r.amount)?;
         response = response.add_submessage(sub).add_event(event);
@@ -638,9 +937,76 @@ fn add_grant(
     Ok(response)
 }
 
+fn add_stream(
+    deps: DepsMut,
+    env: Env,
+    grantee: String,
+    amount: Uint128,
+    schedule: Vec<crate::msg::Period>,
+) -> Result<Response, ContractError> {
+    if amount.is_zero() {
+        return Err(ContractError::ZeroAmount);
+    }
+    rules::validate_schedule(&schedule)?;
+    // Every period must carry a coin: a send of nothing fails.
+    rules::split(amount, &schedule)?;
+    let config = CONFIG.load(deps.storage)?;
+    let available = free(deps.as_ref(), &env, &config)?;
+    if amount > available {
+        return Err(ContractError::Unallocated {
+            available,
+            needed: amount,
+        });
+    }
+    let grantee = deps.api.addr_validate(&grantee)?;
+    // A first grant makes the grantee address the controller. A stream says
+    // nothing about the seat; the next ownership grant restates it.
+    if !PERSONS.has(deps.storage, &grantee) {
+        PERSONS.save(
+            deps.storage,
+            &grantee,
+            &Person {
+                controller: grantee.clone(),
+                seat_holder: false,
+                released: Uint128::zero(),
+            },
+        )?;
+    }
+    let id = NEXT_ID.load(deps.storage)?;
+    NEXT_ID.save(deps.storage, &(id + 1))?;
+    let start = env.block.time.seconds();
+    let periods = schedule.len();
+    let grant = Grant {
+        id,
+        grantee: grantee.clone(),
+        amount,
+        released: Uint128::zero(),
+        remaining: amount,
+        schedule,
+        cancelled: false,
+        kind: Kind::Stream {
+            start,
+            paid: 0,
+            payee: grantee.clone(),
+        },
+    };
+    GRANTS.save(deps.storage, id, &grant)?;
+    ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
+        Ok(e.checked_add(amount)?)
+    })?;
+    Ok(Response::new().add_event(
+        Event::new("ark-grant/stream_added")
+            .add_attribute("id", id.to_string())
+            .add_attribute("grantee", grantee.as_str())
+            .add_attribute("amount", amount)
+            .add_attribute("periods", periods.to_string())
+            .add_attribute("start", start.to_string()),
+    ))
+}
+
 fn release(mut deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let grant = GRANTS
+    let mut grant = GRANTS
         .may_load(deps.storage, id)?
         .ok_or(ContractError::GrantNotFound(id))?;
     if grant.cancelled {
@@ -649,17 +1015,95 @@ fn release(mut deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractErr
     if grant.remaining.is_zero() {
         return Err(ContractError::Exhausted(id));
     }
-    let address = grant
-        .release_address
-        .clone()
-        .ok_or(ContractError::NoReleaseAddress(id))?;
-    let person = PERSONS.load(deps.storage, &grant.grantee)?;
-    let r = releasable(deps.as_ref(), &config, &grant, &person)?;
-    if r.amount.is_zero() {
-        return Err(ContractError::NothingReleasable(id));
+    match grant.kind.clone() {
+        Kind::Ownership {
+            release_address, ..
+        } => {
+            let address = release_address.ok_or(ContractError::NoReleaseAddress(id))?;
+            let person = PERSONS.load(deps.storage, &grant.grantee)?;
+            let r = releasable(deps.as_ref(), &env, &config, &grant, &person)?;
+            if r.amount.is_zero() {
+                return Err(ContractError::NothingReleasable(id));
+            }
+            let (sub, event) = tranche(&mut deps, &env, &config, &grant, &address, r.amount)?;
+            Ok(Response::new().add_submessage(sub).add_event(event))
+        }
+        Kind::Stream { start, paid, payee } => {
+            let (elapsed, _) = rules::elapsed(&grant.schedule, start, env.block.time.seconds());
+            let amount = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
+            if amount.is_zero() {
+                return Err(ContractError::NothingReleasable(id));
+            }
+            settle_stream(deps.storage, &mut grant, elapsed, amount)?;
+            GRANTS.save(deps.storage, id, &grant)?;
+            Ok(Response::new()
+                .add_message(send(&config, &payee, amount))
+                .add_event(
+                    Event::new("ark-grant/paid")
+                        .add_attribute("id", id.to_string())
+                        .add_attribute("address", payee.as_str())
+                        .add_attribute("amount", amount)
+                        .add_attribute("periods", (elapsed - paid).to_string())
+                        .add_attribute("remaining", grant.remaining),
+                ))
+        }
     }
-    let (sub, event) = tranche(&mut deps, &env, &config, &grant, &address, r.amount)?;
-    Ok(Response::new().add_submessage(sub).add_event(event))
+}
+
+/// settle_stream moves a stream's figures for the periods through elapsed:
+/// here rather than in a reply, since a send within the balance cannot fail
+/// and escrow holds the balance. The caller saves the grant.
+fn settle_stream(
+    storage: &mut dyn Storage,
+    grant: &mut Grant,
+    elapsed: u32,
+    amount: Uint128,
+) -> Result<(), ContractError> {
+    grant.released = grant.released.checked_add(amount)?;
+    grant.remaining = grant.remaining.checked_sub(amount)?;
+    if let Kind::Stream { paid, .. } = &mut grant.kind {
+        *paid = elapsed;
+    }
+    ESCROWED.update(storage, |e| -> Result<_, ContractError> {
+        Ok(e.checked_sub(amount)?)
+    })?;
+    CONTRIBUTORS_PAID.update(storage, |t| -> Result<_, ContractError> {
+        Ok(t.checked_add(amount)?)
+    })?;
+    Ok(())
+}
+
+/// send is a bank send from the contract: a stream's pay, spendable on
+/// arrival at any address.
+fn send(config: &Config, to: &Addr, amount: Uint128) -> CosmosMsg {
+    CosmosMsg::Bank(BankMsg::Send {
+        to_address: to.to_string(),
+        amount: coins(amount.u128(), &config.denom),
+    })
+}
+
+/// promise_allowance grants amount of gas to an account the contract created
+/// and counts the promise, none at zero. The contract never sees the grant
+/// drawn, so the count only grows.
+fn promise_allowance(
+    storage: &mut dyn Storage,
+    config: &Config,
+    env: &Env,
+    address: &Addr,
+    amount: Uint128,
+) -> Result<Option<CosmosMsg>, ContractError> {
+    if amount.is_zero() {
+        return Ok(None);
+    }
+    FEES_PROMISED.update(storage, |p| -> Result<_, ContractError> {
+        Ok(p.checked_add(amount)?)
+    })?;
+    Ok(Some(proto::grant_fee_allowance(
+        env.contract.address.as_str(),
+        address.as_str(),
+        &config.denom,
+        amount,
+    )))
 }
 
 /// tranche dispatches one vesting account creation; the reply settles the
@@ -702,66 +1146,122 @@ fn cancel_grant(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractEr
     if grant.cancelled {
         return Err(ContractError::Cancelled(id));
     }
+    let mut response = Response::new();
+    let mut gas = Uint128::zero();
+    let mut settled = Uint128::zero();
+    match grant.kind.clone() {
+        Kind::Ownership { fee_reserve, .. } => {
+            gas = fee_reserve;
+            grant.kind = Kind::Ownership {
+                fee_reserve: Uint128::zero(),
+                release_address: None,
+            };
+        }
+        Kind::Stream { start, paid, payee } => {
+            // What has elapsed is the payee's: anyone could have released it
+            // before the vote executed.
+            let (elapsed, _) = rules::elapsed(&grant.schedule, start, env.block.time.seconds());
+            settled = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
+            if !settled.is_zero() {
+                settle_stream(deps.storage, &mut grant, elapsed, settled)?;
+                response = response.add_message(send(&config, &payee, settled));
+            }
+        }
+    }
     let returned = grant.remaining;
     grant.remaining = Uint128::zero();
-    grant.release_address = None;
     grant.cancelled = true;
     GRANTS.save(deps.storage, id, &grant)?;
     ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
         Ok(e.checked_sub(returned)?)
     })?;
-    let mut response = Response::new().add_event(
+    FEES_RESERVED.update(deps.storage, |r| -> Result<_, ContractError> {
+        Ok(r.checked_sub(gas)?)
+    })?;
+    let total = returned.checked_add(gas)?;
+    response = response.add_event(
         Event::new("ark-grant/cancelled")
             .add_attribute("id", id.to_string())
-            .add_attribute("returned", returned),
+            .add_attribute("returned", returned)
+            .add_attribute("gas_returned", gas)
+            .add_attribute("settled", settled),
     );
-    if !returned.is_zero() {
+    if !total.is_zero() {
         response = response.add_message(proto::fund_community_pool(
             env.contract.address.as_str(),
             &config.denom,
-            returned,
+            total,
         ));
     }
     Ok(response)
 }
 
-/// releasable applies the cap and, for a seat holder, the bloc rule to one
-/// grant against bonded stake read now.
+/// releasable is what release would pay a grant now: for ownership, by the
+/// cap and, for a seat holder, the bloc rule against bonded stake read now;
+/// for a stream, by the clock.
 fn releasable(
     deps: Deps,
+    env: &Env,
     config: &Config,
     grant: &Grant,
     person: &Person,
 ) -> Result<ReleasableResponse, ContractError> {
-    let bonded = proto::bonded_tokens(&deps.querier)?;
-    let own = own(config, person);
-    let cap = rules::cap_total(bonded, own, &config.cap);
-    let mut allowance = cap.saturating_sub(own);
-    let mut seat_share = None;
-    if person.seat_holder {
-        let (seat_grants, seat_remaining) = seat_totals(deps)?;
-        let pool = rules::seat_allowance(bonded, config.founding_stake, seat_grants);
-        let share = rules::pro_rata(pool, grant.remaining, seat_remaining);
-        allowance = allowance.min(share);
-        seat_share = Some(share);
+    let idle = grant.cancelled || grant.remaining.is_zero();
+    match &grant.kind {
+        Kind::Ownership { .. } => {
+            let bonded = proto::bonded_tokens(&deps.querier)?;
+            let own = own(config, person);
+            let cap = rules::cap_total(bonded, own, &config.cap);
+            let mut allowance = cap.saturating_sub(own);
+            let mut seat_allowance = None;
+            if person.seat_holder {
+                let (seat_grants, seat_remaining) = seat_totals(deps)?;
+                let pool = rules::seat_allowance(bonded, config.founding_stake, seat_grants);
+                let share = rules::pro_rata(pool, grant.remaining, seat_remaining);
+                allowance = allowance.min(share);
+                seat_allowance = Some(share);
+            }
+            let amount = if idle {
+                Uint128::zero()
+            } else {
+                rules::release_amount(grant.remaining, allowance, config.cap.unit)
+            };
+            Ok(ReleasableResponse {
+                id: grant.id,
+                amount,
+                rule: Rule::Cap {
+                    bonded,
+                    own,
+                    cap,
+                    seat_allowance,
+                },
+            })
+        }
+        Kind::Stream { start, paid, .. } => {
+            let (elapsed, next_at) =
+                rules::elapsed(&grant.schedule, *start, env.block.time.seconds());
+            let amount = if idle {
+                Uint128::zero()
+            } else {
+                rules::accrued(grant.amount, &grant.schedule, *paid, elapsed)?
+            };
+            Ok(ReleasableResponse {
+                id: grant.id,
+                amount,
+                rule: Rule::Clock {
+                    start: *start,
+                    elapsed,
+                    paid: *paid,
+                    next_at,
+                },
+            })
+        }
     }
-    let amount = if grant.cancelled || grant.remaining.is_zero() {
-        Uint128::zero()
-    } else {
-        rules::release_amount(grant.remaining, allowance, config.cap.unit)
-    };
-    Ok(ReleasableResponse {
-        id: grant.id,
-        amount,
-        bonded,
-        own,
-        cap,
-        seat_allowance: seat_share,
-    })
 }
 
 /// seat_totals sums what this contract has released to seat holders and
-/// what their grants still hold in escrow.
+/// what their ownership grants still hold in escrow; streams are pay and
+/// stay outside.
 fn seat_totals(deps: Deps) -> Result<(Uint128, Uint128), ContractError> {
     let mut received = Uint128::zero();
     for item in PERSONS.range(deps.storage, None, None, Order::Ascending) {
@@ -773,7 +1273,7 @@ fn seat_totals(deps: Deps) -> Result<(Uint128, Uint128), ContractError> {
     let mut remaining = Uint128::zero();
     for item in GRANTS.range(deps.storage, None, None, Order::Ascending) {
         let (_, g) = item?;
-        if g.cancelled || g.remaining.is_zero() {
+        if g.cancelled || g.remaining.is_zero() || matches!(g.kind, Kind::Stream { .. }) {
             continue;
         }
         if PERSONS.load(deps.storage, &g.grantee)?.seat_holder {

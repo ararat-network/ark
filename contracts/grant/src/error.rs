@@ -27,6 +27,24 @@ pub enum ContractError {
     #[error("member {0} already registered")]
     MemberExists(String),
 
+    #[error("member {0} not found")]
+    MemberNotFound(String),
+
+    #[error("member {0} is cancelled")]
+    MemberCancelled(String),
+
+    #[error("member {0} is fully paid")]
+    MemberPaidOut(String),
+
+    #[error("member {0} is suspended")]
+    MemberSuspended(String),
+
+    #[error("member {0} is not suspended")]
+    MemberNotSuspended(String),
+
+    #[error("nothing due to any address in the batch")]
+    NothingDue,
+
     #[error("issuance limit: {remaining} more in the window, {requested} requested; the batch fits at {fits_at}")]
     IssuanceLimit {
         remaining: u64,
@@ -54,6 +72,9 @@ pub enum ContractError {
 
     #[error("grant {0}: nothing releasable")]
     NothingReleasable(u64),
+
+    #[error("grant {0} is not an ownership grant")]
+    NotOwnership(u64),
 
     #[error("amount must be positive")]
     ZeroAmount,

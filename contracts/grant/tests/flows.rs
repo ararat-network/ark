@@ -7,8 +7,8 @@ use anyhow::bail;
 use ark_grant::contract::{execute, instantiate, migrate, query, reply, sudo, MAX_BATCH};
 use ark_grant::msg::{
     CapRule, ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceEntry,
-    IssuanceLimit, IssuanceResponse, MemberResponse, MemberStatus, Period, QueryMsg,
-    ReleasableResponse, SudoMsg, TotalsResponse,
+    IssuanceLimit, IssuanceResponse, Kind, Member, MemberResponse, Period, PersonResponse,
+    QueryMsg, ReleasableResponse, Rule, SudoMsg, Suspension, TotalsResponse,
 };
 use ark_grant::proto::{encode_pool_response, POOL_QUERY_PATH};
 use ark_grant::ContractError;
@@ -43,6 +43,20 @@ fn standard() -> Vec<Period> {
     s.extend((0..36).map(|_| Period {
         length: 2_628_000,
         parts: 1,
+    }));
+    s
+}
+
+/// member is the plan's member schedule: a tenth after a second, then twelve
+/// months of three fortieths.
+fn member() -> Vec<Period> {
+    let mut s = vec![Period {
+        length: 1,
+        parts: 4,
+    }];
+    s.extend((0..12).map(|_| Period {
+        length: 2_628_000,
+        parts: 3,
     }));
     s
 }
@@ -200,7 +214,7 @@ impl Fixture {
                         window_seconds: 604_800,
                     },
                     member_grant: noah(10_000),
-                    member_schedule: standard(),
+                    member_schedule: member(),
                     fee_allowance: noah(2),
                     founding_stake: noah(50_000_000),
                     seat_stake: noah(5_000_000),
@@ -275,6 +289,38 @@ impl Fixture {
         self.app.api().addr_make(name)
     }
 
+    fn advance(&mut self, seconds: u64) {
+        self.app.update_block(|block| {
+            block.time = block.time.plus_seconds(seconds);
+            block.height += 1;
+        });
+    }
+
+    fn register(&mut self, addresses: &[&Addr]) -> AnyResult<AppResponse> {
+        let registrar = self.registrar.clone();
+        self.exec(
+            &registrar,
+            ExecuteMsg::RegisterMembers {
+                addresses: strings(addresses),
+            },
+        )
+    }
+
+    fn release_members(&mut self, sender: &Addr, addresses: &[&Addr]) -> AnyResult<AppResponse> {
+        self.exec(
+            sender,
+            ExecuteMsg::ReleaseMembers {
+                addresses: strings(addresses),
+            },
+        )
+    }
+
+    fn member(&self, address: &Addr) -> MemberResponse {
+        self.query(QueryMsg::Member {
+            address: address.to_string(),
+        })
+    }
+
     fn exec(&mut self, sender: &Addr, msg: ExecuteMsg) -> AnyResult<AppResponse> {
         self.app
             .execute_contract(sender.clone(), self.contract.clone(), &msg, &[])
@@ -302,11 +348,40 @@ impl Fixture {
     fn releasable(&self, id: u64) -> ReleasableResponse {
         self.query(QueryMsg::Releasable { id })
     }
+
+    /// ownership is an ownership grant's gas reserve and next address.
+    fn ownership(&self, id: u64) -> (Uint128, Option<Addr>) {
+        match self.grant(id).kind {
+            Kind::Ownership {
+                fee_reserve,
+                release_address,
+            } => (fee_reserve, release_address),
+            other => panic!("grant {id} is {other:?}"),
+        }
+    }
+
+    /// cap is the cap rule's figures for an ownership grant: own, cap, and
+    /// the seat allowance.
+    fn cap(&self, id: u64) -> (Uint128, Uint128, Option<Uint128>) {
+        match self.releasable(id).rule {
+            Rule::Cap {
+                own,
+                cap,
+                seat_allowance,
+                ..
+            } => (own, cap, seat_allowance),
+            other => panic!("grant {id} is {other:?}"),
+        }
+    }
 }
 
 fn contract_error(err: &anyhow::Error) -> &ContractError {
     err.downcast_ref::<ContractError>()
         .unwrap_or_else(|| panic!("not a contract error: {err:?}"))
+}
+
+fn strings(addresses: &[&Addr]) -> Vec<String> {
+    addresses.iter().map(|a| a.to_string()).collect()
 }
 
 #[test]
@@ -315,96 +390,513 @@ fn instantiate_records_config() {
     let config: ConfigResponse = f.query(QueryMsg::Config {});
     assert_eq!(config.registrar, Some(f.registrar.clone()));
     assert_eq!(config.member_grant, noah(10_000));
-    assert_eq!(config.member_schedule.len(), 37);
+    assert_eq!(config.member_schedule.len(), 13);
     let totals = f.totals();
     assert_eq!(totals.balance, Uint128::zero());
     assert_eq!(totals.escrowed, Uint128::zero());
 }
 
 #[test]
-fn members_issue_at_registration_and_a_dusted_address_is_skipped() {
+fn members_are_paid_the_first_period_at_once_and_the_rest_by_the_clock() {
     let mut f = Fixture::new();
     f.fund(noah(30_000));
-    let (alice, bob, dusted) = (f.addr("alice"), f.addr("bob"), f.addr("dusted"));
-    f.mark_existing(&dusted);
-
-    let registrar = f.registrar.clone();
-    f.exec(
-        &registrar,
-        ExecuteMsg::RegisterMembers {
-            addresses: vec![alice.to_string(), dusted.to_string(), bob.to_string()],
-        },
-    )
-    .unwrap();
-
-    for member in [&alice, &bob] {
-        let status: MemberResponse = f.query(QueryMsg::Member {
-            address: member.to_string(),
-        });
-        let (start, periods, total) = f
-            .account(member)
-            .unwrap_or_else(|| panic!("account not created: {status:?}"));
-        assert_eq!(start, f.app.block_info().time.seconds() as i64);
-        assert_eq!(periods, 37);
-        assert_eq!(total, noah(10_000));
-        assert_eq!(f.balance(member), noah(10_000));
-        assert_eq!(f.allowance(member), Some(noah(2)), "fee allowance granted");
-        let m: MemberResponse = f.query(QueryMsg::Member {
-            address: member.to_string(),
-        });
-        assert!(matches!(m.status, Some(MemberStatus::Issued { .. })));
-    }
-    let m: MemberResponse = f.query(QueryMsg::Member {
-        address: dusted.to_string(),
-    });
-    match m.status {
-        Some(MemberStatus::Rejected { error, .. }) => {
-            assert!(error.contains("already exists"), "{error}")
-        }
-        other => panic!("dusted address is {other:?}"),
-    }
-    assert_eq!(f.allowance(&dusted), None);
-
-    let totals = f.totals();
-    assert_eq!(totals.members_issued, 2);
-    assert_eq!(totals.members_rejected, 1);
-    assert_eq!(
-        totals.balance,
-        noah(10_000),
-        "the rejected grant stayed unallocated"
+    let (alice, bob, dusted, stranger) = (
+        f.addr("alice"),
+        f.addr("bob"),
+        f.addr("dusted"),
+        f.addr("stranger"),
     );
-    assert_eq!(totals.unallocated, noah(10_000));
+    // A send to the address while the proposal was open.
+    let gov = f.gov.clone();
+    f.app
+        .send_tokens(gov, dusted.clone(), &coins(1, DENOM))
+        .unwrap();
+    let t0 = f.app.block_info().time.seconds();
+    let month = 2_628_000;
+    let (tenth, period) = (noah(1_000), noah(750));
 
-    // Neither an issued nor a rejected address can be registered again.
-    let err = f
-        .exec(
-            &registrar,
-            ExecuteMsg::RegisterMembers {
-                addresses: vec![alice.to_string()],
-            },
-        )
-        .unwrap_err();
+    f.register(&[&alice, &dusted, &bob]).unwrap();
+    for who in [&alice, &bob] {
+        assert_eq!(f.balance(who), tenth, "the first period pays at once");
+        assert_eq!(f.account(who), None, "no vesting account");
+        assert_eq!(
+            f.allowance(who),
+            None,
+            "members pay gas from the first period"
+        );
+        let m = f.member(who);
+        assert_eq!(
+            m.member,
+            Some(Member {
+                start: t0,
+                amount: noah(10_000),
+                schedule: member(),
+                released: tenth,
+                remaining: noah(9_000),
+                paid: 1,
+                suspended: None,
+                cancelled: false,
+            })
+        );
+        assert_eq!(
+            (m.releasable, m.elapsed, m.next_at),
+            (Uint128::zero(), 0, Some(t0 + 1))
+        );
+    }
+    assert_eq!(
+        f.balance(&dusted),
+        tenth + Uint128::one(),
+        "an address holding coins is paid like any other"
+    );
+    assert_eq!(f.member(&stranger).member, None);
+    let totals = f.totals();
+    assert_eq!(totals.members_issued, 3);
+    assert_eq!(totals.members_paid, noah(3_000));
+    assert_eq!(totals.escrowed, noah(27_000));
+    assert_eq!(totals.balance, noah(27_000));
+    assert_eq!(totals.unallocated, Uint128::zero());
+    assert_eq!(totals.fees_promised, Uint128::zero());
+
+    // Nothing is due until a period elapses, and a batch that pays nobody
+    // fails; a second short of the month is still nothing.
+    let err = f.release_members(&stranger, &[&alice, &bob]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+    f.advance(month);
+    assert_eq!(f.member(&alice).releasable, Uint128::zero());
+    f.advance(1);
+    let m = f.member(&alice);
+    assert_eq!(
+        (m.releasable, m.elapsed, m.next_at),
+        (period, 2, Some(t0 + 1 + 2 * month))
+    );
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period);
+    assert_eq!(f.balance(&bob), tenth + period);
+    assert_eq!(
+        f.balance(&dusted),
+        tenth + Uint128::one(),
+        "not in the batch"
+    );
+    let m = f.member(&alice).member.unwrap();
+    assert_eq!(
+        (m.paid, m.released, m.remaining),
+        (2, tenth + period, noah(8_250))
+    );
+    assert_eq!(f.totals().members_paid, noah(4_500));
+    assert_eq!(f.totals().escrowed, noah(25_500));
+    let err = f.release_members(&stranger, &[&alice]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+
+    // Three months unclaimed pay in one release, and a member with nothing
+    // due is skipped rather than failing the batch.
+    f.advance(3 * month);
+    f.release_members(&stranger, &[&dusted, &alice]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period * Uint128::new(4));
+    assert_eq!(
+        f.balance(&dusted),
+        tenth + Uint128::one() + period * Uint128::new(4)
+    );
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&bob), tenth + period * Uint128::new(4));
+
+    // The year pays out; a paid-out member is skipped.
+    f.advance(12 * month);
+    f.release_members(&stranger, &[&alice, &bob, &dusted])
+        .unwrap();
+    for who in [&alice, &bob] {
+        assert_eq!(f.balance(who), noah(10_000));
+        let m = f.member(who);
+        assert_eq!(m.next_at, None);
+        let m = m.member.unwrap();
+        assert_eq!((m.paid, m.remaining), (13, Uint128::zero()));
+    }
+    let totals = f.totals();
+    assert_eq!(totals.escrowed, Uint128::zero());
+    assert_eq!(totals.members_paid, noah(30_000));
+    assert_eq!(totals.balance, Uint128::zero());
+    let err = f.release_members(&stranger, &[&alice]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+
+    // An issued address is never registered again.
+    let err = f.register(&[&alice]).unwrap_err();
     assert_eq!(
         contract_error(&err),
         &ContractError::MemberExists(alice.to_string())
     );
+}
+
+/// The registrar can stop a member's pay and nothing else: a suspended
+/// member is skipped, a reinstated one is paid everything since, and a
+/// cancel by governance settles what had elapsed by the suspension rather
+/// than by the vote, and keeps the rest in the tranche.
+#[test]
+fn suspension_holds_pay_and_a_cancel_settles_to_it() {
+    let mut f = Fixture::new();
+    f.fund(noah(20_000));
+    let (alice, bob, stranger) = (f.addr("alice"), f.addr("bob"), f.addr("stranger"));
+    let registrar = f.registrar.clone();
+    let month = 2_628_000;
+    let (tenth, period) = (noah(1_000), noah(750));
+    f.register(&[&alice, &bob]).unwrap();
+    f.advance(1 + 2 * month);
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period * Uint128::new(2));
+
+    // Half a month on the registrar suspends alice; only the registrar can,
+    // and only once.
+    f.advance(month / 2);
+    let suspend = ExecuteMsg::SuspendMembers {
+        addresses: strings(&[&alice]),
+    };
+    let err = f.exec(&stranger, suspend.clone()).unwrap_err();
+    assert!(matches!(
+        contract_error(&err),
+        ContractError::Unauthorized(_)
+    ));
+    f.exec(&registrar, suspend.clone()).unwrap();
+    let block = f.app.block_info();
+    let m = f.member(&alice);
+    assert_eq!(
+        m.member.unwrap().suspended,
+        Some(Suspension {
+            at: block.time.seconds(),
+            height: block.height,
+            by: registrar.clone(),
+        })
+    );
+    assert_eq!((m.releasable, m.elapsed), (Uint128::zero(), 3));
+    let err = f.exec(&registrar, suspend).unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberSuspended(alice.to_string())
+    );
+
+    // Two months on bob is paid and alice is skipped; her clock reads at
+    // the suspension.
+    f.advance(2 * month);
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period * Uint128::new(2));
+    assert_eq!(f.balance(&bob), tenth + period * Uint128::new(4));
+    let err = f.release_members(&stranger, &[&alice]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+    assert_eq!(f.member(&alice).elapsed, 3);
+
+    // Reinstated, the next release pays everything since.
+    let reinstate = |who: &Addr| ExecuteMsg::ReinstateMembers {
+        addresses: strings(&[who]),
+    };
+    let err = f.exec(&stranger, reinstate(&alice)).unwrap_err();
+    assert!(matches!(
+        contract_error(&err),
+        ContractError::Unauthorized(_)
+    ));
+    let err = f.exec(&registrar, reinstate(&bob)).unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberNotSuspended(bob.to_string())
+    );
+    f.exec(&registrar, reinstate(&alice)).unwrap();
+    let m = f.member(&alice);
+    assert_eq!(m.member.unwrap().suspended, None);
+    assert_eq!(m.releasable, period * Uint128::new(2));
+    f.release_members(&stranger, &[&alice]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period * Uint128::new(4));
+
+    // Suspended again a month later and cancelled a month and a half after
+    // that: the month that had elapsed by the suspension settles, the half
+    // since and the rest do not, and nothing goes to the pool.
+    f.advance(month);
+    f.exec(
+        &registrar,
+        ExecuteMsg::SuspendMembers {
+            addresses: strings(&[&alice]),
+        },
+    )
+    .unwrap();
+    f.advance(month + month / 2);
+    let (contract, pool) = (f.contract.clone(), f.pool.clone());
+    f.sudo(SudoMsg::CancelMembers {
+        addresses: strings(&[&alice]),
+    })
+    .unwrap();
+    assert_eq!(
+        f.balance(&alice),
+        tenth + period * Uint128::new(5),
+        "period six settled"
+    );
+    let m = f.member(&alice);
+    assert_eq!(m.releasable, Uint128::zero());
+    let record = m.member.unwrap();
+    assert!(record.cancelled);
+    assert_eq!(
+        (record.paid, record.released, record.remaining),
+        (6, tenth + period * Uint128::new(5), Uint128::zero())
+    );
+    assert_eq!(f.balance(&pool), Uint128::zero());
+    let returned = noah(10_000) - tenth - period * Uint128::new(5);
+    let totals = f.totals();
+    assert_eq!(
+        totals.unallocated, returned,
+        "the rest is the tranche's again"
+    );
+    assert_eq!(
+        totals.escrowed,
+        noah(10_000) - tenth - period * Uint128::new(4)
+    );
+    assert_eq!(totals.members_cancelled, 1);
+    assert_eq!(
+        totals.members_paid,
+        tenth * Uint128::new(2) + period * Uint128::new(9)
+    );
+    assert_eq!(f.balance(&contract), totals.escrowed + returned);
+
+    // A cancelled member is skipped by release and refused by the rest.
+    let err = f.release_members(&stranger, &[&alice]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
     let err = f
         .exec(
             &registrar,
-            ExecuteMsg::RegisterMembers {
-                addresses: vec![dusted.to_string()],
+            ExecuteMsg::SuspendMembers {
+                addresses: strings(&[&alice]),
             },
         )
         .unwrap_err();
     assert_eq!(
         contract_error(&err),
-        &ContractError::MemberExists(dusted.to_string())
+        &ContractError::MemberCancelled(alice.to_string())
+    );
+    let err = f.exec(&registrar, reinstate(&alice)).unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberCancelled(alice.to_string())
+    );
+    let err = f
+        .sudo(SudoMsg::CancelMembers {
+            addresses: strings(&[&alice]),
+        })
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberCancelled(alice.to_string())
+    );
+
+    // The returned part seats the next member.
+    let carol = f.addr("carol");
+    let err = f.register(&[&carol]).unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::Unallocated {
+            available: returned,
+            needed: noah(10_000)
+        }
+    );
+    f.fund(noah(10_000) - returned);
+    f.register(&[&carol]).unwrap();
+    assert_eq!(f.totals().unallocated, Uint128::zero());
+
+    // A cancel with no suspension settles to the vote.
+    f.sudo(SudoMsg::CancelMembers {
+        addresses: strings(&[&bob]),
+    })
+    .unwrap();
+    assert_eq!(f.balance(&bob), tenth + period * Uint128::new(7));
+    assert_eq!(f.totals().members_cancelled, 2);
+}
+
+/// A stolen registrar key can suspend every member and nothing more. The
+/// proposal that replaces it voids its suspensions in one write, read
+/// wherever a suspension is; the same key set again later suspends afresh.
+#[test]
+fn a_void_lifts_a_registrars_suspensions_in_one_write() {
+    let mut f = Fixture::new();
+    f.fund(noah(20_000));
+    let (alice, bob, stranger) = (f.addr("alice"), f.addr("bob"), f.addr("stranger"));
+    let stolen = f.registrar.clone();
+    let month = 2_628_000;
+    let (tenth, period) = (noah(1_000), noah(750));
+    let suspend = |who: &Addr| ExecuteMsg::SuspendMembers {
+        addresses: strings(&[who]),
+    };
+    f.register(&[&alice, &bob]).unwrap();
+    f.advance(1 + month);
+    f.exec(
+        &stolen,
+        ExecuteMsg::SuspendMembers {
+            addresses: strings(&[&alice, &bob]),
+        },
+    )
+    .unwrap();
+    let err = f.release_members(&stranger, &[&alice, &bob]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+
+    // Replaced and voided in the same block as the suspension, since a vote
+    // executes after the block's transactions.
+    let fresh = f.addr("registrar-2");
+    f.sudo(SudoMsg::SetRegistrar {
+        registrar: Some(fresh.to_string()),
+    })
+    .unwrap();
+    f.sudo(SudoMsg::VoidSuspensions {
+        registrar: stolen.to_string(),
+    })
+    .unwrap();
+    let m = f.member(&alice);
+    assert_eq!(m.member.unwrap().suspended, None, "reads as lifted");
+    assert_eq!(m.releasable, period);
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), tenth + period);
+    assert_eq!(f.balance(&bob), tenth + period);
+    // A voided suspension is not one to lift.
+    let err = f
+        .sudo(SudoMsg::ReinstateMembers {
+            addresses: strings(&[&alice]),
+        })
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberNotSuspended(alice.to_string())
+    );
+
+    // The new registrar suspends over the voided record, and governance
+    // lifts that by sudo.
+    f.exec(&fresh, suspend(&alice)).unwrap();
+    let m = f.member(&alice).member.unwrap();
+    assert_eq!(m.suspended.map(|s| s.by), Some(fresh.clone()));
+    f.sudo(SudoMsg::ReinstateMembers {
+        addresses: strings(&[&alice]),
+    })
+    .unwrap();
+    assert_eq!(f.member(&alice).member.unwrap().suspended, None);
+
+    // The old key, set again in a later block, suspends afresh: the void
+    // covered its past.
+    f.advance(1);
+    f.sudo(SudoMsg::SetRegistrar {
+        registrar: Some(stolen.to_string()),
+    })
+    .unwrap();
+    f.exec(&stolen, suspend(&bob)).unwrap();
+    assert!(f.member(&bob).member.unwrap().suspended.is_some());
+    f.advance(month);
+    let err = f.release_members(&stranger, &[&bob]).unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingDue);
+}
+
+/// A member keeps the schedule they registered under: a changed member grant
+/// reaches only the members registered after it.
+#[test]
+fn a_changed_member_grant_leaves_registered_members_alone() {
+    let mut f = Fixture::new();
+    f.fund(noah(30_000));
+    let (alice, bob, stranger) = (f.addr("alice"), f.addr("bob"), f.addr("stranger"));
+    let month = 2_628_000;
+    f.register(&[&alice]).unwrap();
+    let quarterly: Vec<Period> = (0..4)
+        .map(|_| Period {
+            length: 3 * month,
+            parts: 1,
+        })
+        .collect();
+    f.sudo(SudoMsg::SetMemberGrant {
+        amount: noah(20_000),
+        schedule: quarterly.clone(),
+    })
+    .unwrap();
+    f.register(&[&bob]).unwrap();
+    assert_eq!(
+        f.balance(&bob),
+        noah(5_000),
+        "the first period pays at once whatever its length"
+    );
+    assert_eq!(f.member(&bob).member.unwrap().schedule, quarterly);
+    assert_eq!(f.member(&alice).member.unwrap().schedule, member());
+
+    f.advance(1 + month);
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), noah(1_750));
+    assert_eq!(f.balance(&bob), noah(5_000), "no quarter has elapsed");
+    f.advance(5 * month);
+    f.release_members(&stranger, &[&alice, &bob]).unwrap();
+    assert_eq!(f.balance(&alice), noah(1_000 + 6 * 750));
+    assert_eq!(f.balance(&bob), noah(10_000));
+}
+
+/// Every call over member addresses is bounded like registration and names
+/// an address it cannot act on.
+#[test]
+fn member_batches_are_bounded_and_named() {
+    let mut f = Fixture::new();
+    f.fund(noah(10_000));
+    let (alice, stranger) = (f.addr("alice"), f.addr("stranger"));
+    let registrar = f.registrar.clone();
+    let many: Vec<String> = (0..=MAX_BATCH)
+        .map(|i| f.addr(&format!("m{i}")).to_string())
+        .collect();
+    f.register(&[&alice]).unwrap();
+
+    let err = f
+        .exec(&stranger, ExecuteMsg::ReleaseMembers { addresses: vec![] })
+        .unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::EmptyBatch);
+    let err = f
+        .exec(
+            &stranger,
+            ExecuteMsg::ReleaseMembers {
+                addresses: many.clone(),
+            },
+        )
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::BatchTooLarge(MAX_BATCH + 1, MAX_BATCH)
+    );
+    let err = f
+        .release_members(&stranger, &[&alice, &stranger])
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberNotFound(stranger.to_string())
+    );
+    let err = f
+        .exec(
+            &registrar,
+            ExecuteMsg::SuspendMembers {
+                addresses: strings(&[&stranger]),
+            },
+        )
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberNotFound(stranger.to_string())
+    );
+    let err = f
+        .sudo(SudoMsg::CancelMembers { addresses: many })
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::BatchTooLarge(MAX_BATCH + 1, MAX_BATCH)
+    );
+
+    // A paid-out member cannot be suspended.
+    f.advance(1 + 13 * 2_628_000);
+    f.release_members(&stranger, &[&alice]).unwrap();
+    let err = f
+        .exec(
+            &registrar,
+            ExecuteMsg::SuspendMembers {
+                addresses: strings(&[&alice]),
+            },
+        )
+        .unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::MemberPaidOut(alice.to_string())
     );
 }
 
 /// The window bounds what a registrar key can issue: a batch past the limit
-/// is refused whole, one larger than the limit is refused as such, rejected
-/// registrations count, and room returns as registrations age out.
+/// is refused whole, one larger than the limit is refused as such, and room
+/// returns as registrations age out.
 #[test]
 fn issuance_is_bounded_per_window() {
     let mut f = Fixture::new();
@@ -471,14 +963,12 @@ fn issuance_is_bounded_per_window() {
     )
     .unwrap();
 
-    // A rejected registration counts against the window too, merged into
-    // the block's entry.
-    let dusted = f.addr("dusted-2");
-    f.mark_existing(&dusted);
+    // A second registration in the block merges into its entry.
+    let d = f.addr("d");
     f.exec(
         &registrar,
         ExecuteMsg::RegisterMembers {
-            addresses: vec![dusted.to_string()],
+            addresses: vec![d.to_string()],
         },
     )
     .unwrap();
@@ -577,12 +1067,12 @@ fn issuance_window_slides() {
 #[test]
 fn grants_too_small_for_their_schedule_are_refused() {
     let mut f = Fixture::new();
-    f.fund(noah(1));
+    // Enough for the grant's gas, so the schedule is what refuses it.
+    f.fund(noah(3));
     let err = f
         .sudo(SudoMsg::SetMemberGrant {
             amount: Uint128::new(10),
             schedule: standard(),
-            fee_allowance: Uint128::zero(),
         })
         .unwrap_err();
     assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
@@ -693,7 +1183,8 @@ fn registration_refusals() {
 #[test]
 fn contributor_grant_escrows_and_releases_by_the_cap() {
     let mut f = Fixture::new();
-    f.fund(noah(30_000_000));
+    // The grant and two NOAH of gas for each of its thirty possible tranches.
+    f.fund(noah(30_000_060));
     let grantee = f.addr("contributor");
 
     f.sudo(SudoMsg::AddGrant {
@@ -710,9 +1201,18 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
     let g = f.grant(1);
     assert_eq!(g.released, noah(10_000_000));
     assert_eq!(g.remaining, noah(20_000_000));
-    assert_eq!(g.release_address, None, "the first address is spent");
+    let (reserve, next) = f.ownership(1);
+    assert_eq!(next, None, "the first address is spent");
+    assert_eq!(
+        f.allowance(&grantee),
+        Some(noah(2)),
+        "the tranche can pay its gas"
+    );
+    assert_eq!(reserve, noah(58), "one allowance promised from the reserve");
     let totals = f.totals();
     assert_eq!(totals.escrowed, noah(20_000_000));
+    assert_eq!(totals.fees_reserved, noah(58));
+    assert_eq!(totals.fees_promised, noah(2));
     assert_eq!(totals.unallocated, Uint128::zero());
     assert_eq!(totals.contributors_paid, noah(10_000_000));
 
@@ -752,12 +1252,15 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
 
     // Others hold 100M: bonded is that plus the grantee's own 10M.
     f.set_bonded(noah(110_000_000));
-    let r = f.releasable(1);
-    assert_eq!(r.own, noah(10_000_000));
-    assert_eq!(r.cap, noah(20_000_000));
-    assert_eq!(r.amount, noah(10_000_000));
+    let (own, cap, _) = f.cap(1);
+    assert_eq!(own, noah(10_000_000));
+    assert_eq!(cap, noah(20_000_000));
+    assert_eq!(f.releasable(1).amount, noah(10_000_000));
     f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
     assert_eq!(f.account(&second).unwrap().2, noah(10_000_000));
+    assert_eq!(f.allowance(&second), Some(noah(2)));
+    assert_eq!(f.totals().fees_promised, noah(4));
+    assert_eq!(f.totals().fees_reserved, noah(56));
     assert_eq!(f.grant(1).remaining, noah(10_000_000));
 
     // A release into an address that already exists is rejected and the
@@ -775,7 +1278,12 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
     f.set_bonded(noah(170_000_000));
     f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
     assert_eq!(f.grant(1).remaining, noah(10_000_000));
-    assert_eq!(f.grant(1).release_address, None);
+    assert_eq!(f.ownership(1).1, None);
+    assert_eq!(
+        f.allowance(&third),
+        None,
+        "a rejected tranche grants nothing"
+    );
 
     let fourth = f.addr("contributor-4");
     f.exec(
@@ -792,10 +1300,30 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
     assert_eq!(g.remaining, Uint128::zero());
     assert_eq!(g.released, noah(30_000_000));
     assert_eq!(f.totals().escrowed, Uint128::zero());
+    // Three tranches used six; the last returned the rest of the reserve.
+    assert_eq!(f.ownership(1).0, Uint128::zero());
+    assert_eq!(f.totals().fees_reserved, Uint128::zero());
+    assert_eq!(f.balance(&f.pool.clone()), noah(54), "unused gas returned");
     let err = f
         .exec(&stranger, ExecuteMsg::Release { id: 1 })
         .unwrap_err();
     assert_eq!(contract_error(&err), &ContractError::Exhausted(1));
+
+    // A grant arrives with its own spend and gas, so promised gas never
+    // blocks it: it checks free, not unallocated.
+    assert_eq!(f.totals().unallocated, Uint128::zero());
+    assert_eq!(f.totals().fees_promised, noah(6));
+    let late = f.addr("late");
+    f.fund(noah(1_000_002));
+    f.sudo(SudoMsg::AddGrant {
+        grantee: late.to_string(),
+        amount: noah(1_000_000),
+        schedule: standard(),
+        seat_holder: false,
+    })
+    .unwrap();
+    assert_eq!(f.account(&late).unwrap().2, noah(1_000_000));
+    assert_eq!(f.totals().fees_promised, noah(8));
 }
 
 /// The founder's table: nothing releases while bonded stake is under 150M;
@@ -804,7 +1332,7 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
 #[test]
 fn seat_holder_waits_on_the_bloc_rule() {
     let mut f = Fixture::new();
-    f.fund(noah(60_000_000));
+    f.fund(noah(60_000_120));
     let founder = f.addr("founder");
     f.set_bonded(noah(150_000_000));
 
@@ -816,9 +1344,9 @@ fn seat_holder_waits_on_the_bloc_rule() {
     })
     .unwrap();
     assert_eq!(f.account(&founder), None, "nothing releases at 150M");
-    let r = f.releasable(1);
-    assert_eq!(r.own, noah(5_000_000));
-    assert_eq!(r.seat_allowance, Some(Uint128::zero()));
+    let (own, _, seat_allowance) = f.cap(1);
+    assert_eq!(own, noah(5_000_000));
+    assert_eq!(seat_allowance, Some(Uint128::zero()));
     assert_eq!(f.totals().escrowed, noah(60_000_000));
 
     let stranger = f.addr("stranger");
@@ -826,7 +1354,7 @@ fn seat_holder_waits_on_the_bloc_rule() {
     assert_eq!(f.releasable(1).amount, noah(5_000_000));
     f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
     assert_eq!(f.account(&founder).unwrap().2, noah(5_000_000));
-    assert_eq!(f.releasable(1).own, noah(10_000_000));
+    assert_eq!(f.cap(1).0, noah(10_000_000));
 
     let second = f.addr("founder-2");
     f.exec(
@@ -858,7 +1386,7 @@ fn seat_holder_waits_on_the_bloc_rule() {
 
     // A second seat holder shares the room pro rata by what each has left.
     let other = f.addr("seat-two");
-    f.fund(noah(35_000_000));
+    f.fund(noah(35_000_070));
     f.set_bonded(noah(240_000_000));
     f.sudo(SudoMsg::AddGrant {
         grantee: other.to_string(),
@@ -876,12 +1404,15 @@ fn seat_holder_waits_on_the_bloc_rule() {
     );
     assert_eq!(f.grant(2).remaining, noah(33_000_000));
     // Afterwards the room is 3M, shared 35:33.
-    let r = f.releasable(2);
     assert_eq!(
-        r.seat_allowance,
+        f.cap(2).2,
         Some(noah(3_000_000).multiply_ratio(33u64, 68u64))
     );
-    assert_eq!(r.amount, noah(1_000_000), "floored to a whole million");
+    assert_eq!(
+        f.releasable(2).amount,
+        noah(1_000_000),
+        "floored to a whole million"
+    );
 }
 
 #[test]
@@ -896,7 +1427,8 @@ fn cancel_returns_the_unreleased_part_and_return_unallocated_is_bounded() {
         seat_holder: false,
     })
     .unwrap();
-    assert_eq!(f.totals().unallocated, noah(10_000_000));
+    // The 10M over escrow, less the reserve's other 58 and the 2 promised.
+    assert_eq!(f.totals().unallocated, noah(9_999_940));
 
     let pool = f.pool.clone();
     let err = f
@@ -917,8 +1449,8 @@ fn cancel_returns_the_unreleased_part_and_return_unallocated_is_bounded() {
     f.sudo(SudoMsg::CancelGrant { id: 1 }).unwrap();
     assert_eq!(
         f.balance(&pool),
-        noah(24_000_000),
-        "the 20M escrow came back"
+        noah(24_000_058),
+        "the 20M escrow and its unused gas came back"
     );
     let g = f.grant(1);
     assert!(g.cancelled);
@@ -929,7 +1461,8 @@ fn cancel_returns_the_unreleased_part_and_return_unallocated_is_bounded() {
         "released coins are the grantee's"
     );
     assert_eq!(f.totals().escrowed, Uint128::zero());
-    assert_eq!(f.totals().unallocated, noah(6_000_000));
+    assert_eq!(f.totals().fees_reserved, Uint128::zero());
+    assert_eq!(f.totals().unallocated, noah(5_999_940));
 
     let err = f.exec(&grantee, ExecuteMsg::Release { id: 1 }).unwrap_err();
     assert_eq!(contract_error(&err), &ContractError::Cancelled(1));
@@ -956,7 +1489,7 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
         contract_error(&err),
         &ContractError::Unallocated {
             available: noah(1_000_000),
-            needed: noah(2_000_000)
+            needed: noah(2_000_004)
         }
     );
     let err = f
@@ -970,7 +1503,7 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
     assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
 
     // A scoped grant under the cap pays whole, no escrow, on its own schedule.
-    let stream: Vec<Period> = (0..24)
+    let monthly: Vec<Period> = (0..24)
         .map(|_| Period {
             length: 2_628_000,
             parts: 1,
@@ -979,7 +1512,7 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
     f.sudo(SudoMsg::AddGrant {
         grantee: grantee.to_string(),
         amount: noah(200_000),
-        schedule: stream,
+        schedule: monthly,
         seat_holder: false,
     })
     .unwrap();
@@ -987,4 +1520,341 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
     assert_eq!(periods, 24);
     assert_eq!(total, noah(200_000));
     assert_eq!(f.totals().escrowed, Uint128::zero());
+}
+
+#[test]
+fn fee_allowance_is_set_by_sudo_and_reserved_at_grant() {
+    let mut f = Fixture::new();
+    f.sudo(SudoMsg::SetFeeAllowance { amount: noah(5) })
+        .unwrap();
+    let c: ConfigResponse = f.query(QueryMsg::Config {});
+    assert_eq!(c.fee_allowance, noah(5));
+
+    // A grant under the unit is one tranche: its amount and one allowance.
+    let grantee = f.addr("late");
+    f.fund(noah(200_004));
+    let grant = SudoMsg::AddGrant {
+        grantee: grantee.to_string(),
+        amount: noah(200_000),
+        schedule: standard(),
+        seat_holder: false,
+    };
+    let err = f.sudo(grant.clone()).unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::Unallocated {
+            available: noah(200_004),
+            needed: noah(200_005)
+        }
+    );
+    f.fund(noah(1));
+    f.sudo(grant).unwrap();
+    assert_eq!(f.allowance(&grantee), Some(noah(5)));
+    assert_eq!(f.totals().fees_promised, noah(5));
+}
+
+/// A stream stays in the contract and pays by the clock: nothing at once,
+/// each period to the payee by bank send as it elapses, whole periods only,
+/// and cancel pays what has elapsed and returns the rest.
+#[test]
+fn stream_pays_by_the_clock_and_cancel_returns_what_has_not_elapsed() {
+    let mut f = Fixture::new();
+    f.fund(noah(262_000));
+    let hire = f.addr("hire");
+    let stranger = f.addr("stranger");
+    let month = 2_628_000;
+    let monthly: Vec<Period> = (0..24)
+        .map(|_| Period {
+            length: month,
+            parts: 1,
+        })
+        .collect();
+    let period = noah(262_000).multiply_ratio(1u64, 24u64);
+    let t0 = f.app.block_info().time.seconds();
+    let advance = |f: &mut Fixture, seconds: u64| {
+        f.app.update_block(|block| {
+            block.time = block.time.plus_seconds(seconds);
+            block.height += 1;
+        });
+    };
+
+    f.sudo(SudoMsg::AddStream {
+        grantee: hire.to_string(),
+        amount: noah(262_000),
+        schedule: monthly,
+    })
+    .unwrap();
+    assert_eq!(f.account(&hire), None, "no vesting account");
+    assert_eq!(f.balance(&hire), Uint128::zero(), "nothing pays at once");
+    let g = f.grant(1);
+    assert_eq!(
+        g.kind,
+        Kind::Stream {
+            start: t0,
+            paid: 0,
+            payee: hire.clone()
+        }
+    );
+    assert_eq!(g.remaining, noah(262_000));
+    let totals = f.totals();
+    assert_eq!(totals.escrowed, noah(262_000));
+    assert_eq!(totals.unallocated, Uint128::zero());
+    assert_eq!(
+        totals.fees_reserved,
+        Uint128::zero(),
+        "a stream reserves no gas"
+    );
+    let r = f.releasable(1);
+    assert_eq!(r.amount, Uint128::zero());
+    assert_eq!(
+        r.rule,
+        Rule::Clock {
+            start: t0,
+            elapsed: 0,
+            paid: 0,
+            next_at: Some(t0 + month)
+        }
+    );
+    let err = f
+        .exec(&stranger, ExecuteMsg::Release { id: 1 })
+        .unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingReleasable(1));
+
+    // A second short of the month is still nothing; the month itself pays.
+    advance(&mut f, month - 1);
+    assert_eq!(f.releasable(1).amount, Uint128::zero());
+    advance(&mut f, 1);
+    assert_eq!(f.releasable(1).amount, period);
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(f.balance(&hire), period);
+    assert_eq!(
+        f.account(&hire),
+        None,
+        "paid by send, not a vesting account"
+    );
+    let g = f.grant(1);
+    assert_eq!(g.released, period);
+    assert_eq!(
+        g.kind,
+        Kind::Stream {
+            start: t0,
+            paid: 1,
+            payee: hire.clone()
+        }
+    );
+    assert_eq!(f.totals().contributors_paid, period);
+    assert_eq!(f.totals().escrowed, noah(262_000) - period);
+    let err = f
+        .exec(&stranger, ExecuteMsg::Release { id: 1 })
+        .unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::NothingReleasable(1));
+
+    // Three months unclaimed pay in one release.
+    advance(&mut f, 3 * month);
+    let r = f.releasable(1);
+    assert_eq!(r.amount, period * Uint128::new(3));
+    assert_eq!(
+        r.rule,
+        Rule::Clock {
+            start: t0,
+            elapsed: 4,
+            paid: 1,
+            next_at: Some(t0 + 5 * month)
+        }
+    );
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(f.balance(&hire), period * Uint128::new(4));
+
+    // The controller moves the pay to another address, which is kept.
+    let wallet = f.addr("hire-wallet");
+    let err = f
+        .exec(
+            &stranger,
+            ExecuteMsg::SetReleaseAddress {
+                id: 1,
+                address: wallet.to_string(),
+            },
+        )
+        .unwrap_err();
+    assert!(matches!(
+        contract_error(&err),
+        ContractError::Unauthorized(_)
+    ));
+    f.exec(
+        &hire,
+        ExecuteMsg::SetReleaseAddress {
+            id: 1,
+            address: wallet.to_string(),
+        },
+    )
+    .unwrap();
+    advance(&mut f, month);
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(f.balance(&wallet), period);
+    assert_eq!(
+        f.grant(1).kind,
+        Kind::Stream {
+            start: t0,
+            paid: 5,
+            payee: wallet.clone()
+        }
+    );
+    advance(&mut f, month);
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(
+        f.balance(&wallet),
+        period * Uint128::new(2),
+        "the address is kept"
+    );
+
+    // Cancelled a month and a half on: the month pays, the half returns.
+    advance(&mut f, month + month / 2);
+    let pool = f.pool.clone();
+    let contract = f.contract.clone();
+    f.sudo(SudoMsg::CancelGrant { id: 1 }).unwrap();
+    assert_eq!(
+        f.balance(&wallet),
+        period * Uint128::new(3),
+        "the elapsed month settled"
+    );
+    let paid = period * Uint128::new(7);
+    assert_eq!(f.balance(&pool), noah(262_000) - paid, "the rest came back");
+    assert_eq!(f.balance(&contract), Uint128::zero());
+    let g = f.grant(1);
+    assert!(g.cancelled);
+    assert_eq!(g.released, paid);
+    assert_eq!(g.remaining, Uint128::zero());
+    assert_eq!(
+        g.kind,
+        Kind::Stream {
+            start: t0,
+            paid: 7,
+            payee: wallet.clone()
+        }
+    );
+    assert_eq!(f.totals().escrowed, Uint128::zero());
+    assert_eq!(f.totals().contributors_paid, paid);
+    assert_eq!(f.releasable(1).amount, Uint128::zero());
+    let err = f
+        .exec(&stranger, ExecuteMsg::Release { id: 1 })
+        .unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::Cancelled(1));
+}
+
+/// Streams are pay, not ownership: they check neither the cap nor the bloc
+/// rule, count in neither own nor the seat pool, and share a person with an
+/// ownership grant to the same address.
+#[test]
+fn streams_stay_outside_the_ownership_rules() {
+    let mut f = Fixture::new();
+    f.fund(noah(60_262_120));
+    let founder = f.addr("founder");
+    let stranger = f.addr("stranger");
+    let month = 2_628_000;
+    let monthly: Vec<Period> = (0..24)
+        .map(|_| Period {
+            length: month,
+            parts: 1,
+        })
+        .collect();
+    let period = noah(262_000).multiply_ratio(1u64, 24u64);
+    f.set_bonded(noah(150_000_000));
+
+    f.sudo(SudoMsg::AddGrant {
+        grantee: founder.to_string(),
+        amount: noah(60_000_000),
+        schedule: standard(),
+        seat_holder: true,
+    })
+    .unwrap();
+    let before = f.cap(1);
+    assert_eq!(
+        before,
+        (noah(5_000_000), noah(29_000_000), Some(Uint128::zero()))
+    );
+    f.sudo(SudoMsg::AddStream {
+        grantee: founder.to_string(),
+        amount: noah(262_000),
+        schedule: monthly.clone(),
+    })
+    .unwrap();
+    assert_eq!(f.cap(1), before, "the stream moved nothing");
+    assert_eq!(f.totals().escrowed, noah(60_262_000));
+
+    // The stream pays while the bloc rule still holds the ownership grant.
+    f.app.update_block(|block| {
+        block.time = block.time.plus_seconds(month);
+        block.height += 1;
+    });
+    f.exec(&stranger, ExecuteMsg::Release { id: 2 }).unwrap();
+    assert_eq!(f.balance(&founder), period);
+    let p: PersonResponse = f.query(QueryMsg::Person {
+        grantee: founder.to_string(),
+    });
+    assert!(p.seat_holder);
+    assert_eq!(p.released, Uint128::zero(), "pay is not own");
+    assert_eq!(p.own, noah(5_000_000));
+
+    // At 165M the seat pool is 5M, shared by ownership escrow alone: with
+    // the stream's remaining in the pool the share would floor to 4M.
+    f.set_bonded(noah(165_000_000));
+    assert_eq!(f.releasable(1).amount, noah(5_000_000));
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(f.account(&founder).unwrap().2, noah(5_000_000));
+    let p: PersonResponse = f.query(QueryMsg::Person {
+        grantee: founder.to_string(),
+    });
+    assert_eq!(p.released, noah(5_000_000));
+
+    // A stream first makes the address a person without a seat; the next
+    // ownership grant restates it.
+    let hire = f.addr("hire");
+    f.fund(noah(262_000));
+    f.sudo(SudoMsg::AddStream {
+        grantee: hire.to_string(),
+        amount: noah(262_000),
+        schedule: monthly.clone(),
+    })
+    .unwrap();
+    let p: PersonResponse = f.query(QueryMsg::Person {
+        grantee: hire.to_string(),
+    });
+    assert_eq!((p.controller, p.seat_holder), (hire.clone(), false));
+
+    // Refusals: zero, an empty schedule, too small for its periods, over free.
+    let err = f
+        .sudo(SudoMsg::AddStream {
+            grantee: hire.to_string(),
+            amount: Uint128::zero(),
+            schedule: monthly.clone(),
+        })
+        .unwrap_err();
+    assert_eq!(contract_error(&err), &ContractError::ZeroAmount);
+    let err = f
+        .sudo(SudoMsg::AddStream {
+            grantee: hire.to_string(),
+            amount: noah(1),
+            schedule: vec![],
+        })
+        .unwrap_err();
+    assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
+    let err = f
+        .sudo(SudoMsg::AddStream {
+            grantee: hire.to_string(),
+            amount: Uint128::new(10),
+            schedule: monthly.clone(),
+        })
+        .unwrap_err();
+    assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
+    let err = f
+        .sudo(SudoMsg::AddStream {
+            grantee: hire.to_string(),
+            amount: noah(1_000_000),
+            schedule: monthly,
+        })
+        .unwrap_err();
+    assert!(matches!(
+        contract_error(&err),
+        ContractError::Unallocated { .. }
+    ));
 }

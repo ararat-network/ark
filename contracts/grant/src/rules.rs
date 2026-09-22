@@ -181,6 +181,53 @@ pub fn release_amount(remaining: Uint128, allowance: Uint128, unit: Uint128) -> 
         .unwrap_or(Uint128::zero())
 }
 
+/// fee_reserve is one allowance per tranche a grant can take at most: every
+/// release is a whole unit or the remainder, so ceil(amount / unit) of them.
+pub fn fee_reserve(
+    amount: Uint128,
+    unit: Uint128,
+    allowance: Uint128,
+) -> Result<Uint128, ContractError> {
+    let tranches = amount
+        .checked_add(unit)?
+        .checked_sub(Uint128::one())?
+        .checked_div(unit)
+        .map_err(cosmwasm_std::StdError::from)?;
+    Ok(allowance.checked_mul(tranches)?)
+}
+
+/// elapsed is how many leading periods of schedule have ended by now,
+/// counted from start, and when the next ends, none once all have.
+pub fn elapsed(schedule: &[Period], start: u64, now: u64) -> (u32, Option<u64>) {
+    let mut end = start;
+    for (i, p) in schedule.iter().enumerate() {
+        end = end.saturating_add(p.length);
+        if now < end {
+            return (i as u32, Some(end));
+        }
+    }
+    (schedule.len() as u32, None)
+}
+
+/// accrued is a stream's pay for periods paid..elapsed: slices of split, so
+/// each period is exact and all of them sum to the grant.
+pub fn accrued(
+    amount: Uint128,
+    schedule: &[Period],
+    paid: u32,
+    elapsed: u32,
+) -> Result<Uint128, ContractError> {
+    let mut sum = Uint128::zero();
+    for share in split(amount, schedule)?
+        .into_iter()
+        .take(elapsed as usize)
+        .skip(paid as usize)
+    {
+        sum = sum.checked_add(share)?;
+    }
+    Ok(sum)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -428,6 +475,28 @@ mod tests {
     }
 
     #[test]
+    fn fee_reserve_is_one_allowance_a_tranche() {
+        let unit = noah(1_000_000);
+        // 30M in whole millions is thirty tranches at most.
+        assert_eq!(
+            fee_reserve(noah(30_000_000), unit, noah(2)).unwrap(),
+            noah(60)
+        );
+        // A remainder is a tranche of its own.
+        assert_eq!(
+            fee_reserve(noah(2_500_000), unit, noah(2)).unwrap(),
+            noah(6)
+        );
+        // Under a unit pays whole, one tranche.
+        assert_eq!(fee_reserve(noah(200_000), unit, noah(2)).unwrap(), noah(2));
+        assert_eq!(
+            fee_reserve(noah(30_000_000), unit, Uint128::zero()).unwrap(),
+            Uint128::zero()
+        );
+        assert!(fee_reserve(noah(1), Uint128::zero(), noah(2)).is_err());
+    }
+
+    #[test]
     fn pro_rata_shares_floor() {
         assert_eq!(
             pro_rata(Uint128::new(10), Uint128::new(1), Uint128::new(3)),
@@ -440,6 +509,73 @@ mod tests {
         assert_eq!(
             pro_rata(Uint128::new(10), Uint128::new(1), Uint128::zero()),
             Uint128::zero()
+        );
+    }
+
+    #[test]
+    fn elapsed_counts_whole_periods() {
+        let monthly: Vec<Period> = (0..3)
+            .map(|_| Period {
+                length: 100,
+                parts: 1,
+            })
+            .collect();
+        assert_eq!(elapsed(&monthly, 1_000, 1_000), (0, Some(1_100)));
+        assert_eq!(elapsed(&monthly, 1_000, 1_099), (0, Some(1_100)));
+        assert_eq!(elapsed(&monthly, 1_000, 1_100), (1, Some(1_200)));
+        assert_eq!(elapsed(&monthly, 1_000, 1_250), (2, Some(1_300)));
+        assert_eq!(elapsed(&monthly, 1_000, 1_300), (3, None));
+        assert_eq!(elapsed(&monthly, 1_000, 9_999), (3, None));
+        // Uneven periods count by their own lengths.
+        let uneven = vec![
+            Period {
+                length: 10,
+                parts: 1,
+            },
+            Period {
+                length: 100,
+                parts: 1,
+            },
+        ];
+        assert_eq!(elapsed(&uneven, 0, 9), (0, Some(10)));
+        assert_eq!(elapsed(&uneven, 0, 10), (1, Some(110)));
+        assert_eq!(elapsed(&uneven, 0, 109), (1, Some(110)));
+        assert_eq!(elapsed(&uneven, 0, 110), (2, None));
+    }
+
+    #[test]
+    fn accrued_is_exact_slices_of_the_split() {
+        let three = vec![
+            Period {
+                length: 1,
+                parts: 1
+            };
+            3
+        ];
+        // split(10) is 3, 3, 4.
+        let ten = Uint128::new(10);
+        assert_eq!(accrued(ten, &three, 0, 0).unwrap(), Uint128::zero());
+        assert_eq!(accrued(ten, &three, 0, 1).unwrap(), Uint128::new(3));
+        assert_eq!(accrued(ten, &three, 1, 3).unwrap(), Uint128::new(7));
+        assert_eq!(accrued(ten, &three, 0, 3).unwrap(), ten);
+        assert_eq!(accrued(ten, &three, 3, 3).unwrap(), Uint128::zero());
+        // The plan's stream: twenty-four months, the last taking the remainder.
+        let monthly: Vec<Period> = (0..24)
+            .map(|_| Period {
+                length: 2_628_000,
+                parts: 1,
+            })
+            .collect();
+        let month = noah(262_000).multiply_ratio(1u64, 24u64);
+        assert_eq!(accrued(noah(262_000), &monthly, 0, 1).unwrap(), month);
+        assert_eq!(
+            accrued(noah(262_000), &monthly, 0, 24).unwrap(),
+            noah(262_000)
+        );
+        assert!(accrued(noah(262_000), &monthly, 23, 24).unwrap() > month);
+        assert!(
+            accrued(Uint128::new(10), &monthly, 0, 1).is_err(),
+            "too small for the schedule"
         );
     }
 }
