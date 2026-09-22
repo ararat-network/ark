@@ -140,8 +140,9 @@ instantiate message carried the plan's figures: `arkd query wasm code-info <code
 
 **A member tranche** is one message, the pool spend to the contract. The registrar, set at instantiation or by the
 sudo below, then issues grants as members are admitted; nothing about a member appears in a proposal. The contract
-issues at most the window's members, 250 in seven days at launch; a compromised registrar is replaced by an expedited
-`set_registrar`, and the window bounds what the old key can issue meanwhile.
+issues at most the window's members, 250 in any seven days at launch, each registration counting for seven days from its
+block; a compromised registrar is replaced by an expedited `set_registrar`, and the window bounds what the old key can
+issue meanwhile.
 
 ```json
 {

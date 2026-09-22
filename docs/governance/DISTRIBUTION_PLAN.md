@@ -137,15 +137,15 @@ key governance sets, registers the member's address: the contract creates the pe
 above, starting at that block, and grants it a fee allowance of a few NOAH from its own balance so its first delegation
 can pay its gas. No proposal carries a member address. An address that already holds an account when it is registered,
 because someone sent to it first, fails only its own creation: the contract records it as rejected, the rest of the
-batch lands, and the member registers a fresh one. The contract issues at most 250 members in any seven days, a limit
-governance sets, so a stolen registrar key costs a week's issuance rather than a tranche before an expedited vote
-replaces it, and the registrar is a multisig for the same reason. A contributor grant is one `add_grant` in a proposal,
-which escrows the whole amount and pays what the rules allow at once (below). A member account stores thirteen periods,
-about 650 bytes, so the full member roll is on the order of 30 MB of account state before tree overhead. A tranche
-proposal passes like any other: half the bonded stake voting, two thirds of the non-abstaining
-vote agreeing. At launch the ten founders are the only voters, so proposals pass; later the public votes. The mechanism
-never changes, only who is voting. Every grant is on-chain, and the contract's totals show what each tranche has issued,
-escrowed, and still holds.
+batch lands, and the member registers a fresh one. The contract issues at most 250 members in any seven days, counted
+from each registration's block, a limit governance sets, so a stolen registrar key costs at most a week's issuance
+rather than a tranche before an expedited vote replaces it, and the registrar is a multisig for the same reason. A
+contributor grant is one `add_grant` in a proposal, which escrows the whole amount and pays what the rules allow at once
+(below). A member account stores thirteen periods, about 650 bytes, so the full member roll is on the order of 30 MB of
+account state before tree overhead. A tranche proposal passes like any other: half the bonded stake voting, two thirds
+of the non-abstaining vote agreeing. At launch the ten founders are the only voters, so proposals pass; later the public
+votes. The mechanism never changes, only who is voting. Every grant is on-chain, and the contract's totals show what
+each tranche has issued, escrowed, and still holds.
 
 **Members through the app.** A member never sees a key, a transaction, or a fee. The interface is the first-party
 [wallet](../direction/TOOLING_DIRECTION.md#6-make-a-first-party-ark-wallet-the-reference-experience) the tooling
@@ -433,7 +433,7 @@ direction, and two levers exist:
 
 - [ ] Every grant is created by the grant contract from tranches governance spends to it, as a vesting account on its
       group's schedule at a fresh address.
-- [ ] The registrar is a multisig, and the contract's issuance window stays at 250 members in seven days unless
+- [ ] The registrar is a multisig, and the contract's issuance window stays at 250 members in any seven days unless
       governance changes it.
 - [ ] Members and contributors at 60/40 over the whole distribution; a step's unpaid member tranche rolls forward.
 - [ ] Cumulative contributor cap is checked against the bonded stake the person does not hold before every grant.
@@ -457,7 +457,7 @@ direction, and two levers exist:
 - The member process: how a person is admitted as a member, vouching by existing members or verified identity, and who
   runs it while the founders hold the block, and so who holds the registrar key the contract issues member grants on. It
   is the only guard against one person holding many member wallets. The registrar is a multisig, and the contract's
-  issuance window bounds a stolen key to a week's members.
+  issuance window bounds a stolen key to at most a week's members.
 - The member app: the first-party wallet with signup and vouching in front of it, the feegrant account and who funds and
   runs it, and the authz shape behind the delegation defaults §4 sets. It is the tooling dependency for the first member
   tranche, and none of it is built.
