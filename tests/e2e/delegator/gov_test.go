@@ -11,8 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/tidwall/sjson"
 
-	sdkmath "cosmossdk.io/math"
-
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	"github.com/ararat-network/ark/tests/e2e/chainsuite"
@@ -131,62 +129,6 @@ func (s *GovSuite) TestCommunityPoolSpend() {
 	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "spend from the community pool", spend)
 	s.Require().NoError(err)
 	s.Require().Equal(before.Add(amount).String(), s.Balance(recipient).String())
-}
-
-// TestSeatAdmission submits the seat admission proposal from governance
-// operations §7 word for word: the grant spent to gov, the permanently locked
-// account created at a fresh operator, the float spent to it, and both reward
-// targets raised by one share. The seat then holds the grant locked, the
-// float liquid, and the policy shows the new share.
-func (s *GovSuite) TestSeatAdmission() {
-	ctx := s.GetContext()
-	gov, err := s.Chain.GovAuthority(ctx)
-	s.Require().NoError(err)
-	// A key with no account yet: a send first would create a plain account
-	// and the locked account could no longer be made.
-	seat, err := s.Chain.BuildWallet(ctx, "seat", "")
-	s.Require().NoError(err)
-	operator := seat.FormattedAddress()
-
-	grant := chainsuite.NOAH(chainsuite.SeatGrantNoah)
-	float := chainsuite.NOAH(chainsuite.SeatFloatNoah)
-	policy, err := s.Chain.QueryJSON(ctx, "policy", "treasury", "economic-policy")
-	s.Require().NoError(err)
-	raised := policy.Raw
-	for _, target := range []struct{ field, share string }{
-		{"validator_block_reward_target", chainsuite.SeatValidatorShare},
-		{"oracle_block_reward_target", chainsuite.SeatOracleShare},
-	} {
-		current, ok := sdkmath.NewIntFromString(policy.Get(target.field).String())
-		s.Require().True(ok, target.field)
-		share, ok := sdkmath.NewIntFromString(target.share)
-		s.Require().True(ok)
-		raised, err = sjson.Set(raised, target.field, current.Add(share).String())
-		s.Require().NoError(err)
-	}
-
-	coin := func(amount sdkmath.Int) string {
-		return fmt.Sprintf(`[{"denom":%q,"amount":%q}]`, chainsuite.Denom, amount.String())
-	}
-	messages := []json.RawMessage{
-		json.RawMessage(fmt.Sprintf(`{"@type":"/cosmos.distribution.v1beta1.MsgCommunityPoolSpend","authority":%q,"recipient":%q,"amount":%s}`, gov, gov, coin(grant))),
-		json.RawMessage(fmt.Sprintf(`{"@type":"/cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccount","from_address":%q,"to_address":%q,"amount":%s}`, gov, operator, coin(grant))),
-		json.RawMessage(fmt.Sprintf(`{"@type":"/cosmos.distribution.v1beta1.MsgCommunityPoolSpend","authority":%q,"recipient":%q,"amount":%s}`, gov, operator, coin(float))),
-		json.RawMessage(fmt.Sprintf(`{"@type":"/ark.treasury.v1.MsgUpdatePolicy","authority":%q,"policy":%s}`, gov, raised)),
-	}
-	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "admit a validator seat", messages...)
-	s.Require().NoError(err)
-
-	account, err := s.Chain.QueryJSON(ctx, "account", "auth", "account", operator)
-	s.Require().NoError(err)
-	// The CLI renders the account's Any as a type and value pair.
-	s.Require().Equal("/cosmos.vesting.v1beta1.PermanentLockedAccount", account.Get("type").String())
-	s.Require().Equal(grant.String(), account.Get("value.base_vesting_account.original_vesting.0.amount").String())
-	s.Require().Equal(grant.Add(float).String(), s.Balance(operator).String())
-
-	after, err := s.Chain.QueryJSON(ctx, "policy", "treasury", "economic-policy")
-	s.Require().NoError(err)
-	s.Require().JSONEq(raised, after.Raw)
 }
 
 func mustUint(id string) uint64 {

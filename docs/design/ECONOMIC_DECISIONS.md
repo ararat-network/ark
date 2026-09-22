@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D85: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D85](#d85).
+- D72–D86: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1064,6 +1064,22 @@ power: the return is fiscal, as the tax rate is (D80). Governance already reache
 raising the targets, so the message adds a bounded, auditable exit rather than a new class of access. D9 and D25
 stand.
 
+## D84
+
+**Recorded status:** Decided 2026-09-22. Amends the launch review's seat admission recorded in
+[GENESIS.md](../governance/GENESIS.md#3-accounts-supply-and-validator-seats) (decided 2026-09-11).
+
+Validator entry after launch is open. The ten founding seats are the only granted stake: equal permanently locked
+grants and floats drawn from the community pool at assembly, each adding one seat's share to both reward targets. A
+later validator bonds NOAH it holds through the ordinary staking transaction; no proposal grants it a seat, and the
+seat-admission procedure and its e2e coverage are removed. Equality is therefore a launch fact rather than an enforced
+property, and the reward targets no longer track the set by construction: they are the founding count's shares at
+assembly and move afterwards only by `MsgUpdatePolicy`, inside the committee corridor or by governance beyond it.
+Why: a granted seat made the founders the gate to consensus for as long as they held the vote, which is the control
+the [distribution plan](../governance/DISTRIBUTION_PLAN.md) exists to hand over, and a seat budget drawn from the
+pool competed with that distribution for the same NOAH. The seat command, the assembly sequence, and the testnet
+tooling that seats validators from the artefact stand. D9, D13, and the gov thresholds stand.
+
 ## D85
 
 **Recorded status:** Decided 2026-09-22. Amends the accept-list practice recorded in [D74](#d74).
@@ -1077,6 +1093,29 @@ total bonded stake through the staking pool query, and a list widened one path a
 re-review what upstream already has. Wasmd's native bank, staking, and distribution queriers were already on; the
 listed paths add what they lack: the pool total, both modules' params, unbonding and redelegation views, historical
 info, spendable balances, send-enabled, and account lookups. D74 stands.
+
+## D86
+
+**Recorded status:** Decided 2026-09-22.
+
+The [distribution plan](../governance/DISTRIBUTION_PLAN.md)'s grants are created by a CosmWasm contract,
+`contracts/grant`, funded one tranche at a time by `MsgCommunityPoolSpend` and instructed by `MsgSudoContract`, not by
+proposals that name recipient addresses and not by a chain module. Members are issued at registration by a registrar
+key governance sets; contributor grants are escrowed in the same contract and released by the plan's cap and bloc rule
+against the staking pool query. Why: a proposal listing addresses publishes them for its voting window, and one base
+unit sent to any of them creates a plain account the vesting message refuses, failing the whole proposal at trivial
+cost to the sender. The contract creates each account in the registrar's transaction as a submessage with a reply on
+error, so a dusted address costs one member a re-registration, never a tranche. A module that wrapped an existing plain
+account was built and reverted the same day: it would have stayed in the binary for the life of the chain for a
+distribution that ends, and it kept the member roll in proposals. The pool's single exit stands (D9, D25); the contract
+has no admin because wasmd's governance policy lets a vote sudo or migrate any contract; it grants each account it
+creates a fee allowance from its own balance, so no platform account funds gas and no grantee holds a float; its cap
+counts everything a person has had from the pool as bonded, the conservative reading of the plan's rule; and Rust is
+pinned in `mise.toml` to the optimizer's version, since newer wasm defaults are outside what the chain's wasmvm
+accepts. D85 stands and is what the contract reads. Amended 2026-09-22: the contract bounds issuance to a
+governance-set number of members per window, so a stolen registrar key costs a window's issuance rather than a
+tranche before a vote replaces it, and a grant too small to give every vesting period a coin is refused where it is
+set rather than dispatched to a chain that rejects it.
 
 ## P1
 

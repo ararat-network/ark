@@ -7,9 +7,10 @@ import "cosmossdk.io/math"
 // prices; live observations replace the seed.
 const BootstrapNoahPerUSD = "1"
 
-// Validator seat policy: every seat holds the same permanently locked grant and the same liquid
-// float, both granted from the community pool, and each admission raises both reward targets by
-// one seat's share. Equal grants are what make governance one seat one vote.
+// Validator seat policy: every founding seat holds the same permanently locked grant and the same
+// liquid float, both granted from the community pool at assembly, and each adds one seat's share to
+// both reward targets. Entry after launch is open and grants nothing; the targets then move only by
+// governance policy (D84).
 const (
 	// SeatGrantNoah is the locked, delegated stake of one seat, in whole NOAH.
 	SeatGrantNoah = 5_000_000

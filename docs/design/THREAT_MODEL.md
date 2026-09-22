@@ -225,14 +225,20 @@ and the chain records the shape it observed at appointment. A contract may hold 
 chain records that it is one and nothing about its code or membership, which its admin, its membership
 contract, or governance can change without a term advance. Governance holds every unbounded path, including
 Wasmd's authority policy over every contract, the return of subsidy NOAH to the community pool through a
-fixed-endpoint message with a per-proposal minimum (D83), and can replace or disable any committee. A committee's
+fixed-endpoint message with a per-proposal minimum (D83), the grant contract's tranches, rules, and registrar through
+a pool spend and sudo (D86), and can replace or disable any committee. A committee's
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 
-**Launch supply.** Most NOAH starts in the community pool and every validator seat holds the same locked grant, so
-governance is one seat one vote and the only control over the pool is its own tally: half the seats voting, two
-thirds agreeing. Until the pool is distributed this is a proof-of-authority trust model, and admitting a seat is
-itself a governance act ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats)).
+**Launch supply.** Most NOAH starts in the community pool and the ten founding seats hold the same locked grant, so
+at launch governance is one seat one vote and the only control over the pool is its own tally: half the bonded stake
+voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
+distributed NOAH is bonded: a proof-of-authority trust model until then
+([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the grant
+contract under `contracts/grant`: a tranche is custody the contract holds until its rules release it, the registrar key
+governance sets can only name who receives the next fixed member grant, within that tranche and within the contract's
+issuance window, so a stolen key costs a window's members before a vote replaces it, and a vote can also cancel a
+grant or migrate the contract (D86).
 
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
 on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds.

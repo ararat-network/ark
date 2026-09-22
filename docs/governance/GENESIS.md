@@ -95,7 +95,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
-| `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message, including the seat admission below. |
+| `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message. |
 | `transfer`, `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; transfer holds Minter and Burner for vouchers (D45). |
 
 The blocked list replaces the SDK default rather than augmenting it, so every blocked account above is named
@@ -120,23 +120,24 @@ what give the funds capacity before the first expansion.
 
 ### Validator seats
 
-Every validator holds the same stake, granted from the community pool, so governance is one seat one vote and
-admitting a seat is itself a governance act. Until the pool is distributed this is a proof-of-authority trust model
-on proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-committees) records it.
+The ten founding validators hold the same stake, granted from the community pool, so at launch governance is one seat
+one vote. Entry after launch is open: a validator bonds NOAH it holds, and no proposal grants a seat (D84). Until
+distributed NOAH is bonded the founders hold every vote, a proof-of-authority trust model on proof-of-stake
+machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-committees) records it.
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| Seat grant | 5,000,000 NOAH, permanently locked | Decided | Locked coins can be delegated, vote, and be slashed, never transferred, so equal power is structural rather than a norm. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. At the 100-seat cap the set holds half the supply, which is intended: the validators are the chain's principal holders. |
+| Seat grant | 5,000,000 NOAH, permanently locked | Decided | Locked coins can be delegated, vote, and be slashed, never transferred, so equal power is structural rather than a norm. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. The founding seats are the only granted stake, 5% of supply across ten; later validators bond NOAH they hold. |
 | Seat float | 300,000 NOAH, liquid | Decided | Locked coins cannot pay fees. Operations need little; the floats are the only liquid NOAH at launch and so the only NOAH that can be converted into the currencies, about 4.5M across fifteen seats. |
 | Per-seat income | 0.025 NOAH a block, 131,400 a year, split 70/30 between the validator and oracle lanes | Decided | Funds a highly available operation with the price sidecar, on-call, and the governance and committee work, at about 10,000 USD a month. The targets are floors: once tax exceeds them the oracle lane takes every residual, so the mature split is set by revenue, not by these numbers (§4). |
 | `auth.params.tx_sig_limit` | `7` | Decided | The ante counts every member key of a multisig, not its threshold, so committees hold at most seven keys (§13). |
 | `auth.accounts` | empty in the artefact | Assembly | One permanently locked account per seat, holding the grant as its locked amount plus the float; the gentx self-delegates the grant. Committees are appointed after launch. |
 
-Admitting a seat after launch is one proposal executing, as the gov account, a community pool spend to gov, a
-`MsgCreatePermanentLockedAccount` of the grant to the operator's fresh address, a liquid spend of the float, and a
-`MsgUpdatePolicy` raising both reward targets by one seat's share. The operator then sends create-validator with
-commission at or above the floor. Governance operations [§7](GOVERNANCE_OPERATIONS.md#7-seat-admission) carries the
-proposal template, which the e2e gov suite executes.
+After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
+floor; no proposal is involved and nothing is drawn from the pool. The reward targets do not follow the set: they are
+the founding seats' shares at assembly, and raising them as validators join is a governance policy choice by
+`MsgUpdatePolicy` (§4), which the [distribution plan](DISTRIBUTION_PLAN.md#6-if-the-public-does-not-stake) proposes
+how to use.
 
 ## 4. Treasury
 
@@ -161,8 +162,8 @@ Economic policy (the committee's levers once appointed, §13):
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `validator_block_reward_target` | `0` in the artefact; 0.0175 NOAH a block per seat, `17500000000000000`, added by each seat | Assembly | Every seat adds its share at assembly and every admission adds another, so the target is the seat count times the share by construction. Met from gas first, then tax above the oracle floor, then subsidy (D10, D11). |
-| `oracle_block_reward_target` | `0` in the artefact; 0.0075 NOAH a block per seat, `7500000000000000`, added by each seat | Assembly | Protected first out of tax (D11). The oracle lane is the only performance-weighted income, paid by band-gated accuracy, and the lane every tax residual flows to, so 30% of the floor keeps a half-accuracy operator 15% poorer without deferring most of a seat's income behind the oracle payout window (§8). |
+| `validator_block_reward_target` | `0` in the artefact; 0.0175 NOAH a block per seat, `17500000000000000`, added by each founding seat | Assembly | Every founding seat adds its share at assembly, so the launch target is the seat count times the share; entry after launch grants nothing, and the target then moves only by `MsgUpdatePolicy`, inside the committee corridor (§13) or by governance beyond it (D84). Met from gas first, then tax above the oracle floor, then subsidy (D10, D11). |
+| `oracle_block_reward_target` | `0` in the artefact; 0.0075 NOAH a block per seat, `7500000000000000`, added by each founding seat | Assembly | Protected first out of tax (D11). The oracle lane is the only performance-weighted income, paid by band-gated accuracy, and the lane every tax residual flows to, so 30% of the floor keeps a half-accuracy operator 15% poorer without deferring most of a seat's income behind the oracle payout window (§8). |
 | `redemption_buffer_target_ratio` | `0.30` | Decided | Each redemption pays 30% from inventory and mints 70% (D4), and that share holds through a run (D73). |
 | `strategic_reserve_target_ratio` | `0.15` | Decided | With the Buffer, a 45% coverage ceiling when everything is committed, 22.5% after NOAH halves. |
 | `insurance_target_ratio` | `0.05` | Decided | No loss history; a tail margin so the fund builds at all. |
@@ -257,7 +258,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `distribution.params` (proposer rewards 0, withdraw address enabled) | SDK defaults | Default | |
 | `distribution.fee_pool.community_pool` | 835,000,000 NOAH less the seats | Decided | Equal to the Distribution module balance (§3). |
 | `gov.params.min_deposit`, `expedited_min_deposit` | 1,000 NOAH, 5,000 NOAH | Decided | About 1,000 USD, the range established chains settle in: deposits refund unless vetoed, so the deposit is capital locked for four days, not a fee. With the 10% initial ratio, 100 NOAH lists a proposal. `app/config.go` carries the same default. |
-| `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | Equal seats make governance one validator one vote and the pool it guards holds most of the supply: half the set must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
+| `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | The founding set is ten equal seats and the pool it guards holds most of the supply: half the bonded stake must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
 | `gov.params.veto_threshold` | `0.334` | Default | A third of the set can block. |
 | `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, veto deposits burned) | SDK defaults | Default | Confirmed; the claims veto window and the tax-raise notice were sized on them. Lengthen after the calibration window if wanted. |
 | `gov.constitution` | empty | Default | |
