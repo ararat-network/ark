@@ -69,7 +69,7 @@ the launch genesis starts with a zero `ArkPoolDelta`.
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `chain_id` | `ark-1` | Decided | A later relaunch takes a new one. |
-| `genesis_time` | `0001-01-01T00:00:00Z` in the artefact | Assembly | A start gate, not a record: CometBFT waits for it, so nodes start early and the chain begins on its own. Set it after gentx collection (§12). |
+| `genesis_time` | `0001-01-01T00:00:00Z` in the artefact | Assembly | A start gate, not a record: CometBFT waits for it, so nodes start early and the chain begins on its own. Set it before the seats are granted, which vest from it (§12). |
 | `initial_height` | `1` | Decided | A fresh chain starts at one; continuation exports start at the next height. |
 | `consensus.authority.authority` | the gov module address, `ark10d07y265gmmuvt4z0w9aw880jnsr700j2cu5hn` | Decided | Chain authority lives in consensus params; empty would fall back to each module's own gov string, which is the same address stated a dozen times. `arkd testnet` sets it the same way. |
 | `consensus.block.max_gas` | `100000000` | Decided | The base-fee controller measures utilisation against this budget; without a finite `max_gas` its guard held the price at the floor forever ([local design](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)). |
@@ -294,16 +294,16 @@ then the transfer flags. The activation tests are complete (`docs/design/ECONOMI
 
 The artefact is the reviewed base; assembly adds the time and the seats and changes nothing else.
 
-1. **Time.** Set `genesis_time` to a weekday hour, in UTC, when every validator's region is awake and at least 48
-   hours after the file will be published. The seats vest from it, so it comes first: the first seat command below
-   sets it with `--genesis-time`, and a time changed after seating means seating again from the artefact.
-2. **Seats.** For each genesis validator run `arkd genesis add-validator-seat <operator-address>` against the file.
-   It writes a continuous vesting account at the operator with 5,000,000 NOAH vesting from four to ten years after
-   `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the Distribution balance and
-   `fee_pool.community_pool`, raises both reward targets by one seat's share, and leaves supply untouched. It refuses
-   an unset or different `genesis_time`, an operator already present, and a pool that cannot fund the seat, and
-   writes nothing unless every edited module validates. The seat policy is fixed in `pkg/chain/launch.go`;
-   `TestLaunchGenesisBootsVestingSeat` boots what it writes.
+1. **Time.** Set `genesis_time` in the file to a weekday hour, in UTC, when every validator's region is awake and at
+   least 48 hours after the file will be published. The seats vest from it, so it comes first; a time changed after
+   seating means seating again from the artefact.
+2. **Seats.** Run `arkd genesis add-validator-seats <operator-address>...` once against the file, naming every
+   genesis validator. For each it writes a continuous vesting account at the operator with 5,000,000 NOAH vesting
+   from four to ten years after `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the
+   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and leaves
+   supply untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
+   the seats, and writes nothing unless every seat and every edited module validates. The seat policy is fixed in
+   `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what it writes.
 3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
    5,000,000 NOAH grant with commission at or above 5%. The gentx pays no fee at height zero.
 4. **Collect.** Collect the gentxs; collection keeps `genesis_time`.

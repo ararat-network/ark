@@ -55,9 +55,9 @@ When validators create their own keys, each participant initialises a fresh home
 Keep each participant's mnemonic and private validator key local to that participant.
 
 The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
-copied over `config/genesis.json`, and grants each validator's seat with
-`arkd genesis add-validator-seat <address> --home <home>`, the first with `--genesis-time <RFC 3339>` since the seats
-vest from it ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
+seat in one `arkd genesis add-validator-seats <address>... --home <home>`
+([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
