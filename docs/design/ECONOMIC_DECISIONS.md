@@ -1115,7 +1115,9 @@ pinned in `mise.toml` to the optimizer's version, since newer wasm defaults are 
 accepts. D85 stands and is what the contract reads. Amended 2026-09-22: the contract bounds issuance to a
 governance-set number of members per window, so a stolen registrar key costs a window's issuance rather than a
 tranche before a vote replaces it, and a grant too small to give every vesting period a coin is refused where it is
-set rather than dispatched to a chain that rejects it.
+set rather than dispatched to a chain that rejects it. Amended again 2026-09-22: the founder's first 5M, the one grant
+paid outside the contract by a proposal naming an address, goes through it under the bloc rule like every seat
+holder's, and the field that restated pay outside the contract is gone with nothing left to restate.
 
 ## P1
 

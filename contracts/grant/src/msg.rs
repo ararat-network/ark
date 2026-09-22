@@ -82,14 +82,12 @@ pub enum SudoMsg {
     },
     /// AddGrant escrows a contributor grant from the unallocated balance and
     /// pays its first tranche to grantee, which becomes the grant's
-    /// controller. paid_elsewhere restates what the person has received from
-    /// the pool outside this contract, the seat excluded.
+    /// controller.
     AddGrant {
         grantee: String,
         amount: Uint128,
         schedule: Vec<Period>,
         seat_holder: bool,
-        paid_elsewhere: Uint128,
     },
     SetController {
         grantee: String,
@@ -157,10 +155,8 @@ pub struct PersonResponse {
     pub grantee: Addr,
     pub controller: Addr,
     pub seat_holder: bool,
-    pub paid_elsewhere: Uint128,
     pub released: Uint128,
-    /// own is everything counted against the person: seat, paid elsewhere,
-    /// and released here.
+    /// own is everything counted against the person: seat and released here.
     pub own: Uint128,
 }
 

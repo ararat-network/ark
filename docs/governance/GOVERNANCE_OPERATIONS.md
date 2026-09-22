@@ -161,8 +161,7 @@ issues at most the window's members, 250 in seven days at launch; a compromised 
 ```
 
 **A contributor grant** is the spend followed by the contract's add-grant call, in one proposal that reverts whole if
-either fails. `paid_elsewhere` restates what the pool has paid the person outside the contract, the seat excluded; the
-reasoning for the band goes in the summary.
+either fails; the reasoning for the band goes in the summary.
 
 ```json
 {
@@ -186,8 +185,7 @@ reasoning for the band goes in the summary.
           "grantee": "GRANTEE",
           "amount": "30000000000000000000000000",
           "schedule": [{"length": 31536000, "parts": 12}, {"length": 2628000, "parts": 1}, "... 36 monthly entries"],
-          "seat_holder": false,
-          "paid_elsewhere": "0"
+          "seat_holder": false
         }
       }
     }
@@ -200,36 +198,7 @@ The other sudo calls take the same shape with `set_registrar`, `set_issuance_lim
 `{"totals":{}}` for what the tranche holds, `{"grant":{"id":N}}` for a grant, `{"releasable":{"id":N}}` for what
 the rules allow now. Anyone may then send `{"release":{"id":N}}` once the grantee has registered a fresh address.
 
-**The founder's first 5M** is the one grant the plan pays outside the contract, since the bloc rule releases nothing
-to a seat holder at launch ([plan §4](DISTRIBUTION_PLAN.md#4-distribution)). It is the SDK's own path: the spend to
-gov, then the vesting message from gov to a fresh address, with the thirty-seven period amounts written out. The
-address is public for the voting window, so a send to it before execution fails the proposal; resubmit at a fresh
-one. Later grants to the founder go through the contract with `paid_elsewhere` set to this 5M.
-
-```json
-{
-  "title": "Founding-band grant, first tranche: <name>",
-  "summary": "<band, multipliers, and reasoning>",
-  "metadata": "",
-  "deposit": "1000000000000000000000anoah",
-  "messages": [
-    {
-      "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
-      "authority": "GOV",
-      "recipient": "GOV",
-      "amount": [{"denom": "anoah", "amount": "5000000000000000000000000"}]
-    },
-    {
-      "@type": "/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount",
-      "from_address": "GOV",
-      "to_address": "GRANTEE",
-      "start_time": <unix seconds of the expected execution day>,
-      "vesting_periods": [
-        {"length": "31536000", "amount": [{"denom": "anoah", "amount": "1250000000000000000000000"}]},
-        {"length": "2628000", "amount": [{"denom": "anoah", "amount": "104166666666666666666666"}]},
-        "... 35 more monthly entries; the last takes the remainder so the amounts sum to the grant"
-      ]
-    }
-  ]
-}
-```
+**A grant to a seat holder** is the same proposal with `seat_holder` true, the grantee abstaining. The bloc rule
+releases nothing to a seat holder until public bonded stake passes the block line
+([plan §4](DISTRIBUTION_PLAN.md#4-distribution)), so the grant escrows whole and anyone releases it, tranche by
+tranche, as bonded stake grows.

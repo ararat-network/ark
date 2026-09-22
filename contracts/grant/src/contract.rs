@@ -166,16 +166,7 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
             amount,
             schedule,
             seat_holder,
-            paid_elsewhere,
-        } => add_grant(
-            deps,
-            env,
-            grantee,
-            amount,
-            schedule,
-            seat_holder,
-            paid_elsewhere,
-        ),
+        } => add_grant(deps, env, grantee, amount, schedule, seat_holder),
         SudoMsg::SetController {
             grantee,
             controller,
@@ -336,7 +327,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 grantee,
                 controller: p.controller.clone(),
                 seat_holder: p.seat_holder,
-                paid_elsewhere: p.paid_elsewhere,
                 released: p.released,
                 own: own(&config, &p),
             })
@@ -433,16 +423,15 @@ fn unallocated(deps: Deps, env: &Env, config: &Config) -> Result<Uint128, Contra
     Ok(balance.saturating_sub(ESCROWED.load(deps.storage)?))
 }
 
-/// own is everything counted against a person: the seat if they hold one,
-/// what the pool paid them outside this contract, and what this contract has
-/// released to them, all assumed bonded.
+/// own is everything counted against a person: the seat if they hold one
+/// and what this contract has released to them, all assumed bonded.
 fn own(config: &Config, person: &Person) -> Uint128 {
     let seat = if person.seat_holder {
         config.seat_stake
     } else {
         Uint128::zero()
     };
-    seat + person.paid_elsewhere + person.released
+    seat + person.released
 }
 
 fn next_reply_id(deps: &mut DepsMut) -> StdResult<u64> {
@@ -583,7 +572,6 @@ fn add_grant(
     amount: Uint128,
     schedule: Vec<crate::msg::Period>,
     seat_holder: bool,
-    paid_elsewhere: Uint128,
 ) -> Result<Response, ContractError> {
     if amount.is_zero() {
         return Err(ContractError::ZeroAmount);
@@ -599,18 +587,16 @@ fn add_grant(
     }
     let grantee = deps.api.addr_validate(&grantee)?;
 
-    // A person's figures are restated by governance on each grant; a first
-    // grant makes the grantee address the controller.
+    // Governance restates whether the person holds a seat on each grant; a
+    // first grant makes the grantee address the controller.
     let person = match PERSONS.may_load(deps.storage, &grantee)? {
         Some(mut p) => {
             p.seat_holder = seat_holder;
-            p.paid_elsewhere = paid_elsewhere;
             p
         }
         None => Person {
             controller: grantee.clone(),
             seat_holder,
-            paid_elsewhere,
             released: Uint128::zero(),
         },
     };
@@ -772,16 +758,14 @@ fn releasable(
     })
 }
 
-/// seat_totals sums what seat holders have received from the pool beyond
-/// their seats, and what their grants still hold in escrow.
+/// seat_totals sums what this contract has released to seat holders and
+/// what their grants still hold in escrow.
 fn seat_totals(deps: Deps) -> Result<(Uint128, Uint128), ContractError> {
     let mut received = Uint128::zero();
     for item in PERSONS.range(deps.storage, None, None, Order::Ascending) {
         let (_, p) = item?;
         if p.seat_holder {
-            received = received
-                .checked_add(p.paid_elsewhere)?
-                .checked_add(p.released)?;
+            received = received.checked_add(p.released)?;
         }
     }
     let mut remaining = Uint128::zero();

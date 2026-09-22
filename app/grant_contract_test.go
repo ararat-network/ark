@@ -289,7 +289,7 @@ func TestGrantContractEscrowsAndReleasesByBondedStake(t *testing.T) {
 	grantee := sdk.AccAddress([]byte("contributor_________"))
 	f.sudo(t, map[string]any{"add_grant": map[string]any{
 		"grantee": grantee.String(), "amount": amount.String(), "schedule": standardSchedule,
-		"seat_holder": false, "paid_elsewhere": "0",
+		"seat_holder": false,
 	}})
 
 	first := bonded.QuoRaw(5)
@@ -341,7 +341,7 @@ func TestGrantContractEscrowsAndReleasesByBondedStake(t *testing.T) {
 	other := sdk.AccAddress([]byte("contributor_b_______"))
 	f.sudo(t, map[string]any{"add_grant": map[string]any{
 		"grantee": other.String(), "amount": large.String(), "schedule": standardSchedule,
-		"seat_holder": false, "paid_elsewhere": "0",
+		"seat_holder": false,
 	}})
 	require.Equal(t, bonded.MulRaw(6).QuoRaw(5), f.grant(t, 2).Released)
 	escrowed := f.grant(t, 2).Remaining

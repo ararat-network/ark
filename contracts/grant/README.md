@@ -39,9 +39,9 @@ contract, and it stores nothing the plan does not name.
   allow at once to the grantee, who becomes the grant's controller. Later tranches go to an address the
   controller registers, and anyone may trigger them. Each tranche is a fresh vesting account on the grant's own
   schedule.
-- **Rules.** A person's `own` is their seat if they hold one, what governance says the pool paid them outside
-  this contract, and what this contract has released to them, all assumed bonded: subtracting more than is
-  bonded only lowers the cap. Their total may reach a fifth of `bonded − own`, at most the ceiling. Seat holders
+- **Rules.** A person's `own` is their seat if they hold one and what this contract has released to them, all
+  assumed bonded: subtracting more than is bonded only lowers the cap. Their total may reach a fifth of
+  `bonded − own`, at most the ceiling. Seat holders
   together may reach a third of bonded stake less the founding stake, shared pro rata by remaining escrow. A
   grant that fits under its allowance pays whole; a larger one releases the allowance floored to whole units. A
   grant too small to give every period of its schedule a coin is refused where it is set, since the chain rejects

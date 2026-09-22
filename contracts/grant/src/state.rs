@@ -23,7 +23,6 @@ pub struct Config {
 pub struct Person {
     pub controller: Addr,
     pub seat_holder: bool,
-    pub paid_elsewhere: Uint128,
     pub released: Uint128,
 }
 

@@ -510,7 +510,6 @@ fn grants_too_small_for_their_schedule_are_refused() {
             amount: Uint128::new(10),
             schedule: standard(),
             seat_holder: false,
-            paid_elsewhere: Uint128::zero(),
         })
         .unwrap_err();
     assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
@@ -619,7 +618,6 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
         amount: noah(30_000_000),
         schedule: standard(),
         seat_holder: false,
-        paid_elsewhere: Uint128::zero(),
     })
     .unwrap();
 
@@ -717,49 +715,63 @@ fn contributor_grant_escrows_and_releases_by_the_cap() {
     assert_eq!(contract_error(&err), &ContractError::Exhausted(1));
 }
 
-/// The founder's table: the seat and the first 5M count as own, the bloc
-/// rule holds everything until bonded stake passes 150M, and then releases
-/// 5M at 180M and 15M more at 225M.
+/// The founder's table: nothing releases while bonded stake is under 150M;
+/// then the bloc rule pays 5M at 165M, 5M more at 180M, and 15M more at
+/// 225M, the seat and every release counting as own.
 #[test]
 fn seat_holder_waits_on_the_bloc_rule() {
     let mut f = Fixture::new();
-    f.fund(noah(55_000_000));
+    f.fund(noah(60_000_000));
     let founder = f.addr("founder");
-    f.set_bonded(noah(165_000_000));
+    f.set_bonded(noah(150_000_000));
 
     f.sudo(SudoMsg::AddGrant {
         grantee: founder.to_string(),
-        amount: noah(55_000_000),
+        amount: noah(60_000_000),
         schedule: standard(),
         seat_holder: true,
-        paid_elsewhere: noah(5_000_000),
     })
     .unwrap();
-    assert_eq!(f.account(&founder), None, "nothing releases at 165M");
+    assert_eq!(f.account(&founder), None, "nothing releases at 150M");
     let r = f.releasable(1);
-    assert_eq!(r.own, noah(10_000_000));
+    assert_eq!(r.own, noah(5_000_000));
     assert_eq!(r.seat_allowance, Some(Uint128::zero()));
-    assert_eq!(f.totals().escrowed, noah(55_000_000));
+    assert_eq!(f.totals().escrowed, noah(60_000_000));
 
     let stranger = f.addr("stranger");
-    f.set_bonded(noah(180_000_000));
+    f.set_bonded(noah(165_000_000));
     assert_eq!(f.releasable(1).amount, noah(5_000_000));
     f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
     assert_eq!(f.account(&founder).unwrap().2, noah(5_000_000));
+    assert_eq!(f.releasable(1).own, noah(10_000_000));
 
-    let next = f.addr("founder-2");
+    let second = f.addr("founder-2");
     f.exec(
         &founder,
         ExecuteMsg::SetReleaseAddress {
             id: 1,
-            address: next.to_string(),
+            address: second.to_string(),
+        },
+    )
+    .unwrap();
+    f.set_bonded(noah(180_000_000));
+    assert_eq!(f.releasable(1).amount, noah(5_000_000));
+    f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
+    assert_eq!(f.account(&second).unwrap().2, noah(5_000_000));
+
+    let third = f.addr("founder-3");
+    f.exec(
+        &founder,
+        ExecuteMsg::SetReleaseAddress {
+            id: 1,
+            address: third.to_string(),
         },
     )
     .unwrap();
     f.set_bonded(noah(225_000_000));
     assert_eq!(f.releasable(1).amount, noah(15_000_000));
     f.exec(&stranger, ExecuteMsg::Release { id: 1 }).unwrap();
-    assert_eq!(f.grant(1).released, noah(20_000_000));
+    assert_eq!(f.grant(1).released, noah(25_000_000));
 
     // A second seat holder shares the room pro rata by what each has left.
     let other = f.addr("seat-two");
@@ -770,7 +782,6 @@ fn seat_holder_waits_on_the_bloc_rule() {
         amount: noah(35_000_000),
         schedule: standard(),
         seat_holder: true,
-        paid_elsewhere: Uint128::zero(),
     })
     .unwrap();
     // Room at add time: 80M − 50M − 25M received = 5M, shared 35:35 with the
@@ -800,7 +811,6 @@ fn cancel_returns_the_unreleased_part_and_return_unallocated_is_bounded() {
         amount: noah(30_000_000),
         schedule: standard(),
         seat_holder: false,
-        paid_elsewhere: Uint128::zero(),
     })
     .unwrap();
     assert_eq!(f.totals().unallocated, noah(10_000_000));
@@ -857,7 +867,6 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
             amount: noah(2_000_000),
             schedule: standard(),
             seat_holder: false,
-            paid_elsewhere: Uint128::zero(),
         })
         .unwrap_err();
     assert_eq!(
@@ -873,7 +882,6 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
             amount: noah(1),
             schedule: vec![],
             seat_holder: false,
-            paid_elsewhere: Uint128::zero(),
         })
         .unwrap_err();
     assert!(matches!(contract_error(&err), ContractError::Schedule(_)));
@@ -890,7 +898,6 @@ fn add_grant_needs_unallocated_balance_and_a_valid_schedule() {
         amount: noah(200_000),
         schedule: stream,
         seat_holder: false,
-        paid_elsewhere: Uint128::zero(),
     })
     .unwrap();
     let (_, periods, total) = f.account(&grantee).unwrap();
