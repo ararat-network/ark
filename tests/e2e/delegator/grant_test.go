@@ -31,9 +31,10 @@ func (s *GrantSuite) TestMemberGrantThroughTranche() {
 	codeID, err := s.Chain.StoreContract(ctx, s.Wallet.KeyName(), "../../../app/testdata/grant.wasm")
 	s.Require().NoError(err)
 
-	schedule := []string{`{"length":31536000,"parts":12}`}
-	for range 36 {
-		schedule = append(schedule, `{"length":2628000,"parts":1}`)
+	// The plan's member schedule: a tenth after a second, then twelve months.
+	schedule := []string{`{"length":1,"parts":4}`}
+	for range 12 {
+		schedule = append(schedule, `{"length":2628000,"parts":3}`)
 	}
 	init := fmt.Sprintf(
 		`{"denom":%q,"registrar":%q,"issuance_limit":{"max_members":1000,"window_seconds":604800},`+
@@ -71,33 +72,36 @@ func (s *GrantSuite) TestMemberGrantThroughTranche() {
 	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "wasm", "execute", contract, register)
 	s.Require().NoError(err)
 
-	grant := chainsuite.NOAH(memberGrantNoah)
+	// The first period, a tenth, is sent at once into an ordinary account;
+	// the rest waits in the contract.
+	tenth := chainsuite.NOAH(memberGrantNoah / 10)
 	account, err := s.Chain.QueryJSON(ctx, "account", "auth", "account", member.FormattedAddress())
 	s.Require().NoError(err)
-	s.Require().Equal("/cosmos.vesting.v1beta1.PeriodicVestingAccount", account.Get("type").String())
-	s.Require().Equal(grant.String(), account.Get("value.base_vesting_account.original_vesting.0.amount").String())
-	s.Require().Len(account.Get("value.vesting_periods").Array(), 37)
-	s.Require().Equal(grant, s.Balance(member.FormattedAddress()))
-
-	account, err = s.Chain.QueryJSON(ctx, "account", "auth", "account", dusted.FormattedAddress())
-	s.Require().NoError(err)
-	s.Require().Equal("/cosmos.auth.v1beta1.BaseAccount", account.Get("type").String(), "the dusted address was left alone")
+	s.Require().Equal("/cosmos.auth.v1beta1.BaseAccount", account.Get("type").String())
+	s.Require().Equal(tenth, s.Balance(member.FormattedAddress()))
+	s.Require().Equal(tenth.Add(chainsuite.NOAH(1)), s.Balance(dusted.FormattedAddress()), "an address holding coins is paid like any other")
 	var status struct {
 		Data struct {
-			Status map[string]json.RawMessage `json:"status"`
+			Member struct {
+				Paid      uint32 `json:"paid"`
+				Remaining string `json:"remaining"`
+			} `json:"member"`
+			Releasable string `json:"releasable"`
 		} `json:"data"`
 	}
-	s.Require().NoError(s.Chain.QueryContract(ctx, contract, fmt.Sprintf(`{"member":{"address":%q}}`, dusted.FormattedAddress()), &status))
-	s.Require().Contains(status.Data.Status, "rejected")
-	s.Require().Equal(chainsuite.NOAH(2*memberGrantNoah), s.Balance(contract), "the rejected grant stayed in the tranche")
+	s.Require().NoError(s.Chain.QueryContract(ctx, contract, fmt.Sprintf(`{"member":{"address":%q}}`, member.FormattedAddress()), &status))
+	s.Require().Equal(uint32(1), status.Data.Member.Paid)
+	s.Require().Equal(chainsuite.NOAH(memberGrantNoah).Sub(tenth).String(), status.Data.Member.Remaining)
+	s.Require().Equal("0", status.Data.Releasable, "nothing has elapsed")
+	s.Require().Equal(tranche.Sub(tenth.MulRaw(2)), s.Balance(contract), "only the first periods left")
 
-	// The unvested grant delegates, with the contract's allowance paying the fee.
+	// The tenth is stake like any other, and pays its own fee.
 	val := s.Chain.ValidatorWallets[0].ValoperAddress
-	_, err = s.Node().ExecTx(ctx, member.KeyName(), "staking", "delegate", val, chainsuite.NOAHCoin(memberGrantNoah/2), "--fee-granter", contract)
+	_, err = s.Node().ExecTx(ctx, member.KeyName(), "staking", "delegate", val, chainsuite.NOAHCoin(memberGrantNoah/20))
 	s.Require().NoError(err)
 	delegated, err := s.Chain.QueryJSON(ctx, "delegation_response.balance.amount", "staking", "delegation", member.FormattedAddress(), val)
 	s.Require().NoError(err)
-	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/2).String(), delegated.String())
+	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/20).String(), delegated.String())
 
 	// Governance replaces the registrar by sudo; the old key is refused.
 	sudo := json.RawMessage(fmt.Sprintf(
@@ -113,7 +117,7 @@ func (s *GrantSuite) TestMemberGrantThroughTranche() {
 	s.Require().Error(err)
 	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "wasm", "execute", contract, register)
 	s.Require().NoError(err)
-	s.Require().Equal(grant, s.Balance(another.FormattedAddress()))
+	s.Require().Equal(tenth, s.Balance(another.FormattedAddress()))
 }
 
 func TestGrant(t *testing.T) {
