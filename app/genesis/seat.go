@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,16 +19,20 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// AddValidatorSeat grants one equal validator seat in appState: a permanently
-// locked account at operator holding chain.SeatGrantNoah, a liquid float of
-// chain.SeatFloatNoah beside it, both moved out of the community pool, and
-// both reward targets raised by one seat's share. Supply is unchanged. It
-// refuses an operator already holding an account or balance and a pool that
-// cannot fund the seat, and writes nothing unless every edited module passes
-// its own validation.
-func AddValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress) error {
+// AddValidatorSeat grants one equal validator seat in appState: a continuous
+// vesting account at operator holding chain.SeatGrantNoah, vesting from
+// chain.SeatVestingCliffYears to chain.SeatVestingEndYears after genesisTime,
+// a liquid float of chain.SeatFloatNoah beside it, both moved out of the
+// community pool, and both reward targets raised by one seat's share. Supply
+// is unchanged. It refuses an unset genesis time, an operator already holding
+// an account or balance, and a pool that cannot fund the seat, and writes
+// nothing unless every edited module passes its own validation.
+func AddValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, genesisTime time.Time) error {
 	if len(operator) == 0 {
 		return errors.New("operator address must be set")
+	}
+	if genesisTime.IsZero() {
+		return errors.New("genesis time must be set before a seat is granted: the seat vests from it")
 	}
 	grant := noahCoins(chain.SeatGrantNoah)
 	seat := grant.Add(noahCoins(chain.SeatFloatNoah)...)
@@ -37,7 +42,7 @@ func AddValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, oper
 		edit   func(json.RawMessage) (json.RawMessage, error)
 	}{
 		{authtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return addSeatAccount(cdc, raw, operator, grant)
+			return addSeatAccount(cdc, raw, operator, grant, genesisTime)
 		}},
 		{banktypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return fundSeat(cdc, raw, operator, seat)
@@ -71,9 +76,10 @@ func noahCoins(whole int64) sdk.Coins {
 	return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(whole)))
 }
 
-// addSeatAccount appends the permanently locked account. It carries no public
-// key; the gentx's signature sets it, as for any genesis account.
-func addSeatAccount(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress, grant sdk.Coins) (json.RawMessage, error) {
+// addSeatAccount appends the vesting account, its window counted in calendar
+// years from genesisTime. It carries no public key; the gentx's signature sets
+// it, as for any genesis account.
+func addSeatAccount(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress, grant sdk.Coins, genesisTime time.Time) (json.RawMessage, error) {
 	var state authtypes.GenesisState
 	if err := cdc.UnmarshalJSON(raw, &state); err != nil {
 		return nil, err
@@ -85,7 +91,12 @@ func addSeatAccount(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddres
 	if accounts.Contains(operator) {
 		return nil, fmt.Errorf("operator %s already holds an account", operator)
 	}
-	seat, err := vestingtypes.NewPermanentLockedAccount(authtypes.NewBaseAccount(operator, nil, 0, 0), grant)
+	seat, err := vestingtypes.NewContinuousVestingAccount(
+		authtypes.NewBaseAccount(operator, nil, 0, 0),
+		grant,
+		genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(),
+		genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(),
+	)
 	if err != nil {
 		return nil, err
 	}

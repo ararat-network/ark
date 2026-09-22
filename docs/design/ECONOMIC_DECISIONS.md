@@ -1078,7 +1078,11 @@ assembly and move afterwards only by `MsgUpdatePolicy`, inside the committee cor
 Why: a granted seat made the founders the gate to consensus for as long as they held the vote, which is the control
 the [distribution plan](../governance/DISTRIBUTION_PLAN.md) exists to hand over, and a seat budget drawn from the
 pool competed with that distribution for the same NOAH. The seat command, the assembly sequence, and the testnet
-tooling that seats validators from the artefact stand. D9, D13, and the gov thresholds stand.
+tooling that seats validators from the artefact stand. D9, D13, and the gov thresholds stand. Amended 2026-09-22: the
+seat vests rather than locking for good, a continuous vesting account from four years after genesis to ten, so a
+founder can leave with what a decade of running the chain paid. The four-year cliff keeps the floats the only liquid
+NOAH a founder holds through the launch years; the block line, the escrow's 50M subtraction, and the cap's own-stake
+count stand, the subtraction turning conservative once a founder sells.
 
 ## D85
 

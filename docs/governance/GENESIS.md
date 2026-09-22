@@ -127,11 +127,11 @@ machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-commit
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| Seat grant | 5,000,000 NOAH, permanently locked | Decided | Locked coins can be delegated, vote, and be slashed, never transferred, so equal power is structural rather than a norm. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. The founding seats are the only granted stake, 5% of supply across ten; later validators bond NOAH they hold. |
-| Seat float | 300,000 NOAH, liquid | Decided | Locked coins cannot pay fees. Operations need little; the floats are the only liquid NOAH at launch and so the only NOAH that can be converted into the currencies, about 4.5M across fifteen seats. |
+| Seat grant | 5,000,000 NOAH, vesting from four to ten years after genesis | Decided | A continuous vesting account whose start is four years after genesis and whose end is ten: deferred pay for a decade of running the chain. Unvested coins can be delegated, vote, and be slashed, never transferred, so equal power is structural through the launch years and the floats stay the only liquid NOAH a founder holds until year four. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. The founding seats are the only granted stake, 5% of supply across ten; later validators bond NOAH they hold. |
+| Seat float | 300,000 NOAH, liquid | Decided | Unvested coins cannot pay fees. Operations need little; the floats are the only liquid NOAH at launch and so the only NOAH that can be converted into the currencies, about 4.5M across fifteen seats. |
 | Per-seat income | 0.025 NOAH a block, 131,400 a year, split 70/30 between the validator and oracle lanes | Decided | Funds a highly available operation with the price sidecar, on-call, and the governance and committee work, at about 10,000 USD a month. The targets are floors: once tax exceeds them the oracle lane takes every residual, so the mature split is set by revenue, not by these numbers (§4). |
 | `auth.params.tx_sig_limit` | `7` | Decided | The ante counts every member key of a multisig, not its threshold, so committees hold at most seven keys (§13). |
-| `auth.accounts` | empty in the artefact | Assembly | One permanently locked account per seat, holding the grant as its locked amount plus the float; the gentx self-delegates the grant. Committees are appointed after launch. |
+| `auth.accounts` | empty in the artefact | Assembly | One continuous vesting account per seat, its window four to ten years after genesis time, holding the grant as its original vesting plus the float; the gentx self-delegates the grant. Committees are appointed after launch. |
 
 After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
 floor; no proposal is involved and nothing is drawn from the pool. The reward targets do not follow the set: they are
@@ -292,19 +292,22 @@ then the transfer flags. The activation tests are complete (`docs/design/ECONOMI
 
 ## 12. Assembly sequence
 
-The artefact is the reviewed base; assembly adds the seats and the time and changes nothing else.
+The artefact is the reviewed base; assembly adds the time and the seats and changes nothing else.
 
-1. **Seats.** For each genesis validator run `arkd genesis add-validator-seat <operator-address>` against the file.
-   It writes a permanently locked account at the operator with 5,000,000 NOAH locked and a 5,300,000 NOAH balance,
-   subtracts 5,300,000 NOAH from both the Distribution balance and `fee_pool.community_pool`, raises both reward
-   targets by one seat's share, and leaves supply untouched. It refuses an operator already present and a pool that
-   cannot fund the seat, and writes nothing unless every edited module validates. The seat policy is fixed in
-   `pkg/chain/launch.go`; `TestLaunchGenesisBootsLockedSeat` boots what it writes.
-2. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
+1. **Time.** Set `genesis_time` to a weekday hour, in UTC, when every validator's region is awake and at least 48
+   hours after the file will be published. The seats vest from it, so it comes first: the first seat command below
+   sets it with `--genesis-time`, and a time changed after seating means seating again from the artefact.
+2. **Seats.** For each genesis validator run `arkd genesis add-validator-seat <operator-address>` against the file.
+   It writes a continuous vesting account at the operator with 5,000,000 NOAH vesting from four to ten years after
+   `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the Distribution balance and
+   `fee_pool.community_pool`, raises both reward targets by one seat's share, and leaves supply untouched. It refuses
+   an unset or different `genesis_time`, an operator already present, and a pool that cannot fund the seat, and
+   writes nothing unless every edited module validates. The seat policy is fixed in `pkg/chain/launch.go`;
+   `TestLaunchGenesisBootsVestingSeat` boots what it writes.
+3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
    5,000,000 NOAH grant with commission at or above 5%. The gentx pays no fee at height zero.
-3. **Collect and time.** Collect the gentxs, set `genesis_time` to a weekday hour, in UTC, when every validator's
-   region is awake and at least 48 hours after the file is published.
-4. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
+4. **Collect.** Collect the gentxs; collection keeps `genesis_time`.
+5. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
    verify the hash before starting. The chain starts itself at `genesis_time` once more than two thirds of the seats
    are online: 7 of 10, 11 of 15.
 
@@ -347,8 +350,9 @@ allowlist, and the open contract runtime, read back from the keepers after the f
 
 Confirm by hand at assembly:
 
-- Each seat's locked amount is 5,000,000 NOAH, its balance 5,300,000, and the pool and fee-pool entries are reduced
-  by exactly the seats' total; supply is still 1,000,000,000 NOAH.
+- Each seat's original vesting is 5,000,000 NOAH, its `start_time` and `end_time` four and ten years after the file's
+  `genesis_time`, its balance 5,300,000, and the pool and fee-pool entries are reduced by exactly the seats' total;
+  supply is still 1,000,000,000 NOAH.
 - Both reward targets equal the seat count times the per-seat share, which the seat command guarantees when nothing
   else has edited them.
 - Every gentx self-delegates the whole grant at a commission of at least 5%.

@@ -627,8 +627,9 @@ Within the existing binary, governance can act through the messages it authorise
 when those rules need to change. It remains subject to current message validation and cannot make an otherwise invalid
 state transition valid merely by approving it.
 
-The launch distributes equal permanently locked staking grants to the founding validator seats and leaves the
-remaining unallocated supply in the governance-controlled community pool. Entry after launch is open: a validator
+The launch distributes equal staking grants to the founding validator seats, locked for four years and vesting over
+the six after, and leaves the remaining unallocated supply in the governance-controlled community pool. Entry after
+launch is open: a validator
 bonds NOAH it holds, and no proposal grants a seat. The initial trust model is therefore authority-based membership
 operating on proof-of-stake machinery until distributed NOAH is bonded; equal grants establish equal starting stake,
 while voting and rewards remain governed by the underlying stake-based rules. Section 10.2 sets out the grants and
@@ -835,10 +836,10 @@ the Buffer, and 5,000,000 Insurance. The remaining 835,000,000 enters the commun
 There is no separate investor, backer, or public allocation at launch. The initial supply can subsequently change
 through conversion and authorised burns; it is not a permanent maximum supply.
 
-Each founding validator seat receives 5,000,000 NOAH in a permanently locked staking grant and 300,000 NOAH of
-liquid float, both from the community pool. The grant is self-delegated at genesis and can participate in staking
-and governance and be slashed, but cannot be transferred. The float pays operating expenses and permits initial
-currency conversion.
+Each founding validator seat receives 5,000,000 NOAH in a staking grant that vests continuously from the fourth year
+after genesis to the tenth, and 300,000 NOAH of liquid float, both from the community pool. The grant is
+self-delegated at genesis and can participate in staking and governance and be slashed, but cannot be transferred
+until it vests. The float pays operating expenses and permits initial currency conversion.
 For `n` seats, the community pool retains `835,000,000 − 5,300,000n` NOAH. Seat assembly transfers existing supply
 and raises both reward targets by the per-seat shares in Section 7.1; it creates no additional NOAH.
 
@@ -1017,7 +1018,7 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Buffer seed | 10,000,000 NOAH; 1% | Decided |
 | Insurance seed | 5,000,000 NOAH; 0.5% | Decided |
 | Community pool | 835,000,000 NOAH before seats; subtract 5,300,000 per seat | Decided |
-| Seat staking grant | 5,000,000 NOAH, permanently locked and self-delegated at genesis | Decided |
+| Seat staking grant | 5,000,000 NOAH, self-delegated at genesis, vesting from year four to year ten | Decided |
 | Seat liquid float | 300,000 NOAH | Decided |
 | Validator funding target | 0.0175 NOAH per block per seat | Assembly |
 | Oracle funding target | 0.0075 NOAH per block per seat | Assembly |
@@ -1026,8 +1027,8 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Reward funding window | 100,800 blocks, approximately one week | Decided |
 | Distribution community tax | 0; the community pool is separately seeded | Decided |
 
-For fifteen seats, the allocations are 75,000,000 locked NOAH, 4,500,000 liquid NOAH, and 755,500,000 NOAH remaining
-in the community pool, alongside the four fund seeds. For one hundred seats the corresponding amounts are
+For fifteen seats, the allocations are 75,000,000 NOAH in seat grants, 4,500,000 liquid NOAH, and 755,500,000 NOAH
+remaining in the community pool, alongside the four fund seeds. For one hundred seats the corresponding amounts are
 500,000,000, 30,000,000, and 305,000,000. These are illustrations of the fixed allocation rule, not an announced
 initial seat count. The subsidy's zero-revenue runway is approximately 50.7 and 7.6 years respectively under the
 unchanged per-seat targets, before any subsidy return to the community pool.

@@ -7,15 +7,20 @@ import "cosmossdk.io/math"
 // prices; live observations replace the seed.
 const BootstrapNoahPerUSD = "1"
 
-// Validator seat policy: every founding seat holds the same permanently locked grant and the same
-// liquid float, both granted from the community pool at assembly, and each adds one seat's share to
-// both reward targets. Entry after launch is open and grants nothing; the targets then move only by
+// Validator seat policy: every founding seat holds the same grant, vesting continuously from
+// SeatVestingCliffYears to SeatVestingEndYears after genesis time, and the same liquid float,
+// both granted from the community pool at assembly, and each adds one seat's share to both
+// reward targets. Entry after launch is open and grants nothing; the targets then move only by
 // governance policy (D84).
 const (
-	// SeatGrantNoah is the locked, delegated stake of one seat, in whole NOAH.
+	// SeatGrantNoah is the delegated stake of one seat, in whole NOAH.
 	SeatGrantNoah = 5_000_000
-	// SeatFloatNoah is the liquid balance beside it, in whole NOAH: locked coins cannot pay fees.
+	// SeatFloatNoah is the liquid balance beside it, in whole NOAH: unvested coins cannot pay fees.
 	SeatFloatNoah = 300_000
+	// SeatVestingCliffYears and SeatVestingEndYears are the seat's vesting window in calendar
+	// years after genesis time: nothing vests before the cliff, all of it by the end.
+	SeatVestingCliffYears = 4
+	SeatVestingEndYears   = 10
 )
 
 // SeatValidatorShare and SeatOracleShare are one seat's reward targets per block in base units:

@@ -565,12 +565,13 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	}
 }
 
-// TestLaunchGenesisBootsLockedSeat boots the artefact the way assembly builds
-// it: one seat granted by arkgenesis.AddValidatorSeat, the function behind
-// arkd genesis add-validator-seat, whose gentx self-delegates the locked
-// grant. Locked coins cannot pay fees; the gentx pays none at height zero and
-// the float pays afterwards.
-func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
+// TestLaunchGenesisBootsVestingSeat boots the artefact the way assembly
+// builds it: one seat granted by arkgenesis.AddValidatorSeat, the function
+// behind arkd genesis add-validator-seat, whose gentx self-delegates the
+// grant while none of it has vested. Unvested coins cannot pay fees; the
+// gentx pays none at height zero and the float pays afterwards.
+func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
+	genesisTime := time.Date(2027, time.January, 4, 12, 0, 0, 0, time.UTC)
 	for _, artefact := range artefacts() {
 		t.Run(artefact.name, func(t *testing.T) {
 			appGenesis, state := loadGenesis(t, artefact.path)
@@ -591,9 +592,9 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 			operator, err := record.GetAddress()
 			require.NoError(t, err)
 
-			locked := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
+			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
 			float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
-			require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator))
+			require.NoError(t, arkgenesis.AddValidatorSeat(cdc, state, operator, genesisTime))
 
 			privVal := mock.NewPV()
 			consPub, err := privVal.GetPubKey()
@@ -625,6 +626,7 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 			require.NoError(t, err)
 			consensusParams := appGenesis.Consensus.Params.ToProto()
 			_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+				Time:            genesisTime,
 				ChainId:         appGenesis.ChainID,
 				Validators:      []cmtabci.ValidatorUpdate{},
 				ConsensusParams: &consensusParams,
@@ -635,6 +637,7 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 			valSet := cmttypes.NewValidatorSet([]*cmttypes.Validator{cmttypes.NewValidator(consPub, chain.SeatGrantNoah)})
 			_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 				Height:             arkApp.LastBlockHeight() + 1,
+				Time:               genesisTime,
 				Hash:               arkApp.LastCommitID().Hash,
 				NextValidatorsHash: valSet.Hash(),
 			})
@@ -648,10 +651,12 @@ func TestLaunchGenesisBootsLockedSeat(t *testing.T) {
 			require.True(t, validator.IsBonded())
 			require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
 
-			account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.PermanentLockedAccount)
-			require.True(t, ok, "the seat stays a permanently locked account")
-			require.Equal(t, locked, account.OriginalVesting)
-			require.Equal(t, locked, account.DelegatedVesting, "the whole grant is staked")
+			account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.ContinuousVestingAccount)
+			require.True(t, ok, "the seat stays a continuous vesting account")
+			require.Equal(t, grant, account.OriginalVesting)
+			require.Equal(t, genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(), account.StartTime)
+			require.Equal(t, genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(), account.EndTime)
+			require.Equal(t, grant, account.DelegatedVesting, "the whole grant is staked unvested")
 			require.Equal(t, float, arkApp.BankKeeper.SpendableCoins(ctx, operator), "only the float is spendable")
 
 			feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)

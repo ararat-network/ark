@@ -80,7 +80,7 @@ const (
 	// its height: enough for the vote to pass under GovVotingPeriod.
 	UpgradeDelta = 35
 
-	// SeatGrantNoah and SeatFloatNoah are the locked grant and liquid float
+	// SeatGrantNoah and SeatFloatNoah are the vesting grant and liquid float
 	// every seat holds, in whole NOAH, mirrored from pkg/chain/launch.go.
 	SeatGrantNoah = 5_000_000
 	SeatFloatNoah = 300_000

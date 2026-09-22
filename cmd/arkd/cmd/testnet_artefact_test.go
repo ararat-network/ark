@@ -72,10 +72,14 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, accounts, 2)
 	grant := chain.NativeBaseAmount(chain.SeatGrantNoah)
+	require.False(t, appGenesis.GenesisTime.IsZero(), "the testnet stamps its own time")
 	for _, account := range accounts {
-		locked, ok := account.(*vestingtypes.PermanentLockedAccount)
-		require.True(t, ok, "every validator is a locked seat")
-		require.Equal(t, grant, locked.OriginalVesting.AmountOf(chain.NoahBaseDenom))
+		vesting, ok := account.(*vestingtypes.ContinuousVestingAccount)
+		require.True(t, ok, "every validator is a vesting seat")
+		require.Equal(t, grant, vesting.OriginalVesting.AmountOf(chain.NoahBaseDenom))
+		require.Equal(t, appGenesis.GenesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(), vesting.StartTime,
+			"the seat vests from the stamped time")
+		require.Equal(t, appGenesis.GenesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(), vesting.EndTime)
 	}
 
 	bankState := banktypes.GetGenesisStateFromAppState(cdc, state)
@@ -106,6 +110,7 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	)
 	consensusParams := appGenesis.Consensus.Params.ToProto()
 	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+		Time:            appGenesis.GenesisTime,
 		ChainId:         chainID,
 		Validators:      []cmtabci.ValidatorUpdate{},
 		ConsensusParams: &consensusParams,
@@ -114,6 +119,7 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	require.NoError(t, err)
 	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height: arkApp.LastBlockHeight() + 1,
+		Time:   appGenesis.GenesisTime,
 		Hash:   arkApp.LastCommitID().Hash,
 	})
 	require.NoError(t, err)

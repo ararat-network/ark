@@ -418,8 +418,8 @@ func initTestnetFiles(
 		}
 
 		// From code defaults each validator holds test balances and bonds a
-		// token; from an artefact it is a seat, bonding its whole locked
-		// grant at the artefact's commission floor.
+		// token; from an artefact it is a seat, bonding its whole grant at
+		// the artefact's commission floor.
 		bond := sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction))
 		commission := stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec())
 		if base != nil {
@@ -490,12 +490,14 @@ func initTestnetFiles(
 		}
 	}
 
-	if err := initGenFiles(clientCtx, mm, args.chainID, base, seats, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
+	// One time for every file: the seats vest from it, and collection stamps it.
+	genTime := cmttime.Now()
+	if err := initGenFiles(clientCtx, mm, args.chainID, genTime, base, seats, genAccounts, genBalances, genFiles, args.numValidators); err != nil {
 		return err
 	}
 
 	err := collectGenFiles(
-		clientCtx, nodeConfig, args.chainID, nodeIDs, valPubKeys, args.numValidators,
+		clientCtx, nodeConfig, args.chainID, genTime, nodeIDs, valPubKeys, args.numValidators,
 		args.outputDir, args.nodeDirPrefix, args.nodeDaemonHome, genBalIterator,
 		p2pPortStart, args.singleMachine,
 	)
@@ -513,13 +515,13 @@ func initTestnetFiles(
 }
 
 func initGenFiles(
-	clientCtx client.Context, mm module.BasicManager, chainID string,
+	clientCtx client.Context, mm module.BasicManager, chainID string, genTime time.Time,
 	base *genutiltypes.AppGenesis, seats []sdk.AccAddress,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, numValidators int,
 ) error {
 	if base != nil {
-		appGenesis, err := seatedGenesis(clientCtx.Codec, base, chainID, seats)
+		appGenesis, err := seatedGenesis(clientCtx.Codec, base, chainID, genTime, seats)
 		if err != nil {
 			return err
 		}
@@ -575,6 +577,7 @@ func collectGenFiles(
 	clientCtx client.Context,
 	nodeConfig *cmtcfg.Config,
 	chainID string,
+	genTime time.Time,
 	nodeIDs []string,
 	valPubKeys []cryptotypes.PubKey,
 	numValidators int,
@@ -584,7 +587,6 @@ func collectGenFiles(
 	singleMachine bool,
 ) error {
 	var appState json.RawMessage
-	genTime := cmttime.Now()
 
 	for i := range numValidators {
 		// GenAppStateFromConfig writes config.toml, so the per-node listeners
@@ -801,8 +803,8 @@ node = "tcp://localhost:%d"
 broadcast-mode = "sync"
 `
 
-// seatGentx is a seat's self-delegation: the whole locked grant at the
-// artefact's commission floor, with a 20% ceiling and a 1% daily change.
+// seatGentx is a seat's self-delegation: the whole grant at the artefact's
+// commission floor, with a 20% ceiling and a 1% daily change.
 func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakingtypes.CommissionRates, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
@@ -819,15 +821,16 @@ func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakin
 		nil
 }
 
-// seatedGenesis is the artefact under chainID with one seat granted per
-// validator; its consensus block is kept as written.
-func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID string, seats []sdk.AccAddress) (*genutiltypes.AppGenesis, error) {
+// seatedGenesis is the artefact under chainID and genTime with one seat
+// granted per validator, vesting from genTime; its consensus block is kept
+// as written.
+func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID string, genTime time.Time, seats []sdk.AccAddress) (*genutiltypes.AppGenesis, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
 		return nil, fmt.Errorf("unmarshal base app state: %w", err)
 	}
 	for _, seat := range seats {
-		if err := arkgenesis.AddValidatorSeat(cdc, appState, seat); err != nil {
+		if err := arkgenesis.AddValidatorSeat(cdc, appState, seat, genTime); err != nil {
 			return nil, fmt.Errorf("seating %s: %w", seat, err)
 		}
 	}
@@ -837,6 +840,7 @@ func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID strin
 	}
 	seated := *base
 	seated.ChainID = chainID
+	seated.GenesisTime = genTime
 	seated.AppState = appStateJSON
 	return &seated, nil
 }

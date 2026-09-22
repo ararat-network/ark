@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -46,9 +47,11 @@ func clientCodec(t *testing.T) codec.Codec {
 }
 
 // TestAddValidatorSeatCmd grants two seats on a copy of the launch artefact
-// and reads each result back: the locked account, the balances, the fee pool,
-// the targets, and an unchanged supply. A repeated operator is refused with
-// the file untouched, and the result still validates.
+// and reads each result back: the vesting account on its window, the
+// balances, the fee pool, the targets, and an unchanged supply. The
+// artefact carries no genesis time, so the first seat sets it and later ones
+// vest from it; a seat without one, a different time, and a repeated
+// operator are refused with the file untouched, and the result validates.
 func TestAddValidatorSeatCmd(t *testing.T) {
 	home := t.TempDir()
 	genesisFile := filepath.Join(home, "config", "genesis.json")
@@ -84,19 +87,41 @@ func TestAddValidatorSeatCmd(t *testing.T) {
 		secp256k1.GenPrivKey().PubKey().Address().Bytes(),
 		secp256k1.GenPrivKey().PubKey().Address().Bytes(),
 	}
+	genesisTime := time.Date(2027, time.January, 4, 12, 0, 0, 0, time.UTC)
+	untouched := func(t *testing.T, run func() error, errPhrase string) {
+		t.Helper()
+		before, err := os.ReadFile(genesisFile)
+		require.NoError(t, err)
+		require.ErrorContains(t, run(), errPhrase)
+		after, err := os.ReadFile(genesisFile)
+		require.NoError(t, err)
+		require.Equal(t, before, after, "a refused seat leaves the file untouched")
+	}
+	untouched(t, func() error { return run("genesis", "add-validator-seat", operators[0].String()) }, "genesis_time is unset")
+
 	for i, operator := range operators {
-		require.NoError(t, run("genesis", "add-validator-seat", operator.String()))
+		args := []string{"genesis", "add-validator-seat", operator.String()}
+		if i == 0 {
+			args = append(args, fmt.Sprintf("--%s=%s", flagGenesisTime, genesisTime.Format(time.RFC3339)))
+		}
+		require.NoError(t, run(args...))
 		state := load()
 		seats := int64(i + 1)
+
+		appGenesis, err := genutiltypes.AppGenesisFromFile(genesisFile)
+		require.NoError(t, err)
+		require.True(t, genesisTime.Equal(appGenesis.GenesisTime), "the first seat set the time; later ones keep it")
 
 		var authState authtypes.GenesisState
 		cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
 		accounts, err := authtypes.UnpackAccounts(authState.Accounts)
 		require.NoError(t, err)
 		require.Len(t, accounts, int(seats))
-		locked, ok := accounts[slicesIndexAccount(t, accounts, operator)].(*vestingtypes.PermanentLockedAccount)
-		require.True(t, ok, "the seat is a permanently locked account")
-		require.Equal(t, grant, locked.OriginalVesting)
+		vesting, ok := accounts[slicesIndexAccount(t, accounts, operator)].(*vestingtypes.ContinuousVestingAccount)
+		require.True(t, ok, "the seat is a continuous vesting account")
+		require.Equal(t, grant, vesting.OriginalVesting)
+		require.Equal(t, genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(), vesting.StartTime)
+		require.Equal(t, genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(), vesting.EndTime)
 
 		bankState := banktypes.GetGenesisStateFromAppState(cdc, state)
 		require.Equal(t, seat, bankState.Balances[slicesIndex(t, bankState.Balances, operator.String())].Coins)
@@ -115,12 +140,12 @@ func TestAddValidatorSeatCmd(t *testing.T) {
 		require.Equal(t, chain.SeatOracleShare.MulRaw(seats), treasuryState.EconomicPolicy.OracleBlockRewardTarget)
 	}
 
-	before, err := os.ReadFile(genesisFile)
-	require.NoError(t, err)
-	require.ErrorContains(t, run("genesis", "add-validator-seat", operators[0].String()), "already holds an account")
-	after, err := os.ReadFile(genesisFile)
-	require.NoError(t, err)
-	require.Equal(t, before, after, "a refused seat leaves the file untouched")
+	untouched(t, func() error { return run("genesis", "add-validator-seat", operators[0].String()) }, "already holds an account")
+	third := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address().Bytes())
+	untouched(t, func() error {
+		return run("genesis", "add-validator-seat", third.String(),
+			fmt.Sprintf("--%s=%s", flagGenesisTime, genesisTime.Add(time.Hour).Format(time.RFC3339)))
+	}, "every seat vests from the same time")
 
 	require.NoError(t, run("genesis", "validate"))
 }

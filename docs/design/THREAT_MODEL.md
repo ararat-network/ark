@@ -230,8 +230,9 @@ a pool spend and sudo (D86), and can replace or disable any committee. A committ
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 
-**Launch supply.** Most NOAH starts in the community pool and the ten founding seats hold the same locked grant, so
-at launch governance is one seat one vote and the only control over the pool is its own tally: half the bonded stake
+**Launch supply.** Most NOAH starts in the community pool and the ten founding seats hold the same grant, unvested
+for four years, so at launch governance is one seat one vote and the only control over the pool is its own tally:
+half the bonded stake
 voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
 distributed NOAH is bonded: a proof-of-authority trust model until then
 ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the grant

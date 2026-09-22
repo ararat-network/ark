@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -49,26 +50,37 @@ func operatorAddress() sdk.AccAddress {
 	return secp256k1.GenPrivKey().PubKey().Address().Bytes()
 }
 
+// genesisTime is a launch time the seats vest from.
+var genesisTime = time.Date(2027, time.January, 4, 12, 0, 0, 0, time.UTC)
+
 func TestAddValidatorSeat(t *testing.T) {
 	cdc := seatCodec()
 	state := artefactState(t)
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
-	seat := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah+chain.SeatFloatNoah)))
+	grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)))
+	seat := grant.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatFloatNoah)))
 	first, second := operatorAddress(), operatorAddress()
 
-	require.NoError(t, genesis.AddValidatorSeat(cdc, state, first))
-	require.NoError(t, genesis.AddValidatorSeat(cdc, state, second))
+	require.NoError(t, genesis.AddValidatorSeat(cdc, state, first, genesisTime))
+	require.NoError(t, genesis.AddValidatorSeat(cdc, state, second, genesisTime))
 
 	var authState authtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
 	accounts, err := authtypes.UnpackAccounts(authState.Accounts)
 	require.NoError(t, err)
 	require.Len(t, accounts, 2)
+	cliff, end := genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0), genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0)
 	for _, account := range accounts {
-		locked, ok := account.(*vestingtypes.PermanentLockedAccount)
-		require.True(t, ok)
-		require.Equal(t, chain.NativeBaseAmount(chain.SeatGrantNoah), locked.OriginalVesting.AmountOf(chain.NoahBaseDenom))
-		require.Nil(t, locked.GetPubKey(), "the gentx supplies the key")
+		vesting, ok := account.(*vestingtypes.ContinuousVestingAccount)
+		require.True(t, ok, "the seat is a continuous vesting account")
+		require.Equal(t, grant, vesting.OriginalVesting)
+		require.Equal(t, cliff.Unix(), vesting.StartTime, "nothing vests before the cliff")
+		require.Equal(t, end.Unix(), vesting.EndTime, "all of it by the end")
+		require.Nil(t, vesting.GetPubKey(), "the gentx supplies the key")
+		require.True(t, vesting.GetVestedCoins(genesisTime).IsZero(), "unvested at launch")
+		require.True(t, vesting.GetVestedCoins(cliff).IsZero(), "unvested at the cliff")
+		require.Equal(t, grant.QuoInt(math.NewInt(2)), vesting.GetVestedCoins(genesisTime.AddDate(7, 0, 0)), "half way through the window")
+		require.Equal(t, grant, vesting.GetVestedCoins(end))
 	}
 
 	var bankState banktypes.GenesisState
@@ -110,12 +122,13 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 		name      string
 		mutate    func(state map[string]json.RawMessage)
 		operator  sdk.AccAddress
+		unsetTime bool
 		errPhrase string
 	}{
 		{
 			name: "operator already seated",
 			mutate: func(state map[string]json.RawMessage) {
-				require.NoError(t, genesis.AddValidatorSeat(cdc, state, taken))
+				require.NoError(t, genesis.AddValidatorSeat(cdc, state, taken, genesisTime))
 			},
 			operator:  taken,
 			errPhrase: "already holds an account",
@@ -166,6 +179,13 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 			operator:  nil,
 			errPhrase: "operator address must be set",
 		},
+		{
+			name:      "unset genesis time",
+			mutate:    func(map[string]json.RawMessage) {},
+			operator:  operatorAddress(),
+			unsetTime: true,
+			errPhrase: "genesis time must be set",
+		},
 	}
 
 	for _, tt := range tests {
@@ -177,7 +197,11 @@ func TestAddValidatorSeatRefusals(t *testing.T) {
 				before[module] = string(raw)
 			}
 
-			err := genesis.AddValidatorSeat(cdc, state, tt.operator)
+			at := genesisTime
+			if tt.unsetTime {
+				at = time.Time{}
+			}
+			err := genesis.AddValidatorSeat(cdc, state, tt.operator, at)
 			require.ErrorContains(t, err, tt.errPhrase)
 			for module, raw := range state {
 				require.Equal(t, before[module], string(raw), "%s is untouched by a refused seat", module)
