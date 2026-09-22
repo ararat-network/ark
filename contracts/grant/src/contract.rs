@@ -6,15 +6,15 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{
-    ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceResponse, MemberResponse,
-    MemberStatus, MigrateMsg, PersonResponse, QueryMsg, ReleasableResponse, SudoMsg,
-    TotalsResponse,
+    ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceEntry, IssuanceResponse,
+    MemberResponse, MemberStatus, MigrateMsg, PersonResponse, QueryMsg, ReleasableResponse,
+    SudoMsg, TotalsResponse,
 };
 use crate::proto;
 use crate::rules;
 use crate::state::{
-    Config, Grant, IssuanceWindow, Pending, Person, CONFIG, CONTRIBUTORS_PAID, ESCROWED, GRANTS,
-    ISSUANCE, MEMBERS, MEMBERS_ISSUED, MEMBERS_REJECTED, NEXT_ID, PERSONS, REPLY_SEQ,
+    Config, Grant, Pending, Person, CONFIG, CONTRIBUTORS_PAID, ESCROWED, GRANTS, ISSUANCE, MEMBERS,
+    MEMBERS_ISSUED, MEMBERS_REJECTED, NEXT_ID, PERSONS, REPLY_SEQ,
 };
 
 const CONTRACT_NAME: &str = "crates.io:ark-grant";
@@ -26,7 +26,7 @@ pub const MAX_BATCH: usize = 100;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -48,13 +48,7 @@ pub fn instantiate(
         .registrar
         .map(|r| deps.api.addr_validate(&r))
         .transpose()?;
-    ISSUANCE.save(
-        deps.storage,
-        &IssuanceWindow {
-            start: env.block.time.seconds(),
-            issued: 0,
-        },
-    )?;
+    ISSUANCE.save(deps.storage, &Vec::new())?;
     CONFIG.save(
         deps.storage,
         &Config {
@@ -363,42 +357,35 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::Issuance {} => {
             let config = CONFIG.load(deps.storage)?;
-            let window = current_window(deps.storage, &env, &config)?;
+            let entries = issuance_window(deps.storage, &env, &config)?;
+            let issued = rules::issued(&entries);
             to_json_binary(&IssuanceResponse {
-                window_start: window.start,
-                window_ends: window
-                    .start
-                    .saturating_add(config.issuance_limit.window_seconds),
-                issued: window.issued,
-                remaining: config
-                    .issuance_limit
-                    .max_members
-                    .saturating_sub(window.issued),
+                window_start: env
+                    .block
+                    .time
+                    .seconds()
+                    .saturating_sub(config.issuance_limit.window_seconds),
+                issued,
+                remaining: config.issuance_limit.max_members.saturating_sub(issued),
+                entries,
             })
         }
     }
 }
 
-/// current_window is the issuance window as of now: the stored one, or a
-/// fresh one if it has elapsed. Nothing is written; the caller decides.
-fn current_window(
+/// issuance_window is the issuance log as of now, aged-out entries dropped.
+/// Nothing is written; the caller decides.
+fn issuance_window(
     storage: &dyn cosmwasm_std::Storage,
     env: &Env,
     config: &Config,
-) -> StdResult<IssuanceWindow> {
-    let window = ISSUANCE.load(storage)?;
-    let now = env.block.time.seconds();
-    if now
-        >= window
-            .start
-            .saturating_add(config.issuance_limit.window_seconds)
-    {
-        return Ok(IssuanceWindow {
-            start: now,
-            issued: 0,
-        });
-    }
-    Ok(window)
+) -> StdResult<Vec<IssuanceEntry>> {
+    let entries = ISSUANCE.load(storage)?;
+    Ok(rules::in_window(
+        entries,
+        env.block.time.seconds(),
+        config.issuance_limit.window_seconds,
+    ))
 }
 
 fn grant_response(g: Grant) -> GrantResponse {
@@ -466,22 +453,37 @@ fn register_members(
     }
     // The window bounds what a registrar key can issue before governance can
     // replace it; attempted registrations count, whatever their outcome.
-    let mut window = current_window(deps.storage, &env, &config)?;
+    let now = env.block.time.seconds();
+    let mut entries = issuance_window(deps.storage, &env, &config)?;
     let requested = members.len() as u64;
-    if window.issued.saturating_add(requested) > config.issuance_limit.max_members {
-        return Err(ContractError::IssuanceLimit {
-            remaining: config
-                .issuance_limit
-                .max_members
-                .saturating_sub(window.issued),
-            requested,
-            window_ends: window
-                .start
-                .saturating_add(config.issuance_limit.window_seconds),
-        });
+    match rules::fits_at(&entries, now, &config.issuance_limit, requested) {
+        Some(at) if at <= now => {}
+        Some(at) => {
+            return Err(ContractError::IssuanceLimit {
+                remaining: config
+                    .issuance_limit
+                    .max_members
+                    .saturating_sub(rules::issued(&entries)),
+                requested,
+                fits_at: at,
+            })
+        }
+        // Only when the limit is under the batch, so it fits usize.
+        None => {
+            return Err(ContractError::BatchTooLarge(
+                members.len(),
+                config.issuance_limit.max_members as usize,
+            ))
+        }
     }
-    window.issued = window.issued.saturating_add(requested);
-    ISSUANCE.save(deps.storage, &window)?;
+    match entries.last_mut() {
+        Some(last) if last.at == now => last.count = last.count.saturating_add(requested),
+        _ => entries.push(IssuanceEntry {
+            at: now,
+            count: requested,
+        }),
+    }
+    ISSUANCE.save(deps.storage, &entries)?;
     let needed = config
         .member_grant
         .checked_mul(Uint128::new(members.len() as u128))?;
@@ -491,7 +493,7 @@ fn register_members(
     }
 
     let amounts = rules::split(config.member_grant, &config.member_schedule)?;
-    let start = env.block.time.seconds() as i64;
+    let start = now as i64;
     let mut deps = deps;
     let mut response = Response::new().add_attribute("action", "register_members");
     for address in members {

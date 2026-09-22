@@ -6,9 +6,9 @@
 use anyhow::bail;
 use ark_grant::contract::{execute, instantiate, migrate, query, reply, sudo, MAX_BATCH};
 use ark_grant::msg::{
-    CapRule, ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceLimit,
-    IssuanceResponse, MemberResponse, MemberStatus, Period, QueryMsg, ReleasableResponse, SudoMsg,
-    TotalsResponse,
+    CapRule, ConfigResponse, ExecuteMsg, GrantResponse, InstantiateMsg, IssuanceEntry,
+    IssuanceLimit, IssuanceResponse, MemberResponse, MemberStatus, Period, QueryMsg,
+    ReleasableResponse, SudoMsg, TotalsResponse,
 };
 use ark_grant::proto::{encode_pool_response, POOL_QUERY_PATH};
 use ark_grant::ContractError;
@@ -403,8 +403,8 @@ fn members_issue_at_registration_and_a_dusted_address_is_skipped() {
 }
 
 /// The window bounds what a registrar key can issue: a batch past the limit
-/// is refused whole, rejected registrations count, and a fresh window opens
-/// once the old one elapses.
+/// is refused whole, one larger than the limit is refused as such, rejected
+/// registrations count, and room returns as registrations age out.
 #[test]
 fn issuance_is_bounded_per_window() {
     let mut f = Fixture::new();
@@ -418,6 +418,7 @@ fn issuance_is_bounded_per_window() {
     .unwrap();
     let registrar = f.registrar.clone();
     let (a, b, c) = (f.addr("a"), f.addr("b"), f.addr("c"));
+    let t0 = f.app.block_info().time.seconds();
 
     let err = f
         .exec(
@@ -427,14 +428,7 @@ fn issuance_is_bounded_per_window() {
             },
         )
         .unwrap_err();
-    assert!(matches!(
-        contract_error(&err),
-        ContractError::IssuanceLimit {
-            remaining: 2,
-            requested: 3,
-            ..
-        }
-    ));
+    assert_eq!(contract_error(&err), &ContractError::BatchTooLarge(3, 2));
     f.exec(
         &registrar,
         ExecuteMsg::RegisterMembers {
@@ -444,6 +438,7 @@ fn issuance_is_bounded_per_window() {
     .unwrap();
     let issuance: IssuanceResponse = f.query(QueryMsg::Issuance {});
     assert_eq!((issuance.issued, issuance.remaining), (2, 0));
+    assert_eq!(issuance.entries, vec![IssuanceEntry { at: t0, count: 2 }]);
     let err = f
         .exec(
             &registrar,
@@ -452,14 +447,14 @@ fn issuance_is_bounded_per_window() {
             },
         )
         .unwrap_err();
-    assert!(matches!(
+    assert_eq!(
         contract_error(&err),
-        ContractError::IssuanceLimit {
+        &ContractError::IssuanceLimit {
             remaining: 0,
             requested: 1,
-            ..
+            fits_at: t0 + 3_600,
         }
-    ));
+    );
 
     f.app.update_block(|block| {
         block.time = block.time.plus_seconds(3_600);
@@ -467,6 +462,7 @@ fn issuance_is_bounded_per_window() {
     });
     let issuance: IssuanceResponse = f.query(QueryMsg::Issuance {});
     assert_eq!((issuance.issued, issuance.remaining), (0, 2));
+    assert!(issuance.entries.is_empty());
     f.exec(
         &registrar,
         ExecuteMsg::RegisterMembers {
@@ -475,7 +471,8 @@ fn issuance_is_bounded_per_window() {
     )
     .unwrap();
 
-    // A rejected registration counts against the window too.
+    // A rejected registration counts against the window too, merged into
+    // the block's entry.
     let dusted = f.addr("dusted-2");
     f.mark_existing(&dusted);
     f.exec(
@@ -487,6 +484,92 @@ fn issuance_is_bounded_per_window() {
     .unwrap();
     let issuance: IssuanceResponse = f.query(QueryMsg::Issuance {});
     assert_eq!((issuance.issued, issuance.remaining), (2, 0));
+    assert_eq!(
+        issuance.entries,
+        vec![IssuanceEntry {
+            at: t0 + 3_600,
+            count: 2
+        }]
+    );
+}
+
+/// The window slides: a registration counts for window_seconds from its
+/// block, so the limit holds over any span of that length and never resets
+/// at a boundary.
+#[test]
+fn issuance_window_slides() {
+    let mut f = Fixture::new();
+    f.fund(noah(100_000));
+    f.sudo(SudoMsg::SetIssuanceLimit {
+        limit: IssuanceLimit {
+            max_members: 2,
+            window_seconds: 3_600,
+        },
+    })
+    .unwrap();
+    let registrar = f.registrar.clone();
+    let t0 = f.app.block_info().time.seconds();
+    let register = |f: &mut Fixture, name: &str| {
+        let addr = f.addr(name);
+        f.exec(
+            &registrar,
+            ExecuteMsg::RegisterMembers {
+                addresses: vec![addr.to_string()],
+            },
+        )
+    };
+    let advance = |f: &mut Fixture, seconds: u64| {
+        f.app.update_block(|block| {
+            block.time = block.time.plus_seconds(seconds);
+            block.height += 1;
+        });
+    };
+
+    register(&mut f, "a").unwrap();
+    advance(&mut f, 1_800);
+    register(&mut f, "b").unwrap();
+    advance(&mut f, 1_800);
+
+    // An hour after the first registration it has aged out and the second
+    // has not: one seat is free, where a window reset here would free two.
+    let issuance: IssuanceResponse = f.query(QueryMsg::Issuance {});
+    assert_eq!(issuance.window_start, t0);
+    assert_eq!((issuance.issued, issuance.remaining), (1, 1));
+    assert_eq!(
+        issuance.entries,
+        vec![IssuanceEntry {
+            at: t0 + 1_800,
+            count: 1
+        }]
+    );
+    register(&mut f, "c").unwrap();
+    let err = register(&mut f, "d").unwrap_err();
+    assert_eq!(
+        contract_error(&err),
+        &ContractError::IssuanceLimit {
+            remaining: 0,
+            requested: 1,
+            fits_at: t0 + 5_400,
+        }
+    );
+
+    advance(&mut f, 1_800);
+    register(&mut f, "d").unwrap();
+    let issuance: IssuanceResponse = f.query(QueryMsg::Issuance {});
+    assert_eq!((issuance.issued, issuance.remaining), (2, 0));
+    assert_eq!(
+        issuance.entries,
+        vec![
+            IssuanceEntry {
+                at: t0 + 3_600,
+                count: 1
+            },
+            IssuanceEntry {
+                at: t0 + 5_400,
+                count: 1
+            },
+        ]
+    );
 }
 
 /// A grant too small to give every vesting period a coin is refused where it

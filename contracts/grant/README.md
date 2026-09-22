@@ -33,8 +33,8 @@ contract, and it stores nothing the plan does not name.
   Each creation is a submessage with a reply on error: an address that already holds an account fails only its
   own creation, is recorded as rejected, and the rest of the batch lands. A rejected or issued address is never
   registered again; the member supplies a fresh one. The registrar may register at most `max_members` in any
-  `window_seconds`, attempted registrations counted whatever their outcome, so a stolen key costs a window's
-  issuance rather than a tranche before governance replaces it.
+  `window_seconds`: a registration counts for that long from its block, whatever its outcome, so a stolen key
+  costs a window's issuance rather than a tranche before governance replaces it.
 - **Contributors.** `add_grant` escrows the whole amount from the unallocated balance and pays what the rules
   allow at once to the grantee, who becomes the grant's controller. Later tranches go to an address the
   controller registers, and anyone may trigger them. Each tranche is a fresh vesting account on the grant's own

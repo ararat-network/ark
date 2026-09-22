@@ -22,12 +22,21 @@ pub struct CapRule {
     pub unit: Uint128,
 }
 
-/// IssuanceLimit bounds how many members the registrar may register in one
-/// window, so a stolen registrar key costs a window's issuance, not a tranche.
+/// IssuanceLimit bounds how many members the registrar may register in any
+/// window_seconds, so a stolen registrar key costs a window's issuance, not a
+/// tranche.
 #[cw_serde]
 pub struct IssuanceLimit {
     pub max_members: u64,
     pub window_seconds: u64,
+}
+
+/// IssuanceEntry is the registrations attempted in one block; they count
+/// against the limit for window_seconds from it.
+#[cw_serde]
+pub struct IssuanceEntry {
+    pub at: u64,
+    pub count: u64,
 }
 
 #[cw_serde]
@@ -192,12 +201,12 @@ pub struct MemberResponse {
     pub status: Option<MemberStatus>,
 }
 
-/// IssuanceResponse is the current window: what it has issued and what it
-/// may still issue before window_ends, after which a fresh window opens.
+/// IssuanceResponse is the window ending now: what it holds, oldest first,
+/// and what the registrar may still issue.
 #[cw_serde]
 pub struct IssuanceResponse {
     pub window_start: u64,
-    pub window_ends: u64,
     pub issued: u64,
     pub remaining: u64,
+    pub entries: Vec<IssuanceEntry>,
 }

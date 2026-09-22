@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 
-use crate::msg::{CapRule, IssuanceLimit, MemberStatus, Period};
+use crate::msg::{CapRule, IssuanceEntry, IssuanceLimit, MemberStatus, Period};
 
 #[cw_serde]
 pub struct Config {
@@ -51,16 +51,12 @@ pub enum Pending {
     },
 }
 
-/// IssuanceWindow counts registrations attempted since start; rejected ones
-/// count too, since the limit bounds the registrar, not the outcome.
-#[cw_serde]
-pub struct IssuanceWindow {
-    pub start: u64,
-    pub issued: u64,
-}
-
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const ISSUANCE: Item<IssuanceWindow> = Item::new("issuance");
+/// ISSUANCE is the registrations attempted within the window, oldest first
+/// and merged by block time. Rejected ones count too, since the limit bounds
+/// the registrar, not the outcome. Every entry holds at least one, so the log
+/// never exceeds max_members entries.
+pub const ISSUANCE: Item<Vec<IssuanceEntry>> = Item::new("issuance");
 pub const NEXT_ID: Item<u64> = Item::new("next_id");
 pub const GRANTS: Map<u64, Grant> = Map::new("grants");
 pub const PERSONS: Map<&Addr, Person> = Map::new("persons");

@@ -27,11 +27,11 @@ pub enum ContractError {
     #[error("member {0} already registered")]
     MemberExists(String),
 
-    #[error("issuance limit: {remaining} more this window, {requested} requested; the window ends at {window_ends}")]
+    #[error("issuance limit: {remaining} more in the window, {requested} requested; the batch fits at {fits_at}")]
     IssuanceLimit {
         remaining: u64,
         requested: u64,
-        window_ends: u64,
+        fits_at: u64,
     },
 
     #[error("unallocated balance {available} is below {needed}")]

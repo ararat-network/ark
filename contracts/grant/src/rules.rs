@@ -4,7 +4,7 @@
 use cosmwasm_std::Uint128;
 
 use crate::error::ContractError;
-use crate::msg::{CapRule, IssuanceLimit, Period};
+use crate::msg::{CapRule, IssuanceEntry, IssuanceLimit, Period};
 
 /// MAX_SCHEDULE_PERIODS bounds a schedule at a century of monthly periods.
 pub const MAX_SCHEDULE_PERIODS: usize = 1_200;
@@ -52,6 +52,51 @@ pub fn validate_issuance_limit(limit: &IssuanceLimit) -> Result<(), ContractErro
         ));
     }
     Ok(())
+}
+
+/// in_window drops the entries that have aged out: one at `at` counts until
+/// `at + window_seconds`.
+pub fn in_window(
+    mut entries: Vec<IssuanceEntry>,
+    now: u64,
+    window_seconds: u64,
+) -> Vec<IssuanceEntry> {
+    entries.retain(|e| e.at.saturating_add(window_seconds) > now);
+    entries
+}
+
+/// issued is what the window's entries hold.
+pub fn issued(entries: &[IssuanceEntry]) -> u64 {
+    entries.iter().fold(0, |sum, e| sum.saturating_add(e.count))
+}
+
+/// fits_at is when a batch of `requested` fits under the limit: now if it
+/// does, else when enough of the oldest entries have aged out, and None if
+/// the batch alone exceeds the limit.
+pub fn fits_at(
+    entries: &[IssuanceEntry],
+    now: u64,
+    limit: &IssuanceLimit,
+    requested: u64,
+) -> Option<u64> {
+    if requested > limit.max_members {
+        return None;
+    }
+    let needed = issued(entries)
+        .saturating_add(requested)
+        .saturating_sub(limit.max_members);
+    if needed == 0 {
+        return Some(now);
+    }
+    let mut freed: u64 = 0;
+    for e in entries {
+        freed = freed.saturating_add(e.count);
+        if freed >= needed {
+            return Some(e.at.saturating_add(limit.window_seconds));
+        }
+    }
+    // Unreachable: needed is at most what the entries hold.
+    None
 }
 
 pub fn validate_cap(cap: &CapRule) -> Result<(), ContractError> {
@@ -189,6 +234,38 @@ mod tests {
             .collect();
         assert!(validate_schedule(&long).is_err());
         assert!(validate_schedule(&long[..MAX_SCHEDULE_PERIODS]).is_ok());
+    }
+
+    #[test]
+    fn issuance_window_slides() {
+        let entry = |at, count| IssuanceEntry { at, count };
+        let limit = IssuanceLimit {
+            max_members: 3,
+            window_seconds: 100,
+        };
+        let log = vec![entry(10, 2), entry(50, 1)];
+        assert_eq!(in_window(log.clone(), 109, 100), log);
+        assert_eq!(in_window(log.clone(), 110, 100), vec![entry(50, 1)]);
+        assert!(in_window(log.clone(), 150, 100).is_empty());
+        assert_eq!(issued(&log), 3);
+
+        // Full at 60: one more fits when the first entry ages out, three
+        // when both have, and four never at this limit.
+        assert_eq!(fits_at(&log, 60, &limit, 1), Some(110));
+        assert_eq!(fits_at(&log, 60, &limit, 2), Some(110));
+        assert_eq!(fits_at(&log, 60, &limit, 3), Some(150));
+        assert_eq!(fits_at(&log, 60, &limit, 4), None);
+        assert_eq!(fits_at(&[entry(10, 1)], 60, &limit, 2), Some(60));
+        assert_eq!(fits_at(&[], 60, &limit, 3), Some(60));
+
+        // A limit lowered under what the window holds frees nothing until
+        // enough has aged out.
+        let lowered = IssuanceLimit {
+            max_members: 2,
+            window_seconds: 100,
+        };
+        assert_eq!(fits_at(&log, 60, &lowered, 1), Some(110));
+        assert_eq!(fits_at(&log, 60, &lowered, 2), Some(150));
     }
 
     #[test]
