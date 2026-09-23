@@ -2,7 +2,7 @@ syntax = "proto3";
 package ark.disbursement.v1;
 
 import "amino/amino.proto";
-import "ark/disbursement/v1/grant.proto";
+import "ark/disbursement/v1/disbursement.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/disbursement/types";
