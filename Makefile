@@ -8,8 +8,9 @@ VERSION := $(shell git describe --tags --match 'v[0-9]*' --always --dirty)
 PRICEFEED_VERSION := $(shell git describe --tags --match 'pricefeed/v[0-9]*' --always --dirty | sed 's|^pricefeed/||')
 COMMIT := $(shell git rev-parse HEAD)
 
-# Comma-separated go build tags; none by default.
-BUILD_TAGS ?=
+# Comma-separated go build tags. ledger compiles the hardware-wallet keyring
+# (cgo), matching what goreleaser ships; override empty for a cgo-free build.
+BUILD_TAGS ?= ledger
 
 # version.Name and version.AppName are set in app/config.go rather than here.
 # They are chain identity, and Name decides the keyring service name, so they
