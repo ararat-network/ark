@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D86: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86).
+- D72–D87: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1076,7 +1076,7 @@ seat-admission procedure and its e2e coverage are removed. Equality is therefore
 property, and the reward targets no longer track the set by construction: they are the founding count's shares at
 assembly and move afterwards only by `MsgUpdatePolicy`, inside the committee corridor or by governance beyond it.
 Why: a granted seat made the founders the gate to consensus for as long as they held the vote, which is the control
-the [distribution plan](../governance/DISTRIBUTION_PLAN.md) exists to hand over, and a seat budget drawn from the
+the [disbursement plan](../governance/DISBURSEMENT_PLAN.md) exists to hand over, and a seat budget drawn from the
 pool competed with that distribution for the same NOAH. The seat command, the assembly sequence, and the testnet
 tooling that seats validators from the artefact stand. D9, D13, and the gov thresholds stand. Amended 2026-09-22: the
 seat vests rather than locking for good, a continuous vesting account from four years after genesis to ten, so a
@@ -1088,11 +1088,14 @@ count stand, the subtraction turning conservative once a founder sells.
 
 **Recorded status:** Decided 2026-09-22. Amends the accept-list practice recorded in [D74](#d74).
 
+**Lifecycle:** The contract escrow that motivated this expansion was replaced by the native Disbursement module in
+[D87](#d87). Disbursement now reads staking through its keeper; the Wasm query accept list remains available to contracts.
+
 The contract query accept list admits every query the SDK annotates `module_query_safe` for auth, bank, and staking,
 thirty-four paths, beside the fourteen hand-written Ark entries. The annotation is upstream's review, and the test
 that requires it of every entry stands; the hand-written review is for Ark's own modules, whose response shapes Ark
 freezes by listing them. Distribution, gov, and slashing carry no annotation in the pinned SDK and stay out until
-upstream annotates them. Why: the grant escrow in the [distribution plan](../governance/DISTRIBUTION_PLAN.md) reads
+upstream annotates them. Why: the grant escrow in the [disbursement plan](../governance/DISBURSEMENT_PLAN.md) reads
 total bonded stake through the staking pool query, and a list widened one path at a time for each contract need would
 re-review what upstream already has. Wasmd's native bank, staking, and distribution queriers were already on; the
 listed paths add what they lack: the pool total, both modules' params, unbonding and redelegation views, historical
@@ -1100,9 +1103,14 @@ info, spendable balances, send-enabled, and account lookups. D74 stands.
 
 ## D86
 
-**Recorded status:** Decided 2026-09-22.
+**Recorded status:** Superseded by [D87](#d87) for custody and execution; recorded 2026-09-22. The schedule and ownership amendments below remain the economic baseline.
 
-The [distribution plan](../governance/DISTRIBUTION_PLAN.md)'s grants are created by a CosmWasm contract,
+**Lifecycle:** The following is the historical contract design. Its Rust workspace, Wasm fixture, and deployment
+workflow have been removed. Current custody, messages, and authorities are defined by the native
+[Disbursement module](../../x/disbursement/README.md); use the [grant runbook](../governance/GOVERNANCE_OPERATIONS.md#7-grant-tranches)
+for operations.
+
+The [disbursement plan](../governance/DISBURSEMENT_PLAN.md)'s grants are created by a CosmWasm contract,
 `contracts/grant`, funded one tranche at a time by `MsgCommunityPoolSpend` and instructed by `MsgSudoContract`, not by
 proposals that name recipient addresses and not by a chain module. Members are issued at registration by a registrar
 key governance sets; contributor grants are escrowed in the same contract and released by the plan's cap and bloc rule
@@ -1132,7 +1140,48 @@ vesting message, since a send lands in an existing account.
 Amended again 2026-09-23: the contributor ceiling limits cumulative ownership grants to 60M, excluding the founding
 seat. The 5M seat still counts in `own` and in the fifth-of-others concentration limit, so a seat holder may receive
 the full 60M in grants only when that limit and the bloc rule admit it. Their total ceiling is 65M; a contributor
-without a seat remains capped at 60M. This matches the founder's full grant in the distribution plan.
+without a seat remains capped at 60M. This matches the founder's full grant in the disbursement plan.
+
+Amended again 2026-09-23: contributor ownership grants use one contract-held schedule from approval, four years with
+25% after a year and the rest monthly. Each bank payment is the smaller of accrued unpaid entitlement and the live
+cap/bloc allowance. Accrual continues through cap delays, which may outlast the schedule; no new vesting clock starts
+when coins leave. Payments are tracked in base units, including partial periods, without million-NOAH rounding.
+Unpaid grants cannot stake or vote; paid coins are spendable. Founding seats retain their native vesting and launch
+stake. Ownership grants and pay streams share the clock and payment path; streams remain outside ownership limits.
+The payee is reusable, the vesting-account/reply machinery and gas reserves are gone, and anyone can trigger the first
+payment for an unfunded recipient. A cancel returns only unaccrued funds, retaining accrued pay under the same limits.
+Why: a stake-dependent wait followed by a fresh four-year vesting schedule made a grant's timing unnecessarily hard
+to understand. A single clock removes that second wait without relaxing the live ownership checks. Handover now
+counts actual scheduled payments and recipients' staking choices, with no early contributor stake assumed. Contract
+0.2 changes the message/state layout and refuses migration from 0.1 until an explicit conversion policy exists.
+
+## D87
+
+**Recorded status:** Decided 2026-09-23.
+
+Replace the prelaunch grant contract with native [`x/disbursement`](../../x/disbursement/README.md). The same transparent commitment
+ledger will serve member and contributor distribution now and ongoing compensation, including stablecoins, as the system matures. Distribution
+still funds it through `MsgCommunityPoolSpend`; governance creates fully funded contributor awards through typed
+messages, and a bounded registrar registers members outside proposals. Preserve D86's immediate first member payment,
+single contributor clock, live ownership and founder-bloc caps, retained earned debt, and distinct treatment of pay.
+Stablecoin compensation is an untaxed protocol disbursement, funded and paid in its approved denomination, with no
+conversion guarantee. It never increases NOAH ownership counters. A new stablecoin award requires an active Asset
+registry entry; funded obligations survive subsequent lifecycle or allowlist changes.
+
+Founding status is an immutable genesis seat record, not an award input that a later grant can overwrite. The ratio
+and ceiling are genesis ownership policy rather than mutable operational parameters. Beneficiary identity and
+cumulative ownership persist across all controllers, payees, and grants. A member may change a payee using their
+original registered key; the registrar has no redirection authority, and the original address can never register
+again. Cancelled members retain accrued unpaid entitlement under the effective suspension cutoff, while unearned
+funds become unallocated; cancellation never attempts a member payment. Contributor unearned funds return to the pool.
+An epoch per registrar makes bulk suspension recovery bounded and permits a fresh suspension even in the same block.
+
+The module records permanent terms, work references, payments, destinations, cancellations, and administrative changes
+in an append-only journal with indexed pagination and typed events. Releases maintain founder aggregates and perform
+no scans of historical grants; no block hook pays recipients. Export/import preserves absolute clocks and history and
+rebuilds derived state after validating records and Bank backing. There are no live contract commitments to migrate:
+remove its Rust workspace, embedded fixture, and deployment workflow. CosmWasm remains available for other applications;
+D85's existing query accept list is unchanged.
 
 ## P1
 

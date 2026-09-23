@@ -138,6 +138,10 @@ These messages present a taxable input:
 
 Treat this list as orientation and `ComputeTax` as the answer. The list moves; the query does not lie.
 
+Native [Disbursement module](../../x/disbursement/README.md) payouts, including stablecoin compensation, are untaxed protocol
+disbursements. The registration or release caller still pays normal transaction gas; the payout has no transfer-tax
+charge. A later Bank transfer by the recipient follows the ordinary rules above.
+
 ## 6. Cases that behave differently
 
 - **Fee grants.** A granter bears base fee, tip, and tax together, each drawn on the allowance as it is charged.

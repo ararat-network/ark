@@ -16,8 +16,8 @@ maintain that boundary.
 ## Launch a network
 
 - [Genesis](governance/GENESIS.md): curated launch settings, unresolved values and appointments, and final validation.
-- [Distribution plan](governance/DISTRIBUTION_PLAN.md): the 60/40 member and contributor split of the community pool as
-  vesting grants, with measured caps and gates, handing governance to the public.
+- [Disbursement plan](governance/DISBURSEMENT_PLAN.md): the 60/40 member and contributor split of the community pool as
+  scheduled grant payments, with measured caps and gates, handing governance to the public.
 
 ## Operate services
 
@@ -54,7 +54,7 @@ maintain that boundary.
 ## Find subsystem documentation
 
 - [Application](../app/README.md), [ante/post handling](../app/ante/README.md), and [mempool](../app/mempool/README.md).
-- [Contracts](../contracts/README.md): the workspace and the [grant contract](../contracts/grant/README.md).
+- [Disbursement](../x/disbursement/README.md): funded member distribution, contributor ownership, and transparent compensation.
 - [Asset](../x/asset/README.md), [Oracle](../x/oracle/README.md), [Market](../x/market/README.md),
   [Treasury](../x/treasury/README.md), [Claims](../x/claims/README.md), [Reserve](../x/reserve/README.md),
   and [Security](../x/security/README.md).

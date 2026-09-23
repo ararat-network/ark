@@ -95,11 +95,12 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
+| `disbursement` | none | open | Fully funded grants and compensation; governance spends from the community pool into this account (D87). |
 | `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message. |
 | `transfer`, `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; transfer holds Minter and Burner for vouchers (D45). |
 
 The blocked list replaces the SDK default rather than augmenting it, so every blocked account above is named
-explicitly and the four custody accounts and gov are deliberately left out.
+explicitly and the four protocol-fund custody accounts, `disbursement`, and `gov` are deliberately left out.
 
 ### Supply ledger
 
@@ -136,7 +137,7 @@ machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-commit
 After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
 floor; no proposal is involved and nothing is drawn from the pool. The reward targets do not follow the set: they are
 the founding seats' shares at assembly, and raising them as validators join is a governance policy choice by
-`MsgUpdatePolicy` (§4), which the [distribution plan](DISTRIBUTION_PLAN.md#6-if-the-public-does-not-stake) proposes
+`MsgUpdatePolicy` (§4), which the [disbursement plan](DISBURSEMENT_PLAN.md#6-if-the-public-does-not-stake) proposes
 how to use.
 
 ## 4. Treasury
@@ -270,6 +271,16 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `security` | empty mandate and plan | Decided | Appointed in the first governance cycle (§13). |
 | `upgrade`, `evidence`, `feegrant`, `authz`, `vesting`, `genutil` | empty | Default | Gentxs are collected at assembly. |
 
+### Native grants
+
+Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with no grants, custody, journal entries,
+or founders before assembly. Member terms are 10,000 NOAH, a tenth immediately and the balance over twelve monthly
+periods. Issuance is limited to 250 members per rolling seven days. The registrar is empty until governance appoints
+one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
+and a 60M NOAH award ceiling, excluding the founding seat. Seat assembly adds one immutable founder record and
+beneficiary controller per founding operator; the module derives founding stake from these records. IDs start at one.
+Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination (D87).
+
 ## 11. IBC, interchain accounts, and CosmWasm
 
 IBC ships installed and shut behind one switch, an empty allowed-client list; the contract runtime ships open (decided
@@ -300,8 +311,8 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
 2. **Seats.** Run `arkd genesis add-validator-seats <operator-address>...` once against the file, naming every
    genesis validator. For each it writes a continuous vesting account at the operator with 5,000,000 NOAH vesting
    from four to ten years after `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the
-   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and leaves
-   supply untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
+   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the immutable founding
+   identity and 5M principal in `disbursement.founders`, leaving supply untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
    the seats, and writes nothing unless every seat and every edited module validates. The seat policy is fixed in
    `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what it writes.
 3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the

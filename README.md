@@ -72,8 +72,8 @@ simulation, and failure handling for external transaction builders.
 | [tests](tests/README.md)                                                 | Test map, integration fixtures, simulations, and CI.                                 |
 | [contrib](contrib/README.md)                                             | Images, localnet, probes, and operational rehearsals.                                |
 
-On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Market](x/market/README.md),
-[Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and
+On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Disbursement](x/disbursement/README.md),
+[Market](x/market/README.md), [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and
 [Treasury](x/treasury/README.md).
 
 ## Build and run locally

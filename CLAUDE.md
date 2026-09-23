@@ -3,7 +3,7 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/`. The
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/disbursement/`, `x/reserve/`, `x/security/`. The
 chain currently uses **cosmos-sdk v0.54.3** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
 SDK-specific work because the SDK version can move.
 
@@ -28,7 +28,7 @@ Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern pat
 
 Reference codebases:
 
-- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/reserve/`, `x/security/` (this
+- **New chain**: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/disbursement/`, `x/reserve/`, `x/security/` (this
   repo)
 - **Terra Classic reference**: `../classic-core/` (cosmos-sdk v0.45)
 - **Connect reference**: `../connect/`; when the user says `connect`, use this repo.
@@ -44,6 +44,7 @@ x/oracle/       # Price oracle module (validator price voting, feed registry)
 x/treasury/     # Macro policy module (tax, reward funding, liability, fund targets)
 x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank asset
 x/claims/       # Insurance claims module (Claims mandate, claim record, Insurance custody)
+x/disbursement/ # Funded member and ownership grants, compensation, and permanent payment history
 x/reserve/      # Strategic Reserve module (custody, mandate, journal, recognition policy)
 x/security/     # Security committee over the standard-module emergency surface
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
@@ -53,7 +54,6 @@ proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
 app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
-contracts/      # CosmWasm contracts the chain's processes use (grant: member grants and contributor escrow)
 ```
 
 ## Oracle, Price Feed, And ABCI Boundaries
@@ -206,8 +206,8 @@ string field_name = N [
 - Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
   change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
   verification, report the exact blocker.
-- Contracts: `make contracts` lints, tests, builds, and validates the wasm under `contracts/`; `make contracts-optimize`
-  (Docker) is the reproducible build that refreshes the checked-in `app/testdata/grant.wasm`, which CI verifies
+- Native grants: `go test ./x/disbursement/... ./app -run TestNativeDisbursement` verifies funded commitments, cancellation,
+  ownership limits, stablecoin compensation, and continuation export/import on the real app
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`

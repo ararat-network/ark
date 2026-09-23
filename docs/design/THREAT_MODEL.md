@@ -225,8 +225,8 @@ and the chain records the shape it observed at appointment. A contract may hold 
 chain records that it is one and nothing about its code or membership, which its admin, its membership
 contract, or governance can change without a term advance. Governance holds every unbounded path, including
 Wasmd's authority policy over every contract, the return of subsidy NOAH to the community pool through a
-fixed-endpoint message with a per-proposal minimum (D83), the grant contract's tranches, rules, and registrar through
-a pool spend and sudo (D86), and can replace or disable any committee. A committee's
+fixed-endpoint message with a per-proposal minimum (D83), the Disbursement module's tranches, operational parameters, and registrar through
+a pool spend and typed governance messages (D87), and can replace or disable any committee. A committee's
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 
@@ -235,14 +235,27 @@ for four years, so at launch governance is one seat one vote and the only contro
 half the bonded stake
 voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
 distributed NOAH is bonded: a proof-of-authority trust model until then
-([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the grant
-contract under `contracts/grant`: a tranche is custody the contract holds until its rules release it, a pay stream and
-a member grant are custody it pays down month by month, the member's from the tenth it sends at registration, the
-registrar key governance sets can only name who receives the next fixed member grant, within that tranche and within
-the contract's issuance window, and stop or resume a member's pay, so a stolen key costs a window's tenths, pauses
-streams until the vote that replaces it voids its suspensions, and resumes suspended members, whom the next release
-pays for the months since, which is why a cancel follows a suspension within the month; a vote can also cancel a
-grant, a stream or a member for what has not elapsed, or migrate the contract (D86). Admission runs off-chain in the
+([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the native [Disbursement module](../../x/disbursement/README.md): every commitment is fully funded in
+its own denomination, with reservation counters backed by the module's Bank balance. Payment requires both original
+schedule accrual and, for ownership, live concentration and founder-bloc limits. Fixed genesis founder identities and
+permanent beneficiary payment totals survive payee and controller rotation. Genesis rebuilds indexes and founder
+aggregates and validates Bank backing, histories, and absolute timestamps. There are no payment block hooks or scans
+of historical grants on release. Batches, schedules, references, issuance logs, and query pages have write-time bounds.
+
+The registrar can register a fixed member award within a rolling issuance window, suspend member payments, and
+reinstate them; it cannot redirect or cancel a grant. The original member key alone changes a member payee, and the
+permanent registration index prevents registration again after cancellation or a destination change. Governance can
+replace a compromised registrar and invalidate its earlier suspensions with one epoch increment, including when new
+suspensions occur in the same block. Reinstatement permits catch-up, so cancellation must follow a finding promptly.
+Cancellation pays no recipient: it freezes accrued debt, releases only unearned principal, and retains debt under the
+same ownership limits. Failed payments roll back Bank transfers, accounting, and journal entries together.
+
+Compensation is an untaxed protocol disbursement with a governance-approved denomination and work reference. New
+stablecoin commitments require an active Asset registry entry; later lifecycle or allowlist changes do not erase
+funded obligations. Governance controls compensation budgets; the module does not enforce off-chain work quality or
+prevent governance from mislabelling an ownership-scale award as compensation. The permanent journal and typed events
+make awards, destinations, payments, parameter changes, and recovery publicly auditable. Private personnel data does
+not belong in public references. Admission runs off-chain in the
 member platform: a third-party identity verifier returns a uniqueness attestation, and the platform keeps that and a
 dedup token, never the document, beside the vouch graph. The verifier's API is a boundary the chain never sees, and the
 attestation store is the platform's second asset after the registrar key, since it links a person to an address; the

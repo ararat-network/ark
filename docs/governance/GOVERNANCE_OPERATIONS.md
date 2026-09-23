@@ -131,116 +131,111 @@ Other engineering follow-ups are tracked in [future changes](../direction/FUTURE
 
 ## 7. Grant tranches
 
-The [distribution plan](DISTRIBUTION_PLAN.md) runs through the grant contract, `ark-grant` under
-[contracts/grant](../../contracts/grant/README.md) (D86). The runtime is open, so anyone stores and instantiates it
-with no admin; governance then funds it one tranche at a time and instructs it by sudo. Before the first tranche,
-check that the code's checksum is the optimizer build cited in the review (`make contracts-optimize`) and that the
-instantiate message carried the plan's figures: `arkd query wasm code-info <code-id>` and
-`arkd query wasm contract-state smart <contract> '{"config":{}}'`.
+The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md) (D87).
+Find its custody address with `arkd query auth module-account disbursement`, and inspect `arkd query disbursement params`
+before funding. `GOV` below is the governance authority; `DISBURSEMENT_ACCOUNT` is that module account. No contract upload,
+instantiation, or sudo is involved. Amounts are denomination base units and timestamps are block time.
 
-**A member tranche** is one message, the pool spend to the contract. The registrar, set at instantiation or by the
-sudo below, then opens grants as members are admitted, the tenth sent at once and the rest paid month by month to
-anyone's `release_members`; nothing about a member appears in a proposal. The contract issues at most the window's
-members, 250 in any seven days at launch, each registration counting for seven days from its block; a compromised
-registrar is replaced by an expedited `set_registrar`, and the window bounds what the old key can issue meanwhile.
-Since the old key can also have suspended members, the same proposal carries `void_suspensions` for it, which lifts
-everything it suspended in one write; the new registrar then suspends the genuine cases again.
-
-**A faked member** is suspended by the registrar, `suspend_members`, which stops the pay and moves nothing, and
-cancelled by governance, batched within the month of the suspension: the registrar key can lift a suspension as well
-as place one, and a lifted member is paid the months since at the next release, which no void undoes, so a cancel that
-waits leaves a stolen key that much to pay out. The cancel pays what had elapsed by the suspension and leaves the rest
-in the contract as unallocated, so it seats the next member from the same tranche without a proposal.
-
-```json
-{
-  "title": "Cancel members found by the member process",
-  "summary": "<how they were found>",
-  "metadata": "",
-  "deposit": "1000000000000000000000anoah",
-  "messages": [
-    {
-      "@type": "/cosmwasm.wasm.v1.MsgSudoContract",
-      "authority": "GOV",
-      "contract": "CONTRACT",
-      "msg": {"cancel_members": {"addresses": ["ADDRESS", "..."]}}
-    }
-  ]
-}
-```
+**A member tranche** is a `MsgCommunityPoolSpend` into disbursement custody. Appoint the registrar with
+`/ark.disbursement.v1.MsgUpdateParams`, supplying the complete `params` object returned by `query disbursement params` with the intended
+changes. Preserve the approved member amount, schedule, compensation allowlist, and issuance limits. Launch artifacts
+set 250 members per rolling seven days and an empty registrar; ownership policy and founding identities are not
+operational params.
 
 ```json
 {
   "title": "Member tranche, step 1",
-  "summary": "Thirty million NOAH to the grant contract for three thousand member grants.",
+  "summary": "Thirty million NOAH for three thousand member grants.",
   "metadata": "",
   "deposit": "1000000000000000000000anoah",
-  "messages": [
-    {
-      "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
-      "authority": "GOV",
-      "recipient": "CONTRACT",
-      "amount": [{"denom": "anoah", "amount": "30000000000000000000000000"}]
-    }
-  ]
+  "messages": [{
+    "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+    "authority": "GOV",
+    "recipient": "DISBURSEMENT_ACCOUNT",
+    "amount": [{"denom": "anoah", "amount": "30000000000000000000000000"}]
+  }]
 }
 ```
 
-**A contributor grant** is the spend followed by the contract's add-grant call, in one proposal that reverts whole if
-either fails; the reasoning for the band goes in the summary. The spend is the grant plus its gas, one allowance per
-whole unit: sixty NOAH here, at two NOAH an allowance and a million NOAH a unit. A spend of the grant alone fails, or
-takes the gas from a member tranche's free balance.
+The registrar signs `arkd tx disbursement register-members --addresses ADDRESS --addresses ADDRESS --from REGISTRAR`; the member roll does
+not pass through a proposal. Registration sends the tenth immediately and reserves the rest. Look up the permanent
+grant ID with `arkd query disbursement member ADDRESS`. Anyone can call
+`arkd tx disbursement release --grant-ids ID,ID --from CALLER`; payment always goes to each recorded payee.
+
+**A faked member** can be paused with `arkd tx disbursement suspend-members --addresses ADDRESS --from REGISTRAR`.
+Governance then cancels by permanent grant ID:
 
 ```json
 {
-  "title": "Founding-band grant: <name>",
-  "summary": "<band, multipliers, and reasoning>",
+  "@type": "/ark.disbursement.v1.MsgCancelGrants",
+  "authority": "GOV",
+  "grant_ids": ["1", "2"]
+}
+```
+
+Cancellation retains earned unpaid principal at the effective suspension time, or at execution time if there is no
+effective suspension. It leaves unearned member funds unallocated in disbursement custody. It attempts no member payment;
+retained debt remains payable even after cancellation. `MsgReinstateMembers` signed by the registrar or governance
+resumes a suspended grant and permits catch-up; it cannot reopen a cancelled grant. A compromised registrar can
+reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
+
+**Registrar recovery** uses one proposal with `MsgUpdateParams` setting the new registrar and
+`/ark.disbursement.v1.MsgVoidSuspensions` with `authority: GOV` and `registrar: OLD_REGISTRAR`. The void invalidates earlier
+suspensions by the old key in one write. It neither reverses payments nor invalidates later suspensions. The new
+registrar reviews genuine suspension cases. An empty registrar disables its authority without changing existing grants.
+
+**A contributor award** pairs the spend and `MsgCreateGrant` in the same proposal. The example below is a complete
+one-year cliff schedule; a disbursement-plan ownership award uses its full 37-period schedule: first
+`{"length":"31536000","parts":"12"}`, then 36 entries of `{"length":"2628000","parts":"1"}`.
+The proposal summary argues the band and multipliers; `reference` identifies the approved work or agreement on the
+permanent grant itself. Funding must cover the complete schedule before it starts.
+
+```json
+{
+  "title": "Contributor ownership award",
+  "summary": "<approved work, band, and rationale>",
   "metadata": "",
   "deposit": "1000000000000000000000anoah",
   "messages": [
     {
       "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
       "authority": "GOV",
-      "recipient": "CONTRACT",
-      "amount": [{"denom": "anoah", "amount": "30000060000000000000000000"}]
+      "recipient": "DISBURSEMENT_ACCOUNT",
+      "amount": [{"denom": "anoah", "amount": "1000000000000000000000000"}]
     },
     {
-      "@type": "/cosmwasm.wasm.v1.MsgSudoContract",
+      "@type": "/ark.disbursement.v1.MsgCreateGrant",
       "authority": "GOV",
-      "contract": "CONTRACT",
-      "msg": {
-        "add_grant": {
-          "grantee": "GRANTEE",
-          "amount": "30000000000000000000000000",
-          "schedule": [{"length": 31536000, "parts": 12}, {"length": 2628000, "parts": 1}, "... 36 monthly entries"],
-          "seat_holder": false
-        }
-      }
+      "kind": "GRANT_KIND_OWNERSHIP",
+      "beneficiary": "BENEFICIARY",
+      "amount": {"denom": "anoah", "amount": "1000000000000000000000000"},
+      "schedule": [{"length": "31536000", "parts": "1"}],
+      "reference": "<approved contributor agreement>"
     }
   ]
 }
 ```
 
-`release_address` names where the first tranche goes. Without it the tranche goes to the grantee while the contract
-has not paid them, and a repeat grantee's grant waits for the controller to name an address, since an address that
-already holds an account cannot take a vesting account; a grantee whose address holds coins names a fresh one in the
-proposal.
+The clock starts at proposal execution. No payment occurs until a period elapses, and ownership still checks the live
+individual and founder-bloc limits. Founding status is read from genesis seat records; an award has no `seat_holder`
+input. The beneficiary initially controls the contributor payee, and later awards preserve the existing controller.
+Use `arkd tx disbursement set-controller --beneficiary ADDRESS --controller NEW_CONTROLLER --from CURRENT_CONTROLLER` to
+rotate it. Governance can also submit `MsgSetController`, with `sender: GOV`, for recovery.
 
-The other sudo calls take the same shape with `set_registrar`, `set_issuance_limit`, `set_member_grant`,
-`set_fee_allowance`, `add_stream`, `set_controller`, `cancel_grant`, `reinstate_members`, `void_suspensions`, or
-`return_unallocated` in `msg`. After execution, read the contract back: `{"totals":{}}` for what the tranche holds,
-`{"grant":{"id":N}}` for a grant, `{"releasable":{"id":N}}` for what the rules allow now, and
-`{"member":{"address":"..."}}` for a member's record and what is due. Anyone may then send `{"release":{"id":N}}`
-once the grantee has registered a fresh address, or `{"release_members":{"addresses":[...]}}` for up to a hundred
-members, which the app does in the member's own transaction.
+**Compensation** uses `GRANT_KIND_COMPENSATION` with the funded denomination and agreed schedule, such as twenty-four
+monthly periods. Governance first adds an active native stablecoin to `params.compensation_denoms` when needed.
+Stablecoin compensation is fully funded in that denomination, untaxed, and outside NOAH ownership caps. It does not
+promise a conversion rate. A denomination's later suspension or removal from the allowlist prevents new awards without
+erasing already funded entitlement.
 
-**A grant to a seat holder** is the same proposal with `seat_holder` true, the grantee abstaining. The bloc rule
-releases nothing to a seat holder until public bonded stake passes the block line
-([plan §4](DISTRIBUTION_PLAN.md#4-distribution)), so the grant escrows whole and anyone releases it, tranche by
-tranche, as bonded stake grows.
+**Cancellation and destination recovery.** `MsgCancelGrants` applies to any grant kind. Contributor cancellation
+returns only unearned principal to the community pool and retains accrued debt, with ownership limits still applied.
+No cancellation pays the recipient, so a blocked destination cannot veto it. A contributor controller, or the original
+registered member key for a member grant, signs
+`arkd tx disbursement set-payee --grant-id ID --payee ADDRESS --from CONTROLLER_OR_MEMBER`. The beneficiary identity and all
+historical payments remain unchanged. The registrar has no destination-recovery authority.
 
-**A pay stream** is the spend followed by `add_stream`, the same shape without `seat_holder`, on the plan's schedule of
-twenty-four monthly periods: `[{"length": 2628000, "parts": 1}, "... 24 entries"]`. The contract holds the stream and
-pays each month to the hire once it has elapsed, by `{"release":{"id":N}}` from anyone; `{"releasable":{"id":N}}` shows
-the months elapsed and paid and when the next falls due. A `cancel_grant` on a stream holds the months that have
-elapsed for the hire, released as before, and returns the rest to the pool, so no payee can fail it.
+**Audit after execution.** Use `arkd query disbursement` with `grant ID`, `releasable ID`, `balance DENOM`, `issuance`,
+and `journal --grant-id ID`. The journal includes original terms, approvals, destinations, payments, cancellations,
+and recovery actions. All list queries use key pagination; maximum page size is 100. Read all pages when reconciling.
+`MsgReturnUnallocated` can return idle funds to the pool but cannot consume any grant's reserved principal.
