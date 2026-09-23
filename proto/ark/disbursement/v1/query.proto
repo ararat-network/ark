@@ -19,6 +19,11 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/params";
   }
+  // RegistrarMandate queries the registrar appointment and whether it is active.
+  rpc RegistrarMandate(QueryRegistrarMandateRequest) returns (QueryRegistrarMandateResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/registrar_mandate";
+  }
   // Grant queries grant state.
   rpc Grant(QueryGrantRequest) returns (QueryGrantResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
@@ -85,6 +90,19 @@ message QueryParamsResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// QueryRegistrarMandateRequest requests Query/RegistrarMandate.
+message QueryRegistrarMandateRequest {}
+
+// QueryRegistrarMandateResponse returns Query/RegistrarMandate.
+message QueryRegistrarMandateResponse {
+  RegistrarMandate mandate = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // active reports whether the registrar may act at the current height.
+  bool active = 2 [(amino.dont_omitempty) = true];
 }
 
 // QueryGrantRequest requests Query/Grant.

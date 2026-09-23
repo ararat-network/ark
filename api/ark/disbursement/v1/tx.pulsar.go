@@ -872,6 +872,942 @@ func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Meth
 	}
 }
 
+var (
+	md_MsgSetRegistrarMandate                   protoreflect.MessageDescriptor
+	fd_MsgSetRegistrarMandate_authority         protoreflect.FieldDescriptor
+	fd_MsgSetRegistrarMandate_committee         protoreflect.FieldDescriptor
+	fd_MsgSetRegistrarMandate_activation_height protoreflect.FieldDescriptor
+	fd_MsgSetRegistrarMandate_expiry_height     protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_disbursement_v1_tx_proto_init()
+	md_MsgSetRegistrarMandate = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgSetRegistrarMandate")
+	fd_MsgSetRegistrarMandate_authority = md_MsgSetRegistrarMandate.Fields().ByName("authority")
+	fd_MsgSetRegistrarMandate_committee = md_MsgSetRegistrarMandate.Fields().ByName("committee")
+	fd_MsgSetRegistrarMandate_activation_height = md_MsgSetRegistrarMandate.Fields().ByName("activation_height")
+	fd_MsgSetRegistrarMandate_expiry_height = md_MsgSetRegistrarMandate.Fields().ByName("expiry_height")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetRegistrarMandate)(nil)
+
+type fastReflection_MsgSetRegistrarMandate MsgSetRegistrarMandate
+
+func (x *MsgSetRegistrarMandate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetRegistrarMandate)(x)
+}
+
+func (x *MsgSetRegistrarMandate) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetRegistrarMandate_messageType fastReflection_MsgSetRegistrarMandate_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetRegistrarMandate_messageType{}
+
+type fastReflection_MsgSetRegistrarMandate_messageType struct{}
+
+func (x fastReflection_MsgSetRegistrarMandate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetRegistrarMandate)(nil)
+}
+func (x fastReflection_MsgSetRegistrarMandate_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetRegistrarMandate)
+}
+func (x fastReflection_MsgSetRegistrarMandate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetRegistrarMandate
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetRegistrarMandate) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetRegistrarMandate
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetRegistrarMandate) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetRegistrarMandate_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetRegistrarMandate) New() protoreflect.Message {
+	return new(fastReflection_MsgSetRegistrarMandate)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetRegistrarMandate) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetRegistrarMandate)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetRegistrarMandate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgSetRegistrarMandate_authority, value) {
+			return
+		}
+	}
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgSetRegistrarMandate_committee, value) {
+			return
+		}
+	}
+	if x.ActivationHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationHeight)
+		if !f(fd_MsgSetRegistrarMandate_activation_height, value) {
+			return
+		}
+	}
+	if x.ExpiryHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
+		if !f(fd_MsgSetRegistrarMandate_expiry_height, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetRegistrarMandate) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		return x.Authority != ""
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		return x.Committee != ""
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		return x.ActivationHeight != uint64(0)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		return x.ExpiryHeight != uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandate) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		x.Authority = ""
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		x.Committee = ""
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		x.ActivationHeight = uint64(0)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		x.ExpiryHeight = uint64(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetRegistrarMandate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		value := x.Committee
+		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		value := x.ActivationHeight
+		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		value := x.ExpiryHeight
+		return protoreflect.ValueOfUint64(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		x.Authority = value.Interface().(string)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		x.ActivationHeight = value.Uint()
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		x.ExpiryHeight = value.Uint()
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		panic(fmt.Errorf("field authority of message ark.disbursement.v1.MsgSetRegistrarMandate is not mutable"))
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		panic(fmt.Errorf("field committee of message ark.disbursement.v1.MsgSetRegistrarMandate is not mutable"))
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		panic(fmt.Errorf("field activation_height of message ark.disbursement.v1.MsgSetRegistrarMandate is not mutable"))
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		panic(fmt.Errorf("field expiry_height of message ark.disbursement.v1.MsgSetRegistrarMandate is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetRegistrarMandate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.authority":
+		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.committee":
+		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.activation_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.MsgSetRegistrarMandate.expiry_height":
+		return protoreflect.ValueOfUint64(uint64(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandate does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetRegistrarMandate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgSetRegistrarMandate", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetRegistrarMandate) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandate) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetRegistrarMandate) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetRegistrarMandate) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetRegistrarMandate)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Committee)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ActivationHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		}
+		if x.ExpiryHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetRegistrarMandate)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ExpiryHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+			i--
+			dAtA[i] = 0x20
+		}
+		if x.ActivationHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+			i--
+			dAtA[i] = 0x18
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetRegistrarMandate)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetRegistrarMandate: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetRegistrarMandate: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Committee = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+				}
+				x.ActivationHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ActivationHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+				}
+				x.ExpiryHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgSetRegistrarMandateResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_disbursement_v1_tx_proto_init()
+	md_MsgSetRegistrarMandateResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgSetRegistrarMandateResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgSetRegistrarMandateResponse)(nil)
+
+type fastReflection_MsgSetRegistrarMandateResponse MsgSetRegistrarMandateResponse
+
+func (x *MsgSetRegistrarMandateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSetRegistrarMandateResponse)(x)
+}
+
+func (x *MsgSetRegistrarMandateResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgSetRegistrarMandateResponse_messageType fastReflection_MsgSetRegistrarMandateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSetRegistrarMandateResponse_messageType{}
+
+type fastReflection_MsgSetRegistrarMandateResponse_messageType struct{}
+
+func (x fastReflection_MsgSetRegistrarMandateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSetRegistrarMandateResponse)(nil)
+}
+func (x fastReflection_MsgSetRegistrarMandateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSetRegistrarMandateResponse)
+}
+func (x fastReflection_MsgSetRegistrarMandateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetRegistrarMandateResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSetRegistrarMandateResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSetRegistrarMandateResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSetRegistrarMandateResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSetRegistrarMandateResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSetRegistrarMandateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgSetRegistrarMandateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgSetRegistrarMandateResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgSetRegistrarMandateResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgSetRegistrarMandateResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetRegistrarMandateResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgSetRegistrarMandateResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetRegistrarMandateResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSetRegistrarMandateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 var _ protoreflect.List = (*_MsgCreateGrant_5_list)(nil)
 
 type _MsgCreateGrant_5_list struct {
@@ -953,7 +1889,7 @@ func (x *MsgCreateGrant) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCreateGrant) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[2]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1705,7 +2641,7 @@ func (x *MsgCreateGrantResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCreateGrantResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[3]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2089,75 +3025,77 @@ func (x *fastReflection_MsgCreateGrantResponse) ProtoMethods() *protoiface.Metho
 	}
 }
 
-var _ protoreflect.List = (*_MsgRegisterMembers_2_list)(nil)
+var _ protoreflect.List = (*_MsgCommitteeRegister_3_list)(nil)
 
-type _MsgRegisterMembers_2_list struct {
+type _MsgCommitteeRegister_3_list struct {
 	list *[]string
 }
 
-func (x *_MsgRegisterMembers_2_list) Len() int {
+func (x *_MsgCommitteeRegister_3_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_MsgRegisterMembers_2_list) Get(i int) protoreflect.Value {
+func (x *_MsgCommitteeRegister_3_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_MsgRegisterMembers_2_list) Set(i int, value protoreflect.Value) {
+func (x *_MsgCommitteeRegister_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_MsgRegisterMembers_2_list) Append(value protoreflect.Value) {
+func (x *_MsgCommitteeRegister_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_MsgRegisterMembers_2_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message MsgRegisterMembers at list field Addresses as it is not of Message kind"))
+func (x *_MsgCommitteeRegister_3_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message MsgCommitteeRegister at list field Addresses as it is not of Message kind"))
 }
 
-func (x *_MsgRegisterMembers_2_list) Truncate(n int) {
+func (x *_MsgCommitteeRegister_3_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_MsgRegisterMembers_2_list) NewElement() protoreflect.Value {
+func (x *_MsgCommitteeRegister_3_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_MsgRegisterMembers_2_list) IsValid() bool {
+func (x *_MsgCommitteeRegister_3_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_MsgRegisterMembers           protoreflect.MessageDescriptor
-	fd_MsgRegisterMembers_registrar protoreflect.FieldDescriptor
-	fd_MsgRegisterMembers_addresses protoreflect.FieldDescriptor
+	md_MsgCommitteeRegister               protoreflect.MessageDescriptor
+	fd_MsgCommitteeRegister_committee     protoreflect.FieldDescriptor
+	fd_MsgCommitteeRegister_expected_term protoreflect.FieldDescriptor
+	fd_MsgCommitteeRegister_addresses     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
-	md_MsgRegisterMembers = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgRegisterMembers")
-	fd_MsgRegisterMembers_registrar = md_MsgRegisterMembers.Fields().ByName("registrar")
-	fd_MsgRegisterMembers_addresses = md_MsgRegisterMembers.Fields().ByName("addresses")
+	md_MsgCommitteeRegister = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeRegister")
+	fd_MsgCommitteeRegister_committee = md_MsgCommitteeRegister.Fields().ByName("committee")
+	fd_MsgCommitteeRegister_expected_term = md_MsgCommitteeRegister.Fields().ByName("expected_term")
+	fd_MsgCommitteeRegister_addresses = md_MsgCommitteeRegister.Fields().ByName("addresses")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgRegisterMembers)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeRegister)(nil)
 
-type fastReflection_MsgRegisterMembers MsgRegisterMembers
+type fastReflection_MsgCommitteeRegister MsgCommitteeRegister
 
-func (x *MsgRegisterMembers) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgRegisterMembers)(x)
+func (x *MsgCommitteeRegister) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeRegister)(x)
 }
 
-func (x *MsgRegisterMembers) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[4]
+func (x *MsgCommitteeRegister) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2168,43 +3106,43 @@ func (x *MsgRegisterMembers) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgRegisterMembers_messageType fastReflection_MsgRegisterMembers_messageType
-var _ protoreflect.MessageType = fastReflection_MsgRegisterMembers_messageType{}
+var _fastReflection_MsgCommitteeRegister_messageType fastReflection_MsgCommitteeRegister_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeRegister_messageType{}
 
-type fastReflection_MsgRegisterMembers_messageType struct{}
+type fastReflection_MsgCommitteeRegister_messageType struct{}
 
-func (x fastReflection_MsgRegisterMembers_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgRegisterMembers)(nil)
+func (x fastReflection_MsgCommitteeRegister_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeRegister)(nil)
 }
-func (x fastReflection_MsgRegisterMembers_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgRegisterMembers)
+func (x fastReflection_MsgCommitteeRegister_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeRegister)
 }
-func (x fastReflection_MsgRegisterMembers_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgRegisterMembers
+func (x fastReflection_MsgCommitteeRegister_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeRegister
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgRegisterMembers) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgRegisterMembers
+func (x *fastReflection_MsgCommitteeRegister) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeRegister
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgRegisterMembers) Type() protoreflect.MessageType {
-	return _fastReflection_MsgRegisterMembers_messageType
+func (x *fastReflection_MsgCommitteeRegister) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeRegister_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgRegisterMembers) New() protoreflect.Message {
-	return new(fastReflection_MsgRegisterMembers)
+func (x *fastReflection_MsgCommitteeRegister) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeRegister)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgRegisterMembers) Interface() protoreflect.ProtoMessage {
-	return (*MsgRegisterMembers)(x)
+func (x *fastReflection_MsgCommitteeRegister) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeRegister)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2212,16 +3150,22 @@ func (x *fastReflection_MsgRegisterMembers) Interface() protoreflect.ProtoMessag
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgRegisterMembers) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Registrar != "" {
-		value := protoreflect.ValueOfString(x.Registrar)
-		if !f(fd_MsgRegisterMembers_registrar, value) {
+func (x *fastReflection_MsgCommitteeRegister) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgCommitteeRegister_committee, value) {
+			return
+		}
+	}
+	if x.ExpectedTerm != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpectedTerm)
+		if !f(fd_MsgCommitteeRegister_expected_term, value) {
 			return
 		}
 	}
 	if len(x.Addresses) != 0 {
-		value := protoreflect.ValueOfList(&_MsgRegisterMembers_2_list{list: &x.Addresses})
-		if !f(fd_MsgRegisterMembers_addresses, value) {
+		value := protoreflect.ValueOfList(&_MsgCommitteeRegister_3_list{list: &x.Addresses})
+		if !f(fd_MsgCommitteeRegister_addresses, value) {
 			return
 		}
 	}
@@ -2238,17 +3182,19 @@ func (x *fastReflection_MsgRegisterMembers) Range(f func(protoreflect.FieldDescr
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgRegisterMembers) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeRegister) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
-		return x.Registrar != ""
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
+		return x.Committee != ""
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		return x.ExpectedTerm != uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		return len(x.Addresses) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2258,17 +3204,19 @@ func (x *fastReflection_MsgRegisterMembers) Has(fd protoreflect.FieldDescriptor)
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembers) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeRegister) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
-		x.Registrar = ""
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
+		x.Committee = ""
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		x.ExpectedTerm = uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		x.Addresses = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2278,22 +3226,25 @@ func (x *fastReflection_MsgRegisterMembers) Clear(fd protoreflect.FieldDescripto
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgRegisterMembers) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegister) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
-		value := x.Registrar
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
+		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		value := x.ExpectedTerm
+		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		if len(x.Addresses) == 0 {
-			return protoreflect.ValueOfList(&_MsgRegisterMembers_2_list{})
+			return protoreflect.ValueOfList(&_MsgCommitteeRegister_3_list{})
 		}
-		listValue := &_MsgRegisterMembers_2_list{list: &x.Addresses}
+		listValue := &_MsgCommitteeRegister_3_list{list: &x.Addresses}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2307,19 +3258,21 @@ func (x *fastReflection_MsgRegisterMembers) Get(descriptor protoreflect.FieldDes
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembers) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeRegister) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
-		x.Registrar = value.Interface().(string)
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		x.ExpectedTerm = value.Uint()
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		lv := value.List()
-		clv := lv.(*_MsgRegisterMembers_2_list)
+		clv := lv.(*_MsgCommitteeRegister_3_list)
 		x.Addresses = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2333,49 +3286,53 @@ func (x *fastReflection_MsgRegisterMembers) Set(fd protoreflect.FieldDescriptor,
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembers) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegister) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		if x.Addresses == nil {
 			x.Addresses = []string{}
 		}
-		value := &_MsgRegisterMembers_2_list{list: &x.Addresses}
+		value := &_MsgCommitteeRegister_3_list{list: &x.Addresses}
 		return protoreflect.ValueOfList(value)
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
-		panic(fmt.Errorf("field registrar of message ark.disbursement.v1.MsgRegisterMembers is not mutable"))
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
+		panic(fmt.Errorf("field committee of message ark.disbursement.v1.MsgCommitteeRegister is not mutable"))
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		panic(fmt.Errorf("field expected_term of message ark.disbursement.v1.MsgCommitteeRegister is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgRegisterMembers) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegister) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembers.registrar":
+	case "ark.disbursement.v1.MsgCommitteeRegister.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.MsgRegisterMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeRegister.expected_term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.MsgCommitteeRegister.addresses":
 		list := []string{}
-		return protoreflect.ValueOfList(&_MsgRegisterMembers_2_list{list: &list})
+		return protoreflect.ValueOfList(&_MsgCommitteeRegister_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegister"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegister does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgRegisterMembers) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeRegister) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgRegisterMembers", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeRegister", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2383,7 +3340,7 @@ func (x *fastReflection_MsgRegisterMembers) WhichOneof(d protoreflect.OneofDescr
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgRegisterMembers) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeRegister) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2394,7 +3351,7 @@ func (x *fastReflection_MsgRegisterMembers) GetUnknown() protoreflect.RawFields 
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembers) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeRegister) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2406,7 +3363,7 @@ func (x *fastReflection_MsgRegisterMembers) SetUnknown(fields protoreflect.RawFi
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgRegisterMembers) IsValid() bool {
+func (x *fastReflection_MsgCommitteeRegister) IsValid() bool {
 	return x != nil
 }
 
@@ -2416,9 +3373,9 @@ func (x *fastReflection_MsgRegisterMembers) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeRegister) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgRegisterMembers)
+		x := input.Message.Interface().(*MsgCommitteeRegister)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2430,9 +3387,12 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Registrar)
+		l = len(x.Committee)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedTerm != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpectedTerm))
 		}
 		if len(x.Addresses) > 0 {
 			for _, s := range x.Addresses {
@@ -2450,7 +3410,7 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgRegisterMembers)
+		x := input.Message.Interface().(*MsgCommitteeRegister)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2475,13 +3435,18 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], x.Addresses[iNdEx])
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Addresses[iNdEx])))
 				i--
-				dAtA[i] = 0x12
+				dAtA[i] = 0x1a
 			}
 		}
-		if len(x.Registrar) > 0 {
-			i -= len(x.Registrar)
-			copy(dAtA[i:], x.Registrar)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Registrar)))
+		if x.ExpectedTerm != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedTerm))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -2496,7 +3461,7 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgRegisterMembers)
+		x := input.Message.Interface().(*MsgCommitteeRegister)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2528,15 +3493,15 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRegisterMembers: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRegister: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRegisterMembers: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRegister: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Registrar", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -2564,9 +3529,28 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Registrar = string(dAtA[iNdEx:postIndex])
+				x.Committee = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+				}
+				x.ExpectedTerm = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpectedTerm |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
 				}
@@ -2633,73 +3617,73 @@ func (x *fastReflection_MsgRegisterMembers) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_MsgRegisterMembersResponse_1_list)(nil)
+var _ protoreflect.List = (*_MsgCommitteeRegisterResponse_1_list)(nil)
 
-type _MsgRegisterMembersResponse_1_list struct {
+type _MsgCommitteeRegisterResponse_1_list struct {
 	list *[]uint64
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) Len() int {
+func (x *_MsgCommitteeRegisterResponse_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) Get(i int) protoreflect.Value {
+func (x *_MsgCommitteeRegisterResponse_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfUint64((*x.list)[i])
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) Set(i int, value protoreflect.Value) {
+func (x *_MsgCommitteeRegisterResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) Append(value protoreflect.Value) {
+func (x *_MsgCommitteeRegisterResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message MsgRegisterMembersResponse at list field GrantIds as it is not of Message kind"))
+func (x *_MsgCommitteeRegisterResponse_1_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message MsgCommitteeRegisterResponse at list field GrantIds as it is not of Message kind"))
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) Truncate(n int) {
+func (x *_MsgCommitteeRegisterResponse_1_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) NewElement() protoreflect.Value {
+func (x *_MsgCommitteeRegisterResponse_1_list) NewElement() protoreflect.Value {
 	v := uint64(0)
 	return protoreflect.ValueOfUint64(v)
 }
 
-func (x *_MsgRegisterMembersResponse_1_list) IsValid() bool {
+func (x *_MsgCommitteeRegisterResponse_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_MsgRegisterMembersResponse           protoreflect.MessageDescriptor
-	fd_MsgRegisterMembersResponse_grant_ids protoreflect.FieldDescriptor
+	md_MsgCommitteeRegisterResponse           protoreflect.MessageDescriptor
+	fd_MsgCommitteeRegisterResponse_grant_ids protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
-	md_MsgRegisterMembersResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgRegisterMembersResponse")
-	fd_MsgRegisterMembersResponse_grant_ids = md_MsgRegisterMembersResponse.Fields().ByName("grant_ids")
+	md_MsgCommitteeRegisterResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeRegisterResponse")
+	fd_MsgCommitteeRegisterResponse_grant_ids = md_MsgCommitteeRegisterResponse.Fields().ByName("grant_ids")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgRegisterMembersResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeRegisterResponse)(nil)
 
-type fastReflection_MsgRegisterMembersResponse MsgRegisterMembersResponse
+type fastReflection_MsgCommitteeRegisterResponse MsgCommitteeRegisterResponse
 
-func (x *MsgRegisterMembersResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgRegisterMembersResponse)(x)
+func (x *MsgCommitteeRegisterResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeRegisterResponse)(x)
 }
 
-func (x *MsgRegisterMembersResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[5]
+func (x *MsgCommitteeRegisterResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2710,43 +3694,43 @@ func (x *MsgRegisterMembersResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgRegisterMembersResponse_messageType fastReflection_MsgRegisterMembersResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgRegisterMembersResponse_messageType{}
+var _fastReflection_MsgCommitteeRegisterResponse_messageType fastReflection_MsgCommitteeRegisterResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeRegisterResponse_messageType{}
 
-type fastReflection_MsgRegisterMembersResponse_messageType struct{}
+type fastReflection_MsgCommitteeRegisterResponse_messageType struct{}
 
-func (x fastReflection_MsgRegisterMembersResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgRegisterMembersResponse)(nil)
+func (x fastReflection_MsgCommitteeRegisterResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeRegisterResponse)(nil)
 }
-func (x fastReflection_MsgRegisterMembersResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgRegisterMembersResponse)
+func (x fastReflection_MsgCommitteeRegisterResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeRegisterResponse)
 }
-func (x fastReflection_MsgRegisterMembersResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgRegisterMembersResponse
+func (x fastReflection_MsgCommitteeRegisterResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeRegisterResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgRegisterMembersResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgRegisterMembersResponse
+func (x *fastReflection_MsgCommitteeRegisterResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeRegisterResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgRegisterMembersResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgRegisterMembersResponse_messageType
+func (x *fastReflection_MsgCommitteeRegisterResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeRegisterResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgRegisterMembersResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgRegisterMembersResponse)
+func (x *fastReflection_MsgCommitteeRegisterResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeRegisterResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgRegisterMembersResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgRegisterMembersResponse)(x)
+func (x *fastReflection_MsgCommitteeRegisterResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeRegisterResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2754,10 +3738,10 @@ func (x *fastReflection_MsgRegisterMembersResponse) Interface() protoreflect.Pro
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgRegisterMembersResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if len(x.GrantIds) != 0 {
-		value := protoreflect.ValueOfList(&_MsgRegisterMembersResponse_1_list{list: &x.GrantIds})
-		if !f(fd_MsgRegisterMembersResponse_grant_ids, value) {
+		value := protoreflect.ValueOfList(&_MsgCommitteeRegisterResponse_1_list{list: &x.GrantIds})
+		if !f(fd_MsgCommitteeRegisterResponse_grant_ids, value) {
 			return
 		}
 	}
@@ -2774,15 +3758,15 @@ func (x *fastReflection_MsgRegisterMembersResponse) Range(f func(protoreflect.Fi
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgRegisterMembersResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		return len(x.GrantIds) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2792,15 +3776,15 @@ func (x *fastReflection_MsgRegisterMembersResponse) Has(fd protoreflect.FieldDes
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembersResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		x.GrantIds = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2810,19 +3794,19 @@ func (x *fastReflection_MsgRegisterMembersResponse) Clear(fd protoreflect.FieldD
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgRegisterMembersResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		if len(x.GrantIds) == 0 {
-			return protoreflect.ValueOfList(&_MsgRegisterMembersResponse_1_list{})
+			return protoreflect.ValueOfList(&_MsgCommitteeRegisterResponse_1_list{})
 		}
-		listValue := &_MsgRegisterMembersResponse_1_list{list: &x.GrantIds}
+		listValue := &_MsgCommitteeRegisterResponse_1_list{list: &x.GrantIds}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2836,17 +3820,17 @@ func (x *fastReflection_MsgRegisterMembersResponse) Get(descriptor protoreflect.
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembersResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		lv := value.List()
-		clv := lv.(*_MsgRegisterMembersResponse_1_list)
+		clv := lv.(*_MsgCommitteeRegisterResponse_1_list)
 		x.GrantIds = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2860,45 +3844,45 @@ func (x *fastReflection_MsgRegisterMembersResponse) Set(fd protoreflect.FieldDes
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembersResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegisterResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		if x.GrantIds == nil {
 			x.GrantIds = []uint64{}
 		}
-		value := &_MsgRegisterMembersResponse_1_list{list: &x.GrantIds}
+		value := &_MsgCommitteeRegisterResponse_1_list{list: &x.GrantIds}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgRegisterMembersResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeRegisterResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgRegisterMembersResponse.grant_ids":
+	case "ark.disbursement.v1.MsgCommitteeRegisterResponse.grant_ids":
 		list := []uint64{}
-		return protoreflect.ValueOfList(&_MsgRegisterMembersResponse_1_list{list: &list})
+		return protoreflect.ValueOfList(&_MsgCommitteeRegisterResponse_1_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgRegisterMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeRegisterResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgRegisterMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeRegisterResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgRegisterMembersResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeRegisterResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgRegisterMembersResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeRegisterResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2906,7 +3890,7 @@ func (x *fastReflection_MsgRegisterMembersResponse) WhichOneof(d protoreflect.On
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgRegisterMembersResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeRegisterResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2917,7 +3901,7 @@ func (x *fastReflection_MsgRegisterMembersResponse) GetUnknown() protoreflect.Ra
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgRegisterMembersResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeRegisterResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2929,7 +3913,7 @@ func (x *fastReflection_MsgRegisterMembersResponse) SetUnknown(fields protorefle
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgRegisterMembersResponse) IsValid() bool {
+func (x *fastReflection_MsgCommitteeRegisterResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2939,9 +3923,9 @@ func (x *fastReflection_MsgRegisterMembersResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgRegisterMembersResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeRegisterResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgRegisterMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeRegisterResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2970,7 +3954,7 @@ func (x *fastReflection_MsgRegisterMembersResponse) ProtoMethods() *protoiface.M
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgRegisterMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeRegisterResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3020,7 +4004,7 @@ func (x *fastReflection_MsgRegisterMembersResponse) ProtoMethods() *protoiface.M
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgRegisterMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeRegisterResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -3052,10 +4036,10 @@ func (x *fastReflection_MsgRegisterMembersResponse) ProtoMethods() *protoiface.M
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRegisterMembersResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRegisterResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgRegisterMembersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeRegisterResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -3237,7 +4221,7 @@ func (x *MsgRelease) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgRelease) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[6]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3787,7 +4771,7 @@ func (x *MsgReleaseResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgReleaseResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[7]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4193,7 +5177,7 @@ func (x *MsgCancelGrants) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCancelGrants) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[8]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4743,7 +5727,7 @@ func (x *MsgCancelGrantsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCancelGrantsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[9]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5081,75 +6065,77 @@ func (x *fastReflection_MsgCancelGrantsResponse) ProtoMethods() *protoiface.Meth
 	}
 }
 
-var _ protoreflect.List = (*_MsgSuspendMembers_2_list)(nil)
+var _ protoreflect.List = (*_MsgCommitteeSuspend_3_list)(nil)
 
-type _MsgSuspendMembers_2_list struct {
+type _MsgCommitteeSuspend_3_list struct {
 	list *[]string
 }
 
-func (x *_MsgSuspendMembers_2_list) Len() int {
+func (x *_MsgCommitteeSuspend_3_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_MsgSuspendMembers_2_list) Get(i int) protoreflect.Value {
+func (x *_MsgCommitteeSuspend_3_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_MsgSuspendMembers_2_list) Set(i int, value protoreflect.Value) {
+func (x *_MsgCommitteeSuspend_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_MsgSuspendMembers_2_list) Append(value protoreflect.Value) {
+func (x *_MsgCommitteeSuspend_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_MsgSuspendMembers_2_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message MsgSuspendMembers at list field Addresses as it is not of Message kind"))
+func (x *_MsgCommitteeSuspend_3_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message MsgCommitteeSuspend at list field Addresses as it is not of Message kind"))
 }
 
-func (x *_MsgSuspendMembers_2_list) Truncate(n int) {
+func (x *_MsgCommitteeSuspend_3_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_MsgSuspendMembers_2_list) NewElement() protoreflect.Value {
+func (x *_MsgCommitteeSuspend_3_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_MsgSuspendMembers_2_list) IsValid() bool {
+func (x *_MsgCommitteeSuspend_3_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_MsgSuspendMembers           protoreflect.MessageDescriptor
-	fd_MsgSuspendMembers_registrar protoreflect.FieldDescriptor
-	fd_MsgSuspendMembers_addresses protoreflect.FieldDescriptor
+	md_MsgCommitteeSuspend               protoreflect.MessageDescriptor
+	fd_MsgCommitteeSuspend_committee     protoreflect.FieldDescriptor
+	fd_MsgCommitteeSuspend_expected_term protoreflect.FieldDescriptor
+	fd_MsgCommitteeSuspend_addresses     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
-	md_MsgSuspendMembers = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgSuspendMembers")
-	fd_MsgSuspendMembers_registrar = md_MsgSuspendMembers.Fields().ByName("registrar")
-	fd_MsgSuspendMembers_addresses = md_MsgSuspendMembers.Fields().ByName("addresses")
+	md_MsgCommitteeSuspend = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeSuspend")
+	fd_MsgCommitteeSuspend_committee = md_MsgCommitteeSuspend.Fields().ByName("committee")
+	fd_MsgCommitteeSuspend_expected_term = md_MsgCommitteeSuspend.Fields().ByName("expected_term")
+	fd_MsgCommitteeSuspend_addresses = md_MsgCommitteeSuspend.Fields().ByName("addresses")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSuspendMembers)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeSuspend)(nil)
 
-type fastReflection_MsgSuspendMembers MsgSuspendMembers
+type fastReflection_MsgCommitteeSuspend MsgCommitteeSuspend
 
-func (x *MsgSuspendMembers) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSuspendMembers)(x)
+func (x *MsgCommitteeSuspend) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSuspend)(x)
 }
 
-func (x *MsgSuspendMembers) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[10]
+func (x *MsgCommitteeSuspend) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5160,43 +6146,43 @@ func (x *MsgSuspendMembers) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSuspendMembers_messageType fastReflection_MsgSuspendMembers_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSuspendMembers_messageType{}
+var _fastReflection_MsgCommitteeSuspend_messageType fastReflection_MsgCommitteeSuspend_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeSuspend_messageType{}
 
-type fastReflection_MsgSuspendMembers_messageType struct{}
+type fastReflection_MsgCommitteeSuspend_messageType struct{}
 
-func (x fastReflection_MsgSuspendMembers_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSuspendMembers)(nil)
+func (x fastReflection_MsgCommitteeSuspend_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSuspend)(nil)
 }
-func (x fastReflection_MsgSuspendMembers_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSuspendMembers)
+func (x fastReflection_MsgCommitteeSuspend_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSuspend)
 }
-func (x fastReflection_MsgSuspendMembers_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSuspendMembers
+func (x fastReflection_MsgCommitteeSuspend_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSuspend
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSuspendMembers) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSuspendMembers
+func (x *fastReflection_MsgCommitteeSuspend) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSuspend
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSuspendMembers) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSuspendMembers_messageType
+func (x *fastReflection_MsgCommitteeSuspend) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeSuspend_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSuspendMembers) New() protoreflect.Message {
-	return new(fastReflection_MsgSuspendMembers)
+func (x *fastReflection_MsgCommitteeSuspend) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSuspend)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSuspendMembers) Interface() protoreflect.ProtoMessage {
-	return (*MsgSuspendMembers)(x)
+func (x *fastReflection_MsgCommitteeSuspend) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeSuspend)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -5204,16 +6190,22 @@ func (x *fastReflection_MsgSuspendMembers) Interface() protoreflect.ProtoMessage
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSuspendMembers) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Registrar != "" {
-		value := protoreflect.ValueOfString(x.Registrar)
-		if !f(fd_MsgSuspendMembers_registrar, value) {
+func (x *fastReflection_MsgCommitteeSuspend) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgCommitteeSuspend_committee, value) {
+			return
+		}
+	}
+	if x.ExpectedTerm != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpectedTerm)
+		if !f(fd_MsgCommitteeSuspend_expected_term, value) {
 			return
 		}
 	}
 	if len(x.Addresses) != 0 {
-		value := protoreflect.ValueOfList(&_MsgSuspendMembers_2_list{list: &x.Addresses})
-		if !f(fd_MsgSuspendMembers_addresses, value) {
+		value := protoreflect.ValueOfList(&_MsgCommitteeSuspend_3_list{list: &x.Addresses})
+		if !f(fd_MsgCommitteeSuspend_addresses, value) {
 			return
 		}
 	}
@@ -5230,17 +6222,19 @@ func (x *fastReflection_MsgSuspendMembers) Range(f func(protoreflect.FieldDescri
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSuspendMembers) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeSuspend) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
-		return x.Registrar != ""
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
+		return x.Committee != ""
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		return x.ExpectedTerm != uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		return len(x.Addresses) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5250,17 +6244,19 @@ func (x *fastReflection_MsgSuspendMembers) Has(fd protoreflect.FieldDescriptor) 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembers) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeSuspend) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
-		x.Registrar = ""
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
+		x.Committee = ""
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		x.ExpectedTerm = uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		x.Addresses = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5270,22 +6266,25 @@ func (x *fastReflection_MsgSuspendMembers) Clear(fd protoreflect.FieldDescriptor
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSuspendMembers) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspend) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
-		value := x.Registrar
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
+		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		value := x.ExpectedTerm
+		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		if len(x.Addresses) == 0 {
-			return protoreflect.ValueOfList(&_MsgSuspendMembers_2_list{})
+			return protoreflect.ValueOfList(&_MsgCommitteeSuspend_3_list{})
 		}
-		listValue := &_MsgSuspendMembers_2_list{list: &x.Addresses}
+		listValue := &_MsgCommitteeSuspend_3_list{list: &x.Addresses}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -5299,19 +6298,21 @@ func (x *fastReflection_MsgSuspendMembers) Get(descriptor protoreflect.FieldDesc
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembers) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeSuspend) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
-		x.Registrar = value.Interface().(string)
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		x.ExpectedTerm = value.Uint()
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		lv := value.List()
-		clv := lv.(*_MsgSuspendMembers_2_list)
+		clv := lv.(*_MsgCommitteeSuspend_3_list)
 		x.Addresses = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5325,49 +6326,53 @@ func (x *fastReflection_MsgSuspendMembers) Set(fd protoreflect.FieldDescriptor, 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembers) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspend) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		if x.Addresses == nil {
 			x.Addresses = []string{}
 		}
-		value := &_MsgSuspendMembers_2_list{list: &x.Addresses}
+		value := &_MsgCommitteeSuspend_3_list{list: &x.Addresses}
 		return protoreflect.ValueOfList(value)
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
-		panic(fmt.Errorf("field registrar of message ark.disbursement.v1.MsgSuspendMembers is not mutable"))
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
+		panic(fmt.Errorf("field committee of message ark.disbursement.v1.MsgCommitteeSuspend is not mutable"))
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		panic(fmt.Errorf("field expected_term of message ark.disbursement.v1.MsgCommitteeSuspend is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSuspendMembers) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspend) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgSuspendMembers.registrar":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.MsgSuspendMembers.addresses":
+	case "ark.disbursement.v1.MsgCommitteeSuspend.expected_term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.MsgCommitteeSuspend.addresses":
 		list := []string{}
-		return protoreflect.ValueOfList(&_MsgSuspendMembers_2_list{list: &list})
+		return protoreflect.ValueOfList(&_MsgCommitteeSuspend_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembers"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspend"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembers does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspend does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSuspendMembers) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeSuspend) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgSuspendMembers", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeSuspend", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5375,7 +6380,7 @@ func (x *fastReflection_MsgSuspendMembers) WhichOneof(d protoreflect.OneofDescri
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSuspendMembers) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeSuspend) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5386,7 +6391,7 @@ func (x *fastReflection_MsgSuspendMembers) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembers) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeSuspend) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -5398,7 +6403,7 @@ func (x *fastReflection_MsgSuspendMembers) SetUnknown(fields protoreflect.RawFie
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSuspendMembers) IsValid() bool {
+func (x *fastReflection_MsgCommitteeSuspend) IsValid() bool {
 	return x != nil
 }
 
@@ -5408,9 +6413,9 @@ func (x *fastReflection_MsgSuspendMembers) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeSuspend) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSuspendMembers)
+		x := input.Message.Interface().(*MsgCommitteeSuspend)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5422,9 +6427,12 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Registrar)
+		l = len(x.Committee)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedTerm != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpectedTerm))
 		}
 		if len(x.Addresses) > 0 {
 			for _, s := range x.Addresses {
@@ -5442,7 +6450,7 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSuspendMembers)
+		x := input.Message.Interface().(*MsgCommitteeSuspend)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5467,13 +6475,18 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], x.Addresses[iNdEx])
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Addresses[iNdEx])))
 				i--
-				dAtA[i] = 0x12
+				dAtA[i] = 0x1a
 			}
 		}
-		if len(x.Registrar) > 0 {
-			i -= len(x.Registrar)
-			copy(dAtA[i:], x.Registrar)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Registrar)))
+		if x.ExpectedTerm != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedTerm))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -5488,7 +6501,7 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSuspendMembers)
+		x := input.Message.Interface().(*MsgCommitteeSuspend)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5520,15 +6533,15 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendMembers: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSuspend: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendMembers: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSuspend: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Registrar", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -5556,9 +6569,28 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Registrar = string(dAtA[iNdEx:postIndex])
+				x.Committee = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+				}
+				x.ExpectedTerm = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpectedTerm |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
 				}
@@ -5626,24 +6658,24 @@ func (x *fastReflection_MsgSuspendMembers) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgSuspendMembersResponse protoreflect.MessageDescriptor
+	md_MsgCommitteeSuspendResponse protoreflect.MessageDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
-	md_MsgSuspendMembersResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgSuspendMembersResponse")
+	md_MsgCommitteeSuspendResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeSuspendResponse")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSuspendMembersResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeSuspendResponse)(nil)
 
-type fastReflection_MsgSuspendMembersResponse MsgSuspendMembersResponse
+type fastReflection_MsgCommitteeSuspendResponse MsgCommitteeSuspendResponse
 
-func (x *MsgSuspendMembersResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSuspendMembersResponse)(x)
+func (x *MsgCommitteeSuspendResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSuspendResponse)(x)
 }
 
-func (x *MsgSuspendMembersResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[11]
+func (x *MsgCommitteeSuspendResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5654,43 +6686,43 @@ func (x *MsgSuspendMembersResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSuspendMembersResponse_messageType fastReflection_MsgSuspendMembersResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSuspendMembersResponse_messageType{}
+var _fastReflection_MsgCommitteeSuspendResponse_messageType fastReflection_MsgCommitteeSuspendResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeSuspendResponse_messageType{}
 
-type fastReflection_MsgSuspendMembersResponse_messageType struct{}
+type fastReflection_MsgCommitteeSuspendResponse_messageType struct{}
 
-func (x fastReflection_MsgSuspendMembersResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSuspendMembersResponse)(nil)
+func (x fastReflection_MsgCommitteeSuspendResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeSuspendResponse)(nil)
 }
-func (x fastReflection_MsgSuspendMembersResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSuspendMembersResponse)
+func (x fastReflection_MsgCommitteeSuspendResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSuspendResponse)
 }
-func (x fastReflection_MsgSuspendMembersResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSuspendMembersResponse
+func (x fastReflection_MsgCommitteeSuspendResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSuspendResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSuspendMembersResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSuspendMembersResponse
+func (x *fastReflection_MsgCommitteeSuspendResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeSuspendResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSuspendMembersResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSuspendMembersResponse_messageType
+func (x *fastReflection_MsgCommitteeSuspendResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeSuspendResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSuspendMembersResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgSuspendMembersResponse)
+func (x *fastReflection_MsgCommitteeSuspendResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeSuspendResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSuspendMembersResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgSuspendMembersResponse)(x)
+func (x *fastReflection_MsgCommitteeSuspendResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeSuspendResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -5698,7 +6730,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) Interface() protoreflect.Prot
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSuspendMembersResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 }
 
 // Has reports whether a field is populated.
@@ -5712,13 +6744,13 @@ func (x *fastReflection_MsgSuspendMembersResponse) Range(f func(protoreflect.Fie
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSuspendMembersResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5728,13 +6760,13 @@ func (x *fastReflection_MsgSuspendMembersResponse) Has(fd protoreflect.FieldDesc
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembersResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5744,13 +6776,13 @@ func (x *fastReflection_MsgSuspendMembersResponse) Clear(fd protoreflect.FieldDe
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSuspendMembersResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -5764,13 +6796,13 @@ func (x *fastReflection_MsgSuspendMembersResponse) Get(descriptor protoreflect.F
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembersResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -5784,36 +6816,36 @@ func (x *fastReflection_MsgSuspendMembersResponse) Set(fd protoreflect.FieldDesc
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembersResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspendResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSuspendMembersResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgCommitteeSuspendResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgSuspendMembersResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeSuspendResponse"))
 		}
-		panic(fmt.Errorf("message ark.disbursement.v1.MsgSuspendMembersResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeSuspendResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSuspendMembersResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgCommitteeSuspendResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgSuspendMembersResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeSuspendResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5821,7 +6853,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) WhichOneof(d protoreflect.One
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSuspendMembersResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgCommitteeSuspendResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5832,7 +6864,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) GetUnknown() protoreflect.Raw
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSuspendMembersResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgCommitteeSuspendResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -5844,7 +6876,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) SetUnknown(fields protoreflec
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSuspendMembersResponse) IsValid() bool {
+func (x *fastReflection_MsgCommitteeSuspendResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -5854,9 +6886,9 @@ func (x *fastReflection_MsgSuspendMembersResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSuspendMembersResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgCommitteeSuspendResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSuspendMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeSuspendResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5878,7 +6910,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) ProtoMethods() *protoiface.Me
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSuspendMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeSuspendResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5908,7 +6940,7 @@ func (x *fastReflection_MsgSuspendMembersResponse) ProtoMethods() *protoiface.Me
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSuspendMembersResponse)
+		x := input.Message.Interface().(*MsgCommitteeSuspendResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5940,10 +6972,958 @@ func (x *fastReflection_MsgSuspendMembersResponse) ProtoMethods() *protoiface.Me
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendMembersResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSuspendResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSuspendMembersResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeSuspendResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var _ protoreflect.List = (*_MsgCommitteeReinstate_3_list)(nil)
+
+type _MsgCommitteeReinstate_3_list struct {
+	list *[]string
+}
+
+func (x *_MsgCommitteeReinstate_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_MsgCommitteeReinstate_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfString((*x.list)[i])
+}
+
+func (x *_MsgCommitteeReinstate_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_MsgCommitteeReinstate_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.String()
+	concreteValue := valueUnwrapped
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_MsgCommitteeReinstate_3_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message MsgCommitteeReinstate at list field Addresses as it is not of Message kind"))
+}
+
+func (x *_MsgCommitteeReinstate_3_list) Truncate(n int) {
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_MsgCommitteeReinstate_3_list) NewElement() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_MsgCommitteeReinstate_3_list) IsValid() bool {
+	return x.list != nil
+}
+
+var (
+	md_MsgCommitteeReinstate               protoreflect.MessageDescriptor
+	fd_MsgCommitteeReinstate_committee     protoreflect.FieldDescriptor
+	fd_MsgCommitteeReinstate_expected_term protoreflect.FieldDescriptor
+	fd_MsgCommitteeReinstate_addresses     protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_disbursement_v1_tx_proto_init()
+	md_MsgCommitteeReinstate = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeReinstate")
+	fd_MsgCommitteeReinstate_committee = md_MsgCommitteeReinstate.Fields().ByName("committee")
+	fd_MsgCommitteeReinstate_expected_term = md_MsgCommitteeReinstate.Fields().ByName("expected_term")
+	fd_MsgCommitteeReinstate_addresses = md_MsgCommitteeReinstate.Fields().ByName("addresses")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeReinstate)(nil)
+
+type fastReflection_MsgCommitteeReinstate MsgCommitteeReinstate
+
+func (x *MsgCommitteeReinstate) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeReinstate)(x)
+}
+
+func (x *MsgCommitteeReinstate) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgCommitteeReinstate_messageType fastReflection_MsgCommitteeReinstate_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeReinstate_messageType{}
+
+type fastReflection_MsgCommitteeReinstate_messageType struct{}
+
+func (x fastReflection_MsgCommitteeReinstate_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeReinstate)(nil)
+}
+func (x fastReflection_MsgCommitteeReinstate_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeReinstate)
+}
+func (x fastReflection_MsgCommitteeReinstate_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeReinstate
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgCommitteeReinstate) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeReinstate
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgCommitteeReinstate) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeReinstate_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgCommitteeReinstate) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeReinstate)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgCommitteeReinstate) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeReinstate)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgCommitteeReinstate) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Committee != "" {
+		value := protoreflect.ValueOfString(x.Committee)
+		if !f(fd_MsgCommitteeReinstate_committee, value) {
+			return
+		}
+	}
+	if x.ExpectedTerm != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpectedTerm)
+		if !f(fd_MsgCommitteeReinstate_expected_term, value) {
+			return
+		}
+	}
+	if len(x.Addresses) != 0 {
+		value := protoreflect.ValueOfList(&_MsgCommitteeReinstate_3_list{list: &x.Addresses})
+		if !f(fd_MsgCommitteeReinstate_addresses, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgCommitteeReinstate) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		return x.Committee != ""
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		return x.ExpectedTerm != uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		return len(x.Addresses) != 0
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstate) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		x.Committee = ""
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		x.ExpectedTerm = uint64(0)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		x.Addresses = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgCommitteeReinstate) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		value := x.Committee
+		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		value := x.ExpectedTerm
+		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		if len(x.Addresses) == 0 {
+			return protoreflect.ValueOfList(&_MsgCommitteeReinstate_3_list{})
+		}
+		listValue := &_MsgCommitteeReinstate_3_list{list: &x.Addresses}
+		return protoreflect.ValueOfList(listValue)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstate) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		x.Committee = value.Interface().(string)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		x.ExpectedTerm = value.Uint()
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		lv := value.List()
+		clv := lv.(*_MsgCommitteeReinstate_3_list)
+		x.Addresses = *clv.list
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstate) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		if x.Addresses == nil {
+			x.Addresses = []string{}
+		}
+		value := &_MsgCommitteeReinstate_3_list{list: &x.Addresses}
+		return protoreflect.ValueOfList(value)
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		panic(fmt.Errorf("field committee of message ark.disbursement.v1.MsgCommitteeReinstate is not mutable"))
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		panic(fmt.Errorf("field expected_term of message ark.disbursement.v1.MsgCommitteeReinstate is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgCommitteeReinstate) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.disbursement.v1.MsgCommitteeReinstate.committee":
+		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.MsgCommitteeReinstate.expected_term":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.MsgCommitteeReinstate.addresses":
+		list := []string{}
+		return protoreflect.ValueOfList(&_MsgCommitteeReinstate_3_list{list: &list})
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstate"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstate does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgCommitteeReinstate) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeReinstate", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgCommitteeReinstate) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstate) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgCommitteeReinstate) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgCommitteeReinstate) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgCommitteeReinstate)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Committee)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedTerm != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpectedTerm))
+		}
+		if len(x.Addresses) > 0 {
+			for _, s := range x.Addresses {
+				l = len(s)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCommitteeReinstate)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.Addresses) > 0 {
+			for iNdEx := len(x.Addresses) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.Addresses[iNdEx])
+				copy(dAtA[i:], x.Addresses[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Addresses[iNdEx])))
+				i--
+				dAtA[i] = 0x1a
+			}
+		}
+		if x.ExpectedTerm != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpectedTerm))
+			i--
+			dAtA[i] = 0x10
+		}
+		if len(x.Committee) > 0 {
+			i -= len(x.Committee)
+			copy(dAtA[i:], x.Committee)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Committee)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCommitteeReinstate)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeReinstate: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeReinstate: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Committee", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Committee = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedTerm", wireType)
+				}
+				x.ExpectedTerm = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ExpectedTerm |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Addresses", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Addresses = append(x.Addresses, string(dAtA[iNdEx:postIndex]))
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgCommitteeReinstateResponse protoreflect.MessageDescriptor
+)
+
+func init() {
+	file_ark_disbursement_v1_tx_proto_init()
+	md_MsgCommitteeReinstateResponse = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgCommitteeReinstateResponse")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgCommitteeReinstateResponse)(nil)
+
+type fastReflection_MsgCommitteeReinstateResponse MsgCommitteeReinstateResponse
+
+func (x *MsgCommitteeReinstateResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeReinstateResponse)(x)
+}
+
+func (x *MsgCommitteeReinstateResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgCommitteeReinstateResponse_messageType fastReflection_MsgCommitteeReinstateResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgCommitteeReinstateResponse_messageType{}
+
+type fastReflection_MsgCommitteeReinstateResponse_messageType struct{}
+
+func (x fastReflection_MsgCommitteeReinstateResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgCommitteeReinstateResponse)(nil)
+}
+func (x fastReflection_MsgCommitteeReinstateResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeReinstateResponse)
+}
+func (x fastReflection_MsgCommitteeReinstateResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeReinstateResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgCommitteeReinstateResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgCommitteeReinstateResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgCommitteeReinstateResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgCommitteeReinstateResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgCommitteeReinstateResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstateResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgCommitteeReinstateResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgCommitteeReinstateResponse"))
+		}
+		panic(fmt.Errorf("message ark.disbursement.v1.MsgCommitteeReinstateResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgCommitteeReinstateResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.disbursement.v1.MsgCommitteeReinstateResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgCommitteeReinstateResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgCommitteeReinstateResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgCommitteeReinstateResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgCommitteeReinstateResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgCommitteeReinstateResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCommitteeReinstateResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgCommitteeReinstateResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeReinstateResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgCommitteeReinstateResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			default:
@@ -6029,14 +8009,14 @@ func (x *_MsgReinstateMembers_2_list) IsValid() bool {
 
 var (
 	md_MsgReinstateMembers           protoreflect.MessageDescriptor
-	fd_MsgReinstateMembers_sender    protoreflect.FieldDescriptor
+	fd_MsgReinstateMembers_authority protoreflect.FieldDescriptor
 	fd_MsgReinstateMembers_addresses protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
 	md_MsgReinstateMembers = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgReinstateMembers")
-	fd_MsgReinstateMembers_sender = md_MsgReinstateMembers.Fields().ByName("sender")
+	fd_MsgReinstateMembers_authority = md_MsgReinstateMembers.Fields().ByName("authority")
 	fd_MsgReinstateMembers_addresses = md_MsgReinstateMembers.Fields().ByName("addresses")
 }
 
@@ -6049,7 +8029,7 @@ func (x *MsgReinstateMembers) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgReinstateMembers) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[12]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6105,9 +8085,9 @@ func (x *fastReflection_MsgReinstateMembers) Interface() protoreflect.ProtoMessa
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_MsgReinstateMembers) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Sender != "" {
-		value := protoreflect.ValueOfString(x.Sender)
-		if !f(fd_MsgReinstateMembers_sender, value) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgReinstateMembers_authority, value) {
 			return
 		}
 	}
@@ -6132,8 +8112,8 @@ func (x *fastReflection_MsgReinstateMembers) Range(f func(protoreflect.FieldDesc
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_MsgReinstateMembers) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
-		return x.Sender != ""
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
+		return x.Authority != ""
 	case "ark.disbursement.v1.MsgReinstateMembers.addresses":
 		return len(x.Addresses) != 0
 	default:
@@ -6152,8 +8132,8 @@ func (x *fastReflection_MsgReinstateMembers) Has(fd protoreflect.FieldDescriptor
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgReinstateMembers) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
-		x.Sender = ""
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
+		x.Authority = ""
 	case "ark.disbursement.v1.MsgReinstateMembers.addresses":
 		x.Addresses = nil
 	default:
@@ -6172,8 +8152,8 @@ func (x *fastReflection_MsgReinstateMembers) Clear(fd protoreflect.FieldDescript
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_MsgReinstateMembers) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
-		value := x.Sender
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
+		value := x.Authority
 		return protoreflect.ValueOfString(value)
 	case "ark.disbursement.v1.MsgReinstateMembers.addresses":
 		if len(x.Addresses) == 0 {
@@ -6201,8 +8181,8 @@ func (x *fastReflection_MsgReinstateMembers) Get(descriptor protoreflect.FieldDe
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_MsgReinstateMembers) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
-		x.Sender = value.Interface().(string)
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
+		x.Authority = value.Interface().(string)
 	case "ark.disbursement.v1.MsgReinstateMembers.addresses":
 		lv := value.List()
 		clv := lv.(*_MsgReinstateMembers_2_list)
@@ -6233,8 +8213,8 @@ func (x *fastReflection_MsgReinstateMembers) Mutable(fd protoreflect.FieldDescri
 		}
 		value := &_MsgReinstateMembers_2_list{list: &x.Addresses}
 		return protoreflect.ValueOfList(value)
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
-		panic(fmt.Errorf("field sender of message ark.disbursement.v1.MsgReinstateMembers is not mutable"))
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
+		panic(fmt.Errorf("field authority of message ark.disbursement.v1.MsgReinstateMembers is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgReinstateMembers"))
@@ -6248,7 +8228,7 @@ func (x *fastReflection_MsgReinstateMembers) Mutable(fd protoreflect.FieldDescri
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_MsgReinstateMembers) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.MsgReinstateMembers.sender":
+	case "ark.disbursement.v1.MsgReinstateMembers.authority":
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.MsgReinstateMembers.addresses":
 		list := []string{}
@@ -6322,7 +8302,7 @@ func (x *fastReflection_MsgReinstateMembers) ProtoMethods() *protoiface.Methods 
 		var n int
 		var l int
 		_ = l
-		l = len(x.Sender)
+		l = len(x.Authority)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -6370,10 +8350,10 @@ func (x *fastReflection_MsgReinstateMembers) ProtoMethods() *protoiface.Methods 
 				dAtA[i] = 0x12
 			}
 		}
-		if len(x.Sender) > 0 {
-			i -= len(x.Sender)
-			copy(dAtA[i:], x.Sender)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Sender)))
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -6428,7 +8408,7 @@ func (x *fastReflection_MsgReinstateMembers) ProtoMethods() *protoiface.Methods 
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -6456,7 +8436,7 @@ func (x *fastReflection_MsgReinstateMembers) ProtoMethods() *protoiface.Methods 
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Sender = string(dAtA[iNdEx:postIndex])
+				x.Authority = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
@@ -6543,7 +8523,7 @@ func (x *MsgReinstateMembersResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgReinstateMembersResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[13]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6884,14 +8864,14 @@ func (x *fastReflection_MsgReinstateMembersResponse) ProtoMethods() *protoiface.
 var (
 	md_MsgVoidSuspensions           protoreflect.MessageDescriptor
 	fd_MsgVoidSuspensions_authority protoreflect.FieldDescriptor
-	fd_MsgVoidSuspensions_registrar protoreflect.FieldDescriptor
+	fd_MsgVoidSuspensions_term      protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_tx_proto_init()
 	md_MsgVoidSuspensions = File_ark_disbursement_v1_tx_proto.Messages().ByName("MsgVoidSuspensions")
 	fd_MsgVoidSuspensions_authority = md_MsgVoidSuspensions.Fields().ByName("authority")
-	fd_MsgVoidSuspensions_registrar = md_MsgVoidSuspensions.Fields().ByName("registrar")
+	fd_MsgVoidSuspensions_term = md_MsgVoidSuspensions.Fields().ByName("term")
 }
 
 var _ protoreflect.Message = (*fastReflection_MsgVoidSuspensions)(nil)
@@ -6903,7 +8883,7 @@ func (x *MsgVoidSuspensions) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgVoidSuspensions) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[14]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6965,9 +8945,9 @@ func (x *fastReflection_MsgVoidSuspensions) Range(f func(protoreflect.FieldDescr
 			return
 		}
 	}
-	if x.Registrar != "" {
-		value := protoreflect.ValueOfString(x.Registrar)
-		if !f(fd_MsgVoidSuspensions_registrar, value) {
+	if x.Term != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Term)
+		if !f(fd_MsgVoidSuspensions_term, value) {
 			return
 		}
 	}
@@ -6988,8 +8968,8 @@ func (x *fastReflection_MsgVoidSuspensions) Has(fd protoreflect.FieldDescriptor)
 	switch fd.FullName() {
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		return x.Authority != ""
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		return x.Registrar != ""
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		return x.Term != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7008,8 +8988,8 @@ func (x *fastReflection_MsgVoidSuspensions) Clear(fd protoreflect.FieldDescripto
 	switch fd.FullName() {
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		x.Authority = ""
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		x.Registrar = ""
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		x.Term = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7029,9 +9009,9 @@ func (x *fastReflection_MsgVoidSuspensions) Get(descriptor protoreflect.FieldDes
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		value := x.Authority
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		value := x.Registrar
-		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		value := x.Term
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7054,8 +9034,8 @@ func (x *fastReflection_MsgVoidSuspensions) Set(fd protoreflect.FieldDescriptor,
 	switch fd.FullName() {
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		x.Authority = value.Interface().(string)
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		x.Registrar = value.Interface().(string)
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		x.Term = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7078,8 +9058,8 @@ func (x *fastReflection_MsgVoidSuspensions) Mutable(fd protoreflect.FieldDescrip
 	switch fd.FullName() {
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		panic(fmt.Errorf("field authority of message ark.disbursement.v1.MsgVoidSuspensions is not mutable"))
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		panic(fmt.Errorf("field registrar of message ark.disbursement.v1.MsgVoidSuspensions is not mutable"))
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		panic(fmt.Errorf("field term of message ark.disbursement.v1.MsgVoidSuspensions is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7095,8 +9075,8 @@ func (x *fastReflection_MsgVoidSuspensions) NewField(fd protoreflect.FieldDescri
 	switch fd.FullName() {
 	case "ark.disbursement.v1.MsgVoidSuspensions.authority":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.MsgVoidSuspensions.registrar":
-		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.MsgVoidSuspensions.term":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.MsgVoidSuspensions"))
@@ -7170,9 +9150,8 @@ func (x *fastReflection_MsgVoidSuspensions) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.Registrar)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if x.Term != 0 {
+			n += 1 + runtime.Sov(uint64(x.Term))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -7203,12 +9182,10 @@ func (x *fastReflection_MsgVoidSuspensions) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Registrar) > 0 {
-			i -= len(x.Registrar)
-			copy(dAtA[i:], x.Registrar)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Registrar)))
+		if x.Term != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.Term))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x10
 		}
 		if len(x.Authority) > 0 {
 			i -= len(x.Authority)
@@ -7299,10 +9276,10 @@ func (x *fastReflection_MsgVoidSuspensions) ProtoMethods() *protoiface.Methods {
 				x.Authority = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Registrar", wireType)
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
 				}
-				var stringLen uint64
+				x.Term = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -7312,24 +9289,11 @@ func (x *fastReflection_MsgVoidSuspensions) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					x.Term |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Registrar = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -7383,7 +9347,7 @@ func (x *MsgVoidSuspensionsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgVoidSuspensionsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[15]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7745,7 +9709,7 @@ func (x *MsgSetPayee) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSetPayee) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[16]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8271,7 +10235,7 @@ func (x *MsgSetPayeeResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSetPayeeResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[17]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8633,7 +10597,7 @@ func (x *MsgSetController) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSetController) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[18]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9175,7 +11139,7 @@ func (x *MsgSetControllerResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSetControllerResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[19]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9535,7 +11499,7 @@ func (x *MsgReturnUnallocated) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgReturnUnallocated) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[20]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10030,7 +11994,7 @@ func (x *MsgReturnUnallocatedResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgReturnUnallocatedResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[21]
+	mi := &file_ark_disbursement_v1_tx_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10452,6 +12416,95 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
+// MsgSetRegistrarMandate appoints, replaces, or disables the registrar. An empty committee
+// disables; the chain derives the next term.
+type MsgSetRegistrarMandate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// committee is the exact appointed account, empty to disable.
+	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
+	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+}
+
+func (x *MsgSetRegistrarMandate) Reset() {
+	*x = MsgSetRegistrarMandate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetRegistrarMandate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetRegistrarMandate) ProtoMessage() {}
+
+// Deprecated: Use MsgSetRegistrarMandate.ProtoReflect.Descriptor instead.
+func (*MsgSetRegistrarMandate) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MsgSetRegistrarMandate) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgSetRegistrarMandate) GetCommittee() string {
+	if x != nil {
+		return x.Committee
+	}
+	return ""
+}
+
+func (x *MsgSetRegistrarMandate) GetActivationHeight() uint64 {
+	if x != nil {
+		return x.ActivationHeight
+	}
+	return 0
+}
+
+func (x *MsgSetRegistrarMandate) GetExpiryHeight() uint64 {
+	if x != nil {
+		return x.ExpiryHeight
+	}
+	return 0
+}
+
+// MsgSetRegistrarMandateResponse reports the result of SetRegistrarMandate.
+type MsgSetRegistrarMandateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgSetRegistrarMandateResponse) Reset() {
+	*x = MsgSetRegistrarMandateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgSetRegistrarMandateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgSetRegistrarMandateResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgSetRegistrarMandateResponse.ProtoReflect.Descriptor instead.
+func (*MsgSetRegistrarMandateResponse) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{3}
+}
+
 // MsgCreateGrant reserves a fully funded ownership or compensation award under governance authority.
 type MsgCreateGrant struct {
 	state         protoimpl.MessageState
@@ -10469,7 +12522,7 @@ type MsgCreateGrant struct {
 func (x *MsgCreateGrant) Reset() {
 	*x = MsgCreateGrant{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[2]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10483,7 +12536,7 @@ func (*MsgCreateGrant) ProtoMessage() {}
 
 // Deprecated: Use MsgCreateGrant.ProtoReflect.Descriptor instead.
 func (*MsgCreateGrant) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{2}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MsgCreateGrant) GetAuthority() string {
@@ -10540,7 +12593,7 @@ type MsgCreateGrantResponse struct {
 func (x *MsgCreateGrantResponse) Reset() {
 	*x = MsgCreateGrantResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[3]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10554,7 +12607,7 @@ func (*MsgCreateGrantResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgCreateGrantResponse.ProtoReflect.Descriptor instead.
 func (*MsgCreateGrantResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{3}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MsgCreateGrantResponse) GetGrantId() uint64 {
@@ -10564,52 +12617,60 @@ func (x *MsgCreateGrantResponse) GetGrantId() uint64 {
 	return 0
 }
 
-// MsgRegisterMembers permanently registers members and pays their first period atomically.
-type MsgRegisterMembers struct {
+// MsgCommitteeRegister permanently registers members and pays their first period atomically.
+type MsgCommitteeRegister struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Registrar string   `protobuf:"bytes,1,opt,name=registrar,proto3" json:"registrar,omitempty"`
-	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	Committee    string   `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	ExpectedTerm uint64   `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+	Addresses    []string `protobuf:"bytes,3,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
 
-func (x *MsgRegisterMembers) Reset() {
-	*x = MsgRegisterMembers{}
+func (x *MsgCommitteeRegister) Reset() {
+	*x = MsgCommitteeRegister{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[4]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgRegisterMembers) String() string {
+func (x *MsgCommitteeRegister) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgRegisterMembers) ProtoMessage() {}
+func (*MsgCommitteeRegister) ProtoMessage() {}
 
-// Deprecated: Use MsgRegisterMembers.ProtoReflect.Descriptor instead.
-func (*MsgRegisterMembers) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use MsgCommitteeRegister.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeRegister) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *MsgRegisterMembers) GetRegistrar() string {
+func (x *MsgCommitteeRegister) GetCommittee() string {
 	if x != nil {
-		return x.Registrar
+		return x.Committee
 	}
 	return ""
 }
 
-func (x *MsgRegisterMembers) GetAddresses() []string {
+func (x *MsgCommitteeRegister) GetExpectedTerm() uint64 {
+	if x != nil {
+		return x.ExpectedTerm
+	}
+	return 0
+}
+
+func (x *MsgCommitteeRegister) GetAddresses() []string {
 	if x != nil {
 		return x.Addresses
 	}
 	return nil
 }
 
-// MsgRegisterMembersResponse reports the result of RegisterMembers.
-type MsgRegisterMembersResponse struct {
+// MsgCommitteeRegisterResponse reports the result of CommitteeRegister.
+type MsgCommitteeRegisterResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -10617,27 +12678,27 @@ type MsgRegisterMembersResponse struct {
 	GrantIds []uint64 `protobuf:"varint,1,rep,packed,name=grant_ids,json=grantIds,proto3" json:"grant_ids,omitempty"`
 }
 
-func (x *MsgRegisterMembersResponse) Reset() {
-	*x = MsgRegisterMembersResponse{}
+func (x *MsgCommitteeRegisterResponse) Reset() {
+	*x = MsgCommitteeRegisterResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[5]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgRegisterMembersResponse) String() string {
+func (x *MsgCommitteeRegisterResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgRegisterMembersResponse) ProtoMessage() {}
+func (*MsgCommitteeRegisterResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgRegisterMembersResponse.ProtoReflect.Descriptor instead.
-func (*MsgRegisterMembersResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{5}
+// Deprecated: Use MsgCommitteeRegisterResponse.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeRegisterResponse) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *MsgRegisterMembersResponse) GetGrantIds() []uint64 {
+func (x *MsgCommitteeRegisterResponse) GetGrantIds() []uint64 {
 	if x != nil {
 		return x.GrantIds
 	}
@@ -10657,7 +12718,7 @@ type MsgRelease struct {
 func (x *MsgRelease) Reset() {
 	*x = MsgRelease{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[6]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10671,7 +12732,7 @@ func (*MsgRelease) ProtoMessage() {}
 
 // Deprecated: Use MsgRelease.ProtoReflect.Descriptor instead.
 func (*MsgRelease) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{6}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *MsgRelease) GetSender() string {
@@ -10698,7 +12759,7 @@ type MsgReleaseResponse struct {
 func (x *MsgReleaseResponse) Reset() {
 	*x = MsgReleaseResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[7]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10712,7 +12773,7 @@ func (*MsgReleaseResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgReleaseResponse.ProtoReflect.Descriptor instead.
 func (*MsgReleaseResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{7}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{9}
 }
 
 // MsgCancelGrants freezes earned debt and frees only unearned principal without paying recipients.
@@ -10728,7 +12789,7 @@ type MsgCancelGrants struct {
 func (x *MsgCancelGrants) Reset() {
 	*x = MsgCancelGrants{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[8]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10742,7 +12803,7 @@ func (*MsgCancelGrants) ProtoMessage() {}
 
 // Deprecated: Use MsgCancelGrants.ProtoReflect.Descriptor instead.
 func (*MsgCancelGrants) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{8}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MsgCancelGrants) GetAuthority() string {
@@ -10769,7 +12830,7 @@ type MsgCancelGrantsResponse struct {
 func (x *MsgCancelGrantsResponse) Reset() {
 	*x = MsgCancelGrantsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[9]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10783,94 +12844,181 @@ func (*MsgCancelGrantsResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgCancelGrantsResponse.ProtoReflect.Descriptor instead.
 func (*MsgCancelGrantsResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{9}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{11}
 }
 
-// MsgSuspendMembers pauses member payments under the current registrar.
-type MsgSuspendMembers struct {
+// MsgCommitteeSuspend pauses member payments under the live registrar term.
+type MsgCommitteeSuspend struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Registrar string   `protobuf:"bytes,1,opt,name=registrar,proto3" json:"registrar,omitempty"`
-	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	Committee    string   `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	ExpectedTerm uint64   `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+	Addresses    []string `protobuf:"bytes,3,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
 
-func (x *MsgSuspendMembers) Reset() {
-	*x = MsgSuspendMembers{}
+func (x *MsgCommitteeSuspend) Reset() {
+	*x = MsgCommitteeSuspend{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[10]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgSuspendMembers) String() string {
+func (x *MsgCommitteeSuspend) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSuspendMembers) ProtoMessage() {}
+func (*MsgCommitteeSuspend) ProtoMessage() {}
 
-// Deprecated: Use MsgSuspendMembers.ProtoReflect.Descriptor instead.
-func (*MsgSuspendMembers) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{10}
+// Deprecated: Use MsgCommitteeSuspend.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeSuspend) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *MsgSuspendMembers) GetRegistrar() string {
+func (x *MsgCommitteeSuspend) GetCommittee() string {
 	if x != nil {
-		return x.Registrar
+		return x.Committee
 	}
 	return ""
 }
 
-func (x *MsgSuspendMembers) GetAddresses() []string {
+func (x *MsgCommitteeSuspend) GetExpectedTerm() uint64 {
+	if x != nil {
+		return x.ExpectedTerm
+	}
+	return 0
+}
+
+func (x *MsgCommitteeSuspend) GetAddresses() []string {
 	if x != nil {
 		return x.Addresses
 	}
 	return nil
 }
 
-// MsgSuspendMembersResponse reports the result of SuspendMembers.
-type MsgSuspendMembersResponse struct {
+// MsgCommitteeSuspendResponse reports the result of CommitteeSuspend.
+type MsgCommitteeSuspendResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *MsgSuspendMembersResponse) Reset() {
-	*x = MsgSuspendMembersResponse{}
+func (x *MsgCommitteeSuspendResponse) Reset() {
+	*x = MsgCommitteeSuspendResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[11]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
 }
 
-func (x *MsgSuspendMembersResponse) String() string {
+func (x *MsgCommitteeSuspendResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSuspendMembersResponse) ProtoMessage() {}
+func (*MsgCommitteeSuspendResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgSuspendMembersResponse.ProtoReflect.Descriptor instead.
-func (*MsgSuspendMembersResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{11}
+// Deprecated: Use MsgCommitteeSuspendResponse.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeSuspendResponse) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{13}
 }
 
-// MsgReinstateMembers resumes suspended members under registrar or governance authority.
+// MsgCommitteeReinstate resumes suspended members under the live registrar term.
+type MsgCommitteeReinstate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Committee    string   `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
+	ExpectedTerm uint64   `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
+	Addresses    []string `protobuf:"bytes,3,rep,name=addresses,proto3" json:"addresses,omitempty"`
+}
+
+func (x *MsgCommitteeReinstate) Reset() {
+	*x = MsgCommitteeReinstate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgCommitteeReinstate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCommitteeReinstate) ProtoMessage() {}
+
+// Deprecated: Use MsgCommitteeReinstate.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeReinstate) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *MsgCommitteeReinstate) GetCommittee() string {
+	if x != nil {
+		return x.Committee
+	}
+	return ""
+}
+
+func (x *MsgCommitteeReinstate) GetExpectedTerm() uint64 {
+	if x != nil {
+		return x.ExpectedTerm
+	}
+	return 0
+}
+
+func (x *MsgCommitteeReinstate) GetAddresses() []string {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+// MsgCommitteeReinstateResponse reports the result of CommitteeReinstate.
+type MsgCommitteeReinstateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *MsgCommitteeReinstateResponse) Reset() {
+	*x = MsgCommitteeReinstateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgCommitteeReinstateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgCommitteeReinstateResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgCommitteeReinstateResponse.ProtoReflect.Descriptor instead.
+func (*MsgCommitteeReinstateResponse) Descriptor() ([]byte, []int) {
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{15}
+}
+
+// MsgReinstateMembers resumes suspended members under governance authority.
 type MsgReinstateMembers struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Sender    string   `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty"`
+	Authority string   `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
 
 func (x *MsgReinstateMembers) Reset() {
 	*x = MsgReinstateMembers{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[12]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10884,12 +13032,12 @@ func (*MsgReinstateMembers) ProtoMessage() {}
 
 // Deprecated: Use MsgReinstateMembers.ProtoReflect.Descriptor instead.
 func (*MsgReinstateMembers) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{12}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *MsgReinstateMembers) GetSender() string {
+func (x *MsgReinstateMembers) GetAuthority() string {
 	if x != nil {
-		return x.Sender
+		return x.Authority
 	}
 	return ""
 }
@@ -10911,7 +13059,7 @@ type MsgReinstateMembersResponse struct {
 func (x *MsgReinstateMembersResponse) Reset() {
 	*x = MsgReinstateMembersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[13]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10925,23 +13073,24 @@ func (*MsgReinstateMembersResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgReinstateMembersResponse.ProtoReflect.Descriptor instead.
 func (*MsgReinstateMembersResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{13}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
-// MsgVoidSuspensions increments a registrar epoch to invalidate all earlier suspensions.
+// MsgVoidSuspensions invalidates every suspension made under a replaced registrar term.
 type MsgVoidSuspensions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Registrar string `protobuf:"bytes,2,opt,name=registrar,proto3" json:"registrar,omitempty"`
+	// term is a registrar term below the current one.
+	Term uint64 `protobuf:"varint,2,opt,name=term,proto3" json:"term,omitempty"`
 }
 
 func (x *MsgVoidSuspensions) Reset() {
 	*x = MsgVoidSuspensions{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[14]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10955,7 +13104,7 @@ func (*MsgVoidSuspensions) ProtoMessage() {}
 
 // Deprecated: Use MsgVoidSuspensions.ProtoReflect.Descriptor instead.
 func (*MsgVoidSuspensions) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{14}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MsgVoidSuspensions) GetAuthority() string {
@@ -10965,11 +13114,11 @@ func (x *MsgVoidSuspensions) GetAuthority() string {
 	return ""
 }
 
-func (x *MsgVoidSuspensions) GetRegistrar() string {
+func (x *MsgVoidSuspensions) GetTerm() uint64 {
 	if x != nil {
-		return x.Registrar
+		return x.Term
 	}
-	return ""
+	return 0
 }
 
 // MsgVoidSuspensionsResponse reports the result of VoidSuspensions.
@@ -10982,7 +13131,7 @@ type MsgVoidSuspensionsResponse struct {
 func (x *MsgVoidSuspensionsResponse) Reset() {
 	*x = MsgVoidSuspensionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[15]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10996,7 +13145,7 @@ func (*MsgVoidSuspensionsResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgVoidSuspensionsResponse.ProtoReflect.Descriptor instead.
 func (*MsgVoidSuspensionsResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{15}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{19}
 }
 
 // MsgSetPayee changes a destination under member or contributor controller authority.
@@ -11013,7 +13162,7 @@ type MsgSetPayee struct {
 func (x *MsgSetPayee) Reset() {
 	*x = MsgSetPayee{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[16]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11027,7 +13176,7 @@ func (*MsgSetPayee) ProtoMessage() {}
 
 // Deprecated: Use MsgSetPayee.ProtoReflect.Descriptor instead.
 func (*MsgSetPayee) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{16}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *MsgSetPayee) GetSender() string {
@@ -11061,7 +13210,7 @@ type MsgSetPayeeResponse struct {
 func (x *MsgSetPayeeResponse) Reset() {
 	*x = MsgSetPayeeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[17]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11075,7 +13224,7 @@ func (*MsgSetPayeeResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgSetPayeeResponse.ProtoReflect.Descriptor instead.
 func (*MsgSetPayeeResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{17}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{21}
 }
 
 // MsgSetController rotates contributor control without changing beneficiary identity.
@@ -11092,7 +13241,7 @@ type MsgSetController struct {
 func (x *MsgSetController) Reset() {
 	*x = MsgSetController{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[18]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11106,7 +13255,7 @@ func (*MsgSetController) ProtoMessage() {}
 
 // Deprecated: Use MsgSetController.ProtoReflect.Descriptor instead.
 func (*MsgSetController) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{18}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *MsgSetController) GetSender() string {
@@ -11140,7 +13289,7 @@ type MsgSetControllerResponse struct {
 func (x *MsgSetControllerResponse) Reset() {
 	*x = MsgSetControllerResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[19]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11154,7 +13303,7 @@ func (*MsgSetControllerResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgSetControllerResponse.ProtoReflect.Descriptor instead.
 func (*MsgSetControllerResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{19}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{23}
 }
 
 // MsgReturnUnallocated returns unreserved custody to the community pool under governance authority.
@@ -11170,7 +13319,7 @@ type MsgReturnUnallocated struct {
 func (x *MsgReturnUnallocated) Reset() {
 	*x = MsgReturnUnallocated{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[20]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11184,7 +13333,7 @@ func (*MsgReturnUnallocated) ProtoMessage() {}
 
 // Deprecated: Use MsgReturnUnallocated.ProtoReflect.Descriptor instead.
 func (*MsgReturnUnallocated) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{20}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *MsgReturnUnallocated) GetAuthority() string {
@@ -11211,7 +13360,7 @@ type MsgReturnUnallocatedResponse struct {
 func (x *MsgReturnUnallocatedResponse) Reset() {
 	*x = MsgReturnUnallocatedResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[21]
+		mi := &file_ark_disbursement_v1_tx_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11225,7 +13374,7 @@ func (*MsgReturnUnallocatedResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgReturnUnallocatedResponse.ProtoReflect.Descriptor instead.
 func (*MsgReturnUnallocatedResponse) Descriptor() ([]byte, []int) {
-	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{21}
+	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{25}
 }
 
 var File_ark_disbursement_v1_tx_proto protoreflect.FileDescriptor
@@ -11258,244 +13407,302 @@ var file_ark_disbursement_v1_tx_proto_rawDesc = []byte{
 	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64,
 	0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67,
 	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x8c, 0x03, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61,
-	0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
-	0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12,
-	0x32, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1e, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x4b, 0x69, 0x6e, 0x64, 0x52, 0x04, 0x6b,
-	0x69, 0x6e, 0x64, 0x12, 0x3a, 0x0a, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61,
-	0x72, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12,
-	0x3c, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x42, 0x0a,
-	0x08, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x42, 0x09, 0xc8, 0xde,
-	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c,
-	0x65, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x06,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x3a,
-	0x32, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a,
-	0xe7, 0xb0, 0x2a, 0x1f, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72,
-	0x61, 0x6e, 0x74, 0x22, 0x3a, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a,
-	0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42,
-	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x22,
-	0xbc, 0x01, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4d,
-	0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x72, 0x61, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x12, 0x36,
-	0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x3a, 0x36, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x23, 0x61, 0x72, 0x6b, 0x2f, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x22, 0x39,
-	0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4d, 0x65, 0x6d,
-	0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09,
-	0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52,
-	0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x73, 0x22, 0x88, 0x01, 0x0a, 0x0a, 0x4d, 0x73,
-	0x67, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64,
-	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x72,
-	0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x04, 0x52, 0x08, 0x67,
-	0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x73, 0x3a, 0x2b, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65,
-	0x6e, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73,
-	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c,
-	0x65, 0x61, 0x73, 0x65, 0x22, 0x14, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65, 0x61,
-	0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x9b, 0x01, 0x0a, 0x0f, 0x4d,
-	0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x36,
-	0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74,
-	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f,
-	0x69, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x04, 0x52, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74,
-	0x49, 0x64, 0x73, 0x3a, 0x33, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x20, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62,
-	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63,
-	0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x43,
-	0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0xba, 0x01, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65,
-	0x6e, 0x64, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
-	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61,
-	0x72, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02,
-	0x20, 0x03, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x3a, 0x35, 0x82, 0xe7, 0xb0, 0x2a, 0x09,
-	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x22, 0x61, 0x72,
-	0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d,
-	0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73,
-	0x22, 0x1b, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x4d, 0x65,
-	0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xb5, 0x01,
-	0x0a, 0x13, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65,
-	0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x3a,
-	0x34, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a,
-	0x24, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65,
-	0x6d, 0x62, 0x65, 0x72, 0x73, 0x22, 0x1d, 0x0a, 0x1b, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e,
-	0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbc, 0x01, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64,
-	0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x61,
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
-	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x74, 0x79, 0x12, 0x36, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x3a, 0x36, 0x82, 0xe7, 0xb0,
-	0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x23,
-	0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x2f, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69,
-	0x6f, 0x6e, 0x73, 0x22, 0x1c, 0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75,
-	0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0xbf, 0x01, 0x0a, 0x0b, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65,
-	0x65, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e,
-	0x64, 0x65, 0x72, 0x12, 0x20, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x67, 0x72,
-	0x61, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x2e, 0x0a, 0x05, 0x70, 0x61, 0x79, 0x65, 0x65, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05,
-	0x70, 0x61, 0x79, 0x65, 0x65, 0x3a, 0x2c, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64,
-	0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61,
-	0x79, 0x65, 0x65, 0x22, 0x15, 0x0a, 0x13, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79,
-	0x65, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xed, 0x01, 0x0a, 0x10, 0x4d,
-	0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12,
-	0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65,
-	0x72, 0x12, 0x3a, 0x0a, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12, 0x38, 0x0a,
-	0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x3a, 0x31, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65,
-	0x6e, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x21, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73,
-	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
-	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73,
-	0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc6, 0x01, 0x0a, 0x14, 0x4d, 0x73, 0x67, 0x52, 0x65,
-	0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa4, 0x02, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
 	0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
 	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75,
-	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x3c, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e,
-	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f,
-	0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x61,
-	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x3a, 0x38, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x25, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69,
-	0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65,
-	0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x22,
-	0x1e, 0x0a, 0x1c, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c,
-	0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32,
-	0xf0, 0x08, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x62, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69,
-	0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2c, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x5f, 0x0a, 0x0b, 0x43,
-	0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b,
-	0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x1a,
-	0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47,
-	0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6b, 0x0a, 0x0f,
-	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
-	0x72, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x1a, 0x2f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12,
+	0x32, 0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65,
+	0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a,
+	0x3a, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a,
+	0xe7, 0xb0, 0x2a, 0x27, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x22, 0x20, 0x0a, 0x1e, 0x4d,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x4d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x8c, 0x03,
+	0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74,
+	0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x32, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73,
+	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x72, 0x61,
+	0x6e, 0x74, 0x4b, 0x69, 0x6e, 0x64, 0x52, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x12, 0x3a, 0x0a, 0x0b,
+	0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0b, 0x62, 0x65, 0x6e,
+	0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12, 0x3c, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75,
+	0x6e, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
+	0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
+	0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x42, 0x0a, 0x08, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75,
+	0x6c, 0x65, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50,
+	0x65, 0x72, 0x69, 0x6f, 0x64, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x08, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65,
+	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72,
+	0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x3a, 0x32, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1f, 0x61, 0x72, 0x6b,
+	0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73,
+	0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x22, 0x3a, 0x0a, 0x16,
+	0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x20, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f,
+	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x07, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x22, 0xec, 0x01, 0x0a, 0x14, 0x4d, 0x73, 0x67,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
+	0x72, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
+	0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70,
+	0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65,
+	0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x3a, 0x38, 0x82,
+	0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x8a, 0xe7, 0xb0,
+	0x2a, 0x25, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x22, 0x3b, 0x0a, 0x1c, 0x4d, 0x73, 0x67, 0x43, 0x6f,
+	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74,
+	0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x04, 0x52, 0x08, 0x67, 0x72, 0x61, 0x6e,
+	0x74, 0x49, 0x64, 0x73, 0x22, 0x88, 0x01, 0x0a, 0x0a, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65,
+	0x61, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73,
+	0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69,
+	0x64, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x04, 0x52, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49,
+	0x64, 0x73, 0x3a, 0x2b, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x8a,
+	0xe7, 0xb0, 0x2a, 0x1b, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x22,
+	0x14, 0x0a, 0x12, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x9b, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e,
+	0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x12, 0x1b, 0x0a, 0x09, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x02,
+	0x20, 0x03, 0x28, 0x04, 0x52, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x73, 0x3a, 0x33,
+	0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7,
+	0xb0, 0x2a, 0x20, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61,
+	0x6e, 0x74, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c,
+	0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xea,
+	0x01, 0x0a, 0x13, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53,
+	0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x2a,
+	0x0a, 0x0d, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78,
+	0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x42, 0x18, 0xd2,
+	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x65, 0x73, 0x3a, 0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x65, 0x8a, 0xe7, 0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75,
+	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
+	0x74, 0x74, 0x65, 0x65, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x22, 0x1d, 0x0a, 0x1b, 0x4d,
+	0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x75, 0x73, 0x70, 0x65,
+	0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xee, 0x01, 0x0a, 0x15, 0x4d,
+	0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x69, 0x6e, 0x73,
+	0x74, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
+	0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x2a, 0x0a, 0x0d,
+	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x65,
+	0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73,
+	0x3a, 0x39, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65,
+	0x8a, 0xe7, 0xb0, 0x2a, 0x26, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x65, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x22, 0x1f, 0x0a, 0x1d, 0x4d,
+	0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x69, 0x6e, 0x73,
+	0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbe, 0x01, 0x0a,
+	0x13, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d,
+	0x62, 0x65, 0x72, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e,
+	0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x36, 0x0a, 0x09,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x65, 0x73, 0x3a, 0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73,
+	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69,
+	0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x22, 0x1d, 0x0a,
+	0x1b, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d,
+	0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x9f, 0x01, 0x0a,
+	0x12, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x19, 0x0a, 0x04, 0x74,
+	0x65, 0x72, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x3a, 0x36, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x23, 0x61, 0x72, 0x6b, 0x2f, 0x64,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x56,
+	0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x1c,
+	0x0a, 0x1a, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73,
+	0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbf, 0x01, 0x0a,
+	0x0b, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x12, 0x30, 0x0a, 0x06,
+	0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x20,
+	0x0a, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
+	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64,
+	0x12, 0x2e, 0x0a, 0x05, 0x70, 0x61, 0x79, 0x65, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x70, 0x61, 0x79, 0x65, 0x65,
+	0x3a, 0x2c, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0,
+	0x2a, 0x1c, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x22, 0x15,
+	0x0a, 0x13, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xed, 0x01, 0x0a, 0x10, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
+	0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x30, 0x0a, 0x06, 0x73, 0x65,
+	0x6e, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
+	0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x12, 0x3a, 0x0a, 0x0b,
+	0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0b, 0x62, 0x65, 0x6e,
+	0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x65, 0x72, 0x3a, 0x31, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x73, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x8a,
+	0xe7, 0xb0, 0x2a, 0x21, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x22, 0x1a, 0x0a, 0x18, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43,
+	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0xc6, 0x01, 0x0a, 0x14, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55,
+	0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
+	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69,
+	0x74, 0x79, 0x12, 0x3c, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
+	0x3a, 0x38, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x8a, 0xe7, 0xb0, 0x2a, 0x25, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55,
+	0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x22, 0x1e, 0x0a, 0x1c, 0x4d, 0x73,
+	0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74,
+	0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xeb, 0x0a, 0x0a, 0x03, 0x4d,
+	0x73, 0x67, 0x12, 0x62, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
 	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x07, 0x52, 0x65, 0x6c,
-	0x65, 0x61, 0x73, 0x65, 0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65,
-	0x6c, 0x65, 0x61, 0x73, 0x65, 0x1a, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62,
-	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52,
-	0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62,
-	0x0a, 0x0c, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x24,
+	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x77, 0x0a, 0x13, 0x53, 0x65, 0x74, 0x52, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x2b, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x1a, 0x33, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72,
+	0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x5f, 0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x12, 0x23,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x47, 0x72,
+	0x61, 0x6e, 0x74, 0x1a, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72,
+	0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x71, 0x0a, 0x11, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x65, 0x72, 0x12, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62,
+	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43,
+	0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72,
+	0x1a, 0x31, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x07, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x12, 0x1f,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65, 0x1a,
+	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6c, 0x65, 0x61, 0x73, 0x65,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x62, 0x0a, 0x0c, 0x43, 0x61, 0x6e, 0x63,
+	0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
+	0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x1a, 0x2c,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
 	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72,
-	0x61, 0x6e, 0x74, 0x73, 0x1a, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x61,
-	0x6e, 0x63, 0x65, 0x6c, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x68, 0x0a, 0x0e, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x4d, 0x65, 0x6d,
-	0x62, 0x65, 0x72, 0x73, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x75,
-	0x73, 0x70, 0x65, 0x6e, 0x64, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x1a, 0x2e, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x4d, 0x65, 0x6d,
-	0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6e, 0x0a, 0x10,
-	0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73,
+	0x61, 0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6e, 0x0a, 0x10,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64,
 	0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
-	0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74,
-	0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b,
+	0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d,
-	0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x6b, 0x0a, 0x0f,
-	0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12,
-	0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73,
-	0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x56, 0x0a, 0x08, 0x53, 0x65, 0x74,
-	0x50, 0x61, 0x79, 0x65, 0x65, 0x12, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62,
-	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53,
-	0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x1a, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69,
-	0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x65, 0x0a, 0x0d, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x65, 0x72, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43,
-	0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x71, 0x0a, 0x11, 0x52, 0x65, 0x74, 0x75,
-	0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x12, 0x29, 0x2e,
+	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x75, 0x73,
+	0x70, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x74, 0x0a, 0x12,
+	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61,
+	0x74, 0x65, 0x12, 0x2a, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d,
+	0x69, 0x74, 0x74, 0x65, 0x65, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x1a, 0x32,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x6e, 0x0a, 0x10, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d,
+	0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73,
+	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67,
+	0x52, 0x65, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73,
+	0x1a, 0x30, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x69, 0x6e, 0x73, 0x74,
+	0x61, 0x74, 0x65, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x6b, 0x0a, 0x0f, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e,
+	0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62,
+	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x56,
+	0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x2f,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x56, 0x6f, 0x69, 0x64, 0x53, 0x75, 0x73, 0x70,
+	0x65, 0x6e, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x56, 0x0a, 0x08, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x12, 0x20, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x1a, 0x28, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61,
-	0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x1a, 0x31, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x50, 0x61, 0x79, 0x65, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x65, 0x0a, 0x0d, 0x53, 0x65, 0x74, 0x43, 0x6f,
+	0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
 	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61,
-	0x74, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7, 0xb0,
-	0x2a, 0x01, 0x42, 0xd6, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x07,
-	0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x44, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74,
-	0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b,
-	0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x31,
-	0x3b, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x76, 0x31, 0xa2,
-	0x02, 0x03, 0x41, 0x44, 0x58, 0xaa, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x2e, 0x44, 0x69, 0x73, 0x62,
-	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x13, 0x41, 0x72,
-	0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56,
-	0x31, 0xe2, 0x02, 0x1f, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
-	0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
-	0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x44, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x1a,
+	0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x71,
+	0x0a, 0x11, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61,
+	0x74, 0x65, 0x64, 0x12, 0x29, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72,
+	0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74,
+	0x75, 0x72, 0x6e, 0x55, 0x6e, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x1a, 0x31,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x74, 0x75, 0x72, 0x6e, 0x55, 0x6e,
+	0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xd6, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x2e, 0x76, 0x31, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x44, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72,
+	0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61,
+	0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x44, 0x58, 0xaa, 0x02, 0x13, 0x41, 0x72,
+	0x6b, 0x2e, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x56,
+	0x31, 0xca, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69,
+	0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x41, 0x72, 0x6b, 0x3a,
+	0x3a, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x3a, 0x3a, 0x56,
+	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -11510,65 +13717,73 @@ func file_ark_disbursement_v1_tx_proto_rawDescGZIP() []byte {
 	return file_ark_disbursement_v1_tx_proto_rawDescData
 }
 
-var file_ark_disbursement_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_ark_disbursement_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_ark_disbursement_v1_tx_proto_goTypes = []interface{}{
-	(*MsgUpdateParams)(nil),              // 0: ark.disbursement.v1.MsgUpdateParams
-	(*MsgUpdateParamsResponse)(nil),      // 1: ark.disbursement.v1.MsgUpdateParamsResponse
-	(*MsgCreateGrant)(nil),               // 2: ark.disbursement.v1.MsgCreateGrant
-	(*MsgCreateGrantResponse)(nil),       // 3: ark.disbursement.v1.MsgCreateGrantResponse
-	(*MsgRegisterMembers)(nil),           // 4: ark.disbursement.v1.MsgRegisterMembers
-	(*MsgRegisterMembersResponse)(nil),   // 5: ark.disbursement.v1.MsgRegisterMembersResponse
-	(*MsgRelease)(nil),                   // 6: ark.disbursement.v1.MsgRelease
-	(*MsgReleaseResponse)(nil),           // 7: ark.disbursement.v1.MsgReleaseResponse
-	(*MsgCancelGrants)(nil),              // 8: ark.disbursement.v1.MsgCancelGrants
-	(*MsgCancelGrantsResponse)(nil),      // 9: ark.disbursement.v1.MsgCancelGrantsResponse
-	(*MsgSuspendMembers)(nil),            // 10: ark.disbursement.v1.MsgSuspendMembers
-	(*MsgSuspendMembersResponse)(nil),    // 11: ark.disbursement.v1.MsgSuspendMembersResponse
-	(*MsgReinstateMembers)(nil),          // 12: ark.disbursement.v1.MsgReinstateMembers
-	(*MsgReinstateMembersResponse)(nil),  // 13: ark.disbursement.v1.MsgReinstateMembersResponse
-	(*MsgVoidSuspensions)(nil),           // 14: ark.disbursement.v1.MsgVoidSuspensions
-	(*MsgVoidSuspensionsResponse)(nil),   // 15: ark.disbursement.v1.MsgVoidSuspensionsResponse
-	(*MsgSetPayee)(nil),                  // 16: ark.disbursement.v1.MsgSetPayee
-	(*MsgSetPayeeResponse)(nil),          // 17: ark.disbursement.v1.MsgSetPayeeResponse
-	(*MsgSetController)(nil),             // 18: ark.disbursement.v1.MsgSetController
-	(*MsgSetControllerResponse)(nil),     // 19: ark.disbursement.v1.MsgSetControllerResponse
-	(*MsgReturnUnallocated)(nil),         // 20: ark.disbursement.v1.MsgReturnUnallocated
-	(*MsgReturnUnallocatedResponse)(nil), // 21: ark.disbursement.v1.MsgReturnUnallocatedResponse
-	(*Params)(nil),                       // 22: ark.disbursement.v1.Params
-	(GrantKind)(0),                       // 23: ark.disbursement.v1.GrantKind
-	(*v1beta1.Coin)(nil),                 // 24: cosmos.base.v1beta1.Coin
-	(*Period)(nil),                       // 25: ark.disbursement.v1.Period
+	(*MsgUpdateParams)(nil),                // 0: ark.disbursement.v1.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),        // 1: ark.disbursement.v1.MsgUpdateParamsResponse
+	(*MsgSetRegistrarMandate)(nil),         // 2: ark.disbursement.v1.MsgSetRegistrarMandate
+	(*MsgSetRegistrarMandateResponse)(nil), // 3: ark.disbursement.v1.MsgSetRegistrarMandateResponse
+	(*MsgCreateGrant)(nil),                 // 4: ark.disbursement.v1.MsgCreateGrant
+	(*MsgCreateGrantResponse)(nil),         // 5: ark.disbursement.v1.MsgCreateGrantResponse
+	(*MsgCommitteeRegister)(nil),           // 6: ark.disbursement.v1.MsgCommitteeRegister
+	(*MsgCommitteeRegisterResponse)(nil),   // 7: ark.disbursement.v1.MsgCommitteeRegisterResponse
+	(*MsgRelease)(nil),                     // 8: ark.disbursement.v1.MsgRelease
+	(*MsgReleaseResponse)(nil),             // 9: ark.disbursement.v1.MsgReleaseResponse
+	(*MsgCancelGrants)(nil),                // 10: ark.disbursement.v1.MsgCancelGrants
+	(*MsgCancelGrantsResponse)(nil),        // 11: ark.disbursement.v1.MsgCancelGrantsResponse
+	(*MsgCommitteeSuspend)(nil),            // 12: ark.disbursement.v1.MsgCommitteeSuspend
+	(*MsgCommitteeSuspendResponse)(nil),    // 13: ark.disbursement.v1.MsgCommitteeSuspendResponse
+	(*MsgCommitteeReinstate)(nil),          // 14: ark.disbursement.v1.MsgCommitteeReinstate
+	(*MsgCommitteeReinstateResponse)(nil),  // 15: ark.disbursement.v1.MsgCommitteeReinstateResponse
+	(*MsgReinstateMembers)(nil),            // 16: ark.disbursement.v1.MsgReinstateMembers
+	(*MsgReinstateMembersResponse)(nil),    // 17: ark.disbursement.v1.MsgReinstateMembersResponse
+	(*MsgVoidSuspensions)(nil),             // 18: ark.disbursement.v1.MsgVoidSuspensions
+	(*MsgVoidSuspensionsResponse)(nil),     // 19: ark.disbursement.v1.MsgVoidSuspensionsResponse
+	(*MsgSetPayee)(nil),                    // 20: ark.disbursement.v1.MsgSetPayee
+	(*MsgSetPayeeResponse)(nil),            // 21: ark.disbursement.v1.MsgSetPayeeResponse
+	(*MsgSetController)(nil),               // 22: ark.disbursement.v1.MsgSetController
+	(*MsgSetControllerResponse)(nil),       // 23: ark.disbursement.v1.MsgSetControllerResponse
+	(*MsgReturnUnallocated)(nil),           // 24: ark.disbursement.v1.MsgReturnUnallocated
+	(*MsgReturnUnallocatedResponse)(nil),   // 25: ark.disbursement.v1.MsgReturnUnallocatedResponse
+	(*Params)(nil),                         // 26: ark.disbursement.v1.Params
+	(GrantKind)(0),                         // 27: ark.disbursement.v1.GrantKind
+	(*v1beta1.Coin)(nil),                   // 28: cosmos.base.v1beta1.Coin
+	(*Period)(nil),                         // 29: ark.disbursement.v1.Period
 }
 var file_ark_disbursement_v1_tx_proto_depIdxs = []int32{
-	22, // 0: ark.disbursement.v1.MsgUpdateParams.params:type_name -> ark.disbursement.v1.Params
-	23, // 1: ark.disbursement.v1.MsgCreateGrant.kind:type_name -> ark.disbursement.v1.GrantKind
-	24, // 2: ark.disbursement.v1.MsgCreateGrant.amount:type_name -> cosmos.base.v1beta1.Coin
-	25, // 3: ark.disbursement.v1.MsgCreateGrant.schedule:type_name -> ark.disbursement.v1.Period
-	24, // 4: ark.disbursement.v1.MsgReturnUnallocated.amount:type_name -> cosmos.base.v1beta1.Coin
+	26, // 0: ark.disbursement.v1.MsgUpdateParams.params:type_name -> ark.disbursement.v1.Params
+	27, // 1: ark.disbursement.v1.MsgCreateGrant.kind:type_name -> ark.disbursement.v1.GrantKind
+	28, // 2: ark.disbursement.v1.MsgCreateGrant.amount:type_name -> cosmos.base.v1beta1.Coin
+	29, // 3: ark.disbursement.v1.MsgCreateGrant.schedule:type_name -> ark.disbursement.v1.Period
+	28, // 4: ark.disbursement.v1.MsgReturnUnallocated.amount:type_name -> cosmos.base.v1beta1.Coin
 	0,  // 5: ark.disbursement.v1.Msg.UpdateParams:input_type -> ark.disbursement.v1.MsgUpdateParams
-	2,  // 6: ark.disbursement.v1.Msg.CreateGrant:input_type -> ark.disbursement.v1.MsgCreateGrant
-	4,  // 7: ark.disbursement.v1.Msg.RegisterMembers:input_type -> ark.disbursement.v1.MsgRegisterMembers
-	6,  // 8: ark.disbursement.v1.Msg.Release:input_type -> ark.disbursement.v1.MsgRelease
-	8,  // 9: ark.disbursement.v1.Msg.CancelGrants:input_type -> ark.disbursement.v1.MsgCancelGrants
-	10, // 10: ark.disbursement.v1.Msg.SuspendMembers:input_type -> ark.disbursement.v1.MsgSuspendMembers
-	12, // 11: ark.disbursement.v1.Msg.ReinstateMembers:input_type -> ark.disbursement.v1.MsgReinstateMembers
-	14, // 12: ark.disbursement.v1.Msg.VoidSuspensions:input_type -> ark.disbursement.v1.MsgVoidSuspensions
-	16, // 13: ark.disbursement.v1.Msg.SetPayee:input_type -> ark.disbursement.v1.MsgSetPayee
-	18, // 14: ark.disbursement.v1.Msg.SetController:input_type -> ark.disbursement.v1.MsgSetController
-	20, // 15: ark.disbursement.v1.Msg.ReturnUnallocated:input_type -> ark.disbursement.v1.MsgReturnUnallocated
-	1,  // 16: ark.disbursement.v1.Msg.UpdateParams:output_type -> ark.disbursement.v1.MsgUpdateParamsResponse
-	3,  // 17: ark.disbursement.v1.Msg.CreateGrant:output_type -> ark.disbursement.v1.MsgCreateGrantResponse
-	5,  // 18: ark.disbursement.v1.Msg.RegisterMembers:output_type -> ark.disbursement.v1.MsgRegisterMembersResponse
-	7,  // 19: ark.disbursement.v1.Msg.Release:output_type -> ark.disbursement.v1.MsgReleaseResponse
-	9,  // 20: ark.disbursement.v1.Msg.CancelGrants:output_type -> ark.disbursement.v1.MsgCancelGrantsResponse
-	11, // 21: ark.disbursement.v1.Msg.SuspendMembers:output_type -> ark.disbursement.v1.MsgSuspendMembersResponse
-	13, // 22: ark.disbursement.v1.Msg.ReinstateMembers:output_type -> ark.disbursement.v1.MsgReinstateMembersResponse
-	15, // 23: ark.disbursement.v1.Msg.VoidSuspensions:output_type -> ark.disbursement.v1.MsgVoidSuspensionsResponse
-	17, // 24: ark.disbursement.v1.Msg.SetPayee:output_type -> ark.disbursement.v1.MsgSetPayeeResponse
-	19, // 25: ark.disbursement.v1.Msg.SetController:output_type -> ark.disbursement.v1.MsgSetControllerResponse
-	21, // 26: ark.disbursement.v1.Msg.ReturnUnallocated:output_type -> ark.disbursement.v1.MsgReturnUnallocatedResponse
-	16, // [16:27] is the sub-list for method output_type
-	5,  // [5:16] is the sub-list for method input_type
+	2,  // 6: ark.disbursement.v1.Msg.SetRegistrarMandate:input_type -> ark.disbursement.v1.MsgSetRegistrarMandate
+	4,  // 7: ark.disbursement.v1.Msg.CreateGrant:input_type -> ark.disbursement.v1.MsgCreateGrant
+	6,  // 8: ark.disbursement.v1.Msg.CommitteeRegister:input_type -> ark.disbursement.v1.MsgCommitteeRegister
+	8,  // 9: ark.disbursement.v1.Msg.Release:input_type -> ark.disbursement.v1.MsgRelease
+	10, // 10: ark.disbursement.v1.Msg.CancelGrants:input_type -> ark.disbursement.v1.MsgCancelGrants
+	12, // 11: ark.disbursement.v1.Msg.CommitteeSuspend:input_type -> ark.disbursement.v1.MsgCommitteeSuspend
+	14, // 12: ark.disbursement.v1.Msg.CommitteeReinstate:input_type -> ark.disbursement.v1.MsgCommitteeReinstate
+	16, // 13: ark.disbursement.v1.Msg.ReinstateMembers:input_type -> ark.disbursement.v1.MsgReinstateMembers
+	18, // 14: ark.disbursement.v1.Msg.VoidSuspensions:input_type -> ark.disbursement.v1.MsgVoidSuspensions
+	20, // 15: ark.disbursement.v1.Msg.SetPayee:input_type -> ark.disbursement.v1.MsgSetPayee
+	22, // 16: ark.disbursement.v1.Msg.SetController:input_type -> ark.disbursement.v1.MsgSetController
+	24, // 17: ark.disbursement.v1.Msg.ReturnUnallocated:input_type -> ark.disbursement.v1.MsgReturnUnallocated
+	1,  // 18: ark.disbursement.v1.Msg.UpdateParams:output_type -> ark.disbursement.v1.MsgUpdateParamsResponse
+	3,  // 19: ark.disbursement.v1.Msg.SetRegistrarMandate:output_type -> ark.disbursement.v1.MsgSetRegistrarMandateResponse
+	5,  // 20: ark.disbursement.v1.Msg.CreateGrant:output_type -> ark.disbursement.v1.MsgCreateGrantResponse
+	7,  // 21: ark.disbursement.v1.Msg.CommitteeRegister:output_type -> ark.disbursement.v1.MsgCommitteeRegisterResponse
+	9,  // 22: ark.disbursement.v1.Msg.Release:output_type -> ark.disbursement.v1.MsgReleaseResponse
+	11, // 23: ark.disbursement.v1.Msg.CancelGrants:output_type -> ark.disbursement.v1.MsgCancelGrantsResponse
+	13, // 24: ark.disbursement.v1.Msg.CommitteeSuspend:output_type -> ark.disbursement.v1.MsgCommitteeSuspendResponse
+	15, // 25: ark.disbursement.v1.Msg.CommitteeReinstate:output_type -> ark.disbursement.v1.MsgCommitteeReinstateResponse
+	17, // 26: ark.disbursement.v1.Msg.ReinstateMembers:output_type -> ark.disbursement.v1.MsgReinstateMembersResponse
+	19, // 27: ark.disbursement.v1.Msg.VoidSuspensions:output_type -> ark.disbursement.v1.MsgVoidSuspensionsResponse
+	21, // 28: ark.disbursement.v1.Msg.SetPayee:output_type -> ark.disbursement.v1.MsgSetPayeeResponse
+	23, // 29: ark.disbursement.v1.Msg.SetController:output_type -> ark.disbursement.v1.MsgSetControllerResponse
+	25, // 30: ark.disbursement.v1.Msg.ReturnUnallocated:output_type -> ark.disbursement.v1.MsgReturnUnallocatedResponse
+	18, // [18:31] is the sub-list for method output_type
+	5,  // [5:18] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -11606,7 +13821,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCreateGrant); i {
+			switch v := v.(*MsgSetRegistrarMandate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11618,7 +13833,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCreateGrantResponse); i {
+			switch v := v.(*MsgSetRegistrarMandateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11630,7 +13845,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgRegisterMembers); i {
+			switch v := v.(*MsgCreateGrant); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11642,7 +13857,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgRegisterMembersResponse); i {
+			switch v := v.(*MsgCreateGrantResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11654,7 +13869,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgRelease); i {
+			switch v := v.(*MsgCommitteeRegister); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11666,7 +13881,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReleaseResponse); i {
+			switch v := v.(*MsgCommitteeRegisterResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11678,7 +13893,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelGrants); i {
+			switch v := v.(*MsgRelease); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11690,7 +13905,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCancelGrantsResponse); i {
+			switch v := v.(*MsgReleaseResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11702,7 +13917,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSuspendMembers); i {
+			switch v := v.(*MsgCancelGrants); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11714,7 +13929,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSuspendMembersResponse); i {
+			switch v := v.(*MsgCancelGrantsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11726,7 +13941,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReinstateMembers); i {
+			switch v := v.(*MsgCommitteeSuspend); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11738,7 +13953,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReinstateMembersResponse); i {
+			switch v := v.(*MsgCommitteeSuspendResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11750,7 +13965,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgVoidSuspensions); i {
+			switch v := v.(*MsgCommitteeReinstate); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11762,7 +13977,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgVoidSuspensionsResponse); i {
+			switch v := v.(*MsgCommitteeReinstateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11774,7 +13989,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetPayee); i {
+			switch v := v.(*MsgReinstateMembers); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11786,7 +14001,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetPayeeResponse); i {
+			switch v := v.(*MsgReinstateMembersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11798,7 +14013,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetController); i {
+			switch v := v.(*MsgVoidSuspensions); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11810,7 +14025,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSetControllerResponse); i {
+			switch v := v.(*MsgVoidSuspensionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11822,7 +14037,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgReturnUnallocated); i {
+			switch v := v.(*MsgSetPayee); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11834,6 +14049,54 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			}
 		}
 		file_ark_disbursement_v1_tx_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetPayeeResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_disbursement_v1_tx_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetController); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_disbursement_v1_tx_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSetControllerResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_disbursement_v1_tx_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgReturnUnallocated); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_disbursement_v1_tx_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgReturnUnallocatedResponse); i {
 			case 0:
 				return &v.state
@@ -11852,7 +14115,7 @@ func file_ark_disbursement_v1_tx_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_disbursement_v1_tx_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

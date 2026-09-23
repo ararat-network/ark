@@ -2,6 +2,7 @@ syntax = "proto3";
 package ark.disbursement.v1;
 
 import "amino/amino.proto";
+import "ark/mandate/v1/envelope.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
@@ -31,20 +32,29 @@ message Period {
 message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/disbursement/Params";
-  string registrar = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 max_members = 2 [(amino.dont_omitempty) = true];
-  uint64 window_seconds = 3 [(amino.dont_omitempty) = true];
-  string member_amount = 4 [
+  uint64 max_members = 1 [(amino.dont_omitempty) = true];
+  uint64 window_seconds = 2 [(amino.dont_omitempty) = true];
+  string member_amount = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Period member_schedule = 5 [
+  repeated Period member_schedule = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated string compensation_denoms = 6;
+  repeated string compensation_denoms = 5;
+}
+
+// RegistrarMandate appoints the registrar for a height window. An empty committee disables it;
+// every replacement advances the term.
+message RegistrarMandate {
+  ark.mandate.v1.Envelope envelope = 1 [
+    (gogoproto.embed) = true,
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // OwnershipPolicy fixes ownership limits at genesis; ordinary messages cannot change it.
@@ -83,11 +93,11 @@ message Beneficiary {
   ];
 }
 
-// Suspension stops member payments until reinstated or its registrar epoch is voided.
+// Suspension stops member payments until reinstated or its term is voided.
 message Suspension {
   uint64 at = 1 [(amino.dont_omitempty) = true];
-  string registrar = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 epoch = 3 [(amino.dont_omitempty) = true];
+  // term is the registrar appointment the suspension was made under.
+  uint64 term = 2 [(amino.dont_omitempty) = true];
 }
 
 // Grant stores immutable award terms and the settlement of that obligation.
@@ -172,12 +182,6 @@ message Issuance {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-}
-
-// RegistrarEpoch invalidates suspensions from an earlier appointment generation.
-message RegistrarEpoch {
-  string registrar = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 epoch = 2 [(amino.dont_omitempty) = true];
 }
 
 // JournalEntry is an append-only account of a module operation; details contain its bounded JSON facts.

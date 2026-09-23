@@ -37,7 +37,7 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated RegistrarEpoch registrar_epochs = 8 [
+  RegistrarMandate registrar_mandate = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -47,4 +47,6 @@ message GenesisState {
   ];
   uint64 next_grant_id = 10 [(amino.dont_omitempty) = true];
   uint64 next_journal_id = 11 [(amino.dont_omitempty) = true];
+  // voided_terms lists replaced registrar terms whose suspensions are not effective.
+  repeated uint64 voided_terms = 12;
 }
