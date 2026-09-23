@@ -7,10 +7,10 @@ authorisation semantics that go with it.
 A mandate is one bounded, expiring delegation of a power governance already
 holds. Governance appoints an exact account for a half-open height window;
 the committee acts faster than a voting period allows; the appointment
-expires on its own. Six mandates exist today — Treasury's economic-policy
+expires on its own. Seven mandates exist today — Treasury's economic-policy
 mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
-Reserve's, and Security's — and the sections below are the convention a
-seventh follows.
+Reserve's, Security's, and Disbursement's registrar mandate — and the sections
+below are the convention an eighth follows.
 
 ## What this package owns
 
@@ -125,7 +125,8 @@ term-scoped: reset it in the same handler that stores the new appointment, so
 the appointment and the usage keyed to it can never skew. The Claims and
 Reserve mandates each reset an allowance; Asset's emergency mandate clears
 its recorded per-term suspensions. A mandate with no usage to reset resets
-nothing.
+nothing: Disbursement's registrar mandate keys member suspensions by term
+and leaves them standing, since governance voids a replaced term explicitly.
 
 ## Acting
 

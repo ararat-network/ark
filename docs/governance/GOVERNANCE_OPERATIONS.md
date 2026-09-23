@@ -137,10 +137,21 @@ before funding. `GOV` below is the governance authority; `DISBURSEMENT_ACCOUNT` 
 instantiation, or sudo is involved. Amounts are denomination base units and timestamps are block time.
 
 **A member tranche** is a `MsgCommunityPoolSpend` into disbursement custody. Appoint the registrar with
-`/ark.disbursement.v1.MsgUpdateParams`, supplying the complete `params` object returned by `query disbursement params` with the intended
-changes. Preserve the approved member amount, schedule, compensation allowlist, and issuance limits. Launch artifacts
-set 250 members per rolling seven days and an empty registrar; ownership policy and founding identities are not
-operational params.
+`/ark.disbursement.v1.MsgSetRegistrarMandate`, naming the exact committee account and a half-open height window. The
+appointment is its own message, so operational params never travel with it; every appointment advances the term the
+registrar's transactions must carry, shown by `query disbursement registrar-mandate`. Launch artifacts set 250 members
+per rolling seven days and leave the mandate disabled; ownership policy and founding identities are not operational
+params.
+
+```json
+{
+  "@type": "/ark.disbursement.v1.MsgSetRegistrarMandate",
+  "authority": "GOV",
+  "committee": "REGISTRAR",
+  "activation_height": "ACTIVATION",
+  "expiry_height": "EXPIRY"
+}
+```
 
 ```json
 {
@@ -157,12 +168,12 @@ operational params.
 }
 ```
 
-The registrar signs `arkd tx disbursement register-members --addresses ADDRESS --addresses ADDRESS --from REGISTRAR`; the member roll does
-not pass through a proposal. Registration sends the tenth immediately and reserves the rest. Look up the permanent
+The registrar signs `arkd tx disbursement committee-register --expected-term TERM --addresses ADDRESS --addresses ADDRESS --from REGISTRAR`;
+the member roll does not pass through a proposal. Registration sends the tenth immediately and reserves the rest. Look up the permanent
 grant ID with `arkd query disbursement member ADDRESS`. Anyone can call
 `arkd tx disbursement release --grant-ids ID,ID --from CALLER`; payment always goes to each recorded payee.
 
-**A faked member** can be paused with `arkd tx disbursement suspend-members --addresses ADDRESS --from REGISTRAR`.
+**A faked member** can be paused with `arkd tx disbursement committee-suspend --expected-term TERM --addresses ADDRESS --from REGISTRAR`.
 Governance then cancels by permanent grant ID:
 
 ```json
@@ -175,14 +186,18 @@ Governance then cancels by permanent grant ID:
 
 Cancellation retains earned unpaid principal at the effective suspension time, or at execution time if there is no
 effective suspension. It leaves unearned member funds unallocated in disbursement custody. It attempts no member payment;
-retained debt remains payable even after cancellation. `MsgReinstateMembers` signed by the registrar or governance
-resumes a suspended grant and permits catch-up; it cannot reopen a cancelled grant. A compromised registrar can
-reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
+retained debt remains payable even after cancellation. `MsgCommitteeReinstate` from the registrar or `MsgReinstateMembers`
+from governance resumes a suspended grant and permits catch-up; neither can reopen a cancelled grant. A compromised
+registrar can reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
 
-**Registrar recovery** uses one proposal with `MsgUpdateParams` setting the new registrar and
-`/ark.disbursement.v1.MsgVoidSuspensions` with `authority: GOV` and `registrar: OLD_REGISTRAR`. The void invalidates earlier
-suspensions by the old key in one write. It neither reverses payments nor invalidates later suspensions. The new
-registrar reviews genuine suspension cases. An empty registrar disables its authority without changing existing grants.
+**Registrar recovery** uses one proposal with `MsgSetRegistrarMandate` appointing the new registrar and
+`/ark.disbursement.v1.MsgVoidSuspensions` with `authority: GOV` and `term: OLD_TERM`, the term the mandate query showed
+before the vote. The appointment advances the term, so nothing prepared under the old key lands afterwards, and the void
+invalidates every suspension made under the old term in one write. It neither reverses payments nor touches suspensions
+under the new term. The live term can never be voided: to void a sitting registrar's suspensions, re-appoint the same
+account and void the previous term in the same proposal. The new registrar reviews genuine suspension cases. An empty
+committee disables the registrar without changing existing grants, and a lapsed window does the same until the next
+appointment.
 
 **A contributor award** pairs the spend and `MsgCreateGrant` in the same proposal. The example below is a complete
 one-year cliff schedule; a disbursement-plan ownership award uses its full 37-period schedule: first

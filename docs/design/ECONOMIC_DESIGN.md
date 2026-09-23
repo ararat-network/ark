@@ -763,15 +763,15 @@ the wrong signer is rejected before any term reasoning.
 | --- | --- | --- |
 | Treasury | Parameters, appointment, and unrestricted valid economic policy | Policy inside the appointed corridor |
 | Claims | Parameters, appointment, submission, and cancellation | Term-limited submission and origin-limited cancellation |
-| Disbursement | Operational parameters, registrar appointment, contributor awards, cancellation, suspension recovery, controller recovery, and unallocated returns | None; the registrar has separate member-only authority |
+| Disbursement | Operational parameters, registrar appointment, contributor awards, cancellation, term voids, reinstatement, controller recovery, and unallocated returns | Member registration, suspension, and reinstatement under the registrar's term and window |
 | Reserve | Recognition, appointment, corrections, commitments, and discretionary burns | Bounded deployment, bookkeeping, commitments, and burns |
 | Market | Parameters, appointment, conversion policy, and Tobin policy | Conversion corridor and Tobin band |
 | Oracle | Parameters, feeds, and reference unit | None |
 | Asset | Registry, lifecycle, settlement terms, and appointment | One suspension per asset per term |
 | Security | Appointment and standard-module authority | Own upgrade planning/cancellation and client recovery |
 
-The Disbursement registrar can register members within the issuance window, suspend payments, and reinstate members. It
-cannot redirect or cancel an award. Anyone can trigger a release to the recorded payee; beneficiary and controller
+The Disbursement registrar is a committee mandate like the others: it can register members within the issuance window,
+suspend payments, and reinstate members under its exact term and active window. It cannot redirect or cancel an award. Anyone can trigger a release to the recorded payee; beneficiary and controller
 authority over destinations is specified in the [Disbursement README](../../x/disbursement/README.md) (D87).
 
 Market's `MsgSwap` and `MsgSwapSend` are the trader's, and `MsgSettle` converts suspended supply under a plan. Three

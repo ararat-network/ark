@@ -1174,7 +1174,8 @@ cumulative ownership persist across all controllers, payees, and grants. A membe
 original registered key; the registrar has no redirection authority, and the original address can never register
 again. Cancelled members retain accrued unpaid entitlement under the effective suspension cutoff, while unearned
 funds become unallocated; cancellation never attempts a member payment. Contributor unearned funds return to the pool.
-An epoch per registrar makes bulk suspension recovery bounded and permits a fresh suspension even in the same block.
+The registrar holds a term-limited committee mandate; a suspension records its term, and governance voids a replaced
+term in one write, so bulk recovery is bounded and a fresh suspension under the new term stands even in the same block.
 
 The module records permanent terms, work references, payments, destinations, cancellations, and administrative changes
 in an append-only journal with indexed pagination and typed events. Releases maintain founder aggregates and perform

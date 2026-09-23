@@ -146,7 +146,7 @@ platform, so an unfunded recipient need not pay its transaction fee; subsequent 
 No proposal carries a member address. The module issues at most
 250 members in any seven days, counted from each registration's block, a limit governance sets, so a stolen registrar
 key pays out at most a week's tenths before an expedited vote replaces it, and the registrar is a multisig for the same
-reason. A contributor grant is one `MsgCreateGrant` in a proposal, which escrows the whole amount and starts its schedule
+reason, appointed under a term-limited mandate that records the shape of the account it names. A contributor grant is one `MsgCreateGrant` in a proposal, which escrows the whole amount and starts its schedule
 (below). A member record keeps the schedule it registered under permanently; records, indexes, and the append-only journal
 grow with registrations and subsequent operations. A tranche proposal passes like any other: half the
 bonded stake voting, two thirds of the non-abstaining vote agreeing. At launch the ten founders are the only voters, so
@@ -162,8 +162,8 @@ It sends nothing to the member, so a blocked destination cannot prevent cancella
 change the member payee without changing identity or becoming eligible to register again. Suspend sits with the
 registrar because it can only delay; cancel sits with governance because a cancel followed by a registration would let one key redirect a grant.
 A stolen registrar key can therefore pay out a week's tenths, pause member payments, and lift every suspension, and no
-more. The proposal that replaces it voids that key's suspensions in one write, so the new registrar suspends afresh
-only the genuine cases. A lifted suspension it cannot undo: the next release pays the lifted member the months since,
+more. The proposal that replaces it advances the term, so nothing prepared under the old key lands afterwards, and
+voids that term's suspensions in one write, so the new registrar suspends afresh only the genuine cases. A lifted suspension it cannot undo: the next release pays the lifted member the months since,
 so a cancel follows a suspension within the month, and what a lifted suspension can pay stays under a month a member.
 What a faked member costs is the tenth plus the months it took to find them, and the year is the time there is to do it.
 
@@ -481,8 +481,8 @@ slow distribution when that lags, which is the safe direction, and two levers ex
 
 - [ ] Every grant is created by the disbursement module from tranches governance spends to it, on its group's schedule: a
       contributor's with capped scheduled payments, a member's to its recorded payee, controlled by the original member key.
-- [ ] The registrar is a multisig, and the module's issuance window stays at 250 members in any seven days unless
-      governance changes it.
+- [ ] The registrar is a multisig appointed under a term-limited mandate, and the module's issuance window stays at 250
+      members in any seven days unless governance changes it.
 - [ ] The registrar suspends or resumes a member's pay and nothing more; only governance cancels a member, retaining
       earned debt at the effective suspension cutoff and keeping unearned funds in the tranche, within the month of the suspension,
       since a resumed member is paid the months since.
@@ -514,7 +514,7 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   what it finds within the year the stream takes back (§4). Still open: the verifier, the data it obliges the platform
   to protect, which joins the counsel question below, and who runs the process while the founders hold the block, and
   so who holds the registrar key. The registrar is a multisig, and the module's issuance window bounds a stolen key
-  to at most a week's tenths, its suspensions voided by the vote that replaces it.
+  to at most a week's tenths, its term's suspensions voided by the vote that replaces it.
 - The member app: a layer on a wallet, with signup, the identity check, and the vouch in front of it and the picker
   defaults §4 sets, hosted in the first-party wallet and open to any wallet through the kit. It and the wallet are the
   tooling dependency for the first member tranche, and none of it is built.

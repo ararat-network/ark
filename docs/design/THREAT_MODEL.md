@@ -225,7 +225,7 @@ and the chain records the shape it observed at appointment. A contract may hold 
 chain records that it is one and nothing about its code or membership, which its admin, its membership
 contract, or governance can change without a term advance. Governance holds every unbounded path, including
 Wasmd's authority policy over every contract, the return of subsidy NOAH to the community pool through a
-fixed-endpoint message with a per-proposal minimum (D83), the Disbursement module's tranches, operational parameters, and registrar through
+fixed-endpoint message with a per-proposal minimum (D83), the Disbursement module's tranches, operational parameters, and registrar mandate through
 a pool spend and typed governance messages (D87), and can replace or disable any committee. A committee's
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
@@ -242,11 +242,12 @@ permanent beneficiary payment totals survive payee and controller rotation. Gene
 aggregates and validates Bank backing, histories, and absolute timestamps. There are no payment block hooks or scans
 of historical grants on release. Batches, schedules, references, issuance logs, and query pages have write-time bounds.
 
-The registrar can register a fixed member award within a rolling issuance window, suspend member payments, and
-reinstate them; it cannot redirect or cancel a grant. The original member key alone changes a member payee, and the
+The registrar is a term-limited committee mandate whose messages ride the committee lane. It can register a fixed
+member award within a rolling issuance window, suspend member payments, and reinstate them, each under its exact term
+and active window; it cannot redirect or cancel a grant. The original member key alone changes a member payee, and the
 permanent registration index prevents registration again after cancellation or a destination change. Governance can
-replace a compromised registrar and invalidate its earlier suspensions with one epoch increment, including when new
-suspensions occur in the same block. Reinstatement permits catch-up, so cancellation must follow a finding promptly.
+replace a compromised registrar, which advances the term so prepared transactions expire, and void every suspension of
+the replaced term in one write; a suspension under the new term stands even in the same block. Reinstatement permits catch-up, so cancellation must follow a finding promptly.
 Cancellation pays no recipient: it freezes accrued debt, releases only unearned principal, and retains debt under the
 same ownership limits. Failed payments roll back Bank transfers, accounting, and journal entries together.
 

@@ -15,6 +15,12 @@ Governance funds custody with Distribution's `MsgCommunityPoolSpend`. For a cont
 `MsgCreateGrant` in the same proposal: both execute or neither does. A member tranche funds unallocated custody; the
 appointed registrar subsequently registers members without putting the member roll through a proposal.
 
+The registrar is a [committee mandate](../../pkg/mandate/README.md). Governance appoints an exact account for a
+half-open height window with `MsgSetRegistrarMandate`; every replacement advances the term, and each registrar message
+carries `expected_term`, so transactions prepared under a replaced key never land. Appointment records the shape the
+chain could prove about the account, which is how the plan's multisig requirement becomes a fact on chain. Registrar
+messages ride the committee lane. A lapsed window stops the registrar without moving the term or any suspension.
+
 The module account has no mint/burn permission and accepts deposits. Each grant must be backed in its own denomination
 at creation. `MsgReturnUnallocated` is governance-only and returns at most Bank balance minus reservations through
 `FundCommunityPool`, preserving Distribution's ledger. Contributor cancellation uses the same return path; unearned
@@ -22,9 +28,9 @@ member principal stays unallocated in disbursement custody for another member.
 
 | Action | Authority |
 | --- | --- |
-| Set operational params, create contributor awards, cancel, return unallocated funds, void a registrar's suspensions | Governance |
-| Register and suspend members | Current registrar |
-| Reinstate members | Current registrar or governance |
+| Set operational params, appoint or replace the registrar, create contributor awards, cancel, return unallocated funds, void a replaced term's suspensions | Governance |
+| Register and suspend members | Registrar, under its exact term and active window |
+| Reinstate members | Registrar or governance |
 | Release one or more grants | Any sender; always pays the stored payee |
 | Change member payee | Original registered member key |
 | Change contributor payee | Beneficiary's current controller |
@@ -58,9 +64,10 @@ gas. Paid coins are ordinary spendable coins; unpaid escrow cannot stake or vote
 as ownership awards even if the recipient subsequently stakes them.
 
 Suspension blocks member payments while their original schedule continues. Reinstatement permits catch-up. Each
-suspension records its registrar and that registrar's epoch. Governance voids all that registrar's earlier suspensions
-with one epoch increment; a new suspension in the same block remains effective. Rotating the registrar alone does not
-void suspensions: include both messages in an incident proposal.
+suspension records the registrar term it was made under. Governance voids every suspension of a replaced term with one
+write; the live term is never voided, so to void a sitting registrar's suspensions governance re-appoints it, which
+advances the term, and voids the previous term in the same proposal. A suspension under the new term stands even in the
+same block. Replacing the registrar alone does not void suspensions, and neither does expiry.
 
 Cancellation freezes entitlement at the cancellation time, or at the effective suspension time for a suspended member.
 It retains accrued unpaid principal, frees only unearned principal, and **never sends to the payee**. A blocked recipient
@@ -100,9 +107,10 @@ principal, including cancelled accrued debt. `Bank balance >= reserved` is requi
 Paid counters distinguish members, ownership, and compensation. Bank sends, counters, indexes, and journal writes
 share the SDK transaction cache; one failure rolls the whole message batch back.
 
-Grant records and member indexes are permanent. The append-only journal records creation (including the original
+Grant records and member indexes are permanent; the registrar mandate and voided terms export verbatim, an expired
+appointment included. The append-only journal records creation (including the original
 terms and reference), each payment and destination, cancellation and retained debt, suspensions, reinstatements,
-payee changes, controller changes, parameter changes, epoch voids, and unallocated returns. Every journal entry also
+payee changes, controller changes, parameter changes, registrar appointments, term voids, and unallocated returns. Every journal entry also
 emits a typed `EventOperation`. Incoming funding is visible through Bank and Distribution events. Grant ID zero
 identifies administrative journal entries; list them with the unfiltered journal query. Records are public; references
 should identify approved work or an agreement without publishing private personnel information.
@@ -114,15 +122,17 @@ should identify approved work or an agreement without publishing private personn
 | Schedule | 1–1,200 periods, each at most 100 years, positive weights with a checked uint64 sum |
 | Member issuance | 1–10,000 members per rolling window; window 1 second–100 years |
 | Compensation allowlist | Up to 64 sorted, unique native denominations |
+| Voided term | Below the current registrar term; each term at most once |
 | Contributor public reference | Nonempty, at most 2,048 bytes |
 | Query page | At most 100 records, key pagination only; no offsets or count-total scans |
 
 The issuance log retains registrations in the configured window and prunes expired entries on registration. Changing
 the window does not reconstruct registrations already pruned under an earlier policy. Lowering the member limit can
 stop registration until enough entries expire. The library default is 1,000 per week; the reviewed launch and testnet
-artifacts use the disbursement plan's **250 per week**, with the registrar disabled until appointed.
+artifacts use the disbursement plan's **250 per week**, with the registrar mandate disabled until appointed.
 
-Genesis validation checks identities, schedules, conservation, aggregate totals, contiguous IDs and journal accounting.
+Genesis validation checks identities, schedules, conservation, aggregate totals, contiguous IDs, journal accounting, the
+registrar mandate, and voided terms.
 Import also checks Bank backing and timestamps against genesis time, then rebuilds secondary indexes and founder
 aggregates. Continuation exports retain absolute times, IDs, member identities, and the journal.
 
@@ -130,7 +140,7 @@ aggregates. Continuation exports retain absolute times, IDs, member identities, 
 
 The authoritative API is [proto/ark/disbursement/v1](../../proto/ark/disbursement/v1). AutoCLI exposes `arkd tx disbursement` and
 `arkd query disbursement`; gRPC and REST expose the same query surface. `params` includes the immutable ownership policy and
-founding stake; `releasable` separates accrued unpaid principal from currently payable funds and shows live cap inputs.
+founding stake; `registrar-mandate` shows the appointment, its term, and whether it is active; `releasable` separates accrued unpaid principal from currently payable funds and shows live cap inputs.
 `balance` shows Bank backing, reservation, paid totals, and unallocated funds. `grants --beneficiary` and
 `journal --grant-id` use indexes rather than scanning unrelated history. `member`, `beneficiary`, `issuance`, and
 `totals` complete the public accounting surface. Queries carry `module_query_safe`; they are not automatically added
@@ -138,9 +148,10 @@ to the app's separately reviewed Wasm query accept list.
 
 | Source | Responsibility |
 | --- | --- |
-| [types/rules.go](types/rules.go), [types/params.go](types/params.go) | Schedule arithmetic, bounds, operational and ownership policy |
+| [types/rules.go](types/rules.go), [types/params.go](types/params.go), [types/registrar.go](types/registrar.go) | Schedule arithmetic, bounds, operational and ownership policy, registrar mandate and committee surface |
 | [types/genesis.go](types/genesis.go) | Record and import validation |
 | [keeper/keeper.go](keeper/keeper.go) | Collections, custody checks, journal writer |
+| [keeper/registrar.go](keeper/registrar.go) | Registrar appointment, observation, and committee authorisation |
 | [keeper/payments.go](keeper/payments.go) | Creation, entitlement, caps, payment, cancellation |
 | [keeper/msg_server.go](keeper/msg_server.go) | Authorities, rolling issuance, member recovery, destinations |
 | [keeper/grpc_query.go](keeper/grpc_query.go), [keeper/genesis.go](keeper/genesis.go) | Indexed reads and continuation export/import |

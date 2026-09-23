@@ -275,8 +275,8 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with no grants, custody, journal entries,
 or founders before assembly. Member terms are 10,000 NOAH, a tenth immediately and the balance over twelve monthly
-periods. Issuance is limited to 250 members per rolling seven days. The registrar is empty until governance appoints
-one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
+periods. Issuance is limited to 250 members per rolling seven days. The registrar mandate is disabled until governance
+appoints one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
 and a 60M NOAH award ceiling, excluding the founding seat. Seat assembly adds one immutable founder record and
 beneficiary controller per founding operator; the module derives founding stake from these records. IDs start at one.
 Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination (D87).
