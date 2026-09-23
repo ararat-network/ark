@@ -463,6 +463,71 @@ func TestGrantContractEscrowsAndReleasesByBondedStake(t *testing.T) {
 	require.ErrorContains(t, f.execute(anyone, map[string]any{"release": map[string]any{"id": 2}}), "cancelled")
 }
 
+func TestGrantContractOwnershipCeilingExcludesTheSeat(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		seatHolder bool
+		own        int64
+	}{
+		{name: "contributor", own: 60_000_000},
+		{name: "seat holder", seatHolder: true, own: 65_000_000},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newGrantFixture(t)
+			unit := f.bonded(t).QuoRaw(5)
+			public := authtypes.NewModuleAddress("ceiling-public-stake")
+			stake := oneNoah.MulRaw(400_000_000)
+			apptestutil.FundAccount(t, f.app, f.ctx, public, sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, stake)))
+			f.delegate(t, public, stake)
+			grantee := authtypes.NewModuleAddress("ceiling-contributor")
+			amount := oneNoah.MulRaw(30_000_000)
+			reserve := amount.Add(unit).SubRaw(1).Quo(unit).Mul(memberAllowance)
+
+			for i, address := range []sdk.AccAddress{grantee, authtypes.NewModuleAddress("ceiling-second-tranche")} {
+				f.spendFromPool(t, amount.Add(reserve))
+				f.sudo(t, map[string]any{"add_grant": map[string]any{
+					"grantee": grantee.String(), "amount": amount.String(), "schedule": standardSchedule,
+					"seat_holder": tc.seatHolder, "release_address": address.String(),
+				}})
+				g := f.grant(t, uint64(i+1))
+				require.Equal(t, amount, g.Released)
+				require.True(t, g.Remaining.IsZero())
+				acc, ok := f.app.AccountKeeper.GetAccount(f.ctx, address).(*vestingtypes.PeriodicVestingAccount)
+				require.True(t, ok)
+				require.Equal(t, amount, acc.OriginalVesting.AmountOf(chain.NoahBaseDenom))
+			}
+			require.Equal(t, oneNoah.MulRaw(60_000_000), f.totals(t).ContributorsPaid)
+
+			// Further grants share the ceiling already reached by the first two.
+			amount = oneNoah.MulRaw(1_000_000)
+			reserve = amount.Add(unit).SubRaw(1).Quo(unit).Mul(memberAllowance)
+			f.spendFromPool(t, amount.Add(reserve))
+			next := authtypes.NewModuleAddress("ceiling-extra-tranche")
+			f.sudo(t, map[string]any{"add_grant": map[string]any{
+				"grantee": grantee.String(), "amount": amount.String(), "schedule": standardSchedule,
+				"seat_holder": tc.seatHolder, "release_address": next.String(),
+			}})
+			g := f.grant(t, 3)
+			require.True(t, g.Released.IsZero())
+			require.Equal(t, amount, g.Remaining)
+			var r struct {
+				Amount math.Int `json:"amount"`
+				Rule   struct {
+					Cap struct {
+						Own math.Int `json:"own"`
+						Cap math.Int `json:"cap"`
+					} `json:"cap"`
+				} `json:"rule"`
+			}
+			f.query(t, map[string]any{"releasable": map[string]any{"id": 3}}, &r)
+			require.True(t, r.Amount.IsZero())
+			require.Equal(t, oneNoah.MulRaw(tc.own), r.Rule.Cap.Own)
+			require.Equal(t, oneNoah.MulRaw(tc.own), r.Rule.Cap.Cap)
+			require.ErrorContains(t, f.execute(grantee, map[string]any{"release": map[string]any{"id": 3}}), "nothing releasable")
+		})
+	}
+}
+
 // TestGrantContractRegistrarIsTheOnlyIssuer: anyone else is refused, and
 // governance can swap the registrar through sudo.
 func TestGrantContractRegistrarIsTheOnlyIssuer(t *testing.T) {
@@ -483,7 +548,8 @@ func TestGrantContractRegistrarIsTheOnlyIssuer(t *testing.T) {
 // TestGrantContractStreamsPayByTheClock: a stream stays in the contract and
 // pays each elapsed period to the payee by bank send, spendable on arrival,
 // into an ordinary account or beside a vesting one; governance cancels what
-// has not elapsed back to the pool after paying what has.
+// has not elapsed back to the pool and holds what has for the payee, so a
+// payee that cannot receive funds cannot fail the cancel.
 func TestGrantContractStreamsPayByTheClock(t *testing.T) {
 	f := newGrantFixture(t)
 	amount := oneNoah.MulRaw(262_000)
@@ -539,17 +605,28 @@ func TestGrantContractStreamsPayByTheClock(t *testing.T) {
 	require.Equal(t, stake.Add(period), f.noah(both))
 	require.Equal(t, period, f.app.BankKeeper.SpendableCoins(f.ctx, both).AmountOf(chain.NoahBaseDenom), "the pay is spendable beside the locked grant")
 
-	// Cancelled a month and a half on: the elapsed months settle to the
-	// payee and the rest returns to the pool.
+	// The hire points the pay at a module account, which cannot receive
+	// funds. Cancelled a month and a half on, the cancel still lands: the
+	// elapsed months are held for the payee and the rest returns to the pool.
+	blocked := authtypes.NewModuleAddress("distribution")
+	require.True(t, f.app.BankKeeper.BlockedAddr(blocked))
+	require.NoError(t, f.execute(hire, map[string]any{"set_release_address": map[string]any{"id": 1, "address": blocked.String()}}))
 	f.ctx = f.ctx.WithBlockTime(f.ctx.BlockTime().Add(month + month/2))
 	poolBefore := f.communityPool(t)
 	f.sudo(t, map[string]any{"cancel_grant": map[string]any{"id": 1}})
-	require.Equal(t, period.MulRaw(3), f.noah(hire), "the elapsed months settled")
+	require.Equal(t, period, f.noah(hire), "the cancel sends nothing")
 	returned := amount.Sub(period.MulRaw(3))
 	require.Equal(t, poolBefore.Add(math.LegacyNewDecFromInt(returned)), f.communityPool(t), "the rest came back")
 	g = f.grant(t, 1)
 	require.True(t, g.Cancelled)
-	require.True(t, g.Remaining.IsZero())
+	require.Equal(t, period.MulRaw(2), g.Remaining, "the elapsed months are held")
 	require.Equal(t, uint32(3), g.Kind.Stream.Paid)
+	require.ErrorContains(t, release(1), "not allowed to receive funds")
+
+	// The controller repoints the held pay and anyone releases it.
+	require.NoError(t, f.execute(hire, map[string]any{"set_release_address": map[string]any{"id": 1, "address": hire.String()}}))
+	require.NoError(t, release(1))
+	require.Equal(t, period.MulRaw(3), f.noah(hire))
+	require.True(t, f.grant(t, 1).Remaining.IsZero())
 	require.ErrorContains(t, release(1), "cancelled")
 }
