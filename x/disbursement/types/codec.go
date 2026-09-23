@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
-// RegisterLegacyAminoCodec registers grant message names.
+// RegisterLegacyAminoCodec registers disbursement message names.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/disbursement/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgCreateGrant{}, "ark/disbursement/MsgCreateGrant")
@@ -23,7 +23,7 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgReturnUnallocated{}, "ark/disbursement/MsgReturnUnallocated")
 }
 
-// RegisterInterfaces registers grant transaction messages.
+// RegisterInterfaces registers disbursement transaction messages.
 func RegisterInterfaces(r codectypes.InterfaceRegistry) {
 	r.RegisterImplementations((*sdk.Msg)(nil), &MsgUpdateParams{}, &MsgCreateGrant{}, &MsgRegisterMembers{}, &MsgRelease{}, &MsgCancelGrants{}, &MsgSuspendMembers{}, &MsgReinstateMembers{}, &MsgVoidSuspensions{}, &MsgSetPayee{}, &MsgSetController{}, &MsgReturnUnallocated{})
 	msgservice.RegisterMsgServiceDesc(r, &_Msg_serviceDesc)

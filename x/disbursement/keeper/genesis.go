@@ -16,14 +16,14 @@ import (
 // InitGenesis imports verified obligations and rebuilds derived indexes and founder totals.
 func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	if gs == nil {
-		return fmt.Errorf("nil grant genesis")
+		return fmt.Errorf("nil disbursement genesis")
 	}
 	if err := gs.Validate(); err != nil {
 		return err
 	}
 	for _, t := range gs.Totals {
 		if k.bank.GetBalance(ctx, k.address, t.Denom).Amount.LT(t.Reserved) {
-			return fmt.Errorf("%s grant reservation is not backed by Bank", t.Denom)
+			return fmt.Errorf("%s disbursement reservation is not backed by Bank", t.Denom)
 		}
 		if err := k.Totals.Set(ctx, t.Denom, t); err != nil {
 			return err

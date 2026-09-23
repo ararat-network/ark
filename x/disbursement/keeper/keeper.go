@@ -97,7 +97,7 @@ func (k *Keeper) unallocated(ctx context.Context, denom string) (math.Int, error
 	}
 	balance := k.bank.GetBalance(ctx, k.address, denom).Amount
 	if balance.LT(t.Reserved) {
-		return math.Int{}, errors.New("grant custody is below its reservation")
+		return math.Int{}, errors.New("disbursement custody is below its reservation")
 	}
 	return balance.Sub(t.Reserved), nil
 }
@@ -105,7 +105,7 @@ func (k *Keeper) unallocated(ctx context.Context, denom string) (math.Int, error
 func blockTime(ctx context.Context) (uint64, error) {
 	at := sdk.UnwrapSDKContext(ctx).BlockTime().Unix()
 	if at < 0 {
-		return 0, errors.New("negative grant block time")
+		return 0, errors.New("negative disbursement block time")
 	}
 	return uint64(at), nil
 }
@@ -116,7 +116,7 @@ func nextID(ctx context.Context, seq collections.Sequence) (uint64, error) {
 		return 0, err
 	}
 	if id == 0 || id == stdmath.MaxUint64 {
-		return 0, errors.New("grant sequence exhausted")
+		return 0, errors.New("disbursement sequence exhausted")
 	}
 	return id, seq.Set(ctx, id+1)
 }
@@ -167,7 +167,7 @@ func (k *Keeper) record(ctx context.Context, grantID uint64, action, actor strin
 	}
 	height := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if height <= 0 {
-		return errors.New("grant operations require a positive block height")
+		return errors.New("disbursement operations require a positive block height")
 	}
 	id, err := nextID(ctx, k.NextJournalID)
 	if err != nil {
@@ -183,7 +183,7 @@ func (k *Keeper) record(ctx context.Context, grantID uint64, action, actor strin
 		}
 	}
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventOperation{Entry: entry}); err != nil {
-		return fmt.Errorf("grant journal event: %w", err)
+		return fmt.Errorf("disbursement journal event: %w", err)
 	}
 	return nil
 }

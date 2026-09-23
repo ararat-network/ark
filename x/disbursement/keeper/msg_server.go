@@ -22,7 +22,7 @@ type msgServer struct {
 
 var _ types.MsgServer = msgServer{}
 
-// NewMsgServerImpl exposes the grant transaction handlers.
+// NewMsgServerImpl exposes the disbursement transaction handlers.
 func NewMsgServerImpl(k *Keeper) types.MsgServer { return msgServer{k: k} }
 
 func (m msgServer) authority(ctx context.Context, address string) error {

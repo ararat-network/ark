@@ -49,7 +49,7 @@ func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind,
 		return 0, err
 	}
 	if available.LT(amount.Amount) {
-		return 0, errors.New("insufficient unallocated grant funds")
+		return 0, errors.New("insufficient unallocated disbursement funds")
 	}
 	at, err := blockTime(ctx)
 	if err != nil {

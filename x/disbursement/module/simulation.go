@@ -22,7 +22,7 @@ func (am AppModule) RegisterStoreDecoder(sdr simtypes.StoreDecoderRegistry) {
 
 // ProposalMsgsX exercises bounded operational policy changes through governance.
 func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
-	reg.Add(weights.Get("msg_grant_update_params", 100), simsx.SimMsgFactoryFn[*types.MsgUpdateParams](func(ctx context.Context, data *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
+	reg.Add(weights.Get("msg_update_params", 100), simsx.SimMsgFactoryFn[*types.MsgUpdateParams](func(ctx context.Context, data *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		p, err := am.k.Params.Get(ctx)
 		if err != nil {
 			reporter.Skip("disbursement params unavailable")

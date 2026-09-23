@@ -6,7 +6,7 @@ import (
 	disbursementv1 "github.com/ararat-network/ark/api/ark/disbursement/v1"
 )
 
-// AutoCLIOptions exposes typed grant messages and public queries.
+// AutoCLIOptions exposes typed disbursement messages and public queries.
 func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Query_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
@@ -21,7 +21,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			{RpcMethod: "Journal", Use: "journal", Short: "List permanent operations, optionally by grant ID"},
 			{RpcMethod: "Issuance", Use: "issuance", Short: "Show usage of the current rolling member window"},
 		}}, Tx: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Msg_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-			{RpcMethod: "UpdateParams", Use: "update-params-proposal", Short: "Propose operational grant parameters", GovProposal: true},
+			{RpcMethod: "UpdateParams", Use: "update-params-proposal", Short: "Propose operational disbursement parameters", GovProposal: true},
 			{RpcMethod: "CreateGrant", Use: "create-grant-proposal", Short: "Propose a fully funded ownership or compensation award", GovProposal: true},
 			{RpcMethod: "RegisterMembers", Use: "register-members", Short: "Register members and pay their first period", GovProposal: false},
 			{RpcMethod: "Release", Use: "release", Short: "Pay available entitlement to each recorded payee", GovProposal: false},
