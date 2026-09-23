@@ -1,0 +1,50 @@
+syntax = "proto3";
+package ark.disbursement.v1;
+
+import "amino/amino.proto";
+import "ark/disbursement/v1/grant.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ararat-network/ark/x/disbursement/types";
+
+// GenesisState exports grant obligations and their audit history; Bank exports custody balances.
+message GenesisState {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  OwnershipPolicy ownership_policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated Founder founders = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated Beneficiary beneficiaries = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated Grant grants = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated DenomTotals totals = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  Issuance issuance = 7 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated RegistrarEpoch registrar_epochs = 8 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated JournalEntry journal = 9 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 next_grant_id = 10 [(amino.dont_omitempty) = true];
+  uint64 next_journal_id = 11 [(amino.dont_omitempty) = true];
+}

@@ -1,0 +1,253 @@
+syntax = "proto3";
+package ark.disbursement.v1;
+
+import "amino/amino.proto";
+import "ark/disbursement/v1/grant.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/query/v1/query.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/ararat-network/ark/x/disbursement/types";
+
+// Query exposes grant records, obligations and their audit history.
+service Query {
+  // Params queries params state.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/params";
+  }
+  // Grant queries grant state.
+  rpc Grant(QueryGrantRequest) returns (QueryGrantResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/grants/{id}";
+  }
+  // Grants queries grants state.
+  rpc Grants(QueryGrantsRequest) returns (QueryGrantsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/grants";
+  }
+  // Member queries member state.
+  rpc Member(QueryMemberRequest) returns (QueryMemberResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/members/{address}";
+  }
+  // Beneficiary queries beneficiary state.
+  rpc Beneficiary(QueryBeneficiaryRequest) returns (QueryBeneficiaryResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/beneficiaries/{address}";
+  }
+  // Releasable queries releasable state.
+  rpc Releasable(QueryReleasableRequest) returns (QueryReleasableResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/grants/{id}/releasable";
+  }
+  // Balance queries balance state.
+  rpc Balance(QueryBalanceRequest) returns (QueryBalanceResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/balance/{denom}";
+  }
+  // Totals queries totals state.
+  rpc Totals(QueryTotalsRequest) returns (QueryTotalsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/totals";
+  }
+  // Journal queries journal state.
+  rpc Journal(QueryJournalRequest) returns (QueryJournalResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/journal";
+  }
+  // Issuance queries issuance state.
+  rpc Issuance(QueryIssuanceRequest) returns (QueryIssuanceResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/issuance";
+  }
+}
+
+// QueryParamsRequest requests Query/Params.
+message QueryParamsRequest {}
+
+// QueryParamsResponse returns Query/Params.
+message QueryParamsResponse {
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  OwnershipPolicy ownership_policy = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string founding_stake = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryGrantRequest requests Query/Grant.
+message QueryGrantRequest {
+  uint64 id = 1 [(amino.dont_omitempty) = true];
+}
+
+// QueryGrantResponse returns Query/Grant.
+message QueryGrantResponse {
+  Grant grant = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryGrantsRequest requests Query/Grants.
+message QueryGrantsRequest {
+  string beneficiary = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryGrantsResponse returns Query/Grants.
+message QueryGrantsResponse {
+  repeated Grant grants = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryMemberRequest requests Query/Member.
+message QueryMemberRequest {
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// QueryMemberResponse returns Query/Member.
+message QueryMemberResponse {
+  Grant grant = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryBeneficiaryRequest requests Query/Beneficiary.
+message QueryBeneficiaryRequest {
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// QueryBeneficiaryResponse returns Query/Beneficiary.
+message QueryBeneficiaryResponse {
+  Beneficiary beneficiary = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  Founder founder = 2;
+}
+
+// QueryReleasableRequest requests Query/Releasable.
+message QueryReleasableRequest {
+  uint64 id = 1 [(amino.dont_omitempty) = true];
+}
+
+// QueryReleasableResponse returns Query/Releasable.
+message QueryReleasableResponse {
+  cosmos.base.v1beta1.Coin amount = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string accrued = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 next_at = 3 [(amino.dont_omitempty) = true];
+  bool suspended = 4 [(amino.dont_omitempty) = true];
+  string bonded = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string own = 6 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string ownership_limit = 7 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string bloc_allowance = 8 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryBalanceRequest requests Query/Balance.
+message QueryBalanceRequest {
+  string denom = 1;
+}
+
+// QueryBalanceResponse returns Query/Balance.
+message QueryBalanceResponse {
+  cosmos.base.v1beta1.Coin balance = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  DenomTotals totals = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string unallocated = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryTotalsRequest requests Query/Totals.
+message QueryTotalsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryTotalsResponse returns Query/Totals.
+message QueryTotalsResponse {
+  repeated DenomTotals totals = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryJournalRequest requests Query/Journal.
+message QueryJournalRequest {
+  uint64 grant_id = 1 [(amino.dont_omitempty) = true];
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryJournalResponse returns Query/Journal.
+message QueryJournalResponse {
+  repeated JournalEntry entries = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryIssuanceRequest requests Query/Issuance.
+message QueryIssuanceRequest {}
+
+// QueryIssuanceResponse returns Query/Issuance.
+message QueryIssuanceResponse {
+  Issuance issuance = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  uint64 used = 2 [(amino.dont_omitempty) = true];
+  uint64 remaining = 3 [(amino.dont_omitempty) = true];
+}

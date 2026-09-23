@@ -1,0 +1,16 @@
+syntax = "proto3";
+package ark.disbursement.v1;
+
+import "amino/amino.proto";
+import "ark/disbursement/v1/grant.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ararat-network/ark/x/disbursement/types";
+
+// EventOperation publishes the journal entry committed with an operation.
+message EventOperation {
+  JournalEntry entry = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
