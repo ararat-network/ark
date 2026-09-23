@@ -23,6 +23,7 @@ import (
 	"github.com/ararat-network/ark/app/genesis"
 	"github.com/ararat-network/ark/app/params"
 	"github.com/ararat-network/ark/pkg/chain"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -110,6 +111,18 @@ func TestAddValidatorSeats(t *testing.T) {
 	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryState)
 	require.Equal(t, chain.SeatValidatorShare.MulRaw(2), treasuryState.EconomicPolicy.ValidatorBlockRewardTarget)
 	require.Equal(t, chain.SeatOracleShare.MulRaw(2), treasuryState.EconomicPolicy.OracleBlockRewardTarget)
+
+	var disbursementState disbursementtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementState)
+	require.NoError(t, disbursementState.Validate())
+	require.Len(t, disbursementState.Founders, 2)
+	for i, address := range []sdk.AccAddress{first, second} {
+		require.Equal(t, sdk.ValAddress(address).String(), disbursementState.Founders[i].Operator)
+		require.Equal(t, address.String(), disbursementState.Founders[i].Beneficiary)
+		require.Equal(t, chain.NativeBaseAmount(chain.SeatGrantNoah), disbursementState.Founders[i].SeatAmount)
+		require.Equal(t, address.String(), disbursementState.Beneficiaries[i].Controller)
+		require.True(t, disbursementState.Beneficiaries[i].OwnershipPaid.IsZero())
+	}
 }
 
 func TestAddValidatorSeatsRefusals(t *testing.T) {
@@ -124,6 +137,12 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 		unsetTime bool
 		errPhrase string
 	}{
+		{
+			name:      "missing disbursement state",
+			mutate:    func(state map[string]json.RawMessage) { delete(state, disbursementtypes.ModuleName) },
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "carries no disbursement state",
+		},
 		{
 			name: "operator already seated",
 			mutate: func(state map[string]json.RawMessage) {

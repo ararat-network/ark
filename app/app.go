@@ -69,6 +69,7 @@ import (
 	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
 	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
+	disbursementkeeper "github.com/ararat-network/ark/x/disbursement/keeper"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
 	oraclekeeper "github.com/ararat-network/ark/x/oracle/keeper"
 	reservekeeper "github.com/ararat-network/ark/x/reserve/keeper"
@@ -121,6 +122,7 @@ type ArkApp struct {
 	MarketKeeper          *marketkeeper.Keeper
 	TreasuryKeeper        *treasurykeeper.Keeper
 	ClaimsKeeper          *claimskeeper.Keeper
+	DisbursementKeeper    *disbursementkeeper.Keeper
 	ReserveKeeper         *reservekeeper.Keeper
 	OracleKeeper          *oraclekeeper.Keeper
 	AssetKeeper           *assetkeeper.Keeper
@@ -203,6 +205,7 @@ func NewArkApp(
 		&app.MarketKeeper,
 		&app.TreasuryKeeper,
 		&app.ClaimsKeeper,
+		&app.DisbursementKeeper,
 		&app.ReserveKeeper,
 		&app.OracleKeeper,
 		&app.AssetKeeper,

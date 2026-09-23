@@ -51,7 +51,7 @@ consensus `max_gas` instead.
 
 ## Module entry points
 
-[Asset](../x/asset/README.md), [Claims](../x/claims/README.md), [Market](../x/market/README.md),
+[Asset](../x/asset/README.md), [Claims](../x/claims/README.md), [Disbursement](../x/disbursement/README.md), [Market](../x/market/README.md),
 [Oracle](../x/oracle/README.md), [Reserve](../x/reserve/README.md), [Security](../x/security/README.md),
 and [Treasury](../x/treasury/README.md) each document their behaviour, rationale, state, and development boundaries.
 
@@ -101,8 +101,9 @@ it remains payable. These adapters enforce that contract at distinct signed-mess
 From the repository root, run `go test ./app/...` for application changes. Integration scenarios live under
 [tests/integration/](../tests/README.md); simulation commands and prerequisites are in the [test guide](../tests/README.md).
 [testutil/](testutil/) supplies app, validator, funding, genesis, and IBC fixtures. Embedded contract fixtures and their
-wrapper live in [testdata/contracts.go](testdata/contracts.go); the grant contract's wasm there is the build of
-[contracts/grant](../contracts/grant/README.md), refreshed by `make contracts-optimize`. Use `go build ./...` before claiming
+wrapper live in [testdata/contracts.go](testdata/contracts.go). Native grant flows are covered by
+[disbursement_test.go](disbursement_test.go), including custody, failure rollback, founder limits, and continuation export/import.
+Use `go build ./...` before claiming
 repository-wide compilation.
 
 ## Simulation fixtures

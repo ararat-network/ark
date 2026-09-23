@@ -67,6 +67,7 @@ import (
 
 	assetmodulev1 "github.com/ararat-network/ark/api/ark/asset/module/v1"
 	claimsmodulev1 "github.com/ararat-network/ark/api/ark/claims/module/v1"
+	disbursementmodulev1 "github.com/ararat-network/ark/api/ark/disbursement/module/v1"
 	marketmodulev1 "github.com/ararat-network/ark/api/ark/market/module/v1"
 	oraclemodulev1 "github.com/ararat-network/ark/api/ark/oracle/module/v1"
 	reservemodulev1 "github.com/ararat-network/ark/api/ark/reserve/module/v1"
@@ -77,6 +78,8 @@ import (
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	_ "github.com/ararat-network/ark/x/claims/module"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	_ "github.com/ararat-network/ark/x/disbursement/module"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	_ "github.com/ararat-network/ark/x/market/module"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	_ "github.com/ararat-network/ark/x/oracle/module"
@@ -107,6 +110,7 @@ var (
 		// The strategic Reserve is the one fund account that may burn.
 		{Account: reservetypes.StrategicReserveName, Permissions: []string{authtypes.Burner}},
 		{Account: claimstypes.InsuranceName},
+		{Account: disbursementtypes.ModuleName},
 		{Account: treasurytypes.TransferTaxCollectorName},
 		{Account: oracletypes.ModuleName},
 	}
@@ -123,7 +127,7 @@ var (
 		wasmtypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
-		// Gov, Subsidy, Redemption Buffer, Strategic Reserve, and Insurance accounts accept direct
+		// Gov, Subsidy, Redemption Buffer, Strategic Reserve, Insurance, and Disbursement accounts accept direct
 		// funding and are absent from this blocklist.
 	}
 
@@ -218,6 +222,7 @@ var (
 					claimstypes.ModuleName,
 					reservetypes.ModuleName,
 					securitytypes.ModuleName,
+					disbursementtypes.ModuleName,
 				},
 				// ExportGenesis is left unset so the runtime mirrors InitGenesis.
 				// Module exports run concurrently and are pure reads, so there
@@ -319,6 +324,10 @@ var (
 		{
 			Name:   assettypes.ModuleName,
 			Config: appconfig.WrapAny(&assetmodulev1.Module{}),
+		},
+		{
+			Name:   disbursementtypes.ModuleName,
+			Config: appconfig.WrapAny(&disbursementmodulev1.Module{}),
 		},
 		{
 			Name:   securitytypes.ModuleName,

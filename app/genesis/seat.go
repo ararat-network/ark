@@ -9,6 +9,8 @@ import (
 	"maps"
 	"time"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -17,6 +19,7 @@ import (
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -67,6 +70,9 @@ func addValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, oper
 		}},
 		{distrtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return drawSeatFromPool(cdc, raw, seat)
+		}},
+		{disbursementtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
+			return registerFounder(cdc, raw, operator)
 		}},
 		{treasurytypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return raiseSeatTargets(cdc, raw)
@@ -193,4 +199,18 @@ func raiseSeatTargets(cdc codec.Codec, raw json.RawMessage) (json.RawMessage, er
 		return nil, err
 	}
 	return cdc.MarshalJSON(&state)
+}
+
+// registerFounder binds the historical seat to its permanent grant beneficiary.
+func registerFounder(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress) (json.RawMessage, error) {
+	var gs disbursementtypes.GenesisState
+	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
+		return nil, err
+	}
+	gs.Founders = append(gs.Founders, disbursementtypes.Founder{Operator: sdk.ValAddress(operator).String(), Beneficiary: operator.String(), SeatAmount: chain.NativeBaseAmount(chain.SeatGrantNoah)})
+	gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipPaid: math.ZeroInt()})
+	if err := gs.Validate(); err != nil {
+		return nil, err
+	}
+	return cdc.MarshalJSON(&gs)
 }

@@ -847,6 +847,87 @@
         "instantiate_default_permission": "Everybody"
       },
       "sequences": []
+    },
+    "disbursement": {
+      "params": {
+        "registrar": "",
+        "max_members": "250",
+        "window_seconds": "604800",
+        "member_amount": "10000000000000000000000",
+        "member_schedule": [
+          {
+            "length": "1",
+            "parts": "4"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          },
+          {
+            "length": "2628000",
+            "parts": "3"
+          }
+        ],
+        "compensation_denoms": [
+          "anoah"
+        ]
+      },
+      "ownership_policy": {
+        "numerator": "1",
+        "denominator": "5",
+        "ceiling": "60000000000000000000000000"
+      },
+      "founders": [],
+      "beneficiaries": [],
+      "grants": [],
+      "totals": [],
+      "issuance": {
+        "entries": []
+      },
+      "registrar_epochs": [],
+      "journal": [],
+      "next_grant_id": "1",
+      "next_journal_id": "1"
     }
   },
   "app_version": "",
