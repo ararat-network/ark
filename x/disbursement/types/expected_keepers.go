@@ -11,8 +11,17 @@ import (
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
-// AccountKeeper resolves the registered custody address.
-type AccountKeeper interface{ GetModuleAddress(string) sdk.AccAddress }
+// AccountKeeper resolves the custody address and the committee account an appointment observes.
+type AccountKeeper interface {
+	GetModuleAddress(string) sdk.AccAddress
+	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI
+}
+
+// WasmKeeper answers whether the contract store holds code at the committee address, the one fact
+// an appointment cannot read off the account.
+type WasmKeeper interface {
+	HasContractInfo(context.Context, sdk.AccAddress) bool
+}
 
 // BankKeeper only exposes custody reads and funded payments.
 type BankKeeper interface {

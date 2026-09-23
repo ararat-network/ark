@@ -121,12 +121,12 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 			}
 		}
 	}
-	for _, e := range gs.RegistrarEpochs {
-		address, err := chain.ParseCanonicalAccountAddress("registrar", e.Registrar)
-		if err != nil {
-			return err
-		}
-		if err := k.RegistrarEpochs.Set(ctx, address, e.Epoch); err != nil {
+	// The mandate imports verbatim, expired included: an export taken after expiry must round-trip.
+	if err := k.RegistrarMandate.Set(ctx, gs.RegistrarMandate); err != nil {
+		return err
+	}
+	for _, term := range gs.VoidedTerms {
+		if err := k.VoidedTerms.Set(ctx, term); err != nil {
 			return err
 		}
 	}
@@ -194,8 +194,12 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	if err := k.Totals.Walk(ctx, nil, func(_ string, t types.DenomTotals) (bool, error) { gs.Totals = append(gs.Totals, t); return false, nil }); err != nil {
 		return nil, err
 	}
-	if err := k.RegistrarEpochs.Walk(ctx, nil, func(a sdk.AccAddress, e uint64) (bool, error) {
-		gs.RegistrarEpochs = append(gs.RegistrarEpochs, types.RegistrarEpoch{Registrar: a.String(), Epoch: e})
+	gs.RegistrarMandate, err = k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := k.VoidedTerms.Walk(ctx, nil, func(term uint64) (bool, error) {
+		gs.VoidedTerms = append(gs.VoidedTerms, term)
 		return false, nil
 	}); err != nil {
 		return nil, err

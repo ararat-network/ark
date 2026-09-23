@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	stdmath "math"
 	"slices"
 
 	"cosmossdk.io/math"
@@ -27,17 +26,6 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer { return msgServer{k: k} }
 
 func (m msgServer) authority(ctx context.Context, address string) error {
 	return sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, address)
-}
-
-func (m msgServer) registrar(ctx context.Context, address string) (types.Params, error) {
-	p, err := m.k.Params.Get(ctx)
-	if err != nil {
-		return p, err
-	}
-	if p.Registrar == "" || address != p.Registrar {
-		return p, errors.New("only the current registrar may act")
-	}
-	return p, nil
 }
 
 func addressesBatch(addresses []string) ([]sdk.AccAddress, error) {
@@ -104,6 +92,19 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	return &types.MsgUpdateParamsResponse{}, nil
 }
 
+func (m msgServer) SetRegistrarMandate(ctx context.Context, msg *types.MsgSetRegistrarMandate) (*types.MsgSetRegistrarMandateResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if err := m.authority(ctx, msg.Authority); err != nil {
+		return nil, err
+	}
+	if err := m.k.SetRegistrarMandate(ctx, msg.Authority, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
+		return nil, err
+	}
+	return &types.MsgSetRegistrarMandateResponse{}, nil
+}
+
 func (m msgServer) CreateGrant(ctx context.Context, msg *types.MsgCreateGrant) (*types.MsgCreateGrantResponse, error) {
 	if msg == nil {
 		return nil, errors.New("nil message")
@@ -162,11 +163,15 @@ func (k *Keeper) issuanceWindow(ctx context.Context, p types.Params) (types.Issu
 	return types.Issuance{Entries: entries}, used, nil
 }
 
-func (m msgServer) RegisterMembers(ctx context.Context, msg *types.MsgRegisterMembers) (*types.MsgRegisterMembersResponse, error) {
+func (m msgServer) CommitteeRegister(ctx context.Context, msg *types.MsgCommitteeRegister) (*types.MsgCommitteeRegisterResponse, error) {
 	if msg == nil {
 		return nil, errors.New("nil message")
 	}
-	p, err := m.registrar(ctx, msg.Registrar)
+	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	if err != nil {
+		return nil, err
+	}
+	p, err := m.k.Params.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -215,13 +220,13 @@ func (m msgServer) RegisterMembers(ctx context.Context, msg *types.MsgRegisterMe
 	}
 	ids := make([]uint64, 0, len(addresses))
 	for _, address := range addresses {
-		id, err := m.k.create(ctx, msg.Registrar, types.GrantKind_GRANT_KIND_MEMBER, address, chain.NoahCoin(p.MemberAmount), p.MemberSchedule, "")
+		id, err := m.k.create(ctx, appointment.Committee, types.GrantKind_GRANT_KIND_MEMBER, address, chain.NoahCoin(p.MemberAmount), p.MemberSchedule, "")
 		if err != nil {
 			return nil, err
 		}
 		ids = append(ids, id)
 	}
-	return &types.MsgRegisterMembersResponse{GrantIds: ids}, nil
+	return &types.MsgCommitteeRegisterResponse{GrantIds: ids}, nil
 }
 
 func (m msgServer) Release(ctx context.Context, msg *types.MsgRelease) (*types.MsgReleaseResponse, error) {
@@ -289,22 +294,15 @@ func (k *Keeper) liveMember(ctx context.Context, address sdk.AccAddress) (types.
 	return g, nil
 }
 
-func (m msgServer) SuspendMembers(ctx context.Context, msg *types.MsgSuspendMembers) (*types.MsgSuspendMembersResponse, error) {
+func (m msgServer) CommitteeSuspend(ctx context.Context, msg *types.MsgCommitteeSuspend) (*types.MsgCommitteeSuspendResponse, error) {
 	if msg == nil {
 		return nil, errors.New("nil message")
 	}
-	if _, err := m.registrar(ctx, msg.Registrar); err != nil {
+	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	if err != nil {
 		return nil, err
 	}
 	addresses, err := addressesBatch(msg.Addresses)
-	if err != nil {
-		return nil, err
-	}
-	registrar, err := chain.ParseCanonicalAccountAddress("registrar", msg.Registrar)
-	if err != nil {
-		return nil, err
-	}
-	epoch, err := m.k.epoch(ctx, registrar)
 	if err != nil {
 		return nil, err
 	}
@@ -324,51 +322,72 @@ func (m msgServer) SuspendMembers(ctx context.Context, msg *types.MsgSuspendMemb
 		if suspended {
 			return nil, errors.New("member already suspended")
 		}
-		g.Suspension = &types.Suspension{At: now, Registrar: msg.Registrar, Epoch: epoch}
+		g.Suspension = &types.Suspension{At: now, Term: appointment.Term}
 		if err := m.k.Grants.Set(ctx, g.Id, g); err != nil {
 			return nil, err
 		}
-		if err := m.k.record(ctx, g.Id, "suspended", msg.Registrar, sdk.NewCoin(g.Amount.Denom, math.ZeroInt()), g.Suspension); err != nil {
+		if err := m.k.record(ctx, g.Id, "suspended", appointment.Committee, sdk.NewCoin(g.Amount.Denom, math.ZeroInt()), g.Suspension); err != nil {
 			return nil, err
 		}
 	}
-	return &types.MsgSuspendMembersResponse{}, nil
+	return &types.MsgCommitteeSuspendResponse{}, nil
+}
+
+func (m msgServer) CommitteeReinstate(ctx context.Context, msg *types.MsgCommitteeReinstate) (*types.MsgCommitteeReinstateResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.reinstate(ctx, appointment.Committee, msg.Addresses); err != nil {
+		return nil, err
+	}
+	return &types.MsgCommitteeReinstateResponse{}, nil
 }
 
 func (m msgServer) ReinstateMembers(ctx context.Context, msg *types.MsgReinstateMembers) (*types.MsgReinstateMembersResponse, error) {
 	if msg == nil {
 		return nil, errors.New("nil message")
 	}
-	if err := m.authority(ctx, msg.Sender); err != nil {
-		if _, err := m.registrar(ctx, msg.Sender); err != nil {
-			return nil, err
-		}
-	}
-	addresses, err := addressesBatch(msg.Addresses)
-	if err != nil {
+	if err := m.authority(ctx, msg.Authority); err != nil {
 		return nil, err
+	}
+	if err := m.reinstate(ctx, msg.Authority, msg.Addresses); err != nil {
+		return nil, err
+	}
+	return &types.MsgReinstateMembersResponse{}, nil
+}
+
+// reinstate clears effective suspensions; the registrar and governance share the action under
+// their own authorisation.
+func (m msgServer) reinstate(ctx context.Context, actor string, batch []string) error {
+	addresses, err := addressesBatch(batch)
+	if err != nil {
+		return err
 	}
 	for _, address := range addresses {
 		g, err := m.k.liveMember(ctx, address)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		suspended, err := m.k.suspended(ctx, g)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !suspended {
-			return nil, errors.New("member is not suspended")
+			return errors.New("member is not suspended")
 		}
 		g.Suspension = nil
 		if err := m.k.Grants.Set(ctx, g.Id, g); err != nil {
-			return nil, err
+			return err
 		}
-		if err := m.k.record(ctx, g.Id, "reinstated", msg.Sender, sdk.NewCoin(g.Amount.Denom, math.ZeroInt()), nil); err != nil {
-			return nil, err
+		if err := m.k.record(ctx, g.Id, "reinstated", actor, sdk.NewCoin(g.Amount.Denom, math.ZeroInt()), nil); err != nil {
+			return err
 		}
 	}
-	return &types.MsgReinstateMembersResponse{}, nil
+	return nil
 }
 
 func (m msgServer) VoidSuspensions(ctx context.Context, msg *types.MsgVoidSuspensions) (*types.MsgVoidSuspensionsResponse, error) {
@@ -378,21 +397,26 @@ func (m msgServer) VoidSuspensions(ctx context.Context, msg *types.MsgVoidSuspen
 	if err := m.authority(ctx, msg.Authority); err != nil {
 		return nil, err
 	}
-	registrar, err := chain.ParseCanonicalAccountAddress("registrar", msg.Registrar)
+	current, err := m.k.RegistrarMandate.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	epoch, err := m.k.epoch(ctx, registrar)
+	// The live term is never voided: re-appoint the registrar first, which advances the term, so a
+	// suspension made after the void lands under a term the void does not touch.
+	if msg.Term == 0 || msg.Term >= current.Term {
+		return nil, errors.New("only a replaced registrar term can be voided")
+	}
+	voided, err := m.k.VoidedTerms.Has(ctx, msg.Term)
 	if err != nil {
 		return nil, err
 	}
-	if epoch == stdmath.MaxUint64 {
-		return nil, errors.New("registrar epoch exhausted")
+	if voided {
+		return nil, errors.New("registrar term already voided")
 	}
-	if err := m.k.RegistrarEpochs.Set(ctx, registrar, epoch+1); err != nil {
+	if err := m.k.VoidedTerms.Set(ctx, msg.Term); err != nil {
 		return nil, err
 	}
-	if err := m.k.record(ctx, 0, "void_suspensions", msg.Authority, chain.NoahCoin(math.ZeroInt()), types.RegistrarEpoch{Registrar: msg.Registrar, Epoch: epoch + 1}); err != nil {
+	if err := m.k.record(ctx, 0, "void_suspensions", msg.Authority, chain.NoahCoin(math.ZeroInt()), map[string]uint64{"term": msg.Term}); err != nil {
 		return nil, err
 	}
 	return &types.MsgVoidSuspensionsResponse{}, nil

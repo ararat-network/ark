@@ -14,7 +14,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
@@ -26,6 +25,8 @@ type Keeper struct {
 	distribution        types.DistributionKeeper
 	staking             types.StakingKeeper
 	assets              types.AssetReader
+	account             types.AccountKeeper
+	wasm                types.WasmKeeper
 	Schema              collections.Schema
 	Params              collections.Item[types.Params]
 	OwnershipPolicy     collections.Item[types.OwnershipPolicy]
@@ -35,7 +36,7 @@ type Keeper struct {
 	Founders            collections.Map[sdk.ValAddress, types.Founder]
 	Totals              collections.Map[string, types.DenomTotals]
 	Issuance            collections.Item[types.Issuance]
-	RegistrarEpochs     collections.Map[sdk.AccAddress, uint64]
+	RegistrarMandate    collections.Item[types.RegistrarMandate]
 	Journal             collections.Map[uint64, types.JournalEntry]
 	NextGrantID         collections.Sequence
 	NextJournalID       collections.Sequence
@@ -44,17 +45,18 @@ type Keeper struct {
 	FoundingStake       collections.Item[math.Int]
 	FounderPaid         collections.Item[math.Int]
 	FounderRemaining    collections.Item[math.Int]
+	VoidedTerms         collections.KeySet[uint64]
 }
 
 // NewKeeper constructs the disbursement module with narrowly scoped capabilities.
-func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority string, account types.AccountKeeper, bank types.BankKeeper, distribution types.DistributionKeeper, staking types.StakingKeeper, assets types.AssetReader) *Keeper {
+func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority string, account types.AccountKeeper, wasm types.WasmKeeper, bank types.BankKeeper, distribution types.DistributionKeeper, staking types.StakingKeeper, assets types.AssetReader) *Keeper {
 	address := account.GetModuleAddress(types.ModuleName)
 	if address == nil {
 		panic("disbursement module account is not registered")
 	}
 	sb := collections.NewSchemaBuilder(service)
 	k := &Keeper{
-		authority: authority, address: address, bank: bank, distribution: distribution, staking: staking, assets: assets,
+		authority: authority, address: address, bank: bank, distribution: distribution, staking: staking, assets: assets, account: account, wasm: wasm,
 		Params:              collections.NewItem(sb, collections.NewPrefix(0), "params", codec.CollValue[types.Params](cdc)),
 		OwnershipPolicy:     collections.NewItem(sb, collections.NewPrefix(1), "ownership_policy", codec.CollValue[types.OwnershipPolicy](cdc)),
 		Grants:              collections.NewMap(sb, collections.NewPrefix(2), "grants", collections.Uint64Key, codec.CollValue[types.Grant](cdc)),
@@ -63,7 +65,7 @@ func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority st
 		Founders:            collections.NewMap(sb, collections.NewPrefix(5), "founders", sdk.ValAddressKey, codec.CollValue[types.Founder](cdc)),
 		Totals:              collections.NewMap(sb, collections.NewPrefix(6), "totals", collections.StringKey, codec.CollValue[types.DenomTotals](cdc)),
 		Issuance:            collections.NewItem(sb, collections.NewPrefix(7), "issuance", codec.CollValue[types.Issuance](cdc)),
-		RegistrarEpochs:     collections.NewMap(sb, collections.NewPrefix(8), "registrar_epochs", sdk.AccAddressKey, collections.Uint64Value),
+		RegistrarMandate:    collections.NewItem(sb, collections.NewPrefix(8), "registrar_mandate", codec.CollValue[types.RegistrarMandate](cdc)),
 		Journal:             collections.NewMap(sb, collections.NewPrefix(9), "journal", collections.Uint64Key, codec.CollValue[types.JournalEntry](cdc)),
 		NextGrantID:         collections.NewSequence(sb, collections.NewPrefix(10), "next_grant_id"),
 		NextJournalID:       collections.NewSequence(sb, collections.NewPrefix(11), "next_journal_id"),
@@ -72,6 +74,7 @@ func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority st
 		FoundingStake:       collections.NewItem(sb, collections.NewPrefix(14), "founding_stake", sdk.IntValue),
 		FounderPaid:         collections.NewItem(sb, collections.NewPrefix(15), "founder_paid", sdk.IntValue),
 		FounderRemaining:    collections.NewItem(sb, collections.NewPrefix(16), "founder_remaining", sdk.IntValue),
+		VoidedTerms:         collections.NewKeySet(sb, collections.NewPrefix(17), "voided_terms", collections.Uint64Key),
 	}
 	var err error
 	k.Schema, err = sb.Build()
@@ -121,24 +124,13 @@ func nextID(ctx context.Context, seq collections.Sequence) (uint64, error) {
 	return id, seq.Set(ctx, id+1)
 }
 
-func (k *Keeper) epoch(ctx context.Context, address sdk.AccAddress) (uint64, error) {
-	e, err := k.RegistrarEpochs.Get(ctx, address)
-	if errors.Is(err, collections.ErrNotFound) {
-		return 0, nil
-	}
-	return e, err
-}
-
+// suspended reports whether a recorded suspension is effective: one made under a voided term is not.
 func (k *Keeper) suspended(ctx context.Context, g types.Grant) (bool, error) {
 	if g.Suspension == nil {
 		return false, nil
 	}
-	addr, err := chain.ParseCanonicalAccountAddress("suspending registrar", g.Suspension.Registrar)
-	if err != nil {
-		return false, err
-	}
-	epoch, err := k.epoch(ctx, addr)
-	return epoch == g.Suspension.Epoch, err
+	voided, err := k.VoidedTerms.Has(ctx, g.Suspension.Term)
+	return !voided, err
 }
 
 func (k *Keeper) founder(ctx context.Context, beneficiary sdk.AccAddress) (*types.Founder, error) {

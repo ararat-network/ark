@@ -26,7 +26,7 @@ func DefaultMemberSchedule() []Period {
 	return schedule
 }
 
-// DefaultParams starts with registration disabled and NOAH compensation admitted.
+// DefaultParams admits NOAH compensation; the registrar is appointed by its mandate.
 func DefaultParams() Params {
 	return Params{
 		MaxMembers: DefaultMaxMembers, WindowSeconds: DefaultWindowSeconds,
@@ -42,11 +42,6 @@ func DefaultOwnershipPolicy() OwnershipPolicy {
 
 // Validate bounds all operational work at the governance write.
 func (p Params) Validate() error {
-	if p.Registrar != "" {
-		if _, err := chain.ParseCanonicalAccountAddress("registrar", p.Registrar); err != nil {
-			return err
-		}
-	}
 	if p.MaxMembers == 0 || p.MaxMembers > MaxIssuanceMembers {
 		return fmt.Errorf("max_members must be 1..%d", MaxIssuanceMembers)
 	}

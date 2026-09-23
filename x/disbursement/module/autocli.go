@@ -11,6 +11,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Query_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 			{RpcMethod: "Params", Use: "params", Short: "Show operational params and immutable ownership policy"},
+			{RpcMethod: "RegistrarMandate", Use: "registrar-mandate", Short: "Show the registrar appointment and whether it is active"},
 			{RpcMethod: "Grant", Use: "grant [id]", Short: "Show a grant and its original terms", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}}},
 			{RpcMethod: "Grants", Use: "grants", Short: "List grants, optionally by beneficiary"},
 			{RpcMethod: "Member", Use: "member [address]", Short: "Look up a permanent member registration", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}}},
@@ -22,13 +23,15 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			{RpcMethod: "Issuance", Use: "issuance", Short: "Show usage of the current rolling member window"},
 		}}, Tx: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Msg_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 			{RpcMethod: "UpdateParams", Use: "update-params-proposal", Short: "Propose operational disbursement parameters", GovProposal: true},
+			{RpcMethod: "SetRegistrarMandate", Use: "set-registrar-mandate-proposal", Short: "Propose appointing, replacing, or disabling the registrar", GovProposal: true},
 			{RpcMethod: "CreateGrant", Use: "create-grant-proposal", Short: "Propose a fully funded ownership or compensation award", GovProposal: true},
-			{RpcMethod: "RegisterMembers", Use: "register-members", Short: "Register members and pay their first period", GovProposal: false},
+			{RpcMethod: "CommitteeRegister", Use: "committee-register", Short: "Register members and pay their first period as the registrar", GovProposal: false},
 			{RpcMethod: "Release", Use: "release", Short: "Pay available entitlement to each recorded payee", GovProposal: false},
 			{RpcMethod: "CancelGrants", Use: "cancel-grants-proposal", Short: "Propose cancellation while retaining earned debt", GovProposal: true},
-			{RpcMethod: "SuspendMembers", Use: "suspend-members", Short: "Suspend member payments as the current registrar", GovProposal: false},
-			{RpcMethod: "ReinstateMembers", Use: "reinstate-members", Short: "Resume suspended member payments", GovProposal: false},
-			{RpcMethod: "VoidSuspensions", Use: "void-suspensions-proposal", Short: "Propose invalidating a registrar's earlier suspensions", GovProposal: true},
+			{RpcMethod: "CommitteeSuspend", Use: "committee-suspend", Short: "Suspend member payments as the registrar", GovProposal: false},
+			{RpcMethod: "CommitteeReinstate", Use: "committee-reinstate", Short: "Resume suspended member payments as the registrar", GovProposal: false},
+			{RpcMethod: "ReinstateMembers", Use: "reinstate-members-proposal", Short: "Propose resuming suspended member payments", GovProposal: true},
+			{RpcMethod: "VoidSuspensions", Use: "void-suspensions-proposal", Short: "Propose invalidating every suspension of a replaced registrar term", GovProposal: true},
 			{RpcMethod: "SetPayee", Use: "set-payee", Short: "Change a grant destination without changing beneficiary identity", GovProposal: false},
 			{RpcMethod: "SetController", Use: "set-controller", Short: "Rotate a contributor's controller", GovProposal: false},
 			{RpcMethod: "ReturnUnallocated", Use: "return-unallocated-proposal", Short: "Propose returning idle funds to the community pool", GovProposal: true},

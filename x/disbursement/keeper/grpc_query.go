@@ -69,6 +69,17 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 	return &types.QueryParamsResponse{Params: p, OwnershipPolicy: policy, FoundingStake: founding}, nil
 }
 
+func (q queryServer) RegistrarMandate(ctx context.Context, req *types.QueryRegistrarMandateRequest) (*types.QueryRegistrarMandateResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "nil request")
+	}
+	appointment, err := q.k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return nil, queryError(err)
+	}
+	return &types.QueryRegistrarMandateResponse{Mandate: appointment, Active: appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()))}, nil
+}
+
 func (q queryServer) Grant(ctx context.Context, req *types.QueryGrantRequest) (*types.QueryGrantResponse, error) {
 	if req == nil || req.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "grant ID required")

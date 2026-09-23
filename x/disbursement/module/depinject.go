@@ -28,6 +28,7 @@ type ModuleInputs struct {
 	Cdc                codec.Codec
 	StoreService       store.KVStoreService
 	AccountKeeper      types.AccountKeeper
+	WasmKeeper         types.WasmKeeper
 	BankKeeper         types.BankKeeper
 	DistributionKeeper types.DistributionKeeper
 	StakingKeeper      types.StakingKeeper
@@ -43,6 +44,6 @@ type ModuleOutputs struct {
 
 // ProvideModule constructs the governance-controlled disbursement module.
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	k := keeper.NewKeeper(in.Cdc, in.StoreService, authtypes.NewModuleAddress(govtypes.ModuleName).String(), in.AccountKeeper, in.BankKeeper, in.DistributionKeeper, in.StakingKeeper, in.AssetKeeper.Assets)
+	k := keeper.NewKeeper(in.Cdc, in.StoreService, authtypes.NewModuleAddress(govtypes.ModuleName).String(), in.AccountKeeper, in.WasmKeeper, in.BankKeeper, in.DistributionKeeper, in.StakingKeeper, in.AssetKeeper.Assets)
 	return ModuleOutputs{DisbursementKeeper: k, Module: NewAppModule(k)}
 }

@@ -17,7 +17,7 @@ import (
 
 // DefaultGenesisState holds no commitments, custody or founder seats.
 func DefaultGenesisState() *GenesisState {
-	return &GenesisState{Params: DefaultParams(), OwnershipPolicy: DefaultOwnershipPolicy(), NextGrantId: 1, NextJournalId: 1}
+	return &GenesisState{Params: DefaultParams(), OwnershipPolicy: DefaultOwnershipPolicy(), RegistrarMandate: DefaultRegistrarMandate(), NextGrantId: 1, NextJournalId: 1}
 }
 
 // EmptyTotals supplies explicit zero-valued counters for a denomination.
@@ -87,11 +87,8 @@ func (g Grant) Validate() error {
 		}
 	}
 	if g.Suspension != nil {
-		if g.Kind != GrantKind_GRANT_KIND_MEMBER || g.Suspension.At < g.StartTime || g.Suspension.At > stdmath.MaxInt64 {
+		if g.Kind != GrantKind_GRANT_KIND_MEMBER || g.Suspension.At < g.StartTime || g.Suspension.At > stdmath.MaxInt64 || g.Suspension.Term == 0 {
 			return errors.New("invalid member suspension")
-		}
-		if _, err := chain.ParseCanonicalAccountAddress("suspending registrar", g.Suspension.Registrar); err != nil {
-			return err
 		}
 	}
 	return nil
@@ -103,6 +100,9 @@ func (gs GenesisState) Validate() error {
 		return err
 	}
 	if err := gs.OwnershipPolicy.Validate(); err != nil {
+		return err
+	}
+	if err := gs.RegistrarMandate.Validate(); err != nil {
 		return err
 	}
 	if gs.NextGrantId == 0 || gs.NextJournalId == 0 {
@@ -158,15 +158,12 @@ func (gs GenesisState) Validate() error {
 	if err := ValidateAmount(foundingStake, false); err != nil {
 		return err
 	}
-	epochs := make(map[string]uint64, len(gs.RegistrarEpochs))
-	for _, e := range gs.RegistrarEpochs {
-		if _, err := chain.ParseCanonicalAccountAddress("registrar epoch", e.Registrar); err != nil {
-			return err
+	voided := make(map[uint64]bool, len(gs.VoidedTerms))
+	for i, term := range gs.VoidedTerms {
+		if term == 0 || term >= gs.RegistrarMandate.Term || (i > 0 && term <= gs.VoidedTerms[i-1]) {
+			return errors.New("voided terms must be increasing registrar terms below the current one")
 		}
-		if _, ok := epochs[e.Registrar]; ok {
-			return errors.New("duplicate registrar epoch")
-		}
-		epochs[e.Registrar] = e.Epoch
+		voided[term] = true
 	}
 	grants := make(map[uint64]Grant, len(gs.Grants))
 	members := make(map[string]bool)
@@ -192,10 +189,10 @@ func (gs GenesisState) Validate() error {
 		}
 		if g.Suspension != nil {
 			s := g.Suspension
-			if s.Epoch > epochs[s.Registrar] {
-				return errors.New("suspension has a future registrar epoch")
+			if s.Term > gs.RegistrarMandate.Term {
+				return errors.New("suspension has a future registrar term")
 			}
-			if s.Epoch == epochs[s.Registrar] {
+			if !voided[s.Term] {
 				earned, _, err := Accrued(g, s.At)
 				if err != nil || g.Paid.GT(earned) {
 					return errors.New("suspended member paid past cutoff")
@@ -307,7 +304,7 @@ func (gs GenesisState) Validate() error {
 		}
 		if e.GrantId == 0 {
 			switch e.Action {
-			case "params", "controller", "void_suspensions", "return_unallocated":
+			case "params", "registrar_mandate", "controller", "void_suspensions", "return_unallocated":
 			default:
 				return errors.New("invalid administrative journal action")
 			}

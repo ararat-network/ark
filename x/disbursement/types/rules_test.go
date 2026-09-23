@@ -111,7 +111,20 @@ func TestGenesisValidation(t *testing.T) {
 		{"missing journal", func(g *types.GenesisState) { g.NextJournalId = 2 }, false},
 		{"changed ownership fraction", func(g *types.GenesisState) { g.OwnershipPolicy.Numerator = 5 }, false},
 		{"nil ownership ceiling", func(g *types.GenesisState) { g.OwnershipPolicy.Ceiling = math.Int{} }, false},
-		{"future epoch nil address", func(g *types.GenesisState) { g.RegistrarEpochs = []types.RegistrarEpoch{{Epoch: 1}} }, false},
+		{"voided live term", func(g *types.GenesisState) { g.RegistrarMandate.Term = 1; g.VoidedTerms = []uint64{1} }, false},
+		{"voided replaced term", func(g *types.GenesisState) {
+			g.RegistrarMandate = types.NewDisabledRegistrarMandate(2)
+			g.VoidedTerms = []uint64{1}
+		}, true},
+		{"unordered voided terms", func(g *types.GenesisState) {
+			g.RegistrarMandate = types.NewDisabledRegistrarMandate(3)
+			g.VoidedTerms = []uint64{2, 1}
+		}, false},
+		{"mandate window without span", func(g *types.GenesisState) {
+			g.RegistrarMandate.Term = 1
+			g.RegistrarMandate.Committee = sdk.AccAddress(make([]byte, 20)).String()
+			g.RegistrarMandate.ActivationHeight, g.RegistrarMandate.ExpiryHeight = 5, 5
+		}, false},
 		{"unordered issuance", func(g *types.GenesisState) {
 			g.Issuance.Entries = []types.IssuanceEntry{{At: 2, Count: 1}, {At: 1, Count: 1}}
 		}, false},
