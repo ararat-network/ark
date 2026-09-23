@@ -1124,10 +1124,15 @@ paid outside the contract by a proposal naming an address, goes through it under
 holder's, and the field that restated pay outside the contract is gone with nothing left to restate. Amended
 2026-09-23: a member grant is no longer a vesting account but a stream the contract holds, the tenth sent at
 registration and the rest paid by bank send as each month elapses, because a vesting account has no clawback and a
-sybil found after registration would still collect the whole grant; the registrar can suspend a member's pay and
-nothing more, governance cancels in batches with the rest staying in the tranche, and a void lifts a stolen registrar's
-suspensions in one write. The dusted-address rejection went with the vesting message, since a send lands in an
-existing account.
+sybil found after registration would still collect the whole grant; the registrar can suspend or resume a member's
+pay and nothing more, a resumption paying the months since, governance cancels in batches with the rest staying in the
+tranche, and a void lifts a stolen registrar's suspensions in one write. The dusted-address rejection went with the
+vesting message, since a send lands in an existing account.
+
+Amended again 2026-09-23: the contributor ceiling limits cumulative ownership grants to 60M, excluding the founding
+seat. The 5M seat still counts in `own` and in the fifth-of-others concentration limit, so a seat holder may receive
+the full 60M in grants only when that limit and the bloc rule admit it. Their total ceiling is 65M; a contributor
+without a seat remains capped at 60M. This matches the founder's full grant in the distribution plan.
 
 ## P1
 

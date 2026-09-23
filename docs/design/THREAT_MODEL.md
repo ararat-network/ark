@@ -239,14 +239,15 @@ distributed NOAH is bonded: a proof-of-authority trust model until then
 contract under `contracts/grant`: a tranche is custody the contract holds until its rules release it, a pay stream and
 a member grant are custody it pays down month by month, the member's from the tenth it sends at registration, the
 registrar key governance sets can only name who receives the next fixed member grant, within that tranche and within
-the contract's issuance window, and stop a member's pay, so a stolen key costs a window's tenths and pauses streams
-until the vote that replaces it voids its suspensions, and a vote can also cancel a grant, a stream or a member for
-what has not elapsed, or migrate the contract (D86). Admission runs off-chain in the member platform: a third-party
-identity verifier returns a uniqueness attestation, and the platform keeps that and a dedup token, never the document,
-beside the vouch graph. The verifier's API is a boundary the chain never sees, and the attestation store is the
-platform's second asset after the registrar key, since it links a person to an address; the plan's counsel item covers
-what it obliges. The wallet holds the member's key, and the member app, a layer on it, holds none and asks for every
-signature through the wallet kit.
+the contract's issuance window, and stop or resume a member's pay, so a stolen key costs a window's tenths, pauses
+streams until the vote that replaces it voids its suspensions, and resumes suspended members, whom the next release
+pays for the months since, which is why a cancel follows a suspension within the month; a vote can also cancel a
+grant, a stream or a member for what has not elapsed, or migrate the contract (D86). Admission runs off-chain in the
+member platform: a third-party identity verifier returns a uniqueness attestation, and the platform keeps that and a
+dedup token, never the document, beside the vouch graph. The verifier's API is a boundary the chain never sees, and the
+attestation store is the platform's second asset after the registrar key, since it links a person to an address; the
+plan's counsel item covers what it obliges. The wallet holds the member's key, and the member app, a layer on it, holds
+none and asks for every signature through the wallet kit.
 
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
 on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds.

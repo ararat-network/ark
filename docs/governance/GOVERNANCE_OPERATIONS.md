@@ -147,8 +147,10 @@ Since the old key can also have suspended members, the same proposal carries `vo
 everything it suspended in one write; the new registrar then suspends the genuine cases again.
 
 **A faked member** is suspended by the registrar, `suspend_members`, which stops the pay and moves nothing, and
-cancelled by governance, batched by month or by step. The cancel pays what had elapsed by the suspension and leaves
-the rest in the contract as unallocated, so it seats the next member from the same tranche without a proposal.
+cancelled by governance, batched within the month of the suspension: the registrar key can lift a suspension as well
+as place one, and a lifted member is paid the months since at the next release, which no void undoes, so a cancel that
+waits leaves a stolen key that much to pay out. The cancel pays what had elapsed by the suspension and leaves the rest
+in the contract as unallocated, so it seats the next member from the same tranche without a proposal.
 
 ```json
 {
@@ -185,7 +187,9 @@ the rest in the contract as unallocated, so it seats the next member from the sa
 ```
 
 **A contributor grant** is the spend followed by the contract's add-grant call, in one proposal that reverts whole if
-either fails; the reasoning for the band goes in the summary.
+either fails; the reasoning for the band goes in the summary. The spend is the grant plus its gas, one allowance per
+whole unit: sixty NOAH here, at two NOAH an allowance and a million NOAH a unit. A spend of the grant alone fails, or
+takes the gas from a member tranche's free balance.
 
 ```json
 {
@@ -198,7 +202,7 @@ either fails; the reasoning for the band goes in the summary.
       "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
       "authority": "GOV",
       "recipient": "CONTRACT",
-      "amount": [{"denom": "anoah", "amount": "30000000000000000000000000"}]
+      "amount": [{"denom": "anoah", "amount": "30000060000000000000000000"}]
     },
     {
       "@type": "/cosmwasm.wasm.v1.MsgSudoContract",
@@ -217,6 +221,11 @@ either fails; the reasoning for the band goes in the summary.
 }
 ```
 
+`release_address` names where the first tranche goes. Without it the tranche goes to the grantee while the contract
+has not paid them, and a repeat grantee's grant waits for the controller to name an address, since an address that
+already holds an account cannot take a vesting account; a grantee whose address holds coins names a fresh one in the
+proposal.
+
 The other sudo calls take the same shape with `set_registrar`, `set_issuance_limit`, `set_member_grant`,
 `set_fee_allowance`, `add_stream`, `set_controller`, `cancel_grant`, `reinstate_members`, `void_suspensions`, or
 `return_unallocated` in `msg`. After execution, read the contract back: `{"totals":{}}` for what the tranche holds,
@@ -233,5 +242,5 @@ tranche, as bonded stake grows.
 **A pay stream** is the spend followed by `add_stream`, the same shape without `seat_holder`, on the plan's schedule of
 twenty-four monthly periods: `[{"length": 2628000, "parts": 1}, "... 24 entries"]`. The contract holds the stream and
 pays each month to the hire once it has elapsed, by `{"release":{"id":N}}` from anyone; `{"releasable":{"id":N}}` shows
-the months elapsed and paid and when the next falls due. A `cancel_grant` on a stream pays the months that have elapsed,
-which anyone could have released before the vote executed, and returns the rest to the pool.
+the months elapsed and paid and when the next falls due. A `cancel_grant` on a stream holds the months that have
+elapsed for the hire, released as before, and returns the rest to the pool, so no payee can fail it.

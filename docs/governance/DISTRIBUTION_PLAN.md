@@ -167,8 +167,10 @@ member's pay, which moves nothing and which the registrar or a vote can undo; go
 which pays the months that had elapsed by the suspension, since anyone could have claimed them before it, and keeps
 the rest in the tranche for the next member, never through the pool. Suspend sits with the registrar because it can
 only delay; cancel sits with governance because a cancel followed by a registration would let one key redirect a grant.
-A stolen registrar key can therefore pay out a week's tenths and pause every stream, and no more: the proposal that
-replaces it voids that key's suspensions in one write, so the new registrar suspends afresh only the genuine cases.
+A stolen registrar key can therefore pay out a week's tenths, pause every stream, and lift every suspension, and no
+more. The proposal that replaces it voids that key's suspensions in one write, so the new registrar suspends afresh
+only the genuine cases. A lifted suspension it cannot undo: the next release pays the lifted member the months since,
+so a cancel follows a suspension within the month, and what a lifted suspension can pay stays under a month a member.
 What a faked member costs is the tenth plus the months it took to find them, and the year is the time there is to do it.
 
 **Members through the app.** A member never sees a key, a transaction, or a fee. The interface is the member app the
@@ -234,13 +236,13 @@ pay for the risk.** Once it exists a hire gets two grants in the same proposal, 
 twenty-four monthly periods of a twenty-fourth each, sized at the design's skilled-year rate of about 131,000 NOAH a
 year, which the grant contract holds and pays to the hire month by month as each elapses. Each month's pay is spendable
 on arrival, and the unpaid balance stays in the contract's escrow, where governance can cancel it if the hire leaves or
-the work stops: a cancel pays the months that have elapsed, which anyone could have released before the vote executed,
-and returns the rest to the pool. The unpaid balance does not stake, which at pay scale moves no gate. An **ownership
-grant** in the core band on the four-year schedule, with its timing multiplier. A team of six for two years is about
-1.6M in pay and, at six core-band grants, 12M to 60M in ownership; the streams start at once and the ownership lands as
-the step tranches admit it. The stream pays for the hired work: a hire who also holds a seat draws seat income for the
-seat and the stream for the work, never both for the same hours. Before streams open, a hire who holds a seat has
-nothing until the bloc rule admits their ownership, so the team and the seats are kept separate (§9).
+the work stops: a cancel holds the months that have elapsed for the hire, who releases them as before, and returns the
+rest to the pool, so no payee can fail it. The unpaid balance does not stake, which at pay scale moves no gate. An
+**ownership grant** in the core band on the four-year schedule, with its timing multiplier. A team of six for two years
+is about 1.6M in pay and, at six core-band grants, 12M to 60M in ownership; the streams start at once and the ownership
+lands as the step tranches admit it. The stream pays for the hired work: a hire who also holds a seat draws seat income
+for the seat and the stream for the work, never both for the same hours. Before streams open, a hire who holds a seat
+has nothing until the bloc rule admits their ownership, so the team and the seats are kept separate (§9).
 
 **Founding validators.** A seat holder receives no grant for validator work; the seat, which vests to them over ten
 years, and its income are that pay. Other work, before launch or after, is granted like anyone's, in its band, with the
@@ -275,12 +277,13 @@ hire who held a seat would wait on that.
 holder, is not a series of promises. The whole amount leaves the pool in one proposal, in a step whose contributor
 tranche has room for it, and sits in the grant contract's escrow, the same contract that issues member grants, until the
 rules release it. The proposal spends the grant and its gas, one allowance per whole unit, to the contract and, as the
-gov account, executes its add-grant call naming the grantee, the amount, and whether they hold a seat. Anyone can call
-release. The escrow reads total bonded stake `T` from the staking pool query and releases, in whole millions, whatever
-the rules allow:
+gov account, executes its add-grant call naming the grantee, the amount, whether they hold a seat, and, for a grantee
+whose address already holds an account, the fresh address of the first tranche. Anyone can call release. The escrow
+reads total bonded stake `T` from the staking pool query and releases, in whole millions, whatever the rules allow:
 
 - for every grantee, cumulative paid and released, the 5M seat included for a seat holder, is `own`, and stays within
-  `(T − own) / 5`, a fifth of the stake the person does not hold, 60M at most;
+  `(T − own) / 5`, a fifth of the stake the person does not hold; cumulative ownership grants alone stay within
+  60M, so a seat holder's total ceiling is 65M including the seat;
 - for seat holders together, cumulative paid and released stays within `T/3 − 50M`, a third of total bonded stake less
   the founders' 50M, which is the bloc rule restated against the number the contract can read, shared pro rata by what
   remains in escrow.
@@ -325,10 +328,13 @@ steps 1 to 4: 782M with ten founding seats, and more if governance returns idle 
 
 **Cap per contributor** = the most any single person may hold from the pool in total, seat and grants together. It is
 measured, not scheduled: **a fifth of the bonded stake the person does not hold, total bonded stake less their own, at
-the time of the grant, rounded down to the nearest million, and never above 60M.** Their own is what they have received
-from the pool, bonded or not; counting unbonded coins only tightens the measure. The base excludes the person's own
-stake because a share of a total their own bonding raises would let two people grant each other up to half the chain
-(§7).
+the time of the grant, rounded down to the nearest million. Cumulative ownership grants are capped separately at
+60M, excluding the seat.** Their own includes the seat and ownership grants they have received, bonded or not;
+counting unbonded coins only tightens the measure. A seat holder's total ceiling is therefore 65M, all of which still
+counts against the fifth. The base excludes the person's own stake because a share of a total their own bonding
+raises would let two people grant each other up to half the chain (§7).
+
+For a contributor without a seat:
 
 | Bonded stake the person does not hold | Cap |
 | ------------------------------------- | --- |
@@ -336,6 +342,9 @@ stake because a share of a total their own bonding raises would let two people g
 | 100M                                  | 20M |
 | 200M                                  | 40M |
 | 300M and above                        | 60M |
+
+A seat holder reaches the full 60M grant ceiling when others hold 325M: the fifth then admits their 5M seat and
+60M in grants together, 65M of 390M once bonded. The bloc rule must also admit the release.
 
 Example: at genesis the first grantee can receive 10M and a second the tranche's remaining 10M, but not 20M to one
 person. Someone who received 10M can receive more once the stake others hold has grown to admit it; their own bonding
@@ -435,8 +444,9 @@ direction, and two levers exist:
   most ⅙ of the vote, the working limit in the goal, and two at cap hold ⅓ less rounding. It is measured against the
   stake the person does not hold because a quarter of the total, the earlier draft, counted the grantee's own bonded
   grants in the total: two people granting in turns crossed ⅓ on their second grant and converged on half the chain with
-  nobody else staking. The 60M ceiling is a fifth of 300M held by others, ⅙ of the 360M bonded once it is staked: the
-  end state at a 40% staking rate.
+  nobody else staking. The 60M ownership grant ceiling is a fifth of 300M held by others for a contributor without a
+  seat, ⅙ of the 360M bonded once it is staked. A seat holder's 65M including the seat needs 325M held by others,
+  ⅙ of 390M once bonded: the end state at about a 40% staking rate.
 - 60/40 because members are the handover: at 469.2M their pool outweighs the founders' 50M and the contributors' 312.8M
   together, so once grants are delegated the group that dilutes the vote holds most of it.
 - 10,000 NOAH a member because a tenth on the day and the rest within a year is real to a person joining, and because
@@ -470,8 +480,9 @@ direction, and two levers exist:
       contributor's as a vesting account at a fresh address, a member's as a stream to the registered address.
 - [ ] The registrar is a multisig, and the contract's issuance window stays at 250 members in any seven days unless
       governance changes it.
-- [ ] The registrar suspends a member's pay and nothing more; only governance cancels a member, paying what had
-      elapsed by the suspension and keeping the rest in the tranche.
+- [ ] The registrar suspends or resumes a member's pay and nothing more; only governance cancels a member, paying
+      what had elapsed by the suspension and keeping the rest in the tranche, within the month of the suspension,
+      since a resumed member is paid the months since.
 - [ ] Members and contributors at 60/40 over the whole distribution; a step's unpaid member tranche rolls forward.
 - [ ] Cumulative contributor cap is checked against the bonded stake the person does not hold before every grant.
 - [ ] Each contributor grant names its band, its multipliers, and its reasoning in the proposal summary.
