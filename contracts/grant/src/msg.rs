@@ -11,13 +11,15 @@ pub struct Period {
     pub parts: u64,
 }
 
-/// CapRule bounds what one person may have received from the pool: a share of
-/// the bonded stake they do not hold, never above the ceiling, released in
-/// whole units once a grant is larger than its allowance.
+/// CapRule bounds a person's seat and released ownership grants together by
+/// a share of the bonded stake they do not hold. The ceiling bounds released
+/// ownership grants alone. A grant larger than its allowance releases in
+/// whole units.
 #[cw_serde]
 pub struct CapRule {
     pub numerator: u64,
     pub denominator: u64,
+    /// ceiling is the cumulative ownership grant limit, excluding the seat.
     pub ceiling: Uint128,
     pub unit: Uint128,
 }
@@ -103,8 +105,8 @@ pub enum ExecuteMsg {
     /// SetController rotates the grantee's controlling key, by the current one.
     SetController { grantee: String, controller: String },
     /// Release pays a grant what its kind allows now: the cap and the bloc
-    /// rule for ownership, the elapsed periods for a stream. Anyone may call
-    /// it.
+    /// rule for ownership, the elapsed periods for a stream, or what a
+    /// cancelled stream still holds. Anyone may call it.
     Release { id: u64 },
 }
 
@@ -127,13 +129,16 @@ pub enum SudoMsg {
         amount: Uint128,
     },
     /// AddGrant escrows an ownership grant and its gas, one allowance per
-    /// whole unit, and pays its first tranche to grantee, which becomes the
-    /// grant's controller.
+    /// whole unit, and pays its first tranche if the rules allow one: to
+    /// release_address, else to grantee while the contract has not paid
+    /// them, since an address holding an account cannot take a vesting
+    /// account. grantee becomes the grant's controller.
     AddGrant {
         grantee: String,
         amount: Uint128,
         schedule: Vec<Period>,
         seat_holder: bool,
+        release_address: Option<String>,
     },
     /// AddStream escrows a pay stream the contract pays down itself: each
     /// period of schedule goes to grantee by bank send once it has elapsed,
@@ -148,13 +153,15 @@ pub enum SudoMsg {
         controller: String,
     },
     /// CancelGrant returns what a grant has not released to the community
-    /// pool; a stream first pays what has elapsed.
+    /// pool; a stream keeps what has elapsed for its payee to release, so
+    /// no payee can fail the cancel.
     CancelGrant {
         id: u64,
     },
     /// CancelMembers ends each address's grant: what had elapsed by its
     /// suspension, or by now if it was not suspended, is paid, and the rest
-    /// stays in the tranche as unallocated.
+    /// stays in the tranche as unallocated. A member paid out or cancelled
+    /// already is skipped.
     CancelMembers {
         addresses: Vec<String>,
     },
@@ -248,6 +255,7 @@ pub enum Rule {
     Cap {
         bonded: Uint128,
         own: Uint128,
+        /// cap is the total limit on seat and released ownership grants.
         cap: Uint128,
         seat_allowance: Option<Uint128>,
     },

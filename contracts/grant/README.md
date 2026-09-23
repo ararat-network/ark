@@ -44,41 +44,46 @@ grant's controller; `release` by anyone.
   the tranche's again. A suspension records who made it, and `void_suspensions` lifts everything a registrar
   suspended up to that height in one write, read wherever a suspension is, so the proposal that replaces a stolen
   key undoes what it did and a key set again later suspends afresh.
-- **Ownership grants.** `add_grant` escrows the whole amount from the unallocated balance and pays what the rules allow at
-  once to the grantee, who becomes the grant's controller. Later tranches go to an address the controller registers, and
-  anyone may trigger them. Each tranche is a fresh vesting account on the grant's own schedule, with a fee allowance
-  from the grant's gas reserve, since nothing in a tranche is spendable until its cliff. The proposal spends the grant
-  plus one allowance per whole unit of it, the most tranches the cap can split it into; the contract holds that as the
-  grant's gas reserve, promises one allowance to each tranche from it, and returns what is unused with a cancel or after
-  the last tranche.
+- **Ownership grants.** `add_grant` escrows the whole amount from the free balance and pays what the rules allow at
+  once, to the address the proposal names, else to the grantee while the contract has not paid them: an address holding
+  an account cannot take a vesting account, so a repeat grant waits for an address. The grantee becomes the grant's
+  controller. Later tranches go to an address the controller registers, and anyone may trigger them. Each tranche is a
+  fresh vesting account on the grant's own schedule, with a fee allowance from the grant's gas reserve, since nothing in
+  a tranche is spendable until its cliff. The proposal spends the grant plus one allowance per whole unit of it, the
+  most tranches the cap can split it into; the contract holds that as the grant's gas reserve, promises one allowance
+  to each tranche from it, and returns what is unused with a cancel or after the last tranche.
 - **Streams.** `add_stream` escrows a pay stream the contract pays down itself: nothing at once, then each period of
   its schedule to the payee by bank send once it has elapsed since the block it was added in, whole periods only, so
   the pay is spendable on arrival and the unpaid rest stays in escrow. Anyone may trigger a payment; the controller may
   point the payee anywhere, an existing account included. A stream checks neither the cap nor the bloc rule and counts
-  in neither `own` nor the seat pool: it is pay, not ownership, and never stakes. A cancel pays what has elapsed, which
-  anyone could have released before the vote executed, and returns the rest.
-- **Rules.** A person's `own` is their seat if they hold one and what this contract has released to them, all
-  assumed bonded: subtracting more than is bonded only lowers the cap. Their total may reach a fifth of
-  `bonded − own`, at most the ceiling. Seat holders
-  together may reach a third of bonded stake less the founding stake, shared pro rata by remaining escrow. A
-  grant that fits under its allowance pays whole; a larger one releases the allowance floored to whole units. A
-  grant too small to give every period of its schedule a coin is refused where it is set, since the chain rejects
-  a period without one.
+  in neither `own` nor the seat pool: it is pay, not ownership, and never stakes. A cancel holds what has elapsed for
+  the payee, who releases it as before, and returns the rest, so no payee can fail it.
+- **Rules.** A person's `own` is their seat if they hold one and what this contract has released to them, all assumed
+  bonded: subtracting more than is bonded only lowers the cap. Their total may reach a fifth of `bonded − own`; the
+  ceiling bounds cumulative ownership grants alone, so the total ceiling is `ceiling + seat`. At the plan's figures, a
+  seat holder may receive 60M in grants alongside their 5M seat, with all 65M counted against the percentage limit. Seat
+  holders together may reach a third of bonded stake less the founding stake, shared pro rata by remaining escrow. A
+  grant that fits under its allowance pays whole; a larger one releases the allowance floored to whole units. A grant
+  too small to give every period of its schedule a coin is refused where it is set, an ownership grant by its smallest
+  tranche, since the chain rejects a period without one.
 - **Accounting.** Escrowed is the sum of every grant's remaining amount, fees reserved the sum of their gas
   reserves, and fees promised every allowance granted. Free is the bank balance less escrow and reserves;
   unallocated is free less promises. `add_grant` draws grant plus reserve from free, since a grant arrives with
   its own spend and must never wait on the member tranche. Registration draws a grant a member from unallocated,
   and `return_unallocated` is bounded by it. The contract cannot see an allowance being drawn, so a promise counts
-  for good and unallocated reads low by the gas tranche accounts have spent. A changed allowance does not resize
-  gas already reserved: a tranche takes the smaller of the two.
+  for good and unallocated reads low by the gas tranche accounts have spent, and free reads high by the gas promised
+  and not yet drawn, which is why a proposal spends a grant and its gas whole. A changed allowance does not resize
+  gas already reserved: a tranche takes the smaller of the allowance and its reserve spread over the tranches the
+  grant can still take, so a raise neither reaches the grant nor starves its last tranches.
   `add_stream` draws its amount from free the same way, and stream pay counts in contributors paid; member pay,
   the first periods included, counts in members paid.
-  `cancel_grant` sends a grant's remaining amount and unused gas back to the community pool, a stream's after paying
-  what has elapsed; `cancel_members` leaves the rest in the balance, where it is unallocated; `return_unallocated`
-  sends idle balance back.
+  `cancel_grant` sends a grant's remaining amount and unused gas back to the community pool, a stream's less what
+  has elapsed, which stays escrowed for the payee; `cancel_members` leaves the rest in the balance, where it is
+  unallocated; `return_unallocated` sends idle balance back.
 - **Trust.** Governance holds every unbounded path. The registrar can only name who receives the next fixed
   member grant, bounded by the unallocated balance and the issuance window, and stop a member's pay, which it or
-  a vote can resume; it moves no coin. A controller can only point their own next tranche or stream pay.
+  a vote can resume, the next release then paying the months since; it moves no coin. A controller can only point
+  their own next tranche or stream pay.
 
 ## Development
 

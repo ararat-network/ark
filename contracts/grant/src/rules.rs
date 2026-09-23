@@ -1,13 +1,16 @@
 //! The plan's arithmetic, kept pure so it can be tested without a chain.
 //! Every figure floors, and every ratio multiplies before it divides.
 
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{StdError, Uint128};
 
 use crate::error::ContractError;
 use crate::msg::{CapRule, IssuanceEntry, IssuanceLimit, Period};
 
 /// MAX_SCHEDULE_PERIODS bounds a schedule at a century of monthly periods.
 pub const MAX_SCHEDULE_PERIODS: usize = 1_200;
+/// MAX_PERIOD_LENGTH bounds one period at a century, so a schedule's end
+/// time stays far inside the SDK's int64.
+pub const MAX_PERIOD_LENGTH: u64 = 100 * 365 * 86_400;
 
 pub fn validate_schedule(schedule: &[Period]) -> Result<(), ContractError> {
     if schedule.is_empty() {
@@ -25,9 +28,9 @@ pub fn validate_schedule(schedule: &[Period]) -> Result<(), ContractError> {
         if p.length == 0 {
             return Err(ContractError::Schedule(format!("period {i}: zero length")));
         }
-        if p.length > i64::MAX as u64 {
+        if p.length > MAX_PERIOD_LENGTH {
             return Err(ContractError::Schedule(format!(
-                "period {i}: length overflows"
+                "period {i}: length exceeds {MAX_PERIOD_LENGTH}"
             )));
         }
         if p.parts == 0 {
@@ -141,14 +144,21 @@ pub fn split(amount: Uint128, schedule: &[Period]) -> Result<Vec<Uint128>, Contr
     Ok(out)
 }
 
-/// cap_total is the most a person may have received in total: a share of the
-/// bonded stake they do not hold, at most the ceiling. own is assumed bonded
-/// and subtracted whole, which can only lower the cap.
-pub fn cap_total(bonded: Uint128, own: Uint128, cap: &CapRule) -> Uint128 {
+/// cap_total bounds seat and released ownership grants together by a share
+/// of the bonded stake they do not hold. The ceiling bounds grants alone,
+/// so the total ceiling includes the seat. own is assumed bonded and
+/// subtracted whole, which can only lower the cap.
+pub fn cap_total(
+    bonded: Uint128,
+    own: Uint128,
+    seat: Uint128,
+    cap: &CapRule,
+) -> Result<Uint128, ContractError> {
     let others = bonded.saturating_sub(own);
-    others
+    let ceiling = cap.ceiling.checked_add(seat)?;
+    Ok(others
         .multiply_ratio(cap.numerator, cap.denominator)
-        .min(cap.ceiling)
+        .min(ceiling))
 }
 
 /// seat_allowance is what seat holders together may still receive: a third
@@ -181,19 +191,46 @@ pub fn release_amount(remaining: Uint128, allowance: Uint128, unit: Uint128) -> 
         .unwrap_or(Uint128::zero())
 }
 
-/// fee_reserve is one allowance per tranche a grant can take at most: every
-/// release is a whole unit or the remainder, so ceil(amount / unit) of them.
+/// tranches is the most a grant of amount can still take: every release is
+/// a whole unit or the remainder, so ceil(amount / unit).
+fn tranches(amount: Uint128, unit: Uint128) -> Result<Uint128, ContractError> {
+    Ok(amount
+        .checked_add(unit)?
+        .checked_sub(Uint128::one())?
+        .checked_div(unit)
+        .map_err(StdError::from)?)
+}
+
+/// smallest_tranche is the least one release of an ownership grant can be:
+/// the remainder over whole units, or a unit when there is none. A split
+/// that works at an amount works at every larger one, so a grant whose
+/// smallest tranche splits releases every tranche.
+pub fn smallest_tranche(amount: Uint128, unit: Uint128) -> Result<Uint128, ContractError> {
+    let rest = amount.checked_rem(unit).map_err(StdError::from)?;
+    Ok(if rest.is_zero() { unit } else { rest })
+}
+
+/// fee_reserve is one allowance per tranche a grant can take at most.
 pub fn fee_reserve(
     amount: Uint128,
     unit: Uint128,
     allowance: Uint128,
 ) -> Result<Uint128, ContractError> {
-    let tranches = amount
-        .checked_add(unit)?
-        .checked_sub(Uint128::one())?
-        .checked_div(unit)
-        .map_err(cosmwasm_std::StdError::from)?;
-    Ok(allowance.checked_mul(tranches)?)
+    Ok(allowance.checked_mul(tranches(amount, unit)?)?)
+}
+
+/// tranche_gas is what one tranche draws from its grant's reserve: the
+/// allowance, or the reserve spread over this tranche and those the
+/// remaining amount can still take, so a raised allowance does not starve
+/// the last tranches of a grant reserved at the old rate.
+pub fn tranche_gas(
+    reserve: Uint128,
+    allowance: Uint128,
+    remaining: Uint128,
+    unit: Uint128,
+) -> Result<Uint128, ContractError> {
+    let left = tranches(remaining, unit)?.checked_add(Uint128::one())?;
+    Ok(allowance.min(reserve.checked_div(left).map_err(StdError::from)?))
 }
 
 /// elapsed is how many leading periods of schedule have ended by now,
@@ -281,6 +318,16 @@ mod tests {
             .collect();
         assert!(validate_schedule(&long).is_err());
         assert!(validate_schedule(&long[..MAX_SCHEDULE_PERIODS]).is_ok());
+        assert!(validate_schedule(&[Period {
+            length: MAX_PERIOD_LENGTH + 1,
+            parts: 1
+        }])
+        .is_err());
+        assert!(validate_schedule(&[Period {
+            length: MAX_PERIOD_LENGTH,
+            parts: 1
+        }])
+        .is_ok());
     }
 
     #[test]
@@ -380,23 +427,53 @@ mod tests {
 
     #[test]
     fn cap_at_genesis_and_ceiling() {
-        // 50M bonded, nothing held: a fifth is 10M, the plan's genesis figure.
-        assert_eq!(
-            cap_total(noah(50_000_000), Uint128::zero(), &cap()),
-            noah(10_000_000)
-        );
-        // The founder's seat counts: 294M bonded with 30M own leaves 264M to others.
-        assert_eq!(
-            cap_total(noah(294_000_000), noah(30_000_000), &cap()),
-            noah(52_800_000)
-        );
-        // The ceiling binds once others hold 300M.
-        assert_eq!(
-            cap_total(noah(400_000_000), noah(10_000_000), &cap()),
-            noah(60_000_000)
-        );
-        // own above bonded saturates to zero rather than underflowing.
-        assert_eq!(cap_total(noah(1), noah(2), &cap()), Uint128::zero());
+        for (name, bonded, own, seat, expected) in [
+            ("genesis", 50_000_000, 0, 0, 10_000_000),
+            (
+                "seat counts towards share",
+                294_000_000,
+                30_000_000,
+                5_000_000,
+                52_800_000,
+            ),
+            ("non-seat ceiling", 400_000_000, 10_000_000, 0, 60_000_000),
+            (
+                "seat ceiling",
+                400_000_000,
+                65_000_000,
+                5_000_000,
+                65_000_000,
+            ),
+            (
+                "seat share boundary",
+                390_000_000,
+                65_000_000,
+                5_000_000,
+                65_000_000,
+            ),
+            (
+                "seat share below boundary",
+                385_000_000,
+                65_000_000,
+                5_000_000,
+                64_000_000,
+            ),
+            ("own exceeds bonded", 1, 2, 0, 0),
+        ] {
+            assert_eq!(
+                cap_total(noah(bonded), noah(own), noah(seat), &cap()).unwrap(),
+                noah(expected),
+                "{name}"
+            );
+        }
+        let overflowing = CapRule {
+            ceiling: Uint128::MAX,
+            ..cap()
+        };
+        assert!(matches!(
+            cap_total(Uint128::MAX, Uint128::one(), Uint128::one(), &overflowing),
+            Err(ContractError::Overflow(_))
+        ));
     }
 
     /// The review's colluder case: two people granting in turns under the
@@ -410,9 +487,9 @@ mod tests {
         let mut b = Uint128::zero();
         for _ in 0..50 {
             let bonded = base + a + b;
-            a = cap_total(bonded, a, &cap());
+            a = cap_total(bonded, a, Uint128::zero(), &cap()).unwrap();
             let bonded = base + a + b;
-            b = cap_total(bonded, b, &cap());
+            b = cap_total(bonded, b, Uint128::zero(), &cap()).unwrap();
         }
         let bonded = base + a + b;
         let pair = (a + b).multiply_ratio(1_000_000u64, bonded);
@@ -494,6 +571,59 @@ mod tests {
             Uint128::zero()
         );
         assert!(fee_reserve(noah(1), Uint128::zero(), noah(2)).is_err());
+    }
+
+    #[test]
+    fn smallest_tranche_is_the_remainder_or_a_unit() {
+        let unit = noah(1_000_000);
+        assert_eq!(smallest_tranche(noah(30_000_000), unit).unwrap(), unit);
+        assert_eq!(
+            smallest_tranche(noah(2_500_000), unit).unwrap(),
+            noah(500_000)
+        );
+        assert_eq!(
+            smallest_tranche(noah(200_000), unit).unwrap(),
+            noah(200_000)
+        );
+        // A remainder of ten anoah is a tranche the schedule cannot carry.
+        let odd = noah(1_000_000) + Uint128::new(10);
+        assert_eq!(smallest_tranche(odd, unit).unwrap(), Uint128::new(10));
+        assert!(split(Uint128::new(10), &standard()).is_err());
+        assert!(smallest_tranche(odd, Uint128::zero()).is_err());
+    }
+
+    #[test]
+    fn tranche_gas_spreads_the_reserve() {
+        let unit = noah(1_000_000);
+        // Thirty tranches reserved at two: a 10M first tranche leaves twenty
+        // more, so the reserve spreads over twenty-one. The allowance binds
+        // at two; raised to five, the spread does, and no tranche starves.
+        assert_eq!(
+            tranche_gas(noah(60), noah(2), noah(20_000_000), unit).unwrap(),
+            noah(2)
+        );
+        assert_eq!(
+            tranche_gas(noah(60), noah(5), noah(20_000_000), unit).unwrap(),
+            noah(60).multiply_ratio(1u64, 21u64)
+        );
+        // A lowered allowance draws less and leaves the rest for the end.
+        assert_eq!(
+            tranche_gas(noah(60), noah(1), noah(20_000_000), unit).unwrap(),
+            noah(1)
+        );
+        // The last tranche may take the whole reserve, up to the allowance.
+        assert_eq!(
+            tranche_gas(noah(2), noah(5), Uint128::zero(), unit).unwrap(),
+            noah(2)
+        );
+        assert_eq!(
+            tranche_gas(noah(7), noah(5), Uint128::zero(), unit).unwrap(),
+            noah(5)
+        );
+        assert_eq!(
+            tranche_gas(Uint128::zero(), noah(2), noah(1), unit).unwrap(),
+            Uint128::zero()
+        );
     }
 
     #[test]

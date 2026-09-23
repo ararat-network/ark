@@ -175,7 +175,16 @@ pub fn sudo(deps: DepsMut, env: Env, msg: SudoMsg) -> Result<Response, ContractE
             amount,
             schedule,
             seat_holder,
-        } => add_grant(deps, env, grantee, amount, schedule, seat_holder),
+            release_address,
+        } => add_grant(
+            deps,
+            env,
+            grantee,
+            amount,
+            schedule,
+            seat_holder,
+            release_address,
+        ),
         SudoMsg::AddStream {
             grantee,
             amount,
@@ -251,10 +260,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
             };
             grant.released = grant.released.checked_add(amount)?;
             grant.remaining = grant.remaining.checked_sub(amount)?;
-            // The tranche's gas is the grant's own reserve, so a raised
-            // allowance does not reach a grant reserved at the old rate. The
-            // last tranche returns what the reserve did not need.
-            let gas = config.fee_allowance.min(reserve);
+            // The tranche's gas is the grant's own reserve, spread over the
+            // tranches it can still take, so a raised allowance neither
+            // reaches a grant reserved at the old rate nor starves its last
+            // tranches. The last returns what the reserve did not need.
+            let gas = rules::tranche_gas(
+                reserve,
+                config.fee_allowance,
+                grant.remaining,
+                config.cap.unit,
+            )?;
             let reserve = reserve.checked_sub(gas)?;
             let unused = if grant.remaining.is_zero() {
                 reserve
@@ -361,7 +376,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 controller: p.controller.clone(),
                 seat_holder: p.seat_holder,
                 released: p.released,
-                own: own(&config, &p),
+                own: own(&config, &p)
+                    .map_err(|e| cosmwasm_std::StdError::generic_err(e.to_string()))?,
             })
         }
         QueryMsg::Releasable { id } => {
@@ -493,13 +509,13 @@ fn unallocated(deps: Deps, env: &Env, config: &Config) -> Result<Uint128, Contra
 
 /// own is everything counted against a person: the seat if they hold one
 /// and what this contract has released to them, all assumed bonded.
-fn own(config: &Config, person: &Person) -> Uint128 {
+fn own(config: &Config, person: &Person) -> Result<Uint128, ContractError> {
     let seat = if person.seat_holder {
         config.seat_stake
     } else {
         Uint128::zero()
     };
-    seat + person.released
+    Ok(seat.checked_add(person.released)?)
 }
 
 fn next_reply_id(deps: &mut DepsMut) -> StdResult<u64> {
@@ -769,13 +785,20 @@ fn cancel_members(
     let mut returned = Uint128::zero();
     let mut response = Response::new().add_attribute("action", "cancel_members");
     let members = batch(deps.as_ref(), &addresses)?;
+    let mut cancelled: u64 = 0;
     for address in &members {
         let mut m = MEMBERS
             .may_load(deps.storage, address)?
             .ok_or_else(|| ContractError::MemberNotFound(address.to_string()))?;
-        if m.cancelled {
-            return Err(ContractError::MemberCancelled(address.to_string()));
+        // Nothing to reclaim from a member paid out or cancelled already, so
+        // neither a last claim nor an overlapping proposal fails the batch.
+        if m.cancelled || m.remaining.is_zero() {
+            response = response.add_event(
+                Event::new("ark-grant/member_skipped").add_attribute("address", address.as_str()),
+            );
+            continue;
         }
+        cancelled += 1;
         let until = suspension(deps.storage, &m)?.map_or(now, |s| s.at);
         let (elapsed, _) = rules::elapsed(&m.schedule, m.start, until);
         let pay = rules::accrued(m.amount, &m.schedule, m.paid, elapsed)?;
@@ -802,9 +825,7 @@ fn cancel_members(
     ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
         Ok(e.checked_sub(returned)?)
     })?;
-    MEMBERS_CANCELLED.update(deps.storage, |n| -> StdResult<_> {
-        Ok(n + members.len() as u64)
-    })?;
+    MEMBERS_CANCELLED.update(deps.storage, |n| -> StdResult<_> { Ok(n + cancelled) })?;
     Ok(response)
 }
 
@@ -821,7 +842,9 @@ fn set_release_address(
     if person.controller != info.sender {
         return Err(ContractError::Unauthorized("not the controller".into()));
     }
-    if grant.cancelled {
+    // A cancelled stream still holds what had elapsed for its payee, so the
+    // controller may point that anywhere it can be paid.
+    if grant.cancelled && matches!(grant.kind, Kind::Ownership { .. }) {
         return Err(ContractError::Cancelled(id));
     }
     if grant.remaining.is_zero() {
@@ -865,12 +888,15 @@ fn add_grant(
     amount: Uint128,
     schedule: Vec<crate::msg::Period>,
     seat_holder: bool,
+    release_address: Option<String>,
 ) -> Result<Response, ContractError> {
     if amount.is_zero() {
         return Err(ContractError::ZeroAmount);
     }
     rules::validate_schedule(&schedule)?;
     let config = CONFIG.load(deps.storage)?;
+    // Every tranche must give each period a coin; the smallest decides.
+    rules::split(rules::smallest_tranche(amount, config.cap.unit)?, &schedule)?;
     // Grant and gas against free, not unallocated: a grant arrives with its
     // own spend, so promised gas is no floor a proposal can trip on.
     let gas = rules::fee_reserve(amount, config.cap.unit, config.fee_allowance)?;
@@ -880,10 +906,20 @@ fn add_grant(
         return Err(ContractError::Unallocated { available, needed });
     }
     let grantee = deps.api.addr_validate(&grantee)?;
+    let known = PERSONS.may_load(deps.storage, &grantee)?;
+    // The first tranche goes where the proposal says, else to the grantee
+    // while the contract has not paid them: an address holding an account
+    // cannot take a vesting account, so a repeat grant waits for the
+    // controller to name one.
+    let release_address = match release_address {
+        Some(a) => Some(deps.api.addr_validate(&a)?),
+        None if known.is_none() => Some(grantee.clone()),
+        None => None,
+    };
 
     // Governance restates whether the person holds a seat on each grant; a
     // first grant makes the grantee address the controller.
-    let person = match PERSONS.may_load(deps.storage, &grantee)? {
+    let person = match known {
         Some(mut p) => {
             p.seat_holder = seat_holder;
             p
@@ -908,7 +944,7 @@ fn add_grant(
         cancelled: false,
         kind: Kind::Ownership {
             fee_reserve: gas,
-            release_address: Some(grantee.clone()),
+            release_address: release_address.clone(),
         },
     };
     GRANTS.save(deps.storage, id, &grant)?;
@@ -927,12 +963,14 @@ fn add_grant(
             .add_attribute("gas", gas)
             .add_attribute("seat_holder", seat_holder.to_string()),
     );
-    // The first tranche pays now if the rules allow one; a grant with no
-    // room yet simply waits in escrow.
-    let r = releasable(deps.as_ref(), &env, &config, &grant, &person)?;
-    if !r.amount.is_zero() {
-        let (sub, event) = tranche(&mut deps, &env, &config, &grant, &grantee, r.amount)?;
-        response = response.add_submessage(sub).add_event(event);
+    // The first tranche pays now if there is an address and the rules allow
+    // one; a grant with no room yet simply waits in escrow.
+    if let Some(address) = &release_address {
+        let r = releasable(deps.as_ref(), &env, &config, &grant, &person)?;
+        if !r.amount.is_zero() {
+            let (sub, event) = tranche(&mut deps, &env, &config, &grant, address, r.amount)?;
+            response = response.add_submessage(sub).add_event(event);
+        }
     }
     Ok(response)
 }
@@ -1009,7 +1047,11 @@ fn release(mut deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractErr
     let mut grant = GRANTS
         .may_load(deps.storage, id)?
         .ok_or(ContractError::GrantNotFound(id))?;
-    if grant.cancelled {
+    // A cancelled stream still holds what had elapsed by the vote for its
+    // payee; nothing else cancelled pays.
+    let held =
+        grant.cancelled && matches!(grant.kind, Kind::Stream { .. }) && !grant.remaining.is_zero();
+    if grant.cancelled && !held {
         return Err(ContractError::Cancelled(id));
     }
     if grant.remaining.is_zero() {
@@ -1029,8 +1071,13 @@ fn release(mut deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractErr
             Ok(Response::new().add_submessage(sub).add_event(event))
         }
         Kind::Stream { start, paid, payee } => {
-            let (elapsed, _) = rules::elapsed(&grant.schedule, start, env.block.time.seconds());
-            let amount = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
+            let (elapsed, amount) = if held {
+                (paid, grant.remaining)
+            } else {
+                let (elapsed, _) = rules::elapsed(&grant.schedule, start, env.block.time.seconds());
+                let amount = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
+                (elapsed, amount)
+            };
             if amount.is_zero() {
                 return Err(ContractError::NothingReleasable(id));
             }
@@ -1148,7 +1195,7 @@ fn cancel_grant(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractEr
     }
     let mut response = Response::new();
     let mut gas = Uint128::zero();
-    let mut settled = Uint128::zero();
+    let mut held = Uint128::zero();
     match grant.kind.clone() {
         Kind::Ownership { fee_reserve, .. } => {
             gas = fee_reserve;
@@ -1158,18 +1205,19 @@ fn cancel_grant(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractEr
             };
         }
         Kind::Stream { start, paid, payee } => {
-            // What has elapsed is the payee's: anyone could have released it
-            // before the vote executed.
+            // What has elapsed is the payee's, held for release rather than
+            // sent here, so no payee can fail the cancel; the rest returns.
             let (elapsed, _) = rules::elapsed(&grant.schedule, start, env.block.time.seconds());
-            settled = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
-            if !settled.is_zero() {
-                settle_stream(deps.storage, &mut grant, elapsed, settled)?;
-                response = response.add_message(send(&config, &payee, settled));
-            }
+            held = rules::accrued(grant.amount, &grant.schedule, paid, elapsed)?;
+            grant.kind = Kind::Stream {
+                start,
+                paid: elapsed,
+                payee,
+            };
         }
     }
-    let returned = grant.remaining;
-    grant.remaining = Uint128::zero();
+    let returned = grant.remaining.checked_sub(held)?;
+    grant.remaining = held;
     grant.cancelled = true;
     GRANTS.save(deps.storage, id, &grant)?;
     ESCROWED.update(deps.storage, |e| -> Result<_, ContractError> {
@@ -1184,7 +1232,7 @@ fn cancel_grant(deps: DepsMut, env: Env, id: u64) -> Result<Response, ContractEr
             .add_attribute("id", id.to_string())
             .add_attribute("returned", returned)
             .add_attribute("gas_returned", gas)
-            .add_attribute("settled", settled),
+            .add_attribute("held", held),
     );
     if !total.is_zero() {
         response = response.add_message(proto::fund_community_pool(
@@ -1210,8 +1258,9 @@ fn releasable(
     match &grant.kind {
         Kind::Ownership { .. } => {
             let bonded = proto::bonded_tokens(&deps.querier)?;
-            let own = own(config, person);
-            let cap = rules::cap_total(bonded, own, &config.cap);
+            let own = own(config, person)?;
+            let seat = own.checked_sub(person.released)?;
+            let cap = rules::cap_total(bonded, own, seat, &config.cap)?;
             let mut allowance = cap.saturating_sub(own);
             let mut seat_allowance = None;
             if person.seat_holder {
@@ -1238,10 +1287,14 @@ fn releasable(
             })
         }
         Kind::Stream { start, paid, .. } => {
-            let (elapsed, next_at) =
-                rules::elapsed(&grant.schedule, *start, env.block.time.seconds());
-            let amount = if idle {
-                Uint128::zero()
+            // Cancelled, the clock has stopped and what it holds is the payee's.
+            let (elapsed, next_at) = if grant.cancelled {
+                (*paid, None)
+            } else {
+                rules::elapsed(&grant.schedule, *start, env.block.time.seconds())
+            };
+            let amount = if grant.cancelled {
+                grant.remaining
             } else {
                 rules::accrued(grant.amount, &grant.schedule, *paid, elapsed)?
             };
