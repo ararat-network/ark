@@ -850,7 +850,6 @@
     },
     "disbursement": {
       "params": {
-        "registrar": "",
         "max_members": "250",
         "window_seconds": "604800",
         "member_amount": "10000000000000000000000",
@@ -924,10 +923,25 @@
       "issuance": {
         "entries": []
       },
-      "registrar_epochs": [],
+      "registrar_mandate": {
+        "envelope": {
+          "term": "0",
+          "committee": "",
+          "activation_height": "0",
+          "expiry_height": "0",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "module": "",
+            "threshold": 0,
+            "member_count": 0
+          }
+        }
+      },
       "journal": [],
       "next_grant_id": "1",
-      "next_journal_id": "1"
+      "next_journal_id": "1",
+      "voided_terms": []
     }
   },
   "app_version": "",

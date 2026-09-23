@@ -14,6 +14,7 @@ import (
 	"github.com/ararat-network/ark/pkg/mandate"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
@@ -61,6 +62,7 @@ func (app *ArkApp) newPrivileges() mempool.Set {
 		ante.GovernancePrivilege(app.StakingKeeper, app.BankKeeper, app.GovKeeper),
 		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: assettypes.CommitteeMsgs, Vouch: mandate.Vouch(app.AssetKeeper.AuthoriseCommittee)},
 		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: claimstypes.CommitteeMsgs, Vouch: mandate.Vouch(app.ClaimsKeeper.AuthoriseCommittee)},
+		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: disbursementtypes.CommitteeMsgs, Vouch: mandate.Vouch(app.DisbursementKeeper.AuthoriseCommittee)},
 		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: markettypes.CommitteeMsgs, Vouch: mandate.Vouch(app.MarketKeeper.AuthoriseCommittee)},
 		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: reservetypes.CommitteeMsgs, Vouch: mandate.Vouch(app.ReserveKeeper.AuthoriseCommittee)},
 		mempool.Privilege{Lane: mempool.LaneCommittee, Msgs: securitytypes.CommitteeMsgs, Vouch: mandate.Vouch(app.SecurityKeeper.AuthoriseCommittee)},

@@ -62,6 +62,7 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.disbursement.v1.Query/Journal",
 	"/ark.disbursement.v1.Query/Member",
 	"/ark.disbursement.v1.Query/Params",
+	"/ark.disbursement.v1.Query/RegistrarMandate",
 	"/ark.disbursement.v1.Query/Releasable",
 	"/ark.disbursement.v1.Query/Totals",
 	"/ark.market.v1.Query/ConversionMandate",
