@@ -35,11 +35,17 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	var settings map[string]any
 	s.Require().NoError(json.Unmarshal([]byte(params.Raw), &settings))
-	settings["registrar"] = s.Wallet.FormattedAddress()
 	settings["member_amount"] = chainsuite.NOAH(memberGrantNoah).String()
-	updateParams := func() json.RawMessage {
+	updateParams, err := json.Marshal(map[string]any{
+		"@type": "/ark.disbursement.v1.MsgUpdateParams", "authority": gov, "params": settings,
+	})
+	s.Require().NoError(err)
+	// appoint replaces the registrar for the rest of the chain's life; every appointment advances
+	// the term the registrar's transactions must carry.
+	appoint := func(committee string) json.RawMessage {
 		message, err := json.Marshal(map[string]any{
-			"@type": "/ark.disbursement.v1.MsgUpdateParams", "authority": gov, "params": settings,
+			"@type": "/ark.disbursement.v1.MsgSetRegistrarMandate", "authority": gov, "committee": committee,
+			"activation_height": "1", "expiry_height": "1000000000",
 		})
 		s.Require().NoError(err)
 		return message
@@ -53,7 +59,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 		`{"@type":"/cosmos.distribution.v1beta1.MsgCommunityPoolSpend","authority":%q,"recipient":%q,"amount":[{"denom":%q,"amount":%q}]}`,
 		gov, custody, chainsuite.Denom, tranche,
 	))
-	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "fund the first tranche", spend, updateParams())
+	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "fund the first tranche", spend, updateParams, appoint(s.Wallet.FormattedAddress()))
 	s.Require().NoError(err)
 	s.Require().Equal(tranche, s.Balance(custody))
 
@@ -61,7 +67,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	member, err := s.Chain.BuildWallet(ctx, "member", "")
 	s.Require().NoError(err)
 	dusted := s.FundedWallet("dusted-member", 1)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "register-members", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-register", "--expected-term", "1", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
 	s.Require().NoError(err)
 
 	// The first period, a tenth, is sent at once into an ordinary account;
@@ -89,15 +95,16 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/20).String(), delegated.String())
 
-	// Governance replaces the registrar; the old key is refused.
-	settings["registrar"] = s.Wallet2.FormattedAddress()
-	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "replace the registrar", updateParams())
+	// Governance replaces the registrar; the old key and the old term are refused.
+	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "replace the registrar", appoint(s.Wallet2.FormattedAddress()))
 	s.Require().NoError(err)
 	another, err := s.Chain.BuildWallet(ctx, "member-2", "")
 	s.Require().NoError(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "register-members", "--addresses", another.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-register", "--expected-term", "2", "--addresses", another.FormattedAddress())
 	s.Require().Error(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--addresses", another.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-register", "--expected-term", "1", "--addresses", another.FormattedAddress())
+	s.Require().Error(err)
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-register", "--expected-term", "2", "--addresses", another.FormattedAddress())
 	s.Require().NoError(err)
 	s.Require().Equal(tenth, s.Balance(another.FormattedAddress()))
 }
