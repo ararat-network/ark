@@ -23,4 +23,15 @@ session, such as subscription IDs or symbol caches, belongs in the copied handle
 
 - [Binance](./binance/README.md) subscribes to spot aggregate trade and ticker streams.
 
+## Dial Contract
+
+A handler whose venue needs more than a plain dial, such as a per-connection token fetched over HTTPS, implements
+`websocket.Dialer`:
+
+- `DialFunc(client)` returns the `websocket.DialFunc` the fetcher dials with; `client` is the redirect-refusing HTTP
+  client the fetcher itself uses.
+
+The registry installs it on the fetcher when the handler implements it. The configured endpoint stays the one
+dialled; the dial may only add what the venue's protocol requires, such as a query parameter.
+
 See [shared fetcher lifecycle](../base/README.md) and [provider construction/testing](../README.md).

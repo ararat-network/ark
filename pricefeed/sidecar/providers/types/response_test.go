@@ -52,6 +52,25 @@ func TestNewErrorResponse(t *testing.T) {
 	}
 }
 
+func TestNewUnchangedResponse(t *testing.T) {
+	timestamp := time.Unix(10, 0).UTC()
+
+	response := NewUnchangedResponse([]Ticker{"ATOMUSD", "BTCUSD"}, timestamp)
+
+	require.Len(t, response.Resolved, 2)
+	require.Empty(t, response.Unresolved)
+	for _, ticker := range []Ticker{"ATOMUSD", "BTCUSD"} {
+		result := response.Resolved[ticker]
+		require.True(t, result.Unchanged)
+		require.Nil(t, result.Price)
+		require.Equal(t, timestamp, result.Timestamp)
+		require.True(t, result.LastObserved.IsZero())
+	}
+
+	empty := NewUnchangedResponse(nil, timestamp)
+	require.True(t, empty.Empty())
+}
+
 func TestResultStringHandlesNilPrice(t *testing.T) {
 	result := NewUnchangedResult(time.Unix(10, 0).UTC())
 

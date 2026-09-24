@@ -37,3 +37,12 @@ func TestTickersAddReplacesMatchingKey(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, Ticker("atomusd"), ticker)
 }
+
+func TestTickersAllReturnsEveryTicker(t *testing.T) {
+	tickers := NewTickers("ATOMUSD", "btcusd")
+
+	require.ElementsMatch(t, []Ticker{"ATOMUSD", "btcusd"}, tickers.All())
+
+	empty := NewTickers()
+	require.Empty(t, empty.All())
+}

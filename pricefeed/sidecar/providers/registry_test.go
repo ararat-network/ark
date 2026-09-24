@@ -1,6 +1,7 @@
 package providers_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -274,6 +275,35 @@ func TestDefaultRegistryBuildsInTreeProviders(t *testing.T) {
 			require.Equal(t, tc.name, provider.Name())
 		})
 	}
+}
+
+// dialerWebSocketHandler records that the registry asked it for a dial.
+type dialerWebSocketHandler struct {
+	nopWebSocketHandler
+	dialRequested *bool
+}
+
+func (h dialerWebSocketHandler) DialFunc(client *http.Client) websocket.DialFunc {
+	*h.dialRequested = client != nil
+	return nil
+}
+
+// TestNewProviderInstallsTheHandlerDial pins the Dialer contract: a handler
+// that supplies a dial is asked for it with the fetcher's HTTP client, so a
+// venue that needs a connect token gets one on every session.
+func TestNewProviderInstallsTheHandlerDial(t *testing.T) {
+	dialRequested := false
+	registry := providers.NewRegistry()
+	require.NoError(t, registry.RegisterWebSocket("custom_ws", func(providers.Config, log.Logger) (websocket.DataHandler, error) {
+		return dialerWebSocketHandler{dialRequested: &dialRequested}, nil
+	}))
+
+	// A nil dial from the handler is refused by the fetcher, which is what
+	// proves the registry installed it rather than the default.
+	_, err := registry.NewProvider(customWebSocketProviderConfig("custom_ws"), nil, log.NewNopLogger())
+
+	require.ErrorContains(t, err, "dial function is nil")
+	require.True(t, dialRequested)
 }
 
 func TestNewProviderAllowsEmptyActiveMarkets(t *testing.T) {

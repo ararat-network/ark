@@ -16,6 +16,13 @@ The [provider registry](../README.md) constructs it; [sidecar runtime](../../run
 `GetPrices` returns copied results for configured pairs. Runtime, provider, and fetcher ownership are distinct: changing
 market mappings must preserve the configured identity and the intended retained-price semantics while retargeting transport work.
 
+## Unchanged results
+
+A venue heartbeat that vouches for a subscription reports an unchanged result: no price, only a timestamp. [receive.go](receive.go)
+applies it to the cached result by moving `Timestamp` and leaving `LastObserved` alone, and drops it when no price is
+cached yet. The heartbeat says the price still holds, not that it was seen again, and the two timestamps are what let
+the [sidecar runtime](../../runtime/README.md#freshness) bound how long a heartbeat may carry a price.
+
 API and WebSocket fetchers consume adapter contracts documented in [API providers](../api/README.md) and
 [WebSocket providers](../websocket/README.md). Adapters own exchange requests/messages and parsing; they do not start a
 second polling or reconnect loop. Endpoint transport/security policy is in [pricefeed operations](../../../../docs/operations/PRICEFEED_OPERATIONS.md).

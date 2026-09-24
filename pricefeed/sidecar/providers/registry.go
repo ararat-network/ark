@@ -159,7 +159,9 @@ func (r *Registry) buildAPIFetcher(cfg Config, logger log.Logger) (*api.Fetcher,
 }
 
 // buildWebSocketFetcher builds the registered websocket handler and wraps it in
-// the shared websocket fetcher runtime.
+// the shared websocket fetcher runtime. A handler that implements
+// websocket.Dialer supplies the dial, for a venue whose connection needs more
+// than the configured endpoint.
 func (r *Registry) buildWebSocketFetcher(cfg Config, logger log.Logger) (*websocket.Fetcher, error) {
 	factory, ok := r.wsFactories[cfg.Name]
 	if !ok {
@@ -170,12 +172,16 @@ func (r *Registry) buildWebSocketFetcher(cfg Config, logger log.Logger) (*websoc
 		return nil, err
 	}
 
-	fetcher, err := websocket.NewFetcher(
-		cfg.WebSocket,
-		dataHandler,
+	client := newHTTPClient()
+	opts := []websocket.Option{
 		websocket.WithLogger(logger),
-		websocket.WithHTTPClient(newHTTPClient()),
-	)
+		websocket.WithHTTPClient(client),
+	}
+	if dialer, ok := dataHandler.(websocket.Dialer); ok {
+		opts = append(opts, websocket.WithDialFunc(dialer.DialFunc(client)))
+	}
+
+	fetcher, err := websocket.NewFetcher(cfg.WebSocket, dataHandler, opts...)
 	if err != nil {
 		return nil, err
 	}

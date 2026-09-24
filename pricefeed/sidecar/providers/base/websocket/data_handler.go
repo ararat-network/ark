@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"net/http"
+
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
@@ -22,4 +24,12 @@ type DataHandler interface {
 
 	// Copy returns an independent handler for one websocket connection.
 	Copy() DataHandler
+}
+
+// Dialer is implemented by handlers whose venue needs more than a plain dial
+// to open a connection, such as a per-connection token fetched over HTTPS.
+// The registry installs the returned DialFunc on the fetcher; client is the
+// redirect-refusing HTTP client the fetcher dials with.
+type Dialer interface {
+	DialFunc(client *http.Client) DialFunc
 }

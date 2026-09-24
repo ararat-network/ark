@@ -43,6 +43,21 @@ func NewErrorResponse(tickers []Ticker, err ErrorWithCode) Response {
 	}
 }
 
+// NewUnchangedResponse marks every ticker as unchanged at timestamp. A venue
+// heartbeat that vouches for its subscriptions reports through this; the
+// provider's MaxUnchangedAge decides whether it may extend a price.
+func NewUnchangedResponse(tickers []Ticker, timestamp time.Time) Response {
+	resolved := make(map[Ticker]Result, len(tickers))
+	for _, ticker := range tickers {
+		resolved[ticker] = NewUnchangedResult(timestamp)
+	}
+
+	return Response{
+		Resolved:   resolved,
+		Unresolved: make(map[Ticker]ErrorWithCode),
+	}
+}
+
 // Empty returns true if the response contains no resolved or unresolved tickers.
 func (r Response) Empty() bool {
 	return len(r.Resolved) == 0 && len(r.Unresolved) == 0
