@@ -7,14 +7,32 @@ import (
 	"cosmossdk.io/log/v2"
 
 	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
+	bitstampapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/bitstamp"
+	coinbaseapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coinbase"
+	coingeckoapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coingecko"
+	coinmarketcapapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coinmarketcap"
 	currencybeaconapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/currencybeacon"
 	frankfurterapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	geckoterminalapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/geckoterminal"
+	krakenapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/kraken"
 	openexchangeratesapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/openexchangerates"
+	polymarketapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/polymarket"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	binancews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/binance"
+	bitfinexws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bitfinex"
+	bitstampws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bitstamp"
+	bybitws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bybit"
+	coinbasews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/coinbase"
+	cryptodotcomws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/cryptodotcom"
+	gatews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/gate"
+	huobiws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/huobi"
+	krakenws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/kraken"
+	kucoinws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/kucoin"
+	mexcws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/mexc"
+	okxws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/okx"
 )
 
 // APIHandlerFactory builds a provider's API data handler.
@@ -46,18 +64,54 @@ func DefaultRegistry() *Registry {
 	_ = r.RegisterAPI(binanceapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return binanceapi.NewHandler(), nil
 	})
+	_ = r.RegisterAPI(bitstampapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return bitstampapi.NewHandler(), nil
+	})
+	_ = r.RegisterAPI(coinbaseapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return coinbaseapi.NewHandler(), nil
+	})
+	_ = r.RegisterAPI(coingeckoapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return coingeckoapi.NewHandler(), nil
+	})
+	_ = r.RegisterAPI(coinmarketcapapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return coinmarketcapapi.NewHandler(), nil
+	})
 	_ = r.RegisterAPI(currencybeaconapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return currencybeaconapi.NewHandler(), nil
 	})
 	_ = r.RegisterAPI(frankfurterapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return frankfurterapi.NewHandler(), nil
 	})
+	_ = r.RegisterAPI(geckoterminalapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return geckoterminalapi.NewHandler(), nil
+	})
+	_ = r.RegisterAPI(krakenapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return krakenapi.NewHandler(), nil
+	})
 	_ = r.RegisterAPI(openexchangeratesapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
 		return openexchangeratesapi.NewHandler(), nil
 	})
-	_ = r.RegisterWebSocket(binancews.Name, func(cfg Config, logger log.Logger) (websocket.DataHandler, error) {
-		return binancews.NewHandler(logger, cfg.WebSocket)
+	_ = r.RegisterAPI(polymarketapi.Name, func(Config, log.Logger) (api.DataHandler, error) {
+		return polymarketapi.NewHandler(), nil
 	})
+	for name, newHandler := range map[string]func(log.Logger, websocket.Config) (websocket.DataHandler, error){
+		binancews.Name:      binancews.NewHandler,
+		bitfinexws.Name:     bitfinexws.NewHandler,
+		bitstampws.Name:     bitstampws.NewHandler,
+		bybitws.Name:        bybitws.NewHandler,
+		coinbasews.Name:     coinbasews.NewHandler,
+		cryptodotcomws.Name: cryptodotcomws.NewHandler,
+		gatews.Name:         gatews.NewHandler,
+		huobiws.Name:        huobiws.NewHandler,
+		krakenws.Name:       krakenws.NewHandler,
+		kucoinws.Name:       kucoinws.NewHandler,
+		mexcws.Name:         mexcws.NewHandler,
+		okxws.Name:          okxws.NewHandler,
+	} {
+		_ = r.RegisterWebSocket(name, func(cfg Config, logger log.Logger) (websocket.DataHandler, error) {
+			return newHandler(logger, cfg.WebSocket)
+		})
+	}
 
 	return r
 }

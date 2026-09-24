@@ -11,12 +11,32 @@ import (
 
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	binanceapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/binance"
+	bitstampapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/bitstamp"
+	coinbaseapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coinbase"
+	coingeckoapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coingecko"
+	coinmarketcapapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/coinmarketcap"
+	currencybeaconapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/currencybeacon"
 	frankfurterapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/frankfurter"
+	geckoterminalapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/geckoterminal"
+	krakenapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/kraken"
+	openexchangeratesapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/openexchangerates"
+	polymarketapi "github.com/ararat-network/ark/pricefeed/sidecar/providers/api/polymarket"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base/websocket"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 	binancews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/binance"
+	bitfinexws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bitfinex"
+	bitstampws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bitstamp"
+	bybitws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/bybit"
+	coinbasews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/coinbase"
+	cryptodotcomws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/cryptodotcom"
+	gatews "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/gate"
+	huobiws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/huobi"
+	krakenws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/kraken"
+	kucoinws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/kucoin"
+	mexcws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/mexc"
+	okxws "github.com/ararat-network/ark/pricefeed/sidecar/providers/websocket/okx"
 )
 
 func stubAPIHandlerFactory(providers.Config, log.Logger) (api.DataHandler, error) {
@@ -231,48 +251,66 @@ func TestRegistryNewProviderPassesConfigToFactory(t *testing.T) {
 }
 
 func TestDefaultRegistryBuildsInTreeProviders(t *testing.T) {
-	testCases := []struct {
-		name string
-		cfg  providers.Config
-	}{
-		{
-			name: binanceapi.Name,
-			cfg: providers.Config{
-				Name:          binanceapi.Name,
-				TransportType: base.API,
-				Markets:       types.Markets{{Pair: "NOAH/USD", Symbol: "NOAHUSD"}},
-				MaxPriceAge:   time.Minute,
-				API:           binanceapi.DefaultNonUSAPIConfig,
-			},
-		},
-		{
-			name: frankfurterapi.Name,
-			cfg: providers.Config{
-				Name:          frankfurterapi.Name,
-				TransportType: base.API,
-				Markets:       types.Markets{{Pair: "NOAH/USD", Symbol: "NOAHUSD"}},
-				MaxPriceAge:   time.Minute,
-				API:           frankfurterapi.DefaultAPIConfig,
-			},
-		},
-		{
-			name: binancews.Name,
-			cfg: providers.Config{
-				Name:          binancews.Name,
-				TransportType: base.WebSocket,
-				Markets:       types.Markets{{Pair: "NOAH/USD", Symbol: "NOAHUSD"}},
-				MaxPriceAge:   time.Minute,
-				WebSocket:     binancews.DefaultWebSocketConfig,
-			},
-		},
+	markets := types.Markets{{Pair: "NOAH/USD", Symbol: "NOAHUSD"}}
+	apiConfigs := map[string]api.Config{
+		binanceapi.Name:           binanceapi.DefaultNonUSAPIConfig,
+		bitstampapi.Name:          bitstampapi.DefaultAPIConfig,
+		coinbaseapi.Name:          coinbaseapi.DefaultAPIConfig,
+		coingeckoapi.Name:         coingeckoapi.DefaultAPIConfig,
+		coinmarketcapapi.Name:     coinmarketcapapi.DefaultAPIConfig,
+		currencybeaconapi.Name:    currencybeaconapi.DefaultAPIConfig,
+		frankfurterapi.Name:       frankfurterapi.DefaultAPIConfig,
+		geckoterminalapi.Name:     geckoterminalapi.DefaultETHAPIConfig,
+		krakenapi.Name:            krakenapi.DefaultAPIConfig,
+		openexchangeratesapi.Name: openexchangeratesapi.DefaultAPIConfig,
+		polymarketapi.Name:        polymarketapi.DefaultAPIConfig,
+	}
+	wsConfigs := map[string]websocket.Config{
+		binancews.Name:      binancews.DefaultWebSocketConfig,
+		bitfinexws.Name:     bitfinexws.DefaultWebSocketConfig,
+		bitstampws.Name:     bitstampws.DefaultWebSocketConfig,
+		bybitws.Name:        bybitws.DefaultWebSocketConfig,
+		coinbasews.Name:     coinbasews.DefaultWebSocketConfig,
+		cryptodotcomws.Name: cryptodotcomws.DefaultWebSocketConfig,
+		gatews.Name:         gatews.DefaultWebSocketConfig,
+		huobiws.Name:        huobiws.DefaultWebSocketConfig,
+		krakenws.Name:       krakenws.DefaultWebSocketConfig,
+		kucoinws.Name:       kucoinws.DefaultWebSocketConfig,
+		mexcws.Name:         mexcws.DefaultWebSocketConfig,
+		okxws.Name:          okxws.DefaultWebSocketConfig,
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			provider, err := providers.DefaultRegistry().NewProvider(tc.cfg, tc.cfg.Markets, log.NewNopLogger())
+	for name, apiCfg := range apiConfigs {
+		t.Run(name, func(t *testing.T) {
+			cfg := providers.Config{
+				Name:          name,
+				TransportType: base.API,
+				Markets:       markets,
+				MaxPriceAge:   time.Minute,
+				API:           apiCfg,
+			}
+
+			provider, err := providers.DefaultRegistry().NewProvider(cfg, cfg.Markets, log.NewNopLogger())
 
 			require.NoError(t, err)
-			require.Equal(t, tc.name, provider.Name())
+			require.Equal(t, name, provider.Name())
+		})
+	}
+
+	for name, wsCfg := range wsConfigs {
+		t.Run(name, func(t *testing.T) {
+			cfg := providers.Config{
+				Name:          name,
+				TransportType: base.WebSocket,
+				Markets:       markets,
+				MaxPriceAge:   time.Minute,
+				WebSocket:     wsCfg,
+			}
+
+			provider, err := providers.DefaultRegistry().NewProvider(cfg, cfg.Markets, log.NewNopLogger())
+
+			require.NoError(t, err)
+			require.Equal(t, name, provider.Name())
 		})
 	}
 }
