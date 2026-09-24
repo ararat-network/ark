@@ -102,10 +102,15 @@ prices come back.
 sidecar must neither crash nor vote on a single bad source unchecked. The chain-level defence is the
 median across validators, which only holds while validators draw on different providers.
 
-**Controls.** Response bodies are size-capped; WebSocket reads use the library's default limit; API keys
+**Controls.** Response bodies are size-capped; WebSocket reads use the library's default limit, a venue
+that compresses its stream (Huobi) is inflated under a fixed cap before parsing, and a venue that frames
+its stream in protobuf (MEXC) is decoded by a field-pinned wire reader that skips what it does not name; API keys
 travel in headers, never URLs, and the config file is written owner-only. Endpoints require HTTPS/WSS
 and reject URL user information and fragments. Both provider clients refuse all redirects before a
 second request. An API handler must retain its configured HTTPS origin before credentials are attached.
+A handler that supplies its own dial (KuCoin) still dials the configured endpoint; its connect token is a
+short-lived public value fetched over HTTPS from a fixed origin and carried in the dial query because the
+protocol reads it there, and a dial error is returned with the token redacted.
 Certificate verification is never disabled anywhere in the repository. Provider diversity is an operational duty, not a code property:
 a fleet on the same default providers has one point of failure.
 
