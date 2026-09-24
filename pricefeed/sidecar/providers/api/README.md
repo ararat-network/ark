@@ -20,7 +20,25 @@ shared fetcher. Endpoint authentication belongs in config; adapters should not h
 
 ## Supported Providers
 
+Exchanges:
+
 - [Binance](./binance/README.md) fetches spot ticker prices from Binance's public REST API.
+- [Bitstamp](./bitstamp/README.md) fetches spot prices from Bitstamp's all-markets ticker endpoint.
+- [Coinbase](./coinbase/README.md) fetches spot prices from the Coinbase v2 prices endpoint, one product per request.
+- [Kraken](./kraken/README.md) fetches last-trade prices from Kraken's public ticker endpoint.
+
+Aggregators and other sources:
+
+- [CoinGecko](./coingecko/README.md) fetches aggregated prices from CoinGecko's simple price endpoint. Works without a
+  key on the rate-limited public endpoint; a pro key is sent as `x-cg-pro-api-key` via endpoint authentication.
+- [CoinMarketCap](./coinmarketcap/README.md) fetches aggregated USD quotes from CoinMarketCap. Requires an API key,
+  sent as `X-CMC_PRO_API_KEY` via endpoint authentication.
+- [GeckoTerminal](./geckoterminal/README.md) fetches on-chain token prices by contract address for one network per
+  provider.
+- [Polymarket](./polymarket/README.md) fetches outcome-token prices from the Polymarket CLOB markets endpoint.
+
+Fiat rate services:
+
 - [CurrencyBeacon](currencybeacon/README.md) fetches fiat exchange rates from CurrencyBeacon's REST API. Requires an API key, sent as
   `Authorization: Bearer <key>` via endpoint authentication.
 - [Frankfurter](frankfurter/README.md) fetches fiat exchange rates from Frankfurter's public REST API.
