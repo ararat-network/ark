@@ -2,7 +2,6 @@ package delegator_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -14,14 +13,14 @@ import (
 	"github.com/ararat-network/ark/tests/e2e/delegator"
 )
 
-// DisbursementSuite funds native disbursement custody by governance, registers members, and
-// replaces the registrar while preserving the permanent member records.
+// DisbursementSuite opens a member tranche by governance, registers members, and replaces the
+// committee while preserving the permanent member records.
 type DisbursementSuite struct {
 	*delegator.Suite
 }
 
 const (
-	// memberGrantNoah is small so the delegator's wallet can fund the tranche.
+	// memberGrantNoah keeps the tranche and its payments small against the artefact's pool.
 	memberGrantNoah = 100
 )
 
@@ -40,28 +39,30 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 		"@type": "/ark.disbursement.v1.MsgUpdateParams", "authority": gov, "params": settings,
 	})
 	s.Require().NoError(err)
-	// appoint replaces the registrar for the rest of the chain's life; every appointment advances
-	// the term the registrar's transactions must carry.
+	// appoint replaces the committee for the rest of the chain's life; every appointment advances
+	// the term the committee's transactions must carry.
 	appoint := func(committee string) json.RawMessage {
 		message, err := json.Marshal(map[string]any{
-			"@type": "/ark.disbursement.v1.MsgSetRegistrarMandate", "authority": gov, "committee": committee,
+			"@type": "/ark.disbursement.v1.MsgSetGrantsMandate", "authority": gov, "committee": committee,
 			"activation_height": "1", "expiry_height": "1000000000",
 		})
 		s.Require().NoError(err)
 		return message
 	}
 
-	// The tranche: three member grants, spent from the community pool by vote.
+	// The tranche: three member grants opened from the artefact's member pool by vote.
 	tranche := chainsuite.NOAH(3 * memberGrantNoah)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "distribution", "fund-community-pool", chainsuite.NOAHCoin(3*memberGrantNoah))
+	open, err := json.Marshal(map[string]any{
+		"@type": "/ark.disbursement.v1.MsgOpenTranche", "authority": gov, "pool": "POOL_MEMBERS", "amount": tranche.String(),
+	})
 	s.Require().NoError(err)
-	spend := json.RawMessage(fmt.Sprintf(
-		`{"@type":"/cosmos.distribution.v1beta1.MsgCommunityPoolSpend","authority":%q,"recipient":%q,"amount":[{"denom":%q,"amount":%q}]}`,
-		gov, custody, chainsuite.Denom, tranche,
-	))
-	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "fund the first tranche", spend, updateParams, appoint(s.Wallet.FormattedAddress()))
+	held := s.Balance(custody)
+	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "open the first tranche", open, updateParams, appoint(s.Wallet.FormattedAddress()))
 	s.Require().NoError(err)
-	s.Require().Equal(tranche, s.Balance(custody))
+	s.Require().Equal(held, s.Balance(custody), "opening a tranche moves no coins")
+	opened, err := s.Chain.QueryJSON(ctx, "member_pool.open", "disbursement", "balance", chainsuite.Denom)
+	s.Require().NoError(err)
+	s.Require().Equal(tranche.String(), opened.String())
 
 	// A member with no account yet, and one whose address was dusted.
 	member, err := s.Chain.BuildWallet(ctx, "member", "")
@@ -85,7 +86,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	payable, err := s.Chain.QueryJSON(ctx, "amount.amount", "disbursement", "releasable", status.Get("id").String())
 	s.Require().NoError(err)
 	s.Require().Equal("0", payable.String(), "nothing has elapsed")
-	s.Require().Equal(tranche.Sub(tenth.MulRaw(2)), s.Balance(custody), "only the first periods left")
+	s.Require().Equal(held.Sub(tenth.MulRaw(2)), s.Balance(custody), "only the first periods left")
 
 	// The tenth is stake like any other, and pays its own fee.
 	val := s.Chain.ValidatorWallets[0].ValoperAddress
@@ -95,8 +96,8 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/20).String(), delegated.String())
 
-	// Governance replaces the registrar; the old key and the old term are refused.
-	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "replace the registrar", appoint(s.Wallet2.FormattedAddress()))
+	// Governance replaces the committee; the old key and the old term are refused.
+	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "replace the committee", appoint(s.Wallet2.FormattedAddress()))
 	s.Require().NoError(err)
 	another, err := s.Chain.BuildWallet(ctx, "member-2", "")
 	s.Require().NoError(err)

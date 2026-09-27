@@ -47,7 +47,7 @@ func TestOverlayArtefact(t *testing.T) {
 	require.True(t, bank.Get("params.default_send_enabled").Bool(), "bank params are the artefact's")
 	require.Len(t, bank.Get("denom_metadata").Array(), 1, "the NOAH metadata comes from the artefact")
 	balances := bank.Get("balances").Array()
-	require.Len(t, balances, 6, "five artefact balances plus the generated account")
+	require.Len(t, balances, 7, "six artefact balances plus the generated account")
 	require.Equal(t, "1000010000000000000000000000", bank.Get("supply.0.amount").String(),
 		"supply is the artefact's billion plus the generated 10,000 NOAH")
 
