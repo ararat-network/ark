@@ -21,6 +21,16 @@ enum GrantKind {
   GRANT_KIND_COMPENSATION = 3;
 }
 
+// Pool names a NOAH distribution pool held from genesis.
+enum Pool {
+  // POOL_UNSPECIFIED is custody outside both pools.
+  POOL_UNSPECIFIED = 0;
+  // POOL_MEMBERS funds member grants and has no exit.
+  POOL_MEMBERS = 1;
+  // POOL_CONTRIBUTORS funds ownership, NOAH compensation, and conversions; governance can return it.
+  POOL_CONTRIBUTORS = 2;
+}
+
 // Period allocates a fraction of a commitment after a duration in seconds.
 message Period {
   option (gogoproto.equal) = true;
@@ -47,14 +57,23 @@ message Params {
   repeated string compensation_denoms = 5;
 }
 
-// RegistrarMandate appoints the registrar for a height window. An empty committee disables it;
-// every replacement advances the term.
-message RegistrarMandate {
+// GrantsMandate appoints the grants committee for a height window. An empty committee
+// disables it; every replacement advances the term.
+message GrantsMandate {
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // compensation_allowance caps the term's awards per denomination; a cancel does not restore it.
+  repeated cosmos.base.v1beta1.Coin compensation_allowance = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  // min_first_period is the shortest first period, in seconds, a committee award may have.
+  uint64 min_first_period = 3 [(amino.dont_omitempty) = true];
 }
 
 // OwnershipPolicy fixes ownership limits at genesis; ordinary messages cannot change it.
@@ -62,18 +81,6 @@ message OwnershipPolicy {
   uint64 numerator = 1 [(amino.dont_omitempty) = true];
   uint64 denominator = 2 [(amino.dont_omitempty) = true];
   string ceiling = 3 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
-
-// Founder records the permanent genesis seat and its beneficiary.
-message Founder {
-  string operator = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-  string beneficiary = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string seat_amount = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -91,12 +98,19 @@ message Beneficiary {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // seat is the founding seat principal, set only at genesis; zero for a non-founder.
+  string seat = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // Suspension stops member payments until reinstated or its term is voided.
 message Suspension {
   uint64 at = 1 [(amino.dont_omitempty) = true];
-  // term is the registrar appointment the suspension was made under.
+  // term is the committee appointment the suspension was made under.
   uint64 term = 2 [(amino.dont_omitempty) = true];
 }
 
@@ -139,6 +153,8 @@ message Grant {
   string reference = 14;
   string created_by = 15 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 created_height = 16 [(amino.dont_omitempty) = true];
+  // mandate_term is the committee term that awarded this compensation; zero otherwise.
+  uint64 mandate_term = 17 [(amino.dont_omitempty) = true];
 }
 
 // DenomTotals separates custody obligations and payments by denomination and purpose.
@@ -165,6 +181,41 @@ message DenomTotals {
   string compensation_paid = 5 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// PoolBalance is a pool's uncommitted NOAH; open is the part governance has opened to new grants.
+message PoolBalance {
+  string unallocated = 1 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string open = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// ConversionOrder is governance's standing instruction to convert contributor NOAH into denom.
+message ConversionOrder {
+  string denom = 1;
+  // remaining is the NOAH still to convert; it left the contributor pool when authorised.
+  string remaining = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // max_spread bounds each execution's realised spread, dust included.
+  string max_spread = 3 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

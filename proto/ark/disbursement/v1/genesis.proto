@@ -17,36 +17,44 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Founder founders = 3 [
+  repeated Beneficiary beneficiaries = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Beneficiary beneficiaries = 4 [
+  repeated Grant grants = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Grant grants = 5 [
+  repeated DenomTotals totals = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated DenomTotals totals = 6 [
+  Issuance issuance = 6 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  Issuance issuance = 7 [
+  GrantsMandate grants_mandate = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  RegistrarMandate registrar_mandate = 8 [
+  repeated JournalEntry journal = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated JournalEntry journal = 9 [
+  uint64 next_grant_id = 9 [(amino.dont_omitempty) = true];
+  uint64 next_journal_id = 10 [(amino.dont_omitempty) = true];
+  // voided_terms lists replaced committee terms whose suspensions are not effective.
+  repeated uint64 voided_terms = 11;
+  PoolBalance member_pool = 12 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  uint64 next_grant_id = 10 [(amino.dont_omitempty) = true];
-  uint64 next_journal_id = 11 [(amino.dont_omitempty) = true];
-  // voided_terms lists replaced registrar terms whose suspensions are not effective.
-  repeated uint64 voided_terms = 12;
+  PoolBalance contributor_pool = 13 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated ConversionOrder conversion_orders = 14 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

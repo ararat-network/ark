@@ -15,8 +15,8 @@ service Msg {
   option (cosmos.msg.v1.service) = true;
   // UpdateParams replaces operational parameters without rewriting existing grants.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  // SetRegistrarMandate appoints, replaces, or disables the registrar.
-  rpc SetRegistrarMandate(MsgSetRegistrarMandate) returns (MsgSetRegistrarMandateResponse);
+  // SetGrantsMandate appoints, replaces, or disables the grants committee.
+  rpc SetGrantsMandate(MsgSetGrantsMandate) returns (MsgSetGrantsMandateResponse);
   // CreateGrant reserves a fully funded ownership or compensation award under governance authority.
   rpc CreateGrant(MsgCreateGrant) returns (MsgCreateGrantResponse);
   // CommitteeRegister permanently registers members and pays their first period atomically.
@@ -25,13 +25,13 @@ service Msg {
   rpc Release(MsgRelease) returns (MsgReleaseResponse);
   // CancelGrants freezes earned debt and frees only unearned principal without paying recipients.
   rpc CancelGrants(MsgCancelGrants) returns (MsgCancelGrantsResponse);
-  // CommitteeSuspend pauses member payments under the live registrar term.
+  // CommitteeSuspend pauses member payments under the live committee term.
   rpc CommitteeSuspend(MsgCommitteeSuspend) returns (MsgCommitteeSuspendResponse);
-  // CommitteeReinstate resumes suspended members under the live registrar term.
+  // CommitteeReinstate resumes suspended members under the live committee term.
   rpc CommitteeReinstate(MsgCommitteeReinstate) returns (MsgCommitteeReinstateResponse);
   // ReinstateMembers resumes suspended members under governance authority.
   rpc ReinstateMembers(MsgReinstateMembers) returns (MsgReinstateMembersResponse);
-  // VoidSuspensions invalidates every suspension made under a replaced registrar term.
+  // VoidSuspensions invalidates every suspension made under a replaced committee term.
   rpc VoidSuspensions(MsgVoidSuspensions) returns (MsgVoidSuspensionsResponse);
   // SetPayee changes a destination under member or contributor controller authority.
   rpc SetPayee(MsgSetPayee) returns (MsgSetPayeeResponse);
@@ -39,6 +39,18 @@ service Msg {
   rpc SetController(MsgSetController) returns (MsgSetControllerResponse);
   // ReturnUnallocated returns unreserved custody to the community pool under governance authority.
   rpc ReturnUnallocated(MsgReturnUnallocated) returns (MsgReturnUnallocatedResponse);
+  // OpenTranche opens pool NOAH to new grants under governance authority.
+  rpc OpenTranche(MsgOpenTranche) returns (MsgOpenTrancheResponse);
+  // AuthoriseConversion adds open contributor NOAH to a stablecoin conversion order.
+  rpc AuthoriseConversion(MsgAuthoriseConversion) returns (MsgAuthoriseConversionResponse);
+  // CancelConversion returns an order's remaining NOAH to the open contributor tranche.
+  rpc CancelConversion(MsgCancelConversion) returns (MsgCancelConversionResponse);
+  // Convert executes part of an authorised order; any sender may submit it.
+  rpc Convert(MsgConvert) returns (MsgConvertResponse);
+  // CommitteeCompensate awards compensation within the live term's allowance.
+  rpc CommitteeCompensate(MsgCommitteeCompensate) returns (MsgCommitteeCompensateResponse);
+  // CancelTermGrants cancels every unfinished committee award of one term.
+  rpc CancelTermGrants(MsgCancelTermGrants) returns (MsgCancelTermGrantsResponse);
 }
 
 // MsgUpdateParams replaces operational parameters without rewriting existing grants.
@@ -55,20 +67,27 @@ message MsgUpdateParams {
 // MsgUpdateParamsResponse reports the result of UpdateParams.
 message MsgUpdateParamsResponse {}
 
-// MsgSetRegistrarMandate appoints, replaces, or disables the registrar. An empty committee
-// disables; the chain derives the next term.
-message MsgSetRegistrarMandate {
+// MsgSetGrantsMandate appoints, replaces, or disables the grants committee. An empty
+// committee disables; the chain derives the next term.
+message MsgSetGrantsMandate {
   option (cosmos.msg.v1.signer) = "authority";
-  option (amino.name) = "ark/disbursement/MsgSetRegistrarMandate";
+  option (amino.name) = "ark/disbursement/MsgSetGrantsMandate";
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee is the exact appointed account, empty to disable.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 activation_height = 3 [(amino.dont_omitempty) = true];
   uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  repeated cosmos.base.v1beta1.Coin compensation_allowance = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  uint64 min_first_period = 6 [(amino.dont_omitempty) = true];
 }
 
-// MsgSetRegistrarMandateResponse reports the result of SetRegistrarMandate.
-message MsgSetRegistrarMandateResponse {}
+// MsgSetGrantsMandateResponse reports the result of SetGrantsMandate.
+message MsgSetGrantsMandateResponse {}
 
 // MsgCreateGrant reserves a fully funded ownership or compensation award under governance authority.
 message MsgCreateGrant {
@@ -129,7 +148,7 @@ message MsgCancelGrants {
 // MsgCancelGrantsResponse reports the result of CancelGrants.
 message MsgCancelGrantsResponse {}
 
-// MsgCommitteeSuspend pauses member payments under the live registrar term.
+// MsgCommitteeSuspend pauses member payments under the live committee term.
 message MsgCommitteeSuspend {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/disbursement/MsgCommitteeSuspend";
@@ -141,7 +160,7 @@ message MsgCommitteeSuspend {
 // MsgCommitteeSuspendResponse reports the result of CommitteeSuspend.
 message MsgCommitteeSuspendResponse {}
 
-// MsgCommitteeReinstate resumes suspended members under the live registrar term.
+// MsgCommitteeReinstate resumes suspended members under the live committee term.
 message MsgCommitteeReinstate {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/disbursement/MsgCommitteeReinstate";
@@ -164,12 +183,12 @@ message MsgReinstateMembers {
 // MsgReinstateMembersResponse reports the result of ReinstateMembers.
 message MsgReinstateMembersResponse {}
 
-// MsgVoidSuspensions invalidates every suspension made under a replaced registrar term.
+// MsgVoidSuspensions invalidates every suspension made under a replaced committee term.
 message MsgVoidSuspensions {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/disbursement/MsgVoidSuspensions";
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // term is a registrar term below the current one.
+  // term is a committee term below the current one.
   uint64 term = 2 [(amino.dont_omitempty) = true];
 }
 
@@ -209,7 +228,123 @@ message MsgReturnUnallocated {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // pool is the source; unspecified returns custody outside both pools, and the member pool is refused.
+  Pool pool = 3;
 }
 
 // MsgReturnUnallocatedResponse reports the result of ReturnUnallocated.
 message MsgReturnUnallocatedResponse {}
+
+// MsgOpenTranche opens pool NOAH to new grants under governance authority.
+message MsgOpenTranche {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/disbursement/MsgOpenTranche";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Pool pool = 2;
+  string amount = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgOpenTrancheResponse reports the result of OpenTranche.
+message MsgOpenTrancheResponse {}
+
+// MsgAuthoriseConversion adds open contributor NOAH to a stablecoin conversion order.
+message MsgAuthoriseConversion {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/disbursement/MsgAuthoriseConversion";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string denom = 2;
+  // amount is added to the order.
+  string amount = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // max_spread replaces the order's cap.
+  string max_spread = 4 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgAuthoriseConversionResponse reports the result of AuthoriseConversion.
+message MsgAuthoriseConversionResponse {}
+
+// MsgCancelConversion returns an order's remaining NOAH to the open contributor tranche.
+message MsgCancelConversion {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/disbursement/MsgCancelConversion";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string denom = 2;
+}
+
+// MsgCancelConversionResponse reports the result of CancelConversion.
+message MsgCancelConversionResponse {}
+
+// MsgConvert executes part of an authorised order; any sender may submit it.
+message MsgConvert {
+  option (cosmos.msg.v1.signer) = "sender";
+  option (amino.name) = "ark/disbursement/MsgConvert";
+  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string denom = 2;
+  // amount is the NOAH offered.
+  string amount = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgConvertResponse reports the stablecoin received and the spread charged.
+message MsgConvertResponse {
+  cosmos.base.v1beta1.Coin output = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.DecCoin fee = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgCommitteeCompensate awards compensation within the live term's allowance.
+message MsgCommitteeCompensate {
+  option (cosmos.msg.v1.signer) = "committee";
+  option (amino.name) = "ark/disbursement/MsgCommitteeCompensate";
+  string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 expected_term = 2 [(amino.dont_omitempty) = true];
+  string beneficiary = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin amount = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated Period schedule = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string reference = 6;
+}
+
+// MsgCommitteeCompensateResponse reports the result of CommitteeCompensate.
+message MsgCommitteeCompensateResponse {
+  uint64 grant_id = 1 [(amino.dont_omitempty) = true];
+}
+
+// MsgCancelTermGrants cancels every unfinished committee award of one term.
+message MsgCancelTermGrants {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "ark/disbursement/MsgCancelTermGrants";
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 term = 2 [(amino.dont_omitempty) = true];
+}
+
+// MsgCancelTermGrantsResponse reports the result of CancelTermGrants.
+message MsgCancelTermGrantsResponse {}

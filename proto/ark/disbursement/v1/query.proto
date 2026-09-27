@@ -19,10 +19,10 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/params";
   }
-  // RegistrarMandate queries the registrar appointment and whether it is active.
-  rpc RegistrarMandate(QueryRegistrarMandateRequest) returns (QueryRegistrarMandateResponse) {
+  // GrantsMandate queries the committee appointment, whether it is active, and the term's awards.
+  rpc GrantsMandate(QueryGrantsMandateRequest) returns (QueryGrantsMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/disbursement/v1/registrar_mandate";
+    option (google.api.http).get = "/ark/disbursement/v1/grants_mandate";
   }
   // Grant queries grant state.
   rpc Grant(QueryGrantRequest) returns (QueryGrantResponse) {
@@ -69,6 +69,11 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/issuance";
   }
+  // ConversionOrders lists open stablecoin conversion orders.
+  rpc ConversionOrders(QueryConversionOrdersRequest) returns (QueryConversionOrdersResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/disbursement/v1/conversion_orders";
+  }
 }
 
 // QueryParamsRequest requests Query/Params.
@@ -92,17 +97,25 @@ message QueryParamsResponse {
   ];
 }
 
-// QueryRegistrarMandateRequest requests Query/RegistrarMandate.
-message QueryRegistrarMandateRequest {}
+// QueryGrantsMandateRequest requests Query/GrantsMandate.
+message QueryGrantsMandateRequest {}
 
-// QueryRegistrarMandateResponse returns Query/RegistrarMandate.
-message QueryRegistrarMandateResponse {
-  RegistrarMandate mandate = 1 [
+// QueryGrantsMandateResponse returns Query/GrantsMandate.
+message QueryGrantsMandateResponse {
+  GrantsMandate mandate = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // active reports whether the registrar may act at the current height.
+  // active reports whether the committee may act at the current height.
   bool active = 2 [(amino.dont_omitempty) = true];
+  // compensation_used and compensation_grants count the live term's awards, cancelled ones included.
+  repeated cosmos.base.v1beta1.Coin compensation_used = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
+  ];
+  uint64 compensation_grants = 4 [(amino.dont_omitempty) = true];
 }
 
 // QueryGrantRequest requests Query/Grant.
@@ -122,6 +135,8 @@ message QueryGrantResponse {
 message QueryGrantsRequest {
   string beneficiary = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  // mandate_term lists one committee term's awards; it excludes a beneficiary filter.
+  uint64 mandate_term = 3;
 }
 
 // QueryGrantsResponse returns Query/Grants.
@@ -157,7 +172,6 @@ message QueryBeneficiaryResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  Founder founder = 2;
 }
 
 // QueryReleasableRequest requests Query/Releasable.
@@ -220,7 +234,23 @@ message QueryBalanceResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // unallocated is custody outside grants, pools, and conversion orders.
   string unallocated = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // member_pool, contributor_pool, and converting are zero for denominations other than NOAH.
+  PoolBalance member_pool = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  PoolBalance contributor_pool = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string converting = 6 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -268,4 +298,18 @@ message QueryIssuanceResponse {
   ];
   uint64 used = 2 [(amino.dont_omitempty) = true];
   uint64 remaining = 3 [(amino.dont_omitempty) = true];
+}
+
+// QueryConversionOrdersRequest requests Query/ConversionOrders.
+message QueryConversionOrdersRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryConversionOrdersResponse returns Query/ConversionOrders.
+message QueryConversionOrdersResponse {
+  repeated ConversionOrder orders = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

@@ -17,7 +17,7 @@ import (
 var _ protoreflect.List = (*_GenesisState_3_list)(nil)
 
 type _GenesisState_3_list struct {
-	list *[]*Founder
+	list *[]*Beneficiary
 }
 
 func (x *_GenesisState_3_list) Len() int {
@@ -33,18 +33,18 @@ func (x *_GenesisState_3_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Founder)
+	concreteValue := valueUnwrapped.Interface().(*Beneficiary)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Founder)
+	concreteValue := valueUnwrapped.Interface().(*Beneficiary)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_3_list) AppendMutable() protoreflect.Value {
-	v := new(Founder)
+	v := new(Beneficiary)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -57,7 +57,7 @@ func (x *_GenesisState_3_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_3_list) NewElement() protoreflect.Value {
-	v := new(Founder)
+	v := new(Beneficiary)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -68,7 +68,7 @@ func (x *_GenesisState_3_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_4_list)(nil)
 
 type _GenesisState_4_list struct {
-	list *[]*Beneficiary
+	list *[]*Grant
 }
 
 func (x *_GenesisState_4_list) Len() int {
@@ -84,18 +84,18 @@ func (x *_GenesisState_4_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_4_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Beneficiary)
+	concreteValue := valueUnwrapped.Interface().(*Grant)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_4_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Beneficiary)
+	concreteValue := valueUnwrapped.Interface().(*Grant)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_4_list) AppendMutable() protoreflect.Value {
-	v := new(Beneficiary)
+	v := new(Grant)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -108,7 +108,7 @@ func (x *_GenesisState_4_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_4_list) NewElement() protoreflect.Value {
-	v := new(Beneficiary)
+	v := new(Grant)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -119,7 +119,7 @@ func (x *_GenesisState_4_list) IsValid() bool {
 var _ protoreflect.List = (*_GenesisState_5_list)(nil)
 
 type _GenesisState_5_list struct {
-	list *[]*Grant
+	list *[]*DenomTotals
 }
 
 func (x *_GenesisState_5_list) Len() int {
@@ -135,18 +135,18 @@ func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
 
 func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Grant)
+	concreteValue := valueUnwrapped.Interface().(*DenomTotals)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*Grant)
+	concreteValue := valueUnwrapped.Interface().(*DenomTotals)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
-	v := new(Grant)
+	v := new(DenomTotals)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -159,7 +159,7 @@ func (x *_GenesisState_5_list) Truncate(n int) {
 }
 
 func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
-	v := new(Grant)
+	v := new(DenomTotals)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -167,151 +167,151 @@ func (x *_GenesisState_5_list) IsValid() bool {
 	return x.list != nil
 }
 
-var _ protoreflect.List = (*_GenesisState_6_list)(nil)
+var _ protoreflect.List = (*_GenesisState_8_list)(nil)
 
-type _GenesisState_6_list struct {
-	list *[]*DenomTotals
-}
-
-func (x *_GenesisState_6_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_GenesisState_6_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*DenomTotals)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_GenesisState_6_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*DenomTotals)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_GenesisState_6_list) AppendMutable() protoreflect.Value {
-	v := new(DenomTotals)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_6_list) NewElement() protoreflect.Value {
-	v := new(DenomTotals)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_GenesisState_6_list) IsValid() bool {
-	return x.list != nil
-}
-
-var _ protoreflect.List = (*_GenesisState_9_list)(nil)
-
-type _GenesisState_9_list struct {
+type _GenesisState_8_list struct {
 	list *[]*JournalEntry
 }
 
-func (x *_GenesisState_9_list) Len() int {
+func (x *_GenesisState_8_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_GenesisState_9_list) Get(i int) protoreflect.Value {
+func (x *_GenesisState_8_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_GenesisState_9_list) Set(i int, value protoreflect.Value) {
+func (x *_GenesisState_8_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*JournalEntry)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_GenesisState_9_list) Append(value protoreflect.Value) {
+func (x *_GenesisState_8_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*JournalEntry)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_GenesisState_9_list) AppendMutable() protoreflect.Value {
+func (x *_GenesisState_8_list) AppendMutable() protoreflect.Value {
 	v := new(JournalEntry)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_9_list) Truncate(n int) {
+func (x *_GenesisState_8_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_GenesisState_9_list) NewElement() protoreflect.Value {
+func (x *_GenesisState_8_list) NewElement() protoreflect.Value {
 	v := new(JournalEntry)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_GenesisState_9_list) IsValid() bool {
+func (x *_GenesisState_8_list) IsValid() bool {
 	return x.list != nil
 }
 
-var _ protoreflect.List = (*_GenesisState_12_list)(nil)
+var _ protoreflect.List = (*_GenesisState_11_list)(nil)
 
-type _GenesisState_12_list struct {
+type _GenesisState_11_list struct {
 	list *[]uint64
 }
 
-func (x *_GenesisState_12_list) Len() int {
+func (x *_GenesisState_11_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_GenesisState_12_list) Get(i int) protoreflect.Value {
+func (x *_GenesisState_11_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfUint64((*x.list)[i])
 }
 
-func (x *_GenesisState_12_list) Set(i int, value protoreflect.Value) {
+func (x *_GenesisState_11_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_GenesisState_12_list) Append(value protoreflect.Value) {
+func (x *_GenesisState_11_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Uint()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_GenesisState_12_list) AppendMutable() protoreflect.Value {
+func (x *_GenesisState_11_list) AppendMutable() protoreflect.Value {
 	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field VoidedTerms as it is not of Message kind"))
 }
 
-func (x *_GenesisState_12_list) Truncate(n int) {
+func (x *_GenesisState_11_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_GenesisState_12_list) NewElement() protoreflect.Value {
+func (x *_GenesisState_11_list) NewElement() protoreflect.Value {
 	v := uint64(0)
 	return protoreflect.ValueOfUint64(v)
 }
 
-func (x *_GenesisState_12_list) IsValid() bool {
+func (x *_GenesisState_11_list) IsValid() bool {
+	return x.list != nil
+}
+
+var _ protoreflect.List = (*_GenesisState_14_list)(nil)
+
+type _GenesisState_14_list struct {
+	list *[]*ConversionOrder
+}
+
+func (x *_GenesisState_14_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_GenesisState_14_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_GenesisState_14_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ConversionOrder)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_GenesisState_14_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ConversionOrder)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_GenesisState_14_list) AppendMutable() protoreflect.Value {
+	v := new(ConversionOrder)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_14_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_GenesisState_14_list) NewElement() protoreflect.Value {
+	v := new(ConversionOrder)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_GenesisState_14_list) IsValid() bool {
 	return x.list != nil
 }
 
@@ -319,16 +319,18 @@ var (
 	md_GenesisState                   protoreflect.MessageDescriptor
 	fd_GenesisState_params            protoreflect.FieldDescriptor
 	fd_GenesisState_ownership_policy  protoreflect.FieldDescriptor
-	fd_GenesisState_founders          protoreflect.FieldDescriptor
 	fd_GenesisState_beneficiaries     protoreflect.FieldDescriptor
 	fd_GenesisState_grants            protoreflect.FieldDescriptor
 	fd_GenesisState_totals            protoreflect.FieldDescriptor
 	fd_GenesisState_issuance          protoreflect.FieldDescriptor
-	fd_GenesisState_registrar_mandate protoreflect.FieldDescriptor
+	fd_GenesisState_grants_mandate    protoreflect.FieldDescriptor
 	fd_GenesisState_journal           protoreflect.FieldDescriptor
 	fd_GenesisState_next_grant_id     protoreflect.FieldDescriptor
 	fd_GenesisState_next_journal_id   protoreflect.FieldDescriptor
 	fd_GenesisState_voided_terms      protoreflect.FieldDescriptor
+	fd_GenesisState_member_pool       protoreflect.FieldDescriptor
+	fd_GenesisState_contributor_pool  protoreflect.FieldDescriptor
+	fd_GenesisState_conversion_orders protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -336,16 +338,18 @@ func init() {
 	md_GenesisState = File_ark_disbursement_v1_genesis_proto.Messages().ByName("GenesisState")
 	fd_GenesisState_params = md_GenesisState.Fields().ByName("params")
 	fd_GenesisState_ownership_policy = md_GenesisState.Fields().ByName("ownership_policy")
-	fd_GenesisState_founders = md_GenesisState.Fields().ByName("founders")
 	fd_GenesisState_beneficiaries = md_GenesisState.Fields().ByName("beneficiaries")
 	fd_GenesisState_grants = md_GenesisState.Fields().ByName("grants")
 	fd_GenesisState_totals = md_GenesisState.Fields().ByName("totals")
 	fd_GenesisState_issuance = md_GenesisState.Fields().ByName("issuance")
-	fd_GenesisState_registrar_mandate = md_GenesisState.Fields().ByName("registrar_mandate")
+	fd_GenesisState_grants_mandate = md_GenesisState.Fields().ByName("grants_mandate")
 	fd_GenesisState_journal = md_GenesisState.Fields().ByName("journal")
 	fd_GenesisState_next_grant_id = md_GenesisState.Fields().ByName("next_grant_id")
 	fd_GenesisState_next_journal_id = md_GenesisState.Fields().ByName("next_journal_id")
 	fd_GenesisState_voided_terms = md_GenesisState.Fields().ByName("voided_terms")
+	fd_GenesisState_member_pool = md_GenesisState.Fields().ByName("member_pool")
+	fd_GenesisState_contributor_pool = md_GenesisState.Fields().ByName("contributor_pool")
+	fd_GenesisState_conversion_orders = md_GenesisState.Fields().ByName("conversion_orders")
 }
 
 var _ protoreflect.Message = (*fastReflection_GenesisState)(nil)
@@ -425,26 +429,20 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if len(x.Founders) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.Founders})
-		if !f(fd_GenesisState_founders, value) {
-			return
-		}
-	}
 	if len(x.Beneficiaries) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.Beneficiaries})
+		value := protoreflect.ValueOfList(&_GenesisState_3_list{list: &x.Beneficiaries})
 		if !f(fd_GenesisState_beneficiaries, value) {
 			return
 		}
 	}
 	if len(x.Grants) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.Grants})
+		value := protoreflect.ValueOfList(&_GenesisState_4_list{list: &x.Grants})
 		if !f(fd_GenesisState_grants, value) {
 			return
 		}
 	}
 	if len(x.Totals) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_6_list{list: &x.Totals})
+		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.Totals})
 		if !f(fd_GenesisState_totals, value) {
 			return
 		}
@@ -455,14 +453,14 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 			return
 		}
 	}
-	if x.RegistrarMandate != nil {
-		value := protoreflect.ValueOfMessage(x.RegistrarMandate.ProtoReflect())
-		if !f(fd_GenesisState_registrar_mandate, value) {
+	if x.GrantsMandate != nil {
+		value := protoreflect.ValueOfMessage(x.GrantsMandate.ProtoReflect())
+		if !f(fd_GenesisState_grants_mandate, value) {
 			return
 		}
 	}
 	if len(x.Journal) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_9_list{list: &x.Journal})
+		value := protoreflect.ValueOfList(&_GenesisState_8_list{list: &x.Journal})
 		if !f(fd_GenesisState_journal, value) {
 			return
 		}
@@ -480,8 +478,26 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 		}
 	}
 	if len(x.VoidedTerms) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_12_list{list: &x.VoidedTerms})
+		value := protoreflect.ValueOfList(&_GenesisState_11_list{list: &x.VoidedTerms})
 		if !f(fd_GenesisState_voided_terms, value) {
+			return
+		}
+	}
+	if x.MemberPool != nil {
+		value := protoreflect.ValueOfMessage(x.MemberPool.ProtoReflect())
+		if !f(fd_GenesisState_member_pool, value) {
+			return
+		}
+	}
+	if x.ContributorPool != nil {
+		value := protoreflect.ValueOfMessage(x.ContributorPool.ProtoReflect())
+		if !f(fd_GenesisState_contributor_pool, value) {
+			return
+		}
+	}
+	if len(x.ConversionOrders) != 0 {
+		value := protoreflect.ValueOfList(&_GenesisState_14_list{list: &x.ConversionOrders})
+		if !f(fd_GenesisState_conversion_orders, value) {
 			return
 		}
 	}
@@ -504,8 +520,6 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.Params != nil
 	case "ark.disbursement.v1.GenesisState.ownership_policy":
 		return x.OwnershipPolicy != nil
-	case "ark.disbursement.v1.GenesisState.founders":
-		return len(x.Founders) != 0
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		return len(x.Beneficiaries) != 0
 	case "ark.disbursement.v1.GenesisState.grants":
@@ -514,8 +528,8 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return len(x.Totals) != 0
 	case "ark.disbursement.v1.GenesisState.issuance":
 		return x.Issuance != nil
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		return x.RegistrarMandate != nil
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		return x.GrantsMandate != nil
 	case "ark.disbursement.v1.GenesisState.journal":
 		return len(x.Journal) != 0
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
@@ -524,6 +538,12 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 		return x.NextJournalId != uint64(0)
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		return len(x.VoidedTerms) != 0
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		return x.MemberPool != nil
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		return x.ContributorPool != nil
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		return len(x.ConversionOrders) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GenesisState"))
@@ -544,8 +564,6 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Params = nil
 	case "ark.disbursement.v1.GenesisState.ownership_policy":
 		x.OwnershipPolicy = nil
-	case "ark.disbursement.v1.GenesisState.founders":
-		x.Founders = nil
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		x.Beneficiaries = nil
 	case "ark.disbursement.v1.GenesisState.grants":
@@ -554,8 +572,8 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.Totals = nil
 	case "ark.disbursement.v1.GenesisState.issuance":
 		x.Issuance = nil
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		x.RegistrarMandate = nil
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		x.GrantsMandate = nil
 	case "ark.disbursement.v1.GenesisState.journal":
 		x.Journal = nil
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
@@ -564,6 +582,12 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 		x.NextJournalId = uint64(0)
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		x.VoidedTerms = nil
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		x.MemberPool = nil
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		x.ContributorPool = nil
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		x.ConversionOrders = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GenesisState"))
@@ -586,41 +610,35 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 	case "ark.disbursement.v1.GenesisState.ownership_policy":
 		value := x.OwnershipPolicy
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.founders":
-		if len(x.Founders) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_3_list{})
-		}
-		listValue := &_GenesisState_3_list{list: &x.Founders}
-		return protoreflect.ValueOfList(listValue)
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		if len(x.Beneficiaries) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_4_list{})
+			return protoreflect.ValueOfList(&_GenesisState_3_list{})
 		}
-		listValue := &_GenesisState_4_list{list: &x.Beneficiaries}
+		listValue := &_GenesisState_3_list{list: &x.Beneficiaries}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.disbursement.v1.GenesisState.grants":
 		if len(x.Grants) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_5_list{})
+			return protoreflect.ValueOfList(&_GenesisState_4_list{})
 		}
-		listValue := &_GenesisState_5_list{list: &x.Grants}
+		listValue := &_GenesisState_4_list{list: &x.Grants}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.disbursement.v1.GenesisState.totals":
 		if len(x.Totals) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_6_list{})
+			return protoreflect.ValueOfList(&_GenesisState_5_list{})
 		}
-		listValue := &_GenesisState_6_list{list: &x.Totals}
+		listValue := &_GenesisState_5_list{list: &x.Totals}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.disbursement.v1.GenesisState.issuance":
 		value := x.Issuance
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		value := x.RegistrarMandate
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		value := x.GrantsMandate
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "ark.disbursement.v1.GenesisState.journal":
 		if len(x.Journal) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_9_list{})
+			return protoreflect.ValueOfList(&_GenesisState_8_list{})
 		}
-		listValue := &_GenesisState_9_list{list: &x.Journal}
+		listValue := &_GenesisState_8_list{list: &x.Journal}
 		return protoreflect.ValueOfList(listValue)
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
 		value := x.NextGrantId
@@ -630,9 +648,21 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		return protoreflect.ValueOfUint64(value)
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		if len(x.VoidedTerms) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_12_list{})
+			return protoreflect.ValueOfList(&_GenesisState_11_list{})
 		}
-		listValue := &_GenesisState_12_list{list: &x.VoidedTerms}
+		listValue := &_GenesisState_11_list{list: &x.VoidedTerms}
+		return protoreflect.ValueOfList(listValue)
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		value := x.MemberPool
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		value := x.ContributorPool
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		if len(x.ConversionOrders) == 0 {
+			return protoreflect.ValueOfList(&_GenesisState_14_list{})
+		}
+		listValue := &_GenesisState_14_list{list: &x.ConversionOrders}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -658,29 +688,25 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.Params = value.Message().Interface().(*Params)
 	case "ark.disbursement.v1.GenesisState.ownership_policy":
 		x.OwnershipPolicy = value.Message().Interface().(*OwnershipPolicy)
-	case "ark.disbursement.v1.GenesisState.founders":
-		lv := value.List()
-		clv := lv.(*_GenesisState_3_list)
-		x.Founders = *clv.list
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		lv := value.List()
-		clv := lv.(*_GenesisState_4_list)
+		clv := lv.(*_GenesisState_3_list)
 		x.Beneficiaries = *clv.list
 	case "ark.disbursement.v1.GenesisState.grants":
 		lv := value.List()
-		clv := lv.(*_GenesisState_5_list)
+		clv := lv.(*_GenesisState_4_list)
 		x.Grants = *clv.list
 	case "ark.disbursement.v1.GenesisState.totals":
 		lv := value.List()
-		clv := lv.(*_GenesisState_6_list)
+		clv := lv.(*_GenesisState_5_list)
 		x.Totals = *clv.list
 	case "ark.disbursement.v1.GenesisState.issuance":
 		x.Issuance = value.Message().Interface().(*Issuance)
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		x.RegistrarMandate = value.Message().Interface().(*RegistrarMandate)
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		x.GrantsMandate = value.Message().Interface().(*GrantsMandate)
 	case "ark.disbursement.v1.GenesisState.journal":
 		lv := value.List()
-		clv := lv.(*_GenesisState_9_list)
+		clv := lv.(*_GenesisState_8_list)
 		x.Journal = *clv.list
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
 		x.NextGrantId = value.Uint()
@@ -688,8 +714,16 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		x.NextJournalId = value.Uint()
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		lv := value.List()
-		clv := lv.(*_GenesisState_12_list)
+		clv := lv.(*_GenesisState_11_list)
 		x.VoidedTerms = *clv.list
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		x.MemberPool = value.Message().Interface().(*PoolBalance)
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		x.ContributorPool = value.Message().Interface().(*PoolBalance)
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		lv := value.List()
+		clv := lv.(*_GenesisState_14_list)
+		x.ConversionOrders = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GenesisState"))
@@ -720,51 +754,61 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 			x.OwnershipPolicy = new(OwnershipPolicy)
 		}
 		return protoreflect.ValueOfMessage(x.OwnershipPolicy.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.founders":
-		if x.Founders == nil {
-			x.Founders = []*Founder{}
-		}
-		value := &_GenesisState_3_list{list: &x.Founders}
-		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		if x.Beneficiaries == nil {
 			x.Beneficiaries = []*Beneficiary{}
 		}
-		value := &_GenesisState_4_list{list: &x.Beneficiaries}
+		value := &_GenesisState_3_list{list: &x.Beneficiaries}
 		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.grants":
 		if x.Grants == nil {
 			x.Grants = []*Grant{}
 		}
-		value := &_GenesisState_5_list{list: &x.Grants}
+		value := &_GenesisState_4_list{list: &x.Grants}
 		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.totals":
 		if x.Totals == nil {
 			x.Totals = []*DenomTotals{}
 		}
-		value := &_GenesisState_6_list{list: &x.Totals}
+		value := &_GenesisState_5_list{list: &x.Totals}
 		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.issuance":
 		if x.Issuance == nil {
 			x.Issuance = new(Issuance)
 		}
 		return protoreflect.ValueOfMessage(x.Issuance.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		if x.RegistrarMandate == nil {
-			x.RegistrarMandate = new(RegistrarMandate)
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		if x.GrantsMandate == nil {
+			x.GrantsMandate = new(GrantsMandate)
 		}
-		return protoreflect.ValueOfMessage(x.RegistrarMandate.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.GrantsMandate.ProtoReflect())
 	case "ark.disbursement.v1.GenesisState.journal":
 		if x.Journal == nil {
 			x.Journal = []*JournalEntry{}
 		}
-		value := &_GenesisState_9_list{list: &x.Journal}
+		value := &_GenesisState_8_list{list: &x.Journal}
 		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		if x.VoidedTerms == nil {
 			x.VoidedTerms = []uint64{}
 		}
-		value := &_GenesisState_12_list{list: &x.VoidedTerms}
+		value := &_GenesisState_11_list{list: &x.VoidedTerms}
+		return protoreflect.ValueOfList(value)
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		if x.MemberPool == nil {
+			x.MemberPool = new(PoolBalance)
+		}
+		return protoreflect.ValueOfMessage(x.MemberPool.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		if x.ContributorPool == nil {
+			x.ContributorPool = new(PoolBalance)
+		}
+		return protoreflect.ValueOfMessage(x.ContributorPool.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		if x.ConversionOrders == nil {
+			x.ConversionOrders = []*ConversionOrder{}
+		}
+		value := &_GenesisState_14_list{list: &x.ConversionOrders}
 		return protoreflect.ValueOfList(value)
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
 		panic(fmt.Errorf("field next_grant_id of message ark.disbursement.v1.GenesisState is not mutable"))
@@ -789,34 +833,40 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 	case "ark.disbursement.v1.GenesisState.ownership_policy":
 		m := new(OwnershipPolicy)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.founders":
-		list := []*Founder{}
-		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "ark.disbursement.v1.GenesisState.beneficiaries":
 		list := []*Beneficiary{}
-		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
+		return protoreflect.ValueOfList(&_GenesisState_3_list{list: &list})
 	case "ark.disbursement.v1.GenesisState.grants":
 		list := []*Grant{}
-		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
+		return protoreflect.ValueOfList(&_GenesisState_4_list{list: &list})
 	case "ark.disbursement.v1.GenesisState.totals":
 		list := []*DenomTotals{}
-		return protoreflect.ValueOfList(&_GenesisState_6_list{list: &list})
+		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
 	case "ark.disbursement.v1.GenesisState.issuance":
 		m := new(Issuance)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.disbursement.v1.GenesisState.registrar_mandate":
-		m := new(RegistrarMandate)
+	case "ark.disbursement.v1.GenesisState.grants_mandate":
+		m := new(GrantsMandate)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.disbursement.v1.GenesisState.journal":
 		list := []*JournalEntry{}
-		return protoreflect.ValueOfList(&_GenesisState_9_list{list: &list})
+		return protoreflect.ValueOfList(&_GenesisState_8_list{list: &list})
 	case "ark.disbursement.v1.GenesisState.next_grant_id":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.GenesisState.next_journal_id":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.GenesisState.voided_terms":
 		list := []uint64{}
-		return protoreflect.ValueOfList(&_GenesisState_12_list{list: &list})
+		return protoreflect.ValueOfList(&_GenesisState_11_list{list: &list})
+	case "ark.disbursement.v1.GenesisState.member_pool":
+		m := new(PoolBalance)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.contributor_pool":
+		m := new(PoolBalance)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.disbursement.v1.GenesisState.conversion_orders":
+		list := []*ConversionOrder{}
+		return protoreflect.ValueOfList(&_GenesisState_14_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GenesisState"))
@@ -894,12 +944,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.OwnershipPolicy)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if len(x.Founders) > 0 {
-			for _, e := range x.Founders {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
 		if len(x.Beneficiaries) > 0 {
 			for _, e := range x.Beneficiaries {
 				l = options.Size(e)
@@ -922,8 +966,8 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Issuance)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.RegistrarMandate != nil {
-			l = options.Size(x.RegistrarMandate)
+		if x.GrantsMandate != nil {
+			l = options.Size(x.GrantsMandate)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if len(x.Journal) > 0 {
@@ -944,6 +988,20 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				l += runtime.Sov(uint64(e))
 			}
 			n += 1 + runtime.Sov(uint64(l)) + l
+		}
+		if x.MemberPool != nil {
+			l = options.Size(x.MemberPool)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ContributorPool != nil {
+			l = options.Size(x.ContributorPool)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if len(x.ConversionOrders) > 0 {
+			for _, e := range x.ConversionOrders {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -974,6 +1032,50 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.ConversionOrders) > 0 {
+			for iNdEx := len(x.ConversionOrders) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.ConversionOrders[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x72
+			}
+		}
+		if x.ContributorPool != nil {
+			encoded, err := options.Marshal(x.ContributorPool)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x6a
+		}
+		if x.MemberPool != nil {
+			encoded, err := options.Marshal(x.MemberPool)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x62
+		}
 		if len(x.VoidedTerms) > 0 {
 			var pksize2 int
 			for _, num := range x.VoidedTerms {
@@ -992,17 +1094,17 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			}
 			i = runtime.EncodeVarint(dAtA, i, uint64(pksize2))
 			i--
-			dAtA[i] = 0x62
+			dAtA[i] = 0x5a
 		}
 		if x.NextJournalId != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NextJournalId))
 			i--
-			dAtA[i] = 0x58
+			dAtA[i] = 0x50
 		}
 		if x.NextGrantId != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NextGrantId))
 			i--
-			dAtA[i] = 0x50
+			dAtA[i] = 0x48
 		}
 		if len(x.Journal) > 0 {
 			for iNdEx := len(x.Journal) - 1; iNdEx >= 0; iNdEx-- {
@@ -1017,11 +1119,11 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0x4a
+				dAtA[i] = 0x42
 			}
 		}
-		if x.RegistrarMandate != nil {
-			encoded, err := options.Marshal(x.RegistrarMandate)
+		if x.GrantsMandate != nil {
+			encoded, err := options.Marshal(x.GrantsMandate)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1032,7 +1134,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x42
+			dAtA[i] = 0x3a
 		}
 		if x.Issuance != nil {
 			encoded, err := options.Marshal(x.Issuance)
@@ -1046,7 +1148,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x3a
+			dAtA[i] = 0x32
 		}
 		if len(x.Totals) > 0 {
 			for iNdEx := len(x.Totals) - 1; iNdEx >= 0; iNdEx-- {
@@ -1061,7 +1163,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0x32
+				dAtA[i] = 0x2a
 			}
 		}
 		if len(x.Grants) > 0 {
@@ -1077,28 +1179,12 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				copy(dAtA[i:], encoded)
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 				i--
-				dAtA[i] = 0x2a
+				dAtA[i] = 0x22
 			}
 		}
 		if len(x.Beneficiaries) > 0 {
 			for iNdEx := len(x.Beneficiaries) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.Beneficiaries[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x22
-			}
-		}
-		if len(x.Founders) > 0 {
-			for iNdEx := len(x.Founders) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Founders[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1263,40 +1349,6 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Founders", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Founders = append(x.Founders, &Founder{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Founders[len(x.Founders)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 4:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Beneficiaries", wireType)
 				}
 				var msglen int
@@ -1329,7 +1381,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 5:
+			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Grants", wireType)
 				}
@@ -1363,7 +1415,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 6:
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Totals", wireType)
 				}
@@ -1397,7 +1449,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 7:
+			case 6:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Issuance", wireType)
 				}
@@ -1433,9 +1485,9 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 8:
+			case 7:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RegistrarMandate", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GrantsMandate", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1462,14 +1514,14 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.RegistrarMandate == nil {
-					x.RegistrarMandate = &RegistrarMandate{}
+				if x.GrantsMandate == nil {
+					x.GrantsMandate = &GrantsMandate{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RegistrarMandate); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.GrantsMandate); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 9:
+			case 8:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Journal", wireType)
 				}
@@ -1503,7 +1555,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 10:
+			case 9:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NextGrantId", wireType)
 				}
@@ -1522,7 +1574,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 11:
+			case 10:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NextJournalId", wireType)
 				}
@@ -1541,7 +1593,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 12:
+			case 11:
 				if wireType == 0 {
 					var v uint64
 					for shift := uint(0); ; shift += 7 {
@@ -1617,6 +1669,112 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				} else {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VoidedTerms", wireType)
 				}
+			case 12:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MemberPool", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MemberPool == nil {
+					x.MemberPool = &PoolBalance{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MemberPool); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 13:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ContributorPool", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ContributorPool == nil {
+					x.ContributorPool = &PoolBalance{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ContributorPool); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 14:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ConversionOrders", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ConversionOrders = append(x.ConversionOrders, &ConversionOrder{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ConversionOrders[len(x.ConversionOrders)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1671,19 +1829,21 @@ type GenesisState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Params           *Params           `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-	OwnershipPolicy  *OwnershipPolicy  `protobuf:"bytes,2,opt,name=ownership_policy,json=ownershipPolicy,proto3" json:"ownership_policy,omitempty"`
-	Founders         []*Founder        `protobuf:"bytes,3,rep,name=founders,proto3" json:"founders,omitempty"`
-	Beneficiaries    []*Beneficiary    `protobuf:"bytes,4,rep,name=beneficiaries,proto3" json:"beneficiaries,omitempty"`
-	Grants           []*Grant          `protobuf:"bytes,5,rep,name=grants,proto3" json:"grants,omitempty"`
-	Totals           []*DenomTotals    `protobuf:"bytes,6,rep,name=totals,proto3" json:"totals,omitempty"`
-	Issuance         *Issuance         `protobuf:"bytes,7,opt,name=issuance,proto3" json:"issuance,omitempty"`
-	RegistrarMandate *RegistrarMandate `protobuf:"bytes,8,opt,name=registrar_mandate,json=registrarMandate,proto3" json:"registrar_mandate,omitempty"`
-	Journal          []*JournalEntry   `protobuf:"bytes,9,rep,name=journal,proto3" json:"journal,omitempty"`
-	NextGrantId      uint64            `protobuf:"varint,10,opt,name=next_grant_id,json=nextGrantId,proto3" json:"next_grant_id,omitempty"`
-	NextJournalId    uint64            `protobuf:"varint,11,opt,name=next_journal_id,json=nextJournalId,proto3" json:"next_journal_id,omitempty"`
-	// voided_terms lists replaced registrar terms whose suspensions are not effective.
-	VoidedTerms []uint64 `protobuf:"varint,12,rep,packed,name=voided_terms,json=voidedTerms,proto3" json:"voided_terms,omitempty"`
+	Params          *Params          `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	OwnershipPolicy *OwnershipPolicy `protobuf:"bytes,2,opt,name=ownership_policy,json=ownershipPolicy,proto3" json:"ownership_policy,omitempty"`
+	Beneficiaries   []*Beneficiary   `protobuf:"bytes,3,rep,name=beneficiaries,proto3" json:"beneficiaries,omitempty"`
+	Grants          []*Grant         `protobuf:"bytes,4,rep,name=grants,proto3" json:"grants,omitempty"`
+	Totals          []*DenomTotals   `protobuf:"bytes,5,rep,name=totals,proto3" json:"totals,omitempty"`
+	Issuance        *Issuance        `protobuf:"bytes,6,opt,name=issuance,proto3" json:"issuance,omitempty"`
+	GrantsMandate   *GrantsMandate   `protobuf:"bytes,7,opt,name=grants_mandate,json=grantsMandate,proto3" json:"grants_mandate,omitempty"`
+	Journal         []*JournalEntry  `protobuf:"bytes,8,rep,name=journal,proto3" json:"journal,omitempty"`
+	NextGrantId     uint64           `protobuf:"varint,9,opt,name=next_grant_id,json=nextGrantId,proto3" json:"next_grant_id,omitempty"`
+	NextJournalId   uint64           `protobuf:"varint,10,opt,name=next_journal_id,json=nextJournalId,proto3" json:"next_journal_id,omitempty"`
+	// voided_terms lists replaced committee terms whose suspensions are not effective.
+	VoidedTerms      []uint64           `protobuf:"varint,11,rep,packed,name=voided_terms,json=voidedTerms,proto3" json:"voided_terms,omitempty"`
+	MemberPool       *PoolBalance       `protobuf:"bytes,12,opt,name=member_pool,json=memberPool,proto3" json:"member_pool,omitempty"`
+	ContributorPool  *PoolBalance       `protobuf:"bytes,13,opt,name=contributor_pool,json=contributorPool,proto3" json:"contributor_pool,omitempty"`
+	ConversionOrders []*ConversionOrder `protobuf:"bytes,14,rep,name=conversion_orders,json=conversionOrders,proto3" json:"conversion_orders,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
@@ -1720,13 +1880,6 @@ func (x *GenesisState) GetOwnershipPolicy() *OwnershipPolicy {
 	return nil
 }
 
-func (x *GenesisState) GetFounders() []*Founder {
-	if x != nil {
-		return x.Founders
-	}
-	return nil
-}
-
 func (x *GenesisState) GetBeneficiaries() []*Beneficiary {
 	if x != nil {
 		return x.Beneficiaries
@@ -1755,9 +1908,9 @@ func (x *GenesisState) GetIssuance() *Issuance {
 	return nil
 }
 
-func (x *GenesisState) GetRegistrarMandate() *RegistrarMandate {
+func (x *GenesisState) GetGrantsMandate() *GrantsMandate {
 	if x != nil {
-		return x.RegistrarMandate
+		return x.GrantsMandate
 	}
 	return nil
 }
@@ -1790,6 +1943,27 @@ func (x *GenesisState) GetVoidedTerms() []uint64 {
 	return nil
 }
 
+func (x *GenesisState) GetMemberPool() *PoolBalance {
+	if x != nil {
+		return x.MemberPool
+	}
+	return nil
+}
+
+func (x *GenesisState) GetContributorPool() *PoolBalance {
+	if x != nil {
+		return x.ContributorPool
+	}
+	return nil
+}
+
+func (x *GenesisState) GetConversionOrders() []*ConversionOrder {
+	if x != nil {
+		return x.ConversionOrders
+	}
+	return nil
+}
+
 var File_ark_disbursement_v1_genesis_proto protoreflect.FileDescriptor
 
 var file_ark_disbursement_v1_genesis_proto_rawDesc = []byte{
@@ -1801,7 +1975,7 @@ var file_ark_disbursement_v1_genesis_proto_rawDesc = []byte{
 	0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x31,
 	0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67,
-	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb0, 0x06, 0x0a, 0x0c, 0x47, 0x65,
+	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xe6, 0x07, 0x0a, 0x0c, 0x47, 0x65,
 	0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x3e, 0x0a, 0x06, 0x70, 0x61,
 	0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31,
@@ -1812,62 +1986,73 @@ var file_ark_disbursement_v1_genesis_proto_rawDesc = []byte{
 	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4f, 0x77, 0x6e, 0x65, 0x72,
 	0x73, 0x68, 0x69, 0x70, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
 	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x68, 0x69, 0x70,
-	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x43, 0x0a, 0x08, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x65,
-	0x72, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x46,
-	0x6f, 0x75, 0x6e, 0x64, 0x65, 0x72, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x08, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0x65, 0x72, 0x73, 0x12, 0x51, 0x0a, 0x0d, 0x62,
-	0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x69, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x42, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63,
-	0x69, 0x61, 0x72, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0d, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x69, 0x65, 0x73, 0x12, 0x3d,
-	0x0a, 0x06, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x43, 0x0a,
-	0x06, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e,
+	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x51, 0x0a, 0x0d, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69,
+	0x63, 0x69, 0x61, 0x72, 0x69, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x42,
-	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x74, 0x6f, 0x74, 0x61,
-	0x6c, 0x73, 0x12, 0x44, 0x0a, 0x08, 0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x07,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x61,
-	0x6e, 0x63, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08,
-	0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x12, 0x5d, 0x0a, 0x11, 0x72, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x61, 0x72, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x08, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72,
-	0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72,
-	0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x46, 0x0a, 0x07, 0x6a, 0x6f, 0x75, 0x72, 0x6e,
-	0x61, 0x6c, 0x18, 0x09, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4a,
-	0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x09, 0xc8, 0xde, 0x1f,
-	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x6a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x12,
-	0x29, 0x0a, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64,
-	0x18, 0x0a, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x6e,
-	0x65, 0x78, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x0f, 0x6e, 0x65,
-	0x78, 0x74, 0x5f, 0x6a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x18, 0x0b, 0x20,
-	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74,
-	0x4a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x6f, 0x69,
-	0x64, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x73, 0x18, 0x0c, 0x20, 0x03, 0x28, 0x04, 0x52,
-	0x0b, 0x76, 0x6f, 0x69, 0x64, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x73, 0x42, 0xdb, 0x01, 0x0a,
-	0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
-	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69,
-	0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x44, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77,
-	0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x31, 0x3b,
-	0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x76, 0x31, 0xa2, 0x02,
-	0x03, 0x41, 0x44, 0x58, 0xaa, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x2e, 0x44, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x13, 0x41, 0x72, 0x6b,
-	0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31,
-	0xe2, 0x02, 0x1f, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
-	0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x15, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72,
-	0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x2e, 0x76, 0x31, 0x2e, 0x42, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x62, 0x65, 0x6e, 0x65,
+	0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x69, 0x65, 0x73, 0x12, 0x3d, 0x0a, 0x06, 0x67, 0x72, 0x61,
+	0x6e, 0x74, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x47, 0x72, 0x61, 0x6e, 0x74, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x06, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x12, 0x43, 0x0a, 0x06, 0x74, 0x6f, 0x74, 0x61,
+	0x6c, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x44,
+	0x65, 0x6e, 0x6f, 0x6d, 0x54, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x74, 0x6f, 0x74, 0x61, 0x6c, 0x73, 0x12, 0x44, 0x0a,
+	0x08, 0x69, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x73, 0x73, 0x75, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x09,
+	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x69, 0x73, 0x73, 0x75, 0x61,
+	0x6e, 0x63, 0x65, 0x12, 0x54, 0x0a, 0x0e, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x5f, 0x6d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x67, 0x72, 0x61, 0x6e,
+	0x74, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x46, 0x0a, 0x07, 0x6a, 0x6f, 0x75,
+	0x72, 0x6e, 0x61, 0x6c, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x6a, 0x6f, 0x75, 0x72, 0x6e, 0x61,
+	0x6c, 0x12, 0x29, 0x0a, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f,
+	0x69, 0x64, 0x18, 0x09, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0b, 0x6e, 0x65, 0x78, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x2d, 0x0a, 0x0f,
+	0x6e, 0x65, 0x78, 0x74, 0x5f, 0x6a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x5f, 0x69, 0x64, 0x18,
+	0x0a, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x6e, 0x65,
+	0x78, 0x74, 0x4a, 0x6f, 0x75, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x64, 0x12, 0x21, 0x0a, 0x0c, 0x76,
+	0x6f, 0x69, 0x64, 0x65, 0x64, 0x5f, 0x74, 0x65, 0x72, 0x6d, 0x73, 0x18, 0x0b, 0x20, 0x03, 0x28,
+	0x04, 0x52, 0x0b, 0x76, 0x6f, 0x69, 0x64, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x73, 0x12, 0x4c,
+	0x0a, 0x0b, 0x6d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x5f, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x0c, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72,
+	0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x6f, 0x6f, 0x6c, 0x42, 0x61,
+	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0a, 0x6d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x50, 0x6f, 0x6f, 0x6c, 0x12, 0x56, 0x0a, 0x10,
+	0x63, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f, 0x72, 0x5f, 0x70, 0x6f, 0x6f, 0x6c,
+	0x18, 0x0d, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73,
+	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x6f, 0x6f,
+	0x6c, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0f, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x69, 0x62, 0x75, 0x74, 0x6f, 0x72,
+	0x50, 0x6f, 0x6f, 0x6c, 0x12, 0x5c, 0x0a, 0x11, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x18, 0x0e, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x4f, 0x72, 0x64, 0x65, 0x72, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x10, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4f, 0x72, 0x64, 0x65,
+	0x72, 0x73, 0x42, 0xdb, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0c,
+	0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x44,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61,
+	0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x44, 0x58, 0xaa, 0x02, 0x13, 0x41, 0x72, 0x6b,
+	0x2e, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x56, 0x31,
+	0xca, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d,
+	0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73,
+	0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x41, 0x72, 0x6b, 0x3a, 0x3a,
+	0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x3a, 0x3a, 0x56, 0x31,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1884,32 +2069,35 @@ func file_ark_disbursement_v1_genesis_proto_rawDescGZIP() []byte {
 
 var file_ark_disbursement_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_ark_disbursement_v1_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),     // 0: ark.disbursement.v1.GenesisState
-	(*Params)(nil),           // 1: ark.disbursement.v1.Params
-	(*OwnershipPolicy)(nil),  // 2: ark.disbursement.v1.OwnershipPolicy
-	(*Founder)(nil),          // 3: ark.disbursement.v1.Founder
-	(*Beneficiary)(nil),      // 4: ark.disbursement.v1.Beneficiary
-	(*Grant)(nil),            // 5: ark.disbursement.v1.Grant
-	(*DenomTotals)(nil),      // 6: ark.disbursement.v1.DenomTotals
-	(*Issuance)(nil),         // 7: ark.disbursement.v1.Issuance
-	(*RegistrarMandate)(nil), // 8: ark.disbursement.v1.RegistrarMandate
-	(*JournalEntry)(nil),     // 9: ark.disbursement.v1.JournalEntry
+	(*GenesisState)(nil),    // 0: ark.disbursement.v1.GenesisState
+	(*Params)(nil),          // 1: ark.disbursement.v1.Params
+	(*OwnershipPolicy)(nil), // 2: ark.disbursement.v1.OwnershipPolicy
+	(*Beneficiary)(nil),     // 3: ark.disbursement.v1.Beneficiary
+	(*Grant)(nil),           // 4: ark.disbursement.v1.Grant
+	(*DenomTotals)(nil),     // 5: ark.disbursement.v1.DenomTotals
+	(*Issuance)(nil),        // 6: ark.disbursement.v1.Issuance
+	(*GrantsMandate)(nil),   // 7: ark.disbursement.v1.GrantsMandate
+	(*JournalEntry)(nil),    // 8: ark.disbursement.v1.JournalEntry
+	(*PoolBalance)(nil),     // 9: ark.disbursement.v1.PoolBalance
+	(*ConversionOrder)(nil), // 10: ark.disbursement.v1.ConversionOrder
 }
 var file_ark_disbursement_v1_genesis_proto_depIdxs = []int32{
-	1, // 0: ark.disbursement.v1.GenesisState.params:type_name -> ark.disbursement.v1.Params
-	2, // 1: ark.disbursement.v1.GenesisState.ownership_policy:type_name -> ark.disbursement.v1.OwnershipPolicy
-	3, // 2: ark.disbursement.v1.GenesisState.founders:type_name -> ark.disbursement.v1.Founder
-	4, // 3: ark.disbursement.v1.GenesisState.beneficiaries:type_name -> ark.disbursement.v1.Beneficiary
-	5, // 4: ark.disbursement.v1.GenesisState.grants:type_name -> ark.disbursement.v1.Grant
-	6, // 5: ark.disbursement.v1.GenesisState.totals:type_name -> ark.disbursement.v1.DenomTotals
-	7, // 6: ark.disbursement.v1.GenesisState.issuance:type_name -> ark.disbursement.v1.Issuance
-	8, // 7: ark.disbursement.v1.GenesisState.registrar_mandate:type_name -> ark.disbursement.v1.RegistrarMandate
-	9, // 8: ark.disbursement.v1.GenesisState.journal:type_name -> ark.disbursement.v1.JournalEntry
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: ark.disbursement.v1.GenesisState.params:type_name -> ark.disbursement.v1.Params
+	2,  // 1: ark.disbursement.v1.GenesisState.ownership_policy:type_name -> ark.disbursement.v1.OwnershipPolicy
+	3,  // 2: ark.disbursement.v1.GenesisState.beneficiaries:type_name -> ark.disbursement.v1.Beneficiary
+	4,  // 3: ark.disbursement.v1.GenesisState.grants:type_name -> ark.disbursement.v1.Grant
+	5,  // 4: ark.disbursement.v1.GenesisState.totals:type_name -> ark.disbursement.v1.DenomTotals
+	6,  // 5: ark.disbursement.v1.GenesisState.issuance:type_name -> ark.disbursement.v1.Issuance
+	7,  // 6: ark.disbursement.v1.GenesisState.grants_mandate:type_name -> ark.disbursement.v1.GrantsMandate
+	8,  // 7: ark.disbursement.v1.GenesisState.journal:type_name -> ark.disbursement.v1.JournalEntry
+	9,  // 8: ark.disbursement.v1.GenesisState.member_pool:type_name -> ark.disbursement.v1.PoolBalance
+	9,  // 9: ark.disbursement.v1.GenesisState.contributor_pool:type_name -> ark.disbursement.v1.PoolBalance
+	10, // 10: ark.disbursement.v1.GenesisState.conversion_orders:type_name -> ark.disbursement.v1.ConversionOrder
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_ark_disbursement_v1_genesis_proto_init() }

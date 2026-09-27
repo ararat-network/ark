@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	Query_Params_FullMethodName           = "/ark.disbursement.v1.Query/Params"
-	Query_RegistrarMandate_FullMethodName = "/ark.disbursement.v1.Query/RegistrarMandate"
+	Query_GrantsMandate_FullMethodName    = "/ark.disbursement.v1.Query/GrantsMandate"
 	Query_Grant_FullMethodName            = "/ark.disbursement.v1.Query/Grant"
 	Query_Grants_FullMethodName           = "/ark.disbursement.v1.Query/Grants"
 	Query_Member_FullMethodName           = "/ark.disbursement.v1.Query/Member"
@@ -30,6 +30,7 @@ const (
 	Query_Totals_FullMethodName           = "/ark.disbursement.v1.Query/Totals"
 	Query_Journal_FullMethodName          = "/ark.disbursement.v1.Query/Journal"
 	Query_Issuance_FullMethodName         = "/ark.disbursement.v1.Query/Issuance"
+	Query_ConversionOrders_FullMethodName = "/ark.disbursement.v1.Query/ConversionOrders"
 )
 
 // QueryClient is the client API for Query service.
@@ -40,8 +41,8 @@ const (
 type QueryClient interface {
 	// Params queries params state.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// RegistrarMandate queries the registrar appointment and whether it is active.
-	RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error)
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's awards.
+	GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error)
 	// Grant queries grant state.
 	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
 	// Grants queries grants state.
@@ -60,6 +61,8 @@ type QueryClient interface {
 	Journal(ctx context.Context, in *QueryJournalRequest, opts ...grpc.CallOption) (*QueryJournalResponse, error)
 	// Issuance queries issuance state.
 	Issuance(ctx context.Context, in *QueryIssuanceRequest, opts ...grpc.CallOption) (*QueryIssuanceResponse, error)
+	// ConversionOrders lists open stablecoin conversion orders.
+	ConversionOrders(ctx context.Context, in *QueryConversionOrdersRequest, opts ...grpc.CallOption) (*QueryConversionOrdersResponse, error)
 }
 
 type queryClient struct {
@@ -80,10 +83,10 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 	return out, nil
 }
 
-func (c *queryClient) RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error) {
+func (c *queryClient) GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryRegistrarMandateResponse)
-	err := c.cc.Invoke(ctx, Query_RegistrarMandate_FullMethodName, in, out, cOpts...)
+	out := new(QueryGrantsMandateResponse)
+	err := c.cc.Invoke(ctx, Query_GrantsMandate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +183,16 @@ func (c *queryClient) Issuance(ctx context.Context, in *QueryIssuanceRequest, op
 	return out, nil
 }
 
+func (c *queryClient) ConversionOrders(ctx context.Context, in *QueryConversionOrdersRequest, opts ...grpc.CallOption) (*QueryConversionOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryConversionOrdersResponse)
+	err := c.cc.Invoke(ctx, Query_ConversionOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -188,8 +201,8 @@ func (c *queryClient) Issuance(ctx context.Context, in *QueryIssuanceRequest, op
 type QueryServer interface {
 	// Params queries params state.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// RegistrarMandate queries the registrar appointment and whether it is active.
-	RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error)
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's awards.
+	GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error)
 	// Grant queries grant state.
 	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
 	// Grants queries grants state.
@@ -208,6 +221,8 @@ type QueryServer interface {
 	Journal(context.Context, *QueryJournalRequest) (*QueryJournalResponse, error)
 	// Issuance queries issuance state.
 	Issuance(context.Context, *QueryIssuanceRequest) (*QueryIssuanceResponse, error)
+	// ConversionOrders lists open stablecoin conversion orders.
+	ConversionOrders(context.Context, *QueryConversionOrdersRequest) (*QueryConversionOrdersResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -221,8 +236,8 @@ type UnimplementedQueryServer struct{}
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Params not implemented")
 }
-func (UnimplementedQueryServer) RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RegistrarMandate not implemented")
+func (UnimplementedQueryServer) GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GrantsMandate not implemented")
 }
 func (UnimplementedQueryServer) Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Grant not implemented")
@@ -250,6 +265,9 @@ func (UnimplementedQueryServer) Journal(context.Context, *QueryJournalRequest) (
 }
 func (UnimplementedQueryServer) Issuance(context.Context, *QueryIssuanceRequest) (*QueryIssuanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Issuance not implemented")
+}
+func (UnimplementedQueryServer) ConversionOrders(context.Context, *QueryConversionOrdersRequest) (*QueryConversionOrdersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConversionOrders not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -290,20 +308,20 @@ func _Query_Params_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_RegistrarMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryRegistrarMandateRequest)
+func _Query_GrantsMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGrantsMandateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).RegistrarMandate(ctx, in)
+		return srv.(QueryServer).GrantsMandate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_RegistrarMandate_FullMethodName,
+		FullMethod: Query_GrantsMandate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).RegistrarMandate(ctx, req.(*QueryRegistrarMandateRequest))
+		return srv.(QueryServer).GrantsMandate(ctx, req.(*QueryGrantsMandateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -470,6 +488,24 @@ func _Query_Issuance_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ConversionOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryConversionOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ConversionOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ConversionOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ConversionOrders(ctx, req.(*QueryConversionOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -482,8 +518,8 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Params_Handler,
 		},
 		{
-			MethodName: "RegistrarMandate",
-			Handler:    _Query_RegistrarMandate_Handler,
+			MethodName: "GrantsMandate",
+			Handler:    _Query_GrantsMandate_Handler,
 		},
 		{
 			MethodName: "Grant",
@@ -520,6 +556,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Issuance",
 			Handler:    _Query_Issuance_Handler,
+		},
+		{
+			MethodName: "ConversionOrders",
+			Handler:    _Query_ConversionOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
