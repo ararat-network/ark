@@ -1,0 +1,40 @@
+{
+  "brand": "Ark",
+  "tagline": "Stability and Capital",
+  "brief": "A sovereign Cosmos chain that converts its native asset, NOAH, into a family of fiat-tracking currencies, with three funds standing behind them. Trust comes from disclosure and bounded authority, not from a promise of growth.",
+  "adjectives": ["steadfast", "candid", "bounded", "sheltering"],
+  "criteria": "Success: reads at 16 px and in 1-bit on a Ledger, holds in one colour, stands apart from blue crypto marks, and carries one idea.",
+  "industry": "software",
+  "mockups": ["readme", "terminal", "website", "app-icon", "social", "sticker"],
+  "nav": ["Currencies", "Validators", "Docs"],
+  "brand_color": "#1E3A7B",
+  "greyscale": false,
+  "final": true,
+  "concepts": [
+    {
+      "name": "Whole",
+      "symbol": "../svg/ark-symbol-navy.svg",
+      "lockup": "../svg/ark-logo-horizontal-navy.svg",
+      "stacked": "../svg/ark-logo-stacked-navy.svg",
+      "symbol_on_tile": "../svg/ark-symbol-white.svg",
+      "symbol_on_dark": "../svg/ark-symbol-white.svg",
+      "lockup_on_dark": "../svg/ark-logo-horizontal-white.svg",
+      "stacked_on_tile": "../svg/ark-logo-stacked-white.svg",
+      "stacked_on_dark": "../svg/ark-logo-stacked-white.svg",
+      "idea": "The peak above the waterline and its reflection in the hull make one diamond: two halves, one whole.",
+      "rationale": [
+        "Unity: the half above the water and the half held within are the same shape, and the eye completes the diamond",
+        "Built from 45 degrees and one circle: the peak and its mirror are identical, the hull is a half-disc",
+        "Keeps the Ledger Hull outline; a small drawing with a wider waterline carries it to 16 px and 1-bit",
+        "Navy from the Ledger listing, with clay and tide accents so it stands apart from blue crypto marks"
+      ]
+    }
+  ],
+  "recommendation": "Use the horizontal lockup by default, the symbol alone at icon sizes, and the small drawing at 24 px and below.",
+  "next_steps": [
+    "Trademark search for the name and the mark",
+    "Proof navy and clay against a physical Pantone guide",
+    "Move the Ledger app glyphs to the new mark",
+    "Choose where the kit lives"
+  ]
+}

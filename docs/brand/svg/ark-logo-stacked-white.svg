@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -6 295.18 415.2" width="295.18" height="415.2" role="img" aria-labelledby="title">
+  <title id="title">Ark</title>
+  <g transform="translate(19.59 0)">
+    <path fill="#FFFFFF" d="M128 19.7L205.1 96.8L50.9 96.8Z"/>
+    <path fill="#FFFFFF" d="M17.21 111.2H47.5L128 191.7L208.5 111.2H238.79A110.8 110.8 0 0 1 17.21 111.2Z"/>
+  </g>
+  <g transform="translate(24 236.4) scale(0.8)">
+    <path fill="#FFFFFF" fill-rule="evenodd" d="M0.6 128A57.4 57.4 0 1 1 115.4 128A57.4 57.4 0 1 1 0.6 128ZM25.4 128A32.6 32.6 0 1 1 90.6 128A32.6 32.6 0 1 1 25.4 128Z"/>
+    <path fill="#FFFFFF" d="M92.6 72.6H115.4V183.4H92.6Z"/>
+    <path fill="#FFFFFF" d="M144.6 72.6H167.4V183.4H144.6Z"/>
+    <path fill="#FFFFFF" d="M144.6 72.6H195.4V95.4A28.6 28.6 0 0 0 167.4 124H144.6Z"/>
+    <path fill="#FFFFFF" d="M212.6 32.6H235.4V183.4H212.6Z"/>
+    <path fill="#FFFFFF" d="M230 117.88L275.28 72.6L307.52 72.6L230 150.12Z"/>
+    <path fill="#FFFFFF" d="M230 138.12L252.12 128L307.52 183.4L275.28 183.4Z"/>
+  </g>
+</svg>

@@ -41,6 +41,11 @@ maintain that boundary.
 - [Client fee construction](clients/CLIENT_FEES.md): external transaction builders, signed fee declarations, simulation, and failure handling.
 - [Node–sidecar compatibility](operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): the independently released transport contract.
 
+## Use the logo
+
+- [Logo guidelines](brand/LOGO_GUIDELINES.md): which file to use where, clear space, minimum sizes, colours, and misuse.
+- [Logo kit](brand/README.md): the master artwork, icons, and generator, with the design record and open items.
+
 ## Understand future direction
 
 - [Future changes](direction/FUTURE_CHANGES.md): deferred engineering, prerequisites, and revisit triggers; not shipped behaviour.
@@ -87,6 +92,7 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
 | `governance/` | Governance, committees, and relayers. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |
+| `brand/` | Anyone showing the Ark mark. The logo kit and its usage guidelines. |
 | `direction/` | Contributors. Deferred changes and proposed tooling; none of it is shipped behaviour. |
 
 A subsystem README can explain design in depth and use a contents list when useful. "Design" is not a reason for a

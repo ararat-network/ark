@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ark</title>
+    <path fill="#1E3A7B" d="M128 22L200 94L56 94Z"/>
+  <path fill="#1E3A7B" d="M16 118H56L128 190L200 118H240A112 112 0 0 1 16 118Z"/>
+</svg>
