@@ -58,6 +58,7 @@ func TestAddValidatorSeats(t *testing.T) {
 	cdc := seatCodec()
 	state := artefactState(t)
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
+	custody := authtypes.NewModuleAddress(disbursementtypes.ModuleName).String()
 	grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)))
 	seat := grant.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatFloatNoah)))
 	first, second := operatorAddress(), operatorAddress()
@@ -93,9 +94,11 @@ func TestAddValidatorSeats(t *testing.T) {
 			require.Equal(t, seat, balance.Coins)
 		case pool:
 			require.Equal(t,
-				chain.NativeBaseAmount(835_000_000).Sub(seat.AmountOf(chain.NoahBaseDenom).MulRaw(2)),
+				chain.NativeBaseAmount(103_000_000).Sub(seat.AmountOf(chain.NoahBaseDenom).MulRaw(2)),
 				balance.Coins.AmountOf(chain.NoahBaseDenom),
 			)
+		case custody:
+			require.Equal(t, chain.NativeBaseAmount(732_000_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the disbursement pools")
 		}
 	}
 	require.Equal(t, bankState.Supply, total, "supply still equals the balances")
@@ -103,7 +106,7 @@ func TestAddValidatorSeats(t *testing.T) {
 	var distrState distrtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[distrtypes.ModuleName], &distrState)
 	require.Equal(t,
-		math.LegacyNewDecFromInt(chain.NativeBaseAmount(835_000_000).Sub(seat.AmountOf(chain.NoahBaseDenom).MulRaw(2))),
+		math.LegacyNewDecFromInt(chain.NativeBaseAmount(103_000_000).Sub(seat.AmountOf(chain.NoahBaseDenom).MulRaw(2))),
 		distrState.FeePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
 	)
 
@@ -115,11 +118,10 @@ func TestAddValidatorSeats(t *testing.T) {
 	var disbursementState disbursementtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementState)
 	require.NoError(t, disbursementState.Validate())
-	require.Len(t, disbursementState.Founders, 2)
+	require.Len(t, disbursementState.Beneficiaries, 2)
 	for i, address := range []sdk.AccAddress{first, second} {
-		require.Equal(t, sdk.ValAddress(address).String(), disbursementState.Founders[i].Operator)
-		require.Equal(t, address.String(), disbursementState.Founders[i].Beneficiary)
-		require.Equal(t, chain.NativeBaseAmount(chain.SeatGrantNoah), disbursementState.Founders[i].SeatAmount)
+		require.Equal(t, address.String(), disbursementState.Beneficiaries[i].Address)
+		require.Equal(t, chain.NativeBaseAmount(chain.SeatGrantNoah), disbursementState.Beneficiaries[i].Seat)
 		require.Equal(t, address.String(), disbursementState.Beneficiaries[i].Controller)
 		require.True(t, disbursementState.Beneficiaries[i].OwnershipPaid.IsZero())
 	}

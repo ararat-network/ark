@@ -328,7 +328,7 @@
           "address": "ark1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8h9tdgl",
           "coins": [
             {
-              "amount": "835000000000000000000000000",
+              "amount": "103000000000000000000000000",
               "denom": "anoah"
             }
           ]
@@ -347,6 +347,15 @@
           "coins": [
             {
               "amount": "5000000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
+          "address": "ark1xnz66njawtkzq4w8x6vcn95uvjy0y2vkjl8nme",
+          "coins": [
+            {
+              "amount": "732000000000000000000000000",
               "denom": "anoah"
             }
           ]
@@ -422,7 +431,7 @@
       "fee_pool": {
         "community_pool": [
           {
-            "amount": "835000000000000000000000000.000000000000000000",
+            "amount": "103000000000000000000000000.000000000000000000",
             "denom": "anoah"
           }
         ]
@@ -916,14 +925,13 @@
         "denominator": "5",
         "ceiling": "60000000000000000000000000"
       },
-      "founders": [],
       "beneficiaries": [],
       "grants": [],
       "totals": [],
       "issuance": {
         "entries": []
       },
-      "registrar_mandate": {
+      "grants_mandate": {
         "envelope": {
           "term": "0",
           "committee": "",
@@ -936,12 +944,23 @@
             "threshold": 0,
             "member_count": 0
           }
-        }
+        },
+        "compensation_allowance": [],
+        "min_first_period": "0"
       },
       "journal": [],
       "next_grant_id": "1",
       "next_journal_id": "1",
-      "voided_terms": []
+      "voided_terms": [],
+      "member_pool": {
+        "unallocated": "439200000000000000000000000",
+        "open": "0"
+      },
+      "contributor_pool": {
+        "unallocated": "292800000000000000000000000",
+        "open": "0"
+      },
+      "conversion_orders": []
     }
   },
   "app_version": "",

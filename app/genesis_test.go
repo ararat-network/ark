@@ -53,6 +53,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
@@ -402,16 +403,18 @@ func TestWasmLightClientGenesisShipsEmpty(t *testing.T) {
 }
 
 // Launch supply ledger, mirrored in docs/governance/GENESIS.md §3. The
-// artefact carries the whole community pool and zero reward targets; each
-// seat assembly adds moves its grant and float out of the pool and adds one
-// seat's share to both targets (app/genesis).
+// artefact carries the disbursement pools, the community pool before seats, and
+// zero reward targets; each seat assembly adds moves its grant and float out of
+// the community pool and adds one seat's share to both targets (app/genesis).
 const (
-	launchTotalSupplyNoah   = 1_000_000_000
-	launchSubsidyNoah       = 100_000_000
-	launchReserveNoah       = 50_000_000
-	launchBufferNoah        = 10_000_000
-	launchInsuranceNoah     = 5_000_000
-	launchCommunityPoolNoah = 835_000_000
+	launchTotalSupplyNoah     = 1_000_000_000
+	launchSubsidyNoah         = 100_000_000
+	launchReserveNoah         = 50_000_000
+	launchBufferNoah          = 10_000_000
+	launchInsuranceNoah       = 5_000_000
+	launchMemberPoolNoah      = 439_200_000
+	launchContributorPoolNoah = 292_800_000
+	launchCommunityPoolNoah   = 103_000_000
 )
 
 func noah(whole int64) math.Int { return chain.NativeBaseAmount(whole) }
@@ -480,6 +483,7 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName).String(): noah(launchBufferNoah),
 		authtypes.NewModuleAddress(claimstypes.InsuranceName).String():          noah(launchInsuranceNoah),
 		authtypes.NewModuleAddress(distrtypes.ModuleName).String():              noah(launchCommunityPoolNoah),
+		authtypes.NewModuleAddress(disbursementtypes.ModuleName).String():       noah(launchMemberPoolNoah + launchContributorPoolNoah),
 	}
 	require.Len(t, bankGenesis.Balances, len(want))
 	total := math.ZeroInt()
@@ -498,6 +502,13 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		sdk.NewDecCoinsFromCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(launchCommunityPoolNoah))),
 		distrGenesis.FeePool.CommunityPool,
 	)
+
+	// The pools split 60/40 and open nothing; each step's tranche is a governance act.
+	var disbursementGenesis disbursementtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementGenesis)
+	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchMemberPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.MemberPool)
+	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchContributorPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.ContributorPool)
+	require.Empty(t, disbursementGenesis.ConversionOrders)
 }
 
 // TestLaunchGenesisPinsArkEconomics pins the launch values of the Ark modules.

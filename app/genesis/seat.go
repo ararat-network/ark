@@ -201,14 +201,13 @@ func raiseSeatTargets(cdc codec.Codec, raw json.RawMessage) (json.RawMessage, er
 	return cdc.MarshalJSON(&state)
 }
 
-// registerFounder binds the historical seat to its permanent grant beneficiary.
+// registerFounder records the seat on the operator's permanent grant beneficiary.
 func registerFounder(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress) (json.RawMessage, error) {
 	var gs disbursementtypes.GenesisState
 	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
 		return nil, err
 	}
-	gs.Founders = append(gs.Founders, disbursementtypes.Founder{Operator: sdk.ValAddress(operator).String(), Beneficiary: operator.String(), SeatAmount: chain.NativeBaseAmount(chain.SeatGrantNoah)})
-	gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipPaid: math.ZeroInt()})
+	gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipPaid: math.ZeroInt(), Seat: chain.NativeBaseAmount(chain.SeatGrantNoah)})
 	if err := gs.Validate(); err != nil {
 		return nil, err
 	}
