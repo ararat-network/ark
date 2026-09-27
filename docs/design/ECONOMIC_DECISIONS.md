@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D87: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87).
+- D72–D90: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1103,7 +1103,7 @@ info, spendable balances, send-enabled, and account lookups. D74 stands.
 
 ## D86
 
-**Recorded status:** Superseded by [D87](#d87) for custody and execution; recorded 2026-09-22. The schedule and ownership amendments below remain the economic baseline.
+**Recorded status:** Superseded by [D87](#d87) for custody and execution; recorded 2026-09-22. The schedule and ownership amendments below remain the economic baseline, except the seat-excluding ceiling, which [D90](#d90) replaces.
 
 **Lifecycle:** The following is the historical contract design. Its Rust workspace, Wasm fixture, and deployment
 workflow have been removed. Current custody, messages, and authorities are defined by the native
@@ -1157,7 +1157,7 @@ counts actual scheduled payments and recipients' staking choices, with no early 
 
 ## D87
 
-**Recorded status:** Decided 2026-09-23.
+**Recorded status:** Decided 2026-09-23; funding amended by [D88](#d88), the registrar by [D89](#d89).
 
 Replace the prelaunch grant contract with native [`x/disbursement`](../../x/disbursement/README.md). The same transparent commitment
 ledger will serve member and contributor distribution now and ongoing compensation, including stablecoins, as the system matures. Distribution
@@ -1183,6 +1183,69 @@ no scans of historical grants; no block hook pays recipients. Export/import pres
 rebuilds derived state after validating records and Bank backing. There are no live contract commitments to migrate:
 remove its Rust workspace, embedded fixture, and deployment workflow. CosmWasm remains available for other applications;
 D85's existing query accept list is unchanged.
+
+## D88
+
+**Recorded status:** Decided 2026-09-26.
+
+Hold the distribution in `x/disbursement` from genesis. The artefact moves 732M NOAH out of the community pool into
+two pools in disbursement custody, a 439.2M member pool and a 292.8M contributor pool, and leaves the community pool
+50M after ten seats, which still draw on it. A pool records its uncommitted NOAH and the part governance has opened.
+Each step of the plan is a governance `MsgOpenTranche`, which moves no coins, and only genesis grows a pool. Members
+draw on the open member tranche; ownership awards and NOAH compensation on the open contributor tranche; a cancel
+returns unearned NOAH to the tranche it was charged to. The member pool has no exit. `MsgReturnUnallocated` names its
+source: custody outside the pools, or the contributor pool with its unopened NOAH first. Why: with the whole
+distribution in the community pool, the 60/40 split and the member pool were a promise the founders, the only voters
+at launch, could revoke by one proposal; held by the module, the member pool pays members or nobody. Tranches keep
+the pace a governance decision, where the gates belong while their ratio is open. What it costs: the custody
+accounting and tranche checks need audit before launch rather than before the first tranche, and a member remainder
+nobody registers leaves only by a chain upgrade.
+
+Contributor NOAH funds stablecoin compensation through conversion orders. Governance authorises an order per
+denomination from the open contributor tranche, each authorisation adding NOAH and restating a maximum spread;
+`MsgCancelConversion` returns the remainder. Any sender but governance executes an order with `MsgConvert`, trading
+disbursement custody through Market's ordinary swap, so Market quotes, mints, and settles it at EndBlock and Treasury
+allocates the offer as for any expansion. A fill whose realised spread, dust included, exceeds the cap fails, which
+also paces a large order to the pool's recovery. No committee holds the power: with the size, denomination, and price
+bound fixed, only timing remains, and a trigger anyone can pull has no key to steal. Governance cannot execute,
+because proposals run after Market's EndBlocker has settled the block. Cancelled stablecoin compensation stays in
+custody for the next award rather than leaving for the community pool. An award still never converts: obligations stay
+funded in their own denomination (D87).
+
+## D89
+
+**Recorded status:** Decided 2026-09-26.
+
+Fold compensation into Disbursement's one committee rather than appoint a second. The registrar becomes the grants
+committee under a `GrantsMandate`: every module holds one mandate and every mandate's group is a committee, so the type
+names the power, as `ClaimsMandate` and `ConversionMandate` do, within amino's 39-character message-name limit. The appointment adds a compensation power: a per-denomination allowance for the
+term, each denomination allowlisted and active at appointment, and a minimum first period, positive whenever there is
+an allowance. `MsgCommitteeCompensate` creates compensation only, funded like a governance award, never to a founding
+seat holder, with a first period at least the minimum. A term's usage is the sum of its awards, cancelled ones
+included, so a cancel never restores allowance and a new term starts at zero; a term makes at most 100 awards, one
+cancel batch. Governance's `MsgCancelTermGrants` cancels every unfinished award of one term in one write, catching any
+a key made while the vote replacing it was open. Bounties leave the ownership bands and become compensation. Why: one
+committee keeps one appointment, term, and key process for the module's delegated work, and the first period is what
+makes combining safe, since a stolen key's added exposure is awards committed but unpaid, which the replacing vote
+cancels. What it costs: one key carries both powers, so recovery is three messages, appoint, void, and cancel the term,
+and the term cancel also catches the term's legitimate awards, which governance re-awards.
+
+## D90
+
+**Recorded status:** Decided 2026-09-28. Amends the ownership ceiling in [D86](#d86)'s 2026-09-23 amendment.
+
+Size the founder's founding-band grant at 15M NOAH, 20M with the seat, and bound seat holders so that ownership
+payments cannot restore the founders' block. At 15M the founder holds under the tenth of bonded stake one seat carries
+at launch at every payment; at the earlier 60M the cap would have paid the founder up to the goal's sixth and held
+them there from about 180M to 280M of public bonded stake. The bloc rule holds the ten at 3/10 of bonded stake rather
+than a third: the tally passes a proposal only when yes exceeds 66.7%, so a bloc at a third still blocks, and under
+the old rule the earlier grant's payments would have kept the founders a blocking minority to about 181M of public
+bonded stake, past the plan's 100M handover line. The 60M ceiling now counts the seat; excluding it existed only to fit the earlier 65M, and was the one
+rule that gave a seat holder more ownership room than another contributor. The founder's grant is proposed once public
+bonded stake passes 100M, when the founders' own stake can neither pass nor block, so the public rather than the other
+nine decides it; the bloc rule releases nothing to a seat holder before then. What it costs: the founder's clock
+starts at that later proposal, other seat holders' grants wait for more public stake, and the founding band tops at
+15M. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
 
 ## P1
 
