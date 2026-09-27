@@ -35,6 +35,11 @@ type DistributionKeeper interface {
 	FundCommunityPool(context.Context, sdk.Coins, sdk.AccAddress) error
 }
 
+// MarketKeeper converts contributor NOAH through Market's ordinary swap path.
+type MarketKeeper interface {
+	Swap(ctx context.Context, trader, receiver sdk.AccAddress, offerCoin sdk.Coin, askDenom string, minimumReceive sdk.Coin) (sdk.Coin, sdk.DecCoin, error)
+}
+
 // StakingKeeper supplies the live bonded denominator for ownership payments.
 type StakingKeeper interface {
 	TotalValidatorPower(context.Context) (math.Int, error)

@@ -33,8 +33,9 @@ func (k *Keeper) validateCompensation(ctx context.Context, denom string, params 
 	return nil
 }
 
-// create reserves a complete commitment; members receive their first payment in the same call.
-func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind, beneficiary sdk.AccAddress, amount sdk.Coin, schedule []types.Period, reference string) (uint64, error) {
+// create reserves a complete commitment; members receive their first payment in the same call. A
+// nonzero term marks a committee award and indexes it under that term.
+func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind, beneficiary sdk.AccAddress, amount sdk.Coin, schedule []types.Period, reference string, term uint64) (uint64, error) {
 	if k.bank.BlockedAddr(beneficiary) {
 		return 0, errors.New("beneficiary cannot receive funds")
 	}
@@ -44,12 +45,8 @@ func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind,
 	if _, err := types.Split(amount.Amount, schedule); err != nil {
 		return 0, err
 	}
-	available, err := k.unallocated(ctx, amount.Denom)
-	if err != nil {
+	if err := k.draw(ctx, source(kind, amount.Denom), amount); err != nil {
 		return 0, err
-	}
-	if available.LT(amount.Amount) {
-		return 0, errors.New("insufficient unallocated disbursement funds")
 	}
 	at, err := blockTime(ctx)
 	if err != nil {
@@ -63,14 +60,17 @@ func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind,
 		Id: id, Kind: kind, Beneficiary: beneficiary.String(), Payee: beneficiary.String(), Amount: amount,
 		Schedule: append([]types.Period(nil), schedule...), StartTime: at, Paid: math.ZeroInt(), Remaining: amount.Amount,
 		CancelledAmount: math.ZeroInt(), Reference: reference, CreatedBy: actor, CreatedHeight: uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		MandateTerm: term,
 	}
+	var p types.Beneficiary
 	if kind != types.GrantKind_GRANT_KIND_MEMBER {
 		if err := g.Validate(); err != nil {
 			return 0, err
 		}
-		_, err := k.Beneficiaries.Get(ctx, beneficiary)
+		p, err = k.Beneficiaries.Get(ctx, beneficiary)
 		if errors.Is(err, collections.ErrNotFound) {
-			err = k.Beneficiaries.Set(ctx, beneficiary, types.Beneficiary{Address: beneficiary.String(), Controller: beneficiary.String(), OwnershipPaid: math.ZeroInt()})
+			p = types.Beneficiary{Address: beneficiary.String(), Controller: beneficiary.String(), OwnershipPaid: math.ZeroInt(), Seat: math.ZeroInt()}
+			err = k.Beneficiaries.Set(ctx, beneficiary, p)
 		}
 		if err != nil {
 			return 0, err
@@ -90,23 +90,17 @@ func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind,
 	if err := k.Totals.Set(ctx, amount.Denom, t); err != nil {
 		return 0, err
 	}
-	if kind == types.GrantKind_GRANT_KIND_OWNERSHIP {
-		f, err := k.founder(ctx, beneficiary)
+	if kind == types.GrantKind_GRANT_KIND_OWNERSHIP && p.Seat.IsPositive() {
+		remaining, err := k.FounderRemaining.Get(ctx)
 		if err != nil {
 			return 0, err
 		}
-		if f != nil {
-			remaining, err := k.FounderRemaining.Get(ctx)
-			if err != nil {
-				return 0, err
-			}
-			remaining, err = remaining.SafeAdd(amount.Amount)
-			if err != nil {
-				return 0, err
-			}
-			if err := k.FounderRemaining.Set(ctx, remaining); err != nil {
-				return 0, err
-			}
+		remaining, err = remaining.SafeAdd(amount.Amount)
+		if err != nil {
+			return 0, err
+		}
+		if err := k.FounderRemaining.Set(ctx, remaining); err != nil {
+			return 0, err
 		}
 	}
 	if err := k.Grants.Set(ctx, id, g); err != nil {
@@ -114,6 +108,11 @@ func (k *Keeper) create(ctx context.Context, actor string, kind types.GrantKind,
 	}
 	if err := k.GrantsByBeneficiary.Set(ctx, collections.Join(beneficiary, id), true); err != nil {
 		return 0, err
+	}
+	if term != 0 {
+		if err := k.TermGrants.Set(ctx, collections.Join(term, id), amount); err != nil {
+			return 0, err
+		}
 	}
 	if err := k.record(ctx, id, "created", actor, amount, g); err != nil {
 		return 0, err
@@ -166,15 +165,7 @@ func (k *Keeper) releasable(ctx context.Context, g types.Grant) (*types.QueryRel
 	if err != nil {
 		return nil, err
 	}
-	f, err := k.founder(ctx, address)
-	if err != nil {
-		return nil, err
-	}
-	seat := math.ZeroInt()
-	if f != nil {
-		seat = f.SeatAmount
-	}
-	r.Own, err = p.OwnershipPaid.SafeAdd(seat)
+	r.Own, err = p.OwnershipPaid.SafeAdd(p.Seat)
 	if err != nil {
 		return nil, err
 	}
@@ -190,13 +181,9 @@ func (k *Keeper) releasable(ctx context.Context, g types.Grant) (*types.QueryRel
 	if err != nil {
 		return nil, err
 	}
-	ceiling, err := policy.Ceiling.SafeAdd(seat)
-	if err != nil {
-		return nil, err
-	}
-	r.OwnershipLimit = math.MinInt(limit, ceiling)
+	r.OwnershipLimit = math.MinInt(limit, policy.Ceiling)
 	allowance := types.PositiveDifference(r.OwnershipLimit, r.Own)
-	if f != nil {
+	if p.Seat.IsPositive() {
 		founding, err := k.FoundingStake.Get(ctx)
 		if err != nil {
 			return nil, err
@@ -209,7 +196,11 @@ func (k *Keeper) releasable(ctx context.Context, g types.Grant) (*types.QueryRel
 		if err != nil {
 			return nil, err
 		}
-		room := types.PositiveDifference(types.PositiveDifference(r.Bonded.QuoRaw(3), founding), paid)
+		bloc, err := types.MulDiv(r.Bonded, math.NewInt(types.FounderBlocNumerator), math.NewInt(types.FounderBlocDenominator))
+		if err != nil {
+			return nil, err
+		}
+		room := types.PositiveDifference(types.PositiveDifference(bloc, founding), paid)
 		if remaining.IsPositive() {
 			r.BlocAllowance, err = types.MulDiv(room, g.Remaining, remaining)
 			if err != nil {
@@ -270,11 +261,7 @@ func (k *Keeper) pay(ctx context.Context, actor string, g types.Grant) (bool, er
 		if err := k.Beneficiaries.Set(ctx, address, p); err != nil {
 			return false, err
 		}
-		f, err := k.founder(ctx, address)
-		if err != nil {
-			return false, err
-		}
-		if f != nil {
+		if p.Seat.IsPositive() {
 			paid, err := k.FounderPaid.Get(ctx)
 			if err != nil {
 				return false, err
@@ -350,11 +337,11 @@ func (k *Keeper) cancel(ctx context.Context, actor string, g types.Grant) error 
 		if err != nil {
 			return err
 		}
-		f, err := k.founder(ctx, address)
+		p, err := k.Beneficiaries.Get(ctx, address)
 		if err != nil {
 			return err
 		}
-		if f != nil {
+		if p.Seat.IsPositive() {
 			remaining, err := k.FounderRemaining.Get(ctx)
 			if err != nil {
 				return err
@@ -364,12 +351,13 @@ func (k *Keeper) cancel(ctx context.Context, actor string, g types.Grant) error 
 			}
 		}
 	}
-	coin := sdk.NewCoin(g.Amount.Denom, returned)
-	if g.Kind != types.GrantKind_GRANT_KIND_MEMBER && returned.IsPositive() {
-		if err := k.distribution.FundCommunityPool(ctx, sdk.NewCoins(coin), k.address); err != nil {
+	// Unearned NOAH returns to its pool's open tranche; other denominations stay unallocated in custody.
+	if pool := source(g.Kind, g.Amount.Denom); pool != types.Pool_POOL_UNSPECIFIED && returned.IsPositive() {
+		if err := k.refund(ctx, pool, returned); err != nil {
 			return err
 		}
 	}
+	coin := sdk.NewCoin(g.Amount.Denom, returned)
 	if err := k.Grants.Set(ctx, g.Id, g); err != nil {
 		return err
 	}

@@ -17,6 +17,8 @@ const (
 	MaxReferenceBytes      = 2_048
 	MaxJournalDetailsBytes = 131_072
 	MaxPageSize            = 100
+	// MaxTermGrants keeps a term's committee awards within one cancel batch.
+	MaxTermGrants = MaxBatch
 )
 
 // ValidateAmount caps one commitment and the outstanding reservation at 128 bits.

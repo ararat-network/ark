@@ -15,6 +15,11 @@ const (
 	DefaultWindowSeconds    = uint64(604_800)
 	DefaultMemberAmount     = int64(10_000)
 	DefaultOwnershipCeiling = int64(60_000_000)
+
+	// FounderBlocNumerator over FounderBlocDenominator holds seat holders together below the 33.3% that blocks a
+	// proposal at the 66.7% threshold.
+	FounderBlocNumerator   = int64(3)
+	FounderBlocDenominator = int64(10)
 )
 
 // DefaultMemberSchedule pays a tenth immediately and the rest in twelve periods.
@@ -26,7 +31,7 @@ func DefaultMemberSchedule() []Period {
 	return schedule
 }
 
-// DefaultParams admits NOAH compensation; the registrar is appointed by its mandate.
+// DefaultParams admits NOAH compensation; the committee is appointed by its mandate.
 func DefaultParams() Params {
 	return Params{
 		MaxMembers: DefaultMaxMembers, WindowSeconds: DefaultWindowSeconds,

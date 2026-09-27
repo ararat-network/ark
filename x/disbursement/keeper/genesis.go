@@ -46,20 +46,6 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 	}
 	founders := map[string]bool{}
 	founding, paid, remaining := math.ZeroInt(), math.ZeroInt(), math.ZeroInt()
-	for _, f := range gs.Founders {
-		operator, err := chain.ParseCanonicalValidatorAddress("founder", f.Operator)
-		if err != nil {
-			return err
-		}
-		if err := k.Founders.Set(ctx, operator, f); err != nil {
-			return err
-		}
-		founders[f.Beneficiary] = true
-		founding, err = founding.SafeAdd(f.SeatAmount)
-		if err != nil {
-			return err
-		}
-	}
 	for _, p := range gs.Beneficiaries {
 		address, err := chain.ParseCanonicalAccountAddress("beneficiary", p.Address)
 		if err != nil {
@@ -68,11 +54,17 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 		if err := k.Beneficiaries.Set(ctx, address, p); err != nil {
 			return err
 		}
-		if founders[p.Address] {
-			paid, err = paid.SafeAdd(p.OwnershipPaid)
-			if err != nil {
-				return err
-			}
+		if !p.Seat.IsPositive() {
+			continue
+		}
+		founders[p.Address] = true
+		founding, err = founding.SafeAdd(p.Seat)
+		if err != nil {
+			return err
+		}
+		paid, err = paid.SafeAdd(p.OwnershipPaid)
+		if err != nil {
+			return err
 		}
 	}
 	var at uint64
@@ -114,6 +106,11 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 				return err
 			}
 		}
+		if g.MandateTerm != 0 {
+			if err := k.TermGrants.Set(ctx, collections.Join(g.MandateTerm, g.Id), g.Amount); err != nil {
+				return err
+			}
+		}
 		if founders[g.Beneficiary] && g.Kind == types.GrantKind_GRANT_KIND_OWNERSHIP {
 			remaining, err = remaining.SafeAdd(g.Remaining)
 			if err != nil {
@@ -122,7 +119,7 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 		}
 	}
 	// The mandate imports verbatim, expired included: an export taken after expiry must round-trip.
-	if err := k.RegistrarMandate.Set(ctx, gs.RegistrarMandate); err != nil {
+	if err := k.GrantsMandate.Set(ctx, gs.GrantsMandate); err != nil {
 		return err
 	}
 	for _, term := range gs.VoidedTerms {
@@ -142,6 +139,20 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 				return err
 			}
 		}
+	}
+	if err := k.MemberPool.Set(ctx, gs.MemberPool); err != nil {
+		return err
+	}
+	if err := k.ContributorPool.Set(ctx, gs.ContributorPool); err != nil {
+		return err
+	}
+	for _, o := range gs.ConversionOrders {
+		if err := k.ConversionOrders.Set(ctx, o.Denom, o); err != nil {
+			return err
+		}
+	}
+	if _, err := k.unallocated(ctx, chain.NoahBaseDenom); err != nil {
+		return fmt.Errorf("NOAH reservations, pools, and conversion orders are not backed by Bank: %w", err)
 	}
 	if err := k.FoundingStake.Set(ctx, founding); err != nil {
 		return err
@@ -176,12 +187,6 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	if err != nil {
 		return nil, err
 	}
-	if err := k.Founders.Walk(ctx, nil, func(_ sdk.ValAddress, f types.Founder) (bool, error) {
-		gs.Founders = append(gs.Founders, f)
-		return false, nil
-	}); err != nil {
-		return nil, err
-	}
 	if err := k.Beneficiaries.Walk(ctx, nil, func(_ sdk.AccAddress, p types.Beneficiary) (bool, error) {
 		gs.Beneficiaries = append(gs.Beneficiaries, p)
 		return false, nil
@@ -194,7 +199,7 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	if err := k.Totals.Walk(ctx, nil, func(_ string, t types.DenomTotals) (bool, error) { gs.Totals = append(gs.Totals, t); return false, nil }); err != nil {
 		return nil, err
 	}
-	gs.RegistrarMandate, err = k.RegistrarMandate.Get(ctx)
+	gs.GrantsMandate, err = k.GrantsMandate.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +211,18 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	}
 	if err := k.Journal.Walk(ctx, nil, func(_ uint64, e types.JournalEntry) (bool, error) {
 		gs.Journal = append(gs.Journal, e)
+		return false, nil
+	}); err != nil {
+		return nil, err
+	}
+	if gs.MemberPool, err = k.MemberPool.Get(ctx); err != nil {
+		return nil, err
+	}
+	if gs.ContributorPool, err = k.ContributorPool.Get(ctx); err != nil {
+		return nil, err
+	}
+	if err := k.ConversionOrders.Walk(ctx, nil, func(_ string, o types.ConversionOrder) (bool, error) {
+		gs.ConversionOrders = append(gs.ConversionOrders, o)
 		return false, nil
 	}); err != nil {
 		return nil, err

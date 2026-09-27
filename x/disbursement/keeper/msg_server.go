@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -92,17 +93,17 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	return &types.MsgUpdateParamsResponse{}, nil
 }
 
-func (m msgServer) SetRegistrarMandate(ctx context.Context, msg *types.MsgSetRegistrarMandate) (*types.MsgSetRegistrarMandateResponse, error) {
+func (m msgServer) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMandate) (*types.MsgSetGrantsMandateResponse, error) {
 	if msg == nil {
 		return nil, errors.New("nil message")
 	}
 	if err := m.authority(ctx, msg.Authority); err != nil {
 		return nil, err
 	}
-	if err := m.k.SetRegistrarMandate(ctx, msg.Authority, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
+	if err := m.k.SetGrantsMandate(ctx, msg); err != nil {
 		return nil, err
 	}
-	return &types.MsgSetRegistrarMandateResponse{}, nil
+	return &types.MsgSetGrantsMandateResponse{}, nil
 }
 
 func (m msgServer) CreateGrant(ctx context.Context, msg *types.MsgCreateGrant) (*types.MsgCreateGrantResponse, error) {
@@ -132,7 +133,7 @@ func (m msgServer) CreateGrant(ctx context.Context, msg *types.MsgCreateGrant) (
 	default:
 		return nil, errors.New("governance creates ownership or compensation grants")
 	}
-	id, err := m.k.create(ctx, msg.Authority, msg.Kind, beneficiary, msg.Amount, msg.Schedule, msg.Reference)
+	id, err := m.k.create(ctx, msg.Authority, msg.Kind, beneficiary, msg.Amount, msg.Schedule, msg.Reference, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -199,12 +200,12 @@ func (m msgServer) CommitteeRegister(ctx context.Context, msg *types.MsgCommitte
 	if err != nil {
 		return nil, err
 	}
-	available, err := m.k.unallocated(ctx, chain.NoahBaseDenom)
+	pool, err := m.k.MemberPool.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if available.LT(needed) {
-		return nil, errors.New("member batch is not fully funded")
+	if pool.Open.LT(needed) {
+		return nil, errors.New("member batch exceeds the open member tranche")
 	}
 	now, err := blockTime(ctx)
 	if err != nil {
@@ -220,7 +221,7 @@ func (m msgServer) CommitteeRegister(ctx context.Context, msg *types.MsgCommitte
 	}
 	ids := make([]uint64, 0, len(addresses))
 	for _, address := range addresses {
-		id, err := m.k.create(ctx, appointment.Committee, types.GrantKind_GRANT_KIND_MEMBER, address, chain.NoahCoin(p.MemberAmount), p.MemberSchedule, "")
+		id, err := m.k.create(ctx, appointment.Committee, types.GrantKind_GRANT_KIND_MEMBER, address, chain.NoahCoin(p.MemberAmount), p.MemberSchedule, "", 0)
 		if err != nil {
 			return nil, err
 		}
@@ -360,7 +361,7 @@ func (m msgServer) ReinstateMembers(ctx context.Context, msg *types.MsgReinstate
 	return &types.MsgReinstateMembersResponse{}, nil
 }
 
-// reinstate clears effective suspensions; the registrar and governance share the action under
+// reinstate clears effective suspensions; the committee and governance share the action under
 // their own authorisation.
 func (m msgServer) reinstate(ctx context.Context, actor string, batch []string) error {
 	addresses, err := addressesBatch(batch)
@@ -397,21 +398,21 @@ func (m msgServer) VoidSuspensions(ctx context.Context, msg *types.MsgVoidSuspen
 	if err := m.authority(ctx, msg.Authority); err != nil {
 		return nil, err
 	}
-	current, err := m.k.RegistrarMandate.Get(ctx)
+	current, err := m.k.GrantsMandate.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// The live term is never voided: re-appoint the registrar first, which advances the term, so a
+	// The live term is never voided: re-appoint the committee first, which advances the term, so a
 	// suspension made after the void lands under a term the void does not touch.
 	if msg.Term == 0 || msg.Term >= current.Term {
-		return nil, errors.New("only a replaced registrar term can be voided")
+		return nil, errors.New("only a replaced committee term can be voided")
 	}
 	voided, err := m.k.VoidedTerms.Has(ctx, msg.Term)
 	if err != nil {
 		return nil, err
 	}
 	if voided {
-		return nil, errors.New("registrar term already voided")
+		return nil, errors.New("committee term already voided")
 	}
 	if err := m.k.VoidedTerms.Set(ctx, msg.Term); err != nil {
 		return nil, err
@@ -508,18 +509,289 @@ func (m msgServer) ReturnUnallocated(ctx context.Context, msg *types.MsgReturnUn
 	if err := types.ValidateAmount(msg.Amount.Amount, true); err != nil {
 		return nil, err
 	}
-	available, err := m.k.unallocated(ctx, msg.Amount.Denom)
-	if err != nil {
-		return nil, err
-	}
-	if available.LT(msg.Amount.Amount) {
-		return nil, errors.New("return would consume reserved obligations")
+	switch msg.Pool {
+	case types.Pool_POOL_UNSPECIFIED:
+		available, err := m.k.unallocated(ctx, msg.Amount.Denom)
+		if err != nil {
+			return nil, err
+		}
+		if available.LT(msg.Amount.Amount) {
+			return nil, errors.New("return would consume committed funds")
+		}
+	case types.Pool_POOL_CONTRIBUTORS:
+		if msg.Amount.Denom != chain.NoahBaseDenom {
+			return nil, errors.New("the contributor pool holds NOAH")
+		}
+		p, err := m.k.ContributorPool.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if p.Unallocated.LT(msg.Amount.Amount) {
+			return nil, errors.New("return exceeds the contributor pool")
+		}
+		// The unopened part goes first, so a return leaves the open tranche whole when it can.
+		if unopened := p.Unallocated.Sub(p.Open); msg.Amount.Amount.GT(unopened) {
+			p.Open = p.Open.Sub(msg.Amount.Amount.Sub(unopened))
+		}
+		p.Unallocated = p.Unallocated.Sub(msg.Amount.Amount)
+		if err := m.k.ContributorPool.Set(ctx, p); err != nil {
+			return nil, err
+		}
+	case types.Pool_POOL_MEMBERS:
+		return nil, errors.New("the member pool has no exit")
+	default:
+		return nil, errors.New("unknown distribution pool")
 	}
 	if err := m.k.distribution.FundCommunityPool(ctx, sdk.NewCoins(msg.Amount), m.k.address); err != nil {
 		return nil, err
 	}
-	if err := m.k.record(ctx, 0, "return_unallocated", msg.Authority, msg.Amount, nil); err != nil {
+	if err := m.k.record(ctx, 0, "return_unallocated", msg.Authority, msg.Amount, map[string]string{"pool": msg.Pool.String()}); err != nil {
 		return nil, err
 	}
 	return &types.MsgReturnUnallocatedResponse{}, nil
+}
+
+func (m msgServer) OpenTranche(ctx context.Context, msg *types.MsgOpenTranche) (*types.MsgOpenTrancheResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if err := m.authority(ctx, msg.Authority); err != nil {
+		return nil, err
+	}
+	if err := types.ValidateAmount(msg.Amount, true); err != nil {
+		return nil, err
+	}
+	item, err := m.k.pool(msg.Pool)
+	if err != nil {
+		return nil, err
+	}
+	p, err := item.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if p.Open, err = p.Open.SafeAdd(msg.Amount); err != nil {
+		return nil, err
+	}
+	if p.Open.GT(p.Unallocated) {
+		return nil, errors.New("tranche exceeds its pool")
+	}
+	if err := item.Set(ctx, p); err != nil {
+		return nil, err
+	}
+	if err := m.k.record(ctx, 0, "open_tranche", msg.Authority, chain.NoahCoin(msg.Amount), map[string]string{"pool": msg.Pool.String()}); err != nil {
+		return nil, err
+	}
+	return &types.MsgOpenTrancheResponse{}, nil
+}
+
+func (m msgServer) AuthoriseConversion(ctx context.Context, msg *types.MsgAuthoriseConversion) (*types.MsgAuthoriseConversionResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if err := m.authority(ctx, msg.Authority); err != nil {
+		return nil, err
+	}
+	if msg.Denom == chain.NoahBaseDenom {
+		return nil, errors.New("conversion orders sell NOAH for another denomination")
+	}
+	p, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.k.validateCompensation(ctx, msg.Denom, p); err != nil {
+		return nil, err
+	}
+	if err := types.ValidateAmount(msg.Amount, true); err != nil {
+		return nil, err
+	}
+	if err := m.k.draw(ctx, types.Pool_POOL_CONTRIBUTORS, chain.NoahCoin(msg.Amount)); err != nil {
+		return nil, err
+	}
+	order, err := m.k.ConversionOrders.Get(ctx, msg.Denom)
+	if errors.Is(err, collections.ErrNotFound) {
+		order, err = types.ConversionOrder{Denom: msg.Denom, Remaining: math.ZeroInt()}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if order.Remaining, err = order.Remaining.SafeAdd(msg.Amount); err != nil {
+		return nil, err
+	}
+	order.MaxSpread = msg.MaxSpread
+	if err := order.Validate(); err != nil {
+		return nil, err
+	}
+	if err := m.k.ConversionOrders.Set(ctx, order.Denom, order); err != nil {
+		return nil, err
+	}
+	if err := m.k.record(ctx, 0, "authorise_conversion", msg.Authority, chain.NoahCoin(msg.Amount), map[string]string{"denom": order.Denom, "max_spread": order.MaxSpread.String()}); err != nil {
+		return nil, err
+	}
+	return &types.MsgAuthoriseConversionResponse{}, nil
+}
+
+func (m msgServer) CancelConversion(ctx context.Context, msg *types.MsgCancelConversion) (*types.MsgCancelConversionResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if err := m.authority(ctx, msg.Authority); err != nil {
+		return nil, err
+	}
+	order, err := m.k.ConversionOrders.Get(ctx, msg.Denom)
+	if err != nil {
+		return nil, fmt.Errorf("conversion order %s: %w", msg.Denom, err)
+	}
+	if err := m.k.refund(ctx, types.Pool_POOL_CONTRIBUTORS, order.Remaining); err != nil {
+		return nil, err
+	}
+	if err := m.k.ConversionOrders.Remove(ctx, order.Denom); err != nil {
+		return nil, err
+	}
+	if err := m.k.record(ctx, 0, "cancel_conversion", msg.Authority, chain.NoahCoin(order.Remaining), map[string]string{"denom": order.Denom}); err != nil {
+		return nil, err
+	}
+	return &types.MsgCancelConversionResponse{}, nil
+}
+
+func (m msgServer) Convert(ctx context.Context, msg *types.MsgConvert) (*types.MsgConvertResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if _, err := chain.ParseCanonicalAccountAddress("sender", msg.Sender); err != nil {
+		return nil, err
+	}
+	// Proposals execute after Market's EndBlocker has settled the block, which would strand the escrow.
+	if msg.Sender == m.k.authority {
+		return nil, errors.New("governance authorises conversions; a transaction executes them")
+	}
+	if err := types.ValidateAmount(msg.Amount, true); err != nil {
+		return nil, err
+	}
+	order, err := m.k.ConversionOrders.Get(ctx, msg.Denom)
+	if err != nil {
+		return nil, fmt.Errorf("conversion order %s: %w", msg.Denom, err)
+	}
+	if msg.Amount.GT(order.Remaining) {
+		return nil, errors.New("amount exceeds the conversion order")
+	}
+	p, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.k.validateCompensation(ctx, msg.Denom, p); err != nil {
+		return nil, err
+	}
+	output, fee, err := m.k.market.Swap(ctx, m.k.address, m.k.address, chain.NoahCoin(msg.Amount), msg.Denom, sdk.Coin{})
+	if err != nil {
+		return nil, err
+	}
+	// Output plus fee is the gross quote Market already formed, so neither the sum nor the product can
+	// leave range; truncating the cap refuses a tie.
+	gross := math.LegacyNewDecFromInt(output.Amount).Add(fee.Amount)
+	if fee.Amount.GT(order.MaxSpread.MulTruncate(gross)) {
+		return nil, fmt.Errorf("realised spread %s of %s exceeds the order's cap", fee, gross)
+	}
+	order.Remaining = order.Remaining.Sub(msg.Amount)
+	if order.Remaining.IsZero() {
+		err = m.k.ConversionOrders.Remove(ctx, order.Denom)
+	} else {
+		err = m.k.ConversionOrders.Set(ctx, order.Denom, order)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := m.k.record(ctx, 0, "convert", msg.Sender, chain.NoahCoin(msg.Amount), map[string]string{"output": output.String(), "fee": fee.String()}); err != nil {
+		return nil, err
+	}
+	return &types.MsgConvertResponse{Output: output, Fee: fee}, nil
+}
+
+func (m msgServer) CommitteeCompensate(ctx context.Context, msg *types.MsgCommitteeCompensate) (*types.MsgCommitteeCompensateResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
+	if err != nil {
+		return nil, err
+	}
+	beneficiary, err := chain.ParseCanonicalAccountAddress("beneficiary", msg.Beneficiary)
+	if err != nil {
+		return nil, err
+	}
+	person, err := m.k.Beneficiaries.Get(ctx, beneficiary)
+	if err != nil && !errors.Is(err, collections.ErrNotFound) {
+		return nil, err
+	}
+	if err == nil && person.Seat.IsPositive() {
+		return nil, errors.New("compensation to a seat holder is a governance decision")
+	}
+	// The delay lets governance cancel a stolen key's awards before anything accrues.
+	if len(msg.Schedule) == 0 || msg.Schedule[0].Length < appointment.MinFirstPeriod {
+		return nil, errors.New("first period is shorter than the mandate's minimum")
+	}
+	if err := msg.Amount.Validate(); err != nil {
+		return nil, err
+	}
+	used, count, err := m.k.termUsage(ctx, appointment.Term)
+	if err != nil {
+		return nil, err
+	}
+	if count >= types.MaxTermGrants {
+		return nil, fmt.Errorf("the term has made its %d awards", types.MaxTermGrants)
+	}
+	total, err := used.AmountOf(msg.Amount.Denom).SafeAdd(msg.Amount.Amount)
+	if err != nil {
+		return nil, err
+	}
+	if total.GT(appointment.CompensationAllowance.AmountOf(msg.Amount.Denom)) {
+		return nil, errors.New("award exceeds the term's compensation allowance")
+	}
+	p, err := m.k.Params.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.k.validateCompensation(ctx, msg.Amount.Denom, p); err != nil {
+		return nil, err
+	}
+	id, err := m.k.create(ctx, appointment.Committee, types.GrantKind_GRANT_KIND_COMPENSATION, beneficiary, msg.Amount, msg.Schedule, msg.Reference, appointment.Term)
+	if err != nil {
+		return nil, err
+	}
+	return &types.MsgCommitteeCompensateResponse{GrantId: id}, nil
+}
+
+func (m msgServer) CancelTermGrants(ctx context.Context, msg *types.MsgCancelTermGrants) (*types.MsgCancelTermGrantsResponse, error) {
+	if msg == nil {
+		return nil, errors.New("nil message")
+	}
+	if err := m.authority(ctx, msg.Authority); err != nil {
+		return nil, err
+	}
+	current, err := m.k.GrantsMandate.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if msg.Term == 0 || msg.Term > current.Term {
+		return nil, errors.New("no such committee term")
+	}
+	var ids []uint64
+	if err := m.k.TermGrants.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint64](msg.Term), func(key collections.Pair[uint64, uint64], _ sdk.Coin) (bool, error) {
+		ids = append(ids, key.K2())
+		return false, nil
+	}); err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		g, err := m.k.Grants.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if err := m.k.cancel(ctx, msg.Authority, g); err != nil {
+			return nil, fmt.Errorf("grant %d: %w", id, err)
+		}
+	}
+	if err := m.k.record(ctx, 0, "cancel_term_grants", msg.Authority, chain.NoahCoin(math.ZeroInt()), map[string]uint64{"term": msg.Term}); err != nil {
+		return nil, err
+	}
+	return &types.MsgCancelTermGrantsResponse{}, nil
 }

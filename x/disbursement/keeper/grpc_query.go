@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/collections"
+	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	query "github.com/cosmos/cosmos-sdk/types/query"
@@ -69,15 +70,22 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 	return &types.QueryParamsResponse{Params: p, OwnershipPolicy: policy, FoundingStake: founding}, nil
 }
 
-func (q queryServer) RegistrarMandate(ctx context.Context, req *types.QueryRegistrarMandateRequest) (*types.QueryRegistrarMandateResponse, error) {
+func (q queryServer) GrantsMandate(ctx context.Context, req *types.QueryGrantsMandateRequest) (*types.QueryGrantsMandateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "nil request")
 	}
-	appointment, err := q.k.RegistrarMandate.Get(ctx)
+	appointment, err := q.k.GrantsMandate.Get(ctx)
 	if err != nil {
 		return nil, queryError(err)
 	}
-	return &types.QueryRegistrarMandateResponse{Mandate: appointment, Active: appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()))}, nil
+	used, count, err := q.k.termUsage(ctx, appointment.Term)
+	if err != nil {
+		return nil, queryError(err)
+	}
+	return &types.QueryGrantsMandateResponse{
+		Mandate: appointment, Active: appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		CompensationUsed: used, CompensationGrants: count,
+	}, nil
 }
 
 func (q queryServer) Grant(ctx context.Context, req *types.QueryGrantRequest) (*types.QueryGrantResponse, error) {
@@ -101,9 +109,16 @@ func (q queryServer) Grants(ctx context.Context, req *types.QueryGrantsRequest) 
 	}
 	var grants []types.Grant
 	var response *query.PageResponse
-	if req.Beneficiary == "" {
+	switch {
+	case req.MandateTerm != 0 && req.Beneficiary != "":
+		return nil, status.Error(codes.InvalidArgument, "filter by beneficiary or by term, not both")
+	case req.MandateTerm != 0:
+		grants, response, err = query.CollectionPaginate(ctx, q.k.TermGrants, p, func(key collections.Pair[uint64, uint64], _ sdk.Coin) (types.Grant, error) {
+			return q.k.Grants.Get(ctx, key.K2())
+		}, query.WithCollectionPaginationPairPrefix[uint64, uint64](req.MandateTerm))
+	case req.Beneficiary == "":
 		grants, response, err = query.CollectionPaginate(ctx, q.k.Grants, p, func(_ uint64, g types.Grant) (types.Grant, error) { return g, nil })
-	} else {
+	default:
 		a, parseErr := chain.ParseCanonicalAccountAddress("beneficiary", req.Beneficiary)
 		if parseErr != nil {
 			return nil, status.Error(codes.InvalidArgument, parseErr.Error())
@@ -149,11 +164,7 @@ func (q queryServer) Beneficiary(ctx context.Context, req *types.QueryBeneficiar
 	if err != nil {
 		return nil, queryError(err)
 	}
-	f, err := q.k.founder(ctx, a)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	return &types.QueryBeneficiaryResponse{Beneficiary: p, Founder: f}, nil
+	return &types.QueryBeneficiaryResponse{Beneficiary: p}, nil
 }
 
 func (q queryServer) Releasable(ctx context.Context, req *types.QueryReleasableRequest) (*types.QueryReleasableResponse, error) {
@@ -183,7 +194,38 @@ func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest
 	if err != nil {
 		return nil, queryError(err)
 	}
-	return &types.QueryBalanceResponse{Balance: q.k.bank.GetBalance(ctx, q.k.address, req.Denom), Totals: t, Unallocated: available}, nil
+	res := &types.QueryBalanceResponse{
+		Balance: q.k.bank.GetBalance(ctx, q.k.address, req.Denom), Totals: t, Unallocated: available,
+		MemberPool: types.EmptyPool(), ContributorPool: types.EmptyPool(), Converting: math.ZeroInt(),
+	}
+	if req.Denom != chain.NoahBaseDenom {
+		return res, nil
+	}
+	if res.MemberPool, err = q.k.MemberPool.Get(ctx); err != nil {
+		return nil, queryError(err)
+	}
+	if res.ContributorPool, err = q.k.ContributorPool.Get(ctx); err != nil {
+		return nil, queryError(err)
+	}
+	if res.Converting, err = q.k.converting(ctx); err != nil {
+		return nil, queryError(err)
+	}
+	return res, nil
+}
+
+func (q queryServer) ConversionOrders(ctx context.Context, req *types.QueryConversionOrdersRequest) (*types.QueryConversionOrdersResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "nil request")
+	}
+	p, err := page(req.Pagination)
+	if err != nil {
+		return nil, err
+	}
+	orders, response, err := query.CollectionPaginate(ctx, q.k.ConversionOrders, p, func(_ string, o types.ConversionOrder) (types.ConversionOrder, error) { return o, nil })
+	if err != nil {
+		return nil, queryError(err)
+	}
+	return &types.QueryConversionOrdersResponse{Orders: orders, Pagination: response}, nil
 }
 
 func (q queryServer) Totals(ctx context.Context, req *types.QueryTotalsRequest) (*types.QueryTotalsResponse, error) {

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,12 +16,52 @@ import (
 
 // DefaultGenesisState holds no commitments, custody or founder seats.
 func DefaultGenesisState() *GenesisState {
-	return &GenesisState{Params: DefaultParams(), OwnershipPolicy: DefaultOwnershipPolicy(), RegistrarMandate: DefaultRegistrarMandate(), NextGrantId: 1, NextJournalId: 1}
+	return &GenesisState{Params: DefaultParams(), OwnershipPolicy: DefaultOwnershipPolicy(), GrantsMandate: DefaultGrantsMandate(), NextGrantId: 1, NextJournalId: 1, MemberPool: EmptyPool(), ContributorPool: EmptyPool()}
 }
 
 // EmptyTotals supplies explicit zero-valued counters for a denomination.
 func EmptyTotals(denom string) DenomTotals {
 	return DenomTotals{Denom: denom, Reserved: math.ZeroInt(), MembersPaid: math.ZeroInt(), OwnershipPaid: math.ZeroInt(), CompensationPaid: math.ZeroInt()}
+}
+
+// EmptyPool is an unfunded pool with nothing open.
+func EmptyPool() PoolBalance {
+	return PoolBalance{Unallocated: math.ZeroInt(), Open: math.ZeroInt()}
+}
+
+// Validate bounds a pool and keeps its open tranche inside it.
+func (p PoolBalance) Validate() error {
+	for _, v := range []math.Int{p.Unallocated, p.Open} {
+		if err := ValidateAmount(v, false); err != nil {
+			return err
+		}
+	}
+	if p.Open.GT(p.Unallocated) {
+		return errors.New("open tranche exceeds its pool")
+	}
+	return nil
+}
+
+// ValidateMaxSpread admits a cap strictly between zero and one; a spread of one pays nothing.
+func ValidateMaxSpread(spread math.LegacyDec) error {
+	if spread.IsNil() || !spread.IsPositive() || !spread.LT(math.LegacyOneDec()) {
+		return errors.New("max spread must be above zero and below one")
+	}
+	return nil
+}
+
+// Validate checks a live order; an exhausted order is removed rather than kept at zero.
+func (o ConversionOrder) Validate() error {
+	if err := sdk.ValidateDenom(o.Denom); err != nil {
+		return err
+	}
+	if o.Denom == chain.NoahBaseDenom {
+		return errors.New("conversion orders sell NOAH for another denomination")
+	}
+	if err := ValidateAmount(o.Remaining, true); err != nil {
+		return err
+	}
+	return ValidateMaxSpread(o.MaxSpread)
 }
 
 // Validate checks permanent grant terms and conservation independently of Bank.
@@ -91,6 +130,9 @@ func (g Grant) Validate() error {
 			return errors.New("invalid member suspension")
 		}
 	}
+	if g.MandateTerm != 0 && g.Kind != GrantKind_GRANT_KIND_COMPENSATION {
+		return errors.New("only compensation carries a committee term")
+	}
 	return nil
 }
 
@@ -102,13 +144,29 @@ func (gs GenesisState) Validate() error {
 	if err := gs.OwnershipPolicy.Validate(); err != nil {
 		return err
 	}
-	if err := gs.RegistrarMandate.Validate(); err != nil {
+	if err := gs.GrantsMandate.Validate(); err != nil {
 		return err
 	}
 	if gs.NextGrantId == 0 || gs.NextJournalId == 0 {
 		return errors.New("next IDs must be positive")
 	}
+	for _, p := range []PoolBalance{gs.MemberPool, gs.ContributorPool} {
+		if err := p.Validate(); err != nil {
+			return err
+		}
+	}
+	orders := make(map[string]bool, len(gs.ConversionOrders))
+	for _, o := range gs.ConversionOrders {
+		if orders[o.Denom] {
+			return errors.New("duplicate conversion order")
+		}
+		if err := o.Validate(); err != nil {
+			return err
+		}
+		orders[o.Denom] = true
+	}
 	people := make(map[string]Beneficiary, len(gs.Beneficiaries))
+	foundingStake := math.ZeroInt()
 	for _, p := range gs.Beneficiaries {
 		if _, ok := people[p.Address]; ok {
 			return errors.New("duplicate beneficiary")
@@ -118,50 +176,28 @@ func (gs GenesisState) Validate() error {
 				return err
 			}
 		}
-		if err := ValidateAmount(p.OwnershipPaid, false); err != nil {
+		for _, v := range []math.Int{p.OwnershipPaid, p.Seat} {
+			if err := ValidateAmount(v, false); err != nil {
+				return err
+			}
+		}
+		if !p.Seat.IsZero() && !p.Seat.Equal(chain.NativeBaseAmount(chain.SeatGrantNoah)) {
+			return errors.New("founding seat must be zero or the genesis seat principal")
+		}
+		var err error
+		foundingStake, err = foundingStake.SafeAdd(p.Seat)
+		if err != nil {
 			return err
 		}
 		people[p.Address] = p
-	}
-	founders := make(map[string]bool, len(gs.Founders))
-	foundingStake := math.ZeroInt()
-	for _, f := range gs.Founders {
-		op, err := chain.ParseCanonicalValidatorAddress("founder operator", f.Operator)
-		if err != nil {
-			return err
-		}
-		beneficiary, err := chain.ParseCanonicalAccountAddress("founder beneficiary", f.Beneficiary)
-		if err != nil {
-			return err
-		}
-		if !bytes.Equal(op, beneficiary) {
-			return errors.New("founder beneficiary must be the genesis operator account")
-		}
-		if founders[f.Beneficiary] {
-			return errors.New("duplicate founder")
-		}
-		if _, ok := people[f.Beneficiary]; !ok {
-			return errors.New("founder has no beneficiary record")
-		}
-		if err := ValidateAmount(f.SeatAmount, true); err != nil {
-			return err
-		}
-		if !f.SeatAmount.Equal(chain.NativeBaseAmount(chain.SeatGrantNoah)) {
-			return errors.New("founder seat must equal the genesis seat principal")
-		}
-		foundingStake, err = foundingStake.SafeAdd(f.SeatAmount)
-		if err != nil {
-			return err
-		}
-		founders[f.Beneficiary] = true
 	}
 	if err := ValidateAmount(foundingStake, false); err != nil {
 		return err
 	}
 	voided := make(map[uint64]bool, len(gs.VoidedTerms))
 	for i, term := range gs.VoidedTerms {
-		if term == 0 || term >= gs.RegistrarMandate.Term || (i > 0 && term <= gs.VoidedTerms[i-1]) {
-			return errors.New("voided terms must be increasing registrar terms below the current one")
+		if term == 0 || term >= gs.GrantsMandate.Term || (i > 0 && term <= gs.VoidedTerms[i-1]) {
+			return errors.New("voided terms must be increasing committee terms below the current one")
 		}
 		voided[term] = true
 	}
@@ -169,9 +205,29 @@ func (gs GenesisState) Validate() error {
 	members := make(map[string]bool)
 	totals := make(map[string]DenomTotals)
 	ownership := make(map[string]math.Int)
+	termGrants := make(map[uint64]int)
+	live := gs.GrantsMandate
+	liveUsed := sdk.NewCoins()
 	for _, g := range gs.Grants {
 		if err := g.Validate(); err != nil {
 			return fmt.Errorf("grant %d: %w", g.Id, err)
+		}
+		if term := g.MandateTerm; term != 0 {
+			if term > live.Term {
+				return fmt.Errorf("grant %d has a future committee term", g.Id)
+			}
+			if p, ok := people[g.Beneficiary]; ok && p.Seat.IsPositive() {
+				return fmt.Errorf("grant %d: committee compensation to a seat holder", g.Id)
+			}
+			if termGrants[term]++; termGrants[term] > MaxTermGrants {
+				return fmt.Errorf("committee term %d exceeds %d awards", term, MaxTermGrants)
+			}
+			if term == live.Term {
+				if g.Schedule[0].Length < live.MinFirstPeriod {
+					return fmt.Errorf("grant %d: first period is shorter than the mandate's minimum", g.Id)
+				}
+				liveUsed = liveUsed.Add(g.Amount)
+			}
 		}
 		if g.Id >= gs.NextGrantId {
 			return errors.New("grant ID is not below next ID")
@@ -189,8 +245,8 @@ func (gs GenesisState) Validate() error {
 		}
 		if g.Suspension != nil {
 			s := g.Suspension
-			if s.Term > gs.RegistrarMandate.Term {
-				return errors.New("suspension has a future registrar term")
+			if s.Term > gs.GrantsMandate.Term {
+				return errors.New("suspension has a future committee term")
 			}
 			if !voided[s.Term] {
 				earned, _, err := Accrued(g, s.At)
@@ -233,6 +289,9 @@ func (gs GenesisState) Validate() error {
 		}
 		totals[g.Amount.Denom] = t
 		grants[g.Id] = g
+	}
+	if !liveUsed.IsAllLTE(live.CompensationAllowance) {
+		return errors.New("the live term's committee awards exceed its compensation allowance")
 	}
 	for address, p := range people {
 		paid, ok := ownership[address]
@@ -304,7 +363,8 @@ func (gs GenesisState) Validate() error {
 		}
 		if e.GrantId == 0 {
 			switch e.Action {
-			case "params", "registrar_mandate", "controller", "void_suspensions", "return_unallocated":
+			case "params", "grants_mandate", "controller", "void_suspensions", "return_unallocated",
+				"open_tranche", "authorise_conversion", "cancel_conversion", "convert", "cancel_term_grants":
 			default:
 				return errors.New("invalid administrative journal action")
 			}

@@ -13,6 +13,7 @@ import (
 	assetkeeper "github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/disbursement/keeper"
 	"github.com/ararat-network/ark/x/disbursement/types"
+	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
 )
 
 var _ depinject.OnePerModuleType = AppModule{}
@@ -32,6 +33,7 @@ type ModuleInputs struct {
 	BankKeeper         types.BankKeeper
 	DistributionKeeper types.DistributionKeeper
 	StakingKeeper      types.StakingKeeper
+	MarketKeeper       *marketkeeper.Keeper
 	AssetKeeper        *assetkeeper.Keeper
 }
 
@@ -44,6 +46,6 @@ type ModuleOutputs struct {
 
 // ProvideModule constructs the governance-controlled disbursement module.
 func ProvideModule(in ModuleInputs) ModuleOutputs {
-	k := keeper.NewKeeper(in.Cdc, in.StoreService, authtypes.NewModuleAddress(govtypes.ModuleName).String(), in.AccountKeeper, in.WasmKeeper, in.BankKeeper, in.DistributionKeeper, in.StakingKeeper, in.AssetKeeper.Assets)
+	k := keeper.NewKeeper(in.Cdc, in.StoreService, authtypes.NewModuleAddress(govtypes.ModuleName).String(), in.AccountKeeper, in.WasmKeeper, in.BankKeeper, in.DistributionKeeper, in.StakingKeeper, in.MarketKeeper, in.AssetKeeper.Assets)
 	return ModuleOutputs{DisbursementKeeper: k, Module: NewAppModule(k)}
 }

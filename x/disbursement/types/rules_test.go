@@ -11,6 +11,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
@@ -101,6 +102,17 @@ func TestRandomisedScheduleConservation(t *testing.T) {
 }
 
 func TestGenesisValidation(t *testing.T) {
+	seated := func(seat math.Int) func(*types.GenesisState) {
+		return func(g *types.GenesisState) {
+			a := sdk.AccAddress(make([]byte, 20)).String()
+			g.Beneficiaries = []types.Beneficiary{{Address: a, Controller: a, OwnershipPaid: math.ZeroInt(), Seat: seat}}
+		}
+	}
+	ordered := func(denom string, remaining int64, maxSpread string) func(*types.GenesisState) {
+		return func(g *types.GenesisState) {
+			g.ConversionOrders = []types.ConversionOrder{{Denom: denom, Remaining: math.NewInt(remaining), MaxSpread: math.LegacyMustNewDecFromStr(maxSpread)}}
+		}
+	}
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.GenesisState)
@@ -111,19 +123,19 @@ func TestGenesisValidation(t *testing.T) {
 		{"missing journal", func(g *types.GenesisState) { g.NextJournalId = 2 }, false},
 		{"changed ownership fraction", func(g *types.GenesisState) { g.OwnershipPolicy.Numerator = 5 }, false},
 		{"nil ownership ceiling", func(g *types.GenesisState) { g.OwnershipPolicy.Ceiling = math.Int{} }, false},
-		{"voided live term", func(g *types.GenesisState) { g.RegistrarMandate.Term = 1; g.VoidedTerms = []uint64{1} }, false},
+		{"voided live term", func(g *types.GenesisState) { g.GrantsMandate.Term = 1; g.VoidedTerms = []uint64{1} }, false},
 		{"voided replaced term", func(g *types.GenesisState) {
-			g.RegistrarMandate = types.NewDisabledRegistrarMandate(2)
+			g.GrantsMandate = types.NewDisabledGrantsMandate(2)
 			g.VoidedTerms = []uint64{1}
 		}, true},
 		{"unordered voided terms", func(g *types.GenesisState) {
-			g.RegistrarMandate = types.NewDisabledRegistrarMandate(3)
+			g.GrantsMandate = types.NewDisabledGrantsMandate(3)
 			g.VoidedTerms = []uint64{2, 1}
 		}, false},
 		{"mandate window without span", func(g *types.GenesisState) {
-			g.RegistrarMandate.Term = 1
-			g.RegistrarMandate.Committee = sdk.AccAddress(make([]byte, 20)).String()
-			g.RegistrarMandate.ActivationHeight, g.RegistrarMandate.ExpiryHeight = 5, 5
+			g.GrantsMandate.Term = 1
+			g.GrantsMandate.Committee = sdk.AccAddress(make([]byte, 20)).String()
+			g.GrantsMandate.ActivationHeight, g.GrantsMandate.ExpiryHeight = 5, 5
 		}, false},
 		{"unordered issuance", func(g *types.GenesisState) {
 			g.Issuance.Entries = []types.IssuanceEntry{{At: 2, Count: 1}, {At: 1, Count: 1}}
@@ -131,6 +143,25 @@ func TestGenesisValidation(t *testing.T) {
 		{"excess issuance", func(g *types.GenesisState) {
 			g.Issuance.Entries = []types.IssuanceEntry{{At: 1, Count: types.MaxIssuanceMembers + 1}}
 		}, false},
+		{"open tranche at its pool", func(g *types.GenesisState) {
+			g.MemberPool = types.PoolBalance{Unallocated: math.NewInt(10), Open: math.NewInt(10)}
+		}, true},
+		{"open tranche beyond its pool", func(g *types.GenesisState) {
+			g.ContributorPool = types.PoolBalance{Unallocated: math.NewInt(10), Open: math.NewInt(11)}
+		}, false},
+		{"nil pool", func(g *types.GenesisState) { g.ContributorPool.Open = math.Int{} }, false},
+		{"conversion order", ordered("ausd", 1, "0.999999999999999999"), true},
+		{"NOAH conversion order", ordered("anoah", 1, "0.05"), false},
+		{"exhausted conversion order", ordered("ausd", 0, "0.05"), false},
+		{"conversion order at a whole spread", ordered("ausd", 1, "1"), false},
+		{"duplicate conversion order", func(g *types.GenesisState) {
+			ordered("ausd", 1, "0.05")(g)
+			g.ConversionOrders = append(g.ConversionOrders, g.ConversionOrders[0])
+		}, false},
+		{"founding seat", seated(chain.NativeBaseAmount(chain.SeatGrantNoah)), true},
+		{"no seat", seated(math.ZeroInt()), true},
+		{"partial seat", seated(chain.NativeBaseAmount(chain.SeatGrantNoah).SubRaw(1)), false},
+		{"nil seat", seated(math.Int{}), false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			g := types.DefaultGenesisState()
@@ -172,6 +203,57 @@ func TestAccrualBoundaries(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, math.NewInt(tc.want), earned)
 			require.Equal(t, tc.next, next)
+		})
+	}
+}
+
+func TestGrantsMandateValidation(t *testing.T) {
+	allowance := sdk.NewCoins(sdk.NewInt64Coin("ausd", 1_000))
+	active := func() types.GrantsMandate {
+		m := types.NewDisabledGrantsMandate(1)
+		m.Committee = sdk.AccAddress(make([]byte, 20)).String()
+		m.ActivationHeight, m.ExpiryHeight = 5, 10
+		return m
+	}
+	for _, tc := range []struct {
+		name   string
+		mutate func(*types.GrantsMandate)
+		valid  bool
+	}{
+		{"members only", func(*types.GrantsMandate) {}, true},
+		{"compensation", func(m *types.GrantsMandate) { m.CompensationAllowance, m.MinFirstPeriod = allowance, 1 }, true},
+		{"century period", func(m *types.GrantsMandate) {
+			m.CompensationAllowance, m.MinFirstPeriod = allowance, types.MaxPeriodLength
+		}, true},
+		{"allowance without delay", func(m *types.GrantsMandate) { m.CompensationAllowance = allowance }, false},
+		{"period past a century", func(m *types.GrantsMandate) {
+			m.CompensationAllowance, m.MinFirstPeriod = allowance, types.MaxPeriodLength+1
+		}, false},
+		{"unsorted allowance", func(m *types.GrantsMandate) {
+			m.CompensationAllowance, m.MinFirstPeriod = sdk.Coins{sdk.NewInt64Coin("ausd", 1), sdk.NewInt64Coin("anoah", 1)}, 1
+		}, false},
+		{"allowance above 128 bits", func(m *types.GrantsMandate) {
+			m.CompensationAllowance = sdk.NewCoins(sdk.NewCoin("ausd", math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))))
+			m.MinFirstPeriod = 1
+		}, false},
+		{"disabled with an allowance", func(m *types.GrantsMandate) {
+			*m = types.NewDisabledGrantsMandate(1)
+			m.CompensationAllowance, m.MinFirstPeriod = allowance, 1
+		}, false},
+		{"disabled with a period", func(m *types.GrantsMandate) {
+			*m = types.NewDisabledGrantsMandate(1)
+			m.MinFirstPeriod = 1
+		}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := active()
+			tc.mutate(&m)
+			err := m.Validate()
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
 		})
 	}
 }

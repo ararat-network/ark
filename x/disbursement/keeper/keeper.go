@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
@@ -24,6 +25,7 @@ type Keeper struct {
 	bank                types.BankKeeper
 	distribution        types.DistributionKeeper
 	staking             types.StakingKeeper
+	market              types.MarketKeeper
 	assets              types.AssetReader
 	account             types.AccountKeeper
 	wasm                types.WasmKeeper
@@ -33,10 +35,9 @@ type Keeper struct {
 	Grants              collections.Map[uint64, types.Grant]
 	Beneficiaries       collections.Map[sdk.AccAddress, types.Beneficiary]
 	Members             collections.Map[sdk.AccAddress, uint64]
-	Founders            collections.Map[sdk.ValAddress, types.Founder]
 	Totals              collections.Map[string, types.DenomTotals]
 	Issuance            collections.Item[types.Issuance]
-	RegistrarMandate    collections.Item[types.RegistrarMandate]
+	GrantsMandate       collections.Item[types.GrantsMandate]
 	Journal             collections.Map[uint64, types.JournalEntry]
 	NextGrantID         collections.Sequence
 	NextJournalID       collections.Sequence
@@ -46,26 +47,30 @@ type Keeper struct {
 	FounderPaid         collections.Item[math.Int]
 	FounderRemaining    collections.Item[math.Int]
 	VoidedTerms         collections.KeySet[uint64]
+	MemberPool          collections.Item[types.PoolBalance]
+	ContributorPool     collections.Item[types.PoolBalance]
+	ConversionOrders    collections.Map[string, types.ConversionOrder]
+	// TermGrants indexes committee awards by term with their amounts, so usage never decodes a grant.
+	TermGrants collections.Map[collections.Pair[uint64, uint64], sdk.Coin]
 }
 
 // NewKeeper constructs the disbursement module with narrowly scoped capabilities.
-func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority string, account types.AccountKeeper, wasm types.WasmKeeper, bank types.BankKeeper, distribution types.DistributionKeeper, staking types.StakingKeeper, assets types.AssetReader) *Keeper {
+func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority string, account types.AccountKeeper, wasm types.WasmKeeper, bank types.BankKeeper, distribution types.DistributionKeeper, staking types.StakingKeeper, market types.MarketKeeper, assets types.AssetReader) *Keeper {
 	address := account.GetModuleAddress(types.ModuleName)
 	if address == nil {
 		panic("disbursement module account is not registered")
 	}
 	sb := collections.NewSchemaBuilder(service)
 	k := &Keeper{
-		authority: authority, address: address, bank: bank, distribution: distribution, staking: staking, assets: assets, account: account, wasm: wasm,
+		authority: authority, address: address, bank: bank, distribution: distribution, staking: staking, market: market, assets: assets, account: account, wasm: wasm,
 		Params:              collections.NewItem(sb, collections.NewPrefix(0), "params", codec.CollValue[types.Params](cdc)),
 		OwnershipPolicy:     collections.NewItem(sb, collections.NewPrefix(1), "ownership_policy", codec.CollValue[types.OwnershipPolicy](cdc)),
 		Grants:              collections.NewMap(sb, collections.NewPrefix(2), "grants", collections.Uint64Key, codec.CollValue[types.Grant](cdc)),
 		Beneficiaries:       collections.NewMap(sb, collections.NewPrefix(3), "beneficiaries", sdk.AccAddressKey, codec.CollValue[types.Beneficiary](cdc)),
 		Members:             collections.NewMap(sb, collections.NewPrefix(4), "members", sdk.AccAddressKey, collections.Uint64Value),
-		Founders:            collections.NewMap(sb, collections.NewPrefix(5), "founders", sdk.ValAddressKey, codec.CollValue[types.Founder](cdc)),
 		Totals:              collections.NewMap(sb, collections.NewPrefix(6), "totals", collections.StringKey, codec.CollValue[types.DenomTotals](cdc)),
 		Issuance:            collections.NewItem(sb, collections.NewPrefix(7), "issuance", codec.CollValue[types.Issuance](cdc)),
-		RegistrarMandate:    collections.NewItem(sb, collections.NewPrefix(8), "registrar_mandate", codec.CollValue[types.RegistrarMandate](cdc)),
+		GrantsMandate:       collections.NewItem(sb, collections.NewPrefix(8), "grants_mandate", codec.CollValue[types.GrantsMandate](cdc)),
 		Journal:             collections.NewMap(sb, collections.NewPrefix(9), "journal", collections.Uint64Key, codec.CollValue[types.JournalEntry](cdc)),
 		NextGrantID:         collections.NewSequence(sb, collections.NewPrefix(10), "next_grant_id"),
 		NextJournalID:       collections.NewSequence(sb, collections.NewPrefix(11), "next_journal_id"),
@@ -75,6 +80,10 @@ func NewKeeper(cdc codec.BinaryCodec, service store.KVStoreService, authority st
 		FounderPaid:         collections.NewItem(sb, collections.NewPrefix(15), "founder_paid", sdk.IntValue),
 		FounderRemaining:    collections.NewItem(sb, collections.NewPrefix(16), "founder_remaining", sdk.IntValue),
 		VoidedTerms:         collections.NewKeySet(sb, collections.NewPrefix(17), "voided_terms", collections.Uint64Key),
+		MemberPool:          collections.NewItem(sb, collections.NewPrefix(18), "member_pool", codec.CollValue[types.PoolBalance](cdc)),
+		ContributorPool:     collections.NewItem(sb, collections.NewPrefix(19), "contributor_pool", codec.CollValue[types.PoolBalance](cdc)),
+		ConversionOrders:    collections.NewMap(sb, collections.NewPrefix(20), "conversion_orders", collections.StringKey, codec.CollValue[types.ConversionOrder](cdc)),
+		TermGrants:          collections.NewMap(sb, collections.NewPrefix(21), "term_grants", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key), codec.CollValue[sdk.Coin](cdc)),
 	}
 	var err error
 	k.Schema, err = sb.Build()
@@ -93,16 +102,125 @@ func (k *Keeper) totals(ctx context.Context, denom string) (types.DenomTotals, e
 	return t, err
 }
 
+// unallocated is custody outside reservations, pools, and conversion orders.
 func (k *Keeper) unallocated(ctx context.Context, denom string) (math.Int, error) {
 	t, err := k.totals(ctx, denom)
 	if err != nil {
 		return math.Int{}, err
 	}
-	balance := k.bank.GetBalance(ctx, k.address, denom).Amount
-	if balance.LT(t.Reserved) {
-		return math.Int{}, errors.New("disbursement custody is below its reservation")
+	held := t.Reserved
+	if denom == chain.NoahBaseDenom {
+		committed, err := k.committed(ctx)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if held, err = held.SafeAdd(committed); err != nil {
+			return math.Int{}, err
+		}
 	}
-	return balance.Sub(t.Reserved), nil
+	balance := k.bank.GetBalance(ctx, k.address, denom).Amount
+	if balance.LT(held) {
+		return math.Int{}, errors.New("disbursement custody is below its commitments")
+	}
+	return balance.Sub(held), nil
+}
+
+// committed is the NOAH held in both pools and in conversion orders.
+func (k *Keeper) committed(ctx context.Context) (math.Int, error) {
+	total, err := k.converting(ctx)
+	if err != nil {
+		return math.Int{}, err
+	}
+	for _, item := range []collections.Item[types.PoolBalance]{k.MemberPool, k.ContributorPool} {
+		p, err := item.Get(ctx)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if total, err = total.SafeAdd(p.Unallocated); err != nil {
+			return math.Int{}, err
+		}
+	}
+	return total, nil
+}
+
+// converting sums the NOAH conversion orders still hold.
+func (k *Keeper) converting(ctx context.Context) (math.Int, error) {
+	total := math.ZeroInt()
+	err := k.ConversionOrders.Walk(ctx, nil, func(_ string, o types.ConversionOrder) (bool, error) {
+		var err error
+		total, err = total.SafeAdd(o.Remaining)
+		return err != nil, err
+	})
+	return total, err
+}
+
+// pool returns the store item behind a distribution pool.
+func (k *Keeper) pool(p types.Pool) (collections.Item[types.PoolBalance], error) {
+	switch p {
+	case types.Pool_POOL_MEMBERS:
+		return k.MemberPool, nil
+	case types.Pool_POOL_CONTRIBUTORS:
+		return k.ContributorPool, nil
+	}
+	return collections.Item[types.PoolBalance]{}, errors.New("unknown distribution pool")
+}
+
+// source names the pool a grant draws from; POOL_UNSPECIFIED is custody outside the pools.
+func source(kind types.GrantKind, denom string) types.Pool {
+	switch {
+	case denom != chain.NoahBaseDenom:
+		return types.Pool_POOL_UNSPECIFIED
+	case kind == types.GrantKind_GRANT_KIND_MEMBER:
+		return types.Pool_POOL_MEMBERS
+	default:
+		return types.Pool_POOL_CONTRIBUTORS
+	}
+}
+
+// draw commits amount from its source: a pool's open tranche, or unallocated custody otherwise.
+func (k *Keeper) draw(ctx context.Context, from types.Pool, amount sdk.Coin) error {
+	if from == types.Pool_POOL_UNSPECIFIED {
+		available, err := k.unallocated(ctx, amount.Denom)
+		if err != nil {
+			return err
+		}
+		if available.LT(amount.Amount) {
+			return errors.New("insufficient unallocated disbursement funds")
+		}
+		return nil
+	}
+	item, err := k.pool(from)
+	if err != nil {
+		return err
+	}
+	p, err := item.Get(ctx)
+	if err != nil {
+		return err
+	}
+	if p.Open.LT(amount.Amount) {
+		return fmt.Errorf("%s exceeds the open %s tranche", amount, from)
+	}
+	p.Unallocated, p.Open = p.Unallocated.Sub(amount.Amount), p.Open.Sub(amount.Amount)
+	return item.Set(ctx, p)
+}
+
+// refund returns unearned NOAH to its pool's open tranche, the step the plan charged it to.
+func (k *Keeper) refund(ctx context.Context, to types.Pool, amount math.Int) error {
+	item, err := k.pool(to)
+	if err != nil {
+		return err
+	}
+	p, err := item.Get(ctx)
+	if err != nil {
+		return err
+	}
+	if p.Unallocated, err = p.Unallocated.SafeAdd(amount); err != nil {
+		return err
+	}
+	if p.Open, err = p.Open.SafeAdd(amount); err != nil {
+		return err
+	}
+	return item.Set(ctx, p)
 }
 
 func blockTime(ctx context.Context) (uint64, error) {
@@ -131,17 +249,6 @@ func (k *Keeper) suspended(ctx context.Context, g types.Grant) (bool, error) {
 	}
 	voided, err := k.VoidedTerms.Has(ctx, g.Suspension.Term)
 	return !voided, err
-}
-
-func (k *Keeper) founder(ctx context.Context, beneficiary sdk.AccAddress) (*types.Founder, error) {
-	f, err := k.Founders.Get(ctx, sdk.ValAddress(beneficiary))
-	if errors.Is(err, collections.ErrNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &f, nil
 }
 
 // record is the only journal writer; callers commit it with the state and bank movement.
