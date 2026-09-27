@@ -1,7 +1,7 @@
 <h1>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/ark-logo-horizontal-white.svg">
-    <img src="docs/brand/svg/ark-logo-horizontal-navy.svg" alt="Ark" width="280">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/ark-logo-horizontal-flush-white.svg">
+    <img src="docs/brand/svg/ark-logo-horizontal-flush-navy.svg" alt="Ark" width="280">
   </picture>
 </h1>
 

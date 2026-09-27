@@ -11,7 +11,8 @@ record are in the [logo kit](README.md).
 
 | Use | File |
 |---|---|
-| Website header, docs, slides, README | `svg/ark-logo-horizontal-navy.svg` (primary) |
+| Website header, docs, slides | `svg/ark-logo-horizontal-navy.svg` (primary) |
+| Inline with text, such as a README heading | `svg/ark-logo-horizontal-flush-navy.svg` (no side padding, so it lines up with the text) |
 | Square or tall spaces, social posts | `svg/ark-logo-stacked-navy.svg` |
 | Symbol on its own, 32 px and up | `svg/ark-symbol-navy.svg` |
 | Symbol from 16 to 31 px | `svg/ark-symbol-small-navy.svg` |

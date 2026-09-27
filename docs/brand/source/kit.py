@@ -103,7 +103,8 @@ def symbol_file(fill, reversed_, small=False):
 
 SYM_SCALE, WM_GAP_K, PAD = 0.86, 0.75, 24
 
-def horizontal_file(fill, reversed_):
+def horizontal_file(fill, reversed_, pad=PAD):
+    """pad=0 gives the flush lockup, which lines up with text in Markdown."""
     d = D_REV if reversed_ else 0.0
     sym = symbol(**MAIN, d=d)
     x0, y0, x1, y1 = symbol_bounds(**MAIN)
@@ -112,7 +113,7 @@ def horizontal_file(fill, reversed_):
     gap = WM_GAP_K * MAIN["h"] * k
     wm, _, wb = wordmark(d=d * 0.5)
     wx = x1 * k + gap
-    left, right = x0 * k - PAD, wx + wb[2] + PAD
+    left, right = x0 * k - pad, wx + wb[2] + pad
     body = (g(sym, fill, f"translate(0 {f(ty)}) scale({k})") + "\n  " +
             g(wm, fill, f"translate({f(wx)} 0)"))
     return doc(f"{f(left)} 0 {f(right-left)} 256", right - left, 256, "Ark", body)
@@ -162,6 +163,7 @@ def main():
     for name, fn in (("ark-symbol", lambda c, r: symbol_file(c, r)),
                      ("ark-symbol-small", lambda c, r: symbol_file(c, r, small=True)),
                      ("ark-logo-horizontal", horizontal_file),
+                     ("ark-logo-horizontal-flush", lambda c, r: horizontal_file(c, r, pad=0)),
                      ("ark-logo-stacked", stacked_file),
                      ("ark-wordmark", wordmark_file)):
         for cname, colour, rev in (("navy", NAVY, False), ("black", "#000000", False), ("white", "#FFFFFF", True)):

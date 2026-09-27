@@ -8,8 +8,8 @@ anyone putting the mark on a site, wallet, document or print. The mark is **Whol
 
 | Folder | What's inside |
 |---|---|
-| `svg/` | Masters: symbol, small symbol, horizontal, stacked and wordmark, each in navy, black and white (reversed, thinned) |
-| `png/` | Transparent PNGs of every master: symbol 512/1024/2048, horizontal 1200/2400, stacked 1024, wordmark 1200, and a horizontal on white |
+| `svg/` | Masters: symbol, small symbol, horizontal, stacked and wordmark, each in navy, black and white (reversed, thinned), plus a flush horizontal lockup without side padding for Markdown (SVG only) |
+| `png/` | Transparent PNGs: symbol 512/1024/2048, horizontal 1200/2400, stacked 1024, wordmark 1200, and a horizontal on white |
 | `web/` | `favicon.ico`, `favicon.svg` (switches to Tide in dark mode), 16/32/48 PNGs, `apple-touch-icon.png`, `icon-192/512.png`, `maskable-512.png`, `ark-app-icon.svg`, `site.webmanifest`, `head-snippet.html` |
 | `social/` | Circle-safe avatar (SVG, 400 and 1024 PNG) and a padded square symbol |
 | `motifs/` | The three-deck secondary graphic, in the fund colours and in navy |
@@ -49,7 +49,7 @@ available outside the logo.
 
 ## Test results
 
-- **Audit:** all 20 kit SVGs pass the skill's audit with no warnings: 5 score 100, 12 score 99, 3 score 98 (fractional
+- **Audit:** all 23 kit SVGs pass the skill's audit with no warnings: 5 score 100, 15 score 99, 3 score 98 (fractional
   viewBoxes only). Details are in `tests/svg-audit.txt`.
 - **Test sheet:** the mark holds at 16, 32 and 48 px in the pixel test, reversed, blurred, in one colour, on navy, photo
   and pattern backgrounds, and in favicon, app-icon, avatar, header and business-card contexts. Only its top section is
