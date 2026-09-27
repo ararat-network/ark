@@ -131,25 +131,32 @@ Other engineering follow-ups are tracked in [future changes](../direction/FUTURE
 
 ## 7. Grant tranches
 
-The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md) (D87).
-Find its custody address with `arkd query auth module-account disbursement`, and inspect `arkd query disbursement params`
-before funding. `GOV` below is the governance authority; `DISBURSEMENT_ACCOUNT` is that module account. No contract upload,
-instantiation, or sudo is involved. Amounts are denomination base units and timestamps are block time.
+The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md) (D87,
+D88), which holds the member and contributor pools from genesis. Inspect `arkd query disbursement params` and
+`arkd query disbursement balance anoah`, which shows both pools and their open tranches, before proposing. `GOV` below
+is the governance authority. No contract upload, instantiation, or sudo is involved. Amounts are denomination base
+units and timestamps are block time.
 
-**A member tranche** is a `MsgCommunityPoolSpend` into disbursement custody. Appoint the registrar with
-`/ark.disbursement.v1.MsgSetRegistrarMandate`, naming the exact committee account and a half-open height window. The
-appointment is its own message, so operational params never travel with it; every appointment advances the term the
-registrar's transactions must carry, shown by `query disbursement registrar-mandate`. Launch artifacts set 250 members
-per rolling seven days and leave the mandate disabled; ownership policy and founding identities are not operational
-params.
+**A member tranche** is a `MsgOpenTranche` on the member pool; it moves no coins. Appoint the grants committee
+with `/ark.disbursement.v1.MsgSetGrantsMandate`, naming the exact committee account, a half-open height window, and
+its compensation power: a per-denomination allowance for the term and the minimum first period of an award, one month
+in the example; an appointment without compensation leaves both empty. The appointment is its own message, so
+operational params never travel with it; every appointment advances the term the committee's transactions must carry,
+shown by `query disbursement grants-mandate`. Launch artifacts set 250 members per rolling seven days and leave the
+mandate disabled; ownership policy and founding identities are not operational params.
 
 ```json
 {
-  "@type": "/ark.disbursement.v1.MsgSetRegistrarMandate",
+  "@type": "/ark.disbursement.v1.MsgSetGrantsMandate",
   "authority": "GOV",
-  "committee": "REGISTRAR",
+  "committee": "COMMITTEE",
   "activation_height": "ACTIVATION",
-  "expiry_height": "EXPIRY"
+  "expiry_height": "EXPIRY",
+  "compensation_allowance": [
+    {"denom": "anoah", "amount": "500000000000000000000000"},
+    {"denom": "ausd", "amount": "250000000000000000000000"}
+  ],
+  "min_first_period": "2628000"
 }
 ```
 
@@ -160,20 +167,20 @@ params.
   "metadata": "",
   "deposit": "1000000000000000000000anoah",
   "messages": [{
-    "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+    "@type": "/ark.disbursement.v1.MsgOpenTranche",
     "authority": "GOV",
-    "recipient": "DISBURSEMENT_ACCOUNT",
-    "amount": [{"denom": "anoah", "amount": "30000000000000000000000000"}]
+    "pool": "POOL_MEMBERS",
+    "amount": "30000000000000000000000000"
   }]
 }
 ```
 
-The registrar signs `arkd tx disbursement committee-register --expected-term TERM --addresses ADDRESS --addresses ADDRESS --from REGISTRAR`;
+The committee signs `arkd tx disbursement committee-register --expected-term TERM --addresses ADDRESS --addresses ADDRESS --from COMMITTEE`;
 the member roll does not pass through a proposal. Registration sends the tenth immediately and reserves the rest. Look up the permanent
 grant ID with `arkd query disbursement member ADDRESS`. Anyone can call
 `arkd tx disbursement release --grant-ids ID,ID --from CALLER`; payment always goes to each recorded payee.
 
-**A faked member** can be paused with `arkd tx disbursement committee-suspend --expected-term TERM --addresses ADDRESS --from REGISTRAR`.
+**A faked member** can be paused with `arkd tx disbursement committee-suspend --expected-term TERM --addresses ADDRESS --from COMMITTEE`.
 Governance then cancels by permanent grant ID:
 
 ```json
@@ -185,25 +192,28 @@ Governance then cancels by permanent grant ID:
 ```
 
 Cancellation retains earned unpaid principal at the effective suspension time, or at execution time if there is no
-effective suspension. It leaves unearned member funds unallocated in disbursement custody. It attempts no member payment;
-retained debt remains payable even after cancellation. `MsgCommitteeReinstate` from the registrar or `MsgReinstateMembers`
+effective suspension. It returns unearned member funds to the open member tranche for the next member. It attempts no member payment;
+retained debt remains payable even after cancellation. `MsgCommitteeReinstate` from the committee or `MsgReinstateMembers`
 from governance resumes a suspended grant and permits catch-up; neither can reopen a cancelled grant. A compromised
-registrar can reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
+committee can reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
 
-**Registrar recovery** uses one proposal with `MsgSetRegistrarMandate` appointing the new registrar and
+**Committee recovery** uses one proposal with three messages: `MsgSetGrantsMandate` appointing the new committee,
 `/ark.disbursement.v1.MsgVoidSuspensions` with `authority: GOV` and `term: OLD_TERM`, the term the mandate query showed
-before the vote. The appointment advances the term, so nothing prepared under the old key lands afterwards, and the void
-invalidates every suspension made under the old term in one write. It neither reverses payments nor touches suspensions
-under the new term. The live term can never be voided: to void a sitting registrar's suspensions, re-appoint the same
-account and void the previous term in the same proposal. The new registrar reviews genuine suspension cases. An empty
-committee disables the registrar without changing existing grants, and a lapsed window does the same until the next
+before the vote, and `/ark.disbursement.v1.MsgCancelTermGrants` with the same term. The appointment advances the term,
+so nothing prepared under the old key lands afterwards; the void invalidates every suspension made under the old term in
+one write, and the term cancel cancels every unfinished award of the old term, including any the key made while the
+vote was open. Neither reverses payments nor touches the new term. The live term can never be voided: to void a sitting
+committee's suspensions, re-appoint the same account and void the previous term in the same proposal. The new committee
+reviews genuine suspension cases, and governance re-awards any legitimate compensation the term cancel caught. An empty
+committee disables the mandate without changing existing grants, and a lapsed window does the same until the next
 appointment.
 
-**A contributor award** pairs the spend and `MsgCreateGrant` in the same proposal. The example below is a complete
-one-year cliff schedule; a disbursement-plan ownership award uses its full 37-period schedule: first
+**A contributor award** is a `MsgCreateGrant` drawing on the open contributor tranche. When the step's tranche lacks
+room, open it in the same proposal, so both execute or neither does. The example below is a complete one-year cliff
+schedule; a disbursement-plan ownership award uses its full 37-period schedule: first
 `{"length":"31536000","parts":"12"}`, then 36 entries of `{"length":"2628000","parts":"1"}`.
 The proposal summary argues the band and multipliers; `reference` identifies the approved work or agreement on the
-permanent grant itself. Funding must cover the complete schedule before it starts.
+permanent grant itself. The open tranche must cover the complete schedule before it starts.
 
 ```json
 {
@@ -213,10 +223,10 @@ permanent grant itself. Funding must cover the complete schedule before it start
   "deposit": "1000000000000000000000anoah",
   "messages": [
     {
-      "@type": "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend",
+      "@type": "/ark.disbursement.v1.MsgOpenTranche",
       "authority": "GOV",
-      "recipient": "DISBURSEMENT_ACCOUNT",
-      "amount": [{"denom": "anoah", "amount": "1000000000000000000000000"}]
+      "pool": "POOL_CONTRIBUTORS",
+      "amount": "1000000000000000000000000"
     },
     {
       "@type": "/ark.disbursement.v1.MsgCreateGrant",
@@ -243,14 +253,45 @@ Stablecoin compensation is fully funded in that denomination, untaxed, and outsi
 promise a conversion rate. A denomination's later suspension or removal from the allowlist prevents new awards without
 erasing already funded entitlement.
 
+**Committee compensation** pays pay streams and bounties without a proposal. Within its appointment the committee signs
+`MsgCommitteeCompensate` with the beneficiary, amount, schedule, and a work reference; the first period must be at
+least the appointment's minimum, and the award draws on the open contributor tranche for NOAH or on stablecoin
+custody, like a governance award. The term's allowance caps the total, cancelled awards included, and at most 100 awards
+fit in a term. A founding seat holder's pay stays a governance proposal, with the grantee abstaining.
+`query disbursement grants-mandate` shows what the live term has used, and `query disbursement grants --mandate-term
+TERM` lists its awards.
+
+**Stablecoin funding** converts contributor NOAH. The proposal authorises an order from the open contributor tranche
+with the worst spread it accepts; the cap must sit above Market's 2% floor, and each authorisation of the same
+denomination adds NOAH and restates the cap:
+
+```json
+{
+  "@type": "/ark.disbursement.v1.MsgAuthoriseConversion",
+  "authority": "GOV",
+  "denom": "ausd",
+  "amount": "200000000000000000000000",
+  "max_spread": "0.025000000000000000"
+}
+```
+
+Anyone then executes it in ordinary transactions, never inside a proposal:
+`arkd tx disbursement convert --denom ausd --amount AMOUNT --from CALLER`. Market settles each fill like any trader's,
+and the stablecoin lands in disbursement custody, where a later `MsgCreateGrant` draws on it. A fill whose realised
+spread exceeds the cap fails, so a large order converts as the pool recovers; size fills to Market's depth. Follow
+progress with `arkd query disbursement conversion-orders`. `MsgCancelConversion` returns the rest to the open tranche.
+
 **Cancellation and destination recovery.** `MsgCancelGrants` applies to any grant kind. Contributor cancellation
-returns only unearned principal to the community pool and retains accrued debt, with ownership limits still applied.
+returns unearned NOAH to the open contributor tranche, leaves unearned stablecoins in custody for the next award, and
+retains accrued debt, with ownership limits still applied.
 No cancellation pays the recipient, so a blocked destination cannot veto it. A contributor controller, or the original
 registered member key for a member grant, signs
 `arkd tx disbursement set-payee --grant-id ID --payee ADDRESS --from CONTROLLER_OR_MEMBER`. The beneficiary identity and all
-historical payments remain unchanged. The registrar has no destination-recovery authority.
+historical payments remain unchanged. The committee has no destination-recovery authority.
 
 **Audit after execution.** Use `arkd query disbursement` with `grant ID`, `releasable ID`, `balance DENOM`, `issuance`,
-and `journal --grant-id ID`. The journal includes original terms, approvals, destinations, payments, cancellations,
+`conversion-orders`, and `journal --grant-id ID`. The journal includes original terms, approvals, destinations, payments, cancellations,
 and recovery actions. All list queries use key pagination; maximum page size is 100. Read all pages when reconciling.
-`MsgReturnUnallocated` can return idle funds to the pool but cannot consume any grant's reserved principal.
+`MsgReturnUnallocated` returns to the community pool without touching any grant's reserved principal: with `pool`
+unspecified it returns custody outside the pools and orders, with `POOL_CONTRIBUTORS` it returns contributor NOAH,
+unopened first, and the member pool has no exit.

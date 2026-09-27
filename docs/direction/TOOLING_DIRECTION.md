@@ -90,8 +90,8 @@ such as slippage, tax, oracle freshness, IBC routing, or transaction finality wo
 
 The [Disbursement module](../../x/disbursement/README.md) provides the distribution and compensation ledger through typed protobuf
 messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, wallet, and explorer integrations should share those
-schemas and decode typed events. The localnet flow funds native custody through governance, registers members, releases
-payments, and exercises registrar recovery. Contributor interfaces need the original agreement, current payee,
+schemas and decode typed events. The localnet flow opens member tranches through governance, registers members, releases
+payments, and exercises committee recovery. Contributor interfaces need the original agreement, current payee,
 accrued unpaid balance, currently payable amount, and cancellation history; stablecoin compensation uses the same API.
 
 CosmWasm upload and instantiation remain permissionless from launch
@@ -143,10 +143,10 @@ make it possible for other wallets to reach the same level of integration, and t
 
 The platform behind the member app is a component of its own, and the plan bounds it with rules rather than norms. It
 owns the member process, admission by a verified identity and a vouch together and the registry of who is a member,
-the verifier's attestations and the vouch graph it reads for sybils; the registrar signature, a multisig, that
+the verifier's attestations and the vouch graph it reads for sybils; the grants committee signature, a multisig, that
 registers batches of up to a hundred addresses with the Disbursement module inside the module's issuance window; grant-tranche
 funding requests to governance; the release pokes an escrowed grant or an unclaimed member month needs, since
-anyone may trigger a release and someone must; and the registrar's suspend, which stops a sybil's pay and moves
+anyone may trigger a release and someone must; and the committee's suspend, which stops a sybil's pay and moves
 nothing, for governance to cancel, and reaches a voucher whose vouchees are cancelled.
 
 Registration and release callers pay normal transaction gas. Disbursement custody reserves award principal and provides no
@@ -154,9 +154,10 @@ fee allowance; after registration, members can pay their own gas from the immedi
 
 The platform holds no member coins and no authorisation over any member account, it is not a vote, and it keeps attestations,
 never documents: the identity verifier is a third party that checks liveness and a document and returns a uniqueness
-attestation, and the platform stores that and a dedup token. Its one key, the registrar's, is a security component on
-a par with the wallet's key custody: it can misdirect a window's tenths and pause every member's pay, and an expedited
-governance vote revokes it and voids its suspensions. The attestation store is the second thing it must protect, since
+attestation, and the platform stores that and a dedup token. Its one key, the committee's, is a security component on
+a par with the wallet's key custody: it can misdirect a window's tenths, pause every member's pay, and commit its term's
+compensation allowance into awards that pay nothing for a month, and an expedited governance vote revokes it, voids its
+suspensions, and cancels its awards. The attestation store is the second thing it must protect, since
 it links a person to an address. Where members delegate is their own choice, steered only by the app's defaults.
 
 ### 8. Build an explorer around Ark semantics
@@ -221,7 +222,7 @@ The following boundaries should remain clear as the stack grows:
 | Wallet kit        | Dapp-to-wallet session and request protocol                                                                 | A key store or an Ark-specific policy engine                              |
 | Ark wallet        | Key custody on the member's device, signing consent, transaction review, hosting the member app             | The authority for balances, quotes, or transaction success                |
 | Member app        | Signup with identity and vouch, the grant view, the monthly claim, the picker defaults, proposal prompts    | A key store, or anything that works without a wallet                      |
-| Member platform   | Admission by identity and vouch, the registrar signature, grant-tranche funding requests, release pokes, suspend | A custodian, a delegator, a vote, or a document store beyond attestations |
+| Member platform   | Admission by identity and vouch, the committee signature, grant-tranche funding requests, release pokes, suspend | A custodian, a delegator, a vote, or a document store beyond attestations |
 | Disbursement module      | Custody of each tranche, member issuance, and the escrow released by the plan's rules                       | A policy engine beyond those rules, or a treasury                         |
 | Indexer           | Replayable historical and searchable derived data                                                           | Consensus state or an irreplaceable ledger                                |
 | Explorer          | Human-readable verification and network visibility                                                          | The only way to inspect chain activity                                    |
@@ -235,7 +236,8 @@ The wallet will be the highest-risk component in the user-facing stack. Key gene
 isolation, dependency updates, hardware-wallet support, signing-device displays, and release distribution need explicit
 security ownership. A polished interface cannot compensate for an ambiguous custody or update model.
 
-One further key ranks with the wallet's: the registrar signature that issues member grants. Section 7 bounds it.
+One further key ranks with the wallet's: the committee signature that issues member grants and compensation. Section 7
+bounds it.
 
 Transaction review should be based on decoded, structured messages. Raw JSON or opaque bytes are not an acceptable
 default for common Ark operations. Unknown messages and unverified contract payloads should be presented as such rather
@@ -312,7 +314,7 @@ This is a dependency order, not an implementation schedule:
    decoding, and public endpoints as a coherent surface. The local environment is part of it: it exists, and
    everything in the next step is proven on it.
 2. **Build the distribution's dependencies, in this order.** The Disbursement module's schemas and its localnet flow
-   first, since they are what the rest is tested against; then the member process, its verifier, and the registrar
+   first, since they are what the rest is tested against; then the member process, its verifier, and the committee
    multisig, since the platform is built around them; then the platform's registration, grant funding, and release
    flows; then the wallet and the member app on it, the last thing a member touches and the first thing they see. The module's audit
    sits before the first tranche, not before the build. Transfers, simulation, market operations, and IBC follow.

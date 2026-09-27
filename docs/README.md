@@ -16,8 +16,8 @@ maintain that boundary.
 ## Launch a network
 
 - [Genesis](governance/GENESIS.md): curated launch settings, unresolved values and appointments, and final validation.
-- [Disbursement plan](governance/DISBURSEMENT_PLAN.md): the 60/40 member and contributor split of the community pool as
-  scheduled grant payments, with measured caps and gates, handing governance to the public.
+- [Disbursement plan](governance/DISBURSEMENT_PLAN.md): the 60/40 member and contributor pools held from genesis, paid
+  as scheduled grants, with measured caps and gates, handing governance to the public.
 
 ## Operate services
 

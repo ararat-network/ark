@@ -47,15 +47,15 @@ survives, so the artefact and the code obey these rules rather than a migration:
 - `x/mint` is absent from configuration and genesis: no store, query service, module account, or module-version entry
   (D1). The launch supply is the native supply for the life of the chain, changed only by conversion and authorised
   Reserve burns.
-- The subsidy pool, Redemption Buffer, strategic Reserve, Insurance, and community pool seeds are bank balances, never
-  minted by a module's InitGenesis (D9). The community pool's fee-pool entry equals the Distribution module balance,
+- The subsidy pool, Redemption Buffer, strategic Reserve, Insurance, disbursement pools, and community pool seeds are bank
+  balances, never minted by a module's InitGenesis (D9). The community pool's fee-pool entry equals the Distribution module balance,
   which Distribution's InitGenesis requires.
 - Distribution's `community_tax` is zero because the distribution module basic is overridden in application code
   (`app/genesis.go`, D13); the artefact inherits it rather than patching it in.
 - The four custody accounts are unblocked for inbound sends and each module's send restriction admits only positive
   `anoah` (D26). Treasury's InitGenesis runs after Bank's and rejects any fund balance holding a non-NOAH coin.
-- Bank supply equals the sum of balances at every step: the artefact carries the whole community pool, and assembly
-  moves each seat's grant out of it rather than adding supply.
+- Bank supply equals the sum of balances at every step: the artefact carries the disbursement pools and the community
+  pool before seats, and assembly moves each seat's grant out of the community pool rather than adding supply.
 - A relaunch takes a new chain ID and continues heights: `arkd export` refuses a zero-height export on purpose
   (`CLAUDE.md`, Export & Relaunch).
 
@@ -95,7 +95,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
-| `disbursement` | none | open | Fully funded grants and compensation; governance spends from the community pool into this account (D87). |
+| `disbursement` | none | open | The member and contributor pools from genesis, fully funded grants, and compensation; governance opens tranches and nothing else draws the pools (D87, D88). |
 | `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message. |
 | `transfer`, `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; transfer holds Minter and Burner for vouchers (D45). |
 
@@ -105,8 +105,9 @@ explicitly and the four protocol-fund custody accounts, `disbursement`, and `gov
 ### Supply ledger
 
 Total supply is 1,000,000,000 NOAH, `1000000000000000000000000000` in base units. There are no investors, backers, or
-public allocation at launch: the protocol funds are seeded, the validator seats are granted, and everything else is
-the community pool, which governance spends by vote.
+public allocation at launch: the protocol funds are seeded, the member and contributor pools are held by the
+Disbursement module, the validator seats are granted, and the remainder is the community pool, which governance spends
+by vote (D88).
 
 | Balance | NOAH | Share | Status | Why |
 | --- | --- | --- | --- | --- |
@@ -114,7 +115,9 @@ the community pool, which governance spends by vote.
 | `strategic_reserve` | 50,000,000 | 5% | Decided | Governance's intervention capacity through the first growth phase; commitments to the Buffer and surplus burns are its only exits. |
 | `treasury_redemption_buffer` | 10,000,000 | 1% | Decided | Full coverage on the first 10M NOAH of liability, so early redemptions pay from inventory rather than minting. |
 | `claims_insurance` | 5,000,000 | 0.5% | Decided | The only claims capacity until the waterfall reaches Insurance, which is last in line. |
-| `distribution` (community pool) | 835,000,000 less the seats | 83.5% | Decided | Everything not seeded or granted. Assembly moves 5,300,000 NOAH per seat out of it (§12). |
+| `disbursement` member pool | 439,200,000 | 43.92% | Decided | 60% of the distribution. Tranches open by vote; the pool has no exit, so it pays members or nobody (D88). |
+| `disbursement` contributor pool | 292,800,000 | 29.28% | Decided | 40% of the distribution: ownership awards, compensation, and conversion orders. Governance may return it to the community pool (D88). |
+| `distribution` (community pool) | 103,000,000 less the seats | 10.3% | Decided | 50,000,000 after ten seats: governance's discretionary fund, and the backstop behind the Reserve and subsidy pool. Assembly moves 5,300,000 NOAH per seat out of it (§12). |
 
 Under the defensive target ratios in §4, fund targets are zero until conversion creates liability, so the seeds are
 what give the funds capacity before the first expansion.
@@ -257,7 +260,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `staking.params` (7 entries, 10,000 historical entries) | SDK defaults | Default | Historical entries serve IBC once it opens. |
 | `distribution.params.community_tax` | `0` | Decided | Nothing skims validator income; the community-pool ledger receives only rounding residue on top of its seed (D13, D14). |
 | `distribution.params` (proposer rewards 0, withdraw address enabled) | SDK defaults | Default | |
-| `distribution.fee_pool.community_pool` | 835,000,000 NOAH less the seats | Decided | Equal to the Distribution module balance (§3). |
+| `distribution.fee_pool.community_pool` | 103,000,000 NOAH less the seats | Decided | Equal to the Distribution module balance (§3). |
 | `gov.params.min_deposit`, `expedited_min_deposit` | 1,000 NOAH, 5,000 NOAH | Decided | About 1,000 USD, the range established chains settle in: deposits refund unless vetoed, so the deposit is capital locked for four days, not a fee. With the 10% initial ratio, 100 NOAH lists a proposal. `app/config.go` carries the same default. |
 | `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | The founding set is ten equal seats and the pool it guards holds most of the supply: half the bonded stake must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
 | `gov.params.veto_threshold` | `0.334` | Default | A third of the set can block. |
@@ -273,13 +276,15 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 ### Native grants
 
-Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with no grants, custody, journal entries,
+Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with a 439,200,000 NOAH member pool
+and a 292,800,000 NOAH contributor pool in its custody, nothing open, and no grants, journal entries, conversion orders,
 or founders before assembly. Member terms are 10,000 NOAH, a tenth immediately and the balance over twelve monthly
-periods. Issuance is limited to 250 members per rolling seven days. The registrar mandate is disabled until governance
-appoints one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
-and a 60M NOAH award ceiling, excluding the founding seat. Seat assembly adds one immutable founder record and
-beneficiary controller per founding operator; the module derives founding stake from these records. IDs start at one.
-Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination (D87).
+periods. Issuance is limited to 250 members per rolling seven days. The grants mandate is disabled, with no
+compensation allowance, until governance appoints one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
+and a 60M NOAH ceiling that counts the founding seat. Seat assembly adds one beneficiary record per founding
+operator, carrying its immutable seat; the module derives founding stake from these records. IDs start at one.
+Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination, which a
+conversion order of contributor NOAH can supply (D87, D88).
 
 ## 11. IBC, interchain accounts, and CosmWasm
 
@@ -311,8 +316,8 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
 2. **Seats.** Run `arkd genesis add-validator-seats <operator-address>...` once against the file, naming every
    genesis validator. For each it writes a continuous vesting account at the operator with 5,000,000 NOAH vesting
    from four to ten years after `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the
-   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the immutable founding
-   identity and 5M principal in `disbursement.founders`, leaving supply untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
+   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the operator's 5M
+   seat on its beneficiary record in `disbursement.beneficiaries`, leaving supply and the disbursement pools untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
    the seats, and writes nothing unless every seat and every edited module validates. The seat policy is fixed in
    `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what it writes.
 3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
@@ -354,7 +359,7 @@ ratio between half and one and a half times the defensive set, with Insurance ca
 `app/genesis_test.go` pins: validity under the CLI's manager; a boot with a validator set and one funded account; a
 boot from a seat the seat command's own function granted, whose gentx self-delegates the grant, with the pool reduced
 by the grant, supply unchanged, and both targets at one share; the consensus authority and evidence bounds; the staking, slashing, and gov values in §10; the
-supply ledger and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
+supply ledger, the unopened disbursement pools, and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
 value in §4, §5, §8, and §9; the empty allowed-client list, both ICS-20 flags, both ICA sides, the empty host
 allowlist, and the open contract runtime, read back from the keepers after the first block; the absence of `mint`; no
 08-wasm checksums; and the vote-extension enable height.

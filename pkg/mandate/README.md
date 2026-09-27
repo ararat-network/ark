@@ -9,7 +9,7 @@ holds. Governance appoints an exact account for a half-open height window;
 the committee acts faster than a voting period allows; the appointment
 expires on its own. Seven mandates exist today — Treasury's economic-policy
 mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
-Reserve's, Security's, and Disbursement's registrar mandate — and the sections
+Reserve's, Security's, and Disbursement's grants mandate — and the sections
 below are the convention an eighth follows.
 
 ## What this package owns
@@ -124,9 +124,10 @@ Replacement advances the term, which is what makes term-scoped usage
 term-scoped: reset it in the same handler that stores the new appointment, so
 the appointment and the usage keyed to it can never skew. The Claims and
 Reserve mandates each reset an allowance; Asset's emergency mandate clears
-its recorded per-term suspensions. A mandate with no usage to reset resets
-nothing: Disbursement's registrar mandate keys member suspensions by term
-and leaves them standing, since governance voids a replaced term explicitly.
+its recorded per-term suspensions. Disbursement's grants mandate needs no
+reset: it indexes compensation awards by term, so a new term starts empty by
+construction, and it leaves member suspensions standing, since governance
+voids a replaced term explicitly.
 
 ## Acting
 
