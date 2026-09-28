@@ -294,9 +294,11 @@ lane and the gate? Does the runbook still describe how it reaches a block under 
 
 **Controls.** `go mod verify` before every release; the wasmvm static archives are pinned by version and
 digest in the image Dockerfile, and both the image build and the standalone node's container builder check the
-archives against them; CI actions are pinned, the mise action by commit; dependabot, nightly govulncheck,
-and CodeQL run; goreleaser is pinned in `mise.toml`. The sidecar releases from its own tag line so a chain
-release never carries an unreviewed sidecar change, or the reverse.
+archives against them; CI actions are pinned, the mise action by commit; dependabot runs; nightly govulncheck
+and CodeQL are configured but idle while Actions is off for the private repository, and CodeQL results need a
+public repository or a Code Security licence to upload; goreleaser is pinned in `mise.toml`. Releases are
+immutable once published: GitHub locks their assets and tag. The sidecar releases from its own tag line so a
+chain release never carries an unreviewed sidecar change, or the reverse.
 Release source packaging exports a fixed committed tree, refuses tracked changes
 and a moving HEAD, verifies Go module checksums, and includes native dependencies.
 Source verification rebuilds in fresh containers with networking disabled before
