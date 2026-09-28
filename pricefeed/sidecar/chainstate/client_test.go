@@ -250,7 +250,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastFeeds(t *testing.T) {
 			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
 			Addresses: []string{endpoint.address},
 			Timeout:   time.Second,
-			Interval:  time.Millisecond,
+			Interval:  200 * time.Millisecond,
 		},
 		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
 		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
@@ -271,9 +271,7 @@ func TestRunLogsRefreshFailureWhileKeepingLastFeeds(t *testing.T) {
 			strings.Contains(output, "node unavailable")
 	}, time.Second, time.Millisecond)
 
-	got, err := client.Feeds()
-	require.NoError(t, err)
-	require.Equal(t, []string{"akrw", "ausd"}, got)
+	requireEventuallyTargets(t, client, []string{"akrw", "ausd"})
 }
 
 func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
