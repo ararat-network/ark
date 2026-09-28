@@ -517,7 +517,7 @@ func (s *KeeperTestSuite) TestFundStatusReportsBothTargetBases() {
 	s.Require().Equal("100.000000000000000000", resp.NominalLiability.Amount.String())
 	s.Require().Equal("20.000000000000000000", resp.SelfHeldLiability.Amount.String())
 	s.Require().Equal("80.000000000000000000", resp.NetLiability.Amount.String())
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)), sdk.Coins(resp.SelfHeldSupply))
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 20)), resp.SelfHeldSupply)
 
 	// Bounds: ratios against the gross 100.
 	s.Require().Equal(math.NewInt(50), resp.RedemptionBufferTarget.Amount)
