@@ -91,7 +91,8 @@ const (
 
 	// ValidatorFunds is each validator account's genesis balance, in NOAH.
 	ValidatorFunds = 10_000
-	TrustingPeriod = "336h"
+	// TrustingPeriod is 2/3 of the testnet artefact's 24h unbonding time.
+	TrustingPeriod = "16h"
 
 	TransferPortID = "transfer"
 
