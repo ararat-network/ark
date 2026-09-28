@@ -87,7 +87,7 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
 	for _, balance := range bankState.Balances {
 		if balance.Address == pool {
-			require.Equal(t, chain.NativeBaseAmount(835_000_000).Sub(seat.MulRaw(2)), balance.Coins.AmountOf(chain.NoahBaseDenom))
+			require.Equal(t, chain.NativeBaseAmount(103_000_000).Sub(seat.MulRaw(2)), balance.Coins.AmountOf(chain.NoahBaseDenom))
 		}
 	}
 	require.Equal(t, chain.NativeBaseAmount(1_000_000_000), bankState.Supply.AmountOf(chain.NoahBaseDenom), "supply is unchanged")
