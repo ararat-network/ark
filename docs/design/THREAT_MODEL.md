@@ -294,11 +294,10 @@ lane and the gate? Does the runbook still describe how it reaches a block under 
 
 **Controls.** `go mod verify` before every release; the wasmvm static archives are pinned by version and
 digest in the image Dockerfile, and both the image build and the standalone node's container builder check the
-archives against them; CI actions are pinned, the mise action by commit; dependabot runs; nightly govulncheck
-and CodeQL are configured but idle while Actions is off for the private repository, and CodeQL results need a
-public repository or a Code Security licence to upload; goreleaser is pinned in `mise.toml`. Releases are
-immutable once published: GitHub locks their assets and tag. The sidecar releases from its own tag line so a
-chain release never carries an unreviewed sidecar change, or the reverse.
+archives against them; CI actions are pinned, the mise action by commit; dependabot, nightly govulncheck,
+and CodeQL run; goreleaser is pinned in `mise.toml`. Releases are immutable once published: GitHub locks
+their assets and tag. The sidecar releases from its own tag line so a chain release never carries an
+unreviewed sidecar change, or the reverse.
 Release source packaging exports a fixed committed tree, refuses tracked changes
 and a moving HEAD, verifies Go module checksums, and includes native dependencies.
 Source verification rebuilds in fresh containers with networking disabled before
@@ -335,8 +334,8 @@ Image publication uploads the distribution image by digest, generates an SPDX SB
 with pinned Syft, and signs provenance and SBOM attestations with the GitHub workflow's
 OIDC identity. It verifies both registry attestations against the repository, workflow,
 source revision and ref before promoting release/nightly tags. BuildKit also emits
-maximum-detail provenance. On the current Free plan, publication is paused while the
-repository is private because GitHub attestations are unavailable there. Failed runs
+maximum-detail provenance. Publication requires a public repository, since GitHub
+attestations are unavailable to private repositories on the Free plan. Failed runs
 can leave untagged image data or attestations in the registry; a digest upload is not
 private staging. Tag promotion is not atomic across multiple tags.
 The scanner inventories the distribution image; it does not prove complete discovery

@@ -56,10 +56,10 @@ GitHub Actions signs provenance and SBOM claims and stores them in GHCR. Registr
 verification must pass before the workflow moves its release, branch or nightly tags.
 The tag-promotion result must retain the verified digest.
 
-On the current GitHub Free plan, the workflow skips image publication while the
-repository is private. Local builds remain available. After the repository becomes
-public, validate one complete run before relying on this path; making the repository
-public does not itself change the GHCR package's visibility.
+The workflow publishes only from a public repository, since GitHub attestations are
+unavailable to private repositories on the Free plan. Validate one complete run
+before relying on this path; the GHCR package's visibility is set separately from
+the repository's.
 
 A failure before tag promotion leaves existing tags unchanged, but the uploaded digest
 and any completed attestations can remain accessible in the registry. Promotion of
@@ -86,7 +86,7 @@ gh workflow run release.yml --repo ararat-network/ark --ref pricefeed/vX.Y.Z
 ```
 
 These commands start a release build; they are not ordinary verification commands.
-On the current Free plan, this workflow skips while the repository is private.
+The workflow runs only from a public repository: GitHub attestations need one on the Free plan.
 `make release` and `make release-pricefeed` only package locally, without signing or
 uploading. CI selects its exact tag explicitly. Build/source verification, per-archive
 SPDX generation and checksums complete before the workflow stages assets for signing.
