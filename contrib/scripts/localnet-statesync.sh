@@ -15,7 +15,8 @@ RPC=${3%/}
 count=0
 while [ "$count" -lt "$ITERATIONS" ]; do
   sync=$(curl -sf "$RPC/status" | jq -r '.result.sync_info' 2>/dev/null)
-  catching=$(printf '%s' "$sync" | jq -r '.catching_up // empty' 2>/dev/null)
+  # jq's // treats false as missing, so select instead.
+  catching=$(printf '%s' "$sync" | jq -r '.catching_up | select(. != null)' 2>/dev/null)
   latest=$(printf '%s' "$sync" | jq -r '.latest_block_height // empty' 2>/dev/null)
   earliest=$(printf '%s' "$sync" | jq -r '.earliest_block_height // empty' 2>/dev/null)
   echo "poll $((count + 1))/$ITERATIONS: catching_up=${catching:-none} earliest=${earliest:-none} latest=${latest:-none}"
