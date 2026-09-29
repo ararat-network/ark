@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cosmos/interchaintest/v10"
+	"github.com/cosmos/interchaintest/v10/ibc"
 	"github.com/cosmos/interchaintest/v10/testutil"
 	"github.com/stretchr/testify/suite"
 
@@ -63,11 +64,20 @@ func (s *EvidenceSuite) TestDoubleSigning() {
 }
 
 func TestEvidence(t *testing.T) {
+	// A node restarted alone block-syncs until a peer is ahead. CometBFT v0.39
+	// cannot turn block sync off, but adaptive sync starts consensus at once,
+	// which the staggered restart needs.
+	configToml := chainsuite.DefaultConfigToml()
+	configToml["blocksync"] = testutil.Toml{"adaptive_sync": true}
 	s := &EvidenceSuite{
 		Suite: chainsuite.NewSuite(chainsuite.SuiteConfig{
 			UpgradeOnSetup: true,
 			ChainSpec: &interchaintest.ChainSpec{
 				NumValidators: &chainsuite.FourValidators,
+				ChainConfig: ibc.ChainConfig{ConfigFileOverrides: map[string]any{
+					"config/config.toml": configToml,
+					"config/app.toml":    chainsuite.DefaultAppToml(),
+				}},
 			},
 		}),
 	}
