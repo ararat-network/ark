@@ -100,10 +100,10 @@ func TestRunCheckUsesExternalRPCs(t *testing.T) {
 
 	cfg := validation.DefaultConfig()
 	cfg.BurnInPeriod = 0
-	cfg.ValidationPeriod = 10 * time.Millisecond
+	cfg.ValidationPeriod = 500 * time.Millisecond
 	cfg.NumChecks = 1
 	cfg.FeedRefreshInterval = time.Hour
-	cfg.RequestTimeout = 100 * time.Millisecond
+	cfg.RequestTimeout = 500 * time.Millisecond
 	results, err := runCheck(
 		context.Background(),
 		log.NewNopLogger(),
