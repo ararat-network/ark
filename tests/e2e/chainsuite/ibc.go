@@ -87,11 +87,12 @@ func CreateLinkedChains(
 	if err := rly.GeneratePath(ctx, rep, cosmosA.Config().ChainID, cosmosB.Config().ChainID, TransferPath); err != nil {
 		return nil, nil, nil, err
 	}
+	// interchaintest pins Hermes's config to 14days; pass the period per client.
 	if err := rly.LinkPath(ctx, rep, TransferPath, ibc.CreateChannelOptions{
 		SourcePortName: TransferPortID,
 		DestPortName:   TransferPortID,
 		Order:          ibc.Unordered,
-	}, ibc.DefaultClientOpts()); err != nil {
+	}, ibc.CreateClientOptions{TrustingPeriod: TrustingPeriod}); err != nil {
 		return nil, nil, nil, err
 	}
 	if err := rly.StartRelayer(ctx, rep, TransferPath); err != nil {
