@@ -6,7 +6,7 @@ maintain that boundary.
 
 ## Understand the chain
 
-- [Manifesto](papers/MANIFESTO.pdf): "The Revolution Begins Within", the founding statement on intelligence, love, nature,
+- [Manifesto](papers/MANIFESTO.pdf): "The Revolution Begins Within", the founding statement on love, God, intelligence,
   technology, and the future we choose.
 - [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
   the typeset PDF replaces it at this path when finished.
