@@ -178,8 +178,9 @@ func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {
 
 				errCh, cancel := startOracle(t, oracle)
 				requireProviderStarted(t, started)
+				// A tick can commit before the provider's response lands; wait for the price.
 				require.Eventually(t, func() bool {
-					return !oracle.GetPriceSnapshot().Timestamp.IsZero()
+					return len(oracle.GetPriceSnapshot().Prices) > 0
 				}, time.Second, time.Millisecond)
 
 				return oracle, func() {
