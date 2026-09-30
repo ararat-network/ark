@@ -63,8 +63,9 @@ server with the intended context; `baseapp.NewQueryServerTestHelper` captures it
 
 CodeQL includes divide-by-zero and Cosmos SDK-specific consensus checks alongside the standard Go suite. Its query
 references are pinned and kept aligned with the CLI shipped by the action. Generated Go remains in extraction and
-call/dataflow analysis, but the action filters alerts anchored in generated files. A local CLI run does not reproduce
-those action-side path filters; compare findings with that distinction in mind, not against a fixed historical count.
+call/dataflow analysis. Before upload, [scope-results.py](../.github/codeql/scope-results.py) drops alerts anchored in
+generated files and confines the Cosmos SDK checks to code that can run in the state machine; the action's own path
+filters do not apply to Go results. A local CLI run reports everything, so compare findings with that in mind.
 
 govulncheck reports reachable vulnerable calls. It uses the pinned toolchain and runs outside the merge gate because
 some findings have no upstream fix; findings still require review.

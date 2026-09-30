@@ -1,5 +1,5 @@
 # Static analysis includes divide-by-zero and Cosmos SDK consensus checks in addition to the default
-# Go suite. See tests/README.md for query selection and generated-file filtering.
+# Go suite. See tests/README.md for query selection and result scope.
 name: CodeQL
 
 on:
@@ -33,7 +33,6 @@ jobs:
         uses: github/codeql-action/init@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
         with:
           languages: go
-          config-file: ./.github/codeql/config.yml
           # Pin external queries and align the query tag with the action's CLI version. Query code
           # is part of the CI dependency boundary.
           queries: >-
@@ -47,3 +46,16 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
+        with:
+          # Uploaded once scoped below; failure-only still reports a failed analysis.
+          upload: failure-only
+          output: sarif-results
+
+      - name: Scope results
+        run: |
+          python3 -B .github/codeql/scope_results_test.py
+          python3 .github/codeql/scope-results.py sarif-results/*.sarif
+
+      - uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d # v3.37.9
+        with:
+          sarif_file: sarif-results
