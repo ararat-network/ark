@@ -312,10 +312,28 @@ func TestRunPublishesHandledMessageAndWritesUpdate(t *testing.T) {
 	fetcher, err := basewebsocket.NewFetcher(websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1)), handler, basewebsocket.WithHTTPClient(server.Client()))
 	require.NoError(t, err)
 
-	response, err := runUntilResponse(fetcher, tickers)
-	require.NoError(t, err)
-	require.Equal(t, expected, response)
-	require.Equal(t, []byte("update"), <-readUpdate)
+	// The fetcher publishes the response before it writes the update, so keep
+	// it running until the server has read the update.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	responseCh := make(chan types.Response, 1)
+	errCh := make(chan error, 1)
+	go func() { errCh <- fetcher.Run(ctx, tickers, responseCh) }()
+
+	select {
+	case response := <-responseCh:
+		require.Equal(t, expected, response)
+	case err := <-errCh:
+		t.Fatalf("fetcher stopped before responding: %v", err)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for websocket response")
+	}
+	select {
+	case update := <-readUpdate:
+		require.Equal(t, []byte("update"), update)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for the update write")
+	}
 }
 
 func TestRunReturnsErrorWhenReceivePanics(t *testing.T) {
