@@ -22,6 +22,12 @@ def run(*args, **kwargs):
     return subprocess.check_output(args, text=True, **kwargs)
 
 
+def distfiles_mirror():
+    """Alpine's source mirror for this release; abuild tries it before upstream."""
+    major, minor = Path("/etc/alpine-release").read_text().split(".")[:2]
+    return f"https://distfiles.alpinelinux.org/distfiles/v{major}.{minor}"
+
+
 def safe_path(name):
     path = PurePosixPath(name)
     if not name or path.is_absolute() or ".." in path.parts or "\x00" in name:
@@ -364,7 +370,7 @@ def collect(args):
                 stream.write(METADATA)
             meta = work / "metadata"
             env = dict(os.environ, ARK_SOURCE_METADATA=str(meta), SRCDEST=str(args.cache / "downloads" / key),
-                       REPODEST=str(work / "packages"), SOURCE_DATE_EPOCH="0")
+                       REPODEST=str(work / "packages"), SOURCE_DATE_EPOCH="0", DISTFILES_MIRROR=distfiles_mirror())
             subprocess.run(["abuild", "-m", "ark_source_metadata"], cwd=staging, env=env, check=True)
             metadata = meta.read_bytes().decode().split("\x00")[:-1]
             if len(metadata) != 5 or metadata[:2] != [package["origin"], package["version"]]:

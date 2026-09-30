@@ -311,7 +311,9 @@ stage's actual APK database and resolves the node's linker inputs to builder APK
 owners; missing or unknown mappings fail the build. It retrieves aports recipes at
 the package-recorded commits from the official Alpine repository, verifies recipe
 versions and upstream source checksums, and preserves patches, configurations and
-notices. APKBUILD is executable shell code: evaluate it only in the separate
+notices. Source archives come from Alpine's distfiles mirror for the running release
+when it has them, else from upstream; the recipe's checksums verify either. APKBUILD
+is executable shell code: evaluate it only in the separate
 unprivileged collection stage, with no build secrets or host mounts. Its network
 access is a release supply-chain boundary; commit and checksum matching do not
 prove upstream code is benign. The resulting OS archive and package manifest are
