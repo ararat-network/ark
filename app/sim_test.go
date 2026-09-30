@@ -37,6 +37,7 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
@@ -184,13 +185,25 @@ func TestAppSimulationAfterImport(t *testing.T) {
 			newApp.BaseApp,
 			newStateFactory.AppStateFn,
 			simtypes.RandomAccounts,
-			simtestutil.BuildSimulationOperations(newApp, newApp.AppCodec(), newTestInstance.Cfg, newApp.GetTxConfig()),
+			postImportOperations(newApp),
 			newStateFactory.BlockedAddr,
 			newTestInstance.Cfg,
 			newStateFactory.Codec,
 			ti.ExecLogWriter,
 		)
 		require.NoError(tb, err)
+	})
+}
+
+// postImportOperations builds the legacy operations without gov proposal submissions: the SDK's
+// legacy submission signs a zero-amount fee leg, which the fee decorator refuses by design. The
+// first run covers proposals through simsx.
+func postImportOperations(app *ArkApp) []simtypes.WeightedOperation {
+	return app.SimulationManager().WeightedOperations(module.SimulationState{
+		AppParams: make(simtypes.AppParams),
+		Cdc:       app.AppCodec(),
+		TxConfig:  app.GetTxConfig(),
+		BondDenom: sdk.DefaultBondDenom,
 	})
 }
 
