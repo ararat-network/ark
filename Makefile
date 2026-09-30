@@ -111,17 +111,19 @@ test-e2e-vet:
 ###                               Simulation                                ###
 ###############################################################################
 
+# goleveldb, not the default memdb: each seed's DB stays reachable until the whole run ends (the SDK
+# closes it in a subtest cleanup that Go's testing retains), so memdb would keep every seed's history.
 test-sim:
-	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestFullAppSimulation -NumBlocks=50
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestFullAppSimulation -NumBlocks=50 -DBBackend=goleveldb
 
 test-sim-nondeterminism:
-	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppStateDeterminism -NumBlocks=100 -BlockSize=200
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppStateDeterminism -NumBlocks=100 -BlockSize=200 -DBBackend=goleveldb
 
 test-sim-import-export:
-	@go test ./app -failfast -mod=readonly -timeout 20m -tags=sims -run TestAppImportExport -NumBlocks=50
+	@go test ./app -failfast -mod=readonly -timeout 20m -tags=sims -run TestAppImportExport -NumBlocks=50 -DBBackend=goleveldb
 
 test-sim-after-import:
-	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppSimulationAfterImport -NumBlocks=50
+	@go test ./app -failfast -mod=readonly -timeout 30m -tags=sims -run TestAppSimulationAfterImport -NumBlocks=50 -DBBackend=goleveldb
 
 # Small blocks on purpose: the fuzzer wants many short runs, and it kills a
 # worker that does not report an iteration promptly. At the default simulation
