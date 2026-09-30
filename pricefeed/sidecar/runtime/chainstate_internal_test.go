@@ -62,7 +62,8 @@ func TestRunDoesNotLogIntentionalChainStateClientCancellation(t *testing.T) {
 		errCh <- oracle.Run(ctx)
 	}()
 	requireSignal(t, started, "chain state client did not start")
-	require.True(t, oracle.IsRunning())
+	// Run records itself as running only after starting the client.
+	require.Eventually(t, oracle.IsRunning, time.Second, time.Millisecond)
 	cancel()
 
 	select {

@@ -412,11 +412,25 @@ func (c *Chain) GetValidatorPower(ctx context.Context, hexAddr string) (int64, e
 
 // RestartNode stops a node and brings it back on the same volumes. The
 // containers are removed in between: stopping a node stops its sidecars, and
-// starting it creates fresh sidecar containers under the same names.
+// starting it creates fresh sidecar containers under the same names. Docker can
+// refuse a reserved host port as already allocated while concurrent restarts
+// release and reserve ports, so such a start is retried on fresh ones.
 func RestartNode(ctx context.Context, node *cosmos.ChainNode) error {
 	if err := node.StopContainer(ctx); err != nil {
 		return err
 	}
+	var err error
+	for range 3 {
+		if err = recreateNode(ctx, node); err == nil || !strings.Contains(err.Error(), "port is already allocated") {
+			return err
+		}
+	}
+	return err
+}
+
+// recreateNode replaces a stopped node's containers. Removal is forced and
+// skips missing containers, so it also clears what a failed start left.
+func recreateNode(ctx context.Context, node *cosmos.ChainNode) error {
 	if err := node.RemoveContainer(ctx); err != nil {
 		return err
 	}
@@ -539,6 +553,34 @@ func (c *Chain) VoteExtensions(ctx context.Context, height int64) ([]VoteExtensi
 		return nil, fmt.Errorf("decoding vote-extensions output %s: %w", stdout, err)
 	}
 	return out.Votes, nil
+}
+
+// WaitForPricedVoteExtensions polls until the latest block carries rates from
+// every validator and returns its vote extensions. A rate lands once a
+// threshold of power reports it, so an exchange rate alone does not mean every
+// sidecar has reported.
+func (c *Chain) WaitForPricedVoteExtensions(ctx context.Context, timeout time.Duration) ([]VoteExtension, error) {
+	var votes []VoteExtension
+	err := testutil.WaitForCondition(timeout, BlockTime, func() (bool, error) {
+		latest, err := c.VoteExtensions(ctx, 0)
+		if err != nil {
+			return false, err
+		}
+		votes = latest
+		if len(latest) != len(c.Validators) {
+			return false, nil
+		}
+		for _, vote := range latest {
+			if len(vote.Rates) == 0 {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w; last vote extensions: %+v", err, votes)
+	}
+	return votes, nil
 }
 
 // WaitForTx polls until txhash is committed and returns its code.

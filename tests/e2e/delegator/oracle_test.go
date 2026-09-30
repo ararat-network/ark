@@ -28,12 +28,10 @@ func (s *OracleSuite) SetupSuite() {
 }
 
 func (s *OracleSuite) TestEveryValidatorReportsRates() {
-	votes, err := s.Chain.VoteExtensions(s.GetContext(), 0)
+	votes, err := s.Chain.WaitForPricedVoteExtensions(s.GetContext(), 2*time.Minute)
 	s.Require().NoError(err)
-	s.Require().Len(votes, len(s.Chain.Validators))
 	for _, vote := range votes {
 		s.Require().Equal("BLOCK_ID_FLAG_COMMIT", vote.BlockIDFlag)
-		s.Require().NotEmpty(vote.Rates, "validator %s reported no rates", vote.ValidatorAddress)
 	}
 	rates, err := s.Chain.ExchangeRates(s.GetContext())
 	s.Require().NoError(err)
