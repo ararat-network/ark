@@ -15,6 +15,9 @@ Run host commands from the repository root. Host probes use `curl` and `jq`; the
 | [check-wasmvm-libs.sh](check-wasmvm-libs.sh) | Standalone node's container builder; `WASMVM_LIBDIR` overrides `/lib` | Read-only; go.mod's wasmvm version matches the image Dockerfile ARGs and both static archives match its digests. |
 | [release-build.py](release-build.py) | GoReleaser node build tool; `ARK_RELEASE_SOURCE` names the verified application source bundle | Builds the committed export in the requested Linux platform's container, verifies binary/runtime source identity, and writes GoReleaser's binary plus runtime source assets under `build/source/`. Does not publish. |
 
+[vulncheck.py](vulncheck.py) is `make vulncheck`: the govulncheck gate described in
+[tests/README.md](../../tests/README.md#static-analysis-boundaries).
+
 [release-assets.py](release-assets.py) stages the exact binary/source/SBOM asset matrix and checks
 its checksums before signing and after upload. It refuses missing, extra, tampered or symlinked
 assets and never publishes. [Release verification](../../docs/operations/RELEASE_VERIFICATION.md)

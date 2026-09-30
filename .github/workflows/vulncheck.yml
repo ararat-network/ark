@@ -1,7 +1,8 @@
 # Known-CVE scanning of the dependency tree. Nightly rather than per pull
 # request on purpose: govulncheck reports findings whose upstream fix does not
 # exist yet, so gating merges on it would leave a permanently red check that
-# stops being read. A nightly run is the signal that a fix has shipped.
+# stops being read. Reviewed findings live in contrib/scripts/vulncheck-accepted.json;
+# the run fails on an unreviewed finding, or once an accepted one has a fix.
 name: Vulncheck
 
 on:
@@ -30,3 +31,13 @@ jobs:
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
 
       - run: make vulncheck
+
+  report:
+    needs: govulncheck
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: Vulncheck

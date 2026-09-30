@@ -156,10 +156,10 @@ format:
 ###                                Security                                 ###
 ###############################################################################
 
-# Run the pinned reachable-call vulnerability scanner. Findings are reviewed outside the merge gate
-# because some lack upstream fixes; see tests/README.md.
+# Run the pinned reachable-call vulnerability scanner, failing on findings not reviewed into
+# contrib/scripts/vulncheck-accepted.json. Nightly, not a merge gate; see tests/README.md.
 vulncheck:
-	@govulncheck ./...
+	@python3 contrib/scripts/vulncheck.py
 
 ###############################################################################
 ###                                Protobuf                                 ###
