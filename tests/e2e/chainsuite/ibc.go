@@ -23,8 +23,26 @@ const TransferPath = "transfer"
 // CreateLinkedChains starts two chains and Hermes. beforeLink runs once both
 // chains produce blocks and before the relayer creates clients: the launch
 // genesis admits no client type, so the hub has to be opened first. The
-// relayer is running over a transfer channel when this returns.
+// relayer is running over a transfer channel when this returns. A port clash
+// starts the whole setup over.
 func CreateLinkedChains(
+	ctx context.Context,
+	testName interchaintest.TestName,
+	specA, specB *interchaintest.ChainSpec,
+	beforeLink func(a, b *Chain) error,
+) (*Chain, *Chain, *Relayer, error) {
+	var (
+		a, b *Chain
+		rly  *Relayer
+	)
+	err := retryPortClash(ctx, testName, func() (err error) {
+		a, b, rly, err = createLinkedChains(ctx, testName, specA, specB, beforeLink)
+		return err
+	})
+	return a, b, rly, err
+}
+
+func createLinkedChains(
 	ctx context.Context,
 	testName interchaintest.TestName,
 	specA, specB *interchaintest.ChainSpec,
