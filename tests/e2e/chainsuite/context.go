@@ -75,6 +75,14 @@ func GetLogger(ctx context.Context) *zap.Logger {
 // network, logger, and reporters on the context every helper reads.
 func NewSuiteContext(s *suite.Suite) (context.Context, error) {
 	ctx := context.Background()
+	// interchaintest gives a container start 30 seconds unless the context has a
+	// deadline, and a busy runner's Docker can take longer, so the test's own
+	// deadline bounds it instead.
+	if deadline, ok := s.T().Deadline(); ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithDeadline(ctx, deadline)
+		s.T().Cleanup(cancel)
+	}
 
 	dockerClient, dockerNetwork := interchaintest.DockerSetup(s.T())
 	ctx = WithDockerContext(ctx, &dockerContext{NetworkID: dockerNetwork, Client: dockerClient})

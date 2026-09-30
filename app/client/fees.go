@@ -18,8 +18,12 @@ import (
 )
 
 // DefaultFeeHeadroom pads stable fee ceilings for price movement before inclusion. Unused stable
-// fees remain with the payer. NOAH receives no headroom because its entire leg is charged.
+// fees remain with the payer.
 var DefaultFeeHeadroom = math.LegacyMustNewDecFromStr("1.1")
+
+// DefaultNoahFeeMargin pads a NOAH leg for the same movement, chiefly NOAH's gas factor, which
+// follows the oracle rate every block. The leg is charged whole, so the margin is paid as tip.
+var DefaultNoahFeeMargin = math.LegacyMustNewDecFromStr("1.05")
 
 // withHeadroom sizes the declaration for every leg of a priced fee.
 func withHeadroom(fee sdk.Coins) sdk.Coins {
@@ -31,19 +35,21 @@ func withHeadroom(fee sdk.Coins) sdk.Coins {
 	return lifted
 }
 
-// lift sizes one fee leg's declaration under DefaultFeeHeadroom: a stable
-// leg ceils, NOAH stays exact. The declaration and the balance check that
-// picks a denomination both price through here, so they cannot disagree.
+// lift sizes one fee leg's declaration, ceiled: a stable leg under
+// DefaultFeeHeadroom, NOAH under DefaultNoahFeeMargin. The declaration and the
+// balance check that picks a denomination both price through here, so they
+// cannot disagree.
 func lift(denom string, amount math.Int) math.Int {
+	margin := DefaultFeeHeadroom
 	if denom == chain.NoahBaseDenom {
-		return amount
+		margin = DefaultNoahFeeMargin
 	}
-	return DefaultFeeHeadroom.MulInt(amount).Ceil().TruncateInt()
+	return margin.MulInt(amount).Ceil().TruncateInt()
 }
 
-// headroomPercent is DefaultFeeHeadroom as the whole percentage it adds.
-func headroomPercent() math.Int {
-	return DefaultFeeHeadroom.Sub(math.LegacyOneDec()).MulInt64(100).TruncateInt()
+// percentOver is a margin as the whole percentage it adds.
+func percentOver(margin math.LegacyDec) math.Int {
+	return margin.Sub(math.LegacyOneDec()).MulInt64(100).TruncateInt()
 }
 
 // FeeBreakdown is one priced fee and the parts it was built from: the base
@@ -73,9 +79,12 @@ func (b FeeBreakdown) String() string {
 		line += ": " + strings.Join(parts, " + ")
 		for _, coin := range b.Gas.Add(b.Tax...) {
 			if coin.Denom != chain.NoahBaseDenom {
-				line += fmt.Sprintf(", stable legs declared with %s%% headroom", headroomPercent())
+				line += fmt.Sprintf(", stable legs declared with %s%% headroom", percentOver(DefaultFeeHeadroom))
 				break
 			}
+		}
+		if b.Gas.AmountOf(chain.NoahBaseDenom).IsPositive() {
+			line += fmt.Sprintf(", NOAH declared with a %s%% margin charged as tip", percentOver(DefaultNoahFeeMargin))
 		}
 	}
 	if !b.Tip.IsZero() {
@@ -140,8 +149,8 @@ func quoteFee(clientCtx sdkclient.Context, msgs []sdk.Msg, payer sdk.AccAddress,
 	return quote, nil
 }
 
-// price combines tax, caller- or sheet-priced gas, stable-leg headroom, and the NOAH tip. Fee
-// includes Tip; NOAH is unpadded. Zero gas declares only the tip.
+// price combines tax, caller- or sheet-priced gas, each leg's margin, and the NOAH tip. Fee
+// includes Tip, which is not padded. Zero gas declares only the tip.
 func (q feeQuote) price(gas uint64, gasFee, tip sdk.Coins) (FeeBreakdown, error) {
 	if gas == 0 {
 		return FeeBreakdown{Tip: tip, Fee: tip}, nil

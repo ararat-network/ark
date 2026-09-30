@@ -30,7 +30,7 @@ const TipFlagUsage = "NOAH paid above the base fee for priority, e.g. 1000anoah"
 // overrides this margin; TestGasEstimateMatchesExecution checks both fee shapes.
 const DefaultGasAdjustment = 1.15
 
-// PriceTransactions wraps transaction builders to declare tax, gas, stable-fee headroom, and the
+// PriceTransactions wraps transaction builders to declare tax, gas, each leg's margin, and the
 // NOAH tip. It prints a breakdown before SDK confirmation. Explicit --fees remain caller-declared,
 // with the tip added.
 func PriceTransactions(cmd *cobra.Command) {

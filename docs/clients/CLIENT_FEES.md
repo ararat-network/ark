@@ -33,8 +33,10 @@ the tax check sees as well as the slack the base fee is taken from.
 
 **NOAH is charged whole; the remainder is the tip.** `anoah` is the one denomination that does not behave as a
 ceiling. Whatever you declare in NOAH leaves the account: the base fee if no stable leg covered it, and the entire
-rest as a tip. Padding NOAH is a donation. Padding anything else is free. NOAH is also never taxed, which is what
-lets a tip and a padded tax be told apart at all.
+rest as a tip. Padding anything else is free; padding NOAH is a tip. A small one is still worth paying when NOAH
+carries the base fee: its requirement is priced through NOAH's gas factor, which follows the oracle rate every block,
+so an exact NOAH fee can arrive short. `arkd` pads a NOAH gas fee by 5%. NOAH is also never taxed, which is what lets
+a tip and a padded tax be told apart at all.
 
 ## 2. What the chain publishes
 
@@ -78,7 +80,7 @@ payable fee meters the actual transfer instead.
    amount changes the tax.
 3. **`GasPrices`**, and pick a denomination the payer can spend. `required = ceil(gas_price × gas_limit)`. A
    denomination in `tax_base` is one the payer is already spending, and the natural first choice.
-4. **Declare** `tax + required`, with the stable legs padded and NOAH exact.
+4. **Declare** `tax + required`, with every leg padded: the stable legs for free, NOAH at the cost of a tip.
 
 Illustrative, sending `ausd` and paying in `ausd` (base units, `1e18 = 1 USD`):
 

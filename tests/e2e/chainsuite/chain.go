@@ -93,8 +93,18 @@ func NewCosmosChain(ctx context.Context, testName interchaintest.TestName, spec 
 	return cosmos.NewCosmosChain(testName.Name(), chainConfig(ctx, spec), validators, fullNodes, GetLogger(ctx))
 }
 
-// CreateChain starts one chain from spec and funds a relayer wallet on it.
+// CreateChain starts one chain from spec and funds a relayer wallet on it,
+// starting over after a port clash.
 func CreateChain(ctx context.Context, testName interchaintest.TestName, spec *interchaintest.ChainSpec) (*Chain, error) {
+	var chain *Chain
+	err := retryPortClash(ctx, testName, func() (err error) {
+		chain, err = createChain(ctx, testName, spec)
+		return err
+	})
+	return chain, err
+}
+
+func createChain(ctx context.Context, testName interchaintest.TestName, spec *interchaintest.ChainSpec) (*Chain, error) {
 	cosmosChain := NewCosmosChain(ctx, testName, spec)
 	relayerWallet, err := cosmosChain.BuildRelayerWallet(ctx, "relayer-"+cosmosChain.Config().ChainID)
 	if err != nil {
@@ -412,16 +422,15 @@ func (c *Chain) GetValidatorPower(ctx context.Context, hexAddr string) (int64, e
 
 // RestartNode stops a node and brings it back on the same volumes. The
 // containers are removed in between: stopping a node stops its sidecars, and
-// starting it creates fresh sidecar containers under the same names. Docker can
-// refuse a reserved host port as already allocated while concurrent restarts
-// release and reserve ports, so such a start is retried on fresh ones.
+// starting it creates fresh sidecar containers under the same names. A start
+// that hits a port clash is retried on fresh ports.
 func RestartNode(ctx context.Context, node *cosmos.ChainNode) error {
 	if err := node.StopContainer(ctx); err != nil {
 		return err
 	}
 	var err error
-	for range 3 {
-		if err = recreateNode(ctx, node); err == nil || !strings.Contains(err.Error(), "port is already allocated") {
+	for range startAttempts {
+		if err = recreateNode(ctx, node); !isPortClash(err) {
 			return err
 		}
 	}
