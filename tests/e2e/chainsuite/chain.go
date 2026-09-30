@@ -541,6 +541,34 @@ func (c *Chain) VoteExtensions(ctx context.Context, height int64) ([]VoteExtensi
 	return out.Votes, nil
 }
 
+// WaitForPricedVoteExtensions polls until the latest block carries rates from
+// every validator and returns its vote extensions. A rate lands once a
+// threshold of power reports it, so an exchange rate alone does not mean every
+// sidecar has reported.
+func (c *Chain) WaitForPricedVoteExtensions(ctx context.Context, timeout time.Duration) ([]VoteExtension, error) {
+	var votes []VoteExtension
+	err := testutil.WaitForCondition(timeout, BlockTime, func() (bool, error) {
+		latest, err := c.VoteExtensions(ctx, 0)
+		if err != nil {
+			return false, err
+		}
+		votes = latest
+		if len(latest) != len(c.Validators) {
+			return false, nil
+		}
+		for _, vote := range latest {
+			if len(vote.Rates) == 0 {
+				return false, nil
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%w; last vote extensions: %+v", err, votes)
+	}
+	return votes, nil
+}
+
 // WaitForTx polls until txhash is committed and returns its code.
 func (c *Chain) WaitForTx(ctx context.Context, txhash string) (uint32, error) {
 	var code uint32

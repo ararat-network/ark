@@ -107,13 +107,8 @@ func (s *StakingSuite) TestPowerShiftKeepsOracleVotes() {
 	}
 	ctx := s.GetContext()
 	s.Require().NoError(s.Chain.WaitForExchangeRate(ctx, "ausd", 4*time.Minute))
-
-	votes, err := s.Chain.VoteExtensions(ctx, 0)
+	_, err := s.Chain.WaitForPricedVoteExtensions(ctx, 2*time.Minute)
 	s.Require().NoError(err)
-	s.Require().Len(votes, len(s.Chain.Validators))
-	for _, vote := range votes {
-		s.Require().NotEmpty(vote.Rates, "validator %s reported no rates", vote.ValidatorAddress)
-	}
 
 	hexAddr, err := s.Chain.GetValidatorHex(ctx, 3)
 	s.Require().NoError(err)
@@ -129,12 +124,10 @@ func (s *StakingSuite) TestPowerShiftKeepsOracleVotes() {
 	s.Require().NoError(err)
 	s.Require().Greater(after, before)
 
-	votes, err = s.Chain.VoteExtensions(ctx, 0)
-	s.Require().NoError(err)
-	s.Require().Len(votes, len(s.Chain.Validators))
+	votes, err := s.Chain.WaitForPricedVoteExtensions(ctx, time.Minute)
+	s.Require().NoError(err, "rates stopped landing after the shift")
 	var top int64
 	for _, vote := range votes {
-		s.Require().NotEmpty(vote.Rates, "validator %s reported no rates after the shift", vote.ValidatorAddress)
 		top = max(top, vote.ValidatorPower)
 	}
 	s.Require().Equal(after, top, "the extended commit does not carry the new power")
