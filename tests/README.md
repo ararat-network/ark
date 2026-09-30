@@ -50,7 +50,7 @@ gates. The e2e suites run per pull request on the working tree; nightly they sta
 upgrade to the working tree first, so a release-to-release migration is rehearsed against every suite. The nightly
 workflows file one issue per workflow on failure through [nightly-failure.yml](../.github/workflows/nightly-failure.yml).
 [CodeQL](../.github/workflows/codeql.yml) and [vulnerability scanning](../.github/workflows/vulncheck.yml) provide security
-checks; `make vulncheck` runs the reachable-call scanner locally. Image publication is configured separately in
+checks; `make vulncheck` runs the reachable-call gate locally. Image publication is configured separately in
 [docker-push.yml](../.github/workflows/docker-push.yml); [THREAT_MODEL.md](../docs/design/THREAT_MODEL.md) owns release trust.
 ## Height-sensitive fixtures
 
@@ -63,8 +63,11 @@ server with the intended context; `baseapp.NewQueryServerTestHelper` captures it
 
 CodeQL includes divide-by-zero and Cosmos SDK-specific consensus checks alongside the standard Go suite. Its query
 references are pinned and kept aligned with the CLI shipped by the action. Generated Go remains in extraction and
-call/dataflow analysis, but the action filters alerts anchored in generated files. A local CLI run does not reproduce
-those action-side path filters; compare findings with that distinction in mind, not against a fixed historical count.
+call/dataflow analysis. Before upload, [scope-results.py](../.github/codeql/scope-results.py) drops alerts anchored in
+generated files and confines the Cosmos SDK checks to code that can run in the state machine; the action's own path
+filters do not apply to Go results. A local CLI run reports everything, so compare findings with that in mind.
 
 govulncheck reports reachable vulnerable calls. It uses the pinned toolchain and runs outside the merge gate because
-some findings have no upstream fix; findings still require review.
+some findings have no upstream fix. [vulncheck.py](../contrib/scripts/vulncheck.py) fails on any finding not reviewed into
+[vulncheck-accepted.json](../contrib/scripts/vulncheck-accepted.json) with its reason, on an accepted finding once a fix
+ships, and on an entry whose finding is gone.

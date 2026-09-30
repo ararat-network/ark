@@ -37,6 +37,7 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
@@ -74,8 +75,15 @@ func interBlockCacheOpt() func(*baseapp.BaseApp) {
 	return baseapp.SetInterBlockCache(store.NewCommitKVStoreCacheManager())
 }
 
+// newSimApp prunes IAVL synchronously. The async default starts a goroutine per store that only a
+// store close stops, and nothing closes sims' stores, so every finished seed stays in memory. Sims
+// keep every version, so nothing else changes.
+func newSimApp(logger log.Logger, db dbm.DB, loadLatest bool, appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp)) *ArkApp {
+	return NewArkApp(logger, db, loadLatest, appOpts, append(baseAppOptions, baseapp.SetIAVLSyncPruning(true))...)
+}
+
 func TestFullAppSimulation(t *testing.T) {
-	simsx.Run(t, NewArkApp, setupStateFactory)
+	simsx.Run(t, newSimApp, setupStateFactory)
 }
 
 func setupStateFactory(app *ArkApp) simsx.SimStateFactory {
@@ -94,7 +102,7 @@ var (
 )
 
 func TestAppImportExport(t *testing.T) {
-	simsx.Run(t, NewArkApp, setupStateFactory, func(tb testing.TB, ti simsx.TestInstance[*ArkApp], accs []simtypes.Account) {
+	simsx.Run(t, newSimApp, setupStateFactory, func(tb testing.TB, ti simsx.TestInstance[*ArkApp], accs []simtypes.Account) {
 		tb.Helper()
 		app := ti.App
 		tb.Log("exporting genesis...\n")
@@ -102,7 +110,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(tb, err)
 
 		tb.Log("importing genesis...\n")
-		newTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
+		newTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, newSimApp)
 		newApp := newTestInstance.App
 		var genesisState map[string]json.RawMessage
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
@@ -147,7 +155,7 @@ func TestAppImportExport(t *testing.T) {
 
 // Run a fresh chain, export after n blocks, then import its state and run another n blocks.
 func TestAppSimulationAfterImport(t *testing.T) {
-	simsx.Run(t, NewArkApp, setupStateFactory, func(tb testing.TB, ti simsx.TestInstance[*ArkApp], accs []simtypes.Account) {
+	simsx.Run(t, newSimApp, setupStateFactory, func(tb testing.TB, ti simsx.TestInstance[*ArkApp], accs []simtypes.Account) {
 		tb.Helper()
 		app := ti.App
 		tb.Log("exporting genesis...\n")
@@ -155,7 +163,7 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		require.NoError(tb, err)
 
 		tb.Log("importing genesis...\n")
-		newTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, NewArkApp)
+		newTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, newSimApp)
 		newApp := newTestInstance.App
 		var genesisState map[string]json.RawMessage
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
@@ -177,13 +185,25 @@ func TestAppSimulationAfterImport(t *testing.T) {
 			newApp.BaseApp,
 			newStateFactory.AppStateFn,
 			simtypes.RandomAccounts,
-			simtestutil.BuildSimulationOperations(newApp, newApp.AppCodec(), newTestInstance.Cfg, newApp.GetTxConfig()),
+			postImportOperations(newApp),
 			newStateFactory.BlockedAddr,
 			newTestInstance.Cfg,
 			newStateFactory.Codec,
 			ti.ExecLogWriter,
 		)
 		require.NoError(tb, err)
+	})
+}
+
+// postImportOperations builds the legacy operations without gov proposal submissions: the SDK's
+// legacy submission signs a zero-amount fee leg, which the fee decorator refuses by design. The
+// first run covers proposals through simsx.
+func postImportOperations(app *ArkApp) []simtypes.WeightedOperation {
+	return app.SimulationManager().WeightedOperations(module.SimulationState{
+		AppParams: make(simtypes.AppParams),
+		Cdc:       app.AppCodec(),
+		TxConfig:  app.GetTxConfig(),
+		BondDenom: sdk.DefaultBondDenom,
 	})
 }
 
@@ -244,7 +264,7 @@ func TestAppStateDeterminism(t *testing.T) {
 				return others.Get(k)
 			})
 		}
-		return NewArkApp(logger, db, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
+		return newSimApp(logger, db, true, appOpts, append(baseAppOptions, interBlockCacheOpt())...)
 	}
 	var mx sync.Mutex
 	appHashResults := make(map[int64][][]byte)
@@ -345,7 +365,7 @@ func FuzzFullAppSimulation(f *testing.F) {
 		}
 		simsx.RunWithSeeds(
 			t,
-			NewArkApp,
+			newSimApp,
 			setupStateFactory,
 			[]int64{int64(binary.BigEndian.Uint64(rawSeed))},
 			rawSeed[8:],

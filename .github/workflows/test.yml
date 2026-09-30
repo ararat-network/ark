@@ -65,9 +65,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Test source packaging and release boundaries
+      - name: Test source packaging, release boundaries, and the vulnerability gate
         run: |
           python3 -B contrib/scripts/package_source_test.py
           python3 -B contrib/scripts/package_os_source_test.py
           python3 -B contrib/scripts/release_build_test.py
           python3 -B contrib/scripts/release_assets_test.py
+          python3 -B contrib/scripts/vulncheck_test.py

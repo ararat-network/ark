@@ -1,0 +1,22 @@
+[
+  {
+    "id": "GO-2024-2584",
+    "reason": "cosmos-sdk v0.50.5 and later carry the fix (GHSA-86h5-xcpx-cfqc, ASA-2024-005); the Go database entry records no fix after v0.50.0."
+  },
+  {
+    "id": "GO-2026-4479",
+    "reason": "pion/dtls/v2 serves go-libp2p's WebRTC transport. CometBFT's libp2p networking is off by default and Ark never enables it; enabled, it configures QUIC only."
+  },
+  {
+    "id": "GO-2026-4513",
+    "reason": "wasmvm decodes msgpack only for the pinned-contract cache metrics its own library serialises (GetPinnedMetrics); no contract or peer input reaches the decoder."
+  },
+  {
+    "id": "GO-2026-4740",
+    "reason": "Same decoder as GO-2026-4513: wasmvm's pinned-contract cache metrics, serialised by its own library."
+  },
+  {
+    "id": "GO-2026-5932",
+    "reason": "Only openpgp/armor is linked, through the SDK's key import and export (crypto/armor.go): ASCII armour of operator-supplied key files, with no OpenPGP packets, encryption or signatures."
+  }
+]

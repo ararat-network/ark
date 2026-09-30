@@ -10,6 +10,12 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    # All actions in one pull request: the CodeQL steps must move together, and
+    # a pull request per action fills the limit and queues the rest.
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   # Weekly rather than daily: a chain's dependency bumps need the full suite
   # and the simulations behind them, and a queue of open bumps competing for
@@ -31,3 +37,8 @@ updates:
     open-pull-requests-limit: 2
     labels:
       - dependencies
+    # The builder and runtime bases ship in one image and one source bundle.
+    groups:
+      base-images:
+        patterns:
+          - "*"
