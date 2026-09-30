@@ -99,7 +99,7 @@ func connect(t *testing.T, chain *fakeChain) sdkclient.Context {
 }
 
 // TestPricing checks tax queries and gas declarations from explicit prices or the sheet, including
-// payer balances, stable headroom, exact NOAH, and offline behaviour.
+// payer balances, stable headroom, the NOAH margin, and offline behaviour.
 func TestPricing(t *testing.T) {
 	sender := sdk.AccAddress("sender")
 	msg := banktypes.NewMsgSend(
@@ -122,8 +122,8 @@ func TestPricing(t *testing.T) {
 	transferred := sdk.NewCoins(sdk.NewInt64Coin("axdr", 100))
 	noahGasFee := sdk.NewCoins(sdk.NewInt64Coin("anoah", 25))
 	// 200k gas at these prices: 20,000axdr or 5,000anoah. Lifted by the
-	// headroom, the axdr leg with its one of tax declares 22,002; NOAH is
-	// exact.
+	// headroom, the axdr leg with its one of tax declares 22,002; NOAH's
+	// margin declares 5,250.
 	const gas = 200_000
 
 	// price runs the halves as the builder runs them: the chain asked about
@@ -153,8 +153,8 @@ func TestPricing(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "25anoah", got.Gas.String())
 		require.Equal(t, "1axdr", got.Tax.String())
-		// The tax leg is lifted; NOAH gas is exact.
-		require.Equal(t, "25anoah,2axdr", got.Fee.String())
+		// The tax leg takes the headroom, NOAH gas its margin: 25 lifts to 27.
+		require.Equal(t, "27anoah,2axdr", got.Fee.String())
 		// The chain priced the very message being sent, and was asked for
 		// nothing it could not use.
 		require.Equal(t, [][]string{{"/cosmos.bank.v1beta1.MsgSend"}}, chain.taxed)
@@ -167,7 +167,7 @@ func TestPricing(t *testing.T) {
 
 		require.NoError(t, err)
 		require.True(t, got.Tax.IsZero())
-		require.Equal(t, "25anoah", got.Fee.String())
+		require.Equal(t, "27anoah", got.Fee.String())
 	})
 
 	t.Run("zero gas prices nothing", func(t *testing.T) {
@@ -217,14 +217,14 @@ func TestPricing(t *testing.T) {
 			tax:       oneTax,
 			base:      transferred,
 			sheet:     sheet,
-			spendable: sdk.NewCoins(sdk.NewInt64Coin("axdr", 22_101), sdk.NewInt64Coin("anoah", 5_000)),
+			spendable: sdk.NewCoins(sdk.NewInt64Coin("axdr", 22_101), sdk.NewInt64Coin("anoah", 5_250)),
 		}
 		got, err := price(t, connect(t, chain), sender, true, gas, nil, msg)
 
 		require.NoError(t, err)
 		// One short of the lifted gas and tax plus the transfer in axdr, so
 		// gas rides NOAH and the tax still rides axdr, lifted.
-		require.Equal(t, "5000anoah,2axdr", got.Fee.String())
+		require.Equal(t, "5250anoah,2axdr", got.Fee.String())
 	})
 
 	t.Run("without a payer the reference row prices gas beside the tax", func(t *testing.T) {
@@ -257,7 +257,7 @@ func TestPickFeeDenom(t *testing.T) {
 	coin := sdk.NewInt64Coin
 	noTax := sdk.NewCoins()
 	// Fees at these prices: 20,000axdr, 40,000ausd, 5,000anoah; lifted,
-	// 22,000axdr and 44,000ausd, NOAH exact.
+	// 22,000axdr, 44,000ausd and 5,250anoah.
 
 	// own is a transaction whose fee account is the one transferring, so the
 	// transfer is netted; other is one paid from elsewhere.
@@ -295,7 +295,7 @@ func TestPickFeeDenom(t *testing.T) {
 		},
 		{
 			name:  "a transfer the balance cannot also fee falls through to noah",
-			quote: own(sdk.NewCoins(coin("ausd", 40_050), coin("anoah", 5_000)), sdk.NewCoins(coin("ausd", 100)), noTax),
+			quote: own(sdk.NewCoins(coin("ausd", 40_050), coin("anoah", 5_250)), sdk.NewCoins(coin("ausd", 100)), noTax),
 			fee:   coin("anoah", 5_000),
 			ok:    true,
 		},
@@ -308,7 +308,7 @@ func TestPickFeeDenom(t *testing.T) {
 		},
 		{
 			name:  "noah precedes the reference for a transferless transaction",
-			quote: own(sdk.NewCoins(coin("anoah", 5_000), coin("axdr", 1_000_000)), sdk.NewCoins(), noTax),
+			quote: own(sdk.NewCoins(coin("anoah", 5_250), coin("axdr", 1_000_000)), sdk.NewCoins(), noTax),
 			fee:   coin("anoah", 5_000),
 			ok:    true,
 		},
