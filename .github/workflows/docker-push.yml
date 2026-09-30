@@ -30,7 +30,7 @@ jobs:
       packages: write
       id-token: write
       attestations: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     # Includes offline native-source verification for the published architecture.
     timeout-minutes: 180
     steps:
