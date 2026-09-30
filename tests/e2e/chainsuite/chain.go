@@ -412,11 +412,25 @@ func (c *Chain) GetValidatorPower(ctx context.Context, hexAddr string) (int64, e
 
 // RestartNode stops a node and brings it back on the same volumes. The
 // containers are removed in between: stopping a node stops its sidecars, and
-// starting it creates fresh sidecar containers under the same names.
+// starting it creates fresh sidecar containers under the same names. Docker can
+// refuse a reserved host port as already allocated while concurrent restarts
+// release and reserve ports, so such a start is retried on fresh ones.
 func RestartNode(ctx context.Context, node *cosmos.ChainNode) error {
 	if err := node.StopContainer(ctx); err != nil {
 		return err
 	}
+	var err error
+	for range 3 {
+		if err = recreateNode(ctx, node); err == nil || !strings.Contains(err.Error(), "port is already allocated") {
+			return err
+		}
+	}
+	return err
+}
+
+// recreateNode replaces a stopped node's containers. Removal is forced and
+// skips missing containers, so it also clears what a failed start left.
+func recreateNode(ctx context.Context, node *cosmos.ChainNode) error {
 	if err := node.RemoveContainer(ctx); err != nil {
 		return err
 	}
