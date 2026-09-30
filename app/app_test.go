@@ -462,6 +462,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// The default two-second commit timeout is what this suite costs; nothing
 	// it asserts is a function of wall-clock block time.
 	cfg.TimeoutCommit = 200 * time.Millisecond
+	// One validator, so no peers: CometBFT's per-peer consensus goroutines can
+	// outlive a stopped node and read its closed block store, panicking the
+	// package. The E2E suites cover multi-validator consensus.
+	cfg.NumValidators = 1
 
 	var err error
 	s.network, err = network.New(s.T(), s.T().TempDir(), cfg)
