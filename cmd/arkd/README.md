@@ -27,9 +27,10 @@ Its app logs to stderr, so a redirected stdout is the genesis alone. [Node opera
 [app/client/fees.go](../../app/client/fees.go) implements completion for transaction commands.
 [Client fee construction](../../docs/clients/CLIENT_FEES.md) owns the external contract; these choices are CLI policy:
 
-- `DefaultFeeHeadroom` (1.1) and `DefaultGasAdjustment` (1.15) are **policy, not consensus**. They are one prudent
-  choice against a 2.5%-per-block controller. A market maker may want more; a client resubmitting on failure may
-  want less.
+- `DefaultFeeHeadroom` (1.1), `DefaultNoahFeeMargin` (1.05), and `DefaultGasAdjustment` (1.15) are **policy, not
+  consensus**. They are one prudent choice against a 2.5%-per-block controller and NOAH's per-block oracle rate. The
+  NOAH margin is paid as tip, because the NOAH leg is charged whole. A market maker may want more; a client
+  resubmitting on failure may want less.
 - The denomination ranking in `pickFeeDenom` — the denominations in `tax_base`, then NOAH, then the reference,
   then the rest of the sheet — is a convenience for a CLI user who has not said which denomination to pay in. An
   integration that holds one denomination has no use for it.

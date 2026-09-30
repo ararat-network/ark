@@ -159,6 +159,18 @@ func TestPriceTransactions(t *testing.T) {
 		require.Zero(t, chain.sheets)
 	})
 
+	t.Run("a NOAH gas fee carries its margin as tip", func(t *testing.T) {
+		chain := &fakeChain{tax: oneTax, base: transferred}
+		run, stdout, stderr, err := execute(t, chain, "--gas", "200000", "--gas-prices", "0.025anoah")
+		require.NoError(t, err)
+		// 200k gas at 0.025anoah is 5,000; the margin declares 5,250.
+		require.Equal(t, "5250anoah,2axdr", declared(t, run, stdout).GetFee().String())
+		require.Equal(t,
+			"fee 5250anoah,2axdr: base fee 5000anoah + transfer tax 1axdr, stable legs declared with 10% headroom, "+
+				"NOAH declared with a 5% margin charged as tip\n",
+			stderr)
+	})
+
 	t.Run("auto gas takes the estimate and prices from the sheet", func(t *testing.T) {
 		chain := &fakeChain{
 			tax:       oneTax,
@@ -309,8 +321,8 @@ func TestPricingTxBuilder(t *testing.T) {
 		builder.SetGasLimit(100)
 		require.NoError(t, builder.SetSignatures())
 
-		require.Equal(t, "25anoah,2axdr", builder.GetTx().GetFee().String())
-		require.Equal(t, "25anoah,2axdr", builder.GetTx().GetFee().String())
+		require.Equal(t, "27anoah,2axdr", builder.GetTx().GetFee().String())
+		require.Equal(t, "27anoah,2axdr", builder.GetTx().GetFee().String())
 		require.Len(t, chain.taxed, 1)
 	})
 
