@@ -14,6 +14,7 @@ KIT = os.path.dirname(HERE)   # this file lives in <kit>/source/
 NAVY, INK, PAPER, CLAY, TIDE = "#1E3A7B", "#0F1A2E", "#F6F3EC", "#B4532A", "#9BB0DC"
 D_REV = 1.2
 S2 = math.sqrt(2)
+S3 = math.sqrt(3)
 
 # ---------------------------------------------------------------- symbol
 
@@ -49,37 +50,38 @@ def circle(cx, cy, r, ccw=False):
     s = 0 if ccw else 1
     return f"M{f(cx-r)} {f(cy)}A{f(r)} {f(r)} 0 1 {s} {f(cx+r)} {f(cy)}A{f(r)} {f(r)} 0 1 {s} {f(cx-r)} {f(cy)}Z"
 
-def wordmark(s=24, d=0.0):
-    """Geometric lowercase ark. s = stem width; round strokes are s + 2 (optical); d thins for reversed use."""
+def wordmark(s=22, d=0.0):
+    """Geometric lowercase ark. s = stem width; round strokes are s + 2 (optical); d thins for reversed use.
+    The k's arm and leg run at 60 degrees; the r's shoulder is a half ring, like the hull."""
     s_ = s - 2 * d
     paths, x = [], 0.0
     # a: circle bowl (overshoots x-height and baseline by 2) + stem; counter is a real hole (evenodd)
-    Ra = 58 - d
-    b = s + 2
-    cx = x + 58
-    paths.append(("evenodd", circle(cx, 128, Ra) + circle(cx, 128, 58 - b + d)))
-    paths.append(("nonzero", rect(x + 116 - s + d, XT + d, s_, BL - XT - 2 * d)))
-    x += 116 + 28
-    # r: stem + flat-topped arm with a round inner crotch
-    Wr = 52
-    ri = Wr - s
-    paths.append(("nonzero", rect(x + d, XT + d, s_, BL - XT - 2 * d)))
-    paths.append(("nonzero", f"M{f(x+d)} {f(XT+d)}H{f(x+Wr-d)}V{f(XT+s-d)}"
-                             f"A{f(ri+d)} {f(ri+d)} 0 0 0 {f(x+s-d)} {f(XT+s+ri)}H{f(x+d)}Z"))
-    x += Wr + 16
-    # k: stem + 45-degree arm and leg that run 6 units into the stem (no seams). Kw puts the arm's terminal
-    # right above the leg's foot. Thinning moves each 45-degree edge by d, which is d*sqrt(2) along x.
-    Kw, hk, t = s + 56 + s / S2, s * S2, d * S2
-    Ly = Kw - s + XT
-    lx = x + s + (BL - Ly)
-    rx = lx + hk
-    jy = (x + s + Ly - rx + BL) / 2
-    jx = x + s + Ly - jy
+    Ra, b = 58, s + 2
+    cx = x + Ra
+    paths.append(("evenodd", circle(cx, 128, Ra - d) + circle(cx, 128, Ra - b + d, ccw=True)))
+    paths.append(("nonzero", rect(x + 2 * Ra - s + d, XT + d, s_, BL - XT - 2 * d)))
+    x += 2 * Ra + 26
+    # r: stem and half-ring shoulder in one path (no seam); the shoulder overshoots the x-height by 2 like the bowl
+    Ro = 32
+    ri = Ro - s
+    cy = XT + Ro - 2
+    paths.append(("nonzero", f"M{f(x+d)} {f(BL-d)}V{f(cy)}A{f(Ro-d)} {f(Ro-d)} 0 0 1 {f(x+2*Ro-d)} {f(cy)}"
+                             f"H{f(x+Ro+ri+d)}A{f(ri+d)} {f(ri+d)} 0 0 0 {f(x+s-d)} {f(cy)}V{f(BL-d)}Z"))
+    x += 2 * Ro + 20
+    # k: stem from the ascender; arm and leg at 60 degrees through J on the stem's right edge, run 6 units into
+    # the stem (no seams). hw is the horizontal half-width of a 60-degree band of perpendicular width s; thinning
+    # moves each 60-degree edge by d, which is 2d/sqrt(3) along x.
+    jy = 120
+    hw, t = s / S3, 2 * d / S3
+    J = x + s
+    def arm_x(y, off): return J + (jy - y) / S3 + off
+    def leg_x(y, off): return J + (y - jy) / S3 + off
     paths.append(("nonzero", rect(x + d, ASC + d, s_, BL - ASC - 2 * d)))
-    paths.append(("nonzero", poly((x + s - 6, Ly - hk + 6 + t), (x + s + Ly - hk - XT - d + t, XT + d),
-                                  (x + s + Ly - XT - d - t, XT + d), (x + s - 6, Ly + 6 - t))))
-    paths.append(("nonzero", poly((x + s - 6, Ly - 6 - t), (jx - t, jy), (rx - d - t, BL - d), (lx - d + t, BL - d))))
-    right = max(x + Kw, rx)
+    paths.append(("nonzero", poly((J - 6, jy - (hw - 6 - t) * S3), (arm_x(XT + d, -hw + t), XT + d),
+                                  (arm_x(XT + d, hw - t), XT + d), (J - 6, jy + (hw + 6 - t) * S3))))
+    paths.append(("nonzero", poly((J - 6, jy + (hw - 6 - t) * S3), (leg_x(BL - d, -hw + t), BL - d),
+                                  (leg_x(BL - d, hw - t), BL - d), (J - 6, jy - (hw + 6 - t) * S3))))
+    right = max(leg_x(BL, hw), arm_x(XT, hw))
     return paths, (0, XT - 2, right, BL + 2), (0, ASC, right, BL + 2)
 
 # ---------------------------------------------------------------- composition
