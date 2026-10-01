@@ -12,7 +12,8 @@ import (
 )
 
 // EndBlocker settles accumulated conversions against final liability, then replenishes pools.
-// Market must lead other EndBlock mutations. Incomplete valuation parks principal; state or
+// Market settles after governance executes and before other EndBlock fund movements. Incomplete
+// valuation parks principal; state or
 // arithmetic errors fail the block. See x/market/README.md.
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()

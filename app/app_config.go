@@ -158,17 +158,17 @@ var (
 					authz.ModuleName,
 					treasurytypes.ModuleName,
 				},
-				// Market settles conversions before other EndBlockers change supply, fund balances,
-				// or asset lifecycle. Later modules must observe settled funds under the regime
-				// used by this block's swaps.
+				// Governance executes before Market settles, so a proposal's conversions are part
+				// of the block's flow and settlement reads the block's final state, proposal effects
+				// included. Market still settles before every later EndBlocker that moves funds.
 				EndBlockers: []string{
+					govtypes.ModuleName,
 					markettypes.ModuleName,
 					// Bank's EndBlocker only flushes virtual-account credits, which
 					// need an object store key this app never sets. It is listed
 					// because the module implements the hook; its slot carries no
 					// ordering intent.
 					banktypes.ModuleName,
-					govtypes.ModuleName,
 					// Treasury funds the next block's rewards and updates the base fee after Market
 					// settlement and any governance fee-parameter changes.
 					treasurytypes.ModuleName,

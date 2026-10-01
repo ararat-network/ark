@@ -26,7 +26,8 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
    due feed transitions are promoted.
 2. BeginBlock runs after those prices are available. The SDK distribution/slashing ordering is retained; Treasury
    refreshes conversion factors and exposure in its own hook.
-3. Market leads EndBlock and settles conversion facts before later modules move funds or enact lifecycle changes.
+3. Governance executes the block's proposals first, so a proposal's conversions are part of the block's flow;
+   Market then settles conversion facts against the block's final state, before later modules move funds.
    Governance precedes Treasury's reward/base-fee settlement and Oracle attendance settlement. Oracle precedes staking
    so attendance jails affect that block's validator-set update. Claims settles after governance cancellations.
 
