@@ -2,7 +2,7 @@
 
 The master artwork for the Ark logo, the icons and rasters generated from it, and the code that draws them. This file
 is the design record for whoever maintains the logo; [LOGO_GUIDELINES.md](LOGO_GUIDELINES.md) is the usage guide for
-anyone putting the mark on a site, wallet, document or print. The mark is **Whole**, chosen on 28 September 2026.
+anyone putting the mark on a site, wallet, document or print. The mark is **Whole**, chosen on 28 September 2026; the wordmark was re-cut on 2 October 2026 after a ground-up review that put it beside other symbols.
 
 ## Contents
 
@@ -39,10 +39,12 @@ edge. Without that, the gap looks narrower and the mark heavier on dark backgrou
 white. Blue is common across crypto, so the palette pairs it with a warm Clay accent and a light Tide for dark UIs.
 The logo itself stays one colour.
 
-**Wordmark.** A geometric lowercase "ark" drawn as paths, so no font licence is involved. The k's arm and leg run at
-45° to match the peak. The r has a flat top that echoes the waterline. The stems are slightly lighter than the symbol's
-mass, so the pair stays balanced. In the horizontal lockup the hull drops below the baseline, like a ship below its
-waterline.
+**Wordmark.** A geometric lowercase "ark" drawn as paths, so no font licence is involved. Stems are 22 on the
+256 grid, round strokes 24, so the word sits a little lighter than the symbol and the pair stays balanced. The a
+is a circle with its stem inside the bowl's edge. The r's shoulder is a half ring, a small echo of the hull, and
+it overshoots the x-height by 2 like the bowl. The k's arm and leg run at 60°, steeper than the peak, which keeps
+the word narrow and quiet next to the symbol; the earlier cut ran them at 45° to match the peak and read heavier.
+In the horizontal lockup the hull drops below the baseline, like a ship below its waterline.
 
 **Decks motif.** Concept A's three decks are kept as a secondary graphic for the three funds, so that story is still
 available outside the logo.
