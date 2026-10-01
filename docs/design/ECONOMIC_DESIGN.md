@@ -343,8 +343,8 @@ is not capped by the target gap, since targets are routing thresholds rather tha
 
 The committee has the same two transfers, `MsgCommitteeFundBuffer` and `MsgCommitteeFundInsurance`, bounded by the
 receiving fund's shortfall on the gross basis and by the mandate's NOAH floor (§7.5). Governance executes its proposal
-messages in EndBlock after Market has settled the block, so a commitment lands between settlements without a lock or
-queue.
+messages in EndBlock before Market settles the block, so a commitment lands ahead of that block's settlement, which
+reads the moved balances; no lock or queue is needed.
 
 For an amount `a`: the Reserve falls by `a`, the receiving fund rises by `a`, and total supply, liability, quotes,
 spread, pool state, and every other fund are unchanged. Commitment is one-way. There is no Buffer-to-Reserve path,
