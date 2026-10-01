@@ -1,46 +1,164 @@
-=== ark-logo-horizontal-black.svg  (928 bytes)
+
+=== ark-logo-horizontal-black.svg  (897 bytes)
+viewBox -10.24 0 589.89 256 · aspect 2.304 (wide)
+colours 1: #000000 · gradients 0 · anchors 43
+margins L24.0 R24.0 T32.0 B47.2 · bbox fill 0.635
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-horizontal-flush-black.svg  (927 bytes)
+
+=== ark-logo-horizontal-flush-black.svg  (896 bytes)
+viewBox 13.76 0 541.89 256 · aspect 2.117 (wide)
+colours 1: #000000 · gradients 0 · anchors 43
+margins L0.0 R0.0 T32.0 B47.2 · bbox fill 0.691
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-horizontal-flush-navy.svg  (927 bytes)
+
+=== ark-logo-horizontal-flush-navy.svg  (896 bytes)
+viewBox 13.76 0 541.89 256 · aspect 2.117 (wide)
+colours 1: #1e3a7b · gradients 0 · anchors 43
+margins L0.0 R0.0 T32.0 B47.2 · bbox fill 0.691
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-horizontal-flush-white.svg  (1044 bytes)
+
+=== ark-logo-horizontal-flush-white.svg  (1006 bytes)
+viewBox 13.76 0 541.89 256 · aspect 2.117 (wide)
+colours 1: #ffffff · gradients 0 · anchors 43
+margins L1.0 R1.0 T32.6 B48.4 · bbox fill 0.681
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-horizontal-navy.svg  (928 bytes)
+
+=== ark-logo-horizontal-navy.svg  (897 bytes)
+viewBox -10.24 0 589.89 256 · aspect 2.304 (wide)
+colours 1: #1e3a7b · gradients 0 · anchors 43
+margins L24.0 R24.0 T32.0 B47.2 · bbox fill 0.635
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-horizontal-white.svg  (1045 bytes)
+
+=== ark-logo-horizontal-white.svg  (1007 bytes)
+viewBox -10.24 0 589.89 256 · aspect 2.304 (wide)
+colours 1: #ffffff · gradients 0 · anchors 43
+margins L25.0 R25.0 T32.6 B48.4 · bbox fill 0.625
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-logo-stacked-black.svg  (930 bytes)
+
+=== ark-logo-stacked-black.svg  (899 bytes)
+viewBox 0 -6 286.12 415.2 · aspect 0.689 (tall)
+colours 1: #000000 · gradients 0 · anchors 43
+margins L24.0 R24.0 T24.0 B24.0 · bbox fill 0.736
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
+· INFO [tall] Tall proportions (<0.8:1) are awkward in headers and app icons; consider a squarer symbol.
 production-readiness score: 98/100 (heuristic)
-=== ark-logo-stacked-navy.svg  (930 bytes)
+
+=== ark-logo-stacked-navy.svg  (899 bytes)
+viewBox 0 -6 286.12 415.2 · aspect 0.689 (tall)
+colours 1: #1e3a7b · gradients 0 · anchors 43
+margins L24.0 R24.0 T24.0 B24.0 · bbox fill 0.736
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
+· INFO [tall] Tall proportions (<0.8:1) are awkward in headers and app icons; consider a squarer symbol.
 production-readiness score: 98/100 (heuristic)
-=== ark-logo-stacked-white.svg  (1047 bytes)
+
+=== ark-logo-stacked-white.svg  (1009 bytes)
+viewBox 0 -6 286.12 415.2 · aspect 0.689 (tall)
+colours 1: #ffffff · gradients 0 · anchors 43
+margins L24.5 R24.8 T25.7 B24.5 · bbox fill 0.728
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
+· INFO [tall] Tall proportions (<0.8:1) are awkward in headers and app icons; consider a squarer symbol.
 production-readiness score: 98/100 (heuristic)
+
 === ark-symbol-black.svg  (297 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #000000 · gradients 0 · anchors 10
+margins L16.0 R16.0 T18.0 B34.0 · bbox fill 0.697
+· INFO [off-centre-y] Vertical margins differ (top 18.0, bottom 34.0). Remember the optical centre sits slightly above the geometric centre.
 production-readiness score: 99/100 (heuristic)
+
 === ark-symbol-navy.svg  (297 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #1e3a7b · gradients 0 · anchors 10
+margins L16.0 R16.0 T18.0 B34.0 · bbox fill 0.697
+· INFO [off-centre-y] Vertical margins differ (top 18.0, bottom 34.0). Remember the optical centre sits slightly above the geometric centre.
 production-readiness score: 99/100 (heuristic)
+
 === ark-symbol-small-black.svg  (297 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #000000 · gradients 0 · anchors 10
+margins L16.0 R16.0 T22.0 B26.0 · bbox fill 0.711
+✔ no issues found
 production-readiness score: 100/100 (heuristic)
+
 === ark-symbol-small-navy.svg  (297 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #1e3a7b · gradients 0 · anchors 10
+margins L16.0 R16.0 T22.0 B26.0 · bbox fill 0.711
+✔ no issues found
 production-readiness score: 100/100 (heuristic)
+
 === ark-symbol-small-white.svg  (332 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #ffffff · gradients 0 · anchors 10
+margins L17.2 R17.2 T23.7 B27.5 · bbox fill 0.692
+✔ no issues found
 production-readiness score: 100/100 (heuristic)
+
 === ark-symbol-white.svg  (332 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #ffffff · gradients 0 · anchors 10
+margins L17.2 R17.2 T19.7 B35.5 · bbox fill 0.679
+· INFO [off-centre-y] Vertical margins differ (top 19.7, bottom 35.5). Remember the optical centre sits slightly above the geometric centre.
 production-readiness score: 99/100 (heuristic)
-=== ark-wordmark-black.svg  (731 bytes)
+
+=== ark-wordmark-black.svg  (700 bytes)
+viewBox -24 0 345.65 256 · aspect 1.35 (wide)
+colours 1: #000000 · gradients 0 · anchors 33
+margins L24.0 R24.0 T51.0 B51.0 · bbox fill 0.518
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-wordmark-navy.svg  (731 bytes)
+
+=== ark-wordmark-navy.svg  (700 bytes)
+viewBox -24 0 345.65 256 · aspect 1.35 (wide)
+colours 1: #1e3a7b · gradients 0 · anchors 33
+margins L24.0 R24.0 T51.0 B51.0 · bbox fill 0.518
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
-=== ark-wordmark-white.svg  (813 bytes)
+
+=== ark-wordmark-white.svg  (775 bytes)
+viewBox -24 0 345.65 256 · aspect 1.35 (wide)
+colours 1: #ffffff · gradients 0 · anchors 33
+margins L24.6 R25.0 T51.6 B51.6 · bbox fill 0.511
+· INFO [fractional-viewbox] viewBox has fractional values; integer canvases are easier to grid.
 production-readiness score: 99/100 (heuristic)
+
 === ark-decks-funds.svg  (441 bytes)
+viewBox 0 40 256 160 · aspect 1.6 (wide)
+colours 3: #1e3a7b #b4532a #9bb0dc · gradients 0 · anchors 13
+margins L16.0 R16.0 T24.0 B24.0 · bbox fill 0.612
+✔ no issues found
 production-readiness score: 100/100 (heuristic)
+
 === ark-decks-navy.svg  (441 bytes)
+viewBox 0 40 256 160 · aspect 1.6 (wide)
+colours 1: #1e3a7b · gradients 0 · anchors 13
+margins L16.0 R16.0 T24.0 B24.0 · bbox fill 0.612
+✔ no issues found
 production-readiness score: 100/100 (heuristic)
+
 === ark-avatar.svg  (443 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 2: #1e3a7b #ffffff · gradients 0 · anchors 15
+margins L0.0 R0.0 T0.0 B0.0 · bbox fill 1.0
+· INFO [on-tile] White artwork on a full-canvas tile/container — fine for app icons and avatars; make sure a version without the tile exists for other uses.
 production-readiness score: 99/100 (heuristic)
+
 === favicon.svg  (374 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 1: #1e3a7b · gradients 0 · anchors 10
+margins L5.1 R5.1 T13.9 B13.9 · bbox fill 0.856
+· INFO [style-block] Uses a <style> block; inline fill attributes are more portable across tools.
 production-readiness score: 99/100 (heuristic)
+
 === ark-app-icon.svg  (406 bytes)
+viewBox 0 0 256 256 · aspect 1.0 (square)
+colours 2: #1e3a7b #ffffff · gradients 0 · anchors 19
+margins L0.0 R0.0 T0.0 B0.0 · bbox fill 1.0
+· INFO [on-tile] White artwork on a full-canvas tile/container — fine for app icons and avatars; make sure a version without the tile exists for other uses.
 production-readiness score: 99/100 (heuristic)
