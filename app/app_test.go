@@ -360,7 +360,7 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		treasurytypes.ModuleName,
 	)
 	// Treasury follows gov so a fee-param change enacted this block applies at
-	// the same settlement. Market's must-lead slot is pinned in module_order_test.
+	// the same settlement. Market's slot is pinned below.
 	requireOrderBefore(
 		t,
 		arkApp.ModuleManager.OrderEndBlockers,
@@ -382,19 +382,20 @@ func requireOrderBefore(t *testing.T, order []string, first, second string) {
 	require.Less(t, firstIndex, secondIndex, "%s must run before %s", first, second)
 }
 
-// TestMarketSettlesBeforeEveryOtherEndBlocker checks that conversion settlement precedes changes to
-// the lifecycle, supply, and fund balances its valuation reads.
-func TestMarketSettlesBeforeEveryOtherEndBlocker(t *testing.T) {
+// TestMarketSettlesAfterGovernanceAndBeforeFundMovements checks that governance executes before
+// conversion settlement, so a proposal's conversions settle in their own block against the block's
+// final state, and that settlement still precedes every later EndBlocker that moves funds.
+func TestMarketSettlesAfterGovernanceAndBeforeFundMovements(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	order := arkApp.ModuleManager.OrderEndBlockers
 
+	requireOrderBefore(t, order, govtypes.ModuleName, markettypes.ModuleName)
 	marketAt := slices.Index(order, markettypes.ModuleName)
-	require.GreaterOrEqual(t, marketAt, 0, "market must have an EndBlocker")
-	require.Equal(t, 0, marketAt, "market must settle before every other EndBlocker: %v", order)
+	require.Equal(t, 1, marketAt, "only governance may precede conversion settlement: %v", order)
 
 	// Named individually so a failure says which actor would have moved first.
 	for _, later := range []string{
-		govtypes.ModuleName,
+		treasurytypes.ModuleName,
 		claimstypes.ModuleName,
 		banktypes.ModuleName,
 	} {

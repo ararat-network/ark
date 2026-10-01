@@ -293,7 +293,12 @@ per-conversion timing required (D39, D68). Amended 2026-09-02: with D6 amended, 
 the conversion. It escrows the gross offer whole, accumulates gross rather than eligible principal, and Treasury's
 settlement takes the block's gross total through the waterfall; the burn Market executes at settlement is the
 overflow alone. Spread and dust thereby share principal's fallback — an incomplete valuation parks the whole gross
-total in the Reserve — which is the all-or-nothing rule already settled.
+total in the Reserve — which is the all-or-nothing rule already settled. Amended 2026-10-02: governance's EndBlocker
+runs before Market's, so a proposal's conversions are recorded in the block's transient totals and settle with it, and
+settlement reads the block's final state with proposal effects included. Why: a swap executed after settlement would
+strand its offer, which barred governance from converting at all, and carrying facts into the next block would have
+broken block-level settlement. What it costs: proposals observe pre-settlement balances within their block, so the
+subsidy-return minimum and a Reserve commitment's shortfall read one block conservative.
 
 ## D34
 

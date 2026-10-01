@@ -22,7 +22,7 @@ Market implements conversion between NOAH and registered assets, and between eli
 
 ## State and integration
 
-`Params`, `ArkPoolDelta`, `TobinTaxOverrides`, `ConversionPolicy`, and `ConversionMandate` are persistent collections. The transient store carries block-local conversion state. Market leads the application EndBlock sequence so later governance and claims work observes settled funds. Native conversion minting belongs here; IBC voucher minting is a separate transfer-module responsibility.
+`Params`, `ArkPoolDelta`, `TobinTaxOverrides`, `ConversionPolicy`, and `ConversionMandate` are persistent collections. The transient store carries block-local conversion state. Market settles after governance has executed the block's proposals and before every later EndBlocker that moves funds, so a proposal's conversions settle in their own block and claims work observes settled funds. Native conversion minting belongs here; IBC voucher minting is a separate transfer-module responsibility.
 
 ## Conversion policy
 
@@ -66,7 +66,7 @@ the post-spread NOAH output. Only fund allocation and the compensating burn wait
 Market's EndBlocker sends one `ConversionTotals` to Treasury, burns the returned amount from Market custody, then
 replenishes its virtual pool. The call needs no rate set: conversions already recorded valued facts. It runs for idle
 blocks too, so Treasury can sample zero flow. [Application ordering](../../app/README.md#block-lifecycle) keeps this
-before governance lifecycle changes and later fund movements.
+after governance's proposal execution and before later fund movements.
 
 The previous swap-time settlement needed a cached liability snapshot, flat-metered reads, priming, supply-change
 notifications, and cross-module invalidators. End-of-block valuation removed those maintenance obligations and their
