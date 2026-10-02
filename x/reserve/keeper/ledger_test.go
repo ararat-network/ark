@@ -646,7 +646,7 @@ func (s *KeeperTestSuite) TestLedgerLifecycle() {
 		Committee: committee, ExpectedTerm: 1, PositionId: positionID,
 		Quantity: assetCoin(9),
 	})
-	s.Require().ErrorContains(err, "getting open position")
+	s.Require().ErrorContains(err, "is not open")
 }
 
 // TestReturnAttributionValuation checks NOAH at par, in-kind value at attribution-time rates, and
@@ -1078,12 +1078,12 @@ func (s *KeeperTestSuite) TestClosePositionAuthority() {
 		_, err = s.msgServer.ClosePosition(s.ctx, &types.MsgClosePosition{
 			Authority: s.authority, PositionId: positionID,
 		})
-		s.Require().ErrorContains(err, "getting open position")
+		s.Require().ErrorContains(err, "is not open")
 
 		_, err = s.msgServer.CommitteeClosePosition(s.ctx, &types.MsgCommitteeClosePosition{
 			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
 		})
-		s.Require().ErrorContains(err, "getting open position")
+		s.Require().ErrorContains(err, "is not open")
 	})
 
 	s.Run("rejects an unauthorised signer", func() {

@@ -121,6 +121,11 @@ The authoritative service and event definitions are [transactions](../../proto/a
 [queries](../../proto/ark/reserve/v1/query.proto), and [events](../../proto/ark/reserve/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+missing position is `NotFound`, on the transaction path as on the query path, and an operation that needs an open
+position reports a closed one the same way. Every other failure in the module is a plain error, since nothing
+branches on it. Handlers classify only the request itself.
+
 ## Related documents
 
 - [Reserve custody and recognition policy](../../docs/design/ECONOMIC_DESIGN.md).

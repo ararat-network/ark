@@ -2,12 +2,11 @@ package keeper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,6 +18,8 @@ import (
 
 var _ types.QueryServer = (*queryServer)(nil)
 
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
@@ -36,20 +37,15 @@ func (q queryServer) Mandate(ctx context.Context, req *types.QueryMandateRequest
 
 	reserveMandate, err := q.k.Mandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Reserve mandate: %v", err)
+		return nil, fmt.Errorf("getting Reserve mandate: %w", err)
 	}
 	used, err := q.k.AllowanceUsed.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Reserve allowance usage: %v", err)
+		return nil, fmt.Errorf("getting Reserve allowance usage: %w", err)
 	}
 	remaining, err := reserveMandate.DeploymentAllowance.Amount.SafeSub(used)
 	if err != nil || remaining.IsNegative() {
-		return nil, status.Errorf(
-			codes.Internal,
-			"Reserve allowance usage %s exceeds mandate allowance %s",
-			used,
-			reserveMandate.DeploymentAllowance.Amount,
-		)
+		return nil, fmt.Errorf("reserve allowance usage %s exceeds mandate allowance %s", used, reserveMandate.DeploymentAllowance.Amount)
 	}
 
 	return &types.QueryMandateResponse{
@@ -70,15 +66,9 @@ func (q queryServer) Position(ctx context.Context, req *types.QueryPositionReque
 		return nil, status.Error(codes.InvalidArgument, "position ID must be positive")
 	}
 
-	position, err := q.k.OpenPositions.Get(ctx, req.PositionId)
-	if errors.Is(err, collections.ErrNotFound) {
-		position, err = q.k.ClosedPositions.Get(ctx, req.PositionId)
-	}
+	position, _, err := q.k.anyPosition(ctx, req.PositionId)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "position %d not found", req.PositionId)
-		}
-		return nil, status.Errorf(codes.Internal, "getting position %d: %v", req.PositionId, err)
+		return nil, err
 	}
 	return &types.QueryPositionResponse{Position: position}, nil
 }
@@ -105,7 +95,7 @@ func (q queryServer) OpenPositions(ctx context.Context, req *types.QueryOpenPosi
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing open positions: %v", err)
+		return nil, fmt.Errorf("listing open positions: %w", err)
 	}
 	return &types.QueryOpenPositionsResponse{Positions: positions, Pagination: pageResponse}, nil
 }
@@ -130,7 +120,7 @@ func (q queryServer) ClosedPositions(ctx context.Context, req *types.QueryClosed
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing closed positions: %v", err)
+		return nil, fmt.Errorf("listing closed positions: %w", err)
 	}
 	return &types.QueryClosedPositionsResponse{Positions: positions, Pagination: pageResponse}, nil
 }
@@ -162,7 +152,7 @@ func (q queryServer) Ledger(ctx context.Context, req *types.QueryLedgerRequest) 
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing ledger: %v", err)
+		return nil, fmt.Errorf("listing ledger: %w", err)
 	}
 	return &types.QueryLedgerResponse{Ledger: entries, Pagination: pageResponse}, nil
 }
@@ -179,7 +169,7 @@ func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest
 		outstanding, err = outstanding.SafeAdd(position.Deployed.Amount)
 		return false, err
 	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "summing outstanding deployment: %v", err)
+		return nil, fmt.Errorf("summing outstanding deployment: %w", err)
 	}
 
 	return &types.QueryBalanceResponse{
@@ -199,7 +189,7 @@ func (q queryServer) RecognitionPolicy(ctx context.Context, req *types.QueryReco
 		entries = append(entries, entry)
 		return false, nil
 	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "iterating Reserve recognition policy: %v", err)
+		return nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
 	}
 	return &types.QueryRecognitionPolicyResponse{Entries: entries}, nil
 }
@@ -212,12 +202,12 @@ func (q queryServer) RecognisedCapital(ctx context.Context, req *types.QueryReco
 
 	assets, err := q.k.AssetRecognitions(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "decomposing recognised capital: %v", err)
+		return nil, fmt.Errorf("decomposing recognised capital: %w", err)
 	}
 	balance := q.k.balance(ctx)
 	recognised, err := sumRecognised(balance, assets)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", err)
+		return nil, err
 	}
 
 	return &types.QueryRecognisedCapitalResponse{
