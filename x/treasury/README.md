@@ -157,6 +157,10 @@ The authoritative service and event definitions are [transactions](../../proto/a
 [queries](../../proto/ark/treasury/v1/query.proto), and [events](../../proto/ark/treasury/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+message the tax calculator cannot read is `InvalidArgument`, a tax total it cannot represent is `OutOfRange`, and a
+denomination with no conversion factor is `NotFound`. Handlers classify only the request itself.
+
 ## Related documents
 
 - [Economic policy and custody](../../docs/design/ECONOMIC_DESIGN.md).

@@ -196,7 +196,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 
 	partition, err := k.liabilityPartitionValue(ctx)
 	if err != nil {
-		if isUnusableRateInput(err) {
+		if oracletypes.IsRateUnavailable(err) {
 			k.Logger(ctx).Warn("skipping Treasury exposure refresh", "error", err)
 			return false, nil
 		}

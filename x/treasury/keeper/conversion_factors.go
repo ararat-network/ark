@@ -56,7 +56,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 			factor = math.LegacyOneDec()
 		} else {
 			converted, err := rates.Convert(one, denom)
-			if err != nil && !isUnusableRateInput(err) {
+			if err != nil && !oracletypes.IsRateUnavailable(err) {
 				return fmt.Errorf("deriving conversion factor for %s: %w", denom, err)
 			}
 			if err == nil && converted.Amount.IsPositive() {
@@ -93,7 +93,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	// GetTaxCap. NOAH has no arrival seed; genesis supplies its initial factor until a live
 	// reference rate refreshes it.
 	converted, err := rates.Convert(one, chain.NoahBaseDenom)
-	if err != nil && !isUnusableRateInput(err) {
+	if err != nil && !oracletypes.IsRateUnavailable(err) {
 		return fmt.Errorf("deriving the NOAH conversion factor: %w", err)
 	}
 	if err == nil && converted.Amount.IsPositive() {
@@ -197,13 +197,4 @@ func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to st
 		return fmt.Errorf("emitting Treasury conversion-factor rescale event: %w", err)
 	}
 	return nil
-}
-
-// isUnusableRateInput reports whether a conversion failed on the block's rate
-// inputs rather than on Treasury's own arithmetic.
-func isUnusableRateInput(err error) bool {
-	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
-		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
-		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||
-		errors.Is(err, oracletypes.ErrConversionOutOfRange)
 }

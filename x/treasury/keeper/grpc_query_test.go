@@ -409,8 +409,9 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 	s.Require().Equal(codes.OutOfRange, status.Code(err))
 }
 
-func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
-	// Params carry the rate, so they are the first read the calculator makes.
+func (s *KeeperTestSuite) TestQueryComputeTaxSurfacesUnexpectedStateError() {
+	// Params carry the rate, so they are the first read the calculator makes. The
+	// failure is unregistered, so it carries no code and surfaces as unknown.
 	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
@@ -421,7 +422,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
 		s.ctx,
 		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
 	)
-	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().Equal(codes.Unknown, status.Code(err))
 }
 
 func (s *KeeperTestSuite) TestQueryFundStatus() {
@@ -552,7 +553,7 @@ func (s *KeeperTestSuite) TestQueryFundStatusClassifiesUnexpectedStateError() {
 		&treasurytypes.QueryFundStatusRequest{},
 	)
 	s.Require().Nil(response)
-	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().Equal(codes.Unknown, status.Code(err))
 	s.Require().Equal(
 		"getting treasury fund status: pricing aggregate liability: oracle store failure",
 		status.Convert(err).Message(),
