@@ -363,7 +363,8 @@ func (s *KeeperTestSuite) TestQueryAssetPricingByStatus() {
 
 // TestQueryAssetExchangeRateFault checks that an Oracle fault, as opposed to a
 // denomination it simply does not price, fails the query rather than passing
-// as an unpriced asset.
+// as an unpriced asset. An unregistered fault carries no code, so it surfaces
+// as unknown rather than as a precondition or not-found.
 func (s *KeeperTestSuite) TestQueryAssetExchangeRateFault() {
 	asset := assettypes.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
@@ -377,10 +378,10 @@ func (s *KeeperTestSuite) TestQueryAssetExchangeRateFault() {
 		s.ctx,
 		&assettypes.QueryAssetRequest{Denom: asset.Denom},
 	)
-	s.requireQueryCode(err, codes.Internal)
+	s.requireQueryCode(err, codes.Unknown)
 
 	_, err = server.Assets(s.ctx, &assettypes.QueryAssetsRequest{})
-	s.requireQueryCode(err, codes.Internal)
+	s.requireQueryCode(err, codes.Unknown)
 }
 
 func assetDenoms(assets []assettypes.PricedAsset) []string {

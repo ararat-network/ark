@@ -2,12 +2,13 @@ package keeper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
@@ -18,6 +19,8 @@ import (
 
 var _ types.QueryServer = (*queryServer)(nil)
 
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
@@ -34,7 +37,7 @@ func (q queryServer) Params(
 ) (*types.QueryParamsResponse, error) {
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting asset params: %v", err)
+		return nil, fmt.Errorf("getting asset params: %w", err)
 	}
 
 	return &types.QueryParamsResponse{Params: params}, nil
@@ -56,12 +59,7 @@ func (q queryServer) Asset(ctx context.Context, req *types.QueryAssetRequest) (*
 
 	pricings, err := q.k.Pricings(ctx, req.Denom)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"pricing asset %s: %v",
-			req.Denom,
-			err,
-		)
+		return nil, fmt.Errorf("pricing asset %s: %w", req.Denom, err)
 	}
 
 	// A verdict without a record is a denomination the registry does not list:
@@ -69,11 +67,7 @@ func (q queryServer) Asset(ctx context.Context, req *types.QueryAssetRequest) (*
 	// answering a lookup for one asset is where it becomes a not-found.
 	priced := pricings[req.Denom]
 	if priced.Asset.Denom == "" {
-		return nil, status.Errorf(
-			codes.NotFound,
-			"asset %s not found",
-			req.Denom,
-		)
+		return nil, errorsmod.Wrap(types.ErrAssetNotFound, req.Denom)
 	}
 
 	return &types.QueryAssetResponse{PricedAsset: priced}, nil
@@ -88,11 +82,7 @@ func (q queryServer) Assets(ctx context.Context, req *types.QueryAssetsRequest) 
 
 	denoms, pricings, err := q.k.PricedAssets(ctx)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"pricing assets: %v",
-			err,
-		)
+		return nil, fmt.Errorf("pricing assets: %w", err)
 	}
 
 	priced := make([]types.PricedAsset, len(denoms))
@@ -119,19 +109,10 @@ func (q queryServer) SettlementPlan(ctx context.Context, req *types.QuerySettlem
 
 	plan, found, err := q.k.GetSettlementPlan(ctx, req.Denom)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"getting settlement plan for asset %s: %v",
-			req.Denom,
-			err,
-		)
+		return nil, fmt.Errorf("getting settlement plan for asset %s: %w", req.Denom, err)
 	}
 	if !found {
-		return nil, status.Errorf(
-			codes.NotFound,
-			"settlement plan for asset %s not found",
-			req.Denom,
-		)
+		return nil, errorsmod.Wrap(types.ErrSettlementPlanNotFound, req.Denom)
 	}
 
 	return &types.QuerySettlementPlanResponse{SettlementPlan: plan}, nil
@@ -166,19 +147,7 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 		}
 	}
 	if _, err := q.k.GetAsset(ctx, req.Denom); err != nil {
-		if errors.Is(err, types.ErrAssetNotFound) {
-			return nil, status.Errorf(
-				codes.NotFound,
-				"asset %s not found",
-				req.Denom,
-			)
-		}
-		return nil, status.Errorf(
-			codes.Internal,
-			"getting asset %s: %v",
-			req.Denom,
-			err,
-		)
+		return nil, fmt.Errorf("getting asset %s: %w", req.Denom, err)
 	}
 
 	records, pageResponse, err := sdkquery.CollectionPaginate(
@@ -194,12 +163,7 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 		sdkquery.WithCollectionPaginationPairPrefix[string, uint64](req.Denom),
 	)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"listing write-off history for asset %s: %v",
-			req.Denom,
-			err,
-		)
+		return nil, fmt.Errorf("listing write-off history for asset %s: %w", req.Denom, err)
 	}
 
 	return &types.QueryResolutionHistoryResponse{
@@ -217,11 +181,7 @@ func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmerg
 
 	emergencyMandate, err := q.k.EmergencyMandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"getting emergency mandate: %v",
-			err,
-		)
+		return nil, fmt.Errorf("getting emergency mandate: %w", err)
 	}
 
 	suspendedDenoms := []string{}
@@ -233,11 +193,7 @@ func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmerg
 			return false, nil
 		},
 	); err != nil {
-		return nil, status.Errorf(
-			codes.Internal,
-			"listing consumed emergency suspensions: %v",
-			err,
-		)
+		return nil, fmt.Errorf("listing consumed emergency suspensions: %w", err)
 	}
 
 	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
