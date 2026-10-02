@@ -71,6 +71,10 @@ The authoritative service and event definitions are [transactions](../../proto/a
 [queries](../../proto/ark/claims/v1/query.proto), and [events](../../proto/ark/claims/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+missing claim is `NotFound`, on the transaction path as on the query path. Every other failure in the module is a
+plain error, since nothing branches on it. Handlers classify only the request itself.
+
 ## Related documents
 
 - [Insurance custody and claims policy](../../docs/design/ECONOMIC_DESIGN.md).

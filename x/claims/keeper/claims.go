@@ -2,9 +2,11 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -145,9 +147,9 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 // already authenticated their signer; what reaches here is the domain that
 // signed, which is the whole of what the cancellation decides.
 func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority, claimID uint64) error {
-	claim, err := k.Claims.Get(ctx, claimID)
+	claim, err := k.getClaim(ctx, claimID)
 	if err != nil {
-		return fmt.Errorf("getting claim %d: %w", claimID, err)
+		return err
 	}
 	if claim.Status != types.ClaimStatus_CLAIM_STATUS_PENDING {
 		return fmt.Errorf("claim %d is not pending", claim.ClaimId)
@@ -299,4 +301,16 @@ func (k *Keeper) failClaim(ctx context.Context, claim types.Claim) error {
 		return fmt.Errorf("emitting claim failure event: %w", err)
 	}
 	return nil
+}
+
+// getClaim reads a claim, reporting absence as the module's not-found.
+func (k *Keeper) getClaim(ctx context.Context, id uint64) (types.Claim, error) {
+	claim, err := k.Claims.Get(ctx, id)
+	if err != nil {
+		if errors.Is(err, collections.ErrNotFound) {
+			return types.Claim{}, errorsmod.Wrapf(types.ErrClaimNotFound, "%d", id)
+		}
+		return types.Claim{}, fmt.Errorf("getting claim %d: %w", id, err)
+	}
+	return claim, nil
 }

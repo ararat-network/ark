@@ -2,12 +2,10 @@ package keeper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"cosmossdk.io/collections"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
@@ -18,6 +16,8 @@ import (
 
 var _ types.QueryServer = (*queryServer)(nil)
 
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
@@ -35,7 +35,7 @@ func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) 
 
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Claims params: %v", err)
+		return nil, fmt.Errorf("getting Claims params: %w", err)
 	}
 	return &types.QueryParamsResponse{Params: params}, nil
 }
@@ -48,20 +48,15 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 
 	claimsMandate, err := q.k.ClaimsMandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Claims mandate: %v", err)
+		return nil, fmt.Errorf("getting Claims mandate: %w", err)
 	}
 	allowanceUsed, err := q.k.ClaimsAllowanceUsed.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Claims allowance usage: %v", err)
+		return nil, fmt.Errorf("getting Claims allowance usage: %w", err)
 	}
 	allowanceRemaining, err := claimsMandate.CommitteeClaimLimit.Amount.SafeSub(allowanceUsed)
 	if err != nil || allowanceRemaining.IsNegative() {
-		return nil, status.Errorf(
-			codes.Internal,
-			"Claims allowance usage %s exceeds mandate limit %s",
-			allowanceUsed,
-			claimsMandate.CommitteeClaimLimit,
-		)
+		return nil, fmt.Errorf("claims allowance usage %s exceeds mandate limit %s", allowanceUsed, claimsMandate.CommitteeClaimLimit)
 	}
 
 	return &types.QueryClaimsMandateResponse{
@@ -81,7 +76,7 @@ func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest
 
 	reserved, err := q.k.InsuranceReserved.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Insurance reservation: %v", err)
+		return nil, fmt.Errorf("getting Insurance reservation: %w", err)
 	}
 
 	return &types.QueryBalanceResponse{
@@ -99,12 +94,9 @@ func (q queryServer) Claim(ctx context.Context, req *types.QueryClaimRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "claim ID must be positive")
 	}
 
-	claim, err := q.k.Claims.Get(ctx, req.ClaimId)
+	claim, err := q.k.getClaim(ctx, req.ClaimId)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "claim %d not found", req.ClaimId)
-		}
-		return nil, status.Errorf(codes.Internal, "getting claim %d: %v", req.ClaimId, err)
+		return nil, err
 	}
 	return &types.QueryClaimResponse{Claim: claim}, nil
 }
@@ -130,7 +122,7 @@ func (q queryServer) Claims(ctx context.Context, req *types.QueryClaimsRequest) 
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing claims: %v", err)
+		return nil, fmt.Errorf("listing claims: %w", err)
 	}
 
 	return &types.QueryClaimsResponse{
