@@ -98,7 +98,7 @@ func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offer sdk.Coi
 		return sdk.Coin{}, errorsmod.Wrapf(err, "quoting settlement redemption of %s", offer)
 	}
 	// Truncation is the holder's cost, never the protocol's: a partial anoah cannot be paid, and
-	// rounding it up would mint NOAH the plan never committed to.
+	// rounding it up would mint NOAH the plan never committed to. A valid decimal always fits an Int.
 	entitlement := chain.NoahCoin(entitlementDec.Amount.TruncateInt())
 	if !entitlement.IsPositive() {
 		return sdk.Coin{}, errorsmod.Wrapf(types.ErrZeroSwapCoin, "settlement of %s at rate %s rounds to zero", offer, plan.RedemptionRate)

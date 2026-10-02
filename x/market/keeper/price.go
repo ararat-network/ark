@@ -183,6 +183,8 @@ func (s snapshot) sell(offer sdk.Coin) (quote, error) {
 		spread = math.LegacyMaxDec(s.floor, slippage)
 	}
 
+	// The spread is at most one, so nothing here exceeds gross, and a valid decimal always fits an
+	// Int.
 	fee := spread.Mul(gross.Amount)
 	net := sdk.DecCoin{Denom: s.askDenom, Amount: gross.Amount.Sub(fee)}
 	output, dust := net.TruncateDecimal()
@@ -199,7 +201,7 @@ func (s snapshot) sell(offer sdk.Coin) (quote, error) {
 
 	switch q.kind {
 	case expansion:
-		issued, err := s.rates.Convert(sdk.NewDecCoinFromCoin(output), chain.NoahBaseDenom)
+		issued, err := s.rates.Convert(sdk.NewDecCoinFromCoin(q.output), chain.NoahBaseDenom)
 		if err != nil {
 			return quote{}, errorsmod.Wrapf(err, "valuing issued output %s", output)
 		}
@@ -255,7 +257,14 @@ func (s snapshot) buy(ask sdk.Coin) (quote, error) {
 		offer = math.LegacyMaxDec(offer, fromPool.Amount)
 	}
 
-	amount := offer.Ceil().TruncateInt()
+	// A valid offer is below 2^256, so its integer part always fits an Int, but its ceiling can be
+	// 2^256 itself: the checked add is the one place the ceiling can overflow.
+	amount := offer.TruncateInt()
+	if offer.GT(math.LegacyNewDecFromInt(amount)) {
+		if amount, err = amount.SafeAdd(math.OneInt()); err != nil {
+			return quote{}, errorsmod.Wrapf(types.ErrArithmeticOutOfRange, "sizing the %s offer: %v", s.offerDenom, err)
+		}
+	}
 	for range maxOfferAdjustments {
 		q, err := s.sell(sdk.NewCoin(s.offerDenom, amount))
 		if err != nil {
@@ -266,11 +275,11 @@ func (s snapshot) buy(ask sdk.Coin) (quote, error) {
 			return q, nil
 		}
 
+		// The output is below the ask here, so the shortfall is bounded by the ask.
 		short, err := amount.SafeMul(ask.Amount.Sub(q.output.Amount))
 		if err != nil {
 			return quote{}, err
 		}
-
 		if amount, err = amount.SafeAdd(ceilDiv(short, q.output.Amount).AddRaw(1)); err != nil {
 			return quote{}, err
 		}
@@ -287,11 +296,13 @@ func (p pool) slippage(x math.LegacyDec) (math.LegacyDec, error) {
 		return math.LegacyDec{}, errorsmod.Wrapf(types.ErrArithmeticOutOfRange, "adding the offer amount to the effective pool: %v", err)
 	}
 
+	// in is at least the pool's own side, so the quotient is at most the other side and the
+	// difference is non-negative.
 	out := p.out.Sub(p.k.Quo(in))
 	if !out.LT(x) {
 		return math.LegacyZeroDec(), nil
 	}
-
+	// Reached only when out is below x, so x is positive and the ratio lies in (0, 1].
 	return x.Sub(out).Quo(x), nil
 }
 
@@ -350,7 +361,9 @@ func (s snapshot) gap(x math.LegacyDec, net sdk.DecCoin) (math.LegacyDec, error)
 	return gap, nil
 }
 
-// ceilDiv rounds a quotient up: an offer sizes a requirement.
+// ceilDiv rounds a quotient up: an offer sizes a requirement. The denominator is a quote's output,
+// which sell keeps positive, and a sized offer is far too small for the quotient to reach the
+// integer bound.
 func ceilDiv(numerator, denominator math.Int) math.Int {
 	quotient := numerator.Quo(denominator)
 	if !numerator.Mod(denominator).IsZero() {
