@@ -148,7 +148,10 @@ passes basic, authentication, and upfront fee checks before execution. Tax affor
 message results and is enforced during execution, like transfer affordability.
 
 **Controls.** The ante chain in `app/ante`: the fee decorator prices the transfer tax and holds the fee to
-it; MultiSend fan-out is capped with a quadratic surcharge; authz nesting is bounded by the decoder's depth.
+it; MultiSend fan-out is capped with a quadratic surcharge; authz nesting is bounded by the decoder's depth. A
+Market buy sizes its offer at execution, so the calculator treats it as a swap, exempt, and the trader's own
+maximum bounds what it spends. No Market message carries a recipient, so a payment in another denomination is a
+buy and a Bank send, taxed on the send.
 Gas fees and tips must be funded upfront. Tax collection and its feegrant allowance draw run only after
 successful messages in finalisation and simulation. Admission, recheck, and proposal verification do not
 rehearse collection: a payer may acquire tax funds during execution. If collection fails, message and tax

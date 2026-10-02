@@ -872,7 +872,7 @@ shortfall widens the committee's Reserve-to-Buffer injection cap during one.
 **Recorded status:** Confirmed.
 
 Contracts reach Ark's own modules through proto, not a hand-written JSON surface. Wasmd's custom **message**
-encoder goes unused: a contract calls Market with `CosmosMsg::Any` carrying `/ark.market.v1.MsgSwap` and proto
+encoder goes unused: a contract calls Market with `CosmosMsg::Any` carrying `/ark.market.v1.MsgSell` and proto
 bytes, and `x/market/wasm` and `x/wasm/exported` are deleted rather than ported to `wasmvm/v3`. The custom
 **querier** goes unused as well: D43's estimate is Treasury's `Query/ComputeTax`, reached through the accept list,
 so contracts hold one proto surface for reads and one for writes. The argument is one schema instead of two: a
@@ -1015,7 +1015,7 @@ wallets are unaffected because they price through `ComputeTax`.
 **Recorded status:** Confirmed.
 
 Hold `transfer_tax_rate` at or below the conversion spread floor. NOAH carries no tax cap, so it is the one untaxed
-denomination (D44), and `market.MsgSwap` is exempt (§8.2), so `MsgSwap` stable→NOAH, `bank.MsgSend` NOAH, `MsgSwap`
+denomination (D44), and `market.MsgSell` is exempt (§8.2), so `MsgSell` stable→NOAH, `bank.MsgSend` NOAH, `MsgSell`
 NOAH→stable delivers the same value to the same recipient for spread instead of tax. The cap neither softens the
 requirement nor changes its shape: with `tax = min(rate × A, cap)` against a spread cost of `floor × A`, the
 substitution pays exactly when `rate > floor`, at every principal — below the cap crossover both charges scale with

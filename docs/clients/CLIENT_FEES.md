@@ -125,13 +125,15 @@ The tax base is the conversion-factor set: a denomination is taxed exactly when 
 `anoah` is never taxed. A denomination outside the registry, or a member whose first refresh has not landed, is
 untaxed. The cap (`TaxCap` / `TaxCaps`) applies **independently to each message input**, not once per transaction.
 
+Market's `MsgSell` and `MsgBuy` present none: a conversion returns to its signer and pays spread instead. A payment
+in another denomination is a buy and a `MsgSend` in one transaction, taxed on the send.
+
 These messages present a taxable input:
 
 - `cosmos.bank.v1beta1.MsgSend`, `MsgMultiSend` (per input)
 - `cosmos.vesting.v1beta1.MsgCreateVestingAccount`, `MsgCreatePermanentLockedAccount`,
   `MsgCreatePeriodicVestingAccount` (the whole schedule as one input) — funding a vesting account is a transfer,
   and leaving it untaxed was Terra Classic's standard dodge
-- `ark.market.v1.MsgSwapSend` (the offer coin). Plain `MsgSwap` is **not** taxed
 - `ibc.applications.transfer.v1.MsgTransfer` and IBC v2 `MsgSendPacket` — the outbound leg only; forwarded hops,
   acknowledgements, timeouts, and refunds are never re-presented (D46)
 - `cosmwasm.wasm.v1.MsgExecuteContract`, `MsgInstantiateContract`, `MsgInstantiateContract2`,

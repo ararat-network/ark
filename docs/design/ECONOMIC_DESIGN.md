@@ -536,7 +536,7 @@ per-fund model exists; its revisit trigger is in [future changes](../direction/F
 - No tax-rate controller, revenue target, change-rate limit, or rolling indicator exists (D79).
 
 The rate is held at or below the conversion spread floor a conversion committee can reach, because NOAH is untaxed and
-`MsgSwap` is exempt, so a swap to NOAH, a NOAH send, and a swap back delivers the same value for spread instead of tax
+`MsgSell` is exempt, so a swap to NOAH, a NOAH send, and a swap back delivers the same value for spread instead of tax
 whenever the rate exceeds the floor, at every principal. Nothing enforces this in code, since Market depends on
 Treasury and neither module's stateless validation sees the other's state; it is a governance-time constraint on the
 rate and on every conversion appointment (D81).
@@ -554,8 +554,8 @@ Bank hook would tax settlement, draws, claims, grants, reward funding, and commi
 | --- | --- |
 | `bank.MsgSend` | the stablecoins sent |
 | `bank.MsgMultiSend` | each input independently; outputs never |
-| `market.MsgSwapSend` | the stablecoin offer |
-| `market.MsgSwap` | exempt; a self-returning conversion is governed by spread |
+| `market.MsgSell` | exempt; a self-returning conversion is governed by spread |
+| `market.MsgBuy` | exempt, as `MsgSell`; the offer is sized at execution within the message's maximum |
 | `authz.MsgExec` | every nested message, recursively, to a bounded depth |
 | vesting account creation | the stablecoin funding |
 | IBC `MsgTransfer` and v2 `MsgSendPacket` | the outbound stablecoin; a transfer-port payload carries principal, other ports carry none (D46) |
@@ -779,8 +779,9 @@ Executing an authorised conversion order is no one's role: any sender but govern
 already fixes the size, the denomination, and the worst spread. Anyone can trigger a release to the recorded payee; beneficiary and controller
 authority over destinations is specified in the [Disbursement README](../../x/disbursement/README.md) (D87).
 
-Market's `MsgSwap` and `MsgSwapSend` are the trader's, and `MsgSettle` converts suspended supply under a plan. Three
-absences are decisions: no fund has a deposit message, since Bank rails and the recipient restriction suffice; no
+Market's `MsgSell` and `MsgBuy` are the trader's, and `MsgSettle` converts suspended supply under a plan. Four
+absences are decisions: no Market message carries a recipient, since a payment in another denomination is a buy and
+a Bank send in one transaction, taxed on the send; no fund has a deposit message, since Bank rails and the recipient restriction suffice; no
 message settles a claim, since the chain does it; and no message withdraws from the Reserve to an arbitrary recipient,
 since every Reserve debit is a fixed commitment, a bounded deployment, or a burn.
 
