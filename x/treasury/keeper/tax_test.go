@@ -49,14 +49,14 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
 			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
 		}},
-		&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 300)},
-		// Direct swaps are intentionally exempt because Market already charges
-		// the conversion spread.
-		&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)},
+		// Self-returning conversions are exempt because Market already charges the
+		// spread; the calculator names only taxed surfaces, so they take the default.
+		&markettypes.MsgSell{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)},
+		&markettypes.MsgBuy{Trader: sourceA, AskCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000), OfferDenom: chain.KRWBaseDenom},
 	}
 	tax, _, err := s.keeper.ComputeTax(s.ctx, msgs)
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 60)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 30)), tax)
 }
 
 // transferPayload builds an ICS-20 payload the transfer module would accept,
@@ -515,10 +515,10 @@ func (s *KeeperTestSuite) TestComputeTaxReturnsZeroWithoutOracleLookupWhenDisabl
 func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedNestedMessage() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
-	badSwapSend := &markettypes.MsgSwapSend{
-		OfferCoin: sdk.Coin{Denom: "", Amount: math.OneInt()},
+	badSend := &banktypes.MsgSend{
+		Amount: sdk.Coins{sdk.Coin{Denom: "", Amount: math.OneInt()}},
 	}
-	badAny, err := codectypes.NewAnyWithValue(badSwapSend)
+	badAny, err := codectypes.NewAnyWithValue(badSend)
 	s.Require().NoError(err)
 
 	_, _, err = s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{badAny}}})
@@ -529,7 +529,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsAuthzAnyWithoutCachedMessage() {
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 
 	_, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&authz.MsgExec{
-		Msgs: []*codectypes.Any{{TypeUrl: "/ark.market.v1.MsgSwapSend"}},
+		Msgs: []*codectypes.Any{{TypeUrl: "/cosmos.bank.v1beta1.MsgSend"}},
 	}})
 	s.Require().ErrorContains(err, "not a sdk.MsgRequest")
 }
@@ -587,13 +587,12 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 				}}
 				return []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{
 					pack(inner),
-					pack(&markettypes.MsgSwapSend{FromAddress: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 400)}),
-					pack(&markettypes.MsgSwap{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)}),
+					pack(&markettypes.MsgSell{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)}),
 				}}}
 			},
 			want: sdk.NewCoins(
 				sdk.NewInt64Coin(chain.KRWBaseDenom, 30),
-				sdk.NewInt64Coin(chain.USDBaseDenom, 70),
+				sdk.NewInt64Coin(chain.USDBaseDenom, 30),
 			),
 		},
 	}

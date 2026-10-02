@@ -19,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	markettypes "github.com/ararat-network/ark/x/market/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -203,16 +202,6 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 			}
 		}
 		return addCoins(totals.coins())
-	case *markettypes.MsgSwapSend:
-		if typed == nil {
-			return fmt.Errorf("nil Market swap-send message")
-		}
-		return addCoins(sdk.Coins{typed.OfferCoin})
-	case *markettypes.MsgSwap:
-		if typed == nil {
-			return fmt.Errorf("nil Market swap message")
-		}
-		return nil
 	case *ibctransfertypes.MsgTransfer:
 		if typed == nil {
 			return fmt.Errorf("nil IBC transfer message")
