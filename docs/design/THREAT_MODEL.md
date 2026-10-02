@@ -362,11 +362,16 @@ checks. Consumer verification is required even after draft review because assets
 tags can otherwise be changed by a maintainer with sufficient access.
 
 Publication requires effective GitHub settings as well as checked-in workflows.
-Protect `main` with required pull requests, passing CI and resolved conversations;
-apply these rules to administrators and block force pushes and deletion. Required
-checks must run on every pull request, including documentation-only changes.
+Protect `main` with required pull requests, an approval from someone other than
+the last pusher (stale approvals dismissed), passing CI, no new high-severity code
+scanning alerts and resolved conversations. Administrators may bypass these,
+including by pushing directly, so an administrator account is trusted with `main`.
+Nobody may force-push or delete `main`. Only administrators create release tags,
+and nobody moves or deletes them. Required checks must run on every pull request,
+including documentation-only changes.
 Maintainer accounts must use 2FA. Require full commit-SHA pins for Actions, retain
-read-only default tokens, and require approval for all external fork workflows.
+read-only default tokens, keep Actions from approving pull requests, and require
+approval for all external fork workflows.
 Review fork code before approval; approval itself does not make it trustworthy.
 These settings live outside Git and must be verified separately before publication.
 
