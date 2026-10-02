@@ -8,6 +8,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,6 +24,8 @@ import (
 
 var _ types.QueryServer = (*queryServer)(nil)
 
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
@@ -36,7 +39,7 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	params, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle params: %v", err)
+		return nil, fmt.Errorf("getting oracle params: %w", err)
 	}
 
 	return &types.QueryParamsResponse{Params: params}, nil
@@ -53,14 +56,7 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 
 	exchangeRate, err := q.k.GetExchangeRate(ctx, req.Denom)
 	if err != nil {
-		switch {
-		case errors.Is(err, types.ErrUnknownDenom):
-			return nil, status.Errorf(codes.NotFound, "exchange rate not found for denom %s", req.Denom)
-		case errors.Is(err, types.ErrStaleExchangeRate):
-			return nil, status.Errorf(codes.FailedPrecondition, "exchange rate stale for denom %s: %v", req.Denom, err)
-		default:
-			return nil, status.Errorf(codes.Internal, "getting exchange rate for denom %s: %v", req.Denom, err)
-		}
+		return nil, fmt.Errorf("getting exchange rate for %s: %w", req.Denom, err)
 	}
 
 	return &types.QueryExchangeRateResponse{
@@ -74,7 +70,7 @@ func (q queryServer) ExchangeRate(ctx context.Context, req *types.QueryExchangeR
 func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchangeRatesRequest) (*types.QueryExchangeRatesResponse, error) {
 	exchangeRates, err := q.k.GetExchangeRates(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle exchange rates: %v", err)
+		return nil, fmt.Errorf("getting oracle exchange rates: %w", err)
 	}
 
 	readings := make([]types.ExchangeRateReading, 0, len(exchangeRates))
@@ -106,7 +102,7 @@ func unitsPerNoah(rate math.LegacyDec) math.LegacyDec {
 func (q queryServer) Feeds(ctx context.Context, req *types.QueryFeedsRequest) (*types.QueryFeedsResponse, error) {
 	feeds, err := q.k.Feeds.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting oracle feeds: %v", err)
+		return nil, fmt.Errorf("getting oracle feeds: %w", err)
 	}
 
 	return &types.QueryFeedsResponse{Feeds: feeds}, nil
@@ -125,11 +121,7 @@ func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedRefe
 
 	referents, err := q.k.feedReferents(ctx, req.Denom)
 	if err != nil {
-		if errors.Is(err, types.ErrFeedNotFound) {
-			return nil, status.Errorf(codes.NotFound, "no active or in-flight feed for denom %s", req.Denom)
-		}
-
-		return nil, status.Errorf(codes.Internal, "getting feed referents for denom %s: %v", req.Denom, err)
+		return nil, fmt.Errorf("getting feed referents for %s: %w", req.Denom, err)
 	}
 
 	return &types.QueryFeedReferentsResponse{Referents: referents}, nil
@@ -139,7 +131,7 @@ func (q queryServer) FeedReferents(ctx context.Context, req *types.QueryFeedRefe
 func (q queryServer) ReferenceDenom(ctx context.Context, _ *types.QueryReferenceDenomRequest) (*types.QueryReferenceDenomResponse, error) {
 	referenceDenom, err := q.k.GetReferenceDenom(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting protocol reference: %v", err)
+		return nil, fmt.Errorf("getting protocol reference: %w", err)
 	}
 
 	return &types.QueryReferenceDenomResponse{ReferenceDenom: referenceDenom}, nil
@@ -158,7 +150,7 @@ func (q queryServer) RewardWeight(ctx context.Context, req *types.QueryRewardWei
 	rewardWeight, err := q.k.RewardWeight.Get(ctx, valAddr)
 	if err != nil {
 		if !errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.Internal, "getting reward weight for validator %s: %v", valAddr, err)
+			return nil, fmt.Errorf("getting reward weight for validator %s: %w", valAddr, err)
 		}
 		rewardWeight = math.ZeroInt()
 	}
@@ -178,7 +170,7 @@ func (q queryServer) Attendance(ctx context.Context, req *types.QueryAttendanceR
 	}
 	attendance, err := q.k.Attendance.Get(ctx, valAddr)
 	if err != nil && !errors.Is(err, collections.ErrNotFound) {
-		return nil, status.Errorf(codes.Internal, "getting attendance for validator %s: %v", valAddr, err)
+		return nil, fmt.Errorf("getting attendance for validator %s: %w", valAddr, err)
 	}
 
 	return &types.QueryAttendanceResponse{Attendance: attendance}, nil

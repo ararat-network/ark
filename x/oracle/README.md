@@ -287,6 +287,12 @@ The authoritative service and event definitions are [transactions](../../proto/a
 [queries](../../proto/ark/oracle/v1/query.proto), and [events](../../proto/ark/oracle/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+missing rate or feed is `NotFound`, a stale rate or a blocked feed transition is `FailedPrecondition`, a conversion
+the rates cannot represent is `OutOfRange`, and an invalid rate or reference denom is `InvalidArgument`. Handlers
+classify only the request itself. Consumers that fall back on unusable rate inputs branch on
+`types.IsRateUnavailable` rather than naming the oracle's errors.
+
 ## Related documents
 
 - [Reward funding](../../docs/design/ECONOMIC_DESIGN.md).
