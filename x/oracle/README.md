@@ -292,6 +292,8 @@ missing rate or feed is `NotFound`, a stale rate or a blocked feed transition is
 the rates cannot represent is `OutOfRange`, and an invalid rate or reference denom is `InvalidArgument`. Handlers
 classify only the request itself. Consumers that fall back on unusable rate inputs branch on
 `types.IsRateUnavailable` rather than naming the oracle's errors.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 

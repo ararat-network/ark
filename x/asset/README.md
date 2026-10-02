@@ -406,6 +406,8 @@ Errors are registered with their gRPC codes, so a query returns the keeper's err
 missing asset or settlement plan is `NotFound`, a duplicate listing is `AlreadyExists`, a lifecycle, version, or
 supply conflict and an unpriceable status are `FailedPrecondition`, and an action the emergency mandate does not
 authorise is `PermissionDenied`. Handlers classify only the request itself.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 

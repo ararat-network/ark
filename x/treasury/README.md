@@ -160,6 +160,8 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
 message the tax calculator cannot read is `InvalidArgument`, a tax total it cannot represent is `OutOfRange`, and a
 denomination with no conversion factor is `NotFound`. Handlers classify only the request itself.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 

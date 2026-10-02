@@ -91,6 +91,8 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 Query handlers classify only the request itself and otherwise return the keeper's error. Security registers no
 errors of its own, since nothing branches on one of its failures; a registered error from another module keeps its
 gRPC code through the wrap.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 
