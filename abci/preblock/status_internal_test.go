@@ -43,7 +43,7 @@ func TestPreblockStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, preblockStatus(tt.err))
+			require.Equal(t, tt.want, abcimetrics.StatusOf(tt.err))
 		})
 	}
 }

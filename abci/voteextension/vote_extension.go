@@ -83,7 +83,7 @@ func (h *Handler) ExtendVoteHandler() sdk.ExtendVoteHandler {
 			}
 
 			latency := time.Since(start)
-			abcimetrics.RecordLatencyAndStatus(latency, voteExtensionStatus(err), abcimetrics.ExtendVote)
+			abcimetrics.RecordLatencyAndStatus(latency, abcimetrics.StatusOf(err), abcimetrics.ExtendVote)
 			if err != nil {
 				priced = 0
 			}
@@ -189,7 +189,7 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		// Measure latency from invocation to return.
 		defer func() {
 			latency := time.Since(start)
-			status := voteExtensionStatus(err)
+			status := abcimetrics.StatusOf(err)
 			if !completed {
 				status = abcimetrics.StatusPanic
 			}
@@ -229,28 +229,5 @@ func (h *Handler) VerifyVoteExtensionHandler() sdk.VerifyVoteExtensionHandler {
 		}()
 		completed = true
 		return resp, err
-	}
-}
-
-func voteExtensionStatus(err error) abcimetrics.Status {
-	switch {
-	case err == nil:
-		return abcimetrics.StatusSuccess
-	case errors.Is(err, abcitypes.ErrNilRequest):
-		return abcimetrics.StatusNilRequest
-	case errors.Is(err, errPanic):
-		return abcimetrics.StatusPanic
-	case errors.Is(err, errPriceFeedClient):
-		return abcimetrics.StatusPriceFeedClient
-	case errors.Is(err, errInvalidPrices):
-		return abcimetrics.StatusInvalidPrices
-	case errors.Is(err, errVoteExtensionValidation):
-		return abcimetrics.StatusVoteExtensionValidation
-	case errors.Is(err, abcitypes.ErrOracleKeeper):
-		return abcimetrics.StatusOracleKeeper
-	case errors.Is(err, abcitypes.ErrCodec):
-		return abcimetrics.StatusCodec
-	default:
-		return abcimetrics.StatusFailure
 	}
 }

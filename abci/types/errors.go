@@ -1,16 +1,17 @@
 package types
 
-import "errors"
+import abcimetrics "github.com/ararat-network/ark/abci/metrics"
 
+// Boundary errors shared by the hooks. Each carries the status it records under.
 var (
 	// ErrNilRequest is returned when an ABCI handler receives a nil request.
-	ErrNilRequest = errors.New("nil request")
+	ErrNilRequest = abcimetrics.NewError(abcimetrics.StatusNilRequest, "nil request")
 	// ErrWrappedHandler identifies a failure returned by a wrapped SDK handler.
-	ErrWrappedHandler = errors.New("wrapped handler failed")
+	ErrWrappedHandler = abcimetrics.NewError(abcimetrics.StatusWrappedHandler, "wrapped handler failed")
 	// ErrCodec identifies an ABCI protocol encoding or decoding failure.
-	ErrCodec = errors.New("codec error")
+	ErrCodec = abcimetrics.NewError(abcimetrics.StatusCodec, "codec error")
 	// ErrMissingCommitInfo is returned when a proposal omits the previous height's commit information.
-	ErrMissingCommitInfo = errors.New("missing commit info")
+	ErrMissingCommitInfo = abcimetrics.NewError(abcimetrics.StatusMissingCommitInfo, "missing commit info")
 	// ErrOracleKeeper identifies an oracle keeper state access or mutation failure.
-	ErrOracleKeeper = errors.New("oracle keeper error")
+	ErrOracleKeeper = abcimetrics.NewError(abcimetrics.StatusOracleKeeper, "oracle keeper error")
 )

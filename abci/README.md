@@ -13,8 +13,8 @@ aggregation and participation rules, and [x/oracle](../x/oracle/README.md) owns 
 | [preblock](preblock/preblock.go)                       | Module preblock delegation, oracle processing, then feed promotion. |
 | [oracle](oracle/README.md)                             | Extract, aggregate, score, and apply reports.                       |
 | [codec](codec/codec.go)                                | Bounded vote-extension and extended-commit wire encoding.           |
-| [types](types/interfaces.go)                           | Narrow keeper/client interfaces and shared boundary errors.         |
-| [metrics](metrics/), [oracle/metrics](oracle/metrics/) | Hook and oracle instruments.                                        |
+| [types](types/interfaces.go)                           | Narrow keeper/client interfaces and the shared boundary errors.     |
+| [metrics](metrics/), [oracle/metrics](oracle/metrics/) | Hook and oracle instruments; the status a boundary error carries.   |
 | [testutil](testutil/)                                  | Fixtures and generated mocks.                                       |
 
 ## Vote-extension handlers

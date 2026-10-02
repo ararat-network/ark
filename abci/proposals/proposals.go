@@ -1,7 +1,6 @@
 package proposals
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -63,7 +62,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			if statusErr == nil {
 				statusErr = err
 			}
-			status := proposalStatus(statusErr)
+			status := abcimetrics.StatusOf(statusErr)
 			if !completed {
 				status = abcimetrics.StatusPanic
 			}
@@ -169,7 +168,7 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
 			totalLatency := time.Since(start)
-			status := proposalStatus(err)
+			status := abcimetrics.StatusOf(err)
 			if err == nil && resp != nil && resp.Status == cmtabci.ResponseProcessProposal_REJECT {
 				status = abcimetrics.StatusRejected
 			}
@@ -236,24 +235,5 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		}()
 		completed = true
 		return resp, err
-	}
-}
-
-func proposalStatus(err error) abcimetrics.Status {
-	switch {
-	case err == nil:
-		return abcimetrics.StatusSuccess
-	case errors.Is(err, abcitypes.ErrNilRequest):
-		return abcimetrics.StatusNilRequest
-	case errors.Is(err, abcitypes.ErrWrappedHandler):
-		return abcimetrics.StatusWrappedHandler
-	case errors.Is(err, ErrExtendedCommitValidation):
-		return abcimetrics.StatusExtendedCommitValidation
-	case errors.Is(err, abcitypes.ErrCodec):
-		return abcimetrics.StatusCodec
-	case errors.Is(err, abcitypes.ErrMissingCommitInfo):
-		return abcimetrics.StatusMissingCommitInfo
-	default:
-		return abcimetrics.StatusFailure
 	}
 }
