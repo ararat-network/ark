@@ -88,52 +88,24 @@ func TestGovernanceFactoriesSkipWithoutGovAccount(t *testing.T) {
 	})
 }
 
-// TestSwapFactoriesEmitQuotablePairs checks factories emit usable NOAH pairs instead of silently
-// skipping all draws. Recursive NOAH-to-NOAH pairs are excluded.
-func TestSwapFactoriesEmitQuotablePairs(t *testing.T) {
-	t.Run("swap", func(t *testing.T) {
-		for seed := int64(0); seed < factorySeeds; seed++ {
-			f := newMarketFixture(t, seed)
+// TestMsgSellFactoryEmitsQuotablePairs checks the factory emits usable NOAH pairs instead of
+// silently skipping all draws. Recursive NOAH-to-NOAH pairs are excluded.
+func TestMsgSellFactoryEmitsQuotablePairs(t *testing.T) {
+	for seed := int64(0); seed < factorySeeds; seed++ {
+		f := newMarketFixture(t, seed)
 
-			_, msg := simulation.MsgSwapFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+		_, msg := simulation.MsgSellFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 
-			require.False(t, f.reporter.IsSkipped(), "seed %d: %s", seed, f.reporter.Comment())
-			require.NotNil(t, msg, "seed %d", seed)
-			requireNoahOnOneSide(t, seed, msg.OfferCoin.Denom, msg.AskDenom)
-			require.True(t, msg.OfferCoin.IsPositive(), "seed %d", seed)
-		}
-	})
-	t.Run("swap send", func(t *testing.T) {
-		emitted := 0
-		for seed := int64(0); seed < factorySeeds; seed++ {
-			f := newMarketFixture(t, seed)
-
-			_, msg := simulation.MsgSwapSendFactory(f.keeper)(f.ctx, f.testData, f.reporter)
-
-			// The receiver draw is allowed to come up empty: AnyAccount retries
-			// once, so drawing the sender twice out of a small account set
-			// leaves nobody to send to. That is the only skip this fixture
-			// admits — any other means the factory stopped working.
-			if f.reporter.IsSkipped() {
-				require.Contains(t, f.reporter.Comment(), "failed to find a matching account", "seed %d", seed)
-				require.Nil(t, msg, "seed %d", seed)
-				continue
-			}
-
-			emitted++
-			require.NotNil(t, msg, "seed %d", seed)
-			requireNoahOnOneSide(t, seed, msg.OfferCoin.Denom, msg.AskDenom)
-			require.NotEqual(t, msg.FromAddress, msg.ToAddress, "seed %d", seed)
-		}
-		// Seeds are fixed, so this count is deterministic. It is the guard
-		// against a factory that skips its way through an entire run.
-		require.Greater(t, emitted, factorySeeds/2)
-	})
+		require.False(t, f.reporter.IsSkipped(), "seed %d: %s", seed, f.reporter.Comment())
+		require.NotNil(t, msg, "seed %d", seed)
+		requireNoahOnOneSide(t, seed, msg.OfferCoin.Denom, msg.AskDenom)
+		require.True(t, msg.OfferCoin.IsPositive(), "seed %d", seed)
+	}
 }
 
-// TestSwapFactoriesSkipWhenNothingIsPriced covers the registry reads. Both are
+// TestMsgSellFactorySkipsWhenNothingIsPriced covers the registry reads. Both are
 // legitimate simulation states rather than faults, so both skip.
-func TestSwapFactoriesSkipWhenNothingIsPriced(t *testing.T) {
+func TestMsgSellFactorySkipsWhenNothingIsPriced(t *testing.T) {
 	tests := []struct {
 		name    string
 		option  marketOption
@@ -155,7 +127,7 @@ func TestSwapFactoriesSkipWhenNothingIsPriced(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := newMarketFixture(t, 1, tc.option)
 
-			_, msg := simulation.MsgSwapFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+			_, msg := simulation.MsgSellFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 
 			require.True(t, f.reporter.IsSkipped())
 			require.Contains(t, f.reporter.Comment(), tc.comment)
@@ -164,28 +136,16 @@ func TestSwapFactoriesSkipWhenNothingIsPriced(t *testing.T) {
 	}
 }
 
-// TestMsgSwapFactorySkipsAnUnquotablePair is the staleness path quotable
+// TestMsgSellFactorySkipsAnUnquotablePair is the staleness path quotable
 // exists for: a simulation casts no vote extensions, so its genesis rates age
 // out and every later swap would be refused. The factory must skip rather than
 // emit a message that only ever fails.
-func TestMsgSwapFactorySkipsAnUnquotablePair(t *testing.T) {
+func TestMsgSellFactorySkipsAnUnquotablePair(t *testing.T) {
 	f := newMarketFixture(t, 1, withStaleRates())
 
-	_, msg := simulation.MsgSwapFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+	_, msg := simulation.MsgSellFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 
 	require.True(t, f.reporter.IsSkipped())
-	require.Nil(t, msg)
-}
-
-// TestMsgSwapSendFactorySkipsWhenTheOfferCannotBeSent covers the send-enabled
-// gate MsgSwapSend carries and plain MsgSwap does not.
-func TestMsgSwapSendFactorySkipsWhenTheOfferCannotBeSent(t *testing.T) {
-	f := newMarketFixture(t, 1, withSendDisabled())
-
-	_, msg := simulation.MsgSwapSendFactory(f.keeper)(f.ctx, f.testData, f.reporter)
-
-	require.True(t, f.reporter.IsSkipped())
-	require.Contains(t, f.reporter.Comment(), "offer denom send not enabled")
 	require.Nil(t, msg)
 }
 
@@ -218,7 +178,6 @@ type marketConfig struct {
 	pricedDenoms  []string
 	registryErr   error
 	ratesErr      error
-	sendEnabled   bool
 }
 
 type marketOption func(*marketConfig)
@@ -244,10 +203,6 @@ func withStaleRates() marketOption {
 	return func(c *marketConfig) { c.ratesErr = oracletypes.ErrStaleExchangeRate }
 }
 
-func withSendDisabled() marketOption {
-	return func(c *marketConfig) { c.sendEnabled = false }
-}
-
 // balanceStub is the simsx balance source. It funds every account identically,
 // which is all the factories ask of it.
 type balanceStub struct {
@@ -263,7 +218,7 @@ func govAddress() sdk.AccAddress { return authtypes.NewModuleAddress(govtypes.Mo
 func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixture {
 	t.Helper()
 
-	cfg := marketConfig{govRegistered: true, pricedDenoms: []string{simDenom}, sendEnabled: true}
+	cfg := marketConfig{govRegistered: true, pricedDenoms: []string{simDenom}}
 	for _, opt := range opts {
 		opt(&cfg)
 	}
@@ -335,14 +290,13 @@ func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixt
 	require.NoError(t, marketKeeper.ArkPoolDelta.Set(ctx, math.LegacyZeroDec()))
 
 	r := rand.New(rand.NewSource(seed))
-	// Three accounts so MsgSwapSend can always find a receiver distinct from
-	// the sender it drew.
+	// A small pool for the sender draw.
 	accounts := simtypes.RandomAccounts(r, 3)
 	testData := simsx.NewChainDataSource(
 		ctx,
 		r,
 		accountKeeper,
-		balanceStub{coins: simBalances(), sendEnabled: cfg.sendEnabled},
+		balanceStub{coins: simBalances(), sendEnabled: true},
 		addresscodec.NewBech32Codec(sdk.GetConfig().GetBech32AccountAddrPrefix()),
 		accounts...,
 	)

@@ -22,24 +22,24 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-func (s *KeeperTestSuite) TestMsgSwap() {
+func (s *KeeperTestSuite) TestMsgSell() {
 	trader := sdk.AccAddress([]byte("trader_______________")).String()
 
 	tests := []struct {
 		name      string
-		msg       *types.MsgSwap
+		msg       *types.MsgSell
 		expectErr error
 		errMsg    string
 	}{
 		{
 			name:      "empty address",
-			msg:       &types.MsgSwap{},
+			msg:       &types.MsgSell{},
 			expectErr: errortypes.ErrInvalidAddress,
 			errMsg:    "trader is invalid",
 		},
 		{
 			name: "malformed address",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader: "address",
 			},
 			expectErr: errortypes.ErrInvalidAddress,
@@ -50,7 +50,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 			// handler accepts it and the failure is the swap's own recursion
 			// check — proof the address cleared parsing.
 			name: "uppercase trader is accepted",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader:         strings.ToUpper(trader),
 				OfferCoin:      sdk.NewCoin("akrw", math.NewInt(1)),
 				AskDenom:       "akrw",
@@ -61,7 +61,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 		},
 		{
 			name: "recursive swap",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader:         trader,
 				OfferCoin:      sdk.NewCoin("akrw", math.NewInt(1)),
 				AskDenom:       "akrw",
@@ -72,7 +72,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 		},
 		{
 			name: "zero amount",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader: trader,
 				OfferCoin: sdk.Coin{
 					Denom:  "ausd",
@@ -86,7 +86,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 		},
 		{
 			name: "negative amount",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader: trader,
 				OfferCoin: sdk.Coin{
 					Denom:  "ausd",
@@ -100,7 +100,7 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 		},
 		{
 			name: "zero minimum receive",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader:         trader,
 				OfferCoin:      sdk.NewInt64Coin("ausd", 1000),
 				AskDenom:       "akrw",
@@ -111,20 +111,20 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 		},
 		{
 			name: "minimum receive denom does not match ask denom",
-			msg: &types.MsgSwap{
+			msg: &types.MsgSell{
 				Trader:         trader,
 				OfferCoin:      sdk.NewInt64Coin("ausd", 1000),
 				AskDenom:       "akrw",
 				MinimumReceive: sdk.NewInt64Coin("ausd", 1),
 			},
 			expectErr: errortypes.ErrInvalidRequest,
-			errMsg:    "minimum receive denom",
+			errMsg:    "minimum receive: denom",
 		},
 	}
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			_, err := s.msgServer.Swap(s.ctx, tc.msg)
+			_, err := s.msgServer.Sell(s.ctx, tc.msg)
 			s.Require().Error(err)
 			s.Require().ErrorIs(err, tc.expectErr)
 			s.Require().ErrorContains(err, tc.errMsg)
@@ -132,134 +132,27 @@ func (s *KeeperTestSuite) TestMsgSwap() {
 	}
 }
 
-func (s *KeeperTestSuite) TestMsgSwapSend() {
-	fromAddr := sdk.AccAddress([]byte("from________________"))
-
-	tests := []struct {
-		name      string
-		msg       *types.MsgSwapSend
-		expectErr error
-		errMsg    string
-	}{
-		{
-			name:      "empty from address",
-			msg:       &types.MsgSwapSend{},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "from address is invalid",
-		},
-		{
-			name: "malformed from address",
-			msg: &types.MsgSwapSend{
-				FromAddress: "invalid",
-			},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "from address is invalid",
-		},
-		{
-			name: "empty to address",
-			msg: &types.MsgSwapSend{
-				FromAddress: fromAddr.String(),
-			},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "to address is invalid",
-		},
-		{
-			name: "malformed to address",
-			msg: &types.MsgSwapSend{
-				FromAddress: fromAddr.String(),
-				ToAddress:   "invalid",
-			},
-			expectErr: errortypes.ErrInvalidAddress,
-			errMsg:    "to address is invalid",
-		},
-		{
-			// The uppercase spelling decodes to the same account, so the
-			// handler accepts it and the failure is the swap's own recursion
-			// check — proof the address cleared parsing.
-			name: "uppercase to address is accepted",
-			msg: &types.MsgSwapSend{
-				FromAddress:    fromAddr.String(),
-				ToAddress:      strings.ToUpper(fromAddr.String()),
-				OfferCoin:      sdk.NewCoin("akrw", math.NewInt(1)),
-				AskDenom:       "akrw",
-				MinimumReceive: sdk.NewInt64Coin("akrw", 1),
-			},
-			expectErr: types.ErrRecursiveSwap,
-			errMsg:    "recursive swap",
-		},
-	}
-
-	for _, tc := range tests {
-		s.Run(tc.name, func() {
-			_, err := s.msgServer.SwapSend(s.ctx, tc.msg)
-			s.Require().Error(err)
-			s.Require().ErrorIs(err, tc.expectErr)
-			s.Require().ErrorContains(err, tc.errMsg)
-		})
-	}
-}
-
-func (s *KeeperTestSuite) TestMsgSwapSend_Success() {
-	fromAddr := sdk.AccAddress([]byte("from________________"))
-	toAddr := sdk.AccAddress([]byte("to__________________"))
-	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
-	expectedSwapCoin := sdk.NewCoin("akrw", math.NewInt(1296750000))
-	expectedSwapFee := sdk.NewDecCoinFromDec("akrw", math.LegacyNewDec(3250000))
-
-	s.setupArkToArkSwapMocks(fromAddr, toAddr, offerCoin, expectedSwapCoin)
-
-	res, err := s.msgServer.SwapSend(s.ctx, &types.MsgSwapSend{
-		FromAddress:    fromAddr.String(),
-		ToAddress:      toAddr.String(),
-		OfferCoin:      offerCoin,
-		AskDenom:       "akrw",
-		MinimumReceive: expectedSwapCoin,
-	})
-	s.Require().NoError(err)
-	s.Require().NotNil(res)
-	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
-	s.Require().True(expectedSwapFee.Amount.Equal(res.SwapFee.Amount))
-	s.requireSwapEvent(fromAddr.String(), toAddr.String(), offerCoin, res.SwapCoin, res.SwapFee)
-}
-
-// TestMsgSwapOmittedMinimumReceiveAcceptsMarketExecution pins the optionality:
+// TestMsgSellOmittedMinimumReceiveAcceptsMarketExecution pins the optionality:
 // the zero coin is the one spelling of "no floor", and a swap carrying it
 // executes at whatever the quote produced.
-func (s *KeeperTestSuite) TestMsgSwapOmittedMinimumReceiveAcceptsMarketExecution() {
+func (s *KeeperTestSuite) TestMsgSellOmittedMinimumReceiveAcceptsMarketExecution() {
 	trader := sdk.AccAddress([]byte("addr________________"))
 	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
 	expectedSwapCoin := sdk.NewCoin("akrw", math.NewInt(1296750000))
 
-	s.setupArkToArkSwapMocks(trader, trader, offerCoin, expectedSwapCoin)
+	s.setupArkToArkSwapMocks(trader, offerCoin, expectedSwapCoin)
 
-	res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+	res, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 		Trader:    trader.String(),
 		OfferCoin: offerCoin,
 		AskDenom:  "akrw",
 	})
 	s.Require().NoError(err)
 	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
+	s.requireSwapEvent(trader.String(), offerCoin, res.SwapCoin, res.SwapFee)
 }
 
-func (s *KeeperTestSuite) TestMsgSwapSendOmittedMinimumReceiveAcceptsMarketExecution() {
-	fromAddr := sdk.AccAddress([]byte("from________________"))
-	toAddr := sdk.AccAddress([]byte("to__________________"))
-	offerCoin := sdk.NewCoin("ausd", math.NewInt(1000000))
-	expectedSwapCoin := sdk.NewCoin("akrw", math.NewInt(1296750000))
-
-	s.setupArkToArkSwapMocks(fromAddr, toAddr, offerCoin, expectedSwapCoin)
-
-	res, err := s.msgServer.SwapSend(s.ctx, &types.MsgSwapSend{
-		FromAddress: fromAddr.String(),
-		ToAddress:   toAddr.String(),
-		OfferCoin:   offerCoin,
-		AskDenom:    "akrw",
-	})
-	s.Require().NoError(err)
-	s.Require().Equal(expectedSwapCoin, res.SwapCoin)
-}
-
-func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
+func (s *KeeperTestSuite) TestMsgSellNativeSettlementUsesQuotedState() {
 	capacity := types.DefaultConversionPolicy()
 	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
@@ -338,7 +231,7 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 			)
 			gomock.InOrder(calls...)
 
-			res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+			res, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 				Trader:         trader.String(),
 				OfferCoin:      tc.offerCoin,
 				AskDenom:       tc.askDenom,
@@ -355,9 +248,9 @@ func (s *KeeperTestSuite) TestMsgSwapNativeSettlementUsesQuotedState() {
 	}
 }
 
-// TestMsgSwapExpansionFeeReconcilesWithRecordedResidual checks disclosed fee equals offer minus
+// TestMsgSellExpansionFeeReconcilesWithRecordedResidual checks disclosed fee equals offer minus
 // minted value within one base unit of truncation. A non-unit rate exercises denomination rounding.
-func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual() {
+func (s *KeeperTestSuite) TestMsgSellExpansionFeeReconcilesWithRecordedResidual() {
 	capacity := types.DefaultConversionPolicy()
 	capacity.BasePool = xdrBasePool(math.LegacyNewDec(400))
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
@@ -380,7 +273,7 @@ func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual(
 		s.ctx, types.ModuleName, trader, gomock.Any(),
 	).Return(nil)
 
-	res, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+	res, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      offer,
 		AskDenom:       chain.USDBaseDenom,
@@ -418,7 +311,7 @@ func (s *KeeperTestSuite) TestMsgSwapExpansionFeeReconcilesWithRecordedResidual(
 	)
 }
 
-func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
+func (s *KeeperTestSuite) TestMsgSellSettlementErrorsPropagate() {
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	injectedErr := errors.New("injected settlement failure")
 	stableOffer := sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)
@@ -569,7 +462,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyZeroDec()))
 			test.setup()
 
-			_, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+			_, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 				Trader:         trader.String(),
 				OfferCoin:      test.offerCoin,
 				AskDenom:       test.askDenom,
@@ -580,7 +473,7 @@ func (s *KeeperTestSuite) TestMsgSwapSettlementErrorsPropagate() {
 	}
 }
 
-func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
+func (s *KeeperTestSuite) TestMsgSellRejectsMinimumReceiveAboveOutput() {
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	offerCoin := sdk.NewInt64Coin("ausd", 1000000)
 	minimumReceive := sdk.NewInt64Coin("akrw", 1296750001)
@@ -593,7 +486,7 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 
 	beforeDelta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
 	s.Require().NoError(err)
-	_, err = s.msgServer.Swap(s.ctx, &types.MsgSwap{
+	_, err = s.msgServer.Sell(s.ctx, &types.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      offerCoin,
 		AskDenom:       "akrw",
@@ -612,25 +505,15 @@ func (s *KeeperTestSuite) TestMsgSwapRejectsMinimumReceiveAboveOutput() {
 	}
 }
 
-func (s *KeeperTestSuite) TestMsgSwap_QuoteErrorIncludesContext() {
+func (s *KeeperTestSuite) TestMsgSell_QuoteErrorIncludesContext() {
 	tests := []struct {
 		name string
-		msg  sdk.Msg
+		msg  *types.MsgSell
 	}{
 		{
-			name: "swap",
-			msg: &types.MsgSwap{
+			name: "sell",
+			msg: &types.MsgSell{
 				Trader:         sdk.AccAddress([]byte("trader_______________")).String(),
-				OfferCoin:      sdk.NewCoin("ausd", math.NewInt(1000000)),
-				AskDenom:       "afoo",
-				MinimumReceive: sdk.NewInt64Coin("afoo", 1),
-			},
-		},
-		{
-			name: "swap send",
-			msg: &types.MsgSwapSend{
-				FromAddress:    sdk.AccAddress([]byte("from________________")).String(),
-				ToAddress:      sdk.AccAddress([]byte("to__________________")).String(),
 				OfferCoin:      sdk.NewCoin("ausd", math.NewInt(1000000)),
 				AskDenom:       "afoo",
 				MinimumReceive: sdk.NewInt64Coin("afoo", 1),
@@ -643,14 +526,7 @@ func (s *KeeperTestSuite) TestMsgSwap_QuoteErrorIncludesContext() {
 			s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "afoo").
 				Return(nil, oracletypes.ErrUnknownDenom)
 
-			var err error
-			switch msg := tc.msg.(type) {
-			case *types.MsgSwap:
-				_, err = s.msgServer.Swap(s.ctx, msg)
-			case *types.MsgSwapSend:
-				_, err = s.msgServer.SwapSend(s.ctx, msg)
-			}
-
+			_, err := s.msgServer.Sell(s.ctx, tc.msg)
 			s.Require().Error(err)
 			s.Require().ErrorIs(err, types.ErrNoEffectivePrice)
 			s.Require().ErrorContains(err, "computing swap from 1000000ausd to afoo")
@@ -748,7 +624,7 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	}
 }
 
-func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
+func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
 	// One USD is 1300 NOAH and one KRW is one, so one USD is 1300 KRW.
 	s.expectStableToStableQuote(oracletypes.RateSet{
 		"ausd": math.LegacyNewDec(1300),
@@ -759,7 +635,7 @@ func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, receiver
 		s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(s.ctx, trader, types.ModuleName, sdk.NewCoins(offerCoin)).Return(nil),
 		s.bankKeeper.EXPECT().BurnCoins(s.ctx, types.ModuleName, sdk.NewCoins(offerCoin)).Return(nil),
 		s.bankKeeper.EXPECT().MintCoins(s.ctx, types.ModuleName, sdk.NewCoins(swapCoin)).Return(nil),
-		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(s.ctx, types.ModuleName, receiver, sdk.NewCoins(swapCoin)).Return(nil),
+		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(s.ctx, types.ModuleName, trader, sdk.NewCoins(swapCoin)).Return(nil),
 	)
 }
 
@@ -798,11 +674,10 @@ func (s *KeeperTestSuite) requirePoolUpdateEvent(
 	})
 }
 
-func (s *KeeperTestSuite) requireSwapEvent(trader string, recipient string, offer sdk.Coin, swapCoin sdk.Coin, swapFee sdk.DecCoin) {
+func (s *KeeperTestSuite) requireSwapEvent(trader string, offer sdk.Coin, swapCoin sdk.Coin, swapFee sdk.DecCoin) {
 	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
 	s.requireTypedEvents(events, &types.EventSwap{
 		Trader:      trader,
-		Recipient:   recipient,
 		OfferDenom:  offer.Denom,
 		OfferAmount: offer.Amount,
 		SwapDenom:   swapCoin.Denom,

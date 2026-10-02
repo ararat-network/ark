@@ -107,7 +107,7 @@ func (s *KeeperTestSuite) recordExpansionForTest(offer sdk.Coin, output sdk.Coin
 		s.ctx, types.ModuleName, trader, gomock.Any(),
 	).Return(nil)
 
-	_, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+	_, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 		Trader:    trader.String(),
 		OfferCoin: offer,
 		AskDenom:  output.Denom,

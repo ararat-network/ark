@@ -14,4 +14,5 @@ var (
 	ErrIneligibleAsset      = errorsmod.Register(ModuleName, 6, "asset is not eligible for conversion")
 	ErrNoActiveSettlement   = errorsmod.Register(ModuleName, 7, "asset has no active settlement plan")
 	ErrTobinOverrideMissing = errorsmod.Register(ModuleName, 8, "tobin tax override is not set")
+	ErrMaximumOfferExceeded = errorsmod.Register(ModuleName, 9, "maximum offer exceeded")
 )

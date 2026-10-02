@@ -22,7 +22,6 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/market/testutil"
 	"github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type AccumulatorTestSuite struct {
@@ -86,13 +85,6 @@ func (s *AccumulatorTestSuite) TestEmptyBlockTotals() {
 // expansionRates prices one stable at one NOAH, which makes a conversion's
 // eligible principal its output amount and its spread whatever the offer holds
 // above that.
-func expansionRates() oracletypes.RateSet {
-	return oracletypes.RateSet{
-		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyOneDec(),
-	}
-}
-
 // TestExpansionAccumulates covers what the waterfall is handed: the gross
 // offer, spread included, beside the principal liability grew by, so the block
 // total is exactly what settlement has to place and the flow indicator reads.
@@ -100,14 +92,12 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
-		expansionRates(),
+		math.LegacyNewDec(990),
 	))
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 500),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 495),
-		expansionRates(),
+		math.LegacyNewDec(495),
 	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
@@ -123,15 +113,11 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 // output valued below one base unit: the whole offer is spread, so it leaves no
 // principal but still obliges the EndBlocker to place it (D6).
 func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
-	rates := expansionRates()
 	// Half a NOAH per unit: the one unit of output values below one anoah.
-	rates[chain.USDBaseDenom] = math.LegacyNewDecWithPrec(5, 1)
-
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
-		rates,
+		math.LegacyNewDecWithPrec(5, 1),
 	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
@@ -146,35 +132,35 @@ func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 // NOAH offer received in custody.
 func (s *AccumulatorTestSuite) TestExpansionRejections() {
 	testCases := []struct {
-		name   string
-		offer  sdk.Coin
-		output sdk.Coin
+		name  string
+		offer sdk.Coin
+		value math.LegacyDec
 	}{
 		{
-			name:   "non-positive offer",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 990),
+			name:  "non-positive offer",
+			offer: sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
+			value: math.LegacyNewDec(990),
 		},
 		{
-			name:   "non-positive output",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 0),
+			name:  "unset value",
+			offer: sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
+			value: math.LegacyDec{},
 		},
 		{
-			name:   "output the rate set cannot price",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-			output: sdk.NewInt64Coin(chain.XDRBaseDenom, 990),
+			name:  "negative value",
+			offer: sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
+			value: math.LegacyNewDec(-1),
 		},
 		{
-			name:   "output outvalues the offer",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 989),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 990),
+			name:  "value outvalues the offer",
+			offer: sdk.NewInt64Coin(chain.NoahBaseDenom, 989),
+			value: math.LegacyNewDec(990),
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.Require().Error(s.keeper.recordExpansion(s.ctx, tc.offer, tc.output, expansionRates()))
+			s.Require().Error(s.keeper.recordExpansion(s.ctx, tc.offer, tc.value))
 
 			totals, err := s.keeper.conversionTotals(s.ctx)
 			s.Require().NoError(err)
@@ -246,8 +232,7 @@ func (s *AccumulatorTestSuite) TestTotalsResetWithTheBlock() {
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
-		expansionRates(),
+		math.LegacyNewDec(990),
 	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)

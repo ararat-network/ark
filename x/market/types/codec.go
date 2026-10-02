@@ -10,8 +10,8 @@ import (
 
 // RegisterLegacyAminoCodec registers concrete types on the LegacyAmino codec
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	legacy.RegisterAminoMsg(cdc, &MsgSwap{}, "ark/market/MsgSwap")
-	legacy.RegisterAminoMsg(cdc, &MsgSwapSend{}, "ark/market/MsgSwapSend")
+	legacy.RegisterAminoMsg(cdc, &MsgSell{}, "ark/market/MsgSell")
+	legacy.RegisterAminoMsg(cdc, &MsgBuy{}, "ark/market/MsgBuy")
 	legacy.RegisterAminoMsg(cdc, &MsgSettle{}, "ark/market/MsgSettle")
 	legacy.RegisterAminoMsg(cdc, &MsgUpdateParams{}, "ark/market/MsgUpdateParams")
 	legacy.RegisterAminoMsg(cdc, &MsgSetTobinTaxOverride{}, "ark/market/MsgSetTobinTaxOverride")
@@ -26,8 +26,8 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
-		&MsgSwap{},
-		&MsgSwapSend{},
+		&MsgSell{},
+		&MsgBuy{},
 		&MsgSettle{},
 		&MsgUpdateParams{},
 		&MsgSetTobinTaxOverride{},

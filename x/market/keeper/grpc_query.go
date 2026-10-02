@@ -8,6 +8,7 @@ package keeper
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,18 +32,8 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 	return &queryServer{k: k}
 }
 
-// Params queries params of market module
-func (q queryServer) Params(ctx context.Context, _ *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
-	params, err := q.k.Params.Get(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting market params: %v", err)
-	}
-
-	return &types.QueryParamsResponse{Params: params}, nil
-}
-
-// Swap queries for swap simulation
-func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*types.QuerySwapResponse, error) {
+// Sell quotes a stated offer.
+func (q queryServer) Sell(ctx context.Context, req *types.QuerySellRequest) (*types.QuerySellResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -52,32 +43,37 @@ func (q queryServer) Swap(ctx context.Context, req *types.QuerySwapRequest) (*ty
 		return nil, status.Errorf(codes.InvalidArgument, "parsing offer coin %q: %v", req.OfferCoin, err)
 	}
 
-	quote, err := q.k.quoteSwap(ctx, offerCoin, req.AskDenom)
+	priced, err := q.k.priceSell(ctx, offerCoin, req.AskDenom)
 	if err != nil {
-		switch {
-		// An ineligible asset is a precondition failure, not an internal one:
-		// the quote is well formed and the chain simply will not convert that
-		// denomination in that direction right now.
-		case errors.Is(err, types.ErrNoEffectivePrice),
-			errors.Is(err, oracletypes.ErrStaleExchangeRate),
-			errors.Is(err, types.ErrIneligibleAsset),
-			errors.Is(err, assettypes.ErrAssetNotFound):
-			return nil, status.Errorf(codes.FailedPrecondition, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
-		case errors.Is(err, errortypes.ErrInvalidCoins),
-			errors.Is(err, errortypes.ErrInvalidRequest),
-			errors.Is(err, types.ErrRecursiveSwap),
-			errors.Is(err, types.ErrZeroSwapCoin):
-			return nil, status.Errorf(codes.InvalidArgument, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
-		case errors.Is(err, types.ErrArithmeticOutOfRange), errors.Is(err, oracletypes.ErrConversionOutOfRange):
-			return nil, status.Errorf(codes.OutOfRange, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
-		default:
-			return nil, status.Errorf(codes.Internal, "computing swap from %s to %s: %v", offerCoin, req.AskDenom, err)
-		}
+		return nil, quoteStatus(err, fmt.Sprintf("computing swap from %s to %s", offerCoin, req.AskDenom))
 	}
 
-	return &types.QuerySwapResponse{
-		SwapCoin: quote.swapCoin,
-		SwapFee:  quote.swapFee,
+	return &types.QuerySellResponse{
+		SwapCoin: priced.output,
+		SwapFee:  priced.fee,
+	}, nil
+}
+
+// Buy quotes a stated ask: the least offer that buys it.
+func (q queryServer) Buy(ctx context.Context, req *types.QueryBuyRequest) (*types.QueryBuyResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	askCoin, err := sdk.ParseCoinNormalized(req.AskCoin)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "parsing ask coin %q: %v", req.AskCoin, err)
+	}
+
+	priced, err := q.k.priceBuy(ctx, askCoin, req.OfferDenom)
+	if err != nil {
+		return nil, quoteStatus(err, fmt.Sprintf("sizing an offer of %s for %s", req.OfferDenom, askCoin))
+	}
+
+	return &types.QueryBuyResponse{
+		OfferCoin: priced.offer,
+		SwapCoin:  priced.output,
+		SwapFee:   priced.fee,
 	}, nil
 }
 
@@ -98,6 +94,16 @@ func (q queryServer) Pool(ctx context.Context, _ *types.QueryPoolRequest) (*type
 	}, nil
 }
 
+// Params queries params of market module
+func (q queryServer) Params(ctx context.Context, _ *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+	params, err := q.k.Params.Get(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting market params: %v", err)
+	}
+
+	return &types.QueryParamsResponse{Params: params}, nil
+}
+
 // TobinTax queries the effective Tobin rate for a denomination.
 func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxRequest) (*types.QueryTobinTaxResponse, error) {
 	if req == nil {
@@ -107,12 +113,12 @@ func (q queryServer) TobinTax(ctx context.Context, req *types.QueryTobinTaxReque
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	tobinTax, err := q.k.GetTobinTax(ctx, req.Denom)
+	taxes, err := q.k.GetTobinTaxes(ctx, req.Denom)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryTobinTaxResponse{TobinTax: tobinTax}, nil
+	return &types.QueryTobinTaxResponse{TobinTax: taxes[req.Denom]}, nil
 }
 
 // TobinTaxOverrides queries the sparse per-denomination exceptions.
@@ -154,4 +160,26 @@ func (q queryServer) ConversionMandate(ctx context.Context, _ *types.QueryConver
 		Mandate: conversionMandate,
 		Active:  conversionMandate.IsActive(capacity, uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
 	}, nil
+}
+
+// quoteStatus maps a quote failure to a gRPC status. An ineligible asset is a precondition failure,
+// not an internal one: the quote is well formed and the chain simply will not convert that
+// denomination in that direction right now.
+func quoteStatus(err error, computing string) error {
+	switch {
+	case errors.Is(err, types.ErrNoEffectivePrice),
+		errors.Is(err, oracletypes.ErrStaleExchangeRate),
+		errors.Is(err, types.ErrIneligibleAsset),
+		errors.Is(err, assettypes.ErrAssetNotFound):
+		return status.Errorf(codes.FailedPrecondition, "%s: %v", computing, err)
+	case errors.Is(err, errortypes.ErrInvalidCoins),
+		errors.Is(err, errortypes.ErrInvalidRequest),
+		errors.Is(err, types.ErrRecursiveSwap),
+		errors.Is(err, types.ErrZeroSwapCoin):
+		return status.Errorf(codes.InvalidArgument, "%s: %v", computing, err)
+	case errors.Is(err, types.ErrArithmeticOutOfRange), errors.Is(err, oracletypes.ErrConversionOutOfRange):
+		return status.Errorf(codes.OutOfRange, "%s: %v", computing, err)
+	default:
+		return status.Errorf(codes.Internal, "%s: %v", computing, err)
+	}
 }

@@ -31,43 +31,40 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return msgServer{k: k}
 }
 
-// Swap validates the trader address and executes a swap back to the same account.
-func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
+// Sell validates the trader address and sells the offer back to the same account.
+func (m msgServer) Sell(ctx context.Context, msg *types.MsgSell) (*types.MsgSellResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
 		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
-	swapCoin, swapFee, err := m.k.Swap(ctx, addr, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
+	swapCoin, swapFee, err := m.k.Sell(ctx, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.MsgSwapResponse{
+	return &types.MsgSellResponse{
 		SwapCoin: swapCoin,
 		SwapFee:  swapFee,
 	}, nil
 }
 
-// SwapSend validates the sender and recipient addresses and settles the swap to the recipient.
-func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types.MsgSwapSendResponse, error) {
-	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
+// Buy validates the trader address and converts the least sufficient offer back to the same account.
+func (m msgServer) Buy(ctx context.Context, msg *types.MsgBuy) (*types.MsgBuyResponse, error) {
+	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "from address is invalid: %s", err)
-	}
-	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
-	if err != nil {
-		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "to address is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
-	swapCoin, swapFee, err := m.k.Swap(ctx, fromAddr, toAddr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
+	offerCoin, swapCoin, swapFee, err := m.k.Buy(ctx, addr, msg.AskCoin, msg.OfferDenom, msg.MaximumOffer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.MsgSwapSendResponse{
-		SwapCoin: swapCoin,
-		SwapFee:  swapFee,
+	return &types.MsgBuyResponse{
+		OfferCoin: offerCoin,
+		SwapCoin:  swapCoin,
+		SwapFee:   swapFee,
 	}, nil
 }
 

@@ -173,7 +173,7 @@ func TestAutoCLIOptionsCoverMarketServices(t *testing.T) {
 	slices.Sort(committee)
 	slices.Sort(open)
 	require.Equal(t, []string{"CommitteeSetTobinTax", "CommitteeUpdatePolicy"}, committee)
-	require.Equal(t, []string{"Settle", "Swap", "SwapSend"}, open)
+	require.Equal(t, []string{"Buy", "Sell", "Settle"}, open)
 }
 
 // serviceMethods returns every RPC a generated service descriptor declares,

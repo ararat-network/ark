@@ -16,7 +16,7 @@ import (
 )
 
 func (s *KeeperTestSuite) TestSwapQuote_RecursiveSwap() {
-	_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	_, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: "1000ausd",
 		AskDenom:  "ausd",
 	})
@@ -83,7 +83,7 @@ func (s *KeeperTestSuite) TestSwapQuote_StableToStable_TobinSpread() {
 				s.seedTobinTaxOverride(chain.KRWBaseDenom, tc.askOverride)
 			}
 
-			response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+			response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 				OfferCoin: offerCoin.String(),
 				AskDenom:  chain.KRWBaseDenom,
 			})
@@ -173,7 +173,7 @@ func (s *KeeperTestSuite) TestSwapQuoteEligibility() {
 					chain.USDBaseDenom: tc.status,
 				}
 
-				response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+				response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 					OfferCoin: pair.offerCoin.String(),
 					AskDenom:  pair.askDenom,
 				})
@@ -222,7 +222,7 @@ func (s *KeeperTestSuite) TestSwapQuoteNeverGatesNoah() {
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
-	response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000).String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})
@@ -230,14 +230,14 @@ func (s *KeeperTestSuite) TestSwapQuoteNeverGatesNoah() {
 	s.Require().Equal(chain.NoahBaseDenom, response.SwapCoin.Denom)
 }
 
-func (s *KeeperTestSuite) TestMsgSwapRejectsIneligibleAssetBeforeReadingRates() {
+func (s *KeeperTestSuite) TestMsgSellRejectsIneligibleAssetBeforeReadingRates() {
 	trader := sdk.AccAddress([]byte("trader_______________"))
 	s.assetStatuses[chain.USDBaseDenom] = assettypes.AssetStatus_ASSET_STATUS_SUSPENDED
 
 	// No rate expectation is registered: eligibility precedes every rate read, so
 	// a suspended offer must fail before the oracle is consulted and before any
 	// coin moves. The strict mocks fail this test if either happens.
-	_, err := s.msgServer.Swap(s.ctx, &types.MsgSwap{
+	_, err := s.msgServer.Sell(s.ctx, &types.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000),
 		AskDenom:       chain.KRWBaseDenom,
@@ -290,7 +290,7 @@ func (s *KeeperTestSuite) TestSwapQuote_ConstantProduct() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+			response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 				OfferCoin: tc.offerCoin.String(),
 				AskDenom:  tc.askDenom,
 			})
@@ -320,7 +320,7 @@ func (s *KeeperTestSuite) TestSwapQuote_SpreadNeverBelowMinSpread() {
 
 	for _, amt := range []int64{10, 100, 1000, 10000} {
 		offerCoin := sdk.NewCoin("ausd", math.NewInt(amt))
-		response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+		response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 			OfferCoin: offerCoin.String(),
 			AskDenom:  chain.NoahBaseDenom,
 		})
@@ -348,7 +348,7 @@ func (s *KeeperTestSuite) TestSwapQuote_NegativeRawSpreadUsesMinimumSpread() {
 	))
 
 	offerCoin := sdk.NewInt64Coin("ausd", 100_000_000_000)
-	response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})
@@ -379,7 +379,7 @@ func (s *KeeperTestSuite) TestSwapQuote_ExtremeNegativeRawSpreadUsesMinimumWitho
 		chain.NoahBaseDenom: math.LegacyOneDec(),
 	}, nil)
 
-	response, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	response, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000).String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})
@@ -426,7 +426,7 @@ func (s *KeeperTestSuite) TestSwapQuoteRefusesSwapsThatRoundToZero() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			_, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+			_, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 				OfferCoin: tc.offerCoin.String(),
 				AskDenom:  tc.askDenom,
 			})
@@ -448,7 +448,7 @@ func (s *KeeperTestSuite) TestSwapQuote_PoolImbalanceIncreasesSpread() {
 	offerCoin := sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1))
 
 	// Get spread with balanced pool
-	balancedQuote, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	balancedQuote, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})
@@ -462,7 +462,7 @@ func (s *KeeperTestSuite) TestSwapQuote_PoolImbalanceIncreasesSpread() {
 	s.Require().NoError(err)
 
 	// Spread should be larger with imbalanced pool
-	imbalancedQuote, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	imbalancedQuote, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})

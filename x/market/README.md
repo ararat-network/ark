@@ -6,10 +6,11 @@ Market implements conversion between NOAH and registered assets, and between eli
 
 | Entry point | Responsibility |
 | --- | --- |
-| [keeper/swap.go](keeper/swap.go) | Swap quotation and entry points. |
+| [keeper/price.go](keeper/price.go) | A pair's snapshot, the forward quote, and its inverse. |
+| [keeper/orders.go](keeper/orders.go) | Sell, Buy, and Settle entry points and their bounds. |
+| [keeper/ledger.go](keeper/ledger.go) | Booking a quote through the module account. |
 | [keeper/conversion.go](keeper/conversion.go) | Conversion execution. |
 | [keeper/accumulator.go](keeper/accumulator.go) | Block-local conversion accumulation. |
-| [keeper/settle.go](keeper/settle.go) | Holder redemption against an active settlement plan. |
 | [keeper/abci.go](keeper/abci.go) | Block conversion settlement, returned burn, and pool replenishment. |
 | [keeper/tobin.go](keeper/tobin.go) | Tobin overrides. |
 | [keeper/reference_denom.go](keeper/reference_denom.go) | Reference-unit rebasing. |
@@ -93,7 +94,11 @@ The `types/` package mixes handwritten domain code with generated Go; do not edi
 ## API schemas
 
 The authoritative service and event definitions are [transactions](../../proto/ark/market/v1/tx.proto),
-[queries](../../proto/ark/market/v1/query.proto), and [events](../../proto/ark/market/v1/event.proto).
+[queries](../../proto/ark/market/v1/query.proto), and [events](../../proto/ark/market/v1/event.proto). `MsgSell` and `MsgBuy`
+are the two orders and both settle as one swap: a sell states the offer and takes what the quote returns, a buy states
+the ask and pays the least offer that returns it, within a required maximum. Neither carries a recipient: a payment
+in another denomination is a buy and a Bank send in one transaction, taxed on the send. `Query/Sell` quotes a sell;
+`Query/Buy` inverts that quote in closed form, and Disbursement sizes a stablecoin award's funding the same way.
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
 ## Related documents
