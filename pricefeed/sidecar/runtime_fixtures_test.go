@@ -102,10 +102,9 @@ func (c *staticChainStateClient) Feeds() ([]string, error) {
 type blockingFeedsClient struct {
 	*staticChainStateClient
 
-	calls       atomic.Int64
+	armed       atomic.Bool
 	blocked     chan struct{}
 	releaseCh   chan struct{}
-	blockedOnce sync.Once
 	releaseOnce sync.Once
 }
 
@@ -117,14 +116,17 @@ func newBlockingFeedsClient(feeds []string) *blockingFeedsClient {
 	}
 }
 
+// Feeds blocks the first aggregation tick after arm until release.
 func (c *blockingFeedsClient) Feeds() ([]string, error) {
-	if c.calls.Add(1) == 2 {
-		c.blockedOnce.Do(func() {
-			close(c.blocked)
-		})
+	if c.armed.CompareAndSwap(true, false) {
+		close(c.blocked)
 		<-c.releaseCh
 	}
 	return c.staticChainStateClient.Feeds()
+}
+
+func (c *blockingFeedsClient) arm() {
+	c.armed.Store(true)
 }
 
 func (c *blockingFeedsClient) release() {
@@ -268,7 +270,9 @@ func startTestRuntime(t *testing.T, oracle *Service) {
 	})
 }
 
-func requireOracleTick(t *testing.T, oracle *Service) *api.PricesResponse {
+// requireOracleTick waits for a committed snapshot holding every listed feed: the
+// first tick can commit before the provider's first response is ingested.
+func requireOracleTick(t *testing.T, oracle *Service, feeds ...string) *api.PricesResponse {
 	t.Helper()
 
 	var response *api.PricesResponse
@@ -276,6 +280,11 @@ func requireOracleTick(t *testing.T, oracle *Service) *api.PricesResponse {
 		resp, err := oracle.Prices(context.Background(), &api.PricesRequest{})
 		if err != nil || resp.Timestamp.IsZero() {
 			return false
+		}
+		for _, feed := range feeds {
+			if _, ok := resp.Prices[feed]; !ok {
+				return false
+			}
 		}
 		response = resp
 		return true

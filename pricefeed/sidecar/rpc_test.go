@@ -62,7 +62,7 @@ func TestPrices(t *testing.T) {
 	})
 	startTestRuntime(t, oracle)
 
-	response := requireOracleTick(t, oracle)
+	response := requireOracleTick(t, oracle, "ausd", "akrw")
 
 	require.False(t, response.Timestamp.IsZero())
 	require.Equal(t, version.Version, response.Version)
@@ -87,7 +87,6 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 	cfg := newTestRuntimeConfig()
 	cfg.UpdateInterval = time.Millisecond
 	client := newBlockingFeedsClient(cfg.FallbackFeeds)
-	t.Cleanup(client.release)
 	oracle := newTestOracleFromRuntime(
 		t,
 		cfg,
@@ -99,17 +98,22 @@ func TestPricesReturnsCommittedSnapshotDuringAggregationTick(t *testing.T) {
 		ProcessConfig{ServerAddress: "127.0.0.1:0"},
 	)
 	startTestRuntime(t, oracle)
+	// Cleanups run last-in first-out, so the tick unblocks before the runtime stops.
+	t.Cleanup(client.release)
 
-	initial := requireOracleTick(t, oracle)
+	initial := requireOracleTick(t, oracle, "ausd", "akrw")
+	client.arm()
 	requireSignal(t, client.blocked, "runtime did not block during the next aggregation tick")
+	blockedAt := time.Now()
 
 	response, err := oracle.Prices(context.Background(), &api.PricesRequest{})
 
 	require.NoError(t, err)
-	require.Equal(t, initial.Timestamp, response.Timestamp)
+	// The blocked tick stamps its snapshot only after Feeds returns.
+	require.False(t, response.Timestamp.Before(initial.Timestamp))
+	require.False(t, response.Timestamp.After(blockedAt))
 	require.Equal(t, math.LegacyMustNewDecFromStr("4"), decodePrice(t, response.Prices["ausd"]))
 	require.Equal(t, math.LegacyMustNewDecFromStr("16"), decodePrice(t, response.Prices["akrw"]))
-	client.release()
 }
 
 func TestPricesReturnsContextErrorBeforeSnapshotRead(t *testing.T) {

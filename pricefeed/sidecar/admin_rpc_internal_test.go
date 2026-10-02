@@ -32,8 +32,7 @@ func TestReloadConfigLoadsConstructionPath(t *testing.T) {
 	configPath := writeRuntimeConfig(t, reloadedCfg)
 	oracle := newReloadTestOracle(t, initialCfg, configPath)
 	startTestRuntime(t, oracle)
-	initial := requireOracleTick(t, oracle)
-	require.Contains(t, initial.Prices, "ausd")
+	initial := requireOracleTick(t, oracle, "ausd")
 
 	err := oracle.ReloadConfig(context.Background())
 
@@ -51,7 +50,7 @@ func TestReloadConfigPreservesRuntimeAfterInvalidFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(configPath, []byte(`update_interval = "0s"`), 0o600))
 	oracle := newReloadTestOracle(t, newTestRuntimeConfig(), configPath)
 	startTestRuntime(t, oracle)
-	initial := requireOracleTick(t, oracle)
+	initial := requireOracleTick(t, oracle, "ausd")
 
 	err := oracle.ReloadConfig(context.Background())
 
