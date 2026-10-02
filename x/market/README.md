@@ -98,12 +98,14 @@ The authoritative service and event definitions are [transactions](../../proto/a
 are the two orders and both settle as one swap: a sell states the offer and takes what the quote returns, a buy states
 the ask and pays the least offer that returns it, within a required maximum. Neither carries a recipient: a payment
 in another denomination is a buy and a Bank send in one transaction, taxed on the send. `Query/Sell` quotes a sell;
-`Query/Buy` inverts that quote in closed form, and Disbursement sizes a stablecoin award's funding the same way.
+`Query/Buy` inverts that quote in closed form, and Disbursement funds a stablecoin award with a buy.
 
 Errors are registered with their gRPC codes, so a quote returns the keeper's error and the code follows it: a
 malformed order is `InvalidArgument`, an ineligible asset or a crossed floor or cap is `FailedPrecondition`,
 arithmetic the pools cannot represent is `OutOfRange`, and a missing rate or asset is `NotFound` from the module
 that owns the record. Handlers classify only the request itself.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
 ## Related documents

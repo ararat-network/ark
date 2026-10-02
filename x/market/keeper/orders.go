@@ -60,16 +60,6 @@ func (k Keeper) Buy(ctx context.Context, trader sdk.AccAddress, ask sdk.Coin, of
 	return q.offer, q.output, q.fee, nil
 }
 
-// QuoteBuy sizes the least offer of offerDenom whose quote buys at least ask and returns it with
-// that quote's output and fee: a buy without the trade. Disbursement sizes awards through it.
-func (k Keeper) QuoteBuy(ctx context.Context, ask sdk.Coin, offerDenom string) (sdk.Coin, sdk.Coin, sdk.DecCoin, error) {
-	q, err := k.priceBuy(ctx, ask, offerDenom)
-	if err != nil {
-		return sdk.Coin{}, sdk.Coin{}, sdk.DecCoin{}, err
-	}
-	return q.offer, q.output, q.fee, nil
-}
-
 // Settle burns a suspended asset for NOAH at its active governance settlement rate. This holder
 // redemption is separate from swaps and cannot issue the settled asset.
 func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offer sdk.Coin) (sdk.Coin, error) {

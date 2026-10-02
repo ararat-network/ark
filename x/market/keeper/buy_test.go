@@ -12,10 +12,10 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// TestQuoteBuyFindsTheLeastSufficientOffer runs the reverse quote against the constant-product setup
+// TestQueryBuyFindsTheLeastSufficientOffer runs the reverse quote against the constant-product setup
 // the forward quote is pinned on: unit rates and a 400-unit pool, where 100 NOAH buys 80 USD at a
 // 20% spread and 99 buys 79, so the pool term of the inverse, not the floor term, decides.
-func (s *KeeperTestSuite) TestQuoteBuyFindsTheLeastSufficientOffer() {
+func (s *KeeperTestSuite) TestQueryBuyFindsTheLeastSufficientOffer() {
 	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(oracletypes.RateSet{
 			"ausd":              math.LegacyOneDec(),
@@ -27,21 +27,16 @@ func (s *KeeperTestSuite) TestQuoteBuyFindsTheLeastSufficientOffer() {
 	capacity.MinStabilitySpread = math.LegacyNewDecWithPrec(2, 2)
 	s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
 
-	offer, output, fee, err := s.keeper.QuoteBuy(s.ctx, sdk.NewInt64Coin("ausd", 80), chain.NoahBaseDenom)
-	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), offer)
-	s.Require().Equal(sdk.NewInt64Coin("ausd", 80), output)
-	s.Require().True(math.LegacyNewDec(20).Equal(fee.Amount), "fee %s", fee)
-
 	response, err := s.queryClient.Buy(s.ctx, &types.QueryBuyRequest{AskCoin: "80ausd", OfferDenom: chain.NoahBaseDenom})
 	s.Require().NoError(err)
-	s.Require().Equal(offer, response.OfferCoin)
-	s.Require().Equal(output, response.SwapCoin)
+	s.Require().Equal(sdk.NewInt64Coin(chain.NoahBaseDenom, 100), response.OfferCoin)
+	s.Require().Equal(sdk.NewInt64Coin("ausd", 80), response.SwapCoin)
+	s.Require().True(math.LegacyNewDec(20).Equal(response.SwapFee.Amount), "fee %s", response.SwapFee)
 
 	// The pool cannot hand over its whole depth, and an ask in the offer denomination is recursive.
-	_, _, _, err = s.keeper.QuoteBuy(s.ctx, sdk.NewInt64Coin("ausd", 400), chain.NoahBaseDenom)
+	_, err = s.queryClient.Buy(s.ctx, &types.QueryBuyRequest{AskCoin: "400ausd", OfferDenom: chain.NoahBaseDenom})
 	s.Require().ErrorContains(err, "out of range")
-	_, _, _, err = s.keeper.QuoteBuy(s.ctx, sdk.NewInt64Coin(chain.NoahBaseDenom, 1), chain.NoahBaseDenom)
+	_, err = s.queryClient.Buy(s.ctx, &types.QueryBuyRequest{AskCoin: "1" + chain.NoahBaseDenom, OfferDenom: chain.NoahBaseDenom})
 	s.Require().Error(err)
 }
 
