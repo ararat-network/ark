@@ -121,7 +121,7 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		offer := sdk.NewCoin(offerDenom, math.NewInt(conversion.amount))
 		noahBefore := balanceOf(marketAddress)
 
-		response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         trader.String(),
 			OfferCoin:      offer,
 			AskDenom:       askDenom,
@@ -281,7 +281,7 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
 	swap := func(offer sdk.Coin, askDenom string) math.Int {
-		response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         trader.String(),
 			OfferCoin:      offer,
 			AskDenom:       askDenom,
@@ -368,7 +368,10 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				Height: arkApp.LastBlockHeight(),
 				Time:   time.Unix(1_800_000_000, 0),
 			})
-			trader := treasuryGovernanceVoter(t, arkApp, ctx)
+			// A blocked module account trades, so the final send back to it fails
+			// after settlement has written: the latest point a swap can fail.
+			trader := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+			require.True(t, arkApp.BankKeeper.BlockedAddr(trader))
 
 			// The reference unit is never traded here, but it denominates
 			// Market's base pool, so every quote still reads its rate.
@@ -385,7 +388,7 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				}))
 			}
 
-			apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(test.offerCoin))
+			apptestutil.FundModule(t, arkApp, ctx, authtypes.FeeCollectorName, sdk.NewCoins(test.offerCoin))
 			// The mint above stands in for supply that existed before this
 			// block. It bypasses Market and needs no priming: the block's
 			// valuation is folded at settlement, from final state.
@@ -393,12 +396,9 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 			before := captureMarketSettlementState(t, arkApp, ctx, trader, treasuryQuery)
 			beforeEventCount := len(ctx.EventManager().Events())
 
-			blockedRecipient := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
-			require.True(t, arkApp.BankKeeper.BlockedAddr(blockedRecipient))
 			cacheCtx, _ := ctx.CacheContext()
-			_, err := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper).SwapSend(cacheCtx, &markettypes.MsgSwapSend{
-				FromAddress:    trader.String(),
-				ToAddress:      blockedRecipient.String(),
+			_, err := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper).Sell(cacheCtx, &markettypes.MsgSell{
+				Trader:         trader.String(),
 				OfferCoin:      test.offerCoin,
 				AskDenom:       test.askDenom,
 				MinimumReceive: sdk.NewInt64Coin(test.askDenom, 1),

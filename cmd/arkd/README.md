@@ -35,7 +35,7 @@ Its app logs to stderr, so a redirected stdout is the genesis alone. [Node opera
   then the rest of the sheet — is a convenience for a CLI user who has not said which denomination to pay in. An
   integration that holds one denomination has no use for it.
 - `arkd` nets `tax_base` against the payer's spendable balance when ranking. `tax_base` is what was taxed, not what
-  leaves the payer: a `MsgSwap` spends its offer coin untaxed and is absent from it, and a `MsgExec` moves the
+  leaves the payer: a `MsgSell` spends its offer coin untaxed and is absent from it, and a `MsgExec` moves the
   granter's coins and is present. The chain is the arbiter either way; a wrong guess costs a refusal, not funds.
 
 The split to hold onto: the chain publishes what is true, the client decides what is prudent. Tax and gas price

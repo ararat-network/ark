@@ -34,7 +34,6 @@ import (
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
-	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -66,11 +65,12 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.disbursement.v1.Query/Params",
 	"/ark.disbursement.v1.Query/Releasable",
 	"/ark.disbursement.v1.Query/Totals",
+	"/ark.market.v1.Query/Buy",
 	"/ark.market.v1.Query/ConversionMandate",
 	"/ark.market.v1.Query/ConversionPolicy",
 	"/ark.market.v1.Query/Params",
 	"/ark.market.v1.Query/Pool",
-	"/ark.market.v1.Query/Swap",
+	"/ark.market.v1.Query/Sell",
 	"/ark.market.v1.Query/TobinTax",
 	"/ark.market.v1.Query/TobinTaxOverrides",
 	"/ark.oracle.v1.Query/Attendance",
@@ -213,7 +213,7 @@ func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	annotated := moduleQuerySafePaths()
-	require.Len(t, app.AcceptedQueries(), 48, "fourteen Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
+	require.Len(t, app.AcceptedQueries(), 49, "fifteen Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
 
 	for path, response := range app.AcceptedQueries() {
 		t.Run(path, func(t *testing.T) {
@@ -317,10 +317,6 @@ func TestTaxQueryMatchesTheChargeForEveryShape(t *testing.T) {
 		},
 		"ibc transfer": ibctransfertypes.NewMsgTransfer(ibctransfertypes.PortID, "channel-0", stable[0],
 			contract.String(), recipient, clienttypes.NewHeight(1, 1), 0, ""),
-		"market swap send": &markettypes.MsgSwapSend{
-			FromAddress: contract.String(), ToAddress: recipient, OfferCoin: stable[0], AskDenom: chain.NoahBaseDenom,
-			MinimumReceive: sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-		},
 		"execute with funds": &wasmtypes.MsgExecuteContract{
 			Sender: contract.String(), Contract: recipient, Msg: []byte("{}"), Funds: stable,
 		},

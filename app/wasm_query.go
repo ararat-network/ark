@@ -68,7 +68,8 @@ func acceptedQueries() wasmkeeper.AcceptedQueries {
 		"/ark.oracle.v1.Query/ExchangeRates":  func() gogoproto.Message { return &oracletypes.QueryExchangeRatesResponse{} },
 		"/ark.oracle.v1.Query/ReferenceDenom": func() gogoproto.Message { return &oracletypes.QueryReferenceDenomResponse{} },
 
-		"/ark.market.v1.Query/Swap":             func() gogoproto.Message { return &markettypes.QuerySwapResponse{} },
+		"/ark.market.v1.Query/Sell":             func() gogoproto.Message { return &markettypes.QuerySellResponse{} },
+		"/ark.market.v1.Query/Buy":              func() gogoproto.Message { return &markettypes.QueryBuyResponse{} },
 		"/ark.market.v1.Query/Pool":             func() gogoproto.Message { return &markettypes.QueryPoolResponse{} },
 		"/ark.market.v1.Query/ConversionPolicy": func() gogoproto.Message { return &markettypes.QueryConversionPolicyResponse{} },
 		"/ark.market.v1.Query/TobinTax":         func() gogoproto.Message { return &markettypes.QueryTobinTaxResponse{} },

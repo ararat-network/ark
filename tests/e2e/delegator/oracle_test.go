@@ -52,7 +52,7 @@ func (s *OracleSuite) TestConversionClears() {
 	trader := s.Wallet
 	before, err := s.Chain.GetBalance(ctx, trader.FormattedAddress(), "ausd")
 	s.Require().NoError(err)
-	_, err = s.Node().ExecTx(ctx, trader.KeyName(), "market", "swap", chainsuite.NOAHCoin(1), "ausd")
+	_, err = s.Node().ExecTx(ctx, trader.KeyName(), "market", "sell", chainsuite.NOAHCoin(1), "ausd")
 	s.Require().NoError(err)
 	// Settlement runs in the EndBlocker after placement.
 	s.Require().NoError(testutil.WaitForBlocks(ctx, 2, s.Chain))

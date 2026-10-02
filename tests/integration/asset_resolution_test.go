@@ -42,7 +42,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.USDBaseDenom,
@@ -82,14 +82,14 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 		// Both conversion directions close in the block the suspension lands:
 		// the failed claim can neither be issued nor exited at a market price.
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
 			MinimumReceive: sdk.NewCoin(chain.USDBaseDenom, math.OneInt()),
 		})
 		require.ErrorIs(t, err, markettypes.ErrIneligibleAsset)
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      acquired,
 			AskDenom:       chain.NoahBaseDenom,
@@ -296,7 +296,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.True(t, status.PricedLiability.Amount.IsPositive())
 		require.Empty(t, status.UntrustedSuspendedSupply)
 
-		_, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
@@ -308,7 +308,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, f.app.AssetKeeper.ResumeIssuance(ctx, chain.USDBaseDenom, asset.Version))
 
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
@@ -409,7 +409,7 @@ func TestWriteOffAndReinstatement(t *testing.T) {
 
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -733,7 +733,7 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	// The asset must carry supply, or the partition skips it and suspending it
 	// changes nothing about completeness.
 	f.nextBlock(func(ctx sdk.Context) {
-		_, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -774,7 +774,7 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(10)),
 			AskDenom:       chain.USDBaseDenom,

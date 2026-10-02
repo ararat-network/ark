@@ -81,7 +81,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 	// end of the block, so it counts this supply the same way it counts what the
 	// block's own conversions created.
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
-	expansion, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+	expansion, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		AskDenom:       chain.USDBaseDenom,
@@ -101,7 +101,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 		chain.USDBaseDenom,
 		math.NewInt(500),
 	)
-	redemption, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+	redemption, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      redemptionOffer,
 		AskDenom:       chain.NoahBaseDenom,

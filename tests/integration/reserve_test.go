@@ -412,10 +412,10 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	credit := recognised.Sub(base)
 
 	// The Market's leg, at the same rate on a registry member. The gross is the
-	// quote before the spread, which applySpread splits into exactly these two
+	// quote before the spread, which the quote splits into exactly these two
 	// parts — the fee carries the truncation dust, so the sum is the whole
 	// pre-spread figure and nothing is lost in reassembling it.
-	quote, err := marketQuery.Swap(ctx, &markettypes.QuerySwapRequest{
+	quote, err := marketQuery.Sell(ctx, &markettypes.QuerySellRequest{
 		OfferCoin: sdk.NewCoin(chain.USDBaseDenom, quantity).String(),
 		AskDenom:  chain.NoahBaseDenom,
 	})

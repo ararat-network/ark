@@ -57,7 +57,7 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 		policy.RedemptionBufferTargetRatio = math.LegacyNewDecWithPrec(1, 1)
 		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -210,7 +210,7 @@ func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
 
 	// The chain keeps pricing conversion in the new unit on the next block.
 	f.nextBlock(func(ctx sdk.Context) {
-		_, err := marketQueryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+		_, err := marketQueryServer.Sell(ctx, &markettypes.QuerySellRequest{
 			OfferCoin: sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1)).String(),
 			AskDenom:  chain.KRWBaseDenom,
 		})
@@ -240,7 +240,7 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 		params.ReferenceTaxCap = math.ZeroInt()
 		require.NoError(t, f.app.TreasuryKeeper.Params.Set(ctx, params))
 
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -275,7 +275,7 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 		require.True(t, expectedPriced.Equal(status.PricedLiability.Amount))
 
 		// Still redeemable: conversion out draws the ordinary redemption path.
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      acquired,
 			AskDenom:       chain.NoahBaseDenom,
@@ -414,7 +414,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 
 	totalOffer := math.NewInt(500_000_000_000)
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
-	response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+	response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      sdk.NewCoin(chain.USDBaseDenom, totalOffer),
 		AskDenom:       chain.NoahBaseDenom,

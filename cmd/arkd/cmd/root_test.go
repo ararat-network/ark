@@ -67,21 +67,17 @@ func TestHomeFlagRegistration(t *testing.T) {
 func TestMarketTxCommands(t *testing.T) {
 	rootCmd := NewRootCmd()
 
-	swapCmd, args, err := rootCmd.Find([]string{"tx", "market", "swap"})
+	sellCmd, args, err := rootCmd.Find([]string{"tx", "market", "sell"})
 	require.NoError(t, err)
 	require.Empty(t, args)
-	require.Equal(t, "swap", swapCmd.Name())
-	require.Equal(t, "swap [offer-coin] [ask-denom] [minimum-receive]", swapCmd.Use)
+	require.Equal(t, "sell", sellCmd.Name())
+	require.Equal(t, "sell [offer-coin] [ask-denom] [minimum-receive]", sellCmd.Use)
 
-	swapSendCmd, args, err := rootCmd.Find([]string{"tx", "market", "swap-send"})
+	buyCmd, args, err := rootCmd.Find([]string{"tx", "market", "buy"})
 	require.NoError(t, err)
 	require.Empty(t, args)
-	require.Equal(t, "swap-send", swapSendCmd.Name())
-	require.Equal(
-		t,
-		"swap-send [offer-coin] [ask-denom] [to-address] [minimum-receive]",
-		swapSendCmd.Use,
-	)
+	require.Equal(t, "buy", buyCmd.Name())
+	require.Equal(t, "buy [ask-coin] [offer-denom] [maximum-offer]", buyCmd.Use)
 }
 
 // TestTxCommandsArePriced pins the pricing walk through the one
@@ -95,7 +91,7 @@ func TestTxCommandsArePriced(t *testing.T) {
 		{"tx", "bank", "send"},
 		{"tx", "ibc-transfer", "transfer"},
 		{"tx", "wasm", "execute"},
-		{"tx", "market", "swap-send"},
+		{"tx", "market", "sell"},
 	} {
 		command, _, err := rootCmd.Find(path)
 		require.NoError(t, err)
@@ -156,7 +152,7 @@ func TestExportCommandRelaunchFlags(t *testing.T) {
 func TestTxCommandsDefaultGasAdjustment(t *testing.T) {
 	rootCmd := NewRootCmd()
 
-	for _, path := range [][]string{{"tx", "bank", "send"}, {"tx", "gov", "vote"}, {"tx", "market", "swap"}} {
+	for _, path := range [][]string{{"tx", "bank", "send"}, {"tx", "gov", "vote"}, {"tx", "market", "sell"}} {
 		sub, _, err := rootCmd.Find(path)
 		require.NoError(t, err)
 		flag := sub.Flags().Lookup(flags.FlagGasAdjustment)
