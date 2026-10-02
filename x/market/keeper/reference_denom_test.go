@@ -73,8 +73,8 @@ func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 }
 
 func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
-	// Asset captures freshness in the supplied rate set. Missing rates map ErrUnknownDenom to
-	// ErrNoEffectivePrice; internal conversion errors propagate unchanged.
+	// Asset captures freshness in the supplied rate set. Missing rates surface as the oracle's
+	// ErrUnknownDenom; internal conversion errors propagate unchanged.
 	tests := []struct {
 		name       string
 		from       string
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 				chain.USDBaseDenom:  math.LegacyNewDec(2),
 			},
 			expectErr: oracletypes.ErrUnknownDenom.Error(),
-			errorIs:   types.ErrNoEffectivePrice,
+			errorIs:   oracletypes.ErrUnknownDenom,
 		},
 		{
 			name: "destination has no price in the handed set",
@@ -116,7 +116,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 				chain.XDRBaseDenom:  math.LegacyOneDec(),
 			},
 			expectErr: oracletypes.ErrUnknownDenom.Error(),
-			errorIs:   types.ErrNoEffectivePrice,
+			errorIs:   oracletypes.ErrUnknownDenom,
 		},
 		{
 			// An internal conversion failure is not a missing price, and
@@ -135,7 +135,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			},
 			expectErr:  oracletypes.ErrConversionOutOfRange.Error(),
 			errorIs:    oracletypes.ErrConversionOutOfRange,
-			errorIsNot: types.ErrNoEffectivePrice,
+			errorIsNot: oracletypes.ErrUnknownDenom,
 		},
 		{
 			// Zero is a valid conversion result but never a swappable depth:
@@ -151,7 +151,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			},
 			expectErr:  "invalid effective pools after rebasing to ausd",
 			errorIs:    errortypes.ErrInvalidRequest,
-			errorIsNot: types.ErrNoEffectivePrice,
+			errorIsNot: oracletypes.ErrUnknownDenom,
 		},
 		{
 			// The conversion itself can succeed while the rebased depth is too
@@ -169,7 +169,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			},
 			expectErr:  "invalid effective pools after rebasing to ausd",
 			errorIs:    errortypes.ErrInvalidRequest,
-			errorIsNot: types.ErrNoEffectivePrice,
+			errorIsNot: oracletypes.ErrUnknownDenom,
 		},
 	}
 

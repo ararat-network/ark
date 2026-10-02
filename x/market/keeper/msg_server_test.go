@@ -81,8 +81,8 @@ func (s *KeeperTestSuite) TestMsgSell() {
 				AskDenom:       "akrw",
 				MinimumReceive: sdk.NewInt64Coin("akrw", 1),
 			},
-			expectErr: errortypes.ErrInvalidCoins,
-			errMsg:    "invalid coins",
+			expectErr: types.ErrInvalidOrder,
+			errMsg:    "invalid order",
 		},
 		{
 			name: "negative amount",
@@ -95,8 +95,8 @@ func (s *KeeperTestSuite) TestMsgSell() {
 				AskDenom:       "akrw",
 				MinimumReceive: sdk.NewInt64Coin("akrw", 1),
 			},
-			expectErr: errortypes.ErrInvalidCoins,
-			errMsg:    "invalid coins",
+			expectErr: types.ErrInvalidOrder,
+			errMsg:    "invalid order",
 		},
 		{
 			name: "zero minimum receive",
@@ -106,8 +106,8 @@ func (s *KeeperTestSuite) TestMsgSell() {
 				AskDenom:       "akrw",
 				MinimumReceive: sdk.NewCoin("akrw", math.ZeroInt()),
 			},
-			expectErr: errortypes.ErrInvalidCoins,
-			errMsg:    "invalid coins",
+			expectErr: types.ErrInvalidOrder,
+			errMsg:    "invalid order",
 		},
 		{
 			name: "minimum receive denom does not match ask denom",
@@ -117,7 +117,7 @@ func (s *KeeperTestSuite) TestMsgSell() {
 				AskDenom:       "akrw",
 				MinimumReceive: sdk.NewInt64Coin("ausd", 1),
 			},
-			expectErr: errortypes.ErrInvalidRequest,
+			expectErr: types.ErrInvalidOrder,
 			errMsg:    "minimum receive: denom",
 		},
 	}
@@ -528,7 +528,7 @@ func (s *KeeperTestSuite) TestMsgSell_QuoteErrorIncludesContext() {
 
 			_, err := s.msgServer.Sell(s.ctx, tc.msg)
 			s.Require().Error(err)
-			s.Require().ErrorIs(err, types.ErrNoEffectivePrice)
+			s.Require().ErrorIs(err, oracletypes.ErrUnknownDenom)
 			s.Require().ErrorContains(err, "computing swap from 1000000ausd to afoo")
 		})
 	}

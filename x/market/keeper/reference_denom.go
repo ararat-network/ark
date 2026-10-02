@@ -41,7 +41,7 @@ func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rate
 
 	rebased, err := rates.Convert(capacity.BasePool, to)
 	if err != nil {
-		return marketRateError(err)
+		return err
 	}
 
 	newDelta, err := rescaleArkPoolDelta(oldDelta, capacity.BasePool.Amount, rebased.Amount)

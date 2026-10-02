@@ -192,13 +192,15 @@ func (s *KeeperTestSuite) TestSwapQuoteEligibility() {
 
 				// A refused leg is a precondition failure, not an internal one: the
 				// request is well formed and the chain simply will not convert that
-				// denomination in that direction right now.
+				// denomination in that direction right now. An unregistered
+				// denomination is the asset registry's not-found.
 				s.Require().Error(err)
-				s.Require().Equal(codes.FailedPrecondition, status.Code(err))
 				if tc.status == assettypes.AssetStatus_ASSET_STATUS_UNSPECIFIED {
+					s.Require().Equal(codes.NotFound, status.Code(err))
 					s.Require().ErrorContains(err, assettypes.ErrAssetNotFound.Error())
 					return
 				}
+				s.Require().Equal(codes.FailedPrecondition, status.Code(err))
 				s.Require().ErrorContains(err, types.ErrIneligibleAsset.Error())
 				s.Require().ErrorContains(err, rejection)
 			})

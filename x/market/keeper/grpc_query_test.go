@@ -63,7 +63,7 @@ func (s *KeeperTestSuite) TestQuerySell() {
 			expectErr: "invalid decimal coin expression",
 		},
 		{
-			name: "missing oracle price returns failed precondition",
+			name: "missing oracle price returns not found",
 			setup: func() {
 				s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "unknown").
 					Return(nil, oracletypes.ErrUnknownDenom)
@@ -72,8 +72,8 @@ func (s *KeeperTestSuite) TestQuerySell() {
 				OfferCoin: "1000000ausd",
 				AskDenom:  "unknown",
 			},
-			code:      codes.FailedPrecondition,
-			expectErr: "no price registered with oracle",
+			code:      codes.NotFound,
+			expectErr: "unknown denom",
 		},
 		{
 			name: "stale oracle price returns failed precondition",

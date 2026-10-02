@@ -7,7 +7,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
@@ -103,7 +102,7 @@ func (k Keeper) snapshot(ctx context.Context, offerDenom, askDenom string) (snap
 	if kindOf(offerDenom, askDenom) == cross {
 		rates, err := k.oracleKeeper.GetRateSet(ctx, offerDenom, askDenom)
 		if err != nil {
-			return snapshot{}, marketRateError(err)
+			return snapshot{}, err
 		}
 
 		// Each leg contributes its own rate and the wider one governs: the spread has to cover
@@ -131,7 +130,7 @@ func (k Keeper) snapshot(ctx context.Context, offerDenom, askDenom string) (snap
 
 	rates, err := k.oracleKeeper.GetRateSet(ctx, offerDenom, policy.BasePool.Denom, askDenom)
 	if err != nil {
-		return snapshot{}, marketRateError(err)
+		return snapshot{}, err
 	}
 
 	pools, err := types.NewEffectivePools(policy.BasePool.Amount, delta)
@@ -358,13 +357,6 @@ func ceilDiv(numerator, denominator math.Int) math.Int {
 		quotient = quotient.AddRaw(1)
 	}
 	return quotient
-}
-
-func marketRateError(err error) error {
-	if errors.Is(err, oracletypes.ErrUnknownDenom) {
-		return errorsmod.Wrap(types.ErrNoEffectivePrice, err.Error())
-	}
-	return err
 }
 
 // requireConvertible checks status before any rate read: offers may be ACTIVE or ISSUANCE_HALTED,

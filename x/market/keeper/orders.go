@@ -12,7 +12,6 @@ import (
 	errorsmod "cosmossdk.io/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
@@ -75,10 +74,10 @@ func (k Keeper) QuoteBuy(ctx context.Context, ask sdk.Coin, offerDenom string) (
 // redemption is separate from swaps and cannot issue the settled asset.
 func (k Keeper) Settle(ctx context.Context, trader sdk.AccAddress, offer sdk.Coin) (sdk.Coin, error) {
 	if err := offer.Validate(); err != nil {
-		return sdk.Coin{}, fmt.Errorf("invalid settlement offer: %w", err)
+		return sdk.Coin{}, errorsmod.Wrapf(types.ErrInvalidOrder, "invalid settlement offer: %v", err)
 	}
 	if !offer.IsPositive() {
-		return sdk.Coin{}, fmt.Errorf("settlement offer must be positive: %s", offer)
+		return sdk.Coin{}, errorsmod.Wrapf(types.ErrInvalidOrder, "settlement offer %s is not positive", offer)
 	}
 
 	asset, err := k.assetKeeper.GetAsset(ctx, offer.Denom)
@@ -182,13 +181,13 @@ func (k Keeper) fill(ctx context.Context, trader sdk.AccAddress, q quote) error 
 // differ.
 func validateLegs(coin sdk.Coin, denom string) error {
 	if err := coin.Validate(); err != nil {
-		return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "invalid coin: %v", err)
+		return errorsmod.Wrapf(types.ErrInvalidOrder, "invalid coin: %v", err)
 	}
 	if !coin.Amount.IsPositive() {
-		return errorsmod.Wrap(errortypes.ErrInvalidCoins, coin.String())
+		return errorsmod.Wrap(types.ErrInvalidOrder, coin.String())
 	}
 	if err := sdk.ValidateDenom(denom); err != nil {
-		return errorsmod.Wrapf(errortypes.ErrInvalidRequest, "invalid denom %q: %v", denom, err)
+		return errorsmod.Wrapf(types.ErrInvalidOrder, "invalid denom %q: %v", denom, err)
 	}
 	if coin.Denom == denom {
 		return errorsmod.Wrap(types.ErrRecursiveSwap, denom)
@@ -202,18 +201,18 @@ func validateLegs(coin sdk.Coin, denom string) error {
 func validateBound(bound sdk.Coin, denom string, required bool) (bool, error) {
 	if bound.Denom == "" && (bound.Amount.IsNil() || bound.Amount.IsZero()) {
 		if required {
-			return false, errorsmod.Wrap(errortypes.ErrInvalidRequest, "not stated")
+			return false, errorsmod.Wrap(types.ErrInvalidOrder, "not stated")
 		}
 		return false, nil
 	}
 	if err := bound.Validate(); err != nil {
-		return false, errorsmod.Wrap(errortypes.ErrInvalidCoins, err.Error())
+		return false, errorsmod.Wrap(types.ErrInvalidOrder, err.Error())
 	}
 	if !bound.IsPositive() {
-		return false, errorsmod.Wrapf(errortypes.ErrInvalidCoins, "%s is not positive", bound)
+		return false, errorsmod.Wrapf(types.ErrInvalidOrder, "%s is not positive", bound)
 	}
 	if bound.Denom != denom {
-		return false, errorsmod.Wrapf(errortypes.ErrInvalidRequest, "denom %q is not %q", bound.Denom, denom)
+		return false, errorsmod.Wrapf(types.ErrInvalidOrder, "denom %q is not %q", bound.Denom, denom)
 	}
 	return true, nil
 }
