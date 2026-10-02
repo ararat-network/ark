@@ -24,8 +24,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Msg_Swap_FullMethodName                   = "/ark.market.v1.Msg/Swap"
-	Msg_SwapSend_FullMethodName               = "/ark.market.v1.Msg/SwapSend"
+	Msg_Sell_FullMethodName                   = "/ark.market.v1.Msg/Sell"
+	Msg_Buy_FullMethodName                    = "/ark.market.v1.Msg/Buy"
 	Msg_Settle_FullMethodName                 = "/ark.market.v1.Msg/Settle"
 	Msg_UpdateParams_FullMethodName           = "/ark.market.v1.Msg/UpdateParams"
 	Msg_SetTobinTaxOverride_FullMethodName    = "/ark.market.v1.Msg/SetTobinTaxOverride"
@@ -42,12 +42,12 @@ const (
 //
 // Msg defines the market Msg service.
 type MsgClient interface {
-	// Swap defines a method for swapping coin from one denom to another
-	// denom.
-	Swap(ctx context.Context, in *MsgSwap, opts ...grpc.CallOption) (*MsgSwapResponse, error)
-	// SwapSend defines a method for swapping and sending coin from a account to
-	// other account.
-	SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.CallOption) (*MsgSwapSendResponse, error)
+	// Sell converts a stated offer and returns the output, at least an optional minimum, to the
+	// trader.
+	Sell(ctx context.Context, in *MsgSell, opts ...grpc.CallOption) (*MsgSellResponse, error)
+	// Buy converts the least offer whose quote returns at least the ask, within a required maximum,
+	// back to the trader.
+	Buy(ctx context.Context, in *MsgBuy, opts ...grpc.CallOption) (*MsgBuyResponse, error)
 	// Settle redeems a suspended asset against its governance-approved
 	// settlement plan.
 	Settle(ctx context.Context, in *MsgSettle, opts ...grpc.CallOption) (*MsgSettleResponse, error)
@@ -82,20 +82,20 @@ func NewMsgClient(cc grpc.ClientConnInterface) MsgClient {
 	return &msgClient{cc}
 }
 
-func (c *msgClient) Swap(ctx context.Context, in *MsgSwap, opts ...grpc.CallOption) (*MsgSwapResponse, error) {
+func (c *msgClient) Sell(ctx context.Context, in *MsgSell, opts ...grpc.CallOption) (*MsgSellResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgSwapResponse)
-	err := c.cc.Invoke(ctx, Msg_Swap_FullMethodName, in, out, cOpts...)
+	out := new(MsgSellResponse)
+	err := c.cc.Invoke(ctx, Msg_Sell_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) SwapSend(ctx context.Context, in *MsgSwapSend, opts ...grpc.CallOption) (*MsgSwapSendResponse, error) {
+func (c *msgClient) Buy(ctx context.Context, in *MsgBuy, opts ...grpc.CallOption) (*MsgBuyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgSwapSendResponse)
-	err := c.cc.Invoke(ctx, Msg_SwapSend_FullMethodName, in, out, cOpts...)
+	out := new(MsgBuyResponse)
+	err := c.cc.Invoke(ctx, Msg_Buy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -188,12 +188,12 @@ func (c *msgClient) CommitteeSetTobinTax(ctx context.Context, in *MsgCommitteeSe
 //
 // Msg defines the market Msg service.
 type MsgServer interface {
-	// Swap defines a method for swapping coin from one denom to another
-	// denom.
-	Swap(context.Context, *MsgSwap) (*MsgSwapResponse, error)
-	// SwapSend defines a method for swapping and sending coin from a account to
-	// other account.
-	SwapSend(context.Context, *MsgSwapSend) (*MsgSwapSendResponse, error)
+	// Sell converts a stated offer and returns the output, at least an optional minimum, to the
+	// trader.
+	Sell(context.Context, *MsgSell) (*MsgSellResponse, error)
+	// Buy converts the least offer whose quote returns at least the ask, within a required maximum,
+	// back to the trader.
+	Buy(context.Context, *MsgBuy) (*MsgBuyResponse, error)
 	// Settle redeems a suspended asset against its governance-approved
 	// settlement plan.
 	Settle(context.Context, *MsgSettle) (*MsgSettleResponse, error)
@@ -228,11 +228,11 @@ type MsgServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMsgServer struct{}
 
-func (UnimplementedMsgServer) Swap(context.Context, *MsgSwap) (*MsgSwapResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Swap not implemented")
+func (UnimplementedMsgServer) Sell(context.Context, *MsgSell) (*MsgSellResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Sell not implemented")
 }
-func (UnimplementedMsgServer) SwapSend(context.Context, *MsgSwapSend) (*MsgSwapSendResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SwapSend not implemented")
+func (UnimplementedMsgServer) Buy(context.Context, *MsgBuy) (*MsgBuyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Buy not implemented")
 }
 func (UnimplementedMsgServer) Settle(context.Context, *MsgSettle) (*MsgSettleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Settle not implemented")
@@ -279,38 +279,38 @@ func RegisterMsgServer(s grpc.ServiceRegistrar, srv MsgServer) {
 	s.RegisterService(&Msg_ServiceDesc, srv)
 }
 
-func _Msg_Swap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgSwap)
+func _Msg_Sell_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSell)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).Swap(ctx, in)
+		return srv.(MsgServer).Sell(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_Swap_FullMethodName,
+		FullMethod: Msg_Sell_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).Swap(ctx, req.(*MsgSwap))
+		return srv.(MsgServer).Sell(ctx, req.(*MsgSell))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_SwapSend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgSwapSend)
+func _Msg_Buy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgBuy)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).SwapSend(ctx, in)
+		return srv.(MsgServer).Buy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_SwapSend_FullMethodName,
+		FullMethod: Msg_Buy_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).SwapSend(ctx, req.(*MsgSwapSend))
+		return srv.(MsgServer).Buy(ctx, req.(*MsgBuy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -467,12 +467,12 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Swap",
-			Handler:    _Msg_Swap_Handler,
+			MethodName: "Sell",
+			Handler:    _Msg_Sell_Handler,
 		},
 		{
-			MethodName: "SwapSend",
-			Handler:    _Msg_SwapSend_Handler,
+			MethodName: "Buy",
+			Handler:    _Msg_Buy_Handler,
 		},
 		{
 			MethodName: "Settle",

@@ -11,23 +11,22 @@ option go_package = "github.com/ararat-network/ark/x/market/types";
 // EventSwap is emitted after a Market swap settles successfully.
 message EventSwap {
   string trader = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string recipient = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string offer_denom = 3;
-  string offer_amount = 4 [
+  string offer_denom = 2;
+  string offer_amount = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string swap_denom = 5;
-  string swap_amount = 6 [
+  string swap_denom = 4;
+  string swap_amount = 5 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string fee_denom = 7;
-  string fee_amount = 8 [
+  string fee_denom = 6;
+  string fee_amount = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,

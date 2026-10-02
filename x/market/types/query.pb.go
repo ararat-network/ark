@@ -39,26 +39,26 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// QuerySwapRequest is the request type for the Query/Swap RPC method.
-type QuerySwapRequest struct {
+// QuerySellRequest is the request type for the Query/Sell RPC method.
+type QuerySellRequest struct {
 	// offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
 	OfferCoin string `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
 	// ask_denom defines the denom of the coin to swap to
 	AskDenom string `protobuf:"bytes,2,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
 }
 
-func (m *QuerySwapRequest) Reset()         { *m = QuerySwapRequest{} }
-func (m *QuerySwapRequest) String() string { return proto.CompactTextString(m) }
-func (*QuerySwapRequest) ProtoMessage()    {}
-func (*QuerySwapRequest) Descriptor() ([]byte, []int) {
+func (m *QuerySellRequest) Reset()         { *m = QuerySellRequest{} }
+func (m *QuerySellRequest) String() string { return proto.CompactTextString(m) }
+func (*QuerySellRequest) ProtoMessage()    {}
+func (*QuerySellRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f732f14b0cd578b2, []int{0}
 }
-func (m *QuerySwapRequest) XXX_Unmarshal(b []byte) error {
+func (m *QuerySellRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuerySwapRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySellRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QuerySwapRequest.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySellRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -68,52 +68,52 @@ func (m *QuerySwapRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return b[:n], nil
 	}
 }
-func (m *QuerySwapRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QuerySwapRequest.Merge(m, src)
+func (m *QuerySellRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySellRequest.Merge(m, src)
 }
-func (m *QuerySwapRequest) XXX_Size() int {
+func (m *QuerySellRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *QuerySwapRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_QuerySwapRequest.DiscardUnknown(m)
+func (m *QuerySellRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySellRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QuerySwapRequest proto.InternalMessageInfo
+var xxx_messageInfo_QuerySellRequest proto.InternalMessageInfo
 
-func (m *QuerySwapRequest) GetOfferCoin() string {
+func (m *QuerySellRequest) GetOfferCoin() string {
 	if m != nil {
 		return m.OfferCoin
 	}
 	return ""
 }
 
-func (m *QuerySwapRequest) GetAskDenom() string {
+func (m *QuerySellRequest) GetAskDenom() string {
 	if m != nil {
 		return m.AskDenom
 	}
 	return ""
 }
 
-// QuerySwapResponse is the response type for the Query/Swap RPC method.
-type QuerySwapResponse struct {
+// QuerySellResponse is the response type for the Query/Sell RPC method.
+type QuerySellResponse struct {
 	// return_coin defines the coin returned as a result of the swap simulation.
 	SwapCoin types.Coin `protobuf:"bytes,1,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin"`
 	// swap_fee defines the fee deducted from the simulated swap result.
 	SwapFee types.DecCoin `protobuf:"bytes,2,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee"`
 }
 
-func (m *QuerySwapResponse) Reset()         { *m = QuerySwapResponse{} }
-func (m *QuerySwapResponse) String() string { return proto.CompactTextString(m) }
-func (*QuerySwapResponse) ProtoMessage()    {}
-func (*QuerySwapResponse) Descriptor() ([]byte, []int) {
+func (m *QuerySellResponse) Reset()         { *m = QuerySellResponse{} }
+func (m *QuerySellResponse) String() string { return proto.CompactTextString(m) }
+func (*QuerySellResponse) ProtoMessage()    {}
+func (*QuerySellResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f732f14b0cd578b2, []int{1}
 }
-func (m *QuerySwapResponse) XXX_Unmarshal(b []byte) error {
+func (m *QuerySellResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *QuerySwapResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *QuerySellResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_QuerySwapResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_QuerySellResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -123,26 +123,145 @@ func (m *QuerySwapResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, e
 		return b[:n], nil
 	}
 }
-func (m *QuerySwapResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QuerySwapResponse.Merge(m, src)
+func (m *QuerySellResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySellResponse.Merge(m, src)
 }
-func (m *QuerySwapResponse) XXX_Size() int {
+func (m *QuerySellResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *QuerySwapResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_QuerySwapResponse.DiscardUnknown(m)
+func (m *QuerySellResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySellResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_QuerySwapResponse proto.InternalMessageInfo
+var xxx_messageInfo_QuerySellResponse proto.InternalMessageInfo
 
-func (m *QuerySwapResponse) GetSwapCoin() types.Coin {
+func (m *QuerySellResponse) GetSwapCoin() types.Coin {
 	if m != nil {
 		return m.SwapCoin
 	}
 	return types.Coin{}
 }
 
-func (m *QuerySwapResponse) GetSwapFee() types.DecCoin {
+func (m *QuerySellResponse) GetSwapFee() types.DecCoin {
+	if m != nil {
+		return m.SwapFee
+	}
+	return types.DecCoin{}
+}
+
+// QueryBuyRequest is the request type for the Query/Buy RPC method.
+type QueryBuyRequest struct {
+	// ask_coin is the least amount the offer must buy (i.e. 1000000000000000000ausd)
+	AskCoin string `protobuf:"bytes,1,opt,name=ask_coin,json=askCoin,proto3" json:"ask_coin,omitempty"`
+	// offer_denom is the denom offered
+	OfferDenom string `protobuf:"bytes,2,opt,name=offer_denom,json=offerDenom,proto3" json:"offer_denom,omitempty"`
+}
+
+func (m *QueryBuyRequest) Reset()         { *m = QueryBuyRequest{} }
+func (m *QueryBuyRequest) String() string { return proto.CompactTextString(m) }
+func (*QueryBuyRequest) ProtoMessage()    {}
+func (*QueryBuyRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{2}
+}
+func (m *QueryBuyRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryBuyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryBuyRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryBuyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryBuyRequest.Merge(m, src)
+}
+func (m *QueryBuyRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryBuyRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryBuyRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryBuyRequest proto.InternalMessageInfo
+
+func (m *QueryBuyRequest) GetAskCoin() string {
+	if m != nil {
+		return m.AskCoin
+	}
+	return ""
+}
+
+func (m *QueryBuyRequest) GetOfferDenom() string {
+	if m != nil {
+		return m.OfferDenom
+	}
+	return ""
+}
+
+// QueryBuyResponse is the response type for the Query/Buy RPC method.
+type QueryBuyResponse struct {
+	// offer_coin is the least offer whose quote buys at least the ask.
+	OfferCoin types.Coin `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin"`
+	// swap_coin is that offer's quoted output.
+	SwapCoin types.Coin `protobuf:"bytes,2,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin"`
+	// swap_fee is the spread that quote charges.
+	SwapFee types.DecCoin `protobuf:"bytes,3,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee"`
+}
+
+func (m *QueryBuyResponse) Reset()         { *m = QueryBuyResponse{} }
+func (m *QueryBuyResponse) String() string { return proto.CompactTextString(m) }
+func (*QueryBuyResponse) ProtoMessage()    {}
+func (*QueryBuyResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f732f14b0cd578b2, []int{3}
+}
+func (m *QueryBuyResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryBuyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryBuyResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryBuyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryBuyResponse.Merge(m, src)
+}
+func (m *QueryBuyResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryBuyResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryBuyResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryBuyResponse proto.InternalMessageInfo
+
+func (m *QueryBuyResponse) GetOfferCoin() types.Coin {
+	if m != nil {
+		return m.OfferCoin
+	}
+	return types.Coin{}
+}
+
+func (m *QueryBuyResponse) GetSwapCoin() types.Coin {
+	if m != nil {
+		return m.SwapCoin
+	}
+	return types.Coin{}
+}
+
+func (m *QueryBuyResponse) GetSwapFee() types.DecCoin {
 	if m != nil {
 		return m.SwapFee
 	}
@@ -157,7 +276,7 @@ func (m *QueryPoolRequest) Reset()         { *m = QueryPoolRequest{} }
 func (m *QueryPoolRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryPoolRequest) ProtoMessage()    {}
 func (*QueryPoolRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{2}
+	return fileDescriptor_f732f14b0cd578b2, []int{4}
 }
 func (m *QueryPoolRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -200,7 +319,7 @@ func (m *QueryPoolResponse) Reset()         { *m = QueryPoolResponse{} }
 func (m *QueryPoolResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryPoolResponse) ProtoMessage()    {}
 func (*QueryPoolResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{3}
+	return fileDescriptor_f732f14b0cd578b2, []int{5}
 }
 func (m *QueryPoolResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -244,7 +363,7 @@ func (m *QueryParamsRequest) Reset()         { *m = QueryParamsRequest{} }
 func (m *QueryParamsRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryParamsRequest) ProtoMessage()    {}
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{4}
+	return fileDescriptor_f732f14b0cd578b2, []int{6}
 }
 func (m *QueryParamsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -283,7 +402,7 @@ func (m *QueryParamsResponse) Reset()         { *m = QueryParamsResponse{} }
 func (m *QueryParamsResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryParamsResponse) ProtoMessage()    {}
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{5}
+	return fileDescriptor_f732f14b0cd578b2, []int{7}
 }
 func (m *QueryParamsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -328,7 +447,7 @@ func (m *QueryTobinTaxRequest) Reset()         { *m = QueryTobinTaxRequest{} }
 func (m *QueryTobinTaxRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryTobinTaxRequest) ProtoMessage()    {}
 func (*QueryTobinTaxRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{6}
+	return fileDescriptor_f732f14b0cd578b2, []int{8}
 }
 func (m *QueryTobinTaxRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -377,7 +496,7 @@ func (m *QueryTobinTaxResponse) Reset()         { *m = QueryTobinTaxResponse{} }
 func (m *QueryTobinTaxResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryTobinTaxResponse) ProtoMessage()    {}
 func (*QueryTobinTaxResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{7}
+	return fileDescriptor_f732f14b0cd578b2, []int{9}
 }
 func (m *QueryTobinTaxResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -415,7 +534,7 @@ func (m *QueryTobinTaxOverridesRequest) Reset()         { *m = QueryTobinTaxOver
 func (m *QueryTobinTaxOverridesRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryTobinTaxOverridesRequest) ProtoMessage()    {}
 func (*QueryTobinTaxOverridesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{8}
+	return fileDescriptor_f732f14b0cd578b2, []int{10}
 }
 func (m *QueryTobinTaxOverridesRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -454,7 +573,7 @@ func (m *QueryTobinTaxOverridesResponse) Reset()         { *m = QueryTobinTaxOve
 func (m *QueryTobinTaxOverridesResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryTobinTaxOverridesResponse) ProtoMessage()    {}
 func (*QueryTobinTaxOverridesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{9}
+	return fileDescriptor_f732f14b0cd578b2, []int{11}
 }
 func (m *QueryTobinTaxOverridesResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -499,7 +618,7 @@ func (m *QueryConversionPolicyRequest) Reset()         { *m = QueryConversionPol
 func (m *QueryConversionPolicyRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryConversionPolicyRequest) ProtoMessage()    {}
 func (*QueryConversionPolicyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{10}
+	return fileDescriptor_f732f14b0cd578b2, []int{12}
 }
 func (m *QueryConversionPolicyRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -538,7 +657,7 @@ func (m *QueryConversionPolicyResponse) Reset()         { *m = QueryConversionPo
 func (m *QueryConversionPolicyResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryConversionPolicyResponse) ProtoMessage()    {}
 func (*QueryConversionPolicyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{11}
+	return fileDescriptor_f732f14b0cd578b2, []int{13}
 }
 func (m *QueryConversionPolicyResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -583,7 +702,7 @@ func (m *QueryConversionMandateRequest) Reset()         { *m = QueryConversionMa
 func (m *QueryConversionMandateRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryConversionMandateRequest) ProtoMessage()    {}
 func (*QueryConversionMandateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{12}
+	return fileDescriptor_f732f14b0cd578b2, []int{14}
 }
 func (m *QueryConversionMandateRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -623,7 +742,7 @@ func (m *QueryConversionMandateResponse) Reset()         { *m = QueryConversionM
 func (m *QueryConversionMandateResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryConversionMandateResponse) ProtoMessage()    {}
 func (*QueryConversionMandateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f732f14b0cd578b2, []int{13}
+	return fileDescriptor_f732f14b0cd578b2, []int{15}
 }
 func (m *QueryConversionMandateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -667,8 +786,10 @@ func (m *QueryConversionMandateResponse) GetActive() bool {
 }
 
 func init() {
-	proto.RegisterType((*QuerySwapRequest)(nil), "ark.market.v1.QuerySwapRequest")
-	proto.RegisterType((*QuerySwapResponse)(nil), "ark.market.v1.QuerySwapResponse")
+	proto.RegisterType((*QuerySellRequest)(nil), "ark.market.v1.QuerySellRequest")
+	proto.RegisterType((*QuerySellResponse)(nil), "ark.market.v1.QuerySellResponse")
+	proto.RegisterType((*QueryBuyRequest)(nil), "ark.market.v1.QueryBuyRequest")
+	proto.RegisterType((*QueryBuyResponse)(nil), "ark.market.v1.QueryBuyResponse")
 	proto.RegisterType((*QueryPoolRequest)(nil), "ark.market.v1.QueryPoolRequest")
 	proto.RegisterType((*QueryPoolResponse)(nil), "ark.market.v1.QueryPoolResponse")
 	proto.RegisterType((*QueryParamsRequest)(nil), "ark.market.v1.QueryParamsRequest")
@@ -686,64 +807,70 @@ func init() {
 func init() { proto.RegisterFile("ark/market/v1/query.proto", fileDescriptor_f732f14b0cd578b2) }
 
 var fileDescriptor_f732f14b0cd578b2 = []byte{
-	// 909 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xcf, 0x6f, 0xdc, 0x44,
-	0x14, 0x8e, 0x0b, 0x49, 0x76, 0x5f, 0x00, 0x65, 0x27, 0x89, 0x48, 0xdc, 0xc4, 0xd9, 0xba, 0x3d,
-	0x54, 0x90, 0xd8, 0x4a, 0x90, 0x10, 0x57, 0xb6, 0x4b, 0x4f, 0x40, 0x4b, 0x5a, 0x09, 0xa9, 0x42,
-	0xb2, 0x66, 0xbd, 0x93, 0xad, 0xe5, 0xb5, 0xc7, 0xb5, 0x27, 0x9b, 0x44, 0xc0, 0x05, 0x21, 0xc4,
-	0x11, 0x89, 0x1b, 0xe2, 0x00, 0x37, 0x8e, 0x1c, 0x90, 0xf8, 0x03, 0xb8, 0xf4, 0x58, 0xc1, 0x05,
-	0x71, 0xa8, 0x50, 0x82, 0xc4, 0xbf, 0x81, 0x66, 0xe6, 0x79, 0x7f, 0x4c, 0xbc, 0xcb, 0xaa, 0x97,
-	0x68, 0xe7, 0xfd, 0xf8, 0xbe, 0x6f, 0x9e, 0xe7, 0x7b, 0x0a, 0x6c, 0xd1, 0x3c, 0xf6, 0x13, 0x9a,
-	0xc7, 0x4c, 0xf8, 0x83, 0x03, 0xff, 0xc9, 0x09, 0xcb, 0xcf, 0xbd, 0x2c, 0xe7, 0x82, 0x93, 0x57,
-	0x69, 0x1e, 0x7b, 0x3a, 0xe5, 0x0d, 0x0e, 0xec, 0x06, 0x4d, 0xa2, 0x94, 0xfb, 0xea, 0xaf, 0xae,
-	0xb0, 0xed, 0xc9, 0x66, 0xac, 0xd5, 0x39, 0x27, 0xe4, 0x45, 0xc2, 0x0b, 0xbf, 0x43, 0x0b, 0xe6,
-	0x0f, 0x0e, 0x3a, 0x4c, 0xd0, 0x03, 0x3f, 0xe4, 0x51, 0x8a, 0xf9, 0xeb, 0x98, 0x57, 0x8c, 0x06,
-	0xb5, 0xbd, 0xa5, 0x93, 0x81, 0x3a, 0xf9, 0xfa, 0x80, 0xa9, 0xf5, 0x1e, 0xef, 0x71, 0x1d, 0x97,
-	0xbf, 0x30, 0xba, 0xdd, 0xe3, 0xbc, 0xd7, 0x67, 0x3e, 0xcd, 0x22, 0x9f, 0xa6, 0x29, 0x17, 0x54,
-	0x44, 0x3c, 0xc5, 0x1e, 0xf7, 0x43, 0x58, 0xfd, 0x48, 0xa2, 0x3f, 0x38, 0xa5, 0xd9, 0x11, 0x7b,
-	0x72, 0xc2, 0x0a, 0x41, 0x76, 0x00, 0xf8, 0xf1, 0x31, 0xcb, 0x03, 0xa9, 0x69, 0xd3, 0x6a, 0x5a,
-	0xb7, 0xeb, 0x47, 0x75, 0x15, 0xb9, 0xc3, 0xa3, 0x94, 0x5c, 0x87, 0x3a, 0x2d, 0xe2, 0xa0, 0xcb,
-	0x52, 0x9e, 0x6c, 0x5e, 0x53, 0xd9, 0x1a, 0x2d, 0xe2, 0xb6, 0x3c, 0xbb, 0xdf, 0x59, 0xd0, 0x18,
-	0x03, 0x2c, 0x32, 0x9e, 0x16, 0x8c, 0xbc, 0x0b, 0xf5, 0xe2, 0x94, 0x66, 0x23, 0xc0, 0x95, 0xc3,
-	0x2d, 0x0f, 0xb5, 0xcb, 0x29, 0x78, 0x38, 0x05, 0x4f, 0x12, 0xb4, 0xea, 0x4f, 0x9f, 0xef, 0x2e,
-	0xfc, 0xf4, 0xef, 0xcf, 0x6f, 0x58, 0x47, 0x35, 0xd9, 0xa6, 0x58, 0x5b, 0xa0, 0x7e, 0x07, 0xc7,
-	0x8c, 0x29, 0xd2, 0x95, 0xc3, 0xed, 0x4a, 0x84, 0x36, 0x0b, 0x4d, 0x90, 0x65, 0xd9, 0x78, 0x97,
-	0x31, 0x97, 0xe0, 0x65, 0xef, 0x73, 0xde, 0xc7, 0xcb, 0xba, 0xbf, 0x96, 0x82, 0x75, 0x10, 0x05,
-	0xb7, 0xa1, 0x2e, 0x51, 0x83, 0x8c, 0xf3, 0x3e, 0x0a, 0x9e, 0x9b, 0xae, 0x26, 0x0b, 0x24, 0x1a,
-	0xf9, 0x04, 0x5e, 0xa3, 0x79, 0xac, 0x40, 0x82, 0x2e, 0xeb, 0x0b, 0xaa, 0xc7, 0xd5, 0x7a, 0x5b,
-	0x16, 0xff, 0xf5, 0x7c, 0x17, 0x3f, 0x74, 0xd1, 0x8d, 0xbd, 0x88, 0xfb, 0x09, 0x15, 0x8f, 0xbd,
-	0xf7, 0x59, 0x8f, 0x86, 0xe7, 0x6d, 0x16, 0xfe, 0xfe, 0xcb, 0x3e, 0x20, 0x61, 0x9b, 0x85, 0x1a,
-	0xf9, 0x15, 0x9a, 0xc7, 0x12, 0xb8, 0x2d, 0xb1, 0xdc, 0x75, 0x20, 0x5a, 0x38, 0xcd, 0x69, 0x52,
-	0x94, 0xf7, 0xb9, 0x07, 0x6b, 0x13, 0x51, 0xbc, 0xd0, 0x3b, 0xb0, 0x94, 0xa9, 0x08, 0xde, 0x66,
-	0xc3, 0x9b, 0x78, 0xc2, 0x9e, 0x2e, 0x1f, 0xbf, 0x06, 0xd6, 0xbb, 0x7b, 0xb0, 0xae, 0x00, 0x1f,
-	0xf2, 0x4e, 0x94, 0x3e, 0xa4, 0x67, 0xe5, 0x2b, 0x59, 0x87, 0x45, 0xfd, 0x04, 0xf4, 0x03, 0xd1,
-	0x07, 0xb7, 0x0f, 0x1b, 0x46, 0x35, 0x0a, 0x78, 0x00, 0x75, 0x21, 0x63, 0x81, 0xa0, 0x67, 0xba,
-	0xe5, 0x85, 0xc7, 0x50, 0x13, 0x08, 0xee, 0xee, 0xc2, 0xce, 0x04, 0xdb, 0xbd, 0x01, 0xcb, 0xf3,
-	0xa8, 0xcb, 0x86, 0xd3, 0xf8, 0x0c, 0x9c, 0x69, 0x05, 0xa8, 0xeb, 0x11, 0xac, 0x0d, 0x75, 0x05,
-	0xbc, 0x4c, 0x6f, 0x5a, 0xcd, 0x97, 0x6e, 0xaf, 0x1c, 0xee, 0x1a, 0x53, 0x32, 0x61, 0xc6, 0xe7,
-	0xd5, 0x10, 0x26, 0x87, 0xeb, 0xc0, 0xb6, 0x62, 0xbf, 0xc3, 0xd3, 0x01, 0xcb, 0x8b, 0x88, 0xa7,
-	0xf7, 0x79, 0x3f, 0x0a, 0xcf, 0x4b, 0x75, 0x67, 0x28, 0xff, 0x6a, 0x1e, 0xc5, 0x7d, 0x0c, 0x8d,
-	0x70, 0x98, 0x0b, 0x32, 0x95, 0xc4, 0x0f, 0x68, 0x4a, 0x33, 0x31, 0xc6, 0xa5, 0xad, 0x86, 0x46,
-	0x72, 0x38, 0xb8, 0x51, 0xd7, 0x07, 0x34, 0xed, 0x52, 0xc1, 0x4a, 0x69, 0x5f, 0x59, 0x38, 0xb9,
-	0x8a, 0x0a, 0x14, 0xf7, 0x1e, 0x2c, 0x27, 0x3a, 0x84, 0x92, 0x9a, 0x53, 0x25, 0x61, 0xeb, 0x84,
-	0x29, 0xb1, 0x97, 0xec, 0xc0, 0x12, 0x0d, 0x45, 0x34, 0xd0, 0xb6, 0xae, 0xb5, 0x16, 0xf1, 0xf9,
-	0xe9, 0xe0, 0xe1, 0x6f, 0xcb, 0xb0, 0xa8, 0x84, 0x90, 0x18, 0x5e, 0x96, 0x4b, 0x85, 0x98, 0x37,
-	0x37, 0xf7, 0x97, 0xdd, 0x9c, 0x5e, 0xa0, 0xa5, 0xbb, 0xcd, 0xaf, 0x25, 0xc7, 0x17, 0x7f, 0xfc,
-	0xf3, 0xed, 0xb5, 0x0d, 0xb2, 0xe6, 0x4f, 0xee, 0x6a, 0xb9, 0x2d, 0x24, 0x99, 0xb2, 0x70, 0x25,
-	0xd9, 0xd8, 0xfe, 0xa8, 0x26, 0x1b, 0xdf, 0x25, 0xb3, 0xc9, 0xe4, 0x6e, 0x20, 0x05, 0x2c, 0x69,
-	0xff, 0x91, 0x1b, 0x95, 0x68, 0xe3, 0x06, 0xb7, 0xdd, 0x59, 0x25, 0x48, 0xe9, 0x8e, 0x28, 0x5f,
-	0x27, 0x1b, 0x26, 0xa5, 0xa6, 0xfa, 0xd2, 0x82, 0x5a, 0xf9, 0x9e, 0xc9, 0xcd, 0x2a, 0x50, 0xc3,
-	0xf1, 0xf6, 0xad, 0xd9, 0x45, 0xc8, 0xbd, 0x3f, 0xe2, 0x76, 0x49, 0xd3, 0xe0, 0x1e, 0x5a, 0xcd,
-	0xff, 0x54, 0xed, 0x8b, 0xcf, 0xc9, 0x8f, 0x16, 0x34, 0xae, 0xb8, 0x93, 0xec, 0xcd, 0xa2, 0x32,
-	0x5d, 0x6e, 0xef, 0xcf, 0x59, 0x8d, 0x0a, 0xfd, 0x91, 0xc2, 0x5b, 0xc4, 0x9d, 0xa6, 0x70, 0xb4,
-	0x0c, 0xc8, 0xf7, 0x16, 0xac, 0x9a, 0xfe, 0x22, 0x6f, 0x56, 0x91, 0x4e, 0x71, 0xba, 0xbd, 0x37,
-	0x5f, 0xf1, 0x3c, 0x23, 0xbc, 0xb2, 0x10, 0xc8, 0x0f, 0x16, 0x34, 0xae, 0x78, 0x8d, 0xfc, 0x0f,
-	0xe5, 0xa4, 0xdf, 0xab, 0x47, 0x38, 0xd5, 0xfb, 0xae, 0x37, 0x52, 0x78, 0x93, 0xdc, 0x98, 0xae,
-	0x10, 0x4d, 0xde, 0xba, 0xfb, 0xf4, 0xc2, 0xb1, 0x9e, 0x5d, 0x38, 0xd6, 0xdf, 0x17, 0x8e, 0xf5,
-	0xcd, 0xa5, 0xb3, 0xf0, 0xec, 0xd2, 0x59, 0xf8, 0xf3, 0xd2, 0x59, 0x78, 0xb4, 0xd7, 0x8b, 0xc4,
-	0xe3, 0x93, 0x8e, 0x17, 0xf2, 0xc4, 0xa7, 0x39, 0xcd, 0xa9, 0xd8, 0x4f, 0x99, 0x38, 0xe5, 0x79,
-	0xac, 0x50, 0xcf, 0x4a, 0x5c, 0x71, 0x9e, 0xb1, 0xa2, 0xb3, 0xa4, 0xfe, 0x6b, 0x79, 0xeb, 0xbf,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0xe5, 0x10, 0x5c, 0x09, 0x9c, 0x09, 0x00, 0x00,
+	// 993 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x56, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xce, 0x36, 0x24, 0xb1, 0x5f, 0xf8, 0x11, 0x4f, 0x1c, 0x91, 0x6c, 0x93, 0xb5, 0xbb, 0xed,
+	0xa1, 0x82, 0x64, 0x57, 0x09, 0x12, 0xe2, 0x8a, 0x63, 0x7a, 0xa2, 0xb4, 0xa4, 0x95, 0x90, 0x2a,
+	0x24, 0x6b, 0xbc, 0x9e, 0xb8, 0xab, 0xb5, 0x77, 0xdc, 0xdd, 0xb1, 0x1b, 0x0b, 0xb8, 0x20, 0x84,
+	0x38, 0x22, 0x71, 0x43, 0x1c, 0xe0, 0xc6, 0x81, 0x03, 0x07, 0x24, 0xfe, 0x85, 0x1e, 0x2b, 0xb8,
+	0x20, 0x0e, 0x11, 0x4a, 0x90, 0xf8, 0x37, 0xd0, 0xcc, 0xbc, 0xf5, 0xae, 0xd7, 0xeb, 0x60, 0x95,
+	0x4b, 0xe4, 0x9d, 0xf7, 0xe6, 0xfb, 0xbe, 0xf7, 0x79, 0xdf, 0x17, 0xc3, 0x0e, 0x8d, 0x02, 0xb7,
+	0x4f, 0xa3, 0x80, 0x09, 0x77, 0x74, 0xe8, 0x3e, 0x19, 0xb2, 0x68, 0xec, 0x0c, 0x22, 0x2e, 0x38,
+	0x79, 0x85, 0x46, 0x81, 0xa3, 0x4b, 0xce, 0xe8, 0xd0, 0xac, 0xd0, 0xbe, 0x1f, 0x72, 0x57, 0xfd,
+	0xd5, 0x1d, 0xa6, 0x39, 0x7d, 0x19, 0x7b, 0x75, 0xcd, 0xf2, 0x78, 0xdc, 0xe7, 0xb1, 0xdb, 0xa6,
+	0x31, 0x73, 0x47, 0x87, 0x6d, 0x26, 0xe8, 0xa1, 0xeb, 0x71, 0x3f, 0xc4, 0xfa, 0x75, 0xac, 0x2b,
+	0xc6, 0x1c, 0xb5, 0xb9, 0xa3, 0x8b, 0x2d, 0xf5, 0xe4, 0xea, 0x07, 0x2c, 0x55, 0xbb, 0xbc, 0xcb,
+	0xf5, 0xb9, 0xfc, 0x84, 0xa7, 0xbb, 0x5d, 0xce, 0xbb, 0x3d, 0xe6, 0xd2, 0x81, 0xef, 0xd2, 0x30,
+	0xe4, 0x82, 0x0a, 0x9f, 0x87, 0x78, 0xc7, 0xfe, 0x00, 0x36, 0x3e, 0x94, 0xe8, 0x0f, 0x58, 0xaf,
+	0x77, 0xc2, 0x9e, 0x0c, 0x59, 0x2c, 0xc8, 0x1e, 0x00, 0x3f, 0x3d, 0x65, 0x51, 0x4b, 0x6a, 0xda,
+	0x36, 0xea, 0xc6, 0xed, 0xf2, 0x49, 0x59, 0x9d, 0x1c, 0x73, 0x3f, 0x24, 0xd7, 0xa1, 0x4c, 0xe3,
+	0xa0, 0xd5, 0x61, 0x21, 0xef, 0x6f, 0x5f, 0x53, 0xd5, 0x12, 0x8d, 0x83, 0xa6, 0x7c, 0xb6, 0xbf,
+	0x35, 0xa0, 0x92, 0x01, 0x8c, 0x07, 0x3c, 0x8c, 0x19, 0x79, 0x17, 0xca, 0xf1, 0x53, 0x3a, 0x48,
+	0x01, 0xd7, 0x8f, 0x76, 0x1c, 0xd4, 0x2e, 0x5d, 0x70, 0xd0, 0x05, 0x47, 0x12, 0x34, 0xca, 0xcf,
+	0xce, 0x6b, 0x4b, 0x3f, 0xfe, 0xf3, 0xf3, 0x1b, 0xc6, 0x49, 0x49, 0x5e, 0x53, 0xac, 0x0d, 0x50,
+	0x9f, 0x5b, 0xa7, 0x8c, 0x29, 0xd2, 0xf5, 0xa3, 0xdd, 0x42, 0x84, 0x26, 0xf3, 0xf2, 0x20, 0x6b,
+	0xf2, 0xe2, 0x1d, 0xc6, 0xec, 0xbb, 0xf0, 0x9a, 0xd2, 0xd6, 0x18, 0x8e, 0x93, 0x59, 0x77, 0x40,
+	0x6a, 0xcf, 0x4e, 0xba, 0x46, 0xe3, 0x40, 0x31, 0xd6, 0x60, 0x5d, 0xdb, 0x90, 0x9d, 0x54, 0x3b,
+	0xa3, 0x67, 0x3d, 0x37, 0xd0, 0x3c, 0x85, 0x87, 0xa3, 0x1e, 0xcf, 0x98, 0xb7, 0xe8, 0xac, 0x19,
+	0x8b, 0xa7, 0xfc, 0xba, 0xf6, 0xbf, 0xfd, 0x5a, 0x7e, 0x41, 0xbf, 0x08, 0xce, 0x77, 0x9f, 0xf3,
+	0xe4, 0xe5, 0xb0, 0x7f, 0x4d, 0xbe, 0x60, 0x7d, 0x88, 0x53, 0x37, 0xa1, 0x2c, 0x51, 0x5b, 0x03,
+	0xce, 0x7b, 0x38, 0xf4, 0xc2, 0x74, 0x25, 0xd9, 0x20, 0xd1, 0xc8, 0xc7, 0xf0, 0x2a, 0x8d, 0x02,
+	0x05, 0xd2, 0xea, 0xb0, 0x9e, 0xa0, 0xda, 0xf4, 0xc6, 0xdb, 0xb2, 0xf9, 0xcf, 0xf3, 0x1a, 0x2e,
+	0x46, 0xdc, 0x09, 0x1c, 0x9f, 0xbb, 0x7d, 0x2a, 0x1e, 0x3b, 0xef, 0xb3, 0x2e, 0xf5, 0xc6, 0x4d,
+	0xe6, 0xfd, 0xf6, 0xcb, 0x01, 0x20, 0x61, 0x93, 0x79, 0x1a, 0xf9, 0x65, 0x1a, 0x05, 0x12, 0xb8,
+	0x29, 0xb1, 0xec, 0x2a, 0x10, 0x2d, 0x9c, 0x46, 0xb4, 0x1f, 0x27, 0xf3, 0xdc, 0x83, 0xcd, 0xa9,
+	0x53, 0x1c, 0xe8, 0x1d, 0x58, 0x1d, 0xa8, 0x13, 0x9c, 0x66, 0xcb, 0x99, 0x5a, 0x79, 0x47, 0xb7,
+	0x67, 0xc7, 0xc0, 0x7e, 0x7b, 0x1f, 0xaa, 0x0a, 0xf0, 0x21, 0x6f, 0xfb, 0xe1, 0x43, 0x7a, 0x96,
+	0xbc, 0x69, 0x55, 0x58, 0xd1, 0x2f, 0x92, 0x7e, 0xcd, 0xf4, 0x83, 0xdd, 0x83, 0xad, 0x5c, 0x37,
+	0x0a, 0x78, 0x00, 0x65, 0x21, 0xcf, 0x5a, 0x82, 0x9e, 0xe9, 0x2b, 0x2f, 0x6c, 0x43, 0x49, 0x20,
+	0xb8, 0x5d, 0x83, 0xbd, 0x29, 0xb6, 0x7b, 0x23, 0x16, 0x45, 0x7e, 0x87, 0x4d, 0xdc, 0xf8, 0x14,
+	0xac, 0x79, 0x0d, 0xa8, 0xeb, 0x11, 0x6c, 0x4e, 0x74, 0xb5, 0x78, 0x52, 0xde, 0x36, 0xea, 0xcb,
+	0xb7, 0xd7, 0x8f, 0x6a, 0x39, 0x97, 0xf2, 0x30, 0x59, 0xbf, 0x2a, 0x22, 0xcf, 0x61, 0x5b, 0xb0,
+	0xab, 0xd8, 0x8f, 0x79, 0x38, 0x62, 0x51, 0xec, 0xf3, 0xf0, 0x3e, 0xef, 0xf9, 0x5e, 0xb2, 0xac,
+	0xf6, 0x19, 0xca, 0x9f, 0xad, 0xa3, 0xb8, 0x8f, 0xa0, 0xe2, 0x4d, 0x6a, 0xad, 0x81, 0x2a, 0xe2,
+	0x17, 0x98, 0x97, 0x96, 0xc7, 0xc8, 0x4a, 0xdb, 0xf0, 0x72, 0xc5, 0x89, 0x71, 0xe9, 0xad, 0xbb,
+	0x34, 0xec, 0x50, 0xc1, 0x12, 0x69, 0x5f, 0x1a, 0xe8, 0x5c, 0x41, 0x07, 0x8a, 0x7b, 0x0f, 0xd6,
+	0xfa, 0xfa, 0x08, 0x25, 0xd5, 0xe7, 0x4a, 0xc2, 0xab, 0x53, 0x4b, 0x89, 0x77, 0xc9, 0x1e, 0xac,
+	0x52, 0x4f, 0xf8, 0x23, 0x1d, 0x83, 0xa5, 0xc6, 0x0a, 0xbe, 0x7e, 0xfa, 0xf0, 0xe8, 0xa7, 0x12,
+	0xac, 0x28, 0x21, 0x24, 0x80, 0x97, 0x64, 0x08, 0x93, 0xfc, 0xe4, 0xf9, 0xbc, 0x37, 0xeb, 0xf3,
+	0x1b, 0xb4, 0x74, 0xbb, 0xfe, 0x95, 0xe4, 0xf8, 0xfc, 0xf7, 0xbf, 0xbf, 0xb9, 0xb6, 0x45, 0x36,
+	0xdd, 0xe9, 0xff, 0x6d, 0xb1, 0x24, 0xe9, 0xc2, 0x72, 0x63, 0x38, 0x26, 0x56, 0x11, 0x54, 0x1a,
+	0xb7, 0x66, 0x6d, 0x6e, 0x1d, 0x99, 0x6a, 0x29, 0x53, 0x95, 0x90, 0x1c, 0x53, 0x7b, 0xa8, 0xa6,
+	0x52, 0x59, 0x51, 0x88, 0x94, 0x09, 0xaa, 0xe2, 0xa9, 0xb2, 0xa1, 0x75, 0xf5, 0x54, 0x32, 0x84,
+	0x48, 0x0c, 0xab, 0x7a, 0xd1, 0xc9, 0x8d, 0x42, 0xb4, 0x6c, 0x92, 0x98, 0xf6, 0x55, 0x2d, 0x48,
+	0x69, 0xa7, 0x94, 0xaf, 0x93, 0xad, 0x3c, 0xa5, 0xa6, 0xfa, 0xc2, 0x80, 0x52, 0xb2, 0x38, 0xe4,
+	0x66, 0x11, 0x68, 0x2e, 0x5a, 0xcc, 0x5b, 0x57, 0x37, 0x21, 0xf7, 0x41, 0xca, 0x6d, 0x93, 0x7a,
+	0x8e, 0x7b, 0xb2, 0xd3, 0xee, 0x27, 0x2a, 0x98, 0x3e, 0x23, 0x3f, 0x18, 0x50, 0x99, 0x89, 0x01,
+	0xb2, 0x7f, 0x15, 0x55, 0x3e, 0x4e, 0xcc, 0x83, 0x05, 0xbb, 0x51, 0xa1, 0x9b, 0x2a, 0xbc, 0x45,
+	0xec, 0x79, 0x0a, 0xd3, 0xd4, 0x21, 0xdf, 0x19, 0xb0, 0x91, 0x5f, 0x64, 0xf2, 0x66, 0x11, 0xe9,
+	0x9c, 0x48, 0x31, 0xf7, 0x17, 0x6b, 0x5e, 0xc4, 0xc2, 0x99, 0xe4, 0x21, 0xdf, 0x1b, 0x50, 0x99,
+	0x59, 0x6a, 0xf2, 0x1f, 0x94, 0xd3, 0xc1, 0x52, 0x6c, 0xe1, 0xdc, 0x90, 0xb1, 0x9d, 0x54, 0xe1,
+	0x4d, 0x72, 0x63, 0xbe, 0x42, 0x4c, 0x93, 0xc6, 0x9d, 0x67, 0x17, 0x96, 0xf1, 0xfc, 0xc2, 0x32,
+	0xfe, 0xba, 0xb0, 0x8c, 0xaf, 0x2f, 0xad, 0xa5, 0xe7, 0x97, 0xd6, 0xd2, 0x1f, 0x97, 0xd6, 0xd2,
+	0xa3, 0xfd, 0xae, 0x2f, 0x1e, 0x0f, 0xdb, 0x8e, 0xc7, 0xfb, 0x2e, 0x8d, 0x68, 0x44, 0xc5, 0x41,
+	0xc8, 0xc4, 0x53, 0x1e, 0x05, 0x0a, 0xf5, 0x2c, 0xc1, 0x15, 0xe3, 0x01, 0x8b, 0xdb, 0xab, 0xea,
+	0xe7, 0xe4, 0x5b, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0x44, 0x14, 0x82, 0xb3, 0x35, 0x0b, 0x00,
+	0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -758,8 +885,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type QueryClient interface {
-	// Swap returns simulated swap amount.
-	Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error)
+	// Sell quotes a stated offer: the output a sell returns and the spread it pays.
+	Sell(ctx context.Context, in *QuerySellRequest, opts ...grpc.CallOption) (*QuerySellResponse, error)
+	// Buy quotes a stated ask: the least offer that buys it, that offer's output, and the spread.
+	Buy(ctx context.Context, in *QueryBuyRequest, opts ...grpc.CallOption) (*QueryBuyResponse, error)
 	// Pool returns the live virtual-pool state: the policy depth and the signed
 	// deviation from it, in one snapshot. The effective pools derive from these
 	// two numbers, so a caller never has to join queries across heights.
@@ -786,9 +915,18 @@ func NewQueryClient(cc grpc1.ClientConn) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error) {
-	out := new(QuerySwapResponse)
-	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/Swap", in, out, opts...)
+func (c *queryClient) Sell(ctx context.Context, in *QuerySellRequest, opts ...grpc.CallOption) (*QuerySellResponse, error) {
+	out := new(QuerySellResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/Sell", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Buy(ctx context.Context, in *QueryBuyRequest, opts ...grpc.CallOption) (*QueryBuyResponse, error) {
+	out := new(QueryBuyResponse)
+	err := c.cc.Invoke(ctx, "/ark.market.v1.Query/Buy", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -851,8 +989,10 @@ func (c *queryClient) ConversionMandate(ctx context.Context, in *QueryConversion
 
 // QueryServer is the server API for Query service.
 type QueryServer interface {
-	// Swap returns simulated swap amount.
-	Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error)
+	// Sell quotes a stated offer: the output a sell returns and the spread it pays.
+	Sell(context.Context, *QuerySellRequest) (*QuerySellResponse, error)
+	// Buy quotes a stated ask: the least offer that buys it, that offer's output, and the spread.
+	Buy(context.Context, *QueryBuyRequest) (*QueryBuyResponse, error)
 	// Pool returns the live virtual-pool state: the policy depth and the signed
 	// deviation from it, in one snapshot. The effective pools derive from these
 	// two numbers, so a caller never has to join queries across heights.
@@ -875,8 +1015,11 @@ type QueryServer interface {
 type UnimplementedQueryServer struct {
 }
 
-func (*UnimplementedQueryServer) Swap(ctx context.Context, req *QuerySwapRequest) (*QuerySwapResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Swap not implemented")
+func (*UnimplementedQueryServer) Sell(ctx context.Context, req *QuerySellRequest) (*QuerySellResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sell not implemented")
+}
+func (*UnimplementedQueryServer) Buy(ctx context.Context, req *QueryBuyRequest) (*QueryBuyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Buy not implemented")
 }
 func (*UnimplementedQueryServer) Pool(ctx context.Context, req *QueryPoolRequest) (*QueryPoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Pool not implemented")
@@ -901,20 +1044,38 @@ func RegisterQueryServer(s grpc1.Server, srv QueryServer) {
 	s.RegisterService(&_Query_serviceDesc, srv)
 }
 
-func _Query_Swap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QuerySwapRequest)
+func _Query_Sell_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySellRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Swap(ctx, in)
+		return srv.(QueryServer).Sell(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ark.market.v1.Query/Swap",
+		FullMethod: "/ark.market.v1.Query/Sell",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Swap(ctx, req.(*QuerySwapRequest))
+		return srv.(QueryServer).Sell(ctx, req.(*QuerySellRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Buy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBuyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Buy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ark.market.v1.Query/Buy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Buy(ctx, req.(*QueryBuyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1033,8 +1194,12 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Swap",
-			Handler:    _Query_Swap_Handler,
+			MethodName: "Sell",
+			Handler:    _Query_Sell_Handler,
+		},
+		{
+			MethodName: "Buy",
+			Handler:    _Query_Buy_Handler,
 		},
 		{
 			MethodName: "Pool",
@@ -1065,7 +1230,7 @@ var _Query_serviceDesc = grpc.ServiceDesc{
 	Metadata: "ark/market/v1/query.proto",
 }
 
-func (m *QuerySwapRequest) Marshal() (dAtA []byte, err error) {
+func (m *QuerySellRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1075,12 +1240,12 @@ func (m *QuerySwapRequest) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuerySwapRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySellRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QuerySwapRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QuerySellRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1102,7 +1267,7 @@ func (m *QuerySwapRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *QuerySwapResponse) Marshal() (dAtA []byte, err error) {
+func (m *QuerySellResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1112,12 +1277,12 @@ func (m *QuerySwapResponse) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *QuerySwapResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *QuerySellResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *QuerySwapResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *QuerySellResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1134,6 +1299,96 @@ func (m *QuerySwapResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	dAtA[i] = 0x12
 	{
 		size, err := m.SwapCoin.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryBuyRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryBuyRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryBuyRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.OfferDenom) > 0 {
+		i -= len(m.OfferDenom)
+		copy(dAtA[i:], m.OfferDenom)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.OfferDenom)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.AskCoin) > 0 {
+		i -= len(m.AskCoin)
+		copy(dAtA[i:], m.AskCoin)
+		i = encodeVarintQuery(dAtA, i, uint64(len(m.AskCoin)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryBuyResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryBuyResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryBuyResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.SwapFee.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.SwapCoin.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintQuery(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.OfferCoin.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1523,7 +1778,7 @@ func encodeVarintQuery(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *QuerySwapRequest) Size() (n int) {
+func (m *QuerySellRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1540,12 +1795,44 @@ func (m *QuerySwapRequest) Size() (n int) {
 	return n
 }
 
-func (m *QuerySwapResponse) Size() (n int) {
+func (m *QuerySellResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	l = m.SwapCoin.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	l = m.SwapFee.Size()
+	n += 1 + l + sovQuery(uint64(l))
+	return n
+}
+
+func (m *QueryBuyRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AskCoin)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	l = len(m.OfferDenom)
+	if l > 0 {
+		n += 1 + l + sovQuery(uint64(l))
+	}
+	return n
+}
+
+func (m *QueryBuyResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.OfferCoin.Size()
+	n += 1 + l + sovQuery(uint64(l))
 	l = m.SwapCoin.Size()
 	n += 1 + l + sovQuery(uint64(l))
 	l = m.SwapFee.Size()
@@ -1692,7 +1979,7 @@ func sovQuery(x uint64) (n int) {
 func sozQuery(x uint64) (n int) {
 	return sovQuery(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *QuerySwapRequest) Unmarshal(dAtA []byte) error {
+func (m *QuerySellRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1715,10 +2002,10 @@ func (m *QuerySwapRequest) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QuerySwapRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: QuerySellRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QuerySwapRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QuerySellRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1806,7 +2093,7 @@ func (m *QuerySwapRequest) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *QuerySwapResponse) Unmarshal(dAtA []byte) error {
+func (m *QuerySellResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1829,10 +2116,10 @@ func (m *QuerySwapResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: QuerySwapResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: QuerySellResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: QuerySwapResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: QuerySellResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1869,6 +2156,269 @@ func (m *QuerySwapResponse) Unmarshal(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SwapFee", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SwapFee.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryBuyRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryBuyRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryBuyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AskCoin", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AskCoin = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OfferDenom", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OfferDenom = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipQuery(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryBuyResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowQuery
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryBuyResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryBuyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OfferCoin", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.OfferCoin.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SwapCoin", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowQuery
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthQuery
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthQuery
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SwapCoin.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field SwapFee", wireType)
 			}

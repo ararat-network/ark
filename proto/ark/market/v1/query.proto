@@ -17,10 +17,16 @@ option go_package = "github.com/ararat-network/ark/x/market/types";
 
 // Query defines the gRPC querier service.
 service Query {
-  // Swap returns simulated swap amount.
-  rpc Swap(QuerySwapRequest) returns (QuerySwapResponse) {
+  // Sell quotes a stated offer: the output a sell returns and the spread it pays.
+  rpc Sell(QuerySellRequest) returns (QuerySellResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/ark/market/v1/swap";
+    option (google.api.http).get = "/ark/market/v1/sell";
+  }
+
+  // Buy quotes a stated ask: the least offer that buys it, that offer's output, and the spread.
+  rpc Buy(QueryBuyRequest) returns (QueryBuyResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/market/v1/buy";
   }
 
   // Pool returns the live virtual-pool state: the policy depth and the signed
@@ -64,16 +70,16 @@ service Query {
   }
 }
 
-// QuerySwapRequest is the request type for the Query/Swap RPC method.
-message QuerySwapRequest {
+// QuerySellRequest is the request type for the Query/Sell RPC method.
+message QuerySellRequest {
   // offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
   string offer_coin = 1;
   // ask_denom defines the denom of the coin to swap to
   string ask_denom = 2;
 }
 
-// QuerySwapResponse is the response type for the Query/Swap RPC method.
-message QuerySwapResponse {
+// QuerySellResponse is the response type for the Query/Sell RPC method.
+message QuerySellResponse {
   // return_coin defines the coin returned as a result of the swap simulation.
   cosmos.base.v1beta1.Coin swap_coin = 1 [
     (gogoproto.nullable) = false,
@@ -81,6 +87,33 @@ message QuerySwapResponse {
   ];
   // swap_fee defines the fee deducted from the simulated swap result.
   cosmos.base.v1beta1.DecCoin swap_fee = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryBuyRequest is the request type for the Query/Buy RPC method.
+message QueryBuyRequest {
+  // ask_coin is the least amount the offer must buy (i.e. 1000000000000000000ausd)
+  string ask_coin = 1;
+  // offer_denom is the denom offered
+  string offer_denom = 2;
+}
+
+// QueryBuyResponse is the response type for the Query/Buy RPC method.
+message QueryBuyResponse {
+  // offer_coin is the least offer whose quote buys at least the ask.
+  cosmos.base.v1beta1.Coin offer_coin = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // swap_coin is that offer's quoted output.
+  cosmos.base.v1beta1.Coin swap_coin = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // swap_fee is the spread that quote charges.
+  cosmos.base.v1beta1.DecCoin swap_fee = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
