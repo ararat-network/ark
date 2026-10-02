@@ -14,6 +14,8 @@ import (
 
 var _ types.QueryServer = queryServer{}
 
+// queryServer validates each request itself and otherwise returns the keeper's error. Security
+// registers no errors: nothing branches on one of its failures.
 type queryServer struct {
 	k *Keeper
 }
@@ -33,7 +35,7 @@ func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecuri
 
 	securityMandate, err := q.k.Mandate.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("getting security mandate: %s", err))
+		return nil, fmt.Errorf("getting security mandate: %w", err)
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
@@ -52,14 +54,14 @@ func (q queryServer) CommitteePlan(ctx context.Context, req *types.QueryCommitte
 
 	record, err := q.k.CommitteePlan.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("getting committee plan: %s", err))
+		return nil, fmt.Errorf("getting committee plan: %w", err)
 	}
 
 	matchesPending := false
 	if !record.IsZero() {
 		pending, hasPending, err := q.k.pendingUpgradePlan(ctx)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, fmt.Errorf("reading the pending upgrade plan: %w", err)
 		}
 		matchesPending = hasPending && record.Matches(pending.Name, pending.Height)
 	}

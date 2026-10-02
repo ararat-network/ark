@@ -88,6 +88,10 @@ The authoritative service and event definitions are [transactions](../../proto/a
 [queries](../../proto/ark/security/v1/query.proto), and [events](../../proto/ark/security/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
 
+Query handlers classify only the request itself and otherwise return the keeper's error. Security registers no
+errors of its own, since nothing branches on one of its failures; a registered error from another module keeps its
+gRPC code through the wrap.
+
 ## Related documents
 
 - [Authority and trust boundaries](../../docs/design/THREAT_MODEL.md).
