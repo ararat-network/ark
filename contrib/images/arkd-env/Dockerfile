@@ -14,9 +14,9 @@ RUN apk add --no-cache build-base git file linux-headers eudev-dev python3
 # their release names. Bump the three ARGs together with the go.mod
 # requirement; the grep below fails the build when they drift, and
 # contrib/scripts/check-wasmvm-libs.sh holds release builds to the same ARGs.
-ARG WASMVM_VERSION=v3.0.7
-ARG WASMVM_SHA256_AARCH64=ef3e3125e1ce588a9bc698f695a1a4793432b9903a0928018c0d7872e874cc97
-ARG WASMVM_SHA256_X86_64=49ecd70da281b6ee08b31770a54bb529d1de96b3e54013e025df9f0c39fff7f4
+ARG WASMVM_VERSION=v3.0.8
+ARG WASMVM_SHA256_AARCH64=c73a0d5d340e35188e138584ddd6662a160902adef1b08b209e38d16b43a4c28
+ARG WASMVM_SHA256_X86_64=b2299c85d49faccf3dcbb84984f30f55e8870111df98c10f017f86204d007470
 ADD https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
 ADD https://github.com/CosmWasm/wasmvm/releases/download/${WASMVM_VERSION}/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a
 RUN echo "${WASMVM_SHA256_AARCH64}  /lib/libwasmvm_muslc.aarch64.a" | sha256sum -c - \

@@ -8,11 +8,11 @@ prepare() {
     image="ark-source-verifier:$platform"
     # General-purpose build tools are prerequisites, not part of the source bundle.
     docker build --platform "linux/$platform" -t "$image" - >&2 <<'DOCKERFILE'
-FROM rust:1.82.0-alpine@sha256:2f42ce0d00c0b14f7fd84453cdc93ff5efec5da7ce03ead6e0b41adb1fbe834e AS rust
+FROM rust:1.95.0-alpine@sha256:606fd313a0f49743ee2a7bd49a0914bab7deedb12791f3a846a34a4711db7ed2 AS rust
 FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
-RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-static llvm22-dev python3 perl bash cmake nasm
-# Match wasmvm v3.0.7's builders/Dockerfile.alpine. Newer Rust releases removed
-# __rust_probestack, which its Wasmer version still requires on x86_64.
+RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-dev clang22-static llvm22-dev llvm22-static python3 perl bash cmake nasm
+# Match wasmvm v3.0.8's builders/Dockerfile.alpine: Rust 1.95.0, its minimum
+# compiler, with clang and LLVM headers and static libraries.
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
