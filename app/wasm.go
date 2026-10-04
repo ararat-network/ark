@@ -7,7 +7,6 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibcwasm "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
-	"github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/blsverifier"
 	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
 	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
 	"github.com/prometheus/client_golang/prometheus"
@@ -119,21 +118,16 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 }
 
 // setupWasmLightClient constructs the governance-controlled 08-wasm client keeper after IBC
-// keepers. Its separate VM uses iterator capability and deterministic BLS12-381 queries; launch
-// genesis contains no client code. See README.md for runtime boundaries.
+// keepers. Its separate VM uses iterator capability and no custom queries; launch genesis
+// contains no client code. See README.md for runtime boundaries.
 func (app *ArkApp) setupWasmLightClient(appOpts servertypes.AppOptions) error {
 	wasmClientKey := storetypes.NewKVStoreKey(ibcwasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmClientKey); err != nil {
 		return fmt.Errorf("register 08-wasm store: %w", err)
 	}
 
-	// BLS12-381 aggregate verification for Ethereum-consensus light clients
-	// (Union). Merged over the defaults, so the stargate accept list stays at
-	// the module's own (VerifyMembership only); widening it is a per-client
-	// decision, not a default.
-	wasmLightClientQueriers := ibcwasmkeeper.QueryPlugins{
-		Custom: blsverifier.CustomQuerier(),
-	}
+	// No BLS querier: ibc-go's blsverifier imports GPLv3 Prysm, and a GPLv3 node
+	// conflicts with wasmvm's BUSL Singlepass compiler (THIRD_PARTY_NOTICES.md).
 	app.WasmClientKeeper = ibcwasmkeeper.NewKeeperWithConfig(
 		app.appCodec,
 		runtime.NewKVStoreService(wasmClientKey),
@@ -141,7 +135,6 @@ func (app *ArkApp) setupWasmLightClient(appOpts servertypes.AppOptions) error {
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		ibcwasmtypes.DefaultWasmConfig(cast.ToString(appOpts.Get(flags.FlagHome))),
 		app.GRPCQueryRouter(),
-		ibcwasmkeeper.WithQueryPlugins(&wasmLightClientQueriers),
 	)
 
 	if err := app.RegisterModules(ibcwasm.NewAppModule(app.WasmClientKeeper)); err != nil {

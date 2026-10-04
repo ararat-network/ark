@@ -40,17 +40,12 @@ if [ "${1:-}" = --inside ]; then
     # still verify against go.sum; only the external checksum server is disabled.
     if [ "$kind" != pricefeed ]; then
         wasm_version=$(go list -m -f '{{.Version}}' github.com/CosmWasm/wasmvm/v3)
-        herumi_version=$(go list -m -f '{{.Version}}' github.com/herumi/bls-eth-go-binary)
-        go mod download "github.com/herumi/bls-eth-go-binary@$herumi_version" "github.com/CosmWasm/wasmvm/v3@$wasm_version"
+        go mod download "github.com/CosmWasm/wasmvm/v3@$wasm_version"
         case "$arch" in amd64) native_arch=x86_64 ;; arm64) native_arch=aarch64 ;; *) exit 1 ;; esac
-        # Rebuild the native libraries, rather than satisfying the check with the
-        # precompiled libraries supplied in upstream Go module zips.
+        # Rebuild the native library, rather than satisfying the check with the
+        # precompiled library supplied in the upstream Go module zip.
         (cd "$bundle/native/wasmvm/libwasmvm" && cargo build --offline --locked --release --example wasmvmstatic)
         cp "$bundle/native/wasmvm/libwasmvm/target/release/examples/libwasmvmstatic.a" "/usr/local/lib/libwasmvm_muslc.$native_arch.a"
-        make -C "$bundle/native/herumi" -j2
-        herumi_module="$GOMODCACHE/github.com/herumi/bls-eth-go-binary@$herumi_version"
-        chmod -R u+w "$herumi_module"
-        cp "$bundle/native/herumi/bls/lib/linux/$arch/libbls384_256.a" "$herumi_module/bls/lib/linux/$arch/libbls384_256.a"
         CGO_ENABLED=1 GOOS=linux GOARCH="$arch" go build -trimpath -tags netgo,ledger,muslc \
             -ldflags "-X github.com/cosmos/cosmos-sdk/version.Commit=$revision -linkmode=external -extldflags '-Wl,-z,muslsymversions -static'" \
             -o /verify-arkd ./cmd/arkd

@@ -21,7 +21,6 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 WASMVM = "github.com/CosmWasm/wasmvm/v3"
-HERUMI = "github.com/herumi/bls-eth-go-binary"
 LEGAL = ("LICENSE", "COPYING", "NOTICE", "THIRD_PARTY_NOTICES.md")
 
 
@@ -181,35 +180,10 @@ def native_sources(bundle, downloads):
         raise ValueError("cargo vendor changed the locked dependency graph")
     (manifest / ".cargo").mkdir(exist_ok=True)
     (manifest / ".cargo/config.toml").write_text(config)
-    # Go module zips omit submodules, including the source of Herumi's static library.
-    herumi = bundle / "native" / "herumi"
-    version = downloads[HERUMI]["Version"]
-    run("git", "clone", "--quiet", "--depth=1", "--branch", version,
-        "https://github.com/herumi/bls-eth-go-binary.git", str(herumi))
-    revision = run("git", "rev-parse", "HEAD", cwd=herumi).strip()
-    origin = downloads[HERUMI].get("Origin", {}).get("Hash")
-    if not origin or revision != origin:
-        raise ValueError("Herumi source cannot be matched to the Go module's recorded origin revision")
-    with zipfile.ZipFile(downloads[HERUMI]["Zip"]) as archive:
-        for name in archive.namelist():
-            if name.endswith("/"):
-                continue
-            relative = name[name.find("/", name.index("@")) + 1:]
-            if (herumi / relative).read_bytes() != archive.read(name):
-                raise ValueError("Herumi source differs from the verified Go module: " + relative)
-    run("git", "-c", "protocol.allow=never", "-c", "protocol.https.allow=always",
-        "submodule", "update", "--init", "--recursive", cwd=herumi)
-    submodules = run("git", "submodule", "status", "--recursive", cwd=herumi).strip().splitlines()
-    for path in sorted(herumi.rglob(".git"), key=lambda p: len(p.parts), reverse=True):
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
     for path in (bundle / "native").rglob("*"):
         if path.is_file() and path.name.upper().startswith(("LICENSE", "LICENCE", "COPYING", "NOTICE", "PATENTS", "AUTHORS")):
             copy_file(path, bundle / "notices" / path.relative_to(bundle))
-    return {"wasmvm": downloads[WASMVM]["Version"], "cargo_lock_sha256": lock_hash,
-            "herumi": version, "herumi_commit": revision, "herumi_submodules": submodules}
+    return {"wasmvm": downloads[WASMVM]["Version"], "cargo_lock_sha256": lock_hash}
 
 
 def main():

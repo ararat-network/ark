@@ -117,8 +117,6 @@ def link_inputs(database, link_map):
             continue
         elif re.fullmatch(r"/(lib|usr/lib|usr/local/lib)/libwasmvm_muslc\.(x86_64|aarch64)\.a", actual):
             inputs.append(dict(component="wasmvm", source="application source bundle"))
-        elif "/github.com/herumi/bls-eth-go-binary@" in name and name.endswith("/libbls384_256.a"):
-            inputs.append(dict(component="herumi", source="application source bundle"))
         else:
             raise ValueError("linker input lacks source coverage: " + name)
     if not selected or not inputs:
@@ -316,8 +314,7 @@ def validate_static_inputs(linked):
             if item["package"] not in owners or not item.get("path", "").startswith(("/usr/lib/", "/lib/")):
                 raise ValueError("unrecognised linked system input")
             referenced.add(item["package"])
-        elif item not in (dict(component="wasmvm", source="application source bundle"),
-                           dict(component="herumi", source="application source bundle")):
+        elif item != dict(component="wasmvm", source="application source bundle"):
             raise ValueError("unrecognised application runtime input")
     if referenced != owners:
         raise ValueError("incomplete linked package ownership")

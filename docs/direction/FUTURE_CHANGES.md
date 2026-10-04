@@ -10,6 +10,7 @@ actions available through existing messages and relayer procedures.
 - [2. Enable Block-STM](#2-enable-block-stm)
 - [3. Basket index assets](#3-basket-index-assets)
 - [4. Capital and protocol follow-ups](#4-capital-and-protocol-follow-ups)
+- [5. Ethereum light clients](#5-ethereum-light-clients)
 - [Protocol monitoring tooling](#protocol-monitoring-tooling)
 
 ## 1. Upgrade to Cosmos SDK v0.55
@@ -222,6 +223,17 @@ per-order and aggregate bounds in `abci/codec`, a separate verification boundary
 Honest ExtendVote handlers attach only self-verified orders, and VerifyVoteExtension must accept everything they emit.
 Invalid/stale orders must skip without halting; state-failure handling needs an explicit audit. Require a coordinated,
 two-phase rollout rather than treating this as a local mempool setting.
+
+## 5. Ethereum light clients
+
+- Status: not supported. 08-Wasm is installed dormant (D50) with no custom queries.
+- Trigger: governance intends to admit an Ethereum-consensus light client such as `cw-ics08-wasm-eth`.
+
+Ethereum-consensus clients ask the node to aggregate BLS12-381 public keys and verify aggregate signatures through
+two 08-Wasm custom queries, `aggregate` and `aggregate_verify`. ibc-go's `blsverifier` serves them through Prysm,
+which is GPLv3 and so kept out of the node (`app/wasm.go`). Implement the same queries on `supranational/blst`
+(Apache 2.0, already linked through CometBFT), test them against ibc-go's and the client's vectors, and ship them in
+a coordinated upgrade before the client's code is stored.
 
 ## Protocol monitoring tooling
 
