@@ -10,7 +10,7 @@ release:
   name_template: "{{ .Tag }}"
   prerelease: auto
   header: |
-    The combined arkd executable is distributed under GPLv3; Ark-authored source is Apache-2.0.
+    Ark-authored source is Apache-2.0; arkd also links LGPLv3 and BUSL-1.1 components (see THIRD_PARTY_NOTICES.md).
     Corresponding source and third-party notices are attached as arkd-source-{{ .FullCommit }}*.tar.gz.
     Linked system-runtime sources and notices are attached as arkd-runtime-source-{{ .FullCommit }}-linux-ARCH*.
     Download the source bundle rather than GitHub's source-only archive.

@@ -97,7 +97,7 @@ FROM runtime AS distribution
 COPY LICENSE COPYING NOTICE THIRD_PARTY_NOTICES.md /usr/share/ark/
 COPY corresponding-source.tar.gz third-party-notices.tar.gz /usr/share/ark/
 COPY --from=os-source /output/ /usr/share/ark/os/
-LABEL org.opencontainers.image.licenses="GPL-3.0-only"
+LABEL org.opencontainers.image.licenses="Apache-2.0 AND LGPL-3.0-or-later AND BUSL-1.1"
 
 # Keep localnet builds usable with uncommitted working-tree changes. This target
 # is for local development; the publishing workflow explicitly uses distribution.

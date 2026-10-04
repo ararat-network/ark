@@ -1,9 +1,9 @@
 Ark
 
 Ark-authored source is licensed under the Apache License, Version 2.0.
-Third-party material retains its original licences and notices. The combined
-arkd executable includes GPLv3-covered Prysm code and is distributed under
-GPLv3; see COPYING and THIRD_PARTY_NOTICES.md.
+Third-party material retains its original licences and notices. The arkd
+executable includes LGPLv3 go-ethereum code (see COPYING) and the BUSL-1.1
+Wasmer Singlepass compiler; see THIRD_PARTY_NOTICES.md.
 
 Ark includes code adapted from Terra Classic, Cosmos SDK, Gaia, and Connect
 (Slinky), and uses Terra oracle-feeder as an implementation reference. Ark's
