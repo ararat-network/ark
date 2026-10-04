@@ -141,8 +141,9 @@ everywhere else.
 
 ## Release builds
 
-Ark-authored source is licensed under [Apache 2.0](LICENSE). The combined node
-includes GPLv3-covered code and is distributed under [GPLv3](COPYING).
+Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links
+third-party code under LGPLv3 and the Business Source License 1.1, whose
+production-use terms operators should read.
 [Licensing and corresponding source](THIRD_PARTY_NOTICES.md) explains component
 licences, attribution, source downloads, and the release verification procedure.
 

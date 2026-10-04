@@ -4,12 +4,14 @@ Ark-authored source is licensed under Apache 2.0 (`LICENSE`). Third-party materi
 retains its original licence and copyright notices. This does not grant ownership
 of upstream code to Ark or replace upstream licence terms.
 
-The combined `arkd` executable includes Prysm's GPLv3-covered BLS implementation,
-through IBC Wasm's verifier, and is distributed under GPLv3 (`COPYING`). Recipients
-may modify and redistribute that combined work under GPLv3. Its Apache-licensed
-components retain their notices and remain available under Apache 2.0 separately.
-The independently built `pricefeed` executable does not import Prysm; including
-`COPYING` with a distribution does not by itself relicense that separate program.
+The `arkd` executable links go-ethereum library packages under LGPLv3 or later;
+`COPYING` holds the GPLv3 text that licence incorporates. It also links wasmvm's
+Wasmer Singlepass compiler, licensed under the Business Source License 1.1: it may
+be copied, modified, redistributed and used outside production, while production
+use, including running a validator or RPC node, requires a grant from Wasmer.
+[CWA-2026-006](https://github.com/CosmWasm/advisories/blob/main/CWAs/CWA-2026-006.md)
+states that Cosmos Labs holds a licence covering downstream use. Each Singlepass
+version becomes available under MPL 2.0 four years after its publication.
 
 ## Upstream attribution
 
@@ -24,8 +26,7 @@ is not a substitute for the dependency notices and sources included with release
 | [Connect / Slinky](https://github.com/skip-mev/connect) | Adapted oracle validation, metrics, and provider code | Apache 2.0 |
 | [MEXC websocket-proto](https://github.com/mexcdevelop/websocket-proto) | Wire schema the MEXC sidecar adapter decodes against; no code is adapted | Apache 2.0 |
 | [Terra oracle-feeder](https://github.com/terra-money/oracle-feeder) | Oracle sidecar reference | Apache 2.0 |
-| [CosmWasm / wasmvm](https://github.com/CosmWasm/wasmvm) | Contract runtime and native Rust library | Apache 2.0, with separately licensed dependencies |
-| [Prysm](https://github.com/OffchainLabs/prysm) | BLS verifier imported by the node | GPLv3 |
+| [CosmWasm / wasmvm](https://github.com/CosmWasm/wasmvm) | Contract runtime and native Rust library | Apache 2.0, with separately licensed dependencies, including Wasmer Singlepass under BUSL 1.1 |
 | [go-ethereum](https://github.com/ethereum/go-ethereum) | Ethereum library packages imported by node dependencies | LGPLv3 or later for those library files |
 
 `NOTICE` preserves Terra Classic, Gaia, and Cosmos SDK copyright statements and
@@ -258,11 +259,11 @@ recipes, patches, configurations and installation scripts. `MANIFEST.json` maps
 every installed runtime package to its version, architecture, source origin and
 aports commit. It separately records the system archives actually linked into
 `arkd` and their builder package versions; the builder and runtime can use different
-Alpine versions. The application bundle covers Go, Rust, wasmvm and Herumi sources.
+Alpine versions. The application bundle covers Go, Rust and wasmvm sources.
 The OS bundle covers the linked Alpine runtimes as well as the separate OS tools.
 
 OS programs retain their individual licences. For example, BusyBox is GPLv2-only;
-Ark's GPLv3 `COPYING` does not replace that licence. Refer to the per-image manifest
+the GPLv3 text in `COPYING` does not replace that licence. Refer to the per-image manifest
 and preserved source notices for the actual component terms, including compiler
 runtime exceptions. `os/notices/` provides readable extracted notices; keep the
 complete source archives and embedded notices too. Its `licence-texts/` directory
@@ -337,16 +338,14 @@ make verify-source SOURCE_KIND=arkd
 
 Packaging needs Python 3.12 or later, Git, the Go version in `go.mod`, and network
 access to download checksum-verified Go dependencies. Node/image bundles also
-need Cargo or Docker to vendor the locked Rust dependencies, and Git to retrieve
-Herumi's native source submodules. The Herumi checkout is compared with its
-checksum-verified Go module before its submodules are included.
+need Cargo or Docker to vendor the locked Rust dependencies.
 
 Verification requires Docker, including support for Linux amd64 and arm64.
 Preparing the verifier images downloads general-purpose compiler and OS build
-tools. The verifier pins Rust 1.82.0 to match wasmvm v3.0.7's Alpine builder;
-newer Rust releases removed a stack-probe symbol required by its Wasmer version.
+tools. The verifier pins Rust 1.95.0, the minimum compiler of wasmvm v3.0.8's
+Alpine builder.
 Compilation then runs with networking disabled and empty Go caches. Both
-node architectures rebuild wasmvm and Herumi from source; sidecar verification
+node architectures rebuild wasmvm from source; sidecar verification
 cross-compiles its four published OS/architecture combinations. A successful
 check proves the bundle supplies buildable source, not bit-for-bit reproducibility
 of upstream prebuilt native libraries or the final release executable. This gate
@@ -358,7 +357,7 @@ For a manual build, extract the bundle, set `GOPROXY=file:///absolute/path/to/go
 `GOSUMDB=off`, `GOTOOLCHAIN=local`, and `GOWORK=off`, then build from `ark/`.
 `ark/contrib/scripts/verify-source.sh` records the native rebuild commands.
 `SOURCE-MANIFEST.json` records the source revision, Go dependency versions and
-checksums, target matrix, wasmvm lockfile hash, and Herumi submodule revisions.
+checksums, target matrix, and wasmvm lockfile hash.
 General-purpose toolchains and OS build tools are prerequisites. Operational
 credentials, validator keys, local data, and prior Git history are not build inputs.
 
@@ -366,8 +365,7 @@ credentials, validator keys, local data, and prior Git history are not build inp
 
 Keep licence and attribution documents with every distribution, preserve notices
 in copied or modified upstream files, and provide the corresponding source for
-the actual shipped version. Do not add restrictions that prevent recipients from
-exercising their GPLv3 rights in the combined node. Original Ark source remains
-available under Apache 2.0. A source archive alone does not discharge every
-third-party obligation: inspect new dependencies, embedded binaries, and native
-libraries whenever the dependency graph or release toolchain changes.
+the actual shipped version. Original Ark source remains available under Apache
+2.0. A source archive alone does not discharge every third-party obligation:
+inspect new dependencies, embedded binaries, and native libraries whenever the
+dependency graph or release toolchain changes.

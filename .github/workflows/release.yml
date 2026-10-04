@@ -101,7 +101,7 @@ jobs:
             echo
             printf 'Source revision: `%s`.\n\n' "$GITHUB_SHA"
             if [ "$RELEASE_KIND" = arkd ]; then
-              echo 'The combined arkd executable is distributed under GPLv3; Ark-authored source is Apache-2.0.'
+              echo 'Ark-authored source is Apache-2.0; arkd also links LGPLv3 and BUSL-1.1 components (see THIRD_PARTY_NOTICES.md).'
               echo 'Retain the attached application and per-architecture runtime source bundles with the binaries.'
             else
               echo 'Ark-authored source is Apache-2.0; third-party components retain their licences.'

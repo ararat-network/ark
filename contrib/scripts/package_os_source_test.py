@@ -94,13 +94,12 @@ class SourceCoverageTests(unittest.TestCase):
             db.write_text("P:musl-dev\nV:1-r0\nL:MIT\no:musl\nc:" + "a" * 40
                           + "\nA:x86_64\nF:usr/lib\nR:libc.a\n")
             known = ("LOAD /usr/lib/libc.a\nLOAD /tmp/go-link-12/000001.o\n"
-                     "LOAD /lib/libwasmvm_muslc.x86_64.a\n"
-                     "LOAD /go/pkg/mod/github.com/herumi/bls-eth-go-binary@v1/bls/lib/libbls384_256.a\n")
+                     "LOAD /lib/libwasmvm_muslc.x86_64.a\n")
             with patch.object(m.os.path, "realpath", side_effect=lambda p: p):
                 link.write_text(known)
                 result = m.link_inputs(db, link)
                 self.assertEqual([p["name"] for p in result["packages"]], ["musl-dev"])
-                self.assertEqual(len(result["inputs"]), 3)
+                self.assertEqual(len(result["inputs"]), 2)
                 link.write_text(known + "LOAD linker stubs\n")
                 with self.assertRaises(ValueError):
                     m.link_inputs(db, link)

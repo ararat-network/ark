@@ -8,11 +8,11 @@ prepare() {
     image="ark-source-verifier:$platform"
     # General-purpose build tools are prerequisites, not part of the source bundle.
     docker build --platform "linux/$platform" -t "$image" - >&2 <<'DOCKERFILE'
-FROM rust:1.82.0-alpine@sha256:2f42ce0d00c0b14f7fd84453cdc93ff5efec5da7ce03ead6e0b41adb1fbe834e AS rust
+FROM rust:1.95.0-alpine@sha256:606fd313a0f49743ee2a7bd49a0914bab7deedb12791f3a846a34a4711db7ed2 AS rust
 FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
-RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-static llvm22-dev python3 perl bash cmake nasm
-# Match wasmvm v3.0.7's builders/Dockerfile.alpine. Newer Rust releases removed
-# __rust_probestack, which its Wasmer version still requires on x86_64.
+RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-dev clang22-static llvm22-dev llvm22-static python3 perl bash cmake nasm
+# Match wasmvm v3.0.8's builders/Dockerfile.alpine: Rust 1.95.0, its minimum
+# compiler, with clang and LLVM headers and static libraries.
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
@@ -40,17 +40,12 @@ if [ "${1:-}" = --inside ]; then
     # still verify against go.sum; only the external checksum server is disabled.
     if [ "$kind" != pricefeed ]; then
         wasm_version=$(go list -m -f '{{.Version}}' github.com/CosmWasm/wasmvm/v3)
-        herumi_version=$(go list -m -f '{{.Version}}' github.com/herumi/bls-eth-go-binary)
-        go mod download "github.com/herumi/bls-eth-go-binary@$herumi_version" "github.com/CosmWasm/wasmvm/v3@$wasm_version"
+        go mod download "github.com/CosmWasm/wasmvm/v3@$wasm_version"
         case "$arch" in amd64) native_arch=x86_64 ;; arm64) native_arch=aarch64 ;; *) exit 1 ;; esac
-        # Rebuild the native libraries, rather than satisfying the check with the
-        # precompiled libraries supplied in upstream Go module zips.
+        # Rebuild the native library, rather than satisfying the check with the
+        # precompiled library supplied in the upstream Go module zip.
         (cd "$bundle/native/wasmvm/libwasmvm" && cargo build --offline --locked --release --example wasmvmstatic)
         cp "$bundle/native/wasmvm/libwasmvm/target/release/examples/libwasmvmstatic.a" "/usr/local/lib/libwasmvm_muslc.$native_arch.a"
-        make -C "$bundle/native/herumi" -j2
-        herumi_module="$GOMODCACHE/github.com/herumi/bls-eth-go-binary@$herumi_version"
-        chmod -R u+w "$herumi_module"
-        cp "$bundle/native/herumi/bls/lib/linux/$arch/libbls384_256.a" "$herumi_module/bls/lib/linux/$arch/libbls384_256.a"
         CGO_ENABLED=1 GOOS=linux GOARCH="$arch" go build -trimpath -tags netgo,ledger,muslc \
             -ldflags "-X github.com/cosmos/cosmos-sdk/version.Commit=$revision -linkmode=external -extldflags '-Wl,-z,muslsymversions -static'" \
             -o /verify-arkd ./cmd/arkd
