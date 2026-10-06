@@ -192,7 +192,9 @@ There is no status between registration and admission. Registration demands the 
 a rate is a state the chain reaches whenever a feed is young or stale, and every consumer handles both identically. A
 feed addition and the registration against it never share a proposal: governance proposes the feed, watches it print,
 then registers. That cycle falls where it is cheapest, on the one admission path with no holders waiting and the least
-proven price data.
+proven price data. The launch set follows it: the artefact registers the eleven feeds and no asset, and governance
+registers the [ten currencies](../../docs/governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion) once NOAH has a
+market price (D95).
 
 - **`ACTIVE`.** Issuance, conversion, valuation, liability accounting, and redemption all run. The asset pins its feed
   against removal for as long as it stays Oracle-priced.
@@ -348,8 +350,8 @@ suspensions. Validation requires deterministic order; every Oracle-priced asset'
 keeper because the feed registry is `x/oracle` state, which is why the init order is bank, oracle, asset, market,
 treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a written-off asset's current version and
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
-suspension naming a registered asset. The launch set is the ten stablecoins in `pkg/chain/denom.go`, all `ACTIVE` at
-version one (`docs/governance/GENESIS.md` §9).
+suspension naming a registered asset. The artefact registers no asset; governance registers the ten currencies after
+launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion)) (D95).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow

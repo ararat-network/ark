@@ -542,7 +542,8 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	var marketGenesis markettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
 	conversion := marketGenesis.ConversionPolicy
-	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(5_000_000))), conversion.BasePool)
+	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(100_000))), conversion.BasePool,
+		"opens small, with no NOAH market history behind it (D95)")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.02"), conversion.MinStabilitySpread)
 	require.Equal(t, chain.BlocksPerDay, conversion.PoolRecoveryPeriod)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.0025"), marketGenesis.Params.DefaultTobinTax)
@@ -558,22 +559,8 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
 	require.Equal(t, 3*chain.BlocksPerDay, assetGenesis.Params.SettlementActivationDelayBlocks, "outlasts the two-day vote")
-	currencies := map[string]string{
-		chain.AUDBaseDenom: "Australian dollar",
-		chain.CADBaseDenom: "Canadian dollar",
-		chain.CNYBaseDenom: "Chinese yuan",
-		chain.EURBaseDenom: "euro",
-		chain.GBPBaseDenom: "pound sterling",
-		chain.JPYBaseDenom: "Japanese yen",
-		chain.KRWBaseDenom: "South Korean won",
-		chain.MXNBaseDenom: "Mexican peso",
-		chain.SGDBaseDenom: "Singapore dollar",
-		chain.USDBaseDenom: "United States dollar",
-	}
-	require.Len(t, assetGenesis.Assets, len(currencies))
-	for _, asset := range assetGenesis.Assets {
-		require.Equal(t, "An Ark currency tracking the "+currencies[asset.Denom]+".", asset.Metadata.Description, asset.Denom)
-	}
+	require.Empty(t, assetGenesis.Assets,
+		"conversion is closed at launch: the currencies are registered by vote once NOAH has a market price (D95)")
 }
 
 // TestLaunchGenesisBootsVestingSeat boots the artefact the way assembly
@@ -690,6 +677,14 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 // the launch artefact: time compressed so a governance cycle, an unbonding, a
 // settlement, and an oracle payout each complete inside a test day, and
 // nothing else. Mirrored in docs/governance/GENESIS.md §15.
+// launchCurrencies is the launch currency set in the artefact's order, the
+// denominations the testnet registers from genesis and the launch chain
+// registers by vote (D95).
+var launchCurrencies = []string{
+	chain.AUDBaseDenom, chain.CADBaseDenom, chain.CNYBaseDenom, chain.EURBaseDenom, chain.GBPBaseDenom,
+	chain.JPYBaseDenom, chain.KRWBaseDenom, chain.MXNBaseDenom, chain.SGDBaseDenom, chain.USDBaseDenom,
+}
+
 func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state map[string]json.RawMessage) {
 	launch.ChainID = "ark-testnet-1"
 	launch.Consensus.Params.Evidence.MaxAgeNumBlocks = int64(chain.BlocksPerDay)
@@ -706,7 +701,23 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
 	assetGenesis.Params.SettlementActivationDelayBlocks = 2 * chain.BlocksPerHour
+	// The testnet opens conversion from genesis, as the launch chain does by
+	// vote (D95): the ten currencies as registration would store them, and the
+	// pre-D95 depth.
+	for _, denom := range launchCurrencies {
+		assetGenesis.Assets = append(assetGenesis.Assets, assettypes.Asset{
+			Denom:    denom,
+			Metadata: chain.NativeAssetMetadata(denom),
+			Status:   assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
+			Version:  1,
+		})
+	}
 	state[assettypes.ModuleName] = cdc.MustMarshalJSON(&assetGenesis)
+
+	var marketGenesis markettypes.GenesisState
+	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
+	marketGenesis.ConversionPolicy.BasePool = sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(5_000_000)))
+	state[markettypes.ModuleName] = cdc.MustMarshalJSON(&marketGenesis)
 
 	var claimsGenesis claimstypes.GenesisState
 	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
