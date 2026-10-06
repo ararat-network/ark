@@ -83,8 +83,9 @@ app/mempool/    # Pending transactions, lane eligibility, admission limits, and 
 When making code changes:
 
 - Always check the exact cosmos-sdk version in go.mod before suggesting imports or patterns
-- **msgServer/queryServer pattern**: use named `k *Keeper` field + embed
-  `UnimplementedMsgServer`/`UnimplementedQueryServer` in both. Query RPCs collide with public collection fields
+- **msgServer/queryServer pattern**: use a named `k *Keeper` field and do not embed
+  `UnimplementedMsgServer`/`UnimplementedQueryServer`: every RPC is implemented explicitly, so a missing handler
+  fails to compile rather than answering Unimplemented at runtime. Query RPCs collide with public collection fields
   (`Params`, `TaxRate`, etc.); oracle msg RPCs also collide (`AggregateExchangeRatePrevote`). Named fields everywhere
   for consistency.
 - When editing proto files, explain proposed changes before applying them and wait for confirmation

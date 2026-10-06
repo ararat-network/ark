@@ -284,9 +284,8 @@ func (s *KeeperTestSuite) TestQueryFeedReferents() {
 }
 
 // TestQueryReferenceDenom routes through the query client rather than calling
-// the server method directly, so the RPC name stays pinned to the proto: a
-// method named anything else falls through to UnimplementedQueryServer and the
-// interface assertion still compiles.
+// the server method directly, so the test pins the RPC's proto name and
+// registration, not only the Go method the interface assertion checks.
 func (s *KeeperTestSuite) TestQueryReferenceDenom() {
 	tests := []struct {
 		name   string
