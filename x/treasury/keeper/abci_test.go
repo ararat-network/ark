@@ -359,3 +359,22 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), kept.Factor)
 }
+
+// TestBeginBlockerRefreshesNoahFactorWithoutMembers pins D95: the NOAH factor
+// derives from the reference alone, so fees follow a live reference rate while
+// the registry is still empty, before any currency is registered.
+func (s *KeeperTestSuite) TestBeginBlockerRefreshesNoahFactorWithoutMembers() {
+	s.setBlockHeight(1)
+	s.setAssets()
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
+
+	s.Require().NoError(s.beginBlock())
+
+	factor, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacyNewDec(2), factor.Factor)
+	s.Require().Equal(uint64(1), factor.DerivedHeight)
+	s.requireTypedEvent(&types.EventConversionFactorsRefreshed{ConversionFactors: []types.ConversionFactor{
+		{Denom: chain.NoahBaseDenom, Factor: math.LegacyNewDec(2), DerivedHeight: 1},
+	}})
+}

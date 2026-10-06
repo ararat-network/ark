@@ -100,7 +100,8 @@ a unit change would look like a market return. [Protocol monitoring](../../docs/
 One `ConversionFactors` table serves fee prices and tax caps. BeginBlock refreshes a member with a servable rate,
 retains an existing factor through an outage, and seeds a new unpriceable member at one. The reference has an identity
 factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
-retains it until a live cross is available. A reference change atomically rebases the table,
+retains it until a live cross is available, and derives it from the reference alone, so it follows a live rate before
+any member is registered (D95). A reference change atomically rebases the table,
 cap, base-fee floor, and live price, so a cap update applies uniformly without a delayed per-member refresh.
 
 Storing FX factors rather than final fee prices lets an oracle outage freeze FX while the base-fee congestion

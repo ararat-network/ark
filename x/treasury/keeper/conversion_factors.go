@@ -19,14 +19,12 @@ import (
 
 // refreshConversionFactors updates derivable member cross-rates each block, retains unavailable
 // factors, and seeds uncovered members at one. This keeps outstanding member transfers taxable
-// during feed outages.
+// during feed outages. The NOAH factor derives from the reference alone, so it follows a live
+// reference rate while the registry is still empty (D95).
 func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 	if err != nil {
 		return fmt.Errorf("getting oracle-priced denominations: %w", err)
-	}
-	if len(denoms) == 0 {
-		return nil
 	}
 	params, err := k.Params.Get(ctx)
 	if err != nil {
