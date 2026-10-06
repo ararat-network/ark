@@ -6,8 +6,8 @@ maintain that boundary.
 
 ## Understand the chain
 
-- [Manifesto](papers/MANIFESTO.pdf): "The Revolution Begins Within", the founding statement on love, God, intelligence,
-  technology, and the future we choose.
+- [Manifesto](papers/MANIFESTO.pdf): "The Revolution Begins Within", the founding statement, a search for truth through
+  the self, intelligence, God, and the institutions we build.
 - [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
   the typeset PDF replaces it at this path when finished.
 - [Economic design](design/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
