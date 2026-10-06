@@ -20,6 +20,12 @@ routes, and bootstrap expiry before starting. Defaults include placeholder crede
 a structurally valid file does not prove that every requested feed can be priced. Defaults live in
 [pricefeed/config/default.go](../../pricefeed/config/default.go).
 
+Every default route ends on the `USD/NOAH` leg, which the generated config prices with an expiring bootstrap price, one
+NOAH per dollar until its `valid_until`, used only while no provider has a fresh NOAH sample. Do not add NOAH markets
+to a provider until the [opening runbook](../governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion) calls for it:
+the first live sample replaces the bootstrap price on every sidecar that carries the venue, and the
+`ark.pricefeed.bootstrap.price.uses` counter shows which legs still rely on it (D95).
+
 In the node's `config/app.toml`, enable its client and select the sidecar addresses. For a sidecar on the same host:
 
 ```toml

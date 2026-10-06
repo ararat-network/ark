@@ -33,7 +33,7 @@ maintain that boundary.
 ## Govern and respond
 
 - [Governance operations](governance/GOVERNANCE_OPERATIONS.md): proposals, dependent relayer actions, service permissions, and appointments.
-- [Economic committee runbook](governance/ECONOMIC_COMMITTEE_RUNBOOK.md): bounded policy changes, fund actions, and responses to economic alerts.
+- [Economic committee runbook](governance/ECONOMIC_COMMITTEE_RUNBOOK.md): bounded policy changes, fund actions, conversion depth, and responses to economic alerts.
 - [Emergency submission runbook](governance/EMERGENCY_SUBMISSION_RUNBOOK.md): signing, private carriers, submission, inclusion checks, and rehearsal.
 
 ## Integrate clients

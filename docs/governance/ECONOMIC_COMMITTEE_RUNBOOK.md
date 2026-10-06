@@ -1,7 +1,8 @@
 # Economic committee runbook
 
-For Treasury and Reserve committees sizing bounded economic actions, and governance coordinating a conversion-mandate
-reference change. This guide owns action selection and preflight; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
+For Treasury, Reserve, and Market committees sizing bounded economic actions, and governance coordinating a
+conversion-mandate reference change. This guide owns action selection and preflight;
+[protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
 alert conditions and diagnosis. Security incident delivery lives in the [emergency runbook](EMERGENCY_SUBMISSION_RUNBOOK.md).
 
 **Why this exists.** Three of the committee's bounds — what it may burn, what it may move into the Redemption
@@ -112,6 +113,42 @@ from, and no amount of waiting will change that.
 
 **A2 and A3** are engineering conditions with no committee action. A2 is a stalled refresh, A3 a rate limiter
 binding; both are diagnosed against `FundStatus` and the oracle, not decided by vote.
+
+## Conversion depth
+
+Market's depth is the throttle on how fast NOAH mints and burns, and nothing raises it automatically (D95). The
+Market committee moves it with `MsgCommitteeUpdatePolicy` inside its corridor; governance moves it beyond with
+`MsgUpdatePolicy`. Both size it by one rule (D104), in the pool unit, valuing every currency at the oracle rate:
+
+```text
+depth      = max(100 × daily net one-way flow, 50 × largest routine swap)
+daily flow = liquid NOAH × NOAH price × share converting in a month ÷ 30
+```
+
+The factors hold at a 2% floor and a one-day recovery; in general they are `2 / floor × recovery period in days` and
+`1 / floor`. [Market's quote contract](../../x/market/README.md#local-quote-and-admission-contracts) derives them.
+
+**When to run it.** With a live NOAH price before conversion opens
+([opening conversion](GOVERNANCE_OPERATIONS.md#8-opening-conversion)), when a grant tranche adds liquid NOAH, and
+when `Query/Pool` shows `ark_pool_delta` held more negative than a hundredth of `base_pool`, which is expansion flow
+paying above the floor.
+
+**Before raising.**
+
+- A positive `ark_pool_delta` is redemption pressure. Do not raise into it: a deeper pool retires currency into NOAH
+  faster, the May 2022 Terra proposal the whitepaper records (§2.3).
+- A mint at a wrong price stays profitable up to roughly the mispricing times the depth. If that is more than the
+  venues pricing NOAH justify, raise by less; flow above the sizing still converts, at the spreads below.
+- Capacity is added by depth, never by shortening `pool_recovery_period`.
+
+| Daily one-way flow over depth | Marginal spread |
+| --- | --- |
+| 1% | 2%, the floor |
+| 2.5% | about 5% |
+| 5% | about 10% |
+
+A depth change rescales the delta in proportion, so a raise keeps the imbalance it found. After inclusion, verify
+with `Query/Pool` and `EventPoolUpdated`.
 
 ## Reference change and conversion mandate
 

@@ -295,3 +295,47 @@ and recovery actions. All list queries use key pagination; maximum page size is 
 `MsgReturnUnallocated` returns to the community pool without touching any grant's reserved principal: with `pool`
 unspecified it returns custody outside the pools and orders, with `POOL_CONTRIBUTORS` it returns contributor NOAH,
 unopened first, and the member pool has no exit.
+
+---
+
+## 8. Opening conversion
+
+Conversion is closed at launch: the artefact registers the eleven price feeds and no asset, so Market has no `ACTIVE`
+ask to mint (D95). It opens in this order, once a venue trades NOAH with real depth.
+
+1. **Sidecars read the venue.** Operators add NOAH markets to their provider configs in one coordinated window, not as
+   each notices a listing. A live sample replaces the bootstrap NOAH price on every sidecar that carries the venue, and
+   the `ark.pricefeed.bootstrap.price.uses` counter falling to zero shows the switch. From that block the NOAH gas
+   factor tracks the live rate and fees in NOAH move to their XDR-targeted level; clients that build fees from the gas
+   price query follow on their own ([client fees](../clients/CLIENT_FEES.md)).
+2. **Confirm the depth.** The artefact sets `conversion_policy.base_pool` to 100,000 XDR. Run the
+   [depth rule](ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) with the live price and the liquid NOAH outstanding
+   (D104), and change the depth before opening, by `MsgUpdatePolicy`, only if the rule gives a reason: depth is the
+   throttle on how fast NOAH mints and burns, and nothing grows it automatically.
+3. **Register the currencies.** One proposal carrying ten `MsgRegisterAsset`, one per currency listed below.
+   Registration requires each feed to be Active, which they have been since genesis; never bundle a feed change into
+   the same proposal ([asset lifecycle](../../x/asset/README.md#7-the-lifecycle)). Conversion opens when the proposal
+   executes. Verify with the asset registry query and one small `MsgSell`.
+4. **Appoint the Market committee.** Its corridor should reach about ten times the genesis depth, so routine raises as
+   liquid NOAH is distributed need no vote (§6, [genesis §13](GENESIS.md#13-committee-appointments)). The committee
+   sizes each raise by the depth rule; governance raises depth beyond the corridor by the same rule, and nobody
+   shortens recovery to do it.
+
+The currencies step 3 registers:
+
+| Denomination | Tracks |
+| --- | --- |
+| `aaud` | Australian dollar |
+| `acad` | Canadian dollar |
+| `acny` | Chinese yuan |
+| `aeur` | euro |
+| `agbp` | pound sterling |
+| `ajpy` | Japanese yen |
+| `akrw` | South Korean won |
+| `amxn` | Mexican peso |
+| `asgd` | Singapore dollar |
+| `ausd` | United States dollar |
+
+`axdr` is not one of them: it is the protocol reference, priced by its feed and never registered.
+
+Stablecoin compensation in Disbursement becomes available at step 3 (§7).

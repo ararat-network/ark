@@ -312,7 +312,7 @@ flow. Opposing flow can relieve the imbalance. Each block also reduces it by a g
 capacity to recover over time. A minimum spread applies even when calculated price impact is small. Depth, recovery
 period, and minimum spread form one conversion policy.
 
-The launch policy sets the pool depth at 5,000,000 XDR, the minimum spread at 2%, and the recovery period at
+The launch policy sets the pool depth at 100,000 XDR, the minimum spread at 2%, and the recovery period at
 14,400 blocks, approximately one day. Direct currency exchanges retain a 0.25% default Tobin charge. These settings
 govern conversion cost; the fund seeds are separate real balances. [Ark: Launch genesis][ark-genesis]
 
@@ -1051,7 +1051,7 @@ return to the community pool.
 | Currency names and symbols | ArkAUD / arkAUD and the corresponding currency codes | Decided |
 | Protocol reference | XDR feed; no issued XDR currency | Decided |
 | Routine NOAH issuance | No mint module or staking inflation | Decided |
-| Conversion pool depth | 5,000,000 XDR; initially balanced | Decided |
+| Conversion pool depth | 100,000 XDR; initially balanced | Decided |
 | Conversion recovery | 14,400 blocks, approximately one day | Default |
 | Minimum conversion spread | 2% | Default |
 | Direct currency conversion charge | 0.25% default Tobin rate; no overrides | Decided |
@@ -1076,6 +1076,8 @@ return to the community pool.
 
 The initial fee factor reflects the bootstrap assumption of one USD per NOAH and 1.371 USD per XDR. It supplies a
 fee conversion before the first usable reference observation and is not a promise of either market exchange rate.
+No currency is issued at that assumption: conversion is closed at launch and opened by governance once NOAH has a
+market price.
 The oracle distribution horizon smooths payments from the oracle reward account; it is separate from the weekly
 window that funds that account.
 

@@ -2,6 +2,8 @@
 
 - Status: decided 2026-09-11. The artefact is complete except for what assembly adds: the validator seats, the
   seat-scaled reward targets, and the genesis time.
+- Amended 2026-10-02 (D95): conversion is closed at launch. The artefact registers no asset and Market's depth is
+  100,000 XDR; the testnet artefact keeps both as they were, so a testnet converts from genesis.
 - Artefact: `app/genesis/genesis.json`, data rather than a generator. `app/genesis_test.go` is its build check: it
   validates the file with the manager `arkd genesis validate` uses, boots a chain from it two ways, and pins every
   decided value.
@@ -182,7 +184,7 @@ expansions that do not arrive during a run.
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `economic_mandate` | empty | Decided | Appointed after the first expansions (§13). |
-| `conversion_factors` | `anoah` at `1.371`, derived height 0 | Decided | Genesis requires a positive NOAH factor so gas is payable before the first `axdr` rate; the first usable reference observation replaces it. 1.371 is NOAH opening at 1 USD with XDR at 1.371 USD, and every dollar figure in this document assumes it. Recompute as USD per XDR over USD per NOAH, rounded up, if the opening price changes. |
+| `conversion_factors` | `anoah` at `1.371`, derived height 0 | Decided | Genesis requires a positive NOAH factor so gas is payable before the first `axdr` rate; the first usable reference observation replaces it, and the refresh runs whether or not a currency is registered, so fees follow the first live NOAH price rather than waiting for registration (D95). 1.371 is NOAH opening at 1 USD with XDR at 1.371 USD, and every dollar figure in this document assumes it. Recompute as USD per XDR over USD per NOAH, rounded up, if the opening price changes. |
 | `base_gas_price` | the floor | Decided | The controller starts at `min_base_gas_price`. |
 | `tax_caps` | derived | Decided | Derived from the reference cap through the conversion-factor table at the first refresh. |
 | `reward_funding`, `exposure_state` | canonical empty state | Decided | The first observation initialises the window from the param (D34); the multiplier starts at one. |
@@ -198,7 +200,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `conversion_policy.base_pool` | 5,000,000 XDR, `5000000000000000000000000` | Decided | Sized to the bootstrap: the seat floats can mint about a million XDR of currencies a month at the floor, while a 10% run against a 10M liability still pays a 31% marginal spread. Depth is revisited by governance as liability grows, never by shortening recovery. |
+| `conversion_policy.base_pool` | 100,000 XDR, `100000000000000000000000` | Decided | Conversion opens by vote with no NOAH market history behind it (D95): a swap worth about 2,000 pool units pays the floor and about 1,000 a day flows at it, enough for members converting real amounts and small enough that a pushed thin price mints little at the wrong rate. Depth is raised by the Market committee inside its corridor and by governance beyond it, sized by the [depth rule](ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) from what liquid NOAH is expected to convert (D104), never by shortening recovery and never automatically. |
 | `conversion_policy.min_stability_spread` | `0.02` | Default | Terra Classic's default. The transfer tax may not exceed it (D81). |
 | `conversion_policy.pool_recovery_period` | `14400` | Default | A day, Terra Classic's default; each block returns delta divided by period toward zero. |
 | `ark_pool_delta` | `0` | Decided | The launch pool starts balanced, in the pool unit. |
@@ -227,7 +229,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `reference_denom` | `axdr` | Decided | The protocol reference unit (`x/oracle/README.md` §1.3). |
-| `feeds.denoms` | the ten registry denominations plus `axdr` | Decided | Every registered asset is priced by the feed its denomination keys; `axdr` is priced without being listed. |
+| `feeds.denoms` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, `axdr` | Decided | Registration needs the asset's feed Active, so the ten currencies [registered after launch](GOVERNANCE_OPERATIONS.md#8-opening-conversion) print from genesis; `axdr` is the reference and is never registered. |
 | `params.vote_threshold` | `0.666…7` | Default | More than two thirds of power must vote, above Terra's half. |
 | `params.reward_band` | `0.02` | Default | Terra Classic's default. |
 | `params.reward_window` | `100800` | Default | Weekly reward settlement. |
@@ -243,7 +245,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `assets` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, all `ACTIVE`, version 1, 18 decimals | Decided | The launch currency set is the denomination set in `pkg/chain/denom.go`. Registering an asset is what creates a liability and admits it to conversion. |
+| `assets` | none; the ten currencies are registered after launch, once NOAH has a market price | Decided | Registering an asset is what creates a liability and admits it to conversion, and Market mints only an `ACTIVE` ask, so an empty registry closes conversion while the feeds, the placeholder NOAH leg, and the seeded gas factor keep the oracle lane and fees working (D95, [opening conversion](GOVERNANCE_OPERATIONS.md#8-opening-conversion)). |
 | asset `description` | "An Ark currency tracking the Australian dollar." and so on | Decided | Named per currency from the table in `pkg/chain/metadata.go`. Stored metadata is checked against the derivation at every import, so a table entry is added only before its denomination is registered and never changed after; an unnamed denomination reads "An Ark currency." |
 | asset `name`, `symbol` | `ArkAUD`, `arkAUD` and so on | Decided | Derived from the denomination. |
 | `params.settlement_activation_delay_blocks` | `43200` | Decided | The window in which governance can cancel a mistaken settlement plan before its terms bind. Three days outlasts the two-day vote with a day's margin; the SDK-era default of a day equalled the expedited period and fell inside a normal one. The code default moved with it. |
@@ -341,7 +343,7 @@ emergency mandates buy real time.
 | Asset emergency | Suspend an asset; one power, per-term usage tracked | First governance cycle | 3-of-5 off-chain multisig, a distinct account and where the seat count allows a distinct member set |
 | Economic policy | Move the eight policy fields inside a corridor | After the first expansions; weights only after the calibration window | 4-of-7 |
 | Claims | Submit and cancel claims under a gross term limit | When Insurance has a charter naming its perils | 4-of-7 |
-| Conversion | Depth, recovery, and spread corridor, Tobin band | When there is a reason to delegate | 4-of-7 |
+| Conversion | Depth, recovery, and spread corridor, Tobin band | At or after the opening of conversion, with a depth corridor to about ten times the genesis depth so routine raises need no vote (D95) | 4-of-7 |
 | Reserve | Deploy under an allowance, floor, and destination list | When a deployment is approved | 4-of-7 |
 
 Shape and hygiene: legacy amino threshold multisigs of at most seven keys, within `tx_sig_limit`; dedicated

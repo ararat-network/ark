@@ -112,7 +112,10 @@ A handler that supplies its own dial (KuCoin) still dials the configured endpoin
 short-lived public value fetched over HTTPS from a fixed origin and carried in the dial query because the
 protocol reads it there, and a dial error is returned with the token redacted.
 Certificate verification is never disabled anywhere in the repository. Provider diversity is an operational duty, not a code property:
-a fleet on the same default providers has one point of failure.
+a fleet on the same default providers has one point of failure. The NOAH leg of every route is a bootstrap
+price until any provider reports a live NOAH sample, so the first venue to list NOAH re-marks every rate: NOAH
+venues enter the configs together and only once a venue has depth, and conversion is closed until then, so no
+currency exists to re-mark (D95, [opening conversion](../governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion)).
 
 **Review questions.** Does a new provider parse untrusted bytes with a bound? Does any error path log a
 request that carries a key? How many validators would a compromise of the default providers move?

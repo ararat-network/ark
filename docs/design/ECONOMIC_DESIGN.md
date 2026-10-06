@@ -317,8 +317,8 @@ draw avoids (P2). `EventRedemptionBufferDrawn` carries the denomination and the 
 
 One fresh offer and ask snapshot; the offer converts directly to the ask denomination. The path loads neither
 `BasePool` nor `ArkPoolDelta`, burns the whole offer, mints the integer ask after the larger of the two Tobin taxes and
-dust, and touches no fund and no NOAH. Its result is therefore independent of which unit labels the virtual pool, and
-`axdr` and any later basket are valid in both directions.
+dust, and touches no fund and no NOAH. Its result is therefore independent of which unit labels the virtual pool, so a
+registered basket is valid in both directions; `axdr` has no asset and is never an offer or ask.
 
 ### 6.4 Public ratios and the no-cliff rule
 
