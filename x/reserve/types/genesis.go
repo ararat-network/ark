@@ -94,9 +94,18 @@ func (gs GenesisState) Validate() error {
 	returnedByPosition := make(map[uint64]math.Int, len(positions))
 	entries := make(map[uint64]AccountingEntry, len(gs.Ledger))
 	reversed := make(map[uint64]struct{}, len(gs.Ledger))
+	allowanceUsed := math.ZeroInt()
 	for i, entry := range gs.Ledger {
 		if err := entry.Validate(); err != nil {
 			return fmt.Errorf("invalid ledger entry %d: %w", entry.EntryId, err)
+		}
+		if entry.Term > gs.Mandate.Term {
+			return fmt.Errorf(
+				"ledger entry %d term %d exceeds current Reserve mandate term %d",
+				entry.EntryId,
+				entry.Term,
+				gs.Mandate.Term,
+			)
 		}
 		if entry.EntryId >= gs.NextEntryId {
 			return fmt.Errorf(
@@ -173,6 +182,12 @@ func (gs GenesisState) Validate() error {
 			if err != nil {
 				return fmt.Errorf("summing deployments for position %d: %w", entry.PositionId, err)
 			}
+			// Only a NOAH outflow of the current term consumed allowance, on the live path's terms.
+			if entry.Term == gs.Mandate.Term && entry.MovedCoin.Denom == chain.NoahBaseDenom {
+				if allowanceUsed, err = allowanceUsed.SafeAdd(entry.MovedNoahValue.Amount); err != nil {
+					return fmt.Errorf("summing current-term deployments: %w", err)
+				}
+			}
 		case EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION:
 			returnedByPosition[entry.PositionId], err = sumInto(returnedByPosition, entry.PositionId, entry.MovedNoahValue.Amount)
 			if err != nil {
@@ -192,6 +207,13 @@ func (gs GenesisState) Validate() error {
 	}
 	if err := reconcilePositions(gs.ClosedPositions, deployedByPosition, returnedByPosition); err != nil {
 		return err
+	}
+	if !allowanceUsed.Equal(gs.AllowanceUsed.Amount) {
+		return fmt.Errorf(
+			"reserve allowance usage %s does not equal the current term's NOAH deployments %s",
+			gs.AllowanceUsed.Amount,
+			allowanceUsed,
+		)
 	}
 
 	return nil

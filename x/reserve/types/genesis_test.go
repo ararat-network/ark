@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
@@ -52,6 +53,9 @@ func closed(position types.Position, height uint64) types.Position {
 // the ledger that funded them, with the identifier bounds set to fit.
 func genesisWithPositions(open, closedPositions []types.Position) *types.GenesisState {
 	genesisState := types.DefaultGenesisState()
+	// The fixture deployments were made under term 1, so this is the export
+	// of a chain whose committee has since been replaced by nobody.
+	genesisState.Mandate = types.NewDisabledReserveMandate(2)
 	ledger := make([]types.AccountingEntry, 0, len(open)+len(closedPositions))
 	nextPositionID := uint64(1)
 	entryID := uint64(1)
@@ -248,6 +252,65 @@ func TestGenesisReconcilesBothListsAgainstTheLedger(t *testing.T) {
 
 		require.ErrorContains(t, genesisState.Validate(), "names unknown position 42")
 	})
+}
+
+// configuredTermGenesis returns a genesis whose committee is live in the
+// supplied term and whose one NOAH deployment was made under term 1, with
+// allowance_used carrying what that deployment consumed if it is current.
+func configuredTermGenesis(term uint64) *types.GenesisState {
+	position, _ := positionFixture(1, 1)
+	genesisState := genesisWithPositions([]types.Position{position}, nil)
+	genesisState.Mandate = types.ReserveMandate{
+		Envelope:            mandate.Envelope{Term: term, Committee: testAddress(2), ActivationHeight: 1, ExpiryHeight: 100},
+		DeploymentAllowance: chain.NoahCoin(math.NewInt(1_000)),
+		MinimumNoahBalance:  chain.NoahCoin(math.ZeroInt()),
+		Destinations:        []string{testAddress(3)},
+	}
+	if term == 1 {
+		genesisState.AllowanceUsed = chain.NoahCoin(math.NewInt(100))
+	}
+	return genesisState
+}
+
+// TestGenesisReconcilesAllowanceUsedWithTheLedger pins that term usage is
+// re-derived from the current term's NOAH deployments rather than trusted.
+func TestGenesisReconcilesAllowanceUsedWithTheLedger(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*types.GenesisState)
+		err    string
+	}{
+		{name: "usage equal to the current term's NOAH deployments is valid", mutate: func(*types.GenesisState) {}},
+		{name: "usage below the ledger is refused", mutate: func(gs *types.GenesisState) {
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}, err: "does not equal the current term's NOAH deployments"},
+		{name: "usage above the ledger is refused", mutate: func(gs *types.GenesisState) {
+			gs.AllowanceUsed = chain.NoahCoin(math.NewInt(150))
+		}, err: "does not equal the current term's NOAH deployments"},
+		{name: "an in-kind deployment consumes no allowance", mutate: func(gs *types.GenesisState) {
+			gs.Ledger[0].MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(50))
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}},
+		{name: "a prior term's deployment consumes no allowance", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.Term = 2
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}},
+		{name: "an entry from a term that has not existed is refused", mutate: func(gs *types.GenesisState) {
+			gs.Ledger[0].Term = 2
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}, err: "exceeds current Reserve mandate term 1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			genesisState := configuredTermGenesis(1)
+			tc.mutate(genesisState)
+			err := genesisState.Validate()
+			if tc.err == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
 }
 
 // attributedRecovery is the anoah one attribution books.
