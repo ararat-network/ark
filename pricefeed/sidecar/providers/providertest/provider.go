@@ -20,7 +20,8 @@ type Config struct {
 	TestDuration time.Duration
 	// PollInterval is how often prices are sampled from the provider.
 	PollInterval time.Duration
-	// BurnInInterval is how long the provider is allowed to run before sampling starts.
+	// BurnInInterval bounds how long the provider may take to report every
+	// expected price before sampling starts.
 	BurnInInterval time.Duration
 	// ExpectedPriceCount is the number of prices expected on each poll. If zero,
 	// the harness expects one price per configured ticker.
@@ -111,13 +112,20 @@ func RunProvider(ctx context.Context, provider *base.Provider, cfg Config) (Pric
 
 	if cfg.BurnInInterval > 0 {
 		burnInTimer := time.NewTimer(cfg.BurnInInterval)
-		select {
-		case <-burnInTimer.C:
-		case <-doneCh:
-			return nil, providerStoppedError("provider stopped during burn-in", runErr)
-		case <-ctx.Done():
-			burnInTimer.Stop()
-			return nil, ctx.Err()
+		defer burnInTimer.Stop()
+		burnInTicker := time.NewTicker(cfg.PollInterval)
+		defer burnInTicker.Stop()
+	burnIn:
+		for len(provider.GetPrices()) < expectedPriceCount {
+			select {
+			case <-burnInTicker.C:
+			case <-burnInTimer.C:
+				break burnIn
+			case <-doneCh:
+				return nil, providerStoppedError("provider stopped during burn-in", runErr)
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
 		}
 	}
 

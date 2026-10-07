@@ -25,7 +25,7 @@ func TestRunBuildsProviderAndCollectsPriceSnapshots(t *testing.T) {
 	}, Config{
 		TestDuration:   3 * time.Millisecond,
 		PollInterval:   time.Millisecond,
-		BurnInInterval: 0,
+		BurnInInterval: time.Second,
 	})
 
 	require.NoError(t, err)
@@ -49,7 +49,8 @@ func TestRunProviderReturnsErrorWhenExpectedPricesAreMissing(t *testing.T) {
 		BurnInInterval: 0,
 	})
 
-	require.ErrorContains(t, err, "expected 2 prices, got 1")
+	// The first poll can land before or after BTCUSDT is ingested; either way it is short.
+	require.ErrorContains(t, err, "expected 2 prices")
 	require.Nil(t, results)
 }
 
