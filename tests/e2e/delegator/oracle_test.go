@@ -24,7 +24,8 @@ func (s *OracleSuite) SetupSuite() {
 		s.T().Skip("TEST_PRICEFEED is off")
 	}
 	s.Suite.SetupSuite()
-	s.Require().NoError(s.Chain.WaitForExchangeRate(s.GetContext(), "ausd", 4*time.Minute))
+	// ausd prices from the bootstrap NOAH/USD alone; axdr needs a live FX provider.
+	s.Require().NoError(s.Chain.WaitForExchangeRate(s.GetContext(), "axdr", 4*time.Minute))
 }
 
 func (s *OracleSuite) TestEveryValidatorReportsRates() {
