@@ -13,8 +13,8 @@ import (
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
-// book is an account's reservations; empty before its first grant.
-func (k *Keeper) book(ctx context.Context, account string) (types.AccountBook, error) {
+// getBook reads an account's reservations; empty before its first grant.
+func (k *Keeper) getBook(ctx context.Context, account string) (types.AccountBook, error) {
 	b, err := k.Books.Get(ctx, account)
 	if errors.Is(err, collections.ErrNotFound) {
 		return types.EmptyBook(account), nil
@@ -24,7 +24,7 @@ func (k *Keeper) book(ctx context.Context, account string) (types.AccountBook, e
 
 // uncommitted reads an account's book and Bank balance for AccountBook.Uncommitted.
 func (k *Keeper) uncommitted(ctx context.Context, account, denom string) (math.Int, error) {
-	b, err := k.book(ctx, account)
+	b, err := k.getBook(ctx, account)
 	if err != nil {
 		return math.Int{}, err
 	}
