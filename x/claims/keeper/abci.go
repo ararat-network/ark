@@ -38,6 +38,8 @@ func (k *Keeper) EndBlocker(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("getting claim %d: %w", key.K2(), err)
 		}
+		// Unreachable: every status change away from pending removes the key in the same write, and
+		// import indexes only pending claims. Kept because settling a settled claim pays it twice.
 		if claim.Status != types.ClaimStatus_CLAIM_STATUS_PENDING {
 			k.Logger(ctx).Error(
 				"dropping settlement queue entry for an already-settled claim",
