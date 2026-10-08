@@ -3,79 +3,84 @@ package types
 import (
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
 const (
-	ModuleName              = "disbursement"
-	StoreKey                = ModuleName
-	DefaultMaxMembers       = uint64(1_000)
-	DefaultWindowSeconds    = uint64(604_800)
-	DefaultMemberAmount     = int64(10_000)
-	DefaultOwnershipCeiling = int64(60_000_000)
-
-	// FounderBlocNumerator over FounderBlocDenominator holds seat holders together below the 33.3% that blocks a
-	// proposal at the 66.7% threshold.
-	FounderBlocNumerator   = int64(3)
-	FounderBlocDenominator = int64(10)
+	// DefaultMemberAmount is the plan's step 1 grant, in whole NOAH (D91).
+	DefaultMemberAmount = int64(20_000)
+	// DefaultCompensationCap bounds one record's compensation awards per window, in the reference
+	// unit: about eight of the plan's skilled years.
+	DefaultCompensationCap = int64(1_000_000)
+	// DefaultCompensationWindow is a year of twelve plan months.
+	DefaultCompensationWindow = uint64(12 * 2_628_000)
+	// DefaultCompensationPeriod is a fortnight; an award counts them (D116).
+	DefaultCompensationPeriod = uint64(14 * 86_400)
+	// DefaultOwnershipCap bounds one record's ownership payments from the pools over every grant,
+	// in whole NOAH: the founding band's top and the founder's grant (D115).
+	DefaultOwnershipCap = int64(15_000_000)
 )
 
-// DefaultMemberSchedule pays a tenth immediately and the rest in twelve periods.
-func DefaultMemberSchedule() []Period {
-	schedule := []Period{{Length: 1, Parts: 4}}
-	for range 12 {
-		schedule = append(schedule, Period{Length: 2_628_000, Parts: 3})
+// DefaultMemberSchedule pays a tenth at registration and the rest in twelve monthly periods.
+func DefaultMemberSchedule() Schedule {
+	return Schedule{
+		FirstLength:  1,
+		FirstWeight:  4,
+		PeriodLength: 2_628_000,
+		PeriodWeight: 3,
+		Periods:      12,
 	}
-	return schedule
 }
 
-// DefaultParams admits NOAH compensation; the committee is appointed by its mandate.
+// DefaultOwnershipSchedule is a one-year cliff paying a quarter, weighted as the 26 fortnights it
+// spans, then biweekly for three years (D116).
+func DefaultOwnershipSchedule() Schedule {
+	return Schedule{
+		FirstLength:  365 * 86_400,
+		FirstWeight:  26,
+		PeriodLength: DefaultCompensationPeriod,
+		PeriodWeight: 1,
+		Periods:      78,
+	}
+}
+
+// DefaultParams sets the member terms, the compensation terms, and the ownership terms; the
+// committee is appointed by its mandate.
 func DefaultParams() Params {
 	return Params{
-		MaxMembers: DefaultMaxMembers, WindowSeconds: DefaultWindowSeconds,
-		MemberAmount: chain.NativeBaseAmount(DefaultMemberAmount), MemberSchedule: DefaultMemberSchedule(),
-		CompensationDenoms: []string{chain.NoahBaseDenom},
+		MemberAmount:       chain.NativeBaseAmount(DefaultMemberAmount),
+		MemberSchedule:     DefaultMemberSchedule(),
+		CompensationCap:    chain.NativeBaseAmount(DefaultCompensationCap),
+		CompensationWindow: DefaultCompensationWindow,
+		CompensationPeriod: DefaultCompensationPeriod,
+		OwnershipCap:       chain.NativeBaseAmount(DefaultOwnershipCap),
+		OwnershipSchedule:  DefaultOwnershipSchedule(),
 	}
 }
 
-// DefaultOwnershipPolicy is the disbursement plan's fifth-of-others and 60M ceiling.
-func DefaultOwnershipPolicy() OwnershipPolicy {
-	return OwnershipPolicy{Numerator: 1, Denominator: 5, Ceiling: chain.NativeBaseAmount(DefaultOwnershipCeiling)}
-}
-
-// Validate bounds all operational work at the governance write.
+// Validate bounds the member, compensation, and ownership terms at the governance write.
 func (p Params) Validate() error {
-	if p.MaxMembers == 0 || p.MaxMembers > MaxIssuanceMembers {
-		return fmt.Errorf("max_members must be 1..%d", MaxIssuanceMembers)
+	if err := p.MemberSchedule.Validate(); err != nil {
+		return fmt.Errorf("member schedule: %w", err)
 	}
-	if p.WindowSeconds == 0 || p.WindowSeconds > MaxPeriodLength {
-		return errors.New("issuance window must be positive and at most a century")
+	if _, _, _, err := p.MemberSchedule.Shares(p.MemberAmount); err != nil {
+		return fmt.Errorf("member schedule: %w", err)
 	}
-	if _, err := Split(p.MemberAmount, p.MemberSchedule); err != nil {
-		return err
+	if err := ValidateAmount(p.CompensationCap, true); err != nil {
+		return fmt.Errorf("compensation cap: %w", err)
 	}
-	if len(p.CompensationDenoms) > MaxCompensationDenoms || !slices.IsSorted(p.CompensationDenoms) {
-		return errors.New("compensation denominations must be sorted and bounded")
+	if p.CompensationWindow == 0 || p.CompensationWindow > MaxPeriodLength {
+		return errors.New("compensation window must be positive and at most a century")
 	}
-	for i, denom := range p.CompensationDenoms {
-		if denom != chain.NoahBaseDenom {
-			if err := chain.ValidatePricedDenom(denom); err != nil {
-				return err
-			}
-		}
-		if i > 0 && denom == p.CompensationDenoms[i-1] {
-			return errors.New("duplicate compensation denomination")
-		}
+	if p.CompensationPeriod < MinCompensationPeriod || p.CompensationPeriod > MaxCompensationDuration {
+		return errors.New("compensation period must be at least a week and at most ten years")
+	}
+	if err := ValidateAmount(p.OwnershipCap, true); err != nil {
+		return fmt.Errorf("ownership cap: %w", err)
+	}
+	if err := p.OwnershipSchedule.Validate(); err != nil {
+		return fmt.Errorf("ownership schedule: %w", err)
 	}
 	return nil
-}
-
-// Validate checks immutable ownership policy bounds.
-func (p OwnershipPolicy) Validate() error {
-	if p.Numerator == 0 || p.Numerator >= p.Denominator || p.Denominator > 1_000_000 {
-		return errors.New("ownership ratio must be between zero and one with denominator at most 1000000")
-	}
-	return ValidateAmount(p.Ceiling, true)
 }
