@@ -40,22 +40,29 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // Accounting: each module account's reservations, and the member tranche, contributors first.
+  // Accounting: each module account's reservations, contributors first, and the member NOAH
+  // governance has opened to registration.
   repeated AccountBook books = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // Ledgers.
-  repeated GrantEntry grant_journal = 8 [
+  string member_tranche = 8 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated BeneficiaryEntry beneficiary_journal = 9 [
+  // Ledgers.
+  repeated GrantEntry grant_journal = 9 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  repeated BeneficiaryEntry beneficiary_journal = 10 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
   // Sequences.
-  uint64 next_grant_id = 10 [(amino.dont_omitempty) = true];
-  uint64 next_grant_entry_id = 11 [(amino.dont_omitempty) = true];
-  uint64 next_beneficiary_entry_id = 12 [(amino.dont_omitempty) = true];
+  uint64 next_grant_id = 11 [(amino.dont_omitempty) = true];
+  uint64 next_grant_entry_id = 12 [(amino.dont_omitempty) = true];
+  uint64 next_beneficiary_entry_id = 13 [(amino.dont_omitempty) = true];
 }

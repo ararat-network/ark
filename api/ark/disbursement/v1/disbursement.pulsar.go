@@ -2402,17 +2402,15 @@ func (x *_AccountBook_2_list) IsValid() bool {
 
 var (
 	md_AccountBook          protoreflect.MessageDescriptor
-	fd_AccountBook_pool     protoreflect.FieldDescriptor
+	fd_AccountBook_account  protoreflect.FieldDescriptor
 	fd_AccountBook_reserved protoreflect.FieldDescriptor
-	fd_AccountBook_open     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_disbursement_v1_disbursement_proto_init()
 	md_AccountBook = File_ark_disbursement_v1_disbursement_proto.Messages().ByName("AccountBook")
-	fd_AccountBook_pool = md_AccountBook.Fields().ByName("pool")
+	fd_AccountBook_account = md_AccountBook.Fields().ByName("account")
 	fd_AccountBook_reserved = md_AccountBook.Fields().ByName("reserved")
-	fd_AccountBook_open = md_AccountBook.Fields().ByName("open")
 }
 
 var _ protoreflect.Message = (*fastReflection_AccountBook)(nil)
@@ -2480,21 +2478,15 @@ func (x *fastReflection_AccountBook) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_AccountBook) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Pool != "" {
-		value := protoreflect.ValueOfString(x.Pool)
-		if !f(fd_AccountBook_pool, value) {
+	if x.Account != "" {
+		value := protoreflect.ValueOfString(x.Account)
+		if !f(fd_AccountBook_account, value) {
 			return
 		}
 	}
 	if len(x.Reserved) != 0 {
 		value := protoreflect.ValueOfList(&_AccountBook_2_list{list: &x.Reserved})
 		if !f(fd_AccountBook_reserved, value) {
-			return
-		}
-	}
-	if x.Open != "" {
-		value := protoreflect.ValueOfString(x.Open)
-		if !f(fd_AccountBook_open, value) {
 			return
 		}
 	}
@@ -2513,12 +2505,10 @@ func (x *fastReflection_AccountBook) Range(f func(protoreflect.FieldDescriptor, 
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_AccountBook) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.AccountBook.pool":
-		return x.Pool != ""
+	case "ark.disbursement.v1.AccountBook.account":
+		return x.Account != ""
 	case "ark.disbursement.v1.AccountBook.reserved":
 		return len(x.Reserved) != 0
-	case "ark.disbursement.v1.AccountBook.open":
-		return x.Open != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2535,12 +2525,10 @@ func (x *fastReflection_AccountBook) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_AccountBook) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.AccountBook.pool":
-		x.Pool = ""
+	case "ark.disbursement.v1.AccountBook.account":
+		x.Account = ""
 	case "ark.disbursement.v1.AccountBook.reserved":
 		x.Reserved = nil
-	case "ark.disbursement.v1.AccountBook.open":
-		x.Open = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2557,8 +2545,8 @@ func (x *fastReflection_AccountBook) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_AccountBook) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.disbursement.v1.AccountBook.pool":
-		value := x.Pool
+	case "ark.disbursement.v1.AccountBook.account":
+		value := x.Account
 		return protoreflect.ValueOfString(value)
 	case "ark.disbursement.v1.AccountBook.reserved":
 		if len(x.Reserved) == 0 {
@@ -2566,9 +2554,6 @@ func (x *fastReflection_AccountBook) Get(descriptor protoreflect.FieldDescriptor
 		}
 		listValue := &_AccountBook_2_list{list: &x.Reserved}
 		return protoreflect.ValueOfList(listValue)
-	case "ark.disbursement.v1.AccountBook.open":
-		value := x.Open
-		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2589,14 +2574,12 @@ func (x *fastReflection_AccountBook) Get(descriptor protoreflect.FieldDescriptor
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_AccountBook) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.AccountBook.pool":
-		x.Pool = value.Interface().(string)
+	case "ark.disbursement.v1.AccountBook.account":
+		x.Account = value.Interface().(string)
 	case "ark.disbursement.v1.AccountBook.reserved":
 		lv := value.List()
 		clv := lv.(*_AccountBook_2_list)
 		x.Reserved = *clv.list
-	case "ark.disbursement.v1.AccountBook.open":
-		x.Open = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2623,10 +2606,8 @@ func (x *fastReflection_AccountBook) Mutable(fd protoreflect.FieldDescriptor) pr
 		}
 		value := &_AccountBook_2_list{list: &x.Reserved}
 		return protoreflect.ValueOfList(value)
-	case "ark.disbursement.v1.AccountBook.pool":
-		panic(fmt.Errorf("field pool of message ark.disbursement.v1.AccountBook is not mutable"))
-	case "ark.disbursement.v1.AccountBook.open":
-		panic(fmt.Errorf("field open of message ark.disbursement.v1.AccountBook is not mutable"))
+	case "ark.disbursement.v1.AccountBook.account":
+		panic(fmt.Errorf("field account of message ark.disbursement.v1.AccountBook is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2640,13 +2621,11 @@ func (x *fastReflection_AccountBook) Mutable(fd protoreflect.FieldDescriptor) pr
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_AccountBook) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.disbursement.v1.AccountBook.pool":
+	case "ark.disbursement.v1.AccountBook.account":
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.AccountBook.reserved":
 		list := []*v1beta1.Coin{}
 		return protoreflect.ValueOfList(&_AccountBook_2_list{list: &list})
-	case "ark.disbursement.v1.AccountBook.open":
-		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.AccountBook"))
@@ -2716,7 +2695,7 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Pool)
+		l = len(x.Account)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -2725,10 +2704,6 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
-		}
-		l = len(x.Open)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -2759,13 +2734,6 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Open) > 0 {
-			i -= len(x.Open)
-			copy(dAtA[i:], x.Open)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Open)))
-			i--
-			dAtA[i] = 0x1a
-		}
 		if len(x.Reserved) > 0 {
 			for iNdEx := len(x.Reserved) - 1; iNdEx >= 0; iNdEx-- {
 				encoded, err := options.Marshal(x.Reserved[iNdEx])
@@ -2782,10 +2750,10 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 				dAtA[i] = 0x12
 			}
 		}
-		if len(x.Pool) > 0 {
-			i -= len(x.Pool)
-			copy(dAtA[i:], x.Pool)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Pool)))
+		if len(x.Account) > 0 {
+			i -= len(x.Account)
+			copy(dAtA[i:], x.Account)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Account)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -2840,7 +2808,7 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Pool", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Account", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -2868,7 +2836,7 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Pool = string(dAtA[iNdEx:postIndex])
+				x.Account = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
@@ -2903,38 +2871,6 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Reserved[len(x.Reserved)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Open", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Open = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -2972,25 +2908,25 @@ func (x *fastReflection_AccountBook) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Grant                 protoreflect.MessageDescriptor
-	fd_Grant_id              protoreflect.FieldDescriptor
-	fd_Grant_kind            protoreflect.FieldDescriptor
-	fd_Grant_beneficiary     protoreflect.FieldDescriptor
-	fd_Grant_payee           protoreflect.FieldDescriptor
-	fd_Grant_amount          protoreflect.FieldDescriptor
-	fd_Grant_reference       protoreflect.FieldDescriptor
-	fd_Grant_schedule        protoreflect.FieldDescriptor
-	fd_Grant_start_time      protoreflect.FieldDescriptor
-	fd_Grant_created_time    protoreflect.FieldDescriptor
-	fd_Grant_paid            protoreflect.FieldDescriptor
-	fd_Grant_remaining       protoreflect.FieldDescriptor
-	fd_Grant_reference_value protoreflect.FieldDescriptor
-	fd_Grant_cutoff_time     protoreflect.FieldDescriptor
-	fd_Grant_suspended_at    protoreflect.FieldDescriptor
-	fd_Grant_due_at          protoreflect.FieldDescriptor
-	fd_Grant_created_by      protoreflect.FieldDescriptor
-	fd_Grant_created_height  protoreflect.FieldDescriptor
-	fd_Grant_mandate_term    protoreflect.FieldDescriptor
+	md_Grant                protoreflect.MessageDescriptor
+	fd_Grant_id             protoreflect.FieldDescriptor
+	fd_Grant_kind           protoreflect.FieldDescriptor
+	fd_Grant_beneficiary    protoreflect.FieldDescriptor
+	fd_Grant_payee          protoreflect.FieldDescriptor
+	fd_Grant_amount         protoreflect.FieldDescriptor
+	fd_Grant_reference      protoreflect.FieldDescriptor
+	fd_Grant_schedule       protoreflect.FieldDescriptor
+	fd_Grant_start_time     protoreflect.FieldDescriptor
+	fd_Grant_award_value    protoreflect.FieldDescriptor
+	fd_Grant_created_by     protoreflect.FieldDescriptor
+	fd_Grant_created_height protoreflect.FieldDescriptor
+	fd_Grant_created_time   protoreflect.FieldDescriptor
+	fd_Grant_mandate_term   protoreflect.FieldDescriptor
+	fd_Grant_paid           protoreflect.FieldDescriptor
+	fd_Grant_remaining      protoreflect.FieldDescriptor
+	fd_Grant_cutoff_time    protoreflect.FieldDescriptor
+	fd_Grant_suspended_time protoreflect.FieldDescriptor
+	fd_Grant_due_time       protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -3004,16 +2940,16 @@ func init() {
 	fd_Grant_reference = md_Grant.Fields().ByName("reference")
 	fd_Grant_schedule = md_Grant.Fields().ByName("schedule")
 	fd_Grant_start_time = md_Grant.Fields().ByName("start_time")
-	fd_Grant_created_time = md_Grant.Fields().ByName("created_time")
-	fd_Grant_paid = md_Grant.Fields().ByName("paid")
-	fd_Grant_remaining = md_Grant.Fields().ByName("remaining")
-	fd_Grant_reference_value = md_Grant.Fields().ByName("reference_value")
-	fd_Grant_cutoff_time = md_Grant.Fields().ByName("cutoff_time")
-	fd_Grant_suspended_at = md_Grant.Fields().ByName("suspended_at")
-	fd_Grant_due_at = md_Grant.Fields().ByName("due_at")
+	fd_Grant_award_value = md_Grant.Fields().ByName("award_value")
 	fd_Grant_created_by = md_Grant.Fields().ByName("created_by")
 	fd_Grant_created_height = md_Grant.Fields().ByName("created_height")
+	fd_Grant_created_time = md_Grant.Fields().ByName("created_time")
 	fd_Grant_mandate_term = md_Grant.Fields().ByName("mandate_term")
+	fd_Grant_paid = md_Grant.Fields().ByName("paid")
+	fd_Grant_remaining = md_Grant.Fields().ByName("remaining")
+	fd_Grant_cutoff_time = md_Grant.Fields().ByName("cutoff_time")
+	fd_Grant_suspended_time = md_Grant.Fields().ByName("suspended_time")
+	fd_Grant_due_time = md_Grant.Fields().ByName("due_time")
 }
 
 var _ protoreflect.Message = (*fastReflection_Grant)(nil)
@@ -3129,45 +3065,9 @@ func (x *fastReflection_Grant) Range(f func(protoreflect.FieldDescriptor, protor
 			return
 		}
 	}
-	if x.CreatedTime != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.CreatedTime)
-		if !f(fd_Grant_created_time, value) {
-			return
-		}
-	}
-	if x.Paid != "" {
-		value := protoreflect.ValueOfString(x.Paid)
-		if !f(fd_Grant_paid, value) {
-			return
-		}
-	}
-	if x.Remaining != "" {
-		value := protoreflect.ValueOfString(x.Remaining)
-		if !f(fd_Grant_remaining, value) {
-			return
-		}
-	}
-	if x.ReferenceValue != "" {
-		value := protoreflect.ValueOfString(x.ReferenceValue)
-		if !f(fd_Grant_reference_value, value) {
-			return
-		}
-	}
-	if x.CutoffTime != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.CutoffTime)
-		if !f(fd_Grant_cutoff_time, value) {
-			return
-		}
-	}
-	if x.SuspendedAt != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.SuspendedAt)
-		if !f(fd_Grant_suspended_at, value) {
-			return
-		}
-	}
-	if x.DueAt != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.DueAt)
-		if !f(fd_Grant_due_at, value) {
+	if x.AwardValue != "" {
+		value := protoreflect.ValueOfString(x.AwardValue)
+		if !f(fd_Grant_award_value, value) {
 			return
 		}
 	}
@@ -3183,9 +3083,45 @@ func (x *fastReflection_Grant) Range(f func(protoreflect.FieldDescriptor, protor
 			return
 		}
 	}
+	if x.CreatedTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.CreatedTime)
+		if !f(fd_Grant_created_time, value) {
+			return
+		}
+	}
 	if x.MandateTerm != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.MandateTerm)
 		if !f(fd_Grant_mandate_term, value) {
+			return
+		}
+	}
+	if x.Paid != "" {
+		value := protoreflect.ValueOfString(x.Paid)
+		if !f(fd_Grant_paid, value) {
+			return
+		}
+	}
+	if x.Remaining != "" {
+		value := protoreflect.ValueOfString(x.Remaining)
+		if !f(fd_Grant_remaining, value) {
+			return
+		}
+	}
+	if x.CutoffTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.CutoffTime)
+		if !f(fd_Grant_cutoff_time, value) {
+			return
+		}
+	}
+	if x.SuspendedTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.SuspendedTime)
+		if !f(fd_Grant_suspended_time, value) {
+			return
+		}
+	}
+	if x.DueTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.DueTime)
+		if !f(fd_Grant_due_time, value) {
 			return
 		}
 	}
@@ -3220,26 +3156,26 @@ func (x *fastReflection_Grant) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Schedule != nil
 	case "ark.disbursement.v1.Grant.start_time":
 		return x.StartTime != uint64(0)
-	case "ark.disbursement.v1.Grant.created_time":
-		return x.CreatedTime != uint64(0)
-	case "ark.disbursement.v1.Grant.paid":
-		return x.Paid != ""
-	case "ark.disbursement.v1.Grant.remaining":
-		return x.Remaining != ""
-	case "ark.disbursement.v1.Grant.reference_value":
-		return x.ReferenceValue != ""
-	case "ark.disbursement.v1.Grant.cutoff_time":
-		return x.CutoffTime != uint64(0)
-	case "ark.disbursement.v1.Grant.suspended_at":
-		return x.SuspendedAt != uint64(0)
-	case "ark.disbursement.v1.Grant.due_at":
-		return x.DueAt != uint64(0)
+	case "ark.disbursement.v1.Grant.award_value":
+		return x.AwardValue != ""
 	case "ark.disbursement.v1.Grant.created_by":
 		return x.CreatedBy != ""
 	case "ark.disbursement.v1.Grant.created_height":
 		return x.CreatedHeight != uint64(0)
+	case "ark.disbursement.v1.Grant.created_time":
+		return x.CreatedTime != uint64(0)
 	case "ark.disbursement.v1.Grant.mandate_term":
 		return x.MandateTerm != uint64(0)
+	case "ark.disbursement.v1.Grant.paid":
+		return x.Paid != ""
+	case "ark.disbursement.v1.Grant.remaining":
+		return x.Remaining != ""
+	case "ark.disbursement.v1.Grant.cutoff_time":
+		return x.CutoffTime != uint64(0)
+	case "ark.disbursement.v1.Grant.suspended_time":
+		return x.SuspendedTime != uint64(0)
+	case "ark.disbursement.v1.Grant.due_time":
+		return x.DueTime != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.Grant"))
@@ -3272,26 +3208,26 @@ func (x *fastReflection_Grant) Clear(fd protoreflect.FieldDescriptor) {
 		x.Schedule = nil
 	case "ark.disbursement.v1.Grant.start_time":
 		x.StartTime = uint64(0)
-	case "ark.disbursement.v1.Grant.created_time":
-		x.CreatedTime = uint64(0)
-	case "ark.disbursement.v1.Grant.paid":
-		x.Paid = ""
-	case "ark.disbursement.v1.Grant.remaining":
-		x.Remaining = ""
-	case "ark.disbursement.v1.Grant.reference_value":
-		x.ReferenceValue = ""
-	case "ark.disbursement.v1.Grant.cutoff_time":
-		x.CutoffTime = uint64(0)
-	case "ark.disbursement.v1.Grant.suspended_at":
-		x.SuspendedAt = uint64(0)
-	case "ark.disbursement.v1.Grant.due_at":
-		x.DueAt = uint64(0)
+	case "ark.disbursement.v1.Grant.award_value":
+		x.AwardValue = ""
 	case "ark.disbursement.v1.Grant.created_by":
 		x.CreatedBy = ""
 	case "ark.disbursement.v1.Grant.created_height":
 		x.CreatedHeight = uint64(0)
+	case "ark.disbursement.v1.Grant.created_time":
+		x.CreatedTime = uint64(0)
 	case "ark.disbursement.v1.Grant.mandate_term":
 		x.MandateTerm = uint64(0)
+	case "ark.disbursement.v1.Grant.paid":
+		x.Paid = ""
+	case "ark.disbursement.v1.Grant.remaining":
+		x.Remaining = ""
+	case "ark.disbursement.v1.Grant.cutoff_time":
+		x.CutoffTime = uint64(0)
+	case "ark.disbursement.v1.Grant.suspended_time":
+		x.SuspendedTime = uint64(0)
+	case "ark.disbursement.v1.Grant.due_time":
+		x.DueTime = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.Grant"))
@@ -3332,8 +3268,20 @@ func (x *fastReflection_Grant) Get(descriptor protoreflect.FieldDescriptor) prot
 	case "ark.disbursement.v1.Grant.start_time":
 		value := x.StartTime
 		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.Grant.award_value":
+		value := x.AwardValue
+		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.Grant.created_by":
+		value := x.CreatedBy
+		return protoreflect.ValueOfString(value)
+	case "ark.disbursement.v1.Grant.created_height":
+		value := x.CreatedHeight
+		return protoreflect.ValueOfUint64(value)
 	case "ark.disbursement.v1.Grant.created_time":
 		value := x.CreatedTime
+		return protoreflect.ValueOfUint64(value)
+	case "ark.disbursement.v1.Grant.mandate_term":
+		value := x.MandateTerm
 		return protoreflect.ValueOfUint64(value)
 	case "ark.disbursement.v1.Grant.paid":
 		value := x.Paid
@@ -3341,26 +3289,14 @@ func (x *fastReflection_Grant) Get(descriptor protoreflect.FieldDescriptor) prot
 	case "ark.disbursement.v1.Grant.remaining":
 		value := x.Remaining
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.Grant.reference_value":
-		value := x.ReferenceValue
-		return protoreflect.ValueOfString(value)
 	case "ark.disbursement.v1.Grant.cutoff_time":
 		value := x.CutoffTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.Grant.suspended_at":
-		value := x.SuspendedAt
+	case "ark.disbursement.v1.Grant.suspended_time":
+		value := x.SuspendedTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.Grant.due_at":
-		value := x.DueAt
-		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.Grant.created_by":
-		value := x.CreatedBy
-		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.Grant.created_height":
-		value := x.CreatedHeight
-		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.Grant.mandate_term":
-		value := x.MandateTerm
+	case "ark.disbursement.v1.Grant.due_time":
+		value := x.DueTime
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -3398,26 +3334,26 @@ func (x *fastReflection_Grant) Set(fd protoreflect.FieldDescriptor, value protor
 		x.Schedule = value.Message().Interface().(*Schedule)
 	case "ark.disbursement.v1.Grant.start_time":
 		x.StartTime = value.Uint()
-	case "ark.disbursement.v1.Grant.created_time":
-		x.CreatedTime = value.Uint()
-	case "ark.disbursement.v1.Grant.paid":
-		x.Paid = value.Interface().(string)
-	case "ark.disbursement.v1.Grant.remaining":
-		x.Remaining = value.Interface().(string)
-	case "ark.disbursement.v1.Grant.reference_value":
-		x.ReferenceValue = value.Interface().(string)
-	case "ark.disbursement.v1.Grant.cutoff_time":
-		x.CutoffTime = value.Uint()
-	case "ark.disbursement.v1.Grant.suspended_at":
-		x.SuspendedAt = value.Uint()
-	case "ark.disbursement.v1.Grant.due_at":
-		x.DueAt = value.Uint()
+	case "ark.disbursement.v1.Grant.award_value":
+		x.AwardValue = value.Interface().(string)
 	case "ark.disbursement.v1.Grant.created_by":
 		x.CreatedBy = value.Interface().(string)
 	case "ark.disbursement.v1.Grant.created_height":
 		x.CreatedHeight = value.Uint()
+	case "ark.disbursement.v1.Grant.created_time":
+		x.CreatedTime = value.Uint()
 	case "ark.disbursement.v1.Grant.mandate_term":
 		x.MandateTerm = value.Uint()
+	case "ark.disbursement.v1.Grant.paid":
+		x.Paid = value.Interface().(string)
+	case "ark.disbursement.v1.Grant.remaining":
+		x.Remaining = value.Interface().(string)
+	case "ark.disbursement.v1.Grant.cutoff_time":
+		x.CutoffTime = value.Uint()
+	case "ark.disbursement.v1.Grant.suspended_time":
+		x.SuspendedTime = value.Uint()
+	case "ark.disbursement.v1.Grant.due_time":
+		x.DueTime = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.Grant"))
@@ -3460,26 +3396,26 @@ func (x *fastReflection_Grant) Mutable(fd protoreflect.FieldDescriptor) protoref
 		panic(fmt.Errorf("field reference of message ark.disbursement.v1.Grant is not mutable"))
 	case "ark.disbursement.v1.Grant.start_time":
 		panic(fmt.Errorf("field start_time of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.created_time":
-		panic(fmt.Errorf("field created_time of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.paid":
-		panic(fmt.Errorf("field paid of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.remaining":
-		panic(fmt.Errorf("field remaining of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.reference_value":
-		panic(fmt.Errorf("field reference_value of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.cutoff_time":
-		panic(fmt.Errorf("field cutoff_time of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.suspended_at":
-		panic(fmt.Errorf("field suspended_at of message ark.disbursement.v1.Grant is not mutable"))
-	case "ark.disbursement.v1.Grant.due_at":
-		panic(fmt.Errorf("field due_at of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.award_value":
+		panic(fmt.Errorf("field award_value of message ark.disbursement.v1.Grant is not mutable"))
 	case "ark.disbursement.v1.Grant.created_by":
 		panic(fmt.Errorf("field created_by of message ark.disbursement.v1.Grant is not mutable"))
 	case "ark.disbursement.v1.Grant.created_height":
 		panic(fmt.Errorf("field created_height of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.created_time":
+		panic(fmt.Errorf("field created_time of message ark.disbursement.v1.Grant is not mutable"))
 	case "ark.disbursement.v1.Grant.mandate_term":
 		panic(fmt.Errorf("field mandate_term of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.paid":
+		panic(fmt.Errorf("field paid of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.remaining":
+		panic(fmt.Errorf("field remaining of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.cutoff_time":
+		panic(fmt.Errorf("field cutoff_time of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.suspended_time":
+		panic(fmt.Errorf("field suspended_time of message ark.disbursement.v1.Grant is not mutable"))
+	case "ark.disbursement.v1.Grant.due_time":
+		panic(fmt.Errorf("field due_time of message ark.disbursement.v1.Grant is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.Grant"))
@@ -3511,25 +3447,25 @@ func (x *fastReflection_Grant) NewField(fd protoreflect.FieldDescriptor) protore
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "ark.disbursement.v1.Grant.start_time":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.Grant.award_value":
+		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.Grant.created_by":
+		return protoreflect.ValueOfString("")
+	case "ark.disbursement.v1.Grant.created_height":
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.Grant.created_time":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "ark.disbursement.v1.Grant.mandate_term":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.Grant.paid":
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.Grant.remaining":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.Grant.reference_value":
-		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.Grant.cutoff_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.Grant.suspended_at":
+	case "ark.disbursement.v1.Grant.suspended_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.Grant.due_at":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.Grant.created_by":
-		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.Grant.created_height":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.Grant.mandate_term":
+	case "ark.disbursement.v1.Grant.due_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -3629,8 +3565,22 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 		if x.StartTime != 0 {
 			n += 1 + runtime.Sov(uint64(x.StartTime))
 		}
+		l = len(x.AwardValue)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.CreatedBy)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.CreatedHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.CreatedHeight))
+		}
 		if x.CreatedTime != 0 {
 			n += 1 + runtime.Sov(uint64(x.CreatedTime))
+		}
+		if x.MandateTerm != 0 {
+			n += 1 + runtime.Sov(uint64(x.MandateTerm))
 		}
 		l = len(x.Paid)
 		if l > 0 {
@@ -3640,28 +3590,14 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ReferenceValue)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		if x.CutoffTime != 0 {
-			n += 1 + runtime.Sov(uint64(x.CutoffTime))
+			n += 2 + runtime.Sov(uint64(x.CutoffTime))
 		}
-		if x.SuspendedAt != 0 {
-			n += 1 + runtime.Sov(uint64(x.SuspendedAt))
+		if x.SuspendedTime != 0 {
+			n += 2 + runtime.Sov(uint64(x.SuspendedTime))
 		}
-		if x.DueAt != 0 {
-			n += 1 + runtime.Sov(uint64(x.DueAt))
-		}
-		l = len(x.CreatedBy)
-		if l > 0 {
-			n += 2 + l + runtime.Sov(uint64(l))
-		}
-		if x.CreatedHeight != 0 {
-			n += 2 + runtime.Sov(uint64(x.CreatedHeight))
-		}
-		if x.MandateTerm != 0 {
-			n += 2 + runtime.Sov(uint64(x.MandateTerm))
+		if x.DueTime != 0 {
+			n += 2 + runtime.Sov(uint64(x.DueTime))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -3692,69 +3628,69 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.MandateTerm != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.MandateTerm))
+		if x.DueTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.DueTime))
 			i--
 			dAtA[i] = 0x1
 			i--
 			dAtA[i] = 0x90
 		}
-		if x.CreatedHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.CreatedHeight))
+		if x.SuspendedTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SuspendedTime))
 			i--
 			dAtA[i] = 0x1
 			i--
 			dAtA[i] = 0x88
 		}
-		if len(x.CreatedBy) > 0 {
-			i -= len(x.CreatedBy)
-			copy(dAtA[i:], x.CreatedBy)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.CreatedBy)))
-			i--
-			dAtA[i] = 0x1
-			i--
-			dAtA[i] = 0x82
-		}
-		if x.DueAt != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.DueAt))
-			i--
-			dAtA[i] = 0x78
-		}
-		if x.SuspendedAt != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SuspendedAt))
-			i--
-			dAtA[i] = 0x70
-		}
 		if x.CutoffTime != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.CutoffTime))
 			i--
-			dAtA[i] = 0x68
-		}
-		if len(x.ReferenceValue) > 0 {
-			i -= len(x.ReferenceValue)
-			copy(dAtA[i:], x.ReferenceValue)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ReferenceValue)))
+			dAtA[i] = 0x1
 			i--
-			dAtA[i] = 0x62
+			dAtA[i] = 0x80
 		}
 		if len(x.Remaining) > 0 {
 			i -= len(x.Remaining)
 			copy(dAtA[i:], x.Remaining)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Remaining)))
 			i--
-			dAtA[i] = 0x5a
+			dAtA[i] = 0x7a
 		}
 		if len(x.Paid) > 0 {
 			i -= len(x.Paid)
 			copy(dAtA[i:], x.Paid)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Paid)))
 			i--
-			dAtA[i] = 0x52
+			dAtA[i] = 0x72
+		}
+		if x.MandateTerm != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.MandateTerm))
+			i--
+			dAtA[i] = 0x68
 		}
 		if x.CreatedTime != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.CreatedTime))
 			i--
-			dAtA[i] = 0x48
+			dAtA[i] = 0x60
+		}
+		if x.CreatedHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.CreatedHeight))
+			i--
+			dAtA[i] = 0x58
+		}
+		if len(x.CreatedBy) > 0 {
+			i -= len(x.CreatedBy)
+			copy(dAtA[i:], x.CreatedBy)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.CreatedBy)))
+			i--
+			dAtA[i] = 0x52
+		}
+		if len(x.AwardValue) > 0 {
+			i -= len(x.AwardValue)
+			copy(dAtA[i:], x.AwardValue)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AwardValue)))
+			i--
+			dAtA[i] = 0x4a
 		}
 		if x.StartTime != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.StartTime))
@@ -4095,10 +4031,10 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 					}
 				}
 			case 9:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CreatedTime", wireType)
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AwardValue", wireType)
 				}
-				x.CreatedTime = 0
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4108,165 +4044,25 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.CreatedTime |= uint64(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AwardValue = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			case 10:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Paid", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Paid = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 11:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Remaining", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Remaining = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 12:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ReferenceValue", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.ReferenceValue = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 13:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CutoffTime", wireType)
-				}
-				x.CutoffTime = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.CutoffTime |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 14:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SuspendedAt", wireType)
-				}
-				x.SuspendedAt = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.SuspendedAt |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 15:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DueAt", wireType)
-				}
-				x.DueAt = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.DueAt |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 16:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CreatedBy", wireType)
 				}
@@ -4298,7 +4094,7 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 				}
 				x.CreatedBy = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 17:
+			case 11:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CreatedHeight", wireType)
 				}
@@ -4317,7 +4113,26 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 18:
+			case 12:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CreatedTime", wireType)
+				}
+				x.CreatedTime = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.CreatedTime |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 13:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MandateTerm", wireType)
 				}
@@ -4332,6 +4147,127 @@ func (x *fastReflection_Grant) ProtoMethods() *protoiface.Methods {
 					b := dAtA[iNdEx]
 					iNdEx++
 					x.MandateTerm |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 14:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Paid", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Paid = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 15:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Remaining", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Remaining = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 16:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field CutoffTime", wireType)
+				}
+				x.CutoffTime = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.CutoffTime |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 17:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SuspendedTime", wireType)
+				}
+				x.SuspendedTime = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SuspendedTime |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 18:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DueTime", wireType)
+				}
+				x.DueTime = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.DueTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -4511,8 +4447,8 @@ func (x *fastReflection_GrantEntry) Range(f func(protoreflect.FieldDescriptor, p
 			return
 		}
 	}
-	if x.Offer != nil {
-		value := protoreflect.ValueOfMessage(x.Offer.ProtoReflect())
+	if x.Offer != "" {
+		value := protoreflect.ValueOfString(x.Offer)
 		if !f(fd_GrantEntry_offer, value) {
 			return
 		}
@@ -4549,7 +4485,7 @@ func (x *fastReflection_GrantEntry) Has(fd protoreflect.FieldDescriptor) bool {
 	case "ark.disbursement.v1.GrantEntry.subject":
 		return x.Subject != ""
 	case "ark.disbursement.v1.GrantEntry.offer":
-		return x.Offer != nil
+		return x.Offer != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4583,7 +4519,7 @@ func (x *fastReflection_GrantEntry) Clear(fd protoreflect.FieldDescriptor) {
 	case "ark.disbursement.v1.GrantEntry.subject":
 		x.Subject = ""
 	case "ark.disbursement.v1.GrantEntry.offer":
-		x.Offer = nil
+		x.Offer = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4626,7 +4562,7 @@ func (x *fastReflection_GrantEntry) Get(descriptor protoreflect.FieldDescriptor)
 		return protoreflect.ValueOfString(value)
 	case "ark.disbursement.v1.GrantEntry.offer":
 		value := x.Offer
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4664,7 +4600,7 @@ func (x *fastReflection_GrantEntry) Set(fd protoreflect.FieldDescriptor, value p
 	case "ark.disbursement.v1.GrantEntry.subject":
 		x.Subject = value.Interface().(string)
 	case "ark.disbursement.v1.GrantEntry.offer":
-		x.Offer = value.Message().Interface().(*v1beta1.Coin)
+		x.Offer = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4690,11 +4626,6 @@ func (x *fastReflection_GrantEntry) Mutable(fd protoreflect.FieldDescriptor) pro
 			x.Amount = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Amount.ProtoReflect())
-	case "ark.disbursement.v1.GrantEntry.offer":
-		if x.Offer == nil {
-			x.Offer = new(v1beta1.Coin)
-		}
-		return protoreflect.ValueOfMessage(x.Offer.ProtoReflect())
 	case "ark.disbursement.v1.GrantEntry.id":
 		panic(fmt.Errorf("field id of message ark.disbursement.v1.GrantEntry is not mutable"))
 	case "ark.disbursement.v1.GrantEntry.grant_id":
@@ -4709,6 +4640,8 @@ func (x *fastReflection_GrantEntry) Mutable(fd protoreflect.FieldDescriptor) pro
 		panic(fmt.Errorf("field time of message ark.disbursement.v1.GrantEntry is not mutable"))
 	case "ark.disbursement.v1.GrantEntry.subject":
 		panic(fmt.Errorf("field subject of message ark.disbursement.v1.GrantEntry is not mutable"))
+	case "ark.disbursement.v1.GrantEntry.offer":
+		panic(fmt.Errorf("field offer of message ark.disbursement.v1.GrantEntry is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4740,8 +4673,7 @@ func (x *fastReflection_GrantEntry) NewField(fd protoreflect.FieldDescriptor) pr
 	case "ark.disbursement.v1.GrantEntry.subject":
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.GrantEntry.offer":
-		m := new(v1beta1.Coin)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.GrantEntry"))
@@ -4838,8 +4770,8 @@ func (x *fastReflection_GrantEntry) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.Offer != nil {
-			l = options.Size(x.Offer)
+		l = len(x.Offer)
+		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -4871,17 +4803,10 @@ func (x *fastReflection_GrantEntry) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.Offer != nil {
-			encoded, err := options.Marshal(x.Offer)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		if len(x.Offer) > 0 {
+			i -= len(x.Offer)
+			copy(dAtA[i:], x.Offer)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Offer)))
 			i--
 			dAtA[i] = 0x4a
 		}
@@ -5186,7 +5111,7 @@ func (x *fastReflection_GrantEntry) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Offer", wireType)
 				}
-				var msglen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -5196,27 +5121,23 @@ func (x *fastReflection_GrantEntry) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					msglen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if msglen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + msglen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Offer == nil {
-					x.Offer = &v1beta1.Coin{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Offer); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
+				x.Offer = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -5254,11 +5175,11 @@ func (x *fastReflection_GrantEntry) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Beneficiary                protoreflect.MessageDescriptor
-	fd_Beneficiary_address        protoreflect.FieldDescriptor
-	fd_Beneficiary_controller     protoreflect.FieldDescriptor
-	fd_Beneficiary_ownership_paid protoreflect.FieldDescriptor
-	fd_Beneficiary_seat           protoreflect.FieldDescriptor
+	md_Beneficiary                     protoreflect.MessageDescriptor
+	fd_Beneficiary_address             protoreflect.FieldDescriptor
+	fd_Beneficiary_controller          protoreflect.FieldDescriptor
+	fd_Beneficiary_ownership_committed protoreflect.FieldDescriptor
+	fd_Beneficiary_seat                protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -5266,7 +5187,7 @@ func init() {
 	md_Beneficiary = File_ark_disbursement_v1_disbursement_proto.Messages().ByName("Beneficiary")
 	fd_Beneficiary_address = md_Beneficiary.Fields().ByName("address")
 	fd_Beneficiary_controller = md_Beneficiary.Fields().ByName("controller")
-	fd_Beneficiary_ownership_paid = md_Beneficiary.Fields().ByName("ownership_paid")
+	fd_Beneficiary_ownership_committed = md_Beneficiary.Fields().ByName("ownership_committed")
 	fd_Beneficiary_seat = md_Beneficiary.Fields().ByName("seat")
 }
 
@@ -5347,9 +5268,9 @@ func (x *fastReflection_Beneficiary) Range(f func(protoreflect.FieldDescriptor, 
 			return
 		}
 	}
-	if x.OwnershipPaid != "" {
-		value := protoreflect.ValueOfString(x.OwnershipPaid)
-		if !f(fd_Beneficiary_ownership_paid, value) {
+	if x.OwnershipCommitted != "" {
+		value := protoreflect.ValueOfString(x.OwnershipCommitted)
+		if !f(fd_Beneficiary_ownership_committed, value) {
 			return
 		}
 	}
@@ -5378,8 +5299,8 @@ func (x *fastReflection_Beneficiary) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Address != ""
 	case "ark.disbursement.v1.Beneficiary.controller":
 		return x.Controller != ""
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
-		return x.OwnershipPaid != ""
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
+		return x.OwnershipCommitted != ""
 	case "ark.disbursement.v1.Beneficiary.seat":
 		return x.Seat != ""
 	default:
@@ -5402,8 +5323,8 @@ func (x *fastReflection_Beneficiary) Clear(fd protoreflect.FieldDescriptor) {
 		x.Address = ""
 	case "ark.disbursement.v1.Beneficiary.controller":
 		x.Controller = ""
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
-		x.OwnershipPaid = ""
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
+		x.OwnershipCommitted = ""
 	case "ark.disbursement.v1.Beneficiary.seat":
 		x.Seat = ""
 	default:
@@ -5428,8 +5349,8 @@ func (x *fastReflection_Beneficiary) Get(descriptor protoreflect.FieldDescriptor
 	case "ark.disbursement.v1.Beneficiary.controller":
 		value := x.Controller
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
-		value := x.OwnershipPaid
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
+		value := x.OwnershipCommitted
 		return protoreflect.ValueOfString(value)
 	case "ark.disbursement.v1.Beneficiary.seat":
 		value := x.Seat
@@ -5458,8 +5379,8 @@ func (x *fastReflection_Beneficiary) Set(fd protoreflect.FieldDescriptor, value 
 		x.Address = value.Interface().(string)
 	case "ark.disbursement.v1.Beneficiary.controller":
 		x.Controller = value.Interface().(string)
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
-		x.OwnershipPaid = value.Interface().(string)
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
+		x.OwnershipCommitted = value.Interface().(string)
 	case "ark.disbursement.v1.Beneficiary.seat":
 		x.Seat = value.Interface().(string)
 	default:
@@ -5486,8 +5407,8 @@ func (x *fastReflection_Beneficiary) Mutable(fd protoreflect.FieldDescriptor) pr
 		panic(fmt.Errorf("field address of message ark.disbursement.v1.Beneficiary is not mutable"))
 	case "ark.disbursement.v1.Beneficiary.controller":
 		panic(fmt.Errorf("field controller of message ark.disbursement.v1.Beneficiary is not mutable"))
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
-		panic(fmt.Errorf("field ownership_paid of message ark.disbursement.v1.Beneficiary is not mutable"))
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
+		panic(fmt.Errorf("field ownership_committed of message ark.disbursement.v1.Beneficiary is not mutable"))
 	case "ark.disbursement.v1.Beneficiary.seat":
 		panic(fmt.Errorf("field seat of message ark.disbursement.v1.Beneficiary is not mutable"))
 	default:
@@ -5507,7 +5428,7 @@ func (x *fastReflection_Beneficiary) NewField(fd protoreflect.FieldDescriptor) p
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.Beneficiary.controller":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.Beneficiary.ownership_paid":
+	case "ark.disbursement.v1.Beneficiary.ownership_committed":
 		return protoreflect.ValueOfString("")
 	case "ark.disbursement.v1.Beneficiary.seat":
 		return protoreflect.ValueOfString("")
@@ -5588,7 +5509,7 @@ func (x *fastReflection_Beneficiary) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.OwnershipPaid)
+		l = len(x.OwnershipCommitted)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -5632,10 +5553,10 @@ func (x *fastReflection_Beneficiary) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x22
 		}
-		if len(x.OwnershipPaid) > 0 {
-			i -= len(x.OwnershipPaid)
-			copy(dAtA[i:], x.OwnershipPaid)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OwnershipPaid)))
+		if len(x.OwnershipCommitted) > 0 {
+			i -= len(x.OwnershipCommitted)
+			copy(dAtA[i:], x.OwnershipCommitted)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OwnershipCommitted)))
 			i--
 			dAtA[i] = 0x1a
 		}
@@ -5768,7 +5689,7 @@ func (x *fastReflection_Beneficiary) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OwnershipPaid", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OwnershipCommitted", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -5796,7 +5717,7 @@ func (x *fastReflection_Beneficiary) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.OwnershipPaid = string(dAtA[iNdEx:postIndex])
+				x.OwnershipCommitted = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
@@ -6641,8 +6562,8 @@ const (
 	GrantAction_GRANT_ACTION_PAID GrantAction = 3
 	// GRANT_ACTION_CANCELLED frees amount of unearned principal.
 	GrantAction_GRANT_ACTION_CANCELLED GrantAction = 4
-	// GRANT_ACTION_PAYEE moves a grant's payments to subject, the new payee.
-	GrantAction_GRANT_ACTION_PAYEE GrantAction = 5
+	// GRANT_ACTION_PAYEE_CHANGED moves a grant's payments to subject, the new payee.
+	GrantAction_GRANT_ACTION_PAYEE_CHANGED GrantAction = 5
 	// GRANT_ACTION_SUSPENDED pauses a member's payments.
 	GrantAction_GRANT_ACTION_SUSPENDED GrantAction = 6
 	// GRANT_ACTION_REINSTATED resumes a member's payments.
@@ -6657,19 +6578,19 @@ var (
 		2: "GRANT_ACTION_CONVERTED",
 		3: "GRANT_ACTION_PAID",
 		4: "GRANT_ACTION_CANCELLED",
-		5: "GRANT_ACTION_PAYEE",
+		5: "GRANT_ACTION_PAYEE_CHANGED",
 		6: "GRANT_ACTION_SUSPENDED",
 		7: "GRANT_ACTION_REINSTATED",
 	}
 	GrantAction_value = map[string]int32{
-		"GRANT_ACTION_UNSPECIFIED": 0,
-		"GRANT_ACTION_CREATED":     1,
-		"GRANT_ACTION_CONVERTED":   2,
-		"GRANT_ACTION_PAID":        3,
-		"GRANT_ACTION_CANCELLED":   4,
-		"GRANT_ACTION_PAYEE":       5,
-		"GRANT_ACTION_SUSPENDED":   6,
-		"GRANT_ACTION_REINSTATED":  7,
+		"GRANT_ACTION_UNSPECIFIED":   0,
+		"GRANT_ACTION_CREATED":       1,
+		"GRANT_ACTION_CONVERTED":     2,
+		"GRANT_ACTION_PAID":          3,
+		"GRANT_ACTION_CANCELLED":     4,
+		"GRANT_ACTION_PAYEE_CHANGED": 5,
+		"GRANT_ACTION_SUSPENDED":     6,
+		"GRANT_ACTION_REINSTATED":    7,
 	}
 )
 
@@ -6719,8 +6640,8 @@ type Params struct {
 	// compensation_period is one compensation period in seconds; an award is a number of them in
 	// equal shares, one for a lump, together at most ten years (D116).
 	CompensationPeriod uint64 `protobuf:"varint,5,opt,name=compensation_period,json=compensationPeriod,proto3" json:"compensation_period,omitempty"`
-	// ownership_cap is the most ownership one record is paid from the pools, in NOAH, over every
-	// grant; a payment is what the cap still leaves the record.
+	// ownership_cap is the most ownership one record's grants commit from the pools, in NOAH, over
+	// every grant: an award past it is refused, and existing grants keep their terms when it moves.
 	OwnershipCap string `protobuf:"bytes,6,opt,name=ownership_cap,json=ownershipCap,proto3" json:"ownership_cap,omitempty"`
 	// ownership_schedule is every ownership grant's shape, copied at creation (D116).
 	OwnershipSchedule *Schedule `protobuf:"bytes,7,opt,name=ownership_schedule,json=ownershipSchedule,proto3" json:"ownership_schedule,omitempty"`
@@ -6953,18 +6874,15 @@ func (x *RegistrarMandate) GetEnvelope() *v1.Envelope {
 	return nil
 }
 
-// AccountBook is one module account's commitments: reserved principal by denomination and the NOAH
-// governance has opened to new grants.
+// AccountBook is one module account's reserved principal by denomination.
 type AccountBook struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// pool is the module account: disbursement_members or disbursement_contributors.
-	Pool     string          `protobuf:"bytes,1,opt,name=pool,proto3" json:"pool,omitempty"`
+	// account is the module account: disbursement_members or disbursement_contributors.
+	Account  string          `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
 	Reserved []*v1beta1.Coin `protobuf:"bytes,2,rep,name=reserved,proto3" json:"reserved,omitempty"`
-	// open is the member tranche; the contributor book keeps it zero.
-	Open string `protobuf:"bytes,3,opt,name=open,proto3" json:"open,omitempty"`
 }
 
 func (x *AccountBook) Reset() {
@@ -6987,9 +6905,9 @@ func (*AccountBook) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_disbursement_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *AccountBook) GetPool() string {
+func (x *AccountBook) GetAccount() string {
 	if x != nil {
-		return x.Pool
+		return x.Account
 	}
 	return ""
 }
@@ -7001,14 +6919,7 @@ func (x *AccountBook) GetReserved() []*v1beta1.Coin {
 	return nil
 }
 
-func (x *AccountBook) GetOpen() string {
-	if x != nil {
-		return x.Open
-	}
-	return ""
-}
-
-// Grant stores immutable award terms and the settlement of that obligation.
+// Grant stores immutable award terms, their provenance, and the settlement of that obligation.
 type Grant struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7023,25 +6934,25 @@ type Grant struct {
 	// schedule is the grant's shape, copied from its kind's parameter at creation.
 	Schedule  *Schedule `protobuf:"bytes,7,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	StartTime uint64    `protobuf:"varint,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// award_value is a compensation award's principal in the reference unit at creation; zero otherwise.
+	AwardValue    string `protobuf:"bytes,9,opt,name=award_value,json=awardValue,proto3" json:"award_value,omitempty"`
+	CreatedBy     string `protobuf:"bytes,10,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	CreatedHeight uint64 `protobuf:"varint,11,opt,name=created_height,json=createdHeight,proto3" json:"created_height,omitempty"`
 	// created_time is the block time the grant was awarded at, which the compensation window and the
 	// first-payment gate measure from; start_time is the grantor's clock (D116).
-	CreatedTime uint64 `protobuf:"varint,9,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	Paid        string `protobuf:"bytes,10,opt,name=paid,proto3" json:"paid,omitempty"`
-	Remaining   string `protobuf:"bytes,11,opt,name=remaining,proto3" json:"remaining,omitempty"`
-	// reference_value is a compensation award's principal in the reference unit at creation; zero otherwise.
-	ReferenceValue string `protobuf:"bytes,12,opt,name=reference_value,json=referenceValue,proto3" json:"reference_value,omitempty"`
-	// cutoff_time is the block time a cancellation froze entitlement; zero while the grant is live.
-	CutoffTime uint64 `protobuf:"varint,13,opt,name=cutoff_time,json=cutoffTime,proto3" json:"cutoff_time,omitempty"`
-	// suspended_at is the block time the committee paused a member's payments; zero when not suspended.
-	SuspendedAt uint64 `protobuf:"varint,14,opt,name=suspended_at,json=suspendedAt,proto3" json:"suspended_at,omitempty"`
-	// due_at is the block time at or after which the module next attempts a payment; zero while the
-	// grant owes nothing or the member is suspended.
-	DueAt         uint64 `protobuf:"varint,15,opt,name=due_at,json=dueAt,proto3" json:"due_at,omitempty"`
-	CreatedBy     string `protobuf:"bytes,16,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
-	CreatedHeight uint64 `protobuf:"varint,17,opt,name=created_height,json=createdHeight,proto3" json:"created_height,omitempty"`
+	CreatedTime uint64 `protobuf:"varint,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	// mandate_term is the term of the appointment that created the grant: the registrar's for a member,
 	// the committee's for compensation; zero for a governance award.
-	MandateTerm uint64 `protobuf:"varint,18,opt,name=mandate_term,json=mandateTerm,proto3" json:"mandate_term,omitempty"`
+	MandateTerm uint64 `protobuf:"varint,13,opt,name=mandate_term,json=mandateTerm,proto3" json:"mandate_term,omitempty"`
+	Paid        string `protobuf:"bytes,14,opt,name=paid,proto3" json:"paid,omitempty"`
+	Remaining   string `protobuf:"bytes,15,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	// cutoff_time is the block time a cancellation froze entitlement; zero while the grant is live.
+	CutoffTime uint64 `protobuf:"varint,16,opt,name=cutoff_time,json=cutoffTime,proto3" json:"cutoff_time,omitempty"`
+	// suspended_time is the block time the committee paused a member's payments; zero when not suspended.
+	SuspendedTime uint64 `protobuf:"varint,17,opt,name=suspended_time,json=suspendedTime,proto3" json:"suspended_time,omitempty"`
+	// due_time is the block time at or after which the module next attempts a payment; zero while the
+	// grant owes nothing or the member is suspended.
+	DueTime uint64 `protobuf:"varint,18,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`
 }
 
 func (x *Grant) Reset() {
@@ -7120,9 +7031,37 @@ func (x *Grant) GetStartTime() uint64 {
 	return 0
 }
 
+func (x *Grant) GetAwardValue() string {
+	if x != nil {
+		return x.AwardValue
+	}
+	return ""
+}
+
+func (x *Grant) GetCreatedBy() string {
+	if x != nil {
+		return x.CreatedBy
+	}
+	return ""
+}
+
+func (x *Grant) GetCreatedHeight() uint64 {
+	if x != nil {
+		return x.CreatedHeight
+	}
+	return 0
+}
+
 func (x *Grant) GetCreatedTime() uint64 {
 	if x != nil {
 		return x.CreatedTime
+	}
+	return 0
+}
+
+func (x *Grant) GetMandateTerm() uint64 {
+	if x != nil {
+		return x.MandateTerm
 	}
 	return 0
 }
@@ -7141,13 +7080,6 @@ func (x *Grant) GetRemaining() string {
 	return ""
 }
 
-func (x *Grant) GetReferenceValue() string {
-	if x != nil {
-		return x.ReferenceValue
-	}
-	return ""
-}
-
 func (x *Grant) GetCutoffTime() uint64 {
 	if x != nil {
 		return x.CutoffTime
@@ -7155,37 +7087,16 @@ func (x *Grant) GetCutoffTime() uint64 {
 	return 0
 }
 
-func (x *Grant) GetSuspendedAt() uint64 {
+func (x *Grant) GetSuspendedTime() uint64 {
 	if x != nil {
-		return x.SuspendedAt
+		return x.SuspendedTime
 	}
 	return 0
 }
 
-func (x *Grant) GetDueAt() uint64 {
+func (x *Grant) GetDueTime() uint64 {
 	if x != nil {
-		return x.DueAt
-	}
-	return 0
-}
-
-func (x *Grant) GetCreatedBy() string {
-	if x != nil {
-		return x.CreatedBy
-	}
-	return ""
-}
-
-func (x *Grant) GetCreatedHeight() uint64 {
-	if x != nil {
-		return x.CreatedHeight
-	}
-	return 0
-}
-
-func (x *Grant) GetMandateTerm() uint64 {
-	if x != nil {
-		return x.MandateTerm
+		return x.DueTime
 	}
 	return 0
 }
@@ -7205,8 +7116,8 @@ type GrantEntry struct {
 	Amount  *v1beta1.Coin `protobuf:"bytes,7,opt,name=amount,proto3" json:"amount,omitempty"`
 	// subject is the address the action lands on: the payee paid or the new payee.
 	Subject string `protobuf:"bytes,8,opt,name=subject,proto3" json:"subject,omitempty"`
-	// offer is the NOAH a conversion spent.
-	Offer *v1beta1.Coin `protobuf:"bytes,9,opt,name=offer,proto3" json:"offer,omitempty"`
+	// offer is the NOAH a conversion spent; zero for other actions.
+	Offer string `protobuf:"bytes,9,opt,name=offer,proto3" json:"offer,omitempty"`
 }
 
 func (x *GrantEntry) Reset() {
@@ -7285,11 +7196,11 @@ func (x *GrantEntry) GetSubject() string {
 	return ""
 }
 
-func (x *GrantEntry) GetOffer() *v1beta1.Coin {
+func (x *GrantEntry) GetOffer() string {
 	if x != nil {
 		return x.Offer
 	}
-	return nil
+	return ""
 }
 
 // Beneficiary anchors contributor identity independently of controller and payee rotation.
@@ -7302,8 +7213,9 @@ type Beneficiary struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// controller signs payee changes for the record's grants and can hand control on.
 	Controller string `protobuf:"bytes,2,opt,name=controller,proto3" json:"controller,omitempty"`
-	// ownership_paid is what the record has been paid in ownership, which the cap counts.
-	OwnershipPaid string `protobuf:"bytes,3,opt,name=ownership_paid,json=ownershipPaid,proto3" json:"ownership_paid,omitempty"`
+	// ownership_committed is what the record's ownership grants have paid or still owe, which the cap
+	// bounds at award; a cancel drops what the grant had not earned.
+	OwnershipCommitted string `protobuf:"bytes,3,opt,name=ownership_committed,json=ownershipCommitted,proto3" json:"ownership_committed,omitempty"`
 	// seat is the founding seat principal, recorded at genesis for the record alone; zero for a
 	// non-founder, and nothing reads it (D115).
 	Seat string `protobuf:"bytes,4,opt,name=seat,proto3" json:"seat,omitempty"`
@@ -7343,9 +7255,9 @@ func (x *Beneficiary) GetController() string {
 	return ""
 }
 
-func (x *Beneficiary) GetOwnershipPaid() string {
+func (x *Beneficiary) GetOwnershipCommitted() string {
 	if x != nil {
-		return x.OwnershipPaid
+		return x.OwnershipCommitted
 	}
 	return ""
 }
@@ -7517,22 +7429,18 @@ var file_ark_disbursement_v1_disbursement_proto_rawDesc = []byte{
 	0x6c, 0x6f, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x61, 0x72, 0x6b,
 	0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6e, 0x76, 0x65,
 	0x6c, 0x6f, 0x70, 0x65, 0x42, 0x0d, 0xc8, 0xde, 0x1f, 0x00, 0xd0, 0xde, 0x1f, 0x01, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x22, 0xe6, 0x01,
-	0x0a, 0x0b, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x6f, 0x6f, 0x6b, 0x12, 0x12, 0x0a,
-	0x04, 0x70, 0x6f, 0x6f, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x6f, 0x6f,
-	0x6c, 0x12, 0x7d, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x18, 0x02, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46,
-	0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73,
-	0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e,
-	0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72, 0x76, 0x65, 0x64,
-	0x12, 0x44, 0x0a, 0x04, 0x6f, 0x70, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30,
-	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d,
-	0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x04, 0x6f, 0x70, 0x65, 0x6e, 0x22, 0xa2, 0x07, 0x0a, 0x05, 0x47, 0x72, 0x61, 0x6e, 0x74,
+	0xb0, 0x2a, 0x01, 0x52, 0x08, 0x65, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x22, 0xa6, 0x01,
+	0x0a, 0x0b, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x6f, 0x6f, 0x6b, 0x12, 0x18, 0x0a,
+	0x07, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07,
+	0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x7d, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x65, 0x72,
+	0x76, 0x65, 0x64, 0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e,
+	0x43, 0x6f, 0x69, 0x6e, 0x42, 0x46, 0xc8, 0xde, 0x1f, 0x00, 0xaa, 0xdf, 0x1f, 0x28, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73,
+	0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x73, 0x9a, 0xe7, 0xb0, 0x2a, 0x0c, 0x6c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x73, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x72, 0x65,
+	0x73, 0x65, 0x72, 0x76, 0x65, 0x64, 0x22, 0xa2, 0x07, 0x0a, 0x05, 0x47, 0x72, 0x61, 0x6e, 0x74,
 	0x12, 0x15, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x02, 0x69, 0x64, 0x12, 0x32, 0x0a, 0x04, 0x6b, 0x69, 0x6e, 0x64, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62,
@@ -7557,40 +7465,40 @@ var file_ark_disbursement_v1_disbursement_proto_rawDesc = []byte{
 	0x08, 0x73, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x12, 0x24, 0x0a, 0x0a, 0x73, 0x74, 0x61,
 	0x72, 0x74, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x73, 0x74, 0x61, 0x72, 0x74, 0x54, 0x69, 0x6d, 0x65, 0x12,
-	0x28, 0x0a, 0x0c, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18,
-	0x09, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x63, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x64, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x44, 0x0a, 0x04, 0x70, 0x61, 0x69,
-	0x64, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
-	0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61,
-	0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x70, 0x61, 0x69, 0x64, 0x12,
-	0x4e, 0x0a, 0x09, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x18, 0x0b, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e,
-	0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x12,
-	0x59, 0x0a, 0x0f, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x5f, 0x76, 0x61, 0x6c,
-	0x75, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
-	0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
-	0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x72, 0x65, 0x66, 0x65,
-	0x72, 0x65, 0x6e, 0x63, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x26, 0x0a, 0x0b, 0x63, 0x75,
-	0x74, 0x6f, 0x66, 0x66, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x04, 0x42,
-	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x63, 0x75, 0x74, 0x6f, 0x66, 0x66, 0x54, 0x69,
-	0x6d, 0x65, 0x12, 0x28, 0x0a, 0x0c, 0x73, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x5f,
-	0x61, 0x74, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0b, 0x73, 0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1c, 0x0a, 0x06,
-	0x64, 0x75, 0x65, 0x5f, 0x61, 0x74, 0x18, 0x0f, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x05, 0x64, 0x75, 0x65, 0x41, 0x74, 0x12, 0x37, 0x0a, 0x0a, 0x63, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x62, 0x79, 0x18, 0x10, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
-	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x64, 0x42, 0x79, 0x12, 0x2c, 0x0a, 0x0e, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x68,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x11, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x0d, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x12, 0x28, 0x0a, 0x0c, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74, 0x65, 0x72,
-	0x6d, 0x18, 0x12, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b,
-	0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x72, 0x6d, 0x22, 0x8c, 0x03, 0x0a, 0x0a,
+	0x51, 0x0a, 0x0b, 0x61, 0x77, 0x61, 0x72, 0x64, 0x5f, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x09,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e,
+	0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e,
+	0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x61, 0x77, 0x61, 0x72, 0x64, 0x56, 0x61, 0x6c,
+	0x75, 0x65, 0x12, 0x37, 0x0a, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x62, 0x79,
+	0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x42, 0x79, 0x12, 0x2c, 0x0a, 0x0e, 0x63,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x0b, 0x20,
+	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x63, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x28, 0x0a, 0x0c, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0b, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x54,
+	0x69, 0x6d, 0x65, 0x12, 0x28, 0x0a, 0x0c, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x5f, 0x74,
+	0x65, 0x72, 0x6d, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0b, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x44, 0x0a,
+	0x04, 0x70, 0x61, 0x69, 0x64, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x70,
+	0x61, 0x69, 0x64, 0x12, 0x4e, 0x0a, 0x09, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e, 0x69, 0x6e, 0x67,
+	0x18, 0x0f, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74,
+	0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x72, 0x65, 0x6d, 0x61, 0x69, 0x6e,
+	0x69, 0x6e, 0x67, 0x12, 0x26, 0x0a, 0x0b, 0x63, 0x75, 0x74, 0x6f, 0x66, 0x66, 0x5f, 0x74, 0x69,
+	0x6d, 0x65, 0x18, 0x10, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
+	0x0a, 0x63, 0x75, 0x74, 0x6f, 0x66, 0x66, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x2c, 0x0a, 0x0e, 0x73,
+	0x75, 0x73, 0x70, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x11, 0x20,
+	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x73, 0x75, 0x73, 0x70,
+	0x65, 0x6e, 0x64, 0x65, 0x64, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x08, 0x64, 0x75, 0x65,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x12, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x07, 0x64, 0x75, 0x65, 0x54, 0x69, 0x6d, 0x65, 0x22, 0xa3, 0x03, 0x0a, 0x0a,
 	0x47, 0x72, 0x61, 0x6e, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x15, 0x0a, 0x02, 0x69, 0x64,
 	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x02, 0x69,
 	0x64, 0x12, 0x20, 0x0a, 0x08, 0x67, 0x72, 0x61, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20,
@@ -7612,81 +7520,84 @@ var file_ark_disbursement_v1_disbursement_proto_rawDesc = []byte{
 	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x32, 0x0a, 0x07, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74,
 	0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
 	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x07, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x2f, 0x0a, 0x05, 0x6f, 0x66, 0x66,
-	0x65, 0x72, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
-	0x6f, 0x69, 0x6e, 0x52, 0x05, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x22, 0x9a, 0x02, 0x0a, 0x0b, 0x42,
-	0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
-	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x38,
-	0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01,
+	0x52, 0x07, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x12, 0x46, 0x0a, 0x05, 0x6f, 0x66, 0x66,
+	0x65, 0x72, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde,
+	0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d,
+	0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x05, 0x6f, 0x66, 0x66, 0x65,
+	0x72, 0x22, 0xa4, 0x02, 0x0a, 0x0b, 0x42, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72,
+	0x79, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f,
-	0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x57, 0x0a, 0x0e, 0x6f, 0x77, 0x6e, 0x65,
-	0x72, 0x73, 0x68, 0x69, 0x70, 0x5f, 0x70, 0x61, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12,
+	0x61, 0x0a, 0x13, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x68, 0x69, 0x70, 0x5f, 0x63, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x30, 0xc8, 0xde,
+	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4, 0x2d, 0x0a, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x12,
+	0x6f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x68, 0x69, 0x70, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x64, 0x12, 0x44, 0x0a, 0x04, 0x73, 0x65, 0x61, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09,
 	0x42, 0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2,
 	0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x0d, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x73, 0x68, 0x69, 0x70, 0x50, 0x61, 0x69,
-	0x64, 0x12, 0x44, 0x0a, 0x04, 0x73, 0x65, 0x61, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x30, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x15, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
-	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x49, 0x6e, 0x74, 0xd2, 0xb4,
-	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x49, 0x6e, 0x74, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x04, 0x73, 0x65, 0x61, 0x74, 0x22, 0x89, 0x02, 0x0a, 0x10, 0x42, 0x65, 0x6e, 0x65,
-	0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x15, 0x0a, 0x02,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x02, 0x69, 0x64, 0x12, 0x3a, 0x0a, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61,
-	0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x12,
-	0x2e, 0x0a, 0x05, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0x2a, 0x01, 0x52, 0x04, 0x73, 0x65, 0x61, 0x74, 0x22, 0x89, 0x02, 0x0a, 0x10, 0x42, 0x65, 0x6e,
+	0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x15, 0x0a,
+	0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x02, 0x69, 0x64, 0x12, 0x3a, 0x0a, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69,
+	0x61, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
+	0x69, 0x6e, 0x67, 0x52, 0x0b, 0x62, 0x65, 0x6e, 0x65, 0x66, 0x69, 0x63, 0x69, 0x61, 0x72, 0x79,
+	0x12, 0x2e, 0x0a, 0x05, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x61, 0x63, 0x74, 0x6f, 0x72,
+	0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04,
+	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,
+	0x19, 0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x6f,
+	0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
 	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x05, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x12,
-	0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42,
-	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x19,
-	0x0a, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
-	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x69, 0x6d, 0x65, 0x12, 0x38, 0x0a, 0x0a, 0x63, 0x6f, 0x6e,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x18, 0x06, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
-	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x65, 0x72, 0x2a, 0x75, 0x0a, 0x09, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x4b, 0x69, 0x6e, 0x64,
-	0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x55,
-	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x15, 0x0a, 0x11,
-	0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4d, 0x45, 0x4d, 0x42, 0x45,
-	0x52, 0x10, 0x01, 0x12, 0x18, 0x0a, 0x14, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e,
-	0x44, 0x5f, 0x4f, 0x57, 0x4e, 0x45, 0x52, 0x53, 0x48, 0x49, 0x50, 0x10, 0x02, 0x12, 0x1b, 0x0a,
-	0x17, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x43, 0x4f, 0x4d, 0x50,
-	0x45, 0x4e, 0x53, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x03, 0x2a, 0xe5, 0x01, 0x0a, 0x0b, 0x47,
-	0x72, 0x61, 0x6e, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x18, 0x47, 0x52,
-	0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45,
-	0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x18, 0x0a, 0x14, 0x47, 0x52, 0x41, 0x4e,
-	0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x52, 0x45, 0x41, 0x54, 0x45, 0x44,
-	0x10, 0x01, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49,
-	0x4f, 0x4e, 0x5f, 0x43, 0x4f, 0x4e, 0x56, 0x45, 0x52, 0x54, 0x45, 0x44, 0x10, 0x02, 0x12, 0x15,
-	0x0a, 0x11, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x50,
-	0x41, 0x49, 0x44, 0x10, 0x03, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41,
-	0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44, 0x10,
-	0x04, 0x12, 0x16, 0x0a, 0x12, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f,
-	0x4e, 0x5f, 0x50, 0x41, 0x59, 0x45, 0x45, 0x10, 0x05, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41,
-	0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x53, 0x55, 0x53, 0x50, 0x45, 0x4e,
-	0x44, 0x45, 0x44, 0x10, 0x06, 0x12, 0x1b, 0x0a, 0x17, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41,
-	0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x52, 0x45, 0x49, 0x4e, 0x53, 0x54, 0x41, 0x54, 0x45, 0x44,
-	0x10, 0x07, 0x42, 0xe0, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64,
-	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x11,
-	0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74,
-	0x6f, 0x50, 0x01, 0x5a, 0x44, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
-	0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61,
-	0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x62, 0x75,
-	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x44, 0x58, 0xaa,
-	0x02, 0x13, 0x41, 0x72, 0x6b, 0x2e, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65,
-	0x6e, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62,
-	0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x41, 0x72,
-	0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56,
-	0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15,
-	0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
-	0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x65, 0x72, 0x2a, 0x75, 0x0a, 0x09, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x4b, 0x69, 0x6e,
+	0x64, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f,
+	0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x15, 0x0a,
+	0x11, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4d, 0x45, 0x4d, 0x42,
+	0x45, 0x52, 0x10, 0x01, 0x12, 0x18, 0x0a, 0x14, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49,
+	0x4e, 0x44, 0x5f, 0x4f, 0x57, 0x4e, 0x45, 0x52, 0x53, 0x48, 0x49, 0x50, 0x10, 0x02, 0x12, 0x1b,
+	0x0a, 0x17, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x43, 0x4f, 0x4d,
+	0x50, 0x45, 0x4e, 0x53, 0x41, 0x54, 0x49, 0x4f, 0x4e, 0x10, 0x03, 0x2a, 0xed, 0x01, 0x0a, 0x0b,
+	0x47, 0x72, 0x61, 0x6e, 0x74, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1c, 0x0a, 0x18, 0x47,
+	0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55, 0x4e, 0x53, 0x50,
+	0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x18, 0x0a, 0x14, 0x47, 0x52, 0x41,
+	0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x52, 0x45, 0x41, 0x54, 0x45,
+	0x44, 0x10, 0x01, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54,
+	0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x4f, 0x4e, 0x56, 0x45, 0x52, 0x54, 0x45, 0x44, 0x10, 0x02, 0x12,
+	0x15, 0x0a, 0x11, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f,
+	0x50, 0x41, 0x49, 0x44, 0x10, 0x03, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f,
+	0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x43, 0x41, 0x4e, 0x43, 0x45, 0x4c, 0x4c, 0x45, 0x44,
+	0x10, 0x04, 0x12, 0x1e, 0x0a, 0x1a, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49,
+	0x4f, 0x4e, 0x5f, 0x50, 0x41, 0x59, 0x45, 0x45, 0x5f, 0x43, 0x48, 0x41, 0x4e, 0x47, 0x45, 0x44,
+	0x10, 0x05, 0x12, 0x1a, 0x0a, 0x16, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49,
+	0x4f, 0x4e, 0x5f, 0x53, 0x55, 0x53, 0x50, 0x45, 0x4e, 0x44, 0x45, 0x44, 0x10, 0x06, 0x12, 0x1b,
+	0x0a, 0x17, 0x47, 0x52, 0x41, 0x4e, 0x54, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x52,
+	0x45, 0x49, 0x4e, 0x53, 0x54, 0x41, 0x54, 0x45, 0x44, 0x10, 0x07, 0x42, 0xe0, 0x01, 0x0a, 0x17,
+	0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65,
+	0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x11, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73,
+	0x65, 0x6d, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x44, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d,
+	0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x2f, 0x76, 0x31, 0x3b, 0x64, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74,
+	0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x44, 0x58, 0xaa, 0x02, 0x13, 0x41, 0x72, 0x6b, 0x2e, 0x44,
+	0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02,
+	0x13, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e,
+	0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x41, 0x72, 0x6b, 0x5c, 0x44, 0x69, 0x73, 0x62, 0x75,
+	0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x44, 0x69,
+	0x73, 0x62, 0x75, 0x72, 0x73, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -7729,12 +7640,11 @@ var file_ark_disbursement_v1_disbursement_proto_depIdxs = []int32{
 	3,  // 7: ark.disbursement.v1.Grant.schedule:type_name -> ark.disbursement.v1.Schedule
 	1,  // 8: ark.disbursement.v1.GrantEntry.action:type_name -> ark.disbursement.v1.GrantAction
 	12, // 9: ark.disbursement.v1.GrantEntry.amount:type_name -> cosmos.base.v1beta1.Coin
-	12, // 10: ark.disbursement.v1.GrantEntry.offer:type_name -> cosmos.base.v1beta1.Coin
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_ark_disbursement_v1_disbursement_proto_init() }

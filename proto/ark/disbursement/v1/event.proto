@@ -48,8 +48,8 @@ message EventTrancheOpened {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // open is the member tranche after this opening.
-  string open = 2 [
+  // member_tranche is the open member tranche after this opening.
+  string member_tranche = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -105,9 +105,8 @@ message EventPaymentDeferred {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // due_at is when the module tries again.
-  uint64 due_at = 5 [(amino.dont_omitempty) = true];
-  string reason = 6;
+  // due_time is when the module tries again. The refusal itself goes to the node log.
+  uint64 due_time = 5 [(amino.dont_omitempty) = true];
 }
 
 // EventBeneficiaryEntryRecorded publishes each beneficiary journal entry, a controller change.

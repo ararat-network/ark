@@ -39,8 +39,8 @@ message Params {
   // compensation_period is one compensation period in seconds; an award is a number of them in
   // equal shares, one for a lump, together at most ten years (D116).
   uint64 compensation_period = 5 [(amino.dont_omitempty) = true];
-  // ownership_cap is the most ownership one record is paid from the pools, in NOAH, over every
-  // grant; a payment is what the cap still leaves the record.
+  // ownership_cap is the most ownership one record's grants commit from the pools, in NOAH, over
+  // every grant: an award past it is refused, and existing grants keep their terms when it moves.
   string ownership_cap = 6 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -98,23 +98,15 @@ message RegistrarMandate {
   ];
 }
 
-// AccountBook is one module account's commitments: reserved principal by denomination and the NOAH
-// governance has opened to new grants.
+// AccountBook is one module account's reserved principal by denomination.
 message AccountBook {
-  // pool is the module account: disbursement_members or disbursement_contributors.
-  string pool = 1;
+  // account is the module account: disbursement_members or disbursement_contributors.
+  string account = 1;
   repeated cosmos.base.v1beta1.Coin reserved = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true,
     (amino.encoding) = "legacy_coins",
     (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
-  ];
-  // open is the member tranche; the contributor book keeps it zero.
-  string open = 3 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
   ];
 }
 
@@ -130,7 +122,7 @@ enum GrantKind {
   GRANT_KIND_COMPENSATION = 3;
 }
 
-// Grant stores immutable award terms and the settlement of that obligation.
+// Grant stores immutable award terms, their provenance, and the settlement of that obligation.
 message Grant {
   uint64 id = 1 [(amino.dont_omitempty) = true];
   GrantKind kind = 2;
@@ -147,40 +139,40 @@ message Grant {
     (amino.dont_omitempty) = true
   ];
   uint64 start_time = 8 [(amino.dont_omitempty) = true];
+  // award_value is a compensation award's principal in the reference unit at creation; zero otherwise.
+  string award_value = 9 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  string created_by = 10 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 created_height = 11 [(amino.dont_omitempty) = true];
   // created_time is the block time the grant was awarded at, which the compensation window and the
   // first-payment gate measure from; start_time is the grantor's clock (D116).
-  uint64 created_time = 9 [(amino.dont_omitempty) = true];
-  string paid = 10 [
+  uint64 created_time = 12 [(amino.dont_omitempty) = true];
+  // mandate_term is the term of the appointment that created the grant: the registrar's for a member,
+  // the committee's for compensation; zero for a governance award.
+  uint64 mandate_term = 13 [(amino.dont_omitempty) = true];
+  string paid = 14 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string remaining = 11 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-  // reference_value is a compensation award's principal in the reference unit at creation; zero otherwise.
-  string reference_value = 12 [
+  string remaining = 15 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
   // cutoff_time is the block time a cancellation froze entitlement; zero while the grant is live.
-  uint64 cutoff_time = 13 [(amino.dont_omitempty) = true];
-  // suspended_at is the block time the committee paused a member's payments; zero when not suspended.
-  uint64 suspended_at = 14 [(amino.dont_omitempty) = true];
-  // due_at is the block time at or after which the module next attempts a payment; zero while the
+  uint64 cutoff_time = 16 [(amino.dont_omitempty) = true];
+  // suspended_time is the block time the committee paused a member's payments; zero when not suspended.
+  uint64 suspended_time = 17 [(amino.dont_omitempty) = true];
+  // due_time is the block time at or after which the module next attempts a payment; zero while the
   // grant owes nothing or the member is suspended.
-  uint64 due_at = 15 [(amino.dont_omitempty) = true];
-  string created_by = 16 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 created_height = 17 [(amino.dont_omitempty) = true];
-  // mandate_term is the term of the appointment that created the grant: the registrar's for a member,
-  // the committee's for compensation; zero for a governance award.
-  uint64 mandate_term = 18 [(amino.dont_omitempty) = true];
+  uint64 due_time = 18 [(amino.dont_omitempty) = true];
 }
 
 // GrantAction names what a grant entry records.
@@ -195,8 +187,8 @@ enum GrantAction {
   GRANT_ACTION_PAID = 3;
   // GRANT_ACTION_CANCELLED frees amount of unearned principal.
   GRANT_ACTION_CANCELLED = 4;
-  // GRANT_ACTION_PAYEE moves a grant's payments to subject, the new payee.
-  GRANT_ACTION_PAYEE = 5;
+  // GRANT_ACTION_PAYEE_CHANGED moves a grant's payments to subject, the new payee.
+  GRANT_ACTION_PAYEE_CHANGED = 5;
   // GRANT_ACTION_SUSPENDED pauses a member's payments.
   GRANT_ACTION_SUSPENDED = 6;
   // GRANT_ACTION_REINSTATED resumes a member's payments.
@@ -217,8 +209,13 @@ message GrantEntry {
   ];
   // subject is the address the action lands on: the payee paid or the new payee.
   string subject = 8 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // offer is the NOAH a conversion spent.
-  cosmos.base.v1beta1.Coin offer = 9;
+  // offer is the NOAH a conversion spent; zero for other actions.
+  string offer = 9 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // Beneficiary anchors contributor identity independently of controller and payee rotation.
@@ -227,8 +224,9 @@ message Beneficiary {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // controller signs payee changes for the record's grants and can hand control on.
   string controller = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // ownership_paid is what the record has been paid in ownership, which the cap counts.
-  string ownership_paid = 3 [
+  // ownership_committed is what the record's ownership grants have paid or still owe, which the cap
+  // bounds at award; a cancel drops what the grant had not earned.
+  string ownership_committed = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,

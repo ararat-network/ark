@@ -44,7 +44,7 @@ type QueryClient interface {
 	GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error)
-	// Balance shows each pool's custody beside its reservations and open tranche.
+	// Balance shows each account's custody beside its reservations, and the member tranche.
 	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
@@ -57,7 +57,7 @@ type QueryClient interface {
 	Member(ctx context.Context, in *QueryMemberRequest, opts ...grpc.CallOption) (*QueryMemberResponse, error)
 	// Members lists member grants in address order.
 	Members(ctx context.Context, in *QueryMembersRequest, opts ...grpc.CallOption) (*QueryMembersResponse, error)
-	// Beneficiary queries one beneficiary record and its remaining ownership allowance.
+	// Beneficiary queries one beneficiary record and the ownership it can still be awarded.
 	Beneficiary(ctx context.Context, in *QueryBeneficiaryRequest, opts ...grpc.CallOption) (*QueryBeneficiaryResponse, error)
 	// BeneficiaryJournal lists one beneficiary's controller changes in ID order.
 	BeneficiaryJournal(ctx context.Context, in *QueryBeneficiaryJournalRequest, opts ...grpc.CallOption) (*QueryBeneficiaryJournalResponse, error)
@@ -193,7 +193,7 @@ type QueryServer interface {
 	GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error)
-	// Balance shows each pool's custody beside its reservations and open tranche.
+	// Balance shows each account's custody beside its reservations, and the member tranche.
 	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
@@ -206,7 +206,7 @@ type QueryServer interface {
 	Member(context.Context, *QueryMemberRequest) (*QueryMemberResponse, error)
 	// Members lists member grants in address order.
 	Members(context.Context, *QueryMembersRequest) (*QueryMembersResponse, error)
-	// Beneficiary queries one beneficiary record and its remaining ownership allowance.
+	// Beneficiary queries one beneficiary record and the ownership it can still be awarded.
 	Beneficiary(context.Context, *QueryBeneficiaryRequest) (*QueryBeneficiaryResponse, error)
 	// BeneficiaryJournal lists one beneficiary's controller changes in ID order.
 	BeneficiaryJournal(context.Context, *QueryBeneficiaryJournalRequest) (*QueryBeneficiaryJournalResponse, error)
