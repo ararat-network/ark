@@ -4,7 +4,9 @@
 package types
 
 import (
+	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -26,21 +28,25 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // GenesisState exports grant obligations and their audit history; Bank exports custody balances.
 type GenesisState struct {
-	Params          Params          `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
-	OwnershipPolicy OwnershipPolicy `protobuf:"bytes,2,opt,name=ownership_policy,json=ownershipPolicy,proto3" json:"ownership_policy"`
-	Beneficiaries   []Beneficiary   `protobuf:"bytes,3,rep,name=beneficiaries,proto3" json:"beneficiaries"`
-	Grants          []Grant         `protobuf:"bytes,4,rep,name=grants,proto3" json:"grants"`
-	Totals          []DenomTotals   `protobuf:"bytes,5,rep,name=totals,proto3" json:"totals"`
-	Issuance        Issuance        `protobuf:"bytes,6,opt,name=issuance,proto3" json:"issuance"`
-	GrantsMandate   GrantsMandate   `protobuf:"bytes,7,opt,name=grants_mandate,json=grantsMandate,proto3" json:"grants_mandate"`
-	Journal         []JournalEntry  `protobuf:"bytes,8,rep,name=journal,proto3" json:"journal"`
-	NextGrantId     uint64          `protobuf:"varint,9,opt,name=next_grant_id,json=nextGrantId,proto3" json:"next_grant_id,omitempty"`
-	NextJournalId   uint64          `protobuf:"varint,10,opt,name=next_journal_id,json=nextJournalId,proto3" json:"next_journal_id,omitempty"`
-	// voided_terms lists replaced committee terms whose suspensions are not effective.
-	VoidedTerms      []uint64          `protobuf:"varint,11,rep,packed,name=voided_terms,json=voidedTerms,proto3" json:"voided_terms,omitempty"`
-	MemberPool       PoolBalance       `protobuf:"bytes,12,opt,name=member_pool,json=memberPool,proto3" json:"member_pool"`
-	ContributorPool  PoolBalance       `protobuf:"bytes,13,opt,name=contributor_pool,json=contributorPool,proto3" json:"contributor_pool"`
-	ConversionOrders []ConversionOrder `protobuf:"bytes,14,rep,name=conversion_orders,json=conversionOrders,proto3" json:"conversion_orders"`
+	// Policy and appointment.
+	Params           Params           `protobuf:"bytes,1,opt,name=params,proto3" json:"params"`
+	GrantsMandate    GrantsMandate    `protobuf:"bytes,2,opt,name=grants_mandate,json=grantsMandate,proto3" json:"grants_mandate"`
+	RegistrarMandate RegistrarMandate `protobuf:"bytes,3,opt,name=registrar_mandate,json=registrarMandate,proto3" json:"registrar_mandate"`
+	// compensation_used is the live term's charges against its allowance, cancelled awards
+	// included; an appointment resets it.
+	CompensationUsed cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=compensation_used,json=compensationUsed,proto3,customtype=cosmossdk.io/math.Int" json:"compensation_used"`
+	// Records.
+	Beneficiaries []Beneficiary `protobuf:"bytes,5,rep,name=beneficiaries,proto3" json:"beneficiaries"`
+	Grants        []Grant       `protobuf:"bytes,6,rep,name=grants,proto3" json:"grants"`
+	// Accounting: each module account's reservations, and the member tranche, contributors first.
+	Books []AccountBook `protobuf:"bytes,7,rep,name=books,proto3" json:"books"`
+	// Ledgers.
+	GrantJournal       []GrantEntry       `protobuf:"bytes,8,rep,name=grant_journal,json=grantJournal,proto3" json:"grant_journal"`
+	BeneficiaryJournal []BeneficiaryEntry `protobuf:"bytes,9,rep,name=beneficiary_journal,json=beneficiaryJournal,proto3" json:"beneficiary_journal"`
+	// Sequences.
+	NextGrantId            uint64 `protobuf:"varint,10,opt,name=next_grant_id,json=nextGrantId,proto3" json:"next_grant_id,omitempty"`
+	NextGrantEntryId       uint64 `protobuf:"varint,11,opt,name=next_grant_entry_id,json=nextGrantEntryId,proto3" json:"next_grant_entry_id,omitempty"`
+	NextBeneficiaryEntryId uint64 `protobuf:"varint,12,opt,name=next_beneficiary_entry_id,json=nextBeneficiaryEntryId,proto3" json:"next_beneficiary_entry_id,omitempty"`
 }
 
 func (m *GenesisState) Reset()         { *m = GenesisState{} }
@@ -83,11 +89,18 @@ func (m *GenesisState) GetParams() Params {
 	return Params{}
 }
 
-func (m *GenesisState) GetOwnershipPolicy() OwnershipPolicy {
+func (m *GenesisState) GetGrantsMandate() GrantsMandate {
 	if m != nil {
-		return m.OwnershipPolicy
+		return m.GrantsMandate
 	}
-	return OwnershipPolicy{}
+	return GrantsMandate{}
+}
+
+func (m *GenesisState) GetRegistrarMandate() RegistrarMandate {
+	if m != nil {
+		return m.RegistrarMandate
+	}
+	return RegistrarMandate{}
 }
 
 func (m *GenesisState) GetBeneficiaries() []Beneficiary {
@@ -104,30 +117,23 @@ func (m *GenesisState) GetGrants() []Grant {
 	return nil
 }
 
-func (m *GenesisState) GetTotals() []DenomTotals {
+func (m *GenesisState) GetBooks() []AccountBook {
 	if m != nil {
-		return m.Totals
+		return m.Books
 	}
 	return nil
 }
 
-func (m *GenesisState) GetIssuance() Issuance {
+func (m *GenesisState) GetGrantJournal() []GrantEntry {
 	if m != nil {
-		return m.Issuance
+		return m.GrantJournal
 	}
-	return Issuance{}
+	return nil
 }
 
-func (m *GenesisState) GetGrantsMandate() GrantsMandate {
+func (m *GenesisState) GetBeneficiaryJournal() []BeneficiaryEntry {
 	if m != nil {
-		return m.GrantsMandate
-	}
-	return GrantsMandate{}
-}
-
-func (m *GenesisState) GetJournal() []JournalEntry {
-	if m != nil {
-		return m.Journal
+		return m.BeneficiaryJournal
 	}
 	return nil
 }
@@ -139,39 +145,18 @@ func (m *GenesisState) GetNextGrantId() uint64 {
 	return 0
 }
 
-func (m *GenesisState) GetNextJournalId() uint64 {
+func (m *GenesisState) GetNextGrantEntryId() uint64 {
 	if m != nil {
-		return m.NextJournalId
+		return m.NextGrantEntryId
 	}
 	return 0
 }
 
-func (m *GenesisState) GetVoidedTerms() []uint64 {
+func (m *GenesisState) GetNextBeneficiaryEntryId() uint64 {
 	if m != nil {
-		return m.VoidedTerms
+		return m.NextBeneficiaryEntryId
 	}
-	return nil
-}
-
-func (m *GenesisState) GetMemberPool() PoolBalance {
-	if m != nil {
-		return m.MemberPool
-	}
-	return PoolBalance{}
-}
-
-func (m *GenesisState) GetContributorPool() PoolBalance {
-	if m != nil {
-		return m.ContributorPool
-	}
-	return PoolBalance{}
-}
-
-func (m *GenesisState) GetConversionOrders() []ConversionOrder {
-	if m != nil {
-		return m.ConversionOrders
-	}
-	return nil
+	return 0
 }
 
 func init() {
@@ -181,43 +166,42 @@ func init() {
 func init() { proto.RegisterFile("ark/disbursement/v1/genesis.proto", fileDescriptor_3733cd178a973aec) }
 
 var fileDescriptor_3733cd178a973aec = []byte{
-	// 572 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0x4f, 0x6f, 0xd3, 0x3e,
-	0x18, 0xc7, 0x9b, 0x5f, 0xb7, 0x6e, 0x73, 0xf6, 0xd7, 0x3f, 0x0e, 0xd6, 0x10, 0x21, 0x9b, 0x10,
-	0x2a, 0x48, 0x4b, 0xb4, 0x71, 0x86, 0x43, 0x37, 0x98, 0x8a, 0x86, 0x56, 0x46, 0xc5, 0x61, 0x42,
-	0x8a, 0x9c, 0xc4, 0x64, 0xa6, 0x89, 0x1d, 0xd9, 0x6e, 0xb7, 0xbd, 0x0b, 0x5e, 0x06, 0x47, 0x5e,
-	0xc6, 0x8e, 0x3b, 0x72, 0x42, 0xa8, 0x95, 0xe0, 0x6d, 0xa0, 0xd8, 0x5d, 0x95, 0xa0, 0x14, 0x89,
-	0x4b, 0x65, 0xf9, 0xf9, 0x7c, 0x3f, 0x7e, 0xfc, 0x54, 0x31, 0xd8, 0xc1, 0x62, 0xe0, 0xc7, 0x54,
-	0x86, 0x43, 0x21, 0x49, 0x46, 0x98, 0xf2, 0x47, 0xfb, 0x7e, 0x42, 0x18, 0x91, 0x54, 0x7a, 0xb9,
-	0xe0, 0x8a, 0xc3, 0xff, 0xb1, 0x18, 0x78, 0x65, 0xc4, 0x1b, 0xed, 0x6f, 0x6f, 0xe1, 0x8c, 0x32,
-	0xee, 0xeb, 0x5f, 0xc3, 0x6d, 0x3f, 0xae, 0x53, 0x55, 0x72, 0x86, 0xbb, 0x97, 0xf0, 0x84, 0xeb,
-	0xa5, 0x5f, 0xac, 0xcc, 0xee, 0xee, 0xcf, 0x25, 0xb0, 0x7a, 0x6c, 0xce, 0x7d, 0xa7, 0xb0, 0x22,
-	0xf0, 0x05, 0x68, 0xe5, 0x58, 0xe0, 0x4c, 0x22, 0xcb, 0xb5, 0xda, 0xf6, 0xc1, 0x7d, 0xaf, 0xa6,
-	0x0f, 0xaf, 0xa7, 0x91, 0xce, 0xca, 0xcd, 0xf7, 0x87, 0x8d, 0x2f, 0xbf, 0xbe, 0x3e, 0xb5, 0xce,
-	0xa6, 0x29, 0x78, 0x0e, 0x36, 0xf9, 0x25, 0x23, 0x42, 0x5e, 0xd0, 0x3c, 0xc8, 0x79, 0x4a, 0xa3,
-	0x6b, 0xf4, 0x9f, 0x36, 0x3d, 0xaa, 0x35, 0x9d, 0xde, 0xc1, 0x3d, 0xcd, 0x96, 0x95, 0x1b, 0xbc,
-	0x5a, 0x83, 0x6f, 0xc1, 0x5a, 0x48, 0x18, 0xf9, 0x48, 0x23, 0x8a, 0x05, 0x25, 0x12, 0x35, 0xdd,
-	0x66, 0xdb, 0x3e, 0x70, 0x6b, 0xc5, 0x9d, 0x19, 0x59, 0x91, 0x56, 0x0d, 0xf0, 0x39, 0x68, 0x25,
-	0x02, 0x33, 0x25, 0xd1, 0x82, 0x76, 0x6d, 0xd7, 0xba, 0x8e, 0x0b, 0xa4, 0x72, 0x5b, 0x13, 0x82,
-	0x87, 0xa0, 0xa5, 0xb8, 0xc2, 0xa9, 0x44, 0x8b, 0x7f, 0x69, 0xe5, 0x88, 0x30, 0x9e, 0xf5, 0x35,
-	0x57, 0x91, 0x98, 0x28, 0x3c, 0x02, 0xcb, 0x54, 0xca, 0x21, 0x66, 0x11, 0x41, 0x2d, 0x3d, 0xaa,
-	0x07, 0xb5, 0x9a, 0xee, 0x14, 0x2a, 0x3b, 0x66, 0x49, 0xd8, 0x07, 0xeb, 0xa6, 0xa9, 0x20, 0xc3,
-	0x2c, 0xc6, 0x8a, 0xa0, 0x25, 0xed, 0xda, 0x9d, 0x7f, 0x23, 0xf9, 0xc6, 0x90, 0x95, 0xf9, 0x24,
-	0xe5, 0x0a, 0x7c, 0x05, 0x96, 0x3e, 0xf1, 0xa1, 0x60, 0x38, 0x45, 0xcb, 0xfa, 0x86, 0x3b, 0xb5,
-	0xba, 0xd7, 0x86, 0x79, 0xc9, 0x54, 0x75, 0xda, 0x77, 0x61, 0xf8, 0x04, 0xac, 0x31, 0x72, 0xa5,
-	0x02, 0x6d, 0x0f, 0x68, 0x8c, 0x56, 0x5c, 0xab, 0xbd, 0xd0, 0x59, 0x34, 0x98, 0x5d, 0xd4, 0x74,
-	0x4b, 0xdd, 0x18, 0xee, 0x81, 0x0d, 0x8d, 0x4e, 0xa3, 0x05, 0x0c, 0xca, 0xb0, 0x16, 0x4d, 0x0f,
-	0xec, 0xc6, 0x70, 0x07, 0xac, 0x8e, 0x38, 0x8d, 0x49, 0x1c, 0x28, 0x22, 0x32, 0x89, 0x6c, 0xb7,
-	0xd9, 0x5e, 0x38, 0xb3, 0xcd, 0x5e, 0xbf, 0xd8, 0x82, 0x27, 0xc0, 0xce, 0x48, 0x16, 0x12, 0x11,
-	0xe4, 0x9c, 0xa7, 0x68, 0xd5, 0xb5, 0xe6, 0xfe, 0x55, 0x3d, 0xce, 0xd3, 0x0e, 0x4e, 0xff, 0x1c,
-	0x33, 0x30, 0xf9, 0xa2, 0x0a, 0xdf, 0x83, 0xcd, 0x88, 0x33, 0x25, 0x68, 0x38, 0x54, 0x7c, 0xaa,
-	0x5c, 0xfb, 0x77, 0xe5, 0x46, 0x49, 0xa2, 0xbd, 0x1f, 0xc0, 0x56, 0xc4, 0xd9, 0x88, 0x08, 0x49,
-	0x39, 0x0b, 0xb8, 0x88, 0x89, 0x90, 0x68, 0xdd, 0x6d, 0xce, 0xfd, 0x74, 0x0e, 0x67, 0xf4, 0x69,
-	0x01, 0x97, 0xe5, 0x9b, 0x51, 0xb5, 0x26, 0x3b, 0x27, 0x37, 0x63, 0xc7, 0xba, 0x1d, 0x3b, 0xd6,
-	0x8f, 0xb1, 0x63, 0x7d, 0x9e, 0x38, 0x8d, 0xdb, 0x89, 0xd3, 0xf8, 0x36, 0x71, 0x1a, 0xe7, 0x07,
-	0x09, 0x55, 0x17, 0xc3, 0xd0, 0x8b, 0x78, 0xe6, 0x63, 0x81, 0x05, 0x56, 0x7b, 0x8c, 0xa8, 0x4b,
-	0x2e, 0x06, 0x7e, 0xf1, 0xb4, 0x5c, 0x55, 0x1f, 0x17, 0x75, 0x9d, 0x13, 0x19, 0xb6, 0xf4, 0xeb,
-	0xf1, 0xec, 0xf7, 0x00, 0x62, 0xf5, 0x0f, 0xe2, 0xc8, 0x04, 0x00, 0x00,
+	// 557 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x94, 0xc1, 0x6e, 0xd3, 0x30,
+	0x18, 0xc7, 0x1b, 0xb6, 0x76, 0xd4, 0x6d, 0xd1, 0xe6, 0x02, 0xca, 0x8a, 0x94, 0x96, 0x49, 0x43,
+	0x05, 0x69, 0x09, 0x2b, 0x5c, 0x41, 0x2c, 0x12, 0x9a, 0x8a, 0x40, 0xc0, 0x80, 0x0b, 0x12, 0xaa,
+	0xdc, 0xc4, 0x64, 0x26, 0xc4, 0xae, 0x6c, 0x67, 0xac, 0x2f, 0x81, 0x78, 0x0c, 0x8e, 0x1c, 0x78,
+	0x88, 0x1d, 0x27, 0x4e, 0x88, 0xc3, 0x84, 0xda, 0x03, 0xaf, 0x81, 0x62, 0x77, 0xc1, 0x19, 0x19,
+	0x5c, 0xaa, 0xda, 0xdf, 0xff, 0xff, 0xf3, 0xff, 0xfb, 0xac, 0x18, 0x5c, 0x47, 0x3c, 0xf6, 0x42,
+	0x22, 0xc6, 0x29, 0x17, 0x38, 0xc1, 0x54, 0x7a, 0x07, 0xdb, 0x5e, 0x84, 0x29, 0x16, 0x44, 0xb8,
+	0x13, 0xce, 0x24, 0x83, 0x6d, 0xc4, 0x63, 0xd7, 0x94, 0xb8, 0x07, 0xdb, 0x9d, 0x35, 0x94, 0x10,
+	0xca, 0x3c, 0xf5, 0xab, 0x75, 0x9d, 0x1b, 0x65, 0xa8, 0x82, 0x4f, 0xeb, 0xd6, 0x03, 0x26, 0x12,
+	0x26, 0x46, 0x6a, 0xe5, 0xe9, 0xc5, 0xa2, 0x74, 0x39, 0x62, 0x11, 0xd3, 0xfb, 0xd9, 0x3f, 0xbd,
+	0xbb, 0xf1, 0x71, 0x05, 0x34, 0x77, 0x75, 0xa4, 0x17, 0x12, 0x49, 0x0c, 0xef, 0x83, 0xda, 0x04,
+	0x71, 0x94, 0x08, 0xdb, 0xea, 0x59, 0xfd, 0xc6, 0xe0, 0x9a, 0x5b, 0x12, 0xd1, 0x7d, 0xa6, 0x24,
+	0x7e, 0xfd, 0xe8, 0xa4, 0x5b, 0xf9, 0xfc, 0xeb, 0xcb, 0x2d, 0x6b, 0x6f, 0xe1, 0x82, 0x2f, 0xc1,
+	0xa5, 0x88, 0x23, 0x2a, 0xc5, 0x28, 0x41, 0x34, 0x44, 0x12, 0xdb, 0x17, 0x14, 0x67, 0xa3, 0x94,
+	0xb3, 0xab, 0xa4, 0x4f, 0xb4, 0xd2, 0xc4, 0xb5, 0x22, 0xb3, 0x02, 0xdf, 0x80, 0x35, 0x8e, 0x23,
+	0x22, 0x24, 0x47, 0x3c, 0x07, 0x2f, 0x29, 0xf0, 0x66, 0x29, 0x78, 0xef, 0x54, 0x5d, 0xc2, 0x5e,
+	0xe5, 0x67, 0x8a, 0x19, 0x3e, 0x60, 0xc9, 0x04, 0x53, 0x81, 0x24, 0x61, 0x74, 0x94, 0x0a, 0x1c,
+	0xda, 0xcb, 0x3d, 0xab, 0x5f, 0xf7, 0x6f, 0x67, 0xbe, 0x1f, 0x27, 0xdd, 0x2b, 0x7a, 0x98, 0x22,
+	0x8c, 0x5d, 0xc2, 0xbc, 0x04, 0xc9, 0x7d, 0x77, 0x48, 0xe5, 0xb7, 0xaf, 0x5b, 0x60, 0x31, 0xe5,
+	0x21, 0x95, 0x0b, 0xbc, 0x89, 0x7a, 0x25, 0x70, 0x08, 0x9f, 0x83, 0xd6, 0x18, 0x53, 0xfc, 0x96,
+	0x04, 0x04, 0x71, 0x82, 0x85, 0x5d, 0xed, 0x2d, 0xf5, 0x1b, 0x83, 0x5e, 0x69, 0x72, 0x3f, 0x57,
+	0x4e, 0x0b, 0x03, 0x29, 0x10, 0xe0, 0x3d, 0x50, 0xd3, 0x13, 0xb2, 0x6b, 0x8a, 0xd5, 0x39, 0x7f,
+	0xbc, 0x85, 0x5b, 0xd2, 0x26, 0xb8, 0x03, 0xaa, 0x63, 0xc6, 0x62, 0x61, 0xaf, 0xfc, 0x23, 0xc9,
+	0x4e, 0x10, 0xb0, 0x94, 0x4a, 0x9f, 0xb1, 0xd8, 0x64, 0x68, 0x27, 0x7c, 0x0a, 0xf4, 0x1d, 0x8d,
+	0xde, 0xb1, 0x94, 0x53, 0xf4, 0xde, 0xbe, 0xa8, 0x50, 0xdd, 0xf3, 0x83, 0x3c, 0xa4, 0xb2, 0xd8,
+	0x53, 0x53, 0x01, 0x1e, 0x69, 0x3f, 0x44, 0xa0, 0xfd, 0xa7, 0xc7, 0x69, 0x8e, 0xad, 0x2b, 0xec,
+	0xe6, 0xff, 0x66, 0xf5, 0x17, 0x1c, 0x1a, 0xb0, 0xd3, 0x23, 0x6e, 0x82, 0x16, 0xc5, 0x87, 0x72,
+	0xa4, 0x83, 0x93, 0xd0, 0x06, 0x3d, 0xab, 0xbf, 0xec, 0x57, 0xb5, 0xa3, 0x91, 0xd5, 0x54, 0xd2,
+	0x61, 0x08, 0xef, 0x82, 0xb6, 0x21, 0xc5, 0x19, 0x3d, 0x33, 0x34, 0x4c, 0xc3, 0x6a, 0x6e, 0x50,
+	0xa7, 0x0f, 0x43, 0xf8, 0x00, 0xac, 0x2b, 0x97, 0xd9, 0x48, 0xee, 0x6d, 0x9a, 0xde, 0xab, 0x99,
+	0xee, 0x6c, 0xfe, 0x61, 0xe8, 0x3f, 0x3e, 0x9a, 0x39, 0xd6, 0xf1, 0xcc, 0xb1, 0x7e, 0xce, 0x1c,
+	0xeb, 0xd3, 0xdc, 0xa9, 0x1c, 0xcf, 0x9d, 0xca, 0xf7, 0xb9, 0x53, 0x79, 0x3d, 0x88, 0x88, 0xdc,
+	0x4f, 0xc7, 0x6e, 0xc0, 0x12, 0x0f, 0x71, 0xc4, 0x91, 0xdc, 0xa2, 0x58, 0x7e, 0x60, 0x3c, 0xf6,
+	0xb2, 0xd7, 0xe1, 0xb0, 0xf8, 0x3e, 0xc8, 0xe9, 0x04, 0x8b, 0x71, 0x4d, 0x7d, 0xe5, 0x77, 0x7e,
+	0x07, 0x00, 0x00, 0xff, 0xff, 0xf9, 0xb2, 0x9c, 0x7e, 0x8b, 0x04, 0x00, 0x00,
 }
 
 func (m *GenesisState) Marshal() (dAtA []byte, err error) {
@@ -240,10 +224,25 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.ConversionOrders) > 0 {
-		for iNdEx := len(m.ConversionOrders) - 1; iNdEx >= 0; iNdEx-- {
+	if m.NextBeneficiaryEntryId != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.NextBeneficiaryEntryId))
+		i--
+		dAtA[i] = 0x60
+	}
+	if m.NextGrantEntryId != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.NextGrantEntryId))
+		i--
+		dAtA[i] = 0x58
+	}
+	if m.NextGrantId != 0 {
+		i = encodeVarintGenesis(dAtA, i, uint64(m.NextGrantId))
+		i--
+		dAtA[i] = 0x50
+	}
+	if len(m.BeneficiaryJournal) > 0 {
+		for iNdEx := len(m.BeneficiaryJournal) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.ConversionOrders[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.BeneficiaryJournal[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -251,61 +250,13 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x72
+			dAtA[i] = 0x4a
 		}
 	}
-	{
-		size, err := m.ContributorPool.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x6a
-	{
-		size, err := m.MemberPool.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x62
-	if len(m.VoidedTerms) > 0 {
-		dAtA4 := make([]byte, len(m.VoidedTerms)*10)
-		var j3 int
-		for _, num := range m.VoidedTerms {
-			for num >= 1<<7 {
-				dAtA4[j3] = uint8(uint64(num)&0x7f | 0x80)
-				num >>= 7
-				j3++
-			}
-			dAtA4[j3] = uint8(num)
-			j3++
-		}
-		i -= j3
-		copy(dAtA[i:], dAtA4[:j3])
-		i = encodeVarintGenesis(dAtA, i, uint64(j3))
-		i--
-		dAtA[i] = 0x5a
-	}
-	if m.NextJournalId != 0 {
-		i = encodeVarintGenesis(dAtA, i, uint64(m.NextJournalId))
-		i--
-		dAtA[i] = 0x50
-	}
-	if m.NextGrantId != 0 {
-		i = encodeVarintGenesis(dAtA, i, uint64(m.NextGrantId))
-		i--
-		dAtA[i] = 0x48
-	}
-	if len(m.Journal) > 0 {
-		for iNdEx := len(m.Journal) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.GrantJournal) > 0 {
+		for iNdEx := len(m.GrantJournal) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Journal[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.GrantJournal[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -316,30 +267,10 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x42
 		}
 	}
-	{
-		size, err := m.GrantsMandate.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x3a
-	{
-		size, err := m.Issuance.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintGenesis(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x32
-	if len(m.Totals) > 0 {
-		for iNdEx := len(m.Totals) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Books) > 0 {
+		for iNdEx := len(m.Books) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Totals[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Books[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -347,7 +278,7 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x3a
 		}
 	}
 	if len(m.Grants) > 0 {
@@ -361,7 +292,7 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x32
 		}
 	}
 	if len(m.Beneficiaries) > 0 {
@@ -375,11 +306,31 @@ func (m *GenesisState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintGenesis(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x2a
 		}
 	}
 	{
-		size, err := m.OwnershipPolicy.MarshalToSizedBuffer(dAtA[:i])
+		size := m.CompensationUsed.Size()
+		i -= size
+		if _, err := m.CompensationUsed.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x22
+	{
+		size, err := m.RegistrarMandate.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintGenesis(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.GrantsMandate.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -420,7 +371,11 @@ func (m *GenesisState) Size() (n int) {
 	_ = l
 	l = m.Params.Size()
 	n += 1 + l + sovGenesis(uint64(l))
-	l = m.OwnershipPolicy.Size()
+	l = m.GrantsMandate.Size()
+	n += 1 + l + sovGenesis(uint64(l))
+	l = m.RegistrarMandate.Size()
+	n += 1 + l + sovGenesis(uint64(l))
+	l = m.CompensationUsed.Size()
 	n += 1 + l + sovGenesis(uint64(l))
 	if len(m.Beneficiaries) > 0 {
 		for _, e := range m.Beneficiaries {
@@ -434,18 +389,20 @@ func (m *GenesisState) Size() (n int) {
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	if len(m.Totals) > 0 {
-		for _, e := range m.Totals {
+	if len(m.Books) > 0 {
+		for _, e := range m.Books {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
 	}
-	l = m.Issuance.Size()
-	n += 1 + l + sovGenesis(uint64(l))
-	l = m.GrantsMandate.Size()
-	n += 1 + l + sovGenesis(uint64(l))
-	if len(m.Journal) > 0 {
-		for _, e := range m.Journal {
+	if len(m.GrantJournal) > 0 {
+		for _, e := range m.GrantJournal {
+			l = e.Size()
+			n += 1 + l + sovGenesis(uint64(l))
+		}
+	}
+	if len(m.BeneficiaryJournal) > 0 {
+		for _, e := range m.BeneficiaryJournal {
 			l = e.Size()
 			n += 1 + l + sovGenesis(uint64(l))
 		}
@@ -453,25 +410,11 @@ func (m *GenesisState) Size() (n int) {
 	if m.NextGrantId != 0 {
 		n += 1 + sovGenesis(uint64(m.NextGrantId))
 	}
-	if m.NextJournalId != 0 {
-		n += 1 + sovGenesis(uint64(m.NextJournalId))
+	if m.NextGrantEntryId != 0 {
+		n += 1 + sovGenesis(uint64(m.NextGrantEntryId))
 	}
-	if len(m.VoidedTerms) > 0 {
-		l = 0
-		for _, e := range m.VoidedTerms {
-			l += sovGenesis(uint64(e))
-		}
-		n += 1 + sovGenesis(uint64(l)) + l
-	}
-	l = m.MemberPool.Size()
-	n += 1 + l + sovGenesis(uint64(l))
-	l = m.ContributorPool.Size()
-	n += 1 + l + sovGenesis(uint64(l))
-	if len(m.ConversionOrders) > 0 {
-		for _, e := range m.ConversionOrders {
-			l = e.Size()
-			n += 1 + l + sovGenesis(uint64(l))
-		}
+	if m.NextBeneficiaryEntryId != 0 {
+		n += 1 + sovGenesis(uint64(m.NextBeneficiaryEntryId))
 	}
 	return n
 }
@@ -546,7 +489,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OwnershipPolicy", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GrantsMandate", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -573,11 +516,78 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.OwnershipPolicy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.GrantsMandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RegistrarMandate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RegistrarMandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompensationUsed", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.CompensationUsed.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Beneficiaries", wireType)
 			}
@@ -611,7 +621,7 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Grants", wireType)
 			}
@@ -645,76 +655,9 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Totals", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Totals = append(m.Totals, DenomTotals{})
-			if err := m.Totals[len(m.Totals)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Issuance", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Issuance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GrantsMandate", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Books", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -741,13 +684,14 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.GrantsMandate.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Books = append(m.Books, AccountBook{})
+			if err := m.Books[len(m.Books)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 8:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Journal", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field GrantJournal", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -774,12 +718,46 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Journal = append(m.Journal, JournalEntry{})
-			if err := m.Journal[len(m.Journal)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.GrantJournal = append(m.GrantJournal, GrantEntry{})
+			if err := m.GrantJournal[len(m.GrantJournal)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BeneficiaryJournal", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenesis
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenesis
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.BeneficiaryJournal = append(m.BeneficiaryJournal, BeneficiaryEntry{})
+			if err := m.BeneficiaryJournal[len(m.BeneficiaryJournal)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NextGrantId", wireType)
 			}
@@ -798,11 +776,11 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 10:
+		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NextJournalId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NextGrantEntryId", wireType)
 			}
-			m.NextJournalId = 0
+			m.NextGrantEntryId = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenesis
@@ -812,92 +790,16 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NextJournalId |= uint64(b&0x7F) << shift
+				m.NextGrantEntryId |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
-			}
-		case 11:
-			if wireType == 0 {
-				var v uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowGenesis
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					v |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				m.VoidedTerms = append(m.VoidedTerms, v)
-			} else if wireType == 2 {
-				var packedLen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowGenesis
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					packedLen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if packedLen < 0 {
-					return ErrInvalidLengthGenesis
-				}
-				postIndex := iNdEx + packedLen
-				if postIndex < 0 {
-					return ErrInvalidLengthGenesis
-				}
-				if postIndex > l {
-					return io.ErrUnexpectedEOF
-				}
-				var elementCount int
-				var count int
-				for _, integer := range dAtA[iNdEx:postIndex] {
-					if integer < 128 {
-						count++
-					}
-				}
-				elementCount = count
-				if elementCount != 0 && len(m.VoidedTerms) == 0 {
-					m.VoidedTerms = make([]uint64, 0, elementCount)
-				}
-				for iNdEx < postIndex {
-					var v uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowGenesis
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						v |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					m.VoidedTerms = append(m.VoidedTerms, v)
-				}
-			} else {
-				return fmt.Errorf("proto: wrong wireType = %d for field VoidedTerms", wireType)
 			}
 		case 12:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field MemberPool", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NextBeneficiaryEntryId", wireType)
 			}
-			var msglen int
+			m.NextBeneficiaryEntryId = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowGenesis
@@ -907,92 +809,11 @@ func (m *GenesisState) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				m.NextBeneficiaryEntryId |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.MemberPool.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ContributorPool", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ContributorPool.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 14:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConversionOrders", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenesis
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenesis
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ConversionOrders = append(m.ConversionOrders, ConversionOrder{})
-			if err := m.ConversionOrders[len(m.ConversionOrders)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenesis(dAtA[iNdEx:])
