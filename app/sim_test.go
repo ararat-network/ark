@@ -222,13 +222,11 @@ func exportedRateTime(tb testing.TB, cdc codec.Codec, genesisState map[string]js
 	var oracleGenesis oracletypes.GenesisState
 	cdc.MustUnmarshalJSON(raw, &oracleGenesis)
 
-	latest := time.Unix(0, 0).UTC()
+	latest := uint64(0)
 	for _, rate := range oracleGenesis.ExchangeRates {
-		if rate.BlockTimestamp.After(latest) {
-			latest = rate.BlockTimestamp
-		}
+		latest = max(latest, rate.BlockTime)
 	}
-	return latest
+	return time.Unix(int64(latest), 0).UTC()
 }
 
 func TestAppStateDeterminism(t *testing.T) {

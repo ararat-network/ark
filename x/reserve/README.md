@@ -80,10 +80,10 @@ The feed always derives from the prefix: `abtc-cb` and `abtc-osl` use the same s
 There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates.
 A different price series needs a different prefix. Governance sizes the combined cap ratios of entries sharing a series.
 
-Each entry supplies its own positive `max_rate_age`, bounded by `MaxRecognitionRateAge`; Oracle evaluates that request
-through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property; acceptable age is
-consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can serve conversion
-and reserve recognition with different tolerances.
+Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
+that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
+acceptable age is consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can
+serve conversion and reserve recognition with different tolerances.
 
 Feed guards derive two kinds of claims at read time: every eligibility entry, and an open position whose returns
 still need attribution. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.

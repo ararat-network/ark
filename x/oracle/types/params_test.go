@@ -2,7 +2,6 @@ package types_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +31,7 @@ func TestParamsValidate(t *testing.T) {
 			check: func(t *testing.T, p types.Params) {
 				t.Helper()
 				require.Equal(t, math.LegacyMustNewDecFromStr("0.666666666666666667"), p.VoteThreshold)
-				require.Equal(t, time.Minute, p.MaxExchangeRateAge)
+				require.Equal(t, uint64(60), p.MaxExchangeRateAge)
 			},
 		},
 		// VoteThreshold
@@ -225,11 +224,6 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: exchangeRateAgeOutOfRange,
 		},
 		{
-			name:      "max exchange rate age negative",
-			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = -time.Second },
-			expectErr: exchangeRateAgeOutOfRange,
-		},
-		{
 			name:   "max exchange rate age at the domain cap",
 			mutate: func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge },
 		},
@@ -237,7 +231,7 @@ func TestParamsValidate(t *testing.T) {
 			// A window that never elapses does not loosen the staleness gate,
 			// it removes it: every rate reads fresh forever.
 			name:      "max exchange rate age above the domain cap",
-			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + time.Second },
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + 1 },
 			expectErr: exchangeRateAgeOutOfRange,
 		},
 	}

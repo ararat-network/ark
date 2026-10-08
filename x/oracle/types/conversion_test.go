@@ -14,6 +14,25 @@ import (
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
+func TestExchangeRateFreshAt(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		stored, now, age uint64
+		fresh            bool
+	}{
+		{"same second", 100, 100, 0, true},
+		{"at the age", 100, 160, 60, true},
+		{"a second past the age", 100, 161, 60, false},
+		{"zero age a second on", 100, 101, 0, false},
+		{"stamped after the block", 101, 100, 0, true},
+		{"top of the range", ^uint64(0) - 1, ^uint64(0), 0, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.fresh, types.ExchangeRate{BlockTime: tc.stored}.FreshAt(tc.now, tc.age))
+		})
+	}
+}
+
 func TestRateSetConvert(t *testing.T) {
 	// NOAH per unit: one USD is two NOAH and one KRW is two thousandths of a
 	// NOAH, so one USD is a thousand KRW.

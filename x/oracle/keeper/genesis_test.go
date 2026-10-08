@@ -32,8 +32,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 					Params:     params,
 					Accounting: types.NewAccounting(params),
 					ExchangeRates: []types.ExchangeRate{
-						{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-						{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+						{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTime: uint64(blockTime.Unix()), BlockHeight: 10},
+						{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTime: uint64(blockTime.Unix()), BlockHeight: 11},
 					},
 					RewardWeights: []types.RewardWeight{
 						{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -136,14 +136,14 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.USDBaseDenom,
-						Rate:           math.LegacyOneDec(),
-						BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+						Denom:     chain.USDBaseDenom,
+						Rate:      math.LegacyOneDec(),
+						BlockTime: uint64(oracleTestBlockTime.Add(time.Second).Unix()),
 					},
 				}
 				return gs
 			},
-			expectErr:    "timestamp 2026-07-12 12:00:01 +0000 UTC after genesis block time",
+			expectErr:    "has time 1783857601 after genesis block time 1783857600",
 			expectNoRate: chain.USDBaseDenom,
 		},
 		{
@@ -152,9 +152,9 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.USDBaseDenom,
-						Rate:           math.LegacyOneDec(),
-						BlockTimestamp: oracleTestBlockTime,
+						Denom:     chain.USDBaseDenom,
+						Rate:      math.LegacyOneDec(),
+						BlockTime: uint64(oracleTestBlockTime.Unix()),
 					},
 				}
 				return gs
@@ -235,7 +235,7 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().NoError(err)
 		s.Require().Equal(item.Denom, exchangeRate.Denom)
 		s.Require().True(item.Rate.Equal(exchangeRate.Rate), "expected %s for %s, got %s", item.Rate, item.Denom, exchangeRate.Rate)
-		s.Require().True(item.BlockTimestamp.Equal(exchangeRate.BlockTimestamp))
+		s.Require().Equal(item.BlockTime, exchangeRate.BlockTime)
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 
@@ -294,8 +294,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			AttendanceWindowStartHeight: 11,
 		},
 		ExchangeRates: []types.ExchangeRate{
-			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-			{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTime: uint64(blockTime.Unix()), BlockHeight: 10},
+			{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTime: uint64(blockTime.Unix()), BlockHeight: 11},
 		},
 		RewardWeights: []types.RewardWeight{
 			{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -360,7 +360,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	for _, item := range expected.ExchangeRates {
 		exchangeRate := exchangeRates[item.Denom]
 		s.Require().True(item.Rate.Equal(exchangeRate.Rate))
-		s.Require().True(item.BlockTimestamp.Equal(exchangeRate.BlockTimestamp))
+		s.Require().Equal(item.BlockTime, exchangeRate.BlockTime)
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 

@@ -50,10 +50,10 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 		chain.EURBaseDenom,
 	} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 
@@ -464,9 +464,9 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		sdk.NewCoins(sdk.NewInt64Coin(chain.EURBaseDenom, 10)),
 	))
 	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.EURBaseDenom, oracletypes.ExchangeRate{
-		Denom:          chain.EURBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: ctx.BlockTime(),
+		Denom:     chain.EURBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(ctx.BlockTime().Unix()),
 	}))
 	// The mint above bypasses Market and needs no priming: settlement folds the
 	// registry itself, so it values the new supply as soon as its rate exists.

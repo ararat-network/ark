@@ -2,7 +2,6 @@ package simulation
 
 import (
 	"context"
-	"time"
 
 	"cosmossdk.io/math"
 
@@ -89,7 +88,7 @@ func MsgSetRecognitionPolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 				Denom:               denom,
 				HaircutFactor:       math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 100)), 2),
 				RecognitionCapRatio: share,
-				MaxRateAge:          time.Duration(r.IntInRange(1, int(types.MaxRecognitionRateAge/time.Second))) * time.Second,
+				MaxRateAge:          uint64(r.IntInRange(1, int(types.MaxRecognitionRateAge))),
 			})
 		}
 

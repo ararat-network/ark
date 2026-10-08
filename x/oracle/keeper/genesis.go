@@ -13,6 +13,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -26,13 +27,13 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	genesisTime := sdkCtx.BlockTime()
+	genesisTime := chain.BlockSeconds(ctx)
 	for _, er := range data.ExchangeRates {
-		if er.BlockTimestamp.After(genesisTime) {
+		if er.BlockTime > genesisTime {
 			return fmt.Errorf(
-				"genesis exchange rate for denom %s has timestamp %s after genesis block time %s",
+				"genesis exchange rate for denom %s has time %d after genesis block time %d",
 				er.Denom,
-				er.BlockTimestamp,
+				er.BlockTime,
 				genesisTime,
 			)
 		}
@@ -125,10 +126,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	exchangeRates := []types.ExchangeRate{}
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
 		exchangeRates = append(exchangeRates, types.ExchangeRate{
-			Denom:          denom,
-			Rate:           exchangeRate.Rate,
-			BlockTimestamp: exchangeRate.BlockTimestamp,
-			BlockHeight:    exchangeRate.BlockHeight,
+			Denom:       denom,
+			Rate:        exchangeRate.Rate,
+			BlockTime:   exchangeRate.BlockTime,
+			BlockHeight: exchangeRate.BlockHeight,
 		})
 		return false, nil
 	}); err != nil {

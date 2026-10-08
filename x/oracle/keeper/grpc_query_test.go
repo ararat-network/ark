@@ -47,9 +47,9 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			name: "stored denom returned in both readings",
 			setup: func() {
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-					Denom:          chain.USDBaseDenom,
-					Rate:           math.LegacyNewDec(4),
-					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+					Denom:     chain.USDBaseDenom,
+					Rate:      math.LegacyNewDec(4),
+					BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 				}))
 			},
 			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
@@ -62,9 +62,9 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			name: "rate at the store bound reads zero units per noah",
 			setup: func() {
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-					Denom:          chain.USDBaseDenom,
-					Rate:           types.MaxExchangeRate,
-					BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+					Denom:     chain.USDBaseDenom,
+					Rate:      types.MaxExchangeRate,
+					BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 				}))
 			},
 			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
@@ -76,12 +76,12 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 			setup: func() {
 				params, err := s.keeper.Params.Get(s.ctx)
 				s.Require().NoError(err)
-				params.MaxExchangeRateAge = time.Minute
+				params.MaxExchangeRateAge = 60
 				s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 				s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-					Denom:          chain.USDBaseDenom,
-					Rate:           math.LegacyNewDec(7),
-					BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
+					Denom:     chain.USDBaseDenom,
+					Rate:      math.LegacyNewDec(7),
+					BlockTime: uint64(oracleTestBlockTime.Add(-time.Minute - time.Second).Unix()),
 				}))
 			},
 			req:       &types.QueryExchangeRateRequest{Denom: chain.USDBaseDenom},
@@ -121,23 +121,23 @@ func (s *KeeperTestSuite) TestQueryExchangeRate() {
 // the same line. A stale rate is absent, not present with a note.
 func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyNewDecWithPrec(5, 1),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyNewDecWithPrec(5, 1),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.EURBaseDenom, types.ExchangeRate{
-		Denom:          chain.EURBaseDenom,
-		Rate:           math.LegacyNewDec(8),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.EURBaseDenom,
+		Rate:      math.LegacyNewDec(8),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.KRWBaseDenom, types.ExchangeRate{
-		Denom:          chain.KRWBaseDenom,
-		Rate:           math.LegacyNewDec(1000),
-		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
+		Denom:     chain.KRWBaseDenom,
+		Rate:      math.LegacyNewDec(1000),
+		BlockTime: uint64(oracleTestBlockTime.Add(-2 * time.Minute).Unix()),
 	}))
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	resp, err := oraclekeeper.NewQueryServerImpl(s.keeper).ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})

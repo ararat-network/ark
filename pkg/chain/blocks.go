@@ -20,6 +20,12 @@ const (
 	BlocksPerYear   = BlocksPerDay * 365
 )
 
+// BlockSeconds is the block's Unix time in whole seconds. A time before the epoch, which only a test
+// harness produces, reads as the epoch.
+func BlockSeconds(ctx context.Context) uint64 {
+	return uint64(max(sdk.UnwrapSDKContext(ctx).BlockTime().Unix(), 0))
+}
+
 // IsPeriodLastBlock returns true if we are at the last block of the period
 func IsPeriodLastBlock(ctx context.Context, blocksPerPeriod uint64) bool {
 	return IsPeriodLastBlockFrom(ctx, 0, blocksPerPeriod)

@@ -8,7 +8,6 @@ package ark.oracle.v1;
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/duration.proto";
 
 option go_package = "github.com/ararat-network/ark/x/oracle/types";
 
@@ -44,13 +43,9 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // max_exchange_rate_age bounds elapsed block time since the last rate update for ordinary
-  // reads. Consumers using GetRateSetWithin supply their own freshness windows.
-  google.protobuf.Duration max_exchange_rate_age = 7 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdduration) = true,
-    (amino.dont_omitempty) = true
-  ];
+  // max_exchange_rate_age is how old, in seconds, a rate may be for an ordinary read. Consumers
+  // using GetRateSetWithin supply their own windows.
+  uint64 max_exchange_rate_age = 7 [(amino.dont_omitempty) = true];
   // functioning_block_threshold is the minimum participating share of commit power required to
   // grade attendance, bounded to [0.5, 1]. Higher thresholds make grading more forgiving during
   // correlated outages.

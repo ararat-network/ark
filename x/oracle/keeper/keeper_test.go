@@ -166,7 +166,7 @@ func (s *KeeperTestSuite) newBondedValidator(valAddr sdk.ValAddress) (sdk.ConsAd
 }
 
 func newStoredExchangeRate(denom string, rate math.LegacyDec) types.ExchangeRate {
-	return types.ExchangeRate{Denom: denom, Rate: rate, BlockTimestamp: oracleTestBlockTime}
+	return types.ExchangeRate{Denom: denom, Rate: rate, BlockTime: uint64(oracleTestBlockTime.Unix())}
 }
 
 func (s *KeeperTestSuite) TestGetExchangeRate() {
@@ -218,14 +218,14 @@ func (s *KeeperTestSuite) TestGetExchangeRate() {
 
 func (s *KeeperTestSuite) TestGetRateSet() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.XDRBaseDenom,
-		Rate:           math.LegacyMustNewDecFromStr("1.7"),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.XDRBaseDenom,
+		Rate:      math.LegacyMustNewDecFromStr("1.7"),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 
 	rates, err := s.keeper.GetRateSet(
@@ -252,17 +252,17 @@ func (s *KeeperTestSuite) TestGetRateSetReturnsNoahIdentityByDefault() {
 func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyMustNewDecFromStr("1.3"),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyMustNewDecFromStr("1.3"),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.XDRBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
+		Denom:     chain.XDRBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-time.Minute - time.Second).Unix()),
 	}))
 
 	// axdr is stale and akrw was never priced: both are omitted rather than
@@ -285,25 +285,25 @@ func (s *KeeperTestSuite) TestGetAvailableRateSetOmitsUnknownAndStaleDenoms() {
 func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.XDRBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Hour),
+		Denom:     chain.XDRBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-2 * time.Hour).Unix()),
 	}))
 
 	rates, err := s.keeper.GetRateSetWithin(s.ctx, []types.RateRequest{
 		// The series is derived from the requested name — its prefix for an
 		// external symbol, itself for a bare feed key — so a request cannot
 		// route a name to any series but its own.
-		{Denom: "axdr-patient", MaxAge: 26 * time.Hour},
-		{Denom: "axdr-strict", MaxAge: time.Hour},
-		{Denom: chain.XDRBaseDenom, MaxAge: 26 * time.Hour},
+		{Denom: "axdr-patient", MaxAge: 26 * 3_600},
+		{Denom: "axdr-strict", MaxAge: 3_600},
+		{Denom: chain.XDRBaseDenom, MaxAge: 26 * 3_600},
 		// A feed never priced is omitted rather than zero: a judged read is
 		// not licence to invent a rate where none was stored.
-		{Denom: "ausd-x", MaxAge: 26 * time.Hour},
+		{Denom: "ausd-x", MaxAge: 26 * 3_600},
 		// A non-positive window admits nothing rather than erroring: this read
 		// sits behind arithmetic that settles every block.
 		{Denom: "axdr-zero2", MaxAge: 0},
@@ -318,8 +318,8 @@ func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 	// Requested denominations must be unique, or two verdicts would silently
 	// collapse into one.
 	_, err = s.keeper.GetRateSetWithin(s.ctx, []types.RateRequest{
-		{Denom: "axdr-x", MaxAge: time.Hour},
-		{Denom: "axdr-x", MaxAge: 26 * time.Hour},
+		{Denom: "axdr-x", MaxAge: 3_600},
+		{Denom: "axdr-x", MaxAge: 26 * 3_600},
 	})
 	s.Require().ErrorContains(err, "duplicate rate request")
 
@@ -335,17 +335,17 @@ func (s *KeeperTestSuite) TestGetRateSetWithinJudgesOneFeedPerRequest() {
 func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyMustNewDecFromStr("1.3"),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyMustNewDecFromStr("1.3"),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.XDRBaseDenom, types.ExchangeRate{
-		Denom:          chain.XDRBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-24 * time.Hour),
+		Denom:     chain.XDRBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-24 * time.Hour).Unix()),
 	}))
 
 	rates, err := s.keeper.GetLastKnownRateSet(
@@ -372,16 +372,48 @@ func (s *KeeperTestSuite) TestGetLastKnownRateSetIgnoresStalenessButNotAbsence()
 func (s *KeeperTestSuite) TestGetRateSetRejectsElapsedTimeStaleness() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-time.Minute - time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-time.Minute - time.Second).Unix()),
 	}))
 
 	_, err = s.keeper.GetRateSet(s.ctx, chain.USDBaseDenom)
 	s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
+}
+
+// TestRateFreshnessCountsWholeSeconds checks reads judge age in whole seconds: a rate stays fresh
+// through the last fraction of its final second and goes stale at the next.
+func (s *KeeperTestSuite) TestRateFreshnessCountsWholeSeconds() {
+	for _, tc := range []struct {
+		name  string
+		after time.Duration
+		fresh bool
+	}{
+		{"at the age", time.Minute, true},
+		{"within the last second", time.Minute + 999*time.Millisecond, true},
+		{"a second past the age", time.Minute + time.Second, false},
+	} {
+		s.Run(tc.name, func() {
+			params, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			params.MaxExchangeRateAge = 60
+			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+			s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
+				Denom:     chain.USDBaseDenom,
+				Rate:      math.LegacyOneDec(),
+				BlockTime: uint64(oracleTestBlockTime.Unix()),
+			}))
+			_, err = s.keeper.GetExchangeRate(sdk.UnwrapSDKContext(s.ctx).WithBlockTime(oracleTestBlockTime.Add(tc.after)), chain.USDBaseDenom)
+			if tc.fresh {
+				s.Require().NoError(err)
+			} else {
+				s.Require().ErrorIs(err, types.ErrStaleExchangeRate)
+			}
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
@@ -392,17 +424,17 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 		{
 			name: "rate is unset",
 			exchangeRate: types.ExchangeRate{
-				Denom:          chain.USDBaseDenom,
-				Rate:           math.LegacyDec{},
-				BlockTimestamp: oracleTestBlockTime,
+				Denom:     chain.USDBaseDenom,
+				Rate:      math.LegacyDec{},
+				BlockTime: uint64(oracleTestBlockTime.Unix()),
 			},
 		},
 		{
 			name: "rate is not positive",
 			exchangeRate: types.ExchangeRate{
-				Denom:          chain.USDBaseDenom,
-				Rate:           math.LegacyZeroDec(),
-				BlockTimestamp: oracleTestBlockTime,
+				Denom:     chain.USDBaseDenom,
+				Rate:      math.LegacyZeroDec(),
+				BlockTime: uint64(oracleTestBlockTime.Unix()),
 			},
 		},
 		{
@@ -412,7 +444,7 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 				Rate: math.LegacyNewDecFromBigInt(
 					new(big.Int).Lsh(big.NewInt(1), 256),
 				),
-				BlockTimestamp: oracleTestBlockTime,
+				BlockTime: uint64(oracleTestBlockTime.Unix()),
 			},
 		},
 		{
@@ -420,9 +452,9 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 			// to: the backstop behind the folds that multiply by the store.
 			name: "rate exceeds the store bound",
 			exchangeRate: types.ExchangeRate{
-				Denom:          chain.USDBaseDenom,
-				Rate:           types.MaxExchangeRate.Add(math.LegacySmallestDec()),
-				BlockTimestamp: oracleTestBlockTime,
+				Denom:     chain.USDBaseDenom,
+				Rate:      types.MaxExchangeRate.Add(math.LegacySmallestDec()),
+				BlockTime: uint64(oracleTestBlockTime.Unix()),
 			},
 		},
 	}
@@ -442,9 +474,9 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsInvalidRate() {
 
 func (s *KeeperTestSuite) TestSetExchangeRateWithEventRejectsFutureTimestamp() {
 	err := s.keeper.SetExchangeRateWithEvent(s.ctx, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(time.Second).Unix()),
 	})
 	s.Require().ErrorIs(err, types.ErrInvalidExchangeRate)
 
@@ -498,19 +530,19 @@ func (s *KeeperTestSuite) TestSetExchangeRateWithEventAcceptsUnlistedDenom() {
 
 func (s *KeeperTestSuite) TestGetExchangeRates() {
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.USDBaseDenom, types.ExchangeRate{
-		Denom:          chain.USDBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-30 * time.Second),
+		Denom:     chain.USDBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
 	}))
 	s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, chain.KRWBaseDenom, types.ExchangeRate{
-		Denom:          chain.KRWBaseDenom,
-		Rate:           math.LegacyOneDec(),
-		BlockTimestamp: oracleTestBlockTime.Add(-2 * time.Minute),
+		Denom:     chain.KRWBaseDenom,
+		Rate:      math.LegacyOneDec(),
+		BlockTime: uint64(oracleTestBlockTime.Add(-2 * time.Minute).Unix()),
 	}))
 
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	params.MaxExchangeRateAge = time.Minute
+	params.MaxExchangeRateAge = 60
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 
 	exchangeRates, err := s.keeper.GetExchangeRates(s.ctx)

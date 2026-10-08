@@ -238,7 +238,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `params.min_attendance_per_window` | `0.05` | Default | Deliberately lenient; the reward lane, not jailing, is the accuracy incentive. Zero switches jailing off. |
 | `params.functioning_block_threshold` | `0.5` | Default | A block grades attendance only once a majority of power priced it. Floored at a half. |
 | `params.participation_threshold` | `0.2` | Default | A report must price a fifth of the targets to count. Capped at a half. |
-| `params.max_exchange_rate_age` | `60s` | Default | Ten blocks; capped at seven days. |
+| `params.max_exchange_rate_age` | `60` | Default | Seconds: ten blocks; capped at seven days. |
 | `exchange_rates`, `attendance_records`, `reward_weights` | empty | Decided | State the chain builds. |
 
 ## 9. Asset registry

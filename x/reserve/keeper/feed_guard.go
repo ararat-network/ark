@@ -25,7 +25,7 @@ func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]oracletypes.
 			Consumer: types.ModuleName,
 			Referent: fmt.Sprintf(
 				"recognition policy: %s is credited at haircut %s, capped at %s of "+
-					"recognised capital, on rates at most %s old",
+					"recognised capital, on rates at most %ds old",
 				symbol,
 				entry.HaircutFactor,
 				entry.RecognitionCapRatio,

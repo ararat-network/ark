@@ -88,9 +88,9 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 	}
 	for _, denom := range denoms {
 		if err := oracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
+			Denom:     denom,
+			Rate:      math.LegacyOneDec(),
+			BlockTime: uint64(ctx.BlockTime().Unix()),
 		}); err != nil {
 			tb.Fatal(err)
 		}

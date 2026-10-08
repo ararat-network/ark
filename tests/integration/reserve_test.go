@@ -47,10 +47,10 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	// completely and the targets can be sized at all.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 
@@ -210,7 +210,7 @@ func TestReserveFeedGuardBlocksRemoval(t *testing.T) {
 				Denom:               goldExternal,
 				HaircutFactor:       math.LegacyMustNewDecFromStr("0.5"),
 				RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.25"),
-				MaxRateAge:          time.Hour,
+				MaxRateAge:          3_600,
 			}},
 		})
 		require.NoError(t, err)
@@ -370,10 +370,10 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 
 	for _, denom := range []string{externalFeed, chain.USDBaseDenom, chain.XDRBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           rate,
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        rate,
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 
@@ -386,7 +386,7 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 			Denom:               externalAsset,
 			HaircutFactor:       math.LegacyOneDec(),
 			RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.9"),
-			MaxRateAge:          time.Hour,
+			MaxRateAge:          3_600,
 		}},
 	})
 	require.NoError(t, err)

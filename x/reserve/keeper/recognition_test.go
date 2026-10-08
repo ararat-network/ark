@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -19,7 +18,7 @@ import (
 // testRateAge is the window test entries state. Rates the stub serves are age
 // zero, so it admits them all; the cases that exercise the window state their
 // own.
-const testRateAge = time.Hour
+const testRateAge = uint64(3_600)
 
 // xdrExternal and usdExternal identify external claims; their prefixes identify the Oracle series.
 // Reserve lists and holds claims, while Oracle prices series.
@@ -35,7 +34,7 @@ func eligibility(denom, haircut, capRatio string) types.EligibilityEntry {
 	return agedEligibility(denom, haircut, capRatio, testRateAge)
 }
 
-func agedEligibility(denom, haircut, capRatio string, maxRateAge time.Duration) types.EligibilityEntry {
+func agedEligibility(denom, haircut, capRatio string, maxRateAge uint64) types.EligibilityEntry {
 	return types.EligibilityEntry{
 		Denom:               denom,
 		HaircutFactor:       math.LegacyMustNewDecFromStr(haircut),
@@ -69,7 +68,7 @@ func (s *KeeperTestSuite) stubRates(rates oracletypes.RateSet) {
 	s.stubRatesAtAge(rates, 0)
 }
 
-func (s *KeeperTestSuite) stubRatesAtAge(rates oracletypes.RateSet, age time.Duration) {
+func (s *KeeperTestSuite) stubRatesAtAge(rates oracletypes.RateSet, age uint64) {
 	// An external symbol and its series are one price, so a fixture naming either answers
 	// for both: the fold asks for the series, while a proven movement of that
 	// custody asks for the coin. Mirroring here keeps a test that darkens a feed
@@ -116,7 +115,7 @@ func (s *KeeperTestSuite) stubRatesAtAge(rates oracletypes.RateSet, age time.Dur
 		DoAndReturn(func(_ context.Context, requests []oracletypes.RateRequest) (oracletypes.RateSet, error) {
 			answer := oracletypes.NewRateSet()
 			for _, request := range requests {
-				if request.MaxAge <= 0 || age > request.MaxAge {
+				if request.MaxAge == 0 || age > request.MaxAge {
 					continue
 				}
 				feed := request.Denom
@@ -355,8 +354,8 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	s.attest(chain.XDRBaseDenom+"-patient", 100)
 	s.attest(chain.XDRBaseDenom+"-strict", 100)
 	s.setPolicy(
-		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
-		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*3_600),
+		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", 3_600),
 	)
 	rates := oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)}
 
@@ -371,10 +370,10 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	s.attest(chain.XDRBaseDenom+"-patient", 100)
 	s.attest(chain.XDRBaseDenom+"-strict", 100)
 	s.setPolicy(
-		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*time.Hour),
-		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", time.Hour),
+		agedEligibility(chain.XDRBaseDenom+"-patient", "1", "0.4", 26*3_600),
+		agedEligibility(chain.XDRBaseDenom+"-strict", "1", "0.4", 3_600),
 	)
-	s.stubRatesAtAge(rates, 2*time.Hour)
+	s.stubRatesAtAge(rates, 2*3_600)
 	s.Require().Equal(math.NewInt(1_000+200+0), s.recognised())
 }
 

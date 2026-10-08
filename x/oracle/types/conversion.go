@@ -2,7 +2,6 @@ package types
 
 import (
 	"maps"
-	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -39,7 +38,13 @@ func NewRateSetFrom(rates map[string]math.LegacyDec) RateSet {
 // different freshness verdicts.
 type RateRequest struct {
 	Denom  string
-	MaxAge time.Duration
+	MaxAge uint64 // seconds
+}
+
+// FreshAt reports whether the rate is at most maxAge seconds old at now. Writes and genesis refuse a
+// rate timed after its block, so a later one counts as fresh only defensively.
+func (er ExchangeRate) FreshAt(now, maxAge uint64) bool {
+	return now <= er.BlockTime || now-er.BlockTime <= maxAge
 }
 
 // Convert computes offer-to-ask value from captured rates. Sub-precision results may be zero;

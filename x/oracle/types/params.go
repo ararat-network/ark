@@ -8,7 +8,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"cosmossdk.io/math"
 
@@ -20,16 +19,16 @@ const (
 	DefaultRewardWindow             = chain.BlocksPerWeek // window for a week
 	DefaultAttendanceWindow         = chain.BlocksPerWeek // window for a week
 	DefaultRewardDistributionWindow = chain.BlocksPerYear // window for a year
-	DefaultMaxExchangeRateAge       = time.Minute
+	DefaultMaxExchangeRateAge       = uint64(60)          // a minute, in seconds
 
 	// MaxRewardWindow and MaxAttendanceWindow cap settlement cadence at a chain year, keeping valid
 	// governance values finite and well above the week-long defaults.
 	MaxRewardWindow     = chain.BlocksPerYear
 	MaxAttendanceWindow = chain.BlocksPerYear
 
-	// MaxAllowedExchangeRateAge caps the chain-default freshness window at seven days. It bounds
-	// ordinary rate reads; consumers using GetRateSetWithin validate their own windows separately.
-	MaxAllowedExchangeRateAge = 7 * 24 * time.Hour
+	// MaxAllowedExchangeRateAge caps the chain-default freshness window at seven days, in seconds. It
+	// bounds ordinary rate reads; consumers using GetRateSetWithin validate their own windows separately.
+	MaxAllowedExchangeRateAge = uint64(7 * 86_400)
 )
 
 // MaxOutgoingReferenceRate caps an explicit governance rebase rate at one trillion NOAH per
@@ -138,9 +137,9 @@ func (p Params) Validate() error {
 			p.ParticipationThreshold,
 		)
 	}
-	if p.MaxExchangeRateAge <= 0 || p.MaxExchangeRateAge > MaxAllowedExchangeRateAge {
+	if p.MaxExchangeRateAge == 0 || p.MaxExchangeRateAge > MaxAllowedExchangeRateAge {
 		return fmt.Errorf(
-			"oracle parameter MaxExchangeRateAge must be greater than zero and at most %s, is %s",
+			"oracle parameter MaxExchangeRateAge must be greater than zero and at most %ds, is %ds",
 			MaxAllowedExchangeRateAge,
 			p.MaxExchangeRateAge,
 		)

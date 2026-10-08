@@ -381,10 +381,10 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	// carrying the same rate.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 

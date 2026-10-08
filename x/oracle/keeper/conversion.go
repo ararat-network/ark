@@ -7,8 +7,6 @@ import (
 
 	"cosmossdk.io/collections"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
@@ -62,14 +60,14 @@ func (k Keeper) GetLastKnownRateSet(ctx context.Context, denoms ...string) (type
 // identity remains. See x/oracle/README.md for consumer freshness policy.
 func (k Keeper) GetRateSetWithin(ctx context.Context, requests []types.RateRequest) (types.RateSet, error) {
 	rates := types.NewRateSet()
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	now := chain.BlockSeconds(ctx)
 	seen := make(map[string]struct{}, len(requests))
 	for _, request := range requests {
 		if _, duplicate := seen[request.Denom]; duplicate {
 			return nil, fmt.Errorf("duplicate rate request for %s", request.Denom)
 		}
 		seen[request.Denom] = struct{}{}
-		if request.MaxAge <= 0 {
+		if request.MaxAge == 0 {
 			continue
 		}
 		feed := request.Denom
@@ -88,7 +86,7 @@ func (k Keeper) GetRateSetWithin(ctx context.Context, requests []types.RateReque
 			}
 			return nil, fmt.Errorf("getting exchange rate for feed %s: %w", feed, err)
 		}
-		if currentTime.Sub(stored.BlockTimestamp) > request.MaxAge {
+		if !stored.FreshAt(now, request.MaxAge) {
 			continue
 		}
 		rates[request.Denom] = stored.Rate
@@ -117,10 +115,10 @@ func (k Keeper) rateSet(ctx context.Context, skipUnavailable bool, denoms []stri
 	if err != nil {
 		return nil, fmt.Errorf("getting params: %w", err)
 	}
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	now := chain.BlockSeconds(ctx)
 
 	for _, denom := range uniqueDenoms {
-		rate, err := k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
+		rate, err := k.getExchangeRate(ctx, denom, now, params.MaxExchangeRateAge)
 		if err != nil {
 			if skipUnavailable &&
 				(errors.Is(err, types.ErrUnknownDenom) || errors.Is(err, types.ErrStaleExchangeRate)) {

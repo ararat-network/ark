@@ -3,7 +3,6 @@ package types_test
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -39,7 +38,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			Denom:               "axau-lbma",
 			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
 			RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.2"),
-			MaxRateAge:          72 * time.Hour,
+			MaxRateAge:          72 * 3_600,
 		}
 	}
 
@@ -113,11 +112,6 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: rateAgeOutOfRange,
 		},
 		{
-			name:    "negative window",
-			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = -time.Second },
-			wantErr: rateAgeOutOfRange,
-		},
-		{
 			// The cap itself is admissible: it bounds absurdity, it does not
 			// express an opinion about sensible windows.
 			name:   "window at the domain cap",
@@ -125,7 +119,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 		},
 		{
 			name:    "window past the domain cap",
-			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + time.Second },
+			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + 1 },
 			wantErr: rateAgeOutOfRange,
 		},
 	}

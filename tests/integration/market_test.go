@@ -476,10 +476,10 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 		chain.EURBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 	} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           rate,
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        rate,
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 

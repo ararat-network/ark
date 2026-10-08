@@ -50,10 +50,10 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 	// so a parity failure is a settlement bug and never a rounding artefact.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 
@@ -243,10 +243,10 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom, chain.KRWBaseDenom} {
 		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}))
 	}
 
@@ -381,10 +381,10 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				chain.USDBaseDenom,
 			} {
 				require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-					Denom:          denom,
-					Rate:           math.LegacyOneDec(),
-					BlockTimestamp: ctx.BlockTime(),
-					BlockHeight:    uint64(ctx.BlockHeight()),
+					Denom:       denom,
+					Rate:        math.LegacyOneDec(),
+					BlockTime:   uint64(ctx.BlockTime().Unix()),
+					BlockHeight: uint64(ctx.BlockHeight()),
 				}))
 			}
 

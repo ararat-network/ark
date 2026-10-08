@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"time"
 
 	"cosmossdk.io/math"
 
@@ -15,10 +14,10 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// MaxRecognitionRateAge caps per-entry freshness windows with substantial headroom over publication
-// gaps. Recognition executes during block settlement, so valid inputs must keep its arithmetic
-// bounded.
-const MaxRecognitionRateAge = 30 * 24 * time.Hour
+// MaxRecognitionRateAge caps per-entry freshness windows, in seconds, with substantial headroom over
+// publication gaps. Recognition executes during block settlement, so valid inputs must keep its
+// arithmetic bounded.
+const MaxRecognitionRateAge = uint64(30 * 86_400)
 
 // Validate validates one eligibility entry.
 func (entry EligibilityEntry) Validate() error {
@@ -43,9 +42,9 @@ func (entry EligibilityEntry) Validate() error {
 	}
 	// Required rather than defaulted: an entry states its own tolerance rather
 	// than inheriting the Oracle's conversion-grade default.
-	if entry.MaxRateAge <= 0 || entry.MaxRateAge > MaxRecognitionRateAge {
+	if entry.MaxRateAge == 0 || entry.MaxRateAge > MaxRecognitionRateAge {
 		return fmt.Errorf(
-			"eligibility max rate age must be greater than zero and at most %s, is %s",
+			"eligibility max rate age must be greater than zero and at most %ds, is %ds",
 			MaxRecognitionRateAge,
 			entry.MaxRateAge,
 		)

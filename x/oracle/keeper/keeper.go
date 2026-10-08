@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/store"
@@ -184,8 +183,8 @@ func (k Keeper) GetExchangeRate(ctx context.Context, denom string) (math.LegacyD
 		return math.LegacyZeroDec(), fmt.Errorf("getting params: %w", err)
 	}
 
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
-	return k.getExchangeRate(ctx, denom, currentTime, params.MaxExchangeRateAge)
+	now := chain.BlockSeconds(ctx)
+	return k.getExchangeRate(ctx, denom, now, params.MaxExchangeRateAge)
 }
 
 // GetExchangeRates returns all non-stale stored exchange rates.
@@ -196,9 +195,9 @@ func (k Keeper) GetExchangeRates(ctx context.Context) (sdk.DecCoins, error) {
 	}
 
 	var exchangeRates sdk.DecCoins
-	currentTime := sdk.UnwrapSDKContext(ctx).BlockTime()
+	now := chain.BlockSeconds(ctx)
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
-		if currentTime.Sub(exchangeRate.BlockTimestamp) > params.MaxExchangeRateAge {
+		if !exchangeRate.FreshAt(now, params.MaxExchangeRateAge) {
 			return false, nil
 		}
 		exchangeRates = append(exchangeRates, sdk.NewDecCoinFromDec(denom, exchangeRate.Rate))
@@ -242,14 +241,14 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentTime := sdkCtx.BlockTime()
-	if exchangeRate.BlockTimestamp.After(currentTime) {
+	now := chain.BlockSeconds(ctx)
+	if exchangeRate.BlockTime > now {
 		return errorsmod.Wrapf(
 			types.ErrInvalidExchangeRate,
-			"%s rate timestamp %s is after current block time %s",
+			"%s rate time %d is after current block time %d",
 			exchangeRate.Denom,
-			exchangeRate.BlockTimestamp,
-			currentTime,
+			exchangeRate.BlockTime,
+			now,
 		)
 	}
 	if err := k.ExchangeRate.Set(ctx, exchangeRate.Denom, exchangeRate); err != nil {
@@ -266,7 +265,7 @@ func (k Keeper) SetExchangeRateWithEvent(ctx context.Context, exchangeRate types
 	return nil
 }
 
-func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime time.Time, maxAge time.Duration) (math.LegacyDec, error) {
+func (k Keeper) getExchangeRate(ctx context.Context, denom string, now, maxAge uint64) (math.LegacyDec, error) {
 	exchangeRate, err := k.ExchangeRate.Get(ctx, denom)
 	if err != nil {
 		if errors.Is(err, collections.ErrNotFound) {
@@ -274,13 +273,13 @@ func (k Keeper) getExchangeRate(ctx context.Context, denom string, currentTime t
 		}
 		return math.LegacyZeroDec(), fmt.Errorf("getting exchange rate for denom %s: %w", denom, err)
 	}
-	if currentTime.Sub(exchangeRate.BlockTimestamp) > maxAge {
+	if !exchangeRate.FreshAt(now, maxAge) {
 		return math.LegacyZeroDec(), errorsmod.Wrapf(
 			types.ErrStaleExchangeRate,
-			"%s rate age exceeds maximum (updated %s, current %s)",
+			"%s rate age exceeds maximum (updated %d, current %d)",
 			denom,
-			exchangeRate.BlockTimestamp,
-			currentTime,
+			exchangeRate.BlockTime,
+			now,
 		)
 	}
 

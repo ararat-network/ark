@@ -83,10 +83,10 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	}
 	for _, denom := range denoms {
 		if err := oracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
 		}); err != nil {
 			tb.Fatal(err)
 		}

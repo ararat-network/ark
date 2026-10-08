@@ -6,7 +6,6 @@ import "ark/mandate/v1/envelope.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/duration.proto";
 
 option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
@@ -94,15 +93,10 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // max_rate_age is how old the derived feed's rate may be and still back this
-  // claim's credit. Required and positive, and bounded by
-  // MaxRecognitionRateAge: a claim states its own tolerance rather than
-  // inheriting the Oracle default.
-  google.protobuf.Duration max_rate_age = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdduration) = true,
-    (amino.dont_omitempty) = true
-  ];
+  // max_rate_age is how old, in seconds, the derived feed's rate may be and still back this
+  // claim's credit. Required and positive, and bounded by MaxRecognitionRateAge: a claim states
+  // its own tolerance rather than inheriting the Oracle default.
+  uint64 max_rate_age = 4 [(amino.dont_omitempty) = true];
 }
 
 // Position is the current view of one deployment: quantity is what the

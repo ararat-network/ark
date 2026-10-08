@@ -107,9 +107,9 @@ func benchmarkMarketKeeper(
 	for i := range pricedCount {
 		pricedDenoms[i] = fmt.Sprintf("uasset%03d", i)
 		if err := oracleKeeper.ExchangeRate.Set(ctx, pricedDenoms[i], oracletypes.ExchangeRate{
-			Denom:          pricedDenoms[i],
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: sdk.UnwrapSDKContext(ctx).BlockTime(),
+			Denom:     pricedDenoms[i],
+			Rate:      math.LegacyOneDec(),
+			BlockTime: uint64(sdk.UnwrapSDKContext(ctx).BlockTime().Unix()),
 		}); err != nil {
 			b.Fatal(err)
 		}
