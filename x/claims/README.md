@@ -29,7 +29,8 @@ so one approved claim cannot cover a second loss. The reservation spans appointm
 new term. Keeping them separate prevents appointment changes from freeing money still promised to pending claims.
 
 Submission records the origin, submitter, recipient, amount, reference, submission/closing heights, and a committee
-term only for committee claims. Governance claims have term zero and do not require an active mandate. Both paths
+term only for committee claims. The reference is a nonempty pointer to the off-chain case record, at most 2,048 bytes
+(`chain.MaxReferenceBytes`). Governance claims have term zero and do not require an active mandate. Both paths
 use the current `claim_cancellation_period_blocks`; putting the period in the mandate was rejected because it made
 governance claims depend on an enabled committee. Appointments must have a span at least as long as the current
 period. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds

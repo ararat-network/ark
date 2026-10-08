@@ -38,6 +38,8 @@ opening/closing heights. Every mutation appends an `AccountingEntry`; correction
 editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a Bank fact, but assigning
 it to a position is an accounting act. Return value is crystallised at attribution with a fresh rate; realised profit
 or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven movements or their dates.
+Venue and entry references are free-form evidence the chain never interprets, at most 2,048 bytes
+(`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value.
 
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism, since opening requires a

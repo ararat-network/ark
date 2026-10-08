@@ -233,14 +233,14 @@ func TestClaimValidate(t *testing.T) {
 			name:  "reference at maximum length",
 			claim: validPendingClaim,
 			mutate: func(claim *types.Claim) {
-				claim.Reference = strings.Repeat("r", types.MaxClaimReferenceLength)
+				claim.Reference = strings.Repeat("r", chain.MaxReferenceBytes)
 			},
 		},
 		{
 			name:  "reference over maximum length",
 			claim: validPendingClaim,
 			mutate: func(claim *types.Claim) {
-				claim.Reference = strings.Repeat("r", types.MaxClaimReferenceLength+1)
+				claim.Reference = strings.Repeat("r", chain.MaxReferenceBytes+1)
 			},
 			expectErr: "must not exceed",
 		},

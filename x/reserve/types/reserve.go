@@ -4,18 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strings"
 
 	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 )
-
-// MaxReferenceLength bounds one free-form evidence string. A reference
-// carries what the chain cannot verify — an external transaction hash, a
-// custodian account identifier — so it is capped rather than structured.
-const MaxReferenceLength = 512
 
 // MaxAttestedQuantity caps each position at 2^128 base units before the block-time recognition
 // fold. Oracle's MaxExchangeRate bounds the conversion multiplier; checked aggregation and
@@ -128,7 +122,7 @@ func (position Position) Validate() error {
 	if !position.Deployed.Amount.IsPositive() {
 		return errors.New("position deployed must be positive")
 	}
-	if err := ValidateReference("venue reference", position.VenueReference, true); err != nil {
+	if err := chain.ValidateReference("venue reference", position.VenueReference, true); err != nil {
 		return err
 	}
 	if position.OpenedHeight == 0 {
@@ -242,7 +236,7 @@ func (entry AccountingEntry) Validate() error {
 	carriesMovement := entry.Kind == EntryKind_ENTRY_KIND_DEPLOYMENT ||
 		entry.Kind == EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION ||
 		entry.Kind == EntryKind_ENTRY_KIND_RETURN_REVERSAL
-	if err := ValidateReference("entry reference", entry.Reference, carriesMovement); err != nil {
+	if err := chain.ValidateReference("entry reference", entry.Reference, carriesMovement); err != nil {
 		return err
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("entry recorded by", entry.RecordedBy); err != nil {
@@ -285,16 +279,5 @@ func validateHeldDenom(denom string) error {
 		)
 	}
 
-	return nil
-}
-
-// ValidateReference validates a bounded free-form evidence field.
-func ValidateReference(field, value string, required bool) error {
-	if required && strings.TrimSpace(value) == "" {
-		return fmt.Errorf("%s must not be empty", field)
-	}
-	if len(value) > MaxReferenceLength {
-		return fmt.Errorf("%s must not exceed %d bytes", field, MaxReferenceLength)
-	}
 	return nil
 }

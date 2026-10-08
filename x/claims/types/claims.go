@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"cosmossdk.io/math"
 
@@ -12,10 +11,6 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 )
-
-// MaxClaimReferenceLength bounds a claim's required, free-form pointer to its
-// off-chain case record.
-const MaxClaimReferenceLength = 512
 
 // ClaimsMandateLabel names the shared appointment envelope in Claims errors.
 const ClaimsMandateLabel = "Claims mandate"
@@ -78,11 +73,8 @@ func (claim Claim) Validate() error {
 	default:
 		return errors.New("claim origin is invalid")
 	}
-	if strings.TrimSpace(claim.Reference) == "" {
-		return errors.New("claim reference must not be empty")
-	}
-	if len(claim.Reference) > MaxClaimReferenceLength {
-		return fmt.Errorf("claim reference must not exceed %d bytes", MaxClaimReferenceLength)
+	if err := chain.ValidateReference("claim reference", claim.Reference, true); err != nil {
+		return err
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient); err != nil {
 		return err
