@@ -64,12 +64,6 @@ func (gs GenesisState) Validate() error {
 			gs.Mandate.DeploymentAllowance,
 		)
 	}
-	if gs.NextPositionId == 0 {
-		return errors.New("next position ID must be positive")
-	}
-	if gs.NextEntryId == 0 {
-		return errors.New("next entry ID must be positive")
-	}
 	if err := ValidateRecognitionPolicy(gs.RecognitionPolicy); err != nil {
 		return err
 	}
@@ -86,6 +80,11 @@ func (gs GenesisState) Validate() error {
 	if err := collectPositions(gs.ClosedPositions, true, gs.NextPositionId, positions); err != nil {
 		return err
 	}
+	// Positions and entries are permanent, so IDs run from one without a gap and each sequence
+	// sits one past its records; an export that lost a record cannot import.
+	if gs.NextPositionId != uint64(len(positions))+1 {
+		return fmt.Errorf("next position ID %d must follow the %d genesis positions", gs.NextPositionId, len(positions))
+	}
 
 	// Fold the ledger into the figures it should have produced. Only the
 	// entries carrying a proven coin movement contribute: deployments and
@@ -96,6 +95,9 @@ func (gs GenesisState) Validate() error {
 	reversed := make(map[uint64]struct{}, len(gs.Ledger))
 	allowanceUsed := math.ZeroInt()
 	for i, entry := range gs.Ledger {
+		if entry.EntryId != uint64(i)+1 {
+			return fmt.Errorf("genesis ledger must run from entry ID 1 without a gap: entry %d at index %d", entry.EntryId, i)
+		}
 		if err := entry.Validate(); err != nil {
 			return fmt.Errorf("invalid ledger entry %d: %w", entry.EntryId, err)
 		}
@@ -107,16 +109,6 @@ func (gs GenesisState) Validate() error {
 				gs.Mandate.Term,
 			)
 		}
-		if entry.EntryId >= gs.NextEntryId {
-			return fmt.Errorf(
-				"entry ID %d must be below next entry ID %d",
-				entry.EntryId,
-				gs.NextEntryId,
-			)
-		}
-		if i > 0 && entry.EntryId <= gs.Ledger[i-1].EntryId {
-			return errors.New("genesis ledger must be sorted by unique entry ID")
-		}
 		if _, known := positions[entry.PositionId]; !known {
 			return fmt.Errorf(
 				"ledger entry %d names unknown position %d",
@@ -125,8 +117,8 @@ func (gs GenesisState) Validate() error {
 			)
 		}
 		if entry.Corrects != 0 {
-			// Entry.Validate already required the restated ID to be lower, so a
-			// correction or reversal can only name an entry this walk has passed.
+			// Entry.Validate required the restated ID lower and the ledger runs from one without
+			// a gap, so the walk has always passed it; the refusal stays as the backstop.
 			restated, known := entries[entry.Corrects]
 			if !known {
 				return fmt.Errorf(
@@ -199,6 +191,10 @@ func (gs GenesisState) Validate() error {
 				return fmt.Errorf("reversing returns for position %d: %w", entry.PositionId, err)
 			}
 		}
+	}
+
+	if gs.NextEntryId != uint64(len(gs.Ledger))+1 {
+		return fmt.Errorf("next entry ID %d must follow the %d genesis ledger entries", gs.NextEntryId, len(gs.Ledger))
 	}
 
 	// Both lists reconcile against the ledger on identical terms.

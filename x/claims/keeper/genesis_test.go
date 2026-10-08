@@ -146,7 +146,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			name:      "invalid genesis is rejected before Bank is read",
 			balances:  sdk.NewCoins(noahCoin(5_000)),
 			mutate:    func(genesis *types.GenesisState) { genesis.NextClaimId = 0 },
-			expectErr: "next claim ID must be positive",
+			expectErr: "next claim ID 0 must follow the 1 genesis claims",
 		},
 	}
 

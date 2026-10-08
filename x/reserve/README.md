@@ -96,8 +96,10 @@ The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, bala
 policy, and capital decomposition with per-row reasons. Bank transfer/burn events record custody movements;
 `EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
 Genesis preserves open and closed positions and their unpruned history, then recomputes proven position figures and
-term usage from the ledger. IDs, correction references, position references, and closure rules must agree. Oracle
-imports first so recognition entries can validate their feeds. Non-NOAH Bank balances must be registry members.
+term usage from the ledger. IDs, correction references, position references, and closure rules must agree. Positions
+and entries are permanent: IDs run from one without a gap and each sequence sits one past its records, so an export
+that lost a record cannot import. Oracle imports first so recognition entries can validate their feeds. Non-NOAH Bank
+balances must be registry members.
 
 ## Development
 

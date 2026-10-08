@@ -70,17 +70,16 @@ func (gs GenesisState) Validate() error {
 		return errors.New("insurance reservation must be zero or positive")
 	}
 
-	if gs.NextClaimId == 0 {
-		return errors.New("next claim ID must be positive")
-	}
 	allowanceUsed := math.ZeroInt()
 	insuranceReserved := math.ZeroInt()
 	for i, claim := range gs.Claims {
+		// Claims are permanent, so IDs run from one without a gap and the sequence sits one past
+		// them; an export that lost a claim cannot import.
+		if claim.ClaimId != uint64(i)+1 {
+			return fmt.Errorf("genesis claims must run from ID 1 without a gap: claim %d at index %d", claim.ClaimId, i)
+		}
 		if err := claim.Validate(); err != nil {
 			return fmt.Errorf("invalid claim %d: %w", claim.ClaimId, err)
-		}
-		if claim.ClaimId >= gs.NextClaimId {
-			return fmt.Errorf("claim ID %d must be below next claim ID %d", claim.ClaimId, gs.NextClaimId)
 		}
 		if claim.MandateTerm > claimsMandate.Term {
 			return fmt.Errorf(
@@ -105,10 +104,6 @@ func (gs GenesisState) Validate() error {
 				claimsMandate.ExpiryHeight,
 			)
 		}
-		if i > 0 && claim.ClaimId <= gs.Claims[i-1].ClaimId {
-			return errors.New("genesis claims must be sorted by unique claim ID")
-		}
-
 		if claim.Origin == ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE &&
 			claim.MandateTerm == claimsMandate.Term {
 			var err error
@@ -124,6 +119,9 @@ func (gs GenesisState) Validate() error {
 				return fmt.Errorf("summing pending claims: %w", err)
 			}
 		}
+	}
+	if gs.NextClaimId != uint64(len(gs.Claims))+1 {
+		return fmt.Errorf("next claim ID %d must follow the %d genesis claims", gs.NextClaimId, len(gs.Claims))
 	}
 	if !allowanceUsed.Equal(gs.ClaimsAllowanceUsed) {
 		return fmt.Errorf(

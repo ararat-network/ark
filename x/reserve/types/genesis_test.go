@@ -201,7 +201,8 @@ func TestGenesisPositionIdentifiers(t *testing.T) {
 
 // TestGenesisPositionsBoundedBySequence pins that both lists answer to the one
 // sequence that issues them, so neither can import a position the keeper would
-// later hand out again.
+// later hand out again, and that the sequence sits exactly one past the
+// records: positions are never deleted, so a gap is a lost record.
 func TestGenesisPositionsBoundedBySequence(t *testing.T) {
 	open, _ := positionFixture(1, 1)
 
@@ -217,6 +218,20 @@ func TestGenesisPositionsBoundedBySequence(t *testing.T) {
 		genesisState.NextPositionId = open.PositionId
 
 		require.ErrorContains(t, genesisState.Validate(), "must be below next position ID")
+	})
+
+	t.Run("a next position ID ahead of the positions is refused", func(t *testing.T) {
+		genesisState := genesisWithPositions([]types.Position{open}, nil)
+		genesisState.NextPositionId = 3
+
+		require.ErrorContains(t, genesisState.Validate(), "next position ID 3 must follow the 1 genesis positions")
+	})
+
+	t.Run("a gap in position IDs is refused", func(t *testing.T) {
+		second, _ := positionFixture(3, 2)
+		genesisState := genesisWithPositions([]types.Position{open, second}, nil)
+
+		require.ErrorContains(t, genesisState.Validate(), "next position ID 4 must follow the 2 genesis positions")
 	})
 }
 
@@ -381,16 +396,22 @@ func TestGenesisFoldsReversalsOutOfTheRecovery(t *testing.T) {
 		require.ErrorContains(t, genesisState.Validate(), "does not equal its ledger sum")
 	})
 
-	// Validate enforces "earlier" on shape alone; existence is separate, which
-	// a gap in the identifier space is what exercises.
-	t.Run("a reversal of an unknown entry is refused", func(t *testing.T) {
+	// Entries are never deleted, so the ledger runs from one without a gap and
+	// the sequence sits one past it; a restated entry therefore always exists.
+	t.Run("a gap in entry IDs is refused", func(t *testing.T) {
 		genesisState := withReversal(attributedGenesis(t))
 		reversal := &genesisState.Ledger[len(genesisState.Ledger)-1]
 		reversal.EntryId = 10
-		reversal.Corrects = 5
 		genesisState.NextEntryId = 11
 
-		require.ErrorContains(t, genesisState.Validate(), "restates unknown entry 5")
+		require.ErrorContains(t, genesisState.Validate(), "must run from entry ID 1 without a gap: entry 10 at index 2")
+	})
+
+	t.Run("a next entry ID ahead of the ledger is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		genesisState.NextEntryId++
+
+		require.ErrorContains(t, genesisState.Validate(), "next entry ID 5 must follow the 3 genesis ledger entries")
 	})
 
 	// Only an attribution adds to the recovery, so only one can be taken out.

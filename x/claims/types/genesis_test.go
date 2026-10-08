@@ -44,7 +44,7 @@ func TestGenesisValidate(t *testing.T) {
 			validClaimsMandate(),
 			claim.Amount.Amount,
 			claim.Amount.Amount,
-			4,
+			2,
 			[]types.Claim{claim},
 		)
 	}
@@ -70,10 +70,11 @@ func TestGenesisValidate(t *testing.T) {
 			expectErr: "committee is invalid",
 		},
 		{
-			name: "sorted claims are valid",
+			name: "contiguous claims are valid",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Claims = []types.Claim{validPendingClaim(), validPaidClaim()}
 				genesis.ClaimsAllowanceUsed = math.NewInt(200)
+				genesis.NextClaimId = 3
 			},
 		},
 		{
@@ -81,30 +82,47 @@ func TestGenesisValidate(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Claims = []types.Claim{validPaidClaim(), validPendingClaim()}
 				genesis.ClaimsAllowanceUsed = math.NewInt(200)
+				genesis.NextClaimId = 3
 			},
-			expectErr: "genesis claims must be sorted by unique claim ID",
+			expectErr: "must run from ID 1 without a gap: claim 2 at index 0",
+		},
+		{
+			name: "gap in claim IDs",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.Claims = []types.Claim{validPendingClaim(), validCancelledClaim()}
+				genesis.NextClaimId = 3
+			},
+			expectErr: "must run from ID 1 without a gap: claim 3 at index 1",
 		},
 		{
 			name: "zero next claim ID",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.NextClaimId = 0
 			},
-			expectErr: "next claim ID must be positive",
+			expectErr: "next claim ID 0 must follow the 1 genesis claims",
 		},
 		{
-			name: "next claim ID does not follow imported claims",
+			name: "next claim ID behind the claims",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.NextClaimId = genesis.Claims[0].ClaimId
 			},
-			expectErr: "must be below next claim ID",
+			expectErr: "next claim ID 1 must follow the 1 genesis claims",
+		},
+		{
+			name: "next claim ID ahead of the claims",
+			mutate: func(genesis *types.GenesisState) {
+				genesis.NextClaimId = 4
+			},
+			expectErr: "next claim ID 4 must follow the 1 genesis claims",
 		},
 		{
 			name: "duplicate claim ID",
 			mutate: func(genesis *types.GenesisState) {
 				genesis.Claims = append(genesis.Claims, genesis.Claims[0])
 				genesis.InsuranceReserved = math.NewInt(200)
+				genesis.NextClaimId = 3
 			},
-			expectErr: "genesis claims must be sorted by unique claim ID",
+			expectErr: "must run from ID 1 without a gap: claim 1 at index 1",
 		},
 		{
 			name: "Insurance reservation mismatch",
@@ -153,6 +171,7 @@ func TestGenesisValidate(t *testing.T) {
 			name: "terminal claims are not reserved",
 			mutate: func(genesis *types.GenesisState) {
 				claim := validPaidClaim()
+				claim.ClaimId = 1
 				genesis.Claims = []types.Claim{claim}
 				genesis.InsuranceReserved = math.ZeroInt()
 			},

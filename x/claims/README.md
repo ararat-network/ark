@@ -96,4 +96,5 @@ Recognised capital requires `reserved <= balance`. Submission and genesis enforc
 what it sends; cancellation and failure release without sending. Insurance has no burner permission or other
 spending owner. The checked invariant prevents corrupt reservations from silently becoming a larger Treasury
 funding gap. Recipient payability is deliberately not an import condition: settlement can resolve a blocked recipient
-without making genesis depend on the binary's blocked-address set.
+without making genesis depend on the binary's blocked-address set. Claims are permanent: IDs run from one without a
+gap and the sequence sits one past them, so an export that lost a claim cannot import.
