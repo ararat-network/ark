@@ -32,7 +32,7 @@ const (
 	governanceUpgradeName    = "v3-planned"
 	testSubjectClient        = "07-tendermint-0"
 	testSubstituteClient     = "07-tendermint-1"
-	notAppointedCommitteeErr = "security mandate: signer is not the exact appointed committee"
+	notAppointedCommitteeErr = "security mandate: signer is not the exact appointed account"
 )
 
 // stubRouter records what the keeper dispatched instead of executing it. The

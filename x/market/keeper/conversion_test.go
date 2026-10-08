@@ -149,7 +149,7 @@ func (s *KeeperTestSuite) TestSetMandate() {
 		ExpectedTerm: appointment.Term,
 		Policy:       candidateInsideCorridor(),
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 }
 
 func (s *KeeperTestSuite) TestSetMandateRejections() {
@@ -712,14 +712,14 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String(),
 			policy:    candidateInsideCorridor(),
-			expectErr: "conversion mandate: signer is not the exact appointed committee",
+			expectErr: "conversion mandate: signer is not the exact appointed account",
 		},
 		{
 			name:      "governance authority cannot use the committee path",
 			height:    capacityActivation,
 			committee: authority,
 			policy:    candidateInsideCorridor(),
-			expectErr: "conversion mandate: signer is not the exact appointed committee",
+			expectErr: "conversion mandate: signer is not the exact appointed account",
 		},
 		{
 			name:      "stale term",
@@ -816,7 +816,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: "not-an-address",
 			policy:    candidateInsideCorridor(),
-			expectErr: "committee signer is invalid",
+			expectErr: "appointed signer is invalid",
 		},
 	}
 
@@ -1097,7 +1097,7 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
 				}
 			},
-			expectErr: "signer is not the exact appointed committee",
+			expectErr: "signer is not the exact appointed account",
 		},
 		{
 			name:     "wrong signer",
@@ -1110,7 +1110,7 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
 				}
 			},
-			expectErr: "signer is not the exact appointed committee",
+			expectErr: "signer is not the exact appointed account",
 		},
 		{
 			name:     "stale term",

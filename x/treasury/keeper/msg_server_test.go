@@ -262,7 +262,7 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 
 	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
@@ -308,7 +308,7 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 		ExpectedTerm: disabled.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 }
 
 // TestEconomicPolicyMessagesAreRoleDisjoint proves the split messages cannot be
@@ -342,7 +342,7 @@ func (s *KeeperTestSuite) TestEconomicPolicyMessagesAreRoleDisjoint() {
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 
 	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)

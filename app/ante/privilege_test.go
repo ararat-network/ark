@@ -82,7 +82,7 @@ func TestCommitteeVouch(t *testing.T) {
 		wantErr  string
 	}{
 		{"appointed committee", ctx, planUpgrade(committee, committeeTerm), true, ""},
-		{"stranger", ctx, planUpgrade(stranger, committeeTerm), false, "not the exact appointed committee"},
+		{"stranger", ctx, planUpgrade(stranger, committeeTerm), false, "not the exact appointed account"},
 		{"stale term", ctx, planUpgrade(committee, committeeTerm-1), false, "term mismatch"},
 		{"expired", ctx.WithBlockHeight(ctx.BlockHeight() + 100), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
 		{"not yet active", ctx.WithBlockHeight(ctx.BlockHeight() - 1), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
@@ -104,7 +104,7 @@ func TestCommitteeVouchDisabledMandate(t *testing.T) {
 	arkApp, ctx, committee := setupPrivilegeTest(t)
 	require.NoError(t, arkApp.SecurityKeeper.Mandate.Set(ctx, securitytypes.SecurityMandate{Envelope: mandate.Disabled(committeeTerm)}))
 	eligible, err := arkApp.Privileges().Vouch(ctx, planUpgrade(committee, committeeTerm))
-	require.ErrorContains(t, err, "not the exact appointed committee")
+	require.ErrorContains(t, err, "not the exact appointed account")
 	require.False(t, eligible)
 }
 
@@ -130,7 +130,7 @@ func TestPrivilegeDecoratorAssignsLane(t *testing.T) {
 				reached := false
 				got, err := decorator.AnteHandle(ctx, treasuryFeeTx{msgs: tc.msgs}, simulate, passThrough(t, &reached))
 				if tc.wantErr {
-					require.ErrorContains(t, err, "not the exact appointed committee")
+					require.ErrorContains(t, err, "not the exact appointed account")
 					require.False(t, reached)
 					continue
 				}

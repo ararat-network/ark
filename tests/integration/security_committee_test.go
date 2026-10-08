@@ -202,7 +202,7 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 		Name:         "v2-emergency",
 		Height:       f.ctx.BlockHeight() + 500,
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 }
 
 // TestSecurityCommitteeRefusesAStranger pins end to end that the envelope is
@@ -218,7 +218,7 @@ func TestSecurityCommitteeRefusesAStranger(t *testing.T) {
 		Name:         "v2-emergency",
 		Height:       f.ctx.BlockHeight() + 500,
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 
 	_, err = f.msgServer.CommitteeRecoverClient(f.ctx, &securitytypes.MsgCommitteeRecoverClient{
 		Committee:          stranger,
@@ -226,7 +226,7 @@ func TestSecurityCommitteeRefusesAStranger(t *testing.T) {
 		SubjectClientId:    "07-tendermint-0",
 		SubstituteClientId: "07-tendermint-1",
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 
 	// Nothing reached x/upgrade: the envelope refuses before dispatch.
 	_, err = f.app.UpgradeKeeper.GetUpgradePlan(f.ctx)

@@ -140,14 +140,14 @@ func (e Envelope) RequireTerm(expected uint64) error {
 // term mismatch first. Embedded mandates enforce usage, corridors, and status preconditions.
 func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) error {
 	if e.IsDisabled() {
-		return errors.New("signer is not the exact appointed committee")
+		return errors.New("signer is not the exact appointed account")
 	}
-	canonical, err := chain.CanonicaliseAccountAddress("committee signer", signer)
+	canonical, err := chain.CanonicaliseAccountAddress("appointed signer", signer)
 	if err != nil {
 		return err
 	}
 	if canonical != e.Committee {
-		return errors.New("signer is not the exact appointed committee")
+		return errors.New("signer is not the exact appointed account")
 	}
 	if err := e.RequireTerm(expectedTerm); err != nil {
 		return err

@@ -268,7 +268,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       testCommittee(),
 			expectedTerm: 3,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			name:         "disabled envelope rejects its own empty committee",
@@ -276,7 +276,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       "",
 			expectedTerm: 3,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			name:         "wrong signer",
@@ -284,7 +284,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       authtypes.NewModuleAddress("impostor").String(),
 			expectedTerm: 1,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			// The ante handler authenticates the signer by decoded bytes, so an
@@ -301,7 +301,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       "not-an-address",
 			expectedTerm: 1,
 			height:       10,
-			expectErr:    "committee signer is invalid",
+			expectErr:    "appointed signer is invalid",
 		},
 		{
 			name:         "stale term",
