@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D118: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D118](#d118).
+- D72–D118: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D95](#d95), [D104](#d104), [D118](#d118).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1273,6 +1273,69 @@ bonded stake passes 100M, when the founders' own stake can neither pass nor bloc
 nine decides it; the bloc rule releases nothing to a seat holder before then. What it costs: the founder's clock
 starts at that later proposal, other seat holders' grants wait for more public stake, and the founding band tops at
 15M. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D95
+
+**Recorded status:** Decided 2026-10-02. Amends the asset registry, Market depth, and conversion-factor rows of
+[GENESIS.md](../governance/GENESIS.md) (decided 2026-09-11) and the bootstrap sizing of `base_pool` in [P1](#p1).
+Depth sizing added by [D104](#d104).
+
+Conversion is closed at launch and opens by vote once NOAH has a market price. The artefact registers no asset; the
+eleven feeds, the sidecar's placeholder NOAH leg, and the seeded gas factor stay, and Market's depth is 100,000 XDR
+rather than 5M. Governance registers the ten launch currencies in one proposal once the oracle reads a live NOAH
+price, after operators have added NOAH venues to their sidecars together and only once a venue has depth. Treasury
+refreshes the NOAH gas factor from the reference rate whether or not a currency is registered, so fees track the first
+live price block by block rather than jumping at registration. Depth stays a human lever, raised by the Market
+committee inside its corridor and by governance beyond it, with the first appointment's corridor reaching about ten
+times the genesis depth. Why: every oracle rate is NOAH per unit and its NOAH leg is a configured placeholder, one
+NOAH per dollar, until any provider reports a live sample. A stablecoin is a claim on NOAH at the oracle rate, so a
+currency minted at the placeholder is re-marked when the live price arrives: at five cents an XDR that cost 1.37 NOAH
+redeems for 27, the difference is minted, and every holder pays whoever minted early; the liability and every fund
+target are valued at the placeholder until then; and the first live price comes from the first venue to list NOAH, so
+whoever controls a thin venue sets the redemption rate of everything minted before it. An empty registry is the closed
+position because Market mints only an `ACTIVE` ask and there is no status between registration and admission, and it
+is the asset module's own admission cycle, feed first and registration once it prints, applied to the launch set.
+Nothing else on day one needs a priced NOAH: gas is seeded, the oracle lane grades FX legs that are real, tax and the
+Treasury waterfall key off registered currencies, and the funds hold NOAH at face value; closing conversion makes the
+placeholder harmless, so it stays at one dollar and the oracle lane is the only reason to keep it. The depth is set in
+the artefact rather than by a later vote because it is inert until registration and sized for members converting
+real amounts, about 2k XDR a swap at the floor and 1k a day, small enough that a pushed thin price mints little at the
+wrong rate; it never grows on its own, since depth is the throttle on how fast NOAH mints and burns and the 2022 Terra
+expansion is the whitepaper's accelerant. Rejected: registering the currencies and relying on the missing rate, which
+opens conversion by itself at a thin price the moment any provider samples NOAH, at the launch depth and without a
+vote; a low placeholder with conversion open, which bounds the loss without removing it; and `ISSUANCE_HALTED` at
+genesis, a wind-down status that admits redemption. What it costs: no stablecoins before NOAH trades, when there is
+nowhere to spend them yet; Disbursement's stablecoin compensation waits for registration; the seat floats play no
+bootstrap role; and the testnet artefact keeps the registered currencies and the 5M depth, since a testnet exists to
+exercise conversion and the e2e suites run on it. The opening sequence is
+[governance operations §6](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion).
+
+## D104
+
+**Recorded status:** Decided 2026-10-04. Adds the sizing rule to the depth lever in [D95](#d95).
+
+Size Market's depth from the conversion it should pass at the spread floor: the larger of a hundred times the daily
+net one-way flow and fifty times the largest routine swap, each valued in the pool unit at the oracle rate. The flow
+is estimated from distribution, liquid NOAH times its live price times the share expected to convert in a month, over
+thirty. The rule is therefore run with a live price before conversion opens, again when a tranche adds liquid NOAH
+(D102), and when the pool holds an expansion-side imbalance beyond a hundredth of its depth. A raise is checked
+against what it exposes: a mint at a wrong price stays profitable up to roughly the mispricing times the depth, so
+while the venues pricing NOAH are thin the raise is cut and the spread carries the excess. Depth is not raised while
+the imbalance is on the redemption side, and never by shortening recovery (D95). Why: a swap of `x` from a rested
+pool pays `x / (depth + x)`, which reaches the 2% floor at about a fiftieth of the depth; each block returns one part
+in the recovery period of the imbalance, so steady one-way flow holds the imbalance at one period's flow, and the
+marginal spread, about twice the imbalance over the depth, stays at the floor while a day's flow is within a
+hundredth of the depth. Under another policy the factors are two over the floor times the recovery period in days,
+and one over the floor. Both earlier figures were sized this way without the rule being written, 5M for founders
+minting from their floats and 100k for members converting in the first months (D95). Distribution is the input
+because liquid NOAH is all that can be offered to mint; liability is what that flow leaves behind, so it confirms a
+sizing and does not produce one. Rejected: a larger depth in the artefact, which serves no holder at opening, scales
+what the first thin price can mint, and would be set before the price or the float is known; sizing to swap volume,
+which is what depth throttles and part of what Terra's January 2022 raise cited; sizing to liability alone, which
+lags the flow and yields no figure; and any automatic adjustment (D95). What it costs: the converting share is a
+judgement, not a measurement; flow above the sizing pays more than the floor until someone acts; and no alert reports
+the imbalance, so whoever sizes reads `Query/Pool`. The procedure is the
+[committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth).
 
 ## D118
 
