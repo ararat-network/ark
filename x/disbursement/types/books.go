@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"slices"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -39,6 +41,17 @@ func (b *AccountBook) Release(c sdk.Coin) error {
 	}
 	b.Reserved = rest
 	return nil
+}
+
+// Uncommitted is custody outside the book's reservations in balance's denomination: the pool for
+// NOAH, custody open to the next award otherwise. A balance below the reservations is a backing
+// failure.
+func (b AccountBook) Uncommitted(balance sdk.Coin) (math.Int, error) {
+	held := b.Reserved.AmountOf(balance.Denom)
+	if balance.Amount.LT(held) {
+		return math.Int{}, fmt.Errorf("%s %s custody is below its commitments", b.Account, balance.Denom)
+	}
+	return balance.Amount.Sub(held), nil
 }
 
 // Validate checks a book names an account and is bounded; import checks it against the account's Bank balance.
