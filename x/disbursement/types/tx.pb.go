@@ -529,8 +529,8 @@ type MsgCompensate struct {
 	Beneficiary string     `protobuf:"bytes,2,opt,name=beneficiary,proto3" json:"beneficiary,omitempty"`
 	Amount      types.Coin `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount"`
 	Reference   string     `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
-	// start_time is the clock's origin in Unix seconds, within a compensation window before the award,
-	// up to a century ahead.
+	// start_time is the clock's origin in Unix seconds, at most a quarter before the award, up to a
+	// century ahead.
 	StartTime uint64 `protobuf:"varint,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// periods sizes the award in compensation periods, one for a lump.
 	Periods uint32 `protobuf:"varint,6,opt,name=periods,proto3" json:"periods,omitempty"`
@@ -1272,8 +1272,8 @@ type MsgCommitteeCompensate struct {
 	Beneficiary  string     `protobuf:"bytes,3,opt,name=beneficiary,proto3" json:"beneficiary,omitempty"`
 	Amount       types.Coin `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount"`
 	Reference    string     `protobuf:"bytes,5,opt,name=reference,proto3" json:"reference,omitempty"`
-	// start_time is the clock's origin in Unix seconds, set by the committee within a compensation
-	// window before the award; nothing pays before one period after the award.
+	// start_time is the clock's origin in Unix seconds, set by the committee at most a quarter before
+	// the award; nothing pays before one period after the award.
 	StartTime uint64 `protobuf:"varint,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// periods sizes the award in compensation periods, one for a lump.
 	Periods uint32 `protobuf:"varint,7,opt,name=periods,proto3" json:"periods,omitempty"`

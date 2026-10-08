@@ -148,8 +148,8 @@ message MsgCompensate {
     (amino.dont_omitempty) = true
   ];
   string reference = 4;
-  // start_time is the clock's origin in Unix seconds, within a compensation window before the award,
-  // up to a century ahead.
+  // start_time is the clock's origin in Unix seconds, at most a quarter before the award, up to a
+  // century ahead.
   uint64 start_time = 5 [(amino.dont_omitempty) = true];
   // periods sizes the award in compensation periods, one for a lump.
   uint32 periods = 6 [(amino.dont_omitempty) = true];
@@ -257,8 +257,8 @@ message MsgCommitteeCompensate {
     (amino.dont_omitempty) = true
   ];
   string reference = 5;
-  // start_time is the clock's origin in Unix seconds, set by the committee within a compensation
-  // window before the award; nothing pays before one period after the award.
+  // start_time is the clock's origin in Unix seconds, set by the committee at most a quarter before
+  // the award; nothing pays before one period after the award.
   uint64 start_time = 6 [(amino.dont_omitempty) = true];
   // periods sizes the award in compensation periods, one for a lump.
   uint32 periods = 7 [(amino.dont_omitempty) = true];
