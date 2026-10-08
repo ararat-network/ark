@@ -58,5 +58,4 @@ message GenesisState {
   uint64 next_grant_id = 10 [(amino.dont_omitempty) = true];
   uint64 next_grant_entry_id = 11 [(amino.dont_omitempty) = true];
   uint64 next_beneficiary_entry_id = 12 [(amino.dont_omitempty) = true];
-  // The registrar appointment.
 }

@@ -11346,7 +11346,7 @@ func (x *QueryGrantsMandateResponse) GetCompensationRemaining() string {
 	return ""
 }
 
-// QueryRegistrarMandateRequest requests Query/Registrar.
+// QueryRegistrarMandateRequest requests Query/RegistrarMandate.
 type QueryRegistrarMandateRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11373,7 +11373,7 @@ func (*QueryRegistrarMandateRequest) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_query_proto_rawDescGZIP(), []int{4}
 }
 
-// QueryRegistrarMandateResponse returns Query/Registrar.
+// QueryRegistrarMandateResponse returns Query/RegistrarMandate.
 type QueryRegistrarMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -110,10 +110,10 @@ message QueryGrantsMandateResponse {
   ];
 }
 
-// QueryRegistrarMandateRequest requests Query/Registrar.
+// QueryRegistrarMandateRequest requests Query/RegistrarMandate.
 message QueryRegistrarMandateRequest {}
 
-// QueryRegistrarMandateResponse returns Query/Registrar.
+// QueryRegistrarMandateResponse returns Query/RegistrarMandate.
 message QueryRegistrarMandateResponse {
   RegistrarMandate mandate = 1 [
     (gogoproto.nullable) = false,

@@ -211,7 +211,7 @@ func (m *QueryGrantsMandateResponse) GetActive() bool {
 	return false
 }
 
-// QueryRegistrarMandateRequest requests Query/Registrar.
+// QueryRegistrarMandateRequest requests Query/RegistrarMandate.
 type QueryRegistrarMandateRequest struct {
 }
 
@@ -248,7 +248,7 @@ func (m *QueryRegistrarMandateRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryRegistrarMandateRequest proto.InternalMessageInfo
 
-// QueryRegistrarMandateResponse returns Query/Registrar.
+// QueryRegistrarMandateResponse returns Query/RegistrarMandate.
 type QueryRegistrarMandateResponse struct {
 	Mandate RegistrarMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
 	// active reports whether the registrar may act at the current height.

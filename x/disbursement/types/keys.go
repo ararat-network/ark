@@ -11,7 +11,7 @@ const (
 	ModuleName = "disbursement"
 	StoreKey   = ModuleName
 	// ContributorsName holds the contributor pool, ownership and compensation escrow in every
-	// denomination, conversion orders, and deposits.
+	// denomination, and deposits.
 	ContributorsName = "disbursement_contributors"
 	// MembersName holds the member pool and every member grant's escrow, NOAH only. It has no exit.
 	MembersName = "disbursement_members"

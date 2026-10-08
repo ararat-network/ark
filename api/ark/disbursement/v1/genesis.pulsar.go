@@ -1543,7 +1543,7 @@ type GenesisState struct {
 	// Sequences.
 	NextGrantId            uint64 `protobuf:"varint,10,opt,name=next_grant_id,json=nextGrantId,proto3" json:"next_grant_id,omitempty"`
 	NextGrantEntryId       uint64 `protobuf:"varint,11,opt,name=next_grant_entry_id,json=nextGrantEntryId,proto3" json:"next_grant_entry_id,omitempty"`
-	NextBeneficiaryEntryId uint64 `protobuf:"varint,12,opt,name=next_beneficiary_entry_id,json=nextBeneficiaryEntryId,proto3" json:"next_beneficiary_entry_id,omitempty"` // The registrar appointment.
+	NextBeneficiaryEntryId uint64 `protobuf:"varint,12,opt,name=next_beneficiary_entry_id,json=nextBeneficiaryEntryId,proto3" json:"next_beneficiary_entry_id,omitempty"`
 }
 
 func (x *GenesisState) Reset() {
