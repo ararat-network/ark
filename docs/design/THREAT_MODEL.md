@@ -194,11 +194,12 @@ lock during validation.
 
 The SDK default proposal handler owns sequencing and transaction verification. An SDK comparator
 orders lane then full int64 fee priority, and a small TxSelector caps committee and governance service
-independently at 5% of gas and available protobuf bytes. Lane exhaustion leaves the remaining
-entries out of the proposal index without stopping other lanes, so a saturated lane cannot make the
-proposer verify the whole pool. Normal transactions may use unused capacity. A transaction larger than its entire
-lane allowance competes in normal fee order, using a disposable SDK index for the current proposal;
-pending priority and storage allocations do not change. Mixed batches also use normal service. Thus
+independently at 5% of gas and available protobuf bytes. An entry past what its lane has left,
+and its sender's later ordered entries, spill to normal fee order in a disposable SDK index for the
+current proposal, so a full lane neither stops other lanes nor holds its overflow back from unused
+block space; spilled entries cost the proposer verification exactly as normal traffic does, bounded by
+a full block. Normal transactions may use unused lane capacity. Pending priority and storage
+allocations do not change. Mixed batches also use normal service. Thus
 these caps bound preferential service, not total committee/vote traffic. ProcessProposal remains the
 SDK default beneath the oracle wrapper and does not enforce node-local lane shares. Gossip, duplicate
 caches, retries, peer tracking and RPC validation responses remain CometBFT/SDK behavior.

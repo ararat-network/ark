@@ -349,8 +349,9 @@ for application admission allocations, and `ark_mempool_admissions_total` by `st
 toward `normal`; surviving allocations remain fixed at insertion. Counts include SDK rechecks
 and are not incoming transaction throughput. `full` identifies reservation-partition refusals;
 the SDK's total-count error is reported as `invalid`. Gauges read pool occupancy at scrape
-time. The app pool can conservatively retain entries absent from the flood list, including after
-an SDK post-handler failure. These gauges are per process and use no account or proposal labels.
+time. The app pool can hold an entry the flood list refused after admission for up to two commits,
+and the list holds the superseded version of a replaced transaction until a recheck fails it, so the
+two need not match at every instant. These gauges are per process and use no account or proposal labels.
 
 ## Metric reduction migration
 

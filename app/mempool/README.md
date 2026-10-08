@@ -20,8 +20,8 @@ This README owns lane eligibility, reservations, operating limits, and proposal 
 
 These are local admission and proposal rules except where shared ante checks affect consensus execution.
 
-Ark uses Cosmos SDK v0.54.3's `PriorityNonceMempool` through `baseapp.SetMempool`.
-CometBFT v0.39.3 runs its standard flood mempool for gossip, duplicate tracking,
+Ark uses the Cosmos SDK's `PriorityNonceMempool` through `baseapp.SetMempool`.
+CometBFT runs its standard flood mempool for gossip, duplicate tracking,
 RPC broadcast, and post-commit rechecks. The application extension adds authenticated
 committee/governance priority, reserved pending capacity, and bounded preferential
 block service. An SDK priority comparator orders the pair (lane, fee priority),
@@ -71,31 +71,39 @@ the transport list and prevent privileged admission. The wrapper defers these re
 `FinalizeBlock` records the actual block's transactions; the SDK's post-commit
 `PrepareCheckStater` releases those entries under CometBFT's mempool lock. CometBFT
 then updates its list and calls SDK `CheckTx(Recheck)`. Failed ante rechecks remove
-entries through the normal SDK callback. There is no second recheck, reinsertion,
+entries through the normal SDK callback; a passing recheck marks the entry as still
+listed. CometBFT can refuse a transaction after the app admitted it, when its list is
+full, and nothing then rechecks that entry, so the post-commit release also drops any
+entry two consecutive recheck rounds passed over; the second round is slack for a
+timed-out recheck. There is no second recheck, reinsertion,
 or lane refresh; surviving priority and storage allocations remain those captured
 at insertion, as with SDK priority. CometBFT's local ABCI client and commit/update lock
 supply lifecycle synchronisation.
 
 `Pool` protects its index and metadata with a mutex; callbacks run outside that lock.
+The SDK index keeps a skiplist, with its own random source, for every sender it has ever
+held and never frees an empty one, about 6 KB per departed sender. The pool counts senders
+whose last pending entry left and, at the post-commit release, rebuilds the index from its
+own entries once they would outnumber the live entries, with a floor of 4096; an empty pool
+rebuilds for free. Entries re-enter with their stored lane and priority, so SDK order is
+unchanged, and retained index garbage never exceeds the live index.
 Proposal construction snapshots pending entries outside validation callbacks and builds
 one disposable SDK priority/nonce index using the current proposal's resource limits.
 A small SDK `TxSelector` independently caps committee and governance service at 5% of
-block gas and available protobuf transaction bytes. A transaction that fits its entire
-lane allowance but exceeds the remaining allowance waits; it cannot overflow into normal
-service. Unused lane capacity remains available to normal transactions. Entries past a
-lane's allowance in pool order stay out of the proposal index, because the SDK verifies
-every candidate it iterates before the selector can decline it: a saturated lane costs
-no signature checks beyond what it serves. An ordered sender's later entries wait with
-the first one left out. The selector remains the authority; an entry that fails
+block gas and available protobuf transaction bytes. Unused lane capacity remains available
+to normal transactions. The selector remains the authority; an entry that fails
 verification leaves its share unused for that proposal.
 
-An individual privileged transaction larger than its entire byte or gas allowance uses
-normal fee priority in this proposal. This avoids permanently excluding a large action,
-while withholding preferential service from it. The exception uses SDK-encoded bytes
-and the actual budget after the oracle envelope; it changes neither the transaction's
-pending admission allocation nor its stored lane or fee priority. Deliberately large
-transactions and mixed batches can therefore compete as normal: the cap limits privileged
-service, not all committee messages or votes in a block.
+A privileged transaction past what its lane has left in pool order, including one larger
+than the whole allowance, spills to normal fee priority in this proposal: it lands in
+capacity normal traffic leaves unused and competes by fee when the block is contested.
+An ordered sender's later entries follow its first spilled one, even when they would fit,
+so none outranks its predecessor; the lane's remaining room goes to other senders. A
+spilled entry is verified like any normal candidate, so a full block bounds the work as it
+does for normal traffic. Spilling uses SDK-encoded bytes and the actual budget after the
+oracle envelope; it changes neither the transaction's pending admission allocation nor its
+stored lane or fee priority. Mixed batches compete as normal too: the cap limits
+privileged service, not all committee messages or votes in a block.
 
 The SDK default PrepareProposal handler owns the complete selection loop, including
 verification before resource filtering, selected-sequence bookkeeping for every signer,
@@ -118,13 +126,14 @@ for pre-inclusion confidentiality; ordinary public nodes retain normal gossip.
 
 CometBFT unconfirmed-transaction RPCs report its flood list. Ark's transaction and byte
 gauges report application storage by allocation; accepted/invalid/full counters observe
-SDK CheckTx responses, including CometBFT rechecks. The application pool can conservatively
-retain entries absent from the flood list, for example following an SDK post-handler
-failure; transport/application occupancy need not be identical at every instant.
+SDK CheckTx responses, including CometBFT rechecks. The application pool can hold an entry
+the flood list refused after admission for up to two commits before the release above drops
+it, and the list keys by hash, so it holds the superseded version of a replaced transaction
+until a recheck fails it; the two occupancies need not match at every instant.
 
 Validation compares ordinary admission, failures, replacement, ordering and proposal
 output with the unmodified SDK. Reservation regressions cover saturation, independent
-byte/gas caps, oversized ordinary fallback, commit headroom, and three-peer public propagation. Initial shares
+byte/gas caps, spill to ordinary priority, commit headroom, unlisted-entry release, and three-peer public propagation. Initial shares
 still require workload calibration; they do not guarantee inclusion latency or prevent
 validator censorship.
 

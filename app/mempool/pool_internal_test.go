@@ -299,3 +299,42 @@ func TestPoolPriorityBands(t *testing.T) {
 		require.Equal(t, []sdk.Tx{richCommittee, committee, vote, normal}, got)
 	})
 }
+
+// The SDK index never frees a departed sender's skiplist. Once departed senders
+// would outnumber live entries, or the pool is empty, the index is rebuilt from
+// the pool's own entries in the same SDK order.
+func TestPoolRebuildsIndexAfterSenderDepartures(t *testing.T) {
+	p := newTestPool(100)
+	stayer := fixtureTx(1)
+	for i, lane := range []int8{LaneGovernance, LaneCommittee, LaneNormal, LaneNormal, LaneGovernance} {
+		tx := fixtureTx(byte(2 + i))
+		if i%2 == 1 {
+			tx.key, tx.seq = stayer.key, uint64(i/2)
+		}
+		require.NoError(t, admit(p, lane, int64(7*i%5), tx))
+	}
+	before, snapshot := p.index, p.Snapshot()
+	for i := 0; i < rebuildDepartures-1; i++ {
+		tx := fixtureTx(100)
+		require.NoError(t, admit(p, LaneNormal, int64(i), tx))
+		require.NoError(t, p.Remove(tx))
+	}
+	p.PrepareCheckState(sdk.Context{})
+	require.Same(t, before, p.index, "one departure short of the floor keeps the index")
+	tx := fixtureTx(101)
+	require.NoError(t, admit(p, LaneNormal, 0, tx))
+	require.NoError(t, p.Remove(tx))
+	p.PrepareCheckState(sdk.Context{})
+	require.NotSame(t, before, p.index, "the floor reached, the index is rebuilt")
+	require.Zero(t, p.departed)
+	require.Equal(t, snapshot, p.Snapshot(), "SDK order and metadata survive the rebuild")
+	require.Equal(t, len(snapshot), p.CountTx())
+	rebuilt := p.index
+	for _, e := range snapshot {
+		require.NoError(t, p.Remove(e.Tx))
+	}
+	p.PrepareCheckState(sdk.Context{})
+	require.NotSame(t, rebuilt, p.index, "an empty pool rebuilds at the first departure")
+	require.Zero(t, p.CountTx())
+	require.Empty(t, p.senders)
+}

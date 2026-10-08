@@ -13,6 +13,15 @@ import (
 
 type resources struct{ bytes, gas uint64 }
 
+// txGas is the declared gas limit. Ante admits only fee transactions, so the zero
+// branch is unreachable; the SDK selector tolerates the case the same way.
+func txGas(tx sdk.Tx) uint64 {
+	if feeTx, ok := tx.(sdk.FeeTx); ok {
+		return feeTx.GetGas()
+	}
+	return 0
+}
+
 func blockAllowance(lane int8, maxBytes, maxGas uint64) resources {
 	switch lane {
 	case LaneCommittee:
@@ -54,7 +63,7 @@ func (s *txSelector) SelectTxForProposal(_ context.Context, maxBytes, maxGas uin
 	lane := s.lanes[key]
 	limit := blockAllowance(lane, maxBytes, maxGas)
 	size := uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz}))
-	gas := tx.(sdk.FeeTx).GetGas()
+	gas := txGas(tx)
 	used := s.laneUsed[lane]
 	if size <= maxBytes-s.used.bytes && size <= limit.bytes-used.bytes &&
 		(maxGas == 0 || (gas <= maxGas-s.used.gas && gas <= limit.gas-used.gas)) {

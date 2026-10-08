@@ -18,6 +18,10 @@ import (
 
 var ErrCapacity = errorsmod.Register("lanes", 3, "lane admission capacity exhausted")
 
+// rebuildDepartures floors the departed senders a rebuild waits for, so a small
+// pool does not rebuild on every departure.
+const rebuildDepartures = 4096
+
 // Entry adds reservation metadata to a transaction held by the SDK index.
 // Size is the admitted wire length; proposals re-encode through the SDK.
 type Entry struct {
@@ -28,6 +32,7 @@ type Entry struct {
 	Slot     int8
 	Priority int64
 	key      senderNonce // SDK index identity, so proposals need not re-extract signers
+	seen     uint64      // epoch of the last recheck that held it, or of insertion
 }
 
 type senderNonce struct {
@@ -74,6 +79,9 @@ type Pool struct {
 	byteCaps  [3]int64
 	config    Config
 	finalised [][]byte
+	epoch     uint64         // one per commit, bumped before CometBFT's recheck round
+	senders   map[string]int // pending entries per first signer
+	departed  int            // senders whose last pending entry left since the index was built
 }
 
 var _ sdkmempool.ExtMempool = (*Pool)(nil)
@@ -87,15 +95,13 @@ func NewPool(config Config) *Pool {
 	cfg.MaxTx = config.MaxTxs
 	p := &Pool{
 		index: sdkmempool.NewPriorityMempool(cfg), config: config,
-		entries: make(map[senderNonce]Entry), hashes: make(map[[32]byte]senderNonce),
+		entries: make(map[senderNonce]Entry), hashes: make(map[[32]byte]senderNonce), senders: make(map[string]int),
 	}
 	// Normal storage takes the remainder, including integer rounding.
 	p.countCaps[LaneGovernance] = int(fraction(uint64(config.MaxTxs), GovernanceAdmissionCountShare))
 	p.countCaps[LaneCommittee] = int(fraction(uint64(config.MaxTxs), CommitteeAdmissionCountShare))
 	p.countCaps[LaneNormal] = config.MaxTxs - p.countCaps[LaneGovernance] - p.countCaps[LaneCommittee]
-	p.byteCaps[LaneGovernance] = int64(fraction(uint64(config.MaxTxsBytes), GovernanceAdmissionByteShare))
-	p.byteCaps[LaneCommittee] = int64(fraction(uint64(config.MaxTxsBytes), CommitteeAdmissionByteShare))
-	p.byteCaps[LaneNormal] = config.MaxTxsBytes - p.byteCaps[LaneGovernance] - p.byteCaps[LaneCommittee]
+	p.byteCaps = config.byteCaps()
 	abcimetrics.ObservePool(p.Usage)
 	return p
 }
@@ -160,8 +166,10 @@ func (p *Pool) Insert(goCtx context.Context, tx sdk.Tx) error {
 		p.counts[old.Slot]--
 		p.sizes[old.Slot] -= int64(old.Size)
 		delete(p.hashes, old.Key)
+	} else {
+		p.senders[key.sender]++
 	}
-	entry := Entry{Tx: tx, Key: sha256.Sum256(ctx.TxBytes()), Size: len(ctx.TxBytes()), Lane: lane, Slot: slot, Priority: ctx.Priority(), key: key}
+	entry := Entry{Tx: tx, Key: sha256.Sum256(ctx.TxBytes()), Size: len(ctx.TxBytes()), Lane: lane, Slot: slot, Priority: ctx.Priority(), key: key, seen: p.epoch}
 	p.entries[key] = entry
 	p.hashes[entry.Key] = key
 	p.counts[slot]++
@@ -191,6 +199,10 @@ func (p *Pool) remove(key senderNonce) error {
 	delete(p.hashes, entry.Key)
 	p.counts[entry.Slot]--
 	p.sizes[entry.Slot] -= int64(entry.Size)
+	if p.senders[key.sender]--; p.senders[key.sender] == 0 {
+		delete(p.senders, key.sender)
+		p.departed++
+	}
 	return nil
 }
 
@@ -207,8 +219,23 @@ func (p *Pool) RemoveWithReason(_ context.Context, tx sdk.Tx, reason sdkmempool.
 
 func (p *Pool) Finalised(txs [][]byte) { p.mu.Lock(); defer p.mu.Unlock(); p.finalised = txs }
 
-// PrepareCheckState only releases committed entries. CometBFT and SDK CheckTx
-// own the subsequent recheck; there is no application revalidation loop.
+// touch records that CometBFT's recheck still holds these wire bytes.
+func (p *Pool) touch(bz []byte) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if key, ok := p.hashes[sha256.Sum256(bz)]; ok {
+		e := p.entries[key]
+		e.seen = p.epoch
+		p.entries[key] = e
+	}
+}
+
+// PrepareCheckState releases committed entries, then drops those CometBFT's list
+// no longer holds. The recheck after every commit touches each listed entry, so
+// an entry two rounds passed over was refused by the list after admission and no
+// recheck will ever release it; the second round is slack for a timed-out recheck.
+// CometBFT and SDK CheckTx own the recheck itself; there is no application
+// revalidation loop.
 func (p *Pool) PrepareCheckState(sdk.Context) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -218,9 +245,46 @@ func (p *Pool) PrepareCheckState(sdk.Context) {
 		}
 	}
 	p.finalised = nil
+	p.epoch++
+	// A listed entry lags one epoch; three means two rounds passed it over.
+	for key, e := range p.entries {
+		if p.epoch-e.seen > 2 {
+			_ = p.remove(key)
+		}
+	}
+	if p.departed > 0 && (len(p.entries) == 0 || p.departed >= max(len(p.entries), rebuildDepartures)) {
+		p.rebuild()
+	}
 }
 
-func (p *Pool) CountTx() int { return p.index.CountTx() }
+// rebuild replaces the SDK index, which keeps a skiplist and its random source
+// (about 6 KB) for every sender it has ever held; upstream Remove never frees an
+// empty one. Waiting until departed senders outnumber live entries bounds that
+// garbage by the live index; an empty pool rebuilds for free. Entries re-enter
+// with their stored lane and priority, as the proposal index does.
+func (p *Pool) rebuild() {
+	cfg := priorityConfig()
+	cfg.MaxTx = p.config.MaxTxs
+	index := sdkmempool.NewPriorityMempool(cfg)
+	base := sdk.Context{}.WithContext(context.Background())
+	for _, e := range p.entries {
+		// Every entry passed this insertion once, so a failure is unreachable; keep the old index.
+		if err := index.Insert(WithLane(base.WithPriority(e.Priority), e.Lane), e.Tx); err != nil {
+			return
+		}
+	}
+	p.index = index
+	p.departed = 0
+}
+
+// live reads the SDK index pointer, which rebuild replaces under mu.
+func (p *Pool) live() *sdkmempool.PriorityNonceMempool[priority] {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.index
+}
+
+func (p *Pool) CountTx() int { return p.live().CountTx() }
 
 // Usage reports occupancy by allocation; the pool gauges read it at scrape time.
 func (p *Pool) Usage() ([3]int, [3]int64) { p.mu.Lock(); defer p.mu.Unlock(); return p.counts, p.sizes }
@@ -236,11 +300,11 @@ func (p *Pool) Has(bz []byte) bool {
 // Select and SelectBy retain the SDK's iterator semantics. As in the SDK,
 // Select is not safe for concurrent iteration; SelectBy holds the index lock.
 func (p *Pool) Select(ctx context.Context, txs [][]byte) sdkmempool.Iterator {
-	return p.index.Select(ctx, txs)
+	return p.live().Select(ctx, txs)
 }
 
 func (p *Pool) SelectBy(ctx context.Context, txs [][]byte, visit func(sdk.Tx) bool) {
-	p.index.SelectBy(ctx, txs, visit)
+	p.live().SelectBy(ctx, txs, visit)
 }
 
 // Snapshot copies metadata in SDK priority/nonce order. Callers validate only

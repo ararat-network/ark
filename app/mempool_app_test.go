@@ -1,11 +1,13 @@
 package app_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -926,19 +928,21 @@ func TestProposalVoteCapPreservesSDKValidity(t *testing.T) {
 		t.Run(fmt.Sprint(successor), func(t *testing.T) {
 			f := newAdmissionFixture(t, 1)
 			a := f.apps[0]
-			var want [][]byte
+			var want, votes [][]byte
 			for seq := uint64(0); seq < 6; seq++ {
 				bz := signedPending(t, a, f.voter, seq, voteMsg(f.voter))
 				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 				require.NoError(t, err)
 				require.Zero(t, res.Code, res.Log)
+				votes = append(votes, bz)
 				if seq < 5 {
 					want = append(want, bz)
 				}
 			}
+			var follower []byte
 			if successor {
-				bz := signedPending(t, a, f.voter, 6, sendMsg(f.voter))
-				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+				follower = signedPending(t, a, f.voter, 6, sendMsg(f.voter))
+				res, err := a.CheckTx(&abci.RequestCheckTx{Tx: follower})
 				require.NoError(t, err)
 				require.Zero(t, res.Code, res.Log)
 			}
@@ -950,7 +954,18 @@ func TestProposalVoteCapPreservesSDKValidity(t *testing.T) {
 			blockTime := admissionTime.Add(time.Second)
 			proposal, err := a.PrepareProposal(&abci.RequestPrepareProposal{Height: 2, Time: blockTime, MaxTxBytes: 1 << 20})
 			require.NoError(t, err)
-			require.Equal(t, want, proposal.Txs, "the sixth 1M-gas vote exceeds the 5M-gas allowance")
+			// Five 1M-gas votes fill the 5M-gas allowance; the sixth spills to ordinary priority
+			// beside the normal send, and the voter's later send follows its spilled vote.
+			lane, spilled := want[:5], append([][]byte{want[5]}, votes[5])
+			if successor {
+				spilled = append(spilled, follower)
+			}
+			require.Equal(t, lane, proposal.Txs[:5])
+			require.ElementsMatch(t, spilled, proposal.Txs[5:])
+			if successor {
+				require.Less(t, slices.IndexFunc(proposal.Txs, func(bz []byte) bool { return bytes.Equal(bz, votes[5]) }),
+					slices.IndexFunc(proposal.Txs, func(bz []byte) bool { return bytes.Equal(bz, follower) }))
+			}
 			accepted, err := a.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: blockTime, Hash: make([]byte, 32), Txs: proposal.Txs})
 			require.NoError(t, err)
 			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, accepted.Status)
