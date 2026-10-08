@@ -3,8 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
-
-	"cosmossdk.io/math"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -14,9 +13,8 @@ import (
 // EmptyBook is an account's book before any commitment.
 func EmptyBook(account string) AccountBook {
 	return AccountBook{
-		Pool:     account,
+		Account:  account,
 		Reserved: sdk.NewCoins(),
-		Open:     math.ZeroInt(),
 	}
 }
 
@@ -45,8 +43,8 @@ func (b *AccountBook) Release(c sdk.Coin) error {
 
 // Validate checks a book names an account and is bounded; import checks it against the account's Bank balance.
 func (b AccountBook) Validate() error {
-	if err := ValidateAccount(b.Pool); err != nil {
-		return err
+	if !slices.Contains(PoolAccountNames(), b.Account) {
+		return fmt.Errorf("%q is not a disbursement account", b.Account)
 	}
 	if err := b.Reserved.Validate(); err != nil {
 		return fmt.Errorf("reserved: %w", err)
@@ -55,15 +53,9 @@ func (b AccountBook) Validate() error {
 		if err := ValidateAmount(c.Amount, true); err != nil {
 			return fmt.Errorf("reserved %s: %w", c.Denom, err)
 		}
-		if b.Pool == MembersName && c.Denom != chain.NoahBaseDenom {
+		if b.Account == MembersName && c.Denom != chain.NoahBaseDenom {
 			return errors.New("the member book holds NOAH only")
 		}
-	}
-	if err := ValidateAmount(b.Open, false); err != nil {
-		return err
-	}
-	if b.Pool == ContributorsName && !b.Open.IsZero() {
-		return errors.New("the contributor book has no tranche")
 	}
 	return nil
 }

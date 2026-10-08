@@ -20,6 +20,7 @@ func DefaultGenesisState() *GenesisState {
 		GrantsMandate:          DefaultGrantsMandate(),
 		CompensationUsed:       math.ZeroInt(),
 		RegistrarMandate:       DefaultRegistrarMandate(),
+		MemberTranche:          math.ZeroInt(),
 		NextGrantId:            1,
 		NextGrantEntryId:       1,
 		NextBeneficiaryEntryId: 1,
@@ -52,6 +53,9 @@ func (gs GenesisState) Validate() error {
 	if err := ValidateAmount(gs.CompensationUsed, false); err != nil {
 		return fmt.Errorf("term usage: %w", err)
 	}
+	if err := ValidateAmount(gs.MemberTranche, false); err != nil {
+		return fmt.Errorf("member tranche: %w", err)
+	}
 	totals, err := foldGrants(gs, beneficiaries)
 	if err != nil {
 		return err
@@ -65,17 +69,17 @@ func (gs GenesisState) Validate() error {
 	return validateBeneficiaryJournal(gs.Beneficiaries, gs.BeneficiaryJournal, gs.NextBeneficiaryEntryId)
 }
 
-// validateBooks checks each book and that the books are sorted by unique pool.
+// validateBooks checks each book and that the books are sorted by unique account.
 func validateBooks(list []AccountBook) (map[string]AccountBook, error) {
 	books := make(map[string]AccountBook, len(list))
 	for i, b := range list {
 		if err := b.Validate(); err != nil {
-			return nil, fmt.Errorf("%s book: %w", b.Pool, err)
+			return nil, fmt.Errorf("%s book: %w", b.Account, err)
 		}
-		if i > 0 && b.Pool <= list[i-1].Pool {
-			return nil, errors.New("genesis books must be sorted by unique pool")
+		if i > 0 && b.Account <= list[i-1].Account {
+			return nil, errors.New("genesis books must be sorted by unique account")
 		}
-		books[b.Pool] = b
+		books[b.Account] = b
 	}
 	return books, nil
 }
@@ -143,7 +147,7 @@ func foldGrants(gs GenesisState, beneficiaries map[string]bool) (grantTotals, er
 				return grantTotals{}, fmt.Errorf("grant %d carries committee term %d beyond the live term %d", g.Id, term, committee.Term)
 			}
 			if term == committee.Term {
-				t.liveCompensation = t.liveCompensation.Add(g.ReferenceValue)
+				t.liveCompensation = t.liveCompensation.Add(g.AwardValue)
 			}
 		}
 		if g.Kind == GrantKind_GRANT_KIND_MEMBER {
@@ -161,11 +165,12 @@ func foldGrants(gs GenesisState, beneficiaries map[string]bool) (grantTotals, er
 		}
 		t.books[account] = book
 		if g.Kind == GrantKind_GRANT_KIND_OWNERSHIP {
-			paid, err := amountOf(t.ownership, g.Beneficiary).SafeAdd(g.Paid)
+			// A grant commits what it has paid and still owes; a cancel has already dropped the rest.
+			committed, err := amountOf(t.ownership, g.Beneficiary).SafeAdd(g.Paid.Add(g.Remaining))
 			if err != nil {
 				return grantTotals{}, fmt.Errorf("%s ownership: %w", g.Beneficiary, err)
 			}
-			t.ownership[g.Beneficiary] = paid
+			t.ownership[g.Beneficiary] = committed
 		}
 	}
 	return t, nil
@@ -181,12 +186,12 @@ func (t grantTotals) reconcile(gs GenesisState, listed map[string]AccountBook) e
 		return fmt.Errorf("the live term's awards %s exceed its allowance %s", t.liveCompensation, gs.GrantsMandate.CompensationAllowance)
 	}
 	for _, b := range gs.Beneficiaries {
-		if paid := amountOf(t.ownership, b.Address); !paid.Equal(b.OwnershipPaid) {
-			return fmt.Errorf("beneficiary %s ownership paid %s differs from its grants' %s", b.Address, b.OwnershipPaid, paid)
+		if committed := amountOf(t.ownership, b.Address); !committed.Equal(b.OwnershipCommitted) {
+			return fmt.Errorf("beneficiary %s ownership committed %s differs from its grants' %s", b.Address, b.OwnershipCommitted, committed)
 		}
 	}
-	// An all-zero book may be listed or omitted; open is governance state that import checks against
-	// Bank rather than derives from grants.
+	// An all-zero book may be listed or omitted. The member tranche is governance state that import
+	// checks against Bank rather than derives from grants.
 	for _, account := range PoolAccountNames() {
 		actual, ok := listed[account]
 		if !ok {
@@ -232,7 +237,7 @@ func validateGrantJournal(grants []Grant, journal []GrantEntry, next uint64) err
 	for _, g := range grants {
 		run, payee, suspended, cancelled := i, g.Beneficiary, false, false
 		paid, freed := math.ZeroInt(), math.ZeroInt()
-		var suspendedAt uint64
+		var suspendedTime uint64
 		for ; i < entries && journal[i].GrantId == g.Id; i++ {
 			e := journal[i]
 			if e.Amount.Denom != g.Amount.Denom {
@@ -256,7 +261,7 @@ func validateGrantJournal(grants []Grant, journal []GrantEntry, next uint64) err
 				if c := journal[run]; i != run+1 || e.Id != c.Id+1 || e.Height != c.Height || e.Time != c.Time || e.Actor != c.Actor {
 					return fmt.Errorf("grant entry %d does not fund grant %d's award", e.Id, g.Id)
 				}
-			case GrantAction_GRANT_ACTION_PAYEE:
+			case GrantAction_GRANT_ACTION_PAYEE_CHANGED:
 				if e.Subject == payee {
 					return fmt.Errorf("grant entry %d changes nothing: grant %d already pays %s", e.Id, g.Id, payee)
 				}
@@ -273,7 +278,7 @@ func validateGrantJournal(grants []Grant, journal []GrantEntry, next uint64) err
 				// A cancel freezes entitlement when it happens, or at the suspension it ends.
 				cutoff := e.Time
 				if suspended {
-					cutoff = suspendedAt
+					cutoff = suspendedTime
 				}
 				if g.Cancelled() && cutoff != g.CutoffTime {
 					return fmt.Errorf("grant entry %d cancels grant %d at %d; the grant was cut off at %d", e.Id, g.Id, cutoff, g.CutoffTime)
@@ -288,7 +293,7 @@ func validateGrantJournal(grants []Grant, journal []GrantEntry, next uint64) err
 				}
 				suspended = !suspended
 				if suspended {
-					suspendedAt = e.Time
+					suspendedTime = e.Time
 				}
 			}
 			if err != nil {
@@ -308,8 +313,8 @@ func validateGrantJournal(grants []Grant, journal []GrantEntry, next uint64) err
 		if cancelled != g.Cancelled() || suspended != g.Suspended() {
 			return fmt.Errorf("grant %d differs from its journal: cancelled %t, suspended %t", g.Id, cancelled, suspended)
 		}
-		if suspended && suspendedAt != g.SuspendedAt {
-			return fmt.Errorf("grant %d was suspended at %d; its journal suspends it at %d", g.Id, g.SuspendedAt, suspendedAt)
+		if suspended && suspendedTime != g.SuspendedTime {
+			return fmt.Errorf("grant %d was suspended at %d; its journal suspends it at %d", g.Id, g.SuspendedTime, suspendedTime)
 		}
 	}
 	return nil
@@ -377,7 +382,7 @@ func blockOrder(journal string, stamps [][2]uint64) error {
 }
 
 // amountOf reads a running total, zero before its first addition.
-func amountOf[K comparable](totals map[K]math.Int, key K) math.Int {
+func amountOf(totals map[string]math.Int, key string) math.Int {
 	if v, ok := totals[key]; ok {
 		return v
 	}

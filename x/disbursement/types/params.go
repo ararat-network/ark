@@ -17,8 +17,8 @@ const (
 	DefaultCompensationWindow = uint64(12 * 2_628_000)
 	// DefaultCompensationPeriod is a fortnight; an award counts them (D116).
 	DefaultCompensationPeriod = uint64(14 * 86_400)
-	// DefaultOwnershipCap bounds one record's ownership payments from the pools over every grant,
-	// in whole NOAH: the founding band's top and the founder's grant (D115).
+	// DefaultOwnershipCap bounds the ownership one record's grants commit from the pools, in whole
+	// NOAH: the founding band's top and the founder's grant (D115, D121).
 	DefaultOwnershipCap = int64(15_000_000)
 )
 
@@ -39,7 +39,7 @@ func DefaultOwnershipSchedule() Schedule {
 	return Schedule{
 		FirstLength:  365 * 86_400,
 		FirstWeight:  26,
-		PeriodLength: DefaultCompensationPeriod,
+		PeriodLength: 14 * 86_400,
 		PeriodWeight: 1,
 		Periods:      78,
 	}

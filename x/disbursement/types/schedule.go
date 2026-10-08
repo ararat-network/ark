@@ -3,7 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	stdmath "math"
 
 	"cosmossdk.io/math"
 )
@@ -17,7 +16,7 @@ const (
 )
 
 // Validate bounds a shape: a first period, then at most MaxSchedulePeriods further periods, each
-// within a century and with a positive weight under MaxWeight, the whole within time.
+// within a century and with a positive weight of at most MaxWeight.
 func (s Schedule) Validate() error {
 	if s.FirstLength == 0 || s.FirstLength > MaxPeriodLength || s.FirstWeight == 0 || s.FirstWeight > MaxWeight {
 		return errors.New("first period requires a bounded positive length and weight")
@@ -28,7 +27,8 @@ func (s Schedule) Validate() error {
 	if s.Periods > 0 && (s.PeriodLength == 0 || s.PeriodLength > MaxPeriodLength || s.PeriodWeight == 0 || s.PeriodWeight > MaxWeight) {
 		return errors.New("further periods require a bounded positive length and weight")
 	}
-	if s.Duration() > stdmath.MaxInt64 {
+	// Unreachable: the bounds above hold the duration under 1,201 centuries.
+	if !fitsInt64(s.Duration()) {
 		return errors.New("schedule duration overflows time")
 	}
 	return nil

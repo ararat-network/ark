@@ -14,7 +14,8 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgSetGrantsMandate{}, "ark/disbursement/MsgSetGrantsMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgOpenTranche{}, "ark/disbursement/MsgOpenTranche")
 	legacy.RegisterAminoMsg(cdc, &MsgReturnUnallocated{}, "ark/disbursement/MsgReturnUnallocated")
-	legacy.RegisterAminoMsg(cdc, &MsgCreateGrant{}, "ark/disbursement/MsgCreateGrant")
+	legacy.RegisterAminoMsg(cdc, &MsgGrantOwnership{}, "ark/disbursement/MsgGrantOwnership")
+	legacy.RegisterAminoMsg(cdc, &MsgCompensate{}, "ark/disbursement/MsgCompensate")
 	legacy.RegisterAminoMsg(cdc, &MsgCancelGrants{}, "ark/disbursement/MsgCancelGrants")
 	legacy.RegisterAminoMsg(cdc, &MsgReinstateMembers{}, "ark/disbursement/MsgReinstateMembers")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeRegistrar{}, "ark/disbursement/MsgCommitteeRegistrar")
@@ -28,6 +29,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 
 // RegisterInterfaces registers disbursement transaction messages.
 func RegisterInterfaces(r codectypes.InterfaceRegistry) {
-	r.RegisterImplementations((*sdk.Msg)(nil), &MsgUpdateParams{}, &MsgSetGrantsMandate{}, &MsgOpenTranche{}, &MsgReturnUnallocated{}, &MsgCreateGrant{}, &MsgCancelGrants{}, &MsgReinstateMembers{}, &MsgCommitteeRegistrar{}, &MsgRegisterMembers{}, &MsgCommitteeSuspend{}, &MsgCommitteeReinstate{}, &MsgCommitteeCompensate{}, &MsgSetPayee{}, &MsgSetController{})
+	r.RegisterImplementations((*sdk.Msg)(nil), &MsgUpdateParams{}, &MsgSetGrantsMandate{}, &MsgOpenTranche{}, &MsgReturnUnallocated{}, &MsgGrantOwnership{}, &MsgCompensate{}, &MsgCancelGrants{}, &MsgReinstateMembers{}, &MsgCommitteeRegistrar{}, &MsgRegisterMembers{}, &MsgCommitteeSuspend{}, &MsgCommitteeReinstate{}, &MsgCommitteeCompensate{}, &MsgSetPayee{}, &MsgSetController{})
 	msgservice.RegisterMsgServiceDesc(r, &_Msg_serviceDesc)
 }

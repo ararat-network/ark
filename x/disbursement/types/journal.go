@@ -2,7 +2,7 @@ package types
 
 import (
 	"errors"
-	stdmath "math"
+	"fmt"
 
 	"github.com/ararat-network/ark/pkg/chain"
 )
@@ -13,7 +13,7 @@ func (e GrantEntry) Validate() error {
 	if e.Id == 0 {
 		return errors.New("grant entry needs an ID")
 	}
-	if e.Height == 0 || e.Height > stdmath.MaxInt64 || e.Time > stdmath.MaxInt64 {
+	if !positiveInt64(e.Height) || !fitsInt64(e.Time) {
 		return errors.New("invalid grant entry time or height")
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("grant entry actor", e.Actor); err != nil {
@@ -30,7 +30,7 @@ func (e GrantEntry) Validate() error {
 	case GrantAction_GRANT_ACTION_PAID:
 		wantSubject = true
 	case GrantAction_GRANT_ACTION_CANCELLED:
-	case GrantAction_GRANT_ACTION_PAYEE:
+	case GrantAction_GRANT_ACTION_PAYEE_CHANGED:
 		wantSubject, zeroAmount = true, true
 	case GrantAction_GRANT_ACTION_SUSPENDED, GrantAction_GRANT_ACTION_REINSTATED:
 		zeroAmount = true
@@ -48,11 +48,11 @@ func (e GrantEntry) Validate() error {
 			return err
 		}
 	}
-	if (e.Offer != nil) != wantOffer {
-		return errors.New("grant entry offer does not match its action")
+	if err := ValidateAmount(e.Offer, wantOffer); err != nil {
+		return fmt.Errorf("grant entry offer: %w", err)
 	}
-	if wantOffer && (e.Offer.Validate() != nil || e.Offer.Denom != chain.NoahBaseDenom || !e.Offer.Amount.IsPositive()) {
-		return errors.New("conversion offer must be positive NOAH")
+	if !wantOffer && !e.Offer.IsZero() {
+		return errors.New("grant entry offer does not match its action")
 	}
 	if zeroAmount && !e.Amount.IsZero() {
 		return errors.New("nonpayment grant entry moves principal")
@@ -68,7 +68,7 @@ func (e BeneficiaryEntry) Validate() error {
 	if e.Id == 0 {
 		return errors.New("beneficiary entry needs an ID")
 	}
-	if e.Height == 0 || e.Height > stdmath.MaxInt64 || e.Time > stdmath.MaxInt64 {
+	if !positiveInt64(e.Height) || !fitsInt64(e.Time) {
 		return errors.New("invalid beneficiary entry time or height")
 	}
 	for _, a := range []string{e.Beneficiary, e.Actor, e.Controller} {

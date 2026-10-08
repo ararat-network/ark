@@ -33,7 +33,7 @@ const week = types.MinCompensationPeriod
 
 // grantEntry is a grant journal entry the fixture's authority records at the fixture's creation.
 func grantEntry(id, grant uint64, action types.GrantAction, amount int64, subject string) types.GrantEntry {
-	return types.GrantEntry{Id: id, GrantId: grant, Action: action, Actor: testAddress(9), Amount: chain.NoahCoin(math.NewInt(amount)), Subject: subject, Height: 1, Time: 100}
+	return types.GrantEntry{Id: id, GrantId: grant, Action: action, Actor: testAddress(9), Amount: chain.NoahCoin(math.NewInt(amount)), Subject: subject, Offer: math.ZeroInt(), Height: 1, Time: 100}
 }
 
 // validGenesis holds a member paid its first period, a compensation award one payment in, and a
@@ -42,20 +42,20 @@ func validGenesis() *types.GenesisState {
 	a, b, c, authority := testAddress(1), testAddress(2), testAddress(3), testAddress(9)
 	gs := types.DefaultGenesisState()
 	gs.Beneficiaries = []types.Beneficiary{
-		{Address: b, Controller: b, OwnershipPaid: math.ZeroInt(), Seat: math.ZeroInt()},
-		{Address: c, Controller: c, OwnershipPaid: math.ZeroInt(), Seat: math.ZeroInt()},
+		{Address: b, Controller: b, OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()},
+		{Address: c, Controller: c, OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()},
 	}
 	gs.Grants = []types.Grant{
 		{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_MEMBER, Beneficiary: a, Payee: a, CreatedBy: authority,
 			Amount: chain.NoahCoin(math.NewInt(10_000)), Schedule: types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", ReferenceValue: math.ZeroInt(), DueAt: 111,
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", AwardValue: math.ZeroInt(), DueTime: 111,
 			MandateTerm: 1,
 		},
 		{
 			Id: 2, Kind: types.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: b, Payee: b, CreatedBy: authority,
 			Amount: chain.NoahCoin(math.NewInt(30)), Schedule: types.Schedule{FirstLength: week, FirstWeight: 1, PeriodLength: week, PeriodWeight: 1, Periods: 2},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", ReferenceValue: math.NewInt(30), DueAt: 100 + 2*week,
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", AwardValue: math.NewInt(30), DueTime: 100 + 2*week,
 		},
 	}
 	gs.NextGrantId = 3
@@ -94,9 +94,9 @@ func TestGenesisValidation(t *testing.T) {
 		g.NextGrantEntryId = uint64(len(g.GrantJournal)) + 1
 	}
 	// cut cancels the compensation award after its third week, fully earned: it still owes 20 and frees nothing.
-	cut := func(g *types.GenesisState) { g.Grants[1].CutoffTime, g.Grants[1].DueAt = 105+3*week, 105+3*week }
+	cut := func(g *types.GenesisState) { g.Grants[1].CutoffTime, g.Grants[1].DueTime = 105+3*week, 105+3*week }
 	// suspend suspends the member at 105, its first period paid.
-	suspend := func(g *types.GenesisState) { g.Grants[0].SuspendedAt, g.Grants[0].DueAt = 105, 0 }
+	suspend := func(g *types.GenesisState) { g.Grants[0].SuspendedTime, g.Grants[0].DueTime = 105, 0 }
 	// at stamps an entry with its block time.
 	at := func(e types.GrantEntry, time uint64) types.GrantEntry {
 		e.Time = time
@@ -106,11 +106,10 @@ func TestGenesisValidation(t *testing.T) {
 	// creation's write; its payment moves to entry 5.
 	stablecoin := func(g *types.GenesisState) {
 		usd := func(n int64) sdk.Coin { return sdk.NewInt64Coin("ausd", n) }
-		offer := chain.NoahCoin(math.NewInt(31))
 		g.Grants[1].Amount = usd(30)
 		g.Books[0].Reserved = sdk.NewCoins(usd(20))
 		created, converted, paid := g.GrantJournal[2], grantEntry(4, 2, types.GrantAction_GRANT_ACTION_CONVERTED, 0, ""), g.GrantJournal[3]
-		created.Amount, converted.Amount, converted.Offer, paid.Amount, paid.Id = usd(30), usd(30), &offer, usd(10), 5
+		created.Amount, converted.Amount, converted.Offer, paid.Amount, paid.Id = usd(30), usd(30), math.NewInt(31), usd(10), 5
 		g.GrantJournal = append(g.GrantJournal[:2], created, converted, paid)
 		g.NextGrantEntryId = 6
 	}
@@ -119,7 +118,7 @@ func TestGenesisValidation(t *testing.T) {
 	rotate := func(byteOrder bool) func(*types.GenesisState) {
 		return func(g *types.GenesisState) {
 			contract := sdk.AccAddress(bytes.Repeat([]byte{1}, 32)).String()
-			g.Beneficiaries = append([]types.Beneficiary{{Address: contract, Controller: a, OwnershipPaid: math.ZeroInt(), Seat: math.ZeroInt()}}, g.Beneficiaries...)
+			g.Beneficiaries = append([]types.Beneficiary{{Address: contract, Controller: a, OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()}}, g.Beneficiaries...)
 			g.Beneficiaries[1].Controller = a
 			g.BeneficiaryJournal = []types.BeneficiaryEntry{
 				{Id: 1, Beneficiary: b, Actor: b, Controller: a, Height: 1, Time: 100},
@@ -131,14 +130,33 @@ func TestGenesisValidation(t *testing.T) {
 			g.NextBeneficiaryEntryId = 3
 		}
 	}
+	// owned gives c an ownership award of four shares of 10, one paid at 110, cancelled at 125 owing
+	// the second: the record commits the 20 it earned (D121).
+	owned := func(g *types.GenesisState) {
+		c := testAddress(3)
+		g.Grants = append(g.Grants, types.Grant{
+			Id: 3, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: c, Payee: c, CreatedBy: testAddress(9),
+			Amount: chain.NoahCoin(math.NewInt(40)), Schedule: types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 3},
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(10), Reference: "agreement",
+			AwardValue: math.ZeroInt(), CutoffTime: 125, DueTime: 125,
+		})
+		g.NextGrantId = 4
+		g.Beneficiaries[1].OwnershipCommitted = math.NewInt(20)
+		g.Books[0].Reserved = sdk.NewCoins(chain.NoahCoin(math.NewInt(30)))
+		record(g,
+			grantEntry(5, 3, types.GrantAction_GRANT_ACTION_CREATED, 40, ""),
+			at(grantEntry(6, 3, types.GrantAction_GRANT_ACTION_PAID, 10, c), 110),
+			at(grantEntry(7, 3, cancelled, 20, ""), 125),
+		)
+	}
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.GenesisState)
 		err    string
 	}{
 		{"valid", func(*types.GenesisState) {}, ""},
-		{"books out of order", func(g *types.GenesisState) { g.Books[0], g.Books[1] = g.Books[1], g.Books[0] }, "sorted by unique pool"},
-		{"duplicate book", func(g *types.GenesisState) { g.Books[1] = g.Books[0] }, "sorted by unique pool"},
+		{"books out of order", func(g *types.GenesisState) { g.Books[0], g.Books[1] = g.Books[1], g.Books[0] }, "sorted by unique account"},
+		{"duplicate book", func(g *types.GenesisState) { g.Books[1] = g.Books[0] }, "sorted by unique account"},
 		{"beneficiaries out of order", func(g *types.GenesisState) {
 			g.Beneficiaries[0], g.Beneficiaries[1] = g.Beneficiaries[1], g.Beneficiaries[0]
 		}, "sorted by unique address"},
@@ -157,7 +175,12 @@ func TestGenesisValidation(t *testing.T) {
 		{"next grant entry ID behind the history", func(g *types.GenesisState) { g.NextGrantEntryId = 4 }, "does not follow"},
 		{"reservations differ from grants", func(g *types.GenesisState) { g.Books[1].Reserved = sdk.NewCoins(chain.NoahCoin(math.NewInt(8_999))) }, "reservations"},
 		{"term usage differs from awards", func(g *types.GenesisState) { g.CompensationUsed = math.OneInt() }, "term usage"},
-		{"ownership differs from grants", func(g *types.GenesisState) { g.Beneficiaries[0].OwnershipPaid = math.OneInt() }, "ownership paid"},
+		{"negative member tranche", func(g *types.GenesisState) { g.MemberTranche = math.NewInt(-1) }, "member tranche"},
+		{"open member tranche", func(g *types.GenesisState) { g.MemberTranche = math.NewInt(1_000) }, ""},
+		{"ownership differs from grants", func(g *types.GenesisState) { g.Beneficiaries[0].OwnershipCommitted = math.OneInt() }, "ownership committed"},
+		{"cancelled ownership commits what it earned", owned, ""},
+		{"ownership committed as paid alone", func(g *types.GenesisState) { owned(g); g.Beneficiaries[1].OwnershipCommitted = math.NewInt(10) }, "ownership committed"},
+		{"ownership committed as awarded", func(g *types.GenesisState) { owned(g); g.Beneficiaries[1].OwnershipCommitted = math.NewInt(40) }, "ownership committed"},
 		{"payments differ from the journal", func(g *types.GenesisState) { g.GrantJournal[1].Amount = chain.NoahCoin(math.NewInt(999)) }, "differs from its journal"},
 		{"grant without a beneficiary record", func(g *types.GenesisState) { g.Grants[1].Beneficiary = a }, "no beneficiary record"},
 		{"entry naming an unknown grant", func(g *types.GenesisState) { g.GrantJournal[3].GrantId = 9 }, "unknown grant 9"},
@@ -191,7 +214,7 @@ func TestGenesisValidation(t *testing.T) {
 		{"suspended member missing its suspension", suspend, "suspended false"},
 		{"cancellation clears a suspension", func(g *types.GenesisState) {
 			// Cancelled at its suspension, the member keeps the first period it was paid.
-			g.Grants[0].CutoffTime, g.Grants[0].Remaining, g.Grants[0].DueAt = 105, math.ZeroInt(), 0
+			g.Grants[0].CutoffTime, g.Grants[0].Remaining, g.Grants[0].DueTime = 105, math.ZeroInt(), 0
 			g.Books[1].Reserved = sdk.NewCoins()
 			record(g, at(grantEntry(5, 1, suspended, 0, ""), 105), at(grantEntry(6, 1, cancelled, 9_000, ""), 110))
 		}, ""},
@@ -235,13 +258,6 @@ func TestGenesisValidation(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestSortBeneficiaries(t *testing.T) {
-	record := func(b byte) types.Beneficiary { return types.Beneficiary{Address: testAddress(b)} }
-	list := []types.Beneficiary{record(3), record(1), record(2)}
-	types.SortBeneficiaries(list)
-	require.Equal(t, []types.Beneficiary{record(1), record(2), record(3)}, list)
 }
 
 func TestGenesisBeneficiaryJournal(t *testing.T) {
@@ -293,7 +309,7 @@ func TestGenesisBeneficiaryJournal(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			g := types.DefaultGenesisState()
-			g.Beneficiaries = []types.Beneficiary{{Address: a, Controller: a, OwnershipPaid: math.ZeroInt(), Seat: math.ZeroInt()}}
+			g.Beneficiaries = []types.Beneficiary{{Address: a, Controller: a, OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()}}
 			tc.mutate(g)
 			err := g.Validate()
 			if tc.valid {

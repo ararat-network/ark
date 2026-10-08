@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	stdmath "math"
-	"strings"
 
 	"cosmossdk.io/math"
 
@@ -14,16 +13,14 @@ import (
 const (
 	// MaxStartOffset bounds a grant's start time to a century either side of the block.
 	MaxStartOffset = MaxPeriodLength
-	// MaxPaymentsPerBlock bounds EndBlock work; entries past it stay due for the next block.
-	MaxPaymentsPerBlock = 1_000
-	// PaymentRetryInterval is how long a grant waits for another look after a cap or a refused send
-	// held back part of what was due, in seconds.
+	// PaymentRetryInterval is how long a grant waits for another look after Bank refused its payment,
+	// in seconds.
 	PaymentRetryInterval = uint64(86_400)
 )
 
 // ValidateStartTime bounds a grant's clock origin to a century of the block either way.
 func ValidateStartTime(start, now uint64) error {
-	if start == 0 || start > stdmath.MaxInt64 || now > stdmath.MaxInt64 {
+	if !positiveInt64(start) || !fitsInt64(now) {
 		return errors.New("start time must be a positive Unix time")
 	}
 	if start > now+MaxStartOffset || start+MaxStartOffset < now {
@@ -60,21 +57,21 @@ func (g Grant) Validate() error {
 	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && g.Amount.Denom != chain.NoahBaseDenom {
 		return errors.New("distribution grants require NOAH")
 	}
-	if err := ValidateAmount(g.ReferenceValue, g.Kind == GrantKind_GRANT_KIND_COMPENSATION); err != nil {
-		return fmt.Errorf("reference value: %w", err)
+	if err := ValidateAmount(g.AwardValue, g.Kind == GrantKind_GRANT_KIND_COMPENSATION); err != nil {
+		return fmt.Errorf("award value: %w", err)
 	}
-	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && !g.ReferenceValue.IsZero() {
-		return errors.New("only compensation carries a reference value")
+	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && !g.AwardValue.IsZero() {
+		return errors.New("only compensation carries an award value")
 	}
-	if len(g.Reference) > MaxReferenceBytes || strings.TrimSpace(g.Reference) == "" {
-		return errors.New("grant reference must be nonempty and bounded")
+	if err := chain.ValidateReference("grant reference", g.Reference, true); err != nil {
+		return err
 	}
 	for _, v := range []math.Int{g.Paid, g.Remaining} {
 		if err := ValidateAmount(v, false); err != nil {
 			return err
 		}
 	}
-	if g.StartTime == 0 || g.StartTime > stdmath.MaxInt64 || g.CreatedTime == 0 || g.CreatedTime > stdmath.MaxInt64 || g.CreatedHeight == 0 || g.CreatedHeight > stdmath.MaxInt64 {
+	if !positiveInt64(g.StartTime) || !positiveInt64(g.CreatedTime) || !positiveInt64(g.CreatedHeight) {
 		return errors.New("invalid grant creation time or height")
 	}
 	// A member's clock is its registration; an ownership clock never starts before its award (D116).
@@ -89,7 +86,7 @@ func (g Grant) Validate() error {
 		}
 	}
 	// A cancel may fall before a clock the grantor set ahead; nothing has accrued then.
-	if g.Cancelled() && (g.CutoffTime < g.CreatedTime || g.CutoffTime > stdmath.MaxInt64 || g.SuspendedAt != 0) {
+	if g.Cancelled() && (g.CutoffTime < g.CreatedTime || !fitsInt64(g.CutoffTime) || g.SuspendedTime != 0) {
 		return errors.New("invalid cancellation cutoff")
 	}
 	// A live grant still holds its whole principal; a cancelled one holds exactly its unpaid earned debt.
@@ -106,11 +103,11 @@ func (g Grant) Validate() error {
 	if g.Kind == GrantKind_GRANT_KIND_MEMBER && g.Paid.LT(first) {
 		return errors.New("member first period was not paid")
 	}
-	if g.SuspendedAt != 0 && (g.Kind != GrantKind_GRANT_KIND_MEMBER || g.SuspendedAt < g.CreatedTime || g.SuspendedAt > stdmath.MaxInt64) {
+	if g.SuspendedTime != 0 && (g.Kind != GrantKind_GRANT_KIND_MEMBER || g.SuspendedTime < g.CreatedTime || !fitsInt64(g.SuspendedTime)) {
 		return errors.New("invalid member suspension")
 	}
 	if g.Suspended() {
-		if earned, _, err := g.Accrued(g.SuspendedAt); err != nil || g.Paid.GT(earned) {
+		if earned, _, err := g.Accrued(g.SuspendedTime); err != nil || g.Paid.GT(earned) {
 			return errors.New("suspended member paid past its suspension")
 		}
 	}
@@ -121,10 +118,10 @@ func (g Grant) Validate() error {
 	}
 	// A grant waits for a look exactly while it owes principal and is not suspended, and a
 	// contributor grant never before one period after its award.
-	if (g.DueAt == 0) != (g.Suspended() || g.Remaining.IsZero()) || g.DueAt > stdmath.MaxInt64 || (g.DueAt != 0 && g.DueAt < g.StartTime) {
+	if (g.DueTime == 0) != (g.Suspended() || g.Remaining.IsZero()) || !fitsInt64(g.DueTime) || (g.DueTime != 0 && g.DueTime < g.StartTime) {
 		return errors.New("invalid grant due time")
 	}
-	if g.Kind != GrantKind_GRANT_KIND_MEMBER && g.DueAt != 0 && g.DueAt < g.CreatedTime+g.Schedule.FirstLength {
+	if g.Kind != GrantKind_GRANT_KIND_MEMBER && g.DueTime != 0 && g.DueTime < g.CreatedTime+g.Schedule.FirstLength {
 		return errors.New("grant is due before one period after its award")
 	}
 	return nil
@@ -132,7 +129,7 @@ func (g Grant) Validate() error {
 
 // Suspended reports whether a member's payments are paused; a suspension stands until reinstated.
 func (g Grant) Suspended() bool {
-	return g.SuspendedAt != 0
+	return g.SuspendedTime != 0
 }
 
 // Cancelled reports whether entitlement was frozen; a cancelled grant pays only its retained debt.
@@ -153,7 +150,7 @@ func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	if g.StartTime > stdmath.MaxInt64-s.Duration() {
 		return math.Int{}, 0, errors.New("schedule end overflows time")
 	}
-	if g.CreatedTime > stdmath.MaxInt64 {
+	if !fitsInt64(g.CreatedTime) {
 		return math.Int{}, 0, errors.New("grant creation time overflows")
 	}
 	if g.Cancelled() {
@@ -195,13 +192,9 @@ func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	return earned, next, nil
 }
 
-// NextLook is when the module next looks at a grant that still owes principal: its next accrual
-// boundary, or, when a cap or a refused send held back part of what was due, the sooner of that
-// boundary and one retry interval from now.
-func NextLook(now, next uint64, held bool) uint64 {
-	if !held && next != 0 {
-		return next
-	}
+// RetryAt is when the module looks again at a grant whose payment Bank refused: its next accrual
+// boundary or one retry interval from now, whichever is sooner.
+func RetryAt(now, next uint64) uint64 {
 	retry := now + PaymentRetryInterval // Block time is below MaxInt64; the sum fits.
 	if next != 0 && next < retry {
 		return next

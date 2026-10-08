@@ -1,9 +1,6 @@
 package types
 
 import (
-	"fmt"
-	"slices"
-
 	"cosmossdk.io/collections"
 )
 
@@ -36,6 +33,7 @@ var (
 	CompensationUsedKey       = collections.NewPrefix(14)
 	RegistrarMandateKey       = collections.NewPrefix(16)
 	RegistrarTermGrantsKey    = collections.NewPrefix(17)
+	MemberTrancheKey          = collections.NewPrefix(18)
 )
 
 // PoolAccountNames lists the module's pool accounts in storage-key order.
@@ -49,12 +47,4 @@ func Account(kind GrantKind) string {
 		return MembersName
 	}
 	return ContributorsName
-}
-
-// ValidateAccount checks a pool names one of the module's accounts.
-func ValidateAccount(pool string) error {
-	if !slices.Contains(PoolAccountNames(), pool) {
-		return fmt.Errorf("%q is not a disbursement pool", pool)
-	}
-	return nil
 }
