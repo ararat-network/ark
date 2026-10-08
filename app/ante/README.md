@@ -70,6 +70,13 @@ chain retains SDK decorator order while allowing this insertion.
 Signed messages and execution-generated dispatches share bounded authz leaf traversal, the one-NOAH explicit
 vote stake floor, and the MultiSend guard. Governance proposal execution uses the underlying router. Lane
 eligibility is separate from message validity; an ineligible governance transaction can still execute normally.
+At check and recheck only, the vote decorator also refuses a vote or deposit x/gov would refuse for its
+proposal's state, so a vote that arrives after a close is refused at submission and one that was pending leaves
+the pool at recheck instead of being included to fail. Check runs on committed state, and the refusal tracks what
+earlier signed messages and authz leaves in the same transaction change: a deposit may open voting for a later
+vote and a submission may create the proposal a later message names. A contract call may dispatch either, so
+everything after one is admitted. An earlier transaction in the same block can do the same, and a vote it would
+enable is refused until that transaction commits.
 
 MultiSend allows at most 500 outputs and charges `300 * outputs²` gas in addition to Bank's linear cost.
 At 500 outputs the surcharge is 75 million gas, roughly 84 million including Bank's output cost, beneath the

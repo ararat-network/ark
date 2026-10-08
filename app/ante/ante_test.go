@@ -85,6 +85,7 @@ func newBenchFixture(tb testing.TB) *benchFixture {
 		arkApp.BankKeeper,
 		arkApp.FeeGrantKeeper,
 		arkApp.StakingKeeper,
+		arkApp.GovKeeper,
 		arkApp.TreasuryKeeper,
 		arkApp.Privileges(),
 		arkApp.WasmKeeper.GetGasRegister(),
@@ -241,7 +242,7 @@ func TestPrivilegeVouchRunsAfterSignatureVerification(t *testing.T) {
 	calls := 0
 	set := mempool.NewSet(mempool.Privilege{Lane: mempool.LaneGovernance, Msgs: []sdk.Msg{&banktypes.MsgSend{}}, Vouch: func(sdk.Context, sdk.Msg) (bool, error) { calls++; return true, nil }})
 	handler := ante.NewAnteHandler(f.app.AppCodec(), f.app.TxConfig(), f.app.AccountKeeper, f.app.BankKeeper,
-		f.app.FeeGrantKeeper, f.app.StakingKeeper, f.app.TreasuryKeeper, set,
+		f.app.FeeGrantKeeper, f.app.StakingKeeper, f.app.GovKeeper, f.app.TreasuryKeeper, set,
 		f.app.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), wasmTxCounterStore(t, f.app))
 	for _, valid := range []bool{false, true} {
 		t.Run(fmt.Sprint(valid), func(t *testing.T) {

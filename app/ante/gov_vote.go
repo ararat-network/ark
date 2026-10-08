@@ -3,6 +3,7 @@ package ante
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -10,6 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -41,19 +44,119 @@ type votesCheckedKey struct{}
 type GovVoteDecorator struct {
 	cdc     codec.Codec
 	staking *stakingkeeper.Keeper
+	gov     *govkeeper.Keeper
 }
 
-func NewGovVoteDecorator(cdc codec.Codec, staking *stakingkeeper.Keeper) GovVoteDecorator {
-	return GovVoteDecorator{cdc: cdc, staking: staking}
+func NewGovVoteDecorator(cdc codec.Codec, staking *stakingkeeper.Keeper, gov *govkeeper.Keeper) GovVoteDecorator {
+	return GovVoteDecorator{cdc: cdc, staking: staking, gov: gov}
 }
 
+// AnteHandle enforces the stake floor in every mode. At check and recheck it also refuses a vote
+// or deposit x/gov would refuse for its proposal's state, so a late vote leaves the pool instead
+// of being included to fail. Execution and simulation leave that to x/gov, so their gas is unchanged.
 func (d GovVoteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (sdk.Context, error) {
+	mode := ctx.ExecMode()
+	checking := mode == sdk.ExecModeCheck || mode == sdk.ExecModeReCheck
+	guard := closedProposalGuard{gov: d.gov, deposited: map[uint64]bool{}, created: map[uint64]bool{}}
 	for _, msg := range tx.GetMsgs() {
-		if err := ValidateGovVoteMsg(ctx, d.cdc, d.staking, msg, 0); err != nil {
+		err := walkAuthzExec(d.cdc, msg, 0, func(msg sdk.Msg) error {
+			if err := vouchVote(ctx, d.staking, msg); err != nil {
+				return err
+			}
+			if checking {
+				return guard.visit(ctx, msg)
+			}
+			return nil
+		})
+		if err != nil {
 			return ctx, err
 		}
 	}
 	return next(ctx.WithValue(votesCheckedKey{}, true), tx, simulate)
+}
+
+// closedProposalGuard mirrors x/gov's refusals at check: a vote needs its proposal in the voting
+// index, a deposit an existing proposal in its deposit or voting period. Check runs on committed
+// state, so the guard tracks what this transaction's earlier messages change: a deposit may open
+// voting for a later vote, and each submission creates the next proposal ID for a later message.
+// A contract call may dispatch either, so nothing after one is refused. An earlier transaction in
+// the same block can do the same, and a vote it would enable is refused here until that
+// transaction commits.
+type closedProposalGuard struct {
+	gov       *govkeeper.Keeper
+	deposited map[uint64]bool
+	created   map[uint64]bool
+	opaque    bool // a contract ran
+}
+
+func (g *closedProposalGuard) visit(ctx sdk.Context, msg sdk.Msg) error {
+	if g.opaque {
+		return nil
+	}
+	switch m := msg.(type) {
+	case *govv1.MsgSubmitProposal, *govv1beta1.MsgSubmitProposal:
+		next, err := g.gov.ProposalID.Peek(ctx)
+		if err != nil {
+			return err
+		}
+		g.created[next+uint64(len(g.created))] = true
+		return nil
+	case *govv1.MsgVote:
+		return g.vote(ctx, m.ProposalId)
+	case *govv1.MsgVoteWeighted:
+		return g.vote(ctx, m.ProposalId)
+	case *govv1beta1.MsgVote:
+		return g.vote(ctx, m.ProposalId)
+	case *govv1beta1.MsgVoteWeighted:
+		return g.vote(ctx, m.ProposalId)
+	case *govv1.MsgDeposit:
+		return g.deposit(ctx, m.ProposalId)
+	case *govv1beta1.MsgDeposit:
+		return g.deposit(ctx, m.ProposalId)
+	default:
+		// A contract may dispatch a deposit or a submission, so nothing
+		// after it is provably refusable.
+		g.opaque = strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmwasm.wasm.v1.")
+		return nil
+	}
+}
+
+// vote admits what AddVote admits, the voting index, and a proposal this transaction created or
+// deposited on, since either may open voting first.
+func (g *closedProposalGuard) vote(ctx sdk.Context, id uint64) error {
+	if g.created[id] || g.deposited[id] {
+		return nil
+	}
+	voting, err := g.gov.VotingPeriodProposals.Has(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !voting {
+		return errorsmod.Wrapf(govtypes.ErrInactiveProposal, "%d", id)
+	}
+	return nil
+}
+
+// deposit admits what AddDeposit admits and a proposal this transaction created. x/gov returns
+// the uncoded collections error for a missing proposal; the coded not-found reads as a refusal
+// rather than an internal error.
+func (g *closedProposalGuard) deposit(ctx sdk.Context, id uint64) error {
+	if g.created[id] {
+		g.deposited[id] = true
+		return nil
+	}
+	proposal, found, err := findProposal(ctx, g.gov, id)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return errorsmod.Wrapf(errortypes.ErrNotFound, "proposal %d", id)
+	}
+	if proposal.Status != govv1.StatusDepositPeriod && proposal.Status != govv1.StatusVotingPeriod {
+		return errorsmod.Wrapf(govtypes.ErrInactiveProposal, "%d", id)
+	}
+	g.deposited[id] = true
+	return nil
 }
 
 // ValidateGovVoteMsg enforces minVoterStake on explicit votes, including authz leaves, at both

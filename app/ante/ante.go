@@ -15,6 +15,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/ararat-network/ark/app/mempool"
@@ -31,6 +32,7 @@ func NewAnteHandler(
 	bankKeeper bankkeeper.BaseKeeper,
 	feeGrantKeeper feegrantkeeper.Keeper,
 	stakingKeeper *stakingkeeper.Keeper,
+	govKeeper *govkeeper.Keeper,
 	treasuryKeeper *treasurykeeper.Keeper,
 	privileges mempool.Set,
 	wasmGasRegister wasmtypes.GasRegister,
@@ -60,7 +62,7 @@ func NewAnteHandler(
 		// Consensus message policy stays before fee collection. The vote
 		// floor also covers authz; priority-only eligibility is evaluated
 		// separately after signature verification below.
-		NewGovVoteDecorator(cdc, stakingKeeper),
+		NewGovVoteDecorator(cdc, stakingKeeper, govKeeper),
 		NewMultiSendDecorator(cdc),
 
 		// FeeDecorator enforces Treasury's consensus base fee and the signed tax ceiling, then

@@ -46,6 +46,7 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bank "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	gov "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
 	"github.com/ararat-network/ark/app"
@@ -331,7 +332,11 @@ func TestFloodModePublicPropagation(t *testing.T) {
 
 // Rechecks revalidate pending votes through SDK ante without changing the
 // priority or reservation assigned at insertion, matching SDK index behaviour.
-func TestRecheckPreservesInsertionPriority(t *testing.T) {
+// TestRecheckDropsVotesOnClosedProposals pins the check-mode mirror of x/gov's status rule
+// end to end: a vote pending when its proposal closes fails recheck with x/gov's own code and
+// leaves the pool, freeing its reservation, and a vote arriving after the close is refused at
+// admission. Surviving entries keep their insertion lane and slot.
+func TestRecheckDropsVotesOnClosedProposals(t *testing.T) {
 	f := newAdmissionFixture(t, 1)
 	a := f.apps[0]
 	fillNormal(t, f)
@@ -343,26 +348,35 @@ func TestRecheckPreservesInsertionPriority(t *testing.T) {
 	counts, _ := pool.Usage()
 	require.Equal(t, [3]int{18, 1, 0}, counts)
 
+	// The block at the voting end time tallies the proposal in its end-of-block step.
 	_, err = a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 2, Time: admissionTime.Add(48 * time.Hour)})
 	require.NoError(t, err)
 	_, err = a.Commit()
 	require.NoError(t, err)
-	require.True(t, pool.Has(vote), "a lane shift must not evict a surviving transaction")
-	counts, _ = pool.Usage()
-	require.Equal(t, [3]int{18, 1, 0}, counts, "SDK recheck does not reprioritise existing entries")
 	for _, e := range pool.Snapshot() {
-		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: proposalBytes(t, a, e), Type: abci.CheckTxType_Recheck})
+		bz := proposalBytes(t, a, e)
+		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz, Type: abci.CheckTxType_Recheck})
 		require.NoError(t, err)
+		if bytes.Equal(bz, vote) {
+			require.Equal(t, govtypes.ErrInactiveProposal.ABCICode(), res.Code, res.Log)
+			continue
+		}
 		require.Zero(t, res.Code, res.Log)
 	}
+	require.False(t, pool.Has(vote), "a vote on a closed proposal leaves the pool at recheck")
+	counts, _ = pool.Usage()
+	require.Equal(t, [3]int{18, 0, 0}, counts, "its reservation is released; surviving entries keep their slots")
 
+	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.voter, 0, voteMsg(f.voter))})
+	require.NoError(t, err)
+	require.Equal(t, govtypes.ErrInactiveProposal.ABCICode(), res.Code, "a vote after the close is refused at admission")
 	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.normal, 18, sendMsg(f.normal))})
 	require.NoError(t, err)
 	require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, "normal admission waits for the overflow to drain")
 	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.committee, 0, committeeMsg(f.committee))})
 	require.NoError(t, err)
 	require.Zero(t, res.Code, res.Log)
-	require.Equal(t, 20, pool.CountTx())
+	require.Equal(t, 19, pool.CountTx())
 }
 
 // Ark keeps no lock of its own: CometBFT's local ABCI client serialises
@@ -713,7 +727,7 @@ func proposalBytes(t *testing.T, a *app.ArkApp, e mempool.Entry) []byte {
 func sdkReference(a *app.ArkApp) {
 	a.SetMempool(sdkmempool.DefaultPriorityMempool())
 	a.SetAnteHandler(ante.NewAnteHandler(a.AppCodec(), a.TxConfig(), a.AccountKeeper, a.BankKeeper,
-		a.FeeGrantKeeper, a.StakingKeeper, a.TreasuryKeeper, a.Privileges(),
+		a.FeeGrantKeeper, a.StakingKeeper, a.GovKeeper, a.TreasuryKeeper, a.Privileges(),
 		a.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), runtime.NewKVStoreService(a.GetKey(wasmtypes.StoreKey))))
 	a.SetPrepareCheckStater(nil)
 	handler := baseapp.NewDefaultProposalHandler(a.Mempool(), a)

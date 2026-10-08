@@ -170,7 +170,7 @@ func TestGovernanceDepositThenVoteUsesNormalLane(t *testing.T) {
 
 			// Exercise the independent vote policy as well as classification.
 			handler := sdk.ChainAnteDecorators(
-				ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper),
+				ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper, arkApp.GovKeeper),
 				ante.NewPrivilegeDecorator(set),
 			)
 			got, err := handler(ctx, tx, simulate)

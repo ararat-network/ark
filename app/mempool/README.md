@@ -53,7 +53,9 @@ therefore discards the candidate's fee, sequence and unordered-replay writes. Th
 then performs its ordinary pool insertion and post-handler call. Ark does not change
 SDK rollback semantics for unrelated failures after successful ante. The current
 transfer-tax post handler is execution/simulation-only. Node-local admission bounds
-never run during recheck, proposal verification, simulation, or finalisation.
+never run during recheck, proposal verification, simulation, or finalisation. Recheck does drop a
+pending vote or deposit whose proposal has left the period x/gov accepts it in, through the ante
+vote decorator's check-mode refusal, so a stale vote never spends its lane slot on a failing inclusion.
 
 The start command requires `type = "flood"`, `recheck = true`, and CometBFT `size`
 at least the app's transaction count. Both pools receive the same positive

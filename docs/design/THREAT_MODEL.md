@@ -187,7 +187,9 @@ SDK removals during optimistic execution or proposal filtering are deferred beca
 application slots while CometBFT retains the same bytes would let normal traffic exhaust
 transport headroom. Actual block entries are released in the SDK post-commit hook while
 CometBFT holds its mempool lock; CometBFT's subsequent recheck calls the SDK directly, and
-failed ante rechecks remove entries normally. There is no application revalidation loop.
+failed ante rechecks remove entries normally, including votes and deposits on proposals past the period x/gov
+accepts them in, which the vote decorator refuses in check modes with x/gov's own rule. There is no application
+revalidation loop.
 Other SDK behavior, including its post-handler failure semantics and first-signer ordering,
 is retained. Snapshot metadata and index operations are protected without holding a pool
 lock during validation.

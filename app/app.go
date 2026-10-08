@@ -244,6 +244,7 @@ func NewArkApp(
 		app.BankKeeper,
 		app.FeeGrantKeeper,
 		app.StakingKeeper,
+		app.GovKeeper,
 		app.TreasuryKeeper,
 		app.privileges,
 		app.WasmKeeper.GetGasRegister(),
