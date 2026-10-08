@@ -420,7 +420,7 @@ func initTestnetFiles(
 		// From code defaults each validator holds test balances and bonds a
 		// token; from an artefact it is a seat, bonding its whole grant at
 		// the artefact's commission floor.
-		bond := sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction))
+		bond := sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(100))
 		commission := stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec())
 		if base != nil {
 			seats = append(seats, addr)
@@ -429,8 +429,8 @@ func initTestnetFiles(
 			}
 		} else {
 			coins := sdk.Coins{
-				sdk.NewCoin("testtoken", sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)),
-				sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)),
+				sdk.NewCoin("testtoken", chain.NativeBaseAmount(1_000)),
+				sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(500)),
 			}
 			genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 			genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))

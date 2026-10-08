@@ -75,7 +75,7 @@ var (
 	// MaxBaseGasPrice caps the governance floor and saturates the live controller at one reference
 	// unit per gas. Checked requirement arithmetic remains a backstop; price saturation does not
 	// fail EndBlock.
-	MaxBaseGasPrice = math.LegacyNewDec(1_000_000_000_000_000_000)
+	MaxBaseGasPrice = math.LegacyNewDecFromInt(chain.NativeBaseAmount(1))
 	// MaxBaseFeeAdjustmentRate caps the per-block move at a doubling.
 	MaxBaseFeeAdjustmentRate = math.LegacyOneDec()
 )

@@ -194,6 +194,8 @@ string field_name = N [
   every rotation; cons addrs belong at attribution boundaries only
 - Default param values: use `const` for compile-time literals (integers, strings); `var` only for runtime init (function
   calls, struct/slice literals)
+- Token amounts in constants are whole display units (`int64`); convert with `chain.NativeBaseAmount` where the value is
+  built. Sub-unit figures, such as per-block rates and gas prices, stay in base units.
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
   - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTax.Get(ctx, denom)` directly
   - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetFeederDelegation`
