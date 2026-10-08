@@ -54,11 +54,6 @@ const (
 	GasPrices     = ""
 	GasAdjustment = 2.0
 
-	// RelayerGasPrices is Hermes' fee declaration, independent of arkd pricing. VerifyGasPrices
-	// checks it against Treasury's live sheet during setup so inadequate defaults fail before
-	// relaying.
-	RelayerGasPrices = "1000000000000" + Denom
-
 	// BlockTime is what interchaintest sets timeout_commit to.
 	BlockTime = 2 * time.Second
 
@@ -72,8 +67,8 @@ const (
 
 	SlashingWindow       = 20
 	DowntimeJailDuration = 20 * time.Second
-	// ShortUnbondingTime lets a suite see an unbonding complete. It is not
-	// the default because a relayer's trusting period must stay under it.
+	// ShortUnbondingTime lets a suite see an unbonding complete; ordinary
+	// suites keep the artefact's unbonding time.
 	ShortUnbondingTime = 60 * time.Second
 
 	// UpgradeDelta is the number of blocks between an upgrade proposal and
@@ -91,14 +86,9 @@ const (
 
 	// ValidatorFunds is each validator account's genesis balance, in NOAH.
 	ValidatorFunds = 10_000
-	// TrustingPeriod is 2/3 of the testnet artefact's 24h unbonding time.
+	// TrustingPeriod is interchaintest's chain-config field, 2/3 of the
+	// testnet artefact's 24h unbonding time; nothing relays against it.
 	TrustingPeriod = "16h"
-
-	TransferPortID = "transfer"
-
-	HermesRepository = "ghcr.io/informalsystems/hermes"
-	HermesVersion    = "1.13.1"
-	HermesUIDGID     = "2000:2000"
 
 	// ValidatorMoniker is the key name interchaintest gives every validator.
 	ValidatorMoniker = "validator"
@@ -169,7 +159,7 @@ func DefaultGenesis() []cosmos.GenesisKV {
 }
 
 // ShortUnbondingGenesis is for suites that wait for an unbonding to
-// complete. Not for chains a relayer tracks.
+// complete.
 func ShortUnbondingGenesis() []cosmos.GenesisKV {
 	return []cosmos.GenesisKV{
 		cosmos.NewGenesisKV("app_state.staking.params.unbonding_time", ShortUnbondingTime.String()),

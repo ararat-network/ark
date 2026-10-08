@@ -147,7 +147,7 @@ func TestTransferTaxChargesOnlySuccessfulTransactions(t *testing.T) {
 		require.NoError(t, err)
 		return tax.AmountOf(chain.USDBaseDenom)
 	}
-	txConfig := arkApp.GetTxConfig()
+	txConfig := arkApp.TxConfig()
 	sign := func(key *secp256k1.PrivKey, number, sequence uint64, granter sdk.AccAddress, msgs ...sdk.Msg) []byte {
 		signMode, err := authsigning.APISignModeToInternal(txConfig.SignModeHandler().DefaultMode())
 		require.NoError(t, err)

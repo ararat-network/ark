@@ -33,7 +33,7 @@ of every `arkd init` default.
 - [8. Oracle](#8-oracle)
 - [9. Asset registry](#9-asset-registry)
 - [10. Cosmos SDK modules](#10-cosmos-sdk-modules)
-- [11. IBC, interchain accounts, and CosmWasm](#11-ibc-interchain-accounts-and-cosmwasm)
+- [11. CosmWasm](#11-cosmwasm)
 - [12. Assembly sequence](#12-assembly-sequence)
 - [13. Committee appointments](#13-committee-appointments)
 - [14. Review before launch](#14-review-before-launch)
@@ -99,7 +99,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
 | `disbursement` | none | open | The member and contributor pools from genesis, fully funded grants, and compensation; governance opens tranches and nothing else draws the pools (D87, D88). |
 | `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message. |
-| `transfer`, `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; transfer holds Minter and Burner for vouchers (D45). |
+| `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; wasm holds Burner. |
 
 The blocked list replaces the SDK default rather than augmenting it, so every blocked account above is named
 explicitly and the four protocol-fund custody accounts, `disbursement`, and `gov` are deliberately left out.
@@ -229,7 +229,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `reference_denom` | `axdr` | Decided | The protocol reference unit (`x/oracle/README.md` §1.3). |
-| `feeds.denoms` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, `axdr` | Decided | Registration needs the asset's feed Active, so the ten currencies [registered after launch](GOVERNANCE_OPERATIONS.md#8-opening-conversion) print from genesis; `axdr` is the reference and is never registered. |
+| `feeds.denoms` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, `axdr` | Decided | Registration needs the asset's feed Active, so the ten currencies [registered after launch](GOVERNANCE_OPERATIONS.md#6-opening-conversion) print from genesis; `axdr` is the reference and is never registered. |
 | `params.vote_threshold` | `0.666…7` | Default | More than two thirds of power must vote, above Terra's half. |
 | `params.reward_band` | `0.02` | Default | Terra Classic's default. |
 | `params.reward_window` | `100800` | Default | Weekly reward settlement. |
@@ -245,7 +245,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `assets` | none; the ten currencies are registered after launch, once NOAH has a market price | Decided | Registering an asset is what creates a liability and admits it to conversion, and Market mints only an `ACTIVE` ask, so an empty registry closes conversion while the feeds, the placeholder NOAH leg, and the seeded gas factor keep the oracle lane and fees working (D95, [opening conversion](GOVERNANCE_OPERATIONS.md#8-opening-conversion)). |
+| `assets` | none; the ten currencies are registered after launch, once NOAH has a market price | Decided | Registering an asset is what creates a liability and admits it to conversion, and Market mints only an `ACTIVE` ask, so an empty registry closes conversion while the feeds, the placeholder NOAH leg, and the seeded gas factor keep the oracle lane and fees working (D95, [opening conversion](GOVERNANCE_OPERATIONS.md#6-opening-conversion)). |
 | asset `description` | "An Ark currency tracking the Australian dollar." and so on | Decided | Named per currency from the table in `pkg/chain/metadata.go`. Stored metadata is checked against the derivation at every import, so a table entry is added only before its denomination is registered and never changed after; an unnamed denomination reads "An Ark currency." |
 | asset `name`, `symbol` | `ArkAUD`, `arkAUD` and so on | Decided | Derived from the denomination. |
 | `params.settlement_activation_delay_blocks` | `43200` | Decided | The window in which governance can cancel a mistaken settlement plan before its terms bind. Three days outlasts the two-day vote with a day's margin; the SDK-era default of a day equalled the expedited period and fell inside a normal one. The code default moved with it. |
@@ -259,7 +259,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `staking.params.unbonding_time` | 21 days | Default | Confirmed; evidence age matches it (§2). |
 | `staking.params.max_validators` | `100` | Default | Confirmed. The seat grant times the cap is what the set holds when full (§3). |
 | `staking.params.min_commission_rate` | `0.05` | Decided | A zero floor invites a commission race that an operator with other income wins; seats registering below it are refused. |
-| `staking.params` (7 entries, 10,000 historical entries) | SDK defaults | Default | Historical entries serve IBC once it opens. |
+| `staking.params` (7 entries, 10,000 historical entries) | SDK defaults | Default | |
 | `distribution.params.community_tax` | `0` | Decided | Nothing skims validator income; the community-pool ledger receives only rounding residue on top of its seed (D13, D14). |
 | `distribution.params` (proposer rewards 0, withdraw address enabled) | SDK defaults | Default | |
 | `distribution.fee_pool.community_pool` | 103,000,000 NOAH less the seats | Decided | Equal to the Distribution module balance (§3). |
@@ -288,25 +288,14 @@ operator, carrying its immutable seat; the module derives founding stake from th
 Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination, which a
 conversion order of contributor NOAH can supply (D87, D88).
 
-## 11. IBC, interchain accounts, and CosmWasm
+## 11. CosmWasm
 
-IBC ships installed and shut behind one switch, an empty allowed-client list; the contract runtime ships open (decided
-2026-09-06). Opening IBC is a governance sequence: admit `07-tendermint`, configure rate limits for every route (D46),
-then the transfer flags. The activation tests are complete (`docs/design/ECONOMIC_DESIGN.md` §11).
+The contract runtime ships open (decided 2026-09-06). The chain has no IBC: a contract's IBC messages, queries, and
+entry points are refused, so no contract channel can exist.
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `ibc.client_genesis.params.allowed_clients` | `[]` | Decided | No client type at launch. Every IBC surface starts with a client, so this one switch holds channels, ICS-20, ICA, GMP, and contract channels shut; governance admits `07-tendermint` when it opens the hub (D45, D50). |
-| `ibc.connection_genesis.params.max_expected_time_per_block` | `30s` | Default | ibc-go default. |
-| `transfer.params.send_enabled`, `receive_enabled` | `false`, `false` | Decided | Off until the tax, recipient-restriction, and rate-limit gates are live on a real route (D45). |
-| `interchainaccounts.controller_genesis_state.params.controller_enabled` | `false` | Decided | Launched disabled. |
-| `interchainaccounts.host_genesis_state.params` | `host_enabled: false`, `allow_messages: []` | Decided | Activation names explicit type URLs, never the wildcard. |
-| `ratelimit` | no limits, hourly epoch | Default | Limits are governance-set per denomination and channel before a route opens (D46). |
-| `packetfowardmiddleware` | no in-flight packets | Default | Classic-only forwarding (D46). |
-| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open: the tax seams are in place, the accept list is populated, and the empty client allowlist leaves contract channels unopenable (`docs/design/ECONOMIC_DESIGN.md` §11.3). |
-| `08-wasm.contracts` | empty | Decided | No light-client checksums at launch (D50). |
-| `gmp.ics27_accounts` | empty | Decided | Derived accounts are created on first use. |
-| `07-tendermint` | no state | Decided | No client exists, and none can until governance admits the type. |
+| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open: the tax seams are in place and the accept list is populated (`docs/design/ECONOMIC_DESIGN.md` §11.3). |
 
 ## 12. Assembly sequence
 
@@ -333,13 +322,13 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
 
 No committee is appointed in genesis. The message path is what observes and records a committee's key shape, the
 multisig accounts must exist and hold their own gas first, and appointments follow incident exposure rather than chain
-age ([governance operations §6](GOVERNANCE_OPERATIONS.md#6-committee-appointments)). With half the set as quorum and a
+age ([governance operations §4](GOVERNANCE_OPERATIONS.md#4-committee-appointments)). With half the set as quorum and a
 one-day expedited vote, the deliberative committees save at most a day or two over governance itself; the two
 emergency mandates buy real time.
 
 | Mandate | Single job | Appoint | Shape |
 | --- | --- | --- | --- |
-| Security | Schedule or cancel its own upgrade, recover an IBC client. Never funds. | First governance cycle | 3-of-5 off-chain multisig |
+| Security | Schedule or cancel its own upgrade. Never funds. | First governance cycle | 3-of-5 off-chain multisig |
 | Asset emergency | Suspend an asset; one power, per-term usage tracked | First governance cycle | 3-of-5 off-chain multisig, a distinct account and where the seat count allows a distinct member set |
 | Economic policy | Move the eight policy fields inside a corridor | After the first expansions; weights only after the calibration window | 4-of-7 |
 | Claims | Submit and cancel claims under a gross term limit | When Insurance has a charter naming its perils | 4-of-7 |

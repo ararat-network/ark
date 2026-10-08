@@ -565,7 +565,7 @@ charge reaches the cap at 200,000 XDR of transferred value. The base gas-price f
 with a 50% utilisation target and a maximum adjustment of 2.5% per block. [Ark: Launch genesis][ark-genesis]
 
 The tax is part of the transaction's declared payment contract. Client-visible transfers and transfers generated during
-supported contract or interchain execution are assessed through the relevant execution paths. Successful taxable
+contract execution are assessed through the relevant execution paths. Successful taxable
 transfers pay their tax in addition to the principal; recipients do not silently receive less to fund it. Internal fund
 movements are not treated as user transfers. Failed message execution pays applicable gas but does not complete a
 transfer-tax payment for the reverted operation.
@@ -648,7 +648,7 @@ transactions unusable even if the same members are appointed later.
 | Reserve         | Deploy, record positions, commit funds, and burn within specific bounds            |
 | Claims          | Submit covered claims within a term allowance and cancel eligible committee claims |
 | Asset emergency | Suspend an eligible currency once per currency per term                            |
-| Security        | Schedule or cancel its own upgrade plan and recover an IBC client                  |
+| Security        | Schedule or cancel its own upgrade plan                                            |
 
 The oracle's feeds and protocol reference remain governance decisions. There is no delegated power to change every
 parameter, spend every fund, or submit arbitrary messages with governance authority. Separate roles make it possible to
@@ -820,15 +820,12 @@ SDK v0.54.3. Oracle vote extensions are part of the block-processing pipeline, a
 Six-second blocks are the assumption used to translate many policy windows into hours or days; elapsed wall-clock time
 still depends on actual block production. [Ark: Application][ark-app]
 
-The chain supports CosmWasm contracts and IBC interoperability. Contracts can build services using the issued
-currencies, but their balances and promises do not become protocol liabilities merely because they run on Ark. Likewise,
-a bridged token is not an Ark-issued currency and does not automatically qualify for conversion or fund recognition.
-Contract-generated and supported interchain transfers must follow the applicable execution-tax rules.
+The chain supports CosmWasm contracts and has no IBC. Contracts can build services using the issued currencies, but
+their balances and promises do not become protocol liabilities merely because they run on Ark. Contract-generated
+transfers must follow the applicable execution-tax rules.
 
-The curated launch configuration allows contract upload and instantiation while keeping IBC closed through an empty
-client-type allowlist and disabled transfer and interchain-account settings. Opening external routes is a governance and
-operational sequence, including the intended rate limits. Installed interoperability code is not evidence that a live
-route is enabled or that its counterparty is safe.
+The curated launch configuration allows contract upload and instantiation. A contract's IBC messages, queries, and
+entry points are refused, since the chain can open no channel.
 
 ### 10.2 Launch allocation and validator seats
 
@@ -1104,7 +1101,6 @@ window that funds that account.
 | Downtime jail and slash | 600 seconds; 0.01% | Decided |
 | Double-sign slash | 5% | Decided |
 | Transaction signature limit | Seven member keys | Decided |
-| IBC | No admitted client types; transfers and interchain accounts disabled | Decided |
 | Contract upload and instantiation | Open | Decided |
 
 Governance percentages retain the SDK's tally rules, including the treatment of abstentions; they do not replace

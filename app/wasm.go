@@ -2,22 +2,23 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/CosmWasm/wasmd/x/wasm"
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcwasm "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11"
-	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cast"
 
 	"cosmossdk.io/core/store"
+	errorsmod "cosmossdk.io/errors"
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
@@ -37,9 +38,10 @@ func WasmModuleBasics() module.BasicManager {
 // never read from a file; absent, the counters are not exported.
 const WasmVMCacheMetricsRegistererOpt = "ark.wasm.vm-cache-metrics-registerer"
 
-// setupWasm constructs the contract runtime after IBC keepers and before routes. It returns the
-// node config and counter store for ante handling. Execution policy, the query accept list, and IBC
-// client policy bound contract capabilities.
+// setupWasm constructs the contract runtime. It returns the node config and counter store for ante
+// handling. Execution policy and the query accept list bound contract capabilities; the chain has
+// no IBC, so a contract's IBC messages and queries are refused and its IBC entry points are
+// unreachable.
 func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConfig, store.KVStoreService, error) {
 	wasmKey := storetypes.NewKVStoreKey(wasmtypes.StoreKey)
 	if err := app.RegisterStores(wasmKey); err != nil {
@@ -58,6 +60,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	// path (D74).
 	wasmOpts := []wasmkeeper.Option{
 		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
+		wasmkeeper.WithMessageHandler(app.wasmMessageHandler()),
 	}
 	if registerer, ok := appOpts.Get(WasmVMCacheMetricsRegistererOpt).(prometheus.Registerer); ok {
 		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(registerer))
@@ -72,10 +75,13 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		app.StakingKeeper,
 		// Contracts read rewards through the query surface, not the keeper.
 		distrkeeper.NewQuerier(app.DistrKeeper),
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.ChannelKeeperV2,
-		app.TransferKeeper,
+		// No IBC: the default handler, encoders, and querier built over these
+		// are replaced by wasmMessageHandler and wasmQueryPlugins, so nothing
+		// dereferences them.
+		nil,
+		nil,
+		nil,
+		nil,
 		// Every message a contract dispatches clears the execution policy
 		// gate — vote floor, MultiSend guard, transfer tax — on the way
 		// through (D41, D42). Signed top-level messages take BaseApp's own
@@ -85,7 +91,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		cast.ToString(appOpts.Get(flags.FlagHome)),
 		nodeConfig,
 		wasmtypes.VMConfig{},
-		wasmkeeper.BuiltInCapabilities(),
+		contractCapabilities(),
 		authority,
 		wasmOpts...,
 	)
@@ -117,39 +123,30 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	return nodeConfig, wasmStoreService, nil
 }
 
-// setupWasmLightClient constructs the governance-controlled 08-wasm client keeper after IBC
-// keepers. Its separate VM uses iterator capability and no custom queries; launch genesis
-// contains no client code. See README.md for runtime boundaries.
-func (app *ArkApp) setupWasmLightClient(appOpts servertypes.AppOptions) error {
-	wasmClientKey := storetypes.NewKVStoreKey(ibcwasmtypes.StoreKey)
-	if err := app.RegisterStores(wasmClientKey); err != nil {
-		return fmt.Errorf("register 08-wasm store: %w", err)
-	}
+// contractCapabilities is wasmd's built-in set without ibc2, so a contract
+// that requires IBC v2 entry points is refused at upload rather than
+// instantiated against a chain that cannot open a channel.
+func contractCapabilities() []string {
+	capabilities := wasmkeeper.BuiltInCapabilities()
+	return slices.DeleteFunc(capabilities, func(c string) bool { return c == "ibc2" })
+}
 
-	// No BLS querier: ibc-go's blsverifier imports GPLv3 Prysm, and a GPLv3 node
-	// conflicts with wasmvm's BUSL Singlepass compiler (THIRD_PARTY_NOTICES.md).
-	app.WasmClientKeeper = ibcwasmkeeper.NewKeeperWithConfig(
-		app.appCodec,
-		runtime.NewKVStoreService(wasmClientKey),
-		app.IBCKeeper.ClientKeeper,
-		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		ibcwasmtypes.DefaultWasmConfig(cast.ToString(appOpts.Get(flags.FlagHome))),
-		app.GRPCQueryRouter(),
+// wasmMessageHandler is wasmd's default chain without its IBC packet handlers:
+// SDK messages through the policy router, then burns. The IBC and IBC v2
+// encoders refuse, so a contract's IBC message fails with that error rather
+// than reaching a nil channel keeper.
+func (app *ArkApp) wasmMessageHandler() wasmkeeper.Messenger {
+	refuse := errorsmod.Wrap(wasmtypes.ErrUnsupportedForContract, "ibc not supported")
+	encoders := wasmkeeper.DefaultEncoders(app.appCodec, nil).Merge(&wasmkeeper.MessageEncoders{
+		IBC: func(sdk.Context, sdk.AccAddress, string, *wasmvmtypes.IBCMsg) ([]sdk.Msg, error) {
+			return nil, refuse
+		},
+		IBC2: func(sdk.AccAddress, *wasmvmtypes.IBC2Msg) ([]sdk.Msg, error) {
+			return nil, refuse
+		},
+	})
+	return wasmkeeper.NewMessageHandlerChain(
+		wasmkeeper.NewSDKMessageHandler(app.appCodec, app.executionPolicyRouter(), encoders),
+		wasmkeeper.NewBurnCoinMessageHandler(app.BankKeeper),
 	)
-
-	if err := app.RegisterModules(ibcwasm.NewAppModule(app.WasmClientKeeper)); err != nil {
-		return fmt.Errorf("register 08-wasm module: %w", err)
-	}
-
-	// Client bytecode lives outside the IAVL tree, as contract code does, so
-	// state sync needs its own extension to carry it.
-	if manager := app.SnapshotManager(); manager != nil {
-		if err := manager.RegisterExtensions(
-			ibcwasmkeeper.NewWasmSnapshotter(app.CommitMultiStore(), &app.WasmClientKeeper),
-		); err != nil {
-			return fmt.Errorf("register 08-wasm snapshot extension: %w", err)
-		}
-	}
-
-	return nil
 }

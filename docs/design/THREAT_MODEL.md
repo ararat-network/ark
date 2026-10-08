@@ -115,7 +115,7 @@ Certificate verification is never disabled anywhere in the repository. Provider 
 a fleet on the same default providers has one point of failure. The NOAH leg of every route is a bootstrap
 price until any provider reports a live NOAH sample, so the first venue to list NOAH re-marks every rate: NOAH
 venues enter the configs together and only once a venue has depth, and conversion is closed until then, so no
-currency exists to re-mark (D95, [opening conversion](../governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion)).
+currency exists to re-mark (D95, [opening conversion](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
 
 **Review questions.** Does a new provider parse untrusted bytes with a bound? Does any error path log a
 request that carries a key? How many validators would a compromise of the default providers move?
@@ -211,15 +211,15 @@ execution, and shared network bandwidth is not reserved. Treasury's consensus fe
 local minimum-gas-prices is not a filter. A node on an older binary can still refuse propagation.
 Private carriers and isolated sentries remain an optional pre-inclusion confidentiality path with their
 own operator/access-control trust boundary, not a prerequisite for public governance admission.
-Messages a contract, an interchain account, or a GMP-derived account dispatches never see the ante; the
-policy router in `app/execution_policy_router.go` charges their transfer tax at dispatch. What a contract
+Messages a contract dispatches never see the ante; the policy router in
+`app/execution_policy_router.go` charges their transfer tax at dispatch. What a contract
 may read is the accept list in `app/wasm_query.go`: a query path a contract can reach is an input to
 consensus, so the list admits only paths annotated `module_query_safe`, the SDK's own auth, bank, and
 staking set whole and Ark's by hand (D85), and freezes each listed response shape for the life of the
 chain. The contract runtime is open from launch: upload and instantiation are permissionless, so a
-contract is an untrusted input bounded by exactly those two seams, and by the IBC client allowlist, empty
-at launch, which leaves the channels a contract could open unopenable until governance admits a client
-type.
+contract is an untrusted input bounded by exactly those two seams. The chain has no IBC: a contract's
+IBC messages and queries are refused in `app/wasm.go` and no contract port is routed, so there is no
+channel a contract could open.
 
 **Review questions.** Does a new privileged message join a privilege, with its module's own check as the
 vouch, and is that vouch a bounded number of reads rather than the handler? Does a new policy walk authz?
@@ -389,7 +389,7 @@ run from a clean tree at a tag on `HEAD`?
 - Validator key management, sentry topology, and network-layer denial of service: CometBFT's domain and
   the operator's.
 - Committee multisig custody and signer operational security.
-- IBC and CosmWasm internals beyond the ante and policy-router seams that route their messages.
+- CosmWasm internals beyond the ante and policy-router seams that route its messages.
 - Economic attacks on the peg, the reserve, or the tax, which the module specs cover.
 
 ## 4. Keeping this current

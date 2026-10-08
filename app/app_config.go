@@ -7,13 +7,6 @@ package app
 
 import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
-	gmptypes "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/types"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	packetforwardtypes "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/types"
-	ratelimittypes "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
 
 	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
 	appv1alpha1 "cosmossdk.io/api/cosmos/app/v1alpha1"
@@ -101,8 +94,6 @@ var (
 		{Account: stakingtypes.NotBondedPoolName, Permissions: []string{authtypes.Burner, stakingtypes.ModuleName}},
 		{Account: govtypes.ModuleName, Permissions: []string{authtypes.Burner}},
 		{Account: markettypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
-		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
-		{Account: icatypes.ModuleName},
 		// Contracts may burn their own funds; they never mint. Only Market does.
 		{Account: wasmtypes.ModuleName, Permissions: []string{authtypes.Burner}},
 		{Account: treasurytypes.SubsidyPoolName},
@@ -122,8 +113,6 @@ var (
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		markettypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		icatypes.ModuleName,
 		wasmtypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
@@ -153,8 +142,6 @@ var (
 					stakingtypes.ModuleName,
 					// These modules have no relative ordering requirement. Treasury
 					// refreshes factors and exposure from PreBlock-applied rates.
-					ibcexported.ModuleName,
-					ratelimittypes.ModuleName,
 					authz.ModuleName,
 					treasurytypes.ModuleName,
 				},
@@ -199,20 +186,13 @@ var (
 					stakingtypes.ModuleName,
 					slashingtypes.ModuleName,
 					govtypes.ModuleName,
-					ibcexported.ModuleName,
 					genutiltypes.ModuleName,
 					evidencetypes.ModuleName,
 					authz.ModuleName,
 					feegrant.ModuleName,
 					upgradetypes.ModuleName,
 					vestingtypes.ModuleName,
-					ibctransfertypes.ModuleName,
-					ratelimittypes.ModuleName,
-					packetforwardtypes.ModuleName,
-					icatypes.ModuleName,
 					wasmtypes.ModuleName,
-					gmptypes.ModuleName,
-					ibcwasmtypes.ModuleName,
 					// Oracle initialises before asset: asset genesis validates
 					// every asset's feed against the registry.
 					oracletypes.ModuleName,

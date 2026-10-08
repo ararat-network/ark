@@ -162,7 +162,7 @@ func NewTestNetworkFixture() network.TestFixture {
 		EncodingConfig: moduletestutil.TestEncodingConfig{
 			InterfaceRegistry: arkApp.InterfaceRegistry(),
 			Codec:             arkApp.AppCodec(),
-			TxConfig:          arkApp.GetTxConfig(),
+			TxConfig:          arkApp.TxConfig(),
 			Amino:             arkApp.LegacyAmino(),
 		},
 	}

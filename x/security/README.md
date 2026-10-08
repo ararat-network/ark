@@ -1,6 +1,6 @@
 # Security committee
 
-Security implements the bounded committee fast path over standard-module emergency functions: upgrade scheduling/cancellation and IBC client recovery. It constructs upstream messages and dispatches through the app message router with the effective authority. It owns no fund custody.
+Security implements the bounded committee fast path over standard-module emergency functions: upgrade scheduling and cancellation. It constructs upstream messages and dispatches through the app message router with the effective authority. It owns no fund custody.
 
 ## Code map
 
@@ -35,10 +35,10 @@ emergency surface. Its charter is one line: **code and connectivity repair, neve
   through `Envelope.Authorise` (exact signer, exact term, active window, in that order). The authority is
   rejected as committee. No-op actions are rejected.
 - **Execution by dispatch.** Each handler constructs the exact upstream message (`MsgSoftwareUpgrade`,
-  `MsgCancelUpgrade`, `MsgRecoverClient`) with `effectiveAuthority` as signer, resolved exactly as
+  `MsgCancelUpgrade`) with `effectiveAuthority` as signer, resolved exactly as
   `sdk.ValidateAuthority` does (consensus-params authority when set, keeper fallback otherwise), and routes
   it through `baseapp.MessageRouter`, the technique x/gov uses. The target re-validates the authority itself,
-  so no denylist exists: the only reachable messages are the three the module builds, and nothing accepts a
+  so no denylist exists: the only reachable messages are the two the module builds, and nothing accepts a
   caller-supplied `Any`. Committee messages run inside a normal transaction, so dispatch errors abort
   atomically.
 - **Upgrade slot invariant: the committee can never affect a governance-scheduled upgrade.** `x/upgrade`
@@ -51,16 +51,15 @@ emergency surface. Its charter is one line: **code and connectivity repair, neve
   resulting state. Every dependency comes through the constructor and the module reads only x/upgrade
   before dispatching.
 
-**What was withdrawn and why.** Four freeze powers (per-denom send halt, IBC transfer halt, rate-limit
-tightening, ICA host restriction): each froze user funds and defended economics, not the chain; Ark owns
-economics at the source (asset suspension, the conversion corridor); a committee convenes in hours and an
-exploit exits in minutes, so a freeze traps the holders who stayed, while a standing rate limit set in calm
-conditions is what bounds exit velocity and governance keeps it; and a selective freeze can be aimed at
-someone quietly while the chain runs, whereas an upgrade halt stops everything, announces itself, and has a
-remediation path that does not wait for a proposal. The per-class grant list: the three remaining powers are
-one job (scheduling and cancelling are inverses, and without scheduling there is no way to ship the patch),
-so a subset is not a narrower committee but one that cannot finish, and appointing the committee is the
-decision. Cancel-any: cancel-any plus schedule-own-only was defeated in two transactions; governance keeps
+**What was withdrawn and why.** Freeze powers (a per-denom send halt and, while IBC was wired, transfer and
+rate-limit controls): each froze user funds and defended economics, not the chain; Ark owns economics at the
+source (asset suspension, the conversion corridor); a committee convenes in hours and an exploit exits in
+minutes, so a freeze traps the holders who stayed; and a selective freeze can be aimed at someone quietly
+while the chain runs, whereas an upgrade halt stops everything, announces itself, and has a remediation path
+that does not wait for a proposal. IBC client recovery left with IBC itself. The per-class grant list:
+the two remaining powers are one job (scheduling and cancelling are inverses, and without scheduling there is
+no way to ship the patch), so a subset is not a narrower committee but one that cannot finish, and appointing
+the committee is the decision. Cancel-any: cancel-any plus schedule-own-only was defeated in two transactions; governance keeps
 two remedies for a buggy approved upgrade (cancel its own plan, or validators restart past the halt with
 `--unsafe-skip-upgrades`), and a committee veto over a voted upgrade is a governance override, not an
 emergency power. Committee messages keep `MsgCommittee*` names so they never read like the upstream types

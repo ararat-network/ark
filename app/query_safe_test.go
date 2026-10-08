@@ -11,10 +11,6 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
-	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
 	"github.com/stretchr/testify/require"
 	protov2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -38,9 +34,8 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// arkModuleQuerySafePaths records all Ark RPCs annotated for consensus queries, including ICA host
-// access. Explicit expectations make annotation changes reviewable; the Wasm accept list is
-// separate.
+// arkModuleQuerySafePaths records all Ark RPCs annotated for consensus queries. Explicit
+// expectations make annotation changes reviewable; the Wasm accept list is separate.
 var arkModuleQuerySafePaths = []string{
 	"/ark.asset.v1.Query/Asset",
 	"/ark.asset.v1.Query/Assets",
@@ -105,8 +100,8 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.treasury.v1.Query/TaxCaps",
 }
 
-// moduleQuerySafePaths mirrors ibc-go's newModuleQuerySafeAllowList: every
-// method annotated module_query_safe on a non-Msg service, sorted.
+// moduleQuerySafePaths walks the registry for every method annotated
+// module_query_safe on a non-Msg service, sorted.
 func moduleQuerySafePaths() []string {
 	var paths []string
 	gogoproto.GogoResolver.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
@@ -138,43 +133,22 @@ func arkPathsOnly(paths []string) []string {
 	return ark
 }
 
-func moduleQuerySafe(arkApp *app.ArkApp, path string) (*icahosttypes.MsgModuleQuerySafeResponse, error) {
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
-	return icahostkeeper.NewMsgServerImpl(arkApp.ICAHostKeeper).ModuleQuerySafe(ctx, &icahosttypes.MsgModuleQuerySafe{
-		Signer:   authtypes.NewModuleAddress("interchain-account").String(),
-		Requests: []icahosttypes.QueryRequest{{Path: path}},
-	})
-}
-
-// The annotated RPC set must exactly match the proto definitions, keeping the ICA-reachable query
-// surface explicit.
+// The annotated RPC set must exactly match the proto definitions, keeping the
+// surface the accept list may draw from explicit.
 func TestModuleQuerySafePathsMatchTheProtos(t *testing.T) {
 	require.Equal(t, arkModuleQuerySafePaths, arkPathsOnly(moduleQuerySafePaths()))
 }
 
 // FeedReferents is deterministic but deliberately unannotated: its claims are
 // operator prose, and exposing them would make rewording one a state-machine
-// change. This pins the exclusion against the walker and against the ICA host
-// itself, so it cannot be annotated back by reflex.
+// change. This pins the exclusion against the walker, so it cannot be
+// annotated back by reflex.
 func TestFeedReferentsStaysOutOfReach(t *testing.T) {
-	const path = "/ark.oracle.v1.Query/FeedReferents"
-	require.NotContains(t, moduleQuerySafePaths(), path)
-
-	_, err := moduleQuerySafe(apptestutil.Setup(t, false), path)
-	require.ErrorContains(t, err, "not module query safe")
+	require.NotContains(t, moduleQuerySafePaths(), "/ark.oracle.v1.Query/FeedReferents")
 }
 
-// The ICA host serves the annotated set with no list of Ark's own in between:
-// an annotated path answers through MsgModuleQuerySafe as it stands.
-func TestInterchainAccountReachesAnnotatedQueries(t *testing.T) {
-	response, err := moduleQuerySafe(apptestutil.Setup(t, false), "/ark.treasury.v1.Query/Params")
-	require.NoError(t, err)
-	require.Len(t, response.Responses, 1)
-	require.NotEmpty(t, response.Responses[0])
-}
-
-// Every annotated path must route, or the ICA host would fail it at call time
-// with a routing error rather than serve it.
+// Every annotated path must route, or the accept list would fail it at call
+// time with a routing error rather than serve it.
 func TestModuleQuerySafePathsRoute(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
@@ -315,8 +289,6 @@ func TestTaxQueryMatchesTheChargeForEveryShape(t *testing.T) {
 			Inputs:  []banktypes.Input{{Address: contract.String(), Coins: stable}, {Address: recipient, Coins: stable}},
 			Outputs: []banktypes.Output{{Address: recipient, Coins: stable.Add(stable...)}},
 		},
-		"ibc transfer": ibctransfertypes.NewMsgTransfer(ibctransfertypes.PortID, "channel-0", stable[0],
-			contract.String(), recipient, clienttypes.NewHeight(1, 1), 0, ""),
 		"execute with funds": &wasmtypes.MsgExecuteContract{
 			Sender: contract.String(), Contract: recipient, Msg: []byte("{}"), Funds: stable,
 		},

@@ -85,8 +85,8 @@ func (k Keeper) dispatch(ctx context.Context, msg sdk.Msg) error {
 		return fmt.Errorf("dispatching %s: %w", sdk.MsgTypeURL(msg), err)
 	}
 	// The router gives the target its own event manager and returns what it
-	// emitted on the result, so events not forwarded here are lost: a client
-	// recovery would be invisible to every relayer watching for it.
+	// emitted on the result, so events not forwarded here are lost: a
+	// scheduled upgrade would be invisible to anyone watching for it.
 	sdkCtx.EventManager().EmitEvents(res.GetEvents())
 
 	return nil

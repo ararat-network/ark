@@ -17,7 +17,7 @@ fees, and reward funding. It is intended for protocol contributors and readers e
 - [8. Transfer tax](#8-transfer-tax)
 - [9. Validator and Oracle funding](#9-validator-and-oracle-funding)
 - [10. Authority and reporting](#10-authority-and-reporting)
-- [11. Transfer surfaces: IBC and Wasm](#11-transfer-surfaces-ibc-and-wasm)
+- [11. Transfer surfaces: Wasm](#11-transfer-surfaces-wasm)
 - [12. Related references](#12-related-references)
 
 ## 1. The design in one page
@@ -196,7 +196,7 @@ stablecoin's eligibility and `axdr` stays convertible in both directions.
 | Oracle | Consensus rates, the feed registry, the reference denomination, attendance and participation scores, Oracle reward allocation | Fiscal allocation, minting |
 | Asset | The registry and lifecycle of every non-NOAH Bank asset, settlement plans, the emergency-suspension mandate | Pricing, custody, allocation |
 | Distribution | Validator and delegator fee accounting and payouts | Tax classification, any fund |
-| App ante and policy router | Fee declaration and settlement, priority, the transfer-tax charge for signed transactions and for contract, ICA, and GMP dispatches | Target-based allocation, a second tax formula, persistent fiscal state |
+| App ante and policy router | Fee declaration and settlement, priority, the transfer-tax charge for signed transactions and for contract dispatches | Target-based allocation, a second tax formula, persistent fiscal state |
 | Governance | Every unbounded power: Params of every module, every mandate, claims, Reserve commitments and burns, the recognition policy, feeds, the reference denomination | Routine operation, automatic controllers |
 | Committees | One bounded, expiring power each, on a distinct address | Anything another role holds; general Bank authority |
 
@@ -558,12 +558,11 @@ Bank hook would tax settlement, draws, claims, grants, reward funding, and commi
 | `market.MsgBuy` | exempt, as `MsgSell`; the offer is sized at execution within the message's maximum |
 | `authz.MsgExec` | every nested message, recursively, to a bounded depth |
 | vesting account creation | the stablecoin funding |
-| IBC `MsgTransfer` and v2 `MsgSendPacket` | the outbound stablecoin; a transfer-port payload carries principal, other ports carry none (D46) |
 | Wasm instantiate and execute | attached stablecoin funds |
-| contract, ICA, and GMP dispatches | each Bank send, IBC send, execute funds, and instantiate funds at dispatch (§8.6) |
+| contract dispatches | each Bank send, execute funds, and instantiate funds at dispatch (§8.6) |
 
-Escrow, packet acknowledgement, timeout, refund, forwarding hops, Market settlement, fund movements, claims, and reward
-distribution receive no tax (D42, D46, D47). Native Disbursement module payments, including stablecoin compensation, are
+Escrow, Market settlement, fund movements, claims, and reward
+distribution receive no tax (D42). Native Disbursement module payments, including stablecoin compensation, are
 untaxed protocol disbursements (D87), and its conversions of contributor NOAH are Market settlement (D88); their denomination, schedule, and public accounting are defined in the
 [Disbursement README](../../x/disbursement/README.md).
 
@@ -633,13 +632,13 @@ made and not enforced, so an estimate tracks execution to within about a percent
 
 ### 8.6 Execution-generated tax
 
-A transfer a contract, an interchain account, or a GMP-derived account creates while it runs is absent from the signed
+A transfer a contract creates while it runs is absent from the signed
 message list, so the ante cannot see it. Ownership by call path gives exactly-once assessment without a transfer ID or
 context marker (D41): the ante owns signed top-level inputs, and the execution policy router in
 `app/execution_policy_router.go` owns everything dispatched. At dispatch the router prices the message with the same
 calculator, charges the dispatching account in addition to the complete principal, sends the tax straight to
 `transfer_tax_collector`, and runs the dispatch, all inside the same cached execution, so a synchronous or caught
-failure rolls both back and a recipient's amount is never reduced to fund tax (D42, D48). The outer fee payer and any
+failure rolls both back and a recipient's amount is never reduced to fund tax (D42). The outer fee payer and any
 feegrant granter never sponsor it. The router also enforces the message policies the ante enforces for signed
 transactions, the MultiSend fan-out guard and the vote stake floor, so the two seams agree.
 
@@ -804,53 +803,38 @@ Disbursement records each award, payment, cancellation, and administrative chang
 Its queries expose original terms, accrued unpaid entitlement, currently payable amounts, and per-denomination
 reservations and payments; the [Disbursement README](../../x/disbursement/README.md) defines this accounting surface.
 
-## 11. Transfer surfaces: IBC and Wasm
+## 11. Transfer surfaces: Wasm
 
 ### 11.1 The execution-tax contract
 
 Every transfer adapter on the chain implements one contract (D40 to D42):
 
 - The fee payer or feegrant granter pays every ante-visible tax as part of the declared fee.
-- The dispatching account, a contract, an interchain account, or a GMP-derived account, pays every execution-generated
-  tax in addition to the complete requested principal; an insufficient balance fails that dispatch without reducing
-  the recipient's amount.
-- The ante owns signed top-level inputs, including IBC `MsgTransfer` and Wasm attached funds; the policy router owns
-  only what execution generates. This structural ownership is exactly-once assessment, with no persistent transfer ID,
-  context marker, or global Bank hook.
+- The dispatching contract pays every execution-generated tax in addition to the complete requested principal; an
+  insufficient balance fails that dispatch without reducing the recipient's amount.
+- The ante owns signed top-level inputs, including Wasm attached funds; the policy router owns only what execution
+  generates. This structural ownership is exactly-once assessment, with no persistent transfer ID, context marker, or
+  global Bank hook.
 - Execution-generated tax goes straight to `transfer_tax_collector` inside the same cached execution as its transfer,
   so synchronous, caught, and uncaught failures roll both back.
 - Neither feegrant nor the outer fee payer sponsors execution-generated tax.
-- A successfully created IBC packet keeps its tax through acknowledgement, timeout, refund, and return; those, and
-  escrow, forwarding hops, Market settlement, fund movements, claims, and reward distribution, are never new inputs.
+- Escrow, Market settlement, fund movements, claims, and reward distribution are never new inputs.
 
-### 11.2 The hub
+### 11.2 No hub
 
-Ark supports both ICS-20 routes, packet forwarding, callbacks, ICA, GMP, and a dormant Wasm light client.
-The [application README](../../app/README.md#ibc-and-wasm-integration) owns the exact stack, routing, and excluded integrations.
-
-The hub ships shut behind one switch. The launch allowed-client list is empty, so no client, connection, channel, v2
-counterparty, or packet of any kind can exist until governance admits `07-tendermint`; the ICS-20 flags and both ICA
-sides are off as well, so that vote opens client creation and nothing more (D45 as amended). One switch was chosen
-because two surfaces have no flag of their own: GMP, whose derived accounts are ordinary accounts that pay execution
-tax on a contract's terms, and a contract's own IBC channels on either stack. Opening the hub is a governance sequence
-recorded in `docs/governance/GOVERNANCE_OPERATIONS.md` §2: admit the client type, let relayers open routes, set rate limits per denomination
-and route, then flip the transfer flags.
-
-A packet-forwarded hop is continuation of the original transfer and takes no second tax; the raw v2 `MsgSendPacket` is
-the same outbound leg as `MsgTransfer` and prices identically, since the transfer application authenticates the
-payload sender and escrows through the same path, and a transfer payload the calculator cannot decode fails the
-transaction rather than passing untaxed (D46). Every IBC credit to a fund passes through the configured Bank keeper, so
-the recipient restrictions cannot be bypassed.
+The chain has no IBC (D118). The contract runtime is wired with no channel keepers, so a contract's IBC messages and
+queries are refused and its IBC entry points are unreachable; the
+[application README](../../app/README.md#wasm-integration) owns the exact wiring.
 
 ### 11.3 The contract runtime
 
-The runtime ships open: anyone may upload and instantiate from height one, while the empty IBC client allowlist
-prevents contract channels. Contracts use the execution-tax contract above; generated messages must name the calling
+The runtime ships open: anyone may upload and instantiate from height one. Contracts use the execution-tax contract
+above; generated messages must name the calling
 contract as signer. The query accept list exposes a deliberately bounded deterministic API whose admitted response
 shapes are consensus inputs. Widening it requires a coordinated binary upgrade, not a parameter vote.
 
-[Application integration](../../app/README.md#ibc-and-wasm-integration) owns runtime wiring, query registration, callbacks,
-and address handling; [governance operations](../governance/GOVERNANCE_OPERATIONS.md#4-the-contract-runtime) owns permissions.
+[Application integration](../../app/README.md#wasm-integration) owns runtime wiring, query registration, and address
+handling; [governance operations](../governance/GOVERNANCE_OPERATIONS.md#2-the-contract-runtime) owns permissions.
 
 Under `Nobody`, governance could still upload, since Wasmd hands the authority its own permission policy; the choice
 to open the runtime removes a lock on everyone else, not on governance.
@@ -862,4 +846,4 @@ to open the runtime removes a lock on everyone else, not on governance.
 - [Governance operations](../governance/GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.
 - [Future changes](../direction/FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
 - [Application module map](../../app/README.md#module-entry-points): state, API schemas, and subsystem development.
-- [Ante/post handling](../../app/ante/README.md) and [IBC/Wasm integration](../../app/README.md#ibc-and-wasm-integration): execution enforcement.
+- [Ante/post handling](../../app/ante/README.md) and [Wasm integration](../../app/README.md#wasm-integration): execution enforcement.

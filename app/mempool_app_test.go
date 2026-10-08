@@ -112,9 +112,9 @@ func signedPending(tb testing.TB, a *app.ArkApp, f apptest.Funder, seq uint64, m
 	tb.Helper()
 	ctx := a.GetContextForCheckTx(nil)
 	acc := a.AccountKeeper.GetAccount(ctx, f.Address())
-	tx, err := sim.GenSignedMockTx(rand.New(rand.NewSource(1)), a.GetTxConfig(), []sdk.Msg{msg}, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000)), 1_000_000, admissionChain, []uint64{acc.GetAccountNumber()}, []uint64{seq}, f.Key)
+	tx, err := sim.GenSignedMockTx(rand.New(rand.NewSource(1)), a.TxConfig(), []sdk.Msg{msg}, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000)), 1_000_000, admissionChain, []uint64{acc.GetAccountNumber()}, []uint64{seq}, f.Key)
 	require.NoError(tb, err)
-	bz, err := a.GetTxConfig().TxEncoder()(tx)
+	bz, err := a.TxConfig().TxEncoder()(tx)
 	require.NoError(tb, err)
 	return bz
 }
@@ -472,7 +472,7 @@ func TestMempoolMetricLifecycle(t *testing.T) {
 
 func signedUnordered(t *testing.T, a *app.ArkApp, seq uint64, timeout time.Time, memo string, signers ...apptest.Funder) []byte {
 	t.Helper()
-	cfg := a.GetTxConfig()
+	cfg := a.TxConfig()
 	builder := cfg.NewTxBuilder()
 	builder.SetUnordered(true)
 	builder.SetTimeoutTimestamp(timeout)
@@ -710,8 +710,8 @@ func proposalBytes(t *testing.T, a *app.ArkApp, e mempool.Entry) []byte {
 // without the reservation wrapper. Fixtures call it before sealing BaseApp.
 func sdkReference(a *app.ArkApp) {
 	a.SetMempool(sdkmempool.DefaultPriorityMempool())
-	a.SetAnteHandler(ante.NewAnteHandler(a.AppCodec(), a.GetTxConfig(), a.AccountKeeper, a.BankKeeper,
-		a.FeeGrantKeeper, a.StakingKeeper, a.TreasuryKeeper, a.Privileges(), a.IBCKeeper,
+	a.SetAnteHandler(ante.NewAnteHandler(a.AppCodec(), a.TxConfig(), a.AccountKeeper, a.BankKeeper,
+		a.FeeGrantKeeper, a.StakingKeeper, a.TreasuryKeeper, a.Privileges(),
 		a.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), runtime.NewKVStoreService(a.GetKey(wasmtypes.StoreKey))))
 	a.SetPrepareCheckStater(nil)
 	handler := baseapp.NewDefaultProposalHandler(a.Mempool(), a)

@@ -47,6 +47,12 @@ func (app *ArkApp) WasmQueryPlugins(accepted wasmkeeper.AcceptedQueries) *wasmke
 	return app.wasmQueryPlugins(accepted)
 }
 
+// WasmMessageHandler returns the contract message handler the app wires.
+func (app *ArkApp) WasmMessageHandler() wasmkeeper.Messenger { return app.wasmMessageHandler() }
+
+// ContractCapabilities returns the capability list the app hands the VM.
+func ContractCapabilities() []string { return contractCapabilities() }
+
 // Inner returns the router the policy layer wraps.
 func (r ExecutionPolicyRouter) Inner() wasmkeeper.MessageRouter { return r.inner }
 
@@ -55,10 +61,3 @@ func (r ExecutionPolicyRouter) Treasury() *treasurykeeper.Keeper { return r.trea
 
 // Cdc returns the codec the router decodes messages with.
 func (r ExecutionPolicyRouter) Cdc() codec.Codec { return r.cdc }
-
-// WithInner returns a copy of the router wrapping inner instead, so a test can
-// observe the app's own wiring against a stand-in router.
-func (r ExecutionPolicyRouter) WithInner(inner wasmkeeper.MessageRouter) ExecutionPolicyRouter {
-	r.inner = inner
-	return r
-}

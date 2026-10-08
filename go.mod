@@ -22,8 +22,6 @@ require (
 	github.com/cosmos/cosmos-sdk/store/v2 v2.0.0
 	github.com/cosmos/gogogateway v1.2.0
 	github.com/cosmos/gogoproto v1.7.2
-	github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11 v11.1.0
-	github.com/cosmos/ibc-go/v11 v11.2.0
 	github.com/creachadair/tomledit v0.0.29
 	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/golang/protobuf v1.5.4
@@ -114,6 +112,7 @@ require (
 	github.com/cosmos/btree v1.0.0 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/iavl v1.2.8 // indirect
+	github.com/cosmos/ibc-go/v11 v11.2.0 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/creachadair/atomicfile v0.3.8 // indirect

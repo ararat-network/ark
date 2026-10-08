@@ -95,7 +95,7 @@ NOAH dilution to make one asset's failure orderly, and none can work when NOAH's
 
 The module does not provide, and by decision will not: feed keys outside Ark-native base denominations; arbitrary
 non-asset Oracle observations; an on-chain provider or exchange-symbol registry; issuer, custody, proof-of-reserve, or
-physical redemption machinery; a general exchange; lifecycle control over `anoah` or over IBC assets; native assets
+physical redemption machinery; a general exchange; lifecycle control over `anoah`; native assets
 with a display exponent other than eighteen; any timer-driven derecognition; a generic mandate module, since the
 shared envelope and `pkg/mandate` are the permanent boundary and powers stay domain-owned; any native mint path outside
 Market conversion, which tests hold by inspecting module-account permissions; or any systemic backstop for NOAH itself.
@@ -193,7 +193,7 @@ a rate is a state the chain reaches whenever a feed is young or stale, and every
 feed addition and the registration against it never share a proposal: governance proposes the feed, watches it print,
 then registers. That cycle falls where it is cheapest, on the one admission path with no holders waiting and the least
 proven price data. The launch set follows it: the artefact registers the eleven feeds and no asset, and governance
-registers the [ten currencies](../../docs/governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion) once NOAH has a
+registers the [ten currencies](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion) once NOAH has a
 market price (D95).
 
 - **`ACTIVE`.** Issuance, conversion, valuation, liability accounting, and redemption all run. The asset pins its feed
@@ -263,8 +263,7 @@ messages except the one committee message in §9.
   supply is positive: redemption was continuously available, so governance may judge the remainder unredeemable and
   say so. From `SUSPENDED` it requires zero supply, because those holders may have had no exit and a positive residual
   must go through write-off, which names the derecognition honestly. From `WRITTEN_OFF` residual is permitted and no
-  new record is appended, since the `WRITE_OFF` record already discloses it. IBC-escrowed supply counts as
-  outstanding: tokens stranded on a dead counterparty are residual exactly like lost wallets.
+  new record is appended, since the `WRITE_OFF` record already discloses it.
 
 There is no path out of `RETIRED`. The lifecycle already carries two reversible pairs, halt and resume for a pause,
 suspend and recover for distress, the latter reaching back even from `WRITTEN_OFF`, and staying halted costs nothing,
@@ -351,7 +350,7 @@ keeper because the feed registry is `x/oracle` state, which is why the init orde
 treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a written-off asset's current version and
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
 suspension naming a registered asset. The artefact registers no asset; governance registers the ten currencies after
-launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion)) (D95).
+launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)) (D95).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow

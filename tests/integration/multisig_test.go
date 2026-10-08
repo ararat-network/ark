@@ -404,7 +404,7 @@ func buildTreasuryMultisigTx(
 ) []byte {
 	t.Helper()
 
-	txBuilder := arkApp.GetTxConfig().NewTxBuilder()
+	txBuilder := arkApp.TxConfig().NewTxBuilder()
 	require.NoError(t, txBuilder.SetMsgs(msg))
 	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, multisigFeeAmount)))
 	txBuilder.SetGasLimit(multisigGasLimit)
@@ -424,7 +424,7 @@ func buildTreasuryMultisigTx(
 	}
 	signBytes, err := authsigning.GetSignBytesAdapter(
 		context.Background(),
-		arkApp.GetTxConfig().SignModeHandler(),
+		arkApp.TxConfig().SignModeHandler(),
 		signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		signerData,
 		txBuilder.GetTx(),
@@ -453,7 +453,7 @@ func buildTreasuryMultisigTx(
 		Sequence: sequence,
 	}))
 
-	txBytes, err := arkApp.GetTxConfig().TxEncoder()(txBuilder.GetTx())
+	txBytes, err := arkApp.TxConfig().TxEncoder()(txBuilder.GetTx())
 	require.NoError(t, err)
 	return txBytes
 }

@@ -89,7 +89,6 @@ func TestTxCommandsArePriced(t *testing.T) {
 
 	for _, path := range [][]string{
 		{"tx", "bank", "send"},
-		{"tx", "ibc-transfer", "transfer"},
 		{"tx", "wasm", "execute"},
 		{"tx", "market", "sell"},
 	} {
@@ -101,31 +100,6 @@ func TestTxCommandsArePriced(t *testing.T) {
 	signCmd, _, err := rootCmd.Find([]string{"tx", "sign"})
 	require.NoError(t, err)
 	require.NotEqual(t, appclient.TipFlagUsage, signCmd.Flags().Lookup(flags.FlagTip).Usage)
-}
-
-func TestIBCCommands(t *testing.T) {
-	rootCmd := NewRootCmd()
-
-	transferCmd, args, err := rootCmd.Find([]string{"tx", "ibc-transfer", "transfer"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "transfer", transferCmd.Name())
-	require.Equal(t, "transfer [src-port] [src-channel] [receiver] [coin]", transferCmd.Use)
-
-	paramsCmd, args, err := rootCmd.Find([]string{"query", "ibc-transfer", "params"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "params", paramsCmd.Name())
-
-	ibcCmd, args, err := rootCmd.Find([]string{"query", "ibc"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "ibc", ibcCmd.Name())
-
-	icaCmd, args, err := rootCmd.Find([]string{"tx", "interchain-accounts", "controller", "register"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "register", icaCmd.Name())
 }
 
 // TestExportCommandRelaunchFlags pins the export command's relaunch surface:

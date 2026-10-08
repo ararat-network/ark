@@ -46,8 +46,8 @@ message branch rolled back; allowance usage records only charges that stand.
 Charging tax in ante and refunding in post was rejected because failed messages discard post writes. Charging signed
 messages in the router loses the outer fee granter. Recomputing in post duplicates metered work and weakens the
 identity between declaration and charge. This is deferred collection, with no escrow or refund.
-Execution-generated messages use the [policy router](../README.md#ibc-and-wasm-integration), whose tax and transfer
-share the dispatch cache. Later IBC timeouts retain the tax under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
+Execution-generated messages use the [policy router](../README.md#wasm-integration), whose tax and transfer
+share the dispatch cache under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
 
 Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
 the two-denomination stable-base-fee plus NOAH-tip path conservatively; a simulation with a payable fee meters its

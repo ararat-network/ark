@@ -30,8 +30,6 @@ const (
 	committeeUpgradeName     = "v2-emergency"
 	committeeUpgradeNameB    = "v2-emergency-b"
 	governanceUpgradeName    = "v3-planned"
-	testSubjectClient        = "07-tendermint-0"
-	testSubstituteClient     = "07-tendermint-1"
 	notAppointedCommitteeErr = "security mandate: signer is not the exact appointed account"
 )
 

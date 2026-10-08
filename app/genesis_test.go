@@ -10,12 +10,6 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
-	icagenesistypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/genesis/types"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-	ibctypes "github.com/cosmos/ibc-go/v11/modules/core/types"
 	"github.com/stretchr/testify/require"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
@@ -69,9 +63,8 @@ func (unwiredWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool {
 }
 
 // cliBasicManager rebuilds the manager the arkd commands generate genesis
-// from: the depinject-resolved set, plus the IBC, Wasm, and GMP basics
-// NewRootCmd merges in by hand because those modules are wired outside
-// depinject.
+// from: the depinject-resolved set, plus the Wasm basics NewRootCmd merges in
+// by hand because that module is wired outside depinject.
 func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 	t.Helper()
 
@@ -85,14 +78,8 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 		&cdc,
 	))
 
-	for _, manual := range []module.BasicManager{
-		app.IBCModuleBasics(),
-		app.WasmModuleBasics(),
-		app.GMPModuleBasics(),
-	} {
-		for name, basic := range manual {
-			basics[name] = basic
-		}
+	for name, basic := range app.WasmModuleBasics() {
+		basics[name] = basic
 	}
 
 	return basics, cdc
@@ -321,17 +308,8 @@ func TestLaunchGenesisBoots(t *testing.T) {
 				string(arkApp.AppCodec().MustMarshalJSON(&metadata)),
 			)
 
-			// The IBC and Wasm modules are registered by hand, outside depinject, so
-			// a module whose InitGenesis the wiring skipped would boot on its code
-			// defaults — which open every IBC surface the artefact shuts.
-			require.Empty(t, arkApp.IBCKeeper.ClientKeeper.GetParams(ctx).AllowedClients)
-			transferParams := arkApp.TransferKeeper.GetParams(ctx)
-			require.False(t, transferParams.SendEnabled)
-			require.False(t, transferParams.ReceiveEnabled)
-			require.False(t, arkApp.ICAControllerKeeper.GetParams(ctx).ControllerEnabled)
-			hostParams := arkApp.ICAHostKeeper.GetParams(ctx)
-			require.False(t, hostParams.HostEnabled)
-			require.Empty(t, hostParams.AllowMessages)
+			// Wasm is registered by hand, outside depinject, so an InitGenesis the
+			// wiring skipped would boot it on its code defaults.
 			wasmParams := arkApp.WasmKeeper.GetParams(ctx)
 			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.CodeUploadAccess.Permission)
 			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
@@ -339,31 +317,16 @@ func TestLaunchGenesisBoots(t *testing.T) {
 	}
 }
 
-// The launch genesis disables all IBC client types and separately disables transfer and ICA.
-// Admitting a client type alone therefore opens only client creation; Wasm client checksums remain
-// empty.
-func TestLaunchGenesisHoldsTheHubShut(t *testing.T) {
+// The launch genesis carries no section for a module the app does not wire:
+// no mint (D1), and nothing of the IBC stack the chain removed.
+func TestLaunchGenesisCarriesNoForeignModules(t *testing.T) {
 	_, state := launchGenesis(t)
-	_, cdc := cliBasicManager(t)
-
-	var ibcGenesis ibctypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[ibcexported.ModuleName], &ibcGenesis))
-	require.Empty(t, ibcGenesis.ClientGenesis.Params.AllowedClients,
-		"no client type may be created at launch; governance admits 07-tendermint when it opens the hub (D45, D50)")
-
-	var transferGenesis ibctransfertypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[ibctransfertypes.ModuleName], &transferGenesis))
-	require.False(t, transferGenesis.Params.SendEnabled, "ICS-20 send is off until the activation matrix passes")
-	require.False(t, transferGenesis.Params.ReceiveEnabled, "ICS-20 receive is off until the activation matrix passes")
-
-	var icaGenesis icagenesistypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[icatypes.ModuleName], &icaGenesis))
-	require.False(t, icaGenesis.ControllerGenesisState.Params.ControllerEnabled, "ICA controller launches disabled")
-	require.False(t, icaGenesis.HostGenesisState.Params.HostEnabled, "ICA host launches disabled")
-	require.Empty(t, icaGenesis.HostGenesisState.Params.AllowMessages,
-		"the host allowlist ships empty; activation names explicit type URLs, never the wildcard")
-
-	require.NotContains(t, state, "mint", "Ark has no mint module (D1)")
+	for _, name := range []string{
+		"mint", "ibc", "transfer", "interchainaccounts", "ratelimit",
+		"packetfowardmiddleware", "07-tendermint", "08-wasm", "gmp",
+	} {
+		require.NotContains(t, state, name)
+	}
 }
 
 // The launch genesis enables vote extensions from the first height so oracle pricing is available.
@@ -374,8 +337,7 @@ func TestLaunchGenesisEnablesVoteExtensions(t *testing.T) {
 }
 
 // The launch genesis permits contract upload and instantiation from height one and contains no
-// deployed code or contracts. Execution policy, query restrictions, and the empty IBC client
-// allowlist bound the runtime.
+// deployed code or contracts. Execution policy and query restrictions bound the runtime.
 func TestWasmGenesisShipsOpen(t *testing.T) {
 	_, appState := launchGenesis(t)
 	require.NotNil(t, appState[wasmtypes.ModuleName], "wasm genesis must be present")
@@ -389,17 +351,6 @@ func TestWasmGenesisShipsOpen(t *testing.T) {
 		"anyone may instantiate contracts at launch")
 	require.Empty(t, state.Codes, "launch genesis carries no contract code")
 	require.Empty(t, state.Contracts, "launch genesis carries no contracts")
-}
-
-// The 08-wasm light-client host ships the same way: present, with no client
-// code. Uploading a light client is a governance action after launch.
-func TestWasmLightClientGenesisShipsEmpty(t *testing.T) {
-	_, appState := launchGenesis(t)
-	require.NotNil(t, appState[ibcwasmtypes.ModuleName], "08-wasm genesis must be present")
-
-	var state ibcwasmtypes.GenesisState
-	require.NoError(t, json.Unmarshal(appState[ibcwasmtypes.ModuleName], &state))
-	require.Empty(t, state.Contracts, "launch genesis carries no light-client code")
 }
 
 // Launch supply ledger, mirrored in docs/governance/GENESIS.md §3. The

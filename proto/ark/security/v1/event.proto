@@ -40,11 +40,3 @@ message EventCommitteeUpgradeCancelled {
   string name = 2;
   int64 height = 3 [(amino.dont_omitempty) = true];
 }
-
-// EventCommitteeClientRecovered is emitted when the committee substitutes an
-// expired or frozen IBC client.
-message EventCommitteeClientRecovered {
-  uint64 term = 1 [(amino.dont_omitempty) = true];
-  string subject_client_id = 2;
-  string substitute_client_id = 3;
-}

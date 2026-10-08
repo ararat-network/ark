@@ -22,7 +22,6 @@ const (
 	Msg_SetSecurityMandate_FullMethodName     = "/ark.security.v1.Msg/SetSecurityMandate"
 	Msg_CommitteePlanUpgrade_FullMethodName   = "/ark.security.v1.Msg/CommitteePlanUpgrade"
 	Msg_CommitteeCancelUpgrade_FullMethodName = "/ark.security.v1.Msg/CommitteeCancelUpgrade"
-	Msg_CommitteeRecoverClient_FullMethodName = "/ark.security.v1.Msg/CommitteeRecoverClient"
 )
 
 // MsgClient is the client API for Msg service.
@@ -31,7 +30,7 @@ const (
 //
 // Msg defines the security Msg service. Only the appointment is governance's
 // here; every other method is the committee's bounded door to a power
-// governance already holds unbounded through the upstream x/upgrade and IBC
+// governance already holds unbounded through the upstream x/upgrade
 // messages.
 type MsgClient interface {
 	// SetSecurityMandate appoints, replaces, or disables the security committee.
@@ -42,9 +41,6 @@ type MsgClient interface {
 	CommitteePlanUpgrade(ctx context.Context, in *MsgCommitteePlanUpgrade, opts ...grpc.CallOption) (*MsgCommitteePlanUpgradeResponse, error)
 	// CommitteeCancelUpgrade cancels the committee's own pending upgrade plan.
 	CommitteeCancelUpgrade(ctx context.Context, in *MsgCommitteeCancelUpgrade, opts ...grpc.CallOption) (*MsgCommitteeCancelUpgradeResponse, error)
-	// CommitteeRecoverClient substitutes an expired or frozen IBC client as the
-	// security committee.
-	CommitteeRecoverClient(ctx context.Context, in *MsgCommitteeRecoverClient, opts ...grpc.CallOption) (*MsgCommitteeRecoverClientResponse, error)
 }
 
 type msgClient struct {
@@ -85,23 +81,13 @@ func (c *msgClient) CommitteeCancelUpgrade(ctx context.Context, in *MsgCommittee
 	return out, nil
 }
 
-func (c *msgClient) CommitteeRecoverClient(ctx context.Context, in *MsgCommitteeRecoverClient, opts ...grpc.CallOption) (*MsgCommitteeRecoverClientResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCommitteeRecoverClientResponse)
-	err := c.cc.Invoke(ctx, Msg_CommitteeRecoverClient_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
 //
 // Msg defines the security Msg service. Only the appointment is governance's
 // here; every other method is the committee's bounded door to a power
-// governance already holds unbounded through the upstream x/upgrade and IBC
+// governance already holds unbounded through the upstream x/upgrade
 // messages.
 type MsgServer interface {
 	// SetSecurityMandate appoints, replaces, or disables the security committee.
@@ -112,9 +98,6 @@ type MsgServer interface {
 	CommitteePlanUpgrade(context.Context, *MsgCommitteePlanUpgrade) (*MsgCommitteePlanUpgradeResponse, error)
 	// CommitteeCancelUpgrade cancels the committee's own pending upgrade plan.
 	CommitteeCancelUpgrade(context.Context, *MsgCommitteeCancelUpgrade) (*MsgCommitteeCancelUpgradeResponse, error)
-	// CommitteeRecoverClient substitutes an expired or frozen IBC client as the
-	// security committee.
-	CommitteeRecoverClient(context.Context, *MsgCommitteeRecoverClient) (*MsgCommitteeRecoverClientResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -133,9 +116,6 @@ func (UnimplementedMsgServer) CommitteePlanUpgrade(context.Context, *MsgCommitte
 }
 func (UnimplementedMsgServer) CommitteeCancelUpgrade(context.Context, *MsgCommitteeCancelUpgrade) (*MsgCommitteeCancelUpgradeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeCancelUpgrade not implemented")
-}
-func (UnimplementedMsgServer) CommitteeRecoverClient(context.Context, *MsgCommitteeRecoverClient) (*MsgCommitteeRecoverClientResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitteeRecoverClient not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -212,24 +192,6 @@ func _Msg_CommitteeCancelUpgrade_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CommitteeRecoverClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCommitteeRecoverClient)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CommitteeRecoverClient(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CommitteeRecoverClient_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CommitteeRecoverClient(ctx, req.(*MsgCommitteeRecoverClient))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -248,10 +210,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CommitteeCancelUpgrade",
 			Handler:    _Msg_CommitteeCancelUpgrade_Handler,
-		},
-		{
-			MethodName: "CommitteeRecoverClient",
-			Handler:    _Msg_CommitteeRecoverClient_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

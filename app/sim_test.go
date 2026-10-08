@@ -202,7 +202,7 @@ func postImportOperations(app *ArkApp) []simtypes.WeightedOperation {
 	return app.SimulationManager().WeightedOperations(module.SimulationState{
 		AppParams: make(simtypes.AppParams),
 		Cdc:       app.AppCodec(),
-		TxConfig:  app.GetTxConfig(),
+		TxConfig:  app.TxConfig(),
 		BondDenom: sdk.DefaultBondDenom,
 	})
 }

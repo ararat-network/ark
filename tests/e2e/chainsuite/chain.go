@@ -34,7 +34,6 @@ import (
 type Chain struct {
 	*cosmos.CosmosChain
 	ValidatorWallets []ValidatorWallet
-	RelayerWallet    ibc.Wallet
 }
 
 type ValidatorWallet struct {
@@ -44,14 +43,13 @@ type ValidatorWallet struct {
 	ValConsAddress string
 }
 
-func chainFromCosmosChain(cosmosChain *cosmos.CosmosChain, relayerWallet ibc.Wallet) (*Chain, error) {
+func chainFromCosmosChain(cosmosChain *cosmos.CosmosChain) (*Chain, error) {
 	c := &Chain{CosmosChain: cosmosChain}
 	wallets, err := getValidatorWallets(context.Background(), c)
 	if err != nil {
 		return nil, err
 	}
 	c.ValidatorWallets = wallets
-	c.RelayerWallet = relayerWallet
 	return c, nil
 }
 
@@ -93,8 +91,7 @@ func NewCosmosChain(ctx context.Context, testName interchaintest.TestName, spec 
 	return cosmos.NewCosmosChain(testName.Name(), chainConfig(ctx, spec), validators, fullNodes, GetLogger(ctx))
 }
 
-// CreateChain starts one chain from spec and funds a relayer wallet on it,
-// starting over after a port clash.
+// CreateChain starts one chain from spec, starting over after a port clash.
 func CreateChain(ctx context.Context, testName interchaintest.TestName, spec *interchaintest.ChainSpec) (*Chain, error) {
 	var chain *Chain
 	err := retryPortClash(ctx, testName, func() (err error) {
@@ -106,16 +103,7 @@ func CreateChain(ctx context.Context, testName interchaintest.TestName, spec *in
 
 func createChain(ctx context.Context, testName interchaintest.TestName, spec *interchaintest.ChainSpec) (*Chain, error) {
 	cosmosChain := NewCosmosChain(ctx, testName, spec)
-	relayerWallet, err := cosmosChain.BuildRelayerWallet(ctx, "relayer-"+cosmosChain.Config().ChainID)
-	if err != nil {
-		return nil, err
-	}
-
-	ic := interchaintest.NewInterchain().AddChain(cosmosChain, ibc.WalletAmount{
-		Address: relayerWallet.FormattedAddress(),
-		Denom:   cosmosChain.Config().Denom,
-		Amount:  NOAH(ValidatorFunds),
-	})
+	ic := interchaintest.NewInterchain().AddChain(cosmosChain)
 	dockerClient, dockerNetwork, err := GetDockerContext(ctx)
 	if err != nil {
 		return nil, err
@@ -127,7 +115,7 @@ func createChain(ctx context.Context, testName interchaintest.TestName, spec *in
 	}); err != nil {
 		return nil, err
 	}
-	return chainFromCosmosChain(cosmosChain, relayerWallet)
+	return chainFromCosmosChain(cosmosChain)
 }
 
 func getValidatorWallets(ctx context.Context, chain *Chain) ([]ValidatorWallet, error) {
@@ -490,23 +478,6 @@ func (c *Chain) GasPrice(ctx context.Context, denom string) (sdkmath.LegacyDec, 
 		return sdkmath.LegacyDec{}, err
 	}
 	return sdkmath.LegacyNewDecFromStr(price.String())
-}
-
-// VerifyGasPrices fails when the relayer's gas price no longer clears the
-// chain's floor, so a drift shows up here rather than as fee refusals.
-func (c *Chain) VerifyGasPrices(ctx context.Context) error {
-	quoted, err := c.GasPrice(ctx, Denom)
-	if err != nil {
-		return fmt.Errorf("querying the gas price: %w", err)
-	}
-	configured, err := sdkmath.LegacyNewDecFromStr(strings.TrimSuffix(RelayerGasPrices, Denom))
-	if err != nil {
-		return err
-	}
-	if configured.LT(quoted) {
-		return fmt.Errorf("relayer gas price %s is below the chain's %s%s; raise RelayerGasPrices", RelayerGasPrices, quoted, Denom)
-	}
-	return nil
 }
 
 // ExchangeRates is the oracle's current rate per denom.

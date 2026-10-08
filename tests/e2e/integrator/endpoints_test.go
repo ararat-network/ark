@@ -57,8 +57,6 @@ func (s *EndpointsSuite) TestAPIEndpoints() {
 		{name: "staking_validator_delegations", path: "/cosmos/staking/v1beta1/validators/" + wallets[0].ValoperAddress + "/delegations", key: "delegation_responses"},
 		{name: "staking_validator_unbonding", path: "/cosmos/staking/v1beta1/validators/" + wallets[0].ValoperAddress + "/unbonding_delegations", key: "unbonding_responses"},
 		{name: "upgrade_plan", path: "/cosmos/upgrade/v1beta1/current_plan", key: "plan"},
-		{name: "ibc_client_params", path: "/ibc/core/client/v1/params", key: "params"},
-		{name: "ibc_transfer_params", path: "/ibc/apps/transfer/v1/params", key: "params"},
 		{name: "wasm_codes", path: "/cosmwasm/wasm/v1/code", key: "code_infos"},
 
 		{name: "asset_assets", path: "/ark/asset/v1/assets", key: "priced_assets"},

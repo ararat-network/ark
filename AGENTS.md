@@ -52,7 +52,7 @@ pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and
 pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
 proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
 api/ark/       # Pulsar-generated code (runtime only, never import in module code)
-app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
+app/            # App wiring, depinject config, manual Wasm registration, launch genesis
 app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
 ```
 

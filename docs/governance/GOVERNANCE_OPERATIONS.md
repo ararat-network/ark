@@ -1,7 +1,7 @@
 # Governance operations
 
-For governance proposal authors, committee appointers, and relayers coordinating network changes. This guide covers
-opening interchain services, contract permissions, appointments, and economic operations throughout the network's life.
+For governance proposal authors and committee appointers. This guide covers contract permissions, appointments, and
+economic operations throughout the network's life.
 [Genesis](GENESIS.md) owns launch values; [economic design](../design/ECONOMIC_DESIGN.md) owns financial rules;
 [economic decisions](../design/ECONOMIC_DECISIONS.md) owns the D/P history.
 
@@ -12,13 +12,9 @@ fails, re-read state and correct the proposal; do not enable a dependent service
 
 ## 1. Launch defaults and ongoing changes
 
-One thing is post-launch by nature: an IBC channel is a handshake with a live counterparty, so channels and everything
-that rides on them cannot exist in a fresh genesis. Rate limits are keyed by channel or client ID, so they follow the
-channels, and the plan makes limits a precondition for the transfer flags (D46), so the flags follow the limits.
-
-Other initial permissions are launch choices that later governance can change. The launch artefact ships
-the hub shut behind one switch, the empty allowed-client list, and the contract runtime open (D45 as amended,
-`docs/design/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or appointments are needed.
+Initial permissions are launch choices that later governance can change. The launch artefact ships the contract
+runtime open (`docs/design/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or
+appointments are needed.
 
 Initial economic values and permissions are fixed in [genesis](GENESIS.md); committee appointments follow its
 [first-cycle sequence](GENESIS.md#13-committee-appointments). Validator entry after launch is open and needs no
@@ -26,35 +22,7 @@ proposal ([genesis §3](GENESIS.md#3-accounts-supply-and-validator-seats)). The 
 changed later through the procedures below; the contract query accept list remains a code change rather than a
 governance parameter.
 
-## 2. Opening the hub
-
-The order is fixed by dependencies. Step 1 is the switch; steps 2 to 4 cannot be reordered; step 5 is independent of
-3 and 4.
-
-| # | Step | Message | Signer | Needs | Effect |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Admit the client type | `ibc.core.client.v1.MsgUpdateParams` (rpc `UpdateClientParams`), `allowed_clients: ["07-tendermint"]` | governance | the decision to open | Clients, connections, channels, and v2 counterparties can be created. GMP and contract channels become reachable at the same moment (§3). ICS-20 and ICA stay behind their own flags. |
-| 2 | Create clients, connections, channels | `MsgCreateClient`, `MsgConnectionOpen*`, `MsgChannelOpen*` in `ibc.core.*.v1`; for v2, `ibc.core.client.v2.MsgRegisterCounterparty`, signed by the client's creator | relayers | step 1 | Routes exist. Handshakes succeed while transfer is disabled: the flags gate packets, not channels. |
-| 3 | Set rate limits | `ibc.applications.rate_limiting.v1.MsgAddRateLimit` with `denom`, `channel_or_client_id`, `max_percent_send`, `max_percent_recv`, `duration_hours`; `MsgUpdateRateLimit`, `MsgRemoveRateLimit`, `MsgResetRateLimit` | governance | step 2, for the IDs | One limit per denomination per route: `anoah` and each registered stablecoin outbound, and each inbound `ibc/…` denomination as it appears. Percentages are of the route's value over the window. Every route that will carry value is limited before step 4 (D46). |
-| 4 | Enable ICS-20 | `ibc.applications.transfer.v1.MsgUpdateParams` with `send_enabled`, `receive_enabled` | governance | step 3 | Transfers flow, taxed at the ante for signed sends and at the policy router for everything else. The two flags may move separately. |
-| 5 | Enable ICA | host: `ibc.applications.interchain_accounts.host.v1.MsgUpdateParams` with `host_enabled` and `allow_messages` as explicit type URLs, never `*`; controller: `ibc.applications.interchain_accounts.controller.v1.MsgUpdateParams` with `controller_enabled` | governance | step 1 | Each allowed URL is remote execution on Ark; the interchain account pays execution tax through the policy router like a contract. The controller lets Ark accounts act on other chains. |
-| 6 | Admit 08-Wasm | `ibc.core.client.v1.MsgUpdateParams` adding `08-wasm`, then `ibc.lightclients.wasm.v1.MsgStoreCode` | governance | a non-CometBFT counterparty | Not planned. The module is installed dormant with no checksums (D50). |
-
-## 3. What opens with the client type
-
-Two surfaces have no flag of their own and are held shut only by step 1:
-
-- **GMP.** A remote chain executes SDK messages here through an account the chain derives for it. The module has no
-  params; its only message is the outbound `SendCall`. The derived account is an ordinary account with no standing
-  authority, it can do only what its own balance allows, and every message it executes runs through the policy router
-  and pays execution tax on a contract's terms (D48).
-- **Contract channels.** A contract with IBC entry points may open its own channels on either stack. Callback delivery
-  follows the callback and gas rules described in [application integration](../../app/README.md#ibc-and-wasm-integration).
-
-Neither needs a further vote once the client type is admitted, which is why step 1 is the decision to open the hub and
-not merely a preliminary.
-
-## 4. The contract runtime
+## 2. The contract runtime
 
 Open from height one: anyone may upload and instantiate. What governance may still do:
 
@@ -70,11 +38,11 @@ everyone else and never freezes the runtime. The query accept list is the one th
 change: it is code (`app/wasm_query.go`), a listed path's response shape is frozen for the life of the chain, and
 widening it is a coordinated binary upgrade.
 
-## 5. Ark governance operations
+## 3. Ark governance operations
 
 | Operation | Message | Signer | Notes |
 | --- | --- | --- | --- |
-| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §6 for account backing and appointment review. |
+| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §4 for account backing and appointment review. |
 | Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. There is no global floor, cap, or trigger: each proposal states its own (D27). |
 | Return idle subsidy to the community pool | `ark.treasury.v1.MsgReturnSubsidy` with the exact amount and minimum remaining balance | governance | One-way from the subsidy pool into the community pool; changes no supply or target. The minimum is the proposal's stale-state guard, not a floor, and a return that would breach it fails at execution (D83). The community pool tops the subsidy pool up by an ordinary spend to its address. |
 | Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor (D81). The cap is denominated in the reference unit; zero means uncapped. |
@@ -83,7 +51,7 @@ widening it is a coordinated binary upgrade.
 | Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClosePosition`, and the governance corrections | committee; governance | The one-committee mandate (D56, D57); governance corrects records, clears impairment, and owns the recognition policy. |
 | Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority (D61). The surplus bound is Treasury's required capital, which needs a complete valuation. |
 
-## 6. Committee appointments
+## 4. Committee appointments
 
 Default mandates are disabled. Governance can operate without a committee; appointment delegates a bounded faster
 path and never becomes a prerequisite for governance's own messages. Choose appointments from incident exposure,
@@ -129,7 +97,7 @@ Before proposing the first one:
 
 Other engineering follow-ups are tracked in [future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
 
-## 7. Grant tranches
+## 5. Grant tranches
 
 The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md) (D87,
 D88), which holds the member and contributor pools from genesis. Inspect `arkd query disbursement params` and
@@ -298,7 +266,7 @@ unopened first, and the member pool has no exit.
 
 ---
 
-## 8. Opening conversion
+## 6. Opening conversion
 
 Conversion is closed at launch: the artefact registers the eleven price feeds and no asset, so Market has no `ACTIVE`
 ask to mint (D95). It opens in this order, once a venue trades NOAH with real depth.
@@ -317,7 +285,7 @@ ask to mint (D95). It opens in this order, once a venue trades NOAH with real de
    the same proposal ([asset lifecycle](../../x/asset/README.md#7-the-lifecycle)). Conversion opens when the proposal
    executes. Verify with the asset registry query and one small `MsgSell`.
 4. **Appoint the Market committee.** Its corridor should reach about ten times the genesis depth, so routine raises as
-   liquid NOAH is distributed need no vote (§6, [genesis §13](GENESIS.md#13-committee-appointments)). The committee
+   liquid NOAH is distributed need no vote (§4, [genesis §13](GENESIS.md#13-committee-appointments)). The committee
    sizes each raise by the depth rule; governance raises depth beyond the corridor by the same rule, and nobody
    shortens recovery to do it.
 
@@ -338,4 +306,4 @@ The currencies step 3 registers:
 
 `axdr` is not one of them: it is the protocol reference, priced by its feed and never registered.
 
-Stablecoin compensation in Disbursement becomes available at step 3 (§7).
+Stablecoin compensation in Disbursement becomes available at step 3 (§5).

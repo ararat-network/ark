@@ -16,8 +16,6 @@ import (
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -64,7 +62,7 @@ func TestAppConstructs(t *testing.T) {
 	require.NotNil(t, arkApp.BaseApp)
 	require.NotNil(t, arkApp.LegacyAmino())
 	require.NotNil(t, arkApp.AppCodec())
-	require.NotNil(t, arkApp.GetTxConfig())
+	require.NotNil(t, arkApp.TxConfig())
 	require.NotNil(t, arkApp.InterfaceRegistry())
 	require.NotNil(t, arkApp.MsgServiceRouter())
 	require.NotNil(t, arkApp.GRPCQueryRouter())
@@ -141,7 +139,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 		)
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(int64(i+1))),
-			arkApp.GetTxConfig(),
+			arkApp.TxConfig(),
 			[]sdk.Msg{msg},
 			sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000_000_000_000_000)),
 			200_000,
@@ -151,7 +149,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 			funder.Key,
 		)
 		require.NoError(t, err)
-		txs[i], err = arkApp.GetTxConfig().TxEncoder()(tx)
+		txs[i], err = arkApp.TxConfig().TxEncoder()(tx)
 		require.NoError(t, err)
 	}
 
@@ -310,23 +308,12 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 			minters = append(minters, moduleName)
 		}
 	}
-	require.ElementsMatch(
-		t,
-		[]string{markettypes.ModuleName, ibctransfertypes.ModuleName},
-		minters,
-		"Only Market and IBC transfer may mint",
-	)
+	require.Equal(t, []string{markettypes.ModuleName}, minters, "Only Market may mint")
 	require.ElementsMatch(
 		t,
 		[]string{authtypes.Minter, authtypes.Burner},
 		permissions[markettypes.ModuleName],
 		"Market must retain conversion mint and burn permissions",
-	)
-	require.ElementsMatch(
-		t,
-		[]string{authtypes.Minter, authtypes.Burner},
-		permissions[ibctransfertypes.ModuleName],
-		"IBC transfer must retain voucher mint and burn permissions",
 	)
 
 	blocked := app.BlockedAddresses()
@@ -339,8 +326,6 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		markettypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		icatypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
 	} {

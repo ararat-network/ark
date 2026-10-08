@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"encoding/json"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -9,18 +10,19 @@ import (
 	"github.com/CosmWasm/wasmd/x/wasm/keeper/testdata"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	ibctesting "github.com/cosmos/ibc-go/v11/testing"
 	"github.com/stretchr/testify/require"
 
+	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/math"
 
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/app"
+	"github.com/ararat-network/ark/app/ante"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
 	treasurytestutil "github.com/ararat-network/ark/x/treasury/testutil"
@@ -314,39 +316,80 @@ func TestContractCannotCreditAFundWithStablecoin(t *testing.T) {
 	require.Equal(t, math.NewInt(10_000), f.stable(contract))
 }
 
-// signedContractFixture is a single Ark chain whose sender owns a reflect
-// contract, for the shapes only a signed transaction can take.
+// signedContractFixture is a chain whose sender owns a reflect contract, for
+// the shapes only a signed transaction can take. Transactions run through
+// FinalizeBlock and commit, so the ante chain prices them as a node would.
 type signedContractFixture struct {
-	chain    *ibctesting.TestChain
-	app      *app.ArkApp
-	sender   sdk.AccAddress
-	codeID   uint64
-	contract sdk.AccAddress
+	app        *app.ArkApp
+	validators apptestutil.Validators
+	sender     apptestutil.Funder
+	codeID     uint64
+	contract   sdk.AccAddress
 }
 
-func newSignedContractFixture(t *testing.T, coord *ibctesting.Coordinator, c *ibctesting.TestChain) signedContractFixture {
+func newSignedContractFixture(t *testing.T) signedContractFixture {
 	t.Helper()
 
-	arkApp := apptestutil.ArkChain(t, c)
-	ctx := c.GetContext()
-	sender := c.SenderAccount.GetAddress()
-	setStableTax(t, arkApp, ctx, 10_000)
-	apptestutil.FundAccount(t, arkApp, ctx, sender, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)))
+	// The flat NOAH fee below would fail the consensus base fee; the
+	// test-only gate waives it.
+	gate := ante.BaseFeeGate()
+	ante.SetBaseFeeGate(false)
+	t.Cleanup(func() { ante.SetBaseFeeGate(gate) })
 
+	validators := apptestutil.NewValidators(t, 1)
+	sender := apptestutil.NewFunder(t, sdk.NewCoins(
+		sdk.NewCoin(sdk.DefaultBondDenom, chain.NativeBaseAmount(100_000_000)),
+		sdk.NewInt64Coin(chain.USDBaseDenom, 10_000),
+	))
+	arkApp := apptestutil.SetupWithGenesisValSet(t, validators, sender.Accounts(), sender.Balance)
+
+	// Written straight to the root store, which the commit below seals: a
+	// context on the finalised first block is flushed no more, and the
+	// constructor the deprecation names branches the store the same way.
+	ctx := arkApp.NewUncachedContext(false, cmtproto.Header{ //nolint:staticcheck // the only writes that reach the commit
+		Height: arkApp.LastBlockHeight() + 1, Time: time.Unix(1_700_000_000, 0).UTC(),
+	})
+	setStableTax(t, arkApp, ctx, 10_000)
 	pk := wasmkeeper.NewDefaultPermissionKeeper(&arkApp.WasmKeeper)
-	codeID, _, err := pk.Create(ctx, sender, testdata.ReflectContractWasm(), nil)
+	codeID, _, err := pk.Create(ctx, sender.Address(), testdata.ReflectContractWasm(), nil)
 	require.NoError(t, err)
-	contract, _, err := pk.Instantiate(ctx, codeID, sender, nil, []byte("{}"), "owned", nil)
+	contract, _, err := pk.Instantiate(ctx, codeID, sender.Address(), nil, []byte("{}"), "owned", nil)
 	require.NoError(t, err)
 	apptestutil.FundAccount(t, arkApp, ctx, contract, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)))
-	coord.CommitBlock(c)
+	_, err = arkApp.Commit()
+	require.NoError(t, err)
 
-	return signedContractFixture{chain: c, app: arkApp, sender: sender, codeID: codeID, contract: contract}
+	return signedContractFixture{app: arkApp, validators: validators, sender: sender, codeID: codeID, contract: contract}
 }
 
-func (f signedContractFixture) stable(t *testing.T, addr sdk.AccAddress) math.Int {
+// send signs msgs as the sender, runs them in the next block, and commits it.
+func (f signedContractFixture) send(t *testing.T, msgs ...sdk.Msg) {
 	t.Helper()
-	return stableBalance(t, f.chain, addr)
+
+	account := f.app.AccountKeeper.GetAccount(f.app.NewContext(true), f.sender.Address())
+	tx, err := simtestutil.GenSignedMockTx(
+		rand.New(rand.NewSource(1)), f.app.TxConfig(), msgs,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000)),
+		simtestutil.DefaultGenTxGas, f.app.ChainID(),
+		[]uint64{account.GetAccountNumber()}, []uint64{account.GetSequence()}, f.sender.Key,
+	)
+	require.NoError(t, err)
+	bz, err := f.app.TxConfig().TxEncoder()(tx)
+	require.NoError(t, err)
+
+	height := f.app.LastBlockHeight() + 1
+	res, err := f.app.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+		Height:             height,
+		Hash:               f.app.LastCommitID().Hash,
+		Time:               time.Unix(1_700_000_000+height, 0).UTC(),
+		NextValidatorsHash: f.validators.Set.Hash(),
+		Txs:                [][]byte{bz},
+	})
+	require.NoError(t, err)
+	require.Len(t, res.TxResults, 1)
+	require.Zero(t, res.TxResults[0].Code, res.TxResults[0].Log)
+	_, err = f.app.Commit()
+	require.NoError(t, err)
 }
 
 func reflectBody(t *testing.T, msgs ...wasmvmtypes.CosmosMsg) []byte {
@@ -356,71 +399,39 @@ func reflectBody(t *testing.T, msgs ...wasmvmtypes.CosmosMsg) []byte {
 	return body
 }
 
+func (f signedContractFixture) stable(addr sdk.AccAddress) math.Int {
+	return f.app.BankKeeper.GetBalance(f.app.NewContext(true), addr, chain.USDBaseDenom).Amount
+}
+
+func (f signedContractFixture) collector() sdk.AccAddress {
+	return f.app.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
+}
+
 // TestAttachedFundsAreTaxedByTheAnteOnce: funds a signed execute attaches
 // are ante-visible principal, taxed from the signer and never again.
 func TestAttachedFundsAreTaxedByTheAnteOnce(t *testing.T) {
-	coord := apptestutil.NewIBCCoordinator(t, 1)
-	f := newSignedContractFixture(t, coord, coord.GetChain(ibctesting.GetChainID(1)))
+	f := newSignedContractFixture(t)
 
-	_, err := f.chain.SendMsgs(&wasmtypes.MsgExecuteContract{
-		Sender: f.sender.String(), Contract: f.contract.String(), Msg: keepOwner(f.sender),
+	f.send(t, &wasmtypes.MsgExecuteContract{
+		Sender: f.sender.Address().String(), Contract: f.contract.String(), Msg: keepOwner(f.sender.Address()),
 		Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
 	})
-	require.NoError(t, err)
 
-	require.Equal(t, math.NewInt(11_000), f.stable(t, f.contract))
-	require.Equal(t, math.NewInt(100), f.stable(t, collectorAddress(t, f.chain)))
-	require.Equal(t, math.NewInt(8_900), f.stable(t, f.sender))
+	require.Equal(t, math.NewInt(11_000), f.stable(f.contract))
+	require.Equal(t, math.NewInt(100), f.stable(f.collector()))
+	require.Equal(t, math.NewInt(8_900), f.stable(f.sender.Address()))
 }
 
 // TestInstantiateFundsAreTaxedByTheAnteOnce: the same for a signed
 // instantiate.
 func TestInstantiateFundsAreTaxedByTheAnteOnce(t *testing.T) {
-	coord := apptestutil.NewIBCCoordinator(t, 1)
-	f := newSignedContractFixture(t, coord, coord.GetChain(ibctesting.GetChainID(1)))
+	f := newSignedContractFixture(t)
 
-	_, err := f.chain.SendMsgs(&wasmtypes.MsgInstantiateContract{
-		Sender: f.sender.String(), CodeID: f.codeID, Label: "funded", Msg: []byte("{}"),
+	f.send(t, &wasmtypes.MsgInstantiateContract{
+		Sender: f.sender.Address().String(), CodeID: f.codeID, Label: "funded", Msg: []byte("{}"),
 		Funds: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
 	})
-	require.NoError(t, err)
 
-	require.Equal(t, math.NewInt(100), f.stable(t, collectorAddress(t, f.chain)))
-	require.Equal(t, math.NewInt(8_900), f.stable(t, f.sender))
-}
-
-// TestContractIBCTransferIsTaxedAtExecution: an ICS-20 transfer a contract
-// dispatches is not ante-visible, so the router taxes it from the contract at
-// execution, and the packet then crosses like any other.
-func TestContractIBCTransferIsTaxedAtExecution(t *testing.T) {
-	coord := apptestutil.NewIBCCoordinator(t, 2)
-	chainA, chainB := coord.GetChain(ibctesting.GetChainID(1)), coord.GetChain(ibctesting.GetChainID(2))
-	path := ibctesting.NewTransferPath(chainA, chainB)
-	path.Setup()
-	f := newSignedContractFixture(t, coord, chainA)
-	receiver := chainB.SenderAccount.GetAddress()
-
-	res, err := f.chain.SendMsgs(&wasmtypes.MsgExecuteContract{
-		Sender: f.sender.String(), Contract: f.contract.String(),
-		Msg: reflectBody(t, wasmvmtypes.CosmosMsg{IBC: &wasmvmtypes.IBCMsg{Transfer: &wasmvmtypes.TransferMsg{
-			ChannelID: path.EndpointA.ChannelID,
-			ToAddress: receiver.String(),
-			Amount:    wasmvmtypes.Coin{Denom: chain.USDBaseDenom, Amount: "1000"},
-			Timeout:   wasmvmtypes.IBCTimeout{Timestamp: chainA.GetTimeoutTimestamp()},
-		}}}),
-	})
-	require.NoError(t, err)
-
-	escrow := ibctransfertypes.GetEscrowAddress(path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
-	require.Equal(t, math.NewInt(1_000), f.stable(t, escrow))
-	require.Equal(t, math.NewInt(100), f.stable(t, collectorAddress(t, f.chain)), "taxed once, from the contract")
-	require.Equal(t, math.NewInt(8_900), f.stable(t, f.contract))
-	require.Equal(t, math.NewInt(10_000), f.stable(t, f.sender), "the signer attached nothing and paid nothing")
-
-	packet, err := ibctesting.ParseV1PacketFromEvents(res.Events)
-	require.NoError(t, err)
-	require.NoError(t, path.RelayPacket(packet))
-	voucher := ibctransfertypes.NewDenom(chain.USDBaseDenom,
-		ibctransfertypes.NewHop(path.EndpointB.ChannelConfig.PortID, path.EndpointB.ChannelID)).IBCDenom()
-	require.Equal(t, math.NewInt(1_000), balance(t, chainB, receiver, voucher))
+	require.Equal(t, math.NewInt(100), f.stable(f.collector()))
+	require.Equal(t, math.NewInt(8_900), f.stable(f.sender.Address()))
 }

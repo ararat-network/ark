@@ -5,8 +5,6 @@ package ante
 import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcante "github.com/cosmos/ibc-go/v11/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
 	"cosmossdk.io/core/store"
 
@@ -35,7 +33,6 @@ func NewAnteHandler(
 	stakingKeeper *stakingkeeper.Keeper,
 	treasuryKeeper *treasurykeeper.Keeper,
 	privileges mempool.Set,
-	ibcKeeper *ibckeeper.Keeper,
 	wasmGasRegister wasmtypes.GasRegister,
 	wasmNodeConfig wasmtypes.NodeConfig,
 	wasmTxCounterStore store.KVStoreService,
@@ -79,10 +76,6 @@ func NewAnteHandler(
 		sdkante.NewSigVerificationDecorator(accountKeeper, txConfig.SignModeHandler()),
 		NewPrivilegeDecorator(privileges),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
-
-		// Last, as it was when it wrapped the chain from outside: a redundant
-		// relay is only redundant once the transaction is otherwise valid.
-		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 	)
 }
 

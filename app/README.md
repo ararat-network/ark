@@ -1,6 +1,6 @@
 # Application
 
-`ArkApp` assembles the SDK application, Ark modules, and manually wired IBC/Wasm integrations.
+`ArkApp` assembles the SDK application, Ark modules, and the manually wired Wasm integration.
 [app.go](app.go) is the construction entry point; [app_config.go](app_config.go) declares depinject configuration,
 module-account permissions, blocked addresses, and lifecycle order. Check [go.mod](../go.mod) before changing SDK integration.
 
@@ -9,7 +9,7 @@ module-account permissions, blocked addresses, and lifecycle order. Check [go.mo
 - [config.go](config.go) initialises chain identity, denominations, address prefixes, and keyring service identity.
 - [app.go](app.go) builds the runtime, injects keepers, and connects feed guards, reference consumers, send restrictions,
   and the execution-policy router.
-- [ibc.go](ibc.go), [wasm.go](wasm.go), [wasm_query.go](wasm_query.go), and [gmp.go](gmp.go) own manual integrations.
+- [wasm.go](wasm.go) and [wasm_query.go](wasm_query.go) own the manual integration.
 - [ante/](ante/README.md) owns signed-transaction ante/post assembly. [execution_policy_router.go](execution_policy_router.go)
   applies message policy at execution-generated message boundaries.
 - [mempool.go](mempool.go) registers the privileged message surface; [mempool/](mempool/README.md) owns pending storage and proposal service.
@@ -56,23 +56,20 @@ consensus `max_gas` instead.
 [Oracle](../x/oracle/README.md), [Reserve](../x/reserve/README.md), [Security](../x/security/README.md),
 and [Treasury](../x/treasury/README.md) each document their behaviour, rationale, state, and development boundaries.
 
-## IBC and Wasm integration
+## Wasm integration
 
 Decision IDs below refer to the [economic decision register](../docs/design/ECONOMIC_DECISIONS.md).
-Ark is built as an interchain hub on `ibc-go` v11 (D45): IBC core, ICS-20 on both the Classic and the v2 route
-sharing one transfer keeper, the 07-Tendermint client, packet forwarding on Classic, governance rate limiting on both
-routes, callbacks on both routes as the transfer-and-call mechanism, ICA controller and host, ICS-27 v2 general message
-passing, and the 08-Wasm light client installed dormant (D46, D47, D48, D50, D51, D52). The effective inbound Classic
-stack is rate limit, packet forward, callbacks, transfer; v2 is rate limit, callbacks, transfer. Absent by decision:
-ICS-29 relayer fees, ICS-721, IBC Hooks, a v2 packet-forward adapter, a generic contract-to-ICA authentication module,
-06-Solo Machine, and the attestations client (D51, D52, D53). All of it is wired through the SDK runtime's manual
-registration hooks beside the depinject-wired modules, in `app/ibc.go`.
+Ark runs upstream Wasmd `v0.70.x` on `wasmvm/v3` (D49), wired through the SDK runtime's manual registration hooks
+beside the depinject-wired modules, in `app/wasm.go`. The chain has no IBC (D118): the Wasm keeper takes no channel
+keepers, its default message handler and encoders are replaced by ones that refuse a contract's IBC and IBC v2
+messages with an explicit error, its IBC query plugin refuses, no contract port is routed, and the `ibc2` capability
+is withheld so a contract requiring it fails at upload. Wasmd itself still depends on ibc-go, which is why the
+dependency remains in `go.mod`.
 
-[ibc.go](ibc.go) owns the manual IBC registration and middleware order; [wasm.go](wasm.go) constructs the contract
-runtime; [gmp.go](gmp.go) installs general message passing. Verify dependency versions in [go.mod](../go.mod).
-The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns opening the hub and setting permissions.
+[wasm.go](wasm.go) constructs the contract runtime. Verify dependency versions in [go.mod](../go.mod).
+The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contract permissions.
 
-- **The policy router**, which wraps the SDK message router handed to Wasmd and to the GMP keeper. It receives the
+- **The policy router**, which wraps the SDK message router handed to Wasmd. It receives the
   exact SDK message Wasmd's canonical encoder produces, prices it, charges the dispatching account, and calls the
   handler, in one cached execution. Wasmd's custom message encoder is unused: a contract calls Ark's modules
   with `CosmosMsg::Any` carrying the proto type URL and bytes, so there is one schema instead of a JSON mirror that
@@ -86,11 +83,7 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns opening
   annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and fourteen
   of Ark's own: what a contract needs to price and route a conversion or a transfer, the tax estimate and the caps and
   gas prices behind it, the Oracle rates and reference unit, Market's quote, pool, policy, and Tobin tax, and the asset
-  registry. The ICA host derives its own allowlist from the same annotation inside ibc-go, so the two surfaces are
-  separate by construction.
-- **Callbacks** on both ICS-20 stacks deliver source, acknowledgement, timeout, and destination callbacks into
-  contracts under ibc-go's gas cap and authorisation rules: a destination callback failure fails the receive, while
-  acknowledgement and timeout callback failures follow the non-blocking lifecycle and undo no protocol bookkeeping.
+  registry.
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
@@ -101,8 +94,7 @@ it remains payable. These adapters enforce that contract at distinct signed-mess
 
 From the repository root, run `go test ./app/...` for application changes. Integration scenarios live under
 [tests/integration/](../tests/README.md); simulation commands and prerequisites are in the [test guide](../tests/README.md).
-[testutil/](testutil/) supplies app, validator, funding, genesis, and IBC fixtures. Embedded contract fixtures and their
-wrapper live in [testdata/contracts.go](testdata/contracts.go). Native grant flows are covered by
+[testutil/](testutil/) supplies app, validator, funding, and genesis fixtures. Native grant flows are covered by
 [disbursement_test.go](disbursement_test.go), including custody, failure rollback, founder limits, and continuation export/import.
 Use `go build ./...` before claiming
 repository-wide compilation.

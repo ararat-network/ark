@@ -2,8 +2,10 @@ package app
 
 import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -79,12 +81,16 @@ func acceptedQueries() wasmkeeper.AcceptedQueries {
 	}
 }
 
-// wasmQueryPlugins supplies the two queriers Wasmd refuses by default. Both
-// read through the accept list; every other plugin stays Wasmd's own, Custom
-// included, which refuses every request.
+// wasmQueryPlugins supplies the two queriers Wasmd refuses by default, both
+// reading through the accept list, and refuses IBC queries, which Wasmd's own
+// would answer from a channel keeper the chain does not have. Every other
+// plugin stays Wasmd's own, Custom included, which refuses every request.
 func (app *ArkApp) wasmQueryPlugins(accepted wasmkeeper.AcceptedQueries) *wasmkeeper.QueryPlugins {
 	return &wasmkeeper.QueryPlugins{
 		Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, app.GRPCQueryRouter(), app.appCodec),
 		Grpc:     wasmkeeper.AcceptListGrpcQuerier(accepted, app.GRPCQueryRouter(), app.appCodec),
+		IBC: func(sdk.Context, sdk.AccAddress, *wasmvmtypes.IBCQuery) ([]byte, error) {
+			return nil, wasmvmtypes.UnsupportedRequest{Kind: "ibc"}
+		},
 	}
 }

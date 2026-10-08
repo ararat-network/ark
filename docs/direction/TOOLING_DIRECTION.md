@@ -42,7 +42,7 @@ Terra's older implementation choices.
 ### 1. Keep `arkd` as the protocol authority
 
 The chain should remain the only source of truth for economic and consensus-sensitive behavior. Market conversion,
-treasury policy, oracle rates, taxes, fees, staking, governance, IBC state, and any future contract integrations must be
+treasury policy, oracle rates, taxes, fees, staking, governance, and any future contract integrations must be
 determined by committed chain state.
 
 Client tooling may request quotes, simulate transactions, format results, and explain outcomes. It should not
@@ -61,7 +61,7 @@ be capable of describing:
 - display denominations, exponents, symbols, and icons;
 - RPC, gRPC, REST, WebSocket, indexer, and explorer endpoints;
 - genesis identity or another way to prevent endpoint/network confusion;
-- IBC channels, denomination traces, and recognised asset metadata;
+- recognised asset metadata;
 - enabled product features and compatibility ranges.
 
 This information should not be copied into each wallet and dapp. A canonical registry reduces configuration drift and
@@ -84,7 +84,7 @@ Its useful responsibilities include:
 - a small set of higher-level workflow helpers where those helpers do not duplicate chain policy.
 
 The SDK should expose protocol concepts accurately. Convenience abstractions are valuable, but hiding important behavior
-such as slippage, tax, oracle freshness, IBC routing, or transaction finality would make the tooling easier to misuse.
+such as slippage, tax, oracle freshness, or transaction finality would make the tooling easier to misuse.
 
 ### 4. Publish native grant tooling and maintain contract support
 
@@ -95,7 +95,7 @@ payments, and exercises committee recovery. Contributor interfaces need the orig
 accrued unpaid balance, currently payable amount, and cancellation history; stablecoin compensation uses the same API.
 
 CosmWasm upload and instantiation remain permissionless from launch
-([genesis §11](../governance/GENESIS.md#11-ibc-interchain-accounts-and-cosmwasm)). General contract tooling remains a
+([genesis §11](../governance/GENESIS.md#11-cosmwasm)). General contract tooling remains a
 separate product decision; native grants do not need a Rust workspace, optimizer artifact, or contract deployment.
 
 ### 5. Offer a repeatable local Ark environment
@@ -132,8 +132,7 @@ possession, vouch reference, and identity attestation to the platform, is specif
 hosting the member app can run it.
 
 The operations the earlier draft listed remain the wallet's later scope: simulation and comprehensible signing review,
-fee and tax presentation, Ark market operations with explicit pricing and slippage, IBC transfers and denomination
-provenance, a contributor's few interactions with the Disbursement module such as claiming accrued pay or changing its destination, and account
+fee and tax presentation, Ark market operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as claiming accrued pay or changing its destination, and account
 recovery, hardware-wallet use, and multisignature flows where supported.
 
 The first-party wallet should define the quality bar for message decoding and user safety, while the wallet kit and SDK
@@ -172,7 +171,7 @@ plan's numbers with the height they were read at: public bonded stake, the cap a
 gate, and the handover lines. A thin page on node queries meets round one; the full explorer follows the indexer.
 
 The explorer is also an operational tool. It should make block production, validator status, governance, oracle
-activity, IBC paths, upgrades, and relevant network health visible without pretending that every off-chain observation
+activity, upgrades, and relevant network health visible without pretending that every off-chain observation
 is consensus state.
 
 Shared decoding libraries between the SDK, wallet, indexer, and explorer will help prevent each product from assigning
@@ -273,15 +272,6 @@ Textual signing can improve legibility, but it needs accurate coin metadata and 
 remain a first-class path. Any legacy signing support should be a deliberate compatibility decision rather than the
 foundation of new tooling.
 
-### IBC and asset identity
-
-IBC assets require more than a ticker and icon. Tooling should preserve source chain, base denomination, channel path,
-trace, and the distinction between canonical and community-recognised representations. A friendly alias must not make
-two different voucher denominations appear interchangeable.
-
-Network-registry and indexer data can improve presentation, but the underlying on-chain denomination remains the
-identity used for balances and transactions.
-
 ### Infrastructure reliability
 
 First-party tooling depends on public RPC, gRPC, REST, WebSocket, indexer, and asset-metadata services. These need
@@ -317,7 +307,7 @@ This is a dependency order, not an implementation schedule:
    first, since they are what the rest is tested against; then the member process, its verifier, and the committee
    multisig, since the platform is built around them; then the platform's registration, grant funding, and release
    flows; then the wallet and the member app on it, the last thing a member touches and the first thing they see. The module's audit
-   sits before the first tranche, not before the build. Transfers, simulation, market operations, and IBC follow.
+   sits before the first tranche, not before the build. Transfers, simulation, and market operations follow.
 3. **Add the information layer.** A thin distribution view on node queries with round one; replayable indexing and the
    full explorer once the meanings of messages, events, assets, and account activity are stable enough to share.
 4. **Make third-party development routine.** Provide the wallet kit, documented interfaces, fixtures, and

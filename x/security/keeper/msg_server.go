@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -222,44 +220,4 @@ func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCom
 	}
 
 	return &types.MsgCommitteeCancelUpgradeResponse{}, nil
-}
-
-// CommitteeRecoverClient substitutes an expired or frozen IBC client as the
-// exact appointed committee, during the active term and window.
-func (m msgServer) CommitteeRecoverClient(ctx context.Context, msg *types.MsgCommitteeRecoverClient) (*types.MsgCommitteeRecoverClientResponse, error) {
-	if msg == nil {
-		return nil, fmt.Errorf("nil committee recover client message")
-	}
-	securityMandate, err := m.k.AuthoriseCommittee(
-		ctx,
-		msg.Committee,
-		msg.ExpectedTerm,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if msg.SubjectClientId == "" || msg.SubstituteClientId == "" {
-		return nil, errors.New("subject and substitute client identifiers must be set")
-	}
-	if msg.SubjectClientId == msg.SubstituteClientId {
-		return nil, errors.New("subject and substitute clients must differ")
-	}
-
-	if err := m.k.dispatch(ctx, &clienttypes.MsgRecoverClient{
-		SubjectClientId:    msg.SubjectClientId,
-		SubstituteClientId: msg.SubstituteClientId,
-		Signer:             m.k.effectiveAuthority(ctx),
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventCommitteeClientRecovered{
-		Term:               securityMandate.Term,
-		SubjectClientId:    msg.SubjectClientId,
-		SubstituteClientId: msg.SubstituteClientId,
-	}); err != nil {
-		return nil, err
-	}
-
-	return &types.MsgCommitteeRecoverClientResponse{}, nil
 }

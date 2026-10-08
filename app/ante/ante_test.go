@@ -80,14 +80,13 @@ func newBenchFixture(tb testing.TB) *benchFixture {
 
 	handler := ante.NewAnteHandler(
 		arkApp.AppCodec(),
-		arkApp.GetTxConfig(),
+		arkApp.TxConfig(),
 		arkApp.AccountKeeper,
 		arkApp.BankKeeper,
 		arkApp.FeeGrantKeeper,
 		arkApp.StakingKeeper,
 		arkApp.TreasuryKeeper,
 		arkApp.Privileges(),
-		arkApp.IBCKeeper,
 		arkApp.WasmKeeper.GetGasRegister(),
 		wasmtypes.DefaultNodeConfig(),
 		runtime.NewKVStoreService(arkApp.GetKey(wasmtypes.StoreKey)),
@@ -115,7 +114,7 @@ func (f *benchFixture) signedTx(tb testing.TB, gas uint64, msgs ...sdk.Msg) sdk.
 	require.NoError(tb, err)
 	tx, err := simtestutil.GenSignedMockTx(
 		rand.New(rand.NewSource(1)),
-		f.app.GetTxConfig(),
+		f.app.TxConfig(),
 		msgs,
 		sdk.NewCoins(required),
 		gas,
@@ -241,14 +240,14 @@ func TestPrivilegeVouchRunsAfterSignatureVerification(t *testing.T) {
 	f := newBenchFixture(t)
 	calls := 0
 	set := mempool.NewSet(mempool.Privilege{Lane: mempool.LaneGovernance, Msgs: []sdk.Msg{&banktypes.MsgSend{}}, Vouch: func(sdk.Context, sdk.Msg) (bool, error) { calls++; return true, nil }})
-	handler := ante.NewAnteHandler(f.app.AppCodec(), f.app.GetTxConfig(), f.app.AccountKeeper, f.app.BankKeeper,
-		f.app.FeeGrantKeeper, f.app.StakingKeeper, f.app.TreasuryKeeper, set, f.app.IBCKeeper,
+	handler := ante.NewAnteHandler(f.app.AppCodec(), f.app.TxConfig(), f.app.AccountKeeper, f.app.BankKeeper,
+		f.app.FeeGrantKeeper, f.app.StakingKeeper, f.app.TreasuryKeeper, set,
 		f.app.WasmKeeper.GetGasRegister(), wasmtypes.DefaultNodeConfig(), wasmTxCounterStore(t, f.app))
 	for _, valid := range []bool{false, true} {
 		t.Run(fmt.Sprint(valid), func(t *testing.T) {
 			calls = 0
 			tx := f.signedTx(t, 300_000, &banktypes.MsgSend{FromAddress: f.addr.String(), ToAddress: guardAddr(42).String(), Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1))})
-			builder, err := f.app.GetTxConfig().WrapTxBuilder(tx)
+			builder, err := f.app.TxConfig().WrapTxBuilder(tx)
 			require.NoError(t, err)
 			if !valid {
 				sigs, err := builder.GetTx().GetSignaturesV2()

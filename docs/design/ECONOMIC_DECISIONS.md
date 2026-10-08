@@ -19,7 +19,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D90: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90).
+- D72–D118: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D118](#d118).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -367,6 +367,8 @@ every block. Only the completeness flag survives, unchanged in meaning and emitt
 
 ## D40
 
+**Lifecycle:** The IBC half lapsed with [D118](#d118); the execution-tax semantics and the Wasm path stand.
+
 **Recorded status:** Confirmed.
 
 Begin Phase 4 by fixing execution-time tax payer, exactly-once identity, rollback, and fee-sponsorship semantics;
@@ -376,6 +378,8 @@ recipient-restriction activation gate passes.
 
 ## D41
 
+**Lifecycle:** IBC sends left the dispatcher's inputs with [D118](#d118); the ownership split stands.
+
 **Recorded status:** Confirmed.
 
 Use call-path ownership for exactly-once tax assessment: ante owns signed top-level inputs, while the Wasm
@@ -384,6 +388,8 @@ persistent transfer IDs, context markers, global Bank tax hook, or implicit exec
 contract pays the tax in addition to the complete requested principal.
 
 ## D42
+
+**Lifecycle:** The IBC packet clause lapsed with [D118](#d118); single-cache collection stands.
 
 **Recorded status:** Confirmed.
 
@@ -415,6 +421,8 @@ truncates to the zero sentinel.
 
 ## D45
 
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
+
 **Recorded status:** Confirmed.
 
 Build Ark's hub foundation against `github.com/cosmos/ibc-go/v11`, targeting v11.2.0 subject to
@@ -427,6 +435,8 @@ channel, v2 counterparty, or packet of any kind can exist until governance admit
 nothing more.
 
 ## D46
+
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
 
 **Recorded status:** Confirmed.
 
@@ -444,6 +454,8 @@ refund remain untaxed on both paths.
 
 ## D47
 
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
+
 **Recorded status:** Confirmed.
 
 Add IBC callbacks to both the Classic and v2 ICS-20 stacks when the Wasm keeper is wired. Callbacks are Ark's
@@ -452,6 +464,8 @@ same Wasm/Treasury execution adapter, while acknowledgement, timeout, and callba
 taxable transfers.
 
 ## D48
+
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
 
 **Recorded status:** Confirmed.
 
@@ -470,6 +484,8 @@ Remove Ark's unused legacy `wasmvm` v1 parser/query interfaces when the real run
 
 ## D50
 
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
+
 **Recorded status:** Confirmed.
 
 Consider 08-Wasm only with the Wasm foundation and only if its exact dependency and VM family integrates cleanly.
@@ -479,12 +495,16 @@ allowlist; add neither 06-Solo Machine nor the experimental attestations client.
 
 ## D51
 
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
+
 **Recorded status:** Confirmed.
 
 Keep packet forwarding Classic-only until upstream provides reviewed v2 support; do not invent a v2 PFM adapter.
 Add no ICS-29 relayer-fee wiring because that application was removed from IBC-Go.
 
 ## D52
+
+**Lifecycle:** Superseded by [D118](#d118): IBC removed.
 
 **Recorded status:** Confirmed.
 
@@ -493,6 +513,8 @@ allowlist. Defer a generic custom ICA authentication module; if contracts later 
 scoped Wasm-to-ICA adapter with explicit authorization.
 
 ## D53
+
+**Lifecycle:** The IBC clauses were superseded by [D118](#d118); no NFT module remains the decision.
 
 **Recorded status:** Confirmed.
 
@@ -601,7 +623,7 @@ therefore the permanent evidence model, not an interim one; the same-chain case 
 asset in the Reserve account is bank custody the recognition fold prices directly. The journal's append-only design
 keeps this reversible without migration: machine-authored entries could later land beside committee-authored ones
 if a chain-verifiable venue ever became real, but that requires its own spec and the [first-asset governance
-gate](../governance/GOVERNANCE_OPERATIONS.md#5-ark-governance-operations). Closes §12's adapter machinery beyond the D57 narrowing.
+gate](../governance/GOVERNANCE_OPERATIONS.md#3-ark-governance-operations). Closes §12's adapter machinery beyond the D57 narrowing.
 
 ## D60
 
@@ -1112,7 +1134,7 @@ info, spendable balances, send-enabled, and account lookups. D74 stands.
 
 **Lifecycle:** The following is the historical contract design. Its Rust workspace, Wasm fixture, and deployment
 workflow have been removed. Current custody, messages, and authorities are defined by the native
-[Disbursement module](../../x/disbursement/README.md); use the [grant runbook](../governance/GOVERNANCE_OPERATIONS.md#7-grant-tranches)
+[Disbursement module](../../x/disbursement/README.md); use the [grant runbook](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches)
 for operations.
 
 The [disbursement plan](../governance/DISBURSEMENT_PLAN.md)'s grants are created by a CosmWasm contract,
@@ -1251,6 +1273,22 @@ bonded stake passes 100M, when the founders' own stake can neither pass nor bloc
 nine decides it; the bloc rule releases nothing to a seat holder before then. What it costs: the founder's clock
 starts at that later proposal, other seat holders' grants wait for more public stake, and the founding band tops at
 15M. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D118
+
+**Recorded status:** Decided 2026-10-08. Supersedes [D45](#d45) to [D48](#d48) and [D50](#d50) to [D53](#d53); the
+IBC clauses of [D40](#d40) to [D42](#d42) lapse and their Wasm clauses stand.
+
+Remove IBC from the chain: core, both transfer routes, packet forwarding, rate limiting, callbacks, interchain
+accounts, general message passing, the 07-Tendermint and 08-Wasm clients, their stores and genesis sections, the
+redundant-relay ante decorator, the Treasury tax inputs for `MsgTransfer` and the v2 `MsgSendPacket`, and the
+security committee's client recovery. Wasmd stays and keeps ibc-go as a transitive dependency, so the contract
+runtime is wired with no channel keepers: a contract's IBC messages and queries are refused with an explicit error,
+its IBC entry points are unreachable, and the `ibc2` capability is withheld so a contract requiring it fails at
+upload. Why: the hub shipped shut and no counterparty route was planned, while the dormant stack still had to be
+carried by the tax calculator, the policy router, the launch artefact, the threat model, and a two-chain e2e tier.
+What it costs: interoperability, if ever wanted, starts from a decision and a store migration rather than the
+one-switch opening sequence D45 as amended described, which no longer has a switch.
 
 ## P1
 

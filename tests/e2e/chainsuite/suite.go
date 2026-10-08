@@ -48,7 +48,6 @@ func (s *Suite) createChain() {
 	s.name = s.T().Name()
 	s.Chain, err = CreateChain(s.GetContext(), s.T(), s.Config.ChainSpec)
 	s.Require().NoError(err)
-	s.Require().NoError(s.Chain.VerifyGasPrices(s.GetContext()))
 	if s.Config.UpgradeOnSetup {
 		s.UpgradeChain()
 	}

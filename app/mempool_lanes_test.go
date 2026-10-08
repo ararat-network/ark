@@ -37,7 +37,7 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	pool := arkApp.Pool()
 	r := rand.New(rand.NewSource(1))
-	txConfig := arkApp.GetTxConfig()
+	txConfig := arkApp.TxConfig()
 
 	sender := func() (*secp256k1.PrivKey, string) {
 		priv := secp256k1.GenPrivKey()

@@ -23,7 +23,7 @@ Market implements conversion between NOAH and registered assets, and between eli
 
 ## State and integration
 
-`Params`, `ArkPoolDelta`, `TobinTaxOverrides`, `ConversionPolicy`, and `ConversionMandate` are persistent collections. The transient store carries block-local conversion state. Market settles after governance has executed the block's proposals and before every later EndBlocker that moves funds, so a proposal's conversions settle in their own block and claims work observes settled funds. Native conversion minting belongs here; IBC voucher minting is a separate transfer-module responsibility.
+`Params`, `ArkPoolDelta`, `TobinTaxOverrides`, `ConversionPolicy`, and `ConversionMandate` are persistent collections. The transient store carries block-local conversion state. Market settles after governance has executed the block's proposals and before every later EndBlocker that moves funds, so a proposal's conversions settle in their own block and claims work observes settled funds. Native conversion minting belongs here.
 
 ## Conversion policy
 

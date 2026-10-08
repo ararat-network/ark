@@ -22,7 +22,7 @@ a structurally valid file does not prove that every requested feed can be priced
 
 Every default route ends on the `USD/NOAH` leg, which the generated config prices with an expiring bootstrap price, one
 NOAH per dollar until its `valid_until`, used only while no provider has a fresh NOAH sample. Do not add NOAH markets
-to a provider until the [opening runbook](../governance/GOVERNANCE_OPERATIONS.md#8-opening-conversion) calls for it:
+to a provider until the [opening runbook](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion) calls for it:
 the first live sample replaces the bootstrap price on every sidecar that carries the venue, and the
 `ark.pricefeed.bootstrap.price.uses` counter shows which legs still rely on it (D95).
 

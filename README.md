@@ -19,8 +19,7 @@ prices, with a governed capital structure standing behind the stablecoin liabili
 
 Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd` (Ark
 Daemon). Validators also run `pricefeed`, a separate off-chain sidecar that supplies the prices their nodes report in
-vote extensions. Ark interacts with other sovereign chains through [IBC](https://github.com/cosmos/ibc) and runs
-[CosmWasm](https://github.com/CosmWasm/wasmd) contracts.
+vote extensions. Ark runs [CosmWasm](https://github.com/CosmWasm/wasmd) contracts and has no IBC.
 
 What sets Ark apart is its economic model. There is no routine NOAH issuance: no mint module, no staking inflation, and
 no seigniorage. NOAH is minted and burned only inside stablecoin conversion, and three funds stand behind the
@@ -68,7 +67,7 @@ simulation, and failure handling for external transaction builders.
 
 | Directory                                                                | Entry point                                                                          |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [app](app/README.md)                                                     | Application wiring, transaction hooks, mempool, IBC/Wasm, and upgrades.              |
+| [app](app/README.md)                                                     | Application wiring, transaction hooks, mempool, Wasm, and upgrades.                  |
 | [abci](abci/README.md)                                                   | Oracle vote extensions, proposal envelope, preblock, and aggregation implementation. |
 | [pricefeed](pricefeed/README.md)                                         | Node-side cached client and off-chain sidecar/provider pipeline.                     |
 | [cmd/arkd](cmd/arkd/README.md), [cmd/pricefeed](cmd/pricefeed/README.md) | Binary startup and CLI ownership.                                                    |

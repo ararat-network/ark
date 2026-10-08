@@ -60,13 +60,11 @@ func NewRootCmd() *cobra.Command {
 		panic(err)
 	}
 
-	// IBC and Wasm are wired outside depinject, so appBuilder never sees them
-	// and their codecs, interfaces, and commands are registered by hand.
+	// Wasm is wired outside depinject, so appBuilder never sees it and its
+	// codec, interfaces, and commands are registered by hand.
 	manualBasics := module.BasicManager{}
 	for _, basics := range []module.BasicManager{
-		app.IBCModuleBasics(),
 		app.WasmModuleBasics(),
-		app.GMPModuleBasics(),
 	} {
 		basics.RegisterLegacyAminoCodec(clientCtx.LegacyAmino)
 		basics.RegisterInterfaces(clientCtx.InterfaceRegistry)

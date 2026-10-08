@@ -13,7 +13,7 @@ Reserve having changed. That is the mechanism working as designed, and this docu
 it somewhere calm rather than from a rejected transaction.
 
 Monitoring is `docs/operations/PROTOCOL_MONITORING.md`; §5 below answers its alerts by ID. The governance message table is
-`docs/governance/GOVERNANCE_OPERATIONS.md` §5, and the mechanism itself is [local design](../../x/treasury/README.md#exposure-sampling-and-refresh).
+`docs/governance/GOVERNANCE_OPERATIONS.md` §3, and the mechanism itself is [local design](../../x/treasury/README.md#exposure-sampling-and-refresh).
 
 Before any action, query the live appointment and its term/window, the relevant policy, balances, and bounds. After
 inclusion, verify transaction success and the resulting policy or custody state. A simulation is a preflight against
@@ -129,7 +129,7 @@ The factors hold at a 2% floor and a one-day recovery; in general they are `2 / 
 `1 / floor`. [Market's quote contract](../../x/market/README.md#local-quote-and-admission-contracts) derives them.
 
 **When to run it.** With a live NOAH price before conversion opens
-([opening conversion](GOVERNANCE_OPERATIONS.md#8-opening-conversion)), when a grant tranche adds liquid NOAH, and
+([opening conversion](GOVERNANCE_OPERATIONS.md#6-opening-conversion)), when a grant tranche adds liquid NOAH, and
 when `Query/Pool` shows `ark_pool_delta` held more negative than a hundredth of `base_pool`, which is expansion flow
 paying above the floor.
 

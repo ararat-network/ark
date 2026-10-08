@@ -32,7 +32,7 @@ maintain that boundary.
 
 ## Govern and respond
 
-- [Governance operations](governance/GOVERNANCE_OPERATIONS.md): proposals, dependent relayer actions, service permissions, and appointments.
+- [Governance operations](governance/GOVERNANCE_OPERATIONS.md): proposals, service permissions, and appointments.
 - [Economic committee runbook](governance/ECONOMIC_COMMITTEE_RUNBOOK.md): bounded policy changes, fund actions, conversion depth, and responses to economic alerts.
 - [Emergency submission runbook](governance/EMERGENCY_SUBMISSION_RUNBOOK.md): signing, private carriers, submission, inclusion checks, and rehearsal.
 
@@ -90,7 +90,7 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | `papers/` | Everyone. The manifesto and the whitepaper. |
 | `design/` | Protocol contributors and reviewers. The economic contract, its decision record, the threat model. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
-| `governance/` | Governance, committees, and relayers. Launch settings, proposals, and runbooks. |
+| `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |
 | `brand/` | Anyone showing the Ark mark. The logo kit and its usage guidelines. |
 | `direction/` | Contributors. Deferred changes and proposed tooling; none of it is shipped behaviour. |
@@ -107,7 +107,7 @@ construction belongs beside provider code; deploying the node and sidecar togeth
 2. Avoid duplicated specifications. Brief summaries are welcome, but formulas, parameter tables, compatibility rules,
    and procedures each have one maintained home. Link to that home where another audience needs the subject.
 3. Keep current behaviour, proposals, and superseded history distinguishable. Deferred code and dependency changes
-   belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md); post-launch governance and relayer operations belong in
+   belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md); post-launch governance operations belong in
    [GOVERNANCE_OPERATIONS.md](governance/GOVERNANCE_OPERATIONS.md). Label unimplemented proposals and historical decisions explicitly.
 4. Make documentation discoverable. The root README links here; this index links topic documents and subsystem entry
    points. Parent READMEs link their useful child READMEs, and local READMEs link the relevant topic documents.

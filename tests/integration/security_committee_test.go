@@ -220,11 +220,9 @@ func TestSecurityCommitteeRefusesAStranger(t *testing.T) {
 	})
 	require.ErrorContains(t, err, "signer is not the exact appointed account")
 
-	_, err = f.msgServer.CommitteeRecoverClient(f.ctx, &securitytypes.MsgCommitteeRecoverClient{
-		Committee:          stranger,
-		ExpectedTerm:       f.term,
-		SubjectClientId:    "07-tendermint-0",
-		SubstituteClientId: "07-tendermint-1",
+	_, err = f.msgServer.CommitteeCancelUpgrade(f.ctx, &securitytypes.MsgCommitteeCancelUpgrade{
+		Committee:    stranger,
+		ExpectedTerm: f.term,
 	})
 	require.ErrorContains(t, err, "signer is not the exact appointed account")
 

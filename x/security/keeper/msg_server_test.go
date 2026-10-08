@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"github.com/cosmos/gogoproto/proto"
-	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -128,17 +127,6 @@ func (s *KeeperTestSuite) TestCommitteeAuthorisationIsSharedAcrossHandlers() {
 			call: func(committee string, term uint64) error {
 				_, err := s.msgServer.CommitteeCancelUpgrade(s.ctx, &types.MsgCommitteeCancelUpgrade{
 					Committee: committee, ExpectedTerm: term,
-				})
-
-				return err
-			},
-		},
-		{
-			name: "recover client",
-			call: func(committee string, term uint64) error {
-				_, err := s.msgServer.CommitteeRecoverClient(s.ctx, &types.MsgCommitteeRecoverClient{
-					Committee: committee, ExpectedTerm: term,
-					SubjectClientId: testSubjectClient, SubstituteClientId: testSubstituteClient,
 				})
 
 				return err
@@ -333,68 +321,28 @@ func (s *KeeperTestSuite) TestCommitteeCannotReplaceAGovernancePlanInTwoSteps() 
 	s.Require().Empty(s.router.dispatched)
 }
 
-func (s *KeeperTestSuite) TestCommitteeRecoverClient() {
-	s.appoint()
-
-	s.Run("recovers", func() {
-		_, err := s.msgServer.CommitteeRecoverClient(s.ctx, &types.MsgCommitteeRecoverClient{
-			Committee:          s.committee,
-			ExpectedTerm:       1,
-			SubjectClientId:    testSubjectClient,
-			SubstituteClientId: testSubstituteClient,
-		})
-		s.Require().NoError(err)
-
-		dispatched, ok := s.router.only().(*clienttypes.MsgRecoverClient)
-		s.Require().True(ok)
-		s.Require().Equal(testSubjectClient, dispatched.SubjectClientId)
-		s.Require().Equal(testSubstituteClient, dispatched.SubstituteClientId)
-		s.Require().Equal(s.authority, dispatched.Signer)
-	})
-
-	s.Run("refuses identical clients", func() {
-		_, err := s.msgServer.CommitteeRecoverClient(s.ctx, &types.MsgCommitteeRecoverClient{
-			Committee:          s.committee,
-			ExpectedTerm:       1,
-			SubjectClientId:    testSubjectClient,
-			SubstituteClientId: testSubjectClient,
-		})
-		s.Require().ErrorContains(err, "subject and substitute clients must differ")
-	})
-
-	s.Run("refuses a missing client", func() {
-		_, err := s.msgServer.CommitteeRecoverClient(s.ctx, &types.MsgCommitteeRecoverClient{
-			Committee:       s.committee,
-			ExpectedTerm:    1,
-			SubjectClientId: testSubjectClient,
-		})
-		s.Require().ErrorContains(err, "subject and substitute client identifiers must be set")
-	})
-}
-
 // TestDispatchForwardsUpstreamEvents pins that what a target emits reaches the
 // transaction result. The router gives the target its own event manager, so a
-// dispatch that drops the result drops the events with it, and an IBC client
-// recovery would carry only this module's own event.
+// dispatch that drops the result would leave only this module's own event.
 func (s *KeeperTestSuite) TestDispatchForwardsUpstreamEvents() {
 	s.appoint()
 	s.router.events = sdk.Events{
-		sdk.NewEvent("recover_client", sdk.NewAttribute("client_id", testSubjectClient)),
+		sdk.NewEvent("software_upgrade", sdk.NewAttribute("name", committeeUpgradeName)),
 	}
 	ctx := s.ctx.WithEventManager(sdk.NewEventManager())
 
-	_, err := s.msgServer.CommitteeRecoverClient(ctx, &types.MsgCommitteeRecoverClient{
-		Committee:          s.committee,
-		ExpectedTerm:       1,
-		SubjectClientId:    testSubjectClient,
-		SubstituteClientId: testSubstituteClient,
+	_, err := s.msgServer.CommitteePlanUpgrade(ctx, &types.MsgCommitteePlanUpgrade{
+		Committee:    s.committee,
+		ExpectedTerm: 1,
+		Name:         committeeUpgradeName,
+		Height:       200,
 	})
 	s.Require().NoError(err)
 
 	emitted := ctx.EventManager().Events()
 	s.Require().Len(emitted, 2)
-	s.Require().Equal("recover_client", emitted[0].Type)
-	s.Require().Equal(proto.MessageName(&types.EventCommitteeClientRecovered{}), emitted[1].Type)
+	s.Require().Equal("software_upgrade", emitted[0].Type)
+	s.Require().Equal(proto.MessageName(&types.EventCommitteeUpgradeScheduled{}), emitted[1].Type)
 }
 
 // TestCommitteeMessagesRejectNil covers the defensive nil guard every handler
@@ -405,7 +353,5 @@ func (s *KeeperTestSuite) TestCommitteeMessagesRejectNil() {
 	_, err = s.msgServer.CommitteePlanUpgrade(s.ctx, nil)
 	s.Require().Error(err)
 	_, err = s.msgServer.CommitteeCancelUpgrade(s.ctx, nil)
-	s.Require().Error(err)
-	_, err = s.msgServer.CommitteeRecoverClient(s.ctx, nil)
 	s.Require().Error(err)
 }

@@ -1,5 +1,5 @@
-// Package security delegates bounded upgrade, IBC recovery, and halt actions to a committee. It
-// owns no funds or block hooks. Constructed upstream messages retain target-module validation; see
+// Package security delegates bounded upgrade and halt actions to a committee. It owns no funds
+// or block hooks. Constructed upstream messages retain target-module validation; see
 // x/security/README.md.
 package security
 

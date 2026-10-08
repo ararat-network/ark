@@ -2,7 +2,7 @@
 
 For contributors considering deferred code and dependency changes. Each item distinguishes shipped foundations from
 unimplemented work and states its revisit trigger. [Governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns
-actions available through existing messages and relayer procedures.
+actions available through existing messages.
 
 ## Contents
 

@@ -3,7 +3,7 @@
 - Status: **Current as of the dynamic-fee decorator; D78/D80 settled**
 - Last updated: 2026-09-05
 - Target SDK: cosmos-sdk v0.54.3
-- Audience: wallet, exchange, custody, and relayer authors building Ark transactions outside `arkd`
+- Audience: wallet, exchange, and custody authors building Ark transactions outside `arkd`
 
 This note is what you need to know before reading `proto/ark/treasury/v1/query.proto`. Ark charges a transfer tax
 and prices gas from consensus state, so a fee built the way it is built on a stock Cosmos chain will be refused.
@@ -134,8 +134,6 @@ These messages present a taxable input:
 - `cosmos.vesting.v1beta1.MsgCreateVestingAccount`, `MsgCreatePermanentLockedAccount`,
   `MsgCreatePeriodicVestingAccount` (the whole schedule as one input) — funding a vesting account is a transfer,
   and leaving it untaxed was Terra Classic's standard dodge
-- `ibc.applications.transfer.v1.MsgTransfer` and IBC v2 `MsgSendPacket` — the outbound leg only; forwarded hops,
-  acknowledgements, timeouts, and refunds are never re-presented (D46)
 - `cosmwasm.wasm.v1.MsgExecuteContract`, `MsgInstantiateContract`, `MsgInstantiateContract2`,
   `MsgStoreAndInstantiateContract` (attached funds)
 - `cosmos.authz.v1beta1.MsgExec`, recursively
