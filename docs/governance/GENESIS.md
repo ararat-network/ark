@@ -136,7 +136,7 @@ machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-commit
 | Seat grant | 5,000,000 NOAH, vesting from four to ten years after genesis | Decided | A continuous vesting account whose start is four years after genesis and whose end is ten: deferred pay for a decade of running the chain. Unvested coins can be delegated, vote, and be slashed, never transferred, so equal power is structural through the launch years and the floats stay the only liquid NOAH a founder holds until year four. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. The founding seats are the only granted stake, 5% of supply across ten; later validators bond NOAH they hold. |
 | Seat float | 300,000 NOAH, liquid | Decided | Unvested coins cannot pay fees. Operations need little; the floats are the only liquid NOAH at launch and so the only NOAH that can be converted into the currencies, about 4.5M across fifteen seats. |
 | Per-seat income | 0.025 NOAH a block, 131,400 a year, split 70/30 between the validator and oracle lanes | Decided | Funds a highly available operation with the price sidecar, on-call, and the governance and committee work, at about 10,000 USD a month. The targets are floors: once tax exceeds them the oracle lane takes every residual, so the mature split is set by revenue, not by these numbers (§4). |
-| `auth.params.tx_sig_limit` | `7` | Decided | The ante counts every member key of a multisig, not its threshold, so committees hold at most seven keys (§13). |
+| `auth.params.tx_sig_limit` | `10` | Decided | The ante counts every key of every signer, a multisig's whole membership rather than its threshold, so a committee holds at most ten keys, fewer when another account signs as fee payer. The SDK default is seven (§13). |
 | `auth.accounts` | empty in the artefact | Assembly | One continuous vesting account per seat, its window four to ten years after genesis time, holding the grant as its original vesting plus the float; the gentx self-delegates the grant. Committees are appointed after launch. |
 
 After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
@@ -269,7 +269,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, veto deposits burned) | SDK defaults | Default | Confirmed; the claims veto window and the tax-raise notice were sized on them. Lengthen after the calibration window if wanted. |
 | `gov.constitution` | empty | Default | |
 | `slashing.params` | window 10,000, 5% signed, 600 s jail, 0.01% downtime slash, 5% double-sign | Decided | The SDK default of a 100-block window at 50% jailed and slashed 1% after five minutes offline. This is the Cosmos Hub and Terra Classic production set: about 16 hours of window, and oracle attendance jailing is the sharper operational incentive. |
-| `auth.params` | SDK defaults, `tx_sig_limit` 7 | Decided | See §3. |
+| `auth.params` | SDK defaults except `tx_sig_limit` 10 | Decided | See §3. |
 | `bank.denom_metadata` | NOAH: base `anoah`, display `noah`, 18 decimals | Decided | The native and staking unit. |
 | `bank.params` | `default_send_enabled: true`, no per-denom entries | Default | The fund rules are send restrictions in code, not bank params. |
 | `mint` | absent | Decided | D1. |
@@ -335,7 +335,7 @@ emergency mandates buy real time.
 | Conversion | Depth, recovery, and spread corridor, Tobin band | At or after the opening of conversion, with a depth corridor to about ten times the genesis depth so routine raises need no vote (D95) | 4-of-7 |
 | Reserve | Deploy under an allowance, floor, and destination list | When a deployment is approved | 4-of-7 |
 
-Shape and hygiene: legacy amino threshold multisigs of at most seven keys, within `tx_sig_limit`; dedicated
+Shape and hygiene: legacy amino threshold multisigs of at most ten keys, within `tx_sig_limit`; dedicated
 hardware-backed committee keys, not operator keys; each multisig registered on chain with one transaction before
 appointment so the recorded shape is verified K-of-N; committee accounts funded from members' floats, never from
 Insurance or the Reserve. Terms: activation a few blocks after execution, expiry one chain year, annual reappointment;

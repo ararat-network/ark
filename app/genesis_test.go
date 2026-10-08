@@ -415,7 +415,7 @@ func TestLaunchGenesisPinsChainParams(t *testing.T) {
 
 	var authGenesis authtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authGenesis)
-	require.EqualValues(t, 7, authGenesis.Params.TxSigLimit, "committee multisigs hold at most seven member keys")
+	require.EqualValues(t, 10, authGenesis.Params.TxSigLimit, "committee multisigs hold at most ten member keys")
 	require.Empty(t, authGenesis.Accounts, "seats are added at assembly and committees appointed after launch")
 }
 

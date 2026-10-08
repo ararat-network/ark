@@ -1100,7 +1100,7 @@ window that funds that account.
 | Consensus signing window and minimum attendance | 10,000 blocks; 5% signed | Decided |
 | Downtime jail and slash | 600 seconds; 0.01% | Decided |
 | Double-sign slash | 5% | Decided |
-| Transaction signature limit | Seven member keys | Decided |
+| Transaction signature limit | Ten keys | Decided |
 | Contract upload and instantiation | Open | Decided |
 
 Governance percentages retain the SDK's tally rules, including the treatment of abstentions; they do not replace
