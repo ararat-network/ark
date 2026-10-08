@@ -1,4 +1,6 @@
-// Package disbursement integrates funded grants and compensation with the application runtime.
+// Package disbursement owns the member and contributor custody accounts, funded member and
+// ownership grants, and compensation, and pays each grant at EndBlock as it falls due. Market
+// fills the buy behind a stablecoin award. See x/disbursement/README.md.
 package disbursement
 
 import (
@@ -28,10 +30,11 @@ var (
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}
 
-	_ appmodule.AppModule = AppModule{}
+	_ appmodule.AppModule     = AppModule{}
+	_ appmodule.HasEndBlocker = AppModule{}
 )
 
-// AppModule exposes transaction-driven payments without BeginBlocker or EndBlocker work.
+// AppModule pays due grants at EndBlock and takes every other action through transactions.
 type AppModule struct {
 	k *keeper.Keeper
 }
@@ -70,7 +73,6 @@ func (am AppModule) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 func (am AppModule) RegisterServices(registrar grpc.ServiceRegistrar) error {
 	types.RegisterMsgServer(registrar, keeper.NewMsgServerImpl(am.k))
 	types.RegisterQueryServer(registrar, keeper.NewQueryServerImpl(am.k))
-
 	return nil
 }
 
@@ -86,7 +88,6 @@ func (am AppModule) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodin
 	if err := cdc.UnmarshalJSON(bz, &data); err != nil {
 		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
-
 	return data.Validate()
 }
 
@@ -107,8 +108,12 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 	if err != nil {
 		panic(err)
 	}
-
 	return cdc.MustMarshalJSON(gs)
+}
+
+// EndBlock pays the grants that came due in this block.
+func (am AppModule) EndBlock(ctx context.Context) error {
+	return am.k.EndBlocker(ctx)
 }
 
 // ConsensusVersion implements AppModule/ConsensusVersion.
