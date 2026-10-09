@@ -39,7 +39,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if !member {
 			return fmt.Errorf(
 				"%s account contains unsupported genesis denom %s: deposits must be %s "+
-					"or an Ark-issued asset",
+					"or a registered asset",
 				types.StrategicReserveName,
 				balance.Denom,
 				chain.NoahBaseDenom,
