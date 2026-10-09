@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -68,6 +69,9 @@ func (k *Keeper) appendEntry(ctx context.Context, record ledgerAppend) (uint64, 
 	}
 	if err := k.Ledger.Set(ctx, entry.EntryId, entry); err != nil {
 		return 0, fmt.Errorf("recording ledger entry %d: %w", entry.EntryId, err)
+	}
+	if err := k.LedgerByPosition.Set(ctx, collections.Join(entry.PositionId, entry.EntryId)); err != nil {
+		return 0, fmt.Errorf("indexing ledger entry %d: %w", entry.EntryId, err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventLedgerEntryRecorded{
 		EntryId:    entry.EntryId,

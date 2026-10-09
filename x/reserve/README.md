@@ -23,7 +23,7 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 ## State and integration
 
-`OpenPositions`, `ClosedPositions`, `Ledger`, `RecognitionPolicy`, and `ReversedReturns` separate current positions, permanent records, and policy. `Mandate` and `AllowanceUsed` track delegated authority. Valuation is calculated from current inputs rather than stored as a cached capital figure. App wiring sets the Treasury reader after construction.
+`OpenPositions`, `ClosedPositions`, `Ledger`, `RecognitionPolicy`, and `ReversedReturns` separate current positions, permanent records, and policy. `LedgerByPosition` indexes the ledger by position, so the position-filtered `Ledger` query reads only that position's entries; it and `ReversedReturns` are derived from the ledger at import, never exported. `Mandate` and `AllowanceUsed` track delegated authority. Valuation is calculated from current inputs rather than stored as a cached capital figure. App wiring sets the Treasury reader after construction.
 
 ## Mandate, custody, and journal
 

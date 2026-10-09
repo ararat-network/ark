@@ -7,12 +7,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/pagination"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
@@ -74,22 +76,20 @@ func (q queryServer) Position(ctx context.Context, req *types.QueryPositionReque
 }
 
 // OpenPositions queries the paginated open set: what recognition credits and
-// outstanding_deployed sums over. The page walks only the open store, so a
-// counting page request totals the open set rather than the whole record.
+// outstanding_deployed sums over. The page walks only the open store.
 func (q queryServer) OpenPositions(ctx context.Context, req *types.QueryOpenPositionsRequest) (*types.QueryOpenPositionsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	positions, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.OpenPositions,
-		req.Pagination,
+		page,
 		func(_ uint64, position types.Position) (types.Position, error) {
 			return position, nil
 		},
@@ -105,16 +105,15 @@ func (q queryServer) ClosedPositions(ctx context.Context, req *types.QueryClosed
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	positions, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.ClosedPositions,
-		req.Pagination,
+		page,
 		func(_ uint64, position types.Position) (types.Position, error) {
 			return position, nil
 		},
@@ -131,26 +130,36 @@ func (q queryServer) Ledger(ctx context.Context, req *types.QueryLedgerRequest) 
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
-	// Filtering happens before pagination selects a page, so a filtered answer
-	// is a page of that position's entries. The scan is over the whole ledger,
-	// keyed by entry ID.
-	entries, pageResponse, err := sdkquery.CollectionFilteredPaginate(
-		ctx,
-		q.k.Ledger,
-		req.Pagination,
-		func(_ uint64, entry types.AccountingEntry) (bool, error) {
-			return req.PositionId == 0 || entry.PositionId == req.PositionId, nil
-		},
-		func(_ uint64, entry types.AccountingEntry) (types.AccountingEntry, error) {
-			return entry, nil
-		},
-	)
+	// A position's entries page through its index, so a page reads only that
+	// position's entries; the whole ledger pages by entry ID. Either way the
+	// next key belongs to the form of the request that returned it.
+	var entries []types.AccountingEntry
+	var pageResponse *sdkquery.PageResponse
+	if req.PositionId == 0 {
+		entries, pageResponse, err = sdkquery.CollectionPaginate(
+			ctx,
+			q.k.Ledger,
+			page,
+			func(_ uint64, entry types.AccountingEntry) (types.AccountingEntry, error) {
+				return entry, nil
+			},
+		)
+	} else {
+		entries, pageResponse, err = sdkquery.CollectionPaginate(
+			ctx,
+			q.k.LedgerByPosition,
+			page,
+			func(key collections.Pair[uint64, uint64], _ collections.NoValue) (types.AccountingEntry, error) {
+				return q.k.Ledger.Get(ctx, key.K2())
+			},
+			sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.PositionId),
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("listing ledger: %w", err)
 	}

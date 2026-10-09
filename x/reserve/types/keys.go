@@ -22,4 +22,5 @@ var (
 	NextEntryIDKey       = collections.NewPrefix(6)
 	LedgerKey            = collections.NewPrefix(7)
 	ReversedReturnsKey   = collections.NewPrefix(8)
+	LedgerByPositionKey  = collections.NewPrefix(9)
 )
