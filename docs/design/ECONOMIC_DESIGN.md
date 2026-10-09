@@ -50,7 +50,8 @@ Authority is split by role. Governance holds every unbounded power. One threshol
 a bounded, height-scoped mandate: the economic-policy committee moves the reversible levers between governance-set
 bounds; the Claims committee submits claims within a term allowance; the Reserve committee deploys and keeps the
 books; Market's conversion committee moves spread and Tobin policy inside a corridor; the grants committee
-registers members and awards compensation within a term allowance. Every role has its own address
+appoints the registrar and awards compensation within a term allowance; the registrar, a single key the grants
+committee appoints under its mandate, registers members within the open tranche (D120). Every role has its own address
 and its own messages, and none holds general Bank authority (D31, D36).
 
 Market's virtual pool is denomination-bearing and launches in `axdr`; one governance message can re-denominate it live
@@ -191,7 +192,7 @@ stablecoin's eligibility and `axdr` stays convertible in both directions.
 | Market | Quotes, spread, final integer output, the denomination-bearing virtual pool, conversion escrow, mint and burn, atomic settlement, the conversion mandate | Tax policy, fund targets, allocation decisions |
 | Treasury | Tax policy and the one calculator, liability valuation, the three fund targets and the exposure multiplier, the expansion waterfall and coverage draw, reward funding and the subsidy pool, the base-fee controller, the economic-policy mandate; custody of the subsidy pool, the Buffer, and the tax collector | Quotes, pool state, gross conversion custody, mint or burn, claim adjudication, any fund's `recognised_capital` |
 | Claims | The Claims mandate, the claim record, the Insurance reservation, `claims_insurance` custody, Insurance `recognised_capital` | Tax, targets, the waterfall, liability valuation, the Reserve |
-| Disbursement | `disbursement` custody and the member and contributor pools, fully funded member and contributor schedules, ownership limits, compensation, conversion orders it executes as a Market trader, permanent beneficiary records and operation journal | Minting, quoting or settling conversions, delegation of unpaid principal, off-chain membership or work verification |
+| Disbursement | The member and contributor accounts, fully funded member and contributor schedules, the ownership cap, compensation, the conversions that fund stablecoin awards, executed as a Market trader, permanent beneficiary records and operation journal | Minting, quoting or settling conversions, delegation of unpaid principal, off-chain membership or work verification |
 | Reserve | `strategic_reserve` custody, the Reserve mandate, the quantity journal and positions, the recognition policy, Reserve `recognised_capital`, the governed commitments out of the Reserve | Tax, targets, the waterfall, liability valuation, claims |
 | Oracle | Consensus rates, the feed registry, the reference denomination, attendance and participation scores, Oracle reward allocation | Fiscal allocation, minting |
 | Asset | The registry and lifecycle of every non-NOAH Bank asset, settlement plans, the emergency-suspension mandate | Pricing, custody, allocation |
@@ -763,19 +764,20 @@ the wrong signer is rejected before any term reasoning.
 | --- | --- | --- |
 | Treasury | Parameters, appointment, and unrestricted valid economic policy | Policy inside the appointed corridor |
 | Claims | Parameters, appointment, submission, and cancellation | Term-limited submission and origin-limited cancellation |
-| Disbursement | Operational parameters, committee appointment, tranches, contributor awards, conversion orders, cancellation of grants and of a term's awards, term voids, reinstatement, controller recovery, and unallocated and contributor-pool returns | Member registration, suspension, and reinstatement, and compensation within a term allowance, under the committee's term and window |
+| Disbursement | Operational parameters, committee appointment, member tranches, contributor awards, cancellation of grants, term voids, reinstatement, controller recovery, and unallocated and contributor-pool returns | Member registration, suspension, and reinstatement, and compensation within a term allowance, under the committee's term and window |
 | Reserve | Recognition, appointment, corrections, commitments, and discretionary burns | Bounded deployment, bookkeeping, commitments, and burns |
 | Market | Parameters, appointment, conversion policy, and Tobin policy | Conversion corridor and Tobin band |
 | Oracle | Parameters, feeds, and reference unit | None |
 | Asset | Registry, lifecycle, settlement terms, and appointment | One suspension per asset per term |
 | Security | Appointment and standard-module authority | Own upgrade planning/cancellation and client recovery |
 
-The grants committee holds a committee mandate like the others: it can register members within the issuance window,
-suspend payments, reinstate members, and award compensation within its term allowance, never to a founding seat holder
-and never paying before the appointment's minimum first period, all under its exact term and active window. It cannot
-redirect or cancel an award.
-Executing an authorised conversion order is no one's role: any sender but governance may submit it, because the order
-already fixes the size, the denomination, and the worst spread. Anyone can trigger a release to the recorded payee; beneficiary and controller
+The grants committee holds a committee mandate like the others: it can appoint the registrar, suspend payments,
+reinstate members, and award compensation within its term allowance, under the per-record cap in the reference unit,
+with nothing paying before one period after the award, all under its exact term and active window. It awards no
+ownership, which is governance's alone (D113), and cannot redirect or cancel an award. The registrar is the module's
+second appointment, by the committee under its term for a window inside its own, cleared by a committee appointment:
+it registers members within the open tranche and nothing else; every appointment advances its term (D120).
+A stablecoin award converts its own funding when it is created, within the cap it carries. The block pays the recorded payee as each period falls due (D105); beneficiary and controller
 authority over destinations is specified in the [Disbursement README](../../x/disbursement/README.md) (D87).
 
 Market's `MsgSell` and `MsgBuy` are the trader's, and `MsgSettle` converts suspended supply under a plan. Four
@@ -800,8 +802,8 @@ sender, recipient, and coins, and the signed message is the authorisation. Every
 or event is an `anoah` value constructed from the whole decimal aggregate, never truncated for display.
 
 Disbursement records each award, payment, cancellation, and administrative change in a permanent journal and typed events.
-Its queries expose original terms, accrued unpaid entitlement, currently payable amounts, and per-denomination
-reservations and payments; the [Disbursement README](../../x/disbursement/README.md) defines this accounting surface.
+Its queries expose original terms, payments and remaining principal, each record's room under the ownership cap, and
+per-denomination reservations and custody; the [Disbursement README](../../x/disbursement/README.md) defines this accounting surface.
 
 ## 11. Transfer surfaces: Wasm
 

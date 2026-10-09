@@ -7,10 +7,11 @@ authorisation semantics that go with it.
 A mandate is one bounded, expiring delegation of a power governance already
 holds. Governance appoints an exact account for a half-open height window;
 the committee acts faster than a voting period allows; the appointment
-expires on its own. Seven mandates exist today — Treasury's economic-policy
+expires on its own. Eight appointments exist today — Treasury's economic-policy
 mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
-Reserve's, Security's, and Disbursement's grants mandate — and the sections
-below are the convention an eighth follows.
+Reserve's, Security's, Disbursement's grants mandate, and Disbursement's
+registrar, the one appointment a committee may make — and the sections below
+are the convention the next follows.
 
 ## What this package owns
 
@@ -58,6 +59,13 @@ mandate around it, then validate the whole:
 
 Building from the disabled constructor is what keeps a disablement's payload
 zeroed, so a stored disabled mandate is always the canonical one.
+
+An appointment is governance's unless a decision says otherwise. Disbursement's
+registrar (D120) is appointed by the grants committee under its own term, for a
+window inside the committee's, and a committee appointment clears it: the
+registrar is the committee's term-scoped state, as a usage figure is. The
+appointer differs, the envelope, its term rule, and its authorisation do not,
+and nothing in this package knows who appointed.
 
 Appointment-time checks belong here rather than at action time whenever they
 can be decided at appointment: a corridor denominated in a unit the live pool
@@ -123,11 +131,11 @@ signing needs of an external custody provider.
 Replacement advances the term, which is what makes term-scoped usage
 term-scoped: reset it in the same handler that stores the new appointment, so
 the appointment and the usage keyed to it can never skew. The Claims and
-Reserve mandates each reset an allowance; Asset's emergency mandate clears
-its recorded per-term suspensions. Disbursement's grants mandate needs no
-reset: it indexes compensation awards by term, so a new term starts empty by
-construction, and it leaves member suspensions standing, since governance
-voids a replaced term explicitly.
+Reserve mandates each reset an allowance, and Disbursement's grants mandate
+zeroes its usage figure; Asset's emergency mandate clears its recorded
+per-term suspensions. Disbursement's index of awards by term starts empty by
+construction, and a member suspension stands until the committee or
+governance reinstates it.
 
 ## Acting
 
@@ -141,7 +149,10 @@ because no governance authorisation depends on a mandate.
 
 The priority mempool lane carries committee messages ahead of other traffic,
 when every message qualifies. `Vouch` calls the module's AuthoriseCommittee,
-the same appointment check its handler runs first. An inactive or mismatched
+the same appointment check its handler runs first. The lane is the property
+of being a committee message: Disbursement's registrar is appointed through
+it and registers outside it, its batches routine traffic under its handler's
+own authorisation. An inactive or mismatched
 appointment rejects admission, as does a store error; submit only once the
 appointment is active. Ante evaluates this after signature verification.
 Mixed and authz transactions use the normal lane without priority vouches.

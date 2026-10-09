@@ -22,6 +22,7 @@ works down. It is not a claim of completeness: the last section lists what it le
 | Price providers | the internet | nothing; every one is an untrusted input |
 | Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and the accept list |
 | Committee accounts | off chain, usually multisigs | one bounded, expiring power per module, appointed by governance |
+| Registrar key | the member platform's signing service | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
 | Governance | on chain | every unbounded power, including appointing committees |
 | Release pipeline | CI and a maintainer's host | the binaries validators run |
 
@@ -239,48 +240,84 @@ and the chain records the shape it observed at appointment. A contract may hold 
 chain records that it is one and nothing about its code or membership, which its admin, its membership
 contract, or governance can change without a term advance. Governance holds every unbounded path, including
 Wasmd's authority policy over every contract, the return of subsidy NOAH to the community pool through a
-fixed-endpoint message with a per-proposal minimum (D83), the Disbursement module's tranches, conversion orders,
+fixed-endpoint message with a per-proposal minimum (D83), the Disbursement module's tranches, awards,
 operational parameters, and grants mandate through typed governance messages (D87–D89), and can replace or disable
-any committee. A committee's
+any committee, which clears the registrar the grants committee appointed (D120). A committee's
 transactions may need to reach a block during an incident, which is what the priority lane and the
 emergency submission runbook are for.
 
-**Launch supply.** Most NOAH starts in the Disbursement module's member and contributor pools and the ten founding
-seats hold the same grant, unvested for four years, so at launch governance is one seat one vote. The member pool has
-no exit, so no proposal can redirect it; the pace of both pools, the contributor pool's return path, and the 50M
+**Launch supply.** Most NOAH starts in the Disbursement module's member and contributor pools. The founding seats,
+seven to thirteen, hold the same grant, unvested for four years, and the founder's seat is half the others' sum, a
+third of the founding stake, so at launch the founder blocks alone and passing takes the founder plus half the other
+seats, a shape public stake erodes on a fixed per-seat schedule, 15M of public bonded stake an ally seat; the founder
+spreads the seat across the other nodes so no node holds a third of consensus power (D112). The member pool has
+no exit, so no proposal can redirect it; the pace of both pools, the contributor pool's return path, and the 52.5M
 community pool answer only to governance's own tally: half the bonded stake voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
 distributed NOAH is bonded: a proof-of-authority trust model until then
 ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the native [Disbursement module](../../x/disbursement/README.md): every commitment is fully funded in
-its own denomination, drawn from an open tranche or unallocated custody, with reservation, pool, and conversion-order
-counters backed by the module's Bank balance. Custody holds the distribution from block 1, so a defect in its
-accounting or tranche checks is exposed from launch. Payment requires both original
-schedule accrual and, for ownership, live concentration and founder-bloc limits. Fixed genesis founder identities and
-permanent beneficiary payment totals survive payee and controller rotation. Genesis rebuilds indexes and founder
-aggregates and validates Bank backing, histories, and absolute timestamps. There are no payment block hooks or scans
-of historical grants on release. Batches, schedules, references, issuance logs, and query pages have write-time bounds.
+its own denomination, drawn from the open member tranche or uncommitted contributor custody, with reservation, tranche, and
+conversion-order counters backed by the Bank balance of the account that holds them: the member account takes NOAH deposits only and
+pays members only; the contributor account holds every other award, order, and deposit. A send restriction admits only
+NOAH into the member account and only NOAH or a registered asset into the contributor account, on every Bank path,
+module-to-module included. Custody holds the distribution from block 1, so a defect in its accounting or tranche
+checks is exposed from launch. Payment requires original
+schedule accrual, and an ownership award must fit the per-record cap, 15M of committed ownership over every grant as a
+governance parameter, which binds beneficiary records; the proposal and the admission process tie a record to a person.
+Fixed genesis founder identities and committed-ownership totals survive payee and controller rotation. Genesis rebuilds indexes and the due queue
+and validates Bank backing, histories, and absolute timestamps. The block pays due grants at
+its end from a time-ordered queue, at most a thousand a block and with no scan of historical grants. A send Bank
+refuses at the payee is deferred a day and published rather than failing the block, since the payee is the one input
+a write cannot vet against every later restriction; every other failure there is an accounting invariant and halts,
+as in Claims. Batches, schedules, references, and query pages have write-time bounds.
 
-The grants committee holds a term-limited committee mandate whose messages ride the committee lane. It can register
-a fixed member award within a rolling issuance window, suspend member payments, reinstate them, and award compensation
-within its term allowance, each under its exact term and active window; it cannot redirect or cancel a grant. A
-committee award is compensation only, never to a founding seat holder, at most 100 a term, and pays nothing before the
-appointment's minimum first period, so a stolen key commits at most a term's allowance that governance can cancel
-before it accrues. The original member key alone changes a member payee, and the permanent registration index prevents
+**Stake purchase.** Distributed NOAH is for sale, and a buyer who stakes it holds a vote the seats do not answer
+(D93). A third of the vote blocks every proposal and, on the buyer's own validators, halts the chain. It takes about
+half of what everyone else has bonded: roughly 105M at a 20% public staking rate and 210M at 50% once the
+distribution is paid, 34M against the founding stake alone at ten seats, and through the middle distribution steps
+45M to 70M, from a float that is mostly liquid after the first year. Two thirds passes
+alone and takes twice that, a third of supply or more. A bought third also stops the handover and the committees:
+each member step opens by its own `MsgOpenTranche` vote, every contributor grant is a proposal, and every mandate is a term, so a blocker freezes the pools and
+lets each committee lapse. What bounds it: the purchase itself, on an open market from tens of thousands of holders;
+the 21-day unbonding; delegations visible on chain; validators voting the delegations they carry; and the relaunch,
+since the continuation export with `--jail-allowed-addrs` that answers a halt answers a bought vote too, with the
+buyer's balance left out, which is what makes the purchase a bad trade. Nothing today delays an upgrade or a pool
+spend past its vote, and nothing opens a step without one; both are open items under D93.
+
+The grants committee holds a term-limited committee mandate whose messages ride the committee lane. It can appoint the
+registrar, suspend member payments, reinstate them, and award compensation within its term's allowance at reference
+value, converting NOAH through Market for a stablecoin award within the award's cap, each under its exact term and
+active window; it awards no ownership, which is governance's alone (D113), and cannot redirect or cancel a grant.
+Registration is the registrar's (D120): a single key, the hottest on the chain, on the member platform's signing
+service, appointed by the committee under its term for a window inside the committee's, which the committee rotates
+without a vote and which a committee appointment clears, so no key registers under a replaced or disabled committee.
+Its batches ride the normal lane as routine traffic; only the appointment is a committee message. The
+open tranche is its only bound: a stolen registrar key pays out at most the tenths of what governance has opened before
+one committee transaction advances its term and refuses it, so governance sizes each tranche to the exposure it
+accepts; a stolen committee key can appoint a registrar of its own, so its exposure is the same as before. A committee award counts against the per-record compensation cap and pays
+nothing before one period after the award, a fortnight at launch, wherever its clock starts, so a stolen key commits at most a term's allowance, spread no
+thicker than the cap on any one record, that governance can cancel before it accrues. The cap values an award in the reference unit at
+the fresh oracle rates, so an award is refused while no rate is live, and a pushed rate changes only how much of the
+cap and the compensation allowance one award takes. The original member key alone changes a member payee, and the permanent registration index prevents
 registration again after cancellation or a destination change. Governance can replace a compromised committee, which
-advances the term so prepared transactions expire, void every suspension of the replaced term in one write, and cancel
-every unfinished award of that term in another, including any the key made while the vote was open; a suspension under
-the new term stands even in the same block. Reinstatement permits catch-up, so cancellation must follow a finding promptly.
-Cancellation pays no recipient: it freezes accrued debt, releases only unearned principal, and retains debt under the
-same ownership limits. Failed payments roll back Bank transfers, accounting, and journal entries together.
+advances the term so prepared transactions expire and clears the registrar it appointed in the same write,
+cancel that term's awards by ID and any the key made while the vote was open in a second, expedited one, inside the
+first period, and reinstate the members the key wrongly suspended, a hundred a message; a suspension stands until
+reinstated. Every registration records its registrar term and every award its committee term, so the old term's list is
+where the search for a key's fake members or awards starts. Reinstatement permits catch-up, so cancellation must follow a finding promptly.
+Cancellation itself pays no recipient: it freezes accrued debt, frees only unearned principal, and leaves the debt for
+the block to pay under the same cap, so a refusing payee cannot block it. A payment writes its Bank
+transfer, accounting, and journal entry together or not at all.
 
-Compensation is an untaxed protocol disbursement with a governance-approved denomination and work reference. New
-stablecoin commitments require an active Asset registry entry; later lifecycle or allowlist changes do not erase
-funded obligations. Governance controls compensation budgets; the module does not enforce off-chain work quality or
+Compensation is an untaxed protocol disbursement with a work reference, in NOAH or an active Asset registry entry;
+later lifecycle changes do not erase funded obligations. Governance controls compensation budgets; the module does not enforce off-chain work quality or
 prevent governance from mislabelling an ownership-scale award as compensation. Stablecoin custody comes from
-conversion orders: governance fixes the denomination, the NOAH amount, and the worst spread, and any sender may
-execute one through Market, so an adversarial sender chooses only the moment, at a spread the cap already accepts. A
-proposal cannot execute an order, because it would run after Market's settlement for the block. The permanent journal and typed events
-make awards, destinations, payments, parameter changes, and recovery publicly auditable. Private personnel data does
-not belong in public references. Admission runs off-chain in the
+the award itself: a stablecoin award draws uncommitted custody first and converts the rest from the contributor
+pool through Market, inside the message that creates it, offering at most its `max_offer`. The module sizes the
+smallest offer that funds the award, so a committee key cannot overpay beyond market price and the slippage of the
+award's own size, and the compensation allowance bounds that size. The permanent journal and typed events
+make awards, destinations, payments, suspensions, and control changes publicly auditable; governance actions are
+auditable in their proposals. Private personnel data does
+not belong in public references, the registration batch reference included. Admission runs off-chain in the
 member platform: a third-party identity verifier returns a uniqueness attestation, and the platform keeps that and a
 dedup token, never the document, beside the vouch graph. The verifier's API is a boundary the chain never sees, and the
 attestation store is the platform's second asset after the committee key, since it links a person to an address; the
@@ -288,14 +325,17 @@ plan's counsel item covers what it obliges. The wallet holds the member's key, a
 none and asks for every signature through the wallet kit.
 
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
-on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds.
+on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds; the
+registrar is one more envelope under the committee's, with its own term, inside its window, cleared with it, appointed
+through the committee's lane and registering on the normal one.
 Committee actions dispatch through the module's own message router, so every target re-validates. A
 contract acts by dispatching the committee message from a proposer-signed `MsgExecuteContract`: Wasmd
 checks the message names the contract, the policy router taxes it, the module re-validates term and
 window, and the transaction rides the normal lane.
 
 **Review questions.** Does a new committee power have a bound the mandate states? Is its message in the
-lane and the gate? Does the runbook still describe how it reaches a block under congestion?
+lane and the gate? Does the runbook still describe how it reaches a block under congestion? Does a change give a
+bare stake majority a faster or quieter path to an irreversible act, or a blocking minority a new vote to stop?
 
 ### 2.8 Releases and supply chain
 

@@ -836,18 +836,27 @@ validator-seat grants.
 There is no separate investor, backer, or public allocation at launch. The initial supply can subsequently change
 through conversion and authorised burns; it is not a permanent maximum supply.
 
-Each founding validator seat receives 5,000,000 NOAH in a staking grant that vests continuously from the fourth year
-after genesis to the tenth, and 300,000 NOAH of liquid float, both from the community pool. The grant is
-self-delegated at genesis and can participate in staking and governance and be slashed, but cannot be transferred
-until it vests. The float pays operating expenses and permits initial currency conversion.
-For `n` seats, the community pool retains `103,000,000 − 5,300,000n` NOAH, so it funds at most nineteen seats. Seat assembly transfers existing supply
-and raises both reward targets by the per-seat shares in Section 7.1; it creates no additional NOAH.
+Each founding seat is a 5,000,000 NOAH staking grant, whatever the count, vesting
+continuously from the fourth year after genesis to the eighth, with 50,000 NOAH of liquid float, both from the community pool. The
+founder's seat is half the other seats' sum, a third of the founding stake, 22,500,000 NOAH at ten seats, on the same
+account and schedule and from the same pool: consensus weight for the launch window, while the founder's work before
+launch is paid by a 15,000,000 NOAH founding-band grant from the contributor pool, proposed in the first review round
+with the founder abstaining. Each grant can participate in staking and governance and be
+slashed, but cannot be transferred until it vests. Every gentx self-delegates one seat; the founder delegates the rest
+across the other seats in the first blocks, so no node holds a third of consensus power while one vote from the
+founder's account carries the whole seat. The float pays operating expenses.
+For `n` seats, between seven and thirteen, the community pool retains `103,000,000 − 5,050,000n − 2,500,000(n − 3)`
+NOAH, the founder's excess over one seat being the last term: the count sets the pool's cost, not each grant. Seat assembly
+transfers existing supply and raises both reward targets by the per-seat shares in Section 7.1; it creates no
+additional NOAH.
 
-The founder's work before launch is paid from the contributor pool rather than at genesis: one grant of 15,000,000
-NOAH, 20,000,000 with the founder's seat, 2% of initial supply. It is proposed only once public bonded stake exceeds
-100,000,000 NOAH, when the founders' own stake can neither pass nor block a proposal, and is paid under the ownership
-limits that bind every contributor grant: at each payment the founding validators together hold at most 30% of
-bonded stake, and with ten seats the founder under a tenth. [Ark: Disbursement plan][ark-disbursement]
+At genesis the founder can block any proposal alone and the other seats together cannot pass over the founder's no;
+the founder passes nothing alone, a third being under quorum, and passing takes the founder plus half the other seats.
+Public bonded stake dissolves this on a fixed schedule: the seat's sole block with the first few delegations, the
+founder with `m` other seats once the public has bonded `15,000,000m` NOAH, and the seat with the founder's grant
+beside it once the public has bonded twice what the grant has paid. Every ownership payment from the pools is bound
+by a per-record cap of 15,000,000 NOAH over every grant, a governance parameter the seat sits outside, so no
+contributor is paid more ownership than the founder's grant. [Ark: Disbursement plan][ark-disbursement]
 
 The validator-set cap is one hundred, unbonding takes twenty-one days, and the minimum commission is 5%. Governance
 uses a 50% quorum, a 66.7% ordinary approval threshold, and a 75% expedited threshold, with the SDK's applicable
@@ -1024,9 +1033,9 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Buffer seed | 10,000,000 NOAH; 1% | Decided |
 | Insurance seed | 5,000,000 NOAH; 0.5% | Decided |
 | Disbursement pools | 439,200,000 NOAH for members and 292,800,000 NOAH for contributors | Decided |
-| Community pool | 103,000,000 NOAH before seats; subtract 5,300,000 per seat | Decided |
-| Seat staking grant | 5,000,000 NOAH, self-delegated at genesis, vesting from year four to year ten | Decided |
-| Seat liquid float | 300,000 NOAH | Decided |
+| Community pool | 103,000,000 NOAH before seats; subtract 5,050,000 per seat | Decided |
+| Seat staking grant | 5,000,000 NOAH per seat, the founder's half the others' sum, 67,500,000 at ten; one seat self-delegated at genesis, vesting from year four to year eight | Decided |
+| Seat liquid float | 50,000 NOAH | Decided |
 | Validator funding target | 0.0175 NOAH per block per seat | Assembly |
 | Oracle funding target | 0.0075 NOAH per block per seat | Assembly |
 | Transfer-tax rate and cap | 0.5%; 1,000 XDR per taxable input | Decided |
@@ -1034,9 +1043,9 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Reward funding window | 100,800 blocks, approximately one week | Decided |
 | Distribution community tax | 0; the community pool is separately seeded | Decided |
 
-For fifteen seats, the allocations are 75,000,000 NOAH in seat grants, 4,500,000 liquid NOAH, and 23,500,000 NOAH
-remaining in the community pool, alongside the four fund seeds and the disbursement pools. This illustrates the fixed
-allocation rule, not an announced initial seat count; more than nineteen seats would need smaller disbursement pools.
+For fifteen seats, the allocations are 75,000,000 NOAH in seat grants, 750,000 liquid NOAH, and
+27,250,000 NOAH remaining in the community pool, alongside the four fund seeds and the disbursement pools. This
+illustrates the per-seat rule, not an announced initial seat count.
 The subsidy's zero-revenue runway is approximately 50.7 years under the unchanged per-seat targets, before any subsidy
 return to the community pool.
 
@@ -1168,8 +1177,8 @@ behaviour.
 - [Security][ark-security], [Application][ark-app], and [Mempool][ark-mempool]: emergency authority and execution.
 - [Threat model][ark-threat]: trust boundaries and their controls.
 - [Launch genesis][ark-genesis] and [curated genesis data](../../app/genesis/genesis.json): configuration and status.
-- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its ownership limits, and the
-  founder's grant.
+- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its ownership cap, and the
+  founder's seat and grant.
 - Direct source checks include [conversion settlement](../../x/treasury/keeper/settlement.go), [liability
   valuation][ark-liability], [fixed-rate redemption](../../x/market/keeper/orders.go), and [asset settlement
   plans][ark-settlement].
