@@ -30,6 +30,23 @@ func (k *Keeper) validateCompensation(ctx context.Context, denom string) error {
 	return nil
 }
 
+// compensationSchedule is a count of compensation periods, one for a lump. The clock reaches back at
+// most a quarter, which the cap charges in the award's first window (D122).
+func (k *Keeper) compensationSchedule(ctx context.Context, startTime uint64, periods uint32) (types.Schedule, error) {
+	now := chain.BlockSeconds(ctx)
+	if err := types.ValidateStartTime(startTime, now); err != nil {
+		return types.Schedule{}, err
+	}
+	if startTime+types.MaxCompensationBackdate < now {
+		return types.Schedule{}, errors.New("a compensation clock starts at most a quarter before its award")
+	}
+	params, err := k.Params.Get(ctx)
+	if err != nil {
+		return types.Schedule{}, err
+	}
+	return types.CompensationSchedule(params.CompensationPeriod, periods)
+}
+
 // awardValue prices a compensation award in the reference unit at the fresh rates Market quotes
 // with, rounded up so the whole award counts against the cap.
 func (k *Keeper) awardValue(ctx context.Context, amount sdk.Coin) (math.Int, error) {
