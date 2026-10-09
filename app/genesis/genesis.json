@@ -42,6 +42,15 @@
     "bank": {
       "balances": [
         {
+          "address": "ark130txsy9c4tfug4j555rvqt7vmz87dmfdc9kgu8",
+          "coins": [
+            {
+              "amount": "292800000000000000000000000",
+              "denom": "anoah"
+            }
+          ]
+        },
+        {
           "address": "ark14sc6kwk6n83cr9hndw3ftd2c5qyxkhnx9y5ak8",
           "coins": [
             {
@@ -78,19 +87,19 @@
           ]
         },
         {
-          "address": "ark1m6v6phrm6e83w55uhxkluq3y6eyxx7udqu9kvk",
+          "address": "ark1m57j9q3qewpndygg6xc74m6eh0f8c8w3ulnme2",
           "coins": [
             {
-              "amount": "5000000000000000000000000",
+              "amount": "439200000000000000000000000",
               "denom": "anoah"
             }
           ]
         },
         {
-          "address": "ark1xnz66njawtkzq4w8x6vcn95uvjy0y2vkjl8nme",
+          "address": "ark1m6v6phrm6e83w55uhxkluq3y6eyxx7udqu9kvk",
           "coins": [
             {
-              "amount": "732000000000000000000000000",
+              "amount": "5000000000000000000000000",
               "denom": "anoah"
             }
           ]
@@ -507,77 +516,25 @@
     },
     "disbursement": {
       "params": {
-        "max_members": "250",
-        "window_seconds": "604800",
-        "member_amount": "10000000000000000000000",
-        "member_schedule": [
-          {
-            "length": "1",
-            "parts": "4"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          },
-          {
-            "length": "2628000",
-            "parts": "3"
-          }
-        ],
-        "compensation_denoms": [
-          "anoah"
-        ]
-      },
-      "ownership_policy": {
-        "numerator": "1",
-        "denominator": "5",
-        "ceiling": "60000000000000000000000000"
-      },
-      "beneficiaries": [],
-      "grants": [],
-      "totals": [],
-      "issuance": {
-        "entries": []
+        "member_amount": "20000000000000000000000",
+        "member_schedule": {
+          "first_length": "1",
+          "first_weight": "4",
+          "period_length": "2628000",
+          "period_weight": "3",
+          "periods": 12
+        },
+        "compensation_cap": "1000000000000000000000000",
+        "compensation_window": "31536000",
+        "compensation_period": "1209600",
+        "ownership_cap": "15000000000000000000000000",
+        "ownership_schedule": {
+          "first_length": "31536000",
+          "first_weight": "26",
+          "period_length": "1209600",
+          "period_weight": "1",
+          "periods": 78
+        }
       },
       "grants_mandate": {
         "envelope": {
@@ -593,22 +550,33 @@
             "member_count": 0
           }
         },
-        "compensation_allowance": [],
-        "min_first_period": "0"
+        "compensation_allowance": "0"
       },
-      "journal": [],
+      "compensation_used": "0",
+      "registrar_mandate": {
+        "envelope": {
+          "term": "0",
+          "committee": "",
+          "activation_height": "0",
+          "expiry_height": "0",
+          "committee_shape": {
+            "account_type": "",
+            "key_kind": "COMMITTEE_KEY_KIND_UNSPECIFIED",
+            "module": "",
+            "threshold": 0,
+            "member_count": 0
+          }
+        }
+      },
+      "beneficiaries": [],
+      "grants": [],
+      "books": [],
+      "member_tranche": "0",
+      "grant_journal": [],
+      "beneficiary_journal": [],
       "next_grant_id": "1",
-      "next_journal_id": "1",
-      "voided_terms": [],
-      "member_pool": {
-        "unallocated": "439200000000000000000000000",
-        "open": "0"
-      },
-      "contributor_pool": {
-        "unallocated": "292800000000000000000000000",
-        "open": "0"
-      },
-      "conversion_orders": []
+      "next_grant_entry_id": "1",
+      "next_beneficiary_entry_id": "1"
     }
   },
   "app_version": "",

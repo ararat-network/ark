@@ -420,9 +420,9 @@ func TestLaunchGenesisPinsChainParams(t *testing.T) {
 }
 
 // TestLaunchGenesisSupplyLedger pins the billion-NOAH supply and its
-// allocation: four fund seeds as plain balances and the rest in the community
-// pool, whose fee-pool entry must match the module balance or Distribution's
-// InitGenesis panics.
+// allocation: four fund seeds and the two distribution accounts as plain
+// balances and the rest in the community pool, whose fee-pool entry must match
+// the module balance or Distribution's InitGenesis panics.
 func TestLaunchGenesisSupplyLedger(t *testing.T) {
 	_, state := launchGenesis(t)
 	_, cdc := cliBasicManager(t)
@@ -434,7 +434,8 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName).String(): noah(launchBufferNoah),
 		authtypes.NewModuleAddress(claimstypes.InsuranceName).String():          noah(launchInsuranceNoah),
 		authtypes.NewModuleAddress(distrtypes.ModuleName).String():              noah(launchCommunityPoolNoah),
-		authtypes.NewModuleAddress(disbursementtypes.ModuleName).String():       noah(launchMemberPoolNoah + launchContributorPoolNoah),
+		authtypes.NewModuleAddress(disbursementtypes.MembersName).String():      noah(launchMemberPoolNoah),
+		authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String(): noah(launchContributorPoolNoah),
 	}
 	require.Len(t, bankGenesis.Balances, len(want))
 	total := math.ZeroInt()
@@ -454,12 +455,10 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		distrGenesis.FeePool.CommunityPool,
 	)
 
-	// The pools split 60/40 and open nothing; each step's tranche is a governance act.
+	// The accounts split 60/40 and open nothing; the member tranche is a governance act.
 	var disbursementGenesis disbursementtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementGenesis)
-	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchMemberPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.MemberPool)
-	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchContributorPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.ContributorPool)
-	require.Empty(t, disbursementGenesis.ConversionOrders)
+	require.Empty(t, disbursementGenesis.Books)
 }
 
 // TestLaunchGenesisPinsArkEconomics pins the launch values of the Ark modules.
@@ -541,9 +540,10 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			operator, err := record.GetAddress()
 			require.NoError(t, err)
 
-			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
+			// One operator is seated with the seat grant.
+			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant))
 			float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
-			require.NoError(t, arkgenesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{operator}, genesisTime))
+			require.NoError(t, arkgenesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{operator}, operator, genesisTime))
 
 			privVal := mock.NewPV()
 			consPub, err := privVal.GetPubKey()
@@ -553,7 +553,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			createValidator, err := stakingtypes.NewMsgCreateValidator(
 				sdk.ValAddress(operator).String(),
 				consPubKey,
-				sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)),
+				sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant),
 				stakingtypes.NewDescription("seat", "", "", "", ""),
 				stakingtypes.NewCommissionRates(
 					math.LegacyMustNewDecFromStr("0.05"),
@@ -598,7 +598,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
 			require.NoError(t, err)
 			require.True(t, validator.IsBonded())
-			require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
+			require.Equal(t, chain.SeatGrant, validator.Tokens)
 
 			account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.ContinuousVestingAccount)
 			require.True(t, ok, "the seat stays a continuous vesting account")
@@ -611,7 +611,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
 			require.NoError(t, err)
 			require.Equal(t,
-				math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(chain.SeatGrantNoah+chain.SeatFloatNoah))),
+				math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(chain.SeatGrant.Add(noah(chain.SeatFloatNoah)))),
 				feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
 			)
 			require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)

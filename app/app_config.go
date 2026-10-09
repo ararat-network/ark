@@ -101,7 +101,8 @@ var (
 		// The strategic Reserve is the one fund account that may burn.
 		{Account: reservetypes.StrategicReserveName, Permissions: []string{authtypes.Burner}},
 		{Account: claimstypes.InsuranceName},
-		{Account: disbursementtypes.ModuleName},
+		{Account: disbursementtypes.MembersName},
+		{Account: disbursementtypes.ContributorsName},
 		{Account: treasurytypes.TransferTaxCollectorName},
 		{Account: oracletypes.ModuleName},
 	}
@@ -116,8 +117,9 @@ var (
 		wasmtypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
-		// Gov, Subsidy, Redemption Buffer, Strategic Reserve, Insurance, and Disbursement accounts accept direct
-		// funding and are absent from this blocklist.
+		// Gov, Subsidy, Redemption Buffer, Strategic Reserve, Insurance, and both Disbursement accounts
+		// accept direct funding and are absent from this blocklist; each custody owner's send restriction
+		// decides what a deposit may hold.
 	}
 
 	ModuleConfig = []*appv1alpha1.ModuleConfig{
@@ -169,6 +171,11 @@ var (
 					// Claims sweeps after governance. The cancellation cutoff independently
 					// prevents a claim from being both vetoable and executable.
 					claimstypes.ModuleName,
+					// Disbursement pays from custody it already holds: a stablecoin
+					// award's buy fills in the transaction that makes it. It follows gov,
+					// so a proposal executed this block, such as a cancellation, governs
+					// this block's payments.
+					disbursementtypes.ModuleName,
 				},
 				OverrideStoreKeys: []*runtimev1alpha1.StoreKeyConfig{
 					{
@@ -232,6 +239,7 @@ var (
 					treasurytypes.ModuleName,
 					claimstypes.ModuleName,
 					reservetypes.ModuleName,
+					disbursementtypes.ModuleName,
 				},
 			}),
 		},
