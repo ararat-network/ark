@@ -97,18 +97,19 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
-| `disbursement` | none | open | The member and contributor pools from genesis, fully funded grants, and compensation; governance opens tranches and nothing else draws the pools (D87, D88). |
+| `disbursement_members` | none | open, NOAH only | The member pool and every member grant's escrow; a NOAH deposit joins the pool unopened (D107), governance opens tranches, nothing else draws it, and it has no exit (D87, D88). |
+| `disbursement_contributors` | none | open | The contributor pool, ownership and compensation escrow in every denomination, and deposits; a NOAH deposit joins the pool, which has no tranche, and governance may return it to the community pool (D87, D88, D117). |
 | `gov` | Burner | open | Holds deposits, and is the signer of every proposal-executed message. |
 | `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; wasm holds Burner. |
 
 The blocked list replaces the SDK default rather than augmenting it, so every blocked account above is named
-explicitly and the four protocol-fund custody accounts, `disbursement`, and `gov` are deliberately left out.
+explicitly and the four protocol-fund custody accounts, `disbursement_contributors`, and `gov` are deliberately left out.
 
 ### Supply ledger
 
 Total supply is 1,000,000,000 NOAH, `1000000000000000000000000000` in base units. There are no investors, backers, or
-public allocation at launch: the protocol funds are seeded, the member and contributor pools are held by the
-Disbursement module, the validator seats are granted, and the remainder is the community pool, which governance spends
+public allocation at launch: the protocol funds are seeded, the member and contributor pools are held in the
+Disbursement module's two accounts, the validator seats are granted, and the remainder is the community pool, which governance spends
 by vote (D88).
 
 | Balance | NOAH | Share | Status | Why |
@@ -117,27 +118,29 @@ by vote (D88).
 | `strategic_reserve` | 50,000,000 | 5% | Decided | Governance's intervention capacity through the first growth phase; commitments to the Buffer and surplus burns are its only exits. |
 | `treasury_redemption_buffer` | 10,000,000 | 1% | Decided | Full coverage on the first 10M NOAH of liability, so early redemptions pay from inventory rather than minting. |
 | `claims_insurance` | 5,000,000 | 0.5% | Decided | The only claims capacity until the waterfall reaches Insurance, which is last in line. |
-| `disbursement` member pool | 439,200,000 | 43.92% | Decided | 60% of the distribution. Tranches open by vote; the pool has no exit, so it pays members or nobody (D88). |
-| `disbursement` contributor pool | 292,800,000 | 29.28% | Decided | 40% of the distribution: ownership awards, compensation, and conversion orders. Governance may return it to the community pool (D88). |
-| `distribution` (community pool) | 103,000,000 less the seats | 10.3% | Decided | 50,000,000 after ten seats: governance's discretionary fund, and the backstop behind the Reserve and subsidy pool. Assembly moves 5,300,000 NOAH per seat out of it (§12). |
+| `disbursement_members` | 439,200,000 | 43.92% | Decided | 60% of the distribution. Tranches open by vote; the account has no exit, so it pays members or nobody (D88). |
+| `disbursement_contributors` | 292,800,000 | 29.28% | Decided | 40% of the distribution: ownership awards and compensation, converting NOAH for stablecoin awards. Governance may return it to the community pool (D88). |
+| `distribution` (community pool) | 103,000,000 less the seats | 10.3% | Decided | 35,000,000 after ten seats with the founder's: governance's discretionary fund, and the backstop behind the Reserve and subsidy pool. Assembly moves 5,050,000 per seat out of it, the 5,000,000 grant and the 50,000 float, and the founder's excess over one seat (§12, D115). |
 
 Under the defensive target ratios in §4, fund targets are zero until conversion creates liability, so the seeds are
 what give the funds capacity before the first expansion.
 
 ### Validator seats
 
-The ten founding validators hold the same stake, granted from the community pool, so at launch governance is one seat
-one vote. Entry after launch is open: a validator bonds NOAH it holds, and no proposal grants a seat (D84). Until
-distributed NOAH is bonded the founders hold every vote, a proof-of-authority trust model on proof-of-stake
-machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-committees) records it.
+The founding validators, seven to thirteen of them, hold the same seat, granted from the community pool, and the
+founder's seat is half the other seats' sum, a third of the founding stake, its excess over one seat granted from the
+contributor pool (D112). Entry after launch is open: a validator bonds NOAH it holds, and no proposal grants a seat
+(D84). Until distributed NOAH is bonded the founders hold every vote, a proof-of-authority trust model on
+proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-committees) records it.
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| Seat grant | 5,000,000 NOAH, vesting from four to ten years after genesis | Decided | A continuous vesting account whose start is four years after genesis and whose end is ten: deferred pay for a decade of running the chain. Unvested coins can be delegated, vote, and be slashed, never transferred, so equal power is structural through the launch years and the floats stay the only liquid NOAH a founder holds until year four. A double-sign takes 250,000 NOAH, two years of income; downtime takes 500. The founding seats are the only granted stake, 5% of supply across ten; later validators bond NOAH they hold. |
-| Seat float | 300,000 NOAH, liquid | Decided | Unvested coins cannot pay fees. Operations need little; the floats are the only liquid NOAH at launch and so the only NOAH that can be converted into the currencies, about 4.5M across fifteen seats. |
+| Seat grant | 5,000,000 NOAH, vesting from four to eight years after genesis | Decided | A continuous vesting account whose start is four years after genesis and whose end is eight: a founding allocation a leaver keeps (D101), its cliff covering the launch window and its tail finishing about when public bonded stake passes the seats (D114). Unvested coins can be delegated, vote, and be slashed, never transferred, so equal power is structural through the launch years and the floats stay the only liquid NOAH a founder holds until year four. A double-sign takes 250,000 NOAH, under two years of income; downtime takes 500. The founding seats are the only granted stake, 5M a seat whatever the count, the founder's beside them, 6.75% of supply at ten (D111, D112); later validators bond NOAH they hold. |
+| Founder's seat | Half the other seats' sum, 22,500,000 NOAH at ten seats, on the seat's schedule | Decided | A third of the founding stake at any count, the founder's allocation for building the chain and the veto in the launch window, which public stake dissolves from the first delegation; all of it from the community pool like any seat. The founder's gentx self-delegates one seat and the rest is delegated across the other seats in the first blocks, so no node holds the third. Assembly accepts seven to thirteen seats: under seven the founding stake falls under 40M, over thirteen the founder's seat passes 3% of supply (D112, D115). The founder's 15,000,000 NOAH grant for the work before launch is a contributor award by vote, not a genesis figure. |
+| Seat float | 50,000 NOAH, liquid | Decided | Unvested coins cannot pay fees, so the float carries the week before seat income starts: gas at a few hundredths of a NOAH a transaction, proposal deposits of 1,000 and 5,000 refunded unless vetoed, and a committee account's funding, under 10,000 in a busy week. Income then carries everything, and a larger float only adds sellable supply on day one (D96). Beside that income it is the only liquid NOAH a founder holds until the seat vests, and conversion is closed at launch, so the floats play no bootstrap role (D95). |
 | Per-seat income | 0.025 NOAH a block, 131,400 a year, split 70/30 between the validator and oracle lanes | Decided | Funds a highly available operation with the price sidecar, on-call, and the governance and committee work, at about 10,000 USD a month. The targets are floors: once tax exceeds them the oracle lane takes every residual, so the mature split is set by revenue, not by these numbers (§4). |
 | `auth.params.tx_sig_limit` | `10` | Decided | The ante counts every key of every signer, a multisig's whole membership rather than its threshold, so a committee holds at most ten keys, fewer when another account signs as fee payer. The SDK default is seven (§13). |
-| `auth.accounts` | empty in the artefact | Assembly | One continuous vesting account per seat, its window four to ten years after genesis time, holding the grant as its original vesting plus the float; the gentx self-delegates the grant. Committees are appointed after launch. |
+| `auth.accounts` | empty in the artefact | Assembly | One continuous vesting account per seat, its window four to eight years after genesis time, holding the grant as its original vesting plus the float; the gentx self-delegates one seat. Committees are appointed after launch. |
 
 After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
 floor; no proposal is involved and nothing is drawn from the pool. The reward targets do not follow the set: they are
@@ -264,7 +267,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `distribution.params` (proposer rewards 0, withdraw address enabled) | SDK defaults | Default | |
 | `distribution.fee_pool.community_pool` | 103,000,000 NOAH less the seats | Decided | Equal to the Distribution module balance (§3). |
 | `gov.params.min_deposit`, `expedited_min_deposit` | 1,000 NOAH, 5,000 NOAH | Decided | About 1,000 USD, the range established chains settle in: deposits refund unless vetoed, so the deposit is capital locked for four days, not a fee. With the 10% initial ratio, 100 NOAH lists a proposal. `app/config.go` carries the same default. |
-| `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | The founding set is ten equal seats and the pool it guards holds most of the supply: half the bonded stake must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
+| `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | The founding set is equal seats and the founder's third, and the pool it guards holds most of the supply: half the bonded stake must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
 | `gov.params.veto_threshold` | `0.334` | Default | A third of the set can block. |
 | `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, veto deposits burned) | SDK defaults | Default | Confirmed; the claims veto window and the tax-raise notice were sized on them. Lengthen after the calibration window if wanted. |
 | `gov.constitution` | empty | Default | |
@@ -278,15 +281,17 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 ### Native grants
 
-Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with a 439,200,000 NOAH member pool
-and a 292,800,000 NOAH contributor pool in its custody, nothing open, and no grants, journal entries, conversion orders,
-or founders before assembly. Member terms are 10,000 NOAH, a tenth immediately and the balance over twelve monthly
-periods. Issuance is limited to 250 members per rolling seven days. The grants mandate is disabled, with no
-compensation allowance, until governance appoints one; NOAH is the initial compensation denomination. Genesis ownership policy is one fifth of others' bonded stake
-and a 60M NOAH ceiling that counts the founding seat. Seat assembly adds one beneficiary record per founding
-operator, carrying its immutable seat; the module derives founding stake from these records. IDs start at one.
-Stablecoin compensation requires an explicit governance allowlist update and funding in that denomination, which a
-conversion order of contributor NOAH can supply (D87, D88).
+Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with 439,200,000 NOAH in its member
+account and 292,800,000 NOAH in its contributor account, nothing open, and no grants, journal entries, or
+founders before assembly. Member terms open at the plan's step 1 amount, 20,000 NOAH, a tenth immediately and the
+balance over twelve monthly periods; each later step's proposal lowers the amount (D91). One record's compensation is capped at 1M in the
+reference unit a year, a stream counting at its yearly rate (D109, D119). The grants mandate is disabled, with no
+allowances and nothing used, until governance appoints one. The ownership cap is a parameter, 15,000,000 NOAH, the
+most ownership one record's grants commit over every grant, checked at award (D115, D121); it reads neither bonded stake nor the seat. Seat
+assembly adds one beneficiary record per founding operator, carrying its seat, the founder's at half the others' sum,
+a record nothing reads. IDs start at one.
+Stablecoin compensation requires an active registry asset; the award converts contributor NOAH for what custody
+lacks (D87, D88).
 
 ## 11. CosmWasm
 
@@ -304,19 +309,31 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
 1. **Time.** Set `genesis_time` in the file to a weekday hour, in UTC, when every validator's region is awake and at
    least 48 hours after the file will be published. The seats vest from it, so it comes first; a time changed after
    seating means seating again from the artefact.
-2. **Seats.** Run `arkd genesis add-validator-seats <operator-address>...` once against the file, naming every
-   genesis validator. For each it writes a continuous vesting account at the operator with 5,000,000 NOAH vesting
-   from four to ten years after `genesis_time` and a 5,300,000 NOAH balance, subtracts 5,300,000 NOAH from both the
-   Distribution balance and `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the operator's 5M
-   seat on its beneficiary record in `disbursement.beneficiaries`, leaving supply and the disbursement pools untouched. It refuses an unset `genesis_time`, an operator already present, and a pool that cannot fund
-   the seats, and writes nothing unless every seat and every edited module validates. The seat policy is fixed in
-   `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what it writes.
-3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating the
-   5,000,000 NOAH grant with commission at or above 5%. The gentx pays no fee at height zero.
+2. **Seats.** Run `arkd genesis add-validator-seats --founder <operator-address> <operator-address>...` once against
+   the file, naming every genesis validator, seven to thirteen of them, and the founder among them. For each it writes
+   a continuous vesting account at the operator with 5,000,000 NOAH vesting from four to eight years after `genesis_time`
+   and that grant plus the 50,000 float as its balance, subtracts the same from both the Distribution balance and
+   `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the operator's seat on its
+   beneficiary record in `disbursement.beneficiaries`, leaving supply and the disbursement pools untouched. The
+   founder's account holds half the other seats' sum instead, from the same pool. It refuses a count outside the
+   bounds, which `--any-count` lifts for a
+   testnet only, an unset `genesis_time`, a file already
+   seated, since the founding set is seated in one run, a founder outside the operators, an operator already present,
+   and a pool that cannot fund the seats, and writes nothing unless every seat and every edited module validates. The
+   seat policy and the count bounds are fixed in `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what
+   it writes.
+3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating one seat,
+   5,000,000 NOAH, the founder included, with commission at or above 5%. The gentx pays no fee at height zero.
 4. **Collect.** Collect the gentxs; collection keeps `genesis_time`.
 5. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
    verify the hash before starting. The chain starts itself at `genesis_time` once more than two thirds of the seats
-   are online: 7 of 10, 11 of 15.
+   are online: 7 of 10, 9 of 13.
+6. **Spread.** In the first blocks the founder delegates the rest of the founder's seat across the other validators,
+   in roughly equal parts, from the seat's own account; unvested coins can be delegated and the float pays the gas.
+   Genesis cannot hold these delegations, since the validators exist only once the gentxs execute, so this is the one
+   launch step after the first block. Until it is done the founder's node and vote are one seat of the set; after it
+   the founder's vote is a third of the founding stake and no node holds more than about a seat and a quarter
+   ([disbursement plan §2](DISBURSEMENT_PLAN.md#2-validators), D112).
 
 ## 13. Committee appointments
 
@@ -334,6 +351,8 @@ emergency mandates buy real time.
 | Claims | Submit and cancel claims under a gross term limit | When Insurance has a charter naming its perils | 4-of-7 |
 | Conversion | Depth, recovery, and spread corridor, Tobin band | At or after the opening of conversion, with a depth corridor to about ten times the genesis depth so routine raises need no vote (D95) | 4-of-7 |
 | Reserve | Deploy under an allowance, floor, and destination list | When a deployment is approved | 4-of-7 |
+| Grants | Appoint the registrar, suspend members, award compensation under a term allowance | Before the first member tranche | 4-of-7 |
+| Registrar | Register members within the open tranche; one power | By the grants committee under its mandate, with the first tranche; cleared with the committee (D120) | A single hardware-backed key on the member platform's signing service |
 
 Shape and hygiene: legacy amino threshold multisigs of at most ten keys, within `tx_sig_limit`; dedicated
 hardware-backed committee keys, not operator keys; each multisig registered on chain with one transaction before
@@ -350,19 +369,19 @@ ratio between half and one and a half times the defensive set, with Insurance ca
 `app/genesis_test.go` pins: validity under the CLI's manager; a boot with a validator set and one funded account; a
 boot from a seat the seat command's own function granted, whose gentx self-delegates the grant, with the pool reduced
 by the grant, supply unchanged, and both targets at one share; the consensus authority and evidence bounds; the staking, slashing, and gov values in §10; the
-supply ledger, the unopened disbursement pools, and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
+supply ledger, the disbursement pools with nothing open, and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
 value in §4, §5, §8, and §9; the empty allowed-client list, both ICS-20 flags, both ICA sides, the empty host
 allowlist, and the open contract runtime, read back from the keepers after the first block; the absence of `mint`; no
 08-wasm checksums; and the vote-extension enable height.
 
 Confirm by hand at assembly:
 
-- Each seat's original vesting is 5,000,000 NOAH, its `start_time` and `end_time` four and ten years after the file's
-  `genesis_time`, its balance 5,300,000, and the pool and fee-pool entries are reduced by exactly the seats' total;
-  supply is still 1,000,000,000 NOAH.
+- Each seat's original vesting is 5,000,000 NOAH and the founder's half the other seats' sum, its `start_time` and
+  `end_time` four and eight years after the file's `genesis_time`, its balance that plus 50,000, and the pool and
+  fee-pool entries reduced by exactly the seats' total; supply is still 1,000,000,000 NOAH.
 - Both reward targets equal the seat count times the per-seat share, which the seat command guarantees when nothing
   else has edited them.
-- Every gentx self-delegates the whole grant at a commission of at least 5%.
+- Every gentx self-delegates one seat at a commission of at least 5%, the founder's too.
 - The NOAH factor still reflects the opening price.
 - The chain ID and the genesis time are final and the published hash matches.
 

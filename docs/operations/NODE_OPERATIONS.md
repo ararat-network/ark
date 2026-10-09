@@ -56,12 +56,13 @@ Keep each participant's mnemonic and private validator key local to that partici
 
 The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
 copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
-seat in one `arkd genesis add-validator-seats <address>... --home <home>`
+seat in one `arkd genesis add-validator-seats --founder <address> --any-count <address>... --home <home>`, the
+founder's at half the others' sum and the launch count bounds lifted for the testnet
 ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
-the whole seat grant at the commission floor. The coordinator collects all gentxs under `config/gentx`, runs
+one seat at the commission floor, the founder's too. The coordinator collects all gentxs under `config/gentx`, runs
 `arkd genesis collect-gentxs --home <home>`, validates the resulting genesis, and distributes the same final file to everyone.
 
 In each `config/config.toml`, set `[p2p] persistent_peers` to the intended `<node-id>@<host>:<p2p-port>` peers. Obtain the
@@ -105,9 +106,11 @@ interrupt its signing; a coordinated consensus upgrade requires the network to r
 compatible code. Do not run the same validator signing key concurrently in old and replacement processes.
 
 `arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis resumes
-at the next height with a new chain ID for relaunch. Zero-height export is refused. `--jail-allowed-addrs` limits the exported
-validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help` for
-height and output options, and validate the exported genesis before the coordinated relaunch.
+at the next height with a new chain ID for relaunch. The export keeps the original `genesis_time`; set it to the coordinated
+restart time, at or after the export height's block time and identical in every validator's file, because Oracle and
+Disbursement import refuse records dated after genesis. Zero-height export is refused. `--jail-allowed-addrs` limits the
+exported validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help`
+for height and output options, and validate the exported genesis before the coordinated relaunch.
 
 A node that stops on an app-hash mismatch reports which module store differs with `arkd module-hash-by-height <height>
 --home <home>`, run against the stopped node's data; compare the hashes with those from a node that stayed in
