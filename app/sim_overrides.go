@@ -15,6 +15,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 )
 
@@ -57,8 +58,8 @@ func authParamsFactory() simsx.SimMsgFactoryFn[*authtypes.MsgUpdateParams] {
 // a run exercises the guards rather than exhausting the balance immediately.
 const simulatedFundBalance = int64(1_000_000_000_000_000)
 
-// bankSimModule seeds Reserve and Insurance custody balances so simulation can exercise funded
-// operations. Genesis supply increases by the same amount to preserve Bank's invariant.
+// bankSimModule seeds Reserve, Insurance, and both Disbursement custody balances so simulation can
+// exercise funded operations. Genesis supply increases by the same amount to preserve Bank's invariant.
 type bankSimModule struct {
 	bank.AppModule
 
@@ -72,7 +73,12 @@ func (m bankSimModule) GenerateGenesisState(simState *module.SimulationState) {
 	m.cdc.MustUnmarshalJSON(simState.GenState[banktypes.ModuleName], &bankGenesis)
 
 	seeded := sdk.NewCoins(sdk.NewCoin(simState.BondDenom, math.NewInt(simulatedFundBalance)))
-	for _, fund := range []string{reservetypes.StrategicReserveName, claimstypes.InsuranceName} {
+	for _, fund := range []string{
+		reservetypes.StrategicReserveName,
+		claimstypes.InsuranceName,
+		disbursementtypes.MembersName,
+		disbursementtypes.ContributorsName,
+	} {
 		bankGenesis.Balances = append(bankGenesis.Balances, banktypes.Balance{
 			Address: authtypes.NewModuleAddress(fund).String(),
 			Coins:   seeded,

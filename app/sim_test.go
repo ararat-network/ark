@@ -15,7 +15,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -29,7 +28,6 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-	"github.com/cosmos/cosmos-sdk/codec"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/store/v2"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -47,7 +45,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/app/ante"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const AppChainID = "ark-simapp"
@@ -116,7 +113,7 @@ func TestAppImportExport(t *testing.T) {
 		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
 		ctxB := newApp.NewContextLegacy(true, cmtproto.Header{
 			Height: app.LastBlockHeight(),
-			Time:   exportedRateTime(tb, newApp.appCodec, genesisState),
+			Time:   app.GetContextForCheckTx(nil).BlockTime(),
 		})
 		_, err = newApp.ModuleManager.InitGenesis(ctxB, newApp.appCodec, genesisState)
 		if IsEmptyValidatorSetErr(err) {
@@ -165,30 +162,33 @@ func TestAppSimulationAfterImport(t *testing.T) {
 		tb.Log("importing genesis...\n")
 		newTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, newSimApp)
 		newApp := newTestInstance.App
-		var genesisState map[string]json.RawMessage
-		require.NoError(tb, json.Unmarshal(exported.AppState, &genesisState))
 		_, err = newApp.InitChain(&cmtabci.RequestInitChain{
 			AppStateBytes: exported.AppState,
 			ChainId:       simsx.SimAppChainID,
-			Time:          exportedRateTime(tb, newApp.appCodec, genesisState),
+			InitialHeight: exported.Height,
+			Time:          app.GetContextForCheckTx(nil).BlockTime(),
 		})
 		if IsEmptyValidatorSetErr(err) {
 			tb.Skip("Skipping simulation as all validators have been unbonded")
 			return
 		}
 		require.NoError(tb, err)
-		newStateFactory := setupStateFactory(newApp)
+		// The simulator runs its own InitChain, which discards the uncommitted import, so it gets a
+		// fresh app: the import's initial height would otherwise outlive it.
+		postTestInstance := simsx.NewSimulationAppInstance(tb, ti.Cfg, newSimApp)
+		postApp := postTestInstance.App
+		postStateFactory := setupStateFactory(postApp)
 		_, _, err = simulation.SimulateFromSeedX(
 			tb,
-			newTestInstance.AppLogger,
-			simsx.WriteToDebugLog(newTestInstance.AppLogger),
-			newApp.BaseApp,
-			newStateFactory.AppStateFn,
+			postTestInstance.AppLogger,
+			simsx.WriteToDebugLog(postTestInstance.AppLogger),
+			postApp.BaseApp,
+			postStateFactory.AppStateFn,
 			simtypes.RandomAccounts,
-			postImportOperations(newApp),
-			newStateFactory.BlockedAddr,
-			newTestInstance.Cfg,
-			newStateFactory.Codec,
+			postImportOperations(postApp),
+			postStateFactory.BlockedAddr,
+			postTestInstance.Cfg,
+			postStateFactory.Codec,
 			ti.ExecLogWriter,
 		)
 		require.NoError(tb, err)
@@ -209,24 +209,6 @@ func postImportOperations(app *ArkApp) []simtypes.WeightedOperation {
 
 func IsEmptyValidatorSetErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "validator set is empty after InitGenesis")
-}
-
-// exportedRateTime returns the newest exported oracle timestamp for the imported genesis block
-// time. Oracle genesis rejects rates dated after that time.
-func exportedRateTime(tb testing.TB, cdc codec.Codec, genesisState map[string]json.RawMessage) time.Time {
-	tb.Helper()
-
-	raw, ok := genesisState[oracletypes.ModuleName]
-	require.True(tb, ok, "exported state carries no oracle genesis")
-
-	var oracleGenesis oracletypes.GenesisState
-	cdc.MustUnmarshalJSON(raw, &oracleGenesis)
-
-	latest := uint64(0)
-	for _, rate := range oracleGenesis.ExchangeRates {
-		latest = max(latest, rate.BlockTime)
-	}
-	return time.Unix(int64(latest), 0).UTC()
 }
 
 func TestAppStateDeterminism(t *testing.T) {

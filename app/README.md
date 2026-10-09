@@ -109,9 +109,12 @@ broader proposal ranges can make its own fixed-gas transactions undeliverable: s
 memos, and high byte costs exhaust the 10-million gas limit on Wasm uploads. The simulation process bypasses
 fee and governance-vote stake gates because its random fees and voters cannot satisfy these consensus rules.
 
-Reserve and Insurance receive seeded custody balances, with Bank supply increased equally. This makes deployments,
-positions, and claims reachable without a circular dependency on transfers from initially empty funds. Imported
-simulation genesis uses the newest exported oracle timestamp so rates do not appear dated after genesis.
+Reserve, Insurance, and both Disbursement accounts receive seeded custody balances, with Bank supply increased equally.
+This makes deployments, positions, claims, and grants reachable without a circular dependency on transfers from
+initially empty funds; Disbursement's generator opens part of the member balance as its genesis tranche. Imported
+simulation genesis takes the exported chain's last block time and height, as a continuation export resumes, so no
+record appears to come from after genesis. The after-import run then simulates on a fresh app, because the
+simulator's own InitChain discards the uncommitted import.
 
 Gas-estimate tests compare payable and fee-less simulation with finalisation for both NOAH-only and stable-plus-tip
 fees. Wasm's counter skips simulation and SDK signature-size estimation differs from signed execution; the client gas
