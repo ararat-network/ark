@@ -40,8 +40,8 @@ account holding the seat grant, vesting from four to eight years after
 genesis_time, a liquid float beside it, both moved out of the community pool,
 and both reward targets raised by one seat's share. The founder, named with
 --founder and one of the operators, holds half the other seats' sum instead,
-a third of genesis bonded stake, the excess over one seat moved out of the
-contributor pool. Supply is unchanged. Set genesis_time in the file first;
+a third of genesis bonded stake, on the same schedule from the same pool.
+Supply is unchanged. Set genesis_time in the file first;
 every seat vests from it. Run once, naming every genesis validator, between
 %d and %d of them unless --%s lifts the bounds for a testnet, before gentx
 collection: a file already seated is refused, and nothing is written unless
