@@ -223,7 +223,7 @@ func MsgCancelSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.M
 // surface be exercised later rather than merely stored.
 func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergencyMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetEmergencyMandate) {
@@ -241,13 +241,15 @@ func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergenc
 		}
 
 		r := testData.Rand()
-		activationHeight := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activationHeight := height + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetEmergencyMandate{
 			Authority:        authority,
 			Committee:        committee.AddressBech32,
 			ActivationHeight: activationHeight,
-			// Validation demands activation strictly precede expiry.
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current height.
 			ExpiryHeight: activationHeight + r.Uint64InRange(1, 100_000),
 		}
 	}

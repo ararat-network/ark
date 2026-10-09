@@ -79,6 +79,21 @@ func (s *KeeperTestSuite) TestSetMandateAdvancesTerm() {
 	)
 }
 
+func (s *KeeperTestSuite) TestSetMandateRefusesAnElapsedWindow() {
+	s.Require().NoError(s.keeper.EmergencyMandate.Set(
+		s.ctx,
+		types.DefaultEmergencyMandate(),
+	))
+	// The window is half-open, so its expiry height is already inactive.
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(1_000)
+	s.Require().ErrorContains(s.keeper.SetEmergencyMandate(
+		s.ctx,
+		emergencyCommittee(),
+		1,
+		1_000,
+	), "not above the current height")
+}
+
 func (s *KeeperTestSuite) TestEmergencySuspendConsumesOneSuspensionPerTerm() {
 	term := s.seedLiveMandate()
 	asset := types.DefaultGenesisState().Assets[0]

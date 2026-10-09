@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/treasury/keeper"
@@ -31,7 +32,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 // factories exercise corridor width separately.
 func MsgSetEconomicMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEconomicMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetEconomicMandate) {
@@ -49,14 +50,16 @@ func MsgSetEconomicMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEconomicM
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activation := height + r.Uint64InRange(1, 1_000)
 		bounds := RandomisedEconomicPolicy(r.Rand)
 
 		return nil, &types.MsgSetEconomicMandate{
 			Authority:        authority,
 			Committee:        committee.AddressBech32,
 			ActivationHeight: activation,
-			// Validation demands activation strictly precede expiry.
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current height.
 			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
 			MinimumPolicy: bounds,
 			MaximumPolicy: bounds,

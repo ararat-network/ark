@@ -366,13 +366,28 @@ func (s *KeeperTestSuite) TestEconomicMandateAuthorityAndRoleSeparation() {
 	message.Authority = s.authority
 	message.Committee = s.authority
 	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	s.Require().ErrorContains(err, "distinct from the Treasury authority")
 
 	message.Committee = committee
 	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().NoError(err)
 	// An address may hold both Economic and Claims mandates: each role is separated from Treasury
 	// authority, but not from the other role. app/claims_test.go checks the cross-module case.
+}
+
+func (s *KeeperTestSuite) TestEconomicMandateRefusesAnElapsedWindow() {
+	minimum, maximum := economicPolicyBounds()
+	// The window is half-open, so its expiry height is already inactive.
+	s.setBlockHeight(100)
+	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
+		Authority:        s.authority,
+		Committee:        sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String(),
+		ActivationHeight: 10,
+		ExpiryHeight:     100,
+		MinimumPolicy:    minimum,
+		MaximumPolicy:    maximum,
+	})
+	s.Require().ErrorContains(err, "not above the current height")
 }
 
 func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
@@ -390,13 +405,13 @@ func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
 		MaximumPolicy:    maximum,
 	}
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	s.Require().ErrorContains(err, "distinct from the Treasury authority")
 
 	// The fallback authority stays rejected as a committee even while a
 	// consensus-params authority overrides it.
 	message.Committee = s.authority
 	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	s.Require().ErrorContains(err, "distinct from the Treasury authority")
 }
 
 func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {

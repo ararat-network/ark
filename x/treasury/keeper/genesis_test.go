@@ -277,5 +277,5 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
 		MaximumPolicy: maximum,
 	}
 	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	s.Require().ErrorContains(err, "distinct from the Treasury authority")
 }

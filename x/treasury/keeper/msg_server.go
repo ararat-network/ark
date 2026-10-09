@@ -89,8 +89,19 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
-			return nil, errors.New("economic-policy committee must be distinct from Treasury authority")
+			return nil, errors.New("economic-policy committee must be distinct from the Treasury authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+			return nil, fmt.Errorf(
+				"%s expires at height %d, which is not above the current height %d",
+				types.EconomicMandateLabel,
+				updated.ExpiryHeight,
+				height,
+			)
 		}
 	}
 
@@ -104,7 +115,7 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 		ExpiryHeight:     updated.ExpiryHeight,
 		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Treasury economic mandate: %w", err)
+		return nil, fmt.Errorf("emitting economic mandate: %w", err)
 	}
 	return &types.MsgSetEconomicMandateResponse{}, nil
 }

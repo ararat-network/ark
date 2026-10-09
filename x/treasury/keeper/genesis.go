@@ -25,7 +25,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// compare against the fallback authority; the message path re-checks every
 	// later replacement against the effective authority.
 	if data.EconomicMandate.Committee == k.authority {
-		return fmt.Errorf("economic-policy committee must be distinct from Treasury authority")
+		return fmt.Errorf("economic-policy committee must be distinct from the Treasury authority")
 	}
 
 	// ReferenceTaxCap must use the protocol reference denomination. Oracle imports first, making

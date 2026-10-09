@@ -19,7 +19,7 @@ import (
 // key for and the destination is a real account.
 func MsgSetReserveMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetReserveMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetReserveMandate) {
@@ -38,13 +38,15 @@ func MsgSetReserveMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetReserveMan
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activation := height + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetReserveMandate{
 			Authority:        authority,
 			Committee:        committee.AddressBech32,
 			ActivationHeight: activation,
-			// Validation demands activation strictly precede expiry.
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current height.
 			ExpiryHeight: activation + r.Uint64InRange(1, 100_000),
 			// A configured mandate must allow something and name somewhere.
 			DeploymentAllowance: chain.NoahCoin(math.NewInt(int64(r.IntInRange(1, 1_000_000_000)))),

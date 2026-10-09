@@ -65,12 +65,23 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		reserveMandate.DeploymentAllowance = msg.DeploymentAllowance
 		reserveMandate.MinimumNoahBalance = msg.MinimumNoahBalance
 		reserveMandate.Destinations = msg.Destinations
-	}
-	if err := reserveMandate.Validate(); err != nil {
-		return nil, err
-	}
-	if reserveMandate.Committee == m.k.authority || reserveMandate.Committee == msg.Authority {
-		return nil, errors.New("reserve committee must be distinct from the Reserve authority")
+		if err := reserveMandate.Validate(); err != nil {
+			return nil, err
+		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
+		if reserveMandate.Committee == m.k.authority || reserveMandate.Committee == msg.Authority {
+			return nil, errors.New("reserve committee must be distinct from the Reserve authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); reserveMandate.ExpiryHeight <= height {
+			return nil, fmt.Errorf(
+				"%s expires at height %d, which is not above the current height %d",
+				types.ReserveMandateLabel,
+				reserveMandate.ExpiryHeight,
+				height,
+			)
+		}
 	}
 	if err := m.k.Mandate.Set(ctx, reserveMandate); err != nil {
 		return nil, fmt.Errorf("setting Reserve mandate: %w", err)

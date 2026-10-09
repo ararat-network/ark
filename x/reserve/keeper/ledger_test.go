@@ -103,6 +103,22 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 	committee := testAddress(1)
 	destination := testAddress(2)
 
+	s.Run("elapsed window is rejected", func() {
+		s.SetupTest()
+		// The window is half-open, so its expiry height is already inactive.
+		s.setBlockHeight(1_000)
+		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
+			Authority:           s.authority,
+			Committee:           committee,
+			ActivationHeight:    10,
+			ExpiryHeight:        1_000,
+			DeploymentAllowance: noahCoin(1_000),
+			MinimumNoahBalance:  noahCoin(100),
+			Destinations:        []string{destination},
+		})
+		s.Require().ErrorContains(err, "not above the current height")
+	})
+
 	s.Run("appoints and derives the next term", func() {
 		s.SetupTest()
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{

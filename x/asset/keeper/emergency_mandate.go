@@ -33,11 +33,24 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 		)
 	}
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// The mandate carries no fields of its own, so the derived envelope is the
 	// whole appointment.
 	updated := types.EmergencyMandate{Envelope: envelope}
-	if err := updated.Validate(); err != nil {
-		return err
+	if committee != "" {
+		if err := updated.Validate(); err != nil {
+			return err
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+			return fmt.Errorf(
+				"%s expires at height %d, which is not above the current height %d",
+				types.EmergencyMandateLabel,
+				updated.ExpiryHeight,
+				height,
+			)
+		}
 	}
 
 	if err := k.EmergencyMandate.Set(ctx, updated); err != nil {
@@ -46,7 +59,7 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	if err := k.EmergencySuspensions.Clear(ctx, nil); err != nil {
 		return fmt.Errorf("clearing emergency suspension usage: %w", err)
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventEmergencyMandateSet{
 			Term:             updated.Term,
 			Committee:        updated.Committee,
