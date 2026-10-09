@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
@@ -36,6 +37,43 @@ func ValidateNoahCoin(field string, coin sdk.Coin) error {
 	}
 	if coin.Denom != NoahBaseDenom {
 		return fmt.Errorf("%s must be denominated in %s", field, NoahBaseDenom)
+	}
+
+	return nil
+}
+
+// ValidateRegisteredDeposit requires at least one coin, each positive and either NOAH or a
+// denomination hasAsset finds in the asset registry. It is ValidateNoahOnlyDeposit's counterpart for
+// custody that also holds registered assets; fundLabel identifies the refusing account set.
+func ValidateRegisteredDeposit(
+	ctx context.Context,
+	fundLabel string,
+	amount sdk.Coins,
+	hasAsset func(context.Context, string) (bool, error),
+) error {
+	if len(amount) == 0 {
+		return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "%s deposits must contain at least one coin", fundLabel)
+	}
+	for _, coin := range amount {
+		if coin.Amount.IsNil() || !coin.Amount.IsPositive() {
+			return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "%s deposits must be positive, got %s", fundLabel, coin)
+		}
+		if coin.Denom == NoahBaseDenom {
+			continue
+		}
+		registered, err := hasAsset(ctx, coin.Denom)
+		if err != nil {
+			return errorsmod.Wrapf(err, "checking the asset registry for %s", coin.Denom)
+		}
+		if !registered {
+			return errorsmod.Wrapf(
+				errortypes.ErrInvalidCoins,
+				"%s deposits must be %s or a registered asset, got %s",
+				fundLabel,
+				NoahBaseDenom,
+				coin,
+			)
+		}
 	}
 
 	return nil
