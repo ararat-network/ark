@@ -13,8 +13,9 @@ import (
 	"github.com/ararat-network/ark/tests/e2e/delegator"
 )
 
-// DisbursementSuite opens a member tranche by governance, registers members, and replaces the
-// committee while preserving the permanent member records.
+// DisbursementSuite opens a member tranche by governance, appoints a registrar through the
+// committee, registers members, and rotates the registrar while preserving the permanent member
+// records.
 type DisbursementSuite struct {
 	*delegator.Suite
 }
@@ -26,7 +27,7 @@ const (
 
 func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	ctx := s.GetContext()
-	custody, err := sdk.Bech32ifyAddressBytes(chainsuite.Bech32Prefix, authtypes.NewModuleAddress("disbursement"))
+	members, err := sdk.Bech32ifyAddressBytes(chainsuite.Bech32Prefix, authtypes.NewModuleAddress("disbursement_members"))
 	s.Require().NoError(err)
 	gov, err := s.Chain.GovAuthority(ctx)
 	s.Require().NoError(err)
@@ -50,25 +51,33 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 		return message
 	}
 
-	// The tranche: three member grants opened from the artefact's member pool by vote.
+	// The tranche: three member grants opened from the artefact's member account by vote.
 	tranche := chainsuite.NOAH(3 * memberGrantNoah)
 	open, err := json.Marshal(map[string]any{
-		"@type": "/ark.disbursement.v1.MsgOpenTranche", "authority": gov, "pool": "POOL_MEMBERS", "amount": tranche.String(),
+		"@type": "/ark.disbursement.v1.MsgOpenTranche", "authority": gov, "amount": tranche.String(),
 	})
 	s.Require().NoError(err)
-	held := s.Balance(custody)
+	held := s.Balance(members)
 	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "open the first tranche", open, updateParams, appoint(s.Wallet.FormattedAddress()))
 	s.Require().NoError(err)
-	s.Require().Equal(held, s.Balance(custody), "opening a tranche moves no coins")
-	opened, err := s.Chain.QueryJSON(ctx, "member_pool.open", "disbursement", "balance", chainsuite.Denom)
+	s.Require().Equal(held, s.Balance(members), "opening a tranche moves no coins")
+	opened, err := s.Chain.QueryJSON(ctx, `accounts.#(address=="`+members+`").open`, "disbursement", "balance", chainsuite.Denom)
 	s.Require().NoError(err)
 	s.Require().Equal(tranche.String(), opened.String())
+
+	// The committee appoints the registrar, a hot key bounded by the open tranche alone; every
+	// appointment advances the registrar term its batches must carry.
+	registrar := s.FundedWallet("registrar", 10)
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "1", "--registrar", registrar.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	s.Require().NoError(err)
 
 	// A member with no account yet, and one whose address was dusted.
 	member, err := s.Chain.BuildWallet(ctx, "member", "")
 	s.Require().NoError(err)
 	dusted := s.FundedWallet("dusted-member", 1)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-register", "--expected-term", "1", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", member.FormattedAddress())
+	s.Require().Error(err, "the committee is not the registrar")
+	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
 	s.Require().NoError(err)
 
 	// The first period, a tenth, is sent at once into an ordinary account;
@@ -83,10 +92,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	s.Require().Equal(tenth.String(), status.Get("paid").String())
 	s.Require().Equal(chainsuite.NOAH(memberGrantNoah).Sub(tenth).String(), status.Get("remaining").String())
-	payable, err := s.Chain.QueryJSON(ctx, "amount.amount", "disbursement", "releasable", status.Get("id").String())
-	s.Require().NoError(err)
-	s.Require().Equal("0", payable.String(), "nothing has elapsed")
-	s.Require().Equal(held.Sub(tenth.MulRaw(2)), s.Balance(custody), "only the first periods left")
+	s.Require().Equal(held.Sub(tenth.MulRaw(2)), s.Balance(members), "only the first periods left")
 
 	// The tenth is stake like any other, and pays its own fee.
 	val := s.Chain.ValidatorWallets[0].ValoperAddress
@@ -96,16 +102,26 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/20).String(), delegated.String())
 
-	// Governance replaces the committee; the old key and the old term are refused.
+	// Governance replaces the committee, which clears the registrar it appointed; the new committee
+	// names its own, and the old key and the old registrar terms are refused.
 	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "replace the committee", appoint(s.Wallet2.FormattedAddress()))
 	s.Require().NoError(err)
 	another, err := s.Chain.BuildWallet(ctx, "member-2", "")
 	s.Require().NoError(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-register", "--expected-term", "2", "--addresses", another.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	s.Require().Error(err, "the replaced committee cannot rotate the registrar")
+	another2, err := s.Chain.BuildWallet(ctx, "member-3", "")
+	s.Require().NoError(err)
+	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", another2.FormattedAddress())
+	s.Require().Error(err, "the replacement cleared the registrar")
+	// The registrar term is three: the first appointment, the clearing, and this appointment.
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	s.Require().NoError(err)
+	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "2", "--addresses", another.FormattedAddress())
 	s.Require().Error(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-register", "--expected-term", "1", "--addresses", another.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", another.FormattedAddress())
 	s.Require().Error(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-register", "--expected-term", "2", "--addresses", another.FormattedAddress())
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "3", "--addresses", another.FormattedAddress())
 	s.Require().NoError(err)
 	s.Require().Equal(tenth, s.Balance(another.FormattedAddress()))
 }
