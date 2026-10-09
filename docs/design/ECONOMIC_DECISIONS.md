@@ -19,7 +19,8 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D20–D38: [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D29](#d29), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38).
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
-- D72–D118: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D95](#d95), [D104](#d104), [D118](#d118).
+- D72–D111: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D91](#d91), [D92](#d92), [D93](#d93), [D94](#d94), [D95](#d95), [D96](#d96), [D97](#d97), [D98](#d98), [D99](#d99), [D100](#d100), [D101](#d101), [D102](#d102), [D103](#d103), [D104](#d104), [D105](#d105), [D106](#d106), [D107](#d107), [D108](#d108), [D109](#d109), [D110](#d110), [D111](#d111).
+- D112–D122: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -1094,7 +1095,7 @@ stand.
 ## D84
 
 **Recorded status:** Decided 2026-09-22. Amends the launch review's seat admission recorded in
-[GENESIS.md](../governance/GENESIS.md#3-accounts-supply-and-validator-seats) (decided 2026-09-11).
+[GENESIS.md](../governance/GENESIS.md#3-accounts-supply-and-validator-seats) (decided 2026-09-11). Seat sizing amended by [D94](#d94) and set per seat again, 5M, by [D111](#d111); the float by [D96](#d96).
 
 Validator entry after launch is open. The ten founding seats are the only granted stake: equal permanently locked
 grants and floats drawn from the community pool at assembly, each adding one seat's share to both reward targets. A
@@ -1184,16 +1185,19 @@ counts actual scheduled payments and recipients' staking choices, with no early 
 
 ## D87
 
-**Recorded status:** Decided 2026-09-23; funding amended by [D88](#d88), the registrar by [D89](#d89).
+**Recorded status:** Decided 2026-09-23; funding amended by [D88](#d88), the registrar by [D89](#d89). Amended
+2026-10-01: the compensation allowlist is removed; NOAH or an active registry asset is the only denomination gate, and
+the committee's allowance is the bound. Payment amended by [D105](#d105): the block pays due grants, and there is no
+release message.
 
 Replace the prelaunch grant contract with native [`x/disbursement`](../../x/disbursement/README.md). The same transparent commitment
 ledger will serve member and contributor distribution now and ongoing compensation, including stablecoins, as the system matures. Distribution
 still funds it through `MsgCommunityPoolSpend`; governance creates fully funded contributor awards through typed
 messages, and a bounded registrar registers members outside proposals. Preserve D86's immediate first member payment,
 single contributor clock, live ownership and founder-bloc caps, retained earned debt, and distinct treatment of pay.
-Stablecoin compensation is an untaxed protocol disbursement, funded and paid in its approved denomination, with no
+Stablecoin compensation is an untaxed protocol disbursement, funded and paid in its own denomination, with no
 conversion guarantee. It never increases NOAH ownership counters. A new stablecoin award requires an active Asset
-registry entry; funded obligations survive subsequent lifecycle or allowlist changes.
+registry entry; funded obligations survive subsequent lifecycle changes.
 
 Founding status is an immutable genesis seat record, not an award input that a later grant can overwrite. The ratio
 and ceiling are genesis ownership policy rather than mutable operational parameters. Beneficiary identity and
@@ -1213,40 +1217,46 @@ D85's existing query accept list is unchanged.
 
 ## D88
 
-**Recorded status:** Decided 2026-09-26.
+**Recorded status:** Decided 2026-09-26. The community pool remainder is 52.5M after ten seats under [D111](#d111) and [D96](#d96). The contributor tranche is removed by [D117](#d117).
 
 Hold the distribution in `x/disbursement` from genesis. The artefact moves 732M NOAH out of the community pool into
-two pools in disbursement custody, a 439.2M member pool and a 292.8M contributor pool, and leaves the community pool
-50M after ten seats, which still draw on it. A pool records its uncommitted NOAH and the part governance has opened.
-Each step of the plan is a governance `MsgOpenTranche`, which moves no coins, and only genesis grows a pool. Members
-draw on the open member tranche; ownership awards and NOAH compensation on the open contributor tranche; a cancel
-returns unearned NOAH to the tranche it was charged to. The member pool has no exit. `MsgReturnUnallocated` names its
-source: custody outside the pools, or the contributor pool with its unopened NOAH first. Why: with the whole
+two Disbursement module accounts, a 439.2M member account and a 292.8M contributor account, and leaves the community
+pool 50M after ten seats, which still draw on it. An account's pool is its NOAH outside grants and orders; the module
+records the part governance has opened. Each step of the plan is a governance `MsgOpenTranche`, which moves no coins;
+only genesis grows the member pool, and a NOAH deposit joins the contributor pool unopened. Members draw on the open
+member tranche; ownership awards and NOAH compensation on the open contributor tranche; a cancel reopens unearned NOAH
+in the tranche it was charged to. The member account has no exit. `MsgReturnUnallocated` returns from the contributor
+account: NOAH from its pool, unopened first, or any other denomination outside grants. Why: with the whole
 distribution in the community pool, the 60/40 split and the member pool were a promise the founders, the only voters
 at launch, could revoke by one proposal; held by the module, the member pool pays members or nobody. Tranches keep
 the pace a governance decision, where the gates belong while their ratio is open. What it costs: the custody
 accounting and tranche checks need audit before launch rather than before the first tranche, and a member remainder
 nobody registers leaves only by a chain upgrade.
 
-Contributor NOAH funds stablecoin compensation through conversion orders. Governance authorises an order per
-denomination from the open contributor tranche, each authorisation adding NOAH and restating a maximum spread;
-`MsgCancelConversion` returns the remainder. Any sender but governance executes an order with `MsgConvert`, trading
-disbursement custody through Market's ordinary swap, so Market quotes, mints, and settles it at EndBlock and Treasury
-allocates the offer as for any expansion. A fill whose realised spread, dust included, exceeds the cap fails, which
-also paces a large order to the pool's recovery. No committee holds the power: with the size, denomination, and price
-bound fixed, only timing remains, and a trigger anyone can pull has no key to steal. Governance cannot execute,
-because proposals run after Market's EndBlocker has settled the block. Cancelled stablecoin compensation stays in
-custody for the next award rather than leaving for the community pool. An award still never converts: obligations stay
-funded in their own denomination (D87).
+Contributor NOAH funds stablecoin compensation in the award itself. Amended 2026-10-02: a stablecoin award draws
+uncommitted custody first and converts the shortfall from the open contributor tranche through Market's ordinary swap,
+inside the message that creates it, offering at most the `max_offer` it carries; the module sizes the smallest offer
+that buys the shortfall, so the pay and the worst price are one decision and the NOAH cost is what the market charges.
+Market quotes, mints, and settles it at EndBlock and Treasury allocates the offer as for any expansion, which
+governance's own awards reach now that proposals execute before settlement (D33). The standing conversion orders,
+their executor role, and the spread cap are removed: an order sized days ahead of its fills paid for timing nobody
+owned, and a proposal could not convert at all. Cancelled stablecoin compensation stays in custody and funds the next
+award before anything converts. An award never converts after it is funded: obligations stay funded in their own
+denomination (D87).
 
 ## D89
 
-**Recorded status:** Decided 2026-09-26.
+**Recorded status:** Decided 2026-09-26. Amended 2026-10-08: a term has no award-count limit, the allowance and the
+per-record cap bounding its value, and `MsgCancelTermGrants` is removed: governance lists a term's awards by the grants
+query and cancels them by ID, and a second, expedited proposal cancels any made while the replacing vote was open,
+inside the first period. The committee's award kinds and its seat refusal are amended by [D108](#d108);
+its per-denomination allowance is replaced by [D110](#d110). Registration leaves the committee for a registrar it
+appoints in [D120](#d120).
 
 Fold compensation into Disbursement's one committee rather than appoint a second. The registrar becomes the grants
 committee under a `GrantsMandate`: every module holds one mandate and every mandate's group is a committee, so the type
 names the power, as `ClaimsMandate` and `ConversionMandate` do, within amino's 39-character message-name limit. The appointment adds a compensation power: a per-denomination allowance for the
-term, each denomination allowlisted and active at appointment, and a minimum first period, positive whenever there is
+term, each stablecoin denomination an active asset at appointment, and a minimum first period, positive whenever there is
 an allowance. `MsgCommitteeCompensate` creates compensation only, funded like a governance award, never to a founding
 seat holder, with a first period at least the minimum. A term's usage is the sum of its awards, cancelled ones
 included, so a cancel never restores allowance and a new term starts at zero; a term makes at most 100 awards, one
@@ -1259,7 +1269,7 @@ and the term cancel also catches the term's legitimate awards, which governance 
 
 ## D90
 
-**Recorded status:** Decided 2026-09-28. Amends the ownership ceiling in [D86](#d86)'s 2026-09-23 amendment.
+**Recorded status:** Decided 2026-09-28. Amends the ownership ceiling in [D86](#d86)'s 2026-09-23 amendment. The 20M and 100M figures re-derive under [D94](#d94) to 19.5M and 90M; the 60M ceiling is 20M under [D97](#d97) and 30M under [D99](#d99), and the tenth is read as a tenth of the vote under [D98](#d98). The bloc rule is removed by [D106](#d106).
 
 Size the founder's founding-band grant at 15M NOAH, 20M with the seat, and bound seat holders so that ownership
 payments cannot restore the founders' block. At 15M the founder holds under the tenth of bonded stake one seat carries
@@ -1273,6 +1283,87 @@ bonded stake passes 100M, when the founders' own stake can neither pass nor bloc
 nine decides it; the bloc rule releases nothing to a seat holder before then. What it costs: the founder's clock
 starts at that later proposal, other seat holders' grants wait for more public stake, and the founding band tops at
 15M. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D91
+
+**Recorded status:** Decided 2026-10-01.
+
+Set the member grant per step rather than fixing it: 20,000 NOAH at launch, then 15,000, 10,000, 7,500, and 5,000, each
+step's figure carried by the proposal that opens its member tranche as a `MsgUpdateParams` beside the `MsgOpenTranche`.
+A member keeps the amount and schedule they registered under, so a later step never touches an earlier member, and a
+tranche remainder that rolls into the next step is consumed at that step's amount. Nothing on chain forces the
+schedule, and no oracle is involved. Why: a fixed NOAH amount fixes votes but not value, so what a member receives and
+what a faked member is worth both float with the price, and the open tranche bounds how many fakes a stolen key
+registers but not what each is worth. A falling schedule keeps both flatter if the chain succeeds and pays the first
+cohort for carrying the most risk and doing the vouching. Anchoring to a stablecoin value was considered and rejected
+for launch: the oracle has no NOAH price until NOAH trades somewhere, a cheap NOAH would concentrate the pool into a
+few large grants, and it would put the member pool behind an oracle it has never depended on. What it costs: members
+from earlier steps hold more votes each, step 1 seats 1,500 people rather than 3,000, and the pool reaches about
+60,300 members rather than 43,900. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the schedule.
+
+## D92
+
+**Recorded status:** Decided 2026-10-02.
+
+Make the open member tranche the only bound on registration, and remove the rolling issuance window, its two params,
+its log, and its query. Why: every other committee in the system is bounded by a figure governance sets at appointment
+and consumes for the term, and none carries a rate limit; the member tranche is drawn by the committee alone, so it
+already is that figure, in NOAH, set by the vote that opens a step and refilled only by another vote. A second count in
+the mandate would restate it in another unit, and a rolling window paces by a clock no other mandate has. What it
+costs: a stolen key can commit the tenths of whatever is open rather than a week's worth, so governance paces a step by
+opening it in slices, one message per slice, and nothing closes an open tranche short of registering it, so the lever
+against a committee governance wants to slow is to open no more, and against a stolen key the re-appointment that
+already kills the old term's transactions.
+
+## D93
+
+**Recorded status:** Decided 2026-10-02.
+
+The founding seats do not grow with the distribution. No step moves NOAH from the pools into the seats, and no rule
+weights a seat's vote above its stake. Resistance to a buyer of distributed NOAH comes from the cost and visibility of
+the purchase, the unbonding period, validators voting the delegations they carry, and the relaunch, never from founder
+stake. Why: a buyer who stakes what they buy holds a third of the vote, enough to block any proposal or halt the chain,
+with about half of what everyone else has bonded, roughly 85M at a 20% public staking rate and 160M at 50%; passing
+alone takes twice that, a third of supply or more, bought from tens of thousands of holders on an open market. Founder
+stake barely moves the first figure: each NOAH moved from the member pool into the seats raises the buyer's bar by a
+fifth to a third of a NOAH, and for the founders to keep a veto once a buyer holds one they must hold more than the
+whole public bonded stake, the founders' chain D84 hands over. Larger seats also enlarge the cheaper route: four
+founders can halt the chain from block one, so a hostile actor pressures four known people rather than buying a tenth
+of the supply, and seats transfer from year four, so a larger seat is a larger block for the same buyer. What it
+costs: at a 20% public staking rate the founders end near 30% of bonded stake, a few points short of a veto the plan
+never promised them. Open from this decision, each its own change: a minimum lead time, fixed in code, between a
+vote and an upgrade or a large pool spend, so a bought vote is visible before it executes; and whether the
+distribution schedule opens once, with the on-chain gate releasing each step, since today a third of the vote stops
+every later `MsgOpenTranche` and every committee re-appointment (D88, D92). A member tally over the irreversible
+message classes, the one electorate a buyer cannot purchase, is the direction if those prove insufficient; it is not
+planned. The [threat model](THREAT_MODEL.md#27-governance-and-committees) carries the figures.
+
+## D94
+
+**Recorded status:** Decided 2026-10-02. Amends the seat sizing in [D84](#d84), the community pool remainder in
+[D88](#d88), and the figures [D90](#d90) and [D93](#d93) derive from the founding stake. The float is 50k and the pool
+57.5M under [D96](#d96); the gates are 15% of paid and the planning rate 20% under [D99](#d99); the fraction is a tenth
+under [D100](#d100). The fixed total is replaced by a 5M seat, 50M at ten, under [D111](#d111).
+
+Fix the founders' total at 45M NOAH, 4.5% of supply, split equally among the seats the launch review admits, 4.5M each
+at ten. The per-seat grant follows from the total; the 300k float stays per seat, and both still come out of the
+community pool, which keeps 55M after ten seats. Why: the total is what the plan argues from. The founders pass alone
+while the public has bonded under half of it and block alone under twice it, the early attack cost is half of it, and
+the first contributor cap is a fifth of it, so a per-seat constant let the seat count move all four without a
+decision. The total is the one seat figure genesis fixes for good, so it is sized to hold under both staking rates the
+comparables show: about 30% on the original Terra, whose rewards came from fees as Ark's do, and 15% on Terra Classic
+today. Step one pays out about 20M liquid in its first year, so a total under 40M lets a buyer reach a third of the
+vote on paper in year one; at 15% staked, a total above 47M leaves the founders over the 30% the bloc rule holds them
+under once the distribution is paid. At 45M year one is covered, the founders end at 29% in the worse case and 17% in
+the better, and the block falls at 300M paid at the original Terra rate. Every other lever is a vote and needs no
+genesis figure: the step gates, 30% of paid distribution bonded, are the convention each tranche vote applies and come
+down if members stake less; the reward targets move by policy message; the member amount is set per step (D91). At
+15% staked the gates as written never open step two and the bloc rule never pays a seat holder, so a low measured
+rate is answered by lowering the gates or raising the targets, never by the total. What it costs: 500k less deferred
+pay a seat at ten, a 225,000 double-sign slash rather than 250,000, and the founder's grant re-derives to 19.5M with the
+seat, proposed at 90M of public bonded stake. Assembly divides the total by the operators it seats, any base-unit
+remainder staying in the pool. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
+[launch genesis](../governance/GENESIS.md) carry the figures.
 
 ## D95
 
@@ -1310,6 +1401,165 @@ bootstrap role; and the testnet artefact keeps the registered currencies and the
 exercise conversion and the e2e suites run on it. The opening sequence is
 [governance operations §6](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion).
 
+## D96
+
+**Recorded status:** Decided 2026-10-02. Amends the seat float in [D84](#d84) and the pool remainder in [D94](#d94); the remainder is 52.5M at ten seats under [D111](#d111).
+
+Set the seat float at 50k NOAH, per seat, granted at genesis beside the seat as before. Why: the float's job is the
+week before seat income starts, when unvested coins cannot pay fees: gas at a few hundredths of a NOAH a transaction,
+proposal deposits of 1,000 and 5,000 refunded in four days unless vetoed, and a committee account's gas, under 10k in
+a busy week. 50k covers that fifty times over and is four and a half months of the income that carries everything
+after. 300k was sized for a job that no longer exists: the founders minting the first currencies, and conversion is
+closed at launch (D95); above operations the float buys only sellable supply on day one and a larger sum for a
+coerced founder to lose. It stays per seat rather than a fixed total because it is an operating cost per
+operator, not a share of the vote, and it stays a genesis grant rather than a later award because nothing else could
+pay for the proposal that awarded it. What it costs: ten floats are 500k NOAH, a twentieth of a percent of supply,
+and the pool keeps 57.5M after ten seats. The [launch genesis](../governance/GENESIS.md) carries the figure.
+
+## D97
+
+**Recorded status:** Decided 2026-10-02. Amends the ownership ceiling in [D90](#d90). Resized to 30M, a sixth at the
+20% fallback rate, by [D99](#d99).
+
+Set the ownership ceiling at 20M NOAH, seat included: the founder's whole position, 15M and a 4.5M seat. Why: 60M was
+the founder's grant when D86 set it and stayed when D90 cut that grant to 15M, so it matched nothing. The bands top
+at 15M, the founder holds 19.5M, and the ten seats together hold 45M, which left one contributor free to out-hold the
+founder three times over and the founding set once. The fraction, a fifth of what others have bonded, keeps everyone
+under a sixth of the vote at the moment of payment and no longer: payments are permanent and bonded stake is not, so
+a person paid 100M against 600M bonded holds a third of a chain whose stake later falls to 200M. The ceiling is the
+one bound that survives the stake moving, and the only absolute bound on chain, since the bands are a proposal
+convention the module never checks. 20M is the figure the founder's grant was sized on, nobody leaves the pools
+heavier than the founder, and the founder's own position fits it exactly. What it costs: at 15% staked it trims a
+few million from the largest positions at the very end of the distribution and is otherwise idle; it binds once
+bonded stake passes about 120M rather than 360M; and a seat holder's room is the ceiling less the seat, 15.5M at ten
+seats, so a seat above 20M, which takes fewer than three seats, leaves its holder no ownership room at all. Deriving the
+ceiling at assembly as one launch seat plus 15.5M, so the grant stayed 15M at any count, was considered and closed by
+[D98](#d98): it reads the founder's line as a launch seat's share rather than a tenth of the vote. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D98
+
+**Recorded status:** Decided 2026-10-02. Amends the founder's line in [D90](#d90) and closes the open item in
+[D97](#d97). The tenth is the module's fraction for everyone under [D100](#d100), which binds the founder's grant
+rather than the ceiling less the seat ([D101](#d101)). The seat is 5M under [D111](#d111), leaving 25M of room.
+
+Read the founder's line as a tenth of the vote, not a launch seat's share. The founder holds under a tenth of bonded
+stake at every payment whatever the seat count, so the grant is at most the ceiling less the seat, 15M at ten seats,
+and the proposal that makes it, once the public has bonded 90M, sizes it from the count and the stake at the time.
+The ceiling stays a fixed 20M and is not derived at assembly. Why: the two readings agree only at ten seats. A launch
+seat's share grows as seats shrink, so under it the founder's grant would grow to 36M at five seats, while a tenth
+of the vote is a statement about the chain that stays true whatever the launch review does, and it is what a reader
+understands by neutral. The fixed ceiling already tracks the absolute reading, 11M of room at five seats against
+11.2M under the line, so nothing in the module changes. What it costs: with fewer than ten seats the founder enters
+heavier and is granted less, the whole position staying near 20M; with more seats the grant may exceed 15M only up to
+the ceiling's room. The grant is a governance vote years after assembly, so nothing about it is fixed at genesis. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D99
+
+**Recorded status:** Decided 2026-10-02. Amends the ceiling in [D97](#d97) and the gates in [D94](#d94) and the
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md); confirms the 45M total of D94 and the 15M grant of D90. The
+gates are fixed minimums and 15% a scenario the figures survive under [D101](#d101). The total is replaced by a 5M seat
+under [D111](#d111); the grant stays 15M.
+
+Size the plan at a 20% staking rate of paid coins: the rate a live chain paying what Ark pays falls back to in a bad
+year, with 30%, where the original Terra ran on fee-funded rewards, as the active rate, and 15%, Terra Classic after
+its collapse, as what a dead chain shows and not a case to size for. Genesis figures are sized to hold at 20% and
+improve on their own at 30%; figures set by vote are set so the plan works at 20%. Three figures follow. The
+ownership ceiling is 30M, seat included, a sixth of the bonded stake at 20%, so even in the bad year no two holders
+can block; the 20M of D97 was a sixth at a dead-chain rate, and 45M, a sixth at the active rate, would coincide with
+the fraction and never bind, since the ceiling earns its place only below the rate the fraction is measured at. The
+step gates are 15% of paid distribution bonded, three quarters of the planning rate, 7.5M, 22.5M, 45M and 67.5M for
+steps two to five, where the 30% gates never opened step two at 20%; step five now opens before the founders lose the
+block rather than after. The founders' total stays 45M and the founder's grant 15M: at 20% the total is pinned from
+below by year one, a buyer needs half of it against about 20M of liquid supply, and from above by the bloc rule,
+since the founder's 15M pays in full by the end of the distribution at 45M and 12.6M at 50M, and the tenth of the
+vote allows 16M, which 15M is the round figure under. Why one rate: a figure sized at 30% has no margin and cannot be
+lowered after genesis, while one sized at 20% costs nothing at 30% beyond trimming positions above 30M; the reward
+targets, which the committee can double and governance raise further at the subsidy pool's cost, are the margin if
+the rate comes in under 20%. What it costs: a contributor may hold half again the founder's position, and at 15%
+staked the founders end at 29% and the bloc rule pays no seat holder, which the targets answer.
+
+## D100
+
+**Recorded status:** Decided 2026-10-02. Amends the ownership fraction recorded in [D86](#d86) and [D87](#d87) and
+makes the founder's line of [D98](#d98) the rule for everyone.
+
+Set the ownership fraction at a tenth of bonded stake: numerator 1, denominator 9 on the stake the person does not
+hold, which is a tenth of the whole and keeps a person's own bonding from raising their own limit. Why: the fifth of
+others held every wallet paid from the pools at a sixth of the vote, so blocking took three people, and the founder's
+tenth was a sentence in the plan that nothing on chain checked. One fraction at a tenth makes the founder's line the
+chain's rule for anyone paid from the pools: blocking takes four, any three at cap stay under the third, and the
+founder needs no separate term, since the 15M was sized on exactly this fraction. The 30M ceiling stays, because the
+two guard different moments: the fraction holds everyone at a tenth while stake is live, the ceiling at a sixth if
+stake later falls. What it costs: contributors are paid more slowly early. The genesis stake admits 5M per person
+rather than 9M, and a 10M founding-band grant completes once about 100M is bonded, roughly step three at the planning
+rate, where before it paid in full against the genesis stake; accrual is unaffected, so nothing is lost, only delayed,
+and the delay falls on the people who built the chain before launch. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) carries the figures.
+
+## D101
+
+**Recorded status:** Decided 2026-10-02. Amends the gates and step conditions of the
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) as recorded in [D99](#d99), and wording [D98](#d98) left behind.
+
+Make the step gates fixed minimums of public bonded stake, the plan table's 7.5M, 22.5M, 45M and 67.5M, 15% of each
+step's full distribution, and make them the only step condition: the previous step's contributor budget need not be
+exhausted, its remainder rolls forward with the member remainder, and a contributor over the cap no longer holds the
+step. Why: a gate read as 15% of payments was satisfied by the first members' tenths, 3M paid and 600k bonded, and
+stayed satisfied while later steps committed grants that pay nothing for a year, so the same 600k could open every
+step with the founders holding 98% of bonded stake. A fixed figure makes each step prove new participation, at the
+cost of pace: at 20% staked step two waits for about 37M of public payments, roughly two years in, which is the
+handover's real speed rather than a new delay. Requiring a step's contributor budget to be fully granted before the
+next opened rewarded awarding ownership to unlock a stage, so the bands become ceilings sized to the work and the
+unawarded balance rolls forward. A contributor goes over the cap when others unbond, and holding everyone's
+distribution then blocks the dilution that would repair it; the per-payment check already does the work. Wording
+corrected with it: the other founders' grants share bloc room pro rata by remaining escrow and can delay the
+founder's rather than queueing behind it; the seat is a founding allocation with long vesting that a founder who
+leaves keeps, not pay for service; members hold the largest share of bonded stake once grants are delegated, about
+43% at equal 20% staking, and the majority only with the other contributors, since founders bond everything and
+members a fifth; the founder's grant is bounded by the ownership fraction at every payment (D100), not by the ceiling
+less the seat; the founder's proposal waits for 91M of public bonded stake, since at the 0.667 threshold the exact
+block line is 90.14M; and 15%, Terra Classic today, is a scenario every genesis figure must survive rather than a case
+to dismiss, since Ark's rewards, 1.3M NOAH a year across ten seats, do not make 20% a floor. The module changes for
+none of this. What it costs: slow member recruitment can delay later contributor rounds, the price of a gate that
+measures handover; and a step number again says how far the handover has come, since escrow cannot lower a gate.
+
+## D102
+
+**Recorded status:** Decided 2026-10-03. Settles the "what a member gives in return" item of the
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) and restates what bounds the member grant in [D91](#d91).
+
+Membership obliges nothing: a member holds, stakes, votes, or sells by choice, and the chain needs both choices, since
+those who stake carry security and the vote and those who sell are the float. In the first year member payments are
+nearly all the liquid NOAH there is, beside the founders' 50k floats and about 1.3M of seat income, so the market
+outside the chain that opens pay streams forms from member sellers, and the pace governance opens a member tranche at
+is also the pace of the float. The grant is therefore ownership rather than pay, and the joiner and the faker bound it,
+not the work: the floor is the cost of joining, an identity check, a voucher, and a wallet, under which it reads as an
+airdrop; the ceiling is the price of a bought identity, since with nothing owed a fake does nothing a real seller does
+not, so each step's vote holds the tenth, the part no finding recovers, under that price; and the pool over the grant
+is the roll. The launch figure stays at 20,000: nothing is priced at launch and the first cohort is founder-vouched, so
+it risks least, and the later figures in D91 are illustrations each step's vote applies the rule to. Why: a labour
+anchor for the floor, the skilled-year rate or the bounty range, was considered and rejected, since a grant conditioned
+on participation pays for votes, which the app's rule of casting none forbids, and a motive test cannot separate a
+mercenary from a fake once selling is legitimate; identity and vouch carry the whole guard. What it costs: the member
+vote self-selects to those who stay, and to buyers who paid to, which is the handover by market the plan already
+accepts; the step-1 cohort holds four times step 5 in NOAH and sells into the thinnest market, the price of having
+carried the most risk; and counsel's question narrows to how a grant with nothing owed is characterised.
+
+## D103
+
+**Recorded status:** Decided 2026-10-03. Amends the suspension recovery recorded in [D86](#d86) and [D89](#d89).
+
+Drop the voided-term set and `MsgVoidSuspensions`. A suspension stands until the committee or governance reinstates
+it, across a committee replacement or a mandate expiry alike, and it records only the time it was made, which a
+later cancellation uses as its cutoff. Why: lifting suspensions as a side effect of a term change, by a void or by
+scoping them to the term, made a routine re-appointment drop the outgoing committee's legitimate pauses, and the
+explicit lifts already exist; a stolen key's mass suspension costs governance one `MsgReinstateMembers` per hundred
+members, the price the key paid to make them. What it costs: recovery from a stolen key is a proposal of three
+message kinds, appoint, cancel the term's awards, and reinstate, and the committee term a suspension was made under
+is no longer stored, since the actor and height identify it.
+
 ## D104
 
 **Recorded status:** Decided 2026-10-04. Adds the sizing rule to the depth lever in [D95](#d95).
@@ -1337,6 +1587,329 @@ judgement, not a measurement; flow above the sizing pays more than the floor unt
 the imbalance, so whoever sizes reads `Query/Pool`. The procedure is the
 [committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth).
 
+## D105
+
+**Recorded status:** Decided 2026-10-07. Amends the payment path in [D86](#d86) and [D87](#d87), which pulled payments
+by an any-sender release and had no block hook pay recipients. Its capped-grant retry is removed by [D121](#d121).
+
+The block pays. Every grant that owes principal and is not suspended carries the time the module next looks at it,
+and the end of each block pays the grants whose time has come, oldest first and at most a thousand a block, each what
+its schedule has accrued and its caps admit. A paid-in-full grant waits for its next boundary; one a cap held back
+waits for the sooner of that boundary and a day. Registration queues the boundary after the tenth, a contributor
+award its first boundary, cancellation its retained debt and reinstatement its arrears for the same block, a payee
+change the next block's look, and suspension leaves the queue. `MsgRelease` is removed; `Query/Releasable` becomes
+`Query/Payable`. A send Bank refuses at the payee is deferred a day or to the next boundary and published, since the
+payee is the one input no write can vet against every later restriction; every other failure in the hook is an
+accounting invariant and fails the block. Why: a member grant is the handover, and a payment that needs a signature
+is a payment some members never collect, a transaction the app has to make for them, and a gas cost on receiving;
+with the block paying, every member is paid in full by doing nothing, the app's monthly transaction is a delegation,
+and the chain has one fewer any-sender message. The queue is bounded by one entry a grant, so a halt of any length
+costs one catch-up payment each, and the per-block bound drains a backlog at a thousand a block. Rejected: lockup
+accounts in the payee's own account, which would delegate and vote unpaid principal against D86 and offer no
+clawback for suspension or cancellation; a retry every block for capped grants, which would churn the state for a
+founder's grant held years under the ceiling; and keeping the release message as an escape hatch, which keeps the
+surface the decision removes for at most a day's wait on a capped grant. What it costs: Disbursement gains a block
+hook, which the write-time refusals and the deferral keep from halting; a capped ownership grant waits up to a day
+after room opens; and a cancellation now pays its retained debt in the same block rather than leaving it to a later
+claim.
+
+## D106
+
+**Recorded status:** Decided 2026-10-07. Amends the bloc rule in [D90](#d90), restated in [D101](#d101). The committee's seat refusal it keeps is removed by [D108](#d108).
+
+Remove the founder bloc rule. An ownership payment to a seat holder is bound by the record cap alone, seat included,
+and nothing else distinguishes it: the module keeps no founder totals and the beneficiary query reports the record's own limit, shared with no one.
+Why: the rule bound the ten to each other, one founder's grant paying less because another's was paid, which assumes
+the founding seats act in unison. They are independent validators who may vote in different directions, and the chain
+cannot tell a coalition from ten strangers, so a cap that names one by genesis identity is not neutral: the plan's
+working limit, that blocking takes four wallets at a tenth each, is accepted for every other set of validators, and
+the ten were held to a stricter standard for who they are rather than what they hold. What the rule protected was the
+launch window, when the ten hold the whole vote and could grant themselves; that stays policy, which it already was:
+the founder's grant is proposed once public bonded stake passes 91M, the grantee abstains, and the cliff is in the
+schedule. Rejected: dropping only the pro-rata share, which keeps the group assumption; a per-seat fraction, which
+keeps it and pays the founder's grant at 650M of bonded stake rather than 195M. What it costs: the ten together are
+bounded by what the public votes them and by ten ceilings, not by a group rule; the founder's grant is paid in full at
+195M of bonded stake rather than 200M; and the committee's refusal to compensate a seat holder stays, since it is
+about which path decides founder pay, not about a bloc.
+
+## D107
+
+**Recorded status:** Decided 2026-10-07. Amends the member account's deposit rule in [D88](#d88).
+
+The member pool accepts NOAH deposits from anyone. The account leaves Bank's blocklist; the Disbursement send
+restriction, which admits exactly one positive NOAH coin into it on every Bank path, module-to-module included, is the
+guard. A deposit joins the pool unopened: it is spendable only through a tranche governance opens, and the account
+still has no exit, so it pays members or nobody. Why: the contributor account already accepts deposits in what it may
+hold, and a NOAH-only guard that binds every path makes the two accounts symmetric, so a donor or a later proposal
+can top up either pool without a module change, while the blocklist guarded only the message paths. What it costs:
+"only genesis funds the member pool" is no longer a rule; the pool's size is its genesis figure plus what arrives,
+and governance's tranche votes remain the only thing that turns any of it into grants.
+
+## D108
+
+**Recorded status:** Decided 2026-10-07. Amends the committee surface in [D89](#d89) and the seat refusal kept by
+[D106](#d106). The per-record compensation cap is [D109](#d109); the single allowance is split by kind in [D110](#d110).
+The committee's ownership awards are removed by [D113](#d113); its power to compensate a seat holder stands.
+
+The grants committee awards ownership as well as compensation, and to a founding seat holder as to anyone.
+`MsgCommitteeGrant` carries the kind; one allowance per denomination caps the term's awards, ownership under its NOAH
+entry beside NOAH compensation, and the record limit binds a committee ownership award at payment as it binds a
+governance one. The minimum first period, the hundred-a-term cap, and the term cancel are unchanged and apply to both
+kinds. Why: on chain the two labels differ in one thing, ownership counts toward `own` and is capped by the record
+limit while compensation is not, so the refusal kept the more bounded label off the committee's menu and nothing
+else: a NOAH compensation award is stakeable NOAH under the same four bounds. The seat refusal bound a record, not a
+person, and the kickback it named, the appointing ten paying themselves through their delegate, is bounded by the
+allowance governance sets and undone by the vote that replaces the committee; a seat holder paid on the seat record
+is visible there, where a second address would not be. Rejected: a separate ownership allowance, which needs the kind
+in the term index and buys a split the record cap already makes small at the committee's scale; keeping the seat
+refusal, which binds the honest path only. What it costs: governance sizes the NOAH allowance as the most the
+committee may hand any one record under either label; a seat holder's pay no longer needs a vote, so the plan's
+"grantee abstains" check applies to proposals alone; and the committee key carries a third power, recovered by the
+same three messages.
+
+## D109
+
+**Recorded status:** Decided 2026-10-07. Bounds the compensation [D89](#d89) delegated and [D108](#d108) widened.
+
+Cap compensation per record: one beneficiary record may be awarded at most `compensation_cap`, 1M in the reference unit
+at launch, inside a rolling `compensation_window` of a year, on the proposal and committee paths alike. An award is
+valued in the reference unit at the fresh oracle rates when it is created, rounded up, and the value is written on the
+grant; the check sums the record's compensation grants created inside the window, cancelled ones included, so a cancel
+never restores room. Both figures are operational params. Why: compensation had no per-person bound: the term allowance
+caps the committee's total and the tranche the pool, and nothing stopped one record taking all of either. The window
+sum is the pay analogue of the ownership record limit; it bounds the quantity itself, composes with streams and
+bounties, and sits at the write, where a human is in the loop, rather than in the block. The reference unit holds the
+figure steady where a NOAH cap would move with NOAH's price, and locking the value at award time keeps a past award's
+counted size from moving afterwards. Params rather than genesis policy because pay scale follows the market where
+ownership scale follows supply. Rejected: one live award per record, which bounds concurrency rather than quantity and
+chains short awards to many times the figure; a per-award cap alone, which overlapping awards defeat; revaluing past
+awards at current rates, which reintroduces the volatility; a window accumulator in state, which the grants already
+hold. What it costs: a compensation award needs a fresh rate for its denomination and the reference unit, so none can
+be awarded before the first reference observation and a stale feed refuses pay until it recovers; a pushed stablecoin
+rate changes how much of the allowance one record can take, within the oracle's own bounds; a record at its cap waits
+for the window to roll or a params vote; and a record with many grants pays a longer walk at award time.
+
+## D110
+
+**Recorded status:** Decided 2026-10-07. Replaces the per-denomination term allowance of [D89](#d89), shared across
+kinds by [D108](#d108). The ownership allowance is removed by [D113](#d113); the compensation allowance stands.
+
+Split the grants committee's term allowance by kind: an ownership allowance in NOAH and a compensation allowance in the
+reference unit, each one figure; the denomination list goes. An ownership award charges its NOAH amount; a compensation
+award in any active asset, NOAH included, charges the reference value D109 writes on the grant, so the check reads no
+rate the award did not already need. Why: ownership is a share of supply and compensation is pay, and D109 settled the
+unit for pay the day D108 shared one NOAH figure between them, a figure that floated with NOAH's price and that
+governance had to size as the most one record could take under either label. Rejected: one figure in NOAH, which
+charges nothing for an award custody already holds; one figure in the reference unit, which puts ownership awards
+behind the feed and shrinks their budget when NOAH rises; keeping the denomination list, since D109 already needs a
+live reference rate for every compensation award, so restricting pay to NOAH bounded nothing. What it costs: the live
+term's usage is two figures the module keeps and genesis carries, zeroed at appointment as Claims zeroes its allowance
+and checked against the term's grants at import; there is no per-asset bound on what the committee converts through
+Market, which the compensation figure bounds in value; and a NOAH award's label picks its allowance as it already picks
+its per-record cap.
+
+## D111
+
+**Recorded status:** Decided 2026-10-07. Amends the seat sizing in [D94](#d94), restoring the per-seat grant of
+[D84](#d84) at 5M; the float stays 50k under [D96](#d96), the ceiling 30M under [D99](#d99), and the founder's grant
+15M under [D98](#d98).
+
+Size the founding seat per seat: 5M NOAH vesting and a 50k float whatever count the launch review admits, so ten seats
+hold 50M, 5% of supply, and the community pool keeps 103M less 5.05M a seat, 52.5M at ten. Why: D94 fixed the total so
+the count could not move the handover lines, the early attack cost, the first contributor cap, and the bloc rule's room
+without a decision. The bloc rule is gone (D106) and the module keeps no founder total, so the seat is the one founder
+figure the chain still reads, and it is pay for a decade of running the chain: what a founder is promised at the review
+should not shrink because the review admitted another. The other levers are analysis of what the seats could do
+together, not rules, and are stated in the count: the founders pass alone under half the seats' sum and block alone
+under twice it, 25M and 100M at ten, with the founder's grant proposed at 101M. 5M is the top of the band at the 20%
+planning rate, not its floor: with the founder's grant the ten end at 31% of bonded stake, where 6M ends them over a
+third and the handover reverses when the grant lands, and above about 7M the block line sits past the whole
+distribution. The grant stays 15M: the tenth of the vote allows a ninth of public bonded stake whatever the seat, paid
+in full at 135M, and the seat leaves 25M of room under the ceiling, paid by the same path as any contributor's. What it
+costs: the year-one floor, that a buyer cannot reach a third against about 20M liquid, needs eight seats or more, a
+condition on the launch review rather than a genesis guarantee; the step gates, fixed minimums by vote, no longer sit
+on the lines, the step 3 gate opening 2.5M before the pass line at ten; the pool keeps 5M less at ten; a double-sign
+takes 250,000. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
+[launch genesis](../governance/GENESIS.md) carry the figures.
+
+## D112
+
+**Recorded status:** Decided 2026-10-07. Amends the founder's grant and its proposal line in [D90](#d90), [D98](#d98)
+and [D106](#d106), the seat derivation and the ten-seat assumption of [D111](#d111), and the goal's one-party line in
+the [disbursement plan](../governance/DISBURSEMENT_PLAN.md).
+
+Size the founder's position per seat, at genesis. Every seat stays 5M, and the founder's seat is half the other seats'
+sum, a third of the founding stake at any count, 22.5M at ten: one continuous vesting account on the seat schedule, the
+whole position on the founder's beneficiary record so the record cap counts it, the excess over one seat drawn from the
+contributor pool, 275.3M left at ten, and the community pool unchanged at 103M less 5.05M a seat. The founder's gentx
+self-delegates one seat, and the founder delegates the rest across the other seats in the first blocks, so no node
+holds the third and four nodes still halt. The 15M founding-band grant and its 101M proposal line go; the band table
+stays for other contributors. Launch assembly seats seven to thirteen: under seven the founding stake falls under the
+40M a buyer of the first year's liquid NOAH could take a third against, and over thirteen the founder's seat passes the
+30M ceiling. Why: the ten-seat assumption and the unison assumption fell together. With independent seats the founder
+has neither assurance of a grant voted years later by strangers nor weight in the launch electorate, so the founding
+allocation becomes genesis state sized by the threshold rather than a band grant; "a third" is a share, so its NOAH
+amount following the count is the rule, while every other seat stays the absolute promise of D111. The third is the
+veto, chosen on purpose: at genesis the founder blocks alone and the other seats together cannot pass over an active
+no, since two thirds exactly is under the strict 66.7%; the founder passes nothing alone, a third being under quorum;
+passing takes the founder plus half the other seats, and blocking the founder alone or half the others without. It
+dissolves on a per-seat schedule that does not depend on the count: the solo veto at about 0.3% of the founder's seat
+of public bonded stake, roughly 68k NOAH at ten, and the founder plus m seats at 15M times m. Spreading the delegations
+removes the accidental halt; a deliberate one stays one redelegation away, inherent to a third. Rejected: sizing every
+seat from a fixed total, which reverses D111 for D111's reason and makes the dissolution schedule move with the review;
+a seat that grows below seven, since a six-seat launch is a decision rather than a silent adjustment; the largest
+position under a third, which gives up the veto for one base unit. What it costs: the year-one floor becomes a count
+rule at seven rather than eight; the founder is the largest wallet until bonded stake passes ten times the seat, 225M
+at ten, just past the end of the distribution at the planning rate; the goal paragraph excepts the founder at
+genesis; the 25M and 100M handover lines become the dissolution table; and the halt key is removed by a practice
+genesis cannot hold, since validators exist only once the gentxs execute. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md) and [launch genesis](../governance/GENESIS.md) carry the
+figures.
+
+## D113
+
+**Recorded status:** Decided 2026-10-07. Amends the committee's award kinds of [D108](#d108) and removes the ownership
+allowance of [D110](#d110); the compensation allowance, the per-record cap of [D109](#d109), and the committee's power
+to compensate a seat holder stand. Amended 2026-10-08: a member registration carries its registering term too, so the
+term query lists a stolen key's registrations beside its awards; ownership still carries none, and the mandate query's
+award count is removed.
+
+Take ownership off the grants committee's menu. Every committee award is compensation, NOAH or an active asset,
+charged at its reference value against the term's compensation allowance, under the 1M-a-year record cap, the
+month-long first period, the hundred a term, and the term cancel; the award message carries no kind, the mandate no
+ownership allowance, and the module one usage figure. Ownership is a proposal only, in a review round with the
+reasoning in the summary and the grantee abstaining when the grantee votes. Why: a contributor grant is a decision
+about who owns the chain, argued in public, and the committee is a body the launch set appoints. D108 put ownership on
+the menu because a NOAH compensation award is stakeable NOAH too, so the kinds differ only in the record cap; that is
+true of the coins and false of the scale. Under the compensation label the committee's output to one record is bounded
+at pay scale, 1M in the reference unit a year; under the ownership label it was bounded by the record cap, 7.5M at the
+founding stake and a tenth of bonded stake as it grows, within an allowance governance sized, an order of magnitude
+more and exercised without a vote per grant. The month-long first period and the term cancel bound a stolen key, not
+an appointed committee's judgment about ownership. What it costs: a hire's ownership grant needs a proposal while its
+pay stream can still come from the committee, the shape the plan's hire package already had; and the retired field
+numbers, 5 on the appointment message, 2 on the mandate, 3 on the award message and the mandate query, 12 on genesis,
+stay reserved. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
+[module README](../../x/disbursement/README.md) carry the surface.
+
+## D114
+
+**Recorded status:** Decided 2026-10-07. Amends the seat vesting window of [D84](#d84), restated in [D111](#d111) and
+[D112](#d112).
+
+Vest every founding seat, the founder's included, behind a four-year cliff and over a four-year tail, fully vested at
+year eight rather than ten. Why: vesting gates transfer alone, since unvested seats delegate and vote from block one, so
+the schedule decides when founding stake can be sold and nothing in the handover arithmetic. The cliff is doing the
+protecting and stays: it covers the launch window, when the founding set is the electorate deciding every grant and the
+founder's coalitions still block (D112), and it keeps the floats the only liquid NOAH a founder holds while the first
+member cohorts are the whole float. The tail paces the exit after that, and the decade framing it carried went with
+D101, which made the seat an allocation a leaver keeps rather than pay for ten years of service. Sized against the
+member flow, roughly 30M to 45M a year through the middle of the distribution at the planning pace: a one-year tail
+unlocks the whole founding stake inside year five, above that year's member flow and with the founder's seat still
+about a fifth of the vote; two years leaves founders about half of what is sold; three about even; four keeps them a
+minority, 16.9M a year at ten seats, and finishes about when public bonded stake passes the seats at the step-5 gate,
+so the founding stake is fully for sale only once the public outweighs it and a buyer assembling a third faces the open
+market rather than a few known sellers. Rejected: the one-plus-three norm, sized for teams who are not the electorate;
+tails of one to three years, for the reasons above; shortening the cliff. What it costs: founder unlocks a year rise by
+half, 5.6M for the founder's seat at ten; the founding stake is fully for sale two years sooner, the founder's seat
+near an eighth of the vote then rather than a tenth; and the signal is a little weaker, though four years locked and
+four more vesting is still double the norm on both counts. One constant in `pkg/chain/launch.go` carries it; the
+module reads no schedule. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
+[launch genesis](../governance/GENESIS.md) carry the figures.
+
+## D115
+
+**Recorded status:** Decided 2026-10-07. Replaces the ownership fraction of [D86](#d86), [D87](#d87) and [D100](#d100),
+the ceiling of [D97](#d97) and [D99](#d99), the seat inside own of [D106](#d106), and the ceiling-derived seat bound and
+the founder's grant reading of [D112](#d112); restores the founder's 15M founding-band grant of [D90](#d90) beside the
+seat. The cap is checked at award by [D121](#d121); the figure stands.
+
+Bound ownership with one figure: `ownership_cap`, a Disbursement parameter governance sets, 15M NOAH at launch, the most
+one beneficiary record is paid in ownership from the pools over every grant. A payment is the smaller of accrued unpaid
+entitlement and the cap less what the record has been paid. The module reads neither bonded stake nor the seat: the
+staking dependency, the fraction, the ceiling, and the live limit go, and the beneficiary query reports the allowance
+alone. The seat stays on the record as a record nothing reads. Why: the fraction bounded a record's share of the vote
+by assuming the record staked everything it was paid, the one assumption the module cannot replace with a measurement,
+and against a public that sells most of what it is paid the fraction held contributors to a tenth of a small vote while
+the founding band promised figures it would not pay for years. With the founder's seat a third of the founding stake,
+any fraction up to a third left the founder's record no room at all, so the founder's 15M grant for the work before
+launch could only exist if the seat left the fraction's base, and a fraction that excludes the seat bounds nothing a seat
+holder does. One figure says what the plan means: nobody is paid more ownership than the founding band's top, which is
+the founder's grant, so the founder sits at the edge and no record leaves the pools heavier. The seat is consensus
+weight, from the community pool like every seat and vesting on the seat schedule; the 15M is pay for work, from the
+contributor pool, proposed in the first review round with the founder abstaining, on the contributor schedule, and
+paid as the cap admits like anyone's. What the figure means for the vote is stated rather than enforced: at the founding
+stake a record at the cap is about 18% of the vote, two are 31%, and three block; at 150M of bonded stake a record is a
+tenth; at the planning-rate end about 7%. The founder's seat plus grant blocks alone while public bonded stake is under
+twice what the grant has paid, 30M once it is paid in full, so the goal's "nothing restores" becomes this schedule.
+Rejected: a fraction with the seat outside it, which bounds pool payments but not a seat holder's vote; a fraction with
+the seat inside it, which pays the founder nothing in any projected case; a discount on own for an assumed selling
+rate, which is a projection in a halt-class rule and equivalent to a larger fraction for the one holder who does not
+sell; removing the seat from the record, kept as a record. What it costs: the cap no longer tracks the vote, so a
+sell-heavy chain has records at the cap that are a larger share of a small vote, and the working limit of four wallets
+to block becomes three at the founding stake; governance can raise the cap by a parameter vote, bounded only by the
+positive 128-bit check, which the launch electorate could do for itself; and the seat-count bound at thirteen stands on
+the founder's seat reaching 3% of supply rather than on a ceiling. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md), [launch genesis](../governance/GENESIS.md), and the module
+README carry the figure and the formula.
+
+## D116
+
+**Recorded status:** Decided 2026-10-07. Amends the contributor schedule of the
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md), four years with a one-year cliff then monthly, the pay-stream
+shape of twenty-four monthly periods, and the committee's first-period rule of [D89](#d89) and [D92](#d92), which
+the period itself replaces. A compensation clock's reach is a quarter by [D122](#d122).
+
+Fix each grant kind's shape as a module parameter and take the schedule out of the messages. Ownership is a one-year
+cliff paying a quarter, weighted as the 26 fortnights it spans, then biweekly for three years, 79 payments. Compensation
+is a count of fortnights the award sets, in equal shares, one for a bounty, together at most ten years at any cadence.
+Members take the same shape, a first period paid at registration then twelve monthly periods, so both are one
+`Schedule` of five integers: the first period's length and weight, each further period's length and weight, and the
+count of further periods. The grant stores that shape rather than an expanded period list, the `Period` type is gone,
+and accrual is one division rather than a walk, so its cost does not grow with the schedule. The grantor sets the clock's start, up to a century ahead: an ownership clock no earlier than
+its award, since the cliff is the point and the band's timing multiplier credits the past; a compensation clock at
+most a compensation window back, by proposal or committee alike, so a stream aligns to the day a hire started. Each
+grant records the block time it was awarded in beside its start, and nothing accrues before one period after it,
+wherever the clock starts: a backdated award pays its elapsed periods at that first look, a clock already run out is
+due then, and a cancel before it returns everything. That period is the window governance has against a stolen
+committee key, so the mandate's minimum first period goes and the compensation period is floored at a week; the
+compensation window measures from the same time. Why: the messages carried a free
+schedule, so every award was a shape decision in a proposal or a committee transaction, and the plan's "one schedule
+from approval" was a convention nothing checked; a shape in params is the convention as a rule, and governance moves it
+for future grants without touching live ones, which keep their copy. Biweekly is pay's cadence and puts ownership on
+the same clock, so the block pays everything fortnightly, and a count of periods rather than years keeps the cadence
+out of the count, so a six-month engagement is thirteen fortnights rather than a rounding. A fourteen-day period makes
+a 364-day year; the day's drift is accepted over a 14.05-day fortnight. Rejected: a settable count for ownership, since
+ownership is the plan's one stated instrument and the cap bounds it; a shape per award kept in a policy table, which is
+the free schedule again; bounties as a kind of their own, since a bounty is one period; and a backdated ownership clock, which pays the
+cliff at the first look and would let the founding set pass itself grants with clocks already run out. What it costs:
+the smallest award is one fortnight out; a proposal that took weeks to pass cannot reach an ownership clock back to the
+agreement, which sizing answers; a committee award pays nothing for a fortnight rather than a month;
+and ten years is the longest award, so a longer engagement renews. With the schedule list gone the disbursement protos were
+also swept: every reserved field and name was dropped and every message renumbered contiguously, which the chain can
+afford once before launch and never after. The plan's §4, the module README, and the governance runbook carry the
+shapes and the messages.
+
+## D117
+
+**Recorded status:** Decided 2026-10-07. Amends the contributor tranche of [D88](#d88) and the roll-forward wording of
+[D101](#d101); the member tranche of [D92](#d92) stands.
+
+Drop the contributor tranche. The contributor account's NOAH is one pool: every award draws it at creation,
+governance's by proposal and the committee's within its term allowance; a stablecoin award converts its shortfall
+from the pool; a cancel returns unearned contributor NOAH to the pool; a return draws the pool. `MsgOpenTranche`
+names no account and opens the member pool alone. Why: since [D113](#d113) every draw on the contributor tranche was
+either a proposal, which the same electorate opened in the message that needed it, or a committee award already
+bounded by the allowance at reference value, the record cap, the hundred a term, and the first-period minimum with
+the term cancel. A ceiling governance raises in the message that needs it bounds nothing, and the step accounting it
+kept, what the contributor side of a step has distributed, is the reservations and payments the balance query shows.
+The member tranche stays because it bounds a key that is not governance. Given up: an oracle-independent NOAH ceiling
+over committee awards, since the allowance and the record cap are reference-valued and a pushed rate stretches both;
+the first-period minimum and the term cancel are the answer D113 already gives. What it costs: a NOAH deposit into
+the contributor account is grantable the block it lands; a step's contributor budget is plan arithmetic rather than a
+chain record; and the retired field numbers, 2 on the message and 1 on the event, stay reserved. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md), [module README](../../x/disbursement/README.md), and
+[governance runbook](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) carry the surface.
+
 ## D118
 
 **Recorded status:** Decided 2026-10-08. Supersedes [D45](#d45) to [D48](#d48) and [D50](#d50) to [D53](#d53); the
@@ -1352,6 +1925,110 @@ upload. Why: the hub shipped shut and no counterparty route was planned, while t
 carried by the tax calculator, the policy router, the launch artefact, the threat model, and a two-chain e2e tier.
 What it costs: interoperability, if ever wanted, starts from a decision and a store migration rather than the
 one-switch opening sequence D45 as amended described, which no longer has a switch.
+
+## D119
+
+**Recorded status:** Decided 2026-10-08. Amends the measure of the compensation cap in [D109](#d109); the figure and
+the window stand. A backdated award's first window is charged by [D122](#d122).
+
+Charge a compensation award against the record's cap at its yearly rate. An award whose duration is within the window
+charges its whole value, so a bounty counts whole in the year it is paid; a longer stream charges its value spread over
+its years, `value × window / duration` rounded up as a bound. The check at award sums the charges of every compensation
+award to the record that is still running or was made inside the trailing window, cancelled ones included for that
+window, and refuses an award that would take the sum over the cap. Why: the cap counted an award's whole value in the
+year it was awarded, so once streams could run ten years (D116) it had become a bound on a stream's total, 1M however
+long it ran, about 100,000 a year, under the plan's own skilled-year rate; the plan says "1M a year" and means a rate.
+Charging by rate makes a ten-year stream at the design rate fit, 131,000 a year, and seven of them beside each other,
+while an eighth does not; a bounty is unchanged; and award-cancel-reaward cycling stays bounded, since a cancelled
+stream's charge persists for the window after its award. Rejected: a cap scaling with duration, which lets two long
+awards in one year take twice the cap; counting a stream's later years only as they arrive, which lets every year's
+awards each take the cap. What it costs: a running stream counts against the record for its whole life, so a record on
+a long stream has that much less room for bounties each year, and the check reads a stream's duration beside its
+value. The module README and the plan carry the rule.
+
+## D120
+
+**Recorded status:** Decided 2026-10-08. Amends [D89](#d89): registration leaves the grants committee; the committee's
+compensation power, term, and recovery stand.
+
+Appoint a registrar for member registration, apart from the grants committee and under it. The registrar is a second
+appointment in Disbursement, a bare mandate envelope the grants committee sets under its own term with
+`MsgCommitteeRegistrar`, for a height window inside the committee's; the committee may name itself, and each
+appointment advances the registrar term. The registrar is the committee's delegate, so a committee appointment,
+replacement or disabling, clears it, and governance reaches it only through the committee. `MsgRegisterMembers`, the
+one registration message, is the registrar's: it carries the registrar term and draws on the open member tranche, which
+stays the only bound on registration. A member grant records the registrar term and a compensation award the
+committee's, and the grants query lists each by its own term. Why: at a hundred addresses a batch, fifty thousand
+members is at least five hundred committee transactions, each a multisig signing ceremony, and the member platform
+registers as admissions clear, not on a signers' calendar; D89 weighed one key process for compensation and
+registration and never weighed a multisig against five hundred batches. What it costs: the registrar is the hottest key
+on the chain, a single key on the platform's signing service, and a stolen one pays out the tenths of whatever
+governance has opened before one committee transaction advances its term, so the standing rule that governance opens a
+step in slices sized to the pace it wants now sizes them to that exposure too; and each committee appointment is
+followed by one committee transaction naming the registrar again. The committee stops a stolen registrar in one
+transaction rather than two votes, the proposal that replaces a stolen committee clears its registrar in the same write
+with nothing more to carry, and governance cancels the fakes from the old registrar term's list. Rejected: a governance
+message setting the registrar beside the committee's, which made the registrar free-standing and needed its own place
+in every recovery proposal, when one appointer makes the delegate that appointer's term-scoped state; a per-term
+registration allowance the appointer sets, which would let the committee meter a step opened whole but adds a usage
+figure, a refresh cadence, and a second bound to reason about when the tranche already is one and sizing it is
+governance's job; an `x/authz` grant from the committee, which outlives the term and lets one key act under a shape
+recorded for a quorum. `MsgRegisterMembers` rides the normal lane: the lane is the property of being a committee
+message, registration is routine traffic rather than incident response, and the appointment, `MsgCommitteeRegistrar`,
+is the committee message that rides it. It is the first appointment a committee may make; the
+[mandate package README](../../pkg/mandate/README.md) carries the departure, the
+[module README](../../x/disbursement/README.md), the [plan](../governance/DISBURSEMENT_PLAN.md), and the
+[governance runbook](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) the surface.
+
+## D121
+
+**Recorded status:** Decided 2026-10-09. Amends the timing of [D115](#d115) and removes the capped-grant retry of
+[D105](#d105).
+
+Check the ownership cap when a grant is awarded, not when it pays. A record's committed ownership is what its ownership
+grants have paid or still owe, kept on the beneficiary record as `ownership_committed`; an award that takes it past
+`ownership_cap` is refused, and every ownership grant then pays in full on its schedule. A cancel drops the grant's
+unearned principal from the figure, so a grant cancelled inside its one-year cliff frees all its room and one cancelled
+later keeps what it earned committed. A cap vote changes what later awards admit and leaves existing grants on their
+terms; governance stops a grant by cancelling it. Why: D115 fixed the figure but kept the timing of the live stake
+limit it replaced, which could only be measured at payment. With a fixed figure a record's room only shrinks unless
+governance raises the cap, so whether a grant will be paid in full is known at award; checking later let a proposal
+award what the module would never pay, left the excess reserved in the contributor pool, and looked at a capped grant
+every day indefinitely. Award time also matches the compensation cap and the rule that a parameter change leaves
+existing grants on their terms. Rejected: counting a cancelled grant's whole principal, which would make a mistaken
+award spend the record's room until a cap vote, when ownership is governance's alone (D113) and the award-cancel cycle
+the compensation cap guards against has no committee to run it; walking the record's grants at each award as the
+compensation cap does, which a running total the award and the cancel both touch makes unnecessary. What it costs: a
+lowered cap no longer stops grants already made, so governance cancels them; a raised cap resumes nothing, since
+nothing is held; and with the partial payment gone, a payment Bank refuses is the only one that waits a retry. The
+[module README](../../x/disbursement/README.md) and the [plan](../governance/DISBURSEMENT_PLAN.md) carry the rule.
+
+## D122
+
+**Recorded status:** Decided 2026-10-09. Amends the compensation clock's reach in [D116](#d116), a compensation window
+back, and the charge of [D119](#d119) in an award's first window; the cap's figure and window stand.
+
+Charge a backdated compensation award, in the window after it is made, what it pays there, and let a compensation
+clock start at most a quarter before its award. In that first window an award charges its value spread over a window
+plus its backdate, `value × min(duration, window + backdate) / duration` rounded up, where the backdate is how far its
+clock starts before the award; after it, a stream charges `value × window / duration` while it runs, as D119 set. An
+award whose clock starts at or after the award charges as before. The reach is `MaxCompensationBackdate`, three plan
+months, a constant checked when the award is made, by proposal or committee alike. Why: D119 spread an award's value
+over its whole duration, the backdated part included, but counted the award only from when it was made, while the
+first look pays the backdated periods at once, so a record was paid faster than it was charged. A stream two windows
+long and backdated one paid its whole value inside the window after its award while charging half of it, and once it
+had ended and aged out an identical award fit again, so one record drew twice the cap every window on ordinary awards,
+the committee's included, with no cancel; shorter and longer streams drew less. Charging the first window what it pays
+closes that at any reach. The quarter follows practice: vesting commonly starts at a hire date weeks or months before
+the board approves the grant, and back pay covers the gap, while a year of reach was longer than practice. Rejected:
+no backdating, which drops paying for work a proposal took weeks to approve; the shorter reach alone, which still let a
+record draw a quarter more than the cap a window at launch; a parameter for the reach, which a params vote could
+widen; and checking the reach in grant validation, which every payment runs, so a later binary lowering the constant
+would fail stored grants in the block. What it costs: a backdated award uses more of the record's room in its first
+window, so a design-rate ten-year stream a quarter back counts an eighth of its value there rather than a tenth, and
+seven such streams no longer fit in one window; and arrears older than a quarter need a separate award, which counts
+in the window it is made. The [module README](../../x/disbursement/README.md) and the
+[plan](../governance/DISBURSEMENT_PLAN.md) carry the rule.
 
 ## P1
 
