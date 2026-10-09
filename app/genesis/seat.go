@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 	"time"
 
 	"cosmossdk.io/math"
@@ -23,56 +24,104 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// AddValidatorSeats grants one equal validator seat per operator in appState:
-// a continuous vesting account at the operator holding chain.SeatGrantNoah,
-// vesting from chain.SeatVestingCliffYears to chain.SeatVestingEndYears after
+// AddValidatorSeats grants one validator seat per operator in appState: a
+// continuous vesting account at the operator holding chain.SeatGrant, vesting
+// from chain.SeatVestingCliffYears to chain.SeatVestingEndYears after
 // genesisTime, a liquid float of chain.SeatFloatNoah beside it, both moved out
 // of the community pool, and both reward targets raised by one seat's share.
-// Supply is unchanged. It refuses an unset genesis time, an operator already
-// holding an account or balance, and a pool that cannot fund the seats, and
-// writes nothing unless every seat and every edited module passes its own
-// validation.
-func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, genesisTime time.Time) error {
+// The founder, one of the operators, holds chain.FounderSeat for the count
+// instead, half the other seats' sum, on the same account and schedule and
+// from the same pool. Supply is unchanged. It refuses an unset genesis time, a
+// file already seated, since the founding set is seated in one run, a founder
+// outside the operators, an operator already holding an account or balance,
+// and a pool that cannot fund the seats, and writes nothing unless every seat
+// and every edited module passes its own validation. The launch count bounds
+// are the command's. Each seat is recorded on the operator's Disbursement
+// beneficiary, a record nothing reads (D115).
+func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, founder sdk.AccAddress, genesisTime time.Time) error {
 	if len(operators) == 0 {
 		return errors.New("at least one operator address must be set")
+	}
+	for _, operator := range operators {
+		if len(operator) == 0 {
+			return errors.New("operator address must be set")
+		}
+	}
+	if len(founder) == 0 {
+		return errors.New("founder address must be set")
+	}
+	if !slices.ContainsFunc(operators, func(operator sdk.AccAddress) bool { return operator.Equals(founder) }) {
+		return fmt.Errorf("founder %s is not among the operators", founder)
 	}
 	if genesisTime.IsZero() {
 		return errors.New("genesis time must be set before the seats are granted: they vest from it")
 	}
+	if err := refuseSeated(cdc, appState); err != nil {
+		return err
+	}
+	founderSeat := chain.FounderSeat(len(operators))
 	seated := maps.Clone(appState)
-	for _, operator := range operators {
-		if err := addValidatorSeat(cdc, seated, operator, genesisTime); err != nil {
+	seats := make([]math.Int, len(operators))
+	for i, operator := range operators {
+		grant := chain.SeatGrant
+		if operator.Equals(founder) {
+			grant = founderSeat
+		}
+		seats[i] = grant
+		if err := addValidatorSeat(cdc, seated, operator, grant, genesisTime); err != nil {
 			return fmt.Errorf("seat %s: %w", operator, err)
 		}
 	}
+	registered, err := registerFounders(cdc, seated[disbursementtypes.ModuleName], operators, seats)
+	if err != nil {
+		return fmt.Errorf("%s: %w", disbursementtypes.ModuleName, err)
+	}
+	seated[disbursementtypes.ModuleName] = registered
 	maps.Copy(appState, seated)
 	return nil
 }
 
-// addValidatorSeat grants one seat, writing nothing unless every edited
-// module passes its own validation.
-func addValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, genesisTime time.Time) error {
+// refuseSeated rejects a file that already carries a seat: the founding set
+// is seated in one run, which is what fixes the reward targets and the
+// beneficiary records assembly then confirms by hand.
+func refuseSeated(cdc codec.Codec, appState map[string]json.RawMessage) error {
+	raw, present := appState[disbursementtypes.ModuleName]
+	if !present || len(raw) == 0 {
+		return fmt.Errorf("genesis carries no %s state", disbursementtypes.ModuleName)
+	}
+	var gs disbursementtypes.GenesisState
+	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
+		return fmt.Errorf("%s: %w", disbursementtypes.ModuleName, err)
+	}
+	for _, p := range gs.Beneficiaries {
+		if !p.Seat.IsNil() && p.Seat.IsPositive() {
+			return fmt.Errorf("seats already granted, %s holds one: the founding set is seated in one run", p.Address)
+		}
+	}
+	return nil
+}
+
+// addValidatorSeat grants one seat of grant with the float from the community
+// pool, writing nothing unless every edited module passes its own validation.
+func addValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, grant math.Int, genesisTime time.Time) error {
 	if len(operator) == 0 {
 		return errors.New("operator address must be set")
 	}
-	grant := noahCoins(chain.SeatGrantNoah)
-	seat := grant.Add(noahCoins(chain.SeatFloatNoah)...)
+	vesting := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, grant))
+	seat := vesting.Add(noahCoins(chain.SeatFloatNoah)...)
 
 	edits := []struct {
 		module string
 		edit   func(json.RawMessage) (json.RawMessage, error)
 	}{
 		{authtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return addSeatAccount(cdc, raw, operator, grant, genesisTime)
+			return addSeatAccount(cdc, raw, operator, vesting, genesisTime)
 		}},
 		{banktypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return fundSeat(cdc, raw, operator, seat)
 		}},
 		{distrtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return drawSeatFromPool(cdc, raw, seat)
-		}},
-		{disbursementtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return registerFounder(cdc, raw, operator)
 		}},
 		{treasurytypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
 			return raiseSeatTargets(cdc, raw)
@@ -201,13 +250,17 @@ func raiseSeatTargets(cdc codec.Codec, raw json.RawMessage) (json.RawMessage, er
 	return cdc.MarshalJSON(&state)
 }
 
-// registerFounder records the seat on the operator's permanent grant beneficiary.
-func registerFounder(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress) (json.RawMessage, error) {
+// registerFounders records each operator's seat on its permanent grant beneficiary, a record
+// nothing reads (D115).
+func registerFounders(cdc codec.Codec, raw json.RawMessage, operators []sdk.AccAddress, seats []math.Int) (json.RawMessage, error) {
 	var gs disbursementtypes.GenesisState
 	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
 		return nil, err
 	}
-	gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipPaid: math.ZeroInt(), Seat: chain.NativeBaseAmount(chain.SeatGrantNoah)})
+	for i, operator := range operators {
+		gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipCommitted: math.ZeroInt(), Seat: seats[i]})
+	}
+	disbursementtypes.SortBeneficiaries(gs.Beneficiaries)
 	if err := gs.Validate(); err != nil {
 		return nil, err
 	}

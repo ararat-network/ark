@@ -803,8 +803,9 @@ node = "tcp://localhost:%d"
 broadcast-mode = "sync"
 `
 
-// seatGentx is a seat's self-delegation: the whole grant at the artefact's
-// commission floor, with a 20% ceiling and a 1% daily change.
+// seatGentx is a seat's self-delegation: one seat, the founder's included,
+// at the artefact's commission floor, with a 20% ceiling and a 1% daily
+// change.
 func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakingtypes.CommissionRates, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
@@ -816,20 +817,20 @@ func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakin
 	}
 	floor := stakingGenesis.Params.MinCommissionRate
 	ceiling := math.LegacyMaxDec(floor, math.LegacyMustNewDecFromStr("0.2"))
-	return sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)),
+	return sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant),
 		stakingtypes.NewCommissionRates(floor, ceiling, math.LegacyMustNewDecFromStr("0.01")),
 		nil
 }
 
 // seatedGenesis is the artefact under chainID and genTime with one seat
-// granted per validator, vesting from genTime; its consensus block is kept
-// as written.
+// granted per validator, the first validator's the founder's, vesting from
+// genTime; its consensus block is kept as written.
 func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID string, genTime time.Time, seats []sdk.AccAddress) (*genutiltypes.AppGenesis, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
 		return nil, fmt.Errorf("unmarshal base app state: %w", err)
 	}
-	if err := arkgenesis.AddValidatorSeats(cdc, appState, seats, genTime); err != nil {
+	if err := arkgenesis.AddValidatorSeats(cdc, appState, seats, seats[0], genTime); err != nil {
 		return nil, err
 	}
 	appStateJSON, err := json.MarshalIndent(appState, "", "  ")

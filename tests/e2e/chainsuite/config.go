@@ -75,10 +75,10 @@ const (
 	// its height: enough for the vote to pass under GovVotingPeriod.
 	UpgradeDelta = 35
 
-	// SeatGrantNoah and SeatFloatNoah are the vesting grant and liquid float
-	// every seat holds, in whole NOAH, mirrored from pkg/chain/launch.go.
+	// SeatGrantNoah is one founding seat's grant and SeatFloatNoah the
+	// liquid float beside it, in whole NOAH, mirrored from pkg/chain/launch.go.
 	SeatGrantNoah = 5_000_000
-	SeatFloatNoah = 300_000
+	SeatFloatNoah = 50_000
 	// SeatValidatorShare and SeatOracleShare are one seat's per-block reward
 	// shares in base units, mirrored from the same file.
 	SeatValidatorShare = "17500000000000000"
