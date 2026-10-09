@@ -14,6 +14,7 @@ import (
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/pagination"
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
@@ -132,19 +133,9 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 			err,
 		)
 	}
-	if req.Pagination != nil {
-		if req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-			return nil, status.Error(
-				codes.InvalidArgument,
-				"pagination must not specify both key and offset",
-			)
-		}
-		if req.Pagination.Reverse {
-			return nil, status.Error(
-				codes.InvalidArgument,
-				"reverse pagination is not supported",
-			)
-		}
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 	if _, err := q.k.GetAsset(ctx, req.Denom); err != nil {
 		return nil, fmt.Errorf("getting asset %s: %w", req.Denom, err)
@@ -153,7 +144,7 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 	records, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.ResolutionRecords,
-		req.Pagination,
+		page,
 		func(
 			_ collections.Pair[string, uint64],
 			record types.ResolutionRecord,

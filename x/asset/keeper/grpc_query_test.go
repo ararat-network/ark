@@ -186,14 +186,12 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
 			Pagination: &sdkquery.PageRequest{
-				Limit:      2,
-				CountTotal: true,
+				Limit: 2,
 			},
 		},
 	)
 	s.Require().NoError(err)
 	s.Require().Equal([]uint64{2, 4}, writeOffVersions(first.ResolutionRecords))
-	s.Require().Equal(uint64(3), first.Pagination.Total)
 	s.Require().NotEmpty(first.Pagination.NextKey)
 
 	second, err := server.ResolutionHistory(
@@ -217,12 +215,26 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 	)
 	s.requireQueryCode(err, codes.NotFound)
 
+	// Reverse key pagination stays within the denomination's records.
+	reversed, err := server.ResolutionHistory(
+		s.ctx,
+		&assettypes.QueryResolutionHistoryRequest{
+			Denom: assets[0].Denom,
+			Pagination: &sdkquery.PageRequest{
+				Limit:   2,
+				Reverse: true,
+			},
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal([]uint64{7, 4}, writeOffVersions(reversed.ResolutionRecords))
+
 	_, err = server.ResolutionHistory(
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
 			Pagination: &sdkquery.PageRequest{
-				Reverse: true,
+				CountTotal: true,
 			},
 		},
 	)

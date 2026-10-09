@@ -211,14 +211,14 @@ func (s *KeeperTestSuite) TestQueryClaims() {
 		s.Require().NotNil(resp.Pagination.NextKey)
 	})
 
-	s.Run("key and offset together are rejected", func() {
+	s.Run("offsets and totals are refused", func() {
 		s.SetupTest()
 		seed(1)
 
-		_, err := s.queryClient.Claims(s.ctx, &types.QueryClaimsRequest{
-			Pagination: &sdkquery.PageRequest{Offset: 1, Key: []byte{0x01}},
-		})
-		s.Require().ErrorContains(err, "must not specify both key and offset")
+		for _, page := range []*sdkquery.PageRequest{{Offset: 1}, {CountTotal: true}} {
+			_, err := s.queryClient.Claims(s.ctx, &types.QueryClaimsRequest{Pagination: page})
+			s.Require().ErrorContains(err, "use key pagination")
+		}
 	})
 
 	s.Run("empty store lists nothing", func() {

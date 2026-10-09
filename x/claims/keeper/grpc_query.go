@@ -11,6 +11,7 @@ import (
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/pagination"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
@@ -106,17 +107,15 @@ func (q queryServer) Claims(ctx context.Context, req *types.QueryClaimsRequest) 
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			"pagination must not specify both key and offset",
-		)
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	claims, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.Claims,
-		req.Pagination,
+		page,
 		func(_ uint64, claim types.Claim) (types.Claim, error) {
 			return claim, nil
 		},
