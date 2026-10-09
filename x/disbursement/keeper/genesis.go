@@ -2,10 +2,10 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cosmossdk.io/collections"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -13,39 +13,100 @@ import (
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
-// InitGenesis imports verified obligations and rebuilds derived indexes and founder totals.
+// InitGenesis imports verified obligations and rebuilds the grant indexes. It checks what Validate
+// cannot see before it writes module state.
 func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error {
 	if gs == nil {
-		return fmt.Errorf("nil disbursement genesis")
+		return errors.New("nil disbursement genesis")
 	}
 	if err := gs.Validate(); err != nil {
-		return err
+		return fmt.Errorf("invalid disbursement genesis state: %w", err)
 	}
-	for _, t := range gs.Totals {
-		if k.bank.GetBalance(ctx, k.address, t.Denom).Amount.LT(t.Reserved) {
-			return fmt.Errorf("%s disbursement reservation is not backed by Bank", t.Denom)
+	// Governance holds the unbounded path already, so an appointment naming the authority delegates
+	// nothing; the message path re-checks every later replacement.
+	if gs.GrantsMandate.Committee == k.authority {
+		return errors.New("grants committee must be distinct from the disbursement authority")
+	}
+	if gs.RegistrarMandate.Committee == k.authority {
+		return errors.New("registrar must be distinct from the disbursement authority")
+	}
+	at, height := chain.BlockSeconds(ctx), uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	// Validate ties every grant clock to a journal stamp, so these bound the grants too.
+	for _, e := range gs.GrantJournal {
+		if e.Time > at || e.Height > height {
+			return fmt.Errorf("grant entry %d is in the future", e.Id)
 		}
-		if err := k.Totals.Set(ctx, t.Denom, t); err != nil {
+	}
+	for _, e := range gs.BeneficiaryJournal {
+		if e.Time > at || e.Height > height {
+			return fmt.Errorf("beneficiary entry %d is in the future", e.Id)
+		}
+	}
+	// A payee Bank blocks imports: the blocked list can change between an export and its relaunch,
+	// and the block defers the payment as it would any refused send.
+	for _, g := range gs.Grants {
+		earned, _, err := g.Accrued(at)
+		if err != nil {
 			return err
 		}
+		if g.Paid.GT(earned) {
+			return fmt.Errorf("grant %d paid past genesis time", g.Id)
+		}
+		if g.Amount.Denom != chain.NoahBaseDenom {
+			registered, err := k.assetKeeper.HasAsset(ctx, g.Amount.Denom)
+			if err != nil {
+				return fmt.Errorf("grant %d pays %s: checking the asset registry: %w", g.Id, g.Amount.Denom, err)
+			}
+			if !registered {
+				return fmt.Errorf("grant %d pays %s: not a registered asset", g.Id, g.Amount.Denom)
+			}
+		}
 	}
+	// Bank genesis bypasses the send restriction, so import holds each account to its admission rule;
+	// registry membership is permanent, so an export cannot fail it. Bank must also back each
+	// account's commitments: its reservations and, in the member account, the open tranche.
+	committed := make(map[string]sdk.Coins, len(gs.Books))
+	for _, b := range gs.Books {
+		committed[b.Account] = b.Reserved
+	}
+	committed[types.MembersName] = committed[types.MembersName].Add(chain.NoahCoin(gs.MemberTranche))
+	for _, account := range types.PoolAccountNames() {
+		if k.accountKeeper.GetModuleAccount(ctx, account) == nil {
+			return fmt.Errorf("%s module account has not been set", account)
+		}
+		balances := k.bankKeeper.GetAllBalances(ctx, k.accountKeeper.GetModuleAddress(account))
+		for _, coin := range balances {
+			if coin.Denom == chain.NoahBaseDenom {
+				continue
+			}
+			if account == types.MembersName {
+				return fmt.Errorf("the member account holds %s; it pays NOAH only", coin.Denom)
+			}
+			registered, err := k.assetKeeper.HasAsset(ctx, coin.Denom)
+			if err != nil {
+				return fmt.Errorf("the contributor account holds %s: checking the asset registry: %w", coin.Denom, err)
+			}
+			if !registered {
+				return fmt.Errorf("the contributor account holds %s: not a registered asset", coin.Denom)
+			}
+		}
+		if !balances.IsAllGTE(committed[account]) {
+			return fmt.Errorf("%s commitments %s are not backed by Bank", account, committed[account])
+		}
+	}
+
 	if err := k.Params.Set(ctx, gs.Params); err != nil {
-		return err
-	}
-	if err := k.OwnershipPolicy.Set(ctx, gs.OwnershipPolicy); err != nil {
 		return err
 	}
 	if err := k.NextGrantID.Set(ctx, gs.NextGrantId); err != nil {
 		return err
 	}
-	if err := k.NextJournalID.Set(ctx, gs.NextJournalId); err != nil {
+	if err := k.NextGrantEntryID.Set(ctx, gs.NextGrantEntryId); err != nil {
 		return err
 	}
-	if err := k.Issuance.Set(ctx, gs.Issuance); err != nil {
+	if err := k.NextBeneficiaryEntryID.Set(ctx, gs.NextBeneficiaryEntryId); err != nil {
 		return err
 	}
-	founders := map[string]bool{}
-	founding, paid, remaining := math.ZeroInt(), math.ZeroInt(), math.ZeroInt()
 	for _, p := range gs.Beneficiaries {
 		address, err := chain.ParseCanonicalAccountAddress("beneficiary", p.Address)
 		if err != nil {
@@ -54,43 +115,8 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 		if err := k.Beneficiaries.Set(ctx, address, p); err != nil {
 			return err
 		}
-		if !p.Seat.IsPositive() {
-			continue
-		}
-		founders[p.Address] = true
-		founding, err = founding.SafeAdd(p.Seat)
-		if err != nil {
-			return err
-		}
-		paid, err = paid.SafeAdd(p.OwnershipPaid)
-		if err != nil {
-			return err
-		}
-	}
-	var at uint64
-	if len(gs.Grants)+len(gs.Journal)+len(gs.Issuance.Entries) > 0 {
-		var err error
-		at, err = blockTime(ctx)
-		if err != nil {
-			return err
-		}
-	}
-	for _, e := range gs.Issuance.Entries {
-		if e.At > at {
-			return fmt.Errorf("issuance is in the future")
-		}
 	}
 	for _, g := range gs.Grants {
-		if g.StartTime > at || (g.Cancelled && g.CutoffTime > at) || (g.Suspension != nil && g.Suspension.At > at) {
-			return fmt.Errorf("grant %d has future state", g.Id)
-		}
-		earned, _, err := types.Accrued(g, at)
-		if err != nil {
-			return err
-		}
-		if g.Paid.GT(earned) {
-			return fmt.Errorf("grant %d paid past genesis time", g.Id)
-		}
 		address, err := chain.ParseCanonicalAccountAddress("beneficiary", g.Beneficiary)
 		if err != nil {
 			return err
@@ -98,69 +124,48 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 		if err := k.Grants.Set(ctx, g.Id, g); err != nil {
 			return err
 		}
-		if err := k.GrantsByBeneficiary.Set(ctx, collections.Join(address, g.Id), true); err != nil {
+		if err := k.index(ctx, address, g); err != nil {
 			return err
 		}
-		if g.Kind == types.GrantKind_GRANT_KIND_MEMBER {
-			if err := k.Members.Set(ctx, address, g.Id); err != nil {
-				return err
-			}
-		}
-		if g.MandateTerm != 0 {
-			if err := k.TermGrants.Set(ctx, collections.Join(g.MandateTerm, g.Id), g.Amount); err != nil {
-				return err
-			}
-		}
-		if founders[g.Beneficiary] && g.Kind == types.GrantKind_GRANT_KIND_OWNERSHIP {
-			remaining, err = remaining.SafeAdd(g.Remaining)
-			if err != nil {
+		if g.DueTime != 0 {
+			if err := k.Due.Set(ctx, collections.Join(g.DueTime, g.Id)); err != nil {
 				return err
 			}
 		}
 	}
-	// The mandate imports verbatim, expired included: an export taken after expiry must round-trip.
+	for _, b := range gs.Books {
+		if err := k.Books.Set(ctx, b.Account, b); err != nil {
+			return err
+		}
+	}
+	// The mandates import verbatim, expired included: an export taken after expiry must round-trip.
 	if err := k.GrantsMandate.Set(ctx, gs.GrantsMandate); err != nil {
 		return err
 	}
-	for _, term := range gs.VoidedTerms {
-		if err := k.VoidedTerms.Set(ctx, term); err != nil {
+	if err := k.CompensationUsed.Set(ctx, gs.CompensationUsed); err != nil {
+		return err
+	}
+	if err := k.MemberTranche.Set(ctx, gs.MemberTranche); err != nil {
+		return err
+	}
+	if err := k.RegistrarMandate.Set(ctx, gs.RegistrarMandate); err != nil {
+		return err
+	}
+	for _, e := range gs.GrantJournal {
+		if err := k.GrantJournal.Set(ctx, collections.Join(e.GrantId, e.Id), e); err != nil {
 			return err
 		}
 	}
-	for _, e := range gs.Journal {
-		if e.Time > at {
-			return fmt.Errorf("journal entry %d is in the future", e.Id)
-		}
-		if err := k.Journal.Set(ctx, e.Id, e); err != nil {
+	for _, e := range gs.BeneficiaryJournal {
+		address, err := chain.ParseCanonicalAccountAddress("beneficiary entry", e.Beneficiary)
+		if err != nil {
 			return err
 		}
-		if e.GrantId != 0 {
-			if err := k.JournalByGrant.Set(ctx, collections.Join(e.GrantId, e.Id), true); err != nil {
-				return err
-			}
-		}
-	}
-	if err := k.MemberPool.Set(ctx, gs.MemberPool); err != nil {
-		return err
-	}
-	if err := k.ContributorPool.Set(ctx, gs.ContributorPool); err != nil {
-		return err
-	}
-	for _, o := range gs.ConversionOrders {
-		if err := k.ConversionOrders.Set(ctx, o.Denom, o); err != nil {
+		if err := k.BeneficiaryJournal.Set(ctx, collections.Join(address, e.Id), e); err != nil {
 			return err
 		}
 	}
-	if _, err := k.unallocated(ctx, chain.NoahBaseDenom); err != nil {
-		return fmt.Errorf("NOAH reservations, pools, and conversion orders are not backed by Bank: %w", err)
-	}
-	if err := k.FoundingStake.Set(ctx, founding); err != nil {
-		return err
-	}
-	if err := k.FounderPaid.Set(ctx, paid); err != nil {
-		return err
-	}
-	return k.FounderRemaining.Set(ctx, remaining)
+	return nil
 }
 
 // ExportGenesis preserves absolute clocks and audit history; Bank exports the custody coins.
@@ -171,19 +176,15 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	if err != nil {
 		return nil, err
 	}
-	gs.OwnershipPolicy, err = k.OwnershipPolicy.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
 	gs.NextGrantId, err = k.NextGrantID.Peek(ctx)
 	if err != nil {
 		return nil, err
 	}
-	gs.NextJournalId, err = k.NextJournalID.Peek(ctx)
+	gs.NextGrantEntryId, err = k.NextGrantEntryID.Peek(ctx)
 	if err != nil {
 		return nil, err
 	}
-	gs.Issuance, err = k.Issuance.Get(ctx)
+	gs.NextBeneficiaryEntryId, err = k.NextBeneficiaryEntryID.Peek(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -193,36 +194,42 @@ func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error)
 	}); err != nil {
 		return nil, err
 	}
-	if err := k.Grants.Walk(ctx, nil, func(_ uint64, g types.Grant) (bool, error) { gs.Grants = append(gs.Grants, g); return false, nil }); err != nil {
+	if err := k.Grants.Walk(ctx, nil, func(_ uint64, g types.Grant) (bool, error) {
+		gs.Grants = append(gs.Grants, g)
+		return false, nil
+	}); err != nil {
 		return nil, err
 	}
-	if err := k.Totals.Walk(ctx, nil, func(_ string, t types.DenomTotals) (bool, error) { gs.Totals = append(gs.Totals, t); return false, nil }); err != nil {
+	if err := k.Books.Walk(ctx, nil, func(_ string, b types.AccountBook) (bool, error) {
+		gs.Books = append(gs.Books, b)
+		return false, nil
+	}); err != nil {
 		return nil, err
 	}
 	gs.GrantsMandate, err = k.GrantsMandate.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := k.VoidedTerms.Walk(ctx, nil, func(term uint64) (bool, error) {
-		gs.VoidedTerms = append(gs.VoidedTerms, term)
+	gs.CompensationUsed, err = k.CompensationUsed.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	gs.MemberTranche, err = k.MemberTranche.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	gs.RegistrarMandate, err = k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := k.GrantJournal.Walk(ctx, nil, func(_ collections.Pair[uint64, uint64], e types.GrantEntry) (bool, error) {
+		gs.GrantJournal = append(gs.GrantJournal, e)
 		return false, nil
 	}); err != nil {
 		return nil, err
 	}
-	if err := k.Journal.Walk(ctx, nil, func(_ uint64, e types.JournalEntry) (bool, error) {
-		gs.Journal = append(gs.Journal, e)
-		return false, nil
-	}); err != nil {
-		return nil, err
-	}
-	if gs.MemberPool, err = k.MemberPool.Get(ctx); err != nil {
-		return nil, err
-	}
-	if gs.ContributorPool, err = k.ContributorPool.Get(ctx); err != nil {
-		return nil, err
-	}
-	if err := k.ConversionOrders.Walk(ctx, nil, func(_ string, o types.ConversionOrder) (bool, error) {
-		gs.ConversionOrders = append(gs.ConversionOrders, o)
+	if err := k.BeneficiaryJournal.Walk(ctx, nil, func(_ collections.Pair[sdk.AccAddress, uint64], e types.BeneficiaryEntry) (bool, error) {
+		gs.BeneficiaryJournal = append(gs.BeneficiaryJournal, e)
 		return false, nil
 	}); err != nil {
 		return nil, err
