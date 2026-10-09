@@ -18,8 +18,8 @@ member account, `disbursement_members`, holds the member pool and every member g
 contributor account, `disbursement_contributors`, holds the contributor pool, ownership and compensation escrow in
 every denomination, and deposits. An account's pool is its NOAH outside grants; the module also records the
 part of the member pool governance has opened to registration, `member_tranche`. Each member step of the plan is a governance `MsgOpenTranche`
-naming an amount; opening adds to the tranche and moves no coins. Only genesis grows the member pool; a NOAH deposit
-into the contributor account joins its pool. Member registration is the registrar's, a key the grants committee
+naming an amount; opening adds to the tranche and moves no coins. A NOAH deposit into either account joins its
+pool; into the member account it stays unopened until a tranche opens it. Member registration is the registrar's, a key the grants committee
 appoints under its mandate, and draws on the open member tranche, so the roll never passes through a proposal; that tranche
 is the only bound on registration, so governance sizes what a registrar may commit by how much it opens. Each registration batch carries a reference to
 the platform's admission record, stored on every member grant and in the journal; it holds no personal data.
@@ -79,8 +79,9 @@ further periods follow, at most 1,200, each length within a century and each wei
 `amount × first_weight / total_weight`, each further share `amount × period_weight / total_weight`, both floored, the
 last period takes the remainder, and every period must receive a positive base-unit amount; a shape with no further
 periods pays everything in its first. Accrual is one division, so its cost does not grow with the schedule. The grantor sets `start_time`, up to a century ahead: an ownership clock no earlier than
-the award, a compensation clock at most a `compensation_window` back, by proposal or committee alike. The clock runs
-from it and never restarts. The grant also records `created_time`, the block it was awarded in, and **nothing accrues
+the award, a compensation clock at most a quarter back (`MaxCompensationBackdate`, three plan months), by proposal or
+committee alike (D122). The clock runs from it and
+never restarts. The grant also records `created_time`, the block it was awarded in, and **nothing accrues
 before one period after it**, wherever the clock starts: a backdated clock pays its elapsed periods at that first look,
 a clock already run out is due then, and a cancel before it returns everything. The compensation window measures from
 the same time. Period boundaries are inclusive.
@@ -97,9 +98,12 @@ the same time. Period boundaries are inclusive.
   together at most ten years, outside the ownership cap. Its denomination is
   NOAH or an active native Asset registry entry.
   One record's compensation is at most `compensation_cap` in the reference unit a `compensation_window`, valued at the
-  fresh oracle rates when awarded: an award within a window charges its whole value, a longer stream its value over its
-  duration, rounded up, and the sum over the record's awards still running or made inside the trailing window,
-  cancelled ones included for that window, must fit (D119); an award the oracle cannot value is refused. Suspending an asset later does not erase existing obligations. Funding and payment remain
+  fresh oracle rates when awarded. In the window after it is made an award charges what it pays there: its whole value
+  if it runs within a window plus its backdate, otherwise its value over its duration across that span; after that a
+  stream charges its value over its duration a window at a time while it runs, rounded up throughout. The sum over the
+  record's awards still running or made inside the trailing window, cancelled ones included for that window, must fit
+  (D119, D122); a clock that starts after the award counts from the award, and an award the oracle cannot value is
+  refused. Suspending an asset later does not erase existing obligations. Funding and payment remain
   in the award's denomination; a stablecoin award converts NOAH for what custody lacks when it is created and carries
   no exchange-rate guarantee afterwards.
 
@@ -132,14 +136,16 @@ a later look forward to its own block, never before the grant could first be pai
 at once rather than at the retry.
 
 A failed payment inside the block is a halt, so the inputs that could fail one are refused at the write: a payee
-Bank blocks is refused at creation and at a payee change, and amounts and schedules carry their bounds. The inputs no
+Bank blocks is refused at creation and at a payee change, as is either disbursement account, which Bank leaves
+unblocked for deposits and whose payment would only return to custody, and amounts and schedules carry their bounds. The inputs no
 write can vet are a Bank send restriction that refuses the payee later, such as a stablecoin paid into a NOAH-only
 fund account, and a payee the blocked list names by the time an export relaunches, which import accepts. That send is
 deferred instead: nothing is written, `EventPaymentDeferred` names the
 grant, payee, amount, and the retry time, the node log records why, and the grant waits a day or its next boundary. Every other failure in the
 hook is an accounting invariant and fails the block, as in Claims. Disbursement runs after Market in the block, and a
 stablecoin award's first boundary is at least a second after its creation, so its custody has settled before it can
-fall due. Payments are journaled with the paying account as the actor; a deferral moves nothing and is not journaled.
+fall due. Payments in the block are journaled with the paying account as the actor, and a member's first payment,
+which registration makes, with the registrar; a deferral moves nothing and is not journaled.
 
 ## Committee awards
 
@@ -217,7 +223,7 @@ share the SDK transaction cache; one failure rolls the whole message batch back.
 Grant records and member indexes are permanent; the grants mandate exports verbatim, an expired
 appointment included. The due queue is an index of each grant's `due_time`, rebuilt at import. Two append-only ledgers reconcile to the records they describe. The grant journal records each
 grant's creation, the conversion that funded a stablecoin award and the NOAH it cost, each payment and the payee that
-received it, cancellation, suspensions and reinstatements with their committee term, and payee changes; an entry's
+received it, cancellation, suspensions and reinstatements with their actor, and payee changes; an entry's
 shape is fixed by its action and checked at the write and on import; its payments and cancellations must sum to the
 grant's, its payee changes must lead to the grant's payee, a conversion is the entry after its award's creation, and
 the last suspension and the cancellation fall at the times the grant records. The beneficiary journal records each controller
@@ -239,7 +245,8 @@ work or an agreement without publishing private personnel information.
 | Schedule | a first period and at most 1,200 further, each within a century, weights positive and at most 2^32 |
 | Committee awards | Compensation only, within the term's reference-unit allowance; nothing paid before one period after the award |
 | Registration | Within the open member tranche, `member_amount` a head; a cancel reopens the unearned part |
-| Compensation per record | `compensation_cap` in the reference unit a `compensation_window`, a stream charging at its yearly rate while it runs, cancelled awards counting for a window |
+| Grant clock | Up to a century ahead; ownership no earlier than the award, compensation at most a quarter back |
+| Compensation per record | `compensation_cap` in the reference unit a `compensation_window`: an award charging its arrears with its first window, a stream its rate a window while it runs, cancelled awards counting for a window |
 | Grant reference, a member's its batch's | Nonempty, at most 2,048 bytes (`chain.MaxReferenceBytes`, shared with Reserve and Claims) |
 | Query page | At most 100 records, key pagination only; no offsets or count-total scans |
 
