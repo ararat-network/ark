@@ -64,7 +64,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 // clears the registrar, which the new committee may appoint again.
 func MsgSetGrantsMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetGrantsMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetGrantsMandate) {
@@ -80,11 +80,14 @@ func MsgSetGrantsMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetGrantsManda
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activation := height + r.Uint64InRange(1, 1_000)
 		return nil, &types.MsgSetGrantsMandate{
-			Authority:             authority,
-			Committee:             committee.AddressBech32,
-			ActivationHeight:      activation,
+			Authority:        authority,
+			Committee:        committee.AddressBech32,
+			ActivationHeight: activation,
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current height.
 			ExpiryHeight:          activation + r.Uint64InRange(1, 100_000),
 			CompensationAllowance: math.NewInt(r.Int63n(maxSimulatedAllowance) + 1),
 		}

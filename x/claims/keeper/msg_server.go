@@ -78,17 +78,17 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		if err := claimsMandate.Validate(); err != nil {
 			return nil, err
 		}
-	}
-	if claimsMandate.Committee == m.k.authority || claimsMandate.Committee == msg.Authority {
-		return nil, errors.New("Claims committee must be distinct from the Claims authority")
-	}
-	if msg.Committee != "" {
-		// Reject already-expired appointments: they cannot act and would only displace the
-		// incumbent, advance the term, and reset allowance.
-		if height := uint64(sdkCtx.BlockHeight()); msg.ExpiryHeight <= height {
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
+		if claimsMandate.Committee == m.k.authority || claimsMandate.Committee == msg.Authority {
+			return nil, errors.New("Claims committee must be distinct from the Claims authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); claimsMandate.ExpiryHeight <= height {
 			return nil, fmt.Errorf(
-				"Claims mandate expiry height %d is not after current height %d",
-				msg.ExpiryHeight,
+				"%s expires at height %d, which is not above the current height %d",
+				types.ClaimsMandateLabel,
+				claimsMandate.ExpiryHeight,
 				height,
 			)
 		}
@@ -100,7 +100,7 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		// cannot underflow. A span shorter than the cancellation period would
 		// leave the committee unable to submit any claim for the whole
 		// appointment, because every closing height would land past expiry.
-		if msg.ExpiryHeight-msg.ActivationHeight < params.ClaimCancellationPeriodBlocks {
+		if claimsMandate.ExpiryHeight-claimsMandate.ActivationHeight < params.ClaimCancellationPeriodBlocks {
 			return nil, errors.New("Claims mandate active span cannot be shorter than the claim cancellation period")
 		}
 	}

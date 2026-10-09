@@ -173,7 +173,7 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 			// is a delegation to nobody that still reads as a live fast path.
 			name:      "committee is the authority",
 			mutate:    func(msg *types.MsgSetConversionMandate) { msg.Committee = authority },
-			expectErr: "must be distinct from Market authority",
+			expectErr: "must be distinct from the Market authority",
 		},
 		{
 			name:      "inverted window",

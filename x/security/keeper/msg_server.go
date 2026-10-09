@@ -63,20 +63,18 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
-		// A committee that is also the authority is a delegation to nobody that
-		// still reads as a live fast path.
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
 			return nil, errors.New("security committee must be distinct from the chain authority")
 		}
-		// An expiry already behind the chain reads as live and authorises
-		// nothing; the window is half-open, so landing on it is already too
-		// late. Genesis applies no such check: an import must carry a mandate
-		// that expired before the export.
-		if updated.ExpiryHeight <= uint64(sdkCtx.BlockHeight()) {
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
 			return nil, fmt.Errorf(
-				"security mandate expires at height %d, which is not above the current height %d",
+				"%s expires at height %d, which is not above the current height %d",
+				types.SecurityMandateLabel,
 				updated.ExpiryHeight,
-				sdkCtx.BlockHeight(),
+				height,
 			)
 		}
 	}
@@ -94,7 +92,7 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 		ExpiryHeight:     updated.ExpiryHeight,
 		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("emitting security mandate: %w", err)
 	}
 
 	return &types.MsgSetSecurityMandateResponse{}, nil

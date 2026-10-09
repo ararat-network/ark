@@ -47,7 +47,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	// naming the authority is a delegation to nobody that still reads as a live
 	// fast path.
 	if data.ConversionMandate.Committee == k.authority {
-		return fmt.Errorf("conversion committee must be distinct from Market authority")
+		return fmt.Errorf("conversion committee must be distinct from the Market authority")
 	}
 
 	if err := k.Params.Set(ctx, data.Params); err != nil {

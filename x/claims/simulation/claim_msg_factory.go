@@ -41,14 +41,16 @@ func MsgSetClaimsMandateFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.M
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activation := height + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetClaimsMandate{
 			Authority:        authority,
 			Committee:        committee.AddressBech32,
 			ActivationHeight: activation,
 			// Validation demands activation strictly precede expiry, and the
-			// handler demands the span cover the cancellation period.
+			// handler demands expiry sit above the current height and the span
+			// cover the cancellation period.
 			ExpiryHeight: activation + params.ClaimCancellationPeriodBlocks + r.Uint64InRange(1, 100_000),
 			// A configured mandate must allow the committee to pay something.
 			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(int64(r.IntInRange(1, 1_000_000_000)))),

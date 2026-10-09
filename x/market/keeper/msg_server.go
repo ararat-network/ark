@@ -164,14 +164,18 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
-			return nil, errors.New("conversion committee must be distinct from Market authority")
+			return nil, errors.New("conversion committee must be distinct from the Market authority")
 		}
-		if updated.ExpiryHeight <= uint64(sdkCtx.BlockHeight()) {
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
 			return nil, fmt.Errorf(
-				"conversion mandate expires at height %d, which is not above the current height %d",
+				"%s expires at height %d, which is not above the current height %d",
+				types.ConversionMandateLabel,
 				updated.ExpiryHeight,
-				sdkCtx.BlockHeight(),
+				height,
 			)
 		}
 		capacity, err := m.k.ConversionPolicy.Get(ctx)
@@ -210,7 +214,7 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		ExpiryHeight:     updated.ExpiryHeight,
 		CommitteeShape:   updated.CommitteeShape,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Market conversion mandate: %w", err)
+		return nil, fmt.Errorf("emitting conversion mandate: %w", err)
 	}
 
 	return &types.MsgSetConversionMandateResponse{}, nil

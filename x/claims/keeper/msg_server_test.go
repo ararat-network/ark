@@ -118,7 +118,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			ExpiryHeight:        100,
 			CommitteeClaimLimit: noahCoin(1_000),
 		})
-		s.Require().ErrorContains(err, "is not after current height")
+		s.Require().ErrorContains(err, "not above the current height")
 	})
 
 	s.Run("partially elapsed window is accepted", func() {

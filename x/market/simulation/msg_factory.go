@@ -231,7 +231,7 @@ func MsgRemoveTobinTaxOverrideFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*t
 // freedom, which only the committee messages exercise.
 func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConversionMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetConversionMandate) {
@@ -249,7 +249,8 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		activation := height + r.Uint64InRange(1, 1_000)
 		bounds := types.ConversionPolicy{
 			BasePool:           GenBasePool(r.Rand),
 			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
@@ -260,7 +261,8 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 			Authority:        authority,
 			Committee:        committee.AddressBech32,
 			ActivationHeight: activation,
-			// Validation demands activation strictly precede expiry.
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current height.
 			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
 			MinimumPolicy: bounds,
 			MaximumPolicy: bounds,
