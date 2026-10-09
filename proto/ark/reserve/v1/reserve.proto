@@ -183,8 +183,8 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // rate is the Oracle rate used this block, in units of this asset per one
-  // NOAH, so the credit below divides by it. It is zero when no rate was used:
+  // rate is the Oracle rate used this block, NOAH per one unit of this asset,
+  // so the credit below multiplies by it. It is zero when no rate was used:
   // the feed is dark, stale, or non-positive, or the asset was never priced.
   string rate = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
@@ -211,7 +211,7 @@ message AssetRecognition {
     (amino.dont_omitempty) = true
   ];
   // credit is the anoah this asset contributes: the gross quantity haircut,
-  // divided by the rate, truncated, then clipped by the cap.
+  // multiplied by the rate, truncated, then clipped by the cap.
   cosmos.base.v1beta1.Coin credit = 9 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true

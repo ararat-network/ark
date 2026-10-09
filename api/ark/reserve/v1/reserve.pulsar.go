@@ -4627,8 +4627,8 @@ type AssetRecognition struct {
 	// impaired_quantity sums the open, impaired positions: attested holdings
 	// excluded from credit without being erased.
 	ImpairedQuantity string `protobuf:"bytes,4,opt,name=impaired_quantity,json=impairedQuantity,proto3" json:"impaired_quantity,omitempty"`
-	// rate is the Oracle rate used this block, in units of this asset per one
-	// NOAH, so the credit below divides by it. It is zero when no rate was used:
+	// rate is the Oracle rate used this block, NOAH per one unit of this asset,
+	// so the credit below multiplies by it. It is zero when no rate was used:
 	// the feed is dark, stale, or non-positive, or the asset was never priced.
 	Rate                string `protobuf:"bytes,5,opt,name=rate,proto3" json:"rate,omitempty"`
 	HaircutFactor       string `protobuf:"bytes,6,opt,name=haircut_factor,json=haircutFactor,proto3" json:"haircut_factor,omitempty"`
@@ -4637,7 +4637,7 @@ type AssetRecognition struct {
 	// recognised capital: the anoah ceiling this asset's credit was clipped at.
 	EffectiveCap *v1beta1.Coin `protobuf:"bytes,8,opt,name=effective_cap,json=effectiveCap,proto3" json:"effective_cap,omitempty"`
 	// credit is the anoah this asset contributes: the gross quantity haircut,
-	// divided by the rate, truncated, then clipped by the cap.
+	// multiplied by the rate, truncated, then clipped by the cap.
 	Credit *v1beta1.Coin `protobuf:"bytes,9,opt,name=credit,proto3" json:"credit,omitempty"`
 }
 
