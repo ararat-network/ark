@@ -12,6 +12,7 @@ owning module; a shared package should not acquire keeper dependencies merely to
 | [grpcconn](grpcconn/) | gRPC transport preparation, endpoint locality, connections and cleanup. | [Package contract](grpcconn/grpcconn.go) |
 | [tlsconfig](tlsconfig/) | TLS file loading and reloadable identity material. | [tlsconfig.go](tlsconfig/tlsconfig.go), [material.go](tlsconfig/material.go) |
 | [mandate](mandate/) | Shared appointment envelope and bounded delegation checks. | [Package guide](mandate/README.md) |
+| [pagination](pagination/) | The page rule every module list query applies: key pagination, no totals, at most 100 entries. | [pagination.go](pagination/pagination.go) |
 | [metrics](metrics/) | Small metric types and module method instrumentation. | [metrics.go](metrics/metrics.go) |
 | [telemetry](telemetry/README.md) | Process telemetry startup and export integration. | [Developer guide](telemetry/README.md) |
 
