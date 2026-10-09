@@ -11,8 +11,11 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -60,15 +63,21 @@ func acceptedQueries() wasmkeeper.AcceptedQueries {
 		"/cosmos.staking.v1beta1.Query/Redelegations":                 func() gogoproto.Message { return &stakingtypes.QueryRedelegationsResponse{} },
 		"/cosmos.staking.v1beta1.Query/HistoricalInfo":                func() gogoproto.Message { return &stakingtypes.QueryHistoricalInfoResponse{} },
 
-		"/ark.treasury.v1.Query/ComputeTax": func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },
-		"/ark.treasury.v1.Query/TaxCap":     func() gogoproto.Message { return &treasurytypes.QueryTaxCapResponse{} },
-		"/ark.treasury.v1.Query/TaxCaps":    func() gogoproto.Message { return &treasurytypes.QueryTaxCapsResponse{} },
-		"/ark.treasury.v1.Query/GasPrice":   func() gogoproto.Message { return &treasurytypes.QueryGasPriceResponse{} },
-		"/ark.treasury.v1.Query/GasPrices":  func() gogoproto.Message { return &treasurytypes.QueryGasPricesResponse{} },
+		"/ark.treasury.v1.Query/ComputeTax":     func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },
+		"/ark.treasury.v1.Query/TaxCap":         func() gogoproto.Message { return &treasurytypes.QueryTaxCapResponse{} },
+		"/ark.treasury.v1.Query/TaxCaps":        func() gogoproto.Message { return &treasurytypes.QueryTaxCapsResponse{} },
+		"/ark.treasury.v1.Query/GasPrice":       func() gogoproto.Message { return &treasurytypes.QueryGasPriceResponse{} },
+		"/ark.treasury.v1.Query/GasPrices":      func() gogoproto.Message { return &treasurytypes.QueryGasPricesResponse{} },
+		"/ark.treasury.v1.Query/FundStatus":     func() gogoproto.Message { return &treasurytypes.QueryFundStatusResponse{} },
+		"/ark.treasury.v1.Query/ExposureStatus": func() gogoproto.Message { return &treasurytypes.QueryExposureStatusResponse{} },
+		"/ark.treasury.v1.Query/RewardFunding":  func() gogoproto.Message { return &treasurytypes.QueryRewardFundingResponse{} },
 
 		"/ark.oracle.v1.Query/ExchangeRate":   func() gogoproto.Message { return &oracletypes.QueryExchangeRateResponse{} },
 		"/ark.oracle.v1.Query/ExchangeRates":  func() gogoproto.Message { return &oracletypes.QueryExchangeRatesResponse{} },
 		"/ark.oracle.v1.Query/ReferenceDenom": func() gogoproto.Message { return &oracletypes.QueryReferenceDenomResponse{} },
+		"/ark.oracle.v1.Query/Feeds":          func() gogoproto.Message { return &oracletypes.QueryFeedsResponse{} },
+		"/ark.oracle.v1.Query/Attendance":     func() gogoproto.Message { return &oracletypes.QueryAttendanceResponse{} },
+		"/ark.oracle.v1.Query/RewardWeight":   func() gogoproto.Message { return &oracletypes.QueryRewardWeightResponse{} },
 
 		"/ark.market.v1.Query/Sell":             func() gogoproto.Message { return &markettypes.QuerySellResponse{} },
 		"/ark.market.v1.Query/Buy":              func() gogoproto.Message { return &markettypes.QueryBuyResponse{} },
@@ -76,8 +85,19 @@ func acceptedQueries() wasmkeeper.AcceptedQueries {
 		"/ark.market.v1.Query/ConversionPolicy": func() gogoproto.Message { return &markettypes.QueryConversionPolicyResponse{} },
 		"/ark.market.v1.Query/TobinTax":         func() gogoproto.Message { return &markettypes.QueryTobinTaxResponse{} },
 
-		"/ark.asset.v1.Query/Asset":  func() gogoproto.Message { return &assettypes.QueryAssetResponse{} },
-		"/ark.asset.v1.Query/Assets": func() gogoproto.Message { return &assettypes.QueryAssetsResponse{} },
+		"/ark.asset.v1.Query/Asset":          func() gogoproto.Message { return &assettypes.QueryAssetResponse{} },
+		"/ark.asset.v1.Query/Assets":         func() gogoproto.Message { return &assettypes.QueryAssetsResponse{} },
+		"/ark.asset.v1.Query/SettlementPlan": func() gogoproto.Message { return &assettypes.QuerySettlementPlanResponse{} },
+
+		"/ark.reserve.v1.Query/RecognisedCapital": func() gogoproto.Message { return &reservetypes.QueryRecognisedCapitalResponse{} },
+
+		"/ark.claims.v1.Query/Balance": func() gogoproto.Message { return &claimstypes.QueryBalanceResponse{} },
+		"/ark.claims.v1.Query/Claim":   func() gogoproto.Message { return &claimstypes.QueryClaimResponse{} },
+
+		"/ark.disbursement.v1.Query/Grant":       func() gogoproto.Message { return &disbursementtypes.QueryGrantResponse{} },
+		"/ark.disbursement.v1.Query/Beneficiary": func() gogoproto.Message { return &disbursementtypes.QueryBeneficiaryResponse{} },
+		"/ark.disbursement.v1.Query/Grants":      func() gogoproto.Message { return &disbursementtypes.QueryGrantsResponse{} },
+		"/ark.disbursement.v1.Query/Member":      func() gogoproto.Message { return &disbursementtypes.QueryMemberResponse{} },
 	}
 }
 

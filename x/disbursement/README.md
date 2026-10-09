@@ -264,8 +264,8 @@ The authoritative API is [proto/ark/disbursement/v1](../../proto/ark/disbursemen
 asset it holds, and the member tranche; `balance DENOM` shows one denomination, held or not.
 `grants --beneficiary`, `grants --committee-term`, `grants --registrar-term`,
 `grant-journal --grant-id`, and `beneficiary-journal ADDRESS` use indexes rather than scanning unrelated history. `member` and `beneficiary`
-complete the public accounting surface. Queries carry `module_query_safe`; they are not automatically added
-to the app's separately reviewed Wasm query accept list.
+complete the public accounting surface. Queries carry `module_query_safe`; of them, `Grant`, `Grants`,
+`Member`, and `Beneficiary` are on the app's separately reviewed Wasm query accept list.
 
 | Source | Responsibility |
 | --- | --- |

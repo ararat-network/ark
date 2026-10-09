@@ -187,7 +187,7 @@ func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	annotated := moduleQuerySafePaths()
-	require.Len(t, app.AcceptedQueries(), 49, "fifteen Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
+	require.Len(t, app.AcceptedQueries(), 63, "twenty-nine Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
 
 	for path, response := range app.AcceptedQueries() {
 		t.Run(path, func(t *testing.T) {
@@ -206,7 +206,7 @@ func TestUnlistedQueriesAreRefused(t *testing.T) {
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
 	plugins := arkApp.WasmQueryPlugins(app.AcceptedQueries())
 
-	const path = "/ark.treasury.v1.Query/FundStatus"
+	const path = "/ark.treasury.v1.Query/Params"
 	require.Contains(t, moduleQuerySafePaths(), path, "the case is an annotated, unlisted path")
 	require.NotContains(t, app.AcceptedQueries(), path)
 
@@ -376,7 +376,7 @@ func TestContractReadsListedPathsOnly(t *testing.T) {
 		require.Equal(t, want, got, "the contract reads what the chain answers")
 	})
 
-	const unlisted = "/ark.treasury.v1.Query/FundStatus"
+	const unlisted = "/ark.treasury.v1.Query/Params"
 	for name, req := range map[string]wasmvmtypes.QueryRequest{
 		"grpc":     {Grpc: &wasmvmtypes.GrpcQuery{Path: unlisted, Data: []byte{}}},
 		"stargate": {Stargate: &wasmvmtypes.StargateQuery{Path: unlisted, Data: []byte{}}},

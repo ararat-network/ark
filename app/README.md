@@ -79,11 +79,14 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contrac
   because Wasmd ships no permissive default and a permissive list leaks nondeterministic reads into consensus. A path is
   listed only if it is annotated `module_query_safe`, which a test enforces, and listing says something further: its
   response shape is frozen for the life of the chain, because a value a contract reads is an input to consensus.
-  Widening the list is a coordinated binary upgrade, never a vote. It carries forty-eight paths: the thirty-four the SDK
-  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and fourteen
-  of Ark's own: what a contract needs to price and route a conversion or a transfer, the tax estimate and the caps and
-  gas prices behind it, the Oracle rates and reference unit, Market's quote, pool, policy, and Tobin tax, and the asset
-  registry.
+  Widening the list is a coordinated binary upgrade, never a vote. It carries sixty-three paths: the thirty-four the SDK
+  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and
+  twenty-nine of Ark's own. Most are what a contract needs to price and route a conversion or a transfer: the tax
+  estimate and the caps and gas prices behind it, the Oracle rates, reference unit, and feed schedule, Market's quotes,
+  pool, policy, and Tobin tax, and the asset registry with its settlement terms. The rest let a contract read its own
+  standing or the system's: grants and beneficiary records, membership, a validator's oracle attendance and reward
+  weight, reward funding, fund status and exposure, the Reserve's recognised capital, the Insurance balance, and a
+  claim record. Params, mandates, and audit trails stay off the list.
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
