@@ -47,10 +47,8 @@ type OracleKeeper interface {
 	GetReferenceDenom(ctx context.Context) (string, error)
 }
 
-// AssetKeeper validates compensation denominations, admits registered deposits, and lists the registry
-// the balance query walks.
+// AssetKeeper validates compensation denominations and admits registered deposits.
 type AssetKeeper interface {
 	GetAsset(ctx context.Context, denom string) (assettypes.Asset, error)
 	HasAsset(ctx context.Context, denom string) (bool, error)
-	ListAssets(ctx context.Context) ([]assettypes.Asset, error)
 }

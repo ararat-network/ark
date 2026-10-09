@@ -394,18 +394,3 @@ func (mr *MockAssetKeeperMockRecorder) HasAsset(ctx, denom any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasAsset", reflect.TypeOf((*MockAssetKeeper)(nil).HasAsset), ctx, denom)
 }
-
-// ListAssets mocks base method.
-func (m *MockAssetKeeper) ListAssets(ctx context.Context) ([]types.Asset, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListAssets", ctx)
-	ret0, _ := ret[0].([]types.Asset)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListAssets indicates an expected call of ListAssets.
-func (mr *MockAssetKeeperMockRecorder) ListAssets(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAssets", reflect.TypeOf((*MockAssetKeeper)(nil).ListAssets), ctx)
-}

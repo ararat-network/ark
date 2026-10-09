@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	MaxBatch    = 100
-	MaxPageSize = 100
+	MaxBatch = 100
 	// MaxPaymentsPerBlock bounds EndBlock work; entries past it stay due for the next block.
 	MaxPaymentsPerBlock = 1_000
 )
