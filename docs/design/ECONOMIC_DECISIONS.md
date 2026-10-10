@@ -20,7 +20,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
 - D72–D111: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D91](#d91), [D92](#d92), [D93](#d93), [D94](#d94), [D95](#d95), [D96](#d96), [D97](#d97), [D98](#d98), [D99](#d99), [D100](#d100), [D101](#d101), [D102](#d102), [D103](#d103), [D104](#d104), [D105](#d105), [D106](#d106), [D107](#d107), [D108](#d108), [D109](#d109), [D110](#d110), [D111](#d111).
-- D112–D123: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123).
+- D112–D138: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123), [D124](#d124), [D125](#d125), [D126](#d126), [D127](#d127), [D128](#d128), [D129](#d129), [D130](#d130), [D131](#d131), [D132](#d132), [D133](#d133), [D134](#d134), [D135](#d135), [D136](#d136), [D137](#d137), [D138](#d138).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -145,7 +145,7 @@ all arbitrary-recipient, conversion, investment, and external-asset deployment r
 
 ## D17
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. A `MsgMultiSend` is capped per output under [D138](#d138).
 
 Apply each denomination's tax cap independently to each message input.
 
@@ -252,7 +252,7 @@ sender or Treasury parameter authority.
 
 ## D30
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. Its window and the cancellation period are block time under [D133](#d133).
 
 Governance owns the Insurance Claims Mandate. The shared cancellation period is a module parameter applying to both
 origins (Treasury's when written; `x/claims` Params since D54); committee submissions are bound to the active
@@ -328,7 +328,8 @@ time.
 
 ## D37
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. The Claims period is `claim_cancellation_period`, seconds of block time, under
+[D133](#d133).
 
 Governance owns the complete denomination-bearing `reference_tax_cap` Coin together with `reward_funding_window` in
 `Params` (`claim_cancellation_period_blocks`, once named here too, moved to `x/claims` Params by D54;
@@ -344,7 +345,7 @@ computes it, the cadence it runs on, and the rails bounding how far and how fast
 
 **Lifecycle:** Claims parameter and custody ownership moved from Treasury to Claims under [D54](#d54); the bounded appointment remains.
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. The window is block time under [D133](#d133).
 
 Keep launch Claims minimal: the mandate stores its monotonic term, committee, half-open activation/expiry window,
 and fixed gross committee claim limit; the shared cancellation period lives in Treasury `Params` (moved to
@@ -553,7 +554,7 @@ the exemption is what argued for doing it now rather than inside the §12 mandat
 
 ## D56
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. The window is block time under [D133](#d133).
 
 One-committee Reserve mandate. The §12 executor/guardian split collapses into a single Reserve committee appointed
 through `MsgSetReserveMandate` on the shared envelope pattern: chain-derived monotone term, half-open activation
@@ -845,7 +846,7 @@ untouched. Implemented 2026-08-09.
 
 ## D72
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. Volatility is annualised over the seconds its returns spanned under [D133](#d133).
 
 Risk-scaled fund targets. Every target is sized on `m x` its existing liability basis — net for the expansion
 waterfall, gross for the bounds on committee acts — where `m` is a governance-parameterised multiplier over three
@@ -1014,7 +1015,8 @@ handing anything back. Amended 2026-09-03.
 
 ### Transfer-tax parameter ownership
 
-**Recorded status:** Confirmed.
+**Recorded status:** Confirmed. Amended 2026-10-10: the pre-launch renumbering dropped the reserved `EconomicPolicy`
+field 1; the rate stays `Params` field 12.
 
 Move `transfer_tax_rate` from `EconomicPolicy` to `Params`. The rate passes D37's test — a lever stating how much
 the protocol wants, reversible and safe to clamp — but D78 changed what kind of number it is. The rate is part of
@@ -1188,7 +1190,7 @@ counts actual scheduled payments and recipients' staking choices, with no early 
 **Recorded status:** Decided 2026-09-23; funding amended by [D88](#d88), the registrar by [D89](#d89). Amended
 2026-10-01: the compensation allowlist is removed; NOAH or an active registry asset is the only denomination gate, and
 the committee's allowance is the bound. Payment amended by [D105](#d105): the block pays due grants, and there is no
-release message.
+release message. The immediate first member payment waits two weeks under [D126](#d126).
 
 Replace the prelaunch grant contract with native [`x/disbursement`](../../x/disbursement/README.md). The same transparent commitment
 ledger will serve member and contributor distribution now and ongoing compensation, including stablecoins, as the system matures. Distribution
@@ -1217,7 +1219,7 @@ D85's existing query accept list is unchanged.
 
 ## D88
 
-**Recorded status:** Decided 2026-09-26. The community pool remainder is 52.5M after ten seats under [D111](#d111) and [D96](#d96). The contributor tranche is removed by [D117](#d117).
+**Recorded status:** Decided 2026-09-26. The community pool remainder is 35M after ten seats under [D96](#d96), [D111](#d111), and [D115](#d115). The contributor tranche is removed by [D117](#d117). The pools are 469.2M and 312.8M, 782M in all, under [D125](#d125).
 
 Hold the distribution in `x/disbursement` from genesis. The artefact moves 732M NOAH out of the community pool into
 two Disbursement module accounts, a 439.2M member account and a 292.8M contributor account, and leaves the community
@@ -1286,7 +1288,7 @@ starts at that later proposal, other seat holders' grants wait for more public s
 
 ## D91
 
-**Recorded status:** Decided 2026-10-01.
+**Recorded status:** Decided 2026-10-01. The pool reaches about 66,300 members under [D125](#d125).
 
 Set the member grant per step rather than fixing it: 20,000 NOAH at launch, then 15,000, 10,000, 7,500, and 5,000, each
 step's figure carried by the proposal that opens its member tranche as a `MsgUpdateParams` beside the `MsgOpenTranche`.
@@ -1303,7 +1305,8 @@ from earlier steps hold more votes each, step 1 seats 1,500 people rather than 3
 
 ## D92
 
-**Recorded status:** Decided 2026-10-02.
+**Recorded status:** Decided 2026-10-02. A stolen key's registrations pay nothing for two weeks under [D126](#d126), so the
+tranche bounds what it commits rather than what it takes.
 
 Make the open member tranche the only bound on registration, and remove the rolling issuance window, its two params,
 its log, and its query. Why: every other committee in the system is bounded by a figure governance sets at appointment
@@ -1369,7 +1372,7 @@ remainder staying in the pool. The [disbursement plan](../governance/DISBURSEMEN
 
 **Recorded status:** Decided 2026-10-02. Amends the asset registry, Market depth, and conversion-factor rows of
 [GENESIS.md](../governance/GENESIS.md) (decided 2026-09-11) and the bootstrap sizing of `base_pool` in [P1](#p1).
-Depth sizing added by [D104](#d104).
+Depth sizing added by [D104](#d104). The NOAH leg's placeholder is one NOAH a XDR, not a dollar, under [D128](#d128).
 
 Conversion is closed at launch and opens by vote once NOAH has a market price. The artefact registers no asset; the
 eleven feeds, the sidecar's placeholder NOAH leg, and the seeded gas factor stay, and Market's depth is 100,000 XDR
@@ -1403,12 +1406,12 @@ exercise conversion and the e2e suites run on it. The opening sequence is
 
 ## D96
 
-**Recorded status:** Decided 2026-10-02. Amends the seat float in [D84](#d84) and the pool remainder in [D94](#d94); the remainder is 52.5M at ten seats under [D111](#d111).
+**Recorded status:** Decided 2026-10-02. Amends the seat float in [D84](#d84) and the pool remainder in [D94](#d94); the remainder is 35M at ten seats under [D111](#d111) and [D115](#d115).
 
 Set the seat float at 50k NOAH, per seat, granted at genesis beside the seat as before. Why: the float's job is the
 week before seat income starts, when unvested coins cannot pay fees: gas at a few hundredths of a NOAH a transaction,
 proposal deposits of 1,000 and 5,000 refunded in four days unless vetoed, and a committee account's gas, under 10k in
-a busy week. 50k covers that fifty times over and is four and a half months of the income that carries everything
+a busy week. 50k covers that five times over and is four and a half months of the income that carries everything
 after. 300k was sized for a job that no longer exists: the founders minting the first currencies, and conversion is
 closed at launch (D95); above operations the float buys only sellable supply on day one and a larger sum for a
 coerced founder to lose. It stays per seat rather than a fixed total because it is an operating cost per
@@ -1500,8 +1503,10 @@ and the delay falls on the people who built the chain before launch. The
 
 ## D101
 
-**Recorded status:** Decided 2026-10-02. Amends the gates and step conditions of the
-[disbursement plan](../governance/DISBURSEMENT_PLAN.md) as recorded in [D99](#d99), and wording [D98](#d98) left behind.
+**Recorded status:** Decided 2026-10-02. Amends the gates and step conditions of the [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md) as recorded in [D99](#d99), and wording [D98](#d98) left behind. A step's
+contributor budget is a guideline rather than a limit under [D131](#d131). The gates are 3.75M, 18.75M, 41.25M and
+63.75M, and public bonded stake excludes the founder's grant and stream, under [D132](#d132).
 
 Make the step gates fixed minimums of public bonded stake, the plan table's 7.5M, 22.5M, 45M and 67.5M, 15% of each
 step's full distribution, and make them the only step condition: the previous step's contributor budget need not be
@@ -1591,6 +1596,7 @@ the imbalance, so whoever sizes reads `Query/Pool`. The procedure is the
 
 **Recorded status:** Decided 2026-10-07. Amends the payment path in [D86](#d86) and [D87](#d87), which pulled payments
 by an any-sender release and had no block hook pay recipients. Its capped-grant retry is removed by [D121](#d121).
+Registration queues a member for the end of its hold under [D126](#d126).
 
 The block pays. Every grant that owes principal and is not suspended carries the time the module next looks at it,
 and the end of each block pays the grants whose time has come, oldest first and at most a thousand a block, each what
@@ -1670,6 +1676,7 @@ same three messages.
 ## D109
 
 **Recorded status:** Decided 2026-10-07. Bounds the compensation [D89](#d89) delegated and [D108](#d108) widened.
+[D129](#d129) sets the window's year to 26 fortnights, 31,449,600 seconds.
 
 Cap compensation per record: one beneficiary record may be awarded at most `compensation_cap`, 1M in the reference unit
 at launch, inside a rolling `compensation_window` of a year, on the proposal and committee paths alike. An award is
@@ -1736,7 +1743,8 @@ takes 250,000. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
 
 **Recorded status:** Decided 2026-10-07. Amends the founder's grant and its proposal line in [D90](#d90), [D98](#d98)
 and [D106](#d106), the seat derivation and the ten-seat assumption of [D111](#d111), and the goal's one-party line in
-the [disbursement plan](../governance/DISBURSEMENT_PLAN.md).
+the [disbursement plan](../governance/DISBURSEMENT_PLAN.md). The founder's excess over one seat is drawn from the
+community pool, like every seat, under [D115](#d115).
 
 Size the founder's position per seat, at genesis. Every seat stays 5M, and the founder's seat is half the other seats'
 sum, a third of the founding stake at any count, 22.5M at ten: one continuous vesting account on the seat schedule, the
@@ -1772,7 +1780,8 @@ figures.
 allowance of [D110](#d110); the compensation allowance, the per-record cap of [D109](#d109), and the committee's power
 to compensate a seat holder stand. Amended 2026-10-08: a member registration carries its registering term too, so the
 term query lists a stolen key's registrations beside its awards; ownership still carries none, and the mandate query's
-award count is removed.
+award count is removed. Its month-long first period became the fortnight compensation period, and its reserved
+field numbers were dropped, under [D116](#d116); [D89](#d89)'s 2026-10-08 amendment removes the hundred-a-term limit.
 
 Take ownership off the grants committee's menu. Every committee award is compensation, NOAH or an active asset,
 charged at its reference value against the term's compensation allowance, under the 1M-a-year record cap, the
@@ -1794,7 +1803,7 @@ stay reserved. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) and
 ## D114
 
 **Recorded status:** Decided 2026-10-07. Amends the seat vesting window of [D84](#d84), restated in [D111](#d111) and
-[D112](#d112).
+[D112](#d112). The step-5 gate is 63.75M under [D132](#d132), a little under the seats.
 
 Vest every founding seat, the founder's included, behind a four-year cliff and over a four-year tail, fully vested at
 year eight rather than ten. Why: vesting gates transfer alone, since unvested seats delegate and vote from block one, so
@@ -1821,7 +1830,9 @@ module reads no schedule. The [disbursement plan](../governance/DISBURSEMENT_PLA
 **Recorded status:** Decided 2026-10-07. Replaces the ownership fraction of [D86](#d86), [D87](#d87) and [D100](#d100),
 the ceiling of [D97](#d97) and [D99](#d99), the seat inside own of [D106](#d106), and the ceiling-derived seat bound and
 the founder's grant reading of [D112](#d112); restores the founder's 15M founding-band grant of [D90](#d90) beside the
-seat. The cap is checked at award by [D121](#d121); the figure stands.
+seat. The cap is checked at award by [D121](#d121); the figure stands. The bands it was the top of are removed by
+[D127](#d127): the cap is the founder's grant and the one sizing figure. The grant is written at genesis rather than
+proposed under [D136](#d136).
 
 Bound ownership with one figure: `ownership_cap`, a Disbursement parameter governance sets, 15M NOAH at launch, the most
 one beneficiary record is paid in ownership from the pools over every grant. A payment is the smaller of accrued unpaid
@@ -1854,10 +1865,13 @@ README carry the figure and the formula.
 
 ## D116
 
-**Recorded status:** Decided 2026-10-07. Amends the contributor schedule of the
-[disbursement plan](../governance/DISBURSEMENT_PLAN.md), four years with a one-year cliff then monthly, the pay-stream
-shape of twenty-four monthly periods, and the committee's first-period rule of [D89](#d89) and [D92](#d92), which
-the period itself replaces. A compensation clock's reach is a quarter by [D122](#d122).
+**Recorded status:** Decided 2026-10-07. Amends the contributor schedule of the [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md), four years with a one-year cliff then monthly, the pay-stream shape of
+twenty-four monthly periods, and the committee's first-period rule of [D89](#d89) and [D92](#d92), which the period
+itself replaces. A compensation clock's reach is a quarter by [D122](#d122). Every first period, a member's hold and the
+compensation period included, is at least two weeks under [D126](#d126). The band's timing multiplier it leaves the past
+to is removed by [D127](#d127); a grant's amount credits past work. The ownership cliff is 26 fortnights and the
+ten-year bound 260 fortnights under [D130](#d130).
 
 Fix each grant kind's shape as a module parameter and take the schedule out of the messages. Ownership is a one-year
 cliff paying a quarter, weighted as the 26 fortnights it spans, then biweekly for three years, 79 payments. Compensation
@@ -1892,7 +1906,9 @@ shapes and the messages.
 ## D117
 
 **Recorded status:** Decided 2026-10-07. Amends the contributor tranche of [D88](#d88) and the roll-forward wording of
-[D101](#d101); the member tranche of [D92](#d92) stands.
+[D101](#d101); the member tranche of [D92](#d92) stands. [D116](#d116)'s renumbering dropped the field numbers it
+reserves, and [D89](#d89)'s 2026-10-08 amendment the hundred-a-term limit it cites. A grant past its step's budget no
+longer waits for the next step under [D131](#d131).
 
 Drop the contributor tranche. The contributor account's NOAH is one pool: every award draws it at creation,
 governance's by proposal and the committee's within its term allowance; a stablecoin award converts its shortfall
@@ -1949,7 +1965,8 @@ value. The module README and the plan carry the rule.
 ## D120
 
 **Recorded status:** Decided 2026-10-08. Amends [D89](#d89): registration leaves the grants committee; the committee's
-compensation power, term, and recovery stand.
+compensation power, term, and recovery stand. A stolen registrar's registrations pay nothing for two weeks under
+[D126](#d126). Its window is block time under [D133](#d133).
 
 Appoint a registrar for member registration, apart from the grants committee and under it. The registrar is a second
 appointment in Disbursement, a bare mandate envelope the grants committee sets under its own term with
@@ -2006,7 +2023,8 @@ nothing is held; and with the partial payment gone, a payment Bank refuses is th
 ## D122
 
 **Recorded status:** Decided 2026-10-09. Amends the compensation clock's reach in [D116](#d116), a compensation window
-back, and the charge of [D119](#d119) in an award's first window; the cap's figure and window stand.
+back, and the charge of [D119](#d119) in an award's first window; the cap's figure and window stand. The quarter is 13
+weeks under [D130](#d130).
 
 Charge a backdated compensation award, in the window after it is made, what it pays there, and let a compensation
 clock start at most a quarter before its award. In that first window an award charges its value spread over a window
@@ -2056,9 +2074,341 @@ beside the hand-wired reverse dependencies. What it costs: a consumer left off t
 fails nothing, where a missing executor failed loudly before, so the real-app re-point tests require every consumer's
 event; and the clamp lets a term's charges stand a few base units past a strict conversion of its allowance.
 
+## D124
+
+**Recorded status:** Decided 2026-10-10. Restates the per-seat income in [launch genesis](../governance/GENESIS.md)
+under the founder's seat of [D112](#d112). At NOAH's opening price of one XDR ([D128](#d128)) a regular seat's income is
+about 11,300 USD a month.
+
+Keep the reward targets at one share a validator, the founder's included, and state what each seat earns. Assembly adds
+0.0175 and 0.0075 NOAH a block a seat, sized to fund one highly available operation, but both lanes pay by bonded
+stake: Distribution by power, the Oracle by power times rewarded targets. With the founder's seat at half the other
+seats' sum, the pot that paid ten equal seats 131,400 NOAH a year each pays the founder's 22.5M a third of it: at ten
+seats each other seat earns about 99,000 with its commission on the founder's delegation, and the founder about
+421,000. Why: the targets fund operations, and the founder runs one node. Rejected: weighting a seat's share by its
+stake, 13.5 shares at ten, which restores 131,400 to every other seat but raises the pot 35%, shortens the subsidy's
+runway by a quarter, and pays the founder about 568,000 a year of subsidy for weight the plan calls consensus, not pay.
+No rule restores the other seats without paying the founder more, since bonded stake earns pro rata. What it costs:
+each other operator runs on about three quarters of the sized budget, about 8,300 USD a month at the opening price, and
+the economic committee's corridor, up to twice the launch targets, is the margin if that proves short. The
+[launch genesis](../governance/GENESIS.md) and the [disbursement plan](../governance/DISBURSEMENT_PLAN.md) carry the
+figures.
+
+## D125
+
+**Recorded status:** Decided 2026-10-10. Amends the subsidy seed of [P1](#p1) and the pool sizes of [D88](#d88).
+
+Seed the subsidy pool with 50M NOAH rather than 100M and move the other 50M into the disbursement pools at 60/40: the
+member pool holds 469.2M and the contributor pool 312.8M, 782M in all. Why: the seed was argued from fifteen and a
+hundred validators, but the targets follow the founding seats, not the set, so at ten seats 100M lasted 76 years, past
+any horizon a bootstrap serves. 50M runs 38 years at the launch targets, 19 at the economic committee's doubled
+ceiling, and about 13 if governance funds thirty validators at the seat rate; a shortfall is refilled by any NOAH
+deposit, a community-pool spend included ([D25](#d25)), and an excess returns by `MsgReturnSubsidy` ([D83](#d83)). The
+excess goes to the pools because the subsidy pool is restricted money and the launch electorate is the founders: the
+community pool would make it spendable on anything by that electorate, while the member pool, which has no exit, hands
+it to members. Splitting it 60/40 keeps the split the plan argues from; steps 1 to 4 and every gate are unchanged, and
+step 5 grows to 782M, about 66,300 members at its amount. What it costs: half the runway at every target level, so the
+plan's first lever, raising the targets to draw public stake, spends a smaller pool; members' share of supply rises
+from 43.9% to 46.9%, and the founding set's is unchanged. The [launch genesis](../governance/GENESIS.md), the
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md), and the whitepaper carry the figures.
+
+## D126
+
+**Recorded status:** Decided 2026-10-10. Amends the immediate first member payment of [D86](#d86) and [D87](#d87), the
+member shape and the one-week compensation floor of [D116](#d116), and the registrar exposure of [D92](#d92) and
+[D120](#d120). The member balance pays in thirteen four-week periods under [D130](#d130).
+
+Make two weeks the floor on every grant's first period, so nothing pays before two weeks after any award: a member's
+first payment waits out a two-week hold, `member_schedule.first_length` 1,209,600 seconds at launch, and pays from the
+block when it ends like every other grant's first period, so registration pays nothing; the compensation period's floor
+rises from a week to two weeks, its launch value already; and the ownership cliff, a year at launch, may never fall
+under it. `MinFirstPeriod` is checked on every grant and every shape in params, so it is an invariant of stored state,
+not a launch setting. Governance opens each step's member budget in quarters, twenty tranche votes over the
+distribution: 7.5M at step 1, then 15M, 22.5M, 22.5M, and 49.8M. Why: the open tranche is the registrar's only bound,
+and registration paid the tenth at once, so a stolen key took a tenth of whatever was open within minutes, and the only
+defence was tranches small enough to lose, at a vote each. With the hold the committee suspends what a stolen key
+registered inside it, rotates the key, and governance cancels the grants whole, so the tranche bounds what a thief
+commits rather than what it takes; a stolen committee key's registrar is answered by the replacement vote, two days and
+an expedited day, inside the same fortnight. Every other grant already paid nothing before one period after its award
+([D116](#d116)); one floor for every kind makes that window a property of the module rather than of each parameter. With
+the hold the tranche is a backstop behind the daily check of registrations against admissions, so its size is set by the
+vote load it costs: a quarter of a step keeps what an undetected theft could take to a tenth of the quarter, 750k at
+step 1, at about four votes a year at the plan's pace. Rejected: tranches sized to an accepted loss alone, about a
+hundred votes over the distribution at 5M each, each needing half the bonded stake to turn out; monthly tranches, about
+sixty votes over the distribution, which train validators to pass them unread; a one-week hold, which leaves a stolen
+committee key's registrar under a week of slack after two votes; a hold without a floor, which governance could set to a
+second; a rolling registration limit, which [D92](#d92) removed. What it costs: a member waits two weeks for the first
+coins and cannot pay gas until then, since the module grants no fee allowance, and the member year runs two weeks
+longer; the testnet cannot compress the hold, so neither it nor the end-to-end suites see a member paid, and in-process
+tests carry that path; raising the floor in a later binary would refuse stored grants inside the block, so a raise needs
+a migration, while lowering it is always safe; and the hold protects only if someone checks the chain's registrations
+against the platform's admission records inside it, which each batch's reference makes possible. Sybils the member
+process admits are unaffected: their tenth pays after the hold unless found inside it. The [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md), the [module README](../../x/disbursement/README.md), and the [governance
+runbook](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) carry the floor, the hold, and the tranche sizing.
+
+## D127
+
+**Recorded status:** Decided 2026-10-10. Removes the contributor bands and their multipliers from the [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md); the cap of [D115](#d115) stands as a parameter.
+
+Size contributor ownership grants by a written case under the cap, with no scale. The founder's 15M grant for the work
+before launch is `ownership_cap`, so no record is paid more ownership than the founder, and every grant under it is
+argued case by case: its proposal summary states the work, its period, and why this amount, against the founder's grant
+and the grants already made, and the grantee abstains. Earlier and riskier work may earn more than the same work later,
+said in the amount rather than through a multiplier. Why: the bands' ranges were invented, a fivefold spread in the core
+band and a timing multiplier of two to three that nothing measures, so they lent a rigour they did not have; a band
+anchors every case to its top, and the founding band ended at the founder's own grant, which read as a rubric built back
+from one number; and the chain checks none of it, so the precedent the first review round sets was always the real
+scale. While the founding set votes its own members' grants, the written case is what carries legitimacy. Considered and
+not taken: a ceiling on `ownership_cap` in params validation at the founder's grant, which would make "never more than
+the founder" a rule no vote could lift; the cap stays a parameter governance sets ([D115](#d115)). What it costs: no
+number to place a grant against before the first round, so that round's cases carry the whole weight of precedent; and
+"never more than the founder" holds while governance keeps the cap at 15M, binds a record rather than a person, and
+leaves compensation outside it, at most 1M in the reference unit a year a record. The [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md) and the [governance
+runbook](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) carry the case requirement.
+
+## D128
+
+**Recorded status:** Decided 2026-10-10. Amends the opening-price placeholder of [D95](#d95), one NOAH per dollar, and
+the dollar figures [D124](#d124) states at it.
+
+Open NOAH at one XDR rather than one dollar. `pkg/chain/launch.go` holds the bootstrap pair, one NOAH a XDR and the
+1.371 dollar/XDR cross; Treasury's genesis gas factor is one NOAH per XDR, and the sidecar's `USD/NOAH` bootstrap leg is
+the same price in dollars, 0.729394602479941648 NOAH per dollar, which times the cross rounds up to exactly one. Why:
+NOAH is the neutral unit every currency is a claim on, and the protocol references XDR, so its opening price belongs in
+XDR rather than in one member currency; it also makes the reference-unit figures read as NOAH at the opening price, so
+the compensation cap's 1M a year is 1M NOAH. Rejected: an exact anchor that routes every default feed through XDR/USD to
+an XDR/NOAH bootstrap, which keeps NOAH at exactly one XDR until it trades but makes all eleven rates depend on the
+XDR/USD sample, where today only the XDR feed does; and the resolver averages every route that resolves, so the anchor
+cannot sit beside the dollar route as a fallback. What it costs: until NOAH trades, the bootstrap is a fixed dollar leg,
+so NOAH's XDR price drifts with XDR/USD by a few percent, and fees and the valuation of any NOAH compensation award
+drift with it; every dollar figure rises by the cross, a seat's target to about 15,000 USD a month, a regular seat's
+income to about 11,300, the deposits to about 1,400 and 6,900 USD, and a member grant to about 27,400; and gas costs
+about a quarter less NOAH, 0.02 rather than 0.027 a transfer, since its price is set in XDR. Conversion stays closed at
+launch ([D95](#d95)), so no currency is issued at the bootstrap price. The [launch genesis](../governance/GENESIS.md),
+the whitepaper, and the [price-feed runbook](../operations/PRICEFEED_OPERATIONS.md) carry the price.
+
+## D129
+
+**Recorded status:** Decided 2026-10-10. Adds the founder's compensation stream beside the grant of [D115](#d115), sets
+the compensation window to 26 fortnights, and drops the plan's rule that pay streams wait for a NOAH market. The stream
+is written at genesis rather than proposed under [D136](#d136).
+
+Pay the founder's work after launch by a compensation stream at the cap: 10M NOAH over 260 fortnights, ten years, 1M a
+year, a governance `MsgCompensate` in the first review round beside the 15M grant, the founder abstaining. The figure is
+what the cap, 1M in the reference unit a window, admits one record over the longest award at NOAH's opening price of one
+XDR ([D128](#d128)), and it is fixed in NOAH: never more, and less if the cap admits less when it is awarded, as it will
+if XDR has weakened against the dollar since the bootstrap cross. It pays for the founder's work, never the hours seat
+income pays, and fills the founder's compensation cap for its ten years. `compensation_window` becomes 26 fortnights,
+31,449,600 seconds, from twelve plan months, so the cap's year is the pay cadence's: the longest stream then charges
+exactly a tenth of its value a window, where a 365-day window against a 364-day fortnight year capped it at 9.97M. Pay
+streams no longer wait for a NOAH market outside the chain: a hire's stream pays in NOAH from launch, and taking pay
+that cannot yet be converted is the hire's choice; stablecoin pay still waits for conversion ([D95](#d95)). Why: the
+grant pays for the work before launch and the seat is consensus weight, so nothing paid the founder's work from launch
+on; fixing the amount in NOAH keeps it from growing as NOAH's price falls, where the cap's whole room at a tenth of the
+opening price would be 100M NOAH; and the market rule bounded nothing, since the cap, the committee's allowance, and the
+two-week first period bound NOAH pay whatever it can be spent on. Rejected: maxing the cap at the price on the day of
+the award, which grows the stream as NOAH falls. What it costs: the stream is ownership-scale NOAH under the
+compensation label, the case the threat model names, so the plan counts it as the founder's stake: seat, grant, and
+stream block alone until public bonded stake reaches twice what grant and stream have paid, 50M once both are paid where
+the grant alone reached 30M; the founder is the largest wallet until bonded stake passes 475M rather than 375M; at the
+20% planning rate the founder holds about a fifth of bonded stake and members lead the founding set only narrowly, 38.5%
+to 37.9%; no other compensation reaches the founder's record for ten years; and step 1's contributor spend runs to 25M
+against its 20M budget. Before NOAH trades the cap values NOAH at the bootstrap price, so it bounds every record's NOAH
+pay at about 1M NOAH a window whatever NOAH is worth, committee awards included; and the window is a day shorter,
+loosening the cap by under a third of a percent. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md), the
+[threat model](THREAT_MODEL.md), the [launch genesis](../governance/GENESIS.md), and the whitepaper carry the stream.
+
+## D130
+
+**Recorded status:** Decided 2026-10-10. Extends the 26-fortnight year of [D129](#d129) to every disbursement duration:
+amends the ownership cliff and the ten-year bound of [D116](#d116), the quarter of [D122](#d122), and the member periods
+of [D126](#d126).
+
+Put every disbursement duration on whole weeks, a year being 26 fortnights, 364 days, the pay cadence's. The ownership
+cliff becomes 26 fortnights, 31,449,600 seconds, so the ownership shape's 104 weights are one a fortnight and the grant
+runs exactly 104 fortnights, 1,456 days, where the 365-day cliff paid 26 fortnights' weight over 26 fortnights and a
+day. `MaxCompensationDuration` becomes 260 fortnights, 3,640 days, so the longest award at the launch period is the
+bound itself and exactly ten windows, where 3,650 days left 260 as what fit under it with ten days spare.
+`MaxCompensationBackdate` becomes 13 weeks, 91 days, a quarter of the year, from three plan months of 30.4 days. A
+member's balance pays in thirteen four-week periods, 2,419,200 seconds each, weighted 13 for the tenth then 9 each of
+130, from twelve plan months weighted 4 then 3 of 40: the tenth stands and the year after the hold is 52 weeks. Nothing
+on chain is tied to calendar dates: every clock runs from its own award and the compensation window rolls, so the
+364-day year accumulates no drift against anything the chain checks. Why: the plan month, 2,628,000 seconds, was the one
+duration not a whole number of days and, with the window on fortnights, the only unit the pay cadence did not divide;
+one grid makes every schedule a count of the cadence, keeps each payment at its award's time of day, and turns the
+bounds into definitions rather than remainders of a division. Not changed: `chain.BlocksPerYear`, 365 days of blocks,
+since block time strays by more than a day a year and its uses are caps and Treasury's variance annualisation, where 365
+is the convention; seat vesting, four and eight calendar years after genesis, continuous and with no cadence; and
+`MaxPeriodLength`, an overflow bound. What it costs: the year is about 1.24 days short of the calendar's, so a ten-year
+stream ends about twelve days before the tenth anniversary of its award and a four-year grant about five, and 1M a year
+admits about 0.34% more a calendar year; an agreement off chain states pay a fortnight rather than a year. A member is
+paid fourteen times rather than thirteen, each payment after the tenth 6.9% of the grant rather than 7.5%. Nothing is
+live, so no state migrates.
+
+## D131
+
+**Recorded status:** Decided 2026-10-10. Amends the plan's rule, from [D101](#d101) and [D117](#d117), that a
+contributor grant its step's budget cannot hold waits for the next step.
+
+Treat each step's contributor budget, 40% of the step's distribution, as a guideline rather than a limit. A review round
+aims to stay near it; it may run over when the work warrants, stating the overrun and the reason in its summary, and
+later rounds carry less, so contributors stay roughly in step with members and 60/40 holds over the whole distribution.
+Why: the chain does not record the budget ([D117](#d117)), and a strict wait would hold back an award the plan has
+already decided, the founder's stream of [D129](#d129), which with the grant takes step 1 to 25M against 20M, over an
+accounting line. The budget's real job survives as a published pace for awards while the founding set is the only voter.
+What it costs: only governance limits a run of overruns, and at launch that is the founding set; the step table and each
+proposal summary make an overrun visible.
+
+## D132
+
+**Recorded status:** Decided 2026-10-10. Amends the measure of public bonded stake and the gate figures of
+[D101](#d101).
+
+Count the founder's grant and stream out of public bonded stake, and set each gate at 15% of the step's distribution
+less them. Public bonded stake is bonded stake less the genesis seats and less what the founder's 15M grant and 10M
+stream have paid, counted as bonded since the founder bonds everything; the disbursement journal shows the paid figure.
+The gates before steps two to five become 3.75M, 18.75M, 41.25M and 63.75M, each 3.75M, 15% of the founder's 25M, under
+its D101 figure. Why: the gates measure public participation, and the founder's own payments counted toward them: at 20%
+member staking, with step 1's members registering over the first year, step two's 7.5M was met about the month the
+founder's cliff paid, more than half of it the founder's grant and stream. The handover figures of the [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md) already count them as the founder's ([D129](#d129)). Excluding them alone
+would not do: the founder's 25M takes step 1's contributor share, so step 1's public distribution is the members' 30M,
+whose 20% fully paid is 6M, under 7.5M. Netting the founder out of the base keeps each gate three quarters of the
+planning rate on what the public received, and step two opens about month fourteen, near where it did, on members'
+stake. Other seat holders' grants stay public, since the plan treats the seats as independent ([D106](#d106)). What it
+costs: each gate is 3.75M lower, so a step opens on less public stake; the step-5 gate falls under the seats' 67.5M and
+no longer marks where public stake passes them, though the founder plus five seats still block at it, 47.5M of 131.25M;
+and reading a gate needs the journal beside the staking pool.
+
+## D133
+
+**Recorded status:** Decided 2026-10-10. Moves the Claims window of [D30](#d30) and [D38](#d38), every committee window
+of the shared envelope, the registrar's window of [D120](#d120), and the settlement activation delay to block time, and
+amends the volatility annualisation of [D72](#d72). The settlement activation delay is a week under [D134](#d134).
+
+Measure every window a governance vote must fit in seconds of block time, the clock the vote itself runs on, and keep
+per-block processes in blocks. The Claims cancellation period becomes `claim_cancellation_period`, 604,800 seconds, with
+claims queued by closing time; the settlement activation delay becomes `settlement_activation_delay`, 259,200 seconds,
+with plans carrying activation, earliest closing, and opening times; and the shared committee envelope carries
+`activation_time` and `expiry_time`, Unix seconds, for all eight appointments. Treasury's annualised volatility divides
+its EWMA of squared per-block returns by an EWMA of the seconds each return spanned, under the same retention, and
+scales by a year of seconds: variance per second over one window. Unchanged, as per-block processes: the oracle reward
+and attendance windows, Treasury's per-block reward, funding window, and refresh cadence, Market's pool recovery,
+vote-extension activation heights, the Security committee's upgrade height, which `x/upgrade` counts in heights, and
+recorded heights. Why: block time is node-local, set by each validator's `timeout_commit`, and CometBFT gives the app no
+say over it, so a block count promising to outlast a vote held only while blocks stayed near six seconds: the three-day
+delay fell inside the two-day vote below four-second blocks, and the week of claims missed a deposit period and vote
+below about 3.4. Committee terms are dates people plan reappointment around, and a year of blocks ran from about 335 to
+395 days across plausible paces, moving whenever validators retuned. The volatility constant read about 9% low at
+five-second blocks and 4% high at 6.5, and the first return after a halt arrived as one block's move: a one-day halt
+lifted the reading about 31% for a day. The time-weighted fold removes both, starts reading correctly from its second
+sample rather than warming up, and keeps the bound a theorem, since each squared return is at most one and each interval
+counts at least a second. What it costs: block time runs through an outage as the vote does, so a halt takes time from
+the veto and cancel windows that no one could use; a coalition able to halt the chain already holds a third of the vote
+and every veto with it, so it gains nothing, and the relaunch runbook has operators decide whether to push pending
+closing and activation times forward by an outage. The fields are renamed and retyped before launch, so no state
+migrates.
+
+## D134
+
+**Recorded status:** Decided 2026-10-10. Amends the settlement activation delay of [D133](#d133).
+
+Make the settlement activation delay a week, `settlement_activation_delay` 604,800 seconds, the Claims cancellation
+period; the testnet's becomes four hours, as Claims'. Why: the clock starts when the opening vote passes, so three days'
+single spare day also had to absorb noticing the mistake and any deposit period, and a cancel opened at the 10% initial
+deposit could run four days and land after activation. A week fits the full deposit period and a vote with three days
+to notice, and both correction windows rest on one rule. What it costs: holders of a suspended asset wait a week, not
+three days, before redemption opens. The delay is read at opening, so the change never reaches an open plan, and
+nothing is live.
+
+## D135
+
+**Recorded status:** Decided 2026-10-10. Replaces the quarter the [launch genesis](../governance/GENESIS.md#8-oracle)
+recorded for `reward_distribution_window`.
+
+Make the Oracle reward distribution window four weeks, 403,200 blocks, from a quarter; the testnet's becomes four days of
+daily windows, the same quarter of the pool per settlement. Why: Treasury tops the Oracle's account up to its target
+from the subsidy every funding window, so oracle income has a floor while the subsidy lasts, and with conversion closed
+at launch there is no tax above it. The window does not protect voters from a drought; it only spreads tax windfalls
+above the target. A quarter paid 40% of the target in the first quarter and 77% in the first year for smoothing nothing
+yet needs; four weeks pays 77% and 94% and still damps weekly windfall noise about 2.6 times. Revisit with the
+[D72](#d72) weights once tax is measured. What it costs: a tax windfall reaches voters over a month rather than a
+quarter, and the pool's cushion against a quiet tax week is a month of income.
+
+## D136
+
+**Recorded status:** Decided 2026-10-10. Amends the proposal path of the founder's grant in [D115](#d115) and of the
+founder's stream in [D129](#d129); their amounts, schedules, pool, and caps stand.
+
+Write the founder's 15M grant and 10M stream into genesis as governance awards rather than proposing them in the first
+review round. Seat assembly, `arkd genesis add-validator-seats`, adds both to the founder's beneficiary record beside
+the seat: grant 1 an ownership grant at the cap on the ownership schedule, grant 2 a compensation stream of 260
+fortnights valued at one XDR a NOAH ([D128](#d128)), both reserved in the contributor pool, created by the governance
+authority at the first block, and clocked from `genesis_time`, so the stream first pays two weeks in and the grant a
+year in. Why: with the founder abstaining, the other seats decided the awards after launch, two thirds of them needed;
+instead every one of them signs a gentx against the published file, so the founding set approves the awards
+unanimously and before launch, and the founder no longer waits on a vote, the assurance [D112](#d112) gave for making
+the seat genesis state. The bootstrap valuation fixes the stream at 10M exactly, where an award voted later took
+whatever the cap admitted at the XDR of the day. Governance keeps the cancel: one proposal returns either grant's
+unearned principal to the pool, so the founding set's approval becomes the public's standing veto. Rejected: genesis
+vesting accounts, which pay the same coins but leave behind the cap, the journal [D132](#d132) reads, the cancel, and
+controller rotation; a flag, since the awards are policy fixed in `pkg/chain` like the seat. What it costs: both clocks
+start at genesis, earlier than the first round's vote by however long that round would have taken; the written case
+[D127](#d127) asks of every grant lives in the plan rather than a proposal summary, each grant's reference pointing
+to it; a validator who objects to either must refuse the genesis or later propose the cancel; and disbursement import
+admits a stamp at height one though InitChain runs at height zero, as Oracle's already does. The
+[disbursement plan](../governance/DISBURSEMENT_PLAN.md), [launch genesis](../governance/GENESIS.md), module README,
+[threat model](THREAT_MODEL.md), and whitepaper carry the path.
+
+## D137
+
+**Recorded status:** Decided 2026-10-10. Floors the `max_exchange_rate_age` the [launch genesis](../governance/GENESIS.md#8-oracle)
+records.
+
+Leave user transactions out of a block whose prices are stale by its proposer's clock, and floor `max_exchange_rate_age`
+at 30 seconds. A block applies the prices attached to the previous commit and carries that commit's median time, so
+after a stall or a halt both predate the outage while its transactions are chosen after it: a swap sent during a
+two-hour upgrade traded on prices two hours old that the age check read as new, since nothing in the block records the
+outage. A proposer whose clock finds the proposal's time older than `max_exchange_rate_age` proposes commit-only, and
+waiting transactions trade in the next block on prices observed after the outage. The floor keeps the rule off ordinary
+blocks, about five seconds behind the clock: under that gap every block would be empty, the vote to undo it included.
+Why: currency crosses carry only the 0.25% Tobin spread and no pool, so a move over a halt larger than that was free to
+take at the protocol's expense, and conversion opens by vote, so the guard has to precede it. Rejected: settling orders
+on the next block's prices, which closes the gap deterministically but ends single-transaction swaps, buy-and-send
+payments, contract use of a fill, and award-time funding; re-checking in `ProcessProposal`, which would make acceptance
+depend on validator clocks, so a third of stake running fast would stop every transaction; a wider spread, which charges
+every trade for a rare event; proposer-based timestamps, absent from the pinned CometBFT. What it costs: a stall or halt
+costs one empty block; the rule binds honest proposers alone, so a validator proposing the first block after an outage
+can still trade it, on chain and attributably; and a proposer's clock now decides whether its block carries
+transactions. Nothing is live, so no state migrates.
+
+## D138
+
+**Recorded status:** Decided 2026-10-10. Amends the launch tax cap of [P1](#p1) and the per-input cap of [D17](#d17).
+
+Launch `reference_tax_cap` at 100 XDR, from 1,000, and tax each `MsgMultiSend` output as its own principal with its own
+cap. Why: the tax sees only the Bank ledger, so a ledger built on it, a contract's balances, an exchange, a custodian,
+moves value between its users untaxed, and what a large mover saves by leaving the rail is the cap per move. Taking a
+contract's risk at 1% a year, at 1,000 XDR a 100,000 XDR balance moved twice a year already pays for wrapping; at 100 it
+needs ten moves, and a 1M balance a hundred. The chain mints nothing, so after the subsidy tax and gas are the
+validators' pay and the cap cannot fall far: under a heavy-tailed size mix 10 XDR collects about a third of what 100
+does, while under a retail mix the cap barely matters. Above 100 the extra comes only from transfers over 20,000 XDR,
+the movers best placed to leave, so it is the least reliable share of that pay. A MultiSend input capped once let one
+batch share a single cap, 1,000 XDR for 500 payouts that would pay 5,000 as sends; per output a batch pays what its
+sends would, and the SDK's single input makes the outputs the whole principal. Rejected: refusing registered currencies
+to contracts outside a governance code list, which takes them out of the open runtime and still needs every listed
+contract's claims, LP and vault shares included, to be untransferable; 10 XDR; a cap controller, which [D79](#d79)
+rejects. Revisit once conversion opens: if the share of each currency held by contract addresses stays small, large
+movers are staying and a higher cap can be tried, at the cost of refusing the large transfers in flight at the change
+([D80](#d80)). What it costs: a large transfer pays a tenth of the old ceiling, and a payout batch pays per recipient.
+Nothing is taxed before conversion opens, so nothing migrates.
+
 ## P1
 
-**Recorded status:** Decided 2026-09-11; every value is recorded with its reasoning in [GENESIS.md](../governance/GENESIS.md).
+**Recorded status:** Decided 2026-09-11; every value is recorded with its reasoning in [GENESIS.md](../governance/GENESIS.md). The subsidy seed is 50M under [D125](#d125). The tax cap is 100 XDR under [D138](#d138).
 
 Choose launch tax rate, reference cap Coin, three target ratios, subsidies, genesis fund balances, and the D72
 exposure weights (zero at launch keeps `m` at one and the targets unscaled).
@@ -2094,3 +2444,10 @@ shared cancellation-period Treasury param, fixed gross committee claim limit, an
 The curated `vote_extensions_enable_height` was corrected from zero to one on 2026-09-06. Zero disables the oracle
 vote-extension path. This is a configuration correction, not a new D-numbered economic decision. The current setting
 and its verification live in [genesis](../governance/GENESIS.md#2-chain-and-consensus).
+
+The Oracle's `reward_window_start_height` and `attendance_window_start_height` were corrected from zero to one on
+2026-10-10, with the code default and the Oracle's genesis check, which reads height zero on a chain starting at one.
+Zero named a block that never runs, so the first windows were a block short and the first reward settlement ran a block
+before Treasury's first funding, found the account empty, and discarded the week's weights. At one, every reward
+settlement shares a funding block. Also a configuration correction; the setting lives in
+[genesis](../governance/GENESIS.md#8-oracle).
