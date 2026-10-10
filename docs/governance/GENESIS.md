@@ -316,18 +316,20 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
    `fee_pool.community_pool`, raises both reward targets by one seat's share, and records the operator's seat on its
    beneficiary record in `disbursement.beneficiaries`, leaving supply and the disbursement pools untouched. The
    founder's account holds half the other seats' sum instead, from the same pool. It refuses a count outside the
-   bounds, which `--any-count` lifts for a
-   testnet only, an unset `genesis_time`, a file already
-   seated, since the founding set is seated in one run, a founder outside the operators, an operator already present,
-   and a pool that cannot fund the seats, and writes nothing unless every seat and every edited module validates. The
+   bounds, which `--any-count` lifts for a testnet only, up to the fourteen seats either artefact's pool funds
+   (`TestArtefactPoolSeatCeiling`), an unset `genesis_time`, a file already seated, since the founding set is seated in
+   one run, a founder outside the operators, an operator named twice or already present, and a pool that cannot fund
+   the seats, and writes nothing unless every seat and every edited module validates. The
    seat policy and the count bounds are fixed in `pkg/chain/launch.go`; `TestLaunchGenesisBootsVestingSeat` boots what
    it writes.
 3. **Gentxs.** Each validator generates its gentx against the file with chain ID `ark-1`, self-delegating one seat,
    5,000,000 NOAH, the founder included, with commission at or above 5%. The gentx pays no fee at height zero.
 4. **Collect.** Collect the gentxs; collection keeps `genesis_time`.
-5. **Validate and publish.** Run `arkd genesis validate`, publish the file with its SHA-256, and have every validator
-   verify the hash before starting. The chain starts itself at `genesis_time` once more than two thirds of the seats
-   are online: 7 of 10, 9 of 13.
+5. **Validate and publish.** Run `arkd genesis validate`, then `arkd genesis dry-run`, which boots the file in memory
+   through InitChain and the first block and lists the bonded set. Collection and `validate` check each gentx alone, so
+   a gentx the chain refuses, a commission under 5% among them, would otherwise surface only at `genesis_time`
+   (`TestDryRunAssembly`). Publish the file with its SHA-256, and have every validator verify the hash before starting.
+   The chain starts itself at `genesis_time` once more than two thirds of the seats are online: 7 of 10, 9 of 13.
 6. **Spread.** In the first blocks the founder delegates the rest of the founder's seat across the other validators,
    in roughly equal parts, from the seat's own account; unvested coins can be delegated and the float pays the gas.
    Genesis cannot hold these delegations, since the validators exist only once the gentxs execute, so this is the one
@@ -381,7 +383,8 @@ Confirm by hand at assembly:
   fee-pool entries reduced by exactly the seats' total; supply is still 1,000,000,000 NOAH.
 - Both reward targets equal the seat count times the per-seat share, which the seat command guarantees when nothing
   else has edited them.
-- Every gentx self-delegates one seat at a commission of at least 5%, the founder's too.
+- `arkd genesis dry-run` passes and lists every validator at one seat, 5,000,000 NOAH, the founder's too; it refuses a
+  commission under 5% itself.
 - The NOAH factor still reflects the opening price.
 - The chain ID and the genesis time are final and the published hash matches.
 

@@ -225,6 +225,8 @@ string field_name = N [
   takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
   simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that
   lost more than a third of its power.
+- `arkd genesis dry-run <file>` boots a genesis in memory through InitChain and its first block at the file's initial
+  height. Run it on an export before publishing a relaunch genesis, as assembly runs it on the gentxs before launch.
 
 ## Testing Conventions
 

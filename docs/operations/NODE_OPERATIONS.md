@@ -57,13 +57,14 @@ Keep each participant's mnemonic and private validator key local to that partici
 The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
 copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
 seat in one `arkd genesis add-validator-seats --founder <address> --any-count <address>... --home <home>`, the
-founder's at half the others' sum and the launch count bounds lifted for the testnet
-([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+founder's at half the others' sum and the launch count bounds lifted for the testnet, up to what its community pool
+funds ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
 one seat at the commission floor, the founder's too. The coordinator collects all gentxs under `config/gentx`, runs
-`arkd genesis collect-gentxs --home <home>`, validates the resulting genesis, and distributes the same final file to everyone.
+`arkd genesis collect-gentxs --home <home>`, checks the result with `arkd genesis validate` and `arkd genesis dry-run`,
+and distributes the same final file to everyone.
 
 In each `config/config.toml`, set `[p2p] persistent_peers` to the intended `<node-id>@<host>:<p2p-port>` peers. Obtain the
 P2P node ID with `arkd comet show-node-id --home <home>`; it is not the validator operator address. Start only after all
