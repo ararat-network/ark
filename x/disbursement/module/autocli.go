@@ -55,7 +55,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "Grants",
 					Use:       "grants",
-					Short:     "Query grants, optionally by beneficiary, committee term, or registrar term",
+					Short:     "Query grants, optionally by beneficiary, committee term, registrar term, or kind",
 					Example:   fmt.Sprintf("%s query disbursement grants --beneficiary ark1...", version.AppName),
 				},
 				{

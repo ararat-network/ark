@@ -182,10 +182,11 @@ message QueryGrantResponse {
 message QueryGrantsRequest {
   string beneficiary = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee_term lists one committee term's awards; registrar_term one registrar term's
-  // registrations. The three filters exclude one another.
+  // registrations; kind one kind's grants. The four filters exclude one another.
   uint64 committee_term = 2;
   uint64 registrar_term = 3;
   cosmos.base.query.v1beta1.PageRequest pagination = 4;
+  GrantKind kind = 5;
 }
 
 // QueryGrantsResponse returns Query/Grants.

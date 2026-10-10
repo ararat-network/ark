@@ -34,6 +34,7 @@ var (
 	RegistrarMandateKey       = collections.NewPrefix(16)
 	RegistrarTermGrantsKey    = collections.NewPrefix(17)
 	MemberTrancheKey          = collections.NewPrefix(18)
+	GrantsByKindKey           = collections.NewPrefix(19)
 )
 
 // PoolAccountNames lists the module's pool accounts in storage-key order.

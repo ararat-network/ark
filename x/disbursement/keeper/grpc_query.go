@@ -17,17 +17,17 @@ import (
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
+var _ types.QueryServer = (*queryServer)(nil)
+
 // queryServer validates each request itself and otherwise returns the keeper's error: a registered
 // error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
 
-var _ types.QueryServer = queryServer{}
-
 // NewQueryServerImpl exposes indexed grant queries.
 func NewQueryServerImpl(k *Keeper) types.QueryServer {
-	return queryServer{k: k}
+	return &queryServer{k: k}
 }
 
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
@@ -158,9 +158,23 @@ func (q queryServer) Grants(ctx context.Context, req *types.QueryGrantsRequest) 
 	byTerm := func(key collections.Pair[uint64, uint64], _ collections.NoValue) (types.Grant, error) {
 		return q.k.Grants.Get(ctx, key.K2())
 	}
+	byKind := func(key collections.Pair[int32, uint64], _ collections.NoValue) (types.Grant, error) {
+		return q.k.Grants.Get(ctx, key.K2())
+	}
+	filters := 0
+	for _, set := range []bool{req.Beneficiary != "", req.CommitteeTerm != 0, req.RegistrarTerm != 0, req.Kind != types.GrantKind_GRANT_KIND_UNSPECIFIED} {
+		if set {
+			filters++
+		}
+	}
 	switch {
-	case (req.Beneficiary != "" && (req.CommitteeTerm != 0 || req.RegistrarTerm != 0)) || (req.CommitteeTerm != 0 && req.RegistrarTerm != 0):
-		return nil, status.Error(codes.InvalidArgument, "filter by beneficiary, committee term, or registrar term, not two")
+	case filters > 1:
+		return nil, status.Error(codes.InvalidArgument, "filter by beneficiary, committee term, registrar term, or kind, not two")
+	case req.Kind != types.GrantKind_GRANT_KIND_UNSPECIFIED:
+		if _, known := types.GrantKind_name[int32(req.Kind)]; !known {
+			return nil, status.Error(codes.InvalidArgument, "unknown grant kind")
+		}
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.GrantsByKind, p, byKind, sdkquery.WithCollectionPaginationPairPrefix[int32, uint64](int32(req.Kind)))
 	case req.CommitteeTerm != 0:
 		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.CommitteeTermGrants, p, byTerm, sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.CommitteeTerm))
 	case req.RegistrarTerm != 0:

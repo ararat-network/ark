@@ -289,6 +289,9 @@ func (k *Keeper) index(ctx context.Context, beneficiary sdk.AccAddress, g types.
 	if err := k.GrantsByBeneficiary.Set(ctx, collections.Join(beneficiary, g.Id), true); err != nil {
 		return err
 	}
+	if err := k.GrantsByKind.Set(ctx, collections.Join(int32(g.Kind), g.Id)); err != nil {
+		return err
+	}
 	if g.Kind == types.GrantKind_GRANT_KIND_MEMBER {
 		if err := k.Members.Set(ctx, beneficiary, g.Id); err != nil {
 			return err

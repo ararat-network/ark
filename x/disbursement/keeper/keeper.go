@@ -59,6 +59,8 @@ type Keeper struct {
 	// registrar term, for the term queries.
 	CommitteeTermGrants collections.KeySet[collections.Pair[uint64, uint64]]
 	RegistrarTermGrants collections.KeySet[collections.Pair[uint64, uint64]]
+	// GrantsByKind indexes every grant under its kind, for the kind query and the reference rebase.
+	GrantsByKind collections.KeySet[collections.Pair[int32, uint64]]
 	// Due orders each grant that owes principal by (due_time, grant ID), the order the EndBlocker pays in.
 	Due collections.KeySet[collections.Pair[uint64, uint64]]
 }
@@ -116,6 +118,7 @@ func NewKeeper(
 		Members:             collections.NewMap(sb, types.MembersKey, "members", sdk.AccAddressKey, collections.Uint64Value),
 		CommitteeTermGrants: collections.NewKeySet(sb, types.CommitteeTermGrantsKey, "committee_term_grants", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key)),
 		RegistrarTermGrants: collections.NewKeySet(sb, types.RegistrarTermGrantsKey, "registrar_term_grants", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key)),
+		GrantsByKind:        collections.NewKeySet(sb, types.GrantsByKindKey, "grants_by_kind", collections.PairKeyCodec(collections.Int32Key, collections.Uint64Key)),
 		Due:                 collections.NewKeySet(sb, types.DueKey, "due", collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key)),
 	}
 	var err error
