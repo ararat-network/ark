@@ -125,7 +125,7 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 			return false, nil
 		},
 	); err != nil {
-		return nil, fmt.Errorf("iterating write-off records: %w", err)
+		return nil, fmt.Errorf("iterating resolution records: %w", err)
 	}
 
 	emergencyMandate, err := k.EmergencyMandate.Get(ctx)

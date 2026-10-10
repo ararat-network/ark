@@ -3,6 +3,7 @@ package simulation_test
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -59,7 +60,7 @@ func newAssetFixture(t *testing.T) assetFixture {
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, storetypes.NewTransientStoreKey("transient_test"))
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	bank := testutil.NewMockBankKeeper(ctrl)
@@ -158,10 +159,10 @@ func TestMsgOpenSettlementFactory(t *testing.T) {
 			require.True(t, msg.RedemptionRate.LTE(math.LegacyOneDec()))
 			params, err := f.keeper.Params.Get(f.ctx)
 			require.NoError(t, err)
-			require.Greater(t, msg.EarliestClosingHeight, 10+int64(params.SettlementActivationDelayBlocks))
+			require.Greater(t, msg.EarliestClosingTime, 10+params.SettlementActivationDelay)
 			// The factory's whole job is to emit what the handler accepts.
 			require.NoError(t, f.keeper.OpenSettlement(
-				f.ctx, msg.Denom, msg.ExpectedVersion, msg.RedemptionRate, msg.EarliestClosingHeight,
+				f.ctx, msg.Denom, msg.ExpectedVersion, msg.RedemptionRate, msg.EarliestClosingTime,
 			))
 		})
 	}

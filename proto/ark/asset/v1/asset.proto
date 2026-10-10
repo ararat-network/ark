@@ -92,10 +92,10 @@ message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/asset/Params";
 
-  // settlement_activation_delay_blocks is the correction window between plan opening and
+  // settlement_activation_delay is the correction window, in seconds, between plan opening and
   // activation. Governance can cancel only before activation; the delay must allow time for a
-  // correcting proposal. Existing plans retain their stored activation height.
-  uint64 settlement_activation_delay_blocks = 1 [(amino.dont_omitempty) = true];
+  // correcting proposal. Existing plans retain their stored activation time.
+  uint64 settlement_activation_delay = 1 [(amino.dont_omitempty) = true];
 }
 
 // Asset is the authoritative registry record for one governance-managed Bank
@@ -127,15 +127,17 @@ message SettlementPlan {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // activation_height is the opening height plus SettlementActivationDelayBlocks. It is stored so
-  // later parameter changes cannot alter the plan's terms.
-  int64 activation_height = 3 [(amino.dont_omitempty) = true];
-  // earliest_closing_height is the mandatory, immutable holder redemption deadline. WriteOffAsset
-  // is refused before it; reaching it does not close settlement automatically.
-  int64 earliest_closing_height = 4 [(amino.dont_omitempty) = true];
+  // activation_time is the opening time plus SettlementActivationDelay, in Unix seconds. It is
+  // stored so later parameter changes cannot alter the plan's terms.
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  // earliest_closing_time is the mandatory, immutable holder redemption deadline, in Unix seconds.
+  // WriteOffAsset is refused before it; reaching it does not close settlement automatically.
+  uint64 earliest_closing_time = 4 [(amino.dont_omitempty) = true];
   // opened_height records the block height at which governance stored these
   // terms.
   int64 opened_height = 5 [(amino.dont_omitempty) = true];
+  // opened_time records that block's time, in Unix seconds.
+  uint64 opened_time = 6 [(amino.dont_omitempty) = true];
 }
 
 // PricedAsset pairs a pricing verdict with its registry record, if any. Exactly one of source and
@@ -188,7 +190,7 @@ message ResolutionRecord {
 // EmergencyMandate appoints a committee whose sole power is asset suspension. It carries the shared
 // appointment envelope; per-term suspension usage is separate state keyed by denomination.
 message EmergencyMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,

@@ -13,6 +13,7 @@ This module owns the registry and lifecycle of governance-managed Bank assets ot
 | [keeper/lifecycle.go](keeper/lifecycle.go) | Governance-driven lifecycle transitions. |
 | [keeper/settlement.go](keeper/settlement.go) | Settlement plans and resolution records. |
 | [keeper/pricing.go](keeper/pricing.go) | Lifecycle-aware pricing views. |
+| [keeper/oracle_priced.go](keeper/oracle_priced.go) | Oracle-priced membership, `ACTIVE` and `ISSUANCE_HALTED`, that Market and Treasury consume. |
 | [keeper/emergency_mandate.go](keeper/emergency_mandate.go) | Emergency mandate and per-term suspension tracking. |
 | [keeper/feed_guard.go](keeper/feed_guard.go) | Claims that prevent removal of a required oracle feed. |
 
@@ -105,8 +106,9 @@ but consensus receives one final NOAH-relative rate per feed.
 
 ## 4. Price contract
 
-An Oracle rate is NOAH per one unit of the feed's denomination, and `RateSet.Convert` is `amount × rate[offer] /
-rate[ask]`, so valuing in NOAH multiplies (D75). Every Ark-native asset uses exponent eighteen, so a provider price in
+An Oracle rate is NOAH per one unit of the feed's denomination, so valuing in NOAH multiplies
+([rate orientation](../oracle/README.md#14-rate-orientation-noah-per-unit), D75). Every Ark-native asset uses
+exponent eighteen, so a provider price in
 display units has the same numeric value at the base-unit boundary and transport needs no exponent metadata. Rates are
 `LegacyDec` values inside the bounds `pkg/decimal` enforces, a finite, documented band; arithmetic fails closed outside
 it, and a proposal to list an asset whose expected rate sits near either edge is a review item rather than an
@@ -139,7 +141,7 @@ asset-keyed reference with a stored fallback, and asset ownership of the referen
 ## 6. State
 
 ```text
-Params                collections.Item[Params]                                  // settlement_activation_delay_blocks
+Params                collections.Item[Params]                                  // settlement_activation_delay
 Assets                collections.Map[denom, Asset]                             // denom, metadata, status, version
 SettlementPlans       collections.Map[denom, SettlementPlan]                    // rate, activation, closing, opened
 ResolutionRecords     collections.Map[(denom, version), ResolutionRecord]       // kind, height, supply, final plan
@@ -158,8 +160,9 @@ Feed membership is not asset state. `x/oracle` owns the `Feeds` registry, its ve
 by `MsgAddFeed` and `MsgRemoveFeed`; a feed must be Active before an asset may register under its denomination, so the
 two registries are populated in that order and the feed set is always the larger.
 
-A `SettlementPlan` fixes a positive NOAH-per-asset rate, an activation height derived from the opening height plus the
-governed delay, and a mandatory earliest closing height. Every term is set at opening and never amended, and the plan
+A `SettlementPlan` fixes a positive NOAH-per-asset rate, an activation time derived from the opening block time plus
+the governed delay, and a mandatory earliest closing time, all Unix seconds of block time (D133); it records the
+opening height and time. Every term is set at opening and never amended, and the plan
 is authoritative only while attached to a `SUSPENDED` asset. `ResolutionRecords` are immutable, keyed by denomination
 and version, and carry a kind, `WRITE_OFF` or `RETIREMENT_RESIDUAL`, the supply outstanding at resolution, and the
 plan's final terms when one existed. A later recovery never erases or reinterprets a record.
@@ -216,8 +219,8 @@ market price (D95).
 
 Settlement is derived from plan presence, not status. A `SUSPENDED` asset without a plan is untrusted exposure; with one
 it settles at or after activation; a plan on any other status is invalid state. Exactly one message reads the plan's
-earliest closing height, `WriteOffAsset`, which is refused before it, and that is the whole holder guarantee: once your
-redemption opens, nothing can derecognise you before the announced height. The other plan-ending paths need no gate.
+earliest closing time, `WriteOffAsset`, which is refused before it, and that is the whole holder guarantee: once your
+redemption opens, nothing can derecognise you before the announced time. The other plan-ending paths need no gate.
 Cancellation runs only before activation, when no holder relied on a window; recovery restores the ordinary exit the
 plan substituted for; and finalisation reaches a plan only on a `SUSPENDED` asset at zero supply, which nobody can
 still redeem against. A committed window never threatens the system, because supply cannot grow while suspended and
@@ -239,13 +242,14 @@ messages except the one committee message in §9.
 - **`SuspendAsset`** moves `ACTIVE` or `ISSUANCE_HALTED` to `SUSPENDED` at once, stopping issuance, conversion, and
   ordinary redemption while preserving balances, transfers, metadata, and disclosure. It never touches the protocol
   reference, which names a feed, and it leaves the feed running.
-- **`OpenSettlement`** requires `SUSPENDED` or `WRITTEN_OFF`, positive supply, and Market's settlement eligibility; a
-  written-off asset becomes `SUSPENDED` again. Governance states the rate and the earliest closing height only.
+- **`OpenSettlement`** requires `SUSPENDED` or `WRITTEN_OFF`, positive supply, and no plan already open; a
+  written-off asset becomes `SUSPENDED` again. Governance states the rate and the earliest closing time only.
   Activation is derived from the governed delay, because the delay is a correction window that benefits governance
-  alone while holders wait unable to redeem, and a proposed absolute height would fall inside the delay if a vote ran
+  alone while holders wait unable to redeem, and a proposed absolute time would fall inside the delay if a vote ran
   long. The delay is a parameter because the window it must outlast, the voting period, moves without consulting the
-  module; it defaults to three days of blocks, a two-day vote with a day's margin, is refused at zero, and is capped at a
-  year, past which it is a standing ban.
+  module; it is measured in block time, as the voting period is, so a faster block pace cannot shorten it (D133). It
+  defaults to a week, the Claims cancellation period, so a full deposit period and a two-day vote fit with margin
+  (D134), is refused at zero, and is capped at a year, past which it is a standing ban.
   It is read once, at opening, so changing it never reaches terms holders were shown. No term is ever amended: a
   mutable rate would make the maximum entitlement unknowable and redemption timing strategic.
 - **`CancelSettlement`** requires the plan not to have activated, removes it, and leaves the asset `SUSPENDED`. It is
@@ -257,7 +261,7 @@ messages except the one committee message in §9.
   does not arm and wait for a rate, because an armed recovery would fire on a price nobody voted on; governance
   satisfies itself the feed is stable, then proposes. Landing halted rather than active keeps `ISSUANCE_HALTED` free of
   intent and makes a premature recovery re-suspendable with exposure unchanged.
-- **`WriteOffAsset`** requires `SUSPENDED` and the earliest closing height reached, closes any plan emitting its terms,
+- **`WriteOffAsset`** requires `SUSPENDED`, positive supply, and the earliest closing time reached, closes any plan emitting its terms,
   appends a `WRITE_OFF` record with current supply, and moves to `WRITTEN_OFF` without touching a balance.
 - **`FinaliseRetirement`** ends every path in `RETIRED` and closes any plan on the way out. From `ISSUANCE_HALTED` it
   carries `max_residual_supply`, requires supply at or below it, and appends a `RETIREMENT_RESIDUAL` record when
@@ -336,7 +340,7 @@ that is not a registered asset. There is no consumer-written membership or lock 
 ## 12. Protocol surface
 
 Governance messages: `RegisterAsset` (the denomination alone), `HaltIssuance`, `ResumeIssuance`, `SuspendAsset`,
-`OpenSettlement` (rate and earliest closing height), `CancelSettlement`, `RecoverAsset`, `WriteOffAsset`,
+`OpenSettlement` (rate and earliest closing time), `CancelSettlement`, `RecoverAsset`, `WriteOffAsset`,
 `FinaliseRetirement` (`max_residual_supply`), `SetEmergencyMandate`, and `UpdateParams` for the activation delay. One
 committee message, `EmergencySuspendAsset`, term-checked. Queries: `Params`, `Asset`, `Assets` (returned whole, since
 the registry is governance-bounded), `SettlementPlan`, `ResolutionHistory` (paginated), `EmergencyMandate`; feeds and
@@ -350,13 +354,15 @@ suspensions. Validation requires deterministic order; every Oracle-priced asset'
 keeper because the feed registry is `x/oracle` state, which is why the init order is bank, oracle, asset, market,
 treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a written-off asset's current version and
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
-suspension naming a registered asset. The artefact registers no asset; governance registers the ten currencies after
+suspension naming a registered asset. The launch artefact registers no asset, unlike `DefaultGenesisState` and the
+testnet artefact, which seed the ten `ACTIVE`; governance registers the ten currencies after
 launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)) (D95).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow
-Bank access, supply and denomination metadata, and from the Oracle the available and last-known rate sets and the feed
-phase. `x/oracle` does not depend on `x/asset`; Market and Treasury read the registry through their own declared
+Bank access, supply and denomination metadata, from the Oracle the available and last-known rate sets and the feed
+phase, and from Auth and Wasm the account and contract facts an emergency appointment records. `x/oracle` does not
+depend on `x/asset`; Market and Treasury read the registry through their own declared
 interfaces, membership, pricing verdicts, asset records, and active plans.
 
 The code map above identifies the keeper, types, and module entry points.

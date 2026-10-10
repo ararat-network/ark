@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
@@ -45,6 +46,12 @@ func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
 
+// at moves the suite to block height h with block time h seconds, one clock for heights and times
+// alike.
+func (s *KeeperTestSuite) at(h int64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(h).WithBlockTime(time.Unix(h, 0))
+}
+
 func (s *KeeperTestSuite) SetupTest() {
 	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
@@ -58,7 +65,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		key,
 		storetypes.NewTransientStoreKey("transient_test"),
 	)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 
 	ctrl := gomock.NewController(s.T())
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
@@ -102,11 +110,12 @@ func (s *KeeperTestSuite) TestCollectionsPersistState() {
 	s.Require().Equal(asset, storedAsset)
 
 	settlementPlan := types.SettlementPlan{
-		Denom:                 asset.Denom,
-		RedemptionRate:        math.LegacyOneDec(),
-		ActivationHeight:      10,
-		EarliestClosingHeight: 110,
-		OpenedHeight:          1,
+		Denom:               asset.Denom,
+		RedemptionRate:      math.LegacyOneDec(),
+		ActivationTime:      10,
+		EarliestClosingTime: 110,
+		OpenedHeight:        1,
+		OpenedTime:          1,
 	}
 	s.Require().NoError(s.keeper.SettlementPlans.Set(
 		s.ctx,

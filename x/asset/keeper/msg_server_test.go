@@ -54,10 +54,10 @@ func (s *KeeperTestSuite) TestMsgServerRejectsInvalidAuthority() {
 				_, err := server.SetEmergencyMandate(
 					s.ctx,
 					&types.MsgSetEmergencyMandate{
-						Authority:        invalidAuthority,
-						Committee:        emergencyCommittee(),
-						ActivationHeight: 1,
-						ExpiryHeight:     100,
+						Authority:      invalidAuthority,
+						Committee:      emergencyCommittee(),
+						ActivationTime: 1,
+						ExpiryTime:     100,
 					},
 				)
 				return err
@@ -122,11 +122,11 @@ func (s *KeeperTestSuite) TestMsgServerRejectsInvalidAuthority() {
 				_, err := server.OpenSettlement(
 					s.ctx,
 					&types.MsgOpenSettlement{
-						Authority:             invalidAuthority,
-						Denom:                 asset.Denom,
-						ExpectedVersion:       asset.Version,
-						RedemptionRate:        math.LegacyOneDec(),
-						EarliestClosingHeight: 10,
+						Authority:           invalidAuthority,
+						Denom:               asset.Denom,
+						ExpectedVersion:     asset.Version,
+						RedemptionRate:      math.LegacyOneDec(),
+						EarliestClosingTime: 10,
 					},
 				)
 				return err
@@ -190,7 +190,7 @@ func (s *KeeperTestSuite) TestMsgServerRoutesLifecycleMutation() {
 }
 
 func (s *KeeperTestSuite) TestMsgServerRoutesSettlementMutation() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 	server := keeper.NewMsgServerImpl(s.keeper)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
@@ -201,11 +201,11 @@ func (s *KeeperTestSuite) TestMsgServerRoutesSettlementMutation() {
 		Return(sdk.NewInt64Coin(asset.Denom, 100))
 
 	response, err := server.OpenSettlement(s.ctx, &types.MsgOpenSettlement{
-		Authority:             authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Denom:                 asset.Denom,
-		ExpectedVersion:       asset.Version,
-		RedemptionRate:        math.LegacyOneDec(),
-		EarliestClosingHeight: 110 + int64(types.DefaultSettlementActivationDelayBlocks),
+		Authority:           authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Denom:               asset.Denom,
+		ExpectedVersion:     asset.Version,
+		RedemptionRate:      math.LegacyOneDec(),
+		EarliestClosingTime: 110 + types.DefaultSettlementActivationDelay,
 	})
 	s.Require().NoError(err)
 	s.Require().NotNil(response)
@@ -317,20 +317,20 @@ func (s *KeeperTestSuite) TestSetMandateRejectsAuthorityCommittee() {
 
 	govAuthority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	_, err := server.SetEmergencyMandate(s.ctx, &types.MsgSetEmergencyMandate{
-		Authority:        govAuthority,
-		Committee:        govAuthority,
-		ActivationHeight: 1,
-		ExpiryHeight:     100,
+		Authority:      govAuthority,
+		Committee:      govAuthority,
+		ActivationTime: 1,
+		ExpiryTime:     100,
 	})
 	s.Require().ErrorContains(err, "distinct from the Asset authority")
 
 	// The distinctness judgment runs on the canonical spelling, so re-casing
 	// the authority is still the authority.
 	_, err = server.SetEmergencyMandate(s.ctx, &types.MsgSetEmergencyMandate{
-		Authority:        govAuthority,
-		Committee:        strings.ToUpper(govAuthority),
-		ActivationHeight: 1,
-		ExpiryHeight:     100,
+		Authority:      govAuthority,
+		Committee:      strings.ToUpper(govAuthority),
+		ActivationTime: 1,
+		ExpiryTime:     100,
 	})
 	s.Require().ErrorContains(err, "distinct from the Asset authority")
 }
@@ -347,10 +347,10 @@ func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEmergencyCommittee()
 		Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
 	})
 	_, err := server.SetEmergencyMandate(s.ctx, &types.MsgSetEmergencyMandate{
-		Authority:        consensusAuthority,
-		Committee:        consensusAuthority,
-		ActivationHeight: 1,
-		ExpiryHeight:     100,
+		Authority:      consensusAuthority,
+		Committee:      consensusAuthority,
+		ActivationTime: 1,
+		ExpiryTime:     100,
 	})
 	s.Require().ErrorContains(err, "distinct from the Asset authority")
 }
@@ -360,7 +360,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParams() {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	updated := types.DefaultParams()
-	updated.SettlementActivationDelayBlocks = 500
+	updated.SettlementActivationDelay = 500
 	_, err := server.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: authority,
 		Params:    updated,
@@ -374,9 +374,9 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParams() {
 	// fails validation cannot half-apply.
 	_, err = server.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: authority,
-		Params:    types.Params{SettlementActivationDelayBlocks: 0},
+		Params:    types.Params{SettlementActivationDelay: 0},
 	})
-	s.Require().ErrorContains(err, "SettlementActivationDelayBlocks must be between one and")
+	s.Require().ErrorContains(err, "SettlementActivationDelay must be between one and")
 
 	_, err = server.UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: sdk.AccAddress("not-gov").String(),
@@ -395,7 +395,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParams() {
 func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 	const openHeight = 10
 
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(openHeight)
+	s.at(openHeight)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
 	asset.Version = 2
@@ -404,7 +404,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 		GetSupply(s.ctx, asset.Denom).
 		Return(sdk.NewInt64Coin(asset.Denom, 100))
 
-	activation := testSettlementActivationHeight()
+	activation := testSettlementActivationTime()
 	s.Require().NoError(s.keeper.OpenSettlement(
 		s.ctx,
 		asset.Denom,
@@ -414,7 +414,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 	))
 
 	shortened := types.DefaultParams()
-	shortened.SettlementActivationDelayBlocks = 1
+	shortened.SettlementActivationDelay = 1
 	_, err := keeper.NewMsgServerImpl(s.keeper).UpdateParams(s.ctx, &types.MsgUpdateParams{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Params:    shortened,
@@ -423,5 +423,5 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 
 	plan, err := s.keeper.SettlementPlans.Get(s.ctx, asset.Denom)
 	s.Require().NoError(err)
-	s.Require().Equal(activation, plan.ActivationHeight)
+	s.Require().Equal(activation, plan.ActivationTime)
 }

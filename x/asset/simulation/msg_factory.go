@@ -7,8 +7,8 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
 )
@@ -241,16 +241,16 @@ func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergenc
 		}
 
 		r := testData.Rand()
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		activationHeight := height + r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activationTime := now + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activationHeight,
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activationTime,
 			// Validation demands activation strictly precede expiry, and the
-			// handler demands expiry sit above the current height.
-			ExpiryHeight: activationHeight + r.Uint64InRange(1, 100_000),
+			// handler demands expiry sit above the current block time.
+			ExpiryTime: activationTime + r.Uint64InRange(1, 100_000),
 		}
 	}
 }
@@ -305,14 +305,14 @@ func MsgOpenSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.Msg
 
 		r := testData.Rand()
 		asset := candidates[r.IntInRange(0, len(candidates))]
-		activation := sdk.UnwrapSDKContext(ctx).BlockHeight() + int64(params.SettlementActivationDelayBlocks)
+		activation := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 
 		return nil, &types.MsgOpenSettlement{
-			Authority:             testData.ModuleAccountAddress(reporter, "gov"),
-			Denom:                 asset.Denom,
-			ExpectedVersion:       asset.Version,
-			RedemptionRate:        math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
-			EarliestClosingHeight: activation + int64(r.IntInRange(1_000, 10_000)),
+			Authority:           testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:               asset.Denom,
+			ExpectedVersion:     asset.Version,
+			RedemptionRate:      math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
+			EarliestClosingTime: activation + r.Uint64InRange(1_000, 10_000),
 		}
 	}
 }

@@ -127,16 +127,17 @@ func (s *KeeperTestSuite) TestExportGenesisUsesCollectionKeyOrder() {
 
 	plans := []types.SettlementPlan{
 		{
-			Denom:                 assets[1].Denom,
-			RedemptionRate:        math.LegacyOneDec(),
-			ActivationHeight:      10,
-			EarliestClosingHeight: 110,
-			OpenedHeight:          1,
+			Denom:               assets[1].Denom,
+			RedemptionRate:      math.LegacyOneDec(),
+			ActivationTime:      10,
+			EarliestClosingTime: 110,
+			OpenedHeight:        1,
+			OpenedTime:          1,
 		},
 		{
-			Denom:            assets[0].Denom,
-			RedemptionRate:   math.LegacyOneDec(),
-			ActivationHeight: 10,
+			Denom:          assets[0].Denom,
+			RedemptionRate: math.LegacyOneDec(),
+			ActivationTime: 10,
 		},
 	}
 	for _, plan := range plans {
@@ -223,11 +224,12 @@ func fullGenesisState() *types.GenesisState {
 	genesis.Assets[1].Version = 2
 	genesis.SettlementPlans = []types.SettlementPlan{
 		{
-			Denom:                 genesis.Assets[1].Denom,
-			RedemptionRate:        math.LegacyOneDec(),
-			ActivationHeight:      10,
-			EarliestClosingHeight: 110,
-			OpenedHeight:          1,
+			Denom:               genesis.Assets[1].Denom,
+			RedemptionRate:      math.LegacyOneDec(),
+			ActivationTime:      10,
+			EarliestClosingTime: 110,
+			OpenedHeight:        1,
+			OpenedTime:          1,
 		},
 	}
 	genesis.ResolutionRecords = []types.ResolutionRecord{
@@ -278,10 +280,10 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityEmergencyCommittee() {
 	genesis := types.DefaultGenesisState()
 	genesis.EmergencyMandate = types.EmergencyMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		},
 	}
 	s.Require().NoError(genesis.Validate())
@@ -295,14 +297,14 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityEmergencyCommittee() {
 // than the one governance last voted for.
 func (s *KeeperTestSuite) TestGenesisRoundTripsParams() {
 	genesis := types.DefaultGenesisState()
-	genesis.Params.SettlementActivationDelayBlocks = 4_321
+	genesis.Params.SettlementActivationDelay = 4_321
 	genesis.Assets = nil
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(4_321), stored.SettlementActivationDelayBlocks)
+	s.Require().Equal(uint64(4_321), stored.SettlementActivationDelay)
 
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
@@ -313,10 +315,10 @@ func (s *KeeperTestSuite) TestGenesisRoundTripsParams() {
 // chain with no settlement correction window at all.
 func (s *KeeperTestSuite) TestInitGenesisRejectsInvalidParams() {
 	genesis := types.DefaultGenesisState()
-	genesis.Params.SettlementActivationDelayBlocks = 0
+	genesis.Params.SettlementActivationDelay = 0
 
 	s.Require().ErrorContains(
 		s.keeper.InitGenesis(s.ctx, genesis),
-		"SettlementActivationDelayBlocks must be between one and",
+		"SettlementActivationDelay must be between one and",
 	)
 }

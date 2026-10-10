@@ -6,7 +6,8 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// DefaultGenesisState returns the launch asset registry.
+// DefaultGenesisState seeds the ten currencies ACTIVE for tests and testnets; the launch artefact
+// registers none (D95).
 func DefaultGenesisState() *GenesisState {
 	denoms := []string{
 		chain.AUDBaseDenom,

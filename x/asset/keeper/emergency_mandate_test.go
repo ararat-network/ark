@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"time"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -33,7 +35,7 @@ func (s *KeeperTestSuite) seedLiveMandate() uint64 {
 		1,
 		1_000,
 	))
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 
 	stored, err := s.keeper.EmergencyMandate.Get(s.ctx)
 	s.Require().NoError(err)
@@ -69,11 +71,11 @@ func (s *KeeperTestSuite) TestSetMandateAdvancesTerm() {
 	s.requireTypedEvents(
 		sdk.UnwrapSDKContext(s.ctx).EventManager().Events(),
 		&types.EventEmergencyMandateSet{
-			Term:             1,
-			Committee:        emergencyCommittee(),
-			ActivationHeight: 1,
-			ExpiryHeight:     1_000,
-			CommitteeShape:   absentCommitteeShape,
+			Term:           1,
+			Committee:      emergencyCommittee(),
+			ActivationTime: 1,
+			ExpiryTime:     1_000,
+			CommitteeShape: absentCommitteeShape,
 		},
 		&types.EventEmergencyMandateSet{Term: 2},
 	)
@@ -85,13 +87,13 @@ func (s *KeeperTestSuite) TestSetMandateRefusesAnElapsedWindow() {
 		types.DefaultEmergencyMandate(),
 	))
 	// The window is half-open, so its expiry height is already inactive.
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(1_000)
+	s.at(1_000)
 	s.Require().ErrorContains(s.keeper.SetEmergencyMandate(
 		s.ctx,
 		emergencyCommittee(),
 		1,
 		1_000,
-	), "not above the current height")
+	), "not after the current block time")
 }
 
 func (s *KeeperTestSuite) TestEmergencySuspendConsumesOneSuspensionPerTerm() {
@@ -178,7 +180,7 @@ func (s *KeeperTestSuite) TestEmergencySuspendRejectsInactiveMandate() {
 	)
 	s.Require().ErrorIs(err, types.ErrEmergencyMandateInactive)
 
-	expired := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(1_000)
+	expired := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(1_000).WithBlockTime(time.Unix(1_000, 0))
 	err = s.keeper.EmergencySuspendAsset(
 		expired,
 		emergencyCommittee(),

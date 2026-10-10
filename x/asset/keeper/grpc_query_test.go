@@ -117,11 +117,12 @@ func (s *KeeperTestSuite) TestQuerySettlementPlan() {
 	asset := assettypes.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	plan := assettypes.SettlementPlan{
-		Denom:                 asset.Denom,
-		RedemptionRate:        math.LegacyOneDec(),
-		ActivationHeight:      10,
-		EarliestClosingHeight: 110,
-		OpenedHeight:          1,
+		Denom:               asset.Denom,
+		RedemptionRate:      math.LegacyOneDec(),
+		ActivationTime:      10,
+		EarliestClosingTime: 110,
+		OpenedHeight:        1,
+		OpenedTime:          1,
 	}
 	s.Require().NoError(s.keeper.SettlementPlans.Set(
 		s.ctx,

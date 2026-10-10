@@ -88,9 +88,9 @@ func TestMsgSetEmergencyMandateFactory(t *testing.T) {
 	require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
 	require.Equal(t, govAuthority(), msg.Authority)
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	require.NoError(t, f.keeper.SetEmergencyMandate(
-		f.ctx, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight,
+		f.ctx, msg.Committee, msg.ActivationTime, msg.ExpiryTime,
 	))
 }
 
@@ -129,7 +129,7 @@ func TestRandomisedParamsStaysInsideTheDomain(t *testing.T) {
 		params := simulation.RandomisedParams(f.rand)
 
 		require.NoError(t, params.Validate())
-		require.Positive(t, params.SettlementActivationDelayBlocks)
-		require.LessOrEqual(t, params.SettlementActivationDelayBlocks, types.MaxSettlementActivationDelayBlocks)
+		require.Positive(t, params.SettlementActivationDelay)
+		require.LessOrEqual(t, params.SettlementActivationDelay, types.MaxSettlementActivationDelay)
 	}
 }

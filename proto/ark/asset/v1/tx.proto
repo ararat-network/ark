@@ -137,9 +137,9 @@ message MsgOpenSettlement {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // earliest_closing_height must follow the derived activation height and commits to a redemption
-  // window. WriteOffAsset is refused before this height.
-  int64 earliest_closing_height = 5 [(amino.dont_omitempty) = true];
+  // earliest_closing_time, in Unix seconds, must follow the derived activation time and commits to
+  // a redemption window. WriteOffAsset is refused before this time.
+  uint64 earliest_closing_time = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgOpenSettlementResponse is the response type for MsgOpenSettlement.
@@ -148,7 +148,7 @@ message MsgOpenSettlementResponse {}
 // MsgCancelSettlement cancels a settlement plan before it activates, leaving
 // the asset suspended. From activation onward the plan is a hard commitment:
 // only RecoverAsset, FinaliseRetirement, or a WriteOffAsset past the announced
-// closing height may end it.
+// closing time may end it.
 message MsgCancelSettlement {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgCancelSettlement";
@@ -162,8 +162,8 @@ message MsgCancelSettlement {
 message MsgCancelSettlementResponse {}
 
 // MsgRecoverAsset restores a suspended or written-off asset to issuance-halted
-// status in the block it executes. The asset's feed must already be active and
-// the asset must carry no settlement plan.
+// status in the block it executes. The asset's feed must already be active;
+// recovery closes any settlement plan on the way.
 message MsgRecoverAsset {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/asset/MsgRecoverAsset";
@@ -178,7 +178,7 @@ message MsgRecoverAssetResponse {}
 
 // MsgWriteOffAsset derecognises outstanding SUSPENDED supply without burning,
 // transferring, or repricing holder balances. It is refused before a settlement
-// plan's earliest closing height: the announced window is the one guarantee
+// plan's earliest closing time: the announced window is the one guarantee
 // holders get, and derecognition is the only act that could break it.
 message MsgWriteOffAsset {
   option (cosmos.msg.v1.signer) = "authority";
@@ -228,8 +228,8 @@ message MsgSetEmergencyMandate {
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee is the exact threshold-multisig account, empty to disable.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
 }
 
 // MsgSetEmergencyMandateResponse is the response type for

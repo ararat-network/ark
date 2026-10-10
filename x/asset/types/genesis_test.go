@@ -87,11 +87,12 @@ func TestGenesisValidateLifecycleConsistency(t *testing.T) {
 				genesis.SettlementPlans = append(
 					genesis.SettlementPlans,
 					assettypes.SettlementPlan{
-						Denom:                 genesis.Assets[0].Denom,
-						RedemptionRate:        math.LegacyOneDec(),
-						ActivationHeight:      10,
-						EarliestClosingHeight: 110,
-						OpenedHeight:          5,
+						Denom:               genesis.Assets[0].Denom,
+						RedemptionRate:      math.LegacyOneDec(),
+						ActivationTime:      10,
+						EarliestClosingTime: 110,
+						OpenedHeight:        5,
+						OpenedTime:          5,
 					},
 				)
 			},
@@ -114,8 +115,8 @@ func TestGenesisValidateLifecycleConsistency(t *testing.T) {
 			mutate: func(genesis *assettypes.GenesisState) {
 				appointment := assettypes.NewDisabledEmergencyMandate(1)
 				appointment.Committee = authtypes.NewModuleAddress("emergency-committee").String()
-				appointment.ActivationHeight = 10
-				appointment.ExpiryHeight = 20
+				appointment.ActivationTime = 10
+				appointment.ExpiryTime = 20
 				genesis.EmergencyMandate = appointment
 				genesis.EmergencySuspensions = []string{genesis.Assets[0].Denom}
 			},

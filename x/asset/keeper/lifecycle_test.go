@@ -341,7 +341,7 @@ func (s *KeeperTestSuite) TestFinaliseRetirement() {
 }
 
 func (s *KeeperTestSuite) TestFinaliseRetirementDerecognisesApprovedResidual() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
+	s.at(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
 	asset.Version = 4
@@ -393,7 +393,7 @@ func (s *KeeperTestSuite) TestFinaliseRetirementDerecognisesApprovedResidual() {
 // derecognition that cannot record its outcome must not have moved the asset or
 // closed its plan on the way to finding out.
 func (s *KeeperTestSuite) TestFinaliseRetirementRejectsDuplicateResidualBeforeWriting() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
+	s.at(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
 	asset.Version = 4
@@ -533,7 +533,7 @@ func (s *KeeperTestSuite) TestRetirementIsTerminal() {
 				asset.Denom,
 				asset.Version,
 				math.LegacyOneDec(),
-				sdk.UnwrapSDKContext(s.ctx).BlockHeight()+1,
+				chain.BlockSeconds(s.ctx)+1,
 			)
 		}},
 		{"cancel a settlement", func() error {
@@ -614,7 +614,7 @@ func (s *KeeperTestSuite) TestSuspendAssetHasNoBlockerBeyondStatus() {
 }
 
 func (s *KeeperTestSuite) TestRecoverAsset() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 	assets := types.DefaultGenesisState().Assets
 
 	// Recovery takes effect in the block it executes: governance has already
@@ -669,7 +669,7 @@ func (s *KeeperTestSuite) TestRecoverAsset() {
 // An adding feed has no rate yet, so a transition taking effect immediately
 // cannot use it; a removing feed was already cleared of referents.
 func (s *KeeperTestSuite) TestRecoverAssetRequiresActiveFeed() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 	assets := types.DefaultGenesisState().Assets
 
 	for _, tc := range []struct {

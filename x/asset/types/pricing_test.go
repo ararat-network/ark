@@ -115,11 +115,12 @@ func TestPriceVerdictFoldsStatusToVerdict(t *testing.T) {
 			var plan *types.SettlementPlan
 			if testCase.plan {
 				plan = &types.SettlementPlan{
-					Denom:                 pricingDenom,
-					RedemptionRate:        planRate,
-					OpenedHeight:          1,
-					ActivationHeight:      2,
-					EarliestClosingHeight: 3,
+					Denom:               pricingDenom,
+					RedemptionRate:      planRate,
+					OpenedHeight:        1,
+					OpenedTime:          1,
+					ActivationTime:      2,
+					EarliestClosingTime: 3,
 				}
 			}
 
@@ -147,11 +148,12 @@ func TestPriceVerdictIgnoresActivationHeight(t *testing.T) {
 	}
 	planRate := math.LegacyNewDec(5)
 	plan := &types.SettlementPlan{
-		Denom:                 pricingDenom,
-		RedemptionRate:        planRate,
-		OpenedHeight:          1,
-		ActivationHeight:      1_000_000,
-		EarliestClosingHeight: 1_000_001,
+		Denom:               pricingDenom,
+		RedemptionRate:      planRate,
+		OpenedHeight:        1,
+		OpenedTime:          1,
+		ActivationTime:      1_000_000,
+		EarliestClosingTime: 1_000_001,
 	}
 
 	pricing := types.PriceVerdict(asset, oracletypes.NewRateSet(), plan)

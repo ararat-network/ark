@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -119,8 +118,8 @@ func (q queryServer) SettlementPlan(ctx context.Context, req *types.QuerySettlem
 	return &types.QuerySettlementPlanResponse{SettlementPlan: plan}, nil
 }
 
-// ResolutionHistory returns one asset's append-only write-off records in
-// increasing version order.
+// ResolutionHistory returns one asset's append-only resolution records, write-offs
+// and retirement residuals, in increasing version order.
 func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryResolutionHistoryRequest) (*types.QueryResolutionHistoryResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -154,7 +153,7 @@ func (q queryServer) ResolutionHistory(ctx context.Context, req *types.QueryReso
 		sdkquery.WithCollectionPaginationPairPrefix[string, uint64](req.Denom),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("listing write-off history for asset %s: %w", req.Denom, err)
+		return nil, fmt.Errorf("listing resolution history for asset %s: %w", req.Denom, err)
 	}
 
 	return &types.QueryResolutionHistoryResponse{
@@ -187,11 +186,9 @@ func (q queryServer) EmergencyMandate(ctx context.Context, req *types.QueryEmerg
 		return nil, fmt.Errorf("listing consumed emergency suspensions: %w", err)
 	}
 
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
-
 	return &types.QueryEmergencyMandateResponse{
 		Mandate:         emergencyMandate,
-		Active:          emergencyMandate.IsActive(uint64(blockHeight)),
+		Active:          emergencyMandate.IsActive(chain.BlockSeconds(ctx)),
 		SuspendedDenoms: suspendedDenoms,
 	}, nil
 }
