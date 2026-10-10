@@ -37,8 +37,8 @@ message MsgSetSecurityMandate {
   // committee is the exact appointed account, empty to disable. A threshold
   // multisig is the intended shape; the chain sees only the account.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
 }
 
 // MsgSetSecurityMandateResponse is the response for a security committee

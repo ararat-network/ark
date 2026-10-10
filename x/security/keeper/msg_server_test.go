@@ -15,10 +15,10 @@ func (s *KeeperTestSuite) TestSetSecurityMandate() {
 
 	s.Run("appoints and derives the term", func() {
 		_, err := s.msgServer.SetSecurityMandate(s.ctx, &types.MsgSetSecurityMandate{
-			Authority:        s.authority,
-			Committee:        s.committee,
-			ActivationHeight: 50,
-			ExpiryHeight:     500,
+			Authority:      s.authority,
+			Committee:      s.committee,
+			ActivationTime: 50,
+			ExpiryTime:     500,
 		})
 		s.Require().NoError(err)
 
@@ -30,10 +30,10 @@ func (s *KeeperTestSuite) TestSetSecurityMandate() {
 
 	s.Run("replacement advances the term", func() {
 		_, err := s.msgServer.SetSecurityMandate(s.ctx, &types.MsgSetSecurityMandate{
-			Authority:        s.authority,
-			Committee:        stranger,
-			ActivationHeight: 50,
-			ExpiryHeight:     500,
+			Authority:      s.authority,
+			Committee:      stranger,
+			ActivationTime: 50,
+			ExpiryTime:     500,
 		})
 		s.Require().NoError(err)
 
@@ -64,32 +64,32 @@ func (s *KeeperTestSuite) TestSetSecurityMandateRejections() {
 		{
 			name: "wrong authority",
 			msg: &types.MsgSetSecurityMandate{
-				Authority:        authtypes.NewModuleAddress("stranger").String(),
-				Committee:        s.committee,
-				ActivationHeight: 50,
-				ExpiryHeight:     500,
+				Authority:      authtypes.NewModuleAddress("stranger").String(),
+				Committee:      s.committee,
+				ActivationTime: 50,
+				ExpiryTime:     500,
 			},
 			expected: "invalid authority",
 		},
 		{
 			name: "committee is the authority",
 			msg: &types.MsgSetSecurityMandate{
-				Authority:        s.authority,
-				Committee:        s.authority,
-				ActivationHeight: 50,
-				ExpiryHeight:     500,
+				Authority:      s.authority,
+				Committee:      s.authority,
+				ActivationTime: 50,
+				ExpiryTime:     500,
 			},
 			expected: "security committee must be distinct from the chain authority",
 		},
 		{
 			name: "expiry already behind the chain",
 			msg: &types.MsgSetSecurityMandate{
-				Authority:        s.authority,
-				Committee:        s.committee,
-				ActivationHeight: 10,
-				ExpiryHeight:     100,
+				Authority:      s.authority,
+				Committee:      s.committee,
+				ActivationTime: 10,
+				ExpiryTime:     100,
 			},
-			expected: "which is not above the current height 100",
+			expected: "which is not after the current block time 100",
 		},
 	}
 
@@ -191,6 +191,32 @@ func (s *KeeperTestSuite) TestCommitteePlanUpgrade() {
 		s.Require().NoError(getErr)
 		s.Require().Equal(committeeUpgradeNameB, record.Name)
 		s.Require().Equal(int64(210), record.Height)
+	})
+
+	s.Run("refuses an exact repeat of its own plan, accepts new info", func() {
+		s.router.dispatched = nil
+		s.upgrade.plan = &upgradetypes.Plan{Name: committeeUpgradeNameB, Height: 210}
+
+		_, err := s.msgServer.CommitteePlanUpgrade(s.ctx, &types.MsgCommitteePlanUpgrade{
+			Committee:    s.committee,
+			ExpectedTerm: 1,
+			Name:         committeeUpgradeNameB,
+			Height:       210,
+		})
+		s.Require().ErrorContains(err, "is already pending at height 210")
+		s.Require().Empty(s.router.dispatched)
+
+		_, err = s.msgServer.CommitteePlanUpgrade(s.ctx, &types.MsgCommitteePlanUpgrade{
+			Committee:    s.committee,
+			ExpectedTerm: 1,
+			Name:         committeeUpgradeNameB,
+			Height:       210,
+			Info:         "corrected binaries",
+		})
+		s.Require().NoError(err)
+		dispatched, ok := s.router.only().(*upgradetypes.MsgSoftwareUpgrade)
+		s.Require().True(ok)
+		s.Require().Equal("corrected binaries", dispatched.Plan.Info)
 	})
 
 	s.Run("refuses to displace a governance plan", func() {

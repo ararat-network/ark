@@ -1755,7 +1755,7 @@ type QuerySecurityMandateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Mandate *SecurityMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
-	// active reports whether the appointment may act at the current height.
+	// active reports whether the appointment may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 }
 

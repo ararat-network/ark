@@ -25,10 +25,10 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// SecurityMandate appoints a time-scoped committee for code and connectivity repair, never funds.
 // Empty committee disables it; every replacement advances the term.
 type SecurityMandate struct {
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
 }
 

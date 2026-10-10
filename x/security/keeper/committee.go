@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/security/types"
 )
 
@@ -25,7 +26,7 @@ func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expect
 	if err := securityMandate.Authorise(
 		committee,
 		expectedTerm,
-		uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		chain.BlockSeconds(ctx),
 	); err != nil {
 		return types.SecurityMandate{}, fmt.Errorf("%s: %w", types.SecurityMandateLabel, err)
 	}

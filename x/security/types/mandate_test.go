@@ -21,8 +21,8 @@ func testSecurityCommittee() string {
 func enabledSecurityMandate() types.SecurityMandate {
 	appointment := types.NewDisabledSecurityMandate(1)
 	appointment.Committee = testSecurityCommittee()
-	appointment.ActivationHeight = 10
-	appointment.ExpiryHeight = 20
+	appointment.ActivationTime = 10
+	appointment.ExpiryTime = 20
 
 	return appointment
 }
@@ -48,9 +48,9 @@ func TestSecurityMandateValidate(t *testing.T) {
 		{
 			name: "envelope fault is labelled",
 			mutate: func(appointment *types.SecurityMandate) {
-				appointment.ExpiryHeight = appointment.ActivationHeight
+				appointment.ExpiryTime = appointment.ActivationTime
 			},
-			expected: "security mandate: activation height must precede expiry height",
+			expected: "security mandate: activation time must precede expiry time",
 		},
 		{
 			name: "non-canonical committee is labelled",
@@ -96,10 +96,10 @@ func TestSecurityMandateValidateDisabled(t *testing.T) {
 		{
 			name: "disabled with a window",
 			mutate: func(appointment *types.SecurityMandate) {
-				appointment.ActivationHeight = 10
-				appointment.ExpiryHeight = 20
+				appointment.ActivationTime = 10
+				appointment.ExpiryTime = 20
 			},
-			expected: "security mandate: disabled envelope must not have an activation or expiry height",
+			expected: "security mandate: disabled envelope must not have an activation or expiry time",
 		},
 	}
 

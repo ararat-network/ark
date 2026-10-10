@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/security/types"
 )
@@ -43,8 +44,8 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return nil, err
@@ -69,12 +70,12 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"%s expires at height %d, which is not above the current height %d",
+				"%s expires at time %d, which is not after the current block time %d",
 				types.SecurityMandateLabel,
-				updated.ExpiryHeight,
-				height,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 	}
@@ -86,11 +87,11 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 	// appointment neither cancels nor inherits, so carrying it across tells the
 	// next committee whose plan holds the slot.
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventSecurityMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting security mandate: %w", err)
 	}
@@ -133,6 +134,11 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 				pending.Name,
 				pending.Height,
 			)
+		}
+		// x/upgrade accepts the same plan again, and this module would then record
+		// and announce a schedule that changed nothing.
+		if pending.Name == msg.Name && pending.Height == msg.Height && pending.Info == msg.Info {
+			return nil, fmt.Errorf("upgrade %s is already pending at height %d", pending.Name, pending.Height)
 		}
 	}
 

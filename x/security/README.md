@@ -6,7 +6,7 @@ Security implements the bounded committee fast path over standard-module emergen
 
 | Entry point | Responsibility |
 | --- | --- |
-| [keeper/committee.go](keeper/committee.go) | Mandate checks and committee state. |
+| [keeper/committee.go](keeper/committee.go) | Authorisation, plan ownership, and router dispatch. |
 | [keeper/msg_server.go](keeper/msg_server.go) | Emergency messages and upstream dispatch. |
 | [keeper/keeper.go](keeper/keeper.go) | Router, account/upgrade dependencies, and collections. |
 | [types/mandate.go](types/mandate.go) | Mandate validation. |
@@ -31,9 +31,10 @@ emergency surface. Its charter is one line: **code and connectivity repair, neve
   disables and still advances the term, so previously prepared committee transactions never become valid
   again.
 - **Messages.** Governance `MsgSetSecurityMandate`; committee `MsgCommitteePlanUpgrade`,
-  `MsgCommitteeCancelUpgrade`, `MsgCommitteeRecoverClient`, each carrying `expected_term` and authorising
+  `MsgCommitteeCancelUpgrade`, each carrying `expected_term` and authorising
   through `Envelope.Authorise` (exact signer, exact term, active window, in that order). The authority is
-  rejected as committee. No-op actions are rejected.
+  rejected as committee. A cancel with no pending plan, and a schedule repeating the pending plan's name, height,
+  and info, are rejected.
 - **Execution by dispatch.** Each handler constructs the exact upstream message (`MsgSoftwareUpgrade`,
   `MsgCancelUpgrade`) with `effectiveAuthority` as signer, resolved exactly as
   `sdk.ValidateAuthority` does (consensus-params authority when set, keeper fallback otherwise), and routes
@@ -45,8 +46,8 @@ emergency surface. Its charter is one line: **code and connectivity repair, neve
   holds one plan and scheduling overwrites it, so the committee may schedule only when the slot is empty or
   holds its own plan, and may cancel only its own. `CommitteePlan` is trusted only while it matches the
   pending plan on both name and height; a governance overwrite, governance cancel, or executed upgrade
-  leaves a stale record that is cleared opportunistically, never trusted. No minimum lead time: halt-in-hours
-  is the point.
+  leaves a stale record that is never trusted and that the committee's next schedule overwrites. No minimum lead
+  time: halt-in-hours is the point.
 - Queries `SecurityMandate` (with `active`) and `CommitteePlan` (with `matches_pending`). Events report
   resulting state. Every dependency comes through the constructor and the module reads only x/upgrade
   before dispatching.

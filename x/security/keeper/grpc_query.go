@@ -7,8 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/security/types"
 )
 
@@ -27,7 +26,7 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 }
 
 // SecurityMandate returns the committee appointment and whether it may act at
-// the current height.
+// the current block time.
 func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecurityMandateRequest) (*types.QuerySecurityMandateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -37,11 +36,9 @@ func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecuri
 	if err != nil {
 		return nil, fmt.Errorf("getting security mandate: %w", err)
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	return &types.QuerySecurityMandateResponse{
 		Mandate: securityMandate,
-		Active:  securityMandate.IsActive(uint64(sdkCtx.BlockHeight())),
+		Active:  securityMandate.IsActive(chain.BlockSeconds(ctx)),
 	}, nil
 }
 

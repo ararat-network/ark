@@ -34,12 +34,12 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 	s.Run("invalid mandate", func() {
 		genesisState := types.DefaultGenesisState()
 		appointment := s.genesisAppointment()
-		appointment.ExpiryHeight = appointment.ActivationHeight
+		appointment.ExpiryTime = appointment.ActivationTime
 		genesisState.SecurityMandate = appointment
 
 		s.Require().ErrorContains(
 			s.keeper.InitGenesis(s.ctx, genesisState),
-			"activation height must precede expiry height",
+			"activation time must precede expiry time",
 		)
 	})
 
@@ -62,8 +62,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 func (s *KeeperTestSuite) TestInitGenesisAcceptsAnExpiredMandate() {
 	genesisState := types.DefaultGenesisState()
 	appointment := s.genesisAppointment()
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = 2
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = 2
 	genesisState.SecurityMandate = appointment
 
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesisState))
@@ -93,8 +93,8 @@ func (s *KeeperTestSuite) TestExportGenesisWithoutAPlan() {
 func (s *KeeperTestSuite) genesisAppointment() types.SecurityMandate {
 	appointment := types.NewDisabledSecurityMandate(1)
 	appointment.Committee = s.committee
-	appointment.ActivationHeight = 50
-	appointment.ExpiryHeight = 500
+	appointment.ActivationTime = 50
+	appointment.ExpiryTime = 500
 
 	return appointment
 }
@@ -111,8 +111,8 @@ func (s *KeeperTestSuite) TestQuerySecurityMandate() {
 	// appointment opening later reads as inactive through the same client.
 	future := types.NewDisabledSecurityMandate(2)
 	future.Committee = s.committee
-	future.ActivationHeight = 900
-	future.ExpiryHeight = 1000
+	future.ActivationTime = 900
+	future.ExpiryTime = 1000
 	s.Require().NoError(s.keeper.Mandate.Set(s.ctx, future))
 
 	response, err = s.queryClient.SecurityMandate(s.ctx, &types.QuerySecurityMandateRequest{})

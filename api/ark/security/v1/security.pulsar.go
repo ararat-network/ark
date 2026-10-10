@@ -979,14 +979,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// SecurityMandate appoints a time-scoped committee for code and connectivity repair, never funds.
 // Empty committee disables it; every replacement advances the term.
 type SecurityMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	Envelope *v1.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 }
 

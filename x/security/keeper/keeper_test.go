@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -132,7 +133,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	storeService := runtime.NewKVStoreService(key)
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
-	s.ctx = testCtx.Ctx.WithBlockHeight(100)
+	s.ctx = testCtx.Ctx.WithBlockHeight(100).WithBlockTime(time.Unix(100, 0))
 
 	s.router = &stubRouter{}
 	s.account = &stubAccountKeeper{accounts: map[string]sdk.AccountI{}}
@@ -158,8 +159,8 @@ func (s *KeeperTestSuite) SetupTest() {
 func (s *KeeperTestSuite) appoint() {
 	appointment := types.NewDisabledSecurityMandate(1)
 	appointment.Committee = s.committee
-	appointment.ActivationHeight = 50
-	appointment.ExpiryHeight = 500
+	appointment.ActivationTime = 50
+	appointment.ExpiryTime = 500
 	s.Require().NoError(appointment.Validate())
 	s.Require().NoError(s.keeper.Mandate.Set(s.ctx, appointment))
 }

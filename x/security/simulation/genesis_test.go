@@ -80,8 +80,8 @@ func TestGenSecurityMandateAppointments(t *testing.T) {
 		require.NoError(t, mandate.Validate())
 		require.False(t, mandate.IsDisabled())
 		require.Contains(t, accounts, mandate.Committee)
-		require.Positive(t, mandate.ActivationHeight)
-		require.Greater(t, mandate.ExpiryHeight, mandate.ActivationHeight)
+		require.Positive(t, mandate.ActivationTime)
+		require.Greater(t, mandate.ExpiryTime, mandate.ActivationTime)
 	}
 
 	// Without accounts there is nobody to appoint, which is the empty case.
