@@ -155,12 +155,16 @@ func TestCommitteePlanValidate(t *testing.T) {
 		{
 			name:     "name without a height",
 			record:   types.CommitteePlan{Name: testUpgradeName},
-			expected: "committee plan height must be positive",
+			expected: "committee plan height must be in [1, ",
 		},
 		{
-			name:     "negative height",
-			record:   types.CommitteePlan{Name: testUpgradeName, Height: -1},
-			expected: "committee plan height must be positive",
+			name:   "height at x/upgrade's maximum",
+			record: types.CommitteePlan{Name: testUpgradeName, Height: types.MaxPlanHeight},
+		},
+		{
+			name:     "height beyond x/upgrade's range",
+			record:   types.CommitteePlan{Name: testUpgradeName, Height: types.MaxPlanHeight + 1},
+			expected: "committee plan height must be in [1, ",
 		},
 	}
 

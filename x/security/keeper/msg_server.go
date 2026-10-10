@@ -118,6 +118,10 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 	if msg.Name == "" {
 		return nil, errors.New("upgrade plan must have a name")
 	}
+	if msg.Height > types.MaxPlanHeight {
+		return nil, fmt.Errorf("upgrade height %d exceeds x/upgrade's maximum %d", msg.Height, types.MaxPlanHeight)
+	}
+	height := int64(msg.Height)
 
 	pending, hasPending, err := m.k.pendingUpgradePlan(ctx)
 	if err != nil {
@@ -137,7 +141,7 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 		}
 		// x/upgrade accepts the same plan again, and this module would then record
 		// and announce a schedule that changed nothing.
-		if pending.Name == msg.Name && pending.Height == msg.Height && pending.Info == msg.Info {
+		if pending.Name == msg.Name && pending.Height == height && pending.Info == msg.Info {
 			return nil, fmt.Errorf("upgrade %s is already pending at height %d", pending.Name, pending.Height)
 		}
 	}
@@ -146,7 +150,7 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 		Authority: m.k.effectiveAuthority(ctx),
 		Plan: upgradetypes.Plan{
 			Name:   msg.Name,
-			Height: msg.Height,
+			Height: height,
 			Info:   msg.Info,
 		},
 	}); err != nil {
@@ -218,7 +222,7 @@ func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCom
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventCommitteeUpgradeCancelled{
 		Term:   securityMandate.Term,
 		Name:   pending.Name,
-		Height: pending.Height,
+		Height: uint64(pending.Height),
 	}); err != nil {
 		return nil, err
 	}

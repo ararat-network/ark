@@ -149,6 +149,9 @@ var (
 					// refreshes factors and exposure from PreBlock-applied rates.
 					authz.ModuleName,
 					treasurytypes.ModuleName,
+					// Security drops a committee plan record the upgrade slot no
+					// longer holds; upgrade's PreBlocker has already run.
+					securitytypes.ModuleName,
 				},
 				// Governance executes before Market settles, so a proposal's conversions are part
 				// of the block's flow and settlement reads the block's final state, proposal effects

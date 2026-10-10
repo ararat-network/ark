@@ -751,8 +751,8 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Range(f func(protoreflec
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_EventCommitteeUpgradeScheduled_height, value) {
 			return
 		}
@@ -777,7 +777,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Has(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		return x.Name != ""
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -799,7 +799,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Clear(fd protoreflect.Fi
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		x.Name = ""
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -824,7 +824,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Get(descriptor protorefl
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -850,7 +850,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Set(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -895,7 +895,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) NewField(fd protoreflect
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -1135,7 +1135,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1267,8 +1267,8 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Range(f func(protoreflec
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_EventCommitteeUpgradeCancelled_height, value) {
 			return
 		}
@@ -1293,7 +1293,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Has(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		return x.Name != ""
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1315,7 +1315,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Clear(fd protoreflect.Fi
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		x.Name = ""
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1340,7 +1340,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Get(descriptor protorefl
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1366,7 +1366,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Set(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1411,7 +1411,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) NewField(fd protoreflect
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1651,7 +1651,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1786,7 +1786,7 @@ type EventCommitteeUpgradeScheduled struct {
 
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *EventCommitteeUpgradeScheduled) Reset() {
@@ -1823,7 +1823,7 @@ func (x *EventCommitteeUpgradeScheduled) GetName() string {
 	return ""
 }
 
-func (x *EventCommitteeUpgradeScheduled) GetHeight() int64 {
+func (x *EventCommitteeUpgradeScheduled) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
@@ -1839,7 +1839,7 @@ type EventCommitteeUpgradeCancelled struct {
 
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *EventCommitteeUpgradeCancelled) Reset() {
@@ -1876,7 +1876,7 @@ func (x *EventCommitteeUpgradeCancelled) GetName() string {
 	return ""
 }
 
-func (x *EventCommitteeUpgradeCancelled) GetHeight() int64 {
+func (x *EventCommitteeUpgradeCancelled) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
@@ -1918,14 +1918,14 @@ var file_ark_security_v1_event_proto_rawDesc = []byte{
 	0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a,
-	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8,
+	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x6e, 0x0a, 0x1e,
 	0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70,
 	0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x19,
 	0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a,
-	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8,
+	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xbd, 0x01, 0x0a,
 	0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74,
 	0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,

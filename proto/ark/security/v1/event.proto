@@ -30,7 +30,7 @@ message EventSecurityMandateSet {
 message EventCommitteeUpgradeScheduled {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   string name = 2;
-  int64 height = 3 [(amino.dont_omitempty) = true];
+  uint64 height = 3 [(amino.dont_omitempty) = true];
 }
 
 // EventCommitteeUpgradeCancelled is emitted when the committee cancels its own
@@ -38,5 +38,5 @@ message EventCommitteeUpgradeScheduled {
 message EventCommitteeUpgradeCancelled {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   string name = 2;
-  int64 height = 3 [(amino.dont_omitempty) = true];
+  uint64 height = 3 [(amino.dont_omitempty) = true];
 }

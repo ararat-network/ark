@@ -1,6 +1,6 @@
-// Package security delegates bounded upgrade and halt actions to a committee. It owns no funds
-// or block hooks. Constructed upstream messages retain target-module validation; see
-// x/security/README.md.
+// Package security delegates bounded upgrade and halt actions to a committee. It owns no funds;
+// its one block hook reconciles the committee's plan record with the upgrade slot. Constructed
+// upstream messages retain target-module validation; see x/security/README.md.
 package security
 
 import (
@@ -30,11 +30,12 @@ var (
 	_ module.AppModuleSimulation = AppModule{}
 	_ module.HasGenesis          = AppModule{}
 
-	_ appmodule.AppModule = AppModule{}
+	_ appmodule.AppModule       = AppModule{}
+	_ appmodule.HasBeginBlocker = AppModule{}
 )
 
-// AppModule exposes transaction-driven security powers with no BeginBlocker or EndBlocker. Each
-// transaction checks its mandate window at execution height.
+// AppModule exposes transaction-driven security powers. Each transaction checks its mandate
+// window at execution height; BeginBlock only drops a plan record the slot no longer holds.
 type AppModule struct {
 	k *keeper.Keeper
 }
@@ -48,6 +49,11 @@ func NewAppModule(k *keeper.Keeper) AppModule {
 
 // IsAppModule implements the appmodule.AppModule interface.
 func (am AppModule) IsAppModule() {}
+
+// BeginBlock reconciles the committee plan record with the upgrade slot.
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	return am.k.BeginBlocker(ctx)
+}
 
 // Name returns the security module's name.
 func (am AppModule) Name() string { return types.ModuleName }

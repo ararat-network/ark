@@ -79,7 +79,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 		Info:         "patched binaries",
 	})
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-b",
-		Height:       f.ctx.BlockHeight() + 600,
+		Height:       uint64(f.ctx.BlockHeight() + 600),
 	})
 	require.NoError(t, err)
 
@@ -122,7 +122,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-c",
-		Height:       f.ctx.BlockHeight() + 700,
+		Height:       uint64(f.ctx.BlockHeight() + 700),
 	})
 	require.ErrorContains(t, err, "only governance replaces it")
 
@@ -146,7 +146,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-d",
-		Height:       f.ctx.BlockHeight() + 800,
+		Height:       uint64(f.ctx.BlockHeight() + 800),
 	})
 	require.NoError(t, err)
 
@@ -180,7 +180,7 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: staleTerm,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
 	require.ErrorContains(t, err, "term mismatch")
 
@@ -201,7 +201,7 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: appointment.Term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
 	require.ErrorContains(t, err, "signer is not the exact appointed account")
 }
@@ -217,7 +217,7 @@ func TestSecurityCommitteeRefusesAStranger(t *testing.T) {
 		Committee:    stranger,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
 	require.ErrorContains(t, err, "signer is not the exact appointed account")
 

@@ -171,7 +171,7 @@ func (s *KeeperTestSuite) TestCommitteePlanUpgrade() {
 		record, getErr := s.keeper.CommitteePlan.Get(s.ctx)
 		s.Require().NoError(getErr)
 		s.Require().Equal(committeeUpgradeName, record.Name)
-		s.Require().Equal(int64(200), record.Height)
+		s.Require().Equal(uint64(200), record.Height)
 		s.Require().Equal(uint64(1), record.Term)
 	})
 
@@ -190,7 +190,7 @@ func (s *KeeperTestSuite) TestCommitteePlanUpgrade() {
 		record, getErr := s.keeper.CommitteePlan.Get(s.ctx)
 		s.Require().NoError(getErr)
 		s.Require().Equal(committeeUpgradeNameB, record.Name)
-		s.Require().Equal(int64(210), record.Height)
+		s.Require().Equal(uint64(210), record.Height)
 	})
 
 	s.Run("refuses an exact repeat of its own plan, accepts new info", func() {
@@ -260,6 +260,18 @@ func (s *KeeperTestSuite) TestCommitteePlanUpgrade() {
 			Height:       240,
 		})
 		s.Require().ErrorContains(err, "upgrade plan must have a name")
+	})
+
+	s.Run("refuses a height x/upgrade cannot store", func() {
+		s.upgrade.plan = nil
+		_, err := s.msgServer.CommitteePlanUpgrade(s.ctx, &types.MsgCommitteePlanUpgrade{
+			Committee:    s.committee,
+			ExpectedTerm: 1,
+			Name:         committeeUpgradeName,
+			Height:       types.MaxPlanHeight + 1,
+		})
+		s.Require().ErrorContains(err, "exceeds x/upgrade's maximum")
+		s.Require().Empty(s.router.dispatched)
 	})
 }
 

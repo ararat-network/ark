@@ -1053,8 +1053,8 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) Range(f func(protoreflect.Field
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_MsgCommitteePlanUpgrade_height, value) {
 			return
 		}
@@ -1087,7 +1087,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) Has(fd protoreflect.FieldDescri
 	case "ark.security.v1.MsgCommitteePlanUpgrade.name":
 		return x.Name != ""
 	case "ark.security.v1.MsgCommitteePlanUpgrade.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	case "ark.security.v1.MsgCommitteePlanUpgrade.info":
 		return x.Info != ""
 	default:
@@ -1113,7 +1113,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) Clear(fd protoreflect.FieldDesc
 	case "ark.security.v1.MsgCommitteePlanUpgrade.name":
 		x.Name = ""
 	case "ark.security.v1.MsgCommitteePlanUpgrade.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	case "ark.security.v1.MsgCommitteePlanUpgrade.info":
 		x.Info = ""
 	default:
@@ -1143,7 +1143,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) Get(descriptor protoreflect.Fie
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.MsgCommitteePlanUpgrade.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	case "ark.security.v1.MsgCommitteePlanUpgrade.info":
 		value := x.Info
 		return protoreflect.ValueOfString(value)
@@ -1174,7 +1174,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) Set(fd protoreflect.FieldDescri
 	case "ark.security.v1.MsgCommitteePlanUpgrade.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.MsgCommitteePlanUpgrade.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	case "ark.security.v1.MsgCommitteePlanUpgrade.info":
 		x.Info = value.Interface().(string)
 	default:
@@ -1227,7 +1227,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) NewField(fd protoreflect.FieldD
 	case "ark.security.v1.MsgCommitteePlanUpgrade.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.MsgCommitteePlanUpgrade.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.security.v1.MsgCommitteePlanUpgrade.info":
 		return protoreflect.ValueOfString("")
 	default:
@@ -1523,7 +1523,7 @@ func (x *fastReflection_MsgCommitteePlanUpgrade) ProtoMethods() *protoiface.Meth
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2891,9 +2891,9 @@ type MsgCommitteePlanUpgrade struct {
 	ExpectedTerm uint64 `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
 	// name identifies the upgrade handler the patched binary must carry.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// height is the block at which the chain halts for the upgrade, enforced by
-	// x/upgrade to be in the future.
-	Height int64 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
+	// height is the block at which the chain halts for the upgrade, at most
+	// x/upgrade's int64 range and enforced by x/upgrade to be in the future.
+	Height uint64 `protobuf:"varint,4,opt,name=height,proto3" json:"height,omitempty"`
 	// info carries the upgrade metadata operators read, conventionally the
 	// binary locations.
 	Info string `protobuf:"bytes,5,opt,name=info,proto3" json:"info,omitempty"`
@@ -2940,7 +2940,7 @@ func (x *MsgCommitteePlanUpgrade) GetName() string {
 	return ""
 }
 
-func (x *MsgCommitteePlanUpgrade) GetHeight() int64 {
+func (x *MsgCommitteePlanUpgrade) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
@@ -3096,7 +3096,7 @@ var file_ark_security_v1_tx_proto_rawDesc = []byte{
 	0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c,
 	0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x54, 0x65, 0x72, 0x6d, 0x12, 0x12, 0x0a, 0x04,
 	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
-	0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03,
+	0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04,
 	0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12,
 	0x12, 0x0a, 0x04, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x69,
 	0x6e, 0x66, 0x6f, 0x3a, 0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,

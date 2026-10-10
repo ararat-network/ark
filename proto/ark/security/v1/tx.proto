@@ -55,9 +55,9 @@ message MsgCommitteePlanUpgrade {
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   // name identifies the upgrade handler the patched binary must carry.
   string name = 3;
-  // height is the block at which the chain halts for the upgrade, enforced by
-  // x/upgrade to be in the future.
-  int64 height = 4 [(amino.dont_omitempty) = true];
+  // height is the block at which the chain halts for the upgrade, at most
+  // x/upgrade's int64 range and enforced by x/upgrade to be in the future.
+  uint64 height = 4 [(amino.dont_omitempty) = true];
   // info carries the upgrade metadata operators read, conventionally the
   // binary locations.
   string info = 5;
