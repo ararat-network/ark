@@ -10,6 +10,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/cosmos/gogoproto/proto"
+
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -31,69 +33,117 @@ import (
 // of the community pool, and both reward targets raised by one seat's share.
 // The founder, one of the operators, holds chain.FounderSeat for the count
 // instead, half the other seats' sum, on the same account and schedule and
-// from the same pool. Supply is unchanged. It refuses an unset genesis time, a
-// file already seated, since the founding set is seated in one run, a founder
-// outside the operators, an operator already holding an account or balance,
-// and a pool that cannot fund the seats, and writes nothing unless every seat
-// and every edited module passes its own validation. The launch count bounds
-// are the command's. Each seat is recorded on the operator's Disbursement
-// beneficiary, a record nothing reads (D115).
+// from the same pool. Supply is unchanged. It refuses an operator named twice,
+// a founder outside the operators, an unset genesis time, a file already
+// seated, since the founding set is seated in one run, an operator already
+// holding an account or balance, and a pool that cannot fund the seats, and
+// changes appState only once every edited module passes its own validation.
+// The launch count bounds are the command's. Each seat is recorded on the
+// operator's Disbursement beneficiary, a record nothing reads (D115).
 func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, founder sdk.AccAddress, genesisTime time.Time) error {
 	if len(operators) == 0 {
 		return errors.New("at least one operator address must be set")
 	}
+	named := make(map[string]bool, len(operators))
 	for _, operator := range operators {
 		if len(operator) == 0 {
 			return errors.New("operator address must be set")
 		}
+		if named[operator.String()] {
+			return fmt.Errorf("operator %s named twice", operator)
+		}
+		named[operator.String()] = true
 	}
 	if len(founder) == 0 {
 		return errors.New("founder address must be set")
 	}
-	if !slices.ContainsFunc(operators, func(operator sdk.AccAddress) bool { return operator.Equals(founder) }) {
+	if !named[founder.String()] {
 		return fmt.Errorf("founder %s is not among the operators", founder)
 	}
 	if genesisTime.IsZero() {
 		return errors.New("genesis time must be set before the seats are granted: they vest from it")
 	}
-	if err := refuseSeated(cdc, appState); err != nil {
+
+	s, err := decodeSeatStates(cdc, appState)
+	if err != nil {
+		return err
+	}
+	if err := s.refuseSeated(); err != nil {
 		return err
 	}
 	founderSeat := chain.FounderSeat(len(operators))
-	seated := maps.Clone(appState)
-	seats := make([]math.Int, len(operators))
-	for i, operator := range operators {
+	drawn := sdk.NewCoins()
+	for _, operator := range operators {
 		grant := chain.SeatGrant
 		if operator.Equals(founder) {
 			grant = founderSeat
 		}
-		seats[i] = grant
-		if err := addValidatorSeat(cdc, seated, operator, grant, genesisTime); err != nil {
+		seat, err := s.addSeat(operator, grant, genesisTime)
+		if err != nil {
 			return fmt.Errorf("seat %s: %w", operator, err)
 		}
+		drawn = drawn.Add(seat...)
 	}
-	registered, err := registerFounders(cdc, seated[disbursementtypes.ModuleName], operators, seats)
-	if err != nil {
-		return fmt.Errorf("%s: %w", disbursementtypes.ModuleName, err)
+	if err := s.drawFromPool(drawn); err != nil {
+		return err
 	}
-	seated[disbursementtypes.ModuleName] = registered
-	maps.Copy(appState, seated)
-	return nil
+	s.raiseTargets(len(operators))
+	return s.encodeInto(cdc, appState)
+}
+
+// seatStates is every module genesis seating edits, decoded once: the seats
+// are typed edits, and appState changes only in encodeInto.
+type seatStates struct {
+	auth         authtypes.GenesisState
+	accounts     authtypes.GenesisAccounts
+	bank         banktypes.GenesisState
+	distr        distrtypes.GenesisState
+	treasury     treasurytypes.GenesisState
+	disbursement disbursementtypes.GenesisState
+}
+
+type seatModule struct {
+	name     string
+	state    proto.Message
+	validate func() error
+}
+
+// modules lists the genesis in s. Validate goes through closures: bank's,
+// Treasury's, and Disbursement's take value receivers, so a method value
+// would check the state as decoded.
+func (s *seatStates) modules() []seatModule {
+	return []seatModule{
+		{authtypes.ModuleName, &s.auth, func() error { return authtypes.ValidateGenesis(s.auth) }},
+		{banktypes.ModuleName, &s.bank, func() error { return s.bank.Validate() }},
+		{distrtypes.ModuleName, &s.distr, func() error { return distrtypes.ValidateGenesis(&s.distr) }},
+		{treasurytypes.ModuleName, &s.treasury, func() error { return s.treasury.Validate() }},
+		{disbursementtypes.ModuleName, &s.disbursement, func() error { return s.disbursement.Validate() }},
+	}
+}
+
+func decodeSeatStates(cdc codec.Codec, appState map[string]json.RawMessage) (*seatStates, error) {
+	s := &seatStates{}
+	for _, m := range s.modules() {
+		raw, present := appState[m.name]
+		if !present || len(raw) == 0 {
+			return nil, fmt.Errorf("genesis carries no %s state", m.name)
+		}
+		if err := cdc.UnmarshalJSON(raw, m.state); err != nil {
+			return nil, fmt.Errorf("%s: %w", m.name, err)
+		}
+	}
+	var err error
+	if s.accounts, err = authtypes.UnpackAccounts(s.auth.Accounts); err != nil {
+		return nil, fmt.Errorf("%s: %w", authtypes.ModuleName, err)
+	}
+	return s, nil
 }
 
 // refuseSeated rejects a file that already carries a seat: the founding set
 // is seated in one run, which is what fixes the reward targets and the
 // beneficiary records assembly then confirms by hand.
-func refuseSeated(cdc codec.Codec, appState map[string]json.RawMessage) error {
-	raw, present := appState[disbursementtypes.ModuleName]
-	if !present || len(raw) == 0 {
-		return fmt.Errorf("genesis carries no %s state", disbursementtypes.ModuleName)
-	}
-	var gs disbursementtypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
-		return fmt.Errorf("%s: %w", disbursementtypes.ModuleName, err)
-	}
-	for _, p := range gs.Beneficiaries {
+func (s *seatStates) refuseSeated() error {
+	for _, p := range s.disbursement.Beneficiaries {
 		if !p.Seat.IsNil() && p.Seat.IsPositive() {
 			return fmt.Errorf("seats already granted, %s holds one: the founding set is seated in one run", p.Address)
 		}
@@ -101,168 +151,90 @@ func refuseSeated(cdc codec.Codec, appState map[string]json.RawMessage) error {
 	return nil
 }
 
-// addValidatorSeat grants one seat of grant with the float from the community
-// pool, writing nothing unless every edited module passes its own validation.
-func addValidatorSeat(cdc codec.Codec, appState map[string]json.RawMessage, operator sdk.AccAddress, grant math.Int, genesisTime time.Time) error {
-	if len(operator) == 0 {
-		return errors.New("operator address must be set")
-	}
-	vesting := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, grant))
-	seat := vesting.Add(noahCoins(chain.SeatFloatNoah)...)
-
-	edits := []struct {
-		module string
-		edit   func(json.RawMessage) (json.RawMessage, error)
-	}{
-		{authtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return addSeatAccount(cdc, raw, operator, vesting, genesisTime)
-		}},
-		{banktypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return fundSeat(cdc, raw, operator, seat)
-		}},
-		{distrtypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return drawSeatFromPool(cdc, raw, seat)
-		}},
-		{treasurytypes.ModuleName, func(raw json.RawMessage) (json.RawMessage, error) {
-			return raiseSeatTargets(cdc, raw)
-		}},
-	}
-	edited := make(map[string]json.RawMessage, len(edits))
-	for _, e := range edits {
-		raw, present := appState[e.module]
-		if !present || len(raw) == 0 {
-			return fmt.Errorf("genesis carries no %s state", e.module)
-		}
-		out, err := e.edit(raw)
-		if err != nil {
-			return fmt.Errorf("%s: %w", e.module, err)
-		}
-		edited[e.module] = out
-	}
-	for module, raw := range edited {
-		appState[module] = raw
-	}
-	return nil
-}
-
-func noahCoins(whole int64) sdk.Coins {
-	return sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(whole)))
-}
-
-// addSeatAccount appends the vesting account, its window counted in calendar
-// years from genesisTime. It carries no public key; the gentx's signature sets
-// it, as for any genesis account.
-func addSeatAccount(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress, grant sdk.Coins, genesisTime time.Time) (json.RawMessage, error) {
-	var state authtypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &state); err != nil {
-		return nil, err
-	}
-	accounts, err := authtypes.UnpackAccounts(state.Accounts)
-	if err != nil {
-		return nil, err
-	}
-	if accounts.Contains(operator) {
+// addSeat opens a seat of grant at operator: a continuous vesting account,
+// its window counted in calendar years from genesisTime, a balance of the
+// grant and the float, and the seat on the operator's beneficiary. The
+// account carries no public key; the gentx's signature sets it, as for any
+// genesis account. It returns the balance, which the pool has yet to pay.
+func (s *seatStates) addSeat(operator sdk.AccAddress, grant math.Int, genesisTime time.Time) (sdk.Coins, error) {
+	if s.accounts.Contains(operator) {
 		return nil, fmt.Errorf("operator %s already holds an account", operator)
 	}
-	seat, err := vestingtypes.NewContinuousVestingAccount(
+	if slices.ContainsFunc(s.bank.Balances, func(b banktypes.Balance) bool { return b.Address == operator.String() }) {
+		return nil, fmt.Errorf("operator %s already holds a balance", operator)
+	}
+	vesting := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, grant))
+	account, err := vestingtypes.NewContinuousVestingAccount(
 		authtypes.NewBaseAccount(operator, nil, 0, 0),
-		grant,
+		vesting,
 		genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(),
 		genesisTime.AddDate(chain.SeatVestingEndYears, 0, 0).Unix(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	accounts = append(accounts, seat)
-	if state.Accounts, err = authtypes.PackAccounts(authtypes.SanitizeGenesisAccounts(accounts)); err != nil {
-		return nil, err
-	}
-	if err := authtypes.ValidateGenesis(state); err != nil {
-		return nil, err
-	}
-	return cdc.MarshalJSON(&state)
+	seat := vesting.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatFloatNoah)))
+	s.accounts = append(s.accounts, account)
+	s.bank.Balances = append(s.bank.Balances, banktypes.Balance{Address: operator.String(), Coins: seat})
+	s.disbursement.Beneficiaries = append(s.disbursement.Beneficiaries, disbursementtypes.Beneficiary{
+		Address:            operator.String(),
+		Controller:         operator.String(),
+		OwnershipCommitted: math.ZeroInt(),
+		Seat:               grant,
+	})
+	return seat, nil
 }
 
-// fundSeat moves the seat's coins from the community pool's balance to the
-// operator's, leaving supply untouched.
-func fundSeat(cdc codec.Codec, raw json.RawMessage, operator sdk.AccAddress, seat sdk.Coins) (json.RawMessage, error) {
-	var state banktypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &state); err != nil {
-		return nil, err
-	}
+// drawFromPool takes coins from the community pool's balance and from the
+// fee pool's record of it, which InitGenesis requires equal. The seats'
+// balances already hold the coins, so supply is unchanged.
+func (s *seatStates) drawFromPool(coins sdk.Coins) error {
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
-	poolIndex := -1
-	for i, balance := range state.Balances {
-		switch balance.Address {
-		case operator.String():
-			return nil, fmt.Errorf("operator %s already holds a balance", operator)
-		case pool:
-			poolIndex = i
-		}
+	i := slices.IndexFunc(s.bank.Balances, func(b banktypes.Balance) bool { return b.Address == pool })
+	if i < 0 {
+		return errors.New("the community pool holds no balance to grant from")
 	}
-	if poolIndex < 0 {
-		return nil, errors.New("the community pool holds no balance to grant from")
+	held := s.bank.Balances[i].Coins
+	if !held.IsAllGTE(coins) {
+		return fmt.Errorf("the community pool holds %s, short of the %s the seats need", held, coins)
 	}
-	held := state.Balances[poolIndex].Coins
-	if !held.IsAllGTE(seat) {
-		return nil, fmt.Errorf("the community pool holds %s, short of the %s seat", held, seat)
-	}
-	state.Balances[poolIndex].Coins = held.Sub(seat...)
-	state.Balances = append(state.Balances, banktypes.Balance{Address: operator.String(), Coins: seat})
-	state.Balances = banktypes.SanitizeGenesisBalances(state.Balances)
-	if err := state.Validate(); err != nil {
-		return nil, err
-	}
-	return cdc.MarshalJSON(&state)
-}
-
-// drawSeatFromPool lowers the fee pool's record of the community pool by the
-// same coins, so it still equals the module balance Distribution checks at
-// InitGenesis.
-func drawSeatFromPool(cdc codec.Codec, raw json.RawMessage, seat sdk.Coins) (json.RawMessage, error) {
-	var state distrtypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &state); err != nil {
-		return nil, err
-	}
-	remaining, short := state.FeePool.CommunityPool.SafeSub(sdk.NewDecCoinsFromCoins(seat...))
+	recorded, short := s.distr.FeePool.CommunityPool.SafeSub(sdk.NewDecCoinsFromCoins(coins...))
 	if short {
-		return nil, fmt.Errorf("the fee pool records %s, short of the %s seat", state.FeePool.CommunityPool, seat)
+		return fmt.Errorf("the fee pool records %s, short of the %s the seats need", s.distr.FeePool.CommunityPool, coins)
 	}
-	state.FeePool.CommunityPool = remaining
-	if err := distrtypes.ValidateGenesis(&state); err != nil {
-		return nil, err
-	}
-	return cdc.MarshalJSON(&state)
+	s.bank.Balances[i].Coins = held.Sub(coins...)
+	s.distr.FeePool.CommunityPool = recorded
+	return nil
 }
 
-// raiseSeatTargets adds one seat's share to both reward targets.
-func raiseSeatTargets(cdc codec.Codec, raw json.RawMessage) (json.RawMessage, error) {
-	var state treasurytypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &state); err != nil {
-		return nil, err
-	}
-	policy := &state.EconomicPolicy
-	policy.ValidatorBlockRewardTarget = policy.ValidatorBlockRewardTarget.Add(chain.SeatValidatorShare)
-	policy.OracleBlockRewardTarget = policy.OracleBlockRewardTarget.Add(chain.SeatOracleShare)
-	if err := state.Validate(); err != nil {
-		return nil, err
-	}
-	return cdc.MarshalJSON(&state)
+// raiseTargets adds one share per seat to both reward targets; the
+// founder's larger seat adds one share like any other.
+func (s *seatStates) raiseTargets(seats int) {
+	policy := &s.treasury.EconomicPolicy
+	policy.ValidatorBlockRewardTarget = policy.ValidatorBlockRewardTarget.Add(chain.SeatValidatorShare.MulRaw(int64(seats)))
+	policy.OracleBlockRewardTarget = policy.OracleBlockRewardTarget.Add(chain.SeatOracleShare.MulRaw(int64(seats)))
 }
 
-// registerFounders records each operator's seat on its permanent grant beneficiary, a record
-// nothing reads (D115).
-func registerFounders(cdc codec.Codec, raw json.RawMessage, operators []sdk.AccAddress, seats []math.Int) (json.RawMessage, error) {
-	var gs disbursementtypes.GenesisState
-	if err := cdc.UnmarshalJSON(raw, &gs); err != nil {
-		return nil, err
+// encodeInto validates and marshals every module before writing any to
+// appState, so a refusal leaves it as it was.
+func (s *seatStates) encodeInto(cdc codec.Codec, appState map[string]json.RawMessage) error {
+	var err error
+	if s.auth.Accounts, err = authtypes.PackAccounts(authtypes.SanitizeGenesisAccounts(s.accounts)); err != nil {
+		return fmt.Errorf("%s: %w", authtypes.ModuleName, err)
 	}
-	for i, operator := range operators {
-		gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: operator.String(), Controller: operator.String(), OwnershipCommitted: math.ZeroInt(), Seat: seats[i]})
+	s.bank.Balances = banktypes.SanitizeGenesisBalances(s.bank.Balances)
+	disbursementtypes.SortBeneficiaries(s.disbursement.Beneficiaries)
+	encoded := make(map[string]json.RawMessage)
+	for _, m := range s.modules() {
+		if err := m.validate(); err != nil {
+			return fmt.Errorf("%s: %w", m.name, err)
+		}
+		raw, err := cdc.MarshalJSON(m.state)
+		if err != nil {
+			return fmt.Errorf("%s: %w", m.name, err)
+		}
+		encoded[m.name] = raw
 	}
-	disbursementtypes.SortBeneficiaries(gs.Beneficiaries)
-	if err := gs.Validate(); err != nil {
-		return nil, err
-	}
-	return cdc.MarshalJSON(&gs)
+	maps.Copy(appState, encoded)
+	return nil
 }

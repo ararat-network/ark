@@ -264,7 +264,7 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 			name:      "operator repeated in one grant",
 			mutate:    func(map[string]json.RawMessage) {},
 			operators: []sdk.AccAddress{operatorAddress(), taken, taken},
-			errPhrase: "already holds an account",
+			errPhrase: "named twice",
 		},
 		{
 			name: "operator already holds a balance",
