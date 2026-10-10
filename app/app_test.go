@@ -175,14 +175,9 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
 	})
 
-	// app.BlockedAddresses returns a map of addresses in app v1 and a map of modules name in app di.
 	for acc := range app.BlockedAddresses() {
-		var addr sdk.AccAddress
-		if modAddr, err := sdk.AccAddressFromBech32(acc); err == nil {
-			addr = modAddr
-		} else {
-			addr = arkApp.AccountKeeper.GetModuleAddress(acc)
-		}
+		addr, err := sdk.AccAddressFromBech32(acc)
+		require.NoError(t, err)
 
 		require.True(
 			t,
@@ -318,7 +313,7 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 
 	blocked := app.BlockedAddresses()
 	for _, moduleName := range append([]string{govtypes.ModuleName}, treasurytypes.FundAccountNames()...) {
-		require.False(t, blocked[moduleName], "%s must remain reachable", moduleName)
+		require.False(t, blocked[authtypes.NewModuleAddress(moduleName).String()], "%s must remain reachable", moduleName)
 	}
 	for _, moduleName := range []string{
 		authtypes.FeeCollectorName,
@@ -329,7 +324,7 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
 	} {
-		require.True(t, blocked[moduleName], "%s must remain blocked", moduleName)
+		require.True(t, blocked[authtypes.NewModuleAddress(moduleName).String()], "%s must remain blocked", moduleName)
 	}
 
 	arkApp := app.NewArkApp(

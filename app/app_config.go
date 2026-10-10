@@ -6,6 +6,9 @@
 package app
 
 import (
+	"maps"
+	"slices"
+
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 
 	runtimev1alpha1 "cosmossdk.io/api/cosmos/app/runtime/v1alpha1"
@@ -357,18 +360,16 @@ func GetMaccPerms() map[string][]string {
 	return dup
 }
 
-// BlockedAddresses returns all the app's blocked account addresses.
+// BlockedAddresses returns the app's blocked account addresses, bech32-encoded as Bank holds them.
+// The wiring above takes the module names; this is the address-keyed view simapp exposes.
 func BlockedAddresses() map[string]bool {
-	result := make(map[string]bool)
-
-	if len(blockAccAddrs) > 0 {
-		for _, addr := range blockAccAddrs {
-			result[addr] = true
-		}
-	} else {
-		for addr := range GetMaccPerms() {
-			result[addr] = true
-		}
+	names := blockAccAddrs
+	if len(names) == 0 {
+		names = slices.Collect(maps.Keys(GetMaccPerms()))
+	}
+	result := make(map[string]bool, len(names))
+	for _, name := range names {
+		result[authtypes.NewModuleAddress(name).String()] = true
 	}
 
 	return result
