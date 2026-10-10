@@ -20,7 +20,7 @@ works down. It is not a claim of completeness: the last section lists what it le
 | `arkd` validator | validator host | the consensus key; the node's vote in every oracle round |
 | `pricefeed` sidecar | beside or away from the node | the prices that vote carries; outbound credentials to price providers |
 | Price providers | the internet | nothing; every one is an untrusted input |
-| Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and the accept list |
+| Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and its query surface |
 | Committee accounts | off chain, usually multisigs | one bounded, expiring power per module, appointed by governance |
 | Registrar key | the member platform's signing service | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
 | Governance | on chain | every unbounded power, including appointing committees |
@@ -40,14 +40,15 @@ so it is untrusted until verified.
 
 **Assumptions.** A vote extension is bounded before it is decoded, decodes canonically or not at all,
 names only feeds the registry knows, and carries rates the chain can represent. A proposer cannot smuggle a
-vote no validator signed or exceed what the mempool would have admitted.
+vote no validator signed.
 
 **Controls.** `abci/codec` bounds the aggregate wire and decoded sizes and the vote count; `pkg/encoding`
 rejects non-canonical compact decimals; per-rate bytes are capped at `MaxEncodedVoteRateBytes`; rates must
 be positive and at most `MaxExchangeRate`; the feed set is capped at `MaxFeeds`. Aggregation is a
 stake-weighted median inside a reward band, and attendance is accounted, so one bad vote is outvoted and
-recorded. Fee validity is enforced in CheckTx and FinalizeBlock alike, so a proposer cannot include what
-every mempool would refuse. A block's prices and time both date from the previous commit, so the first
+recorded. Fee validity is enforced in CheckTx and FinalizeBlock alike, so a proposer cannot include a
+transaction whose fee fails the ante; node-local admission rules, such as lane shares, `max_tx_bytes`, and the
+stale-vote refusal, are not re-checked in ProcessProposal (§2.6). A block's prices and time both date from the previous commit, so the first
 block after a stall or halt would trade on pre-outage prices its own age check reads as new; a proposer
 whose clock finds the proposal's time older than `max_exchange_rate_age` proposes commit-only instead. That
 binds honest proposers alone: a validator proposing that block can still trade it, on chain and
@@ -69,8 +70,9 @@ and sidecar can read or replace prices unless the link is authenticated.
 the files through `pkg/tlsconfig`, the gRPC clients through `pkg/grpcconn`, and TLS termination shared
 by the sidecar's HTTP and gRPC handlers. Material is read and locally validated at start. The default
 local mode refuses remote endpoints. TLS and remote plaintext each require an
-explicit mode; plaintext with TLS fields is refused. TLS 1.3 verifies peer identity normally, with
-system roots when no client CA file is supplied and a replacement trust bundle otherwise.
+explicit mode; plaintext with TLS fields is refused. TLS 1.3 verifies peer identity normally: a client
+checks the server against system roots unless `ca_file` names a replacement bundle, and the sidecar requires
+and verifies client certificates only when `client_ca_file` is set, accepting any client without it.
 Owners reload identity contents every minute outside the handshake path. Certificate files must contain
 complete certificate PEM blocks separated only by whitespace; incomplete PEM blocks are rejected.
 Invalid replacements retain the current certificate and report failure; expiry and recovery are
@@ -78,8 +80,8 @@ observable. Trust bundles are fixed
 per loaded transport, and changing their contents at the same path requires restart. Rotation applies
 to new handshakes only; existing sessions are not revoked.
 Snapshots are bounded to twice `MaxFeeds` entries and to the compact encoding's byte limit per price,
-refused past `price_ttl` and past a five-second clock skew. The sidecar's build version is logged and exported and
-never gated on; the service contract is described in [Node–sidecar compatibility](../operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility).
+refused past `price_ttl` and past a five-second clock skew. The sidecar's build version is logged, not exported,
+and never gated on; the service contract is described in [Node–sidecar compatibility](../operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility).
 
 **Review questions.** Is the sidecar on another host, and is TLS mode selected under `[pricefeed.tls]`? Does the node hold
 a client certificate if the sidecar requires one? Does anything read the network on the vote path?
@@ -107,7 +109,7 @@ prices come back.
 sidecar must neither crash nor vote on a single bad source unchecked. The chain-level defence is the
 median across validators, which only holds while validators draw on different providers.
 
-**Controls.** Response bodies are size-capped; WebSocket reads use the library's default limit, a venue
+**Controls.** Response bodies are size-capped; WebSocket frames are capped at `MaxMessageBytes`, 32 KiB, a venue
 that compresses its stream (Huobi) is inflated under a fixed cap before parsing, and a venue that frames
 its stream in protobuf (MEXC) is decoded by a field-pinned wire reader that skips what it does not name; API keys
 travel in headers, never URLs, and the config file is written owner-only. Endpoints require HTTPS/WSS
@@ -174,7 +176,10 @@ proposals, submissions and deposits meeting x/gov's deposit ratios from spendabl
 cancellations by the proposer earn governance priority; a deposit followed by a vote remains a normal batch.
 Expected ineligibility uses normal service. Mixed/authz batches remain normal without
 priority vouches. The independent vote
-stake floor is still enforced recursively in ante and at the execution policy router.
+stake floor is still enforced recursively in ante and at the execution policy router. So is the block-data floor:
+a consensus-params update, signed, authz-wrapped, or inside a proposal at submission, that leaves less than
+`ante.MinBlockDataBytes` (8 MiB) of `block.max_bytes − evidence.max_bytes` is refused, so no vote can price the
+injected extended commit out of every proposal.
 
 CometBFT runs its standard flood mempool. `app/mempool.Pool` wraps the SDK priority/nonce
 index with independent 5% committee and governance count/byte reservations; normal admissions
@@ -220,14 +225,16 @@ local minimum-gas-prices is not a filter. A node on an older binary can still re
 Private carriers and isolated sentries remain an optional pre-inclusion confidentiality path with their
 own operator/access-control trust boundary, not a prerequisite for public governance admission.
 Messages a contract dispatches never see the ante; the policy router in
-`app/execution_policy_router.go` charges their transfer tax at dispatch. What a contract
-may read is the accept list in `app/wasm_query.go`: a query path a contract can reach is an input to
+`app/execution_policy_router.go` charges their transfer tax at dispatch. A contract's Stargate and gRPC
+queries go through the accept list in `app/wasm_query.go`: a query path a contract can reach is an input to
 consensus, so the list admits only paths annotated `module_query_safe`, the SDK's own auth, bank, and
 staking set whole and Ark's by hand (D85), and freezes each listed response shape for the life of the
-chain. The contract runtime is open from launch: upload and instantiation are permissionless, so a
-contract is an untrusted input bounded by exactly those two seams. The chain has no IBC: a contract's
-IBC messages and queries are refused in `app/wasm.go` and no contract port is routed, so there is no
-channel a contract could open.
+chain. Beside it the chain inherits Wasmd's typed Bank, Staking, Distribution, and Wasm queriers unchanged,
+the last reading other contracts' state and code, so those shapes are frozen too. The contract runtime is open
+from launch: upload and instantiation are permissionless, so a contract is an untrusted input bounded by the
+router and that query surface. The chain has no IBC: a contract's IBC messages are refused in `app/wasm.go`,
+its IBC queries in `app/wasm_query.go`, and no contract port is routed, so there is no channel a contract could
+open.
 
 **Review questions.** Does a new privileged message join a privilege, with its module's own check as the
 vouch, and is that vouch a bounded number of reads rather than the handler? Does a new policy walk authz?
@@ -260,15 +267,15 @@ no exit, so no proposal can redirect it; the pace of both pools, the contributor
 community pool answer only to governance's own tally: half the bonded stake voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
 distributed NOAH is bonded: a proof-of-authority trust model until then
 ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the native [Disbursement module](../../x/disbursement/README.md): every commitment is fully funded in
-its own denomination, drawn from the open member tranche or uncommitted contributor custody, with reservation, tranche, and
-conversion-order counters backed by the Bank balance of the account that holds them: the member account takes NOAH deposits only and
-pays members only; the contributor account holds every other award, order, and deposit. A send restriction admits only
+its own denomination, drawn from the open member tranche or uncommitted contributor custody, with reservation and
+tranche counters backed by the Bank balance of the account that holds them: the member account takes NOAH deposits only and
+pays members only; the contributor account holds every other award and deposit. A send restriction admits only
 NOAH into the member account and only NOAH or a registered asset into the contributor account, on every Bank path,
 module-to-module included. Custody holds the distribution from block 1, so a defect in its accounting or tranche
 checks is exposed from launch. Payment requires original
 schedule accrual, and an ownership award must fit the per-record cap, 15M of committed ownership over every grant as a
 governance parameter, which binds beneficiary records; the proposal and the admission process tie a record to a person.
-Fixed genesis founder identities and committed-ownership totals survive payee and controller rotation. Genesis rebuilds indexes and the due queue
+Beneficiary records and their committed-ownership totals survive payee and controller rotation. Genesis rebuilds indexes and the due queue
 and validates Bank backing, histories, and absolute timestamps. The block pays due grants at
 its end from a time-ordered queue, at most a thousand a block and with no scan of historical grants. A send Bank
 refuses at the payee is deferred a day and published rather than failing the block, since the payee is the one input
@@ -336,6 +343,16 @@ attestation store is the platform's second asset after the committee key, since 
 plan's counsel item covers what it obliges. The wallet holds the member's key, and the member app, a layer on it, holds
 none and asks for every signature through the wallet kit.
 
+The security committee holds the one committee power that can stop the chain without moving a coin: it schedules an
+upgrade when the slot is empty or holds its own plan, and cancels only its own, through `MsgCommitteePlanUpgrade` and
+`MsgCommitteeCancelUpgrade` on the committee lane. There is no minimum lead time, since halt-in-hours is the point, so
+a stolen key can halt the chain at a height it picks. The answers are a governance replacement that advances the term
+and cancels the plan if the vote finishes first, and validators restarting past the height with
+`--unsafe-skip-upgrades` if it does not. It cannot replace or cancel a governance plan. Its `CommitteePlan` record is
+trusted only while it matches the pending plan's name and height, and a BeginBlocker drops a record the slot no
+longer holds, so a later governance plan reusing the name and height never reads as the committee's
+([security](../../x/security/README.md)).
+
 **Controls.** `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, term retained
 on disablement so stale transactions never revive. Each module keeps its own mandate and payload bounds; the
 registrar is one more envelope under the committee's, with its own term, inside its window, cleared with it, appointed
@@ -355,10 +372,12 @@ bare stake majority a faster or quieter path to an irreversible act, or a blocki
 
 **Controls.** `go mod verify` before every release; the wasmvm static archives are pinned by version and
 digest in the image Dockerfile, and both the image build and the standalone node's container builder check the
-archives against them; CI actions are pinned, the mise action by commit; dependabot, nightly govulncheck,
-and CodeQL run; goreleaser is pinned in `mise.toml`. Releases are immutable once published: GitHub locks
-their assets and tag. The sidecar releases from its own tag line so a chain release never carries an
-unreviewed sidecar change, or the reverse.
+archives against them; every external CI action is pinned by full commit SHA, which the repository requires;
+dependabot, nightly govulncheck, and CodeQL run; goreleaser is pinned in `mise.toml`. Releases are immutable once
+published: GitHub locks their assets and tag. The sidecar's standalone binaries release from their own tag line, so a
+chain binary release never carries an unreviewed sidecar change, or the reverse. The distribution image is the
+exception: it builds `pricefeed` from the chain tag's tree, so a chain image carries whatever sidecar code sits at
+that tag, including commits after the last `pricefeed/v*` tag.
 Release source packaging exports a fixed committed tree, refuses tracked changes
 and a moving HEAD, verifies Go module checksums, and includes native dependencies.
 Source verification rebuilds in fresh containers with networking disabled before
@@ -429,14 +448,15 @@ scanning alerts and resolved conversations. Administrators may bypass these,
 including by pushing directly, so an administrator account is trusted with `main`.
 Nobody may force-push or delete `main`. Only administrators create release tags,
 and nobody moves or deletes them. Required checks must run on every pull request,
-including documentation-only changes.
+including documentation-only changes, and each must name a job the workflows still run: a removed or renamed
+job leaves its check pending and blocks every pull request short of an administrator bypass.
 Maintainer accounts must use 2FA. Require full commit-SHA pins for Actions, retain
 read-only default tokens, keep Actions from approving pull requests, and require
 approval for all external fork workflows.
 Review fork code before approval; approval itself does not make it trustworthy.
 These settings live outside Git and must be verified separately before publication.
 
-**Review questions.** Are the remaining actions pinned by commit rather than major tag? Does a release
+**Review questions.** Does every required status check match a job the workflows still run? Does a release
 run from a clean tree at a tag on `HEAD`?
 
 ## 3. Out of scope here
