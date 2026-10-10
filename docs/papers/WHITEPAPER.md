@@ -560,8 +560,8 @@ governance-set rate and a cap derived from an amount in the protocol reference u
 rate means no transfer tax. NOAH transfers are untaxed. Ordinary self-directed conversions have their own conversion
 charges and are outside this transfer-tax base.
 
-The launch rate is 0.5%, capped at the equivalent of 1,000 XDR per taxable input. At that rate, the proportional
-charge reaches the cap at 200,000 XDR of transferred value. The base gas-price floor is 0.02 XDR per 200,000 gas,
+The launch rate is 0.5%, capped at the equivalent of 100 XDR per taxable transfer. At that rate, the proportional
+charge reaches the cap at 20,000 XDR of transferred value. The base gas-price floor is 0.02 XDR per 200,000 gas,
 with a 50% utilisation target and a maximum adjustment of 2.5% per block. [Ark: Launch genesis][ark-genesis]
 
 The tax is part of the transaction's declared payment contract. Client-visible transfers and transfers generated during
@@ -602,10 +602,10 @@ combined target of `v + o` NOAH per block, balance `S`, and no qualifying revenu
 `S / (v + o)` blocks. Actual payments occur at funding-window boundaries. Changing targets or revenue changes that
 runway; a larger launch seed extends it without creating a recurring source of income.
 
-The launch seed is 100,000,000 NOAH. At 0.025 NOAH per block per seat and 5,256,000 assumed blocks per year, each
+The launch seed is 50,000,000 NOAH. At 0.025 NOAH per block per seat and 5,256,000 assumed blocks per year, each
 seat adds 131,400 NOAH to the annual funding target. With no qualifying revenue, replenishment, target changes, or
-withdrawals, the seed covers approximately 50.7 years for fifteen seats or 7.6 years for one hundred. These examples
-do not fix the number of genesis seats. The opening-price assumption used for bootstrap pricing is one USD per NOAH;
+withdrawals, the seed covers approximately 38.1 years for ten seats or 3.8 years for one hundred. These examples
+do not fix the number of genesis seats. The opening-price assumption used for bootstrap pricing is one XDR per NOAH, about 1.371 USD;
 it is not a market-price guarantee or a dollar-denominated reward commitment.
 
 Governance can return subsidy NOAH to the community pool through a fixed-destination transfer stating an amount
@@ -628,7 +628,7 @@ when those rules need to change. It remains subject to current message validatio
 state transition valid merely by approving it.
 
 The launch distributes equal staking grants to the founding validator seats, locked for four years and vesting over
-the six after, holds the member and contributor distribution in the Disbursement module from genesis, and leaves the
+the four after, holds the member and contributor distribution in the Disbursement module from genesis, and leaves the
 remainder in the governance-controlled community pool. Entry after
 launch is open: a validator
 bonds NOAH it holds, and no proposal grants a seat. The initial trust model is therefore authority-based membership
@@ -637,8 +637,8 @@ while voting and rewards remain governed by the underlying stake-based rules. Se
 community allocation. [Ark: Threat model][ark-threat]
 
 Some decisions require a faster response than a full voting cycle. Governance may appoint committees to specific roles,
-each with its own address, term, activation height, and expiry height. A committee transaction must name the current
-term and execute within the appointment window. Replacement or disabling advances the term, making old prepared
+each with its own address, term, activation time, and expiry time, measured in block time. A committee transaction
+must name the current term and execute within the appointment window. Replacement or disabling advances the term, making old prepared
 transactions unusable even if the same members are appointed later.
 
 | Role            | Delegated authority                                                                |
@@ -668,7 +668,7 @@ to existing claims. The accounting follows commitments independently of who curr
 
 The launch appointment policy uses separate 3-of-5 multisignature accounts for Security and Asset emergency, appointed
 in the first governance cycle, and 4-of-7 accounts for the deliberative committees when their work is needed. Terms
-last one chain year, with reappointment required. Committee keys are dedicated hardware-backed keys, and committee gas
+last a year of block time, with reappointment required. Committee keys are dedicated hardware-backed keys, and committee gas
 comes from members' liquid floats. The protocol authenticates the appointed address; governance chooses the members
 and enacts the appointments. Separate addresses do not prove that memberships or interests are independent.
 [Ark: Launch genesis][ark-genesis]
@@ -765,9 +765,9 @@ market value. [Ark: Asset lifecycle][ark-asset]
 ### 9.4 Fixed-rate settlement
 
 Governance may open a settlement plan for a suspended currency, or reinstate a written-off currency into suspension with
-a plan. The plan specifies a fixed NOAH redemption rate and an earliest closing height. Activation follows a governed
+a plan. The plan specifies a fixed NOAH redemption rate and an earliest closing time. Activation follows a governed
 delay. Before activation the plan can be cancelled; after activation its terms cannot be amended and write-off cannot
-occur before the announced earliest closing height.
+occur before the announced earliest closing time.
 
 Holders settle by surrendering and burning currency for the committed NOAH amount, rounded to whole base units.
 Settlement does not use the suspended currency's oracle rate, the virtual pool, or an ordinary conversion spread. It
@@ -780,7 +780,7 @@ commit no more than 200,000 NOAH of gross output. Buffer use may reduce the net 
 require that amount to be pre-funded in escrow. Governance is accepting a bounded potential dilution cost.
 
 The fixed commitment is in NOAH. Its external purchasing power can change during the settlement window, and the rate may
-recognise only part of the currency's former reference value. An earliest closing height protects time to exercise the
+recognise only part of the currency's former reference value. An earliest closing time protects time to exercise the
 stated exit; it is not an automatic expiry. A later governance act is needed to write off the residual.
 
 Recovery is a separate route. Governance can restore an asset to ordinary redemption, initially with issuance still
@@ -805,8 +805,8 @@ or a guaranteed payout. Governance or the authorised Claims committee decides wh
 recipient and NOAH amount, reserves existing unencumbered Insurance funds, and enters a cancellation period. Committee
 submissions must also fit their remaining gross allowance and close within the term.
 
-Before the closing height, governance can cancel a pending claim; the committee's cancellation power is narrower. At the
-closing height the chain pays automatically, without requiring the recipient to submit another transaction. A claim that
+Before the closing time, governance can cancel a pending claim; the committee's cancellation power is narrower. At the
+closing time the chain pays automatically, without requiring the recipient to submit another transaction. A claim that
 cannot be paid under the specified record and custody checks ends as failed and releases its reservation. Reservations
 prevent the same NOAH being promised twice, but they cannot make an adjudication fair or an unfunded loss disappear.
 Insurance payment in NOAH also retains exposure to NOAH's market value. [Ark: Claims][ark-claims]
@@ -829,9 +829,9 @@ entry points are refused, since the chain can open no channel.
 
 ### 10.2 Launch allocation and validator seats
 
-Ark starts with 1,000,000,000 NOAH. Of this, 100,000,000 funds the subsidy pool, 50,000,000 the Reserve, 10,000,000
-the Buffer, and 5,000,000 Insurance. Of the remaining 835,000,000, the Disbursement module holds 732,000,000 as the
-member and contributor pools, 439,200,000 and 292,800,000, and 103,000,000 enters the community pool before
+Ark starts with 1,000,000,000 NOAH. Of this, 50,000,000 funds the subsidy pool, 50,000,000 the Reserve, 10,000,000
+the Buffer, and 5,000,000 Insurance. Of the remaining 885,000,000, the Disbursement module holds 782,000,000 as the
+member and contributor pools, 469,200,000 and 312,800,000, and 103,000,000 enters the community pool before
 validator-seat grants.
 There is no separate investor, backer, or public allocation at launch. The initial supply can subsequently change
 through conversion and authorised burns; it is not a permanent maximum supply.
@@ -840,8 +840,10 @@ Each founding seat is a 5,000,000 NOAH staking grant, whatever the count, vestin
 continuously from the fourth year after genesis to the eighth, with 50,000 NOAH of liquid float, both from the community pool. The
 founder's seat is half the other seats' sum, a third of the founding stake, 22,500,000 NOAH at ten seats, on the same
 account and schedule and from the same pool: consensus weight for the launch window, while the founder's work before
-launch is paid by a 15,000,000 NOAH founding-band grant from the contributor pool, proposed in the first review round
-with the founder abstaining. Each grant can participate in staking and governance and be
+launch is paid by a 15,000,000 NOAH grant at the ownership cap from the contributor pool, and the founder's work after
+launch by a compensation stream of 10,000,000 NOAH over ten years, the compensation cap's whole room at the opening
+price. Seat assembly writes both into genesis as governance awards, which every founding validator approves by signing
+against the file and governance may still cancel. Each seat grant can participate in staking and governance and be
 slashed, but cannot be transferred until it vests. Every gentx self-delegates one seat; the founder delegates the rest
 across the other seats in the first blocks, so no node holds a third of consensus power while one vote from the
 founder's account carries the whole seat. The float pays operating expenses.
@@ -854,15 +856,16 @@ At genesis the founder can block any proposal alone and the other seats together
 the founder passes nothing alone, a third being under quorum, and passing takes the founder plus half the other seats.
 Public bonded stake dissolves this on a fixed schedule: the seat's sole block with the first few delegations, the
 founder with `m` other seats once the public has bonded `15,000,000m` NOAH, and the seat with the founder's grant
-beside it once the public has bonded twice what the grant has paid. Every ownership payment from the pools is bound
+and stream beside it once the public has bonded twice what they have paid. Every ownership payment from the pools is bound
 by a per-record cap of 15,000,000 NOAH over every grant, a governance parameter the seat sits outside, so no
 contributor is paid more ownership than the founder's grant. [Ark: Disbursement plan][ark-disbursement]
 
 The validator-set cap is one hundred, unbonding takes twenty-one days, and the minimum commission is 5%. Governance
 uses a 50% quorum, a 66.7% ordinary approval threshold, and a 75% expedited threshold, with the SDK's applicable
 tally rules. Ordinary voting lasts two days and expedited voting one day; deposits are 1,000 and 5,000 NOAH
-respectively. Evidence age is aligned with unbonding. The settlement activation delay is three days, allowing a
-normal governance vote to cancel a mistaken plan before activation; claims retain a one-week cancellation period.
+respectively. Evidence age is aligned with unbonding. The settlement activation delay and the claims cancellation
+period are both one week, long enough for a full deposit period and a normal vote to cancel a mistaken plan or veto a
+claim. Both are measured in block time, as the vote is, so a faster block pace cannot shorten them.
 
 The economic settings are settled. What remains at genesis assembly is to add the actual validator seats and their
 transactions, derive aggregate reward targets from the seat count, and set the start time. The zero aggregate targets
@@ -1028,25 +1031,25 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Area | Launch value | Status |
 | --- | --- | --- |
 | Initial supply | 1,000,000,000 NOAH | Decided |
-| Subsidy pool seed | 100,000,000 NOAH; 10% of initial supply | Decided |
+| Subsidy pool seed | 50,000,000 NOAH; 5% of initial supply | Decided |
 | Reserve seed | 50,000,000 NOAH; 5% | Decided |
 | Buffer seed | 10,000,000 NOAH; 1% | Decided |
 | Insurance seed | 5,000,000 NOAH; 0.5% | Decided |
-| Disbursement pools | 439,200,000 NOAH for members and 292,800,000 NOAH for contributors | Decided |
+| Disbursement pools | 469,200,000 NOAH for members and 312,800,000 NOAH for contributors | Decided |
 | Community pool | 103,000,000 NOAH before seats; subtract 5,050,000 per seat | Decided |
 | Seat staking grant | 5,000,000 NOAH per seat, the founder's half the others' sum, 67,500,000 at ten; one seat self-delegated at genesis, vesting from year four to year eight | Decided |
 | Seat liquid float | 50,000 NOAH | Decided |
 | Validator funding target | 0.0175 NOAH per block per seat | Assembly |
 | Oracle funding target | 0.0075 NOAH per block per seat | Assembly |
-| Transfer-tax rate and cap | 0.5%; 1,000 XDR per taxable input | Decided |
+| Transfer-tax rate and cap | 0.5%; 100 XDR per taxable transfer | Decided |
 | Buffer, Reserve, Insurance target ratios | 30%, 15%, 5% | Decided |
 | Reward funding window | 100,800 blocks, approximately one week | Decided |
 | Distribution community tax | 0; the community pool is separately seeded | Decided |
 
-For fifteen seats, the allocations are 75,000,000 NOAH in seat grants, 750,000 liquid NOAH, and
-27,250,000 NOAH remaining in the community pool, alongside the four fund seeds and the disbursement pools. This
-illustrates the per-seat rule, not an announced initial seat count.
-The subsidy's zero-revenue runway is approximately 50.7 years under the unchanged per-seat targets, before any subsidy
+For ten seats, the allocations are 67,500,000 NOAH in seat grants, the founder's 22,500,000 among them, 500,000
+liquid NOAH, and 35,000,000 NOAH remaining in the community pool, alongside the four fund seeds and the disbursement
+pools. This illustrates the per-seat rule, not an announced initial seat count.
+The subsidy's zero-revenue runway is approximately 38.1 years under the unchanged per-seat targets, before any subsidy
 return to the community pool.
 
 ### Currency, conversion, and pricing
@@ -1065,12 +1068,12 @@ return to the community pool.
 | Oracle reward band | 2% total width around the relevant median | Default |
 | Ordinary price freshness | 60 seconds | Default |
 | Oracle reward and attendance windows | 100,800 blocks, approximately one week | Default |
-| Oracle reward distribution horizon | 1,310,400 blocks, approximately one quarter | Decided |
+| Oracle reward distribution horizon | 403,200 blocks, approximately four weeks | Decided |
 | Oracle participation floor | 20% of targets; at least one positive rate | Default |
 | Functioning-block threshold | 50% of commit power participating | Default |
 | Minimum window attendance | 5% of eligible blocks | Default |
-| Claim cancellation period | 100,800 blocks, approximately one week | Decided |
-| Settlement activation delay | 43,200 blocks, approximately three days | Decided |
+| Claim cancellation period | 604,800 seconds of block time, one week | Decided |
+| Settlement activation delay | 604,800 seconds of block time, one week | Decided |
 | Exposure weights | All zero; initial multiplier one | Decided |
 | Exposure refresh | 600 blocks, approximately one hour | Default |
 | Exposure multiplier cap and maximum step | 2 and 0.1 per update | Decided |
@@ -1078,9 +1081,9 @@ return to the community pool.
 | External Reserve recognition | Empty policy; NOAH recognised at par | Decided |
 | Base gas-price floor | 0.02 XDR per 200,000 gas | Default |
 | Base-fee utilisation target and maximum adjustment | 50%; 2.5% per block | Default |
-| Initial NOAH fee-conversion factor | 1.371 NOAH per XDR, replaced by usable oracle observations | Decided |
+| Initial NOAH fee-conversion factor | 1 NOAH per XDR, replaced by usable oracle observations | Decided |
 
-The initial fee factor reflects the bootstrap assumption of one USD per NOAH and 1.371 USD per XDR. It supplies a
+The initial fee factor reflects the bootstrap assumption of one XDR per NOAH, about 1.371 USD at the bootstrap cross. It supplies a
 fee conversion before the first usable reference observation and is not a promise of either market exchange rate.
 No currency is issued at that assumption: conversion is closed at launch and opened by governance once NOAH has a
 market price.

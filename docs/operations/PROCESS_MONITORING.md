@@ -49,7 +49,8 @@ address = "localhost:9464"
 
 What the endpoint carries when enabled:
 
-- Ark's own meters: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`, `pkg/metrics`.
+- Ark's own meters: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`, `pricefeed/client/metrics`,
+  `pkg/metrics`.
 - Go runtime and process collectors.
 - The SDK's `baseapp` instrument: block and transaction counts, and the FinalizeBlock, PreBlock, BeginBlock, and
   EndBlock timings. arkd starts it on the endpoint itself, so it needs no otel.yaml. If otel.yaml names it under
@@ -192,7 +193,9 @@ loop can still leave its last snapshot visible, so interpret these gauges alongs
 wrapped handler, and PreBlock excludes the module manager's preblockers. Use CometBFT's proxy timings for complete
 ABCI calls and SDK baseapp timings for complete block stages. `status="Rejected"` identifies a ProcessProposal
 REJECT response without a Go error. `status="Panic"` records panic unwinding; only ExtendVote has Ark recovery,
-and the other handlers propagate their original panic unchanged.
+and the other handlers propagate their original panic unchanged. `status="CommitOnly"` counts PrepareProposal
+responses that carried the commit alone because the proposer's clock found the prices older than
+`max_exchange_rate_age` or could not read it; the proposal itself succeeded.
 
 ### 8.1 Node
 

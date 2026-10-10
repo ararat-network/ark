@@ -47,7 +47,11 @@ rejects non-canonical compact decimals; per-rate bytes are capped at `MaxEncoded
 be positive and at most `MaxExchangeRate`; the feed set is capped at `MaxFeeds`. Aggregation is a
 stake-weighted median inside a reward band, and attendance is accounted, so one bad vote is outvoted and
 recorded. Fee validity is enforced in CheckTx and FinalizeBlock alike, so a proposer cannot include what
-every mempool would refuse.
+every mempool would refuse. A block's prices and time both date from the previous commit, so the first
+block after a stall or halt would trade on pre-outage prices its own age check reads as new; a proposer
+whose clock finds the proposal's time older than `max_exchange_rate_age` proposes commit-only instead. That
+binds honest proposers alone: a validator proposing that block can still trade it, on chain and
+attributably (D137).
 
 **Review questions.** Is every field bounded before allocation? Does VerifyVoteExtension check everything
 ExtendVote produces? What does a malicious proposer control that ProcessProposal does not re-check?
@@ -232,8 +236,9 @@ newly listed query path carry the annotation, and is its response shape one you 
 
 ### 2.7 Governance and committees
 
-**What crosses.** Governance appoints a committee to one module's mandate for a height window; the
-committee acts within that window under a term; expiry is lazy.
+**What crosses.** Governance appoints a committee to one module's mandate for a window of block time; the
+committee acts within that window under a term; expiry is lazy. Windows a vote must fit are block time, as the vote
+is, so validators running a faster block cannot shorten them; an outage runs them down, as it does the vote (D133).
 
 **Assumptions.** A committee is an ordinary account, so its multisig threshold lives at the account layer,
 and the chain records the shape it observed at appointment. A contract may hold a deliberative mandate; the
@@ -251,7 +256,7 @@ seven to thirteen, hold the same grant, unvested for four years, and the founder
 third of the founding stake, so at launch the founder blocks alone and passing takes the founder plus half the other
 seats, a shape public stake erodes on a fixed per-seat schedule, 15M of public bonded stake an ally seat; the founder
 spreads the seat across the other nodes so no node holds a third of consensus power (D112). The member pool has
-no exit, so no proposal can redirect it; the pace of both pools, the contributor pool's return path, and the 52.5M
+no exit, so no proposal can redirect it; the pace of both pools, the contributor pool's return path, and the 35M
 community pool answer only to governance's own tally: half the bonded stake voting, two thirds agreeing. Entry after launch is open and grants nothing, so the founders hold every vote until
 distributed NOAH is bonded: a proof-of-authority trust model until then
 ([genesis](../governance/GENESIS.md#3-accounts-supply-and-validator-seats), D84). Distribution runs through the native [Disbursement module](../../x/disbursement/README.md): every commitment is fully funded in
@@ -272,7 +277,7 @@ as in Claims. Batches, schedules, references, and query pages have write-time bo
 
 **Stake purchase.** Distributed NOAH is for sale, and a buyer who stakes it holds a vote the seats do not answer
 (D93). A third of the vote blocks every proposal and, on the buyer's own validators, halts the chain. It takes about
-half of what everyone else has bonded: roughly 105M at a 20% public staking rate and 210M at 50% once the
+half of what everyone else has bonded: roughly 120M at a 20% public staking rate and 235M at 50% once the
 distribution is paid, 34M against the founding stake alone at ten seats, and through the middle distribution steps
 45M to 70M, from a float that is mostly liquid after the first year. Two thirds passes
 alone and takes twice that, a third of supply or more. A bought third also stops the handover and the committees:
@@ -291,9 +296,12 @@ Registration is the registrar's (D120): a single key, the hottest on the chain, 
 service, appointed by the committee under its term for a window inside the committee's, which the committee rotates
 without a vote and which a committee appointment clears, so no key registers under a replaced or disabled committee.
 Its batches ride the normal lane as routine traffic; only the appointment is a committee message. The
-open tranche is its only bound: a stolen registrar key pays out at most the tenths of what governance has opened before
-one committee transaction advances its term and refuses it, so governance sizes each tranche to the exposure it
-accepts; a stolen committee key can appoint a registrar of its own, so its exposure is the same as before. A committee award counts against the per-record compensation cap and pays
+open tranche is its only bound, and nothing it registers pays before a two-week hold ends (D126): a stolen registrar key
+commits at most what governance has opened, one committee transaction advances its term and refuses it, and the
+committee suspends what it registered inside the hold for governance to cancel whole, so governance opens each
+step's member budget in quarters; a stolen committee key can appoint a registrar of its own, which the replacement vote
+and the new committee's suspensions answer inside the same hold. The hold protects only if someone compares the
+chain's registrations with the platform's admission records inside it. A committee award counts against the per-record compensation cap and pays
 nothing before one period after the award, a fortnight at launch, wherever its clock starts, so a stolen key commits at most a term's allowance, spread no
 thicker than the cap on any one record, that governance can cancel before it accrues. The cap values an award in the reference unit at
 the fresh oracle rates, so an award is refused while no rate is live, and a pushed rate changes only how much of the
@@ -310,7 +318,11 @@ transfer, accounting, and journal entry together or not at all.
 
 Compensation is an untaxed protocol disbursement with a work reference, in NOAH or an active Asset registry entry;
 later lifecycle changes do not erase funded obligations. Governance controls compensation budgets; the module does not enforce off-chain work quality or
-prevent governance from mislabelling an ownership-scale award as compensation. Stablecoin custody comes from
+prevent governance from mislabelling an ownership-scale award as compensation. The founder's stream, 10M NOAH over
+ten years, is the one deliberate case, counted as the founder's stake in the plan's handover lines (D129). It and the
+founder's 15M grant are the only awards genesis carries: seat assembly writes them as governance awards, every
+founding validator approves them by signing a gentx against the published file, and governance's cancel reaches them
+like any other (D136). Stablecoin custody comes from
 the award itself: a stablecoin award draws uncommitted custody first and converts the rest from the contributor
 pool through Market, inside the message that creates it, offering at most its `max_offer`. The module sizes the
 smallest offer that funds the award, so a committee key cannot overpay beyond market price and the slippage of the

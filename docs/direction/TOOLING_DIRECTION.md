@@ -121,10 +121,11 @@ crypto-native members already carry.
 **The member app** is a layer on a wallet. It owns everything a member does that a wallet does not: signup with the
 member process in front of it, the identity check and the vouch, submitting the address with a proof of possession;
 the grant as the member sees it, what has been paid and what waits, the schedule and the next payment, and the member's
-status read from the Disbursement module; the monthly delegation of the month that arrived; the validator
+status read from the Disbursement module; the delegation of each payment that arrived; the validator
 picker that shows how close each validator is to a third and defaults away from the founding set; every open proposal
 put in front of the member; and sending paid coins out. It asks the wallet for every signature through the kit and
-never sees a key, and it pays gas from the tenth sent on registration, so the member never has to fund it.
+never sees a key, and it pays gas from the tenth the block sends two weeks after registration, so the member never has
+to fund it.
 
 The member app runs in-process inside the first-party wallet, so a member who has never seen a key sees one phone-first
 app, and the same component connects to any other wallet through the kit. The signup protocol, address, proof of
@@ -132,7 +133,7 @@ possession, vouch reference, and identity attestation to the platform, is specif
 hosting the member app can run it.
 
 The operations the earlier draft listed remain the wallet's later scope: simulation and comprehensible signing review,
-fee and tax presentation, Ark market operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as claiming accrued pay or changing its destination, and account
+fee and tax presentation, Ark market operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its destination or rotating its controller, and account
 recovery, hardware-wallet use, and multisignature flows where supported.
 
 The first-party wallet should define the quality bar for message decoding and user safety, while the wallet kit and SDK
@@ -143,20 +144,22 @@ make it possible for other wallets to reach the same level of integration, and t
 The platform behind the member app is a component of its own, and the plan bounds it with rules rather than norms. It
 owns the member process, admission by a verified identity and a vouch together and the registry of who is a member,
 the verifier's attestations and the vouch graph it reads for sybils; the registrar key, a single key the grants
-committee appoints and meters with an allowance, that registers batches of up to a hundred addresses with the
-Disbursement module inside the open member tranche; grant-tranche
+committee appoints, bounded by the open member tranche alone, that registers batches of up to a hundred addresses with
+the Disbursement module; a daily comparison of the chain's registrations against its admission records, inside the
+two-week hold before anything pays (D126); grant-tranche
 funding requests to governance; and the committee's suspend, which stops a sybil's pay and moves
 nothing, for governance to cancel, and reaches a voucher whose vouchees are cancelled.
 
 Registration callers pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
-fee allowance; after registration, members can pay their own gas from the immediate first payment.
+fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
 
 The platform holds no member coins and no authorisation over any member account, it is not a vote, and it keeps attestations,
 never documents: the identity verifier is a third party that checks liveness and a document and returns a uniqueness
 attestation, and the platform stores that and a dedup token. Its one key, the committee's, is a security component on
-a par with the wallet's key custody: it can misdirect a window's tenths, pause every member's pay, and commit its term's
-allowance into awards that pay nothing for a period, and an expedited governance vote revokes it, voids its
-suspensions, and cancels its awards. The attestation store is the second thing it must protect, since
+a par with the wallet's key custody: through a registrar of its own it can commit the open tranche, which pays nothing
+for the two-week hold, pause every member's pay, and commit its term's allowance into awards that pay nothing for a
+period, and an expedited governance vote revokes it, reinstates the members it wrongly suspended, and cancels its
+awards and registrations. The attestation store is the second thing it must protect, since
 it links a person to an address. Where members delegate is their own choice, steered only by the app's defaults.
 
 ### 8. Build an explorer around Ark semantics
@@ -220,7 +223,7 @@ The following boundaries should remain clear as the stack grows:
 | Ark SDK           | Encoding, querying, transaction workflows, decoding, and formatting                                         | An independent implementation of economic or market policy                |
 | Wallet kit        | Dapp-to-wallet session and request protocol                                                                 | A key store or an Ark-specific policy engine                              |
 | Ark wallet        | Key custody on the member's device, signing consent, transaction review, hosting the member app             | The authority for balances, quotes, or transaction success                |
-| Member app        | Signup with identity and vouch, the grant view, the monthly claim, the picker defaults, proposal prompts    | A key store, or anything that works without a wallet                      |
+| Member app        | Signup with identity and vouch, the grant view, staking each payment, the picker defaults, proposal prompts | A key store, or anything that works without a wallet                      |
 | Member platform   | Admission by identity and vouch, the committee signature, grant-tranche funding requests, suspend                | A custodian, a delegator, a vote, or a document store beyond attestations |
 | Disbursement module      | Custody of each tranche, member issuance, and the escrow paid out by the plan's rules                       | A policy engine beyond those rules, or a treasury                         |
 | Indexer           | Replayable historical and searchable derived data                                                           | Consensus state or an irreplaceable ledger                                |

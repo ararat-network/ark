@@ -57,8 +57,8 @@ Keep each participant's mnemonic and private validator key local to that partici
 The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
 copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
 seat in one `arkd genesis add-validator-seats --founder <address> --any-count <address>... --home <home>`, the
-founder's at half the others' sum and the launch count bounds lifted for the testnet, up to what its community pool
-funds ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+founder's at half the others' sum, with the founder's grant and stream written beside it, and the launch count bounds
+lifted for the testnet, up to what its community pool funds ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
@@ -97,6 +97,11 @@ COSMOS_SDK_CONFIG_SCOPE=arkd
 The scope must remain non-empty and constant for the process lifetime. It pins SDK configuration lookup to a stable scope,
 so address parsing does not depend on a hostname-derived lookup changing while the node runs.
 
+Keep validator clocks synchronised. A proposer leaves transactions out of its block when its clock finds the block's
+prices older than the Oracle's `max_exchange_rate_age`, so a clock running a minute fast proposes empty blocks and one
+running slow weakens that guard ([proposal handlers](../../abci/README.md#proposal-handlers)). The first block after an
+upgrade or any stall past that limit carries no transactions by design.
+
 ## Upgrades and relaunch
 
 [Upgrade authoring](../../app/upgrade/README.md) and the [rehearsal](../../contrib/scripts/README.md#upgrade-rehearsal)
@@ -109,7 +114,11 @@ compatible code. Do not run the same validator signing key concurrently in old a
 `arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis resumes
 at the next height with a new chain ID for relaunch. The export keeps the original `genesis_time`; set it to the coordinated
 restart time, at or after the export height's block time and identical in every validator's file, because Oracle and
-Disbursement import refuse records dated after genesis. Zero-height export is refused. `--jail-allowed-addrs` limits the
+Disbursement import refuse records dated after genesis. Records anchored in block time keep their absolute times, so the
+outage counts against them: committee terms, pending claims' closing times, unactivated settlement plans, and grant
+schedules. Before the relaunch, decide whether to push pending claims' `closing_time` and unactivated plans'
+`activation_time` forward by the outage in the exported genesis, returning to governance the veto and cancel windows the
+outage ate, and whether any committee term lapsed during it (D133). Zero-height export is refused. `--jail-allowed-addrs` limits the
 exported validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help`
 for height and output options, and validate the exported genesis before the coordinated relaunch.
 

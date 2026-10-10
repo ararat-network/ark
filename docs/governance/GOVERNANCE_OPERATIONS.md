@@ -65,18 +65,21 @@ integration tests exercise real ante authentication; no native committee module 
 
 1. Prepare the root account and its independent gas funding. Know what appointment will record: a key-backed
    account's kind and K-of-N, a contract only that it is one.
-2. Draft the domain's `MsgSet*Mandate` with activation/expiry and its policy bounds, allowance, floor, or destinations.
+2. Draft the domain's `MsgSet*Mandate` with its activation and expiry times, Unix seconds of block time (D133), and its
+   policy bounds, allowance, floor, or destinations. Write the dates the term should run between; block pace does not
+   move them.
 3. After execution, verify the emitted appointment and query state, including term and shape. Construct actions for
    that exact term and send only while the appointment is active.
 4. At replacement, review outstanding claims and positions as well as term usage. Pending commitments outlive terms;
    replacing the charter does not erase their custody or history.
 
 One appointment is the committee's rather than governance's: the grants committee names the Disbursement registrar
-under its own term with `MsgCommitteeRegistrar`, for a height window inside its own (D120). The registrar is an
+under its own term with `MsgCommitteeRegistrar`, for a window of block time inside its own (D120, D133). The registrar is an
 operational key, hardware-backed on the member platform's signing service, that registers batches as admissions
-clear; the committee may name itself. The open tranche is its only bound, so size each tranche to what a stolen key
-could pay out in tenths before the committee rotates it; a reappointment advances the registrar term, so rotate the key
-that way, without a vote, the moment it is suspect. Every committee appointment clears the registrar, so a replaced or
+clear; the committee may name itself. The open tranche is its only bound, and nothing it registers pays before the
+two-week hold ends (D126): open each step in quarters, compare the chain's registrations against the
+platform's admission records daily, and the moment the key is suspect rotate it by reappointment, which advances the
+registrar term without a vote, and suspend what it registered before the hold ends. Every committee appointment clears the registrar, so a replaced or
 reappointed committee names its registrar again in its first transaction; governance reaches the registrar only
 through the committee.
 
@@ -117,9 +120,9 @@ No contract upload, instantiation, or sudo is involved. Amounts are denomination
 
 **A member tranche** is a `MsgOpenTranche` on the member account beside a `MsgUpdateParams` carrying the step's member
 amount; it moves no coins, and members already registered keep the terms they joined under. Appoint the grants committee
-with `/ark.disbursement.v1.MsgSetGrantsMandate`, naming the exact committee account, a half-open height window, and
+with `/ark.disbursement.v1.MsgSetGrantsMandate`, naming the exact committee account, a half-open window of block time in Unix seconds, and
 its award power: a compensation allowance in the reference unit; nothing pays before one period after an award, a fortnight at launch
-in the example; an appointment that delegates no awards leaves both zero. Ownership is awarded by proposal only (D113). The appointment is its own message, so
+in the example; an appointment that delegates no awards leaves the allowance zero. Ownership is awarded by proposal only (D113). The appointment is its own message, so
 operational params never travel with it; every appointment advances the term the committee's transactions must carry,
 shown by `query disbursement grants-mandate`. Launch artifacts set a 20,000 NOAH member amount and leave the
 mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and founding identities are not.
@@ -129,16 +132,16 @@ mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and f
   "@type": "/ark.disbursement.v1.MsgSetGrantsMandate",
   "authority": "GOV",
   "committee": "COMMITTEE",
-  "activation_height": "ACTIVATION",
-  "expiry_height": "EXPIRY",
+  "activation_time": "ACTIVATION",
+  "expiry_time": "EXPIRY",
   "compensation_allowance": "250000000000000000000000"
 }
 ```
 
 ```json
 {
-  "title": "Member tranche, step 2",
-  "summary": "Sixty million NOAH for four thousand member grants of fifteen thousand.",
+  "title": "Member tranche, step 2, first quarter",
+  "summary": "Fifteen million NOAH for one thousand member grants of fifteen thousand, the first quarter of step 2's member budget.",
   "metadata": "",
   "deposit": "1000000000000000000000anoah",
   "messages": [
@@ -148,15 +151,15 @@ mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and f
       "params": {
         "member_amount": "15000000000000000000000",
         "member_schedule": {
-          "first_length": "1", "first_weight": "4",
-          "period_length": "2628000", "period_weight": "3", "periods": 12
+          "first_length": "1209600", "first_weight": "13",
+          "period_length": "2419200", "period_weight": "9", "periods": 13
         },
         "compensation_cap": "1000000000000000000000000",
-        "compensation_window": "31536000",
+        "compensation_window": "31449600",
         "compensation_period": "1209600",
         "ownership_cap": "15000000000000000000000000",
         "ownership_schedule": {
-          "first_length": "31536000", "first_weight": "26",
+          "first_length": "31449600", "first_weight": "26",
           "period_length": "1209600", "period_weight": "1", "periods": 78
         }
       }
@@ -164,7 +167,7 @@ mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and f
     {
       "@type": "/ark.disbursement.v1.MsgOpenTranche",
       "authority": "GOV",
-      "amount": "60000000000000000000000000"
+      "amount": "15000000000000000000000000"
     }
   ]
 }
@@ -172,14 +175,17 @@ mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and f
 
 `MsgUpdateParams` replaces the whole params object, so copy the current values from `arkd query disbursement params`
 and change only `member_amount`; the compensation and ownership terms stay unless one of them is the proposal. Step 1
-opens at the launch artefact's amount, so its proposal needs only the tranche; each later step carries both messages,
-and the plan's schedule runs 20,000, 15,000, 10,000, 7,500, 5,000 (D91).
+opens at the launch artefact's amount, so its proposals need only the tranche; each later step's first tranche carries
+both messages and its later ones the tranche alone, and the plan's schedule runs 20,000, 15,000, 10,000, 7,500, 5,000
+(D91). Open each step's member budget in quarters: 7.5M at step 1, 375 members, then 15M, 22.5M, 22.5M, and 49.8M, so
+twenty tranche votes cover the distribution. The open tranche is all a stolen registrar key can commit, and the two-week
+hold is the time to suspend it; a step that fills fast may split a quarter in two (D126).
 
 The committee appoints the registrar with
-`arkd tx disbursement committee-registrar --expected-term TERM --registrar REGISTRAR --activation-height ACTIVATION --expiry-height EXPIRY --from COMMITTEE`;
+`arkd tx disbursement committee-registrar --expected-term TERM --registrar REGISTRAR --activation-time ACTIVATION --expiry-time EXPIRY --from COMMITTEE`;
 `query disbursement registrar-mandate` shows the appointment, its term, and whether it is active. The registrar then signs
 `arkd tx disbursement register-members --expected-term REGISTRAR_TERM --addresses ADDRESS --addresses ADDRESS --reference REF --from REGISTRAR`,
-where the reference names the batch's admission record and carries no personal data; the member roll does not pass through a proposal. Registration sends the tenth immediately and reserves the rest. Look up the permanent
+where the reference names the batch's admission record and carries no personal data; the member roll does not pass through a proposal. Registration reserves the whole grant and pays nothing; the block sends the tenth when the two-week hold ends (D126). Look up the permanent
 grant ID with `arkd query disbursement member ADDRESS`. The chain pays each later period at the end of the block its
 boundary falls in, to the recorded payee; nothing is signed to receive it, and `grant ID` shows `due_time`, the next look.
 
@@ -201,9 +207,10 @@ from governance resumes a suspended grant and permits catch-up; neither can reop
 committee can reinstate members before cancellation, so follow the disbursement plan's prompt cancellation process.
 
 **Registrar recovery** is one committee transaction: `committee-registrar` naming the new key, or an empty one to
-disable, advances the registrar term, so nothing prepared under the old key lands afterwards. Governance then cancels
-the fakes from `arkd query disbursement grants --registrar-term OLD_REGISTRAR_TERM`, which lists the old term's
-registrations, by ID as below.
+disable, advances the registrar term, so nothing prepared under the old key lands afterwards. The committee then
+suspends the fakes that `arkd query disbursement grants --registrar-term OLD_REGISTRAR_TERM` lists, before their hold
+ends, and governance cancels them by ID as below; cancelled inside the hold, a fake returns its whole grant to the
+tranche.
 
 **Committee recovery** takes two proposals. The first carries `MsgSetGrantsMandate` appointing the new committee,
 which clears the registrar the old key appointed in the same write, `MsgCancelGrants` for
@@ -212,22 +219,23 @@ key wrongly suspended, a hundred addresses a message. `arkd query disbursement g
 awards and `--registrar-term OLD_REGISTRAR_TERM` the registrations, each `OLD_TERM` being the term its query showed before the vote; legitimate ones can stay off the list. The
 appointment advances the term, so nothing prepared under the old key lands afterwards. Once it executes, list the old
 term again and cancel, in a second, expedited proposal, any award the key made while the first vote was open: nothing
-pays within a period of an award, at least a week, and the two votes take about three days at launch. Neither proposal
+pays within a period of an award, at least two weeks, and the two votes take about three days at launch. Neither proposal
 reverses payments or touches the new term, and suspensions stand until reinstated. Governance cancels known sybils among the
 listed registrations in the first proposal. An empty committee disables the mandate without changing existing grants, and a lapsed window does
 the same until the next appointment; disabling or replacing the committee clears its registrar, and the new committee
 names one again before registration resumes.
 
 **A contributor award** is a `MsgGrantOwnership` or `MsgCompensate` drawing on the contributor pool, which has no tranche (D117); the step's
-contributor budget is the plan's arithmetic, argued in the summary. The award carries no schedule: ownership takes
+contributor budget is the plan's guideline, not a limit; an award past it states the overrun in the summary (D131). The award carries no schedule: ownership takes
 the shape in params, a one-year cliff then biweekly for three years, and `start_time` places the clock, no earlier
-than execution (D116). The proposal summary argues the band and multipliers; `reference` identifies the approved work or agreement on
+than execution (D116). The proposal summary states the work, its period, and why this amount, against the founder's 15M
+grant and the grants already made (D127); `reference` identifies the approved work or agreement on
 the permanent grant itself. The pool must cover the whole amount before it starts.
 
 ```json
 {
   "title": "Contributor ownership award",
-  "summary": "<approved work, band, and rationale>",
+  "summary": "<the work, its period, and why this amount>",
   "metadata": "",
   "deposit": "1000000000000000000000anoah",
   "messages": [

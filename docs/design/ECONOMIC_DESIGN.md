@@ -47,7 +47,7 @@ reward target first and any validator gap second, with a genesis-seeded, non-min
 remains (D9 to D12). No controller adapts the tax rate, the targets, or the Buffer share to prices or revenue.
 
 Authority is split by role. Governance holds every unbounded power. One threshold-multisig committee per module holds
-a bounded, height-scoped mandate: the economic-policy committee moves the reversible levers between governance-set
+a bounded, time-scoped mandate: the economic-policy committee moves the reversible levers between governance-set
 bounds; the Claims committee submits claims within a term allowance; the Reserve committee deploys and keeps the
 books; Market's conversion committee moves spread and Tobin policy inside a corridor; the grants committee
 appoints the registrar and awards compensation within a term allowance; the registrar, a single key the grants
@@ -162,7 +162,7 @@ governed burn.
 
 The `claims_insurance` account, owned by `x/claims`, used only for covered-loss payments through recorded claims. It
 is never a redemption source and receives and pays `anoah` alone. The Claims committee is an ordinary threshold
-multisig appointed for one termed, half-open height window with a fixed gross claim allowance; it signs typed
+multisig appointed for one termed, half-open window of block time with a fixed gross claim allowance; it signs typed
 submissions and cancellations and holds no custody, module permission, or generic send. Governance owns the mandate,
 submits without consuming the committee's allowance, and may cancel any pending claim during the shared cancellation
 period, which is an `x/claims` parameter (D30, D38, D54).
@@ -356,7 +356,9 @@ no transfer-history collection, because the passed proposal is the authorisation
 ### 6.6 Insurance claims
 
 Governance stores one Claims mandate: the shared envelope (chain-derived term, exact committee, half-open activation
-and expiry heights) and a fixed gross claim allowance for the term (D30, D38). An empty committee is the disabled
+and expiry times) and a fixed gross claim allowance for the term (D30, D38). The window and the cancellation period
+are seconds of block time, as the governance vote the period must fit is, so a faster block pace cannot shorten
+either (D133). An empty committee is the disabled
 mandate; replacing or disabling advances the term, resets the allowance used, and never touches an existing claim or
 the reservation. Appointment requires an active span no shorter than the cancellation period, an `x/claims` parameter.
 
@@ -364,15 +366,15 @@ A claim is submitted, encumbered, then paid by the chain:
 
 - **Submission.** The committee submits a positive `anoah` claim with its expected term during the active window; the
   claim must fit the remaining allowance, consumes it permanently, stores the term, and must close before the mandate
-  expires. Governance submits at any height with no term and consumes no allowance. Both derive the closing height
+  expires. Governance submits at any time with no term and consumes no allowance. Both derive the closing time
   from the cancellation period, name a recipient Bank can pay, and must be covered by the Insurance balance less what
   is already reserved. The keeper assigns a monotonic claim ID, reserves the amount without moving coins, and emits
   `EventClaimSubmitted`.
-- **Cancellation.** Before the closing height, governance may cancel any pending claim without reading the mandate, and
+- **Cancellation.** Before the closing time, governance may cancel any pending claim without reading the mandate, and
   the current committee may cancel a non-governance claim with its exact term. Cancellation releases the reservation,
   records which authority vetoed, and restores no allowance, so approve-and-cancel cycles cannot redirect expansion
   funding (D32).
-- **Settlement.** At the closing height cancellation closes for everyone and the `x/claims` EndBlocker pays the
+- **Settlement.** At the closing time cancellation closes for everyone and the `x/claims` EndBlocker pays the
   immutable recipient and amount. Payment needs no signer because nothing about it is discretionary, and the recipient,
   who has just suffered the covered loss, is the party least able to send a transaction; an unsettled claim would
   encumber Insurance for as long as it stood. The sweep is uncapped, since one settling block answers one submitting
@@ -385,9 +387,9 @@ passive target gap, execution lowers balance and reservation together and create
 reservation never exceeds the balance. There is no guardian, pause, category, per-claim cap, or clawback of a paid
 claim (D32).
 
-The record is one height and two enums. `closing_height` is scheduled while pending and actual once not, because
+The record is one closing time and two enums. `closing_time` is scheduled while pending and actual once not, because
 settlement happens in the EndBlock of the block a claim comes due and a cancelled claim never reaches its scheduled
-height; the live handler, not stored-record validation, enforces the window. `origin` and `cancelled_by` share the
+time; the live handler, not stored-record validation, enforces the window. `origin` and `cancelled_by` share the
 `ClaimAuthority` enum, so a committee withdrawing its own claim is a meaningful comparison; the cancelling address is
 recoverable from the appointment history and the governance authority is a constant. `submitter` stays an address
 beside `mandate_term`, because submission moves value and the pair pins the accountable party without a lookup. No
@@ -442,7 +444,9 @@ surplus, and the Buffer and Insurance shortfalls that bound committee commitment
 The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the
 chain already maintains, each weighted by a committee lever in `EconomicPolicy`: the liability ratio, net liability
 over circulating NOAH, which is the dilution term and collapses to a quotient because liability is already in NOAH;
-the annualised realised volatility of the reference rate, an EWMA of squared per-block returns; and flow pressure, an
+the annualised realised volatility of the reference rate, an EWMA of squared per-block returns over an EWMA of the
+seconds they spanned, so block pace does not move it and a return carried across a halt counts its time (D133); and
+flow pressure, an
 EMA of per-block net redemption value taken from the conversion totals. Samples fold in every block's settlement; the
 multiplier recomputes on a governed period, moves at most a governed step per recompute, and is clamped to `[1, cap]`.
 The decays, cap, step, and period are governance `Params`, because they define the measuring instrument and the rails
@@ -554,7 +558,7 @@ Bank hook would tax settlement, draws, claims, grants, reward funding, and commi
 | Input | Tax principal |
 | --- | --- |
 | `bank.MsgSend` | the stablecoins sent |
-| `bank.MsgMultiSend` | each input independently; outputs never |
+| `bank.MsgMultiSend` | each output independently, as separate sends (D138) |
 | `market.MsgSell` | exempt; a self-returning conversion is governed by spread |
 | `market.MsgBuy` | exempt, as `MsgSell`; the offer is sized at execution within the message's maximum |
 | `authz.MsgExec` | every nested message, recursively, to a bounded depth |
@@ -567,6 +571,13 @@ distribution receive no tax (D42). Native Disbursement module payments, includin
 untaxed protocol disbursements (D87), and its conversions of contributor NOAH are Market settlement (D88); their denomination, schedule, and public accounting are defined in the
 [Disbursement README](../../x/disbursement/README.md).
 
+The tax sees the Bank ledger and nothing built on it. A contract keeping its own balances, an exchange, or a custodian
+moves value between its users without a Bank send, so a currency deposited into one is taxed on the way in and on the
+way out and never in between. No calculator change sees those transfers, and refusing currencies to contracts would
+take them out of the open runtime, so the cap is the defence: it bounds what a large mover saves by leaving the rail,
+against a contract's risk or an exchange's custody. The share of each currency held by contract addresses, readable
+from Bank state, is the signal that movers are leaving (D138).
+
 ### 8.3 Calculation
 
 ```text
@@ -576,7 +587,7 @@ tax[input][denom]      = uncapped                          if cap[denom] == 0
 total[denom]           = checked sum over every taxable input
 ```
 
-Each input receives its own cap; two sends from one source, two `MultiSend` inputs, and a signed input beside an
+Each input receives its own cap; two sends from one source, two `MultiSend` outputs, and a signed input beside an
 execution-generated one are never combined (D17). Malformed or undecodable nested messages fail closed. Totals use
 checked addition and return an out-of-range error rather than panic. The ante's checker, the post decorator's charge,
 the policy router, and `Query/ComputeTax` call one implementation.
@@ -717,7 +728,8 @@ carries the targets, organic funding, and payments.
 Distribution's `community_tax` is zero in every generated genesis because the distribution module basic is overridden
 in application code, so nothing skims validator income (D13). The community-pool ledger stays inside Distribution and
 receives only rounding residue; Treasury never funds it, `x/protocolpool` is not wired, and governance may sweep it
-(D14). The Oracle distributes every positive denomination its account holds across validator reward weights,
+(D14). The Oracle pays each reward window its share of a distribution period, `reward_window /
+reward_distribution_window` of every positive denomination its account holds, across validator reward weights,
 truncating per validator per denomination and leaving dust in place; its reward and distribution windows remain the
 smoothing horizon for scores.
 

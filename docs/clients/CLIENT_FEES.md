@@ -130,7 +130,7 @@ in another denomination is a buy and a `MsgSend` in one transaction, taxed on th
 
 These messages present a taxable input:
 
-- `cosmos.bank.v1beta1.MsgSend`, `MsgMultiSend` (per input)
+- `cosmos.bank.v1beta1.MsgSend`, `MsgMultiSend` (per output, so a batch pays what its separate sends would)
 - `cosmos.vesting.v1beta1.MsgCreateVestingAccount`, `MsgCreatePermanentLockedAccount`,
   `MsgCreatePeriodicVestingAccount` (the whole schedule as one input) — funding a vesting account is a transfer,
   and leaving it untaxed was Terra Classic's standard dodge
@@ -141,7 +141,7 @@ These messages present a taxable input:
 Treat this list as orientation and `ComputeTax` as the answer. The list moves; the query does not lie.
 
 Native [Disbursement module](../../x/disbursement/README.md) payouts, including stablecoin compensation, are untaxed protocol
-disbursements. The registration or release caller still pays normal transaction gas; the payout has no transfer-tax
+disbursements. Registration and award callers still pay normal transaction gas; the payout has no transfer-tax
 charge. A later Bank transfer by the recipient follows the ordinary rules above.
 
 ## 6. Cases that behave differently

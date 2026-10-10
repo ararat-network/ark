@@ -169,9 +169,9 @@ successor denom as the ordinary rebalance (the old exposure outlives the decisio
 forced balance conversion (unbounded iteration in a halt-class path); nested baskets; and NOAH as a component (it prices
 part of the basket at par with what mints it, and the priced-denom rule already refuses it).
 
-### 3.2 Reserved identifiers
+### 3.2 Identifiers
 
-Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 9 (field 8 is burned; see the comment there).
+Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 8, the next free numbers in `x/oracle`.
 Messages `MsgCreateBasket`, `MsgRebalanceBasket`, `MsgRemoveBasket`; queries `Basket`, `Baskets`; constants
 `MaxBaskets`, `MaxBasketComponents`, `MaxBasketQuantity`.
 
@@ -218,7 +218,7 @@ valid injected commit cannot exclude every carrier; a valid order can then execu
 for ordinary proposer inclusion. The benefit must justify permanent preblock execution risk and carrier operations. The
 existing suspension keeper does not need this transport to operate.
 
-A future design starts with `EmergencyOrder{denom, term, expiry_height, signature}` and a domain-separated sign-doc,
+A future design starts with `EmergencyOrder{denom, term, expiry_time, signature}` and a domain-separated sign-doc,
 per-order and aggregate bounds in `abci/codec`, a separate verification boundary, and deterministic execution order.
 Honest ExtendVote handlers attach only self-verified orders, and VerifyVoteExtension must accept everything they emit.
 Invalid/stale orders must skip without halting; state-failure handling needs an explicit audit. Require a coordinated,
