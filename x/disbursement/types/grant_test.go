@@ -175,6 +175,12 @@ func TestGrantValidation(t *testing.T) {
 	}{
 		{"live and queued", func(*types.Grant) {}, true},
 		{"live and unqueued", func(g *types.Grant) { g.DueTime = 0 }, false},
+		{"zero ID", func(g *types.Grant) { g.Id = 0 }, false},
+		{"unknown kind", func(g *types.Grant) { g.Kind = types.GrantKind(7) }, false},
+		{"created at no height", func(g *types.Grant) { g.CreatedHeight = 0 }, false},
+		{"created at no time", func(g *types.Grant) { g.CreatedTime = 0 }, false},
+		{"suspended contributor", func(g *types.Grant) { g.SuspendedTime, g.DueTime = 115, 0 }, false},
+		{"member suspended before its registration", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 99, 0 }, false},
 		{"compensation without an award value", func(g *types.Grant) { g.AwardValue = math.ZeroInt() }, false},
 		{"member with an award value", func(g *types.Grant) { member(g); g.AwardValue = math.NewInt(30) }, false},
 		{"queued before it started", func(g *types.Grant) { g.DueTime = 99 }, false},

@@ -39,3 +39,43 @@ func TestAccountBookUncommitted(t *testing.T) {
 		})
 	}
 }
+
+func TestAccountBookValidate(t *testing.T) {
+	book := func(account string, reserved ...sdk.Coin) types.AccountBook {
+		b := types.EmptyBook(account)
+		b.Reserved = reserved
+		return b
+	}
+	for _, tc := range []struct {
+		name string
+		book types.AccountBook
+		err  string
+	}{
+		{"empty contributor book", book(types.ContributorsName), ""},
+		{"member book holding NOAH", book(types.MembersName, chain.NoahCoin(math.OneInt())), ""},
+		{"contributor book holding a stablecoin", book(types.ContributorsName, sdk.NewInt64Coin("ausd", 1)), ""},
+		{"unknown account", book("treasury"), "is not a disbursement account"},
+		{"member book holding a stablecoin", book(types.MembersName, sdk.NewInt64Coin("ausd", 1)), "the member book holds NOAH only"},
+		{"reservation of nothing", book(types.ContributorsName, sdk.Coin{Denom: "ausd", Amount: math.ZeroInt()}), "reserved"},
+		{"reservation past 128 bits", book(types.ContributorsName, sdk.Coin{Denom: "ausd", Amount: math.NewIntWithDecimal(1, 39)}), "at most 128 bits"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.book.Validate()
+			if tc.err == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
+}
+
+func TestAccountBookReserveAndRelease(t *testing.T) {
+	book := types.EmptyBook(types.ContributorsName)
+	require.NoError(t, book.Reserve(sdk.NewInt64Coin("ausd", 30)))
+	require.ErrorContains(t, book.Release(sdk.NewInt64Coin("ausd", 31)), "reservations are below")
+	require.ErrorContains(t, book.Release(chain.NoahCoin(math.OneInt())), "reservations are below")
+	require.NoError(t, book.Release(sdk.NewInt64Coin("ausd", 30)))
+	require.Empty(t, book.Reserved, "a denomination released whole leaves the book")
+	require.ErrorContains(t, book.Reserve(sdk.Coin{Denom: "ausd", Amount: math.NewIntWithDecimal(1, 39)}), "at most 128 bits")
+}

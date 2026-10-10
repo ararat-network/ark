@@ -186,6 +186,28 @@ func TestGenesisValidation(t *testing.T) {
 		{"entry naming an unknown grant", func(g *types.GenesisState) { g.GrantJournal[3].GrantId = 9 }, "unknown grant 9"},
 		{"creation entry differs from its grant", func(g *types.GenesisState) { g.GrantJournal[0].Amount = chain.NoahCoin(math.NewInt(9_999)) }, "creation"},
 		{"payee differs from the journal", func(g *types.GenesisState) { g.Grants[0].Payee = b }, "journal leads to"},
+		{"journal opening with a payment", func(g *types.GenesisState) {
+			paid, created := g.GrantJournal[1], g.GrantJournal[0]
+			paid.Id, created.Id = 1, 2
+			g.GrantJournal[0], g.GrantJournal[1] = paid, created
+		}, "must open with its creation"},
+		{"creation recorded twice", func(g *types.GenesisState) {
+			record(g, grantEntry(5, 1, types.GrantAction_GRANT_ACTION_CREATED, 10_000, ""))
+		}, "must open with its creation, once"},
+		{"grant without a journal", func(g *types.GenesisState) { g.GrantJournal, g.NextGrantEntryId = g.GrantJournal[:2], 3 }, "grant 2 has no journal"},
+		{"entry in another denomination", func(g *types.GenesisState) { g.GrantJournal[3].Amount = sdk.NewInt64Coin("ausd", 10) }, "moves ausd; grant 2 pays"},
+		{"conversion for a NOAH grant", func(g *types.GenesisState) {
+			converted := grantEntry(5, 2, types.GrantAction_GRANT_ACTION_CONVERTED, 30, "")
+			converted.Offer = math.NewInt(31)
+			record(g, converted)
+		}, "converts for NOAH grant 2"},
+		{"payee change to the current payee", func(g *types.GenesisState) {
+			record(g, grantEntry(5, 2, types.GrantAction_GRANT_ACTION_PAYEE_CHANGED, 0, b))
+		}, "already pays"},
+		{"two grants registering one member", func(g *types.GenesisState) {
+			g.Grants[1].Kind, g.Grants[1].Beneficiary, g.Grants[1].Payee = types.GrantKind_GRANT_KIND_MEMBER, a, a
+			g.Grants[1].AwardValue, g.Grants[1].MandateTerm = math.ZeroInt(), 1
+		}, "both register member"},
 		{"committee term beyond the live term", func(g *types.GenesisState) { g.Grants[1].MandateTerm = 2 }, "committee term 2 beyond"},
 		{"registrar term beyond the live term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 2 }, "registrar term 2 beyond"},
 		{"member without a term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 0 }, "registrar term"},
@@ -301,6 +323,10 @@ func TestGenesisBeneficiaryJournal(t *testing.T) {
 		{"gap in IDs", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = b
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(2, b)}, 3
+		}, false},
+		{"gap inside the history", func(g *types.GenesisState) {
+			g.Beneficiaries[0].Controller = c
+			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b), entry(3, c)}, 3
 		}, false},
 		{"next ID behind history", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = b
