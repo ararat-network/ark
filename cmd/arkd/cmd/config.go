@@ -38,10 +38,12 @@ type arkAppConfig struct {
 }
 
 // appConfigTemplate is app.toml: the SDK's sections plus Ark's own.
-var appConfigTemplate = strings.ReplaceAll(serverconfig.DefaultConfigTemplate,
+var appConfigTemplate = strings.NewReplacer(
 	"# Setting max_txs to negative 1 (-1) will disable transactions from being inserted into the mempool (no-op mempool).",
 	"# Negative max-txs values are rejected: Ark requires the app pool for proposal verification.",
-) +
+	`# BlockExecutor sets block execution mode: "block-stm" or "sequential".`,
+	`# Ark executes blocks sequentially; "block-stm" is refused until it is wired.`,
+).Replace(serverconfig.DefaultConfigTemplate) +
 	pricefeedclient.DefaultConfigTemplate +
 	telemetry.PrometheusConfigTemplate
 
@@ -129,6 +131,10 @@ func (c arkAppConfig) Validate() error {
 	}
 	if err := c.ValidateBasic(); err != nil {
 		return err
+	}
+	// Ark installs no block-stm runner (FUTURE_CHANGES §2): refuse rather than ignore.
+	if c.BlockExecutor != serverconfig.BlockExecutorSequential {
+		return errortypes.ErrAppConfig.Wrapf("block-executor %q: Ark executes blocks sequentially", c.BlockExecutor)
 	}
 	if err := validateMinGasPrices(c.MinGasPrices); err != nil {
 		return err

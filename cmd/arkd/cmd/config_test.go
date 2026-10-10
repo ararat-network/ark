@@ -15,6 +15,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
+	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ararat-network/ark/app/mempool"
@@ -143,6 +144,11 @@ func TestAppConfigTemplateRefusesNoopMempoolAdvice(t *testing.T) {
 	require.Contains(t, appConfigTemplate, "Negative max-txs values are rejected")
 }
 
+func TestAppConfigTemplateRefusesBlockSTMAdvice(t *testing.T) {
+	require.NotContains(t, appConfigTemplate, `block execution mode: "block-stm" or "sequential"`)
+	require.Contains(t, appConfigTemplate, `"block-stm" is refused`)
+}
+
 func TestReadAppConfig(t *testing.T) {
 	defaults := defaultAppConfig()
 
@@ -248,6 +254,19 @@ func TestReadAppConfig(t *testing.T) {
 			name:        "empty minimum gas prices",
 			mutate:      func(v *viper.Viper) { v.Set(server.FlagMinGasPrices, "") },
 			errorSubstr: "set min gas price",
+		},
+		{
+			name: "absent block executor reads sequential",
+			doc:  "minimum-gas-prices = \"0anoah\"\n",
+			check: func(t *testing.T, cfg arkAppConfig) {
+				t.Helper()
+				require.Equal(t, serverconfig.BlockExecutorSequential, cfg.BlockExecutor)
+			},
+		},
+		{
+			name:        "block-stm refused",
+			mutate:      func(v *viper.Viper) { v.Set(server.FlagBlockExecutor, serverconfig.BlockExecutorBlockSTM) },
+			errorSubstr: `block-executor "block-stm": Ark executes blocks sequentially`,
 		},
 		{
 			name: "snapshots with prune everything",

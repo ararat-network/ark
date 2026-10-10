@@ -4,7 +4,7 @@
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
 modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/disbursement/`, `x/reserve/`, `x/security/`. The
-chain currently uses **cosmos-sdk v0.54.3** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
+chain currently uses **cosmos-sdk v0.54.4** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
 SDK-specific work because the SDK version can move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
