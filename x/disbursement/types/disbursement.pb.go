@@ -73,7 +73,8 @@ const (
 	GrantAction_GRANT_ACTION_UNSPECIFIED GrantAction = 0
 	// GRANT_ACTION_CREATED reserves a grant; amount is its principal.
 	GrantAction_GRANT_ACTION_CREATED GrantAction = 1
-	// GRANT_ACTION_CONVERTED funds a stablecoin award; amount is what was bought, offer the NOAH spent.
+	// GRANT_ACTION_CONVERTED funds a stablecoin award; amount is what was bought, offer the NOAH
+	// spent.
 	GrantAction_GRANT_ACTION_CONVERTED GrantAction = 2
 	// GRANT_ACTION_PAID releases amount to subject.
 	GrantAction_GRANT_ACTION_PAID GrantAction = 3
@@ -200,8 +201,8 @@ func (m *Params) GetOwnershipSchedule() Schedule {
 	return Schedule{}
 }
 
-// Schedule is a grant's shape: a first period paid at its end, then equal further periods. Shares are
-// weight over the total; the last period takes the remainder.
+// Schedule is a grant's shape: a first period paid at its end, then equal further periods. Shares
+// are weight over the total; the last period takes the remainder.
 type Schedule struct {
 	// first_length and first_weight are the first period, in seconds and in weight.
 	FirstLength uint64 `protobuf:"varint,1,opt,name=first_length,json=firstLength,proto3" json:"first_length,omitempty"`
@@ -324,9 +325,9 @@ func (m *GrantsMandate) XXX_DiscardUnknown() {
 var xxx_messageInfo_GrantsMandate proto.InternalMessageInfo
 
 // RegistrarMandate appoints the registrar, the account that registers members, for a time window
-// inside the grants committee's. The committee appoints it under its term, and a committee appointment
-// clears it; the envelope's committee is the registrar. An empty registrar disables it; every replacement
-// advances the term. The open member tranche is its only bound.
+// inside the grants committee's. The committee appoints it under its term, and a committee
+// appointment clears it; the envelope's committee is the registrar. An empty registrar disables it;
+// every replacement advances the term. The open member tranche is its only bound.
 type RegistrarMandate struct {
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
 }
@@ -429,21 +430,23 @@ type Grant struct {
 	// schedule is the grant's shape, copied from its kind's parameter at creation.
 	Schedule  Schedule `protobuf:"bytes,7,opt,name=schedule,proto3" json:"schedule"`
 	StartTime uint64   `protobuf:"varint,8,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// award_value is a compensation award's principal in the reference unit at creation; zero otherwise.
+	// award_value is a compensation award's principal in the reference unit at creation; zero
+	// otherwise.
 	AwardValue    cosmossdk_io_math.Int `protobuf:"bytes,9,opt,name=award_value,json=awardValue,proto3,customtype=cosmossdk.io/math.Int" json:"award_value"`
 	CreatedBy     string                `protobuf:"bytes,10,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	CreatedHeight uint64                `protobuf:"varint,11,opt,name=created_height,json=createdHeight,proto3" json:"created_height,omitempty"`
 	// created_time is the block time the grant was awarded at, which the compensation window and the
 	// first-payment gate measure from; start_time is the grantor's clock (D116).
 	CreatedTime uint64 `protobuf:"varint,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	// mandate_term is the term of the appointment that created the grant: the registrar's for a member,
-	// the committee's for compensation; zero for a governance award.
+	// mandate_term is the term of the appointment that created the grant: the registrar's for a
+	// member, the committee's for compensation; zero for a governance award.
 	MandateTerm uint64                `protobuf:"varint,13,opt,name=mandate_term,json=mandateTerm,proto3" json:"mandate_term,omitempty"`
 	Paid        cosmossdk_io_math.Int `protobuf:"bytes,14,opt,name=paid,proto3,customtype=cosmossdk.io/math.Int" json:"paid"`
 	Remaining   cosmossdk_io_math.Int `protobuf:"bytes,15,opt,name=remaining,proto3,customtype=cosmossdk.io/math.Int" json:"remaining"`
 	// cutoff_time is the block time a cancellation froze entitlement; zero while the grant is live.
 	CutoffTime uint64 `protobuf:"varint,16,opt,name=cutoff_time,json=cutoffTime,proto3" json:"cutoff_time,omitempty"`
-	// suspended_time is the block time the committee paused a member's payments; zero when not suspended.
+	// suspended_time is the block time the committee paused a member's payments; zero when not
+	// suspended.
 	SuspendedTime uint64 `protobuf:"varint,17,opt,name=suspended_time,json=suspendedTime,proto3" json:"suspended_time,omitempty"`
 	// due_time is the block time at or after which the module next attempts a payment; zero while the
 	// grant owes nothing or the member is suspended.

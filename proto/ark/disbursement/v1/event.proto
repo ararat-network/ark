@@ -25,8 +25,8 @@ message EventGrantsMandateSet {
   ];
 }
 
-// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the registrar,
-// and after a committee appointment clears it.
+// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the
+// registrar, and after a committee appointment clears it.
 message EventRegistrarMandateSet {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   // registrar is empty when the mandate was disabled.
@@ -70,8 +70,8 @@ message EventUnallocatedReturned {
   ];
 }
 
-// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name so an
-// indexer need not track the enum's numbering. The block carries the height and time.
+// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name
+// so an indexer need not track the enum's numbering. The block carries the height and time.
 message EventGrantEntryRecorded {
   uint64 id = 1 [(amino.dont_omitempty) = true];
   uint64 grant_id = 2 [(amino.dont_omitempty) = true];

@@ -15033,8 +15033,9 @@ func (*MsgOpenTrancheResponse) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
-// MsgReturnUnallocated returns uncommitted contributor custody to the community pool under governance
-// authority: any denomination from custody outside grants. The member account has no exit.
+// MsgReturnUnallocated returns uncommitted contributor custody to the community pool under
+// governance authority: any denomination from custody outside grants. The member account has no
+// exit.
 type MsgReturnUnallocated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15105,7 +15106,8 @@ func (*MsgReturnUnallocatedResponse) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{7}
 }
 
-// MsgGrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance authority.
+// MsgGrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance
+// authority.
 type MsgGrantOwnership struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15116,7 +15118,8 @@ type MsgGrantOwnership struct {
 	// amount is the grant's principal in NOAH.
 	Amount    string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	Reference string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
-	// start_time is the clock's origin in Unix seconds: no earlier than the award, up to a century ahead.
+	// start_time is the clock's origin in Unix seconds: no earlier than the award, up to a century
+	// ahead.
 	StartTime uint64 `protobuf:"varint,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 }
 

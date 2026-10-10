@@ -109,8 +109,8 @@ func (m *EventGrantsMandateSet) GetCommitteeShape() mandate.CommitteeShape {
 	return mandate.CommitteeShape{}
 }
 
-// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the registrar,
-// and after a committee appointment clears it.
+// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the
+// registrar, and after a committee appointment clears it.
 type EventRegistrarMandateSet struct {
 	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	// registrar is empty when the mandate was disabled.
@@ -277,8 +277,8 @@ func (m *EventUnallocatedReturned) GetDenom() string {
 	return ""
 }
 
-// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name so an
-// indexer need not track the enum's numbering. The block carries the height and time.
+// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name
+// so an indexer need not track the enum's numbering. The block carries the height and time.
 type EventGrantEntryRecorded struct {
 	Id          uint64                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	GrantId     uint64                `protobuf:"varint,2,opt,name=grant_id,json=grantId,proto3" json:"grant_id,omitempty"`

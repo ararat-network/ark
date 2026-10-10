@@ -48,21 +48,24 @@ type MsgClient interface {
 	SetGrantsMandate(ctx context.Context, in *MsgSetGrantsMandate, opts ...grpc.CallOption) (*MsgSetGrantsMandateResponse, error)
 	// OpenTranche opens member-pool NOAH to registration under governance authority.
 	OpenTranche(ctx context.Context, in *MsgOpenTranche, opts ...grpc.CallOption) (*MsgOpenTrancheResponse, error)
-	// ReturnUnallocated returns uncommitted contributor custody to the community pool under governance authority.
+	// ReturnUnallocated returns uncommitted contributor custody to the community pool under
+	// governance authority.
 	ReturnUnallocated(ctx context.Context, in *MsgReturnUnallocated, opts ...grpc.CallOption) (*MsgReturnUnallocatedResponse, error)
-	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance authority.
+	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance
+	// authority.
 	GrantOwnership(ctx context.Context, in *MsgGrantOwnership, opts ...grpc.CallOption) (*MsgGrantOwnershipResponse, error)
-	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin award.
+	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin
+	// award.
 	Compensate(ctx context.Context, in *MsgCompensate, opts ...grpc.CallOption) (*MsgCompensateResponse, error)
 	// CancelGrants freezes earned debt and frees only unearned principal; the block pays the debt.
 	CancelGrants(ctx context.Context, in *MsgCancelGrants, opts ...grpc.CallOption) (*MsgCancelGrantsResponse, error)
 	// ReinstateMembers resumes suspended members under governance authority.
 	ReinstateMembers(ctx context.Context, in *MsgReinstateMembers, opts ...grpc.CallOption) (*MsgReinstateMembersResponse, error)
-	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term, for a
-	// window inside the committee's.
+	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term,
+	// for a window inside the committee's.
 	CommitteeRegistrar(ctx context.Context, in *MsgCommitteeRegistrar, opts ...grpc.CallOption) (*MsgCommitteeRegistrarResponse, error)
-	// RegisterMembers permanently registers members, reserving each grant whole and queueing its first
-	// period, under the live registrar term and within the open member tranche.
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its
+	// first period, under the live registrar term and within the open member tranche.
 	RegisterMembers(ctx context.Context, in *MsgRegisterMembers, opts ...grpc.CallOption) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(ctx context.Context, in *MsgCommitteeSuspend, opts ...grpc.CallOption) (*MsgCommitteeSuspendResponse, error)
@@ -247,21 +250,24 @@ type MsgServer interface {
 	SetGrantsMandate(context.Context, *MsgSetGrantsMandate) (*MsgSetGrantsMandateResponse, error)
 	// OpenTranche opens member-pool NOAH to registration under governance authority.
 	OpenTranche(context.Context, *MsgOpenTranche) (*MsgOpenTrancheResponse, error)
-	// ReturnUnallocated returns uncommitted contributor custody to the community pool under governance authority.
+	// ReturnUnallocated returns uncommitted contributor custody to the community pool under
+	// governance authority.
 	ReturnUnallocated(context.Context, *MsgReturnUnallocated) (*MsgReturnUnallocatedResponse, error)
-	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance authority.
+	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance
+	// authority.
 	GrantOwnership(context.Context, *MsgGrantOwnership) (*MsgGrantOwnershipResponse, error)
-	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin award.
+	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin
+	// award.
 	Compensate(context.Context, *MsgCompensate) (*MsgCompensateResponse, error)
 	// CancelGrants freezes earned debt and frees only unearned principal; the block pays the debt.
 	CancelGrants(context.Context, *MsgCancelGrants) (*MsgCancelGrantsResponse, error)
 	// ReinstateMembers resumes suspended members under governance authority.
 	ReinstateMembers(context.Context, *MsgReinstateMembers) (*MsgReinstateMembersResponse, error)
-	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term, for a
-	// window inside the committee's.
+	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term,
+	// for a window inside the committee's.
 	CommitteeRegistrar(context.Context, *MsgCommitteeRegistrar) (*MsgCommitteeRegistrarResponse, error)
-	// RegisterMembers permanently registers members, reserving each grant whole and queueing its first
-	// period, under the live registrar term and within the open member tranche.
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its
+	// first period, under the live registrar term and within the open member tranche.
 	RegisterMembers(context.Context, *MsgRegisterMembers) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(context.Context, *MsgCommitteeSuspend) (*MsgCommitteeSuspendResponse, error)

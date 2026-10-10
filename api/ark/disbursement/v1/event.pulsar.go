@@ -5310,8 +5310,8 @@ func (x *EventGrantsMandateSet) GetCommitteeShape() *v1.CommitteeShape {
 	return nil
 }
 
-// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the registrar,
-// and after a committee appointment clears it.
+// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the
+// registrar, and after a committee appointment clears it.
 type EventRegistrarMandateSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5472,8 +5472,8 @@ func (x *EventUnallocatedReturned) GetAmount() string {
 	return ""
 }
 
-// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name so an
-// indexer need not track the enum's numbering. The block carries the height and time.
+// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name
+// so an indexer need not track the enum's numbering. The block carries the height and time.
 type EventGrantEntryRecorded struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

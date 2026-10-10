@@ -156,7 +156,7 @@ var xxx_messageInfo_QueryGrantsMandateRequest proto.InternalMessageInfo
 // QueryGrantsMandateResponse returns Query/GrantsMandate.
 type QueryGrantsMandateResponse struct {
 	Mandate GrantsMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
-	// active reports whether the committee may act at the current height.
+	// active reports whether the committee may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 	// compensation_used sums the live term's charges, cancelled awards included.
 	CompensationUsed cosmossdk_io_math.Int `protobuf:"bytes,3,opt,name=compensation_used,json=compensationUsed,proto3,customtype=cosmossdk.io/math.Int" json:"compensation_used"`
@@ -251,7 +251,7 @@ var xxx_messageInfo_QueryRegistrarMandateRequest proto.InternalMessageInfo
 // QueryRegistrarMandateResponse returns Query/RegistrarMandate.
 type QueryRegistrarMandateResponse struct {
 	Mandate RegistrarMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
-	// active reports whether the registrar may act at the current height.
+	// active reports whether the registrar may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 }
 
@@ -304,8 +304,8 @@ func (m *QueryRegistrarMandateResponse) GetActive() bool {
 
 // QueryBalanceRequest requests Query/Balance.
 type QueryBalanceRequest struct {
-	// denom selects one denomination; empty selects NOAH and every registered asset the account holds, which
-	// is everything Bank admits into custody.
+	// denom selects one denomination; empty selects NOAH and every registered asset the account
+	// holds, which is everything Bank admits into custody.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 }
 
@@ -353,7 +353,8 @@ func (m *QueryBalanceRequest) GetDenom() string {
 type QueryBalanceResponse struct {
 	// accounts holds one entry per account and denomination: contributors always, members for NOAH.
 	Accounts []AccountBalance `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts"`
-	// member_tranche is the member NOAH open to registration, part of the member pool's uncommitted NOAH.
+	// member_tranche is the member NOAH open to registration, part of the member pool's uncommitted
+	// NOAH.
 	MemberTranche cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=member_tranche,json=memberTranche,proto3,customtype=cosmossdk.io/math.Int" json:"member_tranche"`
 }
 
@@ -1032,7 +1033,8 @@ func (m *QueryBeneficiaryRequest) GetAddress() string {
 // QueryBeneficiaryResponse returns Query/Beneficiary.
 type QueryBeneficiaryResponse struct {
 	Beneficiary Beneficiary `protobuf:"bytes,1,opt,name=beneficiary,proto3" json:"beneficiary"`
-	// ownership_remaining is the ownership the record can still be awarded: the cap less ownership_committed.
+	// ownership_remaining is the ownership the record can still be awarded: the cap less
+	// ownership_committed.
 	OwnershipRemaining cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=ownership_remaining,json=ownershipRemaining,proto3,customtype=cosmossdk.io/math.Int" json:"ownership_remaining"`
 }
 
@@ -1316,7 +1318,8 @@ const _ = grpc.SupportPackageIsVersion4
 type QueryClient interface {
 	// Params queries the module parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's compensation usage.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error)
@@ -1324,8 +1327,8 @@ type QueryClient interface {
 	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
-	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, or one
-	// registrar term's registrations.
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
 	Grants(ctx context.Context, in *QueryGrantsRequest, opts ...grpc.CallOption) (*QueryGrantsResponse, error)
 	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
 	GrantJournal(ctx context.Context, in *QueryGrantJournalRequest, opts ...grpc.CallOption) (*QueryGrantJournalResponse, error)
@@ -1450,7 +1453,8 @@ func (c *queryClient) BeneficiaryJournal(ctx context.Context, in *QueryBeneficia
 type QueryServer interface {
 	// Params queries the module parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's compensation usage.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error)
@@ -1458,8 +1462,8 @@ type QueryServer interface {
 	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
-	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, or one
-	// registrar term's registrations.
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
 	Grants(context.Context, *QueryGrantsRequest) (*QueryGrantsResponse, error)
 	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
 	GrantJournal(context.Context, *QueryGrantJournalRequest) (*QueryGrantJournalResponse, error)

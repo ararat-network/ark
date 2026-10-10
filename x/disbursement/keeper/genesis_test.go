@@ -4,6 +4,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/x/disbursement/keeper"
 	"github.com/ararat-network/ark/x/disbursement/types"
@@ -53,6 +54,31 @@ func (s *KeeperTestSuite) TestInitGenesisRefusals() {
 		s.Require().NoError(gs.Validate())
 		fresh, ctx := s.newKeeper()
 		s.Require().ErrorContains(fresh.InitGenesis(ctx, gs), "beneficiary entry 1 is in the future")
+	})
+	s.Run("grant paying a pool account", func() {
+		s.SetupTest()
+		pool := authtypes.NewModuleAddress(types.MembersName).String()
+		start := s.now() - 5
+		gs := types.DefaultGenesisState()
+		gs.Beneficiaries = []types.Beneficiary{{Address: pool, Controller: pool, OwnershipCommitted: math.NewInt(20), Seat: math.ZeroInt()}}
+		gs.Grants = []types.Grant{{
+			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: pool, Payee: pool, CreatedBy: s.authority,
+			Amount: noah(20), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 1},
+			StartTime: start, CreatedTime: start, CreatedHeight: 1, Paid: math.ZeroInt(), Remaining: math.NewInt(20),
+			Reference: "agreement", AwardValue: math.ZeroInt(), DueTime: start + hold,
+		}}
+		gs.NextGrantId = 2
+		book := types.EmptyBook(types.ContributorsName)
+		s.Require().NoError(book.Reserve(noah(20)))
+		gs.Books = []types.AccountBook{book}
+		gs.GrantJournal = []types.GrantEntry{
+			{Id: 1, GrantId: 1, Action: types.GrantAction_GRANT_ACTION_CREATED, Actor: s.authority, Height: 1, Time: start, Amount: noah(20), Offer: math.ZeroInt()},
+		}
+		gs.NextGrantEntryId = 2
+		s.Require().NoError(gs.Validate())
+		s.fund(types.ContributorsName, noah(20))
+		fresh, ctx := s.newKeeper()
+		s.Require().ErrorContains(fresh.InitGenesis(ctx, gs), "names the disbursement_members account")
 	})
 	s.Run("principal paid past genesis time", func() {
 		s.SetupTest()

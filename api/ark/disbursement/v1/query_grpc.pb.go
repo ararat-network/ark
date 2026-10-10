@@ -40,7 +40,8 @@ const (
 type QueryClient interface {
 	// Params queries the module parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's compensation usage.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error)
@@ -48,8 +49,8 @@ type QueryClient interface {
 	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
-	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, or one
-	// registrar term's registrations.
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
 	Grants(ctx context.Context, in *QueryGrantsRequest, opts ...grpc.CallOption) (*QueryGrantsResponse, error)
 	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
 	GrantJournal(ctx context.Context, in *QueryGrantJournalRequest, opts ...grpc.CallOption) (*QueryGrantJournalResponse, error)
@@ -189,7 +190,8 @@ func (c *queryClient) BeneficiaryJournal(ctx context.Context, in *QueryBeneficia
 type QueryServer interface {
 	// Params queries the module parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's compensation usage.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error)
 	// RegistrarMandate queries the registrar appointment and whether it is active.
 	RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error)
@@ -197,8 +199,8 @@ type QueryServer interface {
 	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
 	// Grant queries one grant by ID.
 	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
-	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, or one
-	// registrar term's registrations.
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
 	Grants(context.Context, *QueryGrantsRequest) (*QueryGrantsResponse, error)
 	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
 	GrantJournal(context.Context, *QueryGrantJournalRequest) (*QueryGrantJournalResponse, error)

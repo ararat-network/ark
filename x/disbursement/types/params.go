@@ -19,7 +19,7 @@ const (
 	// DefaultCompensationPeriod is a fortnight; an award counts them (D116).
 	DefaultCompensationPeriod = uint64(14 * 86_400)
 	// DefaultOwnershipCap bounds the ownership one record's grants commit from the pools, in whole
-	// NOAH: the founding band's top and the founder's grant (D115, D121).
+	// NOAH: the founder's grant (D115, D121).
 	DefaultOwnershipCap = int64(15_000_000)
 )
 

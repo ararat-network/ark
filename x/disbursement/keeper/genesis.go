@@ -45,8 +45,19 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 		}
 	}
 	// A payee Bank blocks imports: the blocked list can change between an export and its relaunch,
-	// and the block defers the payment as it would any refused send.
+	// and the block defers the payment as it would any refused send. A pool account does not: no
+	// message can name one, and paying a pool to itself would journal principal as paid while it
+	// stayed in custody.
 	for _, g := range gs.Grants {
+		for _, address := range []string{g.Beneficiary, g.Payee} {
+			parsed, err := chain.ParseCanonicalAccountAddress("grant address", address)
+			if err != nil {
+				return fmt.Errorf("grant %d: %w", g.Id, err)
+			}
+			if pool, isPool := k.poolAddresses[string(parsed)]; isPool {
+				return fmt.Errorf("grant %d names the %s account", g.Id, pool)
+			}
+		}
 		earned, _, err := g.Accrued(at)
 		if err != nil {
 			return err

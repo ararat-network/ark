@@ -19,7 +19,8 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/params";
   }
-  // GrantsMandate queries the committee appointment, whether it is active, and the term's compensation usage.
+  // GrantsMandate queries the committee appointment, whether it is active, and the term's
+  // compensation usage.
   rpc GrantsMandate(QueryGrantsMandateRequest) returns (QueryGrantsMandateResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/grants_mandate";
@@ -39,8 +40,8 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/grants/{id}";
   }
-  // Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, or one
-  // registrar term's registrations.
+  // Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+  // registrar term's registrations, or one kind's.
   rpc Grants(QueryGrantsRequest) returns (QueryGrantsResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/disbursement/v1/grants";
@@ -92,7 +93,7 @@ message QueryGrantsMandateResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // active reports whether the committee may act at the current height.
+  // active reports whether the committee may act at the current block time.
   bool active = 2 [(amino.dont_omitempty) = true];
   // compensation_used sums the live term's charges, cancelled awards included.
   string compensation_used = 3 [
@@ -119,14 +120,14 @@ message QueryRegistrarMandateResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // active reports whether the registrar may act at the current height.
+  // active reports whether the registrar may act at the current block time.
   bool active = 2 [(amino.dont_omitempty) = true];
 }
 
 // QueryBalanceRequest requests Query/Balance.
 message QueryBalanceRequest {
-  // denom selects one denomination; empty selects NOAH and every registered asset the account holds, which
-  // is everything Bank admits into custody.
+  // denom selects one denomination; empty selects NOAH and every registered asset the account
+  // holds, which is everything Bank admits into custody.
   string denom = 1;
 }
 
@@ -137,7 +138,8 @@ message QueryBalanceResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // member_tranche is the member NOAH open to registration, part of the member pool's uncommitted NOAH.
+  // member_tranche is the member NOAH open to registration, part of the member pool's uncommitted
+  // NOAH.
   string member_tranche = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -251,7 +253,8 @@ message QueryBeneficiaryResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // ownership_remaining is the ownership the record can still be awarded: the cap less ownership_committed.
+  // ownership_remaining is the ownership the record can still be awarded: the cap less
+  // ownership_committed.
   string ownership_remaining = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",

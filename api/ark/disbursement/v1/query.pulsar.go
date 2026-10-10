@@ -11338,7 +11338,7 @@ type QueryGrantsMandateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Mandate *GrantsMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
-	// active reports whether the committee may act at the current height.
+	// active reports whether the committee may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 	// compensation_used sums the live term's charges, cancelled awards included.
 	CompensationUsed string `protobuf:"bytes,3,opt,name=compensation_used,json=compensationUsed,proto3" json:"compensation_used,omitempty"`
@@ -11428,7 +11428,7 @@ type QueryRegistrarMandateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Mandate *RegistrarMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
-	// active reports whether the registrar may act at the current height.
+	// active reports whether the registrar may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 }
 
@@ -11472,8 +11472,8 @@ type QueryBalanceRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// denom selects one denomination; empty selects NOAH and every registered asset the account holds, which
-	// is everything Bank admits into custody.
+	// denom selects one denomination; empty selects NOAH and every registered asset the account
+	// holds, which is everything Bank admits into custody.
 	Denom string `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 }
 
@@ -11512,7 +11512,8 @@ type QueryBalanceResponse struct {
 
 	// accounts holds one entry per account and denomination: contributors always, members for NOAH.
 	Accounts []*AccountBalance `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"`
-	// member_tranche is the member NOAH open to registration, part of the member pool's uncommitted NOAH.
+	// member_tranche is the member NOAH open to registration, part of the member pool's uncommitted
+	// NOAH.
 	MemberTranche string `protobuf:"bytes,2,opt,name=member_tranche,json=memberTranche,proto3" json:"member_tranche,omitempty"`
 }
 
@@ -12081,7 +12082,8 @@ type QueryBeneficiaryResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Beneficiary *Beneficiary `protobuf:"bytes,1,opt,name=beneficiary,proto3" json:"beneficiary,omitempty"`
-	// ownership_remaining is the ownership the record can still be awarded: the cap less ownership_committed.
+	// ownership_remaining is the ownership the record can still be awarded: the cap less
+	// ownership_committed.
 	OwnershipRemaining string `protobuf:"bytes,2,opt,name=ownership_remaining,json=ownershipRemaining,proto3" json:"ownership_remaining,omitempty"`
 }
 
