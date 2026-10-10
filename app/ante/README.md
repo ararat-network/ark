@@ -12,7 +12,7 @@ gas charged, and when state writes occur, so edits must account for the surround
 | [transfer_tax.go](transfer_tax.go) | Transfer tax committed with successful message execution in the post handler. |
 | [gas_tally.go](gas_tally.go) | Per-block gas accounting consumed by Treasury's fee controller. |
 | [privilege.go](privilege.go) | Authenticated lane classification after signature verification. |
-| [gov.go](gov.go), [gov_vote.go](gov_vote.go) | Governance eligibility/validation and the vote fee floor. |
+| [gov.go](gov.go), [gov_vote.go](gov_vote.go) | Governance eligibility/validation and the vote stake floor. |
 | [authz.go](authz.go), [multisend.go](multisend.go) | Wrapped-message and multisend policy. |
 
 Ante validates signed message/fee policy before fee deduction. Signature checks precede privilege classification, so its

@@ -54,8 +54,8 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		return wasmtypes.NodeConfig{}, nil, fmt.Errorf("read Wasm node config: %w", err)
 	}
 
-	// Contracts read through a hand-written accept list that is empty at
-	// launch (app/wasm_query.go). No custom querier: the tax estimate D43
+	// Contracts read through a hand-written accept list of query paths
+	// (app/wasm_query.go). No custom querier: the tax estimate D43
 	// asks for is Treasury's ComputeTax query, listed there like any other
 	// path (D74).
 	wasmOpts := []wasmkeeper.Option{

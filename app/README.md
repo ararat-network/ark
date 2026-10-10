@@ -7,8 +7,9 @@ module-account permissions, blocked addresses, and lifecycle order. Check [go.mo
 ## Construction and boundaries
 
 - [config.go](config.go) initialises chain identity, denominations, address prefixes, and keyring service identity.
-- [app.go](app.go) builds the runtime, injects keepers, and connects feed guards, reference consumers, send restrictions,
-  and the execution-policy router.
+- [app.go](app.go) builds the runtime, injects keepers, and connects feed guards, reference rebasers, the Reserve's
+  Treasury capital reader, and the execution-policy router. Send restrictions are depinject outputs ordered in
+  [app_config.go](app_config.go).
 - [wasm.go](wasm.go) and [wasm_query.go](wasm_query.go) own the manual integration.
 - [ante/](ante/README.md) owns signed-transaction ante/post assembly. [execution_policy_router.go](execution_policy_router.go)
   applies message policy at execution-generated message boundaries.
@@ -30,6 +31,7 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
    Market then settles conversion facts against the block's final state, before later modules move funds.
    Governance precedes Treasury's reward/base-fee settlement and Oracle attendance settlement. Oracle precedes staking
    so attendance jails affect that block's validator-set update. Claims settles after governance cancellations.
+   Disbursement pays last, from custody it already holds, so a cancellation executed in the block governs its payments.
 
 Asset lifecycle transitions are message-driven. The ABCI wrapper does not complete asset transitions or prime Treasury
 liability. [Economic design](../docs/design/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
@@ -44,6 +46,8 @@ Ark follows that default for these reasons:
   A cumulative execution meter adds another state-machine constraint at finalisation.
 - **It is state-machine behavior, so removing it later is consensus-visible.** Prelaunch it is one line. After genesis
   it is a coordinated change at an upgrade boundary.
+- **It cannot run under block-stm.** The SDK's parallel executor panics on a block gas meter, which is why upstream
+  defaulted it off.
 
 Nothing in `x/` or `abci/` reads the block gas meter, so removing the option changed no module logic.
 
@@ -66,7 +70,9 @@ messages with an explicit error, its IBC query plugin refuses, no contract port 
 is withheld so a contract requiring it fails at upload. Wasmd itself still depends on ibc-go, which is why the
 dependency remains in `go.mod`.
 
-[wasm.go](wasm.go) constructs the contract runtime. Verify dependency versions in [go.mod](../go.mod).
+[wasm.go](wasm.go) constructs the contract runtime and registers the state-sync snapshot extension that carries contract
+code, which lives outside the IAVL tree; [app.go](app.go) re-warms the pinned-code cache after loading the store, since
+the pin list is state and the VM cache is per-process. Verify dependency versions in [go.mod](../go.mod).
 The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contract permissions.
 
 - **The policy router**, which wraps the SDK message router handed to Wasmd. It receives the

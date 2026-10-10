@@ -26,6 +26,7 @@ import (
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
@@ -34,21 +35,21 @@ import (
 const committeeTerm = 3
 
 // setupPrivilegeTest returns a chain whose security mandate appoints a
-// committee for a window opening at the context height.
+// committee for a window opening at the context's block time.
 func setupPrivilegeTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress) {
 	t.Helper()
 
 	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
-	height := uint64(ctx.BlockHeight())
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight(), Time: time.Unix(1_800_000_000, 0)})
+	now := chain.BlockSeconds(ctx)
 
 	committee := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	require.NoError(t, arkApp.SecurityKeeper.Mandate.Set(ctx, securitytypes.SecurityMandate{
 		Envelope: mandate.Envelope{
-			Term:             committeeTerm,
-			Committee:        committee.String(),
-			ActivationHeight: height,
-			ExpiryHeight:     height + 100,
+			Term:           committeeTerm,
+			Committee:      committee.String(),
+			ActivationTime: now,
+			ExpiryTime:     now + 100,
 		},
 	}))
 
@@ -85,8 +86,8 @@ func TestCommitteeVouch(t *testing.T) {
 		{"appointed committee", ctx, planUpgrade(committee, committeeTerm), true, ""},
 		{"stranger", ctx, planUpgrade(stranger, committeeTerm), false, "not the exact appointed account"},
 		{"stale term", ctx, planUpgrade(committee, committeeTerm-1), false, "term mismatch"},
-		{"expired", ctx.WithBlockHeight(ctx.BlockHeight() + 100), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
-		{"not yet active", ctx.WithBlockHeight(ctx.BlockHeight() - 1), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
+		{"expired", ctx.WithBlockTime(ctx.BlockTime().Add(100 * time.Second)), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
+		{"not yet active", ctx.WithBlockTime(ctx.BlockTime().Add(-time.Second)), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
 		{"unregistered", ctx, &banktypes.MsgSend{}, false, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -476,15 +477,15 @@ func laneOf(ctx sdk.Context) int8 {
 // by design (D120).
 func TestCommitteeVouchDisbursement(t *testing.T) {
 	arkApp, ctx, _ := setupPrivilegeTest(t)
-	height := uint64(ctx.BlockHeight())
+	now := chain.BlockSeconds(ctx)
 	committee := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	stranger := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	require.NoError(t, arkApp.DisbursementKeeper.GrantsMandate.Set(ctx, disbursementtypes.GrantsMandate{
 		Envelope: mandate.Envelope{
-			Term:             committeeTerm,
-			Committee:        committee.String(),
-			ActivationHeight: height,
-			ExpiryHeight:     height + 100,
+			Term:           committeeTerm,
+			Committee:      committee.String(),
+			ActivationTime: now,
+			ExpiryTime:     now + 100,
 		},
 		CompensationAllowance: math.ZeroInt(),
 	}))
