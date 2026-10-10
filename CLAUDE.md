@@ -10,7 +10,7 @@ SDK-specific work because the SDK version can move.
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 
 - **Dependency injection**: depinject-based module wiring, not manual constructor calls
-- **Logging**: `cosmossdk.io/log` not `tendermint/libs/log`
+- **Logging**: `cosmossdk.io/log/v2` not `tendermint/libs/log`
 - **Protobuf codegen**: dual generation — gogo (`x/*/types/*.pb.go`) + pulsar (`api/*.pulsar.go`), following current
   upstream SDK dual-generation patterns
 - **Proto annotations**: key rules:
