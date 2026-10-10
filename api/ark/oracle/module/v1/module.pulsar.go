@@ -452,9 +452,8 @@ type Module struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// distribution_name defines the module account name to
-	// which the community pool remainder is sent. If not set, defaults to
-	// "distribution".
+	// distribution_name names the module account oracle rewards are paid into
+	// for allocation to validators. If not set, defaults to "distribution".
 	DistributionName string `protobuf:"bytes,1,opt,name=distribution_name,json=distributionName,proto3" json:"distribution_name,omitempty"`
 }
 

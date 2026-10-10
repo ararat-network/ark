@@ -32,6 +32,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
+					RpcMethod: "StoredRates",
+					Use:       "stored-rates",
+					Short:     "Query every stored oracle rate whatever its age, with the block time and height that set it",
+					Example:   fmt.Sprintf("%s query oracle stored-rates", version.AppName),
+				},
+				{
 					RpcMethod: "Params",
 					Use:       "params",
 					Short:     "Query the current oracle parameters",

@@ -1646,8 +1646,8 @@ func (x *fastReflection_FeedTransition) Range(f func(protoreflect.FieldDescripto
 			return
 		}
 	}
-	if x.ActivationVoteHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ActivationVoteHeight)
+	if x.ActivationVoteHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationVoteHeight)
 		if !f(fd_FeedTransition_activation_vote_height, value) {
 			return
 		}
@@ -1672,7 +1672,7 @@ func (x *fastReflection_FeedTransition) Has(fd protoreflect.FieldDescriptor) boo
 	case "ark.oracle.v1.FeedTransition.direction":
 		return x.Direction != 0
 	case "ark.oracle.v1.FeedTransition.activation_vote_height":
-		return x.ActivationVoteHeight != int64(0)
+		return x.ActivationVoteHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.FeedTransition"))
@@ -1694,7 +1694,7 @@ func (x *fastReflection_FeedTransition) Clear(fd protoreflect.FieldDescriptor) {
 	case "ark.oracle.v1.FeedTransition.direction":
 		x.Direction = 0
 	case "ark.oracle.v1.FeedTransition.activation_vote_height":
-		x.ActivationVoteHeight = int64(0)
+		x.ActivationVoteHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.FeedTransition"))
@@ -1719,7 +1719,7 @@ func (x *fastReflection_FeedTransition) Get(descriptor protoreflect.FieldDescrip
 		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
 	case "ark.oracle.v1.FeedTransition.activation_vote_height":
 		value := x.ActivationVoteHeight
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.FeedTransition"))
@@ -1745,7 +1745,7 @@ func (x *fastReflection_FeedTransition) Set(fd protoreflect.FieldDescriptor, val
 	case "ark.oracle.v1.FeedTransition.direction":
 		x.Direction = (FeedDirection)(value.Enum())
 	case "ark.oracle.v1.FeedTransition.activation_vote_height":
-		x.ActivationVoteHeight = value.Int()
+		x.ActivationVoteHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.FeedTransition"))
@@ -1790,7 +1790,7 @@ func (x *fastReflection_FeedTransition) NewField(fd protoreflect.FieldDescriptor
 	case "ark.oracle.v1.FeedTransition.direction":
 		return protoreflect.ValueOfEnum(0)
 	case "ark.oracle.v1.FeedTransition.activation_vote_height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.oracle.v1.FeedTransition"))
@@ -2030,7 +2030,7 @@ func (x *fastReflection_FeedTransition) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationVoteHeight |= int64(b&0x7F) << shift
+					x.ActivationVoteHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -3261,7 +3261,7 @@ type FeedTransition struct {
 
 	Denom                string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	Direction            FeedDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=ark.oracle.v1.FeedDirection" json:"direction,omitempty"`
-	ActivationVoteHeight int64         `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
+	ActivationVoteHeight uint64        `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
 }
 
 func (x *FeedTransition) Reset() {
@@ -3298,7 +3298,7 @@ func (x *FeedTransition) GetDirection() FeedDirection {
 	return FeedDirection_FEED_DIRECTION_UNSPECIFIED
 }
 
-func (x *FeedTransition) GetActivationVoteHeight() int64 {
+func (x *FeedTransition) GetActivationVoteHeight() uint64 {
 	if x != nil {
 		return x.ActivationVoteHeight
 	}
@@ -3476,7 +3476,7 @@ var file_ark_oracle_v1_oracle_proto_rawDesc = []byte{
 	0x46, 0x65, 0x65, 0x64, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x05, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12,
 	0x3b, 0x0a, 0x16, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x76, 0x6f,
-	0x74, 0x65, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42,
+	0x74, 0x65, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42,
 	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x14, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x56, 0x6f, 0x74, 0x65, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x46, 0x0a, 0x0c,
 	0x46, 0x65, 0x65, 0x64, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x74, 0x12, 0x1a, 0x0a, 0x08,

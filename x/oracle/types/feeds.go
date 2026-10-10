@@ -40,11 +40,15 @@ func (f Feeds) AtHeight(voteHeight int64) FeedSet {
 	// The value receiver is scratch space; the clone keeps the fold off the
 	// caller's active set.
 	f.Denoms = slices.Clone(f.Denoms)
-	// Activation heights are validated positive, so zero is a safe sentinel for
-	// "no batch applied yet".
-	batchHeight := int64(0)
+	// Activation heights are validated positive, so a non-positive vote height
+	// folds nothing and zero is a safe sentinel for "no batch applied yet".
+	if voteHeight <= 0 {
+		return FeedSet{Version: f.Version, Denoms: f.Denoms}
+	}
+	height := uint64(voteHeight)
+	batchHeight := uint64(0)
 	for _, transition := range f.Transitions {
-		if transition.ActivationVoteHeight > voteHeight {
+		if transition.ActivationVoteHeight > height {
 			break
 		}
 		if transition.ActivationVoteHeight != batchHeight {
@@ -182,7 +186,7 @@ func (t FeedTransition) Validate() error {
 			t.Denom,
 		)
 	}
-	if t.ActivationVoteHeight <= 0 {
+	if t.ActivationVoteHeight == 0 {
 		return fmt.Errorf(
 			"feed transition activation height must be positive: %d",
 			t.ActivationVoteHeight,

@@ -26,6 +26,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Query_ExchangeRate_FullMethodName   = "/ark.oracle.v1.Query/ExchangeRate"
 	Query_ExchangeRates_FullMethodName  = "/ark.oracle.v1.Query/ExchangeRates"
+	Query_StoredRates_FullMethodName    = "/ark.oracle.v1.Query/StoredRates"
 	Query_Feeds_FullMethodName          = "/ark.oracle.v1.Query/Feeds"
 	Query_FeedReferents_FullMethodName  = "/ark.oracle.v1.Query/FeedReferents"
 	Query_ReferenceDenom_FullMethodName = "/ark.oracle.v1.Query/ReferenceDenom"
@@ -44,6 +45,9 @@ type QueryClient interface {
 	ExchangeRate(ctx context.Context, in *QueryExchangeRateRequest, opts ...grpc.CallOption) (*QueryExchangeRateResponse, error)
 	// ExchangeRates returns exchange rates of all denoms
 	ExchangeRates(ctx context.Context, in *QueryExchangeRatesRequest, opts ...grpc.CallOption) (*QueryExchangeRatesResponse, error)
+	// StoredRates returns every stored rate whatever its age, with the block that set it. Kept off
+	// the Wasm accept list: a contract must never read a stale rate as usable.
+	StoredRates(ctx context.Context, in *QueryStoredRatesRequest, opts ...grpc.CallOption) (*QueryStoredRatesResponse, error)
 	// Feeds returns the active feed set and scheduled transitions.
 	Feeds(ctx context.Context, in *QueryFeedsRequest, opts ...grpc.CallOption) (*QueryFeedsResponse, error)
 	// FeedReferents returns removal-blocking consumer claims, or NotFound for an absent feed. It is
@@ -83,6 +87,16 @@ func (c *queryClient) ExchangeRates(ctx context.Context, in *QueryExchangeRatesR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryExchangeRatesResponse)
 	err := c.cc.Invoke(ctx, Query_ExchangeRates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) StoredRates(ctx context.Context, in *QueryStoredRatesRequest, opts ...grpc.CallOption) (*QueryStoredRatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryStoredRatesResponse)
+	err := c.cc.Invoke(ctx, Query_StoredRates_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +173,9 @@ type QueryServer interface {
 	ExchangeRate(context.Context, *QueryExchangeRateRequest) (*QueryExchangeRateResponse, error)
 	// ExchangeRates returns exchange rates of all denoms
 	ExchangeRates(context.Context, *QueryExchangeRatesRequest) (*QueryExchangeRatesResponse, error)
+	// StoredRates returns every stored rate whatever its age, with the block that set it. Kept off
+	// the Wasm accept list: a contract must never read a stale rate as usable.
+	StoredRates(context.Context, *QueryStoredRatesRequest) (*QueryStoredRatesResponse, error)
 	// Feeds returns the active feed set and scheduled transitions.
 	Feeds(context.Context, *QueryFeedsRequest) (*QueryFeedsResponse, error)
 	// FeedReferents returns removal-blocking consumer claims, or NotFound for an absent feed. It is
@@ -189,6 +206,9 @@ func (UnimplementedQueryServer) ExchangeRate(context.Context, *QueryExchangeRate
 }
 func (UnimplementedQueryServer) ExchangeRates(context.Context, *QueryExchangeRatesRequest) (*QueryExchangeRatesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExchangeRates not implemented")
+}
+func (UnimplementedQueryServer) StoredRates(context.Context, *QueryStoredRatesRequest) (*QueryStoredRatesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method StoredRates not implemented")
 }
 func (UnimplementedQueryServer) Feeds(context.Context, *QueryFeedsRequest) (*QueryFeedsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Feeds not implemented")
@@ -261,6 +281,24 @@ func _Query_ExchangeRates_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).ExchangeRates(ctx, req.(*QueryExchangeRatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_StoredRates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryStoredRatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).StoredRates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_StoredRates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).StoredRates(ctx, req.(*QueryStoredRatesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -387,6 +425,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExchangeRates",
 			Handler:    _Query_ExchangeRates_Handler,
+		},
+		{
+			MethodName: "StoredRates",
+			Handler:    _Query_StoredRates_Handler,
 		},
 		{
 			MethodName: "Feeds",

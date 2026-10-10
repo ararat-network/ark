@@ -35,7 +35,7 @@ message EventOracleJail {
 message EventFeedTransitionScheduled {
   string denom = 1;
   FeedDirection direction = 2 [(amino.dont_omitempty) = true];
-  int64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
+  uint64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
   uint64 resulting_version = 4 [(amino.dont_omitempty) = true];
 }
 

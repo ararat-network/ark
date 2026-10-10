@@ -156,6 +156,45 @@ func (s *KeeperTestSuite) TestQueryExchangeRates() {
 	}
 }
 
+// StoredRates reports a rate past the chain window that ExchangeRates hides,
+// with the block that set it, so an outage's length is readable.
+func (s *KeeperTestSuite) TestQueryStoredRates() {
+	server := oraclekeeper.NewQueryServerImpl(s.keeper)
+
+	resp, err := server.StoredRates(s.ctx, &types.QueryStoredRatesRequest{})
+	s.Require().NoError(err)
+	s.Require().Empty(resp.Rates)
+
+	params, err := s.keeper.Params.Get(s.ctx)
+	s.Require().NoError(err)
+	params.MaxExchangeRateAge = 60
+	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+
+	fresh := types.ExchangeRate{
+		Denom:       chain.USDBaseDenom,
+		Rate:        math.LegacyNewDecWithPrec(5, 1),
+		BlockTime:   uint64(oracleTestBlockTime.Add(-30 * time.Second).Unix()),
+		BlockHeight: 90,
+	}
+	stale := types.ExchangeRate{
+		Denom:       chain.KRWBaseDenom,
+		Rate:        math.LegacyNewDec(1000),
+		BlockTime:   uint64(oracleTestBlockTime.Add(-6 * 24 * time.Hour).Unix()),
+		BlockHeight: 7,
+	}
+	for _, rate := range []types.ExchangeRate{fresh, stale} {
+		s.Require().NoError(s.keeper.ExchangeRate.Set(s.ctx, rate.Denom, rate))
+	}
+
+	hidden, err := server.ExchangeRates(s.ctx, &types.QueryExchangeRatesRequest{})
+	s.Require().NoError(err)
+	s.Require().Len(hidden.ExchangeRates, 1, "the chain window hides the stale rate")
+
+	resp, err = server.StoredRates(s.ctx, &types.QueryStoredRatesRequest{})
+	s.Require().NoError(err)
+	s.Require().Equal([]types.ExchangeRate{stale, fresh}, resp.Rates, "every stored rate, in denomination order")
+}
+
 func (s *KeeperTestSuite) TestQueryFeeds() {
 	denoms := []string{chain.KRWBaseDenom, chain.USDBaseDenom}
 	transitions := []types.FeedTransition{{

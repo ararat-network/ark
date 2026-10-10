@@ -85,6 +85,20 @@ func (q queryServer) ExchangeRates(ctx context.Context, req *types.QueryExchange
 	return &types.QueryExchangeRatesResponse{ExchangeRates: readings}, nil
 }
 
+// StoredRates queries every stored rate whatever its age, in denomination
+// order, with the block that set it.
+func (q queryServer) StoredRates(ctx context.Context, req *types.QueryStoredRatesRequest) (*types.QueryStoredRatesResponse, error) {
+	var rates []types.ExchangeRate
+	if err := q.k.ExchangeRate.Walk(ctx, nil, func(_ string, rate types.ExchangeRate) (bool, error) {
+		rates = append(rates, rate)
+		return false, nil
+	}); err != nil {
+		return nil, fmt.Errorf("iterating oracle exchange rates: %w", err)
+	}
+
+	return &types.QueryStoredRatesResponse{Rates: rates}, nil
+}
+
 // unitsPerNoah is a query-only reciprocal of the stored rate. Values below decimal precision
 // display as zero without invalidating the stored-rate response.
 func unitsPerNoah(rate math.LegacyDec) math.LegacyDec {

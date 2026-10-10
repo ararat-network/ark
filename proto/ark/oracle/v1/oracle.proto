@@ -88,7 +88,7 @@ message Feeds {
 message FeedTransition {
   string denom = 1;
   FeedDirection direction = 2 [(amino.dont_omitempty) = true];
-  int64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
+  uint64 activation_vote_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // FeedReferent is one consumer claim on a feed, derived from the consumer's

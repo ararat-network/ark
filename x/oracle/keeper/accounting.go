@@ -36,8 +36,8 @@ func (k Keeper) RecordVoteAccounting(
 		return nil
 	}
 
-	// Sole cons-addr resolution point. v0.55 key rotation makes this mapping
-	// mutable; restore db1fde3's historical-index fallback with the SDK move.
+	// Sole cons-addr resolution point. Under v0.55 key rotation the SDK swaps
+	// this index at the height CometBFT adopts the new key.
 	validator, err := k.stakingKeeper.ValidatorByConsAddr(ctx, consAddr)
 	if err != nil {
 		if errors.Is(err, stakingtypes.ErrNoValidatorFound) {
