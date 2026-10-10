@@ -32,7 +32,7 @@ const (
 	MinLaunchSeats = 7
 	MaxLaunchSeats = 13
 	// SeatFloatNoah is the liquid balance beside each seat, in whole NOAH: unvested coins cannot
-	// pay fees, and the float carries the week before seat income starts (D95).
+	// pay fees, and the float carries the week before seat income starts (D96).
 	SeatFloatNoah = 50_000
 	// SeatVestingCliffYears and SeatVestingEndYears are the seat's vesting window in calendar
 	// years after genesis time: nothing vests before the cliff, all of it by the end. The cliff
