@@ -177,8 +177,8 @@ the amount (D21, D22).
 
 ### 3.10 Live pool-unit transition
 
-Re-pointing the reference is one Oracle message, `MsgSetReferenceDenom`, which runs Treasury's and Market's rebase in
-the same transaction or fails whole. Market converts the stored `BasePool` into the new unit at one fresh Oracle
+Re-pointing the reference is one Oracle message, `MsgSetReferenceDenom`, which runs every wired consumer's rebase,
+Market's, Treasury's, and Disbursement's, in the same transaction or fails whole. Market converts the stored `BasePool` into the new unit at one fresh Oracle
 snapshot and rescales `ArkPoolDelta` by the same factor, so `delta / BasePool.Amount` is preserved and no unit change
 resets imbalance or reprices without flow (D23). Market's own policy messages move the amount, the spread, and the
 recovery period, and refuse a denomination change, so the two units cannot drift apart. A depth change rescales the
@@ -592,9 +592,9 @@ one. A positive reference cap that would truncate to zero is refused, so it can 
 
 `Params.reference_denom` equals the Oracle's reference at every height, and every guard sits at a write, never at a
 read: `InitGenesis` refuses a mismatch, `MsgUpdateParams` rejects any denomination change so governance moves the
-amount alone, and the Oracle's `MsgSetReferenceDenom` is the one denomination-moving path, running Treasury's cap
-rebase and Market's pool rebase before storing the new reference and failing whole if either fails
-(`EventReferenceTaxCapRebased`). Nothing re-checks the pair at runtime, because a derive-time guard fired only when a
+amount alone, and the Oracle's `MsgSetReferenceDenom` is the one denomination-moving path, running every wired
+consumer's rebase, Treasury's cap, Market's pool, and Disbursement's compensation figures, before storing the new
+reference and failing whole if any fails (`EventReferenceTaxCapRebased`). Nothing re-checks the pair at runtime, because a derive-time guard fired only when a
 rebuild was owed and made the derivation depend on state it never used. The obligation is on any future writer of
 `Params`: an upgrade that touches either side repeats the genesis check and tests the pair rather than each side alone.
 

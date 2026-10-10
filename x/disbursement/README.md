@@ -107,6 +107,13 @@ the same time. Period boundaries are inclusive.
   in the award's denomination; a stablecoin award converts NOAH for what custody lacks when it is created and carries
   no exchange-rate guarantee afterwards.
 
+A reference re-point, Oracle's `MsgSetReferenceDenom`, re-expresses every compensation figure in the new unit in the
+same transaction or fails whole: `compensation_cap`, each compensation award's `award_value`, the live term's usage,
+and its allowance. Each rounds up, as the award-time valuation does; the usage is re-derived from the rebased awards,
+and the allowance is raised to the usage where the per-award ceilings outran it, by under a base unit an award (D123).
+`EventCompensationRebased` carries the old and new figures and the count of awards moved. The module stores no copy of
+the unit: Oracle's reference is the unit by definition, as it is at award time.
+
 These payments are **untaxed protocol disbursements**, including stablecoins. A caller still pays normal transaction
 gas. Paid coins are ordinary spendable coins; unpaid escrow cannot stake or vote. Compensation payments do not count
 as ownership awards even if the recipient subsequently stakes them.
@@ -121,7 +128,8 @@ It retains accrued unpaid principal, frees only unearned principal, and **sends 
 retained debt to the current payee afterwards, and a payee that refuses defers that payment without touching the
 cancellation. Cancelling an ownership grant drops its unearned principal from the record's committed ownership; what it
 earned stays committed. A cancelled grant has no future accrual, cannot be reinstated, and cannot
-be registered again as a member.
+be registered again as a member. Cancelling a grant already cancelled or paid in full changes nothing and journals
+nothing, so recovery proposals that overlap may list the same IDs.
 
 ## Payment
 
@@ -142,15 +150,16 @@ write can vet are a Bank send restriction that refuses the payee later, such as 
 fund account, and a payee the blocked list names by the time an export relaunches, which import accepts. That send is
 deferred instead: nothing is written, `EventPaymentDeferred` names the
 grant, payee, amount, and the retry time, the node log records why, and the grant waits a day or its next boundary. Every other failure in the
-hook is an accounting invariant and fails the block, as in Claims. Disbursement runs after Market in the block, and a
-stablecoin award's first boundary is at least a second after its creation, so its custody has settled before it can
-fall due. Payments in the block are journaled with the paying account as the actor, and a member's first payment,
-which registration makes, with the registrar; a deferral moves nothing and is not journaled.
+hook is an accounting invariant and fails the block, as in Claims. Disbursement pays from custody it already holds: a
+stablecoin award's buy fills inside the transaction that makes it. It runs after governance in the block, so a
+proposal executed this block, such as a cancellation, governs this block's payments. Payments in the block are
+journaled with the paying account as the actor, and a member's first payment, which registration makes, with the
+registrar; a deferral moves nothing and is not journaled.
 
 ## Committee awards
 
 The appointment sets the committee's award power: `compensation_allowance`, the most the term may award at reference
-value; a disabled mandate carries none. Every committee award is compensation and ownership is governance's alone (D113):
+value; a disabled mandate carries none, and the allowance and the term's usage follow a reference re-point. Every committee award is compensation and ownership is governance's alone (D113):
 import refuses ownership that carries a term and a member that carries none. `MsgCommitteeCompensate` creates a compensation
 award, funded like a governance award: NOAH from the contributor pool within the allowance, and stablecoins from
 uncommitted contributor custody first, converting NOAH for the rest within the award's `max_offer`. An award in NOAH or any active asset charges the reference value written on the grant, and a seat holder
@@ -160,8 +169,9 @@ is awarded like anyone. Nothing pays before one period after an award, wherever 
 A grant records the term of the appointment that created it in `mandate_term`: a member the registrar's, an award the
 committee's. The live committee term's usage is one figure the module keeps, the charges against the allowance: an
 award grows it, a cancel restores nothing, and an appointment zeroes it. Genesis carries it, and import refuses a
-figure the term's awards do not add up to. The grants query by committee term lists a term's awards and by
-registrar term its registrations, and governance cancels either by ID. A compromised registrar is one committee
+figure the term's awards do not add up to. The grants query by committee term lists a term's awards, by
+registrar term its registrations, and by kind one kind's grants, each through its own index, and governance cancels
+any by ID. A compromised registrar is one committee
 transaction: a reappointment advances its term, and governance cancels the fakes from the old term's list. Committee
 recovery is two proposals: the first appoints a new committee, which clears the registrar the old one appointed,
 cancels the old term's awards and any registrations found fake, and reinstates any members the old key wrongly
@@ -172,7 +182,8 @@ period of an award, at least a week, and the two votes take about three days at 
 
 A stablecoin award funds itself when it is created. It draws uncommitted stablecoin already in the contributor account
 first, then converts NOAH from the contributor pool for the rest through Market's ordinary swap, inside the
-same message, so Market quotes, escrows, mints, and settles it at EndBlock like any trader's conversion. The award
+same message, so Market quotes it, takes the NOAH, and mints the stablecoin into custody there, like any trader's
+conversion; only Market's block settlement of it waits for EndBlock. The award
 carries `max_offer`, the most NOAH it may spend; the module quotes that cap, refuses an award it cannot fund whole, and
 otherwise shrinks the offer by the ratio of need to output until the smallest sufficient offer is found, which the
 swap then executes with the shortfall as its floor. The surplus of a few units stays uncommitted for the next award,
@@ -180,7 +191,8 @@ as does the unearned stablecoin of a cancelled award, so cancelled pay funds lat
 
 The denomination must be an active asset. A NOAH award carries no `max_offer`. Market's `buy` query sizes the cap
 for a prospective award by the same reverse quote; quoting the whole pay is always enough, since custody only lowers
-what converts. Governance awards convert inside their proposal, which executes before Market settles the block.
+what converts. Governance awards convert inside their proposal as it executes, at governance's EndBlock, and Market's
+block settlement of that buy follows at its next EndBlock.
 
 ## Ownership and founding seats
 
@@ -247,6 +259,7 @@ work or an agreement without publishing private personnel information.
 | Registration | Within the open member tranche, `member_amount` a head; a cancel reopens the unearned part |
 | Grant clock | Up to a century ahead; ownership no earlier than the award, compensation at most a quarter back |
 | Compensation per record | `compensation_cap` in the reference unit a `compensation_window`: an award charging its arrears with its first window, a stream its rate a window while it runs, cancelled awards counting for a window |
+| Reference re-point | Every compensation figure re-expressed in the new unit, rounded up; the allowance never below the usage; a figure past 128 bits refuses the re-point |
 | Grant reference, a member's its batch's | Nonempty, at most 2,048 bytes (`chain.MaxReferenceBytes`, shared with Reserve and Claims) |
 | Query page | At most 100 records, key pagination only; no offsets or count-total scans |
 
@@ -287,6 +300,7 @@ complete the public accounting surface. Queries carry `module_query_safe`; of th
 | [keeper/grants.go](keeper/grants.go) | Creation, schedules, the ownership cap, cancellation, the grant write path, the due queue and indexes |
 | [keeper/members.go](keeper/members.go) | Member suspension and reinstatement |
 | [keeper/compensation.go](keeper/compensation.go) | Compensation denominations, reference valuation, the record's cap |
+| [keeper/reference_denom.go](keeper/reference_denom.go) | Every compensation figure re-expressed on a reference re-point |
 | [keeper/payments.go](keeper/payments.go) | Entitlement, payment, and the next look |
 | [keeper/abci.go](keeper/abci.go) | EndBlock payment of due grants, the per-block bound, deferral of a refused send |
 | [keeper/funding.go](keeper/funding.go) | Stablecoin award funding through Market and the conversion entry |
@@ -297,6 +311,7 @@ complete the public accounting surface. Queries carry `module_query_safe`; of th
 | [module](module) | Dependency injection, services, AutoCLI, simulation registration |
 | [simulation](simulation) | Simulation genesis on run-owned appointments and a seeded tranche; governance, committee, registrar, and controller factories |
 | [testutil](testutil) | Generated mocks of the expected keepers |
+| [keeper/keeper_test.go](keeper/keeper_test.go) | Keeper suite over mocked neighbours: query codes and pages, each handler's refusals, the import checks Validate cannot make, and the block's zero-payment, deferred, and stray-key looks |
 | [app/disbursement_test.go](../../app/disbursement_test.go) | Real-app custody, authority, accounting, failure, and continuation tests |
 | [tests/integration/disbursement_funding_test.go](../../tests/integration/disbursement_funding_test.go) | Stablecoin awards funded through real Market settlement |
 
@@ -308,7 +323,8 @@ go test ./tests/integration -run TestDisbursementFundsAwardsThroughMarket
 
 The Docker delegator E2E suite additionally exercises opening a member tranche, appointing the registrar through the
 committee, registration into fresh and existing accounts, delegation of paid coins, and committee replacement with
-registrar rotation through the public CLI.
+registrar rotation through the public CLI. The integrator suite carries a member grant and its registrar across
+`arkd export` and a relaunch, and reads every fixture-backed disbursement REST route.
 
 Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
 missing grant, member grant, or beneficiary is `NotFound`, on the transaction path as on the query path, and a send

@@ -20,7 +20,7 @@ The fee contract is described in [client fee construction](../clients/CLIENT_FEE
 - D39–D53: [D39](#d39), [D40](#d40), [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D45](#d45), [D46](#d46), [D47](#d47), [D48](#d48), [D49](#d49), [D50](#d50), [D51](#d51), [D52](#d52), [D53](#d53).
 - D54–D71: [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D60](#d60), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D68](#d68), [D69](#d69), [D70](#d70), [D71](#d71).
 - D72–D111: [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83), [D84](#d84), [D85](#d85), [D86](#d86), [D87](#d87), [D88](#d88), [D89](#d89), [D90](#d90), [D91](#d91), [D92](#d92), [D93](#d93), [D94](#d94), [D95](#d95), [D96](#d96), [D97](#d97), [D98](#d98), [D99](#d99), [D100](#d100), [D101](#d101), [D102](#d102), [D103](#d103), [D104](#d104), [D105](#d105), [D106](#d106), [D107](#d107), [D108](#d108), [D109](#d109), [D110](#d110), [D111](#d111).
-- D112–D122: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122).
+- D112–D123: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -2029,6 +2029,32 @@ window, so a design-rate ten-year stream a quarter back counts an eighth of its 
 seven such streams no longer fit in one window; and arrears older than a quarter need a separate award, which counts
 in the window it is made. The [module README](../../x/disbursement/README.md) and the
 [plan](../governance/DISBURSEMENT_PLAN.md) carry the rule.
+
+## D123
+
+**Recorded status:** Decided 2026-10-10. Extends the reference re-point of [D23](#d23) and [D76](#d76) to
+Disbursement's compensation figures; one consumer contract replaces the per-module executors.
+
+Rebase Disbursement's compensation figures with the protocol reference: the cap, every compensation award's value, the
+live term's usage, and its allowance, in the same `MsgSetReferenceDenom` transaction as Market's pool and Treasury's
+reference state, or fail whole. All four are quantities, so each converts as `Convert(from → to)` and rounds up as the
+award-time valuation does; the usage is re-derived as the sum of the live term's rebased awards rather than converted,
+so the import equality between the two holds exactly; the allowance is then raised to the usage where the per-award
+ceilings outran its own ceiling, by under one base unit an award. A figure past the module's 128-bit amount bound
+refuses the re-point at the write rather than the next export. Oracle dispatches through one `ReferenceRebaser`
+contract and a variadic registration in the app, mirroring the feed-removal guards, so a new consumer is one method and
+one name on one line. Why: the figures were bare Ints in whatever unit the reference named when they were written, so
+a re-point left new awards, valued in the new unit, charged against old-unit records and bounds, loosening or
+tightening the cap and the allowance by the cross rate; and each consumer had its own interface, keeper field, setter
+slot, nil check, call, and mock in Oracle, seven places for a third consumer to touch. Rejected: stranding the
+allowance until reappointment as Market strands its corridor, since the allowance is a value budget whose meaning
+survives the move, not a depth corridor governance should re-size, and stranding would force a grants-committee
+reappointment into every re-point; a stored unit on Disbursement's params, which is another guarded copy of the
+reference; floor rounding of the charges, which can take a dust award to the zero a compensation value may not hold;
+and depinject self-registration of consumers, which removes the app line at the cost of a second wiring convention
+beside the hand-wired reverse dependencies. What it costs: a consumer left off the wiring line rebases nothing and
+fails nothing, where a missing executor failed loudly before, so the real-app re-point tests require every consumer's
+event; and the clamp lets a term's charges stand a few base units past a strict conversion of its allowance.
 
 ## P1
 
