@@ -92,7 +92,7 @@ func newAdmissionFixture(t *testing.T, n int, configure ...func(*app.ArkApp)) ad
 		gg.Proposals = []*gov.Proposal{{Id: 1, Status: gov.StatusVotingPeriod, VotingStartTime: &admissionTime, VotingEndTime: &end, SubmitTime: &admissionTime, DepositEndTime: &end, TotalDeposit: sdk.Coins{}, FinalTallyResult: &gov.TallyResult{YesCount: "0", AbstainCount: "0", NoCount: "0", NoWithVetoCount: "0"}}}
 		gen["gov"] = a.AppCodec().MustMarshalJSON(&gg)
 		sg := security.DefaultGenesisState()
-		sg.SecurityMandate.Envelope = mandate.Envelope{Committee: f.committee.Address().String(), Term: 1, ActivationHeight: 1, ExpiryHeight: 1000}
+		sg.SecurityMandate.Envelope = mandate.Envelope{Committee: f.committee.Address().String(), Term: 1, ActivationTime: 1, ExpiryTime: chain.MaxBlockSeconds}
 		gen[security.ModuleName] = a.AppCodec().MustMarshalJSON(sg)
 		bz, err := json.Marshal(gen)
 		require.NoError(t, err)
@@ -120,6 +120,13 @@ func signedPending(tb testing.TB, a *app.ArkApp, f apptest.Funder, seq uint64, m
 	bz, err := a.TxConfig().TxEncoder()(tx)
 	require.NoError(tb, err)
 	return bz
+}
+
+// requireCapacity checks the codespace too: a bare code collides with other modules' codes.
+func requireCapacity(t *testing.T, res *abci.ResponseCheckTx, msgAndArgs ...any) {
+	t.Helper()
+	require.Equal(t, mempool.ErrCapacity.Codespace(), res.Codespace, msgAndArgs...)
+	require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, msgAndArgs...)
 }
 
 func sendMsg(f apptest.Funder) sdk.Msg {
@@ -156,7 +163,7 @@ func TestAdmissionAtomicCapacity(t *testing.T) {
 		before := a.BankKeeper.GetBalance(ctx, f.normal.Address(), chain.XDRBaseDenom)
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
+		requireCapacity(t, res, res.Log)
 		require.Equal(t, uint64(18), a.AccountKeeper.GetAccount(ctx, f.normal.Address()).GetSequence())
 		require.Equal(t, before, a.BankKeeper.GetBalance(ctx, f.normal.Address(), chain.XDRBaseDenom))
 		for _, test := range []struct {
@@ -372,7 +379,7 @@ func TestRecheckDropsVotesOnClosedProposals(t *testing.T) {
 	require.Equal(t, govtypes.ErrInactiveProposal.ABCICode(), res.Code, "a vote after the close is refused at admission")
 	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.normal, 18, sendMsg(f.normal))})
 	require.NoError(t, err)
-	require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, "normal admission waits for the overflow to drain")
+	requireCapacity(t, res, "normal admission waits for the overflow to drain")
 	res, err = a.CheckTx(&abci.RequestCheckTx{Tx: signedPending(t, a, f.committee, 0, committeeMsg(f.committee))})
 	require.NoError(t, err)
 	require.Zero(t, res.Code, res.Log)
@@ -641,7 +648,7 @@ func TestUnorderedMempoolValidation(t *testing.T) {
 		balance := a.BankKeeper.GetAllBalances(ctx, f.normal.Address())
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
+		requireCapacity(t, res, res.Log)
 		has, err := a.AccountKeeper.ContainsUnorderedNonce(ctx, f.normal.Address(), timeout)
 		require.NoError(t, err)
 		require.False(t, has)
@@ -807,8 +814,9 @@ func TestAdmissionSDKCapacityRollback(t *testing.T) {
 		})
 		a := f.apps[0]
 		fillNormal(t, f)
-		msg := voteMsg(f.voter).(*gov.MsgVote)
-		msg.ProposalId = 999 // Valid vote envelope, but no proposal exists to grant reserved priority.
+		// The open proposal passes the ante's guard; a denomination gov does not take for deposits
+		// earns no reserved priority.
+		msg := &gov.MsgDeposit{ProposalId: 1, Depositor: f.voter.Address().String(), Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1))}
 		bz := signedPending(t, a, f.voter, 0, msg)
 		pool := a.Pool()
 		before := pool.Snapshot()
@@ -817,7 +825,7 @@ func TestAdmissionSDKCapacityRollback(t *testing.T) {
 		callsBefore := calls
 		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
 		require.NoError(t, err)
-		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code, res.Log)
+		requireCapacity(t, res, res.Log)
 		require.Greater(t, calls, callsBefore, "candidate capacity allowed real SDK ante execution")
 		require.Equal(t, before, pool.Snapshot())
 		require.Zero(t, a.AccountKeeper.GetAccount(ctx, f.voter.Address()).GetSequence())
@@ -1009,7 +1017,7 @@ func TestReservedHeadroomSurvivesFinalizeUntilCometUpdate(t *testing.T) {
 		require.Equal(t, 18, a.Pool().CountTx())
 		res, err := checkTx(t, mp, signedPending(t, a, f.normal, 18, sendMsg(f.normal)))
 		require.NoError(t, err)
-		require.Equal(t, mempool.ErrCapacity.ABCICode(), res.Code)
+		requireCapacity(t, res)
 		for _, entry := range []struct {
 			signer apptest.Funder
 			msg    sdk.Msg

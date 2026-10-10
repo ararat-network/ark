@@ -18,6 +18,7 @@ import (
 
 	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
+	mempoolmetrics "github.com/ararat-network/ark/app/mempool/metrics"
 	pkgmetrics "github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/pkg/telemetry"
 	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
@@ -102,8 +103,8 @@ func TestStartChainIDPrefersFlagThenGenesis(t *testing.T) {
 // recordEveryNodeSeries records once through each of the node's meters, so
 // every instrument has a series to export.
 func recordEveryNodeSeries() {
-	abcimetrics.ObservePool(func() ([3]int, [3]int64) { return [3]int{}, [3]int64{} })
-	abcimetrics.RecordAdmission("accepted")
+	mempoolmetrics.ObservePool(func() ([3]int, [3]int64) { return [3]int{}, [3]int64{} })
+	mempoolmetrics.RecordAdmission("accepted")
 	sink := telemetry.NewGoMetricsSink(context.Background(), otel.Meter("gometrics"))
 	sink.AddSample([]string{"/unknown"}, 1)
 	abcimetrics.RecordLatencyAndStatus(time.Millisecond, abcimetrics.StatusSuccess, abcimetrics.PrepareProposal)

@@ -1,14 +1,19 @@
+// Package metrics owns the mempool's instruments: pool occupancy by lane and
+// SDK CheckTx outcomes. The metric names are a cross-repo contract.
 package metrics
 
 import (
 	"context"
 	"sync/atomic"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
 var (
+	meter = otel.Meter("ark/app/mempool/metrics")
+
 	poolTxs          metric.Int64ObservableGauge
 	poolBytes        metric.Int64ObservableGauge
 	admissionResults metric.Int64Counter
@@ -60,6 +65,7 @@ func observePool(_ context.Context, o metric.Observer) error {
 	return nil
 }
 
+// RecordAdmission counts one SDK CheckTx outcome under status.
 func RecordAdmission(status string) {
 	admissionResults.Add(context.Background(), 1, metric.WithAttributes(attribute.String("status", status)))
 }

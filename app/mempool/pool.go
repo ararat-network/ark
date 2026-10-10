@@ -13,10 +13,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 
-	abcimetrics "github.com/ararat-network/ark/abci/metrics"
+	mempoolmetrics "github.com/ararat-network/ark/app/mempool/metrics"
 )
 
-var ErrCapacity = errorsmod.Register("lanes", 3, "lane admission capacity exhausted")
+var ErrCapacity = errorsmod.Register("lanes", 1, "lane admission capacity exhausted")
 
 // rebuildDepartures floors the departed senders a rebuild waits for, so a small
 // pool does not rebuild on every departure.
@@ -102,7 +102,7 @@ func NewPool(config Config) *Pool {
 	p.countCaps[LaneCommittee] = int(fraction(uint64(config.MaxTxs), CommitteeAdmissionCountShare))
 	p.countCaps[LaneNormal] = config.MaxTxs - p.countCaps[LaneGovernance] - p.countCaps[LaneCommittee]
 	p.byteCaps = config.byteCaps()
-	abcimetrics.ObservePool(p.Usage)
+	mempoolmetrics.ObservePool(p.Usage)
 	return p
 }
 

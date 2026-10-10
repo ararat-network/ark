@@ -60,7 +60,8 @@ vote decorator's check-mode refusal, so a stale vote never spends its lane slot 
 The start command requires `type = "flood"`, `recheck = true`, and CometBFT `size`
 at least the app's transaction count. Both pools receive the same positive
 `max_tx_bytes` (default 1 MiB) and `max_txs_bytes` (default 64 MiB). CometBFT checks
-wire size before decoding; the app also checks it in the reservation wrapper.
+wire size before decoding; the app also checks it in the reservation wrapper. A `max_tx_bytes` above what normal
+admission holds of `max_txs_bytes` is refused, since such a transaction could never be admitted.
 `app.toml [mempool] max-txs` defaults to 5000; zero selects that bounded default;
 negative values and values above 50000 are refused. Existing byte settings are
 honoured, including the former CometBFT 1 GiB default. These settings bound encoded
@@ -128,7 +129,8 @@ for pre-inclusion confidentiality; ordinary public nodes retain normal gossip.
 
 CometBFT unconfirmed-transaction RPCs report its flood list. Ark's transaction and byte
 gauges report application storage by allocation; accepted/invalid/full counters observe
-SDK CheckTx responses, including CometBFT rechecks. The application pool can hold an entry
+SDK CheckTx responses, including CometBFT rechecks, both from [metrics/](metrics/). The
+application pool can hold an entry
 the flood list refused after admission for up to two commits before the release above drops
 it, and the list keys by hash, so it holds the superseded version of a replaced transaction
 until a recheck fails it; the two occupancies need not match at every instant.
@@ -145,7 +147,7 @@ From the root:
 
 ```sh
 go test ./app/mempool/... ./app/ante/...
-go test ./app -run Mempool
+go test ./app
 ```
 
 The package tests cover reservation accounting, selector budgets, rollback, and SDK ordering. App tests cover the actual
