@@ -141,9 +141,11 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 	})
 }
 
-// TestReferenceRepointRebasesPoolAndCap checks both wired executors re-denominate pool and cap
-// atomically. Equal fixture rates isolate unit changes from amount changes.
-func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
+// TestReferenceRepointRebasesEveryConsumer checks every wired consumer re-denominates in the one
+// transaction: Market's pool, Treasury's cap, and Disbursement's compensation figures. Equal
+// fixture rates isolate unit changes from amount changes; the three events are what a consumer
+// left off the app's wiring line would fail to emit.
+func TestReferenceRepointRebasesEveryConsumer(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
 	marketQueryServer := marketkeeper.NewQueryServerImpl(f.app.MarketKeeper)
@@ -195,17 +197,20 @@ func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
 		require.Equal(t, chain.USDBaseDenom, treasuryParams.ReferenceDenom)
 		require.Equal(t, capAmount, treasuryParams.ReferenceTaxCap)
 
-		var sawPoolUpdate, sawCapRebase bool
+		var sawPoolUpdate, sawCapRebase, sawCompensationRebase bool
 		for _, event := range ctx.EventManager().Events() {
 			switch event.Type {
 			case "ark.market.v1.EventPoolUpdated":
 				sawPoolUpdate = true
 			case "ark.treasury.v1.EventReferenceTaxCapRebased":
 				sawCapRebase = true
+			case "ark.disbursement.v1.EventCompensationRebased":
+				sawCompensationRebase = true
 			}
 		}
 		require.True(t, sawPoolUpdate, "market pool rebase event")
 		require.True(t, sawCapRebase, "treasury cap rebase event")
+		require.True(t, sawCompensationRebase, "disbursement compensation rebase event")
 	})
 
 	// The chain keeps pricing conversion in the new unit on the next block.

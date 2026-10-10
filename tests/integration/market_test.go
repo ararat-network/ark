@@ -502,7 +502,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 	// the pool across, and the depth it lands on is derived from rates rather
 	// than proposed. The rates arrive from x/asset, which reads the pair once
 	// for both executors.
-	require.NoError(t, arkApp.MarketKeeper.RebaseBasePool(
+	require.NoError(t, arkApp.MarketKeeper.RebaseReference(
 		ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,

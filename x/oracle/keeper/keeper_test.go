@@ -44,8 +44,8 @@ type KeeperTestSuite struct {
 	distrKeeper   *testutil.MockDistributionKeeper
 	stakingKeeper *testutil.MockStakingKeeper
 
-	marketReferenceDenom   *testutil.MockMarketReferenceDenomKeeper
-	treasuryReferenceDenom *testutil.MockTreasuryReferenceDenomKeeper
+	marketRebaser   *testutil.MockReferenceRebaser
+	treasuryRebaser *testutil.MockReferenceRebaser
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -99,8 +99,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.distrKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
-	s.marketReferenceDenom = testutil.NewMockMarketReferenceDenomKeeper(ctrl)
-	s.treasuryReferenceDenom = testutil.NewMockTreasuryReferenceDenomKeeper(ctrl)
+	s.marketRebaser = testutil.NewMockReferenceRebaser(ctrl)
+	s.treasuryRebaser = testutil.NewMockReferenceRebaser(ctrl)
 
 	s.accountKeeper.EXPECT().GetModuleAddress(types.ModuleName).Return(sdk.AccAddress{1})
 	s.accountKeeper.EXPECT().GetModuleAddress("distribution").Return(sdk.AccAddress{2})
@@ -116,7 +116,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.stakingKeeper,
 	)
 
-	s.keeper.SetReferenceDenomConsumers(s.marketReferenceDenom, s.treasuryReferenceDenom)
+	s.keeper.SetReferenceRebasers(s.marketRebaser, s.treasuryRebaser)
 
 	params := types.DefaultParams()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))

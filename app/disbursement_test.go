@@ -1611,3 +1611,60 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		}
 	})
 }
+
+// TestNativeDisbursementReferenceRepoint re-points the protocol reference on the real app and checks
+// every wired consumer moved in the one transaction: Market's pool, Treasury's params, and
+// Disbursement's compensation figures, each rounded up at a three-quarter cross, with the export
+// reconciling in the new unit. The three events are the guard against a consumer left off the
+// app's wiring line, which would rebase nothing and fail nothing.
+func TestNativeDisbursementReferenceRepoint(t *testing.T) {
+	f := newNativeDisbursement(t)
+	f.fund(t, chain.NoahCoin(nativeNoah(1_000)))
+	f.appointWith(t, f.committee, math.NewInt(1_000))
+	beneficiary, colleague := nativeAddress("beneficiary"), nativeAddress("colleague")
+	governance := f.create(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, beneficiary, chain.NoahCoin(math.NewInt(301)), 1)
+	require.NoError(t, f.exec(&disbursementtypes.MsgCommitteeCompensate{
+		Committee: f.committee.String(), ExpectedTerm: f.term, Beneficiary: colleague.String(), Amount: chain.NoahCoin(math.NewInt(500)),
+		StartTime: f.now(), Periods: 1, Reference: "committee pay",
+	}))
+	committee := governance + 1
+
+	f.setRate(t, chain.XDRBaseDenom, math.LegacyNewDecWithPrec(15, 1))
+	f.setRate(t, chain.USDBaseDenom, math.LegacyNewDec(2))
+	require.NoError(t, f.exec(&oracletypes.MsgSetReferenceDenom{Authority: f.authority.String(), ReferenceDenom: chain.USDBaseDenom}))
+
+	reference, err := f.app.OracleKeeper.GetReferenceDenom(f.ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain.USDBaseDenom, reference)
+	pool, err := f.app.MarketKeeper.ConversionPolicy.Get(f.ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain.USDBaseDenom, pool.BasePool.Denom)
+	treasury, err := f.app.TreasuryKeeper.Params.Get(f.ctx)
+	require.NoError(t, err)
+	require.Equal(t, chain.USDBaseDenom, treasury.ReferenceDenom)
+
+	p, err := f.app.DisbursementKeeper.Params.Get(f.ctx)
+	require.NoError(t, err)
+	require.True(t, p.CompensationCap.Equal(disbursementtypes.DefaultParams().CompensationCap.MulRaw(3).QuoRaw(4)))
+	require.True(t, f.grant(t, governance).AwardValue.Equal(math.NewInt(226)))
+	require.True(t, f.grant(t, committee).AwardValue.Equal(math.NewInt(375)))
+	used, err := f.app.DisbursementKeeper.CompensationUsed.Get(f.ctx)
+	require.NoError(t, err)
+	require.True(t, used.Equal(math.NewInt(375)))
+	mandate, err := f.app.DisbursementKeeper.GrantsMandate.Get(f.ctx)
+	require.NoError(t, err)
+	require.True(t, mandate.CompensationAllowance.Equal(math.NewInt(750)))
+
+	moved := map[string]bool{}
+	for _, e := range f.emitted {
+		moved[e.Type] = true
+	}
+	for _, consumer := range []string{
+		"ark.market.v1.EventPoolUpdated",
+		"ark.treasury.v1.EventReferenceTaxCapRebased",
+		"ark.disbursement.v1.EventCompensationRebased",
+	} {
+		require.True(t, moved[consumer], consumer)
+	}
+	f.check(t)
+}

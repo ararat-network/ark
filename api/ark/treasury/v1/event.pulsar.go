@@ -7194,7 +7194,7 @@ func (x *EventEconomicMandateSet) GetCommitteeShape() *v1.CommitteeShape {
 }
 
 // EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
-// new protocol reference unit. Emitted only by RebaseReferenceState, whose only caller
+// new protocol reference unit. Emitted only by RebaseReference, whose only caller
 // is MsgSetReference.
 type EventReferenceTaxCapRebased struct {
 	state         protoimpl.MessageState

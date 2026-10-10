@@ -125,6 +125,7 @@ rounding down prevents payout amplification through splitting, and a zero-output
 | `x/oracle` | The feed registry and its transitions, reporting, aggregation, accounting, stored rates, freshness, pruning, the protocol reference denomination | Whether an asset may be issued, redeemed, settled, suspended, written off, or retired |
 | `x/market` | Conversion eligibility derived from the registry, Tobin policy, ordinary and settlement redemption, mint and burn; its pool in reference units, rebased through the Oracle's reference executor | Membership |
 | `x/treasury` | Tax caps and liability derived from the registry; its cap in reference units, rebased the same way | Membership |
+| `x/disbursement` | Compensation in NOAH or Active assets; its cap, award values, and term budget in reference units, rebased the same way | Membership |
 
 Freshness has exactly one definition, the Oracle's, consumed through `RateSet`; no lifecycle transition defines a
 staleness policy of its own, and none consults a rate at all. Transitions gate on feed phase and leave freshness to the

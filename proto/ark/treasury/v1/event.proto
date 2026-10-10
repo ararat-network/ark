@@ -213,7 +213,7 @@ message EventEconomicMandateSet {
 }
 
 // EventReferenceTaxCapRebased records the reference tax cap re-expressed in a
-// new protocol reference unit. Emitted only by RebaseReferenceState, whose only caller
+// new protocol reference unit. Emitted only by RebaseReference, whose only caller
 // is MsgSetReference.
 message EventReferenceTaxCapRebased {
   cosmos.base.v1beta1.Coin old_cap = 1 [

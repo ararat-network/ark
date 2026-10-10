@@ -36,10 +36,9 @@ type Keeper struct {
 	distrKeeper   types.DistributionKeeper
 	stakingKeeper types.StakingKeeper
 
-	// Reference rebase executors are wired after construction because Market and Treasury depend on
-	// Oracle. They re-denominate consumer state atomically with reference changes.
-	marketReferenceKeeper   types.MarketReferenceDenomKeeper
-	treasuryReferenceKeeper types.TreasuryReferenceDenomKeeper
+	// referenceRebasers re-denominate consumer state atomically with a reference change. They are
+	// wired after construction because every consumer depends on Oracle.
+	referenceRebasers []types.ReferenceRebaser
 
 	Schema         collections.Schema
 	Params         collections.Item[types.Params]
@@ -143,16 +142,12 @@ func NewKeeper(
 	return k
 }
 
-// SetReferenceDenomConsumers injects the Market and Treasury rebase executors run
-// whenever governance re-points the protocol reference, which is the only way
-// it moves. It must be called once during application wiring, after both
-// consumer keepers exist.
-func (k *Keeper) SetReferenceDenomConsumers(
-	marketKeeper types.MarketReferenceDenomKeeper,
-	treasuryKeeper types.TreasuryReferenceDenomKeeper,
-) {
-	k.marketReferenceKeeper = marketKeeper
-	k.treasuryReferenceKeeper = treasuryKeeper
+// SetReferenceRebasers installs the app-owned consumer set run whenever governance re-points the
+// protocol reference, which is the only way it moves. It must be called once during application
+// wiring, after every consumer keeper exists: a consumer left out rebases nothing and fails
+// nothing, so the real-app re-point test asserts every consumer moved.
+func (k *Keeper) SetReferenceRebasers(rebasers ...types.ReferenceRebaser) {
+	k.referenceRebasers = rebasers
 }
 
 // Logger returns a module-specific logger.

@@ -11,7 +11,7 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-func (s *KeeperTestSuite) TestRebaseReferenceState() {
+func (s *KeeperTestSuite) TestRebaseReference() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(100)
 	current.MinBaseGasPrice = testMinBaseGasPrice
@@ -40,7 +40,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -84,7 +84,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceState() {
 	})
 }
 
-func (s *KeeperTestSuite) TestRebaseReferenceStateToTheSameDenomIsANoOp() {
+func (s *KeeperTestSuite) TestRebaseReferenceToTheSameDenomIsANoOp() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
@@ -92,7 +92,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateToTheSameDenomIsANoOp() {
 
 	// Landing on the unit the cap is already in has nothing to carry across:
 	// no conversion — the nil set asserts that — no write, no event.
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -100,11 +100,11 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateToTheSameDenomIsANoOp() {
 	s.Require().Len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events(), eventsBefore)
 }
 
-// TestRebaseReferenceStateCarriesZeroWithoutConversion pins the uncapped sentinel's
+// TestRebaseReferenceCarriesZeroWithoutConversion pins the uncapped sentinel's
 // unit independence: zero means "no ceiling" in every denomination, so the
 // cap re-labels without a conversion touching its amount, while the base-fee
 // figures — always positive — convert through the handed cross.
-func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion() {
+func (s *KeeperTestSuite) TestRebaseReferenceCarriesZeroWithoutConversion() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(0)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
@@ -118,7 +118,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
 
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	// The factor rescales through the cross like any member's — the zero cap
 	// exempts only the cap's own amount from conversion.
@@ -136,9 +136,9 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateCarriesZeroWithoutConversion()
 	})
 }
 
-// TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit checks a positive converted cap below one
+// TestRebaseReferenceFloorsTruncatedCapAtOneUnit checks a positive converted cap below one
 // becomes the tightest finite ceiling, never the zero uncapped sentinel.
-func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() {
+func (s *KeeperTestSuite) TestRebaseReferenceFloorsTruncatedCapAtOneUnit() {
 	current := types.DefaultParams()
 	current.ReferenceTaxCap = math.NewInt(100)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
@@ -150,7 +150,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() 
 		chain.USDBaseDenom:  math.LegacyNewDec(1_000),
 	}
 
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	stored, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -162,9 +162,9 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFloorsTruncatedCapAtOneUnit() 
 	})
 }
 
-// TestRebaseReferenceStateUnrepresentableRescaleHoldsThatFactor checks overflowing entries retain
+// TestRebaseReferenceUnrepresentableRescaleHoldsThatFactor checks overflowing entries retain
 // their held value while fitting entries rebase and the reference change succeeds.
-func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsThatFactor() {
+func (s *KeeperTestSuite) TestRebaseReferenceUnrepresentableRescaleHoldsThatFactor() {
 	// A 10^60 factor times the 10^18 cross leaves the Dec domain, while the
 	// inverse unit cross stays exactly the smallest representable positive, so
 	// the base-fee leg converts and only this member's rescale degrades.
@@ -188,7 +188,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  cross,
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
@@ -204,11 +204,11 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateUnrepresentableRescaleHoldsTha
 	s.Require().Equal(cross, noah.Factor)
 }
 
-// TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFactor is the underflow
+// TestRebaseReferenceSubPrecisionRescaleHoldsThatFactor is the underflow
 // mirror: a product rounding to zero is held rather than written, because a
 // zero factor is a state genesis validation refuses — the export could never
 // re-import. Fitting entries still move.
-func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFactor() {
+func (s *KeeperTestSuite) TestRebaseReferenceSubPrecisionRescaleHoldsThatFactor() {
 	small := math.LegacyMustNewDecFromStr("0.4")
 	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.KRWBaseDenom, types.ConversionFactor{
 		Denom:  chain.KRWBaseDenom,
@@ -231,7 +231,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 		chain.XDRBaseDenom:  math.LegacyOneDec(),
 		chain.USDBaseDenom:  cross,
 	}
-	s.Require().NoError(s.keeper.RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	held, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
@@ -244,7 +244,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateSubPrecisionRescaleHoldsThatFa
 	s.Require().Equal(cross, noah.Factor)
 }
 
-func (s *KeeperTestSuite) TestRebaseReferenceStateFailuresPreserveState() {
+func (s *KeeperTestSuite) TestRebaseReferenceFailuresPreserveState() {
 	tests := []struct {
 		name      string
 		from      string
@@ -283,7 +283,7 @@ func (s *KeeperTestSuite) TestRebaseReferenceStateFailuresPreserveState() {
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, current))
 			eventsBefore := len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 
-			err := s.keeper.RebaseReferenceState(s.ctx, tc.from, tc.to, tc.rates)
+			err := s.keeper.RebaseReference(s.ctx, tc.from, tc.to, tc.rates)
 			s.Require().ErrorContains(err, tc.expectErr)
 			s.Require().ErrorIs(err, tc.errorIs)
 

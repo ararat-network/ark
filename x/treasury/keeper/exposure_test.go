@@ -296,7 +296,7 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	// One USD is two XDR, so an anchor of two NOAH per XDR is four NOAH per USD
 	// — the anchor is a price, and moves by the reciprocal of what a quantity
 	// of XDR would.
-	s.Require().NoError(s.keeper.RebaseReferenceState(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -322,7 +322,7 @@ func (s *KeeperTestSuite) TestExposureRebasedAnchorRecordsNoReturnWithoutAMove()
 
 	// One USD is two NOAH and one XDR is one, so an anchor of one NOAH per
 	// XDR is two NOAH per USD.
-	s.Require().NoError(s.keeper.RebaseReferenceState(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,

@@ -13,7 +13,7 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-func (s *KeeperTestSuite) TestRebaseBasePool() {
+func (s *KeeperTestSuite) TestRebaseReference() {
 	current := types.DefaultConversionPolicy()
 	current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	oldDelta := math.LegacyNewDec(25)
@@ -30,7 +30,7 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 		chain.USDBaseDenom:  math.LegacyNewDecWithPrec(5, 1),
 	}
 
-	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, rates))
 
 	// The depth is a claim about how much conversion the protocol absorbs before
 	// the spread widens, expressed in reference units, so it is carried across at
@@ -50,7 +50,7 @@ func (s *KeeperTestSuite) TestRebaseBasePool() {
 	s.requirePoolUpdateEvent(current.BasePool, rebased, oldDelta, newDelta)
 }
 
-func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
+func (s *KeeperTestSuite) TestRebaseReferenceToTheSameDenomIsANoOp() {
 	current := types.DefaultConversionPolicy()
 	current.BasePool = xdrBasePool(math.LegacyNewDec(100))
 	oldDelta := math.LegacyNewDec(25)
@@ -61,7 +61,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 	// A reference that lands on the unit the pool is already in has nothing to
 	// carry across, so the handed rates are never consulted — the nil set
 	// asserts that — and neither the depth nor the delta is rewritten.
-	s.Require().NoError(s.keeper.RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
+	s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.XDRBaseDenom, nil))
 
 	storedCapacity, err := s.keeper.ConversionPolicy.Get(s.ctx)
 	s.Require().NoError(err)
@@ -72,7 +72,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolToTheSameDenomIsANoOp() {
 	s.Require().Len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events(), eventsBefore)
 }
 
-func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
+func (s *KeeperTestSuite) TestRebaseReferenceFailuresPreserveState() {
 	// Asset captures freshness in the supplied rate set. Missing rates surface as the oracle's
 	// ErrUnknownDenom; internal conversion errors propagate unchanged.
 	tests := []struct {
@@ -182,7 +182,7 @@ func (s *KeeperTestSuite) TestRebaseBasePoolFailuresPreserveState() {
 			s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, oldDelta))
 			eventsBefore := len(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
 
-			err := s.keeper.RebaseBasePool(s.ctx, tc.from, tc.to, tc.rates)
+			err := s.keeper.RebaseReference(s.ctx, tc.from, tc.to, tc.rates)
 			s.Require().ErrorContains(err, tc.expectErr)
 			s.Require().ErrorIs(err, tc.errorIs)
 			if tc.errorIsNot != nil {

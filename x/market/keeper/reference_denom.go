@@ -15,10 +15,10 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// RebaseBasePool re-denominates the virtual pool when governance re-points the
-// protocol reference. It implements the oracle module's MarketReferenceDenomKeeper,
-// and MsgSetReferenceDenom is its only caller.
-func (k Keeper) RebaseBasePool(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
+// RebaseReference re-denominates the virtual pool when governance re-points the
+// protocol reference. It implements the oracle module's ReferenceRebaser, and
+// MsgSetReferenceDenom is its only caller.
+func (k Keeper) RebaseReference(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	capacity, err := k.ConversionPolicy.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting conversion policy: %w", err)

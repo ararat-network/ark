@@ -201,11 +201,11 @@ func NewArkApp(
 	// eligibility or open positions. Oracle guards its own reference denomination.
 	app.OracleKeeper.SetFeedReferentGuards(app.AssetKeeper, app.ReserveKeeper)
 
-	// Both reference-unit executors exist from this line on, so a reference
-	// re-point executes atomically — Market's base pool and Treasury's tax cap
-	// re-denominate inside the same MsgSetReferenceDenom transaction — instead of
-	// failing atomically as it did while either executor was missing.
-	app.OracleKeeper.SetReferenceDenomConsumers(app.MarketKeeper, app.TreasuryKeeper)
+	// Every reference-unit consumer exists from this line on, so a reference re-point rebases
+	// Market's base pool, Treasury's reference figures, and Disbursement's compensation figures
+	// inside the same MsgSetReferenceDenom transaction. This line is the registry: a consumer
+	// left off it rebases nothing and fails nothing.
+	app.OracleKeeper.SetReferenceRebasers(app.MarketKeeper, app.TreasuryKeeper, app.DisbursementKeeper)
 
 	// The capital contract runs both ways, and only this direction is wired by
 	// hand: Treasury injects the Reserve to read recognised capital, so the

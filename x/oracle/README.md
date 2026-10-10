@@ -178,8 +178,10 @@ It is separate from the temporary ballot reference selected during aggregation. 
 a reference names an Active feed and need not name a registered asset. It is re-pointed rather than cleared.
 
 `MsgSetReferenceDenom` is the governance writer. First configuration has no old unit to rebase. Changing an existing
-reference loads the conversion rates once and atomically invokes the Market and Treasury executors wired by
-`SetReferenceDenomConsumers`. A missing executor or failed rebase rejects the whole action.
+reference loads the conversion rates once and atomically invokes every consumer wired by `SetReferenceRebasers`, one
+`ReferenceRebaser` each: Market, Treasury, and Disbursement, in that order. No wired consumer or a failed rebase rejects
+the whole action. The app's one wiring line is the registry: a consumer left off it rebases nothing and fails nothing,
+which the real-app re-point tests guard by requiring every consumer's event.
 
 The incoming reference rate must be fresh. Without an explicit outgoing rate, the outgoing stored rate must also be
 fresh. Governance may supply a positive bounded `outgoing_rate`, which replaces the outgoing store lookup entirely;
@@ -189,8 +191,9 @@ This is the current implementation in [reference_denom.go](keeper/reference_deno
 [msg_server.go](keeper/msg_server.go). An earlier automatic stale-outgoing-rate exception was superseded.
 
 Market rebases its denomination-bearing base pool and pool delta together, preserving existing spread pressure.
-Treasury re-expresses reference-unit figures, including tax-cap and fee/factor/exposure state. Quantities and prices use
-opposite conversion directions as described below. The conversion mandate corridor is not silently rewritten; its policy
+Treasury re-expresses reference-unit figures, including tax-cap and fee/factor/exposure state. Disbursement re-expresses
+its compensation figures: the cap, every award's value, and the live term's usage and allowance
+([Disbursement](../disbursement/README.md)). Quantities and prices use opposite conversion directions as described below. The conversion mandate corridor is not silently rewritten; its policy
 is recorded in [Market](../market/README.md#conversion-mandate).
 
 There is no automatic promotion. A stale protocol reference closes NOAH conversion paths that need it; fresh cross-pair

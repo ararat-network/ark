@@ -254,7 +254,7 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 		Return(chain.USDBaseDenom, nil).
 		AnyTimes()
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -280,7 +280,7 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 	s.Require().NoError(err)
 	s.Require().True(appointment.IsActive(live, capacityActivation))
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -328,7 +328,7 @@ func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	appointment := s.seedLiveConversionMandate()
 	s.Require().Equal(chain.XDRBaseDenom, appointment.MinimumPolicy.BasePool.Denom)
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -341,7 +341,7 @@ func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	s.Require().False(stranded.IsActive(usdPool, capacityActivation))
 
 	// Back to the original unit at the inverse rate.
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.USDBaseDenom,
 		chain.XDRBaseDenom,
@@ -880,7 +880,7 @@ func (s *KeeperTestSuite) TestGovernanceCapacityPathIgnoresCorridor() {
 func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 	appointment := s.seedLiveConversionMandate()
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -1279,7 +1279,7 @@ func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRate() {
 func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 	appointment := s.seedLiveTobinMandate(tobinCapForTest())
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,

@@ -36,17 +36,9 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx context.Context, senderModule, recipientModule string, amt sdk.Coins) error
 }
 
-// MarketReferenceDenomKeeper rebases Market's pool and delta using the rate pair selected by
-// Oracle. The executor applies no independent freshness policy; errors abort the reference-change
-// transaction.
-type MarketReferenceDenomKeeper interface {
-	RebaseBasePool(ctx context.Context, from string, to string, rates RateSet) error
-}
-
-// TreasuryReferenceDenomKeeper re-expresses every Treasury figure quoted in
-// reference units when the protocol reference moves. It receives the same
-// handed rates as Market's executor and runs in the same transaction as the
-// reference change; its error fails the whole action.
-type TreasuryReferenceDenomKeeper interface {
-	RebaseReferenceState(ctx context.Context, from string, to string, rates RateSet) error
+// ReferenceRebaser re-expresses a consumer's reference-valued state when the protocol reference
+// moves. Every consumer receives the one rate pair Oracle priced, applies no freshness policy of
+// its own, and runs in the reference-change transaction; its error fails the whole action.
+type ReferenceRebaser interface {
+	RebaseReference(ctx context.Context, from string, to string, rates RateSet) error
 }
