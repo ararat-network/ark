@@ -297,8 +297,13 @@ func (p pool) slippage(x math.LegacyDec) (math.LegacyDec, error) {
 	}
 
 	// in is at least the pool's own side, so the quotient is at most the other side and the
-	// difference is non-negative.
+	// difference is non-negative in exact arithmetic. The NOAH side is itself a rounded quotient of
+	// the constant product, so re-dividing can land a quantum past the other side; clamping keeps
+	// the spread inside [0, 1], which the fee and dust arithmetic in sell rely on.
 	out := p.out.Sub(p.k.Quo(in))
+	if out.IsNegative() {
+		out = math.LegacyZeroDec()
+	}
 	if !out.LT(x) {
 		return math.LegacyZeroDec(), nil
 	}

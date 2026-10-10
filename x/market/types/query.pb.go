@@ -41,7 +41,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // QuerySellRequest is the request type for the Query/Sell RPC method.
 type QuerySellRequest struct {
-	// offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
+	// offer_coin defines the coin being offered (e.g. 1000000000000000000anoah)
 	OfferCoin string `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
 	// ask_denom defines the denom of the coin to swap to
 	AskDenom string `protobuf:"bytes,2,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
@@ -96,7 +96,7 @@ func (m *QuerySellRequest) GetAskDenom() string {
 
 // QuerySellResponse is the response type for the Query/Sell RPC method.
 type QuerySellResponse struct {
-	// return_coin defines the coin returned as a result of the swap simulation.
+	// swap_coin is the coin the sell returns.
 	SwapCoin types.Coin `protobuf:"bytes,1,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin"`
 	// swap_fee defines the fee deducted from the simulated swap result.
 	SwapFee types.DecCoin `protobuf:"bytes,2,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee"`
@@ -151,7 +151,7 @@ func (m *QuerySellResponse) GetSwapFee() types.DecCoin {
 
 // QueryBuyRequest is the request type for the Query/Buy RPC method.
 type QueryBuyRequest struct {
-	// ask_coin is the least amount the offer must buy (i.e. 1000000000000000000ausd)
+	// ask_coin is the least amount the offer must buy (e.g. 1000000000000000000ausd)
 	AskCoin string `protobuf:"bytes,1,opt,name=ask_coin,json=askCoin,proto3" json:"ask_coin,omitempty"`
 	// offer_denom is the denom offered
 	OfferDenom string `protobuf:"bytes,2,opt,name=offer_denom,json=offerDenom,proto3" json:"offer_denom,omitempty"`
@@ -732,7 +732,7 @@ func (m *QueryConversionMandateRequest) XXX_DiscardUnknown() {
 var xxx_messageInfo_QueryConversionMandateRequest proto.InternalMessageInfo
 
 // QueryConversionMandateResponse returns the stored mandate and whether it is
-// usable at the current height.
+// usable at the current block time.
 type QueryConversionMandateResponse struct {
 	Mandate ConversionMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
 	Active  bool              `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`

@@ -77,8 +77,7 @@ func (m *Params) XXX_DiscardUnknown() {
 var xxx_messageInfo_Params proto.InternalMessageInfo
 
 // ConversionPolicy defines NOAH-pair depth, recovery period, and spread floor as one curve. The
-// pool uses the protocol reference unit; only reference rebasing changes that unit. See
-// x/market/README.md for policy and authority boundaries.
+// pool uses the protocol reference unit; only reference rebasing changes that unit.
 type ConversionPolicy struct {
 	// base_pool defines the denomination-labelled virtual-pool depth.
 	BasePool types.DecCoin `protobuf:"bytes,1,opt,name=base_pool,json=basePool,proto3" json:"base_pool"`
@@ -140,7 +139,7 @@ func (m *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 
 // ConversionMandate appoints a committee within inclusive policy bounds and a Tobin cap.
 // Replacement advances the term; an empty committee disables it. Policy authority requires corridor
-// and pool units to match; Tobin authority is independent. See x/market/README.md.
+// and pool units to match; Tobin authority is independent.
 type ConversionMandate struct {
 	// envelope carries the shared term, committee, and half-open time window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`

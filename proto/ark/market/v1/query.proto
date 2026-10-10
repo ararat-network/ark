@@ -72,7 +72,7 @@ service Query {
 
 // QuerySellRequest is the request type for the Query/Sell RPC method.
 message QuerySellRequest {
-  // offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
+  // offer_coin defines the coin being offered (e.g. 1000000000000000000anoah)
   string offer_coin = 1;
   // ask_denom defines the denom of the coin to swap to
   string ask_denom = 2;
@@ -80,7 +80,7 @@ message QuerySellRequest {
 
 // QuerySellResponse is the response type for the Query/Sell RPC method.
 message QuerySellResponse {
-  // return_coin defines the coin returned as a result of the swap simulation.
+  // swap_coin is the coin the sell returns.
   cosmos.base.v1beta1.Coin swap_coin = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -94,7 +94,7 @@ message QuerySellResponse {
 
 // QueryBuyRequest is the request type for the Query/Buy RPC method.
 message QueryBuyRequest {
-  // ask_coin is the least amount the offer must buy (i.e. 1000000000000000000ausd)
+  // ask_coin is the least amount the offer must buy (e.g. 1000000000000000000ausd)
   string ask_coin = 1;
   // offer_denom is the denom offered
   string offer_denom = 2;
@@ -202,7 +202,7 @@ message QueryConversionPolicyResponse {
 message QueryConversionMandateRequest {}
 
 // QueryConversionMandateResponse returns the stored mandate and whether it is
-// usable at the current height.
+// usable at the current block time.
 message QueryConversionMandateResponse {
   ConversionMandate mandate = 1 [
     (gogoproto.nullable) = false,

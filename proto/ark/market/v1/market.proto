@@ -32,8 +32,7 @@ message Params {
 }
 
 // ConversionPolicy defines NOAH-pair depth, recovery period, and spread floor as one curve. The
-// pool uses the protocol reference unit; only reference rebasing changes that unit. See
-// x/market/README.md for policy and authority boundaries.
+// pool uses the protocol reference unit; only reference rebasing changes that unit.
 message ConversionPolicy {
   // base_pool defines the denomination-labelled virtual-pool depth.
   cosmos.base.v1beta1.DecCoin base_pool = 1 [
@@ -56,7 +55,7 @@ message ConversionPolicy {
 
 // ConversionMandate appoints a committee within inclusive policy bounds and a Tobin cap.
 // Replacement advances the term; an empty committee disables it. Policy authority requires corridor
-// and pool units to match; Tobin authority is independent. See x/market/README.md.
+// and pool units to match; Tobin authority is independent.
 message ConversionMandate {
   // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
