@@ -3,7 +3,7 @@
 The CoinMarketCap API provider fetches aggregated USD quotes from CoinMarketCap's latest quotes endpoint. CoinMarketCap
 is an aggregator, not a venue; treat it as a secondary source.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires an API key, sent
+[config.go](config.go) owns the provider name `coinmarketcap_api`, endpoint and transport defaults. This adapter requires an API key, sent
 in the `X-CMC_PRO_API_KEY` header through endpoint authentication. The default config ships a placeholder key that must
 be replaced before the provider can fetch anything.
 

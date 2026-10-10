@@ -7,7 +7,7 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
-var (
+const (
 	// Name is the name of the Binance exchange WebSocket provider.
 	Name = "binance_ws"
 	// WSS is the Binance websocket stream endpoint.

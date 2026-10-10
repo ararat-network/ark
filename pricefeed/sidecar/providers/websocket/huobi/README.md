@@ -3,7 +3,7 @@
 The Huobi (HTX) WebSocket provider subscribes to Huobi market ticker topics and publishes last prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `huobi_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 
@@ -23,7 +23,7 @@ handler processes:
 
 The handler keeps requested tickers and the set of tickers with valid price observations per session; `Copy()`
 resets both for each new connection. A subscription request or acknowledgement alone does not qualify a ticker
-for heartbeat refreshes.
+for heartbeat refreshes; upstream's handler refreshed every cached ticker on each ping.
 
 ## Market Checks
 

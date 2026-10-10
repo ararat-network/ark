@@ -15,8 +15,9 @@ const (
 	URL = "https://api.currencybeacon.com/v1/latest"
 
 	// DefaultMaxPriceAge is the default freshness window for CurrencyBeacon
-	// prices. It covers one missed poll of the default interval.
-	DefaultMaxPriceAge = 25 * time.Minute
+	// prices: two polls and a timeout, so one missed poll leaves the price in
+	// place.
+	DefaultMaxPriceAge = 35 * time.Minute
 
 	// PlaceholderAPIKey must be replaced with a real key. The Bearer scheme
 	// prefix stays: the fetcher sends the value verbatim in the header.
@@ -37,8 +38,7 @@ var DefaultAPIConfig = api.Config{
 			APIKeyHeader: "Authorization",
 		},
 	}},
-	BatchSize:         0,
-	MaxBlockHeightAge: 0,
+	BatchSize: 0,
 }
 
 // DefaultMarkets defines the built-in CurrencyBeacon fiat pair mappings.

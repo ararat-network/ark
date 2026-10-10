@@ -3,7 +3,7 @@
 The CoinGecko API provider fetches aggregated prices from CoinGecko's simple price endpoint. CoinGecko is an aggregator,
 not a venue; treat it as a secondary source.
 
-[config.go](config.go) owns the provider name, endpoints and transport defaults. The public endpoint needs no API key but
+[config.go](config.go) owns the provider name `coingecko_api`, endpoints and transport defaults. The public endpoint needs no API key but
 is rate limited, so the default interval is slow. A demo key goes in the `x-cg-demo-api-key` header on the public
 endpoint; a pro key goes in the `x-cg-pro-api-key` header on the pro endpoint. Set the header and key through endpoint
 authentication:

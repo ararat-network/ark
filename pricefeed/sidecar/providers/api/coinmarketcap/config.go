@@ -43,8 +43,7 @@ var DefaultAPIConfig = api.Config{
 			APIKeyHeader: APIKeyHeader,
 		},
 	}},
-	BatchSize:         0,
-	MaxBlockHeightAge: 0,
+	BatchSize: 0,
 }
 
 // DefaultMarkets defines the built-in CoinMarketCap API pair mappings. The

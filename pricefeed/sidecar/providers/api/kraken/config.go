@@ -31,7 +31,6 @@ var DefaultAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         0,
-	MaxBlockHeightAge: 0,
 }
 
 // DefaultMarkets defines the built-in Kraken API pair mappings. Responses are

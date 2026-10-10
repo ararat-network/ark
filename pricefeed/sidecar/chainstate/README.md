@@ -2,7 +2,9 @@
 
 This is the sidecar-to-node query client. It polls the oracle feed registry; it does not fetch sidecar prices.
 [client.go](client.go) owns configuration and the cached feed set, while [polling.go](polling.go) owns connections,
-endpoint selection, refresh, and retry. [config.go](config.go) defines validation and timing limits.
+endpoint selection, refresh, and retry. [config.go](config.go) requires a positive timeout and interval and caps the
+address list at four; [options.go](options.go) holds construction options and [metrics/](metrics/) the client's
+instruments.
 
 `Run(ctx)` owns connections and TLS rotation until cancellation. Each poll tries the active endpoint and then alternatives;
 a successful endpoint remains selected until it fails. Failed sweeps retain the last successful feed snapshot. `Feeds`

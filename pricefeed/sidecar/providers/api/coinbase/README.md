@@ -2,7 +2,7 @@
 
 The Coinbase API provider fetches spot prices from the Coinbase v2 prices endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `coinbase_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 

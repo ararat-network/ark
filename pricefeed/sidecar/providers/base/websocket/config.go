@@ -49,6 +49,12 @@ const (
 	// DefaultMaxSubscriptionsPerBatch is the default provider-handler limit for
 	// subscriptions in one subscription message.
 	DefaultMaxSubscriptionsPerBatch = 1
+
+	// MaxMessageBytes caps one inbound frame. It is coder/websocket's own default,
+	// set here so the bound is this package's to document and test: a ticker is a
+	// few hundred bytes, and a venue batching past it is a fault to surface, not a
+	// frame to buffer.
+	MaxMessageBytes int64 = 32 << 10
 )
 
 // Config defines websocket fetcher settings for one provider.

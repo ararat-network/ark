@@ -15,7 +15,7 @@ type (
 	// request and response shape.
 	Response []Data
 
-	// Data BinanceData is the data returned by the Binance API.
+	// Data is one ticker-price row returned by the Binance API.
 	Data struct {
 		Symbol string `json:"symbol"`
 		Price  string `json:"price"`

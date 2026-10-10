@@ -3,7 +3,7 @@
 The GeckoTerminal API provider fetches on-chain token prices in USD from GeckoTerminal's simple token price endpoint.
 GeckoTerminal aggregates decentralised-exchange pools; treat it as a secondary source.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key. The
+[config.go](config.go) owns the provider name `gecko_terminal_api`, endpoint and transport defaults. This adapter requires no API key. The
 network is part of the endpoint path, so one provider prices one network; the default endpoint is Ethereum mainnet.
 Configure another network by changing the endpoint path, for example `.../networks/base/token_price`.
 

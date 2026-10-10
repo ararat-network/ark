@@ -3,7 +3,7 @@
 The Polymarket API provider fetches outcome-token prices from the Polymarket CLOB markets endpoint. A price is the
 market's probability for that outcome, between 0 and 1, quoted in USDC.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `polymarket_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 

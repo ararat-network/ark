@@ -201,6 +201,7 @@ func (f *Fetcher) runOnce(
 			return reconnectWithErr(dialErr)
 		}
 	}
+	conn.SetReadLimit(MaxMessageBytes)
 	defer func() {
 		if err := conn.CloseNow(); err != nil {
 			f.logger.Debug("failed to close websocket connection", "error", err)

@@ -13,7 +13,8 @@
 4. [prices.go](prices.go) synchronises feeds, reads fresh provider caches, calls the resolver, and commits one snapshot.
    Missing feeds remain absent; [freshness](#freshness) filtering happens before aggregation.
 5. [update.go](update.go) serialises replacement with aggregation and lifecycle changes. It builds replacement providers
-   and loads client material before changing live state, so preparation errors leave the active runtime intact.
+   and loads client material before changing live state, so preparation errors leave the active runtime intact. A changed
+   `update_interval` resets the fetch ticker at once rather than after the old interval elapses.
 
 ## Freshness
 

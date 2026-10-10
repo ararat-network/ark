@@ -15,8 +15,9 @@ const (
 	URL = "https://openexchangerates.org/api/latest.json"
 
 	// DefaultMaxPriceAge is the default freshness window for Open Exchange
-	// Rates prices. It covers one missed poll of the default hourly interval.
-	DefaultMaxPriceAge = 90 * time.Minute
+	// Rates prices: two polls and a timeout, so one missed poll leaves the
+	// price in place.
+	DefaultMaxPriceAge = 150 * time.Minute
 
 	// PlaceholderAPIKey must be replaced with a real app ID. The Token scheme
 	// prefix stays: the fetcher sends the value verbatim in the header.
@@ -38,8 +39,7 @@ var DefaultAPIConfig = api.Config{
 			APIKeyHeader: "Authorization",
 		},
 	}},
-	BatchSize:         0,
-	MaxBlockHeightAge: 0,
+	BatchSize: 0,
 }
 
 // DefaultMarkets defines the built-in Open Exchange Rates fiat pair mappings.

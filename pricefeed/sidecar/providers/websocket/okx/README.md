@@ -2,14 +2,14 @@
 
 The OKX WebSocket provider subscribes to the OKX tickers channel and publishes last prices as provider responses.
 
-[config.go](config.go) owns the provider name, endpoints and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `okx_ws`, endpoints and transport defaults. This adapter requires no API key.
 An AWS-hosted endpoint and a demo endpoint are listed for operators near those regions.
 
 ## Stream Shape
 
-Requested instruments are subscribed to the `tickers` channel, up to 25 per subscribe request, spaced by the write
-interval to stay under OKX's rate of three messages per second. Instruments use the `BASE-QUOTE` form, such as
-`USDC-USDT`. The handler processes:
+Requested instruments are subscribed to the `tickers` channel, up to 25 per subscribe request, spaced by the 3 s write
+interval, well under OKX's three messages a second and its 480 subscription requests an hour. Instruments use the
+`BASE-QUOTE` form, such as `USDC-USDT`. The handler processes:
 
 - the plain-text `pong` answer to the plain-text `ping` the fetcher sends on its ping interval; OKX closes a
   connection idle for 30 seconds

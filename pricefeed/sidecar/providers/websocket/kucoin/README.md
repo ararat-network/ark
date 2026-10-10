@@ -3,7 +3,7 @@
 The KuCoin WebSocket provider subscribes to the KuCoin spot ticker topic and publishes last-trade prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `kucoin_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Connect Token
 
@@ -11,9 +11,12 @@ KuCoin refuses a dial that carries no connect token, so the handler implements t
 contract: [dial.go](dial.go) requests a public token with an empty POST to the fixed bullet-public endpoint, then
 dials the configured endpoint with the token in its `token` query parameter, where KuCoin's protocol reads it. The
 token is a short-lived public value, not a credential. The token response also names an instance server and ping
-timings; the adapter keeps the configured endpoint and the static timings in config, so the endpoint stays an
-operator decision and the read deadline stays a config value. A dial error is returned with the token redacted,
+timings; the adapter keeps the configured endpoint and the static timings in config (a 10 s ping under the 18 s KuCoin
+advertises, a 20 s read deadline that outlasts a ping round trip, 300 ms between writes under its 100 messages per 10 s,
+and 25 tickers a connection under its 300 subscriptions), so the endpoint stays an operator decision and the read
+deadline stays a config value. A dial error is returned with the token redacted,
 because the URL it names would otherwise reach the logs. The token request and the dial share the handshake timeout.
+Upstream's handler followed the token response's instance server; this one keeps the configured endpoint.
 
 ## Stream Shape
 

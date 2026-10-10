@@ -37,7 +37,6 @@ var DefaultETHAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: ETHURL}},
 	BatchSize:         MaxAddressesPerRequest,
-	MaxBlockHeightAge: 0,
 }
 
 // DefaultMarkets defines the built-in GeckoTerminal pair mappings for

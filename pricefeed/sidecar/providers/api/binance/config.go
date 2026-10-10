@@ -38,7 +38,6 @@ var DefaultNonUSAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         0,
-	MaxBlockHeightAge: 30 * time.Second,
 }
 
 // DefaultMarkets defines the built-in Binance API pair mappings.

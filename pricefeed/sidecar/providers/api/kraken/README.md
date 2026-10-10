@@ -2,7 +2,7 @@
 
 The Kraken API provider fetches spot prices from Kraken's public ticker endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `kraken_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 

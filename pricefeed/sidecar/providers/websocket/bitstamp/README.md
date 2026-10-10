@@ -3,7 +3,7 @@
 The Bitstamp WebSocket provider subscribes to Bitstamp live trades channels and publishes each trade's price as a
 provider response.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `bitstamp_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 

@@ -2,7 +2,9 @@
 
 The Binance WebSocket provider subscribes to Binance spot streams and publishes price updates as provider responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `binance_ws`, endpoint and transport defaults: 40 tickers a connection, since each
+subscribes two streams under Binance's per-connection stream limit, 300 ms between writes under its five messages a
+second, and a 20 s handshake. This adapter requires no API key.
 
 ## Stream Shape
 
@@ -47,7 +49,7 @@ Subscription messages correlate a per-session sequential `id` with an acknowledg
 success. Combined streams wrap the observation in `stream` and `data`:
 
 ```json
-{"method":"SUBSCRIBE","params":["btcusdt@aggTrade"],"id":1}
+{"method":"SUBSCRIBE","params":["btcusdt@aggTrade","btcusdt@ticker"],"id":1}
 {"result":null,"id":1}
 {"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","s":"BTCUSDT","p":"67734.00000000"}}
 ```

@@ -36,7 +36,6 @@ var DefaultAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         0,
-	MaxBlockHeightAge: 0,
 }
 
 // DefaultMarkets defines the built-in Coinbase API pair mappings.

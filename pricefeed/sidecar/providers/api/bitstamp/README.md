@@ -2,7 +2,7 @@
 
 The Bitstamp API provider fetches spot prices from Bitstamp's public ticker endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `bitstamp_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 

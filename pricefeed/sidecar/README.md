@@ -2,7 +2,8 @@
 
 [Service](service.go) owns the off-chain process-facing service. It implements the generated RPC server and delegates
 provider/resolver work to [runtime](runtime/README.md). Runtime configuration and process configuration are separate:
-[config.go](config.go) defines reloadable runtime settings and listener/config-path settings fixed at construction.
+[config.go](config.go) composes the [runtime](runtime/README.md) config, whose settings reload, with the listener and
+config-path settings fixed at construction.
 
 ## Code and lifecycle
 
@@ -10,10 +11,12 @@ provider/resolver work to [runtime](runtime/README.md). Runtime configuration an
 | --- | --- |
 | [service.go](service.go), [options.go](options.go) | Service assembly and dependency options. |
 | [server.go](server.go) | Public gRPC/HTTP gateway listener and shutdown. |
-| [rpc.go](rpc.go) | Public price/health/config RPC handling. |
+| [rpc.go](rpc.go) | Public price and version RPC handling. |
 | [admin_server.go](admin_server.go) | Separate loopback administration service and runtime reload. |
 | [rpc_metrics.go](rpc_metrics.go), [metrics/](metrics/) | RPC and service instrumentation. |
 | [types/](types/) | Pair and price domain values used off chain. |
+| [version.go](version.go) | The build version the RPC reports. |
+| [internal/recovery.go](internal/recovery.go) | The panic boundary around the service run. |
 
 The public listener serves the transport contract; the admin listener is local process administration. The
 [CLI](../../cmd/pricefeed/README.md) owns process telemetry and cancellation. Listener failures and runtime termination
