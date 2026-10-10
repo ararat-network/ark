@@ -85,7 +85,8 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if now := chain.BlockSeconds(ctx); claimsMandate.ExpiryTime <= now {
+		now := chain.BlockSeconds(ctx)
+		if claimsMandate.ExpiryTime <= now {
 			return nil, fmt.Errorf(
 				"%s expires at time %d, which is not after the current block time %d",
 				types.ClaimsMandateLabel,
@@ -97,11 +98,12 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		if err != nil {
 			return nil, fmt.Errorf("getting Claims params: %w", err)
 		}
-		// The envelope validated activation < expiry, so the span subtraction
-		// cannot underflow. A span shorter than the cancellation period would
-		// leave the committee unable to submit any claim for the whole
+		// The usable span runs from the later of activation and now to expiry: a past activation
+		// starts the window here, not then. The envelope validated activation < expiry and the
+		// check above now < expiry, so the subtraction cannot underflow. A span shorter than the
+		// cancellation period would leave the committee unable to submit any claim for the whole
 		// appointment, because every closing time would land past expiry.
-		if claimsMandate.ExpiryTime-claimsMandate.ActivationTime < params.ClaimCancellationPeriod {
+		if claimsMandate.ExpiryTime-max(claimsMandate.ActivationTime, now) < params.ClaimCancellationPeriod {
 			return nil, errors.New("Claims mandate active span cannot be shorter than the claim cancellation period")
 		}
 	}

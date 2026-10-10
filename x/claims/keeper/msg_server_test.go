@@ -136,6 +136,31 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		s.Require().NoError(err)
 	})
 
+	// The window the committee can use starts now, not at a past activation.
+	s.Run("elapsed activation shortens the usable span", func() {
+		s.SetupTest()
+		s.setCancellationPeriod(5)
+		s.setBlockHeight(12)
+
+		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
+			Authority:           s.authority,
+			Committee:           committee,
+			ActivationTime:      10,
+			ExpiryTime:          16,
+			CommitteeClaimLimit: noahCoin(1_000),
+		})
+		s.Require().ErrorContains(err, "cannot be shorter than the claim cancellation period")
+
+		_, err = s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
+			Authority:           s.authority,
+			Committee:           committee,
+			ActivationTime:      10,
+			ExpiryTime:          17,
+			CommitteeClaimLimit: noahCoin(1_000),
+		})
+		s.Require().NoError(err)
+	})
+
 	s.Run("empty committee disables and keeps the reservation", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
