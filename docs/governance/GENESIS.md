@@ -1,18 +1,18 @@
 # Launch Genesis
 
-- Status: decided 2026-09-11. The artefact is complete except for what assembly adds: the validator seats, the
-  seat-scaled reward targets, and the genesis time.
-- Amended 2026-10-02 (D95): conversion is closed at launch. The artefact registers no asset and Market's depth is
-  100,000 XDR; the testnet artefact keeps both as they were, so a testnet converts from genesis.
+- Status: decided. The artefact is complete except for what assembly adds: the validator seats and their
+  beneficiary records, the seat-scaled reward targets, the founder's grant and stream, and the genesis time.
+- Conversion is closed at launch (D95): the artefact registers no asset and Market's depth is 100,000 XDR. The testnet
+  artefact registers the currencies and runs a deeper pool, so a testnet converts from genesis (§15).
 - Artefact: `app/genesis/genesis.json`, data rather than a generator. `app/genesis_test.go` is its build check: it
-  validates the file with the manager `arkd genesis validate` uses, boots a chain from it two ways, and pins every
-  decided value.
+  validates the file with the manager `arkd genesis validate` uses, boots a chain from it two ways, and pins the
+  values §14 lists.
 - Decisions: the `Dnn` references below are entries in [economic decisions](../design/ECONOMIC_DECISIONS.md); the
-  register stays the log, this document records what each setting is and why.
+  register holds each rule's reason, this document what each setting is.
 
-Every table reads Setting, Value, Status, Why. Status is one of **Decided** (the launch review or a register row fixed
-it), **Default** (the module or SDK default, confirmed at the launch review), or **Assembly** (set when the final file
-is built, §12).
+Every table reads Setting, Value, Status, Why. Status is one of **Decided** (an explicit launch choice, often a register
+entry), **Default** (the module or SDK default, kept deliberately), or **Assembly** (set when the final file is built,
+§12).
 
 Block counts assume the chain's six-second block: 600 blocks an hour, 14,400 a day, 100,800 a week, 5,256,000 a year
 (`pkg/chain/blocks.go`, and the 5 s commit timeout in `cmd/arkd/cmd/config.go`). Windows a governance vote must fit,
@@ -49,21 +49,23 @@ survives, so the artefact and the code obey these rules rather than a migration:
 - No module registers a state migrator for launch; Treasury's consensus version is 1. No frozen legacy types,
   converters, reserved tags, store-prefix shims, or upgrade handler exist, and any that appear are removed.
 - `x/mint` is absent from configuration and genesis: no store, query service, module account, or module-version entry
-  (D1). The launch supply is the native supply for the life of the chain, changed only by conversion and authorised
-  Reserve burns.
+  (D1). The launch supply is the native supply for the life of the chain: only conversion mints NOAH (D2), and supply
+  falls only through burns, by conversion settlement, authorised Reserve burns, slashing, vetoed governance deposits,
+  and contracts burning coins they hold, the module accounts holding `Burner` (§3).
 - The subsidy pool, Redemption Buffer, strategic Reserve, Insurance, disbursement pools, and community pool seeds are bank
   balances, never minted by a module's InitGenesis (D9). The community pool's fee-pool entry equals the Distribution module balance,
   which Distribution's InitGenesis requires.
-- Distribution's `community_tax` is zero because the distribution module basic is overridden in application code
-  (`app/genesis.go`, D13); the artefact inherits it rather than patching it in.
-- The four custody accounts are unblocked for inbound sends and each module's send restriction admits only positive
-  `anoah` (D26). Treasury's InitGenesis runs after Bank's and rejects any fund balance holding a non-NOAH coin.
+- Distribution's `community_tax` is zero in the artefact itself (D13); `arkd init` still emits the SDK default, so a
+  genesis built from `arkd init` must set it.
+- The four custody accounts are unblocked for inbound sends. The subsidy pool, Buffer, and Insurance admit only
+  positive `anoah` (D26) and the Reserve `anoah` and registry members (D70); each owner's InitGenesis runs after
+  Bank's and re-checks its own balances.
 - Bank supply equals the sum of balances at every step: the artefact carries the disbursement pools and the community
   pool before seats, and assembly moves each seat's grant out of the community pool rather than adding supply.
 - A relaunch takes a new chain ID and continues heights: `arkd export` refuses a zero-height export on purpose
   (`CLAUDE.md`, Export & Relaunch).
 
-Export and import must preserve Treasury params, tax caps, the Claims mandate, allowance used, the Insurance
+Export and import must preserve Treasury params and conversion factors, the Claims mandate, allowance used, the Insurance
 reservation, every claim with its status, all fund balances, total supplies, the denomination-bearing `BasePool`, the
 labelled `ArkPoolDelta`, and every governance proposal that authorised a Reserve-to-Buffer commitment or a claim. Only
 the launch genesis starts with a zero `ArkPoolDelta`.
@@ -95,7 +97,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `treasury_redemption_buffer` | none | `anoah` only | Coverage-based redemption inventory (D4, D26). |
 | `strategic_reserve` | Burner | `anoah` and registry members | Reserve custody; the burn authority is split between committee and governance (D61). External symbols are refused at the restriction, permanently (D70). |
 | `claims_insurance` | none | `anoah` only | Insurance custody, paid only through recorded claims (D15, D26). |
-| `transfer_tax_collector` | none | Blocked | Holds the funding window's transfer tax until settlement routes it. The one exempt pair is its send into `strategic_reserve` (D26). |
+| `transfer_tax_collector` | none | Blocked | Holds the funding window's transfer tax until settlement routes it. Its send of written-off and retired residue into `strategic_reserve` meets the Reserve's ordinary NOAH-or-member admission; no sender is exempt (D65). |
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
 | `distribution` | none | Blocked | The community pool. Governance spends it by `MsgCommunityPoolSpend`; nothing else moves it. |
@@ -105,7 +107,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `wasm`, staking pools | as the SDK and Wasmd require | Blocked | Upstream module accounts; wasm holds Burner. |
 
 The blocked list replaces the SDK default rather than augmenting it, so every blocked account above is named
-explicitly and the four protocol-fund custody accounts, `disbursement_contributors`, and `gov` are deliberately left out.
+explicitly and the four protocol-fund custody accounts, both disbursement accounts, and `gov` are deliberately left out.
 
 ### Supply ledger
 
@@ -116,7 +118,7 @@ by vote (D88).
 
 | Balance | NOAH | Share | Status | Why |
 | --- | --- | --- | --- | --- |
-| `treasury_subsidy_pool` | 50,000,000 | 5% | Decided | The bootstrap payroll until gas and tax cover the targets: at the ten-seat launch targets it runs about 38 years, 19 at the economic committee's doubled ceiling, and under four if governance funds a hundred validators at the seat rate. Drawn by settlement; governance may raise the targets or return idle balance to the community pool through `MsgReturnSubsidy` (D83), and any NOAH deposit refills it (D25). Halved from 100,000,000, the rest moved into the disbursement pools at 60/40 (D125). |
+| `treasury_subsidy_pool` | 50,000,000 | 5% | Decided | The bootstrap payroll until gas and tax cover the targets: at the ten-seat launch targets it runs about 38 years, 19 at the economic committee's doubled ceiling, and under four if governance funds a hundred validators at the seat rate. Drawn by settlement; governance may raise the targets or return idle balance to the community pool through `MsgReturnSubsidy` (D83), and any NOAH deposit refills it (D25). A larger seed would outlast any horizon a bootstrap serves; the NOAH beyond it sits in the disbursement pools at 60/40 (D125). |
 | `strategic_reserve` | 50,000,000 | 5% | Decided | Governance's intervention capacity through the first growth phase; commitments to the Buffer and surplus burns are its only exits. |
 | `treasury_redemption_buffer` | 10,000,000 | 1% | Decided | Full coverage on the first 10M NOAH of liability, so early redemptions pay from inventory rather than minting. |
 | `claims_insurance` | 5,000,000 | 0.5% | Decided | The only claims capacity until the waterfall reaches Insurance, which is last in line. |
@@ -191,7 +193,6 @@ expansions that do not arrive during a run.
 | `economic_mandate` | empty | Decided | Appointed after the first expansions (§13). |
 | `conversion_factors` | `anoah` at `1`, derived height 0 | Decided | Genesis requires a positive NOAH factor so gas is payable before the first `axdr` rate; the first usable reference observation replaces it, and the refresh runs whether or not a currency is registered, so fees follow the first live NOAH price rather than waiting for registration (D95). 1 is NOAH opening at one XDR, the neutral unit the protocol references, 1.371 USD at the bootstrap cross, and every dollar figure in this document assumes it (D128). The sidecar's bootstrap `USD/NOAH` leg, 0.729394602479941648 NOAH per dollar, is the same price; both derive from `pkg/chain/launch.go`, so change the pair there if the opening price changes. |
 | `base_gas_price` | the floor | Decided | The controller starts at `min_base_gas_price`. |
-| `tax_caps` | derived | Decided | Derived from the reference cap through the conversion-factor table at the first refresh. |
 | `reward_funding`, `exposure_state` | canonical empty state | Decided | The first observation initialises the window from the param (D34); the multiplier starts at one. |
 
 The zero-revenue runway is `subsidy_pool / ((validator_target + oracle_target) × 5,256,000)` years, a display
@@ -227,7 +228,6 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | --- | --- | --- | --- |
 | `mandate` | empty | Decided | Governance alone moves Reserve NOAH through the fixed Reserve-to-Buffer message; the committee is appointed when a deployment is approved (§13). |
 | `recognition_policy` | empty | Decided | NOAH-only custody counts at par; an eligibility entry arrives with the first attested external asset (D58, D69). |
-| `params` | empty | Default | The module has no launch parameters. |
 
 ## 8. Oracle
 
@@ -244,7 +244,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `params.functioning_block_threshold` | `0.5` | Default | A block grades attendance only once a majority of power priced it. Floored at a half. |
 | `params.participation_threshold` | `0.2` | Default | A report must price a fifth of the targets to count. Capped at a half. |
 | `params.max_exchange_rate_age` | `60` | Default | Seconds: ten blocks. Also the age past which proposers leave transactions out of a block, so floored at 30 seconds, well above the five-second gap between blocks, and capped at seven days (D137). |
-| `accounting.reward_window_start_height`, `accounting.attendance_window_start_height` | `1` | Decided | Both windows open at the first block, so each reward settlement lands on a Treasury funding block, after the funding in the same EndBlock. Zero named a block that never runs: the first settlement ran a block early and found the account empty. |
+| `accounting.reward_window_start_height`, `accounting.attendance_window_start_height` | `1` | Decided | Both windows open at the first block, the default `NewAccounting` writes, so each reward settlement lands on a Treasury funding block, after the funding in the same EndBlock. Zero names a block that never runs: the first windows would end a block early, before Treasury's first funding, and the settlement would find the account empty and clear the week's weights unpaid. Oracle's InitGenesis refuses a start after the genesis block, which it reads as height one though InitChain runs at height zero. |
 | `exchange_rates`, `attendance_records`, `reward_weights` | empty | Decided | State the chain builds. |
 
 ## 9. Asset registry
@@ -272,7 +272,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `gov.params.min_deposit`, `expedited_min_deposit` | 1,000 NOAH, 5,000 NOAH | Decided | About 1,400 USD at the opening price, the range established chains settle in: deposits refund unless vetoed, so the deposit is capital locked for four days, not a fee. With the 10% initial ratio, 100 NOAH lists a proposal. `app/config.go` carries the same default. |
 | `gov.params.quorum`, `threshold`, `expedited_threshold` | `0.5`, `0.667`, `0.75` | Decided | The founding set is equal seats and the founder's third, and the pool it guards holds most of the supply: half the bonded stake must vote and two thirds of votes must agree. The SDK requires the expedited threshold above the regular one. |
 | `gov.params.veto_threshold` | `0.334` | Default | A third of the set can block. |
-| `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, veto deposits burned) | SDK defaults | Default | Confirmed; every governance window was sized on them: the claims veto and settlement cancel windows (a week each), the two-week first-period floor that holds new members, and the tax-raise notice. Lengthening is safe while deposit period plus voting period stays at four days or less; past that, move the two week-long windows in the same proposal. |
+| `gov.params` (2 d voting, 1 d expedited, 2 d deposit period, veto deposits burned) | SDK defaults | Default | Every governance window is sized on them: the claims veto and settlement cancel windows (a week each), the two-week first-period floor that holds new members, and the tax-raise notice. Lengthening is safe while deposit period plus voting period stays at four days or less; past that, move the two week-long windows in the same proposal. |
 | `gov.constitution` | empty | Default | |
 | `slashing.params` | window 10,000, 5% signed, 600 s jail, 0.01% downtime slash, 5% double-sign | Decided | The SDK default of a 100-block window at 50% jailed and slashed 1% after five minutes offline. This is the Cosmos Hub and Terra Classic production set: about 16 hours of window, and oracle attendance jailing is the sharper operational incentive. |
 | `auth.params` | SDK defaults except `tx_sig_limit` 10 | Decided | See §3. |
@@ -286,7 +286,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 Both launch artifacts include the [Disbursement module](../../x/disbursement/README.md) with 469,200,000 NOAH in its member
 account and 312,800,000 NOAH in its contributor account, nothing open, and no grants, journal entries, or
-founders before assembly. Member terms open at the plan's step 1 amount, 20,000 NOAH, a tenth after a two-week hold and
+beneficiary records before assembly. Member terms open at the plan's step 1 amount, 20,000 NOAH, a tenth after a two-week hold and
 the balance over thirteen four-week periods; each later step's proposal lowers the amount (D91, D126, D130). One record's compensation is capped at 1M in the
 reference unit a year of 26 fortnights, a stream counting at its yearly rate (D109, D119, D129). The grants mandate is disabled, with no
 allowances and nothing used, until governance appoints one. The ownership cap is a parameter, 15,000,000 NOAH, the
@@ -301,7 +301,7 @@ lacks (D87, D88).
 
 ## 11. CosmWasm
 
-The contract runtime ships open (decided 2026-09-06). The chain has no IBC: a contract's IBC messages, queries, and
+The contract runtime ships open. The chain has no IBC: a contract's IBC messages, queries, and
 entry points are refused, so no contract channel can exist.
 
 | Setting | Value | Status | Why |
@@ -310,7 +310,8 @@ entry points are refused, so no contract channel can exist.
 
 ## 12. Assembly sequence
 
-The artefact is the reviewed base; assembly adds the time and the seats and changes nothing else.
+The artefact is the reviewed base; assembly adds the time, the seats with their beneficiary records and reward
+shares, and the founder's two awards, and changes nothing else.
 
 1. **Time.** Set `genesis_time` in the file to a weekday hour, in UTC, when every validator's region is awake and at
    least 48 hours after the file will be published. The seats vest from it, so it comes first; a time changed after
@@ -342,8 +343,8 @@ The artefact is the reviewed base; assembly adds the time and the seats and chan
    in roughly equal parts, from the seat's own account; unvested coins can be delegated and the float pays the gas.
    Genesis cannot hold these delegations, since the validators exist only once the gentxs execute, so this is the one
    launch step after the first block. Until it is done the founder's node and vote are one seat of the set; after it
-   the founder's vote is a third of the founding stake and no node holds more than about a seat and a quarter
-   ([disbursement plan §2](DISBURSEMENT_PLAN.md#2-validators), D112).
+   the founder's vote is a third of the founding stake and no node holds more than about a seat and two fifths,
+   1.39 seats at ten ([disbursement plan §2](DISBURSEMENT_PLAN.md#2-validators), D112).
 
 ## 13. Committee appointments
 
@@ -380,10 +381,13 @@ ratio between half and one and a half times the defensive set, with Insurance ca
 `app/genesis_test.go` pins: validity under the CLI's manager; a boot with a validator set and one funded account; a
 boot from a seat the seat command's own function granted, whose gentx self-delegates the grant, with the pool reduced
 by the grant, supply unchanged, and both targets at one share; the consensus authority and evidence bounds; the staking, slashing, and gov values in §10; the
-supply ledger, the disbursement pools with nothing open, and the community pool equalling the Distribution balance; every Treasury, Market, Oracle, and Asset
-value in §4, §5, §8, and §9; the empty allowed-client list, both ICS-20 flags, both ICA sides, the empty host
-allowlist, and the open contract runtime, read back from the keepers after the first block; the absence of `mint`; no
-08-wasm checksums; and the vote-extension enable height.
+supply ledger, the disbursement pools with nothing open, and the community pool equalling the Distribution balance;
+the economic core of §4, §5, §8, and §9 (reference unit and tax, multiplier cap and step, zero reward targets, the
+three ratios and zero weights, the NOAH factor, the conversion policy and default Tobin tax, the oracle reward windows and their start heights,
+both one-week delays, and the empty registry); the open contract runtime; the absence of `mint` and of every IBC
+module section; and the vote-extension enable height. The rest of those sections, among them the feed list, the
+oracle thresholds and rate age, Treasury's decay and base-fee parameters, the Tobin overrides, and the empty mandates,
+is confirmed by review.
 
 Confirm by hand at assembly:
 
@@ -402,8 +406,8 @@ Confirm by hand at assembly:
 
 ## 15. Testnet artefact
 
-`app/genesis/testnet.json`, chain ID `ark-testnet-1`, is the launch artefact with time compressed and nothing else
-changed: the same supply, seats, economics, slashing, oracle thresholds, shut hub, and open contract runtime.
+`app/genesis/testnet.json`, chain ID `ark-testnet-1`, is the launch artefact with time compressed and conversion
+open from genesis: the same supply, seats, economics, slashing, oracle thresholds, and open contract runtime.
 `TestTestnetGenesisDerivesFromLaunch` applies the list below to the launch file and requires equality module by
 module, so the two cannot drift, and the validity and both boot tests run over both files. Seats are granted with the
 same command (§12); faucet and test accounts are added with `arkd genesis add-genesis-account`, and a testnet supply
@@ -421,5 +425,7 @@ above a billion is acceptable. The Docker localnet and the e2e suites run every 
 | `treasury.params.reward_funding_window` | `100800` | `14400` | Daily settlement, so subsidy and tax flows are observable. |
 | `oracle` `reward_window`, `attendance_window`, and their `accounting` copies | `100800` | `14400` | Daily. |
 | `oracle` `reward_distribution_window`, and its `accounting` copy | `403200` | `57600` | Four daily windows: each settlement pays a quarter of the pool, as at launch. |
+| `asset.assets` | none | the ten launch currencies, `ACTIVE` | Conversion opens from genesis, as the launch chain opens it by vote (D95). |
+| `market.conversion_policy.base_pool` | 100,000 XDR | 5,000,000 XDR | A deep pool, so test conversions do not move it far. |
 
 The production slashing set and the one-minute rate age are kept so their real behaviour is exercised.

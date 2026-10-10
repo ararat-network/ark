@@ -1,8 +1,8 @@
 # Release verification
 
-Use this procedure before running an Ark image or installing a standalone binary.
-It covers artifacts produced by the signed workflows after this support was added;
-older artifacts may lack attestations. [Third-party notices](../../THIRD_PARTY_NOTICES.md)
+Use this procedure before running an Ark image or installing a standalone binary
+produced by the signed release workflows; an artifact without attestations fails it.
+[Third-party notices](../../THIRD_PARTY_NOTICES.md)
 owns corresponding-source availability and licence instructions.
 
 ## Verify an image

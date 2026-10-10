@@ -1,6 +1,6 @@
 # NOAH Genesis & Disbursement Plan
 
-- Status: draft 2026-09-23. Member grants and contributor grants are held by the native
+- Status: draft. Member grants and contributor grants are held by the native
   [Disbursement module](../../x/disbursement/README.md) and paid on one schedule each. The ownership cap is checked when a grant is
   awarded, so every ownership grant pays in full on its clock (D121). Founding seats keep their native vesting
   accounts. This is a proposal, not launch behaviour.
@@ -52,7 +52,7 @@ community pool.
 
 ## 2. Validators
 
-**The founding set.** Vetted at the launch review; equal seats of **5M vesting over eight years + 50k liquid**
+**The founding set.** Vetted at the launch review; equal seats of **5M vesting from year four to year eight + 50k liquid**
 each, seven to thirteen of them, 45M of other seats at ten, and the founder's seat at **half the other seats' sum**, a
 third of the founding stake at any count, 22.5M at ten, on the same account and schedule and from the same pool (D111,
 D112, D115).
@@ -90,8 +90,8 @@ the targets (§6).
 
 ## 3. Consensus safety without a ballast
 
-An earlier draft placed 150M of pool NOAH under a multisig, delegated equally to the founders, to keep insider consensus
-weight high while the public's stake was small. It is removed. Its job is done by three things that exist:
+No pool NOAH is delegated to the founders to keep insider consensus weight high while the public's stake is small.
+Three things do that job:
 
 - **Delegators cannot halt the chain; validators can.** Halting takes ⅓ of bonded consensus power on validators that
   stop signing. A grantee can only delegate to a validator, or register one and bond to it. The founders hold all
@@ -123,7 +123,7 @@ The disbursement pools' 782M goes to two groups, in five steps, as grants the mo
 
 Members are the handover. Seats and contributors concentrate the vote; members are the group that dilutes it, and at
 60% their pool is larger than every concentrated holding together, the seats and the contributor pool. Membership obliges nothing: a
-member grant is fully paid a year after registration, members hold, stake, vote, or sell by choice, and a member who
+member grant is fully paid 54 weeks after registration, members hold, stake, vote, or sell by choice, and a member who
 sells passes their share of the public to whoever buys, so the founders are diluted either way, by the market rather
 than the roll. The chain needs both choices. Those who stake carry security and the vote; those who sell are the float,
 since in the first year member payments are nearly all the liquid NOAH there is, beside the founders' floats and about
@@ -229,8 +229,8 @@ account. Four pieces make the non-custodial version work, all on modules the cha
 
 - **Address at signup.** The wallet generates the member's key on their own device, with backup and recovery, and the
   app submits the address into the member process with a signature from that key, so no grant lands on a key lost
-  between generation and backup. The registrar's registration reserves the grant there, the block sends the tenth a
-  week later, and the member sees a balance, a schedule, and the next payment.
+  between generation and backup. The registrar's registration reserves the grant there, the block sends the tenth two
+  weeks later, and the member sees a balance, a schedule, and the next payment.
 - **Gas from the tenth.** The tenth arrives two weeks after registration, so the member's own account pays its gas
   from the third week, and the module grants members no allowance; nothing a member signs comes sooner, since the app's
   first transaction is the delegation of the first payment. Later payments arrive without a transaction, so an unfunded
@@ -366,7 +366,7 @@ a step's contributor budget is a guideline, not a limit: a round aims to stay ne
 warrants, stating the overrun and why in its summary, and later rounds carry less, so contributors stay roughly in step
 with members over the distribution (D131). A cancelled unaccrued balance returns where it was charged. The gates are fixed minimums of
 public bonded stake, the table's figures, 15% of what each step has distributed to anyone but the founder, its full
-distribution less the founder's 25M grant and stream (D99, D101, D132): escrow cannot lower them, so a step opens only
+distribution less the founder's 25M grant and stream (D101, D132): escrow cannot lower them, so a step opens only
 once the public has actually bonded that much, whatever has or has not been paid. The table
 is a budget illustration, not a calendar forecast. **Public bonded stake** is everything bonded except the genesis seats and the founder's
 grant and stream, read as `arkd query staking pool` less the seats and the founder's, 67.5M at ten, one and a half
@@ -567,11 +567,11 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   a bad year; 30% is the active rate the original Terra ran at on fee-funded rewards, and 15%, Terra Classic today, is the
   scenario every genesis figure must also survive, since Ark's rewards do not make 20% a floor (D101). Genesis figures
   hold at 20% and improve on their own at 30%; figures set by vote are set so the plan works
-  at 20% (D99).
+  at 20% (D101).
 - The gates are fixed minimums of public bonded stake, 15% of each step's distribution less the founder's grant and
   stream, three quarters of the planning rate: a step opens only once the public has bonded that much, escrow cannot
   lower the bar, the founder's own payments never count toward it, a weak year slows the steps rather than stalling
-  them, and a 30% year opens them sooner (D99, D101, D132).
+  them, and a 30% year opens them sooner (D101, D132).
 - The founder's coalitions lose the block on the §5 schedule, 15M of public bonded stake an ally seat. The gates are fixed figures
   of the same stake, so a step number does say how far the handover has come; its pace depends on payment and
   staking.
@@ -640,7 +640,7 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   audit before launch; the rest of the module, and a committee appointment, before the first tranche. Governance may
   return unaccrued contributor escrow on cancellation; accrued ownership pay stays owed. Founding
   identities come from genesis seat assembly, and a compensation denomination is NOAH or an active registry asset (D87).
-- The gate ratio: 15% of distributed less the founder's grant and stream, three quarters of the 20% planning rate (D99, D132); a lower ratio opens steps sooner
+- The gate ratio: 15% of distributed less the founder's grant and stream, three quarters of the 20% planning rate (D101, D132); a lower ratio opens steps sooner
   and hands over later, a higher one stalls a weak year.
 - When, if at all, to pull the reward-target lever for organic validators or for a stalled handover, and the runway cost
   governance accepts for it.

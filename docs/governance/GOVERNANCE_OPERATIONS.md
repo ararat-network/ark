@@ -42,14 +42,14 @@ widening it is a coordinated binary upgrade.
 
 | Operation | Message | Signer | Notes |
 | --- | --- | --- | --- |
-| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate` | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §4 for account backing and appointment review. |
+| Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate`, `ark.disbursement.v1.MsgSetGrantsMandate` (see §5) | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §4 for account backing and appointment review. |
 | Appoint, rotate, or disable the registrar | `ark.disbursement.v1.MsgCommitteeRegistrar` under the committee's term | committee | One operational key, bounded by the open tranche alone, for a window inside the committee's; every appointment advances the registrar term its batches carry, and a committee appointment clears it (D120). See §5. |
-| Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. There is no global floor, cap, or trigger: each proposal states its own (D27). |
+| Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` up to the Buffer's shortfall and inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. Governance's message has no global floor, cap, or trigger: each proposal states its own (D27). The committee's is sized in the [economic committee runbook](ECONOMIC_COMMITTEE_RUNBOOK.md#3-transfers-into-the-buffer-and-insurance). |
 | Return idle subsidy to the community pool | `ark.treasury.v1.MsgReturnSubsidy` with the exact amount and minimum remaining balance | governance | One-way from the subsidy pool into the community pool; changes no supply or target. The minimum is the proposal's stale-state guard, not a floor, and a return that would breach it fails at execution (D83). The community pool tops the subsidy pool up by an ordinary spend to its address. |
 | Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor (D81). The cap is denominated in the reference unit; zero means uncapped. |
 | Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/operations/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
-| Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, cap ratio, staleness window), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity (D59). The Reserve account never holds an external token (D70, amended). |
-| Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClosePosition`, and the governance corrections | committee; governance | The one-committee mandate (D56, D57); governance corrects records, clears impairment, and owns the recognition policy. |
+| Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, cap ratio, staleness window), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity (D59). The Reserve account never holds an external token (D70). |
+| Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeReverseReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClearImpairment`, `MsgCommitteeCorrectPosition`, `MsgCommitteeClosePosition`; governance's `MsgCorrectPosition`, `MsgClearImpairment`, `MsgReverseReturn`, `MsgMarkImpaired`, `MsgClosePosition` | committee; governance | The one-committee mandate (D56, D57). Governance's versions work with no mandate in force; governance alone owns the recognition policy. |
 | Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority (D61). The surplus bound is Treasury's required capital, which needs a complete valuation. |
 
 ## 4. Committee appointments
@@ -108,7 +108,7 @@ Before proposing the first one:
 - Do not grant `x/authz` authority over committee messages, and do not build solo-officer roles into the root.
   Either is delegation state that outlives the term and lets one key act under a shape recorded for a quorum.
 
-Other engineering follow-ups are tracked in [future changes](../direction/FUTURE_CHANGES.md#4-capital-and-protocol-follow-ups).
+Other engineering follow-ups are tracked in [future changes](../direction/FUTURE_CHANGES.md).
 
 ## 5. Grant tranches
 
@@ -259,8 +259,8 @@ rotate it. Governance can also submit `MsgSetController`, with `sender: GOV`, fo
 
 **Compensation** is `MsgCompensate`, with the funded denomination and `periods`: that many fortnights in
 equal shares, one for a bounty, together at most ten years. Its clock may start up to a quarter back (D122), so a
-stream aligns to the day a hire started and pays the elapsed fortnights at the first look. Its denomination must be an
-active native stablecoin in the Asset registry.
+stream aligns to the day a hire started and pays the elapsed fortnights at the first look. Its denomination is NOAH or
+an active asset in the Asset registry; `max_offer` bounds the NOAH converted to fund a stablecoin award.
 Stablecoin compensation is fully funded in that denomination, untaxed, and outside NOAH ownership caps. It does not
 promise a conversion rate. A denomination's later suspension prevents new awards without
 erasing already funded entitlement. One record's compensation is at most `compensation_cap` in the reference unit a

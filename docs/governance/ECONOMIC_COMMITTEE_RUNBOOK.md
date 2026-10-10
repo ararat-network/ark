@@ -21,8 +21,9 @@ one state, so a later refusal requires fresh reads before resizing or signing ag
 
 ## 1. The levers
 
-The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`, clamped field by field by the
-`minimum_policy` and `maximum_policy` of its mandate. Eight fields, in three groups:
+The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`. Each field must lie inside the
+`minimum_policy` and `maximum_policy` of its mandate, inclusive, or the whole update is refused; nothing is
+clamped. Eight fields, in three groups:
 
 | Group | Fields | What it sets |
 | --- | --- | --- |
@@ -30,7 +31,7 @@ The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`, clampe
 | Fund ratios | `redemption_buffer_target_ratio`, `strategic_reserve_target_ratio`, `insurance_target_ratio` | how much capital it holds against liability |
 | Exposure weights | `liability_ratio_weight`, `volatility_weight`, `flow_weight` | how much extra a unit of measured risk demands |
 
-D79 counts these as six levers by taking the three weights as one; the mandate clamps them as eight
+D79 counts these as six levers by taking the three weights as one; the mandate bounds them as eight
 independent fields, which is the number that matters when drafting a policy update.
 
 **The transfer tax is not a committee lever.** `transfer_tax_rate` lives in `Params` and moves only by
@@ -45,28 +46,20 @@ organic stress already produces.
 
 ## 2. Before drafting a burn
 
-**Check `ExposureStatus` first.** `BurnableSurplus` is evaluated when the transaction executes, against the
+**Check `ExposureStatus` first.** The burn bound is evaluated when the transaction executes, against the
 multiplier *then* — not against the one that held when the proposal was written. A surplus sized last week can
 be zero today with no change to the Reserve's own holdings.
 
-**There is no query that reports the bound.** `BurnableSurplus` is a keeper function with no RPC. To
-reconstruct it:
-
-```text
-surplus   = reserve/RecognisedCapital − treasury/FundStatus.strategic_reserve_target
-spendable = reserve/Balance − ReserveMandate.minimum_noah_balance
-burnable  = min(surplus, spendable), floored at zero
-```
-
-Use `strategic_reserve_target`, not `strategic_reserve_net_target`: the requirement reads the gross target.
-
-**Both terms bind, and the second is easy to forget.** A burn can fail because the mandate's NOAH floor leaves
-nothing spendable even while the surplus is comfortably positive. Alert A5 watches only the first term, so this
-failure arrives unannounced.
+**Read the bound with `reserve/BurnableSurplus`** (`arkd query reserve burnable-surplus`). It runs the handler's
+own solve: the largest burn after which recognised capital, re-solved at the balance the burn leaves, still covers
+the requirement, and never more than the balance above the mandate's NOAH floor. Clipped stakes and the floor are
+both included, so the figure is exact at the queried height. The handler solves again at execution, so leave
+margin for the multiplier and prices to move between the query and inclusion.
 
 **A refused burn is not necessarily an error.** If `RequiredReserveCapital` errors rather than returning a
 number, the liability valuation is incomplete and the refusal is deliberate: a fund that cannot size its
-requirement must not dispose of capital. Check for alert A4 before treating it as a bug.
+requirement must not dispose of capital. `BurnableSurplus` fails in the same condition rather than reporting zero.
+Check for alert A4 before treating either as a bug.
 
 ## 3. Transfers into the Buffer and Insurance
 

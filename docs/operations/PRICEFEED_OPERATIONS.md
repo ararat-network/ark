@@ -90,10 +90,9 @@ TLS uses version 1.3 or newer with normal hostname and certificate verification.
   apply. `pricefeed prices` and `pricefeed check` accept `--tls-mode` and `--tls-*` files;
   `check` also accepts `--chain-tls-mode` and `--chain-tls-*` for its chain connection.
 
-**Upgrading existing configurations:** add TLS mode wherever certificate files are already set.
-For remote plaintext, explicitly select plaintext mode; the default now refuses those endpoints.
-Local plaintext configurations continue to work. The Docker localnet selects plaintext explicitly
-for its container-to-container links.
+**Mode is explicit:** a configuration that sets certificate files must also set the TLS mode, and remote
+plaintext must select plaintext mode, since the default refuses remote endpoints. Local plaintext needs no
+mode. The Docker localnet selects plaintext explicitly for its container-to-container links.
 
 Long-lived connections check certificate/key contents every minute, including timestamp-preserving
 file replacements and symlink swaps. Handshakes read only the current certificate from memory.
@@ -133,8 +132,9 @@ service version, such as v2. A missing required service or RPC returns `Unimplem
 Prices use the compact encoding in `pkg/encoding`, also carried by vote extensions, so that
 encoding is part of the compatibility contract.
 
-The sidecar's reported build version identifies the build for operators. The node logs and exports
-it but never gates compatibility on it; nodes and sidecars release independently.
+The sidecar's reported build version identifies the build for operators. The node logs it at Info on
+first contact and whenever it changes, exports no metric for it, and never gates compatibility on it;
+nodes and sidecars release independently.
 
 ## Replacing a sidecar
 

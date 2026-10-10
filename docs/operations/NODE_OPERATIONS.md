@@ -38,9 +38,9 @@ For multiple developers, generate the intended validator count and host addresse
 and agree on a single genesis. `--single-host` is for separate ports on one machine; omit it when using distinct hosts.
 
 Each generated home carries a `client.toml` with its chain ID, keyring backend, key name, and node address, so client
-commands against it need none of those as flags. `arkd testnet start` runs the same network inside one process; its
-commit timeout must leave the first block inside the SDK network's five-second start budget, which its one-second
-default does.
+commands against it need none of those as flags. `arkd testnet start` runs an in-process multi-validator network
+from code defaults instead: no artefact, no seats. Its commit timeout must leave the first block inside the SDK
+network's five-second start budget, which its one-second default does.
 
 To test against real state, copy a node's home and run `arkd in-place-testnet <new-chain-id> <operator-address> --home
 <copy>`: every validator is replaced by one bonded at the operator with the copy's consensus key, CometBFT's validator
@@ -84,7 +84,8 @@ The default home is `~/.ark`; `--home` selects another. `config.toml` controls C
 and `client.toml` CLI defaults. Use `arkd config diff` to compare app settings with this binary's defaults and
 `arkd config migrate --stdout` to inspect a migration before writing. `arkd config set <app|config|client> <key> <value>`
 changes an existing key in that file, app.toml against the validation start applies and config.toml against CometBFT's;
-it does not create missing keys, which migrate adds. `arkd config validate [app|config|client]` runs those checks over a
+it does not create missing keys. `migrate` adds missing app.toml keys and leaves config.toml and client.toml alone.
+`arkd config validate [app|config|client]` runs those checks over a
 file alone. Both take a path to a `.toml` file in place of the name. Use `--help` for each command's options.
 [Mempool policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour) explains the coupled CometBFT/application admission configuration.
 
@@ -112,8 +113,9 @@ interrupt its signing; a coordinated consensus upgrade requires the network to r
 compatible code. Do not run the same validator signing key concurrently in old and replacement processes.
 
 `arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis resumes
-at the next height with a new chain ID for relaunch. The export keeps the original `genesis_time`; set it to the coordinated
-restart time, at or after the export height's block time and identical in every validator's file, because Oracle and
+at the next height. The export keeps the original `chain_id` and `genesis_time`. Set `chain_id` to the relaunch's new ID,
+and `genesis_time` to the coordinated restart time, at or after the export height's block time and identical in every
+validator's file, because Oracle and
 Disbursement import refuse records dated after genesis. Records anchored in block time keep their absolute times, so the
 outage counts against them: committee terms, pending claims' closing times, unactivated settlement plans, and grant
 schedules. Before the relaunch, decide whether to push pending claims' `closing_time` and unactivated plans'

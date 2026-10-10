@@ -83,6 +83,7 @@ whether or not anyone is reading it, and Phase A is precisely when that would go
 | valuation incompleteness | `EventLiabilityIncomplete` (and the two supply lists it carries) | per settling block, when degraded |
 | retained vs burned | `EventExpansionAllocated` | per settling block with expansions |
 | buffer payout | `EventRedemptionBufferDrawn` | per settling block with redemptions |
+| Reserve burnable surplus | `reserve/BurnableSurplus` | on demand |
 | Reserve recognised capital | `reserve/RecognisedCapital` | on demand |
 | Reserve capital requirement | `treasury/FundStatus.strategic_reserve_target` | on demand |
 
@@ -159,17 +160,15 @@ follow-up if the window was long; `ECONOMIC_COMMITTEE_RUNBOOK.md` §5.
 
 #### A5 — Reserve burnable surplus collapsed · notify the committee
 
-**Condition:** `reserve/RecognisedCapital − FundStatus.strategic_reserve_target` crosses from positive to
-non-positive, when driven by a rise in `multiplier` rather than a fall in recognised capital.
+**Condition:** `reserve/BurnableSurplus.burnable` falls from positive to zero, when driven by a rise in
+`multiplier` rather than a fall in recognised capital.
 
 **Why:** the committee's burn authority just went to zero without the committee doing anything, because the
 requirement moved underneath it. This is the mechanism working correctly — the worst moment to destroy reserve
 capital is when the risk model says it is needed — but it will look like a bug to whoever's proposal fails.
 
-**Caveat, and it is a real gap.** This condition models only half of `BurnableSurplus`, which is
-`min(recognised − required, balance − mandate.minimum_noah_balance)`. When the mandate's NOAH floor is the
-binding term, a burn fails with A5 silent. Watching the floor margin beside this condition closes it; see the
-open item in §2.8, because there is no query that reports the composed bound.
+**While valuation is incomplete** the query errors rather than reporting zero. A4 pages on that condition, so A5
+stays silent through it.
 
 **Response:** none required. This alert exists so the committee learns it from a dashboard rather than from a
 rejected transaction.
@@ -217,7 +216,8 @@ In Phase A the same page shows panel 1 flat at one.
 - **Poller.** `treasury/ExposureStatus` once per `exposure_refresh_period_blocks / 2` — 300 blocks, about half
   an hour at defaults — so no update is missed and `refresh_pending` is sampled often enough for A2. It folds no
   registry and reads stored state only, so it stays cheap and answers even when `FundStatus` is degraded, which
-  is why A2 stays reliable during an A4 incident.
+  is why A2 stays reliable during an A4 incident. `reserve/BurnableSurplus` on the same cadence feeds A5; it folds
+  the registry like `FundStatus`, so read its error during an A4 incident as A4's state, never as a zero bound.
 - **Indexer.** `EventExposureRefreshed`, `EventLiabilityIncomplete`, `EventExpansionAllocated`,
   `EventRedemptionBufferDrawn`. All four are typed events, so a generic ABCI event indexer suffices.
 - **Retention.** At least 30 refresh periods of update history, for the "N consecutive" conditions and for A5's
@@ -232,12 +232,12 @@ The collector must preserve these semantics regardless of its implementation. De
    data, in the same pass that chooses the weights.
 2. **Where the dashboard lives**, and who receives the A1, A2 and A4 pages. An ops decision, not a protocol one.
 3. **A5's attribution** — separating "multiplier rose" from "recognised capital fell" — needs both series
-   retained. If that proves awkward, downgrade A5 to a plain surplus-crossed-zero notification; the committee
+   retained. If that proves awkward, downgrade A5 to a plain bound-reached-zero notification; the committee
    still learns what it needs to.
-4. **A5 is an indicator, not the execution bound.** It tracks recognised capital against the Reserve target.
-   The [economic committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#2-before-drafting-a-burn) also applies the mandate's
-   NOAH floor when sizing a transaction. Retain that distinction; a positive capital surplus alone does not authorise
-   a burn. A proposed bound query is tracked with [future tooling](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling).
+4. **A5 reads the bound at poll time, not at execution.** The handler solves again when a burn executes, against
+   the multiplier then; the
+   [economic committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#2-before-drafting-a-burn) leaves margin
+   for that.
 
 ## 3. Other subsystems
 

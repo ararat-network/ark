@@ -89,9 +89,9 @@ the default) as a mirror of Ark's pool. Ark authenticates and classifies transac
 through either RPC or peer gossip before assigning reserved storage; matched limits and deferred storage release leave transport headroom
 for eligible committee actions and governance messages when normal storage is saturated. Block
 selection caps each privileged lane at 5% of gas and available
-transaction bytes. Transactions above the remaining allowance wait. An individual action larger than
-the entire allowance competes in ordinary fee order, so a large legitimate action is not permanently
-excluded. This caps preferential service; mixed batches also compete as normal.
+transaction bytes. A transaction past what its lane has left, oversized or not, competes at ordinary
+fee priority in that block, and its sender's later ordered transactions follow it, so a large
+legitimate action is never excluded. This caps preferential service; mixed batches also compete as normal.
 
 The start command refuses `type = "app"` or `"nop"`, `recheck = false`, and a `size` below
 `app.toml [mempool] max-txs`. For node homes written by an app-mode binary, before restart:
@@ -103,7 +103,7 @@ arkd config set config mempool.type flood
 Normal public nodes must keep transaction broadcast on. The private carrier/sentry configuration
 above still disables broadcast deliberately for confidentiality.
 
-`app.toml [mempool] max-txs` defaults to 5000; zero now selects that bounded default. Its total
+`app.toml [mempool] max-txs` defaults to 5000; zero selects that bounded default. Its total
 count and the configured encoded-byte budget are partitioned 5% committee, 5% governance and 90% normal (with rounding assigned to normal).
 The byte settings live in `config.toml`, not `app.toml`:
 
@@ -116,8 +116,8 @@ max_txs_bytes = 67108864   # 64 MiB total encoded pending transactions
 Both must be positive. Ark and CometBFT use the same resolved transaction limit
 and storage budget. Decoded transactions and indexes
 consume additional RAM. Changing these settings requires a node restart.
-Existing files retain their values: a previously ignored `max_txs_bytes = 1073741824`
-now permits a 1 GiB backlog. To retain the previous effective budget before restart:
+Ark honours whatever the file carries, so CometBFT's stock `max_txs_bytes = 1073741824`
+permits a 1 GiB backlog. To set the 64 MiB budget before restart:
 
 ```sh
 arkd config set config mempool.max_txs_bytes 67108864

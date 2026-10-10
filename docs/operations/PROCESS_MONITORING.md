@@ -18,7 +18,7 @@ means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integrati
 - [7. Local example](#7-local-example)
 - [8. What to watch](#8-what-to-watch)
 - [Application mempool occupancy](#application-mempool-occupancy)
-- [Metric reduction migration](#metric-reduction-migration)
+- [Dependency series at the scraper](#dependency-series-at-the-scraper)
 
 ## 1. Three surfaces, one rule
 
@@ -111,7 +111,8 @@ Rules `arkd start` applies:
   node one step later with a generic error. arkd fails first and names `[prometheus]` as the replacement.
 - **A `meter_provider` with `[prometheus]` enabled is shadowed, and start warns.** Its readers export no metrics.
   Turn `[prometheus]` off to push metrics instead.
-- **A malformed file fails start**, through the SDK's own parse. arkd reads only the file's shape and never judges it.
+- **A malformed file fails start.** A file that is not YAML fails arkd's own read; one that parses but breaks the
+  schema fails through the SDK's parse. arkd reads only the fields it acts on and leaves schema validation to the SDK.
 - **`OTEL_EXPERIMENTAL_CONFIG_FILE` with `[prometheus]` enabled is refused.** The SDK initialises OpenTelemetry
   from that file at package load, before arkd installs the endpoint's provider, so Ark's package-level meters bind
   to that file's provider, or to noop when it is empty, and the endpoint would serve without them. With
@@ -127,21 +128,21 @@ with it:
   The series land on `[prometheus]`; Ark's adapter normalises query routes to the bounded series described below.
 - The same sink with `[prometheus]` off leaves those series with nowhere to go but otel.yaml's `meter_provider`.
   `start` warns.
-- `prometheus-retention-time` is not carried over. The legacy Prometheus fan-out behind it is what `[prometheus]`
-  replaces; set beside the otel sink, `start` warns.
+- `prometheus-retention-time` has no effect: `[prometheus]` serves the endpoint in place of the SDK's go-metrics
+  Prometheus fan-out, and setting it beside the otel sink makes `start` warn.
 
-**Legacy metric migration.** Query paths no longer become instrument names. Completed ABCI queries export
+**Bridged series.** Query paths never become instrument names. Completed ABCI queries export
 `ark_sdk_query_duration_milliseconds{route}`; its `_count` series counts requests. The route is a registered
 gRPC method, `app`, `store`, `p2p`, or `unknown`; even malformed paths without a leading slash use this bounded
 classification. The histogram records from the SDK's deferred query timer, so each completed query counts once.
 
-Other legacy metrics now export under `sdk_legacy_<kind>_<readable-key>_<digest>`, where kind is `counter`, `gauge`,
+Other go-metrics series export under `sdk_legacy_<kind>_<readable-key>_<digest>`, where kind is `counter`, `gauge`,
 or `histogram`. The readable key joins components with underscores and replaces punctuation with underscores;
 it is limited to 120 characters. The digest is the SHA-256 hex of the original key components joined with NUL.
 This distinguishes names that Prometheus sanitises identically and separates generated histogram suffixes from
-other instrument types. Counter and histogram suffixes follow Prometheus conventions. Update legacy dashboards
-when adopting this change; existing `ark_*` names retain their contract. The bridge admits at most 1,024 other
-legacy instruments; existing entries continue recording at the limit and additional names are dropped. Query
+other instrument types. Counter and histogram suffixes follow Prometheus conventions. `ark_*` names are a separate,
+stable contract. The bridge admits at most 1,024 other go-metrics instruments; registered entries keep recording at
+the limit and additional names are dropped. Query
 paths do not consume that allowance.
 
 `arkd testnet` writes `enabled = true` and `metrics-sink = "otel"` beside an enabled `[prometheus]`, which is the
@@ -238,7 +239,8 @@ responses that carried the commit alone because the proposer's clock found the p
   functioning block does not guarantee every feed was priced. A correlated
   outage of a few large validators looks fine in `ark_oracle_vote_reports_total`, which counts heads.
 - First look: `ark_oracle_vote_reports_total{status="empty"}` rising is validators abstaining wholesale;
-  `status="invalid"` is a release mismatch. Then `EventExchangeRateUpdate` going quiet, and A4.
+  `status="invalid"` is a release mismatch. Then `EventExchangeRateUpdate` going quiet, where
+  `arkd query oracle stored-rates` shows which feeds stopped and when, and A4.
 
 **N5 — Peers' reports failing verification · warn**
 
@@ -356,34 +358,13 @@ time. The app pool can hold an entry the flood list refused after admission for 
 and the list holds the superseded version of a replaced transaction until a recheck fails it, so the
 two need not match at every instant. These gauges are per process and use no account or proposal labels.
 
-## Metric reduction migration
-
-The reduction deliberately removes seven Ark-defined metric families:
-
-| Removed family | Replacement |
-| --- | --- |
-| `ark_sdk_query_requests_total` | `ark_sdk_query_duration_milliseconds_count`, same route labels |
-| `ark_pricefeed_provider_api_requests_total` | `ark_pricefeed_provider_api_request_duration_milliseconds_count`, same provider/status-code labels |
-| `ark_abci_extended_commit_size_bytes` | None; the commit-size diagnostic histogram is removed |
-| `ark_pricefeed_rpc_request_duration_milliseconds` | Node-side `ark_pricefeed_response_duration_milliseconds` for polling latency; server RPC outcome counts remain |
-| `ark_pricefeed_provider_price` | No historical per-provider price series; use sample counts, skipped samples and provider errors for health, aggregate prices for output |
-| `ark_pricefeed_route_price` | `ark_pricefeed_aggregate_price` for final output; individual route observations are removed for all configurations |
-| `ark_pricefeed_sidecar_version` | Sidecar `target_info` build metadata and node-side version-change logs |
-
-Provider and route price instrumentation is removed from the resolver, including its extra traversal, float
-conversions and metric snapshot maps. Price calculation, sample counts and aggregate-price publication remain.
-Version-change logging retains its endpoint history; the current/previous-version gauge bookkeeping is removed.
-Update external dashboard and alert queries before adopting this reduction. The two histogram `_count`
-replacements preserve their removed counters' label sets and counting semantics.
-
-### Optional dependency exclusions at the scraper
+## Dependency series at the scraper
 
 Ark exports upstream SDK BaseApp, Wasm and Go/process metrics without custom filters. Keeping an exclusion policy
 in Prometheus avoids maintaining dependency metric-name lists and collector wrappers in production Ark code.
-No external Prometheus configuration is changed by this repository update.
 
-To retain the earlier reduction in stored dependency series, add these optional rules to the **arkd application
-scrape job** under `metric_relabel_configs` (merge with any existing rules):
+To keep the noisiest dependency series out of storage, add these optional rules to the **arkd application scrape
+job** under `metric_relabel_configs` (merge with any existing rules):
 
 ```yaml
 metric_relabel_configs:
