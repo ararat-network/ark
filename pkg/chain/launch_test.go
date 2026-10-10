@@ -10,10 +10,14 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 )
 
-func TestBootstrapNoahPerUSDIsAPositiveDecimal(t *testing.T) {
-	price, err := math.LegacyNewDecFromStr(chain.BootstrapNoahPerUSD)
-	require.NoError(t, err)
-	require.True(t, price.IsPositive())
+// TestBootstrapPricesNoahAtOneXDR pins the sidecar's USD/NOAH leg to one NOAH a XDR at the cross: the
+// leg times the cross, rounded up as Treasury rounds its factor, is exactly one (D128).
+func TestBootstrapPricesNoahAtOneXDR(t *testing.T) {
+	require.Equal(t, "0.729394602479941648", chain.BootstrapNoahPerUSD)
+	perUSD := math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerUSD)
+	require.True(t, perUSD.IsPositive())
+	cross := math.LegacyMustNewDecFromStr(chain.BootstrapUSDPerXDR)
+	require.Equal(t, math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerXDR), perUSD.MulRoundUp(cross))
 }
 
 func TestFounderSeat(t *testing.T) {

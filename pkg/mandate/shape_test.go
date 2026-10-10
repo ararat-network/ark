@@ -287,10 +287,10 @@ func TestObserve(t *testing.T) {
 
 	t.Run("enabled appointment records what it saw", func(t *testing.T) {
 		envelope := mandate.Envelope{
-			Term:             1,
-			Committee:        account.GetAddress().String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      account.GetAddress().String(),
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		}
 		envelope.Observe(account, false)
 
@@ -302,10 +302,10 @@ func TestObserve(t *testing.T) {
 
 	t.Run("an account that is not the committee records nothing", func(t *testing.T) {
 		envelope := mandate.Envelope{
-			Term:             1,
-			Committee:        sdk.AccAddress("0123456789abcdefghij").String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      sdk.AccAddress("0123456789abcdefghij").String(),
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		}
 		envelope.Observe(account, false)
 
@@ -324,10 +324,10 @@ func TestObserve(t *testing.T) {
 	t.Run("contract committee records the contract kind", func(t *testing.T) {
 		contract := authtypes.NewBaseAccount(sdk.AccAddress(make([]byte, 32)), nil, 0, 0)
 		envelope := mandate.Envelope{
-			Term:             1,
-			Committee:        contract.GetAddress().String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      contract.GetAddress().String(),
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		}
 		envelope.Observe(contract, true)
 
@@ -342,10 +342,10 @@ func TestObserve(t *testing.T) {
 func TestEnvelopeValidateCommitteeShape(t *testing.T) {
 	live := func() mandate.Envelope {
 		return mandate.Envelope{
-			Term:             1,
-			Committee:        sdk.AccAddress("0123456789abcdefghij").String(),
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      sdk.AccAddress("0123456789abcdefghij").String(),
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		}
 	}
 

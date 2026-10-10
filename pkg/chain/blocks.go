@@ -7,6 +7,7 @@ package chain
 
 import (
 	"context"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -19,6 +20,10 @@ const (
 	BlocksPerMonth  = BlocksPerDay * 30
 	BlocksPerYear   = BlocksPerDay * 365
 )
+
+// MaxBlockSeconds is the last block time the header's int64 carries: a chain instant past it is one
+// no block reaches.
+const MaxBlockSeconds = uint64(math.MaxInt64)
 
 // BlockSeconds is the block's Unix time in whole seconds. A time before the epoch, which only a test
 // harness produces, reads as the epoch.

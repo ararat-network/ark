@@ -22,22 +22,22 @@ func (e Envelope) IsDisabled() bool {
 	return e.Committee == ""
 }
 
-// IsActive reports whether the appointed committee may act at height. The
-// window is half-open, so expiry_height is the first inactive height.
-func (e Envelope) IsActive(height uint64) bool {
+// IsActive reports whether the appointed committee may act at block time now, in Unix seconds. The
+// window is half-open, so expiry_time is the first inactive time.
+func (e Envelope) IsActive(now uint64) bool {
 	if e.IsDisabled() {
 		return false
 	}
 
-	return e.ActivationHeight <= height && height < e.ExpiryHeight
+	return e.ActivationTime <= now && now < e.ExpiryTime
 }
 
 // Validate checks canonical disabled or complete enabled envelopes. Embedding mandates own payload
 // validation and must call Envelope.Validate explicitly when shadowing this method.
 func (e Envelope) Validate() error {
 	if e.IsDisabled() {
-		if e.ActivationHeight != 0 || e.ExpiryHeight != 0 {
-			return errors.New("disabled envelope must not have an activation or expiry height")
+		if e.ActivationTime != 0 || e.ExpiryTime != 0 {
+			return errors.New("disabled envelope must not have an activation or expiry time")
 		}
 		if !e.CommitteeShape.IsZero() {
 			return errors.New("disabled envelope must not carry a committee shape")
@@ -51,8 +51,12 @@ func (e Envelope) Validate() error {
 	if _, err := chain.ParseCanonicalAccountAddress("committee", e.Committee); err != nil {
 		return err
 	}
-	if e.ActivationHeight >= e.ExpiryHeight {
-		return errors.New("activation height must precede expiry height")
+	if e.ActivationTime >= e.ExpiryTime {
+		return errors.New("activation time must precede expiry time")
+	}
+	// Block time is an int64 in the header, so a later expiry is a window no block can close.
+	if e.ExpiryTime > chain.MaxBlockSeconds {
+		return fmt.Errorf("expiry time %d exceeds the header's int64", e.ExpiryTime)
 	}
 	// The shape is observation, never authorisation, so an enabled envelope is
 	// not required to carry one: an unclassified committee reads as unknown,
@@ -86,8 +90,8 @@ func (e Envelope) NextTerm() (uint64, error) {
 func Next(
 	current Envelope,
 	committee string,
-	activationHeight uint64,
-	expiryHeight uint64,
+	activationTime uint64,
+	expiryTime uint64,
 ) (Envelope, sdk.AccAddress, error) {
 	term, err := current.NextTerm()
 	if err != nil {
@@ -105,10 +109,10 @@ func Next(
 	}
 
 	return Envelope{
-		Term:             term,
-		Committee:        address.String(),
-		ActivationHeight: activationHeight,
-		ExpiryHeight:     expiryHeight,
+		Term:           term,
+		Committee:      address.String(),
+		ActivationTime: activationTime,
+		ExpiryTime:     expiryTime,
 	}, address, nil
 }
 
@@ -136,9 +140,10 @@ func (e Envelope) RequireTerm(expected uint64) error {
 	return nil
 }
 
-// Authorise checks canonical signer, exact term, then active window, so stale transactions report
-// term mismatch first. Embedded mandates enforce usage, corridors, and status preconditions.
-func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) error {
+// Authorise checks canonical signer, exact term, then active window at block time now, so stale
+// transactions report term mismatch first. Embedded mandates enforce usage, corridors, and status
+// preconditions.
+func (e Envelope) Authorise(signer string, expectedTerm uint64, now uint64) error {
 	if e.IsDisabled() {
 		return errors.New("signer is not the exact appointed account")
 	}
@@ -152,11 +157,11 @@ func (e Envelope) Authorise(signer string, expectedTerm uint64, height uint64) e
 	if err := e.RequireTerm(expectedTerm); err != nil {
 		return err
 	}
-	if !e.IsActive(height) {
+	if !e.IsActive(now) {
 		return fmt.Errorf(
 			"mandate is not active: window is [%d, %d)",
-			e.ActivationHeight,
-			e.ExpiryHeight,
+			e.ActivationTime,
+			e.ExpiryTime,
 		)
 	}
 

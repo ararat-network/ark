@@ -2,10 +2,19 @@ package chain
 
 import "cosmossdk.io/math"
 
-// BootstrapNoahPerUSD is the one-NOAH-per-dollar placeholder shared by sidecar bootstrap and
-// Treasury's gas-factor seed. Launch genesis and sidecar configuration supply actual opening
-// prices; live observations replace the seed.
-const BootstrapNoahPerUSD = "1"
+// Bootstrap pricing: NOAH opens at one XDR, the neutral unit the protocol references (D128).
+// BootstrapUSDPerXDR is the upward-rounded dollar/XDR cross; the sidecar's USD/NOAH bootstrap leg
+// and Treasury's gas-factor seed both derive from the pair. Launch genesis and sidecar
+// configuration supply actual opening prices; live observations replace the seed.
+const (
+	BootstrapNoahPerXDR = "1"
+	BootstrapUSDPerXDR  = "1.371"
+)
+
+// BootstrapNoahPerUSD is the sidecar's USD/NOAH bootstrap leg, NOAH per dollar at one NOAH a XDR:
+// 0.729394602479941648 at the 1.371 cross. Until NOAH trades it drifts with XDR/USD.
+var BootstrapNoahPerUSD = math.LegacyMustNewDecFromStr(BootstrapNoahPerXDR).
+	Quo(math.LegacyMustNewDecFromStr(BootstrapUSDPerXDR)).String()
 
 // Validator seat policy: every seat assembly grants is SeatGrantNoah, a continuous vesting
 // account from SeatVestingCliffYears to SeatVestingEndYears after genesis time with the same
@@ -56,3 +65,16 @@ func FounderSeat(count int) math.Int {
 	}
 	return founder
 }
+
+// The founder's awards, which seat assembly writes as governance grants from the contributor
+// pool rather than leaving to a vote (D136): the grant for the work before launch, at the
+// ownership cap on the ownership schedule, and the compensation stream for the work after it,
+// FounderStreamPeriods compensation periods valued at the bootstrap price (D115, D129).
+const (
+	FounderGrantNoah     = 15_000_000
+	FounderStreamNoah    = 10_000_000
+	FounderStreamPeriods = 260
+
+	FounderGrantReference  = "Founder's grant for the work before launch, written at genesis: DISBURSEMENT_PLAN.md §4 (D115, D136)"
+	FounderStreamReference = "Founder's compensation stream for the work after launch, written at genesis: DISBURSEMENT_PLAN.md §4 (D129, D136)"
+)
