@@ -73,7 +73,7 @@ func (q queryServer) EconomicMandate(ctx context.Context, req *types.QueryEconom
 	}
 	return &types.QueryEconomicMandateResponse{
 		Mandate: mandate,
-		Active:  mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:  mandate.IsActive(chain.BlockSeconds(ctx)),
 	}, nil
 }
 
@@ -343,7 +343,7 @@ func (q queryServer) ExposureStatus(ctx context.Context, req *types.QueryExposur
 	if err != nil {
 		return nil, fmt.Errorf("getting exposure status: %w", err)
 	}
-	volatility, err := annualisedVolatility(state.VolatilityVariance)
+	volatility, err := annualisedVolatility(state.VolatilityVariance, state.SampleInterval)
 	if err != nil {
 		return nil, fmt.Errorf("getting exposure status: %w", err)
 	}

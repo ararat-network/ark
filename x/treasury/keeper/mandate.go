@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -16,8 +15,7 @@ func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expect
 	if err != nil {
 		return types.EconomicMandate{}, fmt.Errorf("getting economic mandate: %w", err)
 	}
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-	if err := economicMandate.Authorise(committee, expectedTerm, height); err != nil {
+	if err := economicMandate.Authorise(committee, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.EconomicMandate{}, fmt.Errorf("%s: %w", types.EconomicMandateLabel, err)
 	}
 	return economicMandate, nil

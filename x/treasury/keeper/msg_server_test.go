@@ -223,12 +223,12 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 	minimum, maximum := economicPolicyBounds()
 
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
@@ -236,11 +236,11 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(committee, mandate.Committee)
 	s.requireTypedEvent(&types.EventEconomicMandateSet{
-		Term:             1,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		CommitteeShape:   absentCommitteeShape,
+		Term:           1,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		CommitteeShape: absentCommitteeShape,
 	})
 
 	policy := committeePolicyCandidate()
@@ -319,12 +319,12 @@ func (s *KeeperTestSuite) TestEconomicPolicyMessagesAreRoleDisjoint() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
@@ -353,12 +353,12 @@ func (s *KeeperTestSuite) TestEconomicMandateAuthorityAndRoleSeparation() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 	message := &types.MsgSetEconomicMandate{
-		Authority:        "not-authority",
-		Committee:        committee,
-		ActivationHeight: 1,
-		ExpiryHeight:     2,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      "not-authority",
+		Committee:      committee,
+		ActivationTime: 1,
+		ExpiryTime:     2,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	}
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
@@ -380,14 +380,14 @@ func (s *KeeperTestSuite) TestEconomicMandateRefusesAnElapsedWindow() {
 	// The window is half-open, so its expiry height is already inactive.
 	s.setBlockHeight(100)
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String(),
-		ActivationHeight: 10,
-		ExpiryHeight:     100,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String(),
+		ActivationTime: 10,
+		ExpiryTime:     100,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
-	s.Require().ErrorContains(err, "not above the current height")
+	s.Require().ErrorContains(err, "not after the current block time")
 }
 
 func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
@@ -397,12 +397,12 @@ func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
 	})
 	minimum, maximum := economicPolicyBounds()
 	message := &types.MsgSetEconomicMandate{
-		Authority:        consensusAuthority,
-		Committee:        consensusAuthority,
-		ActivationHeight: 1,
-		ExpiryHeight:     2,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      consensusAuthority,
+		Committee:      consensusAuthority,
+		ActivationTime: 1,
+		ExpiryTime:     2,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	}
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
 	s.Require().ErrorContains(err, "distinct from the Treasury authority")
@@ -418,12 +418,12 @@ func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 1,
-		ExpiryHeight:     100,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 1,
+		ExpiryTime:     100,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 

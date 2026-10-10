@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"errors"
+	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -95,6 +97,66 @@ func (s *KeeperTestSuite) TestExposureFoldsSquaredReturnIntoVariance() {
 	state := s.getExposureState()
 	s.Require().Equal(math.LegacyNewDec(3), state.LastReferencePrice)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.125"), state.VolatilityVariance)
+	// Both samples share a second, which counts as one; folded at half retention, one half.
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.5"), state.SampleInterval)
+}
+
+// atTime moves the suite's block time, leaving its height.
+func (s *KeeperTestSuite) atTime(seconds int64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockTime(time.Unix(seconds, 0))
+}
+
+func (s *KeeperTestSuite) annualisedVolatility() math.LegacyDec {
+	response, err := keeper.NewQueryServerImpl(s.keeper).ExposureStatus(s.ctx, &types.QueryExposureStatusRequest{})
+	s.Require().NoError(err)
+	return response.AnnualisedVolatility
+}
+
+// TestExposureVolatilityPairsReturnsWithSeconds pins the per-second reading: the same return over
+// six seconds annualises as variance per six seconds, so block pace does not move it.
+func (s *KeeperTestSuite) TestExposureVolatilityPairsReturnsWithSeconds() {
+	s.setExposureParams(func(p *types.Params) {
+		p.VolatilityDecay = math.LegacyZeroDec()
+	})
+	s.atTime(1_000)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
+	s.settleEmpty()
+	s.atTime(1_006)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(3)})
+	s.settleEmpty()
+
+	state := s.getExposureState()
+	s.Require().Equal(uint64(1_006), state.LastSampleTime)
+	s.Require().Equal(math.LegacyNewDec(6), state.SampleInterval)
+	// A return of one half squared over six seconds, a year of seconds on top.
+	expected, err := math.LegacyMustNewDecFromStr("0.25").MulInt64(365 * 86_400).QuoInt64(6).ApproxSqrt()
+	s.Require().NoError(err)
+	s.Require().Equal(expected, s.annualisedVolatility())
+}
+
+// TestExposureGapCountsTheTimeItSpanned pins the halt case: a return carried across a long gap is
+// weighed by the seconds it spanned rather than as one block's move, so a move in step with the
+// market's per-second variance leaves the reading where it was.
+func (s *KeeperTestSuite) TestExposureGapCountsTheTimeItSpanned() {
+	s.setExposureParams(func(p *types.Params) {
+		p.VolatilityDecay = math.LegacyMustNewDecFromStr("0.5")
+	})
+	s.atTime(1_000)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
+	s.settleEmpty()
+	// One percent over six seconds.
+	s.atTime(1_006)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1.01")})
+	s.settleEmpty()
+	before := s.annualisedVolatility()
+	s.Require().True(before.IsPositive())
+
+	// Ten percent over six hundred seconds: a hundred times the squared return over a hundred times
+	// the time, the same variance per second.
+	s.atTime(1_606)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1.111")})
+	s.settleEmpty()
+	s.Require().Equal(before, s.annualisedVolatility())
 }
 
 // TestExposureClampsReturnSample pins the bound that keeps the variance series

@@ -14,6 +14,7 @@ func DefaultExposureState() ExposureState {
 	return ExposureState{
 		LastReferencePrice: math.LegacyZeroDec(),
 		VolatilityVariance: math.LegacyZeroDec(),
+		SampleInterval:     math.LegacyZeroDec(),
 		FlowPressure:       math.LegacyZeroDec(),
 		LiabilityRatio:     math.LegacyZeroDec(),
 		FlowRatio:          math.LegacyZeroDec(),
@@ -32,6 +33,7 @@ func (s ExposureState) Validate() error {
 		value math.LegacyDec
 	}{
 		{"LastReferencePrice", s.LastReferencePrice},
+		{"SampleInterval", s.SampleInterval},
 		{"FlowPressure", s.FlowPressure},
 		{"LiabilityRatio", s.LiabilityRatio},
 		{"FlowRatio", s.FlowRatio},
@@ -60,6 +62,16 @@ func (s ExposureState) Validate() error {
 		return fmt.Errorf(
 			"treasury exposure state VolatilityVariance must be between zero and one: %s",
 			s.VolatilityVariance,
+		)
+	}
+	// Each sample pairs a squared return of at most one with an interval of at least a second, so
+	// the folded variance never exceeds the folded interval; above it, annualised volatility would
+	// pass the year-of-seconds bound.
+	if s.VolatilityVariance.GT(s.SampleInterval) {
+		return fmt.Errorf(
+			"treasury exposure state VolatilityVariance %s must not exceed SampleInterval %s",
+			s.VolatilityVariance,
+			s.SampleInterval,
 		)
 	}
 

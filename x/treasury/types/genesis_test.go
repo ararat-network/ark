@@ -24,11 +24,11 @@ func TestDefaultGenesisState(t *testing.T) {
 }
 
 // TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR pins the seed to
-// its derivation, so moving either the stated dollar price or the XDR cross
-// is a deliberate edit here too.
+// the bootstrap price, one NOAH a XDR, so moving it is a deliberate edit
+// here too (D128).
 func TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR(t *testing.T) {
-	require.Equal(t, "1", chain.BootstrapNoahPerUSD)
-	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), types.DefaultNoahConversionFactor)
+	require.Equal(t, "1", chain.BootstrapNoahPerXDR)
+	require.Equal(t, math.LegacyOneDec(), types.DefaultNoahConversionFactor)
 }
 
 func TestNewGenesisStateCopiesSlices(t *testing.T) {

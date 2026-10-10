@@ -37,15 +37,19 @@ func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMessageInput() {
 
 func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
-	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
+	recipientA := authtypes.NewModuleAddress("tax-recipient-a").String()
+	recipientB := authtypes.NewModuleAddress("tax-recipient-b").String()
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 
 	msgs := []sdk.Msg{
-		&banktypes.MsgMultiSend{Inputs: []banktypes.Input{
-			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
-			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
-		}},
+		&banktypes.MsgMultiSend{
+			Inputs: []banktypes.Input{{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300))}},
+			Outputs: []banktypes.Output{
+				{Address: recipientA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))},
+				{Address: recipientB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+			},
+		},
 		// Self-returning conversions are exempt because Market already charges the
 		// spread; the calculator names only taxed surfaces, so they take the default.
 		&markettypes.MsgSell{Trader: sourceA, OfferCoin: sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)},
@@ -246,26 +250,24 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsMalformedVestingMessages() {
 	}
 }
 
-func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendInput() {
-	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
-	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
+// One input capped once would tax this batch 50; per output it pays what two
+// sends would.
+func (s *KeeperTestSuite) TestComputeTaxAppliesCapPerMultiSendOutput() {
+	source := authtypes.NewModuleAddress("tax-source").String()
 	recipientA := authtypes.NewModuleAddress("tax-recipient-a").String()
 	recipientB := authtypes.NewModuleAddress("tax-recipient-b").String()
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(50))
 
 	tax, _, err := s.keeper.ComputeTax(s.ctx, []sdk.Msg{&banktypes.MsgMultiSend{
-		Inputs: []banktypes.Input{
-			{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
-			{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 700))},
-		},
+		Inputs: []banktypes.Input{{Address: source, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_400))}},
 		Outputs: []banktypes.Output{
 			{Address: recipientA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300))},
 			{Address: recipientB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_100))},
 		},
 	}})
 	s.Require().NoError(err)
-	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)), tax)
+	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 80)), tax)
 }
 
 // TestComputeTaxTaxesDepartedDenomWithKeptCap pins the tax base to the cap set
@@ -393,7 +395,7 @@ func (s *KeeperTestSuite) TestComputeTaxRejectsTypedNilMessages() {
 
 func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 	sourceA := authtypes.NewModuleAddress("tax-source-a").String()
-	sourceB := authtypes.NewModuleAddress("tax-source-b").String()
+	recipient := authtypes.NewModuleAddress("tax-recipient").String()
 	s.setTransferTaxRate(math.LegacyMustNewDecFromStr("0.1"))
 	s.setDerivedTaxCap(chain.USDBaseDenom, math.NewInt(1_000))
 	s.setDerivedTaxCap(chain.KRWBaseDenom, math.NewInt(1_000))
@@ -429,10 +431,16 @@ func (s *KeeperTestSuite) TestComputeTaxRecursesThroughAuthzAndFiltersDenoms() {
 						sdk.NewInt64Coin("aatom", 900),
 						sdk.NewInt64Coin(chain.USDBaseDenom, 100),
 					)}),
-					pack(&banktypes.MsgMultiSend{Inputs: []banktypes.Input{
-						{Address: sourceA, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
-						{Address: sourceB, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 300))},
-					}}),
+					pack(&banktypes.MsgMultiSend{
+						Inputs: []banktypes.Input{{Address: sourceA, Coins: sdk.NewCoins(
+							sdk.NewInt64Coin(chain.USDBaseDenom, 200),
+							sdk.NewInt64Coin(chain.KRWBaseDenom, 300),
+						)}},
+						Outputs: []banktypes.Output{
+							{Address: recipient, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 200))},
+							{Address: recipient, Coins: sdk.NewCoins(sdk.NewInt64Coin(chain.KRWBaseDenom, 300))},
+						},
+					}),
 				}}
 				return []sdk.Msg{&authz.MsgExec{Msgs: []*codectypes.Any{
 					pack(inner),

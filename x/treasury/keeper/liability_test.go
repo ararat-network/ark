@@ -306,11 +306,11 @@ func (s *KeeperTestSuite) TestFundStatusPartitionsLiabilityByLifecycleStatus() {
 				s.setAssets(chain.USDBaseDenom)
 				s.seedAsset(chain.KRWBaseDenom, assettypes.AssetStatus_ASSET_STATUS_SUSPENDED)
 				s.plans[chain.KRWBaseDenom] = assettypes.SettlementPlan{
-					Denom:                 chain.KRWBaseDenom,
-					RedemptionRate:        math.LegacyNewDec(2),
-					OpenedHeight:          1,
-					ActivationHeight:      1_000,
-					EarliestClosingHeight: 1100,
+					Denom:               chain.KRWBaseDenom,
+					RedemptionRate:      math.LegacyNewDec(2),
+					OpenedHeight:        1,
+					ActivationTime:      1_000,
+					EarliestClosingTime: 1100,
 				}
 			},
 			supplies: map[string]int64{chain.KRWBaseDenom: 50, chain.USDBaseDenom: 100},

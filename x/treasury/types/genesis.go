@@ -37,14 +37,10 @@ func NewGenesisState(
 	}
 }
 
-// defaultUSDPerXDR is the upward-rounded bootstrap dollar/XDR cross used only until live reference
-// pricing replaces the seed.
-var defaultUSDPerXDR = math.LegacyMustNewDecFromStr("1.371")
-
-// DefaultNoahConversionFactor seeds NOAH-per-reference gas pricing from BootstrapNoahPerUSD and the
-// bootstrap XDR cross, rounded upward. Launch genesis may set the opening price; the first usable
-// reference observation refreshes it.
-var DefaultNoahConversionFactor = defaultUSDPerXDR.MulRoundUp(math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerUSD))
+// DefaultNoahConversionFactor seeds NOAH-per-reference gas pricing at the bootstrap price, one NOAH
+// a XDR (D128). Launch genesis may set the opening price; the first usable reference observation
+// refreshes it.
+var DefaultNoahConversionFactor = math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerXDR)
 
 // DefaultGenesisState returns the safe, unconfigured Treasury genesis state:
 // default policy, the NOAH cross seeded, member factors left to derivation.

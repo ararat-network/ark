@@ -47,6 +47,8 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	genesis.ExposureState = types.ExposureState{
 		LastReferencePrice: math.LegacyNewDec(3),
 		VolatilityVariance: math.LegacyMustNewDecFromStr("0.25"),
+		SampleInterval:     math.LegacyNewDec(6),
+		LastSampleTime:     42,
 		FlowPressure:       math.LegacyNewDec(11),
 		LiabilityRatio:     math.LegacyMustNewDecFromStr("0.4"),
 		FlowRatio:          math.LegacyMustNewDecFromStr("0.05"),
@@ -268,10 +270,10 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
 	genesis := types.DefaultGenesisState()
 	genesis.EconomicMandate = types.EconomicMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        s.authority,
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      s.authority,
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		},
 		MinimumPolicy: minimum,
 		MaximumPolicy: maximum,

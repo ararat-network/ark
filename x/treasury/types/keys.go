@@ -17,9 +17,9 @@ var (
 	RewardFundingKey          = collections.NewPrefix(2)
 	EconomicMandateKey        = collections.NewPrefix(3)
 	EconomicPolicyKey         = collections.NewPrefix(4)
-	ExposureStateKey          = collections.NewPrefix(6)
-	ExposureRefreshPendingKey = collections.NewPrefix(7)
-	BaseGasPriceKey           = collections.NewPrefix(8)
+	ExposureStateKey          = collections.NewPrefix(5)
+	ExposureRefreshPendingKey = collections.NewPrefix(6)
+	BaseGasPriceKey           = collections.NewPrefix(7)
 )
 
 // FundAccountNames returns the custody accounts Treasury itself operates.

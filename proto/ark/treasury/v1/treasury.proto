@@ -135,8 +135,9 @@ message ExposureState {
     (amino.dont_omitempty) = true
   ];
   // volatility_variance is the EWMA of squared per-block returns. Each sample
-  // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and
-  // so bounds annualised volatility by the square root of a year in blocks.
+  // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and,
+  // against sample_interval, bounds annualised volatility by the square root of
+  // a year in seconds.
   string volatility_variance = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -178,6 +179,18 @@ message ExposureState {
   // last_refresh_height identifies the block that produced liability_ratio, flow_ratio, and
   // multiplier. Zero means no refresh. Continuation exports preserve this absolute height.
   uint64 last_refresh_height = 7 [(amino.dont_omitempty) = true];
+  // last_sample_time is the block time, in Unix seconds, of last_reference_price.
+  uint64 last_sample_time = 8 [(amino.dont_omitempty) = true];
+  // sample_interval is the EWMA of seconds between samples, folded with
+  // volatility_variance's retention, so their ratio is variance per second over
+  // the same window. Each interval counts at least one second, which keeps
+  // volatility_variance at or below it.
+  string sample_interval = 9 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EconomicPolicy is the complete set of reversible Treasury levers delegated
@@ -249,7 +262,7 @@ message EconomicPolicy {
 // increases on replacement so previously prepared committee transactions
 // cannot become valid again.
 message EconomicMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,

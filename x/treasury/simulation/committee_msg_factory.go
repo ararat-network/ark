@@ -6,8 +6,8 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/treasury/keeper"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
@@ -58,7 +58,7 @@ func policyWithin(r *simsx.XRand, mandate types.EconomicMandate) types.EconomicP
 // MsgCommitteeUpdatePolicyFactory moves economic policy within the corridor the
 // mandate grants. Unlike a governance proposal, this is delivered as a
 // transaction the appointed committee signs, so the run must hold that key and
-// the mandate must be active at this height.
+// the mandate must be active at this block time.
 func MsgCommitteeUpdatePolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeUpdatePolicy] {
 	return func(
 		ctx context.Context,
@@ -71,8 +71,8 @@ func MsgCommitteeUpdatePolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*ty
 
 			return nil, nil
 		}
-		if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-			reporter.Skip("economic mandate is not active at this height")
+		if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+			reporter.Skip("economic mandate is not active at this block time")
 
 			return nil, nil
 		}

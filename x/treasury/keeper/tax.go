@@ -163,8 +163,10 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 		if typed == nil {
 			return fmt.Errorf("nil bank multi-send message")
 		}
-		for _, input := range typed.Inputs {
-			if err := addCoins(input.Coins); err != nil {
+		// Each recipient is its own principal, as separate sends would be, so a
+		// batch of payouts cannot share one cap.
+		for _, output := range typed.Outputs {
+			if err := addCoins(output.Coins); err != nil {
 				return err
 			}
 		}

@@ -5,6 +5,7 @@ import (
 	"maps"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
@@ -120,7 +121,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		key,
 		transientKey,
 	)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
@@ -395,7 +397,7 @@ func (s *KeeperTestSuite) setReserveRecognised(amount int64) {
 }
 
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
 }
 
 // setDerivedTaxCap binds testutil.SetDerivedTaxCap to the suite's keeper and

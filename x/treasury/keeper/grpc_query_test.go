@@ -576,9 +576,11 @@ func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
 // or registry reads.
 func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	state := treasurytypes.DefaultExposureState()
-	// A variance of one annualises to the square root of a year in blocks,
-	// which is the bound the sample clamp buys.
+	// A variance of one over an interval of one second annualises to the square root of a year in
+	// seconds, which is the bound the sample clamp and the interval floor buy.
 	state.VolatilityVariance = math.LegacyOneDec()
+	state.SampleInterval = math.LegacyOneDec()
+	state.LastSampleTime = 5
 	state.FlowPressure = math.LegacyNewDec(12)
 	state.LiabilityRatio = math.LegacyMustNewDecFromStr("0.4")
 	state.FlowRatio = math.LegacyMustNewDecFromStr("0.05")
@@ -595,7 +597,7 @@ func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	s.Require().Equal(state, response.ExposureState)
 	s.Require().True(response.RefreshPending)
 
-	expected, err := math.LegacyNewDec(int64(chain.BlocksPerYear)).ApproxSqrt()
+	expected, err := math.LegacyNewDec(365 * 86_400).ApproxSqrt()
 	s.Require().NoError(err)
 	s.Require().Equal(expected, response.AnnualisedVolatility)
 }

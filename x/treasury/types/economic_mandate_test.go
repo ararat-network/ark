@@ -30,7 +30,7 @@ func TestEconomicMandateValidate(t *testing.T) {
 		},
 		{
 			name: "empty interval", mandate: validEconomicMandate,
-			mutate: func(m *types.EconomicMandate) { m.ExpiryHeight = m.ActivationHeight }, expectErr: "must precede",
+			mutate: func(m *types.EconomicMandate) { m.ExpiryTime = m.ActivationTime }, expectErr: "must precede",
 		},
 		{
 			name: "inverted bound", mandate: validEconomicMandate,
@@ -40,7 +40,7 @@ func TestEconomicMandateValidate(t *testing.T) {
 		},
 		{
 			name: "disabled with heights", mandate: types.DefaultEconomicMandate,
-			mutate: func(m *types.EconomicMandate) { m.ExpiryHeight = 1 }, expectErr: "disabled",
+			mutate: func(m *types.EconomicMandate) { m.ExpiryTime = 1 }, expectErr: "disabled",
 		},
 		{
 			name: "disabled with policy power", mandate: types.DefaultEconomicMandate,
@@ -109,10 +109,10 @@ func validEconomicMandate() types.EconomicMandate {
 	}
 	return types.EconomicMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        testAddress(9),
-			ActivationHeight: 10,
-			ExpiryHeight:     20,
+			Term:           1,
+			Committee:      testAddress(9),
+			ActivationTime: 10,
+			ExpiryTime:     20,
 		},
 		MinimumPolicy: minimum,
 		MaximumPolicy: maximum,

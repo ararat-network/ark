@@ -3,6 +3,7 @@ package simulation_test
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -57,7 +58,7 @@ func newCommitteeFixture(t *testing.T, seed int64) committeeFixture {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, transientKey)
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
