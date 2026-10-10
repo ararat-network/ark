@@ -33,6 +33,8 @@ func TestProposalStatus(t *testing.T) {
 		{name: "codec", err: fmt.Errorf("%w: %w", abcitypes.ErrCodec, errors.New("boom")), want: abcimetrics.StatusCodec},
 		{name: "missing commit info", err: abcitypes.ErrMissingCommitInfo, want: abcimetrics.StatusMissingCommitInfo},
 		{name: "unknown error is failure", err: errors.New("boom"), want: abcimetrics.StatusFailure},
+		{name: "commit-only fallback", err: errCommitOnly, want: abcimetrics.StatusCommitOnly},
+		{name: "commit-only outranks its cause", err: fmt.Errorf("%w: %w", errCommitOnly, errors.New("boom")), want: abcimetrics.StatusCommitOnly},
 		// The outer error names the stage that failed, so it wins over the
 		// sentinel it wraps.
 		{name: "wrapped handler outranks codec", err: fmt.Errorf("%w: %w", abcitypes.ErrWrappedHandler, abcitypes.ErrCodec), want: abcimetrics.StatusWrappedHandler},
@@ -94,7 +96,7 @@ func TestProposalOutcomeMetrics(t *testing.T) {
 						panic(cause)
 					}
 					return &cmtabci.ResponseProcessProposal{Status: tc.verdict}, tc.err
-				}, nil)
+				}, nil, nil)
 			invoke := func() {
 				ctx := abcitestutil.NewSDKContext(1, 2)
 				if tc.method == "prepare_proposal" {

@@ -23,6 +23,11 @@ type OracleKeeper interface {
 	AdvanceFeeds(ctx context.Context) error
 }
 
+// OracleParamsReader exposes the oracle parameters proposal preparation reads.
+type OracleParamsReader interface {
+	GetParams(ctx context.Context) (oracletypes.Params, error)
+}
+
 // PriceFeedClient fetches prices for the vote-extension handler.
 type PriceFeedClient interface {
 	Prices(ctx context.Context, in *api.PricesRequest, opts ...grpc.CallOption) (*api.PricesResponse, error)

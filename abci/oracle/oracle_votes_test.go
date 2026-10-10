@@ -323,7 +323,7 @@ func TestGetOracleVotes(t *testing.T) {
 		commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
 			Votes: []cmtabci.ExtendedVoteInfo{
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator1"), 3, validBz),
-				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 2, []byte("not-zlib")),
+				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator2"), 2, []byte("undecodable")),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator3"), 1, invalidBz),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator4"), 1, nil),
 				abcitestutil.NewCommitExtendedVoteInfo(sdk.ConsAddress("validator5"), 1, unversionedBz),

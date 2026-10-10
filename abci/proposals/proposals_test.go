@@ -6,6 +6,7 @@ import (
 	"errors"
 	"slices"
 	"testing"
+	"time"
 
 	protoio "github.com/cosmos/gogoproto/io"
 	"github.com/stretchr/testify/require"
@@ -24,6 +25,7 @@ import (
 	"github.com/ararat-network/ark/abci/proposals"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	abcitypes "github.com/ararat-network/ark/abci/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 const (
@@ -38,6 +40,18 @@ type proposalValidationFixture struct {
 }
 
 type testValidatorStore map[string]cmtprotocrypto.PublicKey
+
+// testOracleParams serves a fixed oracle parameter set, or err.
+type testOracleParams struct {
+	params oracletypes.Params
+	err    error
+}
+
+func (p testOracleParams) GetParams(context.Context) (oracletypes.Params, error) {
+	return p.params, p.err
+}
+
+var defaultOracleParams = testOracleParams{params: oracletypes.DefaultParams()}
 
 func (s testValidatorStore) GetPubKeyByConsAddr(_ context.Context, consAddr sdk.ConsAddress) (cmtprotocrypto.PublicKey, error) {
 	pubKey, ok := s[string(consAddr)]
@@ -60,11 +74,14 @@ func TestPrepareProposalHandler(t *testing.T) {
 	maxTxBytes := int64(len(commitBz) + 100)
 	largeAppTx := make([]byte, maxTxBytes-int64(len(commitBz)))
 	prepareErr := errors.New("prepare proposal failed")
+	now := time.Now()
+	limit := time.Duration(oracletypes.DefaultParams().MaxExchangeRateAge) * time.Second
 
 	testCases := []struct {
 		name                 string
 		ctx                  sdk.Context
 		req                  *cmtabci.RequestPrepareProposal
+		oracleParams         abcitypes.OracleParamsReader
 		prepare              sdk.PrepareProposalHandler
 		expectErr            bool
 		expectNilResponse    bool
@@ -143,6 +160,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
+				Time:            now,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1, appTx2},
 				MaxTxBytes:      maxTxBytes,
@@ -160,6 +178,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
+				Time:            now,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      maxTxBytes,
@@ -177,6 +196,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
+				Time:            now,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{largeAppTx},
 				MaxTxBytes:      maxTxBytes,
@@ -194,6 +214,7 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
+				Time:            now,
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      commitBzSize - 1,
@@ -204,6 +225,75 @@ func TestPrepareProposalHandler(t *testing.T) {
 			},
 			expectErr:   true,
 			expectedTxs: [][]byte{},
+		},
+		{
+			name: "prices past the freshness limit yield a commit-only proposal",
+			ctx:  fixture.ctx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now.Add(-limit - 5*time.Second),
+				LocalLastCommit: commitInfo,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				require.Fail(t, "wrapped prepare handler should not be called")
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectedTxs: [][]byte{commitBz},
+		},
+		{
+			name: "prices inside the freshness limit select transactions",
+			ctx:  fixture.ctx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now.Add(-limit + 5*time.Second),
+				LocalLastCommit: commitInfo,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectedTxs:          [][]byte{commitBz, appTx1},
+			expectedPrepareTxs:   [][]byte{appTx1},
+			expectedMaxTxBytes:   maxTxBytes - commitBzSize,
+			expectedWrappedCalls: 1,
+		},
+		{
+			name: "a clock behind the proposal reads fresh prices",
+			ctx:  fixture.ctx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now.Add(time.Minute),
+				LocalLastCommit: commitInfo,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectedTxs:          [][]byte{commitBz, appTx1},
+			expectedPrepareTxs:   [][]byte{appTx1},
+			expectedMaxTxBytes:   maxTxBytes - commitBzSize,
+			expectedWrappedCalls: 1,
+		},
+		{
+			name: "unreadable oracle params yield a commit-only proposal",
+			ctx:  fixture.ctx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now,
+				LocalLastCommit: commitInfo,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			oracleParams: testOracleParams{err: errors.New("params unavailable")},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				require.Fail(t, "wrapped prepare handler should not be called")
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectedTxs: [][]byte{commitBz},
 		},
 	}
 
@@ -227,10 +317,15 @@ func TestPrepareProposalHandler(t *testing.T) {
 				return tc.prepare(ctx, req)
 			})
 
+			oracleParams := tc.oracleParams
+			if oracleParams == nil {
+				oracleParams = defaultOracleParams
+			}
 			handler := proposals.NewHandler(
 				prepare,
 				acceptProcessProposal,
 				fixture.validatorStore,
+				oracleParams,
 			)
 
 			resp, err := handler.PrepareProposalHandler()(tc.ctx, tc.req)
@@ -408,6 +503,7 @@ func TestProcessProposalHandler(t *testing.T) {
 				passThroughPrepareProposal,
 				process,
 				fixture.validatorStore,
+				defaultOracleParams,
 			)
 
 			resp, err := handler.ProcessProposalHandler()(tc.ctx, tc.req)

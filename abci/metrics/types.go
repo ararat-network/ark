@@ -26,6 +26,7 @@ const (
 	StatusInvalidPrices            Status = "InvalidPricesError"
 	StatusVoteExtensionValidation  Status = "VoteExtensionValidationError"
 	StatusOracleKeeper             Status = "OracleKeeperError"
+	StatusCommitOnly               Status = "CommitOnly"
 )
 
 func (s Status) String() string {

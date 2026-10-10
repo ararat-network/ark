@@ -1,7 +1,7 @@
 # ABCI oracle integration
 
 This tree integrates oracle vote extensions with the SDK lifecycle. [app/oracle.go](../app/oracle.go) installs these
-hooks around the default transaction proposal handlers. The protocol is fixed; [oracle/README.md](oracle/README.md) owns
+hooks around the lane pool's proposal selector and the SDK's default process handler. The protocol is fixed; [oracle/README.md](oracle/README.md) owns
 aggregation and participation rules, and [x/oracle](../x/oracle/README.md) owns feed epochs and persistent accounting.
 
 ## Package map
@@ -40,6 +40,16 @@ quorum before delegating ordinary transaction validation. It does not rewrite th
 quality of individual oracle reports. If the wrapped transaction selector fails while vote extensions are enabled,
 preparation returns a commit-only proposal so authenticated oracle reports remain available. An extended commit that
 exceeds the proposal byte budget is an error.
+
+A block applies the prices attached to the previous commit and carries that commit's median time, so after a stall or a
+halt both predate the outage while its transactions are chosen after it. `PrepareProposal` proposes commit-only when its
+own clock finds the proposal's time older than the Oracle's `max_exchange_rate_age`, or when it cannot read that
+parameter: the block applies the old prices
+with nothing trading on them, and waiting transactions trade in the next block on prices observed after the outage.
+Ordinary blocks run about one block, roughly six seconds, behind the clock, and the parameter's 30-second floor keeps
+the rule off them.
+The rule binds honest proposers only: `ProcessProposal` does not re-check it, which would make acceptance depend on
+validator clocks (D137).
 
 [Mempool policy](../app/mempool/README.md#admission-service-and-sdk-behaviour)
 explains ordinary transaction service and proposal-local lane budgets after this envelope is reserved.

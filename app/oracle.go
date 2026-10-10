@@ -33,6 +33,7 @@ func (app *ArkApp) setupOracleABCI(logger log.Logger, appOpts servertypes.AppOpt
 		app.lanePool.PrepareProposalHandler(app),
 		defaultProposalHandler.ProcessProposalHandler(),
 		app.StakingKeeper,
+		app.OracleKeeper,
 	)
 	voteExtensionHandler := voteextension.NewHandler(
 		logger,

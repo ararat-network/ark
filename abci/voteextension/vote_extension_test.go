@@ -321,7 +321,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 			name: "decode error rejects vote extension",
 			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
-				VoteExtension: []byte("not-zlib"),
+				VoteExtension: []byte("undecodable"),
 			},
 			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
 			expectResp:     true,
