@@ -62,8 +62,7 @@ type Params struct {
 	MultiplierMaxStep cosmossdk_io_math.LegacyDec `protobuf:"bytes,7,opt,name=multiplier_max_step,json=multiplierMaxStep,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"multiplier_max_step"`
 	// exposure_refresh_period_blocks is how often the multiplier is recomputed
 	// from the sampled series. Sampling itself is per block; only the
-	// recomputation waits. It keeps the exposure qualifier the four fields above
-	// drop so the cadence reads as the multiplier's rather than the module's.
+	// recomputation waits.
 	ExposureRefreshPeriodBlocks uint64 `protobuf:"varint,8,opt,name=exposure_refresh_period_blocks,json=exposureRefreshPeriodBlocks,proto3" json:"exposure_refresh_period_blocks,omitempty"`
 	// base_fee_target_utilisation is the block-gas utilisation the controller
 	// holds price at, in (0, 1]. Above it the price rises, below it decays.
@@ -142,8 +141,9 @@ func (m *Params) GetExposureRefreshPeriodBlocks() uint64 {
 type ExposureState struct {
 	// last_reference_price is the previous block's protocol reference rate — NOAH
 	// per one reference unit — held to form the next return. It is a price, so a
-	// reference move re-expresses it by the reciprocal of a quantity's factor. Zero means no sample has been taken yet, so the
-	// next one records a price and produces no return.
+	// reference move re-expresses it by the reciprocal of a quantity's factor.
+	// Zero means no sample has been taken yet, so the next one records a price
+	// and produces no return.
 	LastReferencePrice cosmossdk_io_math.LegacyDec `protobuf:"bytes,1,opt,name=last_reference_price,json=lastReferencePrice,proto3,customtype=cosmossdk.io/math.LegacyDec" json:"last_reference_price"`
 	// volatility_variance is the EWMA of squared per-block returns. Each sample
 	// is clamped to [-1, 1], which bounds this series to [0, 1] by induction and,

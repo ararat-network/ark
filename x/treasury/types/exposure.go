@@ -22,9 +22,10 @@ func DefaultExposureState() ExposureState {
 	}
 }
 
-// Validate performs context-free validation of the stored risk state. The cap
-// is not checked here: it lives in Params, and a state imported beside a
-// lowered cap is clamped by the next update rather than refused at genesis.
+// Validate performs context-free validation of the stored risk state. The live cap is not checked
+// here: it lives in Params, and a state imported beside a lowered cap is clamped by the next
+// update rather than refused at genesis. The domain caps are: both figures feed checked arithmetic
+// in block hooks before that update runs, and a checked error there fails the block.
 func (s ExposureState) Validate() error {
 	// Price, NOAH flow, and the two ratios require non-negative values without field-specific
 	// ceilings. Variance has a [0, 1] range and is validated separately.
@@ -81,10 +82,18 @@ func (s ExposureState) Validate() error {
 	if !s.Multiplier.IsInValidRange() {
 		return errors.New("treasury exposure state Multiplier is not representable")
 	}
-	if s.Multiplier.LT(math.LegacyOneDec()) {
+	if s.Multiplier.LT(math.LegacyOneDec()) || s.Multiplier.GT(MaxExposureMultiplierCap) {
 		return fmt.Errorf(
-			"treasury exposure state Multiplier must be at least one: %s",
+			"treasury exposure state Multiplier must be between one and %s: %s",
+			MaxExposureMultiplierCap,
 			s.Multiplier,
+		)
+	}
+	if s.FlowPressure.GT(MaxExposureFlowPressure) {
+		return fmt.Errorf(
+			"treasury exposure state FlowPressure must be at most %s: %s",
+			MaxExposureFlowPressure,
+			s.FlowPressure,
 		)
 	}
 

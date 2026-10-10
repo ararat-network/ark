@@ -12,6 +12,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/core/store"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -214,6 +215,18 @@ func (s *KeeperTestSuite) SetupTest() {
 			}
 			slices.Sort(denoms)
 			return denoms, nil
+		}).
+		AnyTimes()
+	// The pricing-authority verdict reads the fixture's status as the registry would, and
+	// answers an unknown denomination with the registry's own not-found error.
+	s.assetKeeper.EXPECT().
+		IsOraclePriced(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			asset, member := s.assets[denom]
+			if !member {
+				return false, errorsmod.Wrap(assettypes.ErrAssetNotFound, denom)
+			}
+			return asset.IsOraclePriced(), nil
 		}).
 		AnyTimes()
 	// Membership is presence in the fixture registry regardless of status,

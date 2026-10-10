@@ -418,6 +418,21 @@ func (mr *MockAssetKeeperMockRecorder) HasAsset(ctx, denom any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasAsset", reflect.TypeOf((*MockAssetKeeper)(nil).HasAsset), ctx, denom)
 }
 
+// IsOraclePriced mocks base method.
+func (m *MockAssetKeeper) IsOraclePriced(ctx context.Context, denom string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsOraclePriced", ctx, denom)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsOraclePriced indicates an expected call of IsOraclePriced.
+func (mr *MockAssetKeeperMockRecorder) IsOraclePriced(ctx, denom any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOraclePriced", reflect.TypeOf((*MockAssetKeeper)(nil).IsOraclePriced), ctx, denom)
+}
+
 // OraclePricedDenoms mocks base method.
 func (m *MockAssetKeeper) OraclePricedDenoms(ctx context.Context) ([]string, error) {
 	m.ctrl.T.Helper()

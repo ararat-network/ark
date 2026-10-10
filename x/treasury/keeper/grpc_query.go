@@ -173,8 +173,8 @@ func (q queryServer) GasPrice(ctx context.Context, req *types.QueryGasPriceReque
 }
 
 // GasPrices returns reference identity separately and other accepted denominations, including NOAH,
-// in key order. Unrepresentable prices are omitted; presentation order does not set fee-payment
-// priority.
+// in key order. Unrepresentable prices and members the Oracle no longer prices are omitted;
+// presentation order does not set fee-payment priority.
 func (q queryServer) GasPrices(ctx context.Context, req *types.QueryGasPricesRequest) (*types.QueryGasPricesResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")

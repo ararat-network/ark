@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -198,4 +199,39 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 
 	_, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.KRWBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
+}
+
+// TestGetRequiredGasFeeRefusesDepartedMembers pins that a stored factor alone does not sell block
+// space: a member the Oracle no longer prices keeps its cross for the tax cap and loses fee
+// acceptance, while a halted issuer, still priced, keeps both.
+func (s *KeeperTestSuite) TestGetRequiredGasFeeRefusesDepartedMembers() {
+	params, price := s.gasPricing()
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:         chain.USDBaseDenom,
+		Factor:        math.LegacyNewDec(2),
+		DerivedHeight: 5,
+	}))
+
+	tests := []struct {
+		name     string
+		status   assettypes.AssetStatus
+		accepted bool
+	}{
+		{name: "active", status: assettypes.AssetStatus_ASSET_STATUS_ACTIVE, accepted: true},
+		{name: "issuance halted", status: assettypes.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED, accepted: true},
+		{name: "suspended", status: assettypes.AssetStatus_ASSET_STATUS_SUSPENDED, accepted: false},
+		{name: "written off", status: assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF, accepted: false},
+		{name: "retired", status: assettypes.AssetStatus_ASSET_STATUS_RETIRED, accepted: false},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.seedAsset(chain.USDBaseDenom, tc.status)
+			_, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.USDBaseDenom)
+			if tc.accepted {
+				s.Require().NoError(err)
+			} else {
+				s.Require().ErrorIs(err, collections.ErrNotFound)
+			}
+		})
+	}
 }

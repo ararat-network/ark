@@ -94,9 +94,6 @@ message MsgUpdatePolicyResponse {}
 // every field must fall inside the mandate's minimum and maximum policies.
 message MsgCommitteeUpdatePolicy {
   option (cosmos.msg.v1.signer) = "committee";
-  // The protobuf-derived Amino name exceeds the SDK type-name limit, so this
-  // message uses the compact identifier below. Its protobuf message name, RPC
-  // name, signer, and semantics are unchanged.
   option (amino.name) = "ark/treasury/MsgCommitteeUpdatePolicy";
 
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];

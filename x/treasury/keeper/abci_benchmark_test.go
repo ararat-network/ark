@@ -87,6 +87,10 @@ func (b benchAssetKeeper) OraclePricedDenoms(context.Context) ([]string, error) 
 	return slices.Clone(b.denoms), nil
 }
 
+func (b benchAssetKeeper) IsOraclePriced(_ context.Context, denom string) (bool, error) {
+	return slices.Contains(b.denoms, denom), nil
+}
+
 func (b benchAssetKeeper) HasAsset(_ context.Context, denom string) (bool, error) {
 	return slices.Contains(b.denoms, denom), nil
 }

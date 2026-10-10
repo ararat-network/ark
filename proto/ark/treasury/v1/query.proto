@@ -133,7 +133,7 @@ message QueryEconomicPolicyResponse {
 message QueryEconomicMandateRequest {}
 
 // QueryEconomicMandateResponse returns the stored mandate and whether it
-// is usable at the current height.
+// is usable at the current block time.
 message QueryEconomicMandateResponse {
   EconomicMandate mandate = 1 [
     (gogoproto.nullable) = false,
@@ -252,7 +252,7 @@ message QueryFundStatusResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // nominal_liability sums priced, committed, and stale-priced liability before self-held netting.
+  // nominal_liability sums priced, settlement, and stale-priced liability before self-held netting.
   // It remains visible when incomplete; exclusion lists identify the gaps.
   cosmos.base.v1beta1.DecCoin nominal_liability = 4 [
     (gogoproto.nullable) = false,
@@ -341,7 +341,7 @@ message QueryFundStatusResponse {
   ];
   // insurance_balance is the capital x/claims recognises toward its target,
   // which excludes the reservation held against approved pending claims. The
-  // reservation itself is x/claims state, served by Query/ClaimsMandate.
+  // reservation itself is x/claims state, served by ark.claims.v1 Query/Balance.
   cosmos.base.v1beta1.Coin insurance_balance = 17 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -427,9 +427,10 @@ message QueryExposureStatusResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // annualised_volatility is the square root of the stored variance scaled to a
-  // year of blocks: the form the multiplier's volatility weight is denominated
-  // against, and the only figure here the state does not carry directly.
+  // annualised_volatility is the square root of the stored variance per second,
+  // volatility_variance over sample_interval, scaled to a year of seconds: the
+  // form the multiplier's volatility weight is denominated against, and the
+  // only figure here the state does not carry directly.
   string annualised_volatility = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

@@ -13233,7 +13233,7 @@ func (*QueryEconomicMandateRequest) Descriptor() ([]byte, []int) {
 }
 
 // QueryEconomicMandateResponse returns the stored mandate and whether it
-// is usable at the current height.
+// is usable at the current block time.
 type QueryEconomicMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13682,7 +13682,7 @@ type QueryFundStatusResponse struct {
 	// never-priced feeds. It retains outstanding obligations in nominal liability without supporting
 	// fresh quotes or complete fund targets.
 	StalePricedLiability *v1beta1.DecCoin `protobuf:"bytes,3,opt,name=stale_priced_liability,json=stalePricedLiability,proto3" json:"stale_priced_liability,omitempty"`
-	// nominal_liability sums priced, committed, and stale-priced liability before self-held netting.
+	// nominal_liability sums priced, settlement, and stale-priced liability before self-held netting.
 	// It remains visible when incomplete; exclusion lists identify the gaps.
 	NominalLiability *v1beta1.DecCoin `protobuf:"bytes,4,opt,name=nominal_liability,json=nominalLiability,proto3" json:"nominal_liability,omitempty"`
 	// self_held_supply lists Reserve-held members counted in nominal liability. These balances cannot
@@ -13716,7 +13716,7 @@ type QueryFundStatusResponse struct {
 	StrategicReserveNetTarget *v1beta1.Coin         `protobuf:"bytes,16,opt,name=strategic_reserve_net_target,json=strategicReserveNetTarget,proto3" json:"strategic_reserve_net_target,omitempty"`
 	// insurance_balance is the capital x/claims recognises toward its target,
 	// which excludes the reservation held against approved pending claims. The
-	// reservation itself is x/claims state, served by Query/ClaimsMandate.
+	// reservation itself is x/claims state, served by ark.claims.v1 Query/Balance.
 	InsuranceBalance   *v1beta1.Coin `protobuf:"bytes,17,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance,omitempty"`
 	InsuranceTarget    *v1beta1.Coin `protobuf:"bytes,18,opt,name=insurance_target,json=insuranceTarget,proto3" json:"insurance_target,omitempty"`
 	InsuranceNetTarget *v1beta1.Coin `protobuf:"bytes,19,opt,name=insurance_net_target,json=insuranceNetTarget,proto3" json:"insurance_net_target,omitempty"`
@@ -14144,9 +14144,10 @@ type QueryExposureStatusResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	ExposureState *ExposureState `protobuf:"bytes,1,opt,name=exposure_state,json=exposureState,proto3" json:"exposure_state,omitempty"`
-	// annualised_volatility is the square root of the stored variance scaled to a
-	// year of blocks: the form the multiplier's volatility weight is denominated
-	// against, and the only figure here the state does not carry directly.
+	// annualised_volatility is the square root of the stored variance per second,
+	// volatility_variance over sample_interval, scaled to a year of seconds: the
+	// form the multiplier's volatility weight is denominated against, and the
+	// only figure here the state does not carry directly.
 	AnnualisedVolatility string `protobuf:"bytes,2,opt,name=annualised_volatility,json=annualisedVolatility,proto3" json:"annualised_volatility,omitempty"`
 	// refresh_pending reports an elapsed period whose recomputation has not yet
 	// succeeded, so a multiplier that looks stale can be told apart from one that

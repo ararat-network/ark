@@ -141,11 +141,33 @@ func TestExposureStateValidate(t *testing.T) {
 		{
 			name:      "multiplier below one",
 			mutate:    func(s *types.ExposureState) { s.Multiplier = math.LegacyMustNewDecFromStr("0.5") },
-			expectErr: "Multiplier must be at least one",
+			expectErr: "Multiplier must be between one and",
 		},
 		{
 			name:   "multiplier above one",
 			mutate: func(s *types.ExposureState) { s.Multiplier = math.LegacyNewDec(3) },
+		},
+		{
+			name:   "multiplier at the domain cap",
+			mutate: func(s *types.ExposureState) { s.Multiplier = types.MaxExposureMultiplierCap },
+		},
+		{
+			name: "multiplier above the domain cap",
+			mutate: func(s *types.ExposureState) {
+				s.Multiplier = types.MaxExposureMultiplierCap.Add(math.LegacySmallestDec())
+			},
+			expectErr: "Multiplier must be between one and",
+		},
+		{
+			name:   "flow pressure at the domain cap",
+			mutate: func(s *types.ExposureState) { s.FlowPressure = types.MaxExposureFlowPressure },
+		},
+		{
+			name: "flow pressure above the domain cap",
+			mutate: func(s *types.ExposureState) {
+				s.FlowPressure = types.MaxExposureFlowPressure.Add(math.LegacySmallestDec())
+			},
+			expectErr: "FlowPressure must be at most",
 		},
 	}
 

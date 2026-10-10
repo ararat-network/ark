@@ -75,5 +75,6 @@ type AssetKeeper interface {
 	Pricings(ctx context.Context, denoms ...string) (assettypes.AssetPricings, error)
 	PricedAssets(ctx context.Context) ([]string, assettypes.AssetPricings, error)
 	OraclePricedDenoms(ctx context.Context) ([]string, error)
+	IsOraclePriced(ctx context.Context, denom string) (bool, error)
 	HasAsset(ctx context.Context, denom string) (bool, error)
 }

@@ -31,6 +31,11 @@ const AttributeKeyTip = "tip"
 // README.md.
 const SimulatedFeeTransferGas = 38_000
 
+// memberRecordBytes bounds the key and value a member leg's registry read is charged for: a store
+// prefix and a denomination of at most sixteen bytes, then the record's denomination, status, and
+// version, together well under half of this.
+const memberRecordBytes = 64
+
 // useBaseFeeGate gates the consensus base fee.
 var useBaseFeeGate = true
 
@@ -175,11 +180,15 @@ func (d FeeDecorator) settle(
 	}
 
 	// A fee-less estimate gives the loop below no leg to price, so it reads
-	// NOAH's factor in place of the one the eventual fee will name.
+	// NOAH's factor in place of the one the eventual fee will name, and
+	// charges the registry read a member leg makes beside its factor, which
+	// NOAH's does not.
 	if fee.IsZero() && !enforce {
 		if _, _, err := d.treasury.GetRequiredGasFee(ctx, params, price, gas, chain.NoahBaseDenom); err != nil {
 			return settlement{}, errorsmod.Wrap(err, "reading the NOAH gas factor")
 		}
+		kvGas := ctx.KVGasConfig()
+		ctx.GasMeter().ConsumeGas(kvGas.ReadCostFlat+kvGas.ReadCostPerByte*memberRecordBytes, "simulated member leg registry read")
 	}
 
 	// ceil(price × gas) is zero exactly when the price or the gas limit is,
