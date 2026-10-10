@@ -1,8 +1,6 @@
 # Ark Client Fee Construction
 
-- Status: **Current as of the dynamic-fee decorator; D78/D80 settled**
-- Last updated: 2026-09-05
-- Target SDK: cosmos-sdk v0.54.3
+- Target SDK: cosmos-sdk v0.54.4
 - Audience: wallet, exchange, and custody authors building Ark transactions outside `arkd`
 
 This note is what you need to know before reading `proto/ark/treasury/v1/query.proto`. Ark charges a transfer tax
@@ -53,7 +51,7 @@ Both Treasury queries are `module_query_safe`, so contracts can call them too.
 
 `ComputeTax` takes the messages as packed `Any`s and returns the tax as `Coins`, beside `tax_base`: the principal
 it was computed over, summed per denomination — which denominations the transaction already moves, and how much.
-The tax is authoritative: it calls the same `Keeper.ComputeTax` the ante calls, on the same state. Do not reimplement it — Terra Classic's client-side copy of
+The tax is authoritative: it runs the same calculator the ante does (the ante's `ComputeTaxWithParams` shares it), on the same state. Do not reimplement it — Terra Classic's client-side copy of
 this arithmetic drifted from its own ante, and the gap became a standing tax dodge.
 
 `GasPrices` returns every accepted non-reference denomination in `gas_prices` (NOAH among them; order is
@@ -103,12 +101,14 @@ Understanding this is what lets you pad confidently rather than superstitiously.
 
 **Then one leg pays the base fee.** The ante walks the fee's legs **in the order you encoded them**, skipping
 NOAH. For each, `slack = amount − tax(denom)`; if the slack is positive and covers that denomination's
-`required`, that leg pays, and the walk stops. A leg with no conversion factor, or one whose slack falls short, is
-skipped rather than refused — it is simply a tax-only ceiling, charged its tax and nothing more.
+`required`, that leg pays, and the walk stops. A leg with no conversion factor, a member the Oracle no longer
+prices, or one whose slack falls short, is skipped rather than refused — it is simply a tax-only ceiling, charged
+its tax and nothing more.
 
 > **The encoded order names the paying leg.** `sdk.NewCoins` sorts, and most client libraries sort for you, which
 > yields denomination order by default. If you care which leg pays, construct the coin list directly. Unsorted fee
-> coins are valid: the tx's `ValidateBasic` rejects nil and negative amounts, not unsortedness.
+> coins are valid: the tx's `ValidateBasic` rejects nil and negative amounts, and the ante validates a sorted copy,
+> refusing zero legs, repeated denominations, and invalid denoms, but not unsortedness.
 
 **Then NOAH.** If no stable leg covered the base fee and the NOAH leg is at least the NOAH requirement, NOAH pays
 it. Either way the rest of the NOAH leg is the tip.
@@ -123,7 +123,8 @@ buy block space. If you want inclusion priority, tip in NOAH; padding `ausd` wil
 
 The tax base is the conversion-factor set: a denomination is taxed exactly when Treasury holds a factor for it.
 `anoah` is never taxed. A denomination outside the registry, or a member whose first refresh has not landed, is
-untaxed. The cap (`TaxCap` / `TaxCaps`) applies **independently to each message input**, not once per transaction.
+untaxed. A member the Oracle no longer prices keeps its factor, so it stays taxed after it can no longer pay gas.
+The cap (`TaxCap` / `TaxCaps`) applies **independently to each message input**, not once per transaction.
 
 Market's `MsgSell` and `MsgBuy` present none: a conversion returns to its signer and pays spread instead. A payment
 in another denomination is a buy and a `MsgSend` in one transaction, taxed on the send.
@@ -149,8 +150,10 @@ charge. A later Bank transfer by the recipient follows the ordinary rules above.
 - **Fee grants.** A granter bears base fee, tip, and tax together, each drawn on the allowance as it is charged.
   It is strict: a grant that will not cover a charge fails the transaction rather than falling back to the payer.
   Size allowances against the padded declaration, not the expected charge.
-- **Simulation.** Nothing is refused on fee grounds; the tax is set aside and the reads execution makes are made,
-  so the estimate carries their cost.
+- **Simulation.** The tax floor and the base-fee coverage check are skipped, so a fee-less estimate succeeds.
+  Malformed fee coins, an unreadable NOAH factor, and a charge the payer or grant cannot fund still fail it.
+  Whatever the fee covers is deducted and the tax is collected after the messages, so the estimate carries the
+  reads and writes execution makes.
 - **Zero gas.** Refused outside simulation.
 - **Genesis (height 0).** No tax and no gate — gentxs carry no fees. Irrelevant to live clients, listed so that
   genesis tooling is not read as the live rule.

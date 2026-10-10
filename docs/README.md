@@ -53,8 +53,8 @@ maintain that boundary.
 
 ## Trace decisions
 
-- [Economic decisions](design/ECONOMIC_DECISIONS.md): stable D/P identifiers, recorded rationale, amendment trails, and superseded choices.
-  Use economic design for the current contract and genesis for pending launch values.
+- [Economic decisions](design/ECONOMIC_DECISIONS.md): the register of economic rules in force, each with its reason, under
+  stable D/P identifiers. Use economic design for how the rules compose and genesis for launch values.
 
 ## Find subsystem documentation
 
@@ -89,7 +89,7 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | Directory | Audience and content |
 | --- | --- |
 | `papers/` | Everyone. The manifesto and the whitepaper. |
-| `design/` | Protocol contributors and reviewers. The economic contract, its decision record, the threat model. |
+| `design/` | Protocol contributors and reviewers. The economic contract, its decision register, the threat model. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
 | `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |
@@ -107,9 +107,12 @@ construction belongs beside provider code; deploying the node and sidecar togeth
    Existing useful Go package documentation can fulfil the local documentation need without a duplicate README.
 2. Avoid duplicated specifications. Brief summaries are welcome, but formulas, parameter tables, compatibility rules,
    and procedures each have one maintained home. Link to that home where another audience needs the subject.
-3. Keep current behaviour, proposals, and superseded history distinguishable. Deferred code and dependency changes
-   belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md); post-launch governance operations belong in
-   [GOVERNANCE_OPERATIONS.md](governance/GOVERNANCE_OPERATIONS.md). Label unimplemented proposals and historical decisions explicitly.
+3. Describe the current state only. Documents carry no change history: no dates of decisions or edits, no "amended",
+   "replaced", "no longer", or "previously", and no record of what a rule used to be. When behaviour changes, rewrite
+   the text to the new state; git keeps the history. Keep current behaviour and proposals distinguishable: deferred
+   code and dependency changes belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md), post-launch governance
+   operations in [GOVERNANCE_OPERATIONS.md](governance/GOVERNANCE_OPERATIONS.md), and unimplemented proposals are
+   labelled as such.
 4. Make documentation discoverable. The root README links here; this index links topic documents and subsystem entry
    points. Parent READMEs link their useful child READMEs, and local READMEs link the relevant topic documents.
 5. Update the authoritative document with the behaviour it describes. Before removing or moving a document, preserve
@@ -129,9 +132,8 @@ ordered actions, result verification, and failure handling where relevant; a pla
 shipped foundations from proposed work and name its trigger. Do not add empty template sections.
 
 Monitoring owns alert conditions and diagnostics; runbooks own decisions and actions. Preserve alert IDs when moving
-sections. Decision IDs stay stable, including when a decision is amended or superseded. Prefer links to named sections
-or decision anchors over bare section numbers in another document.
+sections. Decision IDs are stable citation keys: a changed decision is rewritten in place under its ID, and a decision
+that no longer holds is deleted and its citations repointed, its number left unused. Prefer links to named sections or
+decision anchors over bare section numbers in another document.
 
-Resolved fixes should describe the current state in reference documents; preserve useful history in the decision
-record. Completed migration catalogues are not maintained navigation. Keep this index and each subject's authoritative
-home up to date instead of creating another directory inventory.
+Keep this index and each subject's authoritative home up to date instead of creating another directory inventory.

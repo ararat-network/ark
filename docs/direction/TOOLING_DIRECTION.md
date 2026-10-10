@@ -90,8 +90,9 @@ such as slippage, tax, oracle freshness, or transaction finality would make the 
 
 The [Disbursement module](../../x/disbursement/README.md) provides the distribution and compensation ledger through typed protobuf
 messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, wallet, and explorer integrations should share those
-schemas and decode typed events. The localnet flow opens member tranches through governance, registers members, watches
-the block pay them, and exercises committee recovery. Contributor interfaces need the original agreement, current payee,
+schemas and decode typed events. The e2e tier opens member tranches through governance, registers members, and sees
+their tenths queued behind the two-week hold; `go test ./app -run TestNativeDisbursement` covers the block paying them,
+deferral, cancellation, and committee recovery on the real app. Contributor interfaces need the original agreement, current payee,
 paid and remaining principal, the record's room under the ownership cap, and cancellation history; stablecoin compensation uses the same API.
 
 CosmWasm upload and instantiation remain permissionless from launch
@@ -132,7 +133,7 @@ app, and the same component connects to any other wallet through the kit. The si
 possession, vouch reference, and identity attestation to the platform, is specified on its own so that any wallet
 hosting the member app can run it.
 
-The operations the earlier draft listed remain the wallet's later scope: simulation and comprehensible signing review,
+The wallet's later scope covers simulation and comprehensible signing review,
 fee and tax presentation, Ark market operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its destination or rotating its controller, and account
 recovery, hardware-wallet use, and multisignature flows where supported.
 
@@ -169,7 +170,7 @@ Ark's market, oracle, and treasury events in addition to standard Cosmos message
 relationship among a transaction, its messages, emitted events, balance changes, fees, taxes, and final result.
 
 The distribution is the explorer's first job. It should decode the Disbursement module's typed events, messages, and
-permanent journal, show each grant's original clock, accrued unpaid entitlement, cap-limited payment and payee, and present the
+permanent journal, show each grant's original clock, accrued unpaid entitlement, next due payment and payee, and present the
 plan's numbers with the height they were read at: public bonded stake, the cap a grant was checked against, each step's
 gate, and the handover lines. A thin page on node queries meets round one; the full explorer follows the indexer.
 
@@ -187,8 +188,8 @@ database. Ark will likely need an indexer for account history, transaction searc
 history, contract activity, and product analytics.
 
 None of that is needed for the plan's first tranche. What the plan promises anyone can check is served by the Disbursement
-module's own queries, its totals, a grant's paid and remaining principal, a person's figures and live limit, a member's status, and each account's
-open tranche, together with the staking pool and the governance proposals, all read from a node at a height. The indexer comes
+module's own queries, its totals, a grant's paid and remaining principal, a person's figures and live limit, a member's status, each account's
+balance and reservation, and the open member tranche, together with the staking pool and the governance proposals, all read from a node at a height. The indexer comes
 after.
 
 The indexer should be replayable from canonical chain data and should record the block height from which every result is
@@ -306,8 +307,8 @@ This is a dependency order, not an implementation schedule:
 1. **Stabilise the integration foundation.** Treat protocol schemas, network metadata, signing modes, transaction
    decoding, and public endpoints as a coherent surface. The local environment is part of it: it exists, and
    everything in the next step is proven on it.
-2. **Build the distribution's dependencies, in this order.** The Disbursement module's schemas and its localnet flow
-   first, since they are what the rest is tested against; then the member process, its verifier, and the committee
+2. **Build the distribution's dependencies, in this order.** The Disbursement module's schemas and its e2e and app
+   test flows first, since they are what the rest is tested against; then the member process, its verifier, and the committee
    multisig, since the platform is built around them; then the platform's registration and grant funding
    flows; then the wallet and the member app on it, the last thing a member touches and the first thing they see. The module's audit
    sits before the first tranche, not before the build. Transfers, simulation, and market operations follow.
