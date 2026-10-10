@@ -1,4 +1,4 @@
-"""Ark logo kit (concept D, Whole): masters, lockups, colour variants and motifs.
+"""Ark logo kit (Whole): masters, lockups, colour variants and motifs.
 
 Geometry is on a 256-unit canvas. The positive master is exact: the peak and the notch cut into the hull
 are mirror images across the waterline. The reversed (white-on-dark) drawings are thinned by D_REV units,
@@ -19,7 +19,7 @@ S3 = math.sqrt(3)
 # ---------------------------------------------------------------- symbol
 
 MAIN = dict(apex=18, h=80, gap=12, R=112)     # use at 32 px and up
-SMALL = dict(apex=22, h=72, gap=24, R=112)    # use at 24 px and below
+SMALL = dict(apex=22, h=72, gap=24, R=112)    # use from 16 to 31 px
 
 def symbol(apex, h, gap, R, d=0.0):
     """Peak above the waterline; its reflection is the notch cut into the hull. d > 0 thins every edge."""
