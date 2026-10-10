@@ -85,8 +85,9 @@ A different price series needs a different prefix. Governance sizes the combined
 
 Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
 that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
-acceptable age is consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can
-serve conversion and reserve recognition with different tolerances.
+acceptable age is consumer risk policy. Oracle carries no per-denomination age override, because one series can serve
+conversion and reserve recognition with different tolerances. Each `RecognisedCapital` row reports its entry's
+window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses.
 
 Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
 external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
@@ -96,7 +97,8 @@ attested destinations, and no native mint path produces those symbols.
 ## Queries, events, and genesis
 
 The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, balances, positions, ledger, recognition
-policy, and capital decomposition with the inputs that explain each row. Bank transfer/burn events record custody movements;
+policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound,
+solved as the burn handler solves it. Bank transfer/burn events record custody movements;
 `EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
 Genesis preserves open and closed positions and their unpruned history, reconciles the stated position figures and
 term usage against the ledger, refusing a mismatch, and rebuilds the per-position and reversal indexes. IDs,

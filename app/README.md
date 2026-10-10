@@ -26,7 +26,8 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
 1. Module preblockers run before oracle decoding so upgrades have already applied. Oracle reports are consumed before
    due feed transitions are promoted.
 2. BeginBlock runs after those prices are available. The SDK distribution/slashing ordering is retained; Treasury
-   refreshes conversion factors and exposure in its own hook.
+   refreshes conversion factors and exposure in its own hook, and Security drops a committee plan record the
+   upgrade slot no longer holds.
 3. Governance executes the block's proposals first, so a proposal's conversions are part of the block's flow;
    Market then settles conversion facts against the block's final state, before later modules move funds.
    Governance precedes Treasury's reward/base-fee settlement and Oracle attendance settlement. Oracle precedes staking

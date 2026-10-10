@@ -19,15 +19,15 @@ Security implements the bounded committee fast path over standard-module emergen
 
 ## State and integration
 
-The persistent items are `Mandate` and `CommitteePlan`. This module has no params or block hooks; authority windows are checked when the transaction executes. Review application privilege registration when changing the committee message surface, and update the threat model for a new message or trust boundary.
+The persistent items are `Mandate` and `CommitteePlan`. This module has no params; authority windows are checked when the transaction executes, and its one block hook only reconciles `CommitteePlan` with the upgrade slot. Review application privilege registration when changing the committee message surface, and update the threat model for a new message or trust boundary.
 
 ## Powers and rationale
 
 `x/security` gives the chain a security committee with a bounded fast path over the standard-module
-emergency surface. Its charter is one line: **code and connectivity repair, never funds.**
+emergency surface. Its charter is one line: **code repair, never funds.**
 
 - **State.** `SecurityMandate{envelope}` and `CommitteePlan{name, height, term}`. No module account, params,
-  hooks, or blockers. An enabled appointment holds every power the module delegates; an empty committee
+  or hooks; one BeginBlocker reconciles `CommitteePlan` with the upgrade slot. An enabled appointment holds every power the module delegates; an empty committee
   disables and still advances the term, so previously prepared committee transactions never become valid
   again.
 - **Messages.** Governance `MsgSetSecurityMandate`; committee `MsgCommitteePlanUpgrade`,
@@ -46,21 +46,23 @@ emergency surface. Its charter is one line: **code and connectivity repair, neve
   holds one plan and scheduling overwrites it, so the committee may schedule only when the slot is empty or
   holds its own plan, and may cancel only its own. `CommitteePlan` is trusted only while it matches the
   pending plan on both name and height; a governance overwrite, governance cancel, or executed upgrade
-  leaves a stale record that is never trusted and that the committee's next schedule overwrites. No minimum lead
-  time: halt-in-hours is the point.
+  leaves a stale record, which BeginBlock clears at the next block so a later governance plan reusing the
+  same name and height cannot read as the committee's. A cancel and re-schedule of the identical plan
+  inside one governance EndBlock is the residual: the record then matches governance's copy until the
+  committee acts on it. No minimum lead time: halt-in-hours is the point.
 - Queries `SecurityMandate` (with `active`) and `CommitteePlan` (with `matches_pending`). Events report
   resulting state. Every dependency comes through the constructor and the module reads only x/upgrade
   before dispatching.
 
-**What was withdrawn and why.** Freeze powers (a per-denom send halt and, while IBC was wired, transfer and
-rate-limit controls): each froze user funds and defended economics, not the chain; Ark owns economics at the
-source (asset suspension, the conversion corridor); a committee convenes in hours and an exploit exits in
-minutes, so a freeze traps the holders who stayed; and a selective freeze can be aimed at someone quietly
-while the chain runs, whereas an upgrade halt stops everything, announces itself, and has a remediation path
-that does not wait for a proposal. IBC client recovery left with IBC itself. The per-class grant list:
-the two remaining powers are one job (scheduling and cancelling are inverses, and without scheduling there is
+**What the committee does not hold, and why.** Freeze powers, such as a per-denom send halt: a freeze stops user
+funds and defends economics, not the chain; Ark owns economics at the source (asset suspension, the conversion
+corridor); a committee convenes in hours and an exploit exits in minutes, so a freeze traps the holders who stayed;
+and a selective freeze can be aimed at someone quietly while the chain runs, whereas an upgrade halt stops
+everything, announces itself, and has a remediation path that does not wait for a proposal. There is no IBC, so no
+client to recover. A per-class grant list:
+the committee's two powers are one job (scheduling and cancelling are inverses, and without scheduling there is
 no way to ship the patch), so a subset is not a narrower committee but one that cannot finish, and appointing
-the committee is the decision. Cancel-any: cancel-any plus schedule-own-only was defeated in two transactions; governance keeps
+the committee is the decision. Cancel-any: cancel-any plus schedule-own-only is defeated in two transactions; governance keeps
 two remedies for a buggy approved upgrade (cancel its own plan, or validators restart past the halt with
 `--unsafe-skip-upgrades`), and a committee veto over a voted upgrade is a governance override, not an
 emergency power. Committee messages keep `MsgCommittee*` names so they never read like the upstream types

@@ -60,11 +60,10 @@ not a second reservation calculation. `RewardFunding` reads stored accounting wi
 No combined backing figure is exposed. There is no Treasury Reserve-transfer history: Bank and the authorising
 proposal already record those movements.
 
-Retired designs include the liability snapshot and flat 2,000-gas lookup, supply-change invalidators, and
-`PricedLiveVersion`/`TaxCapsEpoch` membership epochs. End-of-block conversion settlement has one final-state
-valuation consumer; per-block conversion factors have no membership-epoch consumer. A shared capital-accounting
-package was also rejected because the removed snapshot supplied its supposed common state and no duplicated
-arithmetic remained to extract.
+There is no liability snapshot, flat-gas liability lookup, supply-change invalidator, or membership epoch:
+end-of-block conversion settlement has one final-state valuation consumer, and per-block conversion factors have no
+epoch consumer. There is no shared capital-accounting package either, since without a snapshot there is no common
+state and no duplicated arithmetic to extract.
 
 ## Exposure sampling and refresh
 
@@ -133,7 +132,8 @@ A separate fee-market dependency and refund escrow were rejected: Ark needs its 
 and standard SDK fee commitment semantics, without maintaining a fork of an incompatible fee module.
 
 `GasPrices` exposes the reference row separately from the denomination-sorted rows; clients must not infer the
-reference from list position. `ComputeTax` uses the consensus calculator, treats a missing cap as untaxed, and
+reference from list position. A member the Oracle no longer prices keeps its factor for the tax cap but is neither
+listed nor accepted for gas. `ComputeTax` uses the consensus calculator, treats a missing cap as untaxed, and
 distinguishes malformed inputs, unrepresentable totals, and internal failures; NotFound belongs to the cap and
 factor queries. [Client fee construction](../../docs/clients/CLIENT_FEES.md)
 owns the integration algorithm; [arkd](../../cmd/arkd/README.md#cli-fee-completion) owns its denomination preference.

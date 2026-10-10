@@ -9,7 +9,6 @@ transaction releases a payment.
 
 The [disbursement plan](../../docs/governance/DISBURSEMENT_PLAN.md) sets the launch allocation and review process;
 [governance operations](../../docs/governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) describes proposals and recovery.
-This is a clean prelaunch replacement of the grant contract. There is no contract-state migration.
 
 ## Funding and authority
 
@@ -153,7 +152,8 @@ A failed payment inside the block is a halt, so the inputs that could fail one a
 Bank blocks is refused at creation and at a payee change, as is either disbursement account, which Bank leaves
 unblocked for deposits and whose payment would only return to custody, and amounts and schedules carry their bounds. The inputs no
 write can vet are a Bank send restriction that refuses the payee later, such as a stablecoin paid into a NOAH-only
-fund account, and a payee the blocked list names by the time an export relaunches, which import accepts. That send is
+fund account, and a payee the blocked list names by the time an export relaunches, which import accepts; a disbursement account
+as payee or beneficiary it refuses, as the writes do. That send is
 deferred instead: nothing is written, `EventPaymentDeferred` names the
 grant, payee, amount, and the retry time, the node log records why, and the grant waits a day or its next boundary. Every other failure in the
 hook is an accounting invariant and fails the block, as in Claims. Disbursement pays from custody it already holds: a

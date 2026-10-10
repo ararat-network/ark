@@ -51,7 +51,10 @@ share the dispatch cache under the [economic transfer contract](../../docs/desig
 
 Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
 the two-denomination stable-base-fee plus NOAH-tip path conservatively; a simulation with a payable fee meters its
-actual transfer. The tax post handler still runs during simulation so its transfer cost is included.
+actual transfer. The tax post handler still runs during simulation so its transfer cost is included. With no leg to
+price, the estimate reads NOAH's gas factor in place of the one the fee will name and charges the registry read a
+member leg adds, since only a member the Oracle still prices may pay gas: a suspended or written-off member keeps its
+factor for the tax cap and loses fee acceptance.
 
 ## Development
 
@@ -77,6 +80,12 @@ earlier signed messages and authz leaves in the same transaction change: a depos
 vote and a submission may create the proposal a later message names. A contract call may dispatch either, so
 everything after one is admitted. An earlier transaction in the same block can do the same, and a vote it would
 enable is refused until that transaction commits.
+
+A consensus-parameter update, signed or carried in a proposal, must leave `block.max_bytes` at least
+`MinBlockDataBytes` (8 MiB) above `evidence.max_bytes`: the proposer injects the previous block's extended
+commit as a transaction, and a block that cannot carry it is rejected by every validator with no proposer able
+to build another. The floor is a domain cap on the governance write, not a projection from the live validator
+set.
 
 MultiSend allows at most 500 outputs and charges `300 * outputs²` gas in addition to Bank's linear cost.
 At 500 outputs the surcharge is 75 million gas, roughly 84 million including Bank's output cost, beneath the

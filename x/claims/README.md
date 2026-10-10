@@ -35,7 +35,7 @@ submission. The reference is a nonempty pointer to the off-chain case record, at
 use the current `claim_cancellation_period`, in seconds of block time like the governance vote it must fit (D133);
 putting the period in the mandate was rejected because it made
 governance claims depend on an enabled committee. Appointments must have a span at least as long as the current
-period. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
+period, measured from the later of activation and the appointing block. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
 remain the backstop.
 
 The due-claim index drives EndBlock settlement without an execute message. Records preserve paid, cancelled, and
@@ -48,7 +48,7 @@ restriction ordering must register every restriction provider. Genesis fixtures 
 balance needed to back their reservation. Module-account names determine custody addresses and cannot be renamed
 on a live chain as a cosmetic refactor.
 
-Claims was separated from Treasury so custody, appointment, reservations, and settlement share one owner rather than
+Claims is separate from Treasury so custody, appointment, reservations, and settlement share one owner rather than
 turning fiscal policy into a multi-mandate operator. No claims-adjudication engine or non-NOAH payout is part of this
 module: governance and the committee make the claim decision; the chain enforces the resulting bounded commitment.
 

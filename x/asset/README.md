@@ -59,8 +59,8 @@ NOAH dilution to make one asset's failure orderly, and none can work when NOAH's
 
 - **Asset is the domain name.** No module stores a stable-versus-commodity distinction. Every registered asset is
   convertible, so swap eligibility, tax-cap membership, and liability recognition all derive from Oracle-priced
-  membership, `ACTIVE` or `ISSUANCE_HALTED`. This superseded two earlier decisions, support for assets outside the chain
-  Oracle and a Treasury enrolment set.
+  membership, `ACTIVE` or `ISSUANCE_HALTED`. No asset is priced outside the chain Oracle, and Treasury keeps no
+  enrolment set.
 - **`anoah` is outside the lifecycle.** NOAH is not priced; it is what prices everything else.
 - **A feed is keyed by the denomination it prices.** The price source is the asset's identity, not a recorded choice.
   Two assets can never share a feed, no asset can be unpriced, and no message can re-point an asset at other price data.
@@ -367,26 +367,23 @@ interfaces, membership, pricing verdicts, asset records, and active plans.
 
 The code map above identifies the keeper, types, and module entry points.
 
-## 13. Superseded and closed
+## 13. What the module does not have
 
-These rejected mechanisms explain the current boundaries; they are not implementation work.
+These absences mark the module's boundaries; none is planned work.
 
-- **A `PENDING` status, a completion hook, and the `ActivateAsset`, `AmendRegistration`, `BeginRecovery`,
-  `CancelRecovery`, and `ReactivateAsset` messages.** An asset exists exactly when it is listed, transitions apply in
-  their block, metadata is derived so nothing needs amending, and `RETIRED` is terminal.
-- **The `AssetLocks` index**, an inverse dependency map downstream modules wrote into. Consumers derive membership, so
-  there was nothing to lock; the referent guard replaced the one hazard it addressed.
-- **`PricedLiveVersion` and `TaxCapsEpoch`**, the membership epochs consumers compared each BeginBlocker. Treasury's
-  per-block conversion-factor table replaced them.
-- **The `PricedAssetView`**, a bundled record-plus-rate boundary, removed unused for the reasons in §11.
-- **Asset ownership of the protocol reference, a stored fallback rate, and consumer-owned fallbacks.** The reference is
-  a feed rule and lives with the feeds.
-- **Oracle's Tobin-tax parameter, its coherence rule, and its queries.** Market owns Tobin policy; the launch feed list
-  is declared directly in `x/oracle`.
-- **The interim containment for the confirmed target-removal defect**, which refused every current-target removal from
-  Oracle params until the params-driven membership path itself was deleted. What protects a feed today is the
-  consumer-side removal guard.
-- **A live-chain upgrade path.** The chain launches from a clean genesis (D20).
+- **No `PENDING` status, completion hook, or activation, amendment, or recovery-staging message.** An asset exists
+  exactly when it is listed, transitions apply in their block, metadata is derived so nothing needs amending, and
+  `RETIRED` is terminal.
+- **No inverse dependency index for downstream modules to write into.** Consumers derive membership, so there is nothing
+  to lock; the feed-removal referent guard covers the one hazard such an index would address.
+- **No membership epochs for consumers to compare.** Treasury's per-block conversion-factor table carries what they need.
+- **No bundled record-plus-rate view**, for the reasons in §11.
+- **No Asset-owned protocol reference, stored fallback rate, or consumer-owned fallback.** The reference is a feed rule
+  and lives with the feeds.
+- **No Oracle-side Tobin-tax parameter.** Market owns Tobin policy, and the launch feed list is declared directly in
+  `x/oracle`.
+- **No feed membership in Oracle params.** The consumer-side removal guard protects a feed.
+- **No live-chain upgrade path.** The chain launches from a clean genesis (D20).
 
 ## Development
 
