@@ -78,7 +78,7 @@ func runExport(cmd *cobra.Command, exporter servertypes.AppExporter) error {
 	}
 	genesis := continuationGenesis(base, exported)
 	if outputDocument != "" {
-		return genesis.SaveAs(outputDocument)
+		return saveGenesis(genesis, outputDocument)
 	}
 	out, err := json.Marshal(genesis)
 	if err != nil {

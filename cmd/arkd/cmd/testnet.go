@@ -526,7 +526,7 @@ func initGenFiles(
 			return err
 		}
 		for i := range numValidators {
-			if err := appGenesis.SaveAs(genFiles[i]); err != nil {
+			if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
 				return err
 			}
 		}
@@ -566,7 +566,7 @@ func initGenFiles(
 	appGenesis := genutiltypes.NewAppGenesisWithVersion(chainID, appGenStateJSON)
 	// generate empty genesis files for each validator and save
 	for i := range numValidators {
-		if err := appGenesis.SaveAs(genFiles[i]); err != nil {
+		if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
 			return err
 		}
 	}
@@ -636,7 +636,7 @@ func collectGenFiles(
 		genFile := nodeConfig.GenesisFile()
 
 		// overwrite each validator's genesis file to have a canonical genesis time
-		if err := genutil.ExportGenesisFileWithTime(genFile, chainID, nil, appState, genTime); err != nil {
+		if err := exportGenesisFileWithTime(genFile, chainID, nil, appState, genTime); err != nil {
 			return err
 		}
 	}
@@ -664,7 +664,7 @@ func finaliseGenesisConsensusParams(genFile string, base *genutiltypes.AppGenesi
 
 	genesis.Consensus.Params.Authority.Authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	genesis.Consensus.Params.ABCI.VoteExtensionsEnableHeight = 1
-	if err := genesis.SaveAs(genFile); err != nil {
+	if err := saveGenesis(genesis, genFile); err != nil {
 		return fmt.Errorf("saving generated genesis %s: %w", genFile, err)
 	}
 	return nil

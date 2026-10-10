@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
 	"github.com/ararat-network/ark/app/genesis"
@@ -105,5 +104,5 @@ func runAddValidatorSeats(cmd *cobra.Command, operatorArgs []string, founderArg 
 	if appGenesis.AppState, err = json.Marshal(appState); err != nil {
 		return fmt.Errorf("marshal app state: %w", err)
 	}
-	return genutil.ExportGenesisFile(appGenesis, config.GenesisFile())
+	return exportGenesisFile(appGenesis, config.GenesisFile())
 }
