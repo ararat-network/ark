@@ -23,9 +23,7 @@ service Msg {
   rpc SetRecognitionPolicy(MsgSetRecognitionPolicy) returns (MsgSetRecognitionPolicyResponse) {}
   // FundBuffer transfers strategic Reserve NOAH to the Redemption Buffer.
   rpc FundBuffer(MsgFundBuffer) returns (MsgFundBufferResponse) {}
-  // FundInsurance transfers strategic Reserve NOAH to Insurance. With
-  // FundBuffer these are the only production paths that may debit the
-  // Reserve without opening a position.
+  // FundInsurance transfers strategic Reserve NOAH to Insurance.
   rpc FundInsurance(MsgFundInsurance) returns (MsgFundInsuranceResponse) {}
   // CorrectPosition restates a position as the governance authority, through
   // a correcting ledger entry.
@@ -321,7 +319,7 @@ message MsgCommitteeDeploy {
     (amino.dont_omitempty) = true
   ];
   string venue_reference = 7;
-  // references must name at least one piece of evidence for the outflow.
+  // reference names the evidence for the outflow and is required.
   string reference = 8;
 }
 
@@ -354,11 +352,10 @@ message MsgCommitteeRecordUpdateResponse {
 }
 
 // MsgCommitteeAttributeReturn matches an inflow already sitting in the Reserve
-// account to the position it settles. The amino name drops the object noun:
-// the full name lands exactly on the SDK's 39-byte type-name limit.
+// account to the position it settles.
 message MsgCommitteeAttributeReturn {
   option (cosmos.msg.v1.signer) = "committee";
-  option (amino.name) = "ark/reserve/MsgCommitteeAttribute";
+  option (amino.name) = "ark/reserve/MsgCommitteeAttributeReturn";
 
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
@@ -375,7 +372,7 @@ message MsgCommitteeAttributeReturn {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // references must name at least one piece of evidence for the inflow.
+  // reference names the evidence for the inflow and is required.
   string reference = 6;
 }
 
@@ -426,9 +423,7 @@ message MsgCommitteeMarkImpairedResponse {
 // own reversal stays distinguishable from governance's.
 message MsgCommitteeClearImpairment {
   option (cosmos.msg.v1.signer) = "committee";
-  // The amino name drops the object noun, like MsgCommitteeAttribute: the
-  // full name lands exactly on the SDK's 39-byte type-name limit.
-  option (amino.name) = "ark/reserve/MsgCommitteeClear";
+  option (amino.name) = "ark/reserve/MsgCommitteeClearImpairment";
 
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
@@ -448,8 +443,7 @@ message MsgCommitteeClearImpairmentResponse {
 // corrected. Correcting cannot restate the proven legs, which Bank recorded.
 message MsgCommitteeCorrectPosition {
   option (cosmos.msg.v1.signer) = "committee";
-  // The amino name drops the object noun, for the same reason.
-  option (amino.name) = "ark/reserve/MsgCommitteeCorrect";
+  option (amino.name) = "ark/reserve/MsgCommitteeCorrectPosition";
 
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
@@ -509,9 +503,10 @@ message MsgCommitteeBurnPaper {
 // MsgCommitteeBurnPaperResponse is the response for a paper burn.
 message MsgCommitteeBurnPaperResponse {}
 
-// MsgCommitteeBurnSurplus burns keeper-sized NOAH surplus: min(recognised capital minus
-// requirement, balance minus mandate floor). The committee chooses timing; the bound reaches zero
-// at the target.
+// MsgCommitteeBurnSurplus burns Reserve NOAH within the keeper's bound: the largest burn that
+// leaves recognised capital, solved at the post-burn balance, at or above the requirement and
+// custody at or above the mandate floor. Query/BurnableSurplus reports it. The committee chooses
+// timing; the bound reaches zero at the target.
 message MsgCommitteeBurnSurplus {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/reserve/MsgCommitteeBurnSurplus";

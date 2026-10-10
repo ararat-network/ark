@@ -177,6 +177,86 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	require.True(t, used.IsZero())
 }
 
+// TestReserveBurnableSurplusQueryIsTheHandlersBound checks the query reports exactly what the
+// committee burn admits against Treasury's live requirement.
+func TestReserveBurnableSurplusQueryIsTheHandlersBound(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
+		Height: arkApp.LastBlockHeight(),
+		Time:   time.Unix(1_800_000_000, 0),
+	})
+	msgServer := reservekeeper.NewMsgServerImpl(arkApp.ReserveKeeper)
+	queryServer := reservekeeper.NewQueryServerImpl(arkApp.ReserveKeeper)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	committee := sdk.AccAddress([]byte("reserve-committee---")).String()
+
+	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
+		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
+			Denom:       denom,
+			Rate:        math.LegacyOneDec(),
+			BlockTime:   uint64(ctx.BlockTime().Unix()),
+			BlockHeight: uint64(ctx.BlockHeight()),
+		}))
+	}
+	require.NoError(t, arkApp.BankKeeper.MintCoins(
+		ctx,
+		markettypes.ModuleName,
+		sdk.NewCoins(sdk.NewCoin(chain.USDBaseDenom, math.NewInt(1_000_000_000))),
+	))
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
+	require.NoError(t, err)
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.1")
+	require.NoError(t, arkApp.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
+
+	apptestutil.FundModule(
+		t,
+		arkApp,
+		ctx,
+		reservetypes.StrategicReserveName,
+		sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(500_000_000))),
+	)
+	_, err = msgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
+		Authority:           authority,
+		Committee:           committee,
+		ActivationTime:      chain.BlockSeconds(ctx),
+		ExpiryTime:          chain.BlockSeconds(ctx) + 10_000,
+		DeploymentAllowance: sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000)),
+		MinimumNoahBalance:  sdk.NewCoin(chain.NoahBaseDenom, math.ZeroInt()),
+		Destinations:        []string{sdk.AccAddress([]byte("deployment-target---")).String()},
+	})
+	require.NoError(t, err)
+	mandate, err := arkApp.ReserveKeeper.Mandate.Get(ctx)
+	require.NoError(t, err)
+
+	bound, err := queryServer.BurnableSurplus(ctx, &reservetypes.QueryBurnableSurplusRequest{})
+	require.NoError(t, err)
+	burnable := bound.Burnable
+	require.True(t, burnable.IsPositive(), "expected a positive surplus, got %s", burnable)
+	// Treasury's requirement binds, not the balance.
+	require.True(t, burnable.Amount.LT(math.NewInt(500_000_000)), "expected the requirement to bind, got %s", burnable)
+
+	_, err = msgServer.CommitteeBurnSurplus(ctx, &reservetypes.MsgCommitteeBurnSurplus{
+		Committee:    committee,
+		ExpectedTerm: mandate.Term,
+		Amount:       burnable.AddAmount(math.OneInt()),
+	})
+	require.ErrorContains(t, err, "exceeds the burnable Reserve surplus")
+
+	reserveAddress := authtypes.NewModuleAddress(reservetypes.StrategicReserveName)
+	before := arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.NoahBaseDenom)
+	_, err = msgServer.CommitteeBurnSurplus(ctx, &reservetypes.MsgCommitteeBurnSurplus{
+		Committee:    committee,
+		ExpectedTerm: mandate.Term,
+		Amount:       burnable,
+	})
+	require.NoError(t, err)
+	require.Equal(t, before.Sub(burnable), arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.NoahBaseDenom))
+
+	bound, err = queryServer.BurnableSurplus(ctx, &reservetypes.QueryBurnableSurplusRequest{})
+	require.NoError(t, err)
+	require.True(t, bound.Burnable.IsZero(), "expected the surplus spent, got %s", bound.Burnable)
+}
+
 // TestReserveFeedGuardBlocksRemoval checks app wiring registers Reserve's guard. The external feed
 // has no Asset record, isolating Reserve as the sole foreign blocker.
 func TestReserveFeedGuardBlocksRemoval(t *testing.T) {

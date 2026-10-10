@@ -224,3 +224,17 @@ func (q queryServer) RecognisedCapital(ctx context.Context, req *types.QueryReco
 		Assets:      assets,
 	}, nil
 }
+
+// BurnableSurplus queries the committee's NOAH burn bound.
+func (q queryServer) BurnableSurplus(ctx context.Context, req *types.QueryBurnableSurplusRequest) (*types.QueryBurnableSurplusResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	burnable, err := q.k.BurnableSurplus(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("sizing the burnable surplus: %w", err)
+	}
+
+	return &types.QueryBurnableSurplusResponse{Burnable: chain.NoahCoin(burnable)}, nil
+}

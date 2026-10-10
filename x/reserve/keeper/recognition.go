@@ -17,6 +17,44 @@ import (
 // AssetRecognitions returns denomination-ordered rows over eligibility and attestations.
 // SolveRecognition jointly caps credits; unusable rates zero only their own rows.
 func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition, error) {
+	assets, stakes, err := k.recognitionStakes(ctx)
+	if err != nil || assets == nil {
+		return nil, err
+	}
+
+	// The solve levers only the par-counted NOAH balance, the one
+	// bank-verifiable term.
+	solved, err := types.SolveRecognition(k.balance(ctx), stakes)
+	if err != nil {
+		return nil, fmt.Errorf("solving Reserve recognition: %w", err)
+	}
+	for i, result := range solved {
+		assets[i].EffectiveCap = chain.NoahCoin(result.Ceiling)
+		assets[i].Credit = chain.NoahCoin(result.Credit)
+	}
+
+	return assets, nil
+}
+
+// recognisedAt solves recognised capital for a NOAH balance the caller names: the balance at par
+// plus the credits it levers. The burn bound asks it about the balance a burn would leave.
+func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, error) {
+	solved, err := types.SolveRecognition(balance, stakes)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("solving Reserve recognition: %w", err)
+	}
+	recognised := balance
+	for _, result := range solved {
+		if recognised, err = recognised.SafeAdd(result.Credit); err != nil {
+			return math.Int{}, fmt.Errorf("summing recognised capital: %w", err)
+		}
+	}
+	return recognised, nil
+}
+
+// recognitionStakes walks policy, open positions, and rates once, returning the unsolved rows and
+// the stakes behind them in one denomination order. Nil rows mean nothing is listed or attested.
+func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition, []types.RecognitionStake, error) {
 	entries := make(map[string]types.EligibilityEntry)
 	eligibleDenoms := make([]string, 0)
 	if err := k.RecognitionPolicy.Walk(ctx, nil, func(denom string, entry types.EligibilityEntry) (bool, error) {
@@ -24,7 +62,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		eligibleDenoms = append(eligibleDenoms, denom)
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
+		return nil, nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
 	}
 
 	// One walk of the open set serves every asset. Impaired positions are open,
@@ -47,7 +85,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		quantities[position.Quantity.Denom] = sum
 		return false, nil
 	}); err != nil {
-		return nil, fmt.Errorf("iterating positions: %w", err)
+		return nil, nil, fmt.Errorf("iterating positions: %w", err)
 	}
 
 	denomSet := make(map[string]struct{}, len(entries)+len(attested)+len(impaired))
@@ -61,7 +99,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		denomSet[denom] = struct{}{}
 	}
 	if len(denomSet) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Rates are read once for the whole fold, one request per entry carrying
@@ -79,7 +117,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		var err error
 		rates, err = k.oracleKeeper.GetRateSetWithin(ctx, requests)
 		if err != nil {
-			return nil, fmt.Errorf("getting Reserve asset rates: %w", err)
+			return nil, nil, fmt.Errorf("getting Reserve asset rates: %w", err)
 		}
 	}
 
@@ -113,6 +151,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 			row.Eligible = true
 			row.HaircutFactor = entry.HaircutFactor
 			row.RecognitionCapRatio = entry.RecognitionCapRatio
+			row.MaxRateAge = entry.MaxRateAge
 			stake.Ratio = entry.RecognitionCapRatio
 			// An absent, non-positive, or over-age rate leaves the row at zero:
 			// there is no fallback source.
@@ -120,7 +159,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 				row.Rate = rate
 				raw, err := entry.RawCredit(rates, row.AttestedQuantity)
 				if err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				stake.Raw = raw
 			}
@@ -129,18 +168,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		stakes = append(stakes, stake)
 	}
 
-	// The solve levers only the par-counted NOAH balance, the one
-	// bank-verifiable term.
-	solved, err := types.SolveRecognition(k.balance(ctx), stakes)
-	if err != nil {
-		return nil, fmt.Errorf("solving Reserve recognition: %w", err)
-	}
-	for i, result := range solved {
-		assets[i].EffectiveCap = chain.NoahCoin(result.Ceiling)
-		assets[i].Credit = chain.NoahCoin(result.Credit)
-	}
-
-	return assets, nil
+	return assets, stakes, nil
 }
 
 // valueMovement prices proven movements in NOAH at current rates and rejects unpriced

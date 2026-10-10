@@ -41,6 +41,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:   fmt.Sprintf("%s query reserve recognised-capital", version.AppName),
 				},
 				{
+					RpcMethod: "BurnableSurplus",
+					Use:       "burnable-surplus",
+					Short:     "Query the largest NOAH burn the committee may make now",
+					Example:   fmt.Sprintf("%s query reserve burnable-surplus", version.AppName),
+				},
+				{
 					RpcMethod: "Position",
 					Use:       "position [position-id]",
 					Short:     "Query one position",

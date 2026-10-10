@@ -457,7 +457,8 @@ func (m msgServer) CommitteeBurnPaper(ctx context.Context, msg *types.MsgCommitt
 
 // CommitteeBurnSurplus destroys Reserve NOAH above the fund's capital
 // requirement. The keeper derives the bound rather than trusting the message,
-// and refuses the burn when the requirement cannot be computed.
+// certifies the requirement at the post-burn balance, and refuses the burn
+// when the requirement cannot be computed.
 func (m msgServer) CommitteeBurnSurplus(ctx context.Context, msg *types.MsgCommitteeBurnSurplus) (*types.MsgCommitteeBurnSurplusResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee burn surplus message")
@@ -472,16 +473,9 @@ func (m msgServer) CommitteeBurnSurplus(ctx context.Context, msg *types.MsgCommi
 		return nil, errors.New("burn amount must be positive")
 	}
 
-	surplus, err := m.k.BurnableSurplus(ctx)
+	surplus, err := m.k.CheckSurplusBurn(ctx, msg.Amount.Amount)
 	if err != nil {
 		return nil, err
-	}
-	if msg.Amount.Amount.GT(surplus) {
-		return nil, fmt.Errorf(
-			"burn %s exceeds the burnable Reserve surplus %s",
-			msg.Amount,
-			chain.NoahCoin(surplus),
-		)
 	}
 	if err := m.k.bankKeeper.BurnCoins(
 		ctx,

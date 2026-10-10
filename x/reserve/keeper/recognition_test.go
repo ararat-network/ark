@@ -341,6 +341,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 		// was measured against, reported even when it does not bind.
 		EffectiveCap: noahCoin(102),
 		Credit:       noahCoin(20),
+		MaxRateAge:   testRateAge,
 	}}, response.Assets)
 }
 
@@ -375,6 +376,19 @@ func (s *KeeperTestSuite) TestRecognitionJudgesEachEntryUnderItsOwnWindow() {
 	)
 	s.stubRatesAtAge(rates, 2*3_600)
 	s.Require().Equal(math.NewInt(1_000+200+0), s.recognised())
+
+	// Each row reports the window it was judged under, so the refused row's
+	// zero rate reads against its own hour rather than its neighbour's day.
+	response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
+	s.Require().NoError(err)
+	s.Require().Len(response.Assets, 2)
+	patient, strict := response.Assets[0], response.Assets[1]
+	s.Require().Equal(chain.XDRBaseDenom+"-patient", patient.Denom)
+	s.Require().Equal(uint64(26*3_600), patient.MaxRateAge)
+	s.Require().True(patient.Rate.IsPositive())
+	s.Require().Equal(chain.XDRBaseDenom+"-strict", strict.Denom)
+	s.Require().Equal(uint64(3_600), strict.MaxRateAge)
+	s.Require().True(strict.Rate.IsZero())
 }
 
 // TestRecognitionDegradesToZeroNeverToStale checks that an unavailable Oracle feed zeroes only its
@@ -681,6 +695,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalDecomposesAttestedCustodyOnly() {
 			RecognitionCapRatio: math.LegacyZeroDec(),
 			EffectiveCap:        noahCoin(0),
 			Credit:              noahCoin(0),
+			MaxRateAge:          0,
 		},
 	}, response.Assets)
 }

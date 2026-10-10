@@ -83,10 +83,11 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // recognition_cap_ratio in (0, 1) bounds this asset's credit to ratio ×
+  // recognition_cap_ratio is positive and bounds this asset's credit to ratio ×
   // recognised capital itself, resolved per block by SolveRecognition's closed
   // form. Clipping one asset shrinks the total and can tighten its neighbours,
-  // so ratios across the whole policy must sum strictly below one.
+  // so ratios across the whole policy must sum strictly below one, which also
+  // keeps each ratio below one.
   string recognition_cap_ratio = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -216,4 +217,7 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // max_rate_age is the entry's rate window in seconds; zero on an
+  // ineligible row.
+  uint64 max_rate_age = 10 [(amino.dont_omitempty) = true];
 }

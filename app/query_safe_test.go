@@ -76,6 +76,7 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.oracle.v1.Query/RewardWeight",
 	"/ark.oracle.v1.Query/StoredRates",
 	"/ark.reserve.v1.Query/Balance",
+	"/ark.reserve.v1.Query/BurnableSurplus",
 	"/ark.reserve.v1.Query/ClosedPositions",
 	"/ark.reserve.v1.Query/Ledger",
 	"/ark.reserve.v1.Query/Mandate",
