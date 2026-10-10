@@ -121,10 +121,18 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 	}
 
 	// rewardsPerWeight = oraclePool * rewardWindow / rewardDistributionWindow / totalRewardWeight.
+	// The product is the one step that grows: the divisions shrink it, and each
+	// validator's share below multiplies by a weight no larger than the total it
+	// was divided by. Bank supply sits far under 2^128 and the window is capped
+	// at a chain year, so the product is nowhere near Int's 256 bits; SafeMul is
+	// the loud backstop, and inside EndBlock its error halts as a panic would.
 	rewardsPerWeight := make(sdk.DecCoins, 0, len(rewardBalances))
 	for _, balance := range rewardBalances {
-		amount := math.LegacyNewDecFromInt(balance.Amount).
-			MulInt(math.NewIntFromUint64(rewardWindow)).
+		scaled, err := balance.Amount.SafeMul(math.NewIntFromUint64(rewardWindow))
+		if err != nil {
+			return fmt.Errorf("scaling %s oracle rewards by the reward window: %w", balance.Denom, err)
+		}
+		amount := math.LegacyNewDecFromInt(scaled).
 			QuoInt(math.NewIntFromUint64(rewardDistributionWindow)).
 			QuoInt(totalRewardWeight)
 		rewardsPerWeight = append(rewardsPerWeight, sdk.NewDecCoinFromDec(balance.Denom, amount))

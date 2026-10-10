@@ -3704,8 +3704,8 @@ func (*MsgRemoveFeedResponse) Descriptor() ([]byte, []int) {
 	return file_ark_oracle_v1_tx_proto_rawDescGZIP(), []int{5}
 }
 
-// MsgSetReferenceDenom changes the shared reference and atomically rebases Market and Treasury
-// state. An established reference cannot be cleared.
+// MsgSetReferenceDenom changes the shared reference and atomically rebases Market, Treasury, and
+// Disbursement state. An established reference cannot be cleared.
 type MsgSetReferenceDenom struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

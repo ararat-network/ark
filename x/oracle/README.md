@@ -23,7 +23,13 @@ Oracle owns the feed registry, consensus exchange rates, protocol reference deno
 
 ## State and integration
 
-`ExchangeRate` is keyed by denomination; `RewardWeight` and `Attendance` are keyed by validator operator address. Consensus addresses are resolved at the reporting boundary. `Feeds`, `ReferenceDenom`, `Accounting`, and `Params` are items. App wiring injects foreign feed guards and Market/Treasury reference consumers after construction to avoid dependency cycles.
+`ExchangeRate` is keyed by denomination; `RewardWeight` and `Attendance` are keyed by validator operator address. Consensus addresses are resolved at the reporting boundary. `Feeds`, `ReferenceDenom`, `Accounting`, and `Params` are items. App wiring injects foreign feed guards and the Market, Treasury, and Disbursement reference rebasers after construction to avoid dependency cycles.
+
+`max_exchange_rate_age` is the chain-default freshness window in seconds of block time; a stored rate older than it is
+stale to every consumer that names no window of its own. Governance may set it between 30 s and 7 d
+(`MinExchangeRateAge`, `MaxAllowedExchangeRateAge`); the default is a minute. The floor sits well above the gap between
+blocks because a proposer leaves user transactions out of a block whose prices are older than the window (D137), so a
+window under the gap would empty every block, the vote to raise it included.
 
 ## 1. Oracle state and lifecycle
 
@@ -56,6 +62,14 @@ Settlement is implemented by `x/oracle/keeper/accounting.go` and the window driv
 `Attendance` is keyed by operator address. Unbonded and already-jailed validators are skipped; counters are cleared after
 settlement. An attendance-window change takes effect after the active window settles, while the minimum ratio is read
 live. `EventOracleJail` records the validator, counts, and accounting window. Zero minimum attendance disables jailing.
+
+Reward settlement runs on the reward window the same way. A window pays the module account's balance scaled by
+`reward_window / reward_distribution_window`, its share of a distribution period rather than the whole pool. The
+per-weight figure is that amount over the sum of recorded reward weights; each validator receives its weight times that
+figure, truncated per denomination, and the dust and the undistributed fraction stay in the account for later windows.
+Nothing is paid when no weight was recorded or the account is empty. Both windows open at height 1; import admits a
+start height of 0 as well, since InitChain runs at height zero for a chain starting at one.
+`reward_distribution_window` defaults to four weeks.
 
 ### 1.2 Feed registry
 

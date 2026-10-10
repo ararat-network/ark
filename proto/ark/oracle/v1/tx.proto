@@ -88,8 +88,8 @@ message MsgRemoveFeed {
 // MsgRemoveFeed message.
 message MsgRemoveFeedResponse {}
 
-// MsgSetReferenceDenom changes the shared reference and atomically rebases Market and Treasury
-// state. An established reference cannot be cleared.
+// MsgSetReferenceDenom changes the shared reference and atomically rebases Market, Treasury, and
+// Disbursement state. An established reference cannot be cleared.
 message MsgSetReferenceDenom {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/oracle/MsgSetReferenceDenom";

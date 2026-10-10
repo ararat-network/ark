@@ -205,6 +205,25 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 	}
 }
 
+// A fresh chain runs InitGenesis at height zero though its first block is one,
+// so a window may open at one but not at two.
+func (s *KeeperTestSuite) TestInitGenesisOnAFreshChain() {
+	ctx := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(0)
+
+	gs := types.DefaultGenesisState()
+	gs.Accounting.RewardWindowStartHeight = 2
+	s.Require().ErrorContains(s.keeper.InitGenesis(ctx, gs), "reward window start height 2 is after genesis block height 1")
+
+	s.accountKeeper.EXPECT().GetModuleAccount(ctx, types.ModuleName).Return(
+		authtypes.NewEmptyModuleAccount(types.ModuleName),
+	)
+	s.Require().NoError(s.keeper.InitGenesis(ctx, types.DefaultGenesisState()))
+	accounting, err := s.keeper.Accounting.Get(ctx)
+	s.Require().NoError(err)
+	s.Require().EqualValues(1, accounting.RewardWindowStartHeight)
+	s.Require().EqualValues(1, accounting.AttendanceWindowStartHeight)
+}
+
 func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)

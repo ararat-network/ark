@@ -15,7 +15,7 @@ import (
 const (
 	voteThresholdOutOfRange        = "VoteThreshold must be between"
 	functioningThresholdOutOfRange = "FunctioningBlockThreshold must be between"
-	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be greater than zero and at most"
+	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be between"
 )
 
 func TestParamsValidate(t *testing.T) {
@@ -94,8 +94,12 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardWindow must be between one and",
 		},
 		{
-			name:   "reward window at the domain cap",
-			mutate: func(p *types.Params) { p.RewardWindow = types.MaxRewardWindow },
+			// The distribution window rises with it: it may not be shorter.
+			name: "reward window at the domain cap",
+			mutate: func(p *types.Params) {
+				p.RewardWindow = types.MaxRewardWindow
+				p.RewardDistributionWindow = types.MaxRewardWindow
+			},
 		},
 		{
 			// A cadence no chain reaches does not slow settlement down, it
@@ -222,6 +226,16 @@ func TestParamsValidate(t *testing.T) {
 			name:      "max exchange rate age zero",
 			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = 0 },
 			expectErr: exchangeRateAgeOutOfRange,
+		},
+		{
+			// Under the floor, proposers would leave every block empty.
+			name:      "max exchange rate age below the floor",
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MinExchangeRateAge - 1 },
+			expectErr: exchangeRateAgeOutOfRange,
+		},
+		{
+			name:   "max exchange rate age at the floor",
+			mutate: func(p *types.Params) { p.MaxExchangeRateAge = types.MinExchangeRateAge },
 		},
 		{
 			name:   "max exchange rate age at the domain cap",

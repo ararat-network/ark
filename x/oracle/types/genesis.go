@@ -38,12 +38,15 @@ func NewGenesisState(
 }
 
 // NewAccounting starts reward and attendance accounting from genesis using
-// the supplied active parameter windows.
+// the supplied active parameter windows. Both windows open at block one, the
+// chain's first, so the first reward settlement shares Treasury's first funding block.
 func NewAccounting(params Params) Accounting {
 	return Accounting{
-		RewardWindow:             params.RewardWindow,
-		RewardDistributionWindow: params.RewardDistributionWindow,
-		AttendanceWindow:         params.AttendanceWindow,
+		RewardWindow:                params.RewardWindow,
+		RewardDistributionWindow:    params.RewardDistributionWindow,
+		AttendanceWindow:            params.AttendanceWindow,
+		RewardWindowStartHeight:     1,
+		AttendanceWindowStartHeight: 1,
 	}
 }
 

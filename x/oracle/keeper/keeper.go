@@ -156,7 +156,9 @@ func (k Keeper) Logger(ctx context.Context) log.Logger {
 	return sdkCtx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// GetParams returns oracle params.
+// GetParams returns oracle params. It wraps the collection only because the
+// abci/types keeper interfaces need a method to name; module code reads
+// k.Params directly.
 func (k Keeper) GetParams(ctx context.Context) (types.Params, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {

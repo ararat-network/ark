@@ -16,18 +16,21 @@ import (
 
 // Default parameter values
 const (
-	DefaultRewardWindow             = chain.BlocksPerWeek // window for a week
-	DefaultAttendanceWindow         = chain.BlocksPerWeek // window for a week
-	DefaultRewardDistributionWindow = chain.BlocksPerYear // window for a year
-	DefaultMaxExchangeRateAge       = uint64(60)          // a minute, in seconds
+	DefaultRewardWindow             = chain.BlocksPerWeek     // window for a week
+	DefaultAttendanceWindow         = chain.BlocksPerWeek     // window for a week
+	DefaultRewardDistributionWindow = 4 * chain.BlocksPerWeek // four weeks, the launch value
+	DefaultMaxExchangeRateAge       = uint64(60)              // a minute, in seconds
 
 	// MaxRewardWindow and MaxAttendanceWindow cap settlement cadence at a chain year, keeping valid
 	// governance values finite and well above the week-long defaults.
 	MaxRewardWindow     = chain.BlocksPerYear
 	MaxAttendanceWindow = chain.BlocksPerYear
 
-	// MaxAllowedExchangeRateAge caps the chain-default freshness window at seven days, in seconds. It
-	// bounds ordinary rate reads; consumers using GetRateSetWithin validate their own windows separately.
+	// MinExchangeRateAge and MaxAllowedExchangeRateAge bound the chain-default freshness window, in
+	// seconds; consumers using GetRateSetWithin validate their own windows separately. Proposers
+	// leave user transactions out of a block whose prices are older than it, so the floor sits well
+	// above the gap between blocks: under it every block would be empty, the vote to raise it too.
+	MinExchangeRateAge        = uint64(30)
 	MaxAllowedExchangeRateAge = uint64(7 * 86_400)
 )
 
@@ -137,9 +140,10 @@ func (p Params) Validate() error {
 			p.ParticipationThreshold,
 		)
 	}
-	if p.MaxExchangeRateAge == 0 || p.MaxExchangeRateAge > MaxAllowedExchangeRateAge {
+	if p.MaxExchangeRateAge < MinExchangeRateAge || p.MaxExchangeRateAge > MaxAllowedExchangeRateAge {
 		return fmt.Errorf(
-			"oracle parameter MaxExchangeRateAge must be greater than zero and at most %ds, is %ds",
+			"oracle parameter MaxExchangeRateAge must be between %ds and %ds, is %ds",
+			MinExchangeRateAge,
 			MaxAllowedExchangeRateAge,
 			p.MaxExchangeRateAge,
 		)
