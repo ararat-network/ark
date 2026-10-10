@@ -70,6 +70,7 @@ Comparison revision: `486b89779f22760e3282202fb08e29cce292b87d`.
 | [cmd/arkd/cmd/testnet.go](cmd/arkd/cmd/testnet.go) | [simapp/simd/cmd/testnet.go](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/simapp/simd/cmd/testnet.go) |
 | [cmd/arkd/cmd/testnet_test.go](cmd/arkd/cmd/testnet_test.go) | [simapp/simd/cmd/testnet_test.go](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/simapp/simd/cmd/testnet_test.go) |
 | [proto/scripts/protocgen.sh](proto/scripts/protocgen.sh) | [scripts/protocgen.sh](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/scripts/protocgen.sh) |
+| [proto/scripts/protocgen-pulsar.sh](proto/scripts/protocgen-pulsar.sh) | [scripts/protocgen-pulsar.sh](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/scripts/protocgen-pulsar.sh) |
 
 ### Gaia
 

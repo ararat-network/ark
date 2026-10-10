@@ -32,11 +32,12 @@ make proto-gen
 ```
 
 The [Makefile](../Makefile) pins the proto-builder image. It mounts the workspace and the `ark-proto-cache` named volume;
-[protocgen.sh](scripts/protocgen.sh) generates and relocates gogo output, then invokes
+[protocgen.sh](scripts/protocgen.sh) clears the gogo output Ark schemas own, regenerates and relocates it, then invokes
 [protocgen-pulsar.sh](scripts/protocgen-pulsar.sh) to refresh generated API files, which prepends the schema notices
 through [protocgen-notices.sh](scripts/protocgen-notices.sh). Scripts run under the image's shell. `make proto-all`
 chains format, lint, and generation; `make proto-update-deps` refreshes the BSR dependency lock.
-`make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files.
+`make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files. CI
+runs `make proto-gen` and fails if the tree changes, so commit regenerated output with every schema change.
 
 Run focused module/transport tests, `git diff --check`, and a build appropriate to the changed surface. Do not run
 generation for Markdown-only edits; regenerate when schema comments change so Go documentation stays in sync. `make proto-check-breaking` compares schemas against the configured main branch and

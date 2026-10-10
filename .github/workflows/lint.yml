@@ -1,6 +1,7 @@
-# Go and protobuf linting. Both jobs run the same Makefile targets a
-# developer runs, against the checked-in .golangci.yml and buf config, so a
-# green run here means `make lint` and `make proto-lint` are green locally.
+# Go and protobuf linting, plus a generated-code check. Every job runs the same
+# Makefile targets a developer runs, against the checked-in .golangci.yml and
+# buf config: a green run means `make lint` and `make proto-lint` pass locally
+# and `make proto-gen` leaves the checked-in tree unchanged.
 name: Lint
 
 on:
@@ -36,3 +37,25 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - run: make proto-lint
+
+  proto-gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # proto-gen runs go mod tidy on the host; Go-only jobs read go.mod.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Regenerating from the checked-in schemas must reproduce the checked-in
+      # tree: stale, missing, or hand-edited generated code fails here.
+      - run: make proto-gen
+      - run: |
+          git status --short
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Generated code is out of date: run make proto-gen and commit the result." >&2
+            exit 1
+          fi

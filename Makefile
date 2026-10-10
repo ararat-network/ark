@@ -192,7 +192,7 @@ proto-check-breaking:
 
 proto-update-deps:
 	@echo "Updating Protobuf dependencies"
-	@$(protoImage) buf mod update proto
+	@$(protoImage) buf dep update proto
 
 ###############################################################################
 ###                                Localnet                                 ###
