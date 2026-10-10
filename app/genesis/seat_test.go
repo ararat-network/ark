@@ -41,7 +41,13 @@ func seatCodec() codec.Codec {
 // artefactState loads the launch artefact's app state from this directory.
 func artefactState(t *testing.T) map[string]json.RawMessage {
 	t.Helper()
-	appGenesis, err := genutiltypes.AppGenesisFromFile("genesis.json")
+	return artefactStateFrom(t, "genesis.json")
+}
+
+// artefactStateFrom loads an artefact's app state from this directory.
+func artefactStateFrom(t *testing.T, file string) map[string]json.RawMessage {
+	t.Helper()
+	appGenesis, err := genutiltypes.AppGenesisFromFile(file)
 	require.NoError(t, err)
 	var state map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(appGenesis.AppState, &state))
@@ -205,6 +211,42 @@ func TestAddValidatorSeatsAtAnyCount(t *testing.T) {
 			want = founderSeat
 		}
 		require.Equal(t, want, p.Seat)
+	}
+}
+
+// poolSeatCeiling is the most seats the artefacts' community pool funds, the
+// founder's included: the limit GENESIS.md §12 gives --any-count.
+const poolSeatCeiling = 14
+
+// TestArtefactPoolSeatCeiling seats the top of the launch range and the
+// pool's ceiling on both artefacts, and is refused one seat past it, so a pool
+// change that moves the ceiling fails here rather than at assembly.
+func TestArtefactPoolSeatCeiling(t *testing.T) {
+	cdc := seatCodec()
+	tests := []struct {
+		name      string
+		count     int
+		errPhrase string
+	}{
+		{name: "the launch bound", count: chain.MaxLaunchSeats},
+		{name: "the pool's ceiling", count: poolSeatCeiling},
+		{name: "one seat past it", count: poolSeatCeiling + 1, errPhrase: "short of the"},
+	}
+	for _, file := range []string{"genesis.json", "testnet.json"} {
+		for _, tt := range tests {
+			t.Run(file+"/"+tt.name, func(t *testing.T) {
+				operators := make([]sdk.AccAddress, tt.count)
+				for i := range operators {
+					operators[i] = operatorAddress()
+				}
+				err := genesis.AddValidatorSeats(cdc, artefactStateFrom(t, file), operators, operators[0], genesisTime)
+				if tt.errPhrase == "" {
+					require.NoError(t, err)
+					return
+				}
+				require.ErrorContains(t, err, tt.errPhrase)
+			})
+		}
 	}
 }
 

@@ -19,7 +19,7 @@ const (
 	// MinLaunchSeats and MaxLaunchSeats bound the count launch assembly accepts. Under seven,
 	// genesis bonded stake falls under the 40M a buyer of the first year's liquid NOAH could
 	// otherwise take a third against; over thirteen, the founder's seat passes 3% of supply.
-	// Testnets seat any count (D112, D115).
+	// Testnets seat any count the community pool funds (D112, D115).
 	MinLaunchSeats = 7
 	MaxLaunchSeats = 13
 	// SeatFloatNoah is the liquid balance beside each seat, in whole NOAH: unvested coins cannot

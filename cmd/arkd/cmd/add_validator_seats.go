@@ -43,10 +43,10 @@ and both reward targets raised by one seat's share. The founder, named with
 a third of genesis bonded stake, on the same schedule from the same pool.
 Supply is unchanged. Set genesis_time in the file first;
 every seat vests from it. Run once, naming every genesis validator, between
-%d and %d of them unless --%s lifts the bounds for a testnet, before gentx
-collection: a file already seated is refused, and nothing is written unless
-every seat passes. The seat policy and the count bounds are fixed in
-pkg/chain.`, chain.MinLaunchSeats, chain.MaxLaunchSeats, flagAnyCount),
+%d and %d of them unless --%s lifts the bounds for a testnet, up to what the
+community pool funds, before gentx collection: a file already seated is
+refused, and nothing is written unless every seat passes. The seat policy
+and the count bounds are fixed in pkg/chain.`, chain.MinLaunchSeats, chain.MaxLaunchSeats, flagAnyCount),
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			founder, err := cmd.Flags().GetString(flagFounder)
@@ -62,7 +62,7 @@ pkg/chain.`, chain.MinLaunchSeats, chain.MaxLaunchSeats, flagAnyCount),
 	}
 	cmd.Flags().String(flags.FlagHome, defaultNodeHome, "The application home directory")
 	cmd.Flags().String(flagFounder, "", "The operator whose seat is the founder's, one of the operators named")
-	cmd.Flags().Bool(flagAnyCount, false, "Seat any count, for a testnet; a launch stays within the bounds")
+	cmd.Flags().Bool(flagAnyCount, false, "Seat any count the community pool funds, for a testnet; a launch stays within the bounds")
 	_ = cmd.MarkFlagRequired(flagFounder)
 	return cmd
 }

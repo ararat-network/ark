@@ -219,7 +219,7 @@ Example:
 
 	addTestnetFlagsToCmd(cmd, defaultCommitTimeout)
 	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
-	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, and its chain ID is the default")
+	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, which bounds the count, and its chain ID is the default")
 	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
