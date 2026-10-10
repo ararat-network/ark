@@ -17,7 +17,7 @@ import (
 const simAcquiredDenom = "axau-sim"
 
 // activeReserveCommittee resolves the appointed committee when the mandate is
-// active at this height and the run holds its key. A skip is the norm rather
+// active at this block time and the run holds its key. A skip is the norm rather
 // than a fault: an appointment may have expired, or been restored from an
 // export naming an address this run never held.
 func activeReserveCommittee(
@@ -32,8 +32,8 @@ func activeReserveCommittee(
 
 		return types.ReserveMandate{}, simsx.SimAccount{}, false
 	}
-	if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-		reporter.Skip("reserve mandate is not active at this height")
+	if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+		reporter.Skip("reserve mandate is not active at this block time")
 
 		return types.ReserveMandate{}, simsx.SimAccount{}, false
 	}

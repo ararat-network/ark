@@ -46,8 +46,8 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return nil, err
@@ -74,12 +74,12 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if height := uint64(sdkCtx.BlockHeight()); reserveMandate.ExpiryHeight <= height {
+		if now := chain.BlockSeconds(ctx); reserveMandate.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"%s expires at height %d, which is not above the current height %d",
+				"%s expires at time %d, which is not after the current block time %d",
 				types.ReserveMandateLabel,
-				reserveMandate.ExpiryHeight,
-				height,
+				reserveMandate.ExpiryTime,
+				now,
 			)
 		}
 	}
@@ -90,11 +90,11 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		return nil, fmt.Errorf("resetting Reserve allowance usage: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventReserveMandateSet{
-		Term:             reserveMandate.Term,
-		Committee:        reserveMandate.Committee,
-		ActivationHeight: reserveMandate.ActivationHeight,
-		ExpiryHeight:     reserveMandate.ExpiryHeight,
-		CommitteeShape:   reserveMandate.CommitteeShape,
+		Term:           reserveMandate.Term,
+		Committee:      reserveMandate.Committee,
+		ActivationTime: reserveMandate.ActivationTime,
+		ExpiryTime:     reserveMandate.ExpiryTime,
+		CommitteeShape: reserveMandate.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Reserve mandate: %w", err)
 	}

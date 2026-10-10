@@ -4240,7 +4240,7 @@ func (EntryKind) EnumDescriptor() ([]byte, []int) {
 	return file_ark_reserve_v1_reserve_proto_rawDescGZIP(), []int{0}
 }
 
-// ReserveMandate stores one governance-created, height-scoped Reserve
+// ReserveMandate stores one governance-created, time-scoped Reserve
 // committee appointment and the deployment authority delegated to it for the
 // term. An empty committee identifies a disabled mandate; term still increases
 // on replacement so old committee transactions cannot become valid again.
@@ -4249,7 +4249,7 @@ type ReserveMandate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	Envelope *v1.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	// deployment_allowance is the fixed gross anoah outflow the committee may
 	// deploy during the term. It is consumed permanently and only by NOAH

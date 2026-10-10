@@ -38,16 +38,16 @@ func MsgSetReserveMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetReserveMan
 		}
 
 		r := testData.Rand()
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		activation := height + r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activation := now + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetReserveMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activation,
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activation,
 			// Validation demands activation strictly precede expiry, and the
-			// handler demands expiry sit above the current height.
-			ExpiryHeight: activation + r.Uint64InRange(1, 100_000),
+			// handler demands expiry sit above the current block time.
+			ExpiryTime: activation + r.Uint64InRange(1, 100_000),
 			// A configured mandate must allow something and name somewhere.
 			DeploymentAllowance: chain.NoahCoin(math.NewInt(int64(r.IntInRange(1, 1_000_000_000)))),
 			MinimumNoahBalance:  chain.NoahCoin(math.NewInt(int64(r.IntInRange(0, 1_000_000)))),

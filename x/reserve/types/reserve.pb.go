@@ -88,12 +88,12 @@ func (EntryKind) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_6d4ce7fb5a811c46, []int{0}
 }
 
-// ReserveMandate stores one governance-created, height-scoped Reserve
+// ReserveMandate stores one governance-created, time-scoped Reserve
 // committee appointment and the deployment authority delegated to it for the
 // term. An empty committee identifies a disabled mandate; term still increases
 // on replacement so old committee transactions cannot become valid again.
 type ReserveMandate struct {
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
 	// deployment_allowance is the fixed gross anoah outflow the committee may
 	// deploy during the term. It is consumed permanently and only by NOAH

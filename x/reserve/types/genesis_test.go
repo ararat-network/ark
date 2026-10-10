@@ -276,7 +276,7 @@ func configuredTermGenesis(term uint64) *types.GenesisState {
 	position, _ := positionFixture(1, 1)
 	genesisState := genesisWithPositions([]types.Position{position}, nil)
 	genesisState.Mandate = types.ReserveMandate{
-		Envelope:            mandate.Envelope{Term: term, Committee: testAddress(2), ActivationHeight: 1, ExpiryHeight: 100},
+		Envelope:            mandate.Envelope{Term: term, Committee: testAddress(2), ActivationTime: 1, ExpiryTime: 100},
 		DeploymentAllowance: chain.NoahCoin(math.NewInt(1_000)),
 		MinimumNoahBalance:  chain.NoahCoin(math.ZeroInt()),
 		Destinations:        []string{testAddress(3)},

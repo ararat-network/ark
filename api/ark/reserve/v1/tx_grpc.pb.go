@@ -51,7 +51,7 @@ const (
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgClient interface {
-	// SetReserveMandate appoints, replaces, or disables the height-scoped
+	// SetReserveMandate appoints, replaces, or disables the time-scoped
 	// Reserve committee.
 	SetReserveMandate(ctx context.Context, in *MsgSetReserveMandate, opts ...grpc.CallOption) (*MsgSetReserveMandateResponse, error)
 	// SetRecognitionPolicy replaces the complete asset eligibility set.
@@ -350,7 +350,7 @@ func (c *msgClient) CommitteeFundInsurance(ctx context.Context, in *MsgCommittee
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgServer interface {
-	// SetReserveMandate appoints, replaces, or disables the height-scoped
+	// SetReserveMandate appoints, replaces, or disables the time-scoped
 	// Reserve committee.
 	SetReserveMandate(context.Context, *MsgSetReserveMandate) (*MsgSetReserveMandateResponse, error)
 	// SetRecognitionPolicy replaces the complete asset eligibility set.

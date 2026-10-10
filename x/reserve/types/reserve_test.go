@@ -88,8 +88,8 @@ const disabledMandateErr = "unconfigured Reserve mandate must be empty"
 func enabledReserveMandate() types.ReserveMandate {
 	appointment := types.NewDisabledReserveMandate(1)
 	appointment.Committee = testAddress(9)
-	appointment.ActivationHeight = 10
-	appointment.ExpiryHeight = 20
+	appointment.ActivationTime = 10
+	appointment.ExpiryTime = 20
 	appointment.DeploymentAllowance = chain.NoahCoin(math.NewInt(1_000))
 	appointment.MinimumNoahBalance = chain.NoahCoin(math.NewInt(100))
 	appointment.Destinations = []string{testAddress(2)}
@@ -155,8 +155,8 @@ func TestValidateReserveMandate(t *testing.T) {
 		{
 			name:      "disabled with a window",
 			mandate:   types.DefaultReserveMandate,
-			mutate:    func(m *types.ReserveMandate) { m.ExpiryHeight = 20 },
-			expectErr: "Reserve mandate: disabled envelope must not have an activation or expiry height",
+			mutate:    func(m *types.ReserveMandate) { m.ExpiryTime = 20 },
+			expectErr: "Reserve mandate: disabled envelope must not have an activation or expiry time",
 		},
 		{
 			name:      "configured zero term",
@@ -173,8 +173,8 @@ func TestValidateReserveMandate(t *testing.T) {
 		{
 			name:      "empty window",
 			mandate:   enabledReserveMandate,
-			mutate:    func(m *types.ReserveMandate) { m.ActivationHeight = m.ExpiryHeight },
-			expectErr: "Reserve mandate: activation height must precede expiry height",
+			mutate:    func(m *types.ReserveMandate) { m.ActivationTime = m.ExpiryTime },
+			expectErr: "Reserve mandate: activation time must precede expiry time",
 		},
 		{
 			// The mirror of the disabled rule: an appointment that may spend

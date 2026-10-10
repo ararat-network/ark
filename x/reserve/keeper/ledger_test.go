@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"math/big"
+	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -41,10 +42,10 @@ func paperCoin(amount int64) sdk.Coin {
 func (s *KeeperTestSuite) appointCommittee(committee string, allowance, floor int64, destinations ...string) {
 	reserveMandate := types.ReserveMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        committee,
-			ActivationHeight: 10,
-			ExpiryHeight:     1_000,
+			Term:           1,
+			Committee:      committee,
+			ActivationTime: 10,
+			ExpiryTime:     1_000,
 		},
 		DeploymentAllowance: noahCoin(allowance),
 		MinimumNoahBalance:  noahCoin(floor),
@@ -55,7 +56,7 @@ func (s *KeeperTestSuite) appointCommittee(committee string, allowance, floor in
 }
 
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
 }
 
 func testAddress(seed byte) string {
@@ -110,13 +111,13 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationHeight:    10,
-			ExpiryHeight:        1_000,
+			ActivationTime:      10,
+			ExpiryTime:          1_000,
 			DeploymentAllowance: noahCoin(1_000),
 			MinimumNoahBalance:  noahCoin(100),
 			Destinations:        []string{destination},
 		})
-		s.Require().ErrorContains(err, "not above the current height")
+		s.Require().ErrorContains(err, "not after the current block time")
 	})
 
 	s.Run("appoints and derives the next term", func() {
@@ -124,8 +125,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationHeight:    10,
-			ExpiryHeight:        1_000,
+			ActivationTime:      10,
+			ExpiryTime:          1_000,
 			DeploymentAllowance: noahCoin(1_000),
 			MinimumNoahBalance:  noahCoin(100),
 			Destinations:        []string{destination},
@@ -147,8 +148,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           testAddress(3),
-			ActivationHeight:    10,
-			ExpiryHeight:        1_000,
+			ActivationTime:      10,
+			ExpiryTime:          1_000,
 			DeploymentAllowance: noahCoin(500),
 			MinimumNoahBalance:  noahCoin(0),
 			Destinations:        []string{testAddress(4)},
@@ -190,8 +191,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           testAddress(9),
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        1_000,
+				ActivationTime:      10,
+				ExpiryTime:          1_000,
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -203,8 +204,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           s.authority,
-				ActivationHeight:    10,
-				ExpiryHeight:        1_000,
+				ActivationTime:      10,
+				ExpiryTime:          1_000,
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -216,8 +217,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        1_000,
+				ActivationTime:      10,
+				ExpiryTime:          1_000,
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 			},
@@ -228,8 +229,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        1_000,
+				ActivationTime:      10,
+				ExpiryTime:          1_000,
 				DeploymentAllowance: noahCoin(0),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -241,8 +242,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        1_000,
+				ActivationTime:      10,
+				ExpiryTime:          1_000,
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination, destination},

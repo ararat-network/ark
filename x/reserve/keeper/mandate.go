@@ -6,8 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
@@ -19,8 +18,7 @@ func (k *Keeper) AuthoriseCommittee(ctx context.Context, committee string, expec
 	if err != nil {
 		return types.ReserveMandate{}, fmt.Errorf("getting Reserve mandate: %w", err)
 	}
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-	if err := reserveMandate.Authorise(committee, expectedTerm, height); err != nil {
+	if err := reserveMandate.Authorise(committee, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.ReserveMandate{}, fmt.Errorf("%s: %w", types.ReserveMandateLabel, err)
 	}
 	return reserveMandate, nil

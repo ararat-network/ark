@@ -37,12 +37,12 @@ enum EntryKind {
   ENTRY_KIND_RETURN_REVERSAL = 7;
 }
 
-// ReserveMandate stores one governance-created, height-scoped Reserve
+// ReserveMandate stores one governance-created, time-scoped Reserve
 // committee appointment and the deployment authority delegated to it for the
 // term. An empty committee identifies a disabled mandate; term still increases
 // on replacement so old committee transactions cannot become valid again.
 message ReserveMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,

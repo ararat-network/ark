@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -67,7 +68,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, storetypes.NewTransientStoreKey("transient_test"))
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	reserveAddr := authtypes.NewModuleAddress(types.StrategicReserveName)
@@ -185,7 +186,7 @@ func TestMsgSetReserveMandateFactory(t *testing.T) {
 	require.NotNil(t, msg)
 	require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), msg.Authority)
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	require.True(t, msg.DeploymentAllowance.Amount.IsPositive())
 	require.NotEmpty(t, msg.Destinations)
 	// The factory's whole job is to emit what the handler accepts.

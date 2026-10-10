@@ -10,7 +10,6 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -52,7 +51,7 @@ func (q queryServer) Mandate(ctx context.Context, req *types.QueryMandateRequest
 
 	return &types.QueryMandateResponse{
 		Mandate:            reserveMandate,
-		Active:             reserveMandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:             reserveMandate.IsActive(chain.BlockSeconds(ctx)),
 		AllowanceUsed:      chain.NoahCoin(used),
 		AllowanceRemaining: chain.NoahCoin(remaining),
 	}, nil

@@ -9,12 +9,12 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 | Entry point | Responsibility |
 | --- | --- |
-| [keeper/position.go](keeper/position.go) | Open/closed positions and their lifecycle. |
-| [keeper/ledger.go](keeper/ledger.go) | Accounting journal and return attribution. |
+| [keeper/position.go](keeper/position.go) | Open/closed positions, their lifecycle, and return attribution. |
+| [keeper/ledger.go](keeper/ledger.go) | Append-only accounting journal. |
 | [keeper/recognition.go](keeper/recognition.go) | Live recognition calculation. |
 | [keeper/fund_transfer.go](keeper/fund_transfer.go) | Reserve-to-Buffer and Reserve-to-Insurance transfers. |
 | [keeper/burn.go](keeper/burn.go) | Burn authorisation and execution. |
-| [keeper/feed_guard.go](keeper/feed_guard.go) | Feed dependencies of recognition entries. |
+| [keeper/feed_guard.go](keeper/feed_guard.go) | Feed dependencies of recognition entries and open positions. |
 
 [keeper/keeper.go](keeper/keeper.go) declares the collections and narrow keeper dependencies.
 [msg_server.go](keeper/msg_server.go) and [grpc_query.go](keeper/grpc_query.go) are the transaction/query boundaries;
@@ -28,9 +28,10 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 ## Mandate, custody, and journal
 
 The mandate contains an exact committee, term window, gross deployment allowance, minimum NOAH balance, and approved
-destinations. Deployments consume allowance permanently for the term, enforce the remaining balance floor, and send
-only to those destinations. Recognition policy outlives appointments. There is no separate guardian or pause state:
-governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
+destinations. A NOAH deployment consumes allowance permanently for the term and enforces the remaining balance floor;
+any other held denomination deploys in kind against the holding alone, since that capital was charged when it first
+went out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no
+separate guardian or pause state: governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
 rejected because the bounded on-chain outflow and the off-chain custody relationship have different evidence.
 
 A `Position` holds attested quantity and venue reference beside proven deployed/returned amounts, impairment, and
@@ -42,9 +43,9 @@ Venue and entry references are free-form evidence the chain never interprets, at
 (`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value.
 
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
-loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism, since opening requires a
-real allowance-consuming deployment. No deployment veto window exists; governance pre-approves payees and prices its
-veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
+loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
+allowance again, and an in-kind reopening is booked at the live Oracle value. No deployment veto window exists;
+governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
 and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
@@ -87,19 +88,20 @@ that request through `GetRateSetWithin` and keys the answer by the requested sym
 acceptable age is consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can
 serve conversion and reserve recognition with different tolerances.
 
-Feed guards derive two kinds of claims at read time: every eligibility entry, and an open position whose returns
-still need attribution. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
+Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
+external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
 Bank custody admits NOAH and registered protocol paper, never external-shaped tokens: external holdings remain at
 attested destinations, and no native mint path produces those symbols.
 
 ## Queries, events, and genesis
 
 The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, balances, positions, ledger, recognition
-policy, and capital decomposition with per-row reasons. Bank transfer/burn events record custody movements;
+policy, and capital decomposition with the inputs that explain each row. Bank transfer/burn events record custody movements;
 `EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
-Genesis preserves open and closed positions and their unpruned history, then recomputes proven position figures and
-term usage from the ledger. IDs, correction references, position references, and closure rules must agree. Positions
-and entries are permanent: IDs run from one without a gap and each sequence sits one past its records, so an export
+Genesis preserves open and closed positions and their unpruned history, reconciles the stated position figures and
+term usage against the ledger, refusing a mismatch, and rebuilds the per-position and reversal indexes. IDs,
+correction references, position references, and closure rules must agree. Positions and entries are permanent: IDs
+run from one without a gap and each sequence sits one past its records, so an export
 that lost a record cannot import. Oracle imports first so recognition entries can validate their feeds. Non-NOAH Bank
 balances must be registry members.
 
