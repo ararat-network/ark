@@ -126,7 +126,7 @@ message QueryEmergencyMandateResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // active reports whether the committee may act at the current height.
+  // active reports whether the committee may act at the current block time.
   bool active = 2 [(amino.dont_omitempty) = true];
   // suspended_denoms lists the assets whose per-term suspension the committee
   // has already consumed under the current term, sorted.

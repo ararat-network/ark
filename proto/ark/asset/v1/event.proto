@@ -48,7 +48,7 @@ message EventSettlementClosed {
     (amino.dont_omitempty) = true
   ];
   uint64 version = 2 [(amino.dont_omitempty) = true];
-  int64 closed_height = 3 [(amino.dont_omitempty) = true];
+  uint64 closed_height = 3 [(amino.dont_omitempty) = true];
 }
 
 // EventAssetResolved is emitted after a resolution record is appended.

@@ -135,14 +135,14 @@ message SettlementPlan {
   uint64 earliest_closing_time = 4 [(amino.dont_omitempty) = true];
   // opened_height records the block height at which governance stored these
   // terms.
-  int64 opened_height = 5 [(amino.dont_omitempty) = true];
+  uint64 opened_height = 5 [(amino.dont_omitempty) = true];
   // opened_time records that block's time, in Unix seconds.
   uint64 opened_time = 6 [(amino.dont_omitempty) = true];
 }
 
 // PricedAsset pairs a pricing verdict with its registry record, if any. Exactly one of source and
 // reason is set. NOAH and unregistered denominations have no record; external pricing authorities
-// supply their own verdicts. See x/asset/README.md, "Consumer pricing views".
+// supply their own verdicts.
 message PricedAsset {
   Asset asset = 1 [
     (gogoproto.nullable) = false,
@@ -175,7 +175,7 @@ message ResolutionRecord {
   // (denom, version); duplicate appends are rejected.
   uint64 version = 2 [(amino.dont_omitempty) = true];
   // resolution_height is the block height at which the record was appended.
-  int64 resolution_height = 3 [(amino.dont_omitempty) = true];
+  uint64 resolution_height = 3 [(amino.dont_omitempty) = true];
   cosmos.base.v1beta1.Coin outstanding_supply = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true

@@ -524,7 +524,7 @@ var xxx_messageInfo_QueryEmergencyMandateRequest proto.InternalMessageInfo
 // current effective status.
 type QueryEmergencyMandateResponse struct {
 	Mandate EmergencyMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
-	// active reports whether the committee may act at the current height.
+	// active reports whether the committee may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 	// suspended_denoms lists the assets whose per-term suspension the committee
 	// has already consumed under the current term, sorted.

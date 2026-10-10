@@ -1127,8 +1127,8 @@ func (x *fastReflection_SettlementPlan) Range(f func(protoreflect.FieldDescripto
 			return
 		}
 	}
-	if x.OpenedHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.OpenedHeight)
+	if x.OpenedHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.OpenedHeight)
 		if !f(fd_SettlementPlan_opened_height, value) {
 			return
 		}
@@ -1163,7 +1163,7 @@ func (x *fastReflection_SettlementPlan) Has(fd protoreflect.FieldDescriptor) boo
 	case "ark.asset.v1.SettlementPlan.earliest_closing_time":
 		return x.EarliestClosingTime != uint64(0)
 	case "ark.asset.v1.SettlementPlan.opened_height":
-		return x.OpenedHeight != int64(0)
+		return x.OpenedHeight != uint64(0)
 	case "ark.asset.v1.SettlementPlan.opened_time":
 		return x.OpenedTime != uint64(0)
 	default:
@@ -1191,7 +1191,7 @@ func (x *fastReflection_SettlementPlan) Clear(fd protoreflect.FieldDescriptor) {
 	case "ark.asset.v1.SettlementPlan.earliest_closing_time":
 		x.EarliestClosingTime = uint64(0)
 	case "ark.asset.v1.SettlementPlan.opened_height":
-		x.OpenedHeight = int64(0)
+		x.OpenedHeight = uint64(0)
 	case "ark.asset.v1.SettlementPlan.opened_time":
 		x.OpenedTime = uint64(0)
 	default:
@@ -1224,7 +1224,7 @@ func (x *fastReflection_SettlementPlan) Get(descriptor protoreflect.FieldDescrip
 		return protoreflect.ValueOfUint64(value)
 	case "ark.asset.v1.SettlementPlan.opened_height":
 		value := x.OpenedHeight
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	case "ark.asset.v1.SettlementPlan.opened_time":
 		value := x.OpenedTime
 		return protoreflect.ValueOfUint64(value)
@@ -1257,7 +1257,7 @@ func (x *fastReflection_SettlementPlan) Set(fd protoreflect.FieldDescriptor, val
 	case "ark.asset.v1.SettlementPlan.earliest_closing_time":
 		x.EarliestClosingTime = value.Uint()
 	case "ark.asset.v1.SettlementPlan.opened_height":
-		x.OpenedHeight = value.Int()
+		x.OpenedHeight = value.Uint()
 	case "ark.asset.v1.SettlementPlan.opened_time":
 		x.OpenedTime = value.Uint()
 	default:
@@ -1314,7 +1314,7 @@ func (x *fastReflection_SettlementPlan) NewField(fd protoreflect.FieldDescriptor
 	case "ark.asset.v1.SettlementPlan.earliest_closing_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.asset.v1.SettlementPlan.opened_height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.asset.v1.SettlementPlan.opened_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
@@ -1634,7 +1634,7 @@ func (x *fastReflection_SettlementPlan) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.OpenedHeight |= int64(b&0x7F) << shift
+					x.OpenedHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2450,8 +2450,8 @@ func (x *fastReflection_ResolutionRecord) Range(f func(protoreflect.FieldDescrip
 			return
 		}
 	}
-	if x.ResolutionHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ResolutionHeight)
+	if x.ResolutionHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ResolutionHeight)
 		if !f(fd_ResolutionRecord_resolution_height, value) {
 			return
 		}
@@ -2494,7 +2494,7 @@ func (x *fastReflection_ResolutionRecord) Has(fd protoreflect.FieldDescriptor) b
 	case "ark.asset.v1.ResolutionRecord.version":
 		return x.Version != uint64(0)
 	case "ark.asset.v1.ResolutionRecord.resolution_height":
-		return x.ResolutionHeight != int64(0)
+		return x.ResolutionHeight != uint64(0)
 	case "ark.asset.v1.ResolutionRecord.outstanding_supply":
 		return x.OutstandingSupply != nil
 	case "ark.asset.v1.ResolutionRecord.settlement_plan":
@@ -2522,7 +2522,7 @@ func (x *fastReflection_ResolutionRecord) Clear(fd protoreflect.FieldDescriptor)
 	case "ark.asset.v1.ResolutionRecord.version":
 		x.Version = uint64(0)
 	case "ark.asset.v1.ResolutionRecord.resolution_height":
-		x.ResolutionHeight = int64(0)
+		x.ResolutionHeight = uint64(0)
 	case "ark.asset.v1.ResolutionRecord.outstanding_supply":
 		x.OutstandingSupply = nil
 	case "ark.asset.v1.ResolutionRecord.settlement_plan":
@@ -2553,7 +2553,7 @@ func (x *fastReflection_ResolutionRecord) Get(descriptor protoreflect.FieldDescr
 		return protoreflect.ValueOfUint64(value)
 	case "ark.asset.v1.ResolutionRecord.resolution_height":
 		value := x.ResolutionHeight
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	case "ark.asset.v1.ResolutionRecord.outstanding_supply":
 		value := x.OutstandingSupply
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
@@ -2588,7 +2588,7 @@ func (x *fastReflection_ResolutionRecord) Set(fd protoreflect.FieldDescriptor, v
 	case "ark.asset.v1.ResolutionRecord.version":
 		x.Version = value.Uint()
 	case "ark.asset.v1.ResolutionRecord.resolution_height":
-		x.ResolutionHeight = value.Int()
+		x.ResolutionHeight = value.Uint()
 	case "ark.asset.v1.ResolutionRecord.outstanding_supply":
 		x.OutstandingSupply = value.Message().Interface().(*v1beta11.Coin)
 	case "ark.asset.v1.ResolutionRecord.settlement_plan":
@@ -2651,7 +2651,7 @@ func (x *fastReflection_ResolutionRecord) NewField(fd protoreflect.FieldDescript
 	case "ark.asset.v1.ResolutionRecord.version":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.asset.v1.ResolutionRecord.resolution_height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.asset.v1.ResolutionRecord.outstanding_supply":
 		m := new(v1beta11.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
@@ -2943,7 +2943,7 @@ func (x *fastReflection_ResolutionRecord) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ResolutionHeight |= int64(b&0x7F) << shift
+					x.ResolutionHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -3909,7 +3909,7 @@ type SettlementPlan struct {
 	EarliestClosingTime uint64 `protobuf:"varint,4,opt,name=earliest_closing_time,json=earliestClosingTime,proto3" json:"earliest_closing_time,omitempty"`
 	// opened_height records the block height at which governance stored these
 	// terms.
-	OpenedHeight int64 `protobuf:"varint,5,opt,name=opened_height,json=openedHeight,proto3" json:"opened_height,omitempty"`
+	OpenedHeight uint64 `protobuf:"varint,5,opt,name=opened_height,json=openedHeight,proto3" json:"opened_height,omitempty"`
 	// opened_time records that block's time, in Unix seconds.
 	OpenedTime uint64 `protobuf:"varint,6,opt,name=opened_time,json=openedTime,proto3" json:"opened_time,omitempty"`
 }
@@ -3962,7 +3962,7 @@ func (x *SettlementPlan) GetEarliestClosingTime() uint64 {
 	return 0
 }
 
-func (x *SettlementPlan) GetOpenedHeight() int64 {
+func (x *SettlementPlan) GetOpenedHeight() uint64 {
 	if x != nil {
 		return x.OpenedHeight
 	}
@@ -3978,7 +3978,7 @@ func (x *SettlementPlan) GetOpenedTime() uint64 {
 
 // PricedAsset pairs a pricing verdict with its registry record, if any. Exactly one of source and
 // reason is set. NOAH and unregistered denominations have no record; external pricing authorities
-// supply their own verdicts. See x/asset/README.md, "Consumer pricing views".
+// supply their own verdicts.
 type PricedAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4065,7 +4065,7 @@ type ResolutionRecord struct {
 	// (denom, version); duplicate appends are rejected.
 	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	// resolution_height is the block height at which the record was appended.
-	ResolutionHeight  int64          `protobuf:"varint,3,opt,name=resolution_height,json=resolutionHeight,proto3" json:"resolution_height,omitempty"`
+	ResolutionHeight  uint64         `protobuf:"varint,3,opt,name=resolution_height,json=resolutionHeight,proto3" json:"resolution_height,omitempty"`
 	OutstandingSupply *v1beta11.Coin `protobuf:"bytes,4,opt,name=outstanding_supply,json=outstandingSupply,proto3" json:"outstanding_supply,omitempty"`
 	// settlement_plan carries final terms only for a write-off that ended an
 	// open settlement.
@@ -4108,7 +4108,7 @@ func (x *ResolutionRecord) GetVersion() uint64 {
 	return 0
 }
 
-func (x *ResolutionRecord) GetResolutionHeight() int64 {
+func (x *ResolutionRecord) GetResolutionHeight() uint64 {
 	if x != nil {
 		return x.ResolutionHeight
 	}
@@ -4225,7 +4225,7 @@ var file_ark_asset_v1_asset_proto_rawDesc = []byte{
 	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x13, 0x65, 0x61, 0x72, 0x6c, 0x69, 0x65,
 	0x73, 0x74, 0x43, 0x6c, 0x6f, 0x73, 0x69, 0x6e, 0x67, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x2a, 0x0a,
 	0x0d, 0x6f, 0x70, 0x65, 0x6e, 0x65, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05,
-	0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x70, 0x65,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6f, 0x70, 0x65,
 	0x6e, 0x65, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x26, 0x0a, 0x0b, 0x6f, 0x70, 0x65,
 	0x6e, 0x65, 0x64, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05,
 	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x6f, 0x70, 0x65, 0x6e, 0x65, 0x64, 0x54, 0x69, 0x6d,
@@ -4256,7 +4256,7 @@ var file_ark_asset_v1_asset_proto_rawDesc = []byte{
 	0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
 	0x52, 0x07, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x32, 0x0a, 0x11, 0x72, 0x65, 0x73,
 	0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x72, 0x65, 0x73,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x72, 0x65, 0x73,
 	0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x53, 0x0a,
 	0x12, 0x6f, 0x75, 0x74, 0x73, 0x74, 0x61, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x73, 0x75, 0x70,
 	0x70, 0x6c, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,

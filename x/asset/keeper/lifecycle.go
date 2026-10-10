@@ -261,7 +261,7 @@ func (k Keeper) FinaliseRetirement(ctx context.Context, denom string, expectedVe
 			Denom:             denom,
 			Kind:              types.ResolutionKind_RESOLUTION_KIND_RETIREMENT_RESIDUAL,
 			Version:           asset.Version + 1,
-			ResolutionHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
+			ResolutionHeight:  uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
 			OutstandingSupply: supply,
 		}
 		if err := k.validateResolutionRecord(ctx, *residual); err != nil {

@@ -11665,7 +11665,8 @@ type MsgSetEmergencyMandate struct {
 	unknownFields protoimpl.UnknownFields
 
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	// committee is the exact threshold-multisig account, empty to disable.
+	// committee is the exact appointed account, empty to disable. A threshold
+	// multisig is the intended shape; the chain sees only the account.
 	Committee      string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
 	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
 	ExpiryTime     uint64 `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`

@@ -630,7 +630,7 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        asset.Version + 2,
-			ClosedHeight:   int64(activation + 1),
+			ClosedHeight:   activation + 1,
 		},
 	)
 }

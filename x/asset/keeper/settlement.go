@@ -16,9 +16,9 @@ import (
 )
 
 // GetSettlementPlan returns the stored settlement plan whether or not its
-// activation time has arrived. Treasury recognises the liability from plan
-// open — the commitment is irrevocable from that block — while Market's
-// activation-gated ActiveSettlementPlan governs when holders may execute.
+// activation time has arrived. Treasury recognises the liability at the plan
+// rate from plan open, and a cancelled pending plan drops it again, while
+// Market's activation-gated ActiveSettlementPlan governs when holders may execute.
 func (k Keeper) GetSettlementPlan(ctx context.Context, denom string) (types.SettlementPlan, bool, error) {
 	plan, err := k.SettlementPlans.Get(ctx, denom)
 	if err != nil {
@@ -107,7 +107,7 @@ func (k Keeper) OpenSettlement(
 		RedemptionRate:      redemptionRate,
 		ActivationTime:      now + params.SettlementActivationDelay,
 		EarliestClosingTime: earliestClosingTime,
-		OpenedHeight:        sdkCtx.BlockHeight(),
+		OpenedHeight:        uint64(sdkCtx.BlockHeight()),
 		OpenedTime:          now,
 	}
 	if err := plan.Validate(); err != nil {
@@ -236,7 +236,7 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 
 	// Closing follows activation, so this comparison also protects pending plans. Derecognition
 	// before activation requires cancelling the plan first.
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	blockHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
 	if now := chain.BlockSeconds(ctx); hasPlan && now < plan.EarliestClosingTime {
 		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
@@ -294,7 +294,7 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        version,
-			ClosedHeight:   sdkCtx.BlockHeight(),
+			ClosedHeight:   uint64(sdkCtx.BlockHeight()),
 		},
 	); err != nil {
 		return fmt.Errorf(
