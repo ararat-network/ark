@@ -59,6 +59,7 @@ maintain that boundary.
 ## Find subsystem documentation
 
 - [Application](../app/README.md), [ante/post handling](../app/ante/README.md), and [mempool](../app/mempool/README.md).
+- [arkd](../cmd/arkd/README.md) and [pricefeed](../cmd/pricefeed/README.md): the two binaries' command trees.
 - [Disbursement](../x/disbursement/README.md): funded member distribution, contributor ownership, and transparent compensation.
 - [Asset](../x/asset/README.md), [Oracle](../x/oracle/README.md), [Market](../x/market/README.md),
   [Treasury](../x/treasury/README.md), [Claims](../x/claims/README.md), [Reserve](../x/reserve/README.md),

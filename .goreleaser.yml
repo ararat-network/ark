@@ -4,7 +4,7 @@ project_name: arkd
 
 # Package arkd from vX.Y.Z through make release. The build tool uses each architecture's
 # compiler in the pinned container base and verifies matching runtime sources before returning
-# the binary to GoReleaser. See README.md, "Release builds".
+# the binary to GoReleaser. See docs/operations/RELEASE_VERIFICATION.md, "Local packaging".
 
 release:
   name_template: "{{ .Tag }}"

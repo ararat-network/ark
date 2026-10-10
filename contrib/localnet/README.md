@@ -55,7 +55,10 @@ make localnet-statesync
 make localnet-runbook
 ```
 
-The state-sync target starts `sync0` using the `statesync` profile and checks RPC at `localhost:26697`. Success requires
+The state-sync target starts `sync0` using the `statesync` profile and checks RPC at `localhost:26697`. Its entrypoint,
+[statesync.sh](statesync.sh), waits up to `WAIT_SECONDS` (300) for node0 to pass the snapshot interval
+(`SNAPSHOT_INTERVAL`, 20), takes the trust height and hash from node0's RPC, writes them and `RPC_SERVERS` into the
+`[statesync]` table of config.toml, and starts the node. Success requires
 an earliest block above 1 and progress beyond that restored height, not merely a node that caught up by replaying genesis.
 `localnet-stop` also stops this profile.
 

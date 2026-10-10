@@ -83,7 +83,8 @@ available outside the logo.
 ## Rebuilding
 
 Edit the numbers in `source/kit.py` (`MAIN`, `SMALL`, `D_REV`, the palette, or the wordmark's `s`), then run
-`source/build.sh`. It needs Python 3 and the logo-design skill's scripts (set `SKILL` if they aren't in
-`~/code/logo-design-skill`). The board is rebuilt separately from `board/ark-board.json` with the skill's
-`presentation_board.py`. The stock script prints placeholder commands in the terminal mockup; this board replaces them
+`source/build.sh`. It needs Python 3 and the logo-design skill's scripts (set `SKILL` to the scripts directory if it is not
+`~/code/logo-design-skill/skills/logo-design/scripts`). The board is rebuilt separately from `board/ark-board.json`
+with the skill's `presentation_board.py`. The stock script prints placeholder commands in the terminal mockup; this
+board replaces them
 with `arkd query oracle reference-denom` and `exchange-rates`.

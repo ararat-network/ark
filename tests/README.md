@@ -28,7 +28,7 @@ a sandbox bind/cache failure is an environment issue, not by itself a failing pr
 
 Keeper tests use module-local fixtures; type validation/parsing tests use table-driven functions. Start validation cases
 from default params/genesis and mutate one field; test accepted boundaries as well as errors. Shared application fixtures
-live in [app/testutil](../app/testutil/). [Embedded Wasm fixtures](../app/testdata/contracts.go) support application tests.
+live in [app/testutil](../app/testutil/). [counter.wasm](e2e/testdata/counter.wasm) is the e2e tier's contract fixture.
 Metric golden fixtures and their intentional update workflow are owned by [telemetry](../pkg/telemetry/README.md).
 
 ## Simulation and live rehearsals
@@ -52,6 +52,7 @@ workflows file one issue per workflow on failure through [nightly-failure.yml](.
 [CodeQL](../.github/workflows/codeql.yml) and [vulnerability scanning](../.github/workflows/vulncheck.yml) provide security
 checks; `make vulncheck` runs the reachable-call gate locally. Image publication is configured separately in
 [docker-push.yml](../.github/workflows/docker-push.yml); [THREAT_MODEL.md](../docs/design/THREAT_MODEL.md) owns release trust.
+
 ## Height-sensitive fixtures
 
 Apply keeper writes through `NewNextBlockContext` before driving `FinalizeBlock`/`Commit` in app scenarios. The SDK

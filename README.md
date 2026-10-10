@@ -26,7 +26,7 @@ no seigniorage. NOAH is minted and burned only inside stablecoin conversion, and
 stablecoins: a Redemption Buffer that recycles retained NOAH into redemptions, a strategic Reserve that governance can
 commit and a committee can deploy under a bounded mandate, and Insurance that pays covered losses through recorded
 claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
-holds every unbounded power; committees hold bounded, height-scoped mandates. To understand how funds and authority
+holds every unbounded power; committees hold bounded, time-scoped mandates. To understand how funds and authority
 move, read the [economic design](docs/design/ECONOMIC_DESIGN.md).
 
 The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets out the purpose that design serves.
@@ -138,7 +138,7 @@ images, localnet, probes, and rehearsals. Documentation follows the
 [placement rule](docs/README.md#documentation-placement-rule): one authoritative home per subject, linked from
 everywhere else.
 
-## Release builds
+## Licensing and releases
 
 Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links
 third-party code under LGPLv3 and the Business Source License 1.1, whose
@@ -150,25 +150,5 @@ The chain releases from `vX.Y.Z`; the sidecar releases independently from `price
 [The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags.
 A suffix such as `-rc1` marks the draft as a pre-release. Maintainers review and publish through GitHub;
 only stable chain releases should be marked latest.
-[Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review and consumer checks.
-
-`make release` packages locally without uploading or signing. It checks a clean tree and the chain tag on HEAD, selects it explicitly, and runs the
-[chain configuration](.goreleaser.yml), which builds static Linux binaries for amd64 and arm64. GoReleaser passes its
-build command to [the release adapter](contrib/scripts/release-build.py), which builds the committed source export with
-each architecture's compiler in the pinned base from the [image Dockerfile](contrib/images/arkd-env/Dockerfile).
-Docker must support running both Linux architectures, either natively or through emulation. The builder checks the
-wasmvm version and archive digests, records the linked system libraries and packages their corresponding runtime sources.
-The adapter verifies the binary, target, source revision and runtime-source pairing before returning it to GoReleaser.
-macOS node use remains a source build.
-
-`make release-pricefeed` also packages locally without uploading or signing. It checks a clean tree and the sidecar tag on HEAD, selects it explicitly, then skips GoReleaser's
-bare-semver validation. The [sidecar configuration](.goreleaser.pricefeed.yml) derives version strings from `.Tag` and
-cross-compiles without cgo. Both release configurations prepare a corresponding
-source bundle, verify builds from it, and generate per-archive SPDX inventories with pinned Syft.
-Checksums cover the archives, SPDX files and every attached source/notice asset. This requires Python
-3.12+, Docker with both Linux architectures, and the source-packaging prerequisites
-listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Published images carry
-their source bundle and notices inside `/usr/share/ark/`, including nightly builds.
-Standalone node releases attach both `arkd-source-<commit>` application sources and
-`arkd-runtime-source-<commit>-linux-<arch>` runtime sources. Retain both with the matching binaries.
-Neither release command is part of ordinary verification.
+[Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging, and
+consumer checks.

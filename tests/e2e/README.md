@@ -14,14 +14,14 @@ make localnet-build-env
 make test-e2e E2E_PACKAGES=./delegator/...
 ```
 
-`make test-e2e` runs every package. Each suite spawns its own chain, so a package takes minutes and the whole tree
-most of an hour. The Makefile exports the Docker CLI context's endpoint as `DOCKER_HOST`, which the Go client needs on
-OrbStack and Colima.
+`make test-e2e` runs every package and `E2E_RUN=TestName` narrows it to one suite. Each suite spawns its own chain,
+so a package takes minutes and the whole tree most of an hour. The Makefile exports the Docker CLI context's endpoint
+as `DOCKER_HOST`, which the Go client needs on OrbStack and Colima.
 
 Every chain runs the testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json): `chainsuite.ArtefactGenesis`
 lays its consensus block and module states over the genesis interchaintest generates, keeping interchaintest's
 accounts and gentxs and merging the bank ledger, then applies the suite's short windows. Validators are ordinary bonded
-accounts on the launch economics, not seats; the gov suite admits a seat through the governance proposal.
+accounts on the launch economics, not seats; the gov suite spends from the community pool through a governance proposal.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -48,10 +48,10 @@ included, which is the path an operator's CLI takes.
 ## Writing a suite
 
 Embed `chainsuite.Suite` (or `delegator.Suite` for its three funded wallets) and pass `chainsuite.NewSuite` a `SuiteConfig`:
-the validator count, `GenesisOverrides` on top of `DefaultGenesis`, `Scope` when tests must not share a chain, and
-`UpgradeOnSetup` for suites that should run against an upgraded chain when `TEST_OLD_IMAGE_VERSION` is set.
+a `ChainSpec` such as `FourValidators`, `GenesisOverrides` on top of `DefaultGenesis`, `Scope` when tests must not
+share a chain, and `UpgradeOnSetup` for suites that should run against an upgraded chain when
+`TEST_OLD_IMAGE_VERSION` is set.
 `chainsuite.Chain` wraps interchaintest's chain with what the suites reach for: proposals, config changes with a
-restart, the oracle's rates and vote extensions, Treasury's gas price, and REST fetches. Transactions carry no gas price,
-so arkd prices them itself.
+restart, the oracle's rates and vote extensions, Treasury's gas price, and REST fetches.
 
 Keys made with `BuildWallet` live on the first node's keyring; send their transactions through `Chain.GetNode()`.

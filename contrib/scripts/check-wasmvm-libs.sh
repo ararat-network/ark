@@ -1,7 +1,7 @@
 #!/bin/sh
 # Check the wasmvm static archives a release links: go.mod must require the version that
-# contrib/images/arkd-env/Dockerfile records, and the archives must match its digests. Runs as the
-# chain release's goreleaser before hook; WASMVM_LIBDIR overrides /lib.
+# contrib/images/arkd-env/Dockerfile records, and the archives must match its digests. Run by the
+# image Dockerfile; WASMVM_LIBDIR overrides /lib.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
