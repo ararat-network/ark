@@ -59,6 +59,9 @@ func (d GovVoteDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, 
 	checking := mode == sdk.ExecModeCheck || mode == sdk.ExecModeReCheck
 	guard := closedProposalGuard{gov: d.gov, deposited: map[uint64]bool{}, created: map[uint64]bool{}}
 	for _, msg := range tx.GetMsgs() {
+		if err := ValidateConsensusParamsMsg(d.cdc, msg, 0); err != nil {
+			return ctx, err
+		}
 		err := walkAuthzExec(d.cdc, msg, 0, func(msg sdk.Msg) error {
 			if err := vouchVote(ctx, d.staking, msg); err != nil {
 				return err

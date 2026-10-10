@@ -110,6 +110,10 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				}
 				// Give the wrapped handler only the remaining protobuf transaction
 				// budget. Use a request copy so this wrapper does not mutate its input.
+				// On any error here baseapp proposes CometBFT's raw transaction list
+				// instead, which ProcessProposal rejects for want of the commit, so the
+				// round is lost. The ante's block data budget floor keeps governance
+				// from making this branch permanent.
 				extInfoBzSize := cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{extInfoBz})
 				if extInfoBzSize > req.MaxTxBytes {
 					err = fmt.Errorf(

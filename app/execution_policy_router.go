@@ -55,6 +55,11 @@ func (r executionPolicyRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 		if err := ante.ValidateGovVoteMsg(ctx, r.cdc, r.staking, req, 0); err != nil {
 			return nil, err
 		}
+		// A proposal dispatched here meets the same block data budget floor
+		// as a signed one.
+		if err := ante.ValidateConsensusParamsMsg(r.cdc, req, 0); err != nil {
+			return nil, err
+		}
 		// A MultiSend dispatched here meets the same fan-out cap and pays the
 		// same quadratic surcharge as a signed one.
 		if err := ante.ValidateMultiSendMsg(ctx, r.cdc, req, 0); err != nil {

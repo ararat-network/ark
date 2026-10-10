@@ -45,9 +45,8 @@ func NewAnteHandler(
 		// gas into an error.
 		sdkante.NewSetUpContextDecorator(),
 
-		// Wasm context decorators follow setup so later checks meter their reads. CountTXDecorator
-		// supplies the block transaction index used in contract addresses; another context setup
-		// would reset their gas charges.
+		// Wasm context decorators follow setup so later checks meter their reads; another context
+		// setup would reset their gas charges. CountTXDecorator supplies env.transaction.index.
 		wasmkeeper.NewLimitSimulationGasDecorator(wasmNodeConfig.SimulationGasLimit),
 		wasmkeeper.NewCountTXDecorator(wasmTxCounterStore),
 		wasmkeeper.NewGasRegisterDecorator(wasmGasRegister),
