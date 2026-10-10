@@ -148,9 +148,9 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 		if err := k.Beneficiaries.Set(ctx, beneficiary, p); err != nil {
 			return 0, err
 		}
-	}
-	if err := k.Grants.Set(ctx, id, g); err != nil {
-		return 0, err
+		if err := k.Grants.Set(ctx, id, g); err != nil {
+			return 0, err
+		}
 	}
 	if err := k.index(ctx, beneficiary, g); err != nil {
 		return 0, err
@@ -167,7 +167,8 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 		return 0, err
 	}
 	if g.Kind == types.GrantKind_GRANT_KIND_MEMBER {
-		// A member's first period pays at registration.
+		// A member's first period pays at registration. Unpaid, a member fits no valid shape, so
+		// settle's validated write is its first.
 		q, err := k.payable(ctx, g)
 		if err != nil {
 			return 0, err
@@ -182,6 +183,7 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 // cancel freezes earned entitlement and queues the retained debt for the block to pay; it sends
 // nothing itself.
 func (k *Keeper) cancel(ctx context.Context, actor string, g types.Grant) error {
+	// A closed grant cancels to nothing, unjournaled, so recovery proposals that overlap may share IDs.
 	if g.Cancelled() || g.Remaining.IsZero() {
 		return nil
 	}

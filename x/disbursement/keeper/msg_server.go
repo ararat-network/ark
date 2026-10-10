@@ -20,7 +20,9 @@ type msgServer struct {
 var _ types.MsgServer = msgServer{}
 
 // NewMsgServerImpl exposes the disbursement transaction handlers.
-func NewMsgServerImpl(k *Keeper) types.MsgServer { return msgServer{k: k} }
+func NewMsgServerImpl(k *Keeper) types.MsgServer {
+	return msgServer{k: k}
+}
 
 func addressesBatch(addresses []string) ([]sdk.AccAddress, error) {
 	if len(addresses) == 0 || len(addresses) > types.MaxBatch {
@@ -92,7 +94,7 @@ func (m msgServer) compensation(ctx context.Context, beneficiary string, amount 
 
 func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil update params message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -108,7 +110,7 @@ func (m msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 func (m msgServer) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMandate) (*types.MsgSetGrantsMandateResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil set grants mandate message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -121,7 +123,7 @@ func (m msgServer) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrants
 
 func (m msgServer) OpenTranche(ctx context.Context, msg *types.MsgOpenTranche) (*types.MsgOpenTrancheResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil open tranche message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -157,7 +159,7 @@ func (m msgServer) OpenTranche(ctx context.Context, msg *types.MsgOpenTranche) (
 
 func (m msgServer) ReturnUnallocated(ctx context.Context, msg *types.MsgReturnUnallocated) (*types.MsgReturnUnallocatedResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil return unallocated message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -190,7 +192,7 @@ func (m msgServer) ReturnUnallocated(ctx context.Context, msg *types.MsgReturnUn
 
 func (m msgServer) GrantOwnership(ctx context.Context, msg *types.MsgGrantOwnership) (*types.MsgGrantOwnershipResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil grant ownership message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -223,7 +225,7 @@ func (m msgServer) GrantOwnership(ctx context.Context, msg *types.MsgGrantOwners
 
 func (m msgServer) Compensate(ctx context.Context, msg *types.MsgCompensate) (*types.MsgCompensateResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil compensate message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -242,7 +244,7 @@ func (m msgServer) Compensate(ctx context.Context, msg *types.MsgCompensate) (*t
 
 func (m msgServer) CancelGrants(ctx context.Context, msg *types.MsgCancelGrants) (*types.MsgCancelGrantsResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil cancel grants message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -264,7 +266,7 @@ func (m msgServer) CancelGrants(ctx context.Context, msg *types.MsgCancelGrants)
 
 func (m msgServer) ReinstateMembers(ctx context.Context, msg *types.MsgReinstateMembers) (*types.MsgReinstateMembersResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil reinstate members message")
 	}
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
@@ -283,7 +285,7 @@ func (m msgServer) ReinstateMembers(ctx context.Context, msg *types.MsgReinstate
 
 func (m msgServer) CommitteeRegistrar(ctx context.Context, msg *types.MsgCommitteeRegistrar) (*types.MsgCommitteeRegistrarResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil committee registrar message")
 	}
 	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
@@ -297,7 +299,7 @@ func (m msgServer) CommitteeRegistrar(ctx context.Context, msg *types.MsgCommitt
 
 func (m msgServer) RegisterMembers(ctx context.Context, msg *types.MsgRegisterMembers) (*types.MsgRegisterMembersResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil register members message")
 	}
 	appointment, err := m.k.AuthoriseRegistrar(ctx, msg.Registrar, msg.ExpectedTerm)
 	if err != nil {
@@ -358,7 +360,7 @@ func (m msgServer) RegisterMembers(ctx context.Context, msg *types.MsgRegisterMe
 
 func (m msgServer) CommitteeSuspend(ctx context.Context, msg *types.MsgCommitteeSuspend) (*types.MsgCommitteeSuspendResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil committee suspend message")
 	}
 	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
@@ -378,7 +380,7 @@ func (m msgServer) CommitteeSuspend(ctx context.Context, msg *types.MsgCommittee
 
 func (m msgServer) CommitteeReinstate(ctx context.Context, msg *types.MsgCommitteeReinstate) (*types.MsgCommitteeReinstateResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil committee reinstate message")
 	}
 	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
@@ -398,7 +400,7 @@ func (m msgServer) CommitteeReinstate(ctx context.Context, msg *types.MsgCommitt
 
 func (m msgServer) CommitteeCompensate(ctx context.Context, msg *types.MsgCommitteeCompensate) (*types.MsgCommitteeCompensateResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil committee compensate message")
 	}
 	appointment, err := m.k.AuthoriseCommittee(ctx, msg.Committee, msg.ExpectedTerm)
 	if err != nil {
@@ -434,7 +436,7 @@ func (m msgServer) CommitteeCompensate(ctx context.Context, msg *types.MsgCommit
 
 func (m msgServer) SetPayee(ctx context.Context, msg *types.MsgSetPayee) (*types.MsgSetPayeeResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil set payee message")
 	}
 	g, err := m.k.getGrant(ctx, msg.GrantId)
 	if err != nil {
@@ -494,7 +496,7 @@ func (m msgServer) SetPayee(ctx context.Context, msg *types.MsgSetPayee) (*types
 
 func (m msgServer) SetController(ctx context.Context, msg *types.MsgSetController) (*types.MsgSetControllerResponse, error) {
 	if msg == nil {
-		return nil, errors.New("nil message")
+		return nil, errors.New("nil set controller message")
 	}
 	address, err := chain.ParseCanonicalAccountAddress("beneficiary", msg.Beneficiary)
 	if err != nil {

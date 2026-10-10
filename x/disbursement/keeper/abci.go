@@ -65,6 +65,11 @@ func (k *Keeper) EndBlocker(ctx context.Context) error {
 			if err := k.setDueTime(ctx, &g, types.RetryAt(now, q.next)); err != nil {
 				return fmt.Errorf("deferring grant %d: %w", g.Id, err)
 			}
+			// Unreachable: only due_time moved, from at or before now to after it, on a grant that
+			// owes and is not suspended, so every floor Validate checks still holds.
+			if err := g.Validate(); err != nil {
+				return fmt.Errorf("deferring grant %d: %w", g.Id, err)
+			}
 			if err := k.Grants.Set(ctx, g.Id, g); err != nil {
 				return fmt.Errorf("deferring grant %d: %w", g.Id, err)
 			}
