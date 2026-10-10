@@ -15,6 +15,7 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/chain"
 	securitykeeper "github.com/ararat-network/ark/x/security/keeper"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
 )
@@ -50,10 +51,10 @@ func newSecurityFixture(t *testing.T) *securityFixture {
 	}
 
 	_, err := f.msgServer.SetSecurityMandate(ctx, &securitytypes.MsgSetSecurityMandate{
-		Authority:        f.authority,
-		Committee:        f.committee,
-		ActivationHeight: uint64(ctx.BlockHeight()),
-		ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+		Authority:      f.authority,
+		Committee:      f.committee,
+		ActivationTime: chain.BlockSeconds(ctx),
+		ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 	})
 	require.NoError(t, err)
 
@@ -168,10 +169,10 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 
 	// Governance re-appoints the same account, which still advances the term.
 	_, err := f.msgServer.SetSecurityMandate(f.ctx, &securitytypes.MsgSetSecurityMandate{
-		Authority:        f.authority,
-		Committee:        f.committee,
-		ActivationHeight: uint64(f.ctx.BlockHeight()),
-		ExpiryHeight:     uint64(f.ctx.BlockHeight()) + 1_000,
+		Authority:      f.authority,
+		Committee:      f.committee,
+		ActivationTime: chain.BlockSeconds(f.ctx),
+		ExpiryTime:     chain.BlockSeconds(f.ctx) + 1_000,
 	})
 	require.NoError(t, err)
 

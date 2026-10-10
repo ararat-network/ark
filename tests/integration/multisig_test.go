@@ -142,10 +142,10 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 				func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, committee string) {
 					genesis.ClaimsMandate = claimstypes.ClaimsMandate{
 						Envelope: mandate.Envelope{
-							Term:             1,
-							Committee:        committee,
-							ActivationHeight: 1,
-							ExpiryHeight:     1_000_000,
+							Term:           1,
+							Committee:      committee,
+							ActivationTime: 0,
+							ExpiryTime:     chain.MaxBlockSeconds,
 						},
 						CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 					}
@@ -251,10 +251,10 @@ func TestTreasuryEconomicPolicyLegacyAminoMultisig(t *testing.T) {
 			}
 			genesis.EconomicMandate = treasurytypes.EconomicMandate{
 				Envelope: mandate.Envelope{
-					Term:             1,
-					Committee:        committee,
-					ActivationHeight: 1,
-					ExpiryHeight:     100,
+					Term:           1,
+					Committee:      committee,
+					ActivationTime: 0,
+					ExpiryTime:     chain.MaxBlockSeconds,
 				},
 				MinimumPolicy: minimum,
 				MaximumPolicy: maximum,
@@ -489,8 +489,8 @@ func TestClaimsCommitteeShapeRecordsRegisteredMultisig(t *testing.T) {
 		&claimstypes.MsgSetClaimsMandate{
 			Authority:           authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 			Committee:           committee.String(),
-			ActivationHeight:    1,
-			ExpiryHeight:        chain.BlocksPerYear,
+			ActivationTime:      0,
+			ExpiryTime:          chain.MaxBlockSeconds,
 			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(1_000)),
 		},
 	)

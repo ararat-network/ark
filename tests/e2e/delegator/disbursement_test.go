@@ -23,6 +23,9 @@ type DisbursementSuite struct {
 const (
 	// memberGrantNoah keeps the tranche and its payments small against the artefact's pool.
 	memberGrantNoah = 100
+	// memberHoldSeconds is the two-week floor every grant's first period keeps, longer than any suite
+	// runs, so a chain here sees registration queue the tenth and never the block pay it (D126).
+	memberHoldSeconds = 14 * 24 * 3600
 )
 
 func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
@@ -45,7 +48,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	appoint := func(committee string) json.RawMessage {
 		message, err := json.Marshal(map[string]any{
 			"@type": "/ark.disbursement.v1.MsgSetGrantsMandate", "authority": gov, "committee": committee,
-			"activation_height": "1", "expiry_height": "1000000000",
+			"activation_time": "1", "expiry_time": "4102444800",
 		})
 		s.Require().NoError(err)
 		return message
@@ -61,14 +64,14 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	_, err = s.Chain.SubmitAndPassProposal(ctx, s.Wallet.KeyName(), "open the first tranche", open, updateParams, appoint(s.Wallet.FormattedAddress()))
 	s.Require().NoError(err)
 	s.Require().Equal(held, s.Balance(members), "opening a tranche moves no coins")
-	opened, err := s.Chain.QueryJSON(ctx, `accounts.#(address=="`+members+`").open`, "disbursement", "balance", chainsuite.Denom)
+	opened, err := s.Chain.QueryJSON(ctx, "member_tranche", "disbursement", "balance", chainsuite.Denom)
 	s.Require().NoError(err)
 	s.Require().Equal(tranche.String(), opened.String())
 
 	// The committee appoints the registrar, a hot key bounded by the open tranche alone; every
 	// appointment advances the registrar term its batches must carry.
 	registrar := s.FundedWallet("registrar", 10)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "1", "--registrar", registrar.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "1", "--registrar", registrar.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
 	s.Require().NoError(err)
 
 	// A member with no account yet, and one whose address was dusted.
@@ -80,27 +83,16 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
 	s.Require().NoError(err)
 
-	// The first period, a tenth, is sent at once into an ordinary account;
-	// the rest waits in module custody.
-	tenth := chainsuite.NOAH(memberGrantNoah / 10)
-	account, err := s.Chain.QueryJSON(ctx, "account", "auth", "account", member.FormattedAddress())
-	s.Require().NoError(err)
-	s.Require().Equal("/cosmos.auth.v1beta1.BaseAccount", account.Get("type").String())
-	s.Require().Equal(tenth, s.Balance(member.FormattedAddress()))
-	s.Require().Equal(tenth.Add(chainsuite.NOAH(1)), s.Balance(dusted.FormattedAddress()), "an address holding coins is paid like any other")
+	// Registration pays nothing: the whole grant waits in module custody and the tenth is queued for
+	// the end of the two-week hold, into a fresh address or a dusted one alike (D126).
+	s.Require().True(s.Balance(member.FormattedAddress()).IsZero(), "the tenth waits for the hold")
+	s.Require().Equal(chainsuite.NOAH(1), s.Balance(dusted.FormattedAddress()), "an address holding coins waits like any other")
 	status, err := s.Chain.QueryJSON(ctx, "grant", "disbursement", "member", member.FormattedAddress())
 	s.Require().NoError(err)
-	s.Require().Equal(tenth.String(), status.Get("paid").String())
-	s.Require().Equal(chainsuite.NOAH(memberGrantNoah).Sub(tenth).String(), status.Get("remaining").String())
-	s.Require().Equal(held.Sub(tenth.MulRaw(2)), s.Balance(members), "only the first periods left")
-
-	// The tenth is stake like any other, and pays its own fee.
-	val := s.Chain.ValidatorWallets[0].ValoperAddress
-	_, err = s.Node().ExecTx(ctx, member.KeyName(), "staking", "delegate", val, chainsuite.NOAHCoin(memberGrantNoah/20))
-	s.Require().NoError(err)
-	delegated, err := s.Chain.QueryJSON(ctx, "delegation_response.balance.amount", "staking", "delegation", member.FormattedAddress(), val)
-	s.Require().NoError(err)
-	s.Require().Equal(chainsuite.NOAH(memberGrantNoah/20).String(), delegated.String())
+	s.Require().Equal("0", status.Get("paid").String())
+	s.Require().Equal(chainsuite.NOAH(memberGrantNoah).String(), status.Get("remaining").String())
+	s.Require().Equal(status.Get("created_time").Uint()+memberHoldSeconds, status.Get("due_time").Uint(), "queued for the end of the hold")
+	s.Require().Equal(held, s.Balance(members), "nothing has left the member account")
 
 	// Governance replaces the committee, which clears the registrar it appointed; the new committee
 	// names its own, and the old key and the old registrar terms are refused.
@@ -108,14 +100,14 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	another, err := s.Chain.BuildWallet(ctx, "member-2", "")
 	s.Require().NoError(err)
-	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
 	s.Require().Error(err, "the replaced committee cannot rotate the registrar")
 	another2, err := s.Chain.BuildWallet(ctx, "member-3", "")
 	s.Require().NoError(err)
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", another2.FormattedAddress())
 	s.Require().Error(err, "the replacement cleared the registrar")
 	// The registrar term is three: the first appointment, the clearing, and this appointment.
-	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-height", "1", "--expiry-height", "1000000000")
+	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
 	s.Require().NoError(err)
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "2", "--addresses", another.FormattedAddress())
 	s.Require().Error(err)
@@ -123,7 +115,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().Error(err)
 	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "3", "--addresses", another.FormattedAddress())
 	s.Require().NoError(err)
-	s.Require().Equal(tenth, s.Balance(another.FormattedAddress()))
+	s.Require().True(s.Balance(another.FormattedAddress()).IsZero(), "the new registrar's member waits out the hold too")
 }
 
 func TestDisbursement(t *testing.T) {

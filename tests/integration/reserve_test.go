@@ -83,8 +83,8 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	_, err = msgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
 		Authority:           authority,
 		Committee:           committee,
-		ActivationHeight:    uint64(ctx.BlockHeight()),
-		ExpiryHeight:        uint64(ctx.BlockHeight()) + 10_000,
+		ActivationTime:      chain.BlockSeconds(ctx),
+		ExpiryTime:          chain.BlockSeconds(ctx) + 10_000,
 		DeploymentAllowance: sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000)),
 		MinimumNoahBalance:  sdk.NewCoin(chain.NoahBaseDenom, math.ZeroInt()),
 		Destinations:        []string{sdk.AccAddress([]byte("deployment-target---")).String()},
@@ -273,8 +273,8 @@ func TestReserveOpenPositionFeedGuardClearsOnGovernanceClosure(t *testing.T) {
 		_, err := reserveMsgServer.SetReserveMandate(ctx, &reservetypes.MsgSetReserveMandate{
 			Authority:           authority,
 			Committee:           committee,
-			ActivationHeight:    uint64(ctx.BlockHeight()),
-			ExpiryHeight:        uint64(ctx.BlockHeight()) + 10_000,
+			ActivationTime:      chain.BlockSeconds(ctx),
+			ExpiryTime:          chain.BlockSeconds(ctx) + 10_000,
 			DeploymentAllowance: sdk.NewCoin(chain.NoahBaseDenom, math.NewInt(1_000_000)),
 			MinimumNoahBalance:  sdk.NewCoin(chain.NoahBaseDenom, math.ZeroInt()),
 			Destinations:        []string{destination},

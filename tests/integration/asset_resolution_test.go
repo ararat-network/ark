@@ -122,13 +122,13 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.NoError(t, err)
 		params, err := f.app.AssetKeeper.Params.Get(ctx)
 		require.NoError(t, err)
-		activationHeight := ctx.BlockHeight() + int64(params.SettlementActivationDelayBlocks)
+		activationTime := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 		require.NoError(t, f.app.AssetKeeper.OpenSettlement(
 			ctx,
 			chain.USDBaseDenom,
 			asset.Version,
 			redemptionRate,
-			activationHeight+1,
+			activationTime+1,
 		))
 
 		status := fundStatus(ctx)
@@ -151,14 +151,15 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 	// the delay itself is covered in the keeper suite. Bring the plan forward in
 	// place to reach the executable state, and fund the buffer below the
 	// recognised liability so the draw is partial and provably proportional.
-	var earliestClosing int64
+	var earliestClosing uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		plan, found, err := f.app.AssetKeeper.GetSettlementPlan(ctx, chain.USDBaseDenom)
 		require.NoError(t, err)
 		require.True(t, found)
-		plan.ActivationHeight = ctx.BlockHeight()
-		earliestClosing = ctx.BlockHeight() + 4
-		plan.EarliestClosingHeight = earliestClosing
+		// The fixture's blocks are a second apart, so four seconds is four blocks.
+		plan.ActivationTime = chain.BlockSeconds(ctx)
+		earliestClosing = chain.BlockSeconds(ctx) + 4
+		plan.EarliestClosingTime = earliestClosing
 		require.NoError(t, f.app.AssetKeeper.SettlementPlans.Set(ctx, chain.USDBaseDenom, plan))
 
 		half := noahFor(acquired.Amount).QuoInt64(2).TruncateInt()
@@ -239,14 +240,14 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 		err = f.app.AssetKeeper.WriteOffAsset(ctx, chain.USDBaseDenom, asset.Version)
 		require.ErrorIs(t, err, assettypes.ErrInvalidAssetTransition)
-		require.ErrorContains(t, err, "committed until height")
+		require.ErrorContains(t, err, "committed until time")
 	})
 
 	// Blocks pass inside the window and the guarantee holds on every one of
 	// them. The bound stops one short: nextBlock runs its transaction at the
 	// following height, so this walks up to the last block still inside the
 	// commitment.
-	for f.height < earliestClosing-1 {
+	for uint64(f.blockTime.Unix()) < earliestClosing-1 {
 		f.nextBlock(func(ctx sdk.Context) {
 			asset, err := f.app.AssetKeeper.Assets.Get(ctx, chain.USDBaseDenom)
 			require.NoError(t, err)
@@ -539,10 +540,10 @@ func TestEmergencyMandateSingleProposal(t *testing.T) {
 	var term uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 
@@ -676,10 +677,10 @@ func TestEmergencyMandateSingleProposal(t *testing.T) {
 	f.nextBlock(func(ctx sdk.Context) {
 		successor := sdk.AccAddress([]byte("successor-committee.")).String()
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        successor,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      successor,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 
@@ -745,10 +746,10 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	var term uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 		mandate, err := f.app.AssetKeeper.EmergencyMandate.Get(ctx)

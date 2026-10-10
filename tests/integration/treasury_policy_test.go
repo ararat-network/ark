@@ -106,10 +106,11 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 			ctx,
 			chain.KRWBaseDenom,
 			assettypes.SettlementPlan{
-				Denom:            chain.KRWBaseDenom,
-				RedemptionRate:   redemptionRate,
-				OpenedHeight:     ctx.BlockHeight(),
-				ActivationHeight: ctx.BlockHeight() + 1,
+				Denom:          chain.KRWBaseDenom,
+				RedemptionRate: redemptionRate,
+				OpenedHeight:   ctx.BlockHeight(),
+				OpenedTime:     chain.BlockSeconds(ctx),
+				ActivationTime: chain.BlockSeconds(ctx) + 1,
 			},
 		))
 

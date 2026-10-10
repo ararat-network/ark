@@ -159,10 +159,11 @@ func TestSettlementRedeemsAtPlanRate(t *testing.T) {
 			ctx,
 			chain.KRWBaseDenom,
 			assettypes.SettlementPlan{
-				Denom:            chain.KRWBaseDenom,
-				RedemptionRate:   redemptionRate,
-				OpenedHeight:     ctx.BlockHeight(),
-				ActivationHeight: ctx.BlockHeight() + 1,
+				Denom:          chain.KRWBaseDenom,
+				RedemptionRate: redemptionRate,
+				OpenedHeight:   ctx.BlockHeight(),
+				OpenedTime:     chain.BlockSeconds(ctx),
+				ActivationTime: chain.BlockSeconds(ctx) + 1,
 			},
 		))
 	})
@@ -280,13 +281,13 @@ func TestCapacityCommitteeResizesWithinCorridor(t *testing.T) {
 		}
 
 		_, err = msgServer.SetConversionMandate(ctx, &markettypes.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
-			MinimumPolicy:    minimum,
-			MaximumPolicy:    maximum,
-			MaxTobinTax:      math.LegacyZeroDec(),
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
+			MinimumPolicy:  minimum,
+			MaximumPolicy:  maximum,
+			MaxTobinTax:    math.LegacyZeroDec(),
 		})
 		require.NoError(t, err)
 
@@ -379,13 +380,13 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = msgServer.SetConversionMandate(ctx, &markettypes.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
-			MinimumPolicy:    launch,
-			MaximumPolicy:    launch,
-			MaxTobinTax:      tobinCap,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
+			MinimumPolicy:  launch,
+			MaximumPolicy:  launch,
+			MaxTobinTax:    tobinCap,
 		})
 		require.NoError(t, err)
 

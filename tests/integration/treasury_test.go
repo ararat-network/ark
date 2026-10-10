@@ -340,8 +340,8 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	claimsMandateUpdate := &claimstypes.MsgSetClaimsMandate{
 		Authority:           authority,
 		Committee:           claimsCommittee.String(),
-		ActivationHeight:    1,
-		ExpiryHeight:        1_000_000,
+		ActivationTime:      0,
+		ExpiryTime:          chain.MaxBlockSeconds,
 		CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 50),
 	}
 	minimumPolicy := treasurytypes.DefaultEconomicPolicy()
@@ -353,12 +353,12 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.5"),
 	}
 	economicMandateUpdate := &treasurytypes.MsgSetEconomicMandate{
-		Authority:        authority,
-		Committee:        economicCommittee.String(),
-		ActivationHeight: 1,
-		ExpiryHeight:     1_000_000,
-		MinimumPolicy:    minimumPolicy,
-		MaximumPolicy:    maximumPolicy,
+		Authority:      authority,
+		Committee:      economicCommittee.String(),
+		ActivationTime: 0,
+		ExpiryTime:     chain.MaxBlockSeconds,
+		MinimumPolicy:  minimumPolicy,
+		MaximumPolicy:  maximumPolicy,
 	}
 	ctx, proposal := executeTreasuryProposal(
 		t,
