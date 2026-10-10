@@ -1,5 +1,6 @@
 // Package genesis owns the launch artefact beside it, genesis.json, and the
-// one edit assembly makes to it: granting the validator seats.
+// one edit assembly makes to it: granting the validator seats and the
+// founder's awards.
 package genesis
 
 import (
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/cosmos/gogoproto/proto"
@@ -20,9 +22,11 @@ import (
 	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -39,7 +43,9 @@ import (
 // holding an account or balance, and a pool that cannot fund the seats, and
 // changes appState only once every edited module passes its own validation.
 // The launch count bounds are the command's. Each seat is recorded on the
-// operator's Disbursement beneficiary, a record nothing reads (D115).
+// operator's Disbursement beneficiary, a record nothing reads (D115). The
+// founder's grant and stream are written beside the seats as governance
+// awards from the contributor pool (D136).
 func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, founder sdk.AccAddress, genesisTime time.Time) error {
 	if len(operators) == 0 {
 		return errors.New("at least one operator address must be set")
@@ -88,6 +94,9 @@ func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, ope
 		return err
 	}
 	s.raiseTargets(len(operators))
+	if err := s.awardFounder(founder, genesisTime); err != nil {
+		return fmt.Errorf("founder's awards: %w", err)
+	}
 	return s.encodeInto(cdc, appState)
 }
 
@@ -100,6 +109,9 @@ type seatStates struct {
 	distr        distrtypes.GenesisState
 	treasury     treasurytypes.GenesisState
 	disbursement disbursementtypes.GenesisState
+	// reference is Oracle's reference denomination, read to value the
+	// founder's stream and never written.
+	reference string
 }
 
 type seatModule struct {
@@ -136,6 +148,13 @@ func decodeSeatStates(cdc codec.Codec, appState map[string]json.RawMessage) (*se
 	if s.accounts, err = authtypes.UnpackAccounts(s.auth.Accounts); err != nil {
 		return nil, fmt.Errorf("%s: %w", authtypes.ModuleName, err)
 	}
+	var oracle oracletypes.GenesisState
+	if raw := appState[oracletypes.ModuleName]; len(raw) > 0 {
+		if err := cdc.UnmarshalJSON(raw, &oracle); err != nil {
+			return nil, fmt.Errorf("%s: %w", oracletypes.ModuleName, err)
+		}
+	}
+	s.reference = oracle.ReferenceDenom
 	return s, nil
 }
 
@@ -213,6 +232,132 @@ func (s *seatStates) raiseTargets(seats int) {
 	policy := &s.treasury.EconomicPolicy
 	policy.ValidatorBlockRewardTarget = policy.ValidatorBlockRewardTarget.Add(chain.SeatValidatorShare.MulRaw(int64(seats)))
 	policy.OracleBlockRewardTarget = policy.OracleBlockRewardTarget.Add(chain.SeatOracleShare.MulRaw(int64(seats)))
+}
+
+// founderAwardHeight stamps the founder's awards at the chain's first block,
+// which import admits though InitChain runs at height zero.
+const founderAwardHeight = 1
+
+// awardFounder writes the founder's grant and stream as governance awards
+// made in the first block, clocked from genesisTime on the file's params,
+// reserved in the contributor book and journaled as the keeper's create
+// would (D136). Genesis validation reads neither cap nor Bank, so both caps
+// and the contributor account's backing are checked here.
+func (s *seatStates) awardFounder(founder sdk.AccAddress, genesisTime time.Time) error {
+	params := s.disbursement.Params
+	grant := chain.NativeBaseAmount(chain.FounderGrantNoah)
+	if grant.GT(params.OwnershipCap) {
+		return fmt.Errorf("the grant of %s exceeds the ownership cap of %s", grant, params.OwnershipCap)
+	}
+	if s.reference != chain.XDRBaseDenom {
+		return fmt.Errorf("the stream is valued at the bootstrap price in %s, not the file's reference %q", chain.XDRBaseDenom, s.reference)
+	}
+	stream, err := disbursementtypes.CompensationSchedule(params.CompensationPeriod, chain.FounderStreamPeriods)
+	if err != nil {
+		return fmt.Errorf("stream: %w", err)
+	}
+	pay := chain.NativeBaseAmount(chain.FounderStreamNoah)
+	// NOAH per XDR, rounded up as an award's value is.
+	value := math.LegacyNewDecFromInt(pay).Quo(math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerXDR)).Ceil().TruncateInt()
+	// The clock starts at the award, so the first window carries no backdate.
+	charge, err := disbursementtypes.CompensationCharge(value, stream.Duration(), params.CompensationWindow)
+	if err != nil {
+		return fmt.Errorf("stream: %w", err)
+	}
+	if charge.GT(params.CompensationCap) {
+		return fmt.Errorf("the stream charges %s a window, past the compensation cap of %s", charge, params.CompensationCap)
+	}
+	for _, g := range []disbursementtypes.Grant{
+		{
+			Kind:       disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP,
+			Amount:     chain.NoahCoin(grant),
+			Reference:  chain.FounderGrantReference,
+			Schedule:   params.OwnershipSchedule,
+			AwardValue: math.ZeroInt(),
+		},
+		{
+			Kind:       disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION,
+			Amount:     chain.NoahCoin(pay),
+			Reference:  chain.FounderStreamReference,
+			Schedule:   stream,
+			AwardValue: value,
+		},
+	} {
+		if err := s.award(founder, g, uint64(genesisTime.Unix())); err != nil {
+			return err
+		}
+	}
+	return s.backContributors()
+}
+
+// award stamps g as governance's award to beneficiary at the first block,
+// queues it for its first boundary, and records it in the journal, the
+// contributor book, and the beneficiary's committed ownership.
+func (s *seatStates) award(beneficiary sdk.AccAddress, g disbursementtypes.Grant, at uint64) error {
+	d := &s.disbursement
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	g.Id = d.NextGrantId
+	g.Beneficiary, g.Payee = beneficiary.String(), beneficiary.String()
+	g.StartTime, g.CreatedTime, g.CreatedHeight, g.CreatedBy = at, at, founderAwardHeight, authority
+	g.Paid, g.Remaining = math.ZeroInt(), g.Amount.Amount
+	_, next, err := g.Accrued(at)
+	if err != nil {
+		return err
+	}
+	g.DueTime = next
+	d.Grants = append(d.Grants, g)
+	d.GrantJournal = append(d.GrantJournal, disbursementtypes.GrantEntry{
+		Id:      d.NextGrantEntryId,
+		GrantId: g.Id,
+		Action:  disbursementtypes.GrantAction_GRANT_ACTION_CREATED,
+		Actor:   authority,
+		Height:  founderAwardHeight,
+		Time:    at,
+		Amount:  g.Amount,
+		Offer:   math.ZeroInt(),
+	})
+	d.NextGrantId++
+	d.NextGrantEntryId++
+	account := disbursementtypes.Account(g.Kind)
+	i := slices.IndexFunc(d.Books, func(b disbursementtypes.AccountBook) bool { return b.Account == account })
+	if i < 0 {
+		d.Books = append(d.Books, disbursementtypes.EmptyBook(account))
+		slices.SortFunc(d.Books, func(a, b disbursementtypes.AccountBook) int { return strings.Compare(a.Account, b.Account) })
+		i = slices.IndexFunc(d.Books, func(b disbursementtypes.AccountBook) bool { return b.Account == account })
+	}
+	if err := d.Books[i].Reserve(g.Amount); err != nil {
+		return err
+	}
+	if g.Kind != disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP {
+		return nil
+	}
+	j := slices.IndexFunc(d.Beneficiaries, func(p disbursementtypes.Beneficiary) bool { return p.Address == g.Beneficiary })
+	if j < 0 {
+		return fmt.Errorf("%s holds no beneficiary record", g.Beneficiary)
+	}
+	d.Beneficiaries[j].OwnershipCommitted = d.Beneficiaries[j].OwnershipCommitted.Add(g.Amount.Amount)
+	return nil
+}
+
+// backContributors requires the contributor account's balance to cover its
+// reservations, which import checks against Bank.
+func (s *seatStates) backContributors() error {
+	i := slices.IndexFunc(s.disbursement.Books, func(b disbursementtypes.AccountBook) bool {
+		return b.Account == disbursementtypes.ContributorsName
+	})
+	if i < 0 {
+		return nil
+	}
+	reserved := s.disbursement.Books[i].Reserved
+	address := authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String()
+	held := sdk.NewCoins()
+	if j := slices.IndexFunc(s.bank.Balances, func(b banktypes.Balance) bool { return b.Address == address }); j >= 0 {
+		held = s.bank.Balances[j].Coins
+	}
+	if !held.IsAllGTE(reserved) {
+		return fmt.Errorf("the contributor account holds %s, short of the %s its grants reserve", held, reserved)
+	}
+	return nil
 }
 
 // encodeInto validates and marshals every module before writing any to

@@ -84,7 +84,7 @@ genesis="$DATA/node0/arkd/config/genesis.json"
 arkd genesis add-genesis-account "$committee" 1000000000000000000000anoah --home "$DATA/node0/arkd"
 jq --arg committee "$committee" '
   .app_state.asset.emergency_mandate.envelope |= (
-    .term = "1" | .committee = $committee | .activation_height = "1" | .expiry_height = "1000000000"
+    .term = "1" | .committee = $committee | .activation_time = "1" | .expiry_time = "4102444800"
   )' "$genesis" > "$genesis.tmp"
 mv "$genesis.tmp" "$genesis"
 i=1

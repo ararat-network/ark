@@ -20,11 +20,13 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/app/genesis"
 	"github.com/ararat-network/ark/app/params"
 	"github.com/ararat-network/ark/pkg/chain"
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -107,9 +109,9 @@ func TestAddValidatorSeats(t *testing.T) {
 				balance.Coins.AmountOf(chain.NoahBaseDenom),
 			)
 		case members:
-			require.Equal(t, chain.NativeBaseAmount(439_200_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the member pool")
+			require.Equal(t, chain.NativeBaseAmount(469_200_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the member pool")
 		case contributors:
-			require.Equal(t, chain.NativeBaseAmount(292_800_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the contributor pool")
+			require.Equal(t, chain.NativeBaseAmount(312_800_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "the founder's awards reserve the contributor pool without moving it")
 		}
 	}
 	require.Equal(t, bankState.Supply, total, "supply still equals the balances")
@@ -137,9 +139,92 @@ func TestAddValidatorSeats(t *testing.T) {
 	for _, address := range []sdk.AccAddress{first, second} {
 		p, ok := seated[address.String()]
 		require.True(t, ok, "%s holds a seat", address)
-		require.Equal(t, chain.SeatGrant, p.Seat)
 		require.Equal(t, address.String(), p.Controller)
+		if address.Equals(first) {
+			require.Equal(t, chain.FounderSeat(2), p.Seat)
+			require.Equal(t, chain.NativeBaseAmount(chain.FounderGrantNoah), p.OwnershipCommitted, "the founder's grant")
+			continue
+		}
+		require.Equal(t, chain.SeatGrant, p.Seat)
 		require.True(t, p.OwnershipCommitted.IsZero())
+	}
+}
+
+// TestAddValidatorSeatsAwardsFounder checks the founder's grant and stream are
+// governance awards made in the first block: clocked from genesis on the
+// file's params, queued for their first boundaries, journaled, reserved from
+// the contributor pool without moving it, and the grant committed on the
+// founder's record (D136).
+func TestAddValidatorSeatsAwardsFounder(t *testing.T) {
+	cdc := seatCodec()
+	state := artefactState(t)
+	other, founder := operatorAddress(), operatorAddress()
+	require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{other, founder}, founder, genesisTime))
+
+	var d disbursementtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &d)
+	require.NoError(t, d.Validate())
+	at := uint64(genesisTime.Unix())
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	grant, pay := chain.NativeBaseAmount(chain.FounderGrantNoah), chain.NativeBaseAmount(chain.FounderStreamNoah)
+	require.Len(t, d.Grants, 2)
+	require.Len(t, d.GrantJournal, 2)
+	require.Equal(t, uint64(3), d.NextGrantId)
+	require.Equal(t, uint64(3), d.NextGrantEntryId)
+
+	ownership := d.Grants[0]
+	require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, ownership.Kind)
+	require.Equal(t, chain.NoahCoin(grant), ownership.Amount)
+	require.Equal(t, d.Params.OwnershipCap, grant, "the grant is the cap exactly")
+	require.Equal(t, d.Params.OwnershipSchedule, ownership.Schedule)
+	require.True(t, ownership.AwardValue.IsZero())
+	require.Equal(t, chain.FounderGrantReference, ownership.Reference)
+	require.Equal(t, at+d.Params.OwnershipSchedule.FirstLength, ownership.DueTime, "nothing before the first period's end")
+
+	stream := d.Grants[1]
+	require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, stream.Kind)
+	require.Equal(t, chain.NoahCoin(pay), stream.Amount)
+	want, err := disbursementtypes.CompensationSchedule(d.Params.CompensationPeriod, chain.FounderStreamPeriods)
+	require.NoError(t, err)
+	require.Equal(t, want, stream.Schedule)
+	require.Equal(t, pay, stream.AwardValue, "one NOAH is one XDR at the bootstrap price")
+	require.Equal(t, chain.FounderStreamReference, stream.Reference)
+	require.Equal(t, at+d.Params.CompensationPeriod, stream.DueTime, "the first period pays a period in")
+	charge, err := disbursementtypes.CompensationCharge(stream.AwardValue, stream.Schedule.Duration(), d.Params.CompensationWindow)
+	require.NoError(t, err)
+	require.Equal(t, d.Params.CompensationCap, charge, "the stream fills the record's compensation cap exactly")
+
+	for i, g := range d.Grants {
+		require.Equal(t, uint64(i+1), g.Id)
+		require.Equal(t, founder.String(), g.Beneficiary)
+		require.Equal(t, founder.String(), g.Payee)
+		require.Equal(t, authority, g.CreatedBy, "a governance award")
+		require.Zero(t, g.MandateTerm)
+		require.Equal(t, uint64(1), g.CreatedHeight, "the first block")
+		require.Equal(t, at, g.CreatedTime)
+		require.Equal(t, at, g.StartTime)
+		require.True(t, g.Paid.IsZero())
+		require.Equal(t, g.Amount.Amount, g.Remaining)
+
+		e := d.GrantJournal[i]
+		require.Equal(t, uint64(i+1), e.Id)
+		require.Equal(t, g.Id, e.GrantId)
+		require.Equal(t, disbursementtypes.GrantAction_GRANT_ACTION_CREATED, e.Action)
+		require.Equal(t, authority, e.Actor)
+		require.Equal(t, g.CreatedHeight, e.Height)
+		require.Equal(t, g.CreatedTime, e.Time)
+		require.Equal(t, g.Amount, e.Amount)
+	}
+
+	require.Len(t, d.Books, 1)
+	require.Equal(t, disbursementtypes.ContributorsName, d.Books[0].Account)
+	require.Equal(t, chain.NoahCoins(grant.Add(pay)), d.Books[0].Reserved)
+	for _, p := range d.Beneficiaries {
+		if p.Address == founder.String() {
+			require.Equal(t, grant, p.OwnershipCommitted)
+			continue
+		}
+		require.True(t, p.OwnershipCommitted.IsZero(), "the other seats hold no award")
 	}
 }
 
@@ -170,7 +255,7 @@ func TestAddValidatorSeatsAtAnyCount(t *testing.T) {
 		bankState.Balances[balanceIndex(t, bankState.Balances, pool)].Coins.AmountOf(chain.NoahBaseDenom),
 		"the community pool pays one seat an operator and the founder's excess")
 	require.Equal(t,
-		chain.NativeBaseAmount(292_800_000),
+		chain.NativeBaseAmount(312_800_000),
 		bankState.Balances[balanceIndex(t, bankState.Balances, contributors)].Coins.AmountOf(chain.NoahBaseDenom),
 		"seats never draw on the contributor pool")
 	require.Equal(t, seat.Add(extra), bankState.Balances[balanceIndex(t, bankState.Balances, founder.String())].Coins.AmountOf(chain.NoahBaseDenom))
@@ -198,7 +283,7 @@ func TestAddValidatorSeatsAtAnyCount(t *testing.T) {
 	var treasuryState treasurytypes.GenesisState
 	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryState)
 	require.Equal(t, chain.SeatValidatorShare.MulRaw(int64(len(operators))), treasuryState.EconomicPolicy.ValidatorBlockRewardTarget,
-		"income is per validator, so the founder's seat raises the targets one share")
+		"the targets are sized per validator, so the founder's seat raises them one share")
 
 	var disbursementState disbursementtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementState)
@@ -264,7 +349,14 @@ func balanceIndex(t *testing.T, balances []banktypes.Balance, address string) in
 func TestAddValidatorSeatsRefusals(t *testing.T) {
 	cdc := seatCodec()
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
+	contributors := authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String()
 	taken := operatorAddress()
+	disbursementParams := func(state map[string]json.RawMessage, mutate func(*disbursementtypes.Params)) {
+		var d disbursementtypes.GenesisState
+		cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &d)
+		mutate(&d.Params)
+		state[disbursementtypes.ModuleName] = cdc.MustMarshalJSON(&d)
+	}
 
 	tests := []struct {
 		name      string
@@ -341,6 +433,54 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 			},
 			operators: []sdk.AccAddress{operatorAddress()},
 			errPhrase: "short of the",
+		},
+		{
+			name: "ownership cap under the founder's grant",
+			mutate: func(state map[string]json.RawMessage) {
+				disbursementParams(state, func(p *disbursementtypes.Params) {
+					p.OwnershipCap = chain.NativeBaseAmount(chain.FounderGrantNoah).SubRaw(1)
+				})
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "exceeds the ownership cap",
+		},
+		{
+			name: "compensation cap under the founder's stream",
+			mutate: func(state map[string]json.RawMessage) {
+				disbursementParams(state, func(p *disbursementtypes.Params) { p.CompensationCap = p.CompensationCap.SubRaw(1) })
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "past the compensation cap",
+		},
+		{
+			name: "reference other than the XDR",
+			mutate: func(state map[string]json.RawMessage) {
+				var oracle oracletypes.GenesisState
+				cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracle)
+				oracle.ReferenceDenom = chain.USDBaseDenom
+				state[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracle)
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "bootstrap price",
+		},
+		{
+			name: "contributor account short of the founder's awards",
+			mutate: func(state map[string]json.RawMessage) {
+				var bankState banktypes.GenesisState
+				cdc.MustUnmarshalJSON(state[banktypes.ModuleName], &bankState)
+				for i := range bankState.Balances {
+					if bankState.Balances[i].Address == contributors {
+						bankState.Balances[i].Coins = sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)))
+					}
+				}
+				bankState.Supply = nil
+				for _, balance := range bankState.Balances {
+					bankState.Supply = bankState.Supply.Add(balance.Coins...)
+				}
+				state[banktypes.ModuleName] = cdc.MustMarshalJSON(&bankState)
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "its grants reserve",
 		},
 		{
 			name:      "missing module state",

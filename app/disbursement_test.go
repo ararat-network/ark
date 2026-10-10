@@ -87,11 +87,11 @@ func newNativeDisbursement(t *testing.T, founders ...sdk.AccAddress) *nativeDisb
 	f.setRate(t, "ausd", math.LegacyOneDec())
 	p := g.Params
 	p.MemberAmount = math.NewInt(10_000)
-	p.MemberSchedule = disbursementtypes.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3}
-	// Short shapes: ownership a quarter at a ten-second first period then the rest ten seconds
-	// later; compensation at the week-long floor, since nothing pays before one period after an award.
-	p.OwnershipSchedule = disbursementtypes.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 1}
-	p.CompensationPeriod = disbursementtypes.MinCompensationPeriod
+	// Short shapes past the two-week floor every first period keeps: a member's tenth and an ownership
+	// quarter at the floor, then the rest ten seconds apart; compensation in periods of the floor.
+	p.MemberSchedule = disbursementtypes.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3}
+	p.OwnershipSchedule = disbursementtypes.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 1}
+	p.CompensationPeriod = hold
 	require.NoError(t, f.exec(&disbursementtypes.MsgUpdateParams{Authority: f.authority.String(), Params: p}))
 	f.appoint(t, f.committee)
 	f.appointRegistrar(t, f.registrar)
@@ -116,11 +116,11 @@ func (f *nativeDisbursementFixture) appoint(t *testing.T, committee sdk.AccAddre
 // clears an appointed registrar, advancing its term.
 func (f *nativeDisbursementFixture) appointWith(t *testing.T, committee sdk.AccAddress, compensation math.Int) {
 	t.Helper()
-	height := uint64(f.ctx.BlockHeight())
+	now := f.now()
 	registrar, err := f.app.DisbursementKeeper.RegistrarMandate.Get(f.ctx)
 	require.NoError(t, err)
 	require.NoError(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{
-		Authority: f.authority.String(), Committee: committee.String(), ActivationHeight: height, ExpiryHeight: height + 1_000_000,
+		Authority: f.authority.String(), Committee: committee.String(), ActivationTime: now, ExpiryTime: now + disbursementtypes.MaxPeriodLength,
 		CompensationAllowance: compensation,
 	}))
 	f.term++
@@ -137,7 +137,7 @@ func (f *nativeDisbursementFixture) appointRegistrar(t *testing.T, registrar sdk
 	require.NoError(t, err)
 	require.NoError(t, f.exec(&disbursementtypes.MsgCommitteeRegistrar{
 		Committee: f.committee.String(), ExpectedTerm: f.term, Registrar: registrar.String(),
-		ActivationHeight: committee.ActivationHeight, ExpiryHeight: committee.ExpiryHeight,
+		ActivationTime: committee.ActivationTime, ExpiryTime: committee.ExpiryTime,
 	}))
 	f.registrarTerm++
 }
@@ -230,6 +230,9 @@ func (f *nativeDisbursementFixture) mirror(t *testing.T, fresh *nativeDisburseme
 		}
 	}
 }
+
+// hold is every first period in the fixture: the two-week floor nothing pays before (D126).
+const hold = disbursementtypes.MinFirstPeriod
 
 func (f *nativeDisbursementFixture) advance(seconds int64) {
 	f.ctx = f.ctx.WithBlockTime(f.ctx.BlockTime().Add(time.Duration(seconds) * time.Second)).WithBlockHeight(f.ctx.BlockHeight() + 1)
@@ -325,8 +328,8 @@ func TestNativeDisbursementMemberCancellation(t *testing.T) {
 			payee := nativeAddress("new-payee")
 			f.open(t, math.NewInt(10_000))
 			id := f.register(t, member)
-			require.Equal(t, math.NewInt(1_000), f.app.BankKeeper.GetBalance(f.ctx, member, chain.NoahBaseDenom).Amount)
-			f.advance(11)
+			require.True(t, f.app.BankKeeper.GetBalance(f.ctx, member, chain.NoahBaseDenom).IsZero(), "the tenth waits for the hold")
+			f.advance(int64(hold) + 10)
 			if suspended {
 				require.NoError(t, f.exec(&disbursementtypes.MsgCommitteeSuspend{Committee: f.committee.String(), ExpectedTerm: f.term, Addresses: []string{member.String()}}))
 				f.advance(10)
@@ -341,7 +344,7 @@ func TestNativeDisbursementMemberCancellation(t *testing.T) {
 			require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{id}}))
 			g := f.grant(t, id)
 			require.True(t, g.Cancelled())
-			require.Equal(t, math.NewInt(3_000), g.Remaining)
+			require.Equal(t, math.NewInt(4_000), g.Remaining, "the tenth and the first month retained")
 			require.Equal(t, math.NewInt(6_000), g.Amount.Amount.Sub(g.Paid).Sub(g.Remaining), "unearned principal freed")
 			require.Equal(t, f.now(), g.DueTime, "the retained debt is due at once")
 			// The block defers the refused payment and waits a retry; the debt stays retained.
@@ -349,16 +352,16 @@ func TestNativeDisbursementMemberCancellation(t *testing.T) {
 			deferred := f.deferred(t)
 			require.Len(t, deferred, 1)
 			g = f.grant(t, id)
-			require.Equal(t, math.NewInt(3_000), g.Remaining)
+			require.Equal(t, math.NewInt(4_000), g.Remaining)
 			require.Equal(t, f.now()+disbursementtypes.PaymentRetryInterval, g.DueTime)
-			require.Equal(t, math.NewInt(1_000), f.app.BankKeeper.GetBalance(f.ctx, member, chain.NoahBaseDenom).Amount)
+			require.True(t, f.app.BankKeeper.GetBalance(f.ctx, member, chain.NoahBaseDenom).IsZero())
 			f.check(t)
 			require.Error(t, f.exec(&disbursementtypes.MsgSetPayee{Sender: f.committee.String(), GrantId: id, Payee: payee.String()}))
 			require.NoError(t, f.exec(&disbursementtypes.MsgSetPayee{Sender: member.String(), GrantId: id, Payee: payee.String()}))
 			// A new payee is looked at in its own block rather than at the retry.
 			require.Equal(t, f.now(), f.grant(t, id).DueTime)
 			f.endBlock(t)
-			require.Equal(t, math.NewInt(3_000), f.app.BankKeeper.GetBalance(f.ctx, payee, chain.NoahBaseDenom).Amount)
+			require.Equal(t, math.NewInt(4_000), f.app.BankKeeper.GetBalance(f.ctx, payee, chain.NoahBaseDenom).Amount)
 			require.Zero(t, f.grant(t, id).DueTime, "nothing left to look at")
 			require.Error(t, f.exec(&disbursementtypes.MsgRegisterMembers{Registrar: f.registrar.String(), ExpectedTerm: f.registrarTerm, Addresses: []string{member.String()}, Reference: "admission batch"}))
 			require.Error(t, f.exec(&disbursementtypes.MsgCommitteeReinstate{Committee: f.committee.String(), ExpectedTerm: f.term, Addresses: []string{member.String()}}))
@@ -376,15 +379,15 @@ func TestNativeDisbursementSuspensionRecovery(t *testing.T) {
 			id := f.register(t, member)
 			require.NoError(t, f.exec(&disbursementtypes.MsgCommitteeSuspend{Committee: f.committee.String(), ExpectedTerm: f.term, Addresses: []string{member.String()}}))
 			require.Zero(t, f.grant(t, id).DueTime, "a suspended member leaves the queue")
-			f.advance(11)
+			f.advance(int64(hold) + 10)
 			f.endBlock(t)
-			require.Equal(t, math.NewInt(1_000), f.grant(t, id).Paid)
+			require.True(t, f.grant(t, id).Paid.IsZero(), "suspended inside its hold, it is paid nothing")
 			switch mode {
 			case "replacement":
 				// A suspension stands across a committee replacement until someone reinstates it.
 				f.appoint(t, f.committee)
 				f.endBlock(t)
-				require.Equal(t, math.NewInt(1_000), f.grant(t, id).Paid)
+				require.True(t, f.grant(t, id).Paid.IsZero())
 				require.NoError(t, f.exec(&disbursementtypes.MsgReinstateMembers{Authority: f.authority.String(), Addresses: []string{member.String()}}))
 			case "governance":
 				require.NoError(t, f.exec(&disbursementtypes.MsgReinstateMembers{Authority: f.authority.String(), Addresses: []string{member.String()}}))
@@ -423,7 +426,7 @@ func TestNativeDisbursementOwnershipAndFounders(t *testing.T) {
 			// The cap bounds what the record's grants commit, so an award past it is refused outright.
 			require.ErrorContains(t, f.exec(ownership(nativeNoah(80_000_000))), "remaining ownership")
 			id := f.create(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, beneficiary, chain.NoahCoin(cap), 0)
-			require.Equal(t, f.now()+10, f.grant(t, id).DueTime, "queued for its first boundary")
+			require.Equal(t, f.now()+hold, f.grant(t, id).DueTime, "queued for its first boundary")
 			record, err := f.query.Beneficiary(f.ctx, &disbursementtypes.QueryBeneficiaryRequest{Address: beneficiary.String()})
 			require.NoError(t, err)
 			require.Equal(t, cap, record.Beneficiary.OwnershipCommitted)
@@ -431,7 +434,7 @@ func TestNativeDisbursementOwnershipAndFounders(t *testing.T) {
 			require.ErrorContains(t, f.exec(ownership(nativeNoah(1))), "remaining ownership")
 			f.endBlock(t)
 			require.True(t, f.grant(t, id).Paid.IsZero(), "nothing accrued")
-			f.advance(10)
+			f.advance(int64(hold))
 			// The first period pays its quarter whole: nothing at payment reads the cap.
 			f.endBlock(t)
 			paid := f.grant(t, id).Paid
@@ -457,7 +460,7 @@ func TestNativeDisbursementOwnershipAndFounders(t *testing.T) {
 			// The freed room takes a new award without a founder classification input, and it pays in full.
 			other := f.create(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, beneficiary, chain.NoahCoin(cap.Sub(paid)), 0)
 			require.ErrorContains(t, f.exec(ownership(nativeNoah(1))), "remaining ownership")
-			f.advance(20)
+			f.advance(int64(hold) + 10)
 			f.endBlock(t)
 			require.Equal(t, cap.Sub(paid), f.grant(t, other).Paid)
 			require.Zero(t, f.grant(t, other).DueTime, "paid in full, out of the queue")
@@ -485,14 +488,14 @@ func TestNativeDisbursementStablecoinCompensation(t *testing.T) {
 		asset.Status = assettypes.AssetStatus_ASSET_STATUS_SUSPENDED
 		require.NoError(t, f.app.AssetKeeper.Assets.Set(f.ctx, "ausd", asset))
 		require.ErrorContains(t, f.exec(&disbursementtypes.MsgCompensate{Authority: f.authority.String(), Beneficiary: beneficiary.String(), Amount: sdk.NewInt64Coin("ausd", 1), StartTime: f.now(), Periods: 1, Reference: "new work"}), "active asset")
-		f.advance(int64(disbursementtypes.MinCompensationPeriod))
+		f.advance(int64(hold))
 		f.endBlock(t)
 		require.Equal(t, math.NewInt(4_000), f.app.BankKeeper.GetBalance(f.ctx, beneficiary, "ausd").Amount)
 		require.Equal(t, before, f.app.BankKeeper.GetBalance(f.ctx, collector, "ausd"))
 		person, err := f.query.Beneficiary(f.ctx, &disbursementtypes.QueryBeneficiaryRequest{Address: beneficiary.String()})
 		require.NoError(t, err)
 		require.True(t, person.Beneficiary.OwnershipCommitted.IsZero())
-		f.advance(int64(disbursementtypes.MinCompensationPeriod))
+		f.advance(int64(hold))
 		require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{id}}))
 		g := f.grant(t, id)
 		require.Equal(t, math.NewInt(4_000), g.Remaining)
@@ -555,7 +558,7 @@ func TestNativeDisbursementQueriesAndContinuation(t *testing.T) {
 		a, b := nativeAddress("a"), nativeAddress("b")
 		id := f.register(t, a)
 		f.register(t, b)
-		f.advance(11)
+		f.advance(int64(hold) + 10)
 		f.endBlock(t)
 		require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{id}}))
 		res, err := f.query.Grants(f.ctx, &disbursementtypes.QueryGrantsRequest{Beneficiary: a.String()})
@@ -573,7 +576,8 @@ func TestNativeDisbursementQueriesAndContinuation(t *testing.T) {
 				break
 			}
 		}
-		require.Len(t, entries, 4)
+		// Created, the tenth and first month paid together after the hold, cancelled.
+		require.Len(t, entries, 3)
 		for _, e := range entries {
 			require.Equal(t, id, e.GrantId)
 		}
@@ -692,9 +696,9 @@ func TestNativeDisbursementMemberTerms(t *testing.T) {
 			terms := f.grant(t, id)
 			require.NoError(t, f.exec(&disbursementtypes.MsgCommitteeSuspend{Committee: f.committee.String(), ExpectedTerm: f.term, Addresses: []string{a.String()}}))
 			p.MemberAmount = math.NewInt(20_000)
-			p.MemberSchedule = disbursementtypes.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 100, PeriodWeight: 1, Periods: 1}
+			p.MemberSchedule = disbursementtypes.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 100, PeriodWeight: 1, Periods: 1}
 			require.NoError(t, f.exec(&disbursementtypes.MsgUpdateParams{Authority: f.authority.String(), Params: p}))
-			f.advance(12)
+			f.advance(int64(hold) + 12)
 			other := f.register(t, b)
 			require.Equal(t, p.MemberAmount, f.grant(t, other).Amount.Amount)
 			require.Equal(t, terms.Amount, f.grant(t, id).Amount)
@@ -703,12 +707,12 @@ func TestNativeDisbursementMemberTerms(t *testing.T) {
 				// A committee replacement leaves the suspension standing; governance lifts it.
 				f.appoint(t, f.committee)
 				f.endBlock(t)
-				require.Equal(t, math.NewInt(1_000), f.grant(t, id).Paid)
+				require.True(t, f.grant(t, id).Paid.IsZero(), "suspended inside its hold, it is paid nothing")
 			}
 			require.NoError(t, f.exec(&disbursementtypes.MsgReinstateMembers{Authority: f.authority.String(), Addresses: []string{a.String()}}))
 			// A lapsed or lifted suspension cannot backdate a later cancellation.
 			require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{id}}))
-			require.Equal(t, math.NewInt(3_000), f.grant(t, id).Remaining)
+			require.Equal(t, math.NewInt(4_000), f.grant(t, id).Remaining)
 			require.Equal(t, uint64(f.ctx.BlockTime().Unix()), f.grant(t, id).CutoffTime)
 			f.check(t)
 		})
@@ -751,12 +755,12 @@ func TestNativeDisbursementGrantsMandate(t *testing.T) {
 		f.open(t, math.NewInt(100_000))
 		member := nativeAddress("member")
 		require.ErrorContains(t, f.exec(&disbursementtypes.MsgRegisterMembers{Registrar: f.registrar.String(), ExpectedTerm: f.registrarTerm + 1, Addresses: []string{member.String()}, Reference: "admission batch"}), "term mismatch")
-		height := uint64(f.ctx.BlockHeight())
-		require.ErrorContains(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.authority.String(), ActivationHeight: height, ExpiryHeight: height + 10}), "distinct")
-		require.ErrorContains(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.committee.String(), ActivationHeight: height - 5, ExpiryHeight: height}), "not above the current height")
+		now := f.now()
+		require.ErrorContains(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.authority.String(), ActivationTime: now, ExpiryTime: now + 10}), "distinct")
+		require.ErrorContains(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.committee.String(), ActivationTime: now - 5, ExpiryTime: now}), "not after the current block time")
 		// A short window lapses on its own. The term does not move, so the hold stays effective. The
 		// appointment clears the registrar, which the committee names again inside its new window.
-		require.NoError(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.committee.String(), ActivationHeight: height, ExpiryHeight: height + 2}))
+		require.NoError(t, f.exec(&disbursementtypes.MsgSetGrantsMandate{Authority: f.authority.String(), Committee: f.committee.String(), ActivationTime: now, ExpiryTime: now + 2}))
 		f.term++
 		f.registrarTerm++
 		f.appointRegistrar(t, f.registrar)
@@ -769,9 +773,9 @@ func TestNativeDisbursementGrantsMandate(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, status.Active)
 		require.Equal(t, f.term, status.Mandate.Term)
-		f.advance(11)
+		f.advance(int64(hold) + 10)
 		f.endBlock(t)
-		require.Equal(t, math.NewInt(1_000), f.grant(t, id).Paid, "a suspended member is not looked at")
+		require.True(t, f.grant(t, id).Paid.IsZero(), "a suspended member is not looked at")
 		// Governance lifts the hold directly; disabling advances the term and refuses the old key, and
 		// clears the registrar with it.
 		require.NoError(t, f.exec(&disbursementtypes.MsgReinstateMembers{Authority: f.authority.String(), Addresses: []string{member.String()}}))
@@ -813,16 +817,16 @@ func TestNativeDisbursementRegistrar(t *testing.T) {
 		appoint := func(signer, registrar sdk.AccAddress, activation, expiry uint64) error {
 			return f.exec(&disbursementtypes.MsgCommitteeRegistrar{
 				Committee: signer.String(), ExpectedTerm: f.term, Registrar: registrar.String(),
-				ActivationHeight: activation, ExpiryHeight: expiry,
+				ActivationTime: activation, ExpiryTime: expiry,
 			})
 		}
 		// Only the committee appoints, never the authority, and only inside its own window; it may name
 		// itself, and the replaced registrar's prepared batch dies with its term.
-		require.ErrorContains(t, appoint(a, a, committee.ActivationHeight, committee.ExpiryHeight), "exact appointed")
-		require.ErrorContains(t, appoint(f.committee, f.authority, committee.ActivationHeight, committee.ExpiryHeight), "distinct")
-		require.ErrorContains(t, appoint(f.committee, f.committee, committee.ActivationHeight-1, committee.ExpiryHeight), "inside the committee's")
-		require.ErrorContains(t, appoint(f.committee, f.committee, committee.ActivationHeight, committee.ExpiryHeight+1), "inside the committee's")
-		require.NoError(t, appoint(f.committee, f.committee, committee.ActivationHeight, committee.ExpiryHeight))
+		require.ErrorContains(t, appoint(a, a, committee.ActivationTime, committee.ExpiryTime), "exact appointed")
+		require.ErrorContains(t, appoint(f.committee, f.authority, committee.ActivationTime, committee.ExpiryTime), "distinct")
+		require.ErrorContains(t, appoint(f.committee, f.committee, committee.ActivationTime-1, committee.ExpiryTime), "inside the committee's")
+		require.ErrorContains(t, appoint(f.committee, f.committee, committee.ActivationTime, committee.ExpiryTime+1), "inside the committee's")
+		require.NoError(t, appoint(f.committee, f.committee, committee.ActivationTime, committee.ExpiryTime))
 		f.registrarTerm++
 		require.ErrorContains(t, f.exec(&disbursementtypes.MsgRegisterMembers{Registrar: f.committee.String(), ExpectedTerm: f.registrarTerm - 1, Addresses: []string{a.String()}, Reference: "admission batch"}), "term mismatch")
 		require.ErrorContains(t, registerAs(f, f.registrar, a), "exact appointed")
@@ -833,7 +837,8 @@ func TestNativeDisbursementRegistrar(t *testing.T) {
 		// The open tranche is the registrar's only bound; what a cancel reopens, the next batch may take.
 		require.ErrorContains(t, registerAs(f, f.committee, c, d, e, later), "open member tranche")
 		require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{1}}))
-		requirePool(t, f, disbursementtypes.MembersName, 39_000, 39_000)
+		// Cancelled inside its hold, the whole grant reopens.
+		requirePool(t, f, disbursementtypes.MembersName, 40_000, 40_000)
 		require.NoError(t, registerAs(f, f.committee, c, d, e))
 		// The committee rotates the registrar without a vote; the old key is refused at once.
 		f.appointRegistrar(t, f.registrar)
@@ -870,8 +875,8 @@ func TestNativeDisbursementRegistrar(t *testing.T) {
 		require.NoError(t, registerAs(f, f.registrar, after))
 		// A lapsed registrar window stops it inside a live committee; a disabling by the committee
 		// advances its term and refuses the key.
-		height := uint64(f.ctx.BlockHeight())
-		require.NoError(t, appoint(f.committee, f.registrar, height, height+1))
+		now := f.now()
+		require.NoError(t, appoint(f.committee, f.registrar, now, now+1))
 		f.registrarTerm++
 		f.advance(1)
 		require.ErrorContains(t, registerAs(f, f.registrar, nativeAddress("late")), "not active")
@@ -909,7 +914,7 @@ func TestNativeDisbursementRegistrar(t *testing.T) {
 				g.GrantsMandate = disbursementtypes.NewDisabledGrantsMandate(g.GrantsMandate.Term)
 			}},
 			{"registrar outside the committee window", func(g *disbursementtypes.GenesisState) {
-				g.RegistrarMandate.ExpiryHeight = g.GrantsMandate.ExpiryHeight + 1
+				g.RegistrarMandate.ExpiryTime = g.GrantsMandate.ExpiryTime + 1
 			}},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -928,7 +933,7 @@ func TestNativeDisbursementPaymentDeferral(t *testing.T) {
 		a, b := nativeAddress("a"), nativeAddress("b")
 		f.open(t, math.NewInt(20_000))
 		first, second := f.register(t, a), f.register(t, b)
-		f.advance(11)
+		f.advance(int64(hold) + 10)
 		f.app.BankKeeper.AppendSendRestriction(func(_ context.Context, _ sdk.AccAddress, to sdk.AccAddress, _ sdk.Coins) (sdk.AccAddress, error) {
 			if to.Equals(b) {
 				return nil, errors.New("second destination refuses")
@@ -938,19 +943,19 @@ func TestNativeDisbursementPaymentDeferral(t *testing.T) {
 		f.endBlock(t)
 		// The refusal holds only its own grant: the other is paid, and the block goes on.
 		require.Equal(t, math.NewInt(4_000), f.grant(t, first).Paid)
-		require.Equal(t, math.NewInt(1_000), f.grant(t, second).Paid)
+		require.True(t, f.grant(t, second).Paid.IsZero())
 		require.Equal(t, f.now()+10, f.grant(t, first).DueTime)
 		require.Equal(t, f.now()+10, f.grant(t, second).DueTime, "the sooner of the next boundary and a retry")
 		deferred := f.deferred(t)
 		require.Len(t, deferred, 1)
 		require.Equal(t, second, deferred[0].GrantId)
 		require.Equal(t, b.String(), deferred[0].Payee)
-		require.Equal(t, math.NewInt(3_000), deferred[0].Amount)
+		require.Equal(t, math.NewInt(4_000), deferred[0].Amount)
 		require.Equal(t, f.now()+10, deferred[0].DueTime)
 		// A deferral moves nothing and writes no journal entry.
 		journal, err := f.query.GrantJournal(f.ctx, &disbursementtypes.QueryGrantJournalRequest{GrantId: second})
 		require.NoError(t, err)
-		require.Len(t, journal.Entries, 2)
+		require.Len(t, journal.Entries, 1)
 		f.check(t)
 		// Past its schedule, a refused grant waits a retry interval between looks.
 		f.advance(20)
@@ -963,7 +968,7 @@ func TestNativeDisbursementPaymentDeferral(t *testing.T) {
 		require.NoError(t, f.exec(&disbursementtypes.MsgSetPayee{Sender: b.String(), GrantId: second, Payee: payee.String()}))
 		require.Equal(t, f.now(), f.grant(t, second).DueTime)
 		f.endBlock(t)
-		require.Equal(t, math.NewInt(9_000), f.app.BankKeeper.GetBalance(f.ctx, payee, chain.NoahBaseDenom).Amount)
+		require.Equal(t, math.NewInt(10_000), f.app.BankKeeper.GetBalance(f.ctx, payee, chain.NoahBaseDenom).Amount)
 		require.Zero(t, f.grant(t, second).DueTime)
 		f.check(t)
 	})
@@ -1002,7 +1007,7 @@ func TestNativeDisbursementPaymentDeferral(t *testing.T) {
 			}))
 			return n
 		}
-		f.advance(11)
+		f.advance(int64(hold) + 10)
 		f.endBlock(t)
 		require.Equal(t, disbursementtypes.MaxPaymentsPerBlock, paid(), "the block pays its bound and leaves the rest due")
 		f.endBlock(t)
@@ -1066,6 +1071,10 @@ func TestNativeDisbursementImportRefusals(t *testing.T) {
 				gs = f.check(t)
 				gs.Grants[0].Payee = member.String()
 			case "order":
+				// The tenth pays after the hold, giving the grant a second entry to misorder.
+				f.advance(int64(hold))
+				f.endBlock(t)
+				gs = f.check(t)
 				gs.GrantJournal[0], gs.GrantJournal[1] = gs.GrantJournal[1], gs.GrantJournal[0]
 			case "committee":
 				gs.GrantsMandate.Committee = f.authority.String()
@@ -1078,12 +1087,12 @@ func TestNativeDisbursementImportRefusals(t *testing.T) {
 				}
 			case "denom":
 				// A paid-out award in a denomination no asset carries passes validation; import refuses it.
-				// It follows the member's registration and is paid a week later, before the import.
-				week := disbursementtypes.MinCompensationPeriod
+				// It follows the member's registration and is paid a period later, before the import.
+				period := hold
 				b, created := nativeAddress("b"), gs.Grants[0].CreatedTime+1
 				award := disbursementtypes.Grant{
 					Id: 2, Kind: disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: b.String(), Payee: b.String(), CreatedBy: f.authority.String(),
-					Amount: sdk.NewInt64Coin("azzz", 10), Schedule: disbursementtypes.Schedule{FirstLength: week, FirstWeight: 1, PeriodLength: week, PeriodWeight: 1}, StartTime: created, CreatedTime: created,
+					Amount: sdk.NewInt64Coin("azzz", 10), Schedule: disbursementtypes.Schedule{FirstLength: period, FirstWeight: 1, PeriodLength: period, PeriodWeight: 1}, StartTime: created, CreatedTime: created,
 					CreatedHeight: gs.Grants[0].CreatedHeight, Paid: math.NewInt(10), Remaining: math.ZeroInt(), Reference: "work", AwardValue: math.NewInt(10),
 				}
 				gs.Grants, gs.NextGrantId = append(gs.Grants, award), 3
@@ -1091,7 +1100,7 @@ func TestNativeDisbursementImportRefusals(t *testing.T) {
 				last := gs.GrantJournal[len(gs.GrantJournal)-1]
 				gs.GrantJournal = append(gs.GrantJournal,
 					disbursementtypes.GrantEntry{Id: last.Id + 1, GrantId: 2, Action: disbursementtypes.GrantAction_GRANT_ACTION_CREATED, Actor: award.CreatedBy, Amount: award.Amount, Offer: math.ZeroInt(), Height: award.CreatedHeight, Time: created},
-					disbursementtypes.GrantEntry{Id: last.Id + 2, GrantId: 2, Action: disbursementtypes.GrantAction_GRANT_ACTION_PAID, Actor: award.CreatedBy, Amount: award.Amount, Subject: b.String(), Offer: math.ZeroInt(), Height: award.CreatedHeight + 1, Time: created + week},
+					disbursementtypes.GrantEntry{Id: last.Id + 2, GrantId: 2, Action: disbursementtypes.GrantAction_GRANT_ACTION_PAID, Actor: award.CreatedBy, Amount: award.Amount, Subject: b.String(), Offer: math.ZeroInt(), Height: award.CreatedHeight + 1, Time: created + period},
 				)
 				gs.NextGrantEntryId += 2
 				require.NoError(t, gs.Validate())
@@ -1100,13 +1109,17 @@ func TestNativeDisbursementImportRefusals(t *testing.T) {
 			case "history":
 				gs.GrantJournal = gs.GrantJournal[:len(gs.GrantJournal)-1]
 			case "time":
-				gs.GrantJournal[1].Time++
+				// A registration stamped after the genesis block, its clock with it.
+				gs.Grants[0].CreatedTime++
+				gs.Grants[0].StartTime++
+				gs.Grants[0].DueTime++
+				gs.GrantJournal[0].Time++
 			case "tranche":
 				gs.MemberTranche = math.NewInt(10_001) // past the whole member funding below
 			}
 			fresh := newNativeDisbursement(t)
 			if tc.corruption == "denom" {
-				fresh.advance(int64(disbursementtypes.MinCompensationPeriod) + 1)
+				fresh.advance(int64(hold) + 1)
 			}
 			if tc.corruption != "unbacked" {
 				apptestutil.FundModule(t, fresh.app, fresh.ctx, disbursementtypes.MembersName, sdk.NewCoins(chain.NoahCoin(math.NewInt(10_000))))
@@ -1135,13 +1148,13 @@ func TestNativeDisbursementImportBlockedPayee(t *testing.T) {
 	fresh := newNativeDisbursement(t)
 	apptestutil.FundModule(t, fresh.app, fresh.ctx, disbursementtypes.MembersName, sdk.NewCoins(chain.NoahCoin(math.NewInt(10_000))))
 	require.NoError(t, fresh.app.DisbursementKeeper.InitGenesis(fresh.ctx, gs))
-	fresh.advance(11)
+	fresh.advance(int64(hold) + 10)
 	fresh.endBlock(t)
 	deferred := fresh.deferred(t)
 	require.Len(t, deferred, 1)
 	require.Equal(t, id, deferred[0].GrantId)
 	require.Equal(t, blocked, deferred[0].Payee)
-	require.Equal(t, math.NewInt(1_000), fresh.grant(t, id).Paid, "the refused payment moved nothing")
+	require.True(t, fresh.grant(t, id).Paid.IsZero(), "the refused payment moved nothing")
 	fresh.check(t)
 }
 
@@ -1182,9 +1195,9 @@ func TestNativeDisbursementPools(t *testing.T) {
 				actions = append(actions, entry.Action)
 			}
 		}
-		require.Equal(t, []string{"GRANT_ACTION_CREATED", "GRANT_ACTION_PAID"}, actions, "registration publishes the creation and the first payment by name")
+		require.Equal(t, []string{"GRANT_ACTION_CREATED"}, actions, "registration publishes the creation by name and pays nothing inside the hold")
 		require.ErrorContains(t, f.exec(&disbursementtypes.MsgRegisterMembers{Registrar: f.registrar.String(), ExpectedTerm: f.registrarTerm, Addresses: []string{b.String()}, Reference: "admission batch"}), "open member tranche")
-		f.advance(11)
+		f.advance(int64(hold) + 10)
 		require.NoError(t, f.exec(&disbursementtypes.MsgCancelGrants{Authority: f.authority.String(), GrantIds: []uint64{id}}))
 		// The unearned 6,000 returns to the step it was charged to, ready for the next member.
 		requirePool(t, f, members, 16_000, 6_000)
@@ -1288,7 +1301,7 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 	founder, worker := nativeAddress("founder"), nativeAddress("worker")
 	// Compensation is in the reference unit, which NOAH and ausd each price at one.
 	compensationAllowance := math.NewInt(50_000)
-	const compPeriod = disbursementtypes.MinCompensationPeriod
+	const compPeriod = hold
 	setup := func(t *testing.T) *nativeDisbursementFixture {
 		t.Helper()
 		f := newNativeDisbursement(t, founder)
@@ -1333,9 +1346,9 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 	t.Run("appointment_bounds", func(t *testing.T) {
 		f := setup(t)
 		appoint := func(compensation math.Int) error {
-			height := uint64(f.ctx.BlockHeight())
+			now := f.now()
 			return f.exec(&disbursementtypes.MsgSetGrantsMandate{
-				Authority: f.authority.String(), Committee: f.committee.String(), ActivationHeight: height, ExpiryHeight: height + 100,
+				Authority: f.authority.String(), Committee: f.committee.String(), ActivationTime: now, ExpiryTime: now + 100,
 				CompensationAllowance: compensation,
 			})
 		}
@@ -1401,7 +1414,8 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		require.Zero(t, f.grant(t, workerGrant).MandateTerm, "a governance grant carries no term")
 		require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, f.grant(t, 2).Kind)
 		require.Equal(t, f.term, f.grant(t, 2).MandateTerm)
-		f.advance(int64(compPeriod))
+		// Past both ownership periods, inside compensation's second.
+		f.advance(int64(compPeriod) + 10)
 		record, err := f.query.Beneficiary(f.ctx, &disbursementtypes.QueryBeneficiaryRequest{Address: worker.String()})
 		require.NoError(t, err)
 		// The award commits its whole amount at once; both ownership periods have elapsed, so the block
@@ -1565,11 +1579,12 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		require.NoError(t, cancel())
 		for _, g := range term() {
 			require.True(t, g.Cancelled())
-			require.True(t, g.Remaining.IsZero(), "nothing accrued past what registration paid")
+			require.True(t, g.Remaining.IsZero(), "nothing accrued: no award's first period or the fake's hold had ended")
 		}
-		// NOAH returns to the pool and the fake's unpaid principal to the tranche; stablecoins stay in custody.
+		// NOAH returns to the pool and the fake's whole grant to the tranche, since a cancel inside its
+		// hold finds nothing paid; stablecoins stay in custody.
 		requirePool(t, f, disbursementtypes.ContributorsName, 100_000, 0)
-		requirePool(t, f, disbursementtypes.MembersName, 9_000, 9_000)
+		requirePool(t, f, disbursementtypes.MembersName, 10_000, 10_000)
 		require.Equal(t, math.NewInt(50_000), f.account(t, disbursementtypes.ContributorsName, "ausd").Uncommitted.Amount)
 		require.NoError(t, cancel(), "cancelling again changes nothing")
 		f.check(t)

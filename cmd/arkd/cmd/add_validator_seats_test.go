@@ -127,12 +127,12 @@ func TestAddValidatorSeatsCmd(t *testing.T) {
 	require.NoError(t, appGenesis.SaveAs(genesisFile))
 
 	// The launch bounds and the founder are checked before anything is read.
-	untouched(t, func() error { return run(seatArgs(founder.String(), operators[1:]...)...) }, "a launch seats between")
+	untouched(t, func() error { return run(seatArgs(founder.String(), operators[1:]...)...) }, "launch assembly seats between")
 	tooMany := append(append([]sdk.AccAddress{}, operators...), make([]sdk.AccAddress, chain.MaxLaunchSeats-chain.MinLaunchSeats+1)...)
 	for i := len(operators); i < len(tooMany); i++ {
 		tooMany[i] = newOperator()
 	}
-	untouched(t, func() error { return run(seatArgs(founder.String(), tooMany...)...) }, "a launch seats between")
+	untouched(t, func() error { return run(seatArgs(founder.String(), tooMany...)...) }, "launch assembly seats between")
 	untouched(t, func() error { return run(seatArgs(newOperator().String(), operators...)...) }, "is not among the operators")
 	untouched(t, func() error { return run(seatArgs("", operators...)...) }, "required flag")
 	untouched(t, func() error { return run(seatArgs("ark1notanaddress", operators...)...) }, "parse founder address")
@@ -226,7 +226,7 @@ func TestAddValidatorSeatsCmdAnyCount(t *testing.T) {
 		return svrcmd.Execute(rootCmd, "", app.DefaultNodeHome)
 	}
 	args := []string{"genesis", "add-validator-seats", fmt.Sprintf("--%s=%s", flagFounder, operators[0]), operators[0].String(), operators[1].String()}
-	require.ErrorContains(t, run(args...), "a launch seats between")
+	require.ErrorContains(t, run(args...), "launch assembly seats between")
 	require.NoError(t, run(append(args, fmt.Sprintf("--%s", flagAnyCount))...))
 
 	cdc := clientCodec(t)

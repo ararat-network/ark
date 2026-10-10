@@ -359,12 +359,12 @@ func TestWasmGenesisShipsOpen(t *testing.T) {
 // the community pool and adds one seat's share to both targets (app/genesis).
 const (
 	launchTotalSupplyNoah     = 1_000_000_000
-	launchSubsidyNoah         = 100_000_000
+	launchSubsidyNoah         = 50_000_000
 	launchReserveNoah         = 50_000_000
 	launchBufferNoah          = 10_000_000
 	launchInsuranceNoah       = 5_000_000
-	launchMemberPoolNoah      = 439_200_000
-	launchContributorPoolNoah = 292_800_000
+	launchMemberPoolNoah      = 469_200_000
+	launchContributorPoolNoah = 312_800_000
 	launchCommunityPoolNoah   = 103_000_000
 )
 
@@ -470,7 +470,7 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
 	params := treasuryGenesis.Params
 	require.Equal(t, chain.XDRBaseDenom, params.ReferenceDenom)
-	require.Equal(t, noah(1_000), params.ReferenceTaxCap, "1,000 XDR: proportional up to 200,000 XDR at 0.5%")
+	require.Equal(t, noah(100), params.ReferenceTaxCap, "100 XDR: proportional up to 20,000 XDR at 0.5%")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.005"), params.TransferTaxRate)
 	require.Equal(t, math.LegacyNewDec(2), params.MultiplierCap, "ratios summing to 0.5 reach full retention at 2")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.1"), params.MultiplierMaxStep)
@@ -486,8 +486,8 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 
 	require.Len(t, treasuryGenesis.ConversionFactors, 1)
 	require.Equal(t, chain.NoahBaseDenom, treasuryGenesis.ConversionFactors[0].Denom)
-	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), treasuryGenesis.ConversionFactors[0].Factor,
-		"NOAH opens at 1 USD with XDR at 1.371 USD; the first axdr rate replaces it")
+	require.Equal(t, math.LegacyOneDec(), treasuryGenesis.ConversionFactors[0].Factor,
+		"NOAH opens at one XDR (D128); the first axdr rate replaces it")
 
 	var marketGenesis markettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
@@ -502,13 +502,16 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	var oracleGenesis oracletypes.GenesisState
 	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
 	require.Equal(t, chain.BlocksPerWeek, oracleGenesis.Params.RewardWindow)
-	require.Equal(t, 13*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
-		"a quarter: steady subsidy inflow needs no year of smoothing")
+	require.Equal(t, 4*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
+		"four weeks: the subsidy floors oracle income, so smoothing only spreads tax windfalls (D135)")
 	require.Equal(t, oracleGenesis.Params.RewardDistributionWindow, oracleGenesis.Accounting.RewardDistributionWindow)
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
-	require.Equal(t, 3*chain.BlocksPerDay, assetGenesis.Params.SettlementActivationDelayBlocks, "outlasts the two-day vote")
+	require.Equal(t, uint64(7*86_400), assetGenesis.Params.SettlementActivationDelay, "a week of block time fits a deposit period and a vote")
+	var claimsGenesis claimstypes.GenesisState
+	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
+	require.Equal(t, uint64(7*86_400), claimsGenesis.Params.ClaimCancellationPeriod, "a week of block time fits a deposit period and a vote")
 	require.Empty(t, assetGenesis.Assets,
 		"conversion is closed at launch: the currencies are registered by vote once NOAH has a market price (D95)")
 }
@@ -620,6 +623,37 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, chain.SeatValidatorShare, policy.ValidatorBlockRewardTarget, "one seat, one share")
 			require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
+
+			// The founder's grant and stream import as governance awards, and the stream's first
+			// period pays one period after genesis (D136).
+			ownership, err := arkApp.DisbursementKeeper.Grants.Get(ctx, 1)
+			require.NoError(t, err)
+			require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, ownership.Kind)
+			require.Equal(t, noah(chain.FounderGrantNoah), ownership.Remaining)
+			stream, err := arkApp.DisbursementKeeper.Grants.Get(ctx, 2)
+			require.NoError(t, err)
+			require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, stream.Kind)
+			require.Equal(t, operator.String(), stream.Payee)
+			first, _, _, err := stream.Schedule.Shares(stream.Amount.Amount)
+			require.NoError(t, err)
+
+			_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+				Height:             arkApp.LastBlockHeight() + 1,
+				Time:               time.Unix(int64(stream.DueTime), 0),
+				Hash:               arkApp.LastCommitID().Hash,
+				NextValidatorsHash: valSet.Hash(),
+			})
+			require.NoError(t, err)
+			_, err = arkApp.Commit()
+			require.NoError(t, err)
+			ctx = arkApp.NewContext(true)
+			stream, err = arkApp.DisbursementKeeper.Grants.Get(ctx, 2)
+			require.NoError(t, err)
+			require.Equal(t, first, stream.Paid, "the stream's first period")
+			require.Equal(t, float.AmountOf(chain.NoahBaseDenom).Add(first), arkApp.BankKeeper.SpendableCoins(ctx, operator).AmountOf(chain.NoahBaseDenom))
+			ownership, err = arkApp.DisbursementKeeper.Grants.Get(ctx, 1)
+			require.NoError(t, err)
+			require.True(t, ownership.Paid.IsZero(), "the grant waits for its first period")
 		})
 	}
 }
@@ -651,7 +685,7 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
-	assetGenesis.Params.SettlementActivationDelayBlocks = 2 * chain.BlocksPerHour
+	assetGenesis.Params.SettlementActivationDelay = 4 * 3_600
 	// The testnet opens conversion from genesis, as the launch chain does by
 	// vote (D95): the ten currencies as registration would store them, and the
 	// pre-D95 depth.
@@ -672,7 +706,7 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 
 	var claimsGenesis claimstypes.GenesisState
 	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
-	claimsGenesis.Params.ClaimCancellationPeriodBlocks = 4 * chain.BlocksPerHour
+	claimsGenesis.Params.ClaimCancellationPeriod = 4 * 3_600
 	state[claimstypes.ModuleName] = cdc.MustMarshalJSON(&claimsGenesis)
 
 	var stakingGenesis stakingtypes.GenesisState
@@ -689,11 +723,35 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
 	oracleGenesis.Params.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Params.AttendanceWindow = chain.BlocksPerDay
-	oracleGenesis.Params.RewardDistributionWindow = chain.BlocksPerWeek
+	oracleGenesis.Params.RewardDistributionWindow = 4 * chain.BlocksPerDay
 	oracleGenesis.Accounting.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.AttendanceWindow = chain.BlocksPerDay
-	oracleGenesis.Accounting.RewardDistributionWindow = chain.BlocksPerWeek
+	oracleGenesis.Accounting.RewardDistributionWindow = 4 * chain.BlocksPerDay
 	state[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracleGenesis)
+}
+
+// The Oracle's windows open at the chain's first block and its reward window
+// matches Treasury's funding window, so each reward settlement lands on a
+// funding block. Treasury ends the block first, so the Oracle pays from the
+// window it just funded rather than finding the first one empty.
+func TestGenesisAlignsOracleSettlementWithFunding(t *testing.T) {
+	for _, artefact := range artefacts() {
+		t.Run(artefact.name, func(t *testing.T) {
+			appGenesis, state := loadGenesis(t, artefact.path)
+			_, cdc := cliBasicManager(t)
+
+			var oracleGenesis oracletypes.GenesisState
+			cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
+			var treasuryGenesis treasurytypes.GenesisState
+			cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
+
+			accounting := oracleGenesis.Accounting
+			require.EqualValues(t, appGenesis.InitialHeight, accounting.RewardWindowStartHeight)
+			require.EqualValues(t, appGenesis.InitialHeight, accounting.AttendanceWindowStartHeight)
+			require.Equal(t, treasuryGenesis.Params.RewardFundingWindow, accounting.RewardWindow)
+			require.Zero(t, treasuryGenesis.RewardFunding.BlocksRemaining, "the first funding window opens at the first block")
+		})
+	}
 }
 
 // TestTestnetGenesisDerivesFromLaunch pins the testnet artefact to the launch
