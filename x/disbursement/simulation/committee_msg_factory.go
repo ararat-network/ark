@@ -16,7 +16,7 @@ import (
 // Signed factories deliver at once, and a failed delivery fails the run, so each emits only what
 // the handler accepts in the state it reads.
 
-// activeGrantsCommittee resolves the appointed committee when its mandate is active at this height
+// activeGrantsCommittee resolves the appointed committee when its mandate is active at this block time
 // and the run holds its key. A skip is the norm: the appointment may have expired, or been restored
 // from an export naming an address this run never held.
 func activeGrantsCommittee(
@@ -30,8 +30,8 @@ func activeGrantsCommittee(
 		reporter.Skip("get grants mandate: " + err.Error())
 		return types.GrantsMandate{}, simsx.SimAccount{}, false
 	}
-	if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-		reporter.Skip("grants mandate is not active at this height")
+	if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+		reporter.Skip("grants mandate is not active at this block time")
 		return types.GrantsMandate{}, simsx.SimAccount{}, false
 	}
 	committee := testData.GetAccount(reporter, mandate.Committee)
@@ -41,7 +41,7 @@ func activeGrantsCommittee(
 	return mandate, committee, true
 }
 
-// MsgCommitteeRegistrarFactory appoints a run-owned registrar from now to a height inside the
+// MsgCommitteeRegistrarFactory appoints a run-owned registrar from now to a time inside the
 // committee's window.
 func MsgCommitteeRegistrarFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeRegistrar] {
 	return func(
@@ -57,16 +57,16 @@ func MsgCommitteeRegistrarFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
-		// Active means the committee's activation is at most this height and its expiry above it. The
+		// Active means the committee's activation is at most this block time and its expiry above it. The
 		// draw is capped so a restored mandate's far expiry cannot overflow it.
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		expiry := min(mandate.ExpiryHeight, height+100_000)
+		now := chain.BlockSeconds(ctx)
+		expiry := min(mandate.ExpiryTime, now+100_000)
 		return []simsx.SimAccount{committee}, &types.MsgCommitteeRegistrar{
-			Committee:        mandate.Committee,
-			ExpectedTerm:     mandate.Term,
-			Registrar:        registrar.AddressBech32,
-			ActivationHeight: height,
-			ExpiryHeight:     testData.Rand().Uint64InRange(height+1, expiry+1),
+			Committee:      mandate.Committee,
+			ExpectedTerm:   mandate.Term,
+			Registrar:      registrar.AddressBech32,
+			ActivationTime: now,
+			ExpiryTime:     testData.Rand().Uint64InRange(now+1, expiry+1),
 		}
 	}
 }
@@ -84,8 +84,8 @@ func MsgRegisterMembersFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.Ms
 			reporter.Skip("get registrar mandate: " + err.Error())
 			return nil, nil
 		}
-		if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-			reporter.Skip("registrar mandate is not active at this height")
+		if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+			reporter.Skip("registrar mandate is not active at this block time")
 			return nil, nil
 		}
 		registrar := testData.GetAccount(reporter, mandate.Committee)

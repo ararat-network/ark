@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
@@ -24,8 +25,8 @@ func (k *Keeper) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMa
 	envelope, address, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return err
@@ -52,12 +53,12 @@ func (k *Keeper) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMa
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return fmt.Errorf(
-				"%s expires at height %d, which is not above the current height %d",
+				"%s expires at time %d, which is not after the current block time %d",
 				types.GrantsMandateLabel,
-				updated.ExpiryHeight,
-				height,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 	}
@@ -68,11 +69,11 @@ func (k *Keeper) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMa
 		return fmt.Errorf("resetting compensation usage: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventGrantsMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
 		return fmt.Errorf("emitting grants mandate: %w", err)
 	}
@@ -95,7 +96,7 @@ func (k *Keeper) AuthoriseCommittee(ctx context.Context, committee string, expec
 	if err != nil {
 		return types.GrantsMandate{}, fmt.Errorf("getting grants mandate: %w", err)
 	}
-	if err := appointment.Authorise(committee, expectedTerm, uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())); err != nil {
+	if err := appointment.Authorise(committee, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.GrantsMandate{}, fmt.Errorf("%s: %w", types.GrantsMandateLabel, err)
 	}
 	return appointment, nil
@@ -104,12 +105,12 @@ func (k *Keeper) AuthoriseCommittee(ctx context.Context, committee string, expec
 // SetRegistrarMandate replaces or disables the registrar appointment under committee, the live grants
 // mandate, for a window inside the committee's. Every replacement advances the term; the open member
 // tranche is the registrar's only bound.
-func (k *Keeper) SetRegistrarMandate(ctx context.Context, committee types.GrantsMandate, registrar string, activationHeight, expiryHeight uint64) error {
+func (k *Keeper) SetRegistrarMandate(ctx context.Context, committee types.GrantsMandate, registrar string, activationTime, expiryTime uint64) error {
 	current, err := k.RegistrarMandate.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting registrar mandate: %w", err)
 	}
-	envelope, address, err := mandate.Next(current.Envelope, registrar, activationHeight, expiryHeight)
+	envelope, address, err := mandate.Next(current.Envelope, registrar, activationTime, expiryTime)
 	if err != nil {
 		return err
 	}
@@ -133,12 +134,12 @@ func (k *Keeper) SetRegistrarMandate(ctx context.Context, committee types.Grants
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return fmt.Errorf(
-				"%s expires at height %d, which is not above the current height %d",
+				"%s expires at time %d, which is not after the current block time %d",
 				types.RegistrarMandateLabel,
-				updated.ExpiryHeight,
-				height,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 	}
@@ -146,11 +147,11 @@ func (k *Keeper) SetRegistrarMandate(ctx context.Context, committee types.Grants
 		return fmt.Errorf("setting registrar mandate: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventRegistrarMandateSet{
-		Term:             updated.Term,
-		Registrar:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Registrar:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
 		return fmt.Errorf("emitting registrar mandate: %w", err)
 	}
@@ -164,7 +165,7 @@ func (k *Keeper) AuthoriseRegistrar(ctx context.Context, registrar string, expec
 	if err != nil {
 		return types.RegistrarMandate{}, fmt.Errorf("getting registrar mandate: %w", err)
 	}
-	if err := appointment.Authorise(registrar, expectedTerm, uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())); err != nil {
+	if err := appointment.Authorise(registrar, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.RegistrarMandate{}, fmt.Errorf("%s: %w", types.RegistrarMandateLabel, err)
 	}
 	return appointment, nil

@@ -48,8 +48,8 @@ func (s *KeeperTestSuite) TestQueryGrantsMandate() {
 		s.Require().True(res.Active)
 		s.Require().Equal(math.NewInt(200), res.CompensationUsed)
 		s.Require().Equal(math.NewInt(300), res.CompensationRemaining)
-		// The window is half-open: expiry is the first inactive height.
-		s.setBlockHeight(int64(res.Mandate.ExpiryHeight))
+		// The window is half-open: expiry is the first inactive time.
+		s.setTime(res.Mandate.ExpiryTime)
 		res, err = s.queryServer.GrantsMandate(s.ctx, &types.QueryGrantsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(res.Active)
@@ -85,7 +85,7 @@ func (s *KeeperTestSuite) TestQueryRegistrarMandate() {
 		s.Require().Equal(s.registrar, res.Mandate.Committee)
 		s.Require().Equal(s.registrarTerm, res.Mandate.Term)
 		s.Require().True(res.Active)
-		s.setBlockHeight(int64(res.Mandate.ExpiryHeight))
+		s.setTime(res.Mandate.ExpiryTime)
 		res, err = s.queryServer.RegistrarMandate(s.ctx, &types.QueryRegistrarMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(res.Active)
@@ -126,11 +126,11 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 		s.fund(contributors, noah(100), usd(50))
 		res, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		// The member's 10,000 was drawn from the tranche and reserved; its first 1,000 is paid out.
+		// The member's 10,000 was drawn from the tranche and reserved; its tenth waits for the hold.
 		s.Require().Equal([]types.AccountBalance{
 			row(contributors, noah(100), noah(0), noah(100)),
 			row(contributors, usd(50), usd(0), usd(50)),
-			row(members, noah(29_000), noah(9_000), noah(20_000)),
+			row(members, noah(30_000), noah(10_000), noah(20_000)),
 		}, res.Accounts)
 		s.Require().Equal(math.NewInt(20_000), res.MemberTranche)
 
@@ -251,8 +251,12 @@ func (s *KeeperTestSuite) TestQueryGrants() {
 func (s *KeeperTestSuite) TestQueryGrantJournal() {
 	s.grantsFixture()
 	created, paid := types.GrantAction_GRANT_ACTION_CREATED, types.GrantAction_GRANT_ACTION_PAID
-	s.Require().Equal([]types.GrantAction{created, paid}, s.actions(1), "a member's registration pays its first period")
+	s.Require().Equal([]types.GrantAction{created}, s.actions(1), "a member's registration pays nothing inside its hold")
 	s.Require().Equal([]types.GrantAction{created}, s.actions(3), "an award pays nothing before its first boundary")
+	// Every first period is the two-week floor, so one look past it pays all four.
+	s.advance(int64(hold))
+	s.endBlock()
+	s.Require().Equal([]types.GrantAction{created, paid}, s.actions(1), "the block pays the tenth once the hold ends")
 
 	// Unfiltered, the journal lists every grant's run in grant then entry order.
 	res, err := s.queryServer.GrantJournal(s.ctx, &types.QueryGrantJournalRequest{})
@@ -261,7 +265,7 @@ func (s *KeeperTestSuite) TestQueryGrantJournal() {
 	for _, e := range res.Entries {
 		grants = append(grants, e.GrantId)
 	}
-	s.Require().Equal([]uint64{1, 1, 2, 2, 3, 4}, grants)
+	s.Require().Equal([]uint64{1, 1, 2, 2, 3, 3, 4, 4}, grants)
 
 	_, err = s.queryServer.GrantJournal(s.ctx, nil)
 	s.requireCode(err, codes.InvalidArgument)

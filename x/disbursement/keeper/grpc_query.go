@@ -59,7 +59,7 @@ func (q queryServer) GrantsMandate(ctx context.Context, req *types.QueryGrantsMa
 	}
 	return &types.QueryGrantsMandateResponse{
 		Mandate:               appointment,
-		Active:                appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:                appointment.IsActive(chain.BlockSeconds(ctx)),
 		CompensationUsed:      compensation,
 		CompensationRemaining: remaining,
 	}, nil
@@ -75,7 +75,7 @@ func (q queryServer) RegistrarMandate(ctx context.Context, req *types.QueryRegis
 	}
 	return &types.QueryRegistrarMandateResponse{
 		Mandate: appointment,
-		Active:  appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:  appointment.IsActive(chain.BlockSeconds(ctx)),
 	}, nil
 }
 

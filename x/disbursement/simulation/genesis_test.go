@@ -71,8 +71,8 @@ func TestRandomisedGenState(t *testing.T) {
 	require.True(t, gs.GrantsMandate.CompensationAllowance.IsPositive())
 	require.False(t, gs.RegistrarMandate.IsDisabled())
 	require.Contains(t, addresses, gs.RegistrarMandate.Committee)
-	require.Equal(t, gs.GrantsMandate.ActivationHeight, gs.RegistrarMandate.ActivationHeight)
-	require.Equal(t, gs.GrantsMandate.ExpiryHeight, gs.RegistrarMandate.ExpiryHeight)
+	require.Equal(t, gs.GrantsMandate.ActivationTime, gs.RegistrarMandate.ActivationTime)
+	require.Equal(t, gs.GrantsMandate.ExpiryTime, gs.RegistrarMandate.ExpiryTime)
 
 	// The tranche is drawn from the seeded member custody, which import checks it against.
 	require.Empty(t, gs.Books)

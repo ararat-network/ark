@@ -27,14 +27,14 @@ func (s Schedule) Validate() error {
 	if s.Periods > 0 && (s.PeriodLength == 0 || s.PeriodLength > MaxPeriodLength || s.PeriodWeight == 0 || s.PeriodWeight > MaxWeight) {
 		return errors.New("further periods require a bounded positive length and weight")
 	}
-	// Unreachable: the bounds above hold the duration under 1,201 centuries.
+	// Unreachable: the bounds above hold the duration to at most 1,201 centuries.
 	if !fitsInt64(s.Duration()) {
 		return errors.New("schedule duration overflows time")
 	}
 	return nil
 }
 
-// Duration is the shape's length in seconds; the bounds keep it under 1,201 centuries.
+// Duration is the shape's length in seconds; the bounds keep it to at most 1,201 centuries.
 func (s Schedule) Duration() uint64 {
 	return s.FirstLength + uint64(s.Periods)*s.PeriodLength
 }

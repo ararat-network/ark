@@ -23,11 +23,12 @@ const disbursementParamsKey = "disbursement_params"
 // maxSimulatedAllowance bounds what the seeded committee may award in a term, in the reference unit.
 const maxSimulatedAllowance = int64(1_000_000_000_000_000)
 
-// simulatedSchedule draws a shape whose periods last hours, so a run's blocks, each 5,000 to 10,000
-// seconds apart, cross its boundaries and EndBlock pays.
+// simulatedSchedule draws a shape whose first period sits just past the two-week floor and whose later
+// periods last hours, so a run's blocks, each 5,000 to 10,000 seconds apart, cross its boundaries and
+// EndBlock pays.
 func simulatedSchedule(r *rand.Rand, maxPeriods int) types.Schedule {
 	return types.Schedule{
-		FirstLength:  uint64(r.Int63n(86_400) + 1),
+		FirstLength:  types.MinFirstPeriod + uint64(r.Int63n(86_400)),
 		FirstWeight:  uint64(r.Int63n(10) + 1),
 		PeriodLength: uint64(r.Int63n(86_400) + 3_600),
 		PeriodWeight: uint64(r.Int63n(10) + 1),
@@ -36,14 +37,14 @@ func simulatedSchedule(r *rand.Rand, maxPeriods int) types.Schedule {
 }
 
 // RandomisedParams returns valid parameters on simulation scale: amounts small against the seeded
-// custody, schedules short against the run. The compensation period keeps its one-week floor.
+// custody, schedules short against the run. Every first period keeps the two-week floor.
 func RandomisedParams(r *rand.Rand) types.Params {
 	params := types.DefaultParams()
 	params.MemberSchedule = simulatedSchedule(r, 24)
 	// Each period's share floors, so an amount of at least the total weight pays every period.
 	params.MemberAmount = math.NewIntFromUint64(params.MemberSchedule.TotalWeight()).MulRaw(r.Int63n(1_000_000) + 1_000)
 	params.CompensationCap = math.NewInt(r.Int63n(maxSimulatedAllowance) + 1)
-	params.CompensationPeriod = types.MinCompensationPeriod + uint64(r.Int63n(int64(3*types.MinCompensationPeriod)))
+	params.CompensationPeriod = types.MinFirstPeriod + uint64(r.Int63n(int64(3*types.MinFirstPeriod)))
 	params.OwnershipCap = math.NewInt(r.Int63n(maxSimulatedAllowance) + 1)
 	params.OwnershipSchedule = simulatedSchedule(r, 78)
 	return params
@@ -57,8 +58,10 @@ func GenGrantsMandate(r *rand.Rand, accounts []string) types.GrantsMandate {
 	}
 	appointment := types.NewDisabledGrantsMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = chain.BlocksPerYear
+	// Open from the epoch to the header's last instant, so the window spans whatever genesis time the
+	// simulation draws.
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = chain.MaxBlockSeconds
 	appointment.CompensationAllowance = math.NewInt(r.Int63n(maxSimulatedAllowance) + 1)
 	return appointment
 }
@@ -71,8 +74,8 @@ func GenRegistrarMandate(r *rand.Rand, accounts []string, committee types.Grants
 	}
 	appointment := types.NewDisabledRegistrarMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = committee.ActivationHeight
-	appointment.ExpiryHeight = committee.ExpiryHeight
+	appointment.ActivationTime = committee.ActivationTime
+	appointment.ExpiryTime = committee.ExpiryTime
 	return appointment
 }
 

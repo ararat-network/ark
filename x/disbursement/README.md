@@ -22,12 +22,13 @@ naming an amount; opening adds to the tranche and moves no coins. A NOAH deposit
 pool; into the member account it stays unopened until a tranche opens it. Member registration is the registrar's, a key the grants committee
 appoints under its mandate, and draws on the open member tranche, so the roll never passes through a proposal; that tranche
 is the only bound on registration, so governance sizes what a registrar may commit by how much it opens. Each registration batch carries a reference to
-the platform's admission record, stored on every member grant and in the journal; it holds no personal data.
+the platform's admission record, stored on every member grant; it holds no personal data.
 Ownership awards and NOAH compensation draw on the contributor pool, which has no tranche (D117): a contributor award
 is one proposal carrying `MsgGrantOwnership` or `MsgCompensate`, or one committee message within the term's allowance.
+The founder's grant and stream alone are written at genesis by seat assembly (D136).
 
 The grants committee holds the module's [committee mandate](../../pkg/mandate/README.md): it appoints the registrar,
-suspends members, and awards bounded compensation. Governance appoints an exact account for a half-open height window
+suspends members, and awards bounded compensation. Governance appoints an exact account for a half-open window of block time
 with `MsgSetGrantsMandate`; every replacement advances the term, and each committee message carries
 `expected_term`, so transactions prepared under a replaced key never land. Appointment records the shape the chain
 could prove about the account, which is how the plan's multisig requirement becomes a fact on chain. Committee messages
@@ -50,7 +51,7 @@ contributor pool inside the message that creates it, offering at most the award'
 between the accounts; a draw and a cancellation only move principal between the pool and the reservation.
 `MsgReturnUnallocated` is governance-only and returns from the contributor account through `FundCommunityPool`,
 preserving Distribution's ledger: any denomination from custody outside grants. The member account has no exit.
-Cancellation reopens a member's unearned NOAH in the tranche, the step it was charged to, returns a contributor's to
+Cancellation reopens a member's unearned NOAH in the tranche, returns a contributor's to
 the pool, and leaves other denominations uncommitted in custody for the next award.
 
 | Action | Authority |
@@ -75,30 +76,35 @@ signer for a lost original member key.
 
 Each kind has one shape, held in params and copied onto the grant at creation, so a later parameter change never
 rewrites a live grant (D116). A shape is five integers: a first period's length and weight, each further period's length and weight, and how many
-further periods follow, at most 1,200, each length within a century and each weight under 2^32. The first share is
+further periods follow, at most 1,200, each length within a century and each weight at most 2^32. The first share is
 `amount × first_weight / total_weight`, each further share `amount × period_weight / total_weight`, both floored, the
 last period takes the remainder, and every period must receive a positive base-unit amount; a shape with no further
 periods pays everything in its first. Accrual is one division, so its cost does not grow with the schedule. The grantor sets `start_time`, up to a century ahead: an ownership clock no earlier than
-the award, a compensation clock at most a quarter back (`MaxCompensationBackdate`, three plan months), by proposal or
+the award, a compensation clock at most a quarter back (`MaxCompensationBackdate`, 13 weeks), by proposal or
 committee alike (D122). The clock runs from it and
 never restarts. The grant also records `created_time`, the block it was awarded in, and **nothing accrues
 before one period after it**, wherever the clock starts: a backdated clock pays its elapsed periods at that first look,
-a clock already run out is due then, and a cancel before it returns everything. The compensation window measures from
-the same time. Period boundaries are inclusive.
+a clock already run out is due then, and a cancel before it returns everything. Every first period is at least
+`MinFirstPeriod`, two weeks, on every grant and every shape in params, so nothing pays before two weeks after any award:
+the window to cancel what a stolen committee or registrar key made (D126). The compensation window measures from
+the same time. Period boundaries are inclusive. Every default duration and bound is whole weeks, a year being 26
+fortnights, 364 days, the pay cadence's; no clock is tied to calendar dates (D130).
 
-- **Members** take `member_schedule`, a first period then equal periods like ownership's, and receive the first share
-  immediately in the registration transaction, regardless of its length; their clock is the registration. The remaining shares accrue at cumulative period boundaries. Default terms are
-  the plan's step 1 amount, 20,000 NOAH, a tenth immediately, then twelve monthly periods, as the launch artefact opens;
-  each step's tranche proposal lowers it.
+- **Members** take `member_schedule`, a first period then equal periods like ownership's; their clock is the
+  registration, and like every grant they are paid nothing before one period after it. The first period is the hold, the
+  two-week floor at launch, in which the committee can suspend what a stolen registrar key registered before anything
+  pays (D126); the first share pays when it ends and the remaining shares at cumulative period boundaries. Default terms
+  are the plan's step 1 amount, 20,000 NOAH, a tenth after the hold, then thirteen four-week periods of 9/130 each, as the launch artefact
+  opens; each step's tranche proposal lowers the amount.
 - **Ownership** takes `ownership_schedule`, a first period paid whole at its end then equal periods: at launch a
-  one-year first period weighted as the 26 fortnights it spans, then 78 fortnights, so it pays a quarter. It pays nothing
+  first period of 26 fortnights weighted as the fortnights it spans, then 78 fortnights, so it pays a quarter. It pays nothing
   immediately. The ownership cap bounds the award, not its payments, so each payment is the whole accrued unpaid
   principal (D121).
 - **Compensation** pays `periods` equal periods of `compensation_period`, fortnights at launch, one for a bounty and
   together at most ten years, outside the ownership cap. Its denomination is
   NOAH or an active native Asset registry entry.
-  One record's compensation is at most `compensation_cap` in the reference unit a `compensation_window`, valued at the
-  fresh oracle rates when awarded. In the window after it is made an award charges what it pays there: its whole value
+  One record's compensation is at most `compensation_cap` in the reference unit a `compensation_window`, 1,000,000 a
+  year of 26 fortnights at launch, valued at the fresh oracle rates when awarded. In the window after it is made an award charges what it pays there: its whole value
   if it runs within a window plus its backdate, otherwise its value over its duration across that span; after that a
   stream charges its value over its duration a window at a time while it runs, rounded up throughout. The sum over the
   record's awards still running or made inside the trailing window, cancelled ones included for that window, must fit
@@ -138,8 +144,8 @@ next looks at it, and the due queue indexes those times. At the end of each bloc
 whose time has come, oldest first and at most 1,000, and pays each what its schedule has accrued; the rest stay due
 for the next block. One payment catches up every boundary that has passed, so a grant holds one
 queue entry however long the chain was down. After a look the grant waits for its next boundary. Registration queues a member for
-the boundary after the tenth, a contributor award for its first boundary, cancellation queues retained debt and
-reinstatement queues arrears for the block they happen in, suspension leaves the queue, and a payee change brings
+the end of its hold, a contributor award for its first boundary, cancellation queues retained debt and
+reinstatement queues arrears for the block they happen in, or a member's for the end of its hold, suspension leaves the queue, and a payee change brings
 a later look forward to its own block, never before the grant could first be paid, so a corrected destination is paid
 at once rather than at the retry.
 
@@ -153,8 +159,7 @@ grant, payee, amount, and the retry time, the node log records why, and the gran
 hook is an accounting invariant and fails the block, as in Claims. Disbursement pays from custody it already holds: a
 stablecoin award's buy fills inside the transaction that makes it. It runs after governance in the block, so a
 proposal executed this block, such as a cancellation, governs this block's payments. Payments in the block are
-journaled with the paying account as the actor, and a member's first payment, which registration makes, with the
-registrar; a deferral moves nothing and is not journaled.
+journaled with the paying account as the actor; a deferral moves nothing and is not journaled.
 
 ## Committee awards
 
@@ -164,7 +169,7 @@ import refuses ownership that carries a term and a member that carries none. `Ms
 award, funded like a governance award: NOAH from the contributor pool within the allowance, and stablecoins from
 uncommitted contributor custody first, converting NOAH for the rest within the award's `max_offer`. An award in NOAH or any active asset charges the reference value written on the grant, and a seat holder
 is awarded like anyone. Nothing pays before one period after an award, wherever its clock starts, and
-`compensation_period` is floored at a week, so a stolen key's awards pay nothing before governance can act.
+`compensation_period` is floored at two weeks like every first period, so a stolen key's awards pay nothing before governance can act.
 
 A grant records the term of the appointment that created it in `mandate_term`: a member the registrar's, an award the
 committee's. The live committee term's usage is one figure the module keeps, the charges against the allowance: an
@@ -176,7 +181,7 @@ transaction: a reappointment advances its term, and governance cancels the fakes
 recovery is two proposals: the first appoints a new committee, which clears the registrar the old one appointed,
 cancels the old term's awards and any registrations found fake, and reinstates any members the old key wrongly
 suspended; the second, expedited, cancels any award the key made while the first vote was open. Nothing pays within a
-period of an award, at least a week, and the two votes take about three days at launch.
+period of an award, at least two weeks, and the two votes take about three days at launch.
 
 ## Stablecoin funding
 
@@ -184,15 +189,16 @@ A stablecoin award funds itself when it is created. It draws uncommitted stablec
 first, then converts NOAH from the contributor pool for the rest through Market's ordinary swap, inside the
 same message, so Market quotes it, takes the NOAH, and mints the stablecoin into custody there, like any trader's
 conversion; only Market's block settlement of it waits for EndBlock. The award
-carries `max_offer`, the most NOAH it may spend; the module quotes that cap, refuses an award it cannot fund whole, and
-otherwise shrinks the offer by the ratio of need to output until the smallest sufficient offer is found, which the
-swap then executes with the shortfall as its floor. The surplus of a few units stays uncommitted for the next award,
+carries `max_offer`, the most NOAH it may spend; the module refuses an award it cannot fund whole and checks the
+offer against the pool, while Market's buy sizes it: the sell quote inverted in closed form, ceiled, and confirmed
+forward, the offer raised by any shortfall until the smallest sufficient one is found. The surplus of a few units
+stays uncommitted for the next award,
 as does the unearned stablecoin of a cancelled award, so cancelled pay funds later pay before anything converts.
 
 The denomination must be an active asset. A NOAH award carries no `max_offer`. Market's `buy` query sizes the cap
 for a prospective award by the same reverse quote; quoting the whole pay is always enough, since custody only lowers
 what converts. Governance awards convert inside their proposal as it executes, at governance's EndBlock, and Market's
-block settlement of that buy follows at its next EndBlock.
+block settlement of that buy follows in the same block, since Market's EndBlocker runs after governance's.
 
 ## Ownership and founding seats
 
@@ -202,6 +208,14 @@ seat grant, or for the founder half the other seats' sum (D112). The seat is a r
 validation checks only that it is a non-negative amount. No transaction sets a seat; one
 is never supplied by an award or inferred from the current validator set. Founding seats themselves remain native
 vesting accounts.
+
+Seat assembly also writes the founder's two awards on the founder's record as grants 1 and 2: 15M of ownership at the
+cap on the ownership schedule, and a 10M NOAH stream of 260 compensation periods valued at the bootstrap price of one
+XDR a NOAH. Both are governance awards, created by the authority at height one and `genesis_time`, clocked from it,
+reserved in the contributor account, and journaled, so they pay, cancel, and count against the caps like any other.
+The command checks both caps, the contributor account's backing, and that the file's reference is `axdr`, the unit of
+the stream's bootstrap price, since genesis validation reads none of them, and import
+admits the first block's height though InitChain runs at height zero (D136).
 
 `ownership_cap` in `Params`, 15M NOAH at launch, is the most one record's ownership grants commit from the pools over
 every grant (D115), checked when each is awarded (D121). In base units:
@@ -254,9 +268,9 @@ work or an agreement without publishing private personnel information.
 | Wait after a refused send | One day, or the next boundary if sooner |
 | One grant, member amount, outstanding reservation per denomination | 128-bit positive principal; zero allowed for balances |
 | Tranche, `max_offer` | 128-bit; the tranche never exceeds the member pool, an offer never the contributor pool |
-| Schedule | a first period and at most 1,200 further, each within a century, weights positive and at most 2^32 |
+| Schedule | a first period of at least two weeks (`MinFirstPeriod`) and at most 1,200 further, each within a century, weights positive and at most 2^32 |
 | Committee awards | Compensation only, within the term's reference-unit allowance; nothing paid before one period after the award |
-| Registration | Within the open member tranche, `member_amount` a head; a cancel reopens the unearned part |
+| Registration | Within the open member tranche, `member_amount` a head, nothing paid before the hold ends; a cancel reopens the unearned part |
 | Grant clock | Up to a century ahead; ownership no earlier than the award, compensation at most a quarter back |
 | Compensation per record | `compensation_cap` in the reference unit a `compensation_window`: an award charging its arrears with its first window, a stream its rate a window while it runs, cancelled awards counting for a window |
 | Reference re-point | Every compensation figure re-expressed in the new unit, rounded up; the allowance never below the usage; a figure past 128 bits refuses the re-point |
@@ -264,14 +278,16 @@ work or an agreement without publishing private personnel information.
 | Query page | At most 100 records, key pagination only; no offsets or count-total scans |
 
 Registration is bounded by the open member tranche alone: a stolen registrar key, or a stolen committee key through a
-registrar of its own, commits at most what governance has opened before the committee rotates the registrar in one
-transaction, so governance opens a step in slices sized to the exposure it accepts. The launch and testnet artifacts
+registrar of its own, commits at most what governance has opened, and pays nothing before the hold ends, so the
+committee, or the vote that replaces a stolen committee, suspends what it registered, rotates the registrar, and
+governance cancels the grants whole. Governance opens each step's member budget in quarters, so what is open at once
+is a quarter of a step (D126). The launch and testnet artefacts
 leave both appointments disabled until appointed.
 
 Genesis validation checks identities, schedules, each kind's clock and compensation's shape, conservation, due times, account books, contiguous IDs, journal accounting, controller chains, both
 appointments, the registrar inside the committee's window, tranches, each committee term's awards, and each member's registrar term; every list arrives in storage-key order, which is also the duplicate check.
 Import creates both module accounts before writing state, so no deposit can leave a base account at either address. It also checks that neither the committee nor the registrar is
-the authority, each account's Bank backing, tranches and orders included, that the member account holds NOAH only and the contributor account NOAH or
+the authority, each account's Bank backing, reservations and the open member tranche included, that the member account holds NOAH only and the contributor account NOAH or
 registered assets, as the send restriction admits, that every grant pays NOAH or a registered asset, and heights and timestamps against the genesis block,
 then rebuilds secondary indexes and the due queue. Continuation exports retain absolute times, IDs, member identities, and the journal.
 
@@ -282,7 +298,7 @@ The authoritative API is [proto/ark/disbursement/v1](../../proto/ark/disbursemen
 `grants-mandate` shows the committee appointment, its term, whether it is active, and the live term's compensation used and remaining; `registrar-mandate` shows the registrar's appointment, its term, and whether it is active; `members` lists member grants in address order, a page of at most 100; `beneficiary` shows a record's control, committed ownership, recorded seat, and room under the cap; `grant` carries `paid`, `remaining`, and `due_time`, the next look.
 `balance` shows each account's Bank balance, reservation, and uncommitted custody for NOAH and every registered
 asset it holds, and the member tranche; `balance DENOM` shows one denomination, held or not.
-`grants --beneficiary`, `grants --committee-term`, `grants --registrar-term`,
+`grants --beneficiary`, `grants --committee-term`, `grants --registrar-term`, `grants --kind`,
 `grant-journal --grant-id`, and `beneficiary-journal ADDRESS` use indexes rather than scanning unrelated history. `member` and `beneficiary`
 complete the public accounting surface. Queries carry `module_query_safe`; of them, `Grant`, `Grants`,
 `Member`, and `Beneficiary` are on the app's separately reviewed Wasm query accept list.
@@ -316,15 +332,15 @@ complete the public accounting surface. Queries carry `module_query_safe`; of th
 | [tests/integration/disbursement_funding_test.go](../../tests/integration/disbursement_funding_test.go) | Stablecoin awards funded through real Market settlement |
 
 ```sh
-go test ./x/disbursement/... ./app/genesis ./app -run 'TestNativeDisbursement|TestAddValidatorSeats|TestParamsValidation|TestScheduleShares|TestAccrualBoundaries|TestRetryAt|TestGrantDueTime|TestRandomisedShareConservation|TestGenesis|TestDefaultGenesisState|TestSortBeneficiaries'
+go test ./x/disbursement/... ./app/genesis ./app -run 'TestNativeDisbursement|TestAddValidatorSeats|TestParamsValidation|TestScheduleShares|TestAccrualBoundaries|TestAccrualGate|TestRandomisedAccrualNext|TestRetryAt|TestGrantValidation|TestValidateStartTime|TestRandomisedShareConservation|TestGenesis|TestDefaultGenesisState|TestSortBeneficiaries'
 go test ./app ./app/genesis ./x/disbursement/...
 go test ./tests/integration -run TestDisbursementFundsAwardsThroughMarket
 ```
 
 The Docker delegator E2E suite additionally exercises opening a member tranche, appointing the registrar through the
-committee, registration into fresh and existing accounts, delegation of paid coins, and committee replacement with
-registrar rotation through the public CLI. The integrator suite carries a member grant and its registrar across
-`arkd export` and a relaunch, and reads every fixture-backed disbursement REST route.
+committee, registration into fresh and existing accounts queued behind the two-week hold, and committee replacement
+with registrar rotation through the public CLI. The integrator suite carries a member grant, its queued first payment,
+and its registrar across `arkd export` and a relaunch, and reads every fixture-backed disbursement REST route.
 
 Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
 missing grant, member grant, or beneficiary is `NotFound`, on the transaction path as on the query path, and a send

@@ -6629,8 +6629,8 @@ type Params struct {
 
 	// member_amount is every member grant, in NOAH.
 	MemberAmount string `protobuf:"bytes,1,opt,name=member_amount,json=memberAmount,proto3" json:"member_amount,omitempty"`
-	// member_schedule is every member grant's shape, copied at registration: its first period is
-	// paid at registration whatever its length (D116).
+	// member_schedule is every member grant's shape, copied at registration: its first period, the
+	// tenth, pays when the two-week hold ends (D116, D126).
 	MemberSchedule *Schedule `protobuf:"bytes,2,opt,name=member_schedule,json=memberSchedule,proto3" json:"member_schedule,omitempty"`
 	// compensation_cap is the most one record may be awarded in compensation inside the window,
 	// valued in the reference unit at award time.
@@ -6716,8 +6716,8 @@ func (x *Params) GetOwnershipSchedule() *Schedule {
 	return nil
 }
 
-// Schedule is a grant's shape: a first period, paid at its end or at registration for a member,
-// then equal further periods. Shares are weight over the total; the last period takes the remainder.
+// Schedule is a grant's shape: a first period paid at its end, then equal further periods. Shares are
+// weight over the total; the last period takes the remainder.
 type Schedule struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6788,7 +6788,7 @@ func (x *Schedule) GetPeriods() uint32 {
 	return 0
 }
 
-// GrantsMandate appoints the grants committee for a height window. An empty committee
+// GrantsMandate appoints the grants committee for a time window. An empty committee
 // disables it; every replacement advances the term.
 type GrantsMandate struct {
 	state         protoimpl.MessageState
@@ -6835,7 +6835,7 @@ func (x *GrantsMandate) GetCompensationAllowance() string {
 	return ""
 }
 
-// RegistrarMandate appoints the registrar, the account that registers members, for a height window
+// RegistrarMandate appoints the registrar, the account that registers members, for a time window
 // inside the grants committee's. The committee appoints it under its term, and a committee appointment
 // clears it; the envelope's committee is the registrar. An empty registrar disables it; every replacement
 // advances the term. The open member tranche is its only bound.

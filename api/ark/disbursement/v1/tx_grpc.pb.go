@@ -61,8 +61,8 @@ type MsgClient interface {
 	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term, for a
 	// window inside the committee's.
 	CommitteeRegistrar(ctx context.Context, in *MsgCommitteeRegistrar, opts ...grpc.CallOption) (*MsgCommitteeRegistrarResponse, error)
-	// RegisterMembers permanently registers members and pays their first period atomically, under the
-	// live registrar term and within the open member tranche.
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its first
+	// period, under the live registrar term and within the open member tranche.
 	RegisterMembers(ctx context.Context, in *MsgRegisterMembers, opts ...grpc.CallOption) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(ctx context.Context, in *MsgCommitteeSuspend, opts ...grpc.CallOption) (*MsgCommitteeSuspendResponse, error)
@@ -260,8 +260,8 @@ type MsgServer interface {
 	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term, for a
 	// window inside the committee's.
 	CommitteeRegistrar(context.Context, *MsgCommitteeRegistrar) (*MsgCommitteeRegistrarResponse, error)
-	// RegisterMembers permanently registers members and pays their first period atomically, under the
-	// live registrar term and within the open member tranche.
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its first
+	// period, under the live registrar term and within the open member tranche.
 	RegisterMembers(context.Context, *MsgRegisterMembers) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(context.Context, *MsgCommitteeSuspend) (*MsgCommitteeSuspendResponse, error)

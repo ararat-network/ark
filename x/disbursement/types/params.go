@@ -13,8 +13,9 @@ const (
 	// DefaultCompensationCap bounds one record's compensation awards per window, in the reference
 	// unit: about eight of the plan's skilled years.
 	DefaultCompensationCap = int64(1_000_000)
-	// DefaultCompensationWindow is a year of twelve plan months.
-	DefaultCompensationWindow = uint64(12 * 2_628_000)
+	// DefaultCompensationWindow is a year of 26 fortnights, the pay cadence, so the longest stream, 260
+	// fortnights, charges a tenth of its value a window (D129).
+	DefaultCompensationWindow = uint64(26 * 14 * 86_400)
 	// DefaultCompensationPeriod is a fortnight; an award counts them (D116).
 	DefaultCompensationPeriod = uint64(14 * 86_400)
 	// DefaultOwnershipCap bounds the ownership one record's grants commit from the pools, in whole
@@ -22,22 +23,23 @@ const (
 	DefaultOwnershipCap = int64(15_000_000)
 )
 
-// DefaultMemberSchedule pays a tenth at registration and the rest in twelve monthly periods.
+// DefaultMemberSchedule holds a member's tenth for the two-week floor, the window to suspend what a
+// stolen registrar key registered, then pays the rest in thirteen four-week periods (D126, D130).
 func DefaultMemberSchedule() Schedule {
 	return Schedule{
-		FirstLength:  1,
-		FirstWeight:  4,
-		PeriodLength: 2_628_000,
-		PeriodWeight: 3,
-		Periods:      12,
+		FirstLength:  MinFirstPeriod,
+		FirstWeight:  13,
+		PeriodLength: 28 * 86_400,
+		PeriodWeight: 9,
+		Periods:      13,
 	}
 }
 
-// DefaultOwnershipSchedule is a one-year cliff paying a quarter, weighted as the 26 fortnights it
-// spans, then biweekly for three years (D116).
+// DefaultOwnershipSchedule is a cliff of 26 fortnights paying a quarter, then biweekly for three years:
+// the cliff weighs 26 and each of the 78 fortnights after it one, 104 in all (D116, D130).
 func DefaultOwnershipSchedule() Schedule {
 	return Schedule{
-		FirstLength:  365 * 86_400,
+		FirstLength:  26 * 14 * 86_400,
 		FirstWeight:  26,
 		PeriodLength: 14 * 86_400,
 		PeriodWeight: 1,
@@ -73,8 +75,11 @@ func (p Params) Validate() error {
 	if p.CompensationWindow == 0 || p.CompensationWindow > MaxPeriodLength {
 		return errors.New("compensation window must be positive and at most a century")
 	}
-	if p.CompensationPeriod < MinCompensationPeriod || p.CompensationPeriod > MaxCompensationDuration {
-		return errors.New("compensation period must be at least a week and at most ten years")
+	if p.CompensationPeriod < MinFirstPeriod || p.CompensationPeriod > MaxCompensationDuration {
+		return errors.New("compensation period must be at least two weeks and at most ten years")
+	}
+	if p.MemberSchedule.FirstLength < MinFirstPeriod || p.OwnershipSchedule.FirstLength < MinFirstPeriod {
+		return errors.New("member and ownership first periods must be at least two weeks")
 	}
 	if err := ValidateAmount(p.OwnershipCap, true); err != nil {
 		return fmt.Errorf("ownership cap: %w", err)

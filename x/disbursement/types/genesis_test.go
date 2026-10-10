@@ -3,6 +3,7 @@ package types_test
 import (
 	"bytes"
 	"cmp"
+	"fmt"
 	"slices"
 	"testing"
 
@@ -28,8 +29,8 @@ func TestDefaultGenesisState(t *testing.T) {
 
 func testAddress(b byte) string { return sdk.AccAddress(bytes.Repeat([]byte{b}, 20)).String() }
 
-// week is the shortest compensation period.
-const week = types.MinCompensationPeriod
+// hold is the shortest first period, the two-hold floor every grant waits out (D126).
+const hold = types.MinFirstPeriod
 
 // grantEntry is a grant journal entry the fixture's authority records at the fixture's creation.
 func grantEntry(id, grant uint64, action types.GrantAction, amount int64, subject string) types.GrantEntry {
@@ -48,22 +49,22 @@ func validGenesis() *types.GenesisState {
 	gs.Grants = []types.Grant{
 		{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_MEMBER, Beneficiary: a, Payee: a, CreatedBy: authority,
-			Amount: chain.NoahCoin(math.NewInt(10_000)), Schedule: types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", AwardValue: math.ZeroInt(), DueTime: 111,
+			Amount: chain.NoahCoin(math.NewInt(10_000)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3},
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", AwardValue: math.ZeroInt(), DueTime: 110 + hold,
 			MandateTerm: 1,
 		},
 		{
 			Id: 2, Kind: types.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: b, Payee: b, CreatedBy: authority,
-			Amount: chain.NoahCoin(math.NewInt(30)), Schedule: types.Schedule{FirstLength: week, FirstWeight: 1, PeriodLength: week, PeriodWeight: 1, Periods: 2},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", AwardValue: math.NewInt(30), DueTime: 100 + 2*week,
+			Amount: chain.NoahCoin(math.NewInt(30)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: hold, PeriodWeight: 1, Periods: 2},
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", AwardValue: math.NewInt(30), DueTime: 100 + 2*hold,
 		},
 	}
 	gs.NextGrantId = 3
 	// The member was registered under the live registrar term, appointed inside the committee's window.
 	gs.GrantsMandate = types.NewDisabledGrantsMandate(1)
-	gs.GrantsMandate.Committee, gs.GrantsMandate.ActivationHeight, gs.GrantsMandate.ExpiryHeight = testAddress(7), 1, 1_000
+	gs.GrantsMandate.Committee, gs.GrantsMandate.ActivationTime, gs.GrantsMandate.ExpiryTime = testAddress(7), 1, 1_000
 	gs.RegistrarMandate = types.NewDisabledRegistrarMandate(1)
-	gs.RegistrarMandate.Committee, gs.RegistrarMandate.ActivationHeight, gs.RegistrarMandate.ExpiryHeight = testAddress(8), 1, 1_000
+	gs.RegistrarMandate.Committee, gs.RegistrarMandate.ActivationTime, gs.RegistrarMandate.ExpiryTime = testAddress(8), 1, 1_000
 	members, contributors := types.EmptyBook(types.MembersName), types.EmptyBook(types.ContributorsName)
 	members.Reserved = sdk.NewCoins(chain.NoahCoin(math.NewInt(9_000)))
 	contributors.Reserved = sdk.NewCoins(chain.NoahCoin(math.NewInt(20)))
@@ -93,10 +94,10 @@ func TestGenesisValidation(t *testing.T) {
 		})
 		g.NextGrantEntryId = uint64(len(g.GrantJournal)) + 1
 	}
-	// cut cancels the compensation award after its third week, fully earned: it still owes 20 and frees nothing.
-	cut := func(g *types.GenesisState) { g.Grants[1].CutoffTime, g.Grants[1].DueTime = 105+3*week, 105+3*week }
-	// suspend suspends the member at 105, its first period paid.
-	suspend := func(g *types.GenesisState) { g.Grants[0].SuspendedTime, g.Grants[0].DueTime = 105, 0 }
+	// cut cancels the compensation award after its third period, fully earned: it still owes 20 and frees nothing.
+	cut := func(g *types.GenesisState) { g.Grants[1].CutoffTime, g.Grants[1].DueTime = 105+3*hold, 105+3*hold }
+	// suspend suspends the member five seconds past its hold, its first period paid.
+	suspend := func(g *types.GenesisState) { g.Grants[0].SuspendedTime, g.Grants[0].DueTime = 105+hold, 0 }
 	// at stamps an entry with its block time.
 	at := func(e types.GrantEntry, time uint64) types.GrantEntry {
 		e.Time = time
@@ -130,23 +131,23 @@ func TestGenesisValidation(t *testing.T) {
 			g.NextBeneficiaryEntryId = 3
 		}
 	}
-	// owned gives c an ownership award of four shares of 10, one paid at 110, cancelled at 125 owing
-	// the second: the record commits the 20 it earned (D121).
+	// owned gives c an ownership award of four shares of 10, one paid as its first period ends, cancelled
+	// fifteen seconds later owing the second: the record commits the 20 it earned (D121).
 	owned := func(g *types.GenesisState) {
 		c := testAddress(3)
 		g.Grants = append(g.Grants, types.Grant{
 			Id: 3, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: c, Payee: c, CreatedBy: testAddress(9),
-			Amount: chain.NoahCoin(math.NewInt(40)), Schedule: types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 3},
+			Amount: chain.NoahCoin(math.NewInt(40)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 3},
 			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(10), Reference: "agreement",
-			AwardValue: math.ZeroInt(), CutoffTime: 125, DueTime: 125,
+			AwardValue: math.ZeroInt(), CutoffTime: 115 + hold, DueTime: 115 + hold,
 		})
 		g.NextGrantId = 4
 		g.Beneficiaries[1].OwnershipCommitted = math.NewInt(20)
 		g.Books[0].Reserved = sdk.NewCoins(chain.NoahCoin(math.NewInt(30)))
 		record(g,
 			grantEntry(5, 3, types.GrantAction_GRANT_ACTION_CREATED, 40, ""),
-			at(grantEntry(6, 3, types.GrantAction_GRANT_ACTION_PAID, 10, c), 110),
-			at(grantEntry(7, 3, cancelled, 20, ""), 125),
+			at(grantEntry(6, 3, types.GrantAction_GRANT_ACTION_PAID, 10, c), 100+hold),
+			at(grantEntry(7, 3, cancelled, 20, ""), 115+hold),
 		)
 	}
 	for _, tc := range []struct {
@@ -212,40 +213,40 @@ func TestGenesisValidation(t *testing.T) {
 		{"registrar term beyond the live term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 2 }, "registrar term 2 beyond"},
 		{"member without a term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 0 }, "registrar term"},
 		{"registrar under a disabled committee", func(g *types.GenesisState) { g.GrantsMandate = types.NewDisabledGrantsMandate(1) }, "disabled grants mandate"},
-		{"registrar before the committee's window", func(g *types.GenesisState) { g.RegistrarMandate.ActivationHeight = 0 }, "inside the committee's"},
-		{"registrar past the committee's window", func(g *types.GenesisState) { g.RegistrarMandate.ExpiryHeight = 1_001 }, "inside the committee's"},
+		{"registrar before the committee's window", func(g *types.GenesisState) { g.RegistrarMandate.ActivationTime = 0 }, "inside the committee's"},
+		{"registrar past the committee's window", func(g *types.GenesisState) { g.RegistrarMandate.ExpiryTime = 1_001 }, "inside the committee's"},
 		{"disabled registrar under a disabled committee", func(g *types.GenesisState) {
 			g.GrantsMandate, g.RegistrarMandate = types.NewDisabledGrantsMandate(1), types.NewDisabledRegistrarMandate(2)
 		}, ""},
 		{"disabled registrar with a window", func(g *types.GenesisState) {
 			g.RegistrarMandate = types.NewDisabledRegistrarMandate(2)
-			g.RegistrarMandate.ExpiryHeight = 10
+			g.RegistrarMandate.ExpiryTime = 10
 		}, "registrar mandate"},
 		{"registrar term advanced past its registrations", func(g *types.GenesisState) {
 			g.RegistrarMandate = types.NewDisabledRegistrarMandate(2)
 		}, ""},
 		{"payment to a replaced payee", func(g *types.GenesisState) { g.GrantJournal[3].Subject = a }, "was paying"},
-		{"cancelled grant records its cancellation", func(g *types.GenesisState) { cut(g); record(g, at(grantEntry(5, 2, cancelled, 0, ""), 105+3*week)) }, ""},
+		{"cancelled grant records its cancellation", func(g *types.GenesisState) { cut(g); record(g, at(grantEntry(5, 2, cancelled, 0, ""), 105+3*hold)) }, ""},
 		{"cancelled grant missing its cancellation", cut, "cancelled false"},
 		{"live grant recording a cancellation", func(g *types.GenesisState) { record(g, grantEntry(5, 2, cancelled, 0, "")) }, "cancelled true"},
 		{"cancellation recorded twice", func(g *types.GenesisState) {
 			cut(g)
-			record(g, at(grantEntry(5, 2, cancelled, 0, ""), 105+3*week), at(grantEntry(6, 2, cancelled, 0, ""), 105+3*week))
+			record(g, at(grantEntry(5, 2, cancelled, 0, ""), 105+3*hold), at(grantEntry(6, 2, cancelled, 0, ""), 105+3*hold))
 		}, "cancels grant 2 again"},
-		{"suspended member records its suspension", func(g *types.GenesisState) { suspend(g); record(g, at(grantEntry(5, 1, suspended, 0, ""), 105)) }, ""},
+		{"suspended member records its suspension", func(g *types.GenesisState) { suspend(g); record(g, at(grantEntry(5, 1, suspended, 0, ""), 105+hold)) }, ""},
 		{"suspended member missing its suspension", suspend, "suspended false"},
 		{"cancellation clears a suspension", func(g *types.GenesisState) {
 			// Cancelled at its suspension, the member keeps the first period it was paid.
-			g.Grants[0].CutoffTime, g.Grants[0].Remaining, g.Grants[0].DueTime = 105, math.ZeroInt(), 0
+			g.Grants[0].CutoffTime, g.Grants[0].Remaining, g.Grants[0].DueTime = 105+hold, math.ZeroInt(), 0
 			g.Books[1].Reserved = sdk.NewCoins()
-			record(g, at(grantEntry(5, 1, suspended, 0, ""), 105), at(grantEntry(6, 1, cancelled, 9_000, ""), 110))
+			record(g, at(grantEntry(5, 1, suspended, 0, ""), 105+hold), at(grantEntry(6, 1, cancelled, 9_000, ""), 110+hold))
 		}, ""},
 		{"reinstatement out of turn", func(g *types.GenesisState) { record(g, grantEntry(5, 1, reinstated, 0, "")) }, "out of turn"},
 		{"suspension of a contributor grant", func(g *types.GenesisState) { record(g, grantEntry(5, 2, suspended, 0, "")) }, "out of turn"},
 		{"journal time running back", func(g *types.GenesisState) { g.GrantJournal[1].Time = 101 }, "grant entry 3 is recorded before entry 2"},
 		{"journal height running back", func(g *types.GenesisState) { g.GrantJournal[1].Height = 2 }, "grant entry 3 is recorded before entry 2"},
-		{"suspension at another time", func(g *types.GenesisState) { suspend(g); record(g, at(grantEntry(5, 1, suspended, 0, ""), 106)) }, "suspended at 105"},
-		{"cancellation at another time", func(g *types.GenesisState) { cut(g); record(g, at(grantEntry(5, 2, cancelled, 0, ""), 106+3*week)) }, "cut off at"},
+		{"suspension at another time", func(g *types.GenesisState) { suspend(g); record(g, at(grantEntry(5, 1, suspended, 0, ""), 106+hold)) }, fmt.Sprintf("suspended at %d", 105+hold)},
+		{"cancellation at another time", func(g *types.GenesisState) { cut(g); record(g, at(grantEntry(5, 2, cancelled, 0, ""), 106+3*hold)) }, "cut off at"},
 		{"conversion funds its award", stablecoin, ""},
 		{"conversion after a payment", func(g *types.GenesisState) {
 			stablecoin(g)

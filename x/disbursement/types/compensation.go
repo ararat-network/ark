@@ -8,27 +8,28 @@ import (
 )
 
 const (
-	// MinCompensationPeriod floors the compensation period at a week: nothing pays before one period
-	// after an award, so the period is the window governance has to cancel a stolen key's awards.
-	MinCompensationPeriod = uint64(7 * 86_400)
-	// MaxCompensationDuration bounds a compensation award, periods × period, at ten years whatever
-	// the cadence (D116).
-	MaxCompensationDuration = uint64(10 * 365 * 86_400)
+	// MinFirstPeriod floors every grant's first period at two weeks: nothing pays before one period
+	// after an award, so the period is the window to cancel what a stolen committee or registrar key
+	// made (D126).
+	MinFirstPeriod = uint64(14 * 86_400)
+	// MaxCompensationDuration bounds a compensation award, periods × period, at ten years of 26
+	// fortnights whatever the cadence (D116, D130).
+	MaxCompensationDuration = uint64(260 * 14 * 86_400)
 	// MaxCompensationBackdate bounds how far before its award a compensation clock may start: a
-	// quarter, three plan months (D122).
-	MaxCompensationBackdate = uint64(3 * 2_628_000)
+	// quarter, 13 weeks (D122, D130).
+	MaxCompensationBackdate = uint64(13 * 7 * 86_400)
 )
 
-// CompensationSchedule is a count of equal periods of at least a week, one for a bounty, together
-// at most ten years (D116).
+// CompensationSchedule is a count of equal periods of at least two weeks, one for a bounty, together
+// at most ten years (D116, D126).
 func CompensationSchedule(period uint64, count uint32) (Schedule, error) {
 	if count == 0 {
 		return Schedule{}, errors.New("a compensation award has at least one period")
 	}
-	// count is a uint32 and period is bounded first, so the product fits; the week floor then holds
-	// count to 521, inside MaxSchedulePeriods.
-	if period < MinCompensationPeriod || period > MaxCompensationDuration || uint64(count)*period > MaxCompensationDuration {
-		return Schedule{}, errors.New("a compensation award runs periods of at least a week, at most ten years in all")
+	// count is a uint32 and period is bounded first, so the product fits; the two-week floor then
+	// holds count to 260, inside MaxSchedulePeriods.
+	if period < MinFirstPeriod || period > MaxCompensationDuration || uint64(count)*period > MaxCompensationDuration {
+		return Schedule{}, errors.New("a compensation award runs periods of at least two weeks, at most ten years in all")
 	}
 	s := Schedule{FirstLength: period, FirstWeight: 1, PeriodLength: period, PeriodWeight: 1, Periods: count - 1}
 	if err := s.Validate(); err != nil {

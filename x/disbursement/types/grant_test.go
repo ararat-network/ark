@@ -23,7 +23,8 @@ func TestAccrualBoundaries(t *testing.T) {
 		want      int64
 		next      uint64
 	}{
-		{"member upfront", types.GrantKind_GRANT_KIND_MEMBER, 100, false, 7, 120},
+		{"member held to its first boundary", types.GrantKind_GRANT_KIND_MEMBER, 100, false, 0, 110},
+		{"member at its first boundary", types.GrantKind_GRANT_KIND_MEMBER, 110, false, 7, 120},
 		{"contributor starts unpaid", types.GrantKind_GRANT_KIND_COMPENSATION, 100, false, 0, 110},
 		{"before boundary", types.GrantKind_GRANT_KIND_OWNERSHIP, 109, false, 0, 110},
 		{"at boundary", types.GrantKind_GRANT_KIND_OWNERSHIP, 110, false, 7, 120},
@@ -153,8 +154,8 @@ func TestGrantValidation(t *testing.T) {
 	base := func() types.Grant {
 		return types.Grant{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: address, Payee: address, CreatedBy: address,
-			Amount: sdk.NewInt64Coin("anoah", 30), Schedule: types.Schedule{FirstLength: week, FirstWeight: 1, PeriodLength: week, PeriodWeight: 1, Periods: 2},
-			StartTime: 100, CreatedTime: 100, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", CreatedHeight: 1, DueTime: 100 + 2*week,
+			Amount: sdk.NewInt64Coin("anoah", 30), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: hold, PeriodWeight: 1, Periods: 2},
+			StartTime: 100, CreatedTime: 100, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", CreatedHeight: 1, DueTime: 100 + 2*hold,
 			AwardValue: math.NewInt(30),
 		}
 	}
@@ -185,27 +186,35 @@ func TestGrantValidation(t *testing.T) {
 		{"member with an award value", func(g *types.Grant) { member(g); g.AwardValue = math.NewInt(30) }, false},
 		{"queued before it started", func(g *types.Grant) { g.DueTime = 99 }, false},
 		// Nothing is due before one period after the award, wherever the clock starts.
-		{"queued at its gate", func(g *types.Grant) { g.DueTime = 100 + week }, true},
-		{"queued inside its first period", func(g *types.Grant) { g.DueTime = 100 + week - 1 }, false},
-		{"backdated clock queued at its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+week }, true},
-		{"backdated clock queued before its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+week-1 }, false},
+		{"queued at its gate", func(g *types.Grant) { g.DueTime = 100 + hold }, true},
+		{"queued inside its first period", func(g *types.Grant) { g.DueTime = 100 + hold - 1 }, false},
+		{"backdated clock queued at its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold }, true},
+		{"backdated clock queued before its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold-1 }, false},
 		{"finished and unqueued", func(g *types.Grant) { g.Paid, g.Remaining, g.DueTime = math.NewInt(30), math.ZeroInt(), 0 }, true},
 		{"finished and queued", func(g *types.Grant) { g.Paid, g.Remaining = math.NewInt(30), math.ZeroInt() }, false},
-		{"cancelled debt queued", func(g *types.Grant) { g.CutoffTime, g.Remaining = 100+2*week, math.NewInt(10) }, true},
-		{"cancelled debt unqueued", func(g *types.Grant) { g.CutoffTime, g.Remaining, g.DueTime = 100+2*week, math.NewInt(10), 0 }, false},
-		{"cancelled holding past its debt", func(g *types.Grant) { g.CutoffTime = 100 + 2*week }, false},
+		{"cancelled debt queued", func(g *types.Grant) { g.CutoffTime, g.Remaining = 100+2*hold, math.NewInt(10) }, true},
+		{"cancelled debt unqueued", func(g *types.Grant) { g.CutoffTime, g.Remaining, g.DueTime = 100+2*hold, math.NewInt(10), 0 }, false},
+		{"cancelled holding past its debt", func(g *types.Grant) { g.CutoffTime = 100 + 2*hold }, false},
 		{"cancelled at its award", func(g *types.Grant) {
 			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 100, math.ZeroInt(), math.ZeroInt(), 0
 		}, true},
 		{"cancelled before its award", func(g *types.Grant) {
 			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 99, math.ZeroInt(), math.ZeroInt(), 0
 		}, false},
-		{"cancelled member", func(g *types.Grant) { member(g); g.CutoffTime, g.Remaining, g.DueTime = 115, math.ZeroInt(), 0 }, true},
+		{"member cancelled inside its hold", func(g *types.Grant) {
+			member(g)
+			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 115, math.ZeroInt(), math.ZeroInt(), 0
+		}, true},
+		{"member cancelled after its tenth", func(g *types.Grant) { member(g); g.CutoffTime, g.Remaining, g.DueTime = 100+hold, math.ZeroInt(), 0 }, true},
 		{"cancelled while suspended", func(g *types.Grant) {
 			member(g)
 			g.CutoffTime, g.SuspendedTime, g.Remaining, g.DueTime = 115, 115, math.ZeroInt(), 0
 		}, false},
-		{"suspended member unqueued", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 115, 0 }, true},
+		{"suspended member unqueued", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 100+hold, 0 }, true},
+		{"member suspended inside its hold", func(g *types.Grant) {
+			member(g)
+			g.SuspendedTime, g.DueTime, g.Paid, g.Remaining = 115, 0, math.ZeroInt(), math.NewInt(30)
+		}, true},
 		{"suspended member queued", func(g *types.Grant) { member(g); g.SuspendedTime = 115 }, false},
 		{"suspended member paid past its suspension", func(g *types.Grant) {
 			member(g)
@@ -216,7 +225,15 @@ func TestGrantValidation(t *testing.T) {
 		{"governance ownership", ownership, true},
 		{"ownership under a term", func(g *types.Grant) { ownership(g); g.MandateTerm = 1 }, false},
 		{"registered member", member, true},
-		{"member short of its first period", func(g *types.Grant) { member(g); g.Paid, g.Remaining = math.NewInt(9), math.NewInt(21) }, false},
+		// A member's tenth waits a period like every first payment (D126).
+		{"member registered and unpaid", func(g *types.Grant) {
+			member(g)
+			g.Paid, g.Remaining, g.DueTime = math.ZeroInt(), math.NewInt(30), 100+hold
+		}, true},
+		{"member queued inside its hold", func(g *types.Grant) {
+			member(g)
+			g.Paid, g.Remaining, g.DueTime = math.ZeroInt(), math.NewInt(30), 100+hold-1
+		}, false},
 		{"compensation in a stablecoin", func(g *types.Grant) { g.Amount = sdk.NewInt64Coin("ausd", 30) }, true},
 		{"ownership in a stablecoin", func(g *types.Grant) { ownership(g); g.Amount = sdk.NewInt64Coin("ausd", 30) }, false},
 		{"member without a reference", func(g *types.Grant) { member(g); g.Reference = " " }, false},
@@ -225,14 +242,16 @@ func TestGrantValidation(t *testing.T) {
 		{"backdated ownership clock", func(g *types.Grant) { ownership(g); g.StartTime = 99 }, false},
 		{"clock a century after its award", func(g *types.Grant) {
 			g.StartTime = 100 + types.MaxStartOffset
-			g.DueTime = g.StartTime + week
+			g.DueTime = g.StartTime + hold
 		}, true},
 		{"clock past a century after its award", func(g *types.Grant) {
 			g.StartTime = 101 + types.MaxStartOffset
-			g.DueTime = g.StartTime + week
+			g.DueTime = g.StartTime + hold
 		}, false},
-		{"compensation period under a week", stretch(week - 1), false},
-		{"compensation with unequal periods", func(g *types.Grant) { g.Schedule.PeriodLength = 2 * week }, false},
+		{"compensation period under the floor", stretch(hold - 1), false},
+		{"ownership first period under the floor", func(g *types.Grant) { ownership(g); g.Schedule.FirstLength = hold - 1 }, false},
+		{"member first period under the floor", func(g *types.Grant) { member(g); g.Schedule.FirstLength = hold - 1 }, false},
+		{"compensation with unequal periods", func(g *types.Grant) { g.Schedule.PeriodLength = 2 * hold }, false},
 		{"compensation with unequal weights", func(g *types.Grant) { g.Schedule.FirstWeight = 2 }, false},
 		{"compensation of nine years", stretch(3 * 365 * 86_400), true},
 		{"compensation past ten years", stretch(4 * 365 * 86_400), false},

@@ -45,7 +45,7 @@ func (s *KeeperTestSuite) TestGovernanceMessagesRequireTheAuthority() {
 	stranger := testAddress(9)
 	for _, msg := range []sdk.Msg{
 		&types.MsgUpdateParams{Authority: stranger, Params: testParams()},
-		&types.MsgSetGrantsMandate{Authority: stranger, Committee: s.committee, ActivationHeight: 1, ExpiryHeight: 100},
+		&types.MsgSetGrantsMandate{Authority: stranger, Committee: s.committee, ActivationTime: 1, ExpiryTime: 100},
 		&types.MsgOpenTranche{Authority: stranger, Amount: math.OneInt()},
 		&types.MsgReturnUnallocated{Authority: stranger, Amount: noah(1)},
 		&types.MsgGrantOwnership{Authority: stranger, Beneficiary: testAddress(3), Amount: math.OneInt(), StartTime: s.now(), Reference: "x"},
@@ -124,7 +124,7 @@ func (s *KeeperTestSuite) TestGrantOwnership() {
 	id, err := s.grantOwnership(a, 100, s.now())
 	s.Require().NoError(err)
 	g := s.grant(id)
-	s.Require().Equal(s.now()+10, g.DueTime, "queued for its first boundary")
+	s.Require().Equal(s.now()+hold, g.DueTime, "queued for its first boundary")
 	s.Require().Zero(g.MandateTerm)
 	s.Require().True(g.Paid.IsZero())
 	record, err := s.keeper.Beneficiaries.Get(s.ctx, sdk.MustAccAddressFromBech32(a))
@@ -186,7 +186,7 @@ func (s *KeeperTestSuite) TestCompensate() {
 		s.Require().NoError(err)
 		g := s.grant(id)
 		s.Require().Equal(math.NewInt(60), g.AwardValue, "valued at one reference unit a NOAH")
-		s.Require().Equal(s.now()+types.MinCompensationPeriod, g.DueTime)
+		s.Require().Equal(s.now()+types.MinFirstPeriod, g.DueTime)
 		s.Require().Equal([]types.GrantAction{types.GrantAction_GRANT_ACTION_CREATED}, s.actions(id))
 		_, err = s.compensate(a, noah(41), s.now(), 1, math.ZeroInt())
 		s.Require().ErrorContains(err, "insufficient uncommitted")
@@ -245,15 +245,16 @@ func (s *KeeperTestSuite) TestCancelGrants() {
 	s.Require().ErrorIs(err, types.ErrGrantNotFound)
 	s.requireCode(err, codes.NotFound)
 
-	// Cancelled at once, the member keeps its paid tenth and the tranche reopens the rest.
+	// Cancelled inside its hold, the member keeps nothing and the tranche reopens the whole grant.
 	s.Require().NoError(s.cancel(id))
 	g := s.grant(id)
 	s.Require().True(g.Cancelled())
+	s.Require().True(g.Paid.IsZero())
 	s.Require().True(g.Remaining.IsZero())
 	s.Require().Zero(g.DueTime)
 	tranche, err := s.keeper.MemberTranche.Get(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(math.NewInt(9_000), tranche)
+	s.Require().Equal(math.NewInt(10_000), tranche)
 	entries := len(s.journal(id))
 	// A closed grant cancels to nothing, so overlapping recovery proposals may share IDs.
 	s.Require().NoError(s.cancel(id))
@@ -288,11 +289,13 @@ func (s *KeeperTestSuite) TestSuspendAndReinstate() {
 	s.Require().Equal(s.now(), s.grant(id).SuspendedTime)
 	s.Require().ErrorContains(s.suspend(a), "already suspended")
 	s.Require().NoError(govReinstate(a))
-	s.Require().Equal(s.now(), s.grant(id).DueTime, "reinstatement queues the arrears for this block")
+	s.Require().Equal(s.now()+hold, s.grant(id).DueTime, "reinstated inside its hold, the member waits for its end")
+	s.advance(int64(hold) + 10)
 	s.Require().NoError(s.suspend(a))
 	s.Require().NoError(s.reinstate(a))
+	s.Require().Equal(s.now(), s.grant(id).DueTime, "reinstatement queues the arrears for this block")
 	s.Require().Equal([]types.GrantAction{
-		types.GrantAction_GRANT_ACTION_CREATED, types.GrantAction_GRANT_ACTION_PAID,
+		types.GrantAction_GRANT_ACTION_CREATED,
 		types.GrantAction_GRANT_ACTION_SUSPENDED, types.GrantAction_GRANT_ACTION_REINSTATED,
 		types.GrantAction_GRANT_ACTION_SUSPENDED, types.GrantAction_GRANT_ACTION_REINSTATED,
 	}, s.actions(id))
@@ -304,18 +307,18 @@ func (s *KeeperTestSuite) TestCommitteeRegistrar() {
 	committee, err := s.keeper.GrantsMandate.Get(s.ctx)
 	s.Require().NoError(err)
 	appoint := func(signer string, term uint64, registrar string, activation, expiry uint64) error {
-		return s.deliver(&types.MsgCommitteeRegistrar{Committee: signer, ExpectedTerm: term, Registrar: registrar, ActivationHeight: activation, ExpiryHeight: expiry})
+		return s.deliver(&types.MsgCommitteeRegistrar{Committee: signer, ExpectedTerm: term, Registrar: registrar, ActivationTime: activation, ExpiryTime: expiry})
 	}
-	s.Require().ErrorContains(appoint(testAddress(9), s.term, s.registrar, committee.ActivationHeight, committee.ExpiryHeight), "exact appointed")
-	s.Require().ErrorContains(appoint(s.committee, s.term+1, s.registrar, committee.ActivationHeight, committee.ExpiryHeight), "term mismatch")
-	s.Require().ErrorContains(appoint(s.committee, s.term, s.authority, committee.ActivationHeight, committee.ExpiryHeight), "distinct from the disbursement authority")
-	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationHeight-1, committee.ExpiryHeight), "inside the committee's")
-	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationHeight, committee.ExpiryHeight+1), "inside the committee's")
+	s.Require().ErrorContains(appoint(testAddress(9), s.term, s.registrar, committee.ActivationTime, committee.ExpiryTime), "exact appointed")
+	s.Require().ErrorContains(appoint(s.committee, s.term+1, s.registrar, committee.ActivationTime, committee.ExpiryTime), "term mismatch")
+	s.Require().ErrorContains(appoint(s.committee, s.term, s.authority, committee.ActivationTime, committee.ExpiryTime), "distinct from the disbursement authority")
+	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationTime-1, committee.ExpiryTime), "inside the committee's")
+	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationTime, committee.ExpiryTime+1), "inside the committee's")
 	// A window inside the committee's that has already closed authorises nothing.
-	s.setBlockHeight(int64(committee.ActivationHeight) + 1)
-	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationHeight, committee.ActivationHeight+1), "not above the current height")
+	s.setTime(committee.ActivationTime + 1)
+	s.Require().ErrorContains(appoint(s.committee, s.term, s.registrar, committee.ActivationTime, committee.ActivationTime+1), "not after the current block time")
 
-	s.Require().NoError(appoint(s.committee, s.term, s.registrar, committee.ActivationHeight, committee.ExpiryHeight))
+	s.Require().NoError(appoint(s.committee, s.term, s.registrar, committee.ActivationTime, committee.ExpiryTime))
 	s.registrarTerm++
 	s.openTranche(10_000)
 	s.register(testAddress(3))
@@ -365,12 +368,16 @@ func (s *KeeperTestSuite) TestRegisterMembers() {
 	g := s.grant(ids[0])
 	s.Require().Equal(s.registrar, g.CreatedBy)
 	s.Require().Equal(s.registrarTerm, g.MandateTerm)
-	s.Require().Equal(math.NewInt(1_000), g.Paid, "a tenth at registration")
-	s.Require().Equal(s.now()+11, g.DueTime, "queued for the boundary after the tenth")
+	s.Require().True(g.Paid.IsZero(), "registration pays nothing: the tenth waits for the hold")
+	s.Require().Equal(s.now()+hold, g.DueTime, "queued for the end of the hold")
+	s.Require().Empty(s.received[a])
+	s.Require().Len(s.journal(ids[0]), 1)
+	s.advance(int64(hold))
+	s.endBlock()
 	s.Require().Equal(sdk.NewCoins(noah(1_000)), s.received[a])
 	entries := s.journal(ids[0])
 	s.Require().Len(entries, 2)
-	s.Require().Equal(s.registrar, entries[1].Actor, "the registrar makes the first payment")
+	s.Require().Equal(authtypes.NewModuleAddress(types.MembersName).String(), entries[1].Actor, "the block pays the tenth from the member account")
 	s.Require().Equal(a, entries[1].Subject)
 	_, err = s.registerMembers(a)
 	s.Require().ErrorContains(err, "already registered")
@@ -430,6 +437,7 @@ func (s *KeeperTestSuite) TestSetPayee() {
 	s.Require().ErrorContains(s.setPayee(a, member, "nobody"), "payee is invalid")
 	s.Require().NoError(s.setPayee(a, member, payee))
 	s.Require().Equal(payee, s.grant(member).Payee)
+	s.Require().Equal(s.now()+hold, s.grant(member).DueTime, "a payee change inside the hold waits for its end")
 
 	// A contributor controller rotation at the same address never reaches the member grant, and
 	// the original key never reaches the award once control has moved.
@@ -442,7 +450,7 @@ func (s *KeeperTestSuite) TestSetPayee() {
 	s.Require().NoError(s.setPayee(b, award, payee))
 
 	// A grant paid in full has nothing left to redirect.
-	s.advance(40)
+	s.advance(int64(hold) + 40)
 	s.endBlock()
 	s.Require().True(s.grant(member).Remaining.IsZero())
 	s.Require().ErrorContains(s.setPayee(a, member, payee), "no remaining entitlement")

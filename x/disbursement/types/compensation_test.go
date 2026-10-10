@@ -25,12 +25,12 @@ func TestCompensationSchedule(t *testing.T) {
 		{"ten years of fortnights", fortnight, 260, true},
 		{"past ten years", fortnight, 261, false},
 		{"none", fortnight, 0, false},
-		{"a week", types.MinCompensationPeriod, 1, true},
-		{"under a week", types.MinCompensationPeriod - 1, 1, false},
+		{"the floor", types.MinFirstPeriod, 1, true},
+		{"under the floor", types.MinFirstPeriod - 1, 1, false},
 		{"a ten-year period", types.MaxCompensationDuration, 1, true},
 		{"a period past ten years", types.MaxCompensationDuration + 1, 1, false},
 		{"a period that wraps the product", stdmath.MaxUint64, 2, false},
-		{"more periods than a shape holds", types.MinCompensationPeriod, types.MaxSchedulePeriods + 2, false},
+		{"more periods than a shape holds", types.MinFirstPeriod, types.MaxSchedulePeriods + 2, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			shape, err := types.CompensationSchedule(tc.period, tc.count)
@@ -45,7 +45,7 @@ func TestCompensationSchedule(t *testing.T) {
 }
 
 func TestCompensationCharge(t *testing.T) {
-	year, quarter := uint64(365*86_400), types.MaxCompensationBackdate
+	year, quarter := types.DefaultCompensationWindow, types.MaxCompensationBackdate
 	n := math.NewInt
 	bits128 := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 	for _, tc := range []struct {
@@ -94,4 +94,23 @@ func TestCompensationBackdate(t *testing.T) {
 			require.Equal(t, tc.want, types.CompensationBackdate(tc.start, tc.awarded))
 		})
 	}
+}
+
+// TestLongestStreamChargesATenthOfItsValue pins what the founder's stream relies on: with the window at
+// 26 fortnights, the longest award, 260 fortnights, charges a tenth of its value a window, so ten times
+// the cap fits exactly and a base unit more does not (D129, D130).
+func TestLongestStreamChargesATenthOfItsValue(t *testing.T) {
+	p := types.DefaultParams()
+	shape, err := types.CompensationSchedule(p.CompensationPeriod, 260)
+	require.NoError(t, err)
+	require.Equal(t, types.MaxCompensationDuration, shape.Duration(), "the bound is 260 fortnights exactly")
+	_, err = types.CompensationSchedule(p.CompensationPeriod, 261)
+	require.Error(t, err, "260 fortnights is the longest award")
+	value := p.CompensationCap.MulRaw(10)
+	charge, err := types.CompensationCharge(value, shape.Duration(), p.CompensationWindow)
+	require.NoError(t, err)
+	require.Equal(t, p.CompensationCap, charge)
+	charge, err = types.CompensationCharge(value.AddRaw(1), shape.Duration(), p.CompensationWindow)
+	require.NoError(t, err)
+	require.True(t, charge.GT(p.CompensationCap))
 }

@@ -65,8 +65,8 @@ func (k *Keeper) suspend(ctx context.Context, actor string, address sdk.AccAddre
 	})
 }
 
-// reinstate clears a member's suspension and queues the arrears for this block; the committee and
-// governance share it under their own authorisation.
+// reinstate clears a member's suspension and queues the arrears for this block, or for the end of
+// its hold if it has not ended; the committee and governance share it under their own authorisation.
 func (k *Keeper) reinstate(ctx context.Context, actor string, address sdk.AccAddress) error {
 	g, err := k.liveMember(ctx, address)
 	if err != nil {
@@ -76,7 +76,7 @@ func (k *Keeper) reinstate(ctx context.Context, actor string, address sdk.AccAdd
 		return errors.New("member is not suspended")
 	}
 	g.SuspendedTime = 0
-	if err := k.setDueTime(ctx, &g, chain.BlockSeconds(ctx)); err != nil {
+	if err := k.setDueTime(ctx, &g, max(chain.BlockSeconds(ctx), g.CreatedTime+g.Schedule.FirstLength)); err != nil {
 		return err
 	}
 	return k.writeGrant(ctx, g, types.GrantEntry{

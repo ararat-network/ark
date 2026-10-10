@@ -162,7 +162,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "RegisterMembers",
 					Use:       "register-members",
-					Short:     "Register members and pay their first period as the registrar",
+					Short:     "Register members as the registrar; the block pays each first period after the hold",
 				},
 				{
 					RpcMethod: "CommitteeSuspend",

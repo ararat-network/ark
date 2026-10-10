@@ -30,7 +30,9 @@ func (k *Keeper) InitGenesis(ctx context.Context, gs *types.GenesisState) error 
 	if gs.RegistrarMandate.Committee == k.authority {
 		return errors.New("registrar must be distinct from the disbursement authority")
 	}
-	at, height := chain.BlockSeconds(ctx), uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	// InitChain runs at height zero for a chain starting at one, and seat assembly stamps the
+	// founder's awards at the first block, so the later of the two bounds the stamps, as in Oracle.
+	at, height := chain.BlockSeconds(ctx), uint64(max(sdk.UnwrapSDKContext(ctx).BlockHeight(), 1))
 	// Validate ties every grant clock to a journal stamp, so these bound the grants too.
 	for _, e := range gs.GrantJournal {
 		if e.Time > at || e.Height > height {

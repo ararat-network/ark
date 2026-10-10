@@ -32,8 +32,8 @@ service Msg {
   // CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term, for a
   // window inside the committee's.
   rpc CommitteeRegistrar(MsgCommitteeRegistrar) returns (MsgCommitteeRegistrarResponse);
-  // RegisterMembers permanently registers members and pays their first period atomically, under the
-  // live registrar term and within the open member tranche.
+  // RegisterMembers permanently registers members, reserving each grant whole and queueing its first
+  // period, under the live registrar term and within the open member tranche.
   rpc RegisterMembers(MsgRegisterMembers) returns (MsgRegisterMembersResponse);
   // CommitteeSuspend pauses member payments under the live committee term.
   rpc CommitteeSuspend(MsgCommitteeSuspend) returns (MsgCommitteeSuspendResponse);
@@ -70,8 +70,8 @@ message MsgSetGrantsMandate {
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // committee is the exact appointed account, empty to disable.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   string compensation_allowance = 5 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -197,14 +197,14 @@ message MsgCommitteeRegistrar {
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   string registrar = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 4 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 5 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 4 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgCommitteeRegistrarResponse reports the result of CommitteeRegistrar.
 message MsgCommitteeRegistrarResponse {}
 
-// MsgRegisterMembers permanently registers members and pays their first period atomically.
+// MsgRegisterMembers permanently registers members; nothing pays in the call (D126).
 message MsgRegisterMembers {
   option (cosmos.msg.v1.signer) = "registrar";
   option (amino.name) = "ark/disbursement/MsgRegisterMembers";

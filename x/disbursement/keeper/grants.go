@@ -66,8 +66,8 @@ func (k *Keeper) ownershipRemaining(ctx context.Context, committed math.Int) (ma
 	return math.MaxInt(params.OwnershipCap.Sub(committed), math.ZeroInt()), nil
 }
 
-// create reserves a grant and queues it for its first boundary; members receive their first payment
-// in the same call. The caller fills the kind, amount, schedule, start time, reference, grantor,
+// create reserves a grant and queues it for its first boundary; nothing pays in the call, a member's
+// tenth included (D126). The caller fills the kind, amount, schedule, start time, reference, grantor,
 // term, and award value; create stamps the rest. Every check runs before a stablecoin award buys
 // what custody lacks within maxOffer, so a refused award never trades, and the conversion is
 // journaled straight after the creation it funds.
@@ -119,19 +119,17 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	g.Remaining = g.Amount.Amount
 	g.CreatedHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
 	g.CreatedTime = at
-	if g.Kind != types.GrantKind_GRANT_KIND_MEMBER {
-		// A member's first payment below queues it; a contributor waits for its first boundary or one
-		// period after the award, whichever is later, so next is never zero here.
-		_, next, err := g.Accrued(at)
-		if err != nil {
-			return 0, err
-		}
-		if err := k.setDueTime(ctx, &g, next); err != nil {
-			return 0, err
-		}
-		if err := g.Validate(); err != nil {
-			return 0, err
-		}
+	// Every grant waits for its first boundary or one period after the award, whichever is later, so
+	// next is never zero here.
+	_, next, err := g.Accrued(at)
+	if err != nil {
+		return 0, err
+	}
+	if err := k.setDueTime(ctx, &g, next); err != nil {
+		return 0, err
+	}
+	if err := g.Validate(); err != nil {
+		return 0, err
 	}
 	// Only a stablecoin award converts, and only compensation can be one.
 	converted, err := k.fund(ctx, g.Amount, maxOffer)
@@ -148,9 +146,9 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 		if err := k.Beneficiaries.Set(ctx, beneficiary, p); err != nil {
 			return 0, err
 		}
-		if err := k.Grants.Set(ctx, id, g); err != nil {
-			return 0, err
-		}
+	}
+	if err := k.Grants.Set(ctx, id, g); err != nil {
+		return 0, err
 	}
 	if err := k.index(ctx, beneficiary, g); err != nil {
 		return 0, err
@@ -165,17 +163,6 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	}
 	if err := k.recordConversion(ctx, id, g.CreatedBy, converted); err != nil {
 		return 0, err
-	}
-	if g.Kind == types.GrantKind_GRANT_KIND_MEMBER {
-		// A member's first period pays at registration. Unpaid, a member fits no valid shape, so
-		// settle's validated write is its first.
-		q, err := k.payable(ctx, g)
-		if err != nil {
-			return 0, err
-		}
-		if err := k.settle(ctx, g.CreatedBy, g, q); err != nil {
-			return 0, err
-		}
 	}
 	return id, nil
 }

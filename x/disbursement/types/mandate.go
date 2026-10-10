@@ -68,8 +68,8 @@ func (m RegistrarMandate) WithinCommittee(committee GrantsMandate) error {
 	if committee.IsDisabled() {
 		return fmt.Errorf("%s: a registrar is appointed under a disabled %s", RegistrarMandateLabel, GrantsMandateLabel)
 	}
-	if m.ActivationHeight < committee.ActivationHeight || m.ExpiryHeight > committee.ExpiryHeight {
-		return fmt.Errorf("%s: window [%d, %d) must sit inside the committee's [%d, %d)", RegistrarMandateLabel, m.ActivationHeight, m.ExpiryHeight, committee.ActivationHeight, committee.ExpiryHeight)
+	if m.ActivationTime < committee.ActivationTime || m.ExpiryTime > committee.ExpiryTime {
+		return fmt.Errorf("%s: window [%d, %d) must sit inside the committee's [%d, %d)", RegistrarMandateLabel, m.ActivationTime, m.ExpiryTime, committee.ActivationTime, committee.ExpiryTime)
 	}
 	return nil
 }

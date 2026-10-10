@@ -121,8 +121,8 @@ func (GrantAction) EnumDescriptor() ([]byte, []int) {
 type Params struct {
 	// member_amount is every member grant, in NOAH.
 	MemberAmount cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=member_amount,json=memberAmount,proto3,customtype=cosmossdk.io/math.Int" json:"member_amount"`
-	// member_schedule is every member grant's shape, copied at registration: its first period is
-	// paid at registration whatever its length (D116).
+	// member_schedule is every member grant's shape, copied at registration: its first period, the
+	// tenth, pays when the two-week hold ends (D116, D126).
 	MemberSchedule Schedule `protobuf:"bytes,2,opt,name=member_schedule,json=memberSchedule,proto3" json:"member_schedule"`
 	// compensation_cap is the most one record may be awarded in compensation inside the window,
 	// valued in the reference unit at award time.
@@ -200,8 +200,8 @@ func (m *Params) GetOwnershipSchedule() Schedule {
 	return Schedule{}
 }
 
-// Schedule is a grant's shape: a first period, paid at its end or at registration for a member,
-// then equal further periods. Shares are weight over the total; the last period takes the remainder.
+// Schedule is a grant's shape: a first period paid at its end, then equal further periods. Shares are
+// weight over the total; the last period takes the remainder.
 type Schedule struct {
 	// first_length and first_weight are the first period, in seconds and in weight.
 	FirstLength uint64 `protobuf:"varint,1,opt,name=first_length,json=firstLength,proto3" json:"first_length,omitempty"`
@@ -281,7 +281,7 @@ func (m *Schedule) GetPeriods() uint32 {
 	return 0
 }
 
-// GrantsMandate appoints the grants committee for a height window. An empty committee
+// GrantsMandate appoints the grants committee for a time window. An empty committee
 // disables it; every replacement advances the term.
 type GrantsMandate struct {
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
@@ -323,7 +323,7 @@ func (m *GrantsMandate) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GrantsMandate proto.InternalMessageInfo
 
-// RegistrarMandate appoints the registrar, the account that registers members, for a height window
+// RegistrarMandate appoints the registrar, the account that registers members, for a time window
 // inside the grants committee's. The committee appoints it under its term, and a committee appointment
 // clears it; the envelope's committee is the registrar. An empty registrar disables it; every replacement
 // advances the term. The open member tranche is its only bound.

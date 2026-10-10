@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	md_EventGrantsMandateSet                   protoreflect.MessageDescriptor
-	fd_EventGrantsMandateSet_term              protoreflect.FieldDescriptor
-	fd_EventGrantsMandateSet_committee         protoreflect.FieldDescriptor
-	fd_EventGrantsMandateSet_activation_height protoreflect.FieldDescriptor
-	fd_EventGrantsMandateSet_expiry_height     protoreflect.FieldDescriptor
-	fd_EventGrantsMandateSet_committee_shape   protoreflect.FieldDescriptor
+	md_EventGrantsMandateSet                 protoreflect.MessageDescriptor
+	fd_EventGrantsMandateSet_term            protoreflect.FieldDescriptor
+	fd_EventGrantsMandateSet_committee       protoreflect.FieldDescriptor
+	fd_EventGrantsMandateSet_activation_time protoreflect.FieldDescriptor
+	fd_EventGrantsMandateSet_expiry_time     protoreflect.FieldDescriptor
+	fd_EventGrantsMandateSet_committee_shape protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -31,8 +31,8 @@ func init() {
 	md_EventGrantsMandateSet = File_ark_disbursement_v1_event_proto.Messages().ByName("EventGrantsMandateSet")
 	fd_EventGrantsMandateSet_term = md_EventGrantsMandateSet.Fields().ByName("term")
 	fd_EventGrantsMandateSet_committee = md_EventGrantsMandateSet.Fields().ByName("committee")
-	fd_EventGrantsMandateSet_activation_height = md_EventGrantsMandateSet.Fields().ByName("activation_height")
-	fd_EventGrantsMandateSet_expiry_height = md_EventGrantsMandateSet.Fields().ByName("expiry_height")
+	fd_EventGrantsMandateSet_activation_time = md_EventGrantsMandateSet.Fields().ByName("activation_time")
+	fd_EventGrantsMandateSet_expiry_time = md_EventGrantsMandateSet.Fields().ByName("expiry_time")
 	fd_EventGrantsMandateSet_committee_shape = md_EventGrantsMandateSet.Fields().ByName("committee_shape")
 }
 
@@ -113,15 +113,15 @@ func (x *fastReflection_EventGrantsMandateSet) Range(f func(protoreflect.FieldDe
 			return
 		}
 	}
-	if x.ActivationHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ActivationHeight)
-		if !f(fd_EventGrantsMandateSet_activation_height, value) {
+	if x.ActivationTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationTime)
+		if !f(fd_EventGrantsMandateSet_activation_time, value) {
 			return
 		}
 	}
-	if x.ExpiryHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
-		if !f(fd_EventGrantsMandateSet_expiry_height, value) {
+	if x.ExpiryTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryTime)
+		if !f(fd_EventGrantsMandateSet_expiry_time, value) {
 			return
 		}
 	}
@@ -150,10 +150,10 @@ func (x *fastReflection_EventGrantsMandateSet) Has(fd protoreflect.FieldDescript
 		return x.Term != uint64(0)
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		return x.Committee != ""
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
-		return x.ActivationHeight != uint64(0)
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
-		return x.ExpiryHeight != uint64(0)
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
+		return x.ActivationTime != uint64(0)
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
+		return x.ExpiryTime != uint64(0)
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee_shape":
 		return x.CommitteeShape != nil
 	default:
@@ -176,10 +176,10 @@ func (x *fastReflection_EventGrantsMandateSet) Clear(fd protoreflect.FieldDescri
 		x.Term = uint64(0)
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		x.Committee = ""
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
-		x.ActivationHeight = uint64(0)
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
-		x.ExpiryHeight = uint64(0)
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
+		x.ActivationTime = uint64(0)
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
+		x.ExpiryTime = uint64(0)
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee_shape":
 		x.CommitteeShape = nil
 	default:
@@ -204,11 +204,11 @@ func (x *fastReflection_EventGrantsMandateSet) Get(descriptor protoreflect.Field
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
-		value := x.ActivationHeight
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
+		value := x.ActivationTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
-		value := x.ExpiryHeight
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
+		value := x.ExpiryTime
 		return protoreflect.ValueOfUint64(value)
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee_shape":
 		value := x.CommitteeShape
@@ -237,10 +237,10 @@ func (x *fastReflection_EventGrantsMandateSet) Set(fd protoreflect.FieldDescript
 		x.Term = value.Uint()
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		x.Committee = value.Interface().(string)
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
-		x.ActivationHeight = value.Uint()
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
-		x.ExpiryHeight = value.Uint()
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
+		x.ActivationTime = value.Uint()
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
+		x.ExpiryTime = value.Uint()
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee_shape":
 		x.CommitteeShape = value.Message().Interface().(*v1.CommitteeShape)
 	default:
@@ -272,10 +272,10 @@ func (x *fastReflection_EventGrantsMandateSet) Mutable(fd protoreflect.FieldDesc
 		panic(fmt.Errorf("field term of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		panic(fmt.Errorf("field committee of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
-		panic(fmt.Errorf("field expiry_height of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
+		panic(fmt.Errorf("field activation_time of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
+		panic(fmt.Errorf("field expiry_time of message ark.disbursement.v1.EventGrantsMandateSet is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.EventGrantsMandateSet"))
@@ -293,9 +293,9 @@ func (x *fastReflection_EventGrantsMandateSet) NewField(fd protoreflect.FieldDes
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.EventGrantsMandateSet.activation_height":
+	case "ark.disbursement.v1.EventGrantsMandateSet.activation_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_height":
+	case "ark.disbursement.v1.EventGrantsMandateSet.expiry_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.EventGrantsMandateSet.committee_shape":
 		m := new(v1.CommitteeShape)
@@ -376,11 +376,11 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationTime))
 		}
-		if x.ExpiryHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryTime))
 		}
 		if x.CommitteeShape != nil {
 			l = options.Size(x.CommitteeShape)
@@ -429,13 +429,13 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 			i--
 			dAtA[i] = 0x2a
 		}
-		if x.ExpiryHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryTime))
 			i--
 			dAtA[i] = 0x20
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationTime))
 			i--
 			dAtA[i] = 0x18
 		}
@@ -553,9 +553,9 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 				iNdEx = postIndex
 			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationTime", wireType)
 				}
-				x.ActivationHeight = 0
+				x.ActivationTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -565,16 +565,16 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= uint64(b&0x7F) << shift
+					x.ActivationTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryTime", wireType)
 				}
-				x.ExpiryHeight = 0
+				x.ExpiryTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -584,7 +584,7 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					x.ExpiryTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -661,12 +661,12 @@ func (x *fastReflection_EventGrantsMandateSet) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_EventRegistrarMandateSet                   protoreflect.MessageDescriptor
-	fd_EventRegistrarMandateSet_term              protoreflect.FieldDescriptor
-	fd_EventRegistrarMandateSet_registrar         protoreflect.FieldDescriptor
-	fd_EventRegistrarMandateSet_activation_height protoreflect.FieldDescriptor
-	fd_EventRegistrarMandateSet_expiry_height     protoreflect.FieldDescriptor
-	fd_EventRegistrarMandateSet_committee_shape   protoreflect.FieldDescriptor
+	md_EventRegistrarMandateSet                 protoreflect.MessageDescriptor
+	fd_EventRegistrarMandateSet_term            protoreflect.FieldDescriptor
+	fd_EventRegistrarMandateSet_registrar       protoreflect.FieldDescriptor
+	fd_EventRegistrarMandateSet_activation_time protoreflect.FieldDescriptor
+	fd_EventRegistrarMandateSet_expiry_time     protoreflect.FieldDescriptor
+	fd_EventRegistrarMandateSet_committee_shape protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -674,8 +674,8 @@ func init() {
 	md_EventRegistrarMandateSet = File_ark_disbursement_v1_event_proto.Messages().ByName("EventRegistrarMandateSet")
 	fd_EventRegistrarMandateSet_term = md_EventRegistrarMandateSet.Fields().ByName("term")
 	fd_EventRegistrarMandateSet_registrar = md_EventRegistrarMandateSet.Fields().ByName("registrar")
-	fd_EventRegistrarMandateSet_activation_height = md_EventRegistrarMandateSet.Fields().ByName("activation_height")
-	fd_EventRegistrarMandateSet_expiry_height = md_EventRegistrarMandateSet.Fields().ByName("expiry_height")
+	fd_EventRegistrarMandateSet_activation_time = md_EventRegistrarMandateSet.Fields().ByName("activation_time")
+	fd_EventRegistrarMandateSet_expiry_time = md_EventRegistrarMandateSet.Fields().ByName("expiry_time")
 	fd_EventRegistrarMandateSet_committee_shape = md_EventRegistrarMandateSet.Fields().ByName("committee_shape")
 }
 
@@ -756,15 +756,15 @@ func (x *fastReflection_EventRegistrarMandateSet) Range(f func(protoreflect.Fiel
 			return
 		}
 	}
-	if x.ActivationHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ActivationHeight)
-		if !f(fd_EventRegistrarMandateSet_activation_height, value) {
+	if x.ActivationTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationTime)
+		if !f(fd_EventRegistrarMandateSet_activation_time, value) {
 			return
 		}
 	}
-	if x.ExpiryHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
-		if !f(fd_EventRegistrarMandateSet_expiry_height, value) {
+	if x.ExpiryTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryTime)
+		if !f(fd_EventRegistrarMandateSet_expiry_time, value) {
 			return
 		}
 	}
@@ -793,10 +793,10 @@ func (x *fastReflection_EventRegistrarMandateSet) Has(fd protoreflect.FieldDescr
 		return x.Term != uint64(0)
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		return x.Registrar != ""
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
-		return x.ActivationHeight != uint64(0)
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
-		return x.ExpiryHeight != uint64(0)
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
+		return x.ActivationTime != uint64(0)
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
+		return x.ExpiryTime != uint64(0)
 	case "ark.disbursement.v1.EventRegistrarMandateSet.committee_shape":
 		return x.CommitteeShape != nil
 	default:
@@ -819,10 +819,10 @@ func (x *fastReflection_EventRegistrarMandateSet) Clear(fd protoreflect.FieldDes
 		x.Term = uint64(0)
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		x.Registrar = ""
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
-		x.ActivationHeight = uint64(0)
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
-		x.ExpiryHeight = uint64(0)
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
+		x.ActivationTime = uint64(0)
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
+		x.ExpiryTime = uint64(0)
 	case "ark.disbursement.v1.EventRegistrarMandateSet.committee_shape":
 		x.CommitteeShape = nil
 	default:
@@ -847,11 +847,11 @@ func (x *fastReflection_EventRegistrarMandateSet) Get(descriptor protoreflect.Fi
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		value := x.Registrar
 		return protoreflect.ValueOfString(value)
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
-		value := x.ActivationHeight
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
+		value := x.ActivationTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
-		value := x.ExpiryHeight
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
+		value := x.ExpiryTime
 		return protoreflect.ValueOfUint64(value)
 	case "ark.disbursement.v1.EventRegistrarMandateSet.committee_shape":
 		value := x.CommitteeShape
@@ -880,10 +880,10 @@ func (x *fastReflection_EventRegistrarMandateSet) Set(fd protoreflect.FieldDescr
 		x.Term = value.Uint()
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		x.Registrar = value.Interface().(string)
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
-		x.ActivationHeight = value.Uint()
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
-		x.ExpiryHeight = value.Uint()
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
+		x.ActivationTime = value.Uint()
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
+		x.ExpiryTime = value.Uint()
 	case "ark.disbursement.v1.EventRegistrarMandateSet.committee_shape":
 		x.CommitteeShape = value.Message().Interface().(*v1.CommitteeShape)
 	default:
@@ -915,10 +915,10 @@ func (x *fastReflection_EventRegistrarMandateSet) Mutable(fd protoreflect.FieldD
 		panic(fmt.Errorf("field term of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		panic(fmt.Errorf("field registrar of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
-		panic(fmt.Errorf("field expiry_height of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
+		panic(fmt.Errorf("field activation_time of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
+		panic(fmt.Errorf("field expiry_time of message ark.disbursement.v1.EventRegistrarMandateSet is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.disbursement.v1.EventRegistrarMandateSet"))
@@ -936,9 +936,9 @@ func (x *fastReflection_EventRegistrarMandateSet) NewField(fd protoreflect.Field
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.EventRegistrarMandateSet.registrar":
 		return protoreflect.ValueOfString("")
-	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_height":
+	case "ark.disbursement.v1.EventRegistrarMandateSet.activation_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_height":
+	case "ark.disbursement.v1.EventRegistrarMandateSet.expiry_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.disbursement.v1.EventRegistrarMandateSet.committee_shape":
 		m := new(v1.CommitteeShape)
@@ -1019,11 +1019,11 @@ func (x *fastReflection_EventRegistrarMandateSet) ProtoMethods() *protoiface.Met
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationTime))
 		}
-		if x.ExpiryHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryTime))
 		}
 		if x.CommitteeShape != nil {
 			l = options.Size(x.CommitteeShape)
@@ -1072,13 +1072,13 @@ func (x *fastReflection_EventRegistrarMandateSet) ProtoMethods() *protoiface.Met
 			i--
 			dAtA[i] = 0x2a
 		}
-		if x.ExpiryHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryTime))
 			i--
 			dAtA[i] = 0x20
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationTime))
 			i--
 			dAtA[i] = 0x18
 		}
@@ -1196,9 +1196,9 @@ func (x *fastReflection_EventRegistrarMandateSet) ProtoMethods() *protoiface.Met
 				iNdEx = postIndex
 			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationTime", wireType)
 				}
-				x.ActivationHeight = 0
+				x.ActivationTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1208,16 +1208,16 @@ func (x *fastReflection_EventRegistrarMandateSet) ProtoMethods() *protoiface.Met
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= uint64(b&0x7F) << shift
+					x.ActivationTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryTime", wireType)
 				}
-				x.ExpiryHeight = 0
+				x.ExpiryTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1227,7 +1227,7 @@ func (x *fastReflection_EventRegistrarMandateSet) ProtoMethods() *protoiface.Met
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					x.ExpiryTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -5247,9 +5247,9 @@ type EventGrantsMandateSet struct {
 
 	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	// committee is empty when governance disabled the mandate.
-	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
-	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	Committee      string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
+	ExpiryTime     uint64 `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
 	// committee_shape is the appointment-time observation of the committee account, zeroed on a
 	// disabling.
 	CommitteeShape *v1.CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape,omitempty"`
@@ -5289,16 +5289,16 @@ func (x *EventGrantsMandateSet) GetCommittee() string {
 	return ""
 }
 
-func (x *EventGrantsMandateSet) GetActivationHeight() uint64 {
+func (x *EventGrantsMandateSet) GetActivationTime() uint64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.ActivationTime
 	}
 	return 0
 }
 
-func (x *EventGrantsMandateSet) GetExpiryHeight() uint64 {
+func (x *EventGrantsMandateSet) GetExpiryTime() uint64 {
 	if x != nil {
-		return x.ExpiryHeight
+		return x.ExpiryTime
 	}
 	return 0
 }
@@ -5319,9 +5319,9 @@ type EventRegistrarMandateSet struct {
 
 	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	// registrar is empty when the mandate was disabled.
-	Registrar        string `protobuf:"bytes,2,opt,name=registrar,proto3" json:"registrar,omitempty"`
-	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	Registrar      string `protobuf:"bytes,2,opt,name=registrar,proto3" json:"registrar,omitempty"`
+	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
+	ExpiryTime     uint64 `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
 	// committee_shape is the appointment-time observation of the registrar account, zeroed on a
 	// disabling.
 	CommitteeShape *v1.CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape,omitempty"`
@@ -5361,16 +5361,16 @@ func (x *EventRegistrarMandateSet) GetRegistrar() string {
 	return ""
 }
 
-func (x *EventRegistrarMandateSet) GetActivationHeight() uint64 {
+func (x *EventRegistrarMandateSet) GetActivationTime() uint64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.ActivationTime
 	}
 	return 0
 }
 
-func (x *EventRegistrarMandateSet) GetExpiryHeight() uint64 {
+func (x *EventRegistrarMandateSet) GetExpiryTime() uint64 {
 	if x != nil {
-		return x.ExpiryHeight
+		return x.ExpiryTime
 	}
 	return 0
 }
@@ -5797,38 +5797,37 @@ var file_ark_disbursement_v1_event_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67,
-	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x9e, 0x02, 0x0a, 0x15, 0x45, 0x76,
+	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x96, 0x02, 0x0a, 0x15, 0x45, 0x76,
 	0x65, 0x6e, 0x74, 0x47, 0x72, 0x61, 0x6e, 0x74, 0x73, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
 	0x53, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36,
 	0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
 	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
-	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78,
-	0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28,
-	0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79,
-	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
-	0x74, 0x65, 0x65, 0x5f, 0x73, 0x68, 0x61, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x42,
-	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x63, 0x6f, 0x6d, 0x6d,
-	0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x22, 0xa1, 0x02, 0x0a, 0x18, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e,
-	0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65,
-	0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63,
-	0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63,
-	0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a,
-	0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78,
-	0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x2e, 0x0a, 0x0f, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42,
+	0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x26, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0a, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x52,
+	0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x5f, 0x73, 0x68, 0x61, 0x70,
+	0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0e, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61,
+	0x70, 0x65, 0x22, 0x99, 0x02, 0x0a, 0x18, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x67, 0x69,
+	0x73, 0x74, 0x72, 0x61, 0x72, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12,
+	0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
+	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x61, 0x72, 0x12, 0x2e, 0x0a, 0x0f, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
+	0x2a, 0x01, 0x52, 0x0e, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69,
+	0x6d, 0x65, 0x12, 0x26, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x74, 0x69, 0x6d,
+	0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a,
+	0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f,
 	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x5f, 0x73, 0x68, 0x61, 0x70, 0x65, 0x18, 0x05, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74,
 	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68,

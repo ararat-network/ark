@@ -19,7 +19,7 @@ func TestGrantsMandateValidation(t *testing.T) {
 	active := func() types.GrantsMandate {
 		m := types.NewDisabledGrantsMandate(1)
 		m.Committee = sdk.AccAddress(make([]byte, 20)).String()
-		m.ActivationHeight, m.ExpiryHeight = 5, 10
+		m.ActivationTime, m.ExpiryTime = 5, 10
 		return m
 	}
 	for _, tc := range []struct {
@@ -56,7 +56,7 @@ func TestRegistrarMandateValidation(t *testing.T) {
 	active := func() types.RegistrarMandate {
 		m := types.NewDisabledRegistrarMandate(1)
 		m.Committee = sdk.AccAddress(make([]byte, 20)).String()
-		m.ActivationHeight, m.ExpiryHeight = 5, 10
+		m.ActivationTime, m.ExpiryTime = 5, 10
 		return m
 	}
 	for _, tc := range []struct {
@@ -65,12 +65,12 @@ func TestRegistrarMandateValidation(t *testing.T) {
 		valid  bool
 	}{
 		{"appointed", func(*types.RegistrarMandate) {}, true},
-		{"window inverted", func(m *types.RegistrarMandate) { m.ActivationHeight, m.ExpiryHeight = 10, 5 }, false},
+		{"window inverted", func(m *types.RegistrarMandate) { m.ActivationTime, m.ExpiryTime = 10, 5 }, false},
 		{"appointed at term zero", func(m *types.RegistrarMandate) { m.Term = 0 }, false},
 		{"disabled", func(m *types.RegistrarMandate) { *m = types.NewDisabledRegistrarMandate(1) }, true},
 		{"disabled with a window", func(m *types.RegistrarMandate) {
 			*m = types.NewDisabledRegistrarMandate(1)
-			m.ExpiryHeight = 10
+			m.ExpiryTime = 10
 		}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -88,10 +88,10 @@ func TestRegistrarMandateValidation(t *testing.T) {
 
 func TestRegistrarWithinCommittee(t *testing.T) {
 	committee := types.NewDisabledGrantsMandate(1)
-	committee.Committee, committee.ActivationHeight, committee.ExpiryHeight = sdk.AccAddress(make([]byte, 20)).String(), 10, 20
+	committee.Committee, committee.ActivationTime, committee.ExpiryTime = sdk.AccAddress(make([]byte, 20)).String(), 10, 20
 	registrar := func(activation, expiry uint64) types.RegistrarMandate {
 		m := types.NewDisabledRegistrarMandate(1)
-		m.Committee, m.ActivationHeight, m.ExpiryHeight = sdk.AccAddress(bytes.Repeat([]byte{1}, 20)).String(), activation, expiry
+		m.Committee, m.ActivationTime, m.ExpiryTime = sdk.AccAddress(bytes.Repeat([]byte{1}, 20)).String(), activation, expiry
 		return m
 	}
 	for _, tc := range []struct {

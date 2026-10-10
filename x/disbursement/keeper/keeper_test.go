@@ -232,15 +232,18 @@ func (s *KeeperTestSuite) newKeeper() (*keeper.Keeper, context.Context) {
 	return k, ctx
 }
 
-// testParams shortens every shape so a few seconds cross a boundary: members pay a tenth at
-// registration then three ten-second periods, ownership a quarter at a ten-second cliff then the
-// rest ten seconds on, compensation at the week-long floor.
+// hold is every first period in testParams: the two-week floor nothing pays before (D126).
+const hold = types.MinFirstPeriod
+
+// testParams keeps every first period at the floor and shortens the rest, so a few seconds past the
+// hold cross a boundary: members a tenth then three ten-second periods, ownership a quarter then the
+// rest ten seconds on, compensation in periods of the floor.
 func testParams() types.Params {
 	p := types.DefaultParams()
 	p.MemberAmount = math.NewInt(10_000)
-	p.MemberSchedule = types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3}
-	p.OwnershipSchedule = types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 1}
-	p.CompensationPeriod = types.MinCompensationPeriod
+	p.MemberSchedule = types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3}
+	p.OwnershipSchedule = types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 1}
+	p.CompensationPeriod = hold
 	return p
 }
 
@@ -266,10 +269,9 @@ func (s *KeeperTestSuite) sdkCtx() sdk.Context { return sdk.UnwrapSDKContext(s.c
 
 func (s *KeeperTestSuite) now() uint64 { return chain.BlockSeconds(s.ctx) }
 
-func (s *KeeperTestSuite) height() uint64 { return uint64(s.sdkCtx().BlockHeight()) }
-
-func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = s.sdkCtx().WithBlockHeight(height)
+// setTime moves the block time, leaving the height.
+func (s *KeeperTestSuite) setTime(seconds uint64) {
+	s.ctx = s.sdkCtx().WithBlockTime(time.Unix(int64(seconds), 0))
 }
 
 // advance moves to the next block, seconds later.
@@ -348,14 +350,14 @@ func (s *KeeperTestSuite) fund(account string, coins ...sdk.Coin) {
 	s.balances[account] = s.balances[account].Add(coins...)
 }
 
-// appointCommittee appoints the committee for a long window with an allowance; every call advances
-// the term and clears an appointed registrar.
+// appointCommittee appoints the committee for a century from now with an allowance, longer than any
+// test advances; every call advances the term and clears an appointed registrar.
 func (s *KeeperTestSuite) appointCommittee(allowance int64) {
 	registrar, err := s.keeper.RegistrarMandate.Get(s.ctx)
 	s.Require().NoError(err)
-	height := s.height()
+	now := s.now()
 	s.Require().NoError(s.deliver(&types.MsgSetGrantsMandate{
-		Authority: s.authority, Committee: s.committee, ActivationHeight: height, ExpiryHeight: height + 1_000,
+		Authority: s.authority, Committee: s.committee, ActivationTime: now, ExpiryTime: now + types.MaxPeriodLength,
 		CompensationAllowance: math.NewInt(allowance),
 	}))
 	s.term++
@@ -370,7 +372,7 @@ func (s *KeeperTestSuite) appointRegistrar() {
 	s.Require().NoError(err)
 	s.Require().NoError(s.deliver(&types.MsgCommitteeRegistrar{
 		Committee: s.committee, ExpectedTerm: s.term, Registrar: s.registrar,
-		ActivationHeight: committee.ActivationHeight, ExpiryHeight: committee.ExpiryHeight,
+		ActivationTime: committee.ActivationTime, ExpiryTime: committee.ExpiryTime,
 	}))
 	s.registrarTerm++
 }

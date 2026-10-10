@@ -291,7 +291,7 @@ func (m msgServer) CommitteeRegistrar(ctx context.Context, msg *types.MsgCommitt
 	if err != nil {
 		return nil, err
 	}
-	if err := m.k.SetRegistrarMandate(ctx, appointment, msg.Registrar, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
+	if err := m.k.SetRegistrarMandate(ctx, appointment, msg.Registrar, msg.ActivationTime, msg.ExpiryTime); err != nil {
 		return nil, err
 	}
 	return &types.MsgCommitteeRegistrarResponse{}, nil
@@ -473,10 +473,7 @@ func (m msgServer) SetPayee(ctx context.Context, msg *types.MsgSetPayee) (*types
 	g.Payee = msg.Payee
 	// A payee that refused is replaced; the block looks again at once rather than at the retry, but
 	// never sooner than the grant may be due.
-	floor := g.StartTime
-	if g.Kind != types.GrantKind_GRANT_KIND_MEMBER {
-		floor = max(floor, g.CreatedTime+g.Schedule.FirstLength)
-	}
+	floor := max(g.StartTime, g.CreatedTime+g.Schedule.FirstLength)
 	if now := chain.BlockSeconds(ctx); g.DueTime > now && now >= floor {
 		if err := m.k.setDueTime(ctx, &g, now); err != nil {
 			return nil, err

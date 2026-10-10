@@ -27,7 +27,7 @@ func (s *KeeperTestSuite) TestInitGenesisRefusals() {
 		s.SetupTest()
 		gs := types.DefaultGenesisState()
 		gs.GrantsMandate = types.NewDisabledGrantsMandate(1)
-		gs.GrantsMandate.Committee, gs.GrantsMandate.ActivationHeight, gs.GrantsMandate.ExpiryHeight = s.authority, 1, 100
+		gs.GrantsMandate.Committee, gs.GrantsMandate.ActivationTime, gs.GrantsMandate.ExpiryTime = s.authority, 1, 100
 		s.Require().NoError(gs.Validate())
 		fresh, ctx := s.newKeeper()
 		s.Require().ErrorContains(fresh.InitGenesis(ctx, gs), "distinct from the disbursement authority")
@@ -56,16 +56,16 @@ func (s *KeeperTestSuite) TestInitGenesisRefusals() {
 	})
 	s.Run("principal paid past genesis time", func() {
 		s.SetupTest()
-		// An ownership grant paid its first half before its ten-second cliff: every stamp sits in the
+		// An ownership grant paid its first half before its two-week cliff: every stamp sits in the
 		// past and the shape validates, but at genesis time nothing has accrued.
 		start := s.now() - 5
 		gs := types.DefaultGenesisState()
 		gs.Beneficiaries = []types.Beneficiary{{Address: a, Controller: a, OwnershipCommitted: math.NewInt(20), Seat: math.ZeroInt()}}
 		gs.Grants = []types.Grant{{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: a, Payee: a, CreatedBy: s.authority,
-			Amount: noah(20), Schedule: types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 1},
+			Amount: noah(20), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 1},
 			StartTime: start, CreatedTime: start, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(10),
-			Reference: "agreement", AwardValue: math.ZeroInt(), DueTime: start + 20,
+			Reference: "agreement", AwardValue: math.ZeroInt(), DueTime: start + hold + 10,
 		}}
 		gs.NextGrantId = 2
 		book := types.EmptyBook(types.ContributorsName)

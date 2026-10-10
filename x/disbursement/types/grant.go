@@ -42,9 +42,13 @@ func (g Grant) Validate() error {
 	if err := g.Amount.Validate(); err != nil {
 		return err
 	}
-	first, _, _, err := g.Schedule.Shares(g.Amount.Amount)
-	if err != nil {
+	if _, _, _, err := g.Schedule.Shares(g.Amount.Amount); err != nil {
 		return err
+	}
+	// Nothing pays before one period after an award, so every first period holds the two-week window
+	// to cancel what a stolen key made (D126).
+	if g.Schedule.FirstLength < MinFirstPeriod {
+		return errors.New("a grant's first period must be at least two weeks")
 	}
 	if g.Amount.Denom != chain.NoahBaseDenom {
 		if err := chain.ValidatePricedDenom(g.Amount.Denom); err != nil {
@@ -82,7 +86,7 @@ func (g Grant) Validate() error {
 	}
 	if g.Kind == GrantKind_GRANT_KIND_COMPENSATION {
 		if s, err := CompensationSchedule(g.Schedule.FirstLength, g.Schedule.Periods+1); err != nil || s != g.Schedule {
-			return errors.New("compensation is equal periods of at least a week, at most ten years in all")
+			return errors.New("compensation is equal periods of at least two weeks, at most ten years in all")
 		}
 	}
 	// A cancel may fall before a clock the grantor set ahead; nothing has accrued then.
@@ -100,9 +104,6 @@ func (g Grant) Validate() error {
 	if g.Paid.GT(earned) || (g.Cancelled() && !g.Remaining.Equal(earned.Sub(g.Paid))) {
 		return errors.New("grant exceeds its earned entitlement")
 	}
-	if g.Kind == GrantKind_GRANT_KIND_MEMBER && g.Paid.LT(first) {
-		return errors.New("member first period was not paid")
-	}
 	if g.SuspendedTime != 0 && (g.Kind != GrantKind_GRANT_KIND_MEMBER || g.SuspendedTime < g.CreatedTime || !fitsInt64(g.SuspendedTime)) {
 		return errors.New("invalid member suspension")
 	}
@@ -116,12 +117,12 @@ func (g Grant) Validate() error {
 	if (g.Kind == GrantKind_GRANT_KIND_MEMBER && g.MandateTerm == 0) || (g.Kind == GrantKind_GRANT_KIND_OWNERSHIP && g.MandateTerm != 0) {
 		return errors.New("a member carries its registrar term and ownership none")
 	}
-	// A grant waits for a look exactly while it owes principal and is not suspended, and a
-	// contributor grant never before one period after its award.
+	// A grant waits for a look exactly while it owes principal and is not suspended, and never
+	// before one period after its award.
 	if (g.DueTime == 0) != (g.Suspended() || g.Remaining.IsZero()) || !fitsInt64(g.DueTime) || (g.DueTime != 0 && g.DueTime < g.StartTime) {
 		return errors.New("invalid grant due time")
 	}
-	if g.Kind != GrantKind_GRANT_KIND_MEMBER && g.DueTime != 0 && g.DueTime < g.CreatedTime+g.Schedule.FirstLength {
+	if g.DueTime != 0 && g.DueTime < g.CreatedTime+g.Schedule.FirstLength {
 		return errors.New("grant is due before one period after its award")
 	}
 	return nil
@@ -137,10 +138,10 @@ func (g Grant) Cancelled() bool {
 	return g.CutoffTime != 0
 }
 
-// Accrued returns earned principal and the next accrual time. Members earn their first period at
-// registration; cancellation freezes the original clock; nothing accrues before one period after
-// the award, wherever the clock starts, so a backdated grant can be cancelled whole until then
-// (D116). Every time here is bounded, so the sums fit.
+// Accrued returns earned principal and the next accrual time. Cancellation freezes the original
+// clock; nothing accrues before one period after the award, whatever the kind and wherever the
+// clock starts, so a backdated grant or a member inside its hold can be cancelled whole until then
+// (D116, D126). Every time here is bounded, so the sums fit.
 func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	s := g.Schedule
 	first, each, _, err := s.Shares(g.Amount.Amount)
@@ -160,15 +161,7 @@ func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	firstEnd := g.StartTime + s.FirstLength
 	switch {
 	case now < firstEnd:
-		// A member's first share is paid at registration, so the member's next accrual is the
-		// second boundary; anyone else's is the first.
 		next = firstEnd
-		if g.Kind == GrantKind_GRANT_KIND_MEMBER {
-			earned, next = first, 0
-			if s.Periods > 0 {
-				next = firstEnd + s.PeriodLength
-			}
-		}
 	case now >= g.StartTime+s.Duration():
 		earned = g.Amount.Amount // The shares sum to the amount.
 	default:
@@ -177,13 +170,11 @@ func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 		earned = first.Add(each.MulRaw(int64(elapsed)))
 		next = firstEnd + (elapsed+1)*s.PeriodLength
 	}
-	if g.Kind != GrantKind_GRANT_KIND_MEMBER {
-		if gate := g.CreatedTime + s.FirstLength; now < gate {
-			earned = math.ZeroInt()
-			// What the clock has earned by the gate accrues at it.
-			if gate >= firstEnd {
-				next = gate
-			}
+	if gate := g.CreatedTime + s.FirstLength; now < gate {
+		earned = math.ZeroInt()
+		// What the clock has earned by the gate accrues at it.
+		if gate >= firstEnd {
+			next = gate
 		}
 	}
 	if g.Cancelled() {

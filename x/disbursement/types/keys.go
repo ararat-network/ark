@@ -14,7 +14,6 @@ const (
 	MembersName = "disbursement_members"
 )
 
-// Store prefixes; the gaps are retired prefixes, never reused.
 var (
 	ParamsKey                 = collections.NewPrefix(0)
 	GrantsKey                 = collections.NewPrefix(1)
@@ -31,10 +30,10 @@ var (
 	CommitteeTermGrantsKey    = collections.NewPrefix(12)
 	DueKey                    = collections.NewPrefix(13)
 	CompensationUsedKey       = collections.NewPrefix(14)
-	RegistrarMandateKey       = collections.NewPrefix(16)
-	RegistrarTermGrantsKey    = collections.NewPrefix(17)
-	MemberTrancheKey          = collections.NewPrefix(18)
-	GrantsByKindKey           = collections.NewPrefix(19)
+	RegistrarMandateKey       = collections.NewPrefix(15)
+	RegistrarTermGrantsKey    = collections.NewPrefix(16)
+	MemberTrancheKey          = collections.NewPrefix(17)
+	GrantsByKindKey           = collections.NewPrefix(18)
 )
 
 // PoolAccountNames lists the module's pool accounts in storage-key order.

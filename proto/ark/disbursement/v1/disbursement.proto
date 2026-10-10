@@ -20,8 +20,8 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // member_schedule is every member grant's shape, copied at registration: its first period is
-  // paid at registration whatever its length (D116).
+  // member_schedule is every member grant's shape, copied at registration: its first period, the
+  // tenth, pays when the two-week hold ends (D116, D126).
   Schedule member_schedule = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -54,8 +54,8 @@ message Params {
   ];
 }
 
-// Schedule is a grant's shape: a first period, paid at its end or at registration for a member,
-// then equal further periods. Shares are weight over the total; the last period takes the remainder.
+// Schedule is a grant's shape: a first period paid at its end, then equal further periods. Shares are
+// weight over the total; the last period takes the remainder.
 message Schedule {
   option (gogoproto.equal) = true;
   // first_length and first_weight are the first period, in seconds and in weight.
@@ -68,7 +68,7 @@ message Schedule {
   uint32 periods = 5 [(amino.dont_omitempty) = true];
 }
 
-// GrantsMandate appoints the grants committee for a height window. An empty committee
+// GrantsMandate appoints the grants committee for a time window. An empty committee
 // disables it; every replacement advances the term.
 message GrantsMandate {
   ark.mandate.v1.Envelope envelope = 1 [
@@ -86,7 +86,7 @@ message GrantsMandate {
   ];
 }
 
-// RegistrarMandate appoints the registrar, the account that registers members, for a height window
+// RegistrarMandate appoints the registrar, the account that registers members, for a time window
 // inside the grants committee's. The committee appoints it under its term, and a committee appointment
 // clears it; the envelope's committee is the registrar. An empty registrar disables it; every replacement
 // advances the term. The open member tranche is its only bound.
