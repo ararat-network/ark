@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -68,7 +69,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
@@ -126,8 +128,9 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
+// setBlockHeight moves height and block time together, one clock for both.
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
 }
 
 // fundInsurance sets what Bank reports for the Insurance account.
@@ -175,10 +178,10 @@ func (s *KeeperTestSuite) requireDueClaims(expected ...uint64) {
 func (s *KeeperTestSuite) appointCommittee(committee string) types.ClaimsMandate {
 	claimsMandate := types.ClaimsMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        committee,
-			ActivationHeight: 10,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      committee,
+			ActivationTime: 10,
+			ExpiryTime:     100,
 		},
 		CommitteeClaimLimit: noahCoin(1_000),
 	}

@@ -23,8 +23,8 @@ const maxSimulatedClaimLimit = int64(1_000_000_000_000)
 // RandomisedParams returns valid governance-owned launch parameters.
 func RandomisedParams(r *rand.Rand) types.Params {
 	params := types.DefaultParams()
-	params.ClaimCancellationPeriodBlocks = uint64(
-		r.Int63n(int64(types.DefaultClaimCancellationPeriodBlocks)) + 1,
+	params.ClaimCancellationPeriod = uint64(
+		r.Int63n(int64(types.DefaultClaimCancellationPeriod)) + 1,
 	)
 	return params
 }
@@ -40,8 +40,10 @@ func GenClaimsMandate(r *rand.Rand, accounts []string) types.ClaimsMandate {
 
 	appointment := types.NewDisabledClaimsMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = chain.BlocksPerYear
+	// Open from the epoch to the header's last instant, so the window spans whatever genesis time the
+	// simulation draws.
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = chain.MaxBlockSeconds
 	appointment.CommitteeClaimLimit = chain.NoahCoin(math.NewInt(maxSimulatedClaimLimit))
 
 	return appointment

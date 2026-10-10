@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/keeper"
@@ -12,7 +11,7 @@ import (
 )
 
 // activeClaimsCommittee resolves the appointed committee when the mandate is
-// active at this height and the run holds its key. A skip is the norm rather
+// active at this block time and the run holds its key. A skip is the norm rather
 // than a fault: an appointment may have expired, or been restored from an
 // export naming an address this run never held.
 func activeClaimsCommittee(
@@ -27,8 +26,8 @@ func activeClaimsCommittee(
 
 		return types.ClaimsMandate{}, simsx.SimAccount{}, false
 	}
-	if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-		reporter.Skip("claims mandate is not active at this height")
+	if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+		reporter.Skip("claims mandate is not active at this block time")
 
 		return types.ClaimsMandate{}, simsx.SimAccount{}, false
 	}
@@ -59,8 +58,8 @@ func MsgCommitteeSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 
 			return nil, nil
 		}
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		if height+params.ClaimCancellationPeriodBlocks > mandate.ExpiryHeight {
+		now := chain.BlockSeconds(ctx)
+		if now+params.ClaimCancellationPeriod > mandate.ExpiryTime {
 			reporter.Skip("claim would close after the appointment expires")
 
 			return nil, nil
@@ -126,12 +125,12 @@ func MsgCommitteeCancelClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 			return nil, nil
 		}
 
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		now := chain.BlockSeconds(ctx)
 		var candidates []uint64
 		if err := k.Claims.Walk(ctx, nil, func(id uint64, claim types.Claim) (bool, error) {
 			if claim.Status == types.ClaimStatus_CLAIM_STATUS_PENDING &&
 				claim.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE &&
-				height < claim.ClosingHeight {
+				now < claim.ClosingTime {
 				candidates = append(candidates, id)
 			}
 

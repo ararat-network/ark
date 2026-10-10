@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -62,7 +61,7 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 
 	return &types.QueryClaimsMandateResponse{
 		Mandate:            claimsMandate,
-		Active:             claimsMandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:             claimsMandate.IsActive(chain.BlockSeconds(ctx)),
 		AllowanceUsed:      chain.NoahCoin(allowanceUsed),
 		AllowanceRemaining: chain.NoahCoin(allowanceRemaining),
 	}, nil

@@ -23,7 +23,7 @@ type claimSubmission struct {
 	Submitter           string
 	Origin              types.ClaimAuthority
 	MandateTerm         uint64
-	MandateExpiryHeight uint64
+	MandateExpiryTime   uint64
 	CommitteeClaimLimit sdk.Coin
 	Reference           string
 	Recipient           string
@@ -44,17 +44,18 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 		return 0, err
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	height := uint64(sdkCtx.BlockHeight())
+	now := chain.BlockSeconds(ctx)
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("getting Claims params: %w", err)
 	}
-	closingHeight := height + params.ClaimCancellationPeriodBlocks
-	if sub.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE && closingHeight > sub.MandateExpiryHeight {
+	// Block time fits the header's int64 and the period is capped at a year, so this cannot wrap.
+	closingTime := now + params.ClaimCancellationPeriod
+	if sub.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE && closingTime > sub.MandateExpiryTime {
 		return 0, fmt.Errorf(
-			"claim closing height %d exceeds Claims mandate expiry height %d",
-			closingHeight,
-			sub.MandateExpiryHeight,
+			"claim closing time %d exceeds Claims mandate expiry time %d",
+			closingTime,
+			sub.MandateExpiryTime,
 		)
 	}
 	claimID, err := k.NextClaimID.Peek(ctx)
@@ -70,8 +71,9 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 		Recipient:       sub.Recipient,
 		Amount:          sub.Amount,
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
-		SubmittedHeight: height,
-		ClosingHeight:   closingHeight,
+		SubmittedHeight: uint64(sdkCtx.BlockHeight()),
+		SubmittedTime:   now,
+		ClosingTime:     closingTime,
 	}
 	if err := claim.Validate(); err != nil {
 		return 0, err
@@ -131,7 +133,7 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return 0, fmt.Errorf("setting claim %d: %w", claim.ClaimId, err)
 	}
-	if err := k.DueClaims.Set(ctx, collections.Join(claim.ClosingHeight, claim.ClaimId)); err != nil {
+	if err := k.DueClaims.Set(ctx, collections.Join(claim.ClosingTime, claim.ClaimId)); err != nil {
 		return 0, fmt.Errorf("indexing claim %d for settlement: %w", claim.ClaimId, err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimSubmitted{
@@ -143,7 +145,7 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 }
 
 // cancelClaim releases the Insurance reservation of one pending claim before
-// its closing height and records which authority vetoed it. Both handlers have
+// its closing time and records which authority vetoed it. Both handlers have
 // already authenticated their signer; what reaches here is the domain that
 // signed, which is the whole of what the cancellation decides.
 func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority, claimID uint64) error {
@@ -163,13 +165,13 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 		return fmt.Errorf("Claims committee cannot cancel governance-submitted claim %d", claim.ClaimId)
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	height := uint64(sdkCtx.BlockHeight())
-	scheduledHeight := claim.ClosingHeight
-	if height >= scheduledHeight {
+	now := chain.BlockSeconds(ctx)
+	scheduled := claim.ClosingTime
+	if now >= scheduled {
 		return fmt.Errorf(
-			"claim %d cancellation period ended at height %d",
+			"claim %d cancellation period ended at time %d",
 			claim.ClaimId,
-			claim.ClosingHeight,
+			claim.ClosingTime,
 		)
 	}
 
@@ -180,7 +182,7 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 	amount := claim.Amount.Amount
 	nextInsuranceReserved := insuranceReserved.Sub(amount)
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_CANCELLED
-	claim.ClosingHeight = height
+	claim.ClosingTime = now
 	claim.CancelledBy = canceller
 	if err := claim.Validate(); err != nil {
 		return fmt.Errorf("invalid cancelled claim: %w", err)
@@ -193,7 +195,7 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 	}
 	// A cancelled claim never comes due. Its record stays; only the queue entry
 	// goes.
-	if err := k.DueClaims.Remove(ctx, collections.Join(scheduledHeight, claim.ClaimId)); err != nil {
+	if err := k.DueClaims.Remove(ctx, collections.Join(scheduled, claim.ClaimId)); err != nil {
 		return fmt.Errorf("clearing settlement index for claim %d: %w", claim.ClaimId, err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimCancelled{

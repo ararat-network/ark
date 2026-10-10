@@ -10,7 +10,7 @@ import (
 
 // Combining the period bound into one condition means its lower and upper cases
 // assert the same message, so the string lives once for the package.
-const cancellationPeriodOutOfRange = "ClaimCancellationPeriodBlocks must be between one and"
+const cancellationPeriodOutOfRange = "ClaimCancellationPeriod must be between one and"
 
 func TestParamsValidate(t *testing.T) {
 	tests := []struct {
@@ -21,17 +21,17 @@ func TestParamsValidate(t *testing.T) {
 		{name: "defaults", mutate: func(*types.Params) {}},
 		{
 			name:   "minimum positive period",
-			mutate: func(params *types.Params) { params.ClaimCancellationPeriodBlocks = 1 },
+			mutate: func(params *types.Params) { params.ClaimCancellationPeriod = 1 },
 		},
 		{
 			name:      "zero cancellation period",
-			mutate:    func(params *types.Params) { params.ClaimCancellationPeriodBlocks = 0 },
+			mutate:    func(params *types.Params) { params.ClaimCancellationPeriod = 0 },
 			expectErr: cancellationPeriodOutOfRange,
 		},
 		{
 			name: "cancellation period at the domain cap",
 			mutate: func(p *types.Params) {
-				p.ClaimCancellationPeriodBlocks = types.MaxClaimCancellationPeriodBlocks
+				p.ClaimCancellationPeriod = types.MaxClaimCancellationPeriod
 			},
 		},
 		{
@@ -39,7 +39,7 @@ func TestParamsValidate(t *testing.T) {
 			// window, while the mandate still reads as configured.
 			name: "cancellation period above the domain cap",
 			mutate: func(p *types.Params) {
-				p.ClaimCancellationPeriodBlocks = types.MaxClaimCancellationPeriodBlocks + 1
+				p.ClaimCancellationPeriod = types.MaxClaimCancellationPeriod + 1
 			},
 			expectErr: cancellationPeriodOutOfRange,
 		},

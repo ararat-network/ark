@@ -8,7 +8,7 @@ This module owns the Insurance custody account, claim records, reservations, and
 | --- | --- |
 | [keeper/claims.go](keeper/claims.go) | Claim submission, cancellation, and record processing. |
 | [keeper/abci.go](keeper/abci.go) | Due-claim settlement. |
-| [keeper/mandate.go](keeper/mandate.go) | Appointment and term allowance. |
+| [keeper/mandate.go](keeper/mandate.go) | Committee authorisation: signer, term, and window. |
 | [keeper/send_restriction.go](keeper/send_restriction.go) | Inbound custody restrictions. |
 | [keeper/msg_server.go](keeper/msg_server.go) | Governance and committee transaction entry points. |
 
@@ -19,7 +19,7 @@ This module owns the Insurance custody account, claim records, reservations, and
 
 ## State and integration
 
-`Claims` retains records; `DueClaims` indexes pending work by closing height and claim ID. `InsuranceReserved` and `ClaimsAllowanceUsed` have different purposes: pending custody commitments and term usage. See `keeper/keeper.go` for their definitions. Application EndBlock ordering places Claims after governance so cancellations enacted there are visible to settlement.
+`NextClaimID` issues gap-free IDs; `Claims` retains records; `DueClaims` indexes pending work by closing time and claim ID. `InsuranceReserved` and `ClaimsAllowanceUsed` have different purposes: pending custody commitments and term usage. See `keeper/keeper.go` for their definitions. Application EndBlock ordering places Claims after governance so cancellations enacted there are visible to settlement.
 
 ## Claims and reservation lifecycle
 
@@ -28,10 +28,12 @@ targets and can credit Insurance but cannot debit it. `RecognisedCapital` report
 so one approved claim cannot cover a second loss. The reservation spans appointments; allowance usage resets with a
 new term. Keeping them separate prevents appointment changes from freeing money still promised to pending claims.
 
-Submission records the origin, submitter, recipient, amount, reference, submission/closing heights, and a committee
-term only for committee claims. The reference is a nonempty pointer to the off-chain case record, at most 2,048 bytes
+Submission records the origin, submitter, recipient, amount, reference, submission height and time, closing time, and a committee
+term only for committee claims. A recipient that is the Insurance module account or that Bank blocks is refused at
+submission. The reference is a nonempty pointer to the off-chain case record, at most 2,048 bytes
 (`chain.MaxReferenceBytes`). Governance claims have term zero and do not require an active mandate. Both paths
-use the current `claim_cancellation_period_blocks`; putting the period in the mandate was rejected because it made
+use the current `claim_cancellation_period`, in seconds of block time like the governance vote it must fit (D133);
+putting the period in the mandate was rejected because it made
 governance claims depend on an enabled committee. Appointments must have a span at least as long as the current
 period. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
 remain the backstop.
@@ -60,7 +62,7 @@ go test ./x/claims/...
 
 Keeper suites build their fixtures in [keeper/keeper_test.go](keeper/keeper_test.go); types tests cover parsing and
 validation directly. [simulation/](simulation/) holds this module's simulation factories, while
-[testutil/](testutil/) holds shared test helpers and mocks. Use [application tests](../../app/README.md) and
+[testutil/](testutil/) holds the generated keeper mocks. Use [application tests](../../app/README.md) and
 [integration tests](../../tests/README.md) when changing behaviour across module boundaries.
 
 Edit schemas under [proto/ark/claims/](../../proto/ark/claims/), then follow the [generation guide](../../proto/README.md).

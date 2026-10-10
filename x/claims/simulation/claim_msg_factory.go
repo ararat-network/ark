@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/keeper"
@@ -41,17 +40,17 @@ func MsgSetClaimsMandateFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.M
 		}
 
 		r := testData.Rand()
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		activation := height + r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activation := now + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetClaimsMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activation,
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activation,
 			// Validation demands activation strictly precede expiry, and the
-			// handler demands expiry sit above the current height and the span
+			// handler demands expiry sit above the current block time and the span
 			// cover the cancellation period.
-			ExpiryHeight: activation + params.ClaimCancellationPeriodBlocks + r.Uint64InRange(1, 100_000),
+			ExpiryTime: activation + params.ClaimCancellationPeriod + r.Uint64InRange(1, 100_000),
 			// A configured mandate must allow the committee to pay something.
 			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(int64(r.IntInRange(1, 1_000_000_000)))),
 		}
@@ -111,11 +110,11 @@ func MsgCancelClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCan
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgCancelClaim) {
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+		now := chain.BlockSeconds(ctx)
 
 		var candidates []uint64
 		if err := k.Claims.Walk(ctx, nil, func(id uint64, claim types.Claim) (bool, error) {
-			if claim.Status == types.ClaimStatus_CLAIM_STATUS_PENDING && height < claim.ClosingHeight {
+			if claim.Status == types.ClaimStatus_CLAIM_STATUS_PENDING && now < claim.ClosingTime {
 				candidates = append(candidates, id)
 			}
 

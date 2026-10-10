@@ -19,6 +19,11 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := data.Validate(); err != nil {
 		return fmt.Errorf("invalid Claims genesis state: %w", err)
 	}
+	// An appointment naming the authority is a delegation to nobody that still
+	// reads as a live fast path; the message server refuses it and so must the import.
+	if !data.ClaimsMandate.IsDisabled() && data.ClaimsMandate.Committee == k.authority {
+		return fmt.Errorf("Claims committee must be distinct from the Claims authority")
+	}
 	// Recipient payability is checked at settlement, not import. A pending claim with a blocked
 	// recipient remains importable and settles as failed with its reservation released.
 	moduleAccount := k.accountKeeper.GetModuleAccount(ctx, types.InsuranceName)
@@ -63,12 +68,12 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 			return fmt.Errorf("setting claim %d: %w", claim.ClaimId, err)
 		}
 		// The settlement index is derived, not exported: a pending claim is due
-		// at its own closing height, and a finalised one is due never. An
+		// at its own closing time, and a finalised one is due never. An
 		// import whose claims are already payable settles in the first EndBlock.
 		if claim.Status != types.ClaimStatus_CLAIM_STATUS_PENDING {
 			continue
 		}
-		if err := k.DueClaims.Set(ctx, collections.Join(claim.ClosingHeight, claim.ClaimId)); err != nil {
+		if err := k.DueClaims.Set(ctx, collections.Join(claim.ClosingTime, claim.ClaimId)); err != nil {
 			return fmt.Errorf("indexing claim %d for settlement: %w", claim.ClaimId, err)
 		}
 	}

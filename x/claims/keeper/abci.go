@@ -6,20 +6,17 @@ import (
 
 	"cosmossdk.io/collections"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // EndBlocker settles every claim whose cancellation period closed at or before
-// this height.
+// this block's time.
 func (k *Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	height := uint64(sdkCtx.BlockHeight())
-	iterator, err := k.DueClaims.Iterate(ctx, collections.NewPrefixUntilPairRange[uint64, uint64](height))
+	iterator, err := k.DueClaims.Iterate(ctx, collections.NewPrefixUntilPairRange[uint64, uint64](chain.BlockSeconds(ctx)))
 	if err != nil {
 		return fmt.Errorf("iterating due claims: %w", err)
 	}

@@ -47,11 +47,11 @@ func TestRandomisedGenState(t *testing.T) {
 	var claimsGenesis types.GenesisState
 	simState.Cdc.MustUnmarshalJSON(simState.GenState[types.ModuleName], &claimsGenesis)
 
-	require.Positive(t, claimsGenesis.Params.ClaimCancellationPeriodBlocks)
+	require.Positive(t, claimsGenesis.Params.ClaimCancellationPeriod)
 	require.LessOrEqual(
 		t,
-		claimsGenesis.Params.ClaimCancellationPeriodBlocks,
-		types.DefaultClaimCancellationPeriodBlocks,
+		claimsGenesis.Params.ClaimCancellationPeriod,
+		types.DefaultClaimCancellationPeriod,
 	)
 
 	// The committee is appointed from the run's own accounts so the simulation
@@ -74,11 +74,11 @@ func TestRandomisedParamsStayInRange(t *testing.T) {
 
 	for range 100 {
 		params := simulation.RandomisedParams(r)
-		require.Positive(t, params.ClaimCancellationPeriodBlocks)
+		require.Positive(t, params.ClaimCancellationPeriod)
 		require.LessOrEqual(
 			t,
-			params.ClaimCancellationPeriodBlocks,
-			types.DefaultClaimCancellationPeriodBlocks,
+			params.ClaimCancellationPeriod,
+			types.DefaultClaimCancellationPeriod,
 		)
 		require.NoError(t, params.Validate())
 	}

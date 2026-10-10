@@ -46,17 +46,17 @@ message Params {
   option (gogoproto.equal) = true;
   option (amino.name) = "ark/claims/Params";
 
-  // claim_cancellation_period_blocks is the shared veto window between any
-  // claim's submission and its executable height, for both origins.
+  // claim_cancellation_period is the shared veto window, in seconds, between
+  // any claim's submission and the block time it pays, for both origins.
   // Governance owns it, so replacing the Claims mandate never changes it.
-  uint64 claim_cancellation_period_blocks = 1 [(amino.dont_omitempty) = true];
+  uint64 claim_cancellation_period = 1 [(amino.dont_omitempty) = true];
 }
 
-// ClaimsMandate appoints a height-scoped committee with a fixed gross term allowance. An empty
+// ClaimsMandate appoints a time-scoped committee with a fixed gross term allowance. An empty
 // committee disables it; every replacement advances the term to invalidate older committee
 // transactions.
 message ClaimsMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,
@@ -72,7 +72,7 @@ message ClaimsMandate {
 message Claim {
   uint64 claim_id = 1 [(amino.dont_omitempty) = true];
   string submitter = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  ClaimAuthority origin = 3;
+  ClaimAuthority origin = 3 [(amino.dont_omitempty) = true];
   // mandate_term records the committee appointment that authorised the claim;
   // zero for governance claims, which do not depend on the Claims mandate.
   uint64 mandate_term = 4 [(amino.dont_omitempty) = true];
@@ -85,8 +85,12 @@ message Claim {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  ClaimStatus status = 8;
-  uint64 submitted_height = 9;
-  uint64 closing_height = 10;
-  ClaimAuthority cancelled_by = 11;
+  ClaimStatus status = 8 [(amino.dont_omitempty) = true];
+  uint64 submitted_height = 9 [(amino.dont_omitempty) = true];
+  // closing_time is the block time, in Unix seconds, a pending claim pays at,
+  // or the time a cancelled one was vetoed.
+  uint64 closing_time = 10 [(amino.dont_omitempty) = true];
+  ClaimAuthority cancelled_by = 11 [(amino.dont_omitempty) = true];
+  // submitted_time is the block time of submission, in Unix seconds.
+  uint64 submitted_time = 12 [(amino.dont_omitempty) = true];
 }

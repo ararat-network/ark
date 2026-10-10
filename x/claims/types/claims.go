@@ -88,14 +88,18 @@ func (claim Claim) Validate() error {
 	if !claim.Amount.IsPositive() {
 		return errors.New("claim amount must be positive")
 	}
-	// Pending and settled records retain a closing height strictly after submission. Cancelled
-	// records use the veto height, which may equal submission height.
+	// Pending and settled records retain a closing time strictly after submission. Cancelled
+	// records use the veto time, which may equal submission time.
 	if claim.Status == ClaimStatus_CLAIM_STATUS_CANCELLED {
-		if claim.ClosingHeight < claim.SubmittedHeight {
-			return errors.New("cancelled claim closing height cannot precede its submission height")
+		if claim.ClosingTime < claim.SubmittedTime {
+			return errors.New("cancelled claim closing time cannot precede its submission time")
 		}
-	} else if claim.ClosingHeight <= claim.SubmittedHeight {
-		return errors.New("claim closing height must follow its submission height")
+	} else if claim.ClosingTime <= claim.SubmittedTime {
+		return errors.New("claim closing time must follow its submission time")
+	}
+	// A closing past the header's int64 is one no block reaches.
+	if claim.ClosingTime > chain.MaxBlockSeconds {
+		return fmt.Errorf("claim closing time %d exceeds the header's int64", claim.ClosingTime)
 	}
 	switch claim.Status {
 	case ClaimStatus_CLAIM_STATUS_PENDING:

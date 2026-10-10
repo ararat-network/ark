@@ -54,8 +54,8 @@ func TestClaimsMandateValidate(t *testing.T) {
 		{
 			name:      "invalid active heights",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.ActivationHeight = mandate.ExpiryHeight },
-			expectErr: "activation height must precede expiry height",
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.ActivationTime = mandate.ExpiryTime },
+			expectErr: "activation time must precede expiry time",
 		},
 		{
 			name:      "unset committee claim limit",
@@ -99,8 +99,8 @@ func TestClaimsMandateValidate(t *testing.T) {
 
 func TestClaimsMandateIsActive(t *testing.T) {
 	claimsMandate := validClaimsMandate()
-	activation := claimsMandate.ActivationHeight
-	expiry := claimsMandate.ExpiryHeight
+	activation := claimsMandate.ActivationTime
+	expiry := claimsMandate.ExpiryTime
 	require.False(t, claimsMandate.IsActive(activation-1))
 	require.True(t, claimsMandate.IsActive(activation))
 	require.True(t, claimsMandate.IsActive(expiry-1))
@@ -170,26 +170,32 @@ func TestClaimValidate(t *testing.T) {
 		{
 			name:      "closes at submission",
 			claim:     validPendingClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
-			expectErr: "must follow its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
+			expectErr: "must follow its submission time",
 		},
 		{
-			name:      "paid at its submission height",
+			name:      "paid at its submission time",
 			claim:     validPaidClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
-			expectErr: "must follow its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
+			expectErr: "must follow its submission time",
 		},
 		{
 			// A veto may land in the very block that submitted the claim.
 			name:   "cancelled in its submission block",
 			claim:  validCancelledClaim,
-			mutate: func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
+			mutate: func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
 		},
 		{
 			name:      "closes before submission",
 			claim:     validCancelledClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight - 1 },
-			expectErr: "cannot precede its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime - 1 },
+			expectErr: "cannot precede its submission time",
+		},
+		{
+			name:      "closes past the header's int64",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = chain.MaxBlockSeconds + 1 },
+			expectErr: "exceeds the header's int64",
 		},
 		{
 			name:  "pending with canceller",
@@ -263,10 +269,10 @@ func TestClaimValidate(t *testing.T) {
 func validClaimsMandate() types.ClaimsMandate {
 	return types.ClaimsMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        testAddress(1),
-			ActivationHeight: 10,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      testAddress(1),
+			ActivationTime: 10,
+			ExpiryTime:     100,
 		},
 		CommitteeClaimLimit: noahCoin(1_000),
 	}
@@ -283,7 +289,8 @@ func validPendingClaim() types.Claim {
 		Amount:          sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		SubmittedTime:   20,
+		ClosingTime:     25,
 	}
 }
 
@@ -291,7 +298,7 @@ func validPaidClaim() types.Claim {
 	claim := validPendingClaim()
 	claim.ClaimId = 2
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
-	claim.ClosingHeight = 25
+	claim.ClosingTime = 25
 	return claim
 }
 
@@ -299,9 +306,9 @@ func validCancelledClaim() types.Claim {
 	claim := validPendingClaim()
 	claim.ClaimId = 3
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_CANCELLED
-	// A veto closes the claim early, so its closing height moves back from the
-	// 25 submission scheduled to the height the cancellation landed.
-	claim.ClosingHeight = 22
+	// A veto closes the claim early, so its closing time moves back from the
+	// 25 submission scheduled to the time the cancellation landed.
+	claim.ClosingTime = 22
 	claim.CancelledBy = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
 	return claim
 }

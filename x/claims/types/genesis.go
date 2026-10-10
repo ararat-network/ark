@@ -96,12 +96,12 @@ func (gs GenesisState) Validate() error {
 		if claim.Status == ClaimStatus_CLAIM_STATUS_PENDING &&
 			claim.Origin == ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE &&
 			claim.MandateTerm == claimsMandate.Term &&
-			claim.ClosingHeight > claimsMandate.ExpiryHeight {
+			claim.ClosingTime > claimsMandate.ExpiryTime {
 			return fmt.Errorf(
-				"claim %d closing height %d exceeds its authorising mandate expiry height %d",
+				"claim %d closing time %d exceeds its authorising mandate expiry time %d",
 				claim.ClaimId,
-				claim.ClosingHeight,
-				claimsMandate.ExpiryHeight,
+				claim.ClosingTime,
+				claimsMandate.ExpiryTime,
 			)
 		}
 		if claim.Origin == ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE &&

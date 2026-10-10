@@ -42,12 +42,12 @@ func (s *KeeperTestSuite) TestInitGenesisRoundTrip() {
 		Amount:          noahCoin(100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		ClosingTime:     25,
 	}
 	claimsMandate := s.appointCommittee(testAddress(1))
 
 	genesis := types.NewGenesisState(
-		types.Params{ClaimCancellationPeriodBlocks: 5},
+		types.Params{ClaimCancellationPeriod: 5},
 		claimsMandate,
 		math.NewInt(100),
 		math.NewInt(100),
@@ -89,12 +89,12 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			Amount:          noahCoin(100),
 			Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 			SubmittedHeight: 20,
-			ClosingHeight:   25,
+			ClosingTime:     25,
 		}
 	}
 	valid := func() *types.GenesisState {
 		return types.NewGenesisState(
-			types.Params{ClaimCancellationPeriodBlocks: 5},
+			types.Params{ClaimCancellationPeriod: 5},
 			types.DefaultClaimsMandate(),
 			math.ZeroInt(),
 			math.NewInt(100),
@@ -131,6 +131,16 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			balances:  sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin("usdr", 1)),
 			mutate:    func(*types.GenesisState) {},
 			expectErr: "unsupported genesis denom",
+		},
+		{
+			// The message server refuses the authority as committee; the import
+			// must too, or a file could seat a delegation to nobody as a live fast path.
+			name:     "committee equal to the authority",
+			balances: sdk.NewCoins(noahCoin(5_000)),
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ClaimsMandate = s.appointCommittee(s.authority)
+			},
+			expectErr: "must be distinct from the Claims authority",
 		},
 		{
 			// A recipient blocked while its claim was pending is a state the

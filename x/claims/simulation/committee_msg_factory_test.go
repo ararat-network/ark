@@ -105,7 +105,7 @@ func TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom(t *testing.T) {
 func TestMsgCommitteeSubmitClaimFactorySkipsWhenTheClaimWouldOutliveTheMandate(t *testing.T) {
 	f := newClaimFixture(t, 1_000_000)
 	mandate := f.appointCommittee(t)
-	mandate.ExpiryHeight = uint64(f.ctx.BlockHeight()) + 1
+	mandate.ExpiryTime = uint64(f.ctx.BlockHeight()) + 1
 	require.NoError(t, f.keeper.ClaimsMandate.Set(f.ctx, mandate))
 
 	_, msg := simulation.MsgCommitteeSubmitClaimFactory(f.keeper)(f.ctx, f.testData, f.reporter)

@@ -14,7 +14,7 @@ func (s *KeeperTestSuite) TestQueryParams() {
 
 	resp, err := s.queryClient.Params(s.ctx, &types.QueryParamsRequest{})
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(42), resp.Params.ClaimCancellationPeriodBlocks)
+	s.Require().Equal(uint64(42), resp.Params.ClaimCancellationPeriod)
 }
 
 func (s *KeeperTestSuite) TestQueryClaimsMandate() {
@@ -121,8 +121,8 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 		_, err = s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           testAddress(2),
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
+			ActivationTime:      10,
+			ExpiryTime:          100,
 			CommitteeClaimLimit: noahCoin(1_000),
 		})
 		s.Require().NoError(err)

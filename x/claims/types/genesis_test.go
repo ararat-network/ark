@@ -58,7 +58,7 @@ func TestGenesisValidate(t *testing.T) {
 		{
 			name: "invalid params",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Params.ClaimCancellationPeriodBlocks = 0
+				genesis.Params.ClaimCancellationPeriod = 0
 			},
 			expectErr: cancellationPeriodOutOfRange,
 		},
@@ -205,16 +205,16 @@ func TestGenesisValidate(t *testing.T) {
 		{
 			name: "current-term pending claim closing past mandate expiry",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Claims[0].ClosingHeight = genesis.ClaimsMandate.ExpiryHeight + 1
+				genesis.Claims[0].ClosingTime = genesis.ClaimsMandate.ExpiryTime + 1
 			},
-			expectErr: "exceeds its authorising mandate expiry height",
+			expectErr: "exceeds its authorising mandate expiry time",
 		},
 		{
-			// Submission permits a closing height exactly at expiry, so import
+			// Submission permits a closing time exactly at expiry, so import
 			// must as well.
 			name: "current-term pending claim closing at mandate expiry",
 			mutate: func(genesis *types.GenesisState) {
-				genesis.Claims[0].ClosingHeight = genesis.ClaimsMandate.ExpiryHeight
+				genesis.Claims[0].ClosingTime = genesis.ClaimsMandate.ExpiryTime
 			},
 		},
 		{
@@ -224,7 +224,7 @@ func TestGenesisValidate(t *testing.T) {
 			mutate: func(genesis *types.GenesisState) {
 				genesis.ClaimsMandate.Term = 2
 				genesis.ClaimsAllowanceUsed = math.ZeroInt()
-				genesis.Claims[0].ClosingHeight = genesis.ClaimsMandate.ExpiryHeight + 1
+				genesis.Claims[0].ClosingTime = genesis.ClaimsMandate.ExpiryTime + 1
 			},
 		},
 	}

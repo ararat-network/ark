@@ -39,7 +39,7 @@ type Keeper struct {
 	InsuranceReserved   collections.Item[math.Int]
 	NextClaimID         collections.Sequence
 	Claims              collections.Map[uint64, types.Claim]
-	// DueClaims indexes pending claims by (closing height, claim ID) so
+	// DueClaims indexes pending claims by (closing time, claim ID) so
 	// EndBlocker can settle the ones that have come due without walking the
 	// permanent record. A claim leaves the index the block it is paid or
 	// cancelled; the record it points at is never removed.

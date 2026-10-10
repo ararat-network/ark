@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -52,7 +53,7 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, storetypes.NewTransientStoreKey("transient_test"))
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	insuranceAddr := authtypes.NewModuleAddress(types.InsuranceName)
@@ -117,11 +118,11 @@ func TestMsgSetClaimsMandateFactory(t *testing.T) {
 
 	require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	require.True(t, msg.CommitteeClaimLimit.IsPositive())
 	params, err := f.keeper.Params.Get(f.ctx)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, msg.ExpiryHeight-msg.ActivationHeight, params.ClaimCancellationPeriodBlocks)
+	require.GreaterOrEqual(t, msg.ExpiryTime-msg.ActivationTime, params.ClaimCancellationPeriod)
 	// The factory's whole job is to emit what the handler accepts.
 	_, err = f.msgServer.SetClaimsMandate(f.ctx, msg)
 	require.NoError(t, err)

@@ -50,7 +50,7 @@ func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 		claim, err := s.keeper.Claims.Get(s.ctx, claimID)
 		s.Require().NoError(err)
 		s.Require().Equal(types.ClaimStatus_CLAIM_STATUS_PAID, claim.Status)
-		s.Require().Equal(uint64(25), claim.ClosingHeight)
+		s.Require().Equal(uint64(25), claim.ClosingTime)
 		// Nobody signs for a settlement, so a paid claim names no canceller.
 		s.Require().Empty(claim.CancelledBy)
 
@@ -60,7 +60,7 @@ func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 		s.requireDueClaims()
 	})
 
-	s.Run("leaves a claim alone before its closing height", func() {
+	s.Run("leaves a claim alone before its closing time", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.setBlockHeight(20)
@@ -74,7 +74,7 @@ func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 		s.requireDueClaims(claimID)
 	})
 
-	// The veto window closes at the closing height and the sweep runs after
+	// The veto window closes at the closing time and the sweep runs after
 	// that block's transactions, so the two can never act on the same claim.
 	s.Run("settles the block the veto window closes", func() {
 		s.SetupTest()
@@ -105,7 +105,7 @@ func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 		s.setBlockHeight(30)
 		second := s.submitGovernanceClaim(100)
 
-		// Height 40 is past both closing heights, so a single sweep drains
+		// Height 40 is past both closing times, so a single sweep drains
 		// the backlog rather than one claim per block.
 		s.setBlockHeight(40)
 		s.expectPayouts(2)
@@ -197,7 +197,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsUncoveredClaim() {
 
 	failed, err := s.keeper.Claims.Get(s.ctx, claimID)
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(25), failed.ClosingHeight)
+	s.Require().Equal(uint64(25), failed.ClosingTime)
 	s.Require().Empty(failed.CancelledBy)
 
 	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
@@ -249,7 +249,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsInsuranceSelfPayment() {
 
 	// Submission refuses this recipient, so a stored claim can only carry it if
 	// the rules moved under an immutable record. Written directly, the way such
-	// a record would arrive. The closing height and ID are untouched, so the
+	// a record would arrive. The closing time and ID are untouched, so the
 	// queue entry stays valid and the claim still comes due.
 	claim, err := s.keeper.Claims.Get(s.ctx, claimID)
 	s.Require().NoError(err)
@@ -303,7 +303,7 @@ func (s *KeeperTestSuite) TestEndBlockerDropsDivergentQueueEntry() {
 // it today, which is exactly why the sweep must not trust that refusal ever ran.
 func (s *KeeperTestSuite) queueClaimBypassingSubmission(claim types.Claim) {
 	s.Require().NoError(s.keeper.Claims.Set(s.ctx, claim.ClaimId, claim))
-	s.Require().NoError(s.keeper.DueClaims.Set(s.ctx, collections.Join(claim.ClosingHeight, claim.ClaimId)))
+	s.Require().NoError(s.keeper.DueClaims.Set(s.ctx, collections.Join(claim.ClosingTime, claim.ClaimId)))
 	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, claim.Amount.Amount))
 }
 
@@ -323,7 +323,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsUnparseableRecipient() {
 		Amount:          noahCoin(100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		ClosingTime:     25,
 	})
 
 	// No payout is arranged: Bank must never be asked to pay it.
@@ -354,7 +354,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsRecordFailingValidation() {
 		Amount:          noahCoin(100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		ClosingTime:     25,
 	})
 
 	// No payout is arranged: Bank must never be asked to pay it.

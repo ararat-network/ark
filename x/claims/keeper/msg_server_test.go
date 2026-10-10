@@ -13,7 +13,7 @@ import (
 // setCancellationPeriod pins a short veto window so test heights stay readable.
 func (s *KeeperTestSuite) setCancellationPeriod(blocks uint64) {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.Params{
-		ClaimCancellationPeriodBlocks: blocks,
+		ClaimCancellationPeriod: blocks,
 	}))
 }
 
@@ -27,19 +27,19 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 		{
 			name:      "governance authority",
 			authority: s.authority,
-			params:    types.Params{ClaimCancellationPeriodBlocks: 42},
+			params:    types.Params{ClaimCancellationPeriod: 42},
 		},
 		{
 			name:      "wrong authority",
 			authority: testAddress(9),
-			params:    types.Params{ClaimCancellationPeriodBlocks: 42},
+			params:    types.Params{ClaimCancellationPeriod: 42},
 			expectErr: "invalid authority",
 		},
 		{
 			name:      "invalid params",
 			authority: s.authority,
-			params:    types.Params{ClaimCancellationPeriodBlocks: 0},
-			expectErr: "ClaimCancellationPeriodBlocks must be between one and",
+			params:    types.Params{ClaimCancellationPeriod: 0},
+			expectErr: "ClaimCancellationPeriod must be between one and",
 		},
 	}
 
@@ -71,8 +71,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
+			ActivationTime:      10,
+			ExpiryTime:          100,
 			CommitteeClaimLimit: noahCoin(1_000),
 		})
 		s.Require().NoError(err)
@@ -93,8 +93,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           testAddress(2),
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
+			ActivationTime:      10,
+			ExpiryTime:          100,
 			CommitteeClaimLimit: noahCoin(500),
 		})
 		s.Require().NoError(err)
@@ -114,11 +114,11 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
+			ActivationTime:      10,
+			ExpiryTime:          100,
 			CommitteeClaimLimit: noahCoin(1_000),
 		})
-		s.Require().ErrorContains(err, "not above the current height")
+		s.Require().ErrorContains(err, "not after the current block time")
 	})
 
 	s.Run("partially elapsed window is accepted", func() {
@@ -129,8 +129,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
+			ActivationTime:      10,
+			ExpiryTime:          100,
 			CommitteeClaimLimit: noahCoin(1_000),
 		})
 		s.Require().NoError(err)
@@ -166,8 +166,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			msg: &types.MsgSetClaimsMandate{
 				Authority:           testAddress(9),
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        100,
+				ActivationTime:      10,
+				ExpiryTime:          100,
 				CommitteeClaimLimit: noahCoin(1_000),
 			},
 			expectErr: "invalid authority",
@@ -177,8 +177,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			msg: &types.MsgSetClaimsMandate{
 				Authority:           s.authority,
 				Committee:           s.authority,
-				ActivationHeight:    10,
-				ExpiryHeight:        100,
+				ActivationTime:      10,
+				ExpiryTime:          100,
 				CommitteeClaimLimit: noahCoin(1_000),
 			},
 			expectErr: "must be distinct from the Claims authority",
@@ -188,8 +188,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			msg: &types.MsgSetClaimsMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        13,
+				ActivationTime:      10,
+				ExpiryTime:          13,
 				CommitteeClaimLimit: noahCoin(1_000),
 			},
 			expectErr: "cannot be shorter than the claim cancellation period",
@@ -199,8 +199,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			msg: &types.MsgSetClaimsMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        15,
+				ActivationTime:      10,
+				ExpiryTime:          15,
 				CommitteeClaimLimit: noahCoin(1_000),
 			},
 		},
@@ -209,8 +209,8 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			msg: &types.MsgSetClaimsMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationHeight:    10,
-				ExpiryHeight:        100,
+				ActivationTime:      10,
+				ExpiryTime:          100,
 				CommitteeClaimLimit: noahCoin(0),
 			},
 			expectErr: "claim limit must be positive",
@@ -254,7 +254,8 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 		s.Require().Equal(types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE, claim.Origin)
 		s.Require().Equal(uint64(0), claim.MandateTerm)
 		s.Require().Equal(uint64(20), claim.SubmittedHeight)
-		s.Require().Equal(uint64(25), claim.ClosingHeight)
+		s.Require().Equal(uint64(20), claim.SubmittedTime)
+		s.Require().Equal(uint64(25), claim.ClosingTime)
 
 		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
 		s.Require().NoError(err)
@@ -459,7 +460,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.Require().NoError(err)
 	})
 
-	s.Run("closing height may not pass mandate expiry", func() {
+	s.Run("closing time may not pass mandate expiry", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
@@ -468,7 +469,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		// 96 + 5 = 101, one past expiry.
 		s.setBlockHeight(96)
 		_, err := submit(100)
-		s.Require().ErrorContains(err, "exceeds Claims mandate expiry height")
+		s.Require().ErrorContains(err, "exceeds Claims mandate expiry time")
 
 		// 95 + 5 = 100, exactly at expiry, which is permitted.
 		s.setBlockHeight(95)
@@ -579,7 +580,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.Require().True(reserved.IsZero())
 
 		// A cancelled claim must leave the settlement queue, or EndBlock would
-		// pay it the moment its closing height arrived.
+		// pay it the moment its closing time arrived.
 		s.requireDueClaims()
 	})
 
@@ -598,7 +599,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		claim, err := s.keeper.Claims.Get(s.ctx, claimID)
 		s.Require().NoError(err)
 		s.Require().Equal(types.ClaimStatus_CLAIM_STATUS_CANCELLED, claim.Status)
-		s.Require().Equal(claim.SubmittedHeight, claim.ClosingHeight)
+		s.Require().Equal(claim.SubmittedHeight, claim.ClosingTime)
 
 		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
 		s.Require().NoError(err)
@@ -634,7 +635,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.Require().Equal(math.NewInt(400), used)
 	})
 
-	s.Run("at closing height the window has closed", func() {
+	s.Run("at closing time the window has closed", func() {
 		s.SetupTest()
 		claimID := submitGovernance()
 		s.setBlockHeight(25)
