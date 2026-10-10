@@ -108,8 +108,8 @@ func TestValidateGenesisState(t *testing.T) {
 				}
 				gs.ConversionMandate = types.NewDisabledConversionMandate(1)
 				gs.ConversionMandate.Committee = authtypes.NewModuleAddress("capacity").String()
-				gs.ConversionMandate.ActivationHeight = 1
-				gs.ConversionMandate.ExpiryHeight = 2
+				gs.ConversionMandate.ActivationTime = 1
+				gs.ConversionMandate.ExpiryTime = 2
 				gs.ConversionMandate.MinimumPolicy = bound
 				gs.ConversionMandate.MaximumPolicy = bound
 			},

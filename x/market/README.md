@@ -9,7 +9,7 @@ Market implements conversion between NOAH and registered assets, and between eli
 | [keeper/price.go](keeper/price.go) | A pair's snapshot, the forward quote, and its inverse. |
 | [keeper/orders.go](keeper/orders.go) | Sell, Buy, and Settle entry points and their bounds. |
 | [keeper/ledger.go](keeper/ledger.go) | Booking a quote through the module account. |
-| [keeper/conversion.go](keeper/conversion.go) | Conversion execution. |
+| [keeper/conversion.go](keeper/conversion.go) | Policy application shared by governance and committee updates. |
 | [keeper/accumulator.go](keeper/accumulator.go) | Block-local conversion accumulation. |
 | [keeper/abci.go](keeper/abci.go) | Block conversion settlement, returned burn, and pool replenishment. |
 | [keeper/tobin.go](keeper/tobin.go) | Tobin overrides. |
@@ -33,7 +33,7 @@ Setting requires a registered asset, while removing requires only the override. 
 rather than making Asset write Market state. A new denomination cannot inherit a retired denomination's history.
 
 Ordinary conversion accepts `ACTIVE` or `ISSUANCE_HALTED` offers and only `ACTIVE` asks. Status gates precede rate
-reads, and issuance rechecks status at minting. Settlement redemption is a separate holder-signed `MsgSettle`:
+reads. Settlement redemption is a separate holder-signed `MsgSettle`:
 `SUSPENDED`, an activated plan, asset-to-NOAH only. It uses the plan's committed rate, never the virtual pool or an
 ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/design/ECONOMIC_DESIGN.md#6-conversion-flows).
 
@@ -58,9 +58,10 @@ owns the ordered reappointment procedure.
 
 ## Block settlement and failure boundaries
 
-Conversions record `EligiblePrincipal`, `RedemptionOutput`, and `RedeemedValue` in transient state, all in NOAH at
-each conversion's own quoted rate. Checked additions and the output-versus-retired-value bound fail the transaction
-that violates them. Cross-asset conversions record no NOAH flow: they burn the whole offer and mint only the post-spread output.
+Conversions record `GrossOffer`, `EligiblePrincipal`, `RedemptionOutput`, and `RedeemedValue` in transient state, all
+in NOAH at each conversion's own quoted rate; `GrossOffer` is what Treasury's waterfall places, `EligiblePrincipal`
+what liability grew by. Checked additions, the bound that minted value cannot exceed the gross offer, and the
+output-versus-retired-value bound fail the transaction that violates them. Cross-asset conversions record no NOAH flow: they burn the whole offer and mint only the post-spread output.
 NOAH expansion retains the whole offer for settlement; redemption burns the offered asset and immediately mints
 the post-spread NOAH output. Only fund allocation and the compensating burn wait for settlement.
 
@@ -98,7 +99,7 @@ The authoritative service and event definitions are [transactions](../../proto/a
 are the two orders and both settle as one swap: a sell states the offer and takes what the quote returns, a buy states
 the ask and pays the least offer that returns it, within a required maximum. Neither carries a recipient: a payment
 in another denomination is a buy and a Bank send in one transaction, taxed on the send. `Query/Sell` quotes a sell;
-`Query/Buy` inverts that quote in closed form, and Disbursement funds a stablecoin award with a buy.
+`Query/Buy` inverts that quote in closed form and confirms it forward, and Disbursement funds a stablecoin award with a buy.
 
 Errors are registered with their gRPC codes, so a quote returns the keeper's error and the code follows it: a
 malformed order is `InvalidArgument`, an ineligible asset or a crossed floor or cap is `FailedPrecondition`,

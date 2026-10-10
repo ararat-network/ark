@@ -46,8 +46,8 @@ func enabledConversionMandate() types.ConversionMandate {
 	minimum, maximum := conversionBounds()
 	appointment := types.NewDisabledConversionMandate(1)
 	appointment.Committee = testCapacityCommittee()
-	appointment.ActivationHeight = 10
-	appointment.ExpiryHeight = 20
+	appointment.ActivationTime = 10
+	appointment.ExpiryTime = 20
 	appointment.MinimumPolicy = minimum
 	appointment.MaximumPolicy = maximum
 
@@ -192,8 +192,8 @@ func TestValidateConversionMandate(t *testing.T) {
 		{
 			name:      "empty window",
 			mandate:   enabledConversionMandate,
-			mutate:    func(m *types.ConversionMandate) { m.ActivationHeight = m.ExpiryHeight },
-			expectErr: "conversion mandate: activation height must precede expiry height",
+			mutate:    func(m *types.ConversionMandate) { m.ActivationTime = m.ExpiryTime },
+			expectErr: "conversion mandate: activation time must precede expiry time",
 		},
 		{
 			name:      "zero minimum depth",

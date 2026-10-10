@@ -92,13 +92,13 @@ func NewKeeper(
 		ConversionPolicy: collections.NewItem(
 			sb,
 			types.ConversionPolicyKey,
-			"capacity_policy",
+			"conversion_policy",
 			codec.CollValue[types.ConversionPolicy](cdc),
 		),
 		ConversionMandate: collections.NewItem(
 			sb,
 			types.ConversionMandateKey,
-			"capacity_mandate",
+			"conversion_mandate",
 			codec.CollValue[types.ConversionMandate](cdc),
 		),
 	}

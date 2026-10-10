@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -233,7 +234,7 @@ func newMarketFixture(t *testing.T, seed int64, opts ...marketOption) marketFixt
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, transientKey)
 	// Past the first block, so an appointment activating at height one is
 	// open the way a run's would be.
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
@@ -385,9 +386,9 @@ func TestMsgSetConversionMandateFactory(t *testing.T) {
 
 	require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	mandate := types.ConversionMandate{
-		Envelope:      mandatepkg.Envelope{Term: 1, Committee: msg.Committee, ActivationHeight: msg.ActivationHeight, ExpiryHeight: msg.ExpiryHeight},
+		Envelope:      mandatepkg.Envelope{Term: 1, Committee: msg.Committee, ActivationTime: msg.ActivationTime, ExpiryTime: msg.ExpiryTime},
 		MinimumPolicy: msg.MinimumPolicy,
 		MaximumPolicy: msg.MaximumPolicy,
 		MaxTobinTax:   msg.MaxTobinTax,

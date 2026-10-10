@@ -142,7 +142,7 @@ func (m *ConversionPolicy) GetPoolRecoveryPeriod() uint64 {
 // Replacement advances the term; an empty committee disables it. Policy authority requires corridor
 // and pool units to match; Tobin authority is independent. See x/market/README.md.
 type ConversionMandate struct {
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	mandate.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3,embedded=envelope" json:"envelope"`
 	MinimumPolicy    ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy"`
 	MaximumPolicy    ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy"`

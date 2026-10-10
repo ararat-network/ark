@@ -79,7 +79,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "ConversionMandate",
 					Use:       "conversion-mandate",
 					Short:     "Query the governed conversion committee mandate",
-					Long:      "Query the committee appointed to resize conversion capacity, the corridor it may act within, and whether that appointment is usable at the current height.",
+					Long:      "Query the committee appointed to resize conversion capacity, the corridor it may act within, and whether that appointment is usable at the current block time.",
 					Example:   fmt.Sprintf("%s query market conversion-mandate", version.AppName),
 				},
 			},

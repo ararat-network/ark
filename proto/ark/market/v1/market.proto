@@ -58,7 +58,7 @@ message ConversionPolicy {
 // Replacement advances the term; an empty committee disables it. Policy authority requires corridor
 // and pool units to match; Tobin authority is independent. See x/market/README.md.
 message ConversionMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,

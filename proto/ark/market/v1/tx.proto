@@ -216,8 +216,8 @@ message MsgSetConversionMandate {
 
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   ConversionPolicy minimum_policy = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -250,7 +250,7 @@ message MsgUpdatePolicy {
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // policy is the complete conversion pair to apply. The base pool denomination
   // must match the live pool: re-denomination happens only through
-  // MsgSetReference.
+  // MsgSetReferenceDenom.
   ConversionPolicy policy = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true

@@ -3,6 +3,7 @@ package keeper
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -44,7 +45,8 @@ func (s *AccumulatorTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 
 	ctrl := gomock.NewController(s.T())
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)

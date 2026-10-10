@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/market/keeper"
 	"github.com/ararat-network/ark/x/market/types"
 )
@@ -25,8 +26,8 @@ func activeConversionCommittee(
 		return types.ConversionMandate{}, simsx.SimAccount{}, false
 	}
 	// Authorise gates on the envelope, so the factory checks the same thing.
-	if !mandate.Envelope.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-		reporter.Skip("conversion mandate is not active at this height")
+	if !mandate.Envelope.IsActive(chain.BlockSeconds(ctx)) {
+		reporter.Skip("conversion mandate is not active at this block time")
 
 		return types.ConversionMandate{}, simsx.SimAccount{}, false
 	}

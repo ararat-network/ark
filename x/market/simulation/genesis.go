@@ -66,8 +66,10 @@ func GenConversionMandate(r *rand.Rand, accounts []string, policy types.Conversi
 
 	appointment := types.NewDisabledConversionMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = chain.BlocksPerYear
+	// Open from the epoch to the header's last instant, so the window spans whatever genesis time the
+	// simulation draws.
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = chain.MaxBlockSeconds
 	appointment.MinimumPolicy = minimum
 	appointment.MaximumPolicy = maximum
 	appointment.MaxTobinTax = math.LegacyNewDecWithPrec(50, 2)

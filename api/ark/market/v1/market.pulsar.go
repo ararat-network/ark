@@ -2257,7 +2257,7 @@ type ConversionMandate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	Envelope      *v1.Envelope      `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	MinimumPolicy *ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
 	MaximumPolicy *ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`

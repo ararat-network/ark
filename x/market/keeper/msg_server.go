@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/market/types"
 )
@@ -143,7 +144,7 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 	if err != nil {
 		return nil, fmt.Errorf("getting conversion mandate: %w", err)
 	}
-	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationTime, msg.ExpiryTime)
 	if err != nil {
 		return nil, err
 	}
@@ -170,12 +171,12 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		}
 		// An expired window authorises nothing and would only displace the incumbent and advance the
 		// term. Genesis skips this check, so an export taken after expiry round-trips.
-		if height := uint64(sdkCtx.BlockHeight()); updated.ExpiryHeight <= height {
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"%s expires at height %d, which is not above the current height %d",
+				"%s expires at time %d, which is not after the current block time %d",
 				types.ConversionMandateLabel,
-				updated.ExpiryHeight,
-				height,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 		capacity, err := m.k.ConversionPolicy.Get(ctx)
@@ -208,11 +209,11 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		return nil, fmt.Errorf("setting conversion mandate: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventConversionMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting conversion mandate: %w", err)
 	}

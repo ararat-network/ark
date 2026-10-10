@@ -140,7 +140,7 @@ func (q queryServer) ConversionPolicy(ctx context.Context, _ *types.QueryConvers
 }
 
 // ConversionMandate queries the governed conversion committee appointment and
-// whether it is usable at the current height.
+// whether it is usable at the current block time.
 func (q queryServer) ConversionMandate(ctx context.Context, _ *types.QueryConversionMandateRequest) (*types.QueryConversionMandateResponse, error) {
 	conversionMandate, err := q.k.ConversionMandate.Get(ctx)
 	if err != nil {
@@ -156,6 +156,6 @@ func (q queryServer) ConversionMandate(ctx context.Context, _ *types.QueryConver
 
 	return &types.QueryConversionMandateResponse{
 		Mandate: conversionMandate,
-		Active:  conversionMandate.IsActive(capacity, uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:  conversionMandate.IsActive(capacity, chain.BlockSeconds(ctx)),
 	}, nil
 }

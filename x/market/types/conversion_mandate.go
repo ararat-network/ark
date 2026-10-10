@@ -95,10 +95,10 @@ func (conversionMandate ConversionMandate) Validate() error {
 }
 
 // IsActive reports whether the appointment can actually authorize a capacity
-// update at height: inside its window and still denominated in the live pool's
-// unit.
-func (conversionMandate ConversionMandate) IsActive(livePolicy ConversionPolicy, height uint64) bool {
-	if !conversionMandate.Envelope.IsActive(height) {
+// update at block time now: inside its window and still denominated in the live
+// pool's unit.
+func (conversionMandate ConversionMandate) IsActive(livePolicy ConversionPolicy, now uint64) bool {
+	if !conversionMandate.Envelope.IsActive(now) {
 		return false
 	}
 

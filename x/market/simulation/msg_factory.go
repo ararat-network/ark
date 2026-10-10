@@ -249,8 +249,8 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 		}
 
 		r := testData.Rand()
-		height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-		activation := height + r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activation := now + r.Uint64InRange(1, 1_000)
 		bounds := types.ConversionPolicy{
 			BasePool:           GenBasePool(r.Rand),
 			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
@@ -258,12 +258,12 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 		}
 
 		return nil, &types.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activation,
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activation,
 			// Validation demands activation strictly precede expiry, and the
-			// handler demands expiry sit above the current height.
-			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
+			// handler demands expiry sit above the current block time.
+			ExpiryTime:    activation + r.Uint64InRange(1, 100_000),
 			MinimumPolicy: bounds,
 			MaximumPolicy: bounds,
 			MaxTobinTax:   math.LegacyNewDecWithPrec(int64(r.IntInRange(0, 100)), 2),
