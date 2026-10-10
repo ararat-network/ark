@@ -8,6 +8,7 @@ package chainsuite
 import (
 	"context"
 
+	"github.com/cosmos/interchaintest/v10/ibc"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -68,6 +69,19 @@ func (s *Suite) SetupSuite() {
 func (s *Suite) GetContext() context.Context {
 	s.Require().NotNil(s.ctx, "GetContext before SetupSuite ran")
 	return s.ctx
+}
+
+// FundedWallet creates a key on the first node and funds it from the faucet.
+func (s *Suite) FundedWallet(name string, noah int64) ibc.Wallet {
+	ctx := s.GetContext()
+	wallet, err := s.Chain.BuildWallet(ctx, name, "")
+	s.Require().NoError(err)
+	s.Require().NoError(s.Chain.SendFunds(ctx, FaucetKeyName, ibc.WalletAmount{
+		Address: wallet.FormattedAddress(),
+		Denom:   Denom,
+		Amount:  NOAH(noah),
+	}))
+	return wallet
 }
 
 // UpgradeChain moves the chain to the image under test when the environment

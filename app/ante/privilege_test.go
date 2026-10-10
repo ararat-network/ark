@@ -27,6 +27,7 @@ import (
 	"github.com/ararat-network/ark/app/mempool"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/mandate"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
 )
 
@@ -468,4 +469,47 @@ func TestVouchPreservesUnexpectedStoreErrors(t *testing.T) {
 // laneOf reads the lane the privilege decorator recorded in SDK context.
 func laneOf(ctx sdk.Context) int8 {
 	return mempool.Lane(ctx)
+}
+
+// Each module's own mandate backs its vouch: the disbursement committee rides the lane under its
+// appointment, a stranger and a stale term are refused, and a registration batch is unprivileged
+// by design (D120).
+func TestCommitteeVouchDisbursement(t *testing.T) {
+	arkApp, ctx, _ := setupPrivilegeTest(t)
+	height := uint64(ctx.BlockHeight())
+	committee := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	stranger := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	require.NoError(t, arkApp.DisbursementKeeper.GrantsMandate.Set(ctx, disbursementtypes.GrantsMandate{
+		Envelope: mandate.Envelope{
+			Term:             committeeTerm,
+			Committee:        committee.String(),
+			ActivationHeight: height,
+			ExpiryHeight:     height + 100,
+		},
+		CompensationAllowance: math.ZeroInt(),
+	}))
+	suspend := func(who sdk.AccAddress, term uint64) *disbursementtypes.MsgCommitteeSuspend {
+		return &disbursementtypes.MsgCommitteeSuspend{Committee: who.String(), ExpectedTerm: term, Addresses: []string{stranger.String()}}
+	}
+	for _, tc := range []struct {
+		name     string
+		msg      sdk.Msg
+		eligible bool
+		wantErr  string
+	}{
+		{"appointed committee", suspend(committee, committeeTerm), true, ""},
+		{"stranger", suspend(stranger, committeeTerm), false, "not the exact appointed account"},
+		{"stale term", suspend(committee, committeeTerm-1), false, "term mismatch"},
+		{"registration is normal traffic", &disbursementtypes.MsgRegisterMembers{Registrar: committee.String(), ExpectedTerm: committeeTerm}, false, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			eligible, err := arkApp.Privileges().Vouch(ctx, tc.msg)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tc.eligible, eligible)
+		})
+	}
 }

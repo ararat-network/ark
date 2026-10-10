@@ -43,11 +43,11 @@ included, which is the path an operator's CLI takes.
 | --- | --- | --- |
 | `delegator` | one or four validators | Bank, encode/decode, multisig, fee grants, authorisations, vesting, delegation and unbonding, redelegation, governance through deposit and tally, a cancelled software upgrade, an expedited proposal falling back, community-pool spend, a native Disbursement member tranche, member registration and committee recovery, downtime jail and unjail, a CosmWasm contract, and the oracle: every validator's rates in the extended commit, a power shift keeping them there, and a conversion settling. |
 | `validator` | four validators, one chain per test | Node configuration: no indexer, both Prometheus endpoints, pruning everything, node `minimum-gas-prices` ignored, peer limits, websocket limits, API off; a double-sign and its tombstone; a validator withdrawing its whole self-bond. |
-| `integrator` | one or four validators | The REST and RPC routes explorers and operators read, Ark's module routes among them; the extended commit in every block; a continuation export relaunched under a new chain ID with the same validator keys, its balances, and its oracle. |
+| `integrator` | one or four validators | The REST and RPC routes explorers and operators read, Ark's module routes among them; the extended commit in every block; a continuation export relaunched under a new chain ID with the same validator keys, its balances, its oracle, and a member grant with its registrar. |
 
 ## Writing a suite
 
-Embed `chainsuite.Suite` (or `delegator.Suite` for funded wallets) and pass `chainsuite.NewSuite` a `SuiteConfig`:
+Embed `chainsuite.Suite` (or `delegator.Suite` for its three funded wallets) and pass `chainsuite.NewSuite` a `SuiteConfig`:
 the validator count, `GenesisOverrides` on top of `DefaultGenesis`, `Scope` when tests must not share a chain, and
 `UpgradeOnSetup` for suites that should run against an upgraded chain when `TEST_OLD_IMAGE_VERSION` is set.
 `chainsuite.Chain` wraps interchaintest's chain with what the suites reach for: proposals, config changes with a
