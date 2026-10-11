@@ -115,6 +115,38 @@ func (r RateSet) Convert(offerCoin sdk.DecCoin, askDenom string) (sdk.DecCoin, e
 	return sdk.DecCoin{Denom: askDenom, Amount: amount}, nil
 }
 
+// ConvertCeil converts a whole-unit amount and rounds up to a whole base unit, the rounding for a
+// figure that charges or bounds. Zero converts to zero, which Convert refuses.
+func (r RateSet) ConvertCeil(amount sdk.Coin, askDenom string) (math.Int, error) {
+	if amount.Amount.IsNil() {
+		return math.Int{}, errorsmod.Wrapf(ErrConversionOutOfRange, "offer amount for %s is not set", amount.Denom)
+	}
+	if amount.Amount.IsZero() {
+		return math.ZeroInt(), nil
+	}
+	converted, err := r.Convert(sdk.DecCoin{Denom: amount.Denom, Amount: math.LegacyNewDecFromInt(amount.Amount)}, askDenom)
+	if err != nil {
+		return math.Int{}, err
+	}
+	return converted.Amount.Ceil().TruncateInt(), nil
+}
+
+// ConvertCeilSum converts each coin into denom, rounds each up, and sums them: the valuation for a
+// figure charged with several legs, such as custody drawn and the NOAH a conversion cost.
+func (r RateSet) ConvertCeilSum(denom string, coins ...sdk.Coin) (math.Int, error) {
+	sum := math.ZeroInt()
+	for _, coin := range coins {
+		value, err := r.ConvertCeil(coin, denom)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if sum, err = sum.SafeAdd(value); err != nil {
+			return math.Int{}, errorsmod.Wrapf(ErrConversionOutOfRange, "summing values in %s: %v", denom, err)
+		}
+	}
+	return sum, nil
+}
+
 // oneDec is the comparand isOne tests against, held once rather than rebuilt
 // per call: allocating a LegacyDec to decide whether arithmetic can be skipped
 // would spend a good part of what the skip saves. Nothing mutates it, because

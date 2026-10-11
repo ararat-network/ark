@@ -3,6 +3,7 @@ package chain_test
 import (
 	"context"
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -195,4 +196,31 @@ func TestCoinConstructorsPanicOnUnusableAmounts(t *testing.T) {
 	t.Run("unset decimal", func(t *testing.T) {
 		require.Panics(t, func() { chain.NoahDecCoin(math.LegacyDec{}) })
 	})
+}
+
+func TestValidateAmount(t *testing.T) {
+	top := math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))
+	for _, tc := range []struct {
+		name     string
+		amount   math.Int
+		positive bool
+		err      string
+	}{
+		{"zero", math.ZeroInt(), false, ""},
+		{"zero where positive", math.ZeroInt(), true, "amount must be positive"},
+		{"one where positive", math.OneInt(), true, ""},
+		{"at 128 bits", top, true, ""},
+		{"past 128 bits", top.AddRaw(1), false, "at most 128 bits"},
+		{"negative", math.NewInt(-1), false, "nonnegative"},
+		{"unset", math.Int{}, false, "nonnegative"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := chain.ValidateAmount(tc.amount, tc.positive)
+			if tc.err == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
 }

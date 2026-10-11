@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
@@ -10,6 +11,19 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+// ValidateAmount caps a stored commitment, reservation, or reference-unit figure at 128 bits, far
+// past any real supply, so the folds and rebases that multiply it by a bounded rate stay
+// representable. positive additionally refuses zero.
+func ValidateAmount(amount math.Int, positive bool) error {
+	if amount.IsNil() || amount.IsNegative() || amount.BigInt().BitLen() > 128 {
+		return errors.New("amount must be nonnegative and at most 128 bits")
+	}
+	if positive && amount.IsZero() {
+		return errors.New("amount must be positive")
+	}
+	return nil
+}
 
 // ValidateNoahOnlyDeposit requires exactly one positive NOAH coin. Modules apply this shared
 // predicate to their own custody accounts; fundLabel identifies the refusing account set.

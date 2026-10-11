@@ -345,3 +345,71 @@ func maxLegacyDec() math.LegacyDec {
 	raw.Sub(raw, big.NewInt(1))
 	return math.LegacyNewDecFromBigIntWithPrec(raw, math.LegacyPrecision)
 }
+
+func TestRateSetConvertCeil(t *testing.T) {
+	// Three NOAH a USD, so a NOAH is a third of a USD.
+	rates := types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyNewDec(3),
+	}
+	for _, tc := range []struct {
+		name   string
+		amount sdk.Coin
+		ask    string
+		want   math.Int
+		err    error
+	}{
+		{"exact", sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.NewInt(2)}, chain.NoahBaseDenom, math.NewInt(6), nil},
+		{"rounds a fraction up", sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(4)}, chain.USDBaseDenom, math.NewInt(2), nil},
+		{"a unit's third rounds to one", sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(1)}, chain.USDBaseDenom, math.NewInt(1), nil},
+		{"identity", sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.NewInt(5)}, chain.USDBaseDenom, math.NewInt(5), nil},
+		{"zero converts to zero", sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.ZeroInt()}, chain.NoahBaseDenom, math.ZeroInt(), nil},
+		{"unknown offer", sdk.Coin{Denom: chain.KRWBaseDenom, Amount: math.NewInt(1)}, chain.NoahBaseDenom, math.Int{}, types.ErrUnknownDenom},
+		{"unknown ask", sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.NewInt(1)}, chain.KRWBaseDenom, math.Int{}, types.ErrUnknownDenom},
+		{"unset amount", sdk.Coin{Denom: chain.USDBaseDenom}, chain.NoahBaseDenom, math.Int{}, types.ErrConversionOutOfRange},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := rates.ConvertCeil(tc.amount, tc.ask)
+			if tc.err != nil {
+				require.ErrorIs(t, err, tc.err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want.String(), got.String())
+		})
+	}
+}
+
+func TestRateSetConvertCeilSum(t *testing.T) {
+	// Three NOAH a USD, so a NOAH is a third of a USD.
+	rates := types.RateSet{
+		chain.NoahBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom:  math.LegacyNewDec(3),
+	}
+	usd := func(n int64) sdk.Coin { return sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.NewInt(n)} }
+	noah := func(n int64) sdk.Coin { return sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(n)} }
+	for _, tc := range []struct {
+		name  string
+		coins []sdk.Coin
+		want  math.Int
+		err   error
+	}{
+		{"nothing", nil, math.ZeroInt(), nil},
+		{"one leg", []sdk.Coin{usd(2)}, math.NewInt(2), nil},
+		// Each leg rounds up on its own: a third and a third are two units, not one.
+		{"legs round up apiece", []sdk.Coin{noah(1), noah(1)}, math.NewInt(2), nil},
+		{"mixed legs", []sdk.Coin{usd(5), noah(4)}, math.NewInt(7), nil},
+		{"zero leg", []sdk.Coin{usd(5), noah(0)}, math.NewInt(5), nil},
+		{"unpriced leg", []sdk.Coin{usd(5), {Denom: chain.KRWBaseDenom, Amount: math.NewInt(1)}}, math.Int{}, types.ErrUnknownDenom},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := rates.ConvertCeilSum(chain.USDBaseDenom, tc.coins...)
+			if tc.err != nil {
+				require.ErrorIs(t, err, tc.err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want.String(), got.String())
+		})
+	}
+}
