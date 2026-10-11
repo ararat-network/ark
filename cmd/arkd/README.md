@@ -60,7 +60,9 @@ meter provider is shadowed while the endpoint is enabled. Package-load initialis
 
 The node uses a private registry to avoid collisions with CometBFT's default registry and the SDK legacy sink.
 It registers baseapp instruments unless otel.yaml already requests them, plus the Wasm cache collectors. PostSetup
-installs the shared sanitising legacy bridge. SDK providers shut down in app cleanup; the application endpoint's
+installs the shared sanitising legacy bridge. Until then the SDK's own bridge, which telemetry start installs after
+app creation, gets a noop meter: it records raw names (genesis transactions, replayed blocks) that collide with
+baseapp's instruments, and it panics on query paths. SDK providers shut down in app cleanup; the application endpoint's
 provider shuts down with the server errgroup.
 
 ### Why configuration remains in two files

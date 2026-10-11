@@ -12,6 +12,9 @@ import (
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/embedded"
+	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
 
@@ -28,6 +31,30 @@ import (
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/pkg/telemetry"
 )
+
+const (
+	// sdkGoMetricsScope is the meter the SDK's own go-metrics bridge takes
+	// when telemetry starts, after app creation.
+	sdkGoMetricsScope = "gometrics"
+	// goMetricsScope is the meter installGoMetricsSink records under.
+	goMetricsScope = "ark/gometrics"
+)
+
+// withoutSDKBridge is the endpoint's provider with the SDK bridge's meter
+// replaced by a noop. Until PostSetup installs ours, that bridge records raw
+// names (genesis transactions, replayed blocks) that collide with baseapp's own
+// instruments on the scrape, and it panics on query paths.
+type withoutSDKBridge struct {
+	embedded.MeterProvider
+	provider *sdkmetric.MeterProvider
+}
+
+func (p withoutSDKBridge) Meter(name string, opts ...metric.MeterOption) metric.Meter {
+	if name == sdkGoMetricsScope {
+		return metricnoop.NewMeterProvider().Meter(name)
+	}
+	return p.provider.Meter(name, opts...)
+}
 
 // prometheusEndpoint is the node's scrape endpoint: a registry of its own and
 // the provider exporting into it.
@@ -86,7 +113,7 @@ func (e *prometheusEndpoint) install() {
 	if e == nil {
 		return
 	}
-	otel.SetMeterProvider(e.provider)
+	otel.SetMeterProvider(withoutSDKBridge{provider: e.provider})
 }
 
 // exposeWasmVMCache hands the endpoint's registry to the contract runtime
@@ -128,7 +155,7 @@ func installGoMetricsSink(tel sdktelemetry.Config, queryRouter *baseapp.GRPCQuer
 	conf.EnableHostname = tel.EnableHostname
 	conf.EnableHostnameLabel = tel.EnableHostnameLabel
 	conf.EnableRuntimeMetrics = false
-	sink := telemetry.NewGoMetricsSink(context.Background(), otel.Meter("gometrics"), telemetry.GoMetricsConfig{
+	sink := telemetry.NewGoMetricsSink(context.Background(), otel.Meter(goMetricsScope), telemetry.GoMetricsConfig{
 		ServiceName:  tel.ServiceName,
 		IsQueryRoute: func(path string) bool { return queryRouter != nil && queryRouter.Route(path) != nil },
 	})

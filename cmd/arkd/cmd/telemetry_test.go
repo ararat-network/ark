@@ -14,7 +14,9 @@ import (
 	metricnoop "go.opentelemetry.io/otel/metric/noop"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/server"
+	sdktelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 
 	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
@@ -64,12 +66,16 @@ func TestPrometheusEndpointOwnsMetersAcrossSDKInit(t *testing.T) {
 	early.Add(context.Background(), 1)
 	late.Add(context.Background(), 1)
 
+	recordThroughSDKBridge(t)
+
 	resp := httptest.NewRecorder()
 	telemetry.PrometheusHandler(endpoint.registry).ServeHTTP(resp, httptest.NewRequest(http.MethodGet, "/metrics", nil))
-	require.Equal(t, http.StatusOK, resp.Code)
+	require.Equal(t, http.StatusOK, resp.Code, resp.Body.String())
 	body := resp.Body.String()
 	require.Contains(t, body, "test_early_total 1\n")
 	require.Contains(t, body, "test_late_total 1\n")
+	require.Contains(t, body, "\ntx_count_total 1\n")
+	require.Regexp(t, `\nsdk_legacy_counter_tx_count_[0-9a-f]{64}_total 1\n`, body)
 	require.Contains(t, body, `service_instance_id="ark-test/node0"`)
 	require.Contains(t, body, `ark_chain_id="ark-test"`)
 	require.Contains(t, body, "go_goroutines")
@@ -105,7 +111,7 @@ func TestStartChainIDPrefersFlagThenGenesis(t *testing.T) {
 func recordEveryNodeSeries() {
 	mempoolmetrics.ObservePool(func() ([3]int, [3]int64) { return [3]int{}, [3]int64{} })
 	mempoolmetrics.RecordAdmission("accepted")
-	sink := telemetry.NewGoMetricsSink(context.Background(), otel.Meter("gometrics"))
+	sink := telemetry.NewGoMetricsSink(context.Background(), otel.Meter(goMetricsScope))
 	sink.AddSample([]string{"/unknown"}, 1)
 	abcimetrics.RecordLatencyAndStatus(time.Millisecond, abcimetrics.StatusSuccess, abcimetrics.PrepareProposal)
 	oraclemetrics.CountVoteReports(1, 1, 1)
@@ -114,4 +120,24 @@ func recordEveryNodeSeries() {
 	clientmetrics.RecordSidecarResponse("127.0.0.1:1", time.Millisecond, nil)
 	clientmetrics.RecordSnapshotTimestamp("127.0.0.1:1", time.Now())
 	pkgmetrics.RecordModuleMethodLatency(context.Background(), "oracle", pkgmetrics.EndBlock)()
+}
+
+// recordThroughSDKBridge does what start does after app creation: the SDK's own
+// bridge records until PostSetup replaces it, here a gentx and a query, beside
+// baseapp's native transaction counter.
+//
+//nolint:staticcheck // the SDK's legacy bridge is what this exercises
+func recordThroughSDKBridge(t *testing.T) {
+	t.Helper()
+	tel := sdktelemetry.Config{Enabled: true, MetricsSink: otelSink}
+	_, err := sdktelemetry.New(tel)
+	require.NoError(t, err)
+	t.Cleanup(func() { _, _ = sdktelemetry.New(sdktelemetry.Config{}) })
+	sdktelemetry.IncrCounter(1, "tx", "count")
+	sdktelemetry.MeasureSince(time.Now(), "/cosmos.bank.v1beta1.Query/Balance")
+	txs, err := otel.Meter(baseapp.ScopeName).Int64Counter("tx.count")
+	require.NoError(t, err)
+	txs.Add(context.Background(), 1)
+	require.NoError(t, installGoMetricsSink(tel, nil))
+	sdktelemetry.IncrCounter(1, "tx", "count")
 }

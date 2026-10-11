@@ -131,7 +131,8 @@ with it:
 - `prometheus-retention-time` has no effect: `[prometheus]` serves the endpoint in place of the SDK's go-metrics
   Prometheus fan-out, and setting it beside the otel sink makes `start` warn.
 
-**Bridged series.** Query paths never become instrument names. Completed ABCI queries export
+**Bridged series.** The bridge starts in PostSetup; go-metrics calls before it (server info, genesis transactions,
+startup block replay) record nowhere. Query paths never become instrument names. Completed ABCI queries export
 `ark_sdk_query_duration_milliseconds{route}`; its `_count` series counts requests. The route is a registered
 gRPC method, `app`, `store`, `p2p`, or `unknown`; even malformed paths without a leading slash use this bounded
 classification. The histogram records from the SDK's deferred query timer, so each completed query counts once.
