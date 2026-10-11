@@ -23,9 +23,11 @@ type adminServer struct {
 	grpcSrv *grpc.Server
 }
 
-type adminService struct {
-	api.UnimplementedPriceFeedAdminServer
+var _ api.PriceFeedAdminServer = (*adminService)(nil)
 
+// adminService implements every admin RPC explicitly, so one added to the
+// service fails to compile rather than answering Unimplemented.
+type adminService struct {
 	svc *Service
 }
 
