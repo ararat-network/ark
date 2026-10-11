@@ -18,6 +18,59 @@ func TestParsePriceUsesOraclePrecision(t *testing.T) {
 	}
 }
 
+func TestParsePriceAcceptsPlainDecimalTextOnly(t *testing.T) {
+	tests := []struct {
+		text    string
+		want    string
+		wantErr string
+	}{
+		{text: "1371.25", want: "1371.25"},
+		{text: "42", want: "42"},
+		{text: "0.5", want: "0.5"},
+		{text: ".5", want: "0.5"},
+		{text: "5.", want: "5"},
+		{text: "1.5e3", want: "1500"},
+		{text: "2E-2", want: "0.02"},
+		{text: "2.5e+1", want: "25"},
+		{text: "-1", want: "-1"}, // the resolver refuses non-positive samples
+		{text: "0x10", wantErr: "not a plain decimal"},
+		{text: "0x1p-2", wantErr: "not a plain decimal"},
+		{text: "0b101", wantErr: "not a plain decimal"},
+		{text: "0o17", wantErr: "not a plain decimal"},
+		{text: "1p4", wantErr: "not a plain decimal"},
+		{text: "1_000", wantErr: "not a plain decimal"},
+		{text: "+1", wantErr: "not a plain decimal"},
+		{text: "Inf", wantErr: "not a plain decimal"},
+		{text: "NaN", wantErr: "not a plain decimal"},
+		{text: " 1", wantErr: "not a plain decimal"},
+		{text: "1 ", wantErr: "not a plain decimal"},
+		{text: "1,000", wantErr: "not a plain decimal"},
+		{text: "", wantErr: "not a plain decimal"},
+		{text: ".", wantErr: "not a plain decimal"},
+		{text: "1e", wantErr: "not a plain decimal"},
+		{text: "e5", wantErr: "not a plain decimal"},
+		{text: "１", wantErr: "not a plain decimal"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.text, func(t *testing.T) {
+			price, err := ParsePrice(tc.text)
+			if tc.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("ParsePrice(%q) error = %v, want %q", tc.text, err, tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParsePrice(%q) error = %v, want nil", tc.text, err)
+			}
+			if got := price.Text('f', -1); got != tc.want {
+				t.Fatalf("ParsePrice(%q) = %s, want %s", tc.text, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestParsePriceRejectsInfinity(t *testing.T) {
 	if _, err := ParsePrice("+Inf"); err == nil {
 		t.Fatal("ParsePrice() error = nil, want infinity rejection")

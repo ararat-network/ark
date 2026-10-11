@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"regexp"
 	"time"
 )
 
@@ -111,6 +112,12 @@ func ValidateFeedPrice(price *big.Float) error {
 // headroom while refusing unbounded inputs before big.Float parsing.
 const MaxPriceTextBytes = 128
 
+// plainDecimal is decimal digits with an optional sign, point, and exponent. big.Float also reads
+// base prefixes, binary exponents, digit separators, a leading plus, and Inf; refusing them leaves a
+// venue that changes format unresolved rather than read as another number. A venue that sends scaled
+// hex integers is decoded by its adapter, which knows the scale.
+var plainDecimal = regexp.MustCompile(`^-?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?$`)
+
 // ParsePrice parses a finite, LegacyDec-representable decimal string into an
 // oracle price.
 func ParsePrice(s string) (*big.Float, error) {
@@ -120,6 +127,9 @@ func ParsePrice(s string) (*big.Float, error) {
 			len(s),
 			MaxPriceTextBytes,
 		)
+	}
+	if !plainDecimal.MatchString(s) {
+		return nil, fmt.Errorf("oracle price %q is not a plain decimal", s)
 	}
 
 	price, ok := new(big.Float).SetPrec(PricePrecisionBits).SetString(s)

@@ -114,7 +114,9 @@ median across validators, which only holds while validators draw on different pr
 **Controls.** Response bodies are size-capped; WebSocket frames are capped at `MaxMessageBytes`, 32 KiB, a venue
 that compresses its stream (Huobi) is inflated under a fixed cap before parsing, and a venue that frames
 its stream in protobuf (MEXC) is decoded by a field-pinned wire reader that skips what it does not name; API keys
-travel in headers, never URLs, and the config file is written owner-only. Endpoints require HTTPS/WSS
+travel in headers, never URLs, and the config file is written owner-only. A venue's price is read only as
+plain decimal text of at most 128 bytes, so a venue that changes format, such as to hex-encoded integers, goes
+unresolved instead of being read as a different number. Endpoints require HTTPS/WSS
 and reject URL user information and fragments. Both provider clients refuse all redirects before a
 second request. An API handler must retain its configured HTTPS origin before credentials are attached.
 A handler that supplies its own dial (KuCoin) still dials the configured endpoint; its connect token is a
