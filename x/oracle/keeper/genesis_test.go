@@ -14,6 +14,13 @@ import (
 
 func (s *KeeperTestSuite) TestInitGenesis() {
 	blockTime := time.Unix(1_700_000_000, 0).UTC()
+	expectModuleAccount := func() {
+		s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
+			authtypes.NewEmptyModuleAccount(types.ModuleName),
+		)
+	}
+	// pendingHeight is where a transition written at genesis activates.
+	pendingHeight := uint64(oracleTestGenesisHeight + types.FeedActivationDelayBlocks)
 
 	tests := []struct {
 		name                string
@@ -21,6 +28,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 		expected            func() *types.GenesisState
 		setup               func()
 		expectErr           string
+		expectErrIs         error
 		expectNoRate        string
 		expectAccountingOld bool
 	}{
@@ -165,6 +173,51 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			expectErr:    "module account has not been set",
 			expectNoRate: chain.USDBaseDenom,
 		},
+		{
+			// Validate only checks the reference is a feed key; whether that
+			// feed is Active is the keeper's to check against the imported set.
+			name: "reference names no feed",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom, chain.USDBaseDenom})
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
+		},
+		{
+			name: "reference names a feed still being added",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom})
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                chain.XDRBaseDenom,
+					Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
+					ActivationVoteHeight: pendingHeight,
+				}}
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
+		},
+		{
+			name: "reference names a feed being removed",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom, chain.XDRBaseDenom})
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                chain.XDRBaseDenom,
+					Direction:            types.FeedDirection_FEED_DIRECTION_REMOVE,
+					ActivationVoteHeight: pendingHeight,
+				}}
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
+		},
 	}
 
 	for _, tc := range tests {
@@ -185,8 +238,10 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 
 			err := s.keeper.InitGenesis(s.ctx, genesis)
 			if tc.expectErr != "" {
-				s.Require().Error(err)
 				s.Require().ErrorContains(err, tc.expectErr)
+				if tc.expectErrIs != nil {
+					s.Require().ErrorIs(err, tc.expectErrIs)
+				}
 				if tc.expectNoRate != "" {
 					hasRate, hasErr := s.keeper.ExchangeRate.Has(s.ctx, tc.expectNoRate)
 					s.Require().NoError(hasErr)
@@ -297,6 +352,8 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	voteTargets, err := s.keeper.Feeds.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(expected.Feeds, voteTargets)
+
+	s.requireStoredReferenceDenom(expected.ReferenceDenom)
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {

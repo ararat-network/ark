@@ -53,6 +53,12 @@ actually present for, and an eligible-block floor on top would silently soften t
 outages need no such floor, because non-functioning blocks never reach the record in the first place — which means a
 sparse record is evidence the validator was absent while the fleet worked, not evidence that grading is unsafe.
 
+`min_attendance_per_window` may not exceed `functioning_block_threshold`. Each graded block had at least that share of
+commit power participating, so power-weighted attendance over a window meets the threshold, and with power steady
+across the window some validator clears any minimum at or below it. Above it, one degraded window could jail the whole
+active set, and CometBFT halts on an empty set. Slashing's downtime window needs no such bound because a chain producing
+blocks has a signing supermajority; oracle reports fail independently of block signatures.
+
 Newly activated targets get no special grading: attendance is unconditional per window, by decision. Rollout slack comes
 from layers that already exist — the sidecar prices scheduled targets throughout their pending window, pricing the
 surviving targets keeps a validator above the participation floor unless one activation batch more than doubles the

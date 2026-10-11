@@ -130,6 +130,15 @@ func (p Params) Validate() error {
 			p.FunctioningBlockThreshold,
 		)
 	}
+	// Functioning blocks carry at least the threshold share of commit power, so a minimum at or
+	// below it always leaves a validator unjailed; above it, one window can jail the whole set.
+	if p.MinAttendancePerWindow.GT(p.FunctioningBlockThreshold) {
+		return fmt.Errorf(
+			"oracle parameter MinAttendancePerWindow %s must not exceed FunctioningBlockThreshold %s",
+			p.MinAttendancePerWindow,
+			p.FunctioningBlockThreshold,
+		)
+	}
 	if p.ParticipationThreshold.IsNil() {
 		return errors.New("oracle parameter ParticipationThreshold must be set")
 	}

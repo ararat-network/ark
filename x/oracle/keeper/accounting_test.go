@@ -275,6 +275,66 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 			},
 		},
 		{
+			// Per weight the pool pays 0.999 anoah, 2 ausd, and 0.002997 axdr. The weight-one
+			// validator earns only ausd, so its coins skip the denomination sorted before it and
+			// run out before the one sorted after; the transfer must still total by denomination.
+			name: "matches sparse reward coins to their denominations",
+			setup: func() {
+				s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, math.NewInt(1)))
+				s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr2, math.NewInt(1000)))
+
+				s.bankKeeper.EXPECT().
+					GetAllBalances(s.ctx, sdk.AccAddress{1}).
+					Return(sdk.NewCoins(
+						sdk.NewInt64Coin(chain.NoahBaseDenom, 1000),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 2002),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 3),
+					))
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
+				s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
+				s.distrKeeper.EXPECT().AllocateTokensToValidator(
+					s.ctx,
+					validator1,
+					sdk.NewDecCoinsFromCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 2)),
+				).Return(nil)
+				s.distrKeeper.EXPECT().AllocateTokensToValidator(
+					s.ctx,
+					validator2,
+					sdk.NewDecCoinsFromCoins(
+						sdk.NewInt64Coin(chain.NoahBaseDenom, 999),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 2000),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 2),
+					),
+				).Return(nil)
+				s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+					s.ctx,
+					types.ModuleName,
+					"distribution",
+					sdk.NewCoins(
+						sdk.NewInt64Coin(chain.NoahBaseDenom, 999),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 2002),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 2),
+					),
+				).Return(nil)
+			},
+			rewardWindow:             100,
+			rewardDistributionWindow: 100,
+			expectedEvents: []proto.Message{
+				&types.EventOracleReward{
+					Validator: valAddr1.String(),
+					Rewards:   sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 2)),
+				},
+				&types.EventOracleReward{
+					Validator: valAddr2.String(),
+					Rewards: sdk.NewCoins(
+						sdk.NewInt64Coin(chain.NoahBaseDenom, 999),
+						sdk.NewInt64Coin(chain.USDBaseDenom, 2000),
+						sdk.NewInt64Coin(chain.XDRBaseDenom, 2),
+					),
+				},
+			},
+		},
+		{
 			name: "supports reward weight above maximum uint64 and maximum distribution window",
 			setup: func() {
 				s.Require().NoError(s.keeper.RewardWeight.Set(s.ctx, valAddr1, largeScore))
@@ -588,6 +648,8 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 			params, err := s.keeper.Params.Get(s.ctx)
 			s.Require().NoError(err)
 			params.MinAttendancePerWindow = tc.minAttendance
+			// The highest threshold admits every minimum the table judges.
+			params.FunctioningBlockThreshold = math.LegacyOneDec()
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{
 				EligibleBlocks: tc.eligibleBlocks,
@@ -644,6 +706,7 @@ func (s *KeeperTestSuite) TestSettleAttendanceContinuesWalkAfterJailing() {
 	params, err := s.keeper.Params.Get(s.ctx)
 	s.Require().NoError(err)
 	params.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+	params.FunctioningBlockThreshold = math.LegacyOneDec()
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 	s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{EligibleBlocks: 20, AttendedBlocks: 0}))
 	s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr2, types.Attendance{EligibleBlocks: 20, AttendedBlocks: 0}))

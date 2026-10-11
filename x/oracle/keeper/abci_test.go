@@ -92,6 +92,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		params.RewardWindow = 30
 		params.AttendanceWindow = 20
 		params.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		params.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 		// valAddr1: 0/20 attended -> jailed.
@@ -145,6 +146,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		s.Require().NoError(err)
 		params.AttendanceWindow = 20
 		params.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		params.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{EligibleBlocks: 20, AttendedBlocks: 0}))
@@ -176,6 +178,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		desiredParams.RewardDistributionWindow = 40
 		desiredParams.AttendanceWindow = 100
 		desiredParams.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		desiredParams.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, desiredParams))
 		// This case is about window activation, not jailing: a perfect record
 		// clears the 90% ratio, so the settlement fires no staking calls and the

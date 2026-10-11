@@ -53,6 +53,8 @@ func TestRandomisedGenState(t *testing.T) {
 	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.GTE(types.MinFunctioningBlockThreshold))
 	require.True(t, oracleGenesis.Params.FunctioningBlockThreshold.LTE(math.LegacyOneDec()))
 	require.Equal(t, types.DefaultFeedDenoms, oracleGenesis.Feeds.Denoms)
+	// The ranges above are per field; launchability also needs the cross-field rules.
+	require.NoError(t, oracleGenesis.Validate())
 }
 
 func TestRandomisedGenState_InvalidSimState(t *testing.T) {
@@ -63,20 +65,29 @@ func TestRandomisedGenState_InvalidSimState(t *testing.T) {
 	r := rand.New(s)
 
 	tests := []struct {
+		name     string
 		simState module.SimulationState
-		panicMsg string
+		panicErr string
 	}{
-		{module.SimulationState{}, "invalid memory address or nil pointer dereference"},
 		{
-			module.SimulationState{
+			name:     "no random source",
+			simState: module.SimulationState{},
+			panicErr: "runtime error: invalid memory address or nil pointer dereference",
+		},
+		{
+			name: "no genesis map",
+			simState: module.SimulationState{
 				AppParams: make(simtypes.AppParams),
 				Cdc:       cdc,
 				Rand:      r,
-			}, "assignment to entry in nil map",
+			},
+			panicErr: "assignment to entry in nil map",
 		},
 	}
 
 	for _, tt := range tests {
-		require.Panicsf(t, func() { simulation.RandomisedGenState(&tt.simState) }, tt.panicMsg)
+		t.Run(tt.name, func(t *testing.T) {
+			require.PanicsWithError(t, tt.panicErr, func() { simulation.RandomisedGenState(&tt.simState) })
+		})
 	}
 }

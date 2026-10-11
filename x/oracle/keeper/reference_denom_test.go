@@ -327,7 +327,8 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenom() {
 		Authority:      sdk.AccAddress("not-gov").String(),
 		ReferenceDenom: chain.XDRBaseDenom,
 	})
-	s.Require().Error(err)
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+	s.requireStoredReferenceDenom("")
 
 	_, err = s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
 		Authority:      authority,

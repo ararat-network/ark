@@ -160,8 +160,24 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyZeroDec() },
 		},
 		{
-			name:   "min attendance per window at one",
-			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyOneDec() },
+			name: "min attendance per window at one",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = math.LegacyOneDec()
+				p.FunctioningBlockThreshold = math.LegacyOneDec()
+			},
+		},
+		{
+			name: "min attendance per window equal to the functioning block threshold",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = types.MinFunctioningBlockThreshold
+			},
+		},
+		{
+			name: "min attendance per window above the functioning block threshold",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = types.MinFunctioningBlockThreshold.Add(math.LegacySmallestDec())
+			},
+			expectErr: "MinAttendancePerWindow 0.500000000000000001 must not exceed FunctioningBlockThreshold",
 		},
 		// FunctioningBlockThreshold
 		{
