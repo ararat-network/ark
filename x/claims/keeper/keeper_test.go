@@ -38,9 +38,9 @@ type KeeperTestSuite struct {
 	keeper      *keeper.Keeper
 	msgServer   types.MsgServer
 	queryClient types.QueryClient
-	// queryServer serves height-sensitive query assertions. queryClient pins
+	// queryServer serves clock-sensitive query assertions. queryClient pins
 	// the context it was built with (baseapp.NewQueryServerTestHelper stores
-	// Ctx at construction), so a later setBlockHeight never reaches it.
+	// Ctx at construction), so a later setBlockTime never reaches it.
 	queryServer   types.QueryServer
 	authority     string
 	accountKeeper *testutil.MockAccountKeeper
@@ -69,8 +69,9 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	// The clock starts at the epoch, so height and block time read alike until a test moves both.
-	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
+	// Height starts far from every block time the suite uses, so a window read off the height
+	// fails.
+	s.ctx = testCtx.Ctx.WithBlockHeight(heightOrigin).WithBlockTime(time.Unix(0, 0))
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
@@ -128,9 +129,23 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
-// setBlockHeight moves height and block time together, one clock for both.
+// heightOrigin is the suite's first height.
+const heightOrigin = 1_000_000
+
+// setBlockTime moves to the next block at the given block time.
+func (s *KeeperTestSuite) setBlockTime(seconds int64) {
+	ctx := sdk.UnwrapSDKContext(s.ctx)
+	s.ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1).WithBlockTime(time.Unix(seconds, 0))
+}
+
+// setBlockHeight moves the height alone, leaving the block time.
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+}
+
+// blockHeight is the current height as a claim records it.
+func (s *KeeperTestSuite) blockHeight() uint64 {
+	return uint64(sdk.UnwrapSDKContext(s.ctx).BlockHeight())
 }
 
 // fundInsurance sets what Bank reports for the Insurance account.
@@ -172,7 +187,7 @@ func (s *KeeperTestSuite) requireDueClaims(expected ...uint64) {
 	s.Require().Equal(expected, due)
 }
 
-// appointCommittee stores an active mandate spanning heights 10–100 with a
+// appointCommittee stores an active mandate spanning block times 10–100 with a
 // 1000-noah limit and resets allowance usage, mirroring a successful
 // MsgSetClaimsMandate.
 func (s *KeeperTestSuite) appointCommittee(committee string) types.ClaimsMandate {

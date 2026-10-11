@@ -15,6 +15,9 @@ import (
 // ClaimsMandateLabel names the shared appointment envelope in Claims errors.
 const ClaimsMandateLabel = "Claims mandate"
 
+// MaxSettlementsPerBlock bounds EndBlock work; claims past it stay due for the next block.
+const MaxSettlementsPerBlock = 1_000
+
 // DefaultClaimsMandate returns the canonical unconfigured sentinel.
 func DefaultClaimsMandate() ClaimsMandate {
 	return NewDisabledClaimsMandate(0)

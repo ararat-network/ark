@@ -11,8 +11,8 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// EndBlocker settles every claim whose cancellation period closed at or before
-// this block's time.
+// EndBlocker settles claims whose cancellation period closed at or before this block's time, oldest
+// first, at most MaxSettlementsPerBlock in a block; the rest stay due for the next.
 func (k *Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
@@ -20,12 +20,16 @@ func (k *Keeper) EndBlocker(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("iterating due claims: %w", err)
 	}
-	defer iterator.Close()
-
-	due, err := iterator.Keys()
-	if err != nil {
-		return fmt.Errorf("reading due claim keys: %w", err)
+	var due []collections.Pair[uint64, uint64]
+	for ; iterator.Valid() && len(due) < types.MaxSettlementsPerBlock; iterator.Next() {
+		key, err := iterator.Key()
+		if err != nil {
+			iterator.Close()
+			return fmt.Errorf("reading due claim key: %w", err)
+		}
+		due = append(due, key)
 	}
+	iterator.Close()
 
 	for _, key := range due {
 		if err := k.DueClaims.Remove(ctx, key); err != nil {

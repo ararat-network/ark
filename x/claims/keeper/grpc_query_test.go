@@ -22,7 +22,7 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 
 	s.Run("disabled mandate reports inactive", func() {
 		s.SetupTest()
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
@@ -35,7 +35,7 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 		s.SetupTest()
 		s.appointCommittee(committee)
 		s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(400)))
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
@@ -45,28 +45,28 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 		s.Require().Equal(noahCoin(600), resp.AllowanceRemaining)
 	})
 
-	s.Run("activity is derived from the current height", func() {
+	s.Run("activity is derived from the block time", func() {
 		s.SetupTest()
 		s.appointCommittee(committee)
 
-		// Half-open window: inactive one block before activation and again at
+		// Half-open window: inactive a second before activation and again at
 		// expiry itself.
-		s.setBlockHeight(9)
+		s.setBlockTime(9)
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
 
-		s.setBlockHeight(10)
+		s.setBlockTime(10)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 
-		s.setBlockHeight(99)
+		s.setBlockTime(99)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 
-		s.setBlockHeight(100)
+		s.setBlockTime(100)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
@@ -106,7 +106,7 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(testAddress(1))
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -141,7 +141,7 @@ func (s *KeeperTestSuite) TestQueryClaim() {
 	s.Run("returns a stored claim", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		submitted, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
@@ -174,7 +174,7 @@ func (s *KeeperTestSuite) TestQueryClaim() {
 func (s *KeeperTestSuite) TestQueryClaims() {
 	seed := func(count int) {
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(50_000)
 		for range count {
 			_, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{

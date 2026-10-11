@@ -10,11 +10,29 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// setCancellationPeriod pins a short veto window so test heights stay readable.
-func (s *KeeperTestSuite) setCancellationPeriod(blocks uint64) {
+// setCancellationPeriod pins a short veto window so test times stay readable.
+func (s *KeeperTestSuite) setCancellationPeriod(seconds uint64) {
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.Params{
-		ClaimCancellationPeriod: blocks,
+		ClaimCancellationPeriod: seconds,
 	}))
+}
+
+func (s *KeeperTestSuite) TestNilMessages() {
+	s.SetupTest()
+	for _, tc := range []struct {
+		name string
+		call func() error
+		err  string
+	}{
+		{"UpdateParams", func() error { _, err := s.msgServer.UpdateParams(s.ctx, nil); return err }, "nil update params message"},
+		{"SetClaimsMandate", func() error { _, err := s.msgServer.SetClaimsMandate(s.ctx, nil); return err }, "nil set claims mandate message"},
+		{"SubmitClaim", func() error { _, err := s.msgServer.SubmitClaim(s.ctx, nil); return err }, "nil submit claim message"},
+		{"CommitteeSubmitClaim", func() error { _, err := s.msgServer.CommitteeSubmitClaim(s.ctx, nil); return err }, "nil committee submit claim message"},
+		{"CancelClaim", func() error { _, err := s.msgServer.CancelClaim(s.ctx, nil); return err }, "nil cancel claim message"},
+		{"CommitteeCancelClaim", func() error { _, err := s.msgServer.CommitteeCancelClaim(s.ctx, nil); return err }, "nil committee cancel claim message"},
+	} {
+		s.Run(tc.name, func() { s.Require().ErrorContains(tc.call(), tc.err) })
+	}
 }
 
 func (s *KeeperTestSuite) TestUpdateParams() {
@@ -107,9 +125,9 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 	s.Run("elapsed window is rejected", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		// At the expiry height itself the window is already inactive, so this
+		// At the expiry time itself the window is already inactive, so this
 		// pins the boundary along with the fully elapsed case.
-		s.setBlockHeight(100)
+		s.setBlockTime(100)
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
@@ -124,7 +142,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 	s.Run("partially elapsed window is accepted", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(50)
+		s.setBlockTime(50)
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
@@ -140,7 +158,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 	s.Run("elapsed activation shortens the usable span", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(12)
+		s.setBlockTime(12)
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
@@ -262,7 +280,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 	s.Run("reserves without moving coins", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(500)
 
 		resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
@@ -278,7 +296,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 		s.Require().NoError(err)
 		s.Require().Equal(types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE, claim.Origin)
 		s.Require().Equal(uint64(0), claim.MandateTerm)
-		s.Require().Equal(uint64(20), claim.SubmittedHeight)
+		s.Require().Equal(s.blockHeight(), claim.SubmittedHeight)
 		s.Require().Equal(uint64(20), claim.SubmittedTime)
 		s.Require().Equal(uint64(25), claim.ClosingTime)
 
@@ -295,7 +313,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 	s.Run("uppercase recipient is stored canonical", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(500)
 
 		resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
@@ -314,7 +332,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 	s.Run("claim IDs are globally monotonic", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(500)
 
 		for expected := uint64(1); expected <= 3; expected++ {
@@ -392,7 +410,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
 			s.setCancellationPeriod(5)
-			s.setBlockHeight(20)
+			s.setBlockTime(20)
 			s.fundInsurance(tc.balance)
 			if tc.blocked {
 				s.blockedAddrs[tc.recipient] = struct{}{}
@@ -431,7 +449,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		resp, err := submit(400)
@@ -451,7 +469,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		resp, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -472,7 +490,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		_, err := submit(600)
@@ -492,12 +510,12 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.fundInsurance(5_000)
 
 		// 96 + 5 = 101, one past expiry.
-		s.setBlockHeight(96)
+		s.setBlockTime(96)
 		_, err := submit(100)
 		s.Require().ErrorContains(err, "exceeds Claims mandate expiry time")
 
 		// 95 + 5 = 100, exactly at expiry, which is permitted.
-		s.setBlockHeight(95)
+		s.setBlockTime(95)
 		_, err = submit(100)
 		s.Require().NoError(err)
 	})
@@ -506,36 +524,36 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		name      string
 		committee string
 		term      uint64
-		height    int64
+		at        int64
 		expectErr string
 	}{
-		{name: "authorised", committee: committee, term: 1, height: 20},
+		{name: "authorised", committee: committee, term: 1, at: 20},
 		{
 			name:      "wrong committee",
 			committee: testAddress(8),
 			term:      1,
-			height:    20,
+			at:        20,
 			expectErr: "Claims mandate",
 		},
 		{
 			name:      "stale expected term",
 			committee: committee,
 			term:      0,
-			height:    20,
+			at:        20,
 			expectErr: "Claims mandate",
 		},
 		{
 			name:      "before activation",
 			committee: committee,
 			term:      1,
-			height:    9,
+			at:        9,
 			expectErr: "Claims mandate",
 		},
 		{
 			name:      "at expiry",
 			committee: committee,
 			term:      1,
-			height:    100,
+			at:        100,
 			expectErr: "Claims mandate",
 		},
 	}
@@ -545,7 +563,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 			s.SetupTest()
 			s.setCancellationPeriod(5)
 			s.appointCommittee(committee)
-			s.setBlockHeight(tc.height)
+			s.setBlockTime(tc.at)
 			s.fundInsurance(5_000)
 
 			_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -568,11 +586,11 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	committee := testAddress(1)
 	recipient := testAddress(3)
 
-	// submitGovernance returns a pending governance claim at height 20 with a
-	// five-block veto window.
+	// submitGovernance returns a pending governance claim at time 20 with a
+	// five-second veto window.
 	submitGovernance := func() uint64 {
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 		resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
 			Authority: s.authority,
@@ -587,7 +605,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("releases the reservation", func() {
 		s.SetupTest()
 		claimID := submitGovernance()
-		s.setBlockHeight(24)
+		s.setBlockTime(24)
 
 		_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 			Authority: s.authority,
@@ -613,7 +631,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.SetupTest()
 		claimID := submitGovernance()
 
-		// Still at the submission height: a veto may land in the very block
+		// Still at the submission time: a veto may land in the very block
 		// that submitted the claim.
 		_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 			Authority: s.authority,
@@ -624,7 +642,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		claim, err := s.keeper.Claims.Get(s.ctx, claimID)
 		s.Require().NoError(err)
 		s.Require().Equal(types.ClaimStatus_CLAIM_STATUS_CANCELLED, claim.Status)
-		s.Require().Equal(claim.SubmittedHeight, claim.ClosingTime)
+		s.Require().Equal(claim.SubmittedTime, claim.ClosingTime)
 
 		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
 		s.Require().NoError(err)
@@ -636,7 +654,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		resp, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -648,7 +666,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		})
 		s.Require().NoError(err)
 
-		s.setBlockHeight(24)
+		s.setBlockTime(24)
 		_, err = s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 			Authority: s.authority,
 			ClaimId:   resp.ClaimId,
@@ -663,7 +681,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("at closing time the window has closed", func() {
 		s.SetupTest()
 		claimID := submitGovernance()
-		s.setBlockHeight(25)
+		s.setBlockTime(25)
 
 		_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
 			Authority: s.authority,
@@ -676,7 +694,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.SetupTest()
 		claimID := submitGovernance()
 		s.appointCommittee(committee)
-		s.setBlockHeight(24)
+		s.setBlockTime(24)
 
 		_, err := s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
 			Committee:    committee,
@@ -690,7 +708,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		resp, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -702,7 +720,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		})
 		s.Require().NoError(err)
 
-		s.setBlockHeight(24)
+		s.setBlockTime(24)
 		_, err = s.msgServer.CommitteeCancelClaim(s.ctx, &types.MsgCommitteeCancelClaim{
 			Committee:    committee,
 			ExpectedTerm: 1,
@@ -719,7 +737,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	s.Run("already cancelled claim is not pending", func() {
 		s.SetupTest()
 		claimID := submitGovernance()
-		s.setBlockHeight(22)
+		s.setBlockTime(22)
 
 		cancel := &types.MsgCancelClaim{
 			Authority: s.authority,

@@ -208,8 +208,8 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 }
 
 // settleClaim pays or terminally fails a due pending claim after read-only payability checks.
-// Record and recipient checks use current rules. Store, transfer, or event errors propagate;
-// unpayable claims release their reservations. See x/claims/README.md.
+// Record and recipient checks use current rules. Store and event errors propagate; unpayable claims,
+// a payment Bank refuses included, release their reservations. See x/claims/README.md.
 func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 	if err != nil {
@@ -264,7 +264,15 @@ func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 		recipient,
 		sdk.NewCoins(claim.Amount),
 	); err != nil {
-		return fmt.Errorf("paying claim %d: %w", claim.ClaimId, err)
+		// Coverage passed above, so Bank refused the recipient before moving a coin. The recipient is
+		// fixed, so the claim fails like any other unpayable one.
+		k.Logger(ctx).Error(
+			"failing unpayable claim",
+			"claim_id", claim.ClaimId,
+			"reason", "bank refused the payment",
+			"error", err,
+		)
+		return k.failClaim(ctx, claim)
 	}
 	if err := k.InsuranceReserved.Set(ctx, insuranceReserved.Sub(claim.Amount.Amount)); err != nil {
 		return fmt.Errorf("setting Insurance reservation: %w", err)

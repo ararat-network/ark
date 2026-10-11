@@ -233,7 +233,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalRefusesAnOverReservation() {
 func (s *KeeperTestSuite) TestRecognisedCapitalTracksClaimLifecycle() {
 	s.SetupTest()
 	s.setCancellationPeriod(5)
-	s.setBlockHeight(20)
+	s.setBlockTime(20)
 	s.fundInsurance(500)
 
 	recognised, err := s.keeper.RecognisedCapital(s.ctx)
@@ -253,7 +253,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalTracksClaimLifecycle() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(400), recognised)
 
-	s.setBlockHeight(25)
+	s.setBlockTime(25)
 	s.bankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ any, _ string, _ sdk.AccAddress, coins sdk.Coins) error {

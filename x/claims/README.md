@@ -38,7 +38,9 @@ governance claims depend on an enabled committee. Appointments must have a span 
 period, measured from the later of activation and the appointing block. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
 remain the backstop.
 
-The due-claim index drives EndBlock settlement without an execute message. Records preserve paid, cancelled, and
+The due-claim index drives EndBlock settlement without an execute message. A block settles at most 1,000 due claims
+(`MaxSettlementsPerBlock`), oldest first; the rest stay pending and due for the next block, already past the reach of
+cancellation, which ends at the closing time whenever settlement runs. Records preserve paid, cancelled, and
 failed outcomes plus cancelling authority. [Economic design](../../docs/design/ECONOMIC_DESIGN.md#66-insurance-claims) owns
 fund-flow and authorisation policy. `ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports
 custody/reservation across all terms. The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
@@ -89,11 +91,13 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 ## Settlement failure and custody invariants
 
 Settlement rechecks the recipient, coverage, and record under the current binary before its first write. An
-unparseable or blocked recipient, insufficient custody, or invalid record ends the claim as failed and releases its
-reservation. Failure is terminal: immutable recipient problems cannot heal within the same binary, and a custody
-shortfall indicates broken reservation accounting. The failure path does not revalidate a record whose invalidity
-may be why it was called. Failure details stay in node logs so error formatting is not part of the event contract.
-Store, transfer, and event errors still propagate as block errors.
+unparseable or blocked recipient, insufficient custody, an invalid record, or a payment Bank refuses ends the claim as
+failed and releases its reservation. Bank applies its send restrictions before it moves a coin, so a refused payment
+leaves nothing written. Failure is terminal: immutable recipient problems cannot heal within the same binary, and a
+custody shortfall indicates broken reservation accounting; a fresh claim naming a payable recipient is the remedy for
+the first. The failure path does not revalidate a record whose invalidity may be why it was called. Failure details
+stay in node logs so error formatting is not part of the event contract. Store and event errors still propagate as
+block errors.
 
 Recognised capital requires `reserved <= balance`. Submission and genesis enforce coverage; payment releases exactly
 what it sends; cancellation and failure release without sending. Insurance has no burner permission or other

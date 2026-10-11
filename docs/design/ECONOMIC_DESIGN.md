@@ -385,19 +385,22 @@ A claim is submitted, encumbered, then paid by the chain:
 - **Settlement.** At the closing time cancellation closes for everyone and the `x/claims` EndBlocker pays the
   immutable recipient and amount. Payment needs no signer because nothing about it is discretionary, and the recipient,
   who has just suffered the covered loss, is the party least able to send a transaction; an unsettled claim would
-  encumber Insurance for as long as it stood. The sweep is uncapped, since one settling block answers one submitting
-  block at comparable cost. A claim the chain cannot pay ends `failed` and releases its reservation, because nothing
-  about a due claim changes with height and a retry would repeat an identical computation; `EventClaimFailed` carries
-  no reason, since the cause is chain-generated text and a consensus-visible field cannot carry it.
+  encumber Insurance for as long as it stood. The sweep settles at most 1,000 claims a block, oldest first, and leaves
+  the rest due for the next: one settling block normally answers one submitting block at comparable cost, but a block
+  time that jumps after an outage brings due at once every claim that closed during it. A claim the chain cannot pay,
+  a payment Bank refuses included, ends `failed` and releases its reservation, because nothing about a due claim
+  changes with height and a retry would repeat an identical computation; `EventClaimFailed` carries no reason, since
+  the cause is chain-generated text and a consensus-visible field cannot carry it.
 
 The reservation is an encumbrance, not a movement: submission lowers the unencumbered balance and opens only the
 passive target gap, execution lowers balance and reservation together and creates no second gap shock, and the
 reservation never exceeds the balance. There is no guardian, pause, category, per-claim cap, or clawback of a paid
 claim (D32).
 
-The record is one closing time, two enums, and a reference. `closing_time` is scheduled while pending and actual once not, because
-settlement happens in the EndBlock of the block a claim comes due and a cancelled claim never reaches its scheduled
-time; the live handler, not stored-record validation, enforces the window. `origin` and `cancelled_by` share the
+The record is one closing time, two enums, and a reference. `closing_time` is scheduled while pending and actual once not:
+cancellation ends at the scheduled time whether settlement runs that block or waits behind the per-block bound, and a
+cancelled claim records its veto time, never reaching the scheduled one; the live handler, not stored-record
+validation, enforces the window. `origin` and `cancelled_by` share the
 `ClaimAuthority` enum, so a committee withdrawing its own claim is a meaningful comparison; the cancelling address is
 recoverable from the appointment history and the governance authority is a constant. `submitter` stays an address
 beside `mandate_term`, because submission moves value and the pair pins the accountable party without a lookup.
