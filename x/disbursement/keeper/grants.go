@@ -117,7 +117,7 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	g.Payee = beneficiary.String()
 	g.Paid = math.ZeroInt()
 	g.Remaining = g.Amount.Amount
-	g.CreatedHeight = uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	g.CreatedHeight = chain.BlockHeight(ctx)
 	g.CreatedTime = at
 	// Every grant waits for its first boundary or one period after the award, whichever is later, so
 	// next is never zero here.

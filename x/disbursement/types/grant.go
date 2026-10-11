@@ -167,7 +167,7 @@ func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	default:
 		// Periods is positive here, and elapsed below it, a uint32.
 		elapsed := (now - firstEnd) / s.PeriodLength
-		earned = first.Add(each.MulRaw(int64(elapsed)))
+		earned = first.Add(each.Mul(math.NewIntFromUint64(elapsed)))
 		next = firstEnd + (elapsed+1)*s.PeriodLength
 	}
 	if gate := g.CreatedTime + s.FirstLength; now < gate {

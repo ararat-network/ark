@@ -222,7 +222,7 @@ func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCom
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventCommitteeUpgradeCancelled{
 		Term:   securityMandate.Term,
 		Name:   pending.Name,
-		Height: uint64(pending.Height),
+		Height: uint64(max(pending.Height, 0)),
 	}); err != nil {
 		return nil, err
 	}

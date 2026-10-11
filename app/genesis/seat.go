@@ -244,6 +244,10 @@ const founderAwardHeight = 1
 // would (D136). Genesis validation reads neither cap nor Bank, so both caps
 // and the contributor account's backing are checked here.
 func (s *seatStates) awardFounder(founder sdk.AccAddress, genesisTime time.Time) error {
+	start := genesisTime.Unix()
+	if start < 0 {
+		return fmt.Errorf("genesis time %s precedes the Unix epoch", genesisTime)
+	}
 	params := s.disbursement.Params
 	grant := chain.NativeBaseAmount(chain.FounderGrantNoah)
 	if grant.GT(params.OwnershipCap) {
@@ -283,7 +287,7 @@ func (s *seatStates) awardFounder(founder sdk.AccAddress, genesisTime time.Time)
 			AwardValue: value,
 		},
 	} {
-		if err := s.award(founder, g, uint64(genesisTime.Unix())); err != nil {
+		if err := s.award(founder, g, uint64(start)); err != nil {
 			return err
 		}
 	}

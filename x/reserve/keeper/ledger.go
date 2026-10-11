@@ -58,7 +58,7 @@ func (k *Keeper) appendEntry(ctx context.Context, record ledgerAppend) (uint64, 
 		MovedCoin:      record.MovedCoin,
 		Reference:      record.Reference,
 		RecordedBy:     record.RecordedBy,
-		Height:         uint64(sdkCtx.BlockHeight()),
+		Height:         chain.BlockHeight(ctx),
 		Term:           record.Term,
 	}
 	if err := entry.Validate(); err != nil {

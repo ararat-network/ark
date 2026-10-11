@@ -63,7 +63,6 @@ linters:
       excludes:
         - G101 # hardcoded credentials — false positives on test mnemonics/keys
         - G107 # variable URL in HTTP request — legitimate in clients
-        - G115 # integer overflow conversion — too noisy in blockchain math
         - G404 # weak random number generator — math/rand is fine for non-crypto
       confidence: medium
     misspell:
@@ -106,6 +105,11 @@ linters:
         linters:
           - revive
         text: "dot-imports"
+      # Test fixtures and simulation generators convert bounded values.
+      - path: (_test\.go$|/simulation/)
+        linters:
+          - gosec
+        text: G115
       # autocli files are declarative arg tables; repeated field names there
       # are data, not magic strings.
       - path: module/autocli\.go$

@@ -87,11 +87,10 @@ func (c Config) Validate() error {
 // byteCaps reserves lane bytes; normal storage takes the remainder, including rounding.
 func (c Config) byteCaps() [3]int64 {
 	var caps [3]int64
-	caps[LaneGovernance] = int64(fraction(uint64(c.MaxTxsBytes), GovernanceAdmissionByteShare))
-	caps[LaneCommittee] = int64(fraction(uint64(c.MaxTxsBytes), CommitteeAdmissionByteShare))
+	caps[LaneGovernance] = fraction(c.MaxTxsBytes, GovernanceAdmissionByteShare)
+	caps[LaneCommittee] = fraction(c.MaxTxsBytes, CommitteeAdmissionByteShare)
 	caps[LaneNormal] = c.MaxTxsBytes - caps[LaneGovernance] - caps[LaneCommittee]
 	return caps
 }
 
-//nolint:unparam // Count, byte and gas shares remain independently tunable constants.
-func fraction(n, bps uint64) uint64 { return n/10000*bps + n%10000*bps/10000 }
+func fraction[T int | int64 | uint64](n, bps T) T { return n/10000*bps + n%10000*bps/10000 }

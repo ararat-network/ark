@@ -13,6 +13,11 @@ import (
 
 type resources struct{ bytes, gas uint64 }
 
+// txSize is the bytes a transaction takes of a proposal's limit.
+func txSize(bz []byte) uint64 {
+	return uint64(max(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz}), 0))
+}
+
 // txGas is the declared gas limit. Ante admits only fee transactions, so the zero
 // branch is unreachable; the SDK selector tolerates the case the same way.
 func txGas(tx sdk.Tx) uint64 {
@@ -62,7 +67,7 @@ func (s *txSelector) SelectTxForProposal(_ context.Context, maxBytes, maxGas uin
 	} // The SDK verifier rejects malformed signers.
 	lane := s.lanes[key]
 	limit := blockAllowance(lane, maxBytes, maxGas)
-	size := uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz}))
+	size := txSize(bz)
 	gas := txGas(tx)
 	used := s.laneUsed[lane]
 	if size <= maxBytes-s.used.bytes && size <= limit.bytes-used.bytes &&

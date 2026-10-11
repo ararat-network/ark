@@ -63,7 +63,7 @@ func ProcessVoteExtensions(
 			Denom:       denom,
 			Rate:        price,
 			BlockTime:   now,
-			BlockHeight: uint64(ctx.BlockHeight()),
+			BlockHeight: chain.BlockHeight(ctx),
 		}
 		if err := oracleKeeper.SetExchangeRateWithEvent(ctx, exchangeRate); err != nil {
 			return fmt.Errorf(

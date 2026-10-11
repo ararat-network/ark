@@ -98,8 +98,8 @@ func NewPool(config Config) *Pool {
 		entries: make(map[senderNonce]Entry), hashes: make(map[[32]byte]senderNonce), senders: make(map[string]int),
 	}
 	// Normal storage takes the remainder, including integer rounding.
-	p.countCaps[LaneGovernance] = int(fraction(uint64(config.MaxTxs), GovernanceAdmissionCountShare))
-	p.countCaps[LaneCommittee] = int(fraction(uint64(config.MaxTxs), CommitteeAdmissionCountShare))
+	p.countCaps[LaneGovernance] = fraction(config.MaxTxs, GovernanceAdmissionCountShare)
+	p.countCaps[LaneCommittee] = fraction(config.MaxTxs, CommitteeAdmissionCountShare)
 	p.countCaps[LaneNormal] = config.MaxTxs - p.countCaps[LaneGovernance] - p.countCaps[LaneCommittee]
 	p.byteCaps = config.byteCaps()
 	mempoolmetrics.ObservePool(p.Usage)

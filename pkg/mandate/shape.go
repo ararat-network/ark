@@ -1,6 +1,8 @@
 package mandate
 
 import (
+	"math"
+
 	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -59,11 +61,13 @@ func verifiedMultisig(key *kmultisig.LegacyAminoPubKey) (uint32, uint32) {
 		return 0, 0
 	}
 	members := key.PubKeys
-	// Neither bound is reachable through a transaction: a threshold of zero or
-	// one above the member count cannot authenticate, so the ante handler never
-	// registers such a key. The guard keeps the observation honest for a state
-	// that arrived another way.
-	if key.Threshold == 0 || uint64(key.Threshold) > uint64(len(members)) {
+	count := len(members)
+	// No bound is reachable through a transaction: a threshold of zero or one
+	// above the member count cannot authenticate, so the ante handler never
+	// registers such a key, and the transaction size limit keeps the member
+	// count far below uint32. The guard keeps the observation honest for a
+	// state that arrived another way.
+	if key.Threshold == 0 || uint64(key.Threshold) > uint64(count) || uint64(count) > math.MaxUint32 {
 		return 0, 0
 	}
 
@@ -79,7 +83,7 @@ func verifiedMultisig(key *kmultisig.LegacyAminoPubKey) (uint32, uint32) {
 		seen[identity] = struct{}{}
 	}
 
-	return key.Threshold, uint32(len(members))
+	return key.Threshold, uint32(count)
 }
 
 // IsZero reports the shape a disabled mandate carries: nothing observed.

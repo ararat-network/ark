@@ -275,7 +275,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 	state.LiabilityRatio = ratio
 	state.FlowRatio = flow
 	state.Multiplier = multiplier
-	state.LastRefreshHeight = uint64(sdkCtx.BlockHeight())
+	state.LastRefreshHeight = chain.BlockHeight(ctx)
 	if err := k.ExposureState.Set(ctx, state); err != nil {
 		return false, fmt.Errorf("setting exposure state: %w", err)
 	}

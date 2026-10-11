@@ -45,7 +45,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 		return fmt.Errorf("capturing conversion-factor rates: %w", err)
 	}
 
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	height := chain.BlockHeight(ctx)
 	one := sdk.NewDecCoin(reference, math.OneInt())
 	changed := make([]types.ConversionFactor, 0, len(denoms))
 	for _, denom := range denoms {
@@ -152,7 +152,7 @@ func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to st
 		return nil
 	}
 
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	height := chain.BlockHeight(ctx)
 	rescaled := make([]types.ConversionFactor, 0)
 	if err := k.ConversionFactors.Walk(ctx, nil, func(denom string, entry types.ConversionFactor) (bool, error) {
 		// Positive, not merely representable — refresh's own write gate: an

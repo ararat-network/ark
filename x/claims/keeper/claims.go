@@ -71,7 +71,7 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 		Recipient:       sub.Recipient,
 		Amount:          sub.Amount,
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
-		SubmittedHeight: uint64(sdkCtx.BlockHeight()),
+		SubmittedHeight: chain.BlockHeight(ctx),
 		SubmittedTime:   now,
 		ClosingTime:     closingTime,
 	}

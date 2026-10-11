@@ -70,11 +70,10 @@ func (k Keeper) ScheduleFeedTransition(ctx context.Context, denom string, direct
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	activation := sdkCtx.BlockHeight() + types.FeedActivationDelayBlocks
 	transition := types.FeedTransition{
 		Denom:                denom,
 		Direction:            direction,
-		ActivationVoteHeight: uint64(activation),
+		ActivationVoteHeight: chain.BlockHeight(ctx) + types.FeedActivationDelayBlocks,
 	}
 	scheduled := feeds
 	scheduled.Transitions = append(slices.Clone(feeds.Transitions), transition)
@@ -99,7 +98,7 @@ func (k Keeper) ScheduleFeedTransition(ctx context.Context, denom string, direct
 			Direction:            transition.Direction,
 			ActivationVoteHeight: transition.ActivationVoteHeight,
 			ResultingVersion: scheduled.
-				AtHeight(activation).
+				AtHeight(sdkCtx.BlockHeight() + types.FeedActivationDelayBlocks).
 				Version,
 		},
 	); err != nil {
@@ -117,7 +116,7 @@ func (k Keeper) AdvanceFeeds(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting feeds: %w", err)
 	}
-	blockHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	blockHeight := chain.BlockHeight(ctx)
 
 	// Each pass promotes the leading run of transitions sharing the earliest
 	// activation height, once that height has arrived.

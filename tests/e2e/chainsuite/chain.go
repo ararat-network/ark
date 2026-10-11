@@ -230,7 +230,7 @@ func (c *Chain) SubmitProposal(ctx context.Context, keyName, title, deposit stri
 }
 
 func (c *Chain) WaitForProposalStatus(ctx context.Context, proposalID string, status govv1.ProposalStatus) error {
-	propID, err := strconv.ParseInt(proposalID, 10, 64)
+	propID, err := strconv.ParseUint(proposalID, 10, 64)
 	if err != nil {
 		return err
 	}
@@ -240,17 +240,17 @@ func (c *Chain) WaitForProposalStatus(ctx context.Context, proposalID string, st
 	}
 	// Two block times past the longest window a proposal can sit in.
 	maxHeight := height + int64((GovDepositPeriod+GovVotingPeriod)/BlockTime) + 5
-	_, err = cosmos.PollForProposalStatusV1(ctx, c.CosmosChain, height, maxHeight, uint64(propID), status)
+	_, err = cosmos.PollForProposalStatusV1(ctx, c.CosmosChain, height, maxHeight, propID, status)
 	return err
 }
 
 // PassProposal has every validator vote yes and waits for the tally.
 func (c *Chain) PassProposal(ctx context.Context, proposalID string) error {
-	propID, err := strconv.ParseInt(proposalID, 10, 64)
+	propID, err := strconv.ParseUint(proposalID, 10, 64)
 	if err != nil {
 		return err
 	}
-	if err := c.VoteOnProposalAllValidators(ctx, uint64(propID), cosmos.ProposalVoteYes); err != nil {
+	if err := c.VoteOnProposalAllValidators(ctx, propID, cosmos.ProposalVoteYes); err != nil {
 		return err
 	}
 	return c.WaitForProposalStatus(ctx, proposalID, govv1.StatusPassed)
@@ -571,7 +571,7 @@ func (c *Chain) WaitForTx(ctx context.Context, txhash string) (uint32, error) {
 		if err != nil {
 			return false, nil //nolint:nilerr // not yet indexed
 		}
-		code = uint32(gjson.GetBytes(stdout, "code").Uint())
+		code = uint32(gjson.GetBytes(stdout, "code").Uint()) //nolint:gosec // G115: ABCI result codes are uint32.
 		return true, nil
 	})
 	return code, err

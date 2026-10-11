@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/metrics"
 	"github.com/ararat-network/ark/x/oracle/types"
@@ -15,7 +13,6 @@ import (
 func (k Keeper) EndBlocker(ctx context.Context) error {
 	defer metrics.RecordModuleMethodLatency(ctx, types.ModuleName, metrics.EndBlock)()
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)
@@ -40,7 +37,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 			accounting.RewardDistributionWindow != params.RewardDistributionWindow {
 			accounting.RewardWindow = params.RewardWindow
 			accounting.RewardDistributionWindow = params.RewardDistributionWindow
-			accounting.RewardWindowStartHeight = uint64(sdkCtx.BlockHeight()) + 1
+			accounting.RewardWindowStartHeight = chain.BlockHeight(ctx) + 1
 			accountingChanged = true
 		}
 	}
@@ -57,7 +54,7 @@ func (k Keeper) EndBlocker(ctx context.Context) error {
 
 		if accounting.AttendanceWindow != params.AttendanceWindow {
 			accounting.AttendanceWindow = params.AttendanceWindow
-			accounting.AttendanceWindowStartHeight = uint64(sdkCtx.BlockHeight()) + 1
+			accounting.AttendanceWindowStartHeight = chain.BlockHeight(ctx) + 1
 			accountingChanged = true
 		}
 	}

@@ -196,10 +196,7 @@ func (h *Handler) priceAge(ctx sdk.Context, proposalTime time.Time) (age, limit 
 	if err != nil {
 		return 0, 0, fmt.Errorf("reading oracle params: %w", err)
 	}
-	now, observed := time.Now().Unix(), proposalTime.Unix()
-	if now > observed {
-		age = uint64(now - observed)
-	}
+	age = uint64(max(time.Now().Unix()-proposalTime.Unix(), 0))
 	return age, params.MaxExchangeRateAge, nil
 }
 

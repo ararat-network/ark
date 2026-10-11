@@ -20,7 +20,7 @@ const (
 
 	// FeedActivationDelayBlocks leaves one fully committed height between
 	// scheduling a feed transition and using it in ExtendVote.
-	FeedActivationDelayBlocks int64 = 2
+	FeedActivationDelayBlocks = 2
 )
 
 // MaxExchangeRate bounds stored and derived NOAH-per-unit prices to the vote encoding range.

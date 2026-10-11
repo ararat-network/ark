@@ -107,7 +107,7 @@ func (k Keeper) OpenSettlement(
 		RedemptionRate:      redemptionRate,
 		ActivationTime:      now + params.SettlementActivationDelay,
 		EarliestClosingTime: earliestClosingTime,
-		OpenedHeight:        uint64(sdkCtx.BlockHeight()),
+		OpenedHeight:        chain.BlockHeight(ctx),
 		OpenedTime:          now,
 	}
 	if err := plan.Validate(); err != nil {
@@ -236,7 +236,7 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 
 	// Closing follows activation, so this comparison also protects pending plans. Derecognition
 	// before activation requires cancelling the plan first.
-	blockHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	blockHeight := chain.BlockHeight(ctx)
 	if now := chain.BlockSeconds(ctx); hasPlan && now < plan.EarliestClosingTime {
 		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
@@ -294,7 +294,7 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        version,
-			ClosedHeight:   uint64(sdkCtx.BlockHeight()),
+			ClosedHeight:   chain.BlockHeight(ctx),
 		},
 	); err != nil {
 		return fmt.Errorf(

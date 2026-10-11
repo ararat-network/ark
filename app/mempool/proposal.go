@@ -4,7 +4,6 @@ import (
 	"context"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -57,7 +56,7 @@ func (p *Pool) PrepareProposalHandler(app baseapp.ProposalTxVerifier) sdk.Prepar
 				allowance := blockAllowance(lane, uint64(req.MaxTxBytes), maxGas)
 				// Encoding failures still go through SDK verification/removal handling.
 				if bz, err := app.TxEncode(entry.Tx); err == nil {
-					need := resources{uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz})), txGas(entry.Tx)}
+					need := resources{txSize(bz), txGas(entry.Tx)}
 					// Past what the lane has left, oversized or not: ordinary fee priority. Use never
 					// exceeds the allowance, so the differences cannot wrap.
 					if need.bytes > allowance.bytes-laneUsed[lane].bytes || (maxGas > 0 && need.gas > allowance.gas-laneUsed[lane].gas) {

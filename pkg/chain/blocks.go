@@ -31,6 +31,12 @@ func BlockSeconds(ctx context.Context) uint64 {
 	return uint64(max(sdk.UnwrapSDKContext(ctx).BlockTime().Unix(), 0))
 }
 
+// BlockHeight is the block's height. No header carries a negative one; the clamp keeps the
+// conversion total.
+func BlockHeight(ctx context.Context) uint64 {
+	return uint64(max(sdk.UnwrapSDKContext(ctx).BlockHeight(), 0))
+}
+
 // IsPeriodLastBlock returns true if we are at the last block of the period
 func IsPeriodLastBlock(ctx context.Context, blocksPerPeriod uint64) bool {
 	return IsPeriodLastBlockFrom(ctx, 0, blocksPerPeriod)

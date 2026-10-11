@@ -32,7 +32,7 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 		Deployed:       deployed,
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: venueReference,
-		OpenedHeight:   uint64(sdkCtx.BlockHeight()),
+		OpenedHeight:   chain.BlockHeight(ctx),
 	}
 	if err := position.Validate(); err != nil {
 		return types.Position{}, err
@@ -522,7 +522,7 @@ func (k *Keeper) closePosition(
 		return 0, err
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	position.ClosedHeight = uint64(sdkCtx.BlockHeight())
+	position.ClosedHeight = chain.BlockHeight(ctx)
 	if err := position.Validate(); err != nil {
 		return 0, err
 	}

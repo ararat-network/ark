@@ -695,7 +695,7 @@ func calculateIP(ip string, i int) (string, error) {
 	if i < 0 || int(ipv4[3])+i > maxOctet {
 		return "", fmt.Errorf("%s: offset %d overflows the last octet", ip, i)
 	}
-	ipv4[3] += byte(i)
+	ipv4[3] += byte(i) //nolint:gosec // G115: the check above holds the sum within the octet.
 
 	return ipv4.String(), nil
 }
