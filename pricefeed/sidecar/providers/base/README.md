@@ -29,9 +29,14 @@ run.
 
 A venue heartbeat that vouches for a subscription reports an unchanged result: no price, only a timestamp. [receive.go](receive.go)
 applies it to the cached result by moving `Timestamp` and leaving `LastObserved` alone, and drops it when no price is
-cached yet; a result older than the cached one, or one neither unchanged nor priced, is dropped too. The heartbeat
-says the price still holds, not that it was seen again, and the two timestamps are what let
+cached yet; a result neither unchanged nor priced is dropped too. A dropped result is counted under its reason, not as a
+success. The heartbeat says the price still holds, not that it was seen again, and the two timestamps are what let
 the [sidecar runtime](../../runtime/README.md#freshness) bound how long a heartbeat may carry a price.
+
+Results apply in arrival order. Each ticker has one producer delivering in order, and timestamps are local wall-clock
+times, so refusing a result stamped before the cached one would only ever fire after the clock stepped back, freezing
+the cache while the runtime read the frozen price's future stamp as fresh. A priced result's `LastObserved` is never
+later than its `Timestamp`; one left unset is taken as observed on arrival.
 
 API and WebSocket fetchers consume adapter contracts documented in [API providers](../api/README.md) and
 [WebSocket providers](../websocket/README.md). Adapters own exchange requests/messages and parsing; they do not start a

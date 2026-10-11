@@ -35,14 +35,11 @@ func (p *Provider) recv(ctx context.Context, responseCh <-chan types.Response) {
 					"result", result,
 				)
 
-				p.updateData(ctx, ticker, result)
-
-				providermetrics.RecordResponse(
-					ctx,
-					p.name,
-					ticker,
-					types.OK,
-				)
+				// A result the cache refuses is counted under its reason, so
+				// a dropped stream never reads as a success.
+				if code, ok := p.updateData(ctx, ticker, result); ok {
+					providermetrics.RecordResponse(ctx, p.name, ticker, code)
+				}
 			}
 
 			// Log and record all the unresolved data.
@@ -64,14 +61,18 @@ func (p *Provider) recv(ctx context.Context, responseCh <-chan types.Response) {
 	}
 }
 
-// updateData stores results that are not older than the current data. An unchanged
-// result refreshes only the current result's timestamp.
-func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result types.Result) {
+// updateData caches result and returns the code to record for it: OK when
+// stored, otherwise why not. It reports false for a ticker outside the
+// configured markets or a cancelled run, which record nothing. An unchanged
+// result refreshes only the current result's timestamp. Arrival order is the
+// only order: each ticker has one in-order producer, and a wall-clock step
+// back must not freeze the cache.
+func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result types.Result) (types.ErrorCode, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	if ctx.Err() != nil {
-		return
+		return 0, false
 	}
 
 	pair, ok := p.markets.TickerToPair(ticker)
@@ -81,7 +82,7 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 			"ticker", ticker,
 			"result", result,
 		)
-		return
+		return 0, false
 	}
 
 	if !result.Unchanged && result.Price == nil {
@@ -90,54 +91,32 @@ func (p *Provider) updateData(ctx context.Context, ticker types.Ticker, result t
 			"ticker", ticker,
 			"result", result,
 		)
-		return
+		return types.ErrorInvalidResponse, true
 	}
 
 	current, ok := p.prices[pair]
-	if !ok {
-		// Ignore an unchanged result when no previous value exists.
-		if result.Unchanged {
+	if result.Unchanged {
+		if !ok {
 			p.logger.Debug(
 				"result is unchanged but no current data",
 				"ticker", ticker,
 				"result", result,
 			)
-			return
+			return types.ErrorNoExistingPrice, true
 		}
-
-		p.prices[pair] = result
-		return
-	}
-
-	// If the timestamp of the result is less than the current timestamp, then we do not update the data.
-	if result.Timestamp.Before(current.Timestamp) {
-		p.logger.Debug(
-			"result timestamp is before current timestamp",
-			"result_timestamp", result.Timestamp,
-			"current_timestamp", current.Timestamp,
-			"ticker", ticker,
-		)
-		return
-	}
-
-	if result.Unchanged {
-		p.logger.Debug(
-			"result is unchanged",
-			"ticker", ticker,
-			"result", result,
-			"updated_timestamp", result.Timestamp.String(),
-		)
 
 		// Timestamp moves; LastObserved does not. The heartbeat says the
 		// price still holds, not that it was seen again.
 		current.Timestamp = result.Timestamp
 		p.prices[pair] = current
-	} else {
-		p.logger.Debug(
-			"updating base provider data",
-			"ticker", ticker,
-			"result", result,
-		)
-		p.prices[pair] = result
+		return types.OK, true
 	}
+
+	// A price is never observed after it arrived, and a handler that set no
+	// observation time observed it on arrival.
+	if result.LastObserved.IsZero() || result.LastObserved.After(result.Timestamp) {
+		result.LastObserved = result.Timestamp
+	}
+	p.prices[pair] = result
+	return types.OK, true
 }
