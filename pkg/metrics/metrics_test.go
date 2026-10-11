@@ -7,19 +7,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
 	"github.com/ararat-network/ark/pkg/metrics"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
 func TestRecordModuleMethodLatency(t *testing.T) {
-	originalProvider := otel.GetMeterProvider()
-	t.Cleanup(func() {
-		otel.SetMeterProvider(originalProvider)
-	})
-
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
@@ -28,7 +23,7 @@ func TestRecordModuleMethodLatency(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	metrics.RecordModuleMethodLatency(context.Background(), "oracle", metrics.EndBlock)()
 

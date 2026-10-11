@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
@@ -18,6 +17,7 @@ import (
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/pkg/telemetry"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
 func TestProposalStatus(t *testing.T) {
@@ -53,7 +53,7 @@ func TestProposalOutcomeMetrics(t *testing.T) {
 	provider, err := telemetry.NewPrometheusProvider("test", registry)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 	count := func(method, status string) float64 {
 		families, err := registry.Gather()
 		require.NoError(t, err)

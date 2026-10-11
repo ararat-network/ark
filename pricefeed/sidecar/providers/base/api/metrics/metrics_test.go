@@ -10,10 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api/metrics"
 )
 
@@ -26,7 +26,7 @@ func TestRecordAPIMetrics(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	RecordRequest(
 		context.Background(),
