@@ -45,8 +45,8 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 		Address: relauncher.FormattedAddress(), Denom: chainsuite.Denom, Amount: funds,
 	}))
 
-	// A member grant and its registrar ride the export: the grant's clock is wall time and the
-	// mandate's window is absolute heights, so both resume where they were.
+	// A member grant and its registrar ride the export. Both are anchored in block time, so on the
+	// relaunched chain they run on against its clock, the outage included.
 	gov, err := s.Chain.GovAuthority(ctx)
 	s.Require().NoError(err)
 	committee := s.FundedWallet("committee", chainsuite.GovDeposit+10)

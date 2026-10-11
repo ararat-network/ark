@@ -79,7 +79,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 	dusted := s.FundedWallet("dusted-member", 1)
 	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", member.FormattedAddress())
-	s.Require().Error(err, "the committee is not the registrar")
+	s.Require().ErrorContains(err, notAppointed("registrar"), "the committee is not the registrar")
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", member.FormattedAddress(), "--addresses", dusted.FormattedAddress())
 	s.Require().NoError(err)
 
@@ -101,21 +101,26 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	another, err := s.Chain.BuildWallet(ctx, "member-2", "")
 	s.Require().NoError(err)
 	_, err = s.Node().ExecTx(ctx, s.Wallet.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
-	s.Require().Error(err, "the replaced committee cannot rotate the registrar")
+	s.Require().ErrorContains(err, notAppointed("grants"), "the replaced committee cannot rotate the registrar")
 	another2, err := s.Chain.BuildWallet(ctx, "member-3", "")
 	s.Require().NoError(err)
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", another2.FormattedAddress())
-	s.Require().Error(err, "the replacement cleared the registrar")
+	s.Require().ErrorContains(err, notAppointed("registrar"), "the replacement cleared the registrar")
 	// The registrar term is three: the first appointment, the clearing, and this appointment.
 	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "committee-registrar", "--expected-term", "2", "--registrar", s.Wallet2.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
 	s.Require().NoError(err)
 	_, err = s.Node().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "2", "--addresses", another.FormattedAddress())
-	s.Require().Error(err)
+	s.Require().ErrorContains(err, notAppointed("registrar"), "the old registrar was replaced")
 	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "1", "--addresses", another.FormattedAddress())
-	s.Require().Error(err)
+	s.Require().ErrorContains(err, "registrar mandate: term mismatch", "the registrar term moved on")
 	_, err = s.Node().ExecTx(ctx, s.Wallet2.KeyName(), "disbursement", "register-members", "--reference", "admission batch", "--expected-term", "3", "--addresses", another.FormattedAddress())
 	s.Require().NoError(err)
 	s.Require().True(s.Balance(another.FormattedAddress()).IsZero(), "the new registrar's member waits out the hold too")
+}
+
+// notAppointed is the refusal a mandate gives a signer it did not appoint.
+func notAppointed(mandate string) string {
+	return mandate + " mandate: signer is not the exact appointed account"
 }
 
 func TestDisbursement(t *testing.T) {

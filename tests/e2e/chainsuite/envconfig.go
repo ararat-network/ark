@@ -23,6 +23,9 @@ type Environment struct {
 	// a production validator has. Off, validators vote empty extensions and
 	// the chain holds no exchange rate.
 	PriceFeed bool `envconfig:"PRICEFEED" default:"true"`
+	// PriceFeedLive points the sidecars at their default venues over the internet. Off, every route
+	// leg reports a pinned price, so rates are known numbers and no venue's availability matters.
+	PriceFeedLive bool `envconfig:"PRICEFEED_LIVE" default:"false"`
 }
 
 func GetEnvironment() Environment {

@@ -48,9 +48,8 @@ const (
 	CoinDecimals = int64(18)
 
 	// GasPrices is empty on purpose: arkd prices every transaction itself,
-	// from Treasury's live sheet and the payer's balances, tax included. A
-	// --gas-prices flag would make the SDK factory build a zero-amount fee
-	// coin for the `--gas auto` simulation, which the ante refuses.
+	// from Treasury's live sheet and the payer's balances, tax included,
+	// which is the path an operator's CLI takes.
 	GasPrices     = ""
 	GasAdjustment = 2.0
 
@@ -74,15 +73,6 @@ const (
 	// UpgradeDelta is the number of blocks between an upgrade proposal and
 	// its height: enough for the vote to pass under GovVotingPeriod.
 	UpgradeDelta = 35
-
-	// SeatGrantNoah is one founding seat's grant and SeatFloatNoah the
-	// liquid float beside it, in whole NOAH, mirrored from pkg/chain/launch.go.
-	SeatGrantNoah = 5_000_000
-	SeatFloatNoah = 50_000
-	// SeatValidatorShare and SeatOracleShare are one seat's per-block reward
-	// shares in base units, mirrored from the same file.
-	SeatValidatorShare = "17500000000000000"
-	SeatOracleShare    = "7500000000000000"
 
 	// ValidatorFunds is each validator account's genesis balance, in NOAH.
 	ValidatorFunds = 10_000

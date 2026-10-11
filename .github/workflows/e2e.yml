@@ -118,6 +118,8 @@ jobs:
           TEST_IMAGE_VERSION: latest
           TEST_OLD_IMAGE_VERSION: ${{ steps.old.outputs.version }}
           TEST_UPGRADE_NAME: ${{ steps.old.outputs.plan }}
+          # Pull requests run on pinned prices; nightly runs reach the live venues.
+          TEST_PRICEFEED_LIVE: ${{ github.event_name == 'schedule' }}
         run: make test-e2e E2E_PACKAGES=./${{ matrix.package }}/...
 
       - name: Container logs

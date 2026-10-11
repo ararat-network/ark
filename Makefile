@@ -8,6 +8,8 @@ VERSION := $(shell git describe --tags --match 'v[0-9]*' --always --dirty)
 PRICEFEED_VERSION := $(shell git describe --tags --match 'pricefeed/v[0-9]*' --always --dirty | sed 's|^pricefeed/||')
 COMMIT := $(shell git rev-parse HEAD)
 
+DOCKER := $(shell which docker)
+
 # Comma-separated go build tags. ledger compiles the hardware-wallet keyring
 # (cgo), matching what goreleaser ships; override empty for a cgo-free build.
 BUILD_TAGS ?= ledger
@@ -99,14 +101,15 @@ E2E_PACKAGES ?= ./...
 E2E_RUN ?=
 # The Go Docker client dials DOCKER_HOST or /var/run/docker.sock; it does not
 # read the CLI's context, which is where OrbStack and Colima put their socket.
-DOCKER_HOST ?= $(shell $(DOCKER) context inspect --format '{{(index .Endpoints "docker").Host}}' 2>/dev/null)
-export DOCKER_HOST
+# Recursive, so only test-e2e pays for the lookup.
+E2E_DOCKER_HOST = $(or $(DOCKER_HOST),$(shell $(DOCKER) context inspect --format '{{(index .Endpoints "docker").Host}}' 2>/dev/null))
 test-e2e:
-	@cd tests/e2e && go test -mod=readonly -v -p 1 -count=1 -timeout 90m $(if $(E2E_RUN),-run '$(E2E_RUN)',) $(E2E_PACKAGES)
+	@cd tests/e2e && DOCKER_HOST='$(E2E_DOCKER_HOST)' go test -mod=readonly -v -p 1 -count=1 -timeout 90m $(if $(E2E_RUN),-run '$(E2E_RUN)',) $(E2E_PACKAGES)
 
-# Compiles the suites without Docker, so the module cannot rot between runs.
+# Compiles the suites and runs the harness's own unit tests, without Docker, so the module cannot
+# rot between runs.
 test-e2e-vet:
-	@cd tests/e2e && go vet ./...
+	@cd tests/e2e && go vet ./... && go test -mod=readonly -count=1 ./chainsuite/
 
 ###############################################################################
 ###                               Simulation                                ###
@@ -168,7 +171,6 @@ vulncheck:
 
 HTTPS_GIT := https://github.com/ararat-network/ark.git
 
-DOCKER := $(shell which docker)
 protoVer=0.18.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 # expanded per-recipe so only the proto targets require docker
