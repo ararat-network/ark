@@ -195,9 +195,8 @@ func TestAppSimulationAfterImport(t *testing.T) {
 	})
 }
 
-// postImportOperations builds the legacy operations without gov proposal submissions: the SDK's
-// legacy submission signs a zero-amount fee leg, which the fee decorator refuses by design. The
-// first run covers proposals through simsx.
+// postImportOperations builds the legacy operations without gov proposal submissions; the first run
+// covers proposals through simsx.
 func postImportOperations(app *ArkApp) []simtypes.WeightedOperation {
 	return app.SimulationManager().WeightedOperations(module.SimulationState{
 		AppParams: make(simtypes.AppParams),

@@ -46,7 +46,7 @@ func newReflectFixture(t *testing.T) reflectFixture {
 	t.Helper()
 
 	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1, Time: time.Now()})
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1, Time: apptestutil.GenesisTime})
 	setStableTax(t, arkApp, ctx, 10_000)
 	f := reflectFixture{
 		app: arkApp, ctx: ctx,

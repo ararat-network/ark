@@ -16,7 +16,6 @@ import (
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	"google.golang.org/protobuf/encoding/protowire"
 
 	abcicli "github.com/cometbft/cometbft/abci/client"
@@ -25,6 +24,7 @@ import (
 	cmtsync "github.com/cometbft/cometbft/libs/sync"
 	cmtpool "github.com/cometbft/cometbft/mempool"
 	"github.com/cometbft/cometbft/p2p"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cometbft/cometbft/proxy"
 	rpccore "github.com/cometbft/cometbft/rpc/core"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
@@ -49,6 +49,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	gov "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 
+	"github.com/ararat-network/ark/abci/codec"
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
@@ -56,6 +57,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/pkg/telemetry"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	security "github.com/ararat-network/ark/x/security/types"
 )
 
@@ -66,15 +68,39 @@ var admissionTime = time.Date(2026, 9, 6, 0, 0, 0, 0, time.UTC)
 type admissionFixture struct {
 	apps                     []*app.ArkApp
 	voter, normal, committee apptest.Funder
+	validators               apptest.Validators
+	start                    time.Time
+}
+
+// admissionConfig varies the admission chain: extra app options, the genesis and first-block
+// time (admissionTime when zero), and vote extensions from height one.
+type admissionConfig struct {
+	options        sim.AppOptionsMap
+	start          time.Time
+	voteExtensions bool
 }
 
 func newAdmissionFixture(t *testing.T, n int, configure ...func(*app.ArkApp)) admissionFixture {
 	t.Helper()
+	return newAdmissionFixtureWith(t, admissionConfig{}, n, configure...)
+}
+
+func newAdmissionFixtureWith(t *testing.T, cfg admissionConfig, n int, configure ...func(*app.ArkApp)) admissionFixture {
+	t.Helper()
+	start := cfg.start
+	if start.IsZero() {
+		start = admissionTime
+	}
 	coins := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, chain.NativeBaseAmount(1_000_000)), sdk.NewCoin(chain.XDRBaseDenom, math.NewIntWithDecimal(1, 23)))
-	f := admissionFixture{voter: apptest.NewFunder(t, coins), normal: apptest.NewFunder(t, coins), committee: apptest.NewFunder(t, coins)}
+	f := admissionFixture{voter: apptest.NewFunder(t, coins), normal: apptest.NewFunder(t, coins), committee: apptest.NewFunder(t, coins), start: start}
 	validators := apptest.NewValidators(t, 1)
+	f.validators = validators
 	for i := 0; i < n; i++ {
-		a := app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), len(configure) == 0, sim.AppOptionsMap{flags.FlagHome: t.TempDir(), mempool.MaxTxsKey: 20}, baseapp.SetChainID(admissionChain))
+		options := sim.AppOptionsMap{flags.FlagHome: t.TempDir(), mempool.MaxTxsKey: 20}
+		for key, value := range cfg.options {
+			options[key] = value
+		}
+		a := app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), len(configure) == 0, options, baseapp.SetChainID(admissionChain))
 		t.Cleanup(func() { require.NoError(t, a.Close()) })
 		for _, setup := range configure {
 			setup(a)
@@ -85,11 +111,15 @@ func newAdmissionFixture(t *testing.T, n int, configure ...func(*app.ArkApp)) ad
 		gen, err := sim.GenesisStateWithValSet(a.AppCodec(), a.DefaultGenesis(), validators.Set, []auth.GenesisAccount{f.voter.Account, f.normal.Account, f.committee.Account}, f.voter.Balance, f.normal.Balance, f.committee.Balance)
 		require.NoError(t, err)
 		apptest.CorrectBondedPool(t, a.AppCodec(), gen, 1)
+		if cfg.voteExtensions {
+			// Blocks then carry the previous commit, which slashing attributes.
+			apptest.SeedSigningInfos(t, a.AppCodec(), gen, validators.ConsAddresses(), 1)
+		}
 		var gg gov.GenesisState
 		a.AppCodec().MustUnmarshalJSON(gen["gov"], &gg)
-		end := admissionTime.Add(48 * time.Hour)
+		end := start.Add(48 * time.Hour)
 		gg.StartingProposalId = 2
-		gg.Proposals = []*gov.Proposal{{Id: 1, Status: gov.StatusVotingPeriod, VotingStartTime: &admissionTime, VotingEndTime: &end, SubmitTime: &admissionTime, DepositEndTime: &end, TotalDeposit: sdk.Coins{}, FinalTallyResult: &gov.TallyResult{YesCount: "0", AbstainCount: "0", NoCount: "0", NoWithVetoCount: "0"}}}
+		gg.Proposals = []*gov.Proposal{{Id: 1, Status: gov.StatusVotingPeriod, VotingStartTime: &start, VotingEndTime: &end, SubmitTime: &start, DepositEndTime: &end, TotalDeposit: sdk.Coins{}, FinalTallyResult: &gov.TallyResult{YesCount: "0", AbstainCount: "0", NoCount: "0", NoWithVetoCount: "0"}}}
 		gen["gov"] = a.AppCodec().MustMarshalJSON(&gg)
 		sg := security.DefaultGenesisState()
 		sg.SecurityMandate.Envelope = mandate.Envelope{Committee: f.committee.Address().String(), Term: 1, ActivationTime: 1, ExpiryTime: chain.MaxBlockSeconds}
@@ -100,9 +130,12 @@ func newAdmissionFixture(t *testing.T, n int, configure ...func(*app.ArkApp)) ad
 		blockParams := *consensusParams.Block
 		blockParams.MaxGas = 100_000_000
 		consensusParams.Block = &blockParams
-		_, err = a.InitChain(&abci.RequestInitChain{ChainId: admissionChain, Time: admissionTime, ConsensusParams: &consensusParams, AppStateBytes: bz})
+		if cfg.voteExtensions {
+			consensusParams.Abci = &cmtproto.ABCIParams{VoteExtensionsEnableHeight: 1}
+		}
+		_, err = a.InitChain(&abci.RequestInitChain{ChainId: admissionChain, Time: start, ConsensusParams: &consensusParams, AppStateBytes: bz})
 		require.NoError(t, err)
-		_, err = a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1, Time: admissionTime})
+		_, err = a.FinalizeBlock(&abci.RequestFinalizeBlock{Height: 1, Time: start})
 		require.NoError(t, err)
 		_, err = a.Commit()
 		require.NoError(t, err)
@@ -111,11 +144,19 @@ func newAdmissionFixture(t *testing.T, n int, configure ...func(*app.ArkApp)) ad
 	return f
 }
 
+// admissionFee pays for signedPending's million gas.
+var admissionFee = sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000))
+
 func signedPending(tb testing.TB, a *app.ArkApp, f apptest.Funder, seq uint64, msg sdk.Msg) []byte {
+	tb.Helper()
+	return signedPendingFee(tb, a, f, seq, admissionFee, msg)
+}
+
+func signedPendingFee(tb testing.TB, a *app.ArkApp, f apptest.Funder, seq uint64, fee sdk.Coins, msgs ...sdk.Msg) []byte {
 	tb.Helper()
 	ctx := a.GetContextForCheckTx(nil)
 	acc := a.AccountKeeper.GetAccount(ctx, f.Address())
-	tx, err := sim.GenSignedMockTx(rand.New(rand.NewSource(1)), a.TxConfig(), []sdk.Msg{msg}, sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1_000_000_000_000_000_000)), 1_000_000, admissionChain, []uint64{acc.GetAccountNumber()}, []uint64{seq}, f.Key)
+	tx, err := sim.GenSignedMockTx(rand.New(rand.NewSource(1)), a.TxConfig(), msgs, fee, 1_000_000, admissionChain, []uint64{acc.GetAccountNumber()}, []uint64{seq}, f.Key)
 	require.NoError(tb, err)
 	bz, err := a.TxConfig().TxEncoder()(tx)
 	require.NoError(tb, err)
@@ -393,13 +434,21 @@ func TestConcurrentAdmissionAndCommit(t *testing.T) {
 	a := f.apps[0]
 	client := abcicli.NewLocalClient(new(cmtsync.Mutex), server.NewCometABCIWrapper(a))
 	bz := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
-	var wg sync.WaitGroup
+	var (
+		wg      sync.WaitGroup
+		mu      sync.Mutex
+		results []*abci.ResponseCheckTx
+		errs    []error
+	)
 	for i := 0; i < 12; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 5; j++ {
-				_, _ = client.CheckTx(context.Background(), &abci.RequestCheckTx{Tx: bz})
+				res, err := client.CheckTx(context.Background(), &abci.RequestCheckTx{Tx: bz})
+				mu.Lock()
+				results, errs = append(results, res), append(errs, err)
+				mu.Unlock()
 			}
 		}()
 	}
@@ -408,7 +457,22 @@ func TestConcurrentAdmissionAndCommit(t *testing.T) {
 	_, err = client.Commit(context.Background(), &abci.RequestCommit{})
 	require.NoError(t, err)
 	wg.Wait()
-	require.LessOrEqual(t, a.Pool().CountTx(), 1)
+	// The first admission before the commit and the first after it, which replaces the pending
+	// copy against the reset check state, are accepted; every other copy repeats a sequence.
+	accepted := 0
+	for i, res := range results {
+		require.NoError(t, errs[i])
+		if res.Code == 0 {
+			accepted++
+			continue
+		}
+		require.Equal(t, sdkerrors.ErrWrongSequence.Codespace(), res.Codespace, res.Log)
+		require.Equal(t, sdkerrors.ErrWrongSequence.ABCICode(), res.Code, res.Log)
+	}
+	require.Len(t, results, 60)
+	require.GreaterOrEqual(t, accepted, 1)
+	require.LessOrEqual(t, accepted, 2)
+	require.Equal(t, 1, a.Pool().CountTx())
 	counts, _ := a.Pool().Usage()
 	require.Equal(t, a.Pool().CountTx(), counts[0]+counts[1]+counts[2])
 }
@@ -442,7 +506,7 @@ func TestMempoolMetricLifecycle(t *testing.T) {
 	provider, err := telemetry.NewPrometheusProvider("test", registry)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 	f := newAdmissionFixture(t, 1)
 	a := f.apps[0]
 	check := func(t *testing.T, want int) {
@@ -993,6 +1057,51 @@ func TestProposalVoteCapPreservesSDKValidity(t *testing.T) {
 			require.Equal(t, abci.ResponseProcessProposal_ACCEPT, accepted.Status)
 		})
 	}
+}
+
+// Lane budgets are shares of the bytes the oracle commit leaves, not of the whole block: a vote
+// the block's governance share would hold spills to ordinary fee priority once the commit is
+// reserved, behind a better-paying send.
+func TestProposalLaneBudgetsFollowOracleReservation(t *testing.T) {
+	// The proposer selects no transactions on prices older than the oracle's freshness limit by
+	// its own clock, so the chain starts now.
+	f := newAdmissionFixtureWith(t, admissionConfig{start: time.Now().UTC().Truncate(time.Second), voteExtensions: true}, 1)
+	a := f.apps[0]
+	admit := func(bz []byte) []byte {
+		t.Helper()
+		res, err := a.CheckTx(&abci.RequestCheckTx{Tx: bz})
+		require.NoError(t, err)
+		require.Zero(t, res.Code, res.Log)
+		return bz
+	}
+	var votes [][]byte
+	for seq := uint64(0); seq < 3; seq++ {
+		votes = append(votes, admit(signedPending(t, a, f.voter, seq, voteMsg(f.voter))))
+	}
+	// A NOAH tip is what ranks fee priority; the votes tip nothing.
+	tipped := admissionFee.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)))
+	send := admit(signedPendingFee(t, a, f.normal, 0, tipped, sendMsg(f.normal)))
+
+	extended, decided := lastCommit(t, f, 2, nil)
+	commit, err := codec.EncodeExtendedCommit(extended)
+	require.NoError(t, err)
+	size := func(bz []byte) uint64 { return uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz})) }
+	share := func(n uint64) uint64 { return n * mempool.GovernanceBlockByteShare / 10_000 }
+	twoVotes := size(votes[0]) + size(votes[1])
+	threeVotes := twoVotes + size(votes[2])
+	maxTxBytes := threeVotes * 10_000 / mempool.GovernanceBlockByteShare
+	require.Equal(t, threeVotes, share(maxTxBytes), "the whole block's share holds three votes")
+	left := share(maxTxBytes - size(commit))
+	require.Less(t, left, threeVotes, "what the commit leaves holds two")
+	require.GreaterOrEqual(t, left, twoVotes)
+
+	blockTime := f.start.Add(time.Second)
+	proposal, err := a.PrepareProposal(&abci.RequestPrepareProposal{Height: 2, Time: blockTime, MaxTxBytes: int64(maxTxBytes), LocalLastCommit: extended})
+	require.NoError(t, err)
+	require.Equal(t, [][]byte{commit, votes[0], votes[1], send, votes[2]}, proposal.Txs)
+	processed, err := a.ProcessProposal(&abci.RequestProcessProposal{Height: 2, Time: blockTime, Hash: make([]byte, 32), Txs: proposal.Txs, ProposedLastCommit: decided})
+	require.NoError(t, err)
+	require.Equal(t, abci.ResponseProcessProposal_ACCEPT, processed.Status)
 }
 
 func TestReservedHeadroomSurvivesFinalizeUntilCometUpdate(t *testing.T) {

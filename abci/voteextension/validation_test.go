@@ -149,6 +149,25 @@ func TestValidateExtendedCommit(t *testing.T) {
 	}
 	insufficientCommit, insufficientInfo := extendedCommitToBlockInfo(insufficientCommit)
 	insufficientCtx := enabledCtx.WithCometInfo(insufficientInfo)
+	// Honest commits need not be unanimous or decided in the first round: an absent or nil
+	// validator carries no extension, and the rest keep quorum.
+	laterRoundCommit := signedExtendedCommitAtRound(t, enabledCtx, vals, []int64{50, 30, 20}, ext, 2)
+	laterRoundCommit.Votes[2] = newExtendedVote(vals[2], 20, cmtproto.BlockIDFlagAbsent, nil, nil)
+	laterRoundCommit, laterRoundInfo := extendedCommitToBlockInfo(laterRoundCommit)
+	laterRoundCtx := enabledCtx.WithCometInfo(laterRoundInfo)
+	otherRoundCommit := signedExtendedCommit(t, enabledCtx, vals, []int64{50, 30, 20}, ext)
+	otherRoundCommit.Round = 2
+	otherRoundCommit, otherRoundInfo := extendedCommitToBlockInfo(otherRoundCommit)
+	otherRoundCtx := enabledCtx.WithCometInfo(otherRoundInfo)
+	nilVoteCommit := signedExtendedCommit(t, enabledCtx, vals, []int64{50, 30, 20}, ext)
+	nilVoteCommit.Votes[2] = newExtendedVote(vals[2], 20, cmtproto.BlockIDFlagNil, nil, nil)
+	nilVoteCommit, nilVoteInfo := extendedCommitToBlockInfo(nilVoteCommit)
+	nilVoteCtx := enabledCtx.WithCometInfo(nilVoteInfo)
+	nilVoteExtension := signedExtendedCommit(t, enabledCtx, vals, []int64{50, 30, 20}, ext)
+	nilVoteExtension.Votes[2].BlockIdFlag = cmtproto.BlockIDFlagNil
+	nilVoteExtension.Votes[2].ExtensionSignature = nil
+	nilVoteExtension, nilVoteExtensionInfo := extendedCommitToBlockInfo(nilVoteExtension)
+	nilVoteExtensionCtx := enabledCtx.WithCometInfo(nilVoteExtensionInfo)
 
 	testCases := []struct {
 		name        string
@@ -168,6 +187,32 @@ func TestValidateExtendedCommit(t *testing.T) {
 			ctx:    emptyCtx,
 			store:  validStore,
 			commit: emptyCommit,
+		},
+		{
+			name:   "absent validator in a later round is accepted",
+			ctx:    laterRoundCtx,
+			store:  validStore,
+			commit: laterRoundCommit,
+		},
+		{
+			name:   "nil vote without an extension is accepted",
+			ctx:    nilVoteCtx,
+			store:  validStore,
+			commit: nilVoteCommit,
+		},
+		{
+			name:        "extensions signed for another round reject",
+			ctx:         otherRoundCtx,
+			store:       validStore,
+			commit:      otherRoundCommit,
+			expectedErr: "failed to verify validator",
+		},
+		{
+			name:        "nil vote with extension rejects",
+			ctx:         nilVoteExtensionCtx,
+			store:       validStore,
+			commit:      nilVoteExtension,
+			expectedErr: "non-commit vote extension present",
 		},
 		{
 			name:        "proposer cannot erase committed report while retaining quorum",
@@ -316,8 +361,20 @@ func signedExtendedCommit(
 ) cmtabci.ExtendedCommitInfo {
 	t.Helper()
 
+	return signedExtendedCommitAtRound(t, ctx, vals, powers, extension, 0)
+}
+
+func signedExtendedCommitAtRound(
+	t *testing.T,
+	ctx sdk.Context,
+	vals []testValidator,
+	powers []int64,
+	extension []byte,
+	round int32,
+) cmtabci.ExtendedCommitInfo {
+	t.Helper()
+
 	require.Len(t, vals, len(powers))
-	round := int32(0)
 	commit := cmtabci.ExtendedCommitInfo{
 		Round: round,
 		Votes: make([]cmtabci.ExtendedVoteInfo, len(vals)),

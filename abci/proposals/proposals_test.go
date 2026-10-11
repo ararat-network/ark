@@ -3,7 +3,9 @@ package proposals_test
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -76,6 +78,10 @@ func TestPrepareProposalHandler(t *testing.T) {
 	prepareErr := errors.New("prepare proposal failed")
 	now := time.Now()
 	limit := time.Duration(oracletypes.DefaultParams().MaxExchangeRateAge) * time.Second
+	invalidCommitInfo := commitInfo
+	invalidCommitInfo.Votes = slices.Clone(commitInfo.Votes)
+	invalidCommitInfo.Votes[0].ExtensionSignature = []byte("invalid-signature")
+	oversizedCtx, oversizedCommit := oversizedCommitFixture(fixture)
 
 	testCases := []struct {
 		name                 string
@@ -88,9 +94,13 @@ func TestPrepareProposalHandler(t *testing.T) {
 		expectedTxs          [][]byte
 		expectedCategory     error
 		expectedErrIs        error
+		expectedErrMsg       string
 		expectedPrepareTxs   [][]byte
 		expectedMaxTxBytes   int64
 		expectedWrappedCalls int
+		// at, when set, dates the request as the handler is called, so time the test spends
+		// before the call cannot carry it across the freshness limit.
+		at func() time.Time
 	}{
 		{
 			name: "nil request returns error",
@@ -223,19 +233,58 @@ func TestPrepareProposalHandler(t *testing.T) {
 				require.Fail(t, "wrapped prepare handler should not be called")
 				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
-			expectErr:   true,
-			expectedTxs: [][]byte{},
+			expectErr:      true,
+			expectedTxs:    [][]byte{},
+			expectedErrMsg: fmt.Sprintf("extended commit transaction size %d exceeds MaxTxBytes %d", commitBzSize, commitBzSize-1),
+		},
+		{
+			name: "invalid local commit returns error before selection",
+			ctx:  fixture.ctx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now,
+				LocalLastCommit: invalidCommitInfo,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				require.Fail(t, "wrapped prepare handler should not be called")
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectErr:        true,
+			expectedTxs:      [][]byte{},
+			expectedCategory: proposals.ErrExtendedCommitValidation,
+			expectedErrMsg:   "failed to verify validator",
+		},
+		{
+			name: "unencodable local commit returns error before selection",
+			ctx:  oversizedCtx,
+			req: &cmtabci.RequestPrepareProposal{
+				Height:          proposalTestHeight,
+				Time:            now,
+				LocalLastCommit: oversizedCommit,
+				Txs:             [][]byte{appTx1},
+				MaxTxBytes:      maxTxBytes,
+			},
+			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
+				require.Fail(t, "wrapped prepare handler should not be called")
+				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
+			},
+			expectErr:        true,
+			expectedTxs:      [][]byte{},
+			expectedCategory: abcitypes.ErrCodec,
+			expectedErrMsg:   fmt.Sprintf("extended commit vote count %d exceeds maximum %d", cmttypes.MaxVotesCount+1, cmttypes.MaxVotesCount),
 		},
 		{
 			name: "prices past the freshness limit yield a commit-only proposal",
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
-				Time:            now.Add(-limit - 5*time.Second),
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      maxTxBytes,
 			},
+			at: func() time.Time { return time.Now().Add(-limit - 5*time.Second) },
 			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				require.Fail(t, "wrapped prepare handler should not be called")
 				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
@@ -247,11 +296,11 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
-				Time:            now.Add(-limit + 5*time.Second),
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      maxTxBytes,
 			},
+			at: func() time.Time { return time.Now().Add(-limit + 5*time.Second) },
 			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
@@ -265,11 +314,11 @@ func TestPrepareProposalHandler(t *testing.T) {
 			ctx:  fixture.ctx,
 			req: &cmtabci.RequestPrepareProposal{
 				Height:          proposalTestHeight,
-				Time:            now.Add(time.Minute),
 				LocalLastCommit: commitInfo,
 				Txs:             [][]byte{appTx1},
 				MaxTxBytes:      maxTxBytes,
 			},
+			at: func() time.Time { return time.Now().Add(time.Minute) },
 			prepare: func(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {
 				return &cmtabci.ResponsePrepareProposal{Txs: req.Txs}, nil
 			},
@@ -328,9 +377,13 @@ func TestPrepareProposalHandler(t *testing.T) {
 				oracleParams,
 			)
 
+			if tc.at != nil {
+				tc.req.Time = tc.at()
+			}
 			resp, err := handler.PrepareProposalHandler()(tc.ctx, tc.req)
 			if tc.expectErr {
-				require.Error(t, err)
+				require.True(t, tc.expectedErrIs != nil || tc.expectedCategory != nil || tc.expectedErrMsg != "",
+					"an error case names the error it expects")
 			} else {
 				require.NoError(t, err)
 			}
@@ -339,6 +392,9 @@ func TestPrepareProposalHandler(t *testing.T) {
 			}
 			if tc.expectedCategory != nil {
 				require.ErrorIs(t, err, tc.expectedCategory)
+			}
+			if tc.expectedErrMsg != "" {
+				require.ErrorContains(t, err, tc.expectedErrMsg)
 			}
 			if tc.expectNilResponse {
 				require.Nil(t, resp)
@@ -576,6 +632,29 @@ func newProposalValidationFixture(t *testing.T) proposalValidationFixture {
 			string(consensusAddress): publicKey,
 		},
 	}
+}
+
+// oversizedCommitFixture extends the fixture's signed commit with absent votes until it holds one
+// vote more than CometBFT allows: the commit still authenticates, but cannot be encoded.
+func oversizedCommitFixture(fixture proposalValidationFixture) (sdk.Context, cmtabci.ExtendedCommitInfo) {
+	signed := fixture.commit.Votes[0]
+	// The signed vote leads the power order and carries quorum alone.
+	signed.Validator.Power = 3 * cmttypes.MaxVotesCount
+	commit := cmtabci.ExtendedCommitInfo{Votes: []cmtabci.ExtendedVoteInfo{signed}}
+	for i := range cmttypes.MaxVotesCount {
+		address := make([]byte, 20)
+		binary.BigEndian.PutUint32(address[16:], uint32(i))
+		commit.Votes = append(commit.Votes, cmtabci.ExtendedVoteInfo{
+			Validator:   cmtabci.Validator{Address: address, Power: 1},
+			BlockIdFlag: cmtproto.BlockIDFlagAbsent,
+		})
+	}
+	lastCommit := cmtabci.CommitInfo{Votes: make([]cmtabci.VoteInfo, len(commit.Votes))}
+	for i, vote := range commit.Votes {
+		lastCommit.Votes[i] = cmtabci.VoteInfo{Validator: vote.Validator, BlockIdFlag: vote.BlockIdFlag}
+	}
+
+	return fixture.ctx.WithCometInfo(baseapp.NewBlockInfo(nil, nil, nil, lastCommit)), commit
 }
 
 func passThroughPrepareProposal(_ sdk.Context, req *cmtabci.RequestPrepareProposal) (*cmtabci.ResponsePrepareProposal, error) {

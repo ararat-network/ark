@@ -197,8 +197,25 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 
 	// Making a new app object with the db, so that initchain hasn't been called
 	app2 := app.NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
-	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
+	exported, err := app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
+
+	// The reopened store exports what the first instance committed, to resume at the next height.
+	require.Equal(t, int64(2), exported.Height)
+	require.Len(t, exported.Validators, 1)
+	require.Equal(t, int64(1), exported.Validators[0].Power)
+	require.NotNil(t, exported.ConsensusParams.Block)
+	var appState map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(exported.AppState, &appState))
+	var stakingGenesis stakingtypes.GenesisState
+	app2.AppCodec().MustUnmarshalJSON(appState[stakingtypes.ModuleName], &stakingGenesis)
+	require.True(t, stakingGenesis.Exported)
+	require.Len(t, stakingGenesis.Validators, 1)
+	require.Equal(t, sdk.ValAddress(exported.Validators[0].Address).String(), stakingGenesis.Validators[0].OperatorAddress)
+	var bankGenesis banktypes.GenesisState
+	app2.AppCodec().MustUnmarshalJSON(appState[banktypes.ModuleName], &bankGenesis)
+	// The funded genesis account and the one validator's bond.
+	require.Equal(t, chain.NativeBaseAmount(100_000_001), bankGenesis.Supply.AmountOf(sdk.DefaultBondDenom))
 }
 
 func TestUpgradeStateOnGenesis(t *testing.T) {
