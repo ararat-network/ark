@@ -39,7 +39,7 @@ Reference codebases:
 ## Project Structure
 
 ```text
-x/market/       # DEX swap module (Noah ↔ stablecoins)
+x/market/       # Conversion module (NOAH ↔ stablecoins at oracle prices)
 x/oracle/       # Price oracle module (validator price voting, feed registry)
 x/treasury/     # Macro policy module (tax, reward funding, liability, fund targets)
 x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank asset
@@ -50,10 +50,14 @@ x/security/     # Security committee over the standard-module emergency surface
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
 pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
 pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
-proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
-api/ark/       # Pulsar-generated code (runtime only, never import in module code)
+proto/ark/      # Proto definitions (modules, ABCI, pricefeed)
+api/ark/        # Pulsar-generated code (runtime only, never import in module code)
 app/            # App wiring, depinject config, manual Wasm registration, launch genesis
 app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
+cmd/            # arkd and pricefeed binary startup and CLI
+tests/          # Integration fixtures, simulations, and the separate e2e module
+contrib/        # Images, localnet, probes, release scripts, and operational rehearsals
+docs/           # Cross-subsystem design, operations, governance, and papers
 ```
 
 ## Oracle, Price Feed, And ABCI Boundaries
@@ -87,8 +91,7 @@ When making code changes:
 - **msgServer/queryServer pattern**: use a named `k *Keeper` field and do not embed
   `UnimplementedMsgServer`/`UnimplementedQueryServer`: every RPC is implemented explicitly, so a missing handler
   fails to compile rather than answering Unimplemented at runtime. Query RPCs collide with public collection fields
-  (`Params`, `TaxRate`, etc.); oracle msg RPCs also collide (`AggregateExchangeRatePrevote`). Named fields everywhere
-  for consistency.
+  (`Params`, `EconomicPolicy`, `RewardFunding`, etc.). Named fields everywhere for consistency.
 - When editing proto files, explain proposed changes before applying them and wait for confirmation
 
 When porting from Classic, always modernize:
@@ -197,9 +200,9 @@ string field_name = N [
 - Token amounts in constants are whole display units (`int64`); convert with `chain.NativeBaseAmount` where the value is
   built. Sub-unit figures, such as per-block rates and gas prices, stay in base units.
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
-  - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTax.Get(ctx, denom)` directly
-  - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetFeederDelegation`
-    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has NoahBaseDenom identity), side effects
+  - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTaxOverrides.Get(ctx, denom)` directly
+  - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetTobinTaxes` falls
+    back to `Params.DefaultTobinTax`), domain checks (e.g., `GetExchangeRate` has NoahBaseDenom identity), side effects
     (e.g., `SetExchangeRateWithEvent` emits events)
   - If a wrapper is just `return k.Collection.Get(ctx, key)` with no extra logic, delete it — the collection IS the
     getter

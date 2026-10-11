@@ -8,10 +8,9 @@ release policy will be defined when releases are published.
 
 ## Report a vulnerability privately
 
-Email [chitpole@proton.me](mailto:chitpole@proton.me). If GitHub's private vulnerability
-reporting is enabled, you can also use **Report a vulnerability** on the repository's
-[Security advisories page](https://github.com/ararat-network/ark/security/advisories).
-If that option is unavailable, use email.
+Use **Report a vulnerability** on the repository's
+[Security advisories page](https://github.com/ararat-network/ark/security/advisories), or email
+[chitpole@proton.me](mailto:chitpole@proton.me).
 
 Do not put exploit details in public issues, pull requests or discussions. Ordinary
 bugs without a security impact can use the public issue tracker.
