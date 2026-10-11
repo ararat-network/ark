@@ -26,7 +26,9 @@ while [ "$count" -lt "$ITERATIONS" ]; do
     echo "ok: $PLAN applied at height $applied, chain at $height on ${version:-unknown}"
     exit 0
   fi
-  if [ -n "$height" ] && [ "$height" -gt "$UPGRADE_HEIGHT" ] && [ "${applied:-0}" -eq 0 ]; then
+  # Only an answering REST server shows the plan was skipped; the new binary
+  # can commit before its API listens.
+  if [ -n "$height" ] && [ "$height" -gt "$UPGRADE_HEIGHT" ] && [ "$applied" = 0 ]; then
     echo "failed: height $height passed upgrade height $UPGRADE_HEIGHT without applying $PLAN" >&2
     exit 1
   fi

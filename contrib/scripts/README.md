@@ -33,7 +33,7 @@ coverage, verification, download and retention procedures.
 
 Use the [Docker localnet](../localnet/README.md). The runbook driver reads keys from the generated committee home and
 keeps ceremony files there. `DENOM` chooses an asset; otherwise a rerun selects an eligible active asset. `CARRIER`,
-`PUBLIC_NODES`, `GAS`, and `INCLUSION_POLLS` customise the driver; inspect its header for exact defaults.
+`SENTRY`, `PUBLIC_NODES`, `GAS`, and `INCLUSION_POLLS` customise the driver; inspect its header for exact defaults.
 
 Saturation requires a disposable four-validator network initialised with `PUBLIC_MEMPOOL_SIZE=32`. The fill helper rejects
 large pool sizes to bound its work. The parent script restores paused validators in cleanup. This tests isolation and
@@ -47,8 +47,8 @@ versioned handler when that tree contains only `template/`.
 | Environment | Meaning |
 | --- | --- |
 | `UPGRADE_NAME` | Registered plan name; otherwise inferred from the newest `app/upgrade/v*` directory. |
-| `OLD_REF` | Git ref used to build the old binary; defaults to the latest `v*` release tag, or HEAD before the first release. |
-| `GENESIS` | Curated genesis the old binary generates the node from; defaults to `app/genesis/testnet.json`. An old release without `--genesis` generates from its defaults instead. |
+| `OLD_REF` | Git ref used to build the old binary; defaults to the newest `v*` release tag without `app/upgrade/<UPGRADE_NAME>`, or HEAD while the plan is uncommitted. |
+| `GENESIS` | Curated genesis the old binary generates the node from; defaults to `OLD_REF`'s `app/genesis/testnet.json`. Without one, or for an old binary lacking `--genesis`, the old binary generates from its defaults. |
 | `OLD_BINARY`, `NEW_BINARY` | Supply binaries instead of building the corresponding version. |
 | `UPGRADE_DELAY` | Blocks from proposal to scheduled upgrade. |
 | `COSMOVISOR_VERSION` | Cosmovisor release installed into the tooling location when needed; defaults to `v1.7.3`. |

@@ -90,8 +90,12 @@ jobs:
           old="$INPUT_OLD_VERSION"
           plan="$INPUT_UPGRADE_NAME"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            old=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
             plan=$(ls -d app/upgrade/v* 2>/dev/null | sed 's|.*/||' | sort -V | tail -1)
+            # The newest release without the plan; one carrying it halts once the plan is stored.
+            old=""
+            for tag in $(git tag --merged HEAD --list 'v[0-9]*' --sort=-creatordate); do
+              if [ -z "$plan" ] || ! git cat-file -e "$tag:app/upgrade/$plan" 2>/dev/null; then old=$tag; break; fi
+            done
           fi
           if [ -n "$old" ]; then
             docker pull "$REPOSITORY:$old"

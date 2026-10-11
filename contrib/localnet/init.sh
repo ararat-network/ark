@@ -45,8 +45,14 @@ while [ "$i" -lt "$VALIDATORS" ]; do
     -e '/^\[prometheus\]/,/^\[/ s|^address = .*|address = "0.0.0.0:9464"|' \
     "$app"
 
-  if [ "$i" -lt "$CARRIER" ]; then
+  # Public validators take the pool size; a lone validator has no carrier.
+  # CometBFT's list must hold at least the app pool, which start enforces.
+  if [ "$i" -lt "$CARRIER" ] || [ "$VALIDATORS" -eq 1 ]; then
     sed -i '/^\[mempool\]/,/^\[/ s|^max-txs = .*|max-txs = '"$PUBLIC_MEMPOOL_SIZE"'|' "$app"
+    comet="$home/config/config.toml"
+    if [ "$PUBLIC_MEMPOOL_SIZE" -gt "$(sed -n '/^\[mempool\]/,/^\[/ s/^size = //p' "$comet")" ]; then
+      sed -i '/^\[mempool\]/,/^\[/ s|^size = .*|size = '"$PUBLIC_MEMPOOL_SIZE"'|' "$comet"
+    fi
   fi
 
   # Sidecar runtime config, polling this node for the feed registry.
@@ -95,7 +101,8 @@ done
 
 # Multi-validator rehearsal: the carrier has no public-network interface and
 # dials only its dedicated sentry. Both disable transaction broadcast. PEX is
-# off so peer discovery cannot recreate a public transaction path.
+# off so peer discovery cannot recreate a public transaction path. The
+# sentry's RPC answers on the Compose networks for the runbook's leak check.
 if [ "$VALIDATORS" -gt 1 ]; then
   sentry_home="$DATA/carrier-sentry/arkd"
   arkd init carrier-sentry --chain-id "$CHAIN_ID" --home "$sentry_home" > /dev/null
@@ -141,6 +148,7 @@ if [ "$VALIDATORS" -gt 1 ]; then
     -e '/^\[p2p\]/,/^\[/ s|^addr_book_strict = .*|addr_book_strict = false|' \
     -e '/^\[p2p\]/,/^\[/ s|^pex = .*|pex = false|' \
     -e '/^\[mempool\]/,/^\[/ s|^broadcast = .*|broadcast = false|' \
+    -e '/^\[rpc\]/,/^\[/ s|^laddr = .*|laddr = "tcp://0.0.0.0:26657"|' \
     "$sentry_home/config/config.toml"
 fi
 

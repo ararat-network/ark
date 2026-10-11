@@ -11,6 +11,9 @@ VALIDATORS=${VALIDATORS:-4}
 # public nodes whose mempools must never see the transaction.
 CARRIER=${CARRIER:-node$((VALIDATORS - 1))}
 PUBLIC_NODES=${PUBLIC_NODES:-$(i=0; while [ "$i" -lt $((VALIDATORS - 1)) ]; do printf 'node%d ' "$i"; i=$((i + 1)); done)}
+# The sentry's own broadcast = false would stop a leak one hop later and hide
+# a carrier that gossips, so its mempool is read too.
+SENTRY=${SENTRY:-carrier-sentry}
 DENOM=${DENOM:-}
 GAS=${GAS:-500000}
 INCLUSION_POLLS=${INCLUSION_POLLS:-60}
@@ -113,17 +116,24 @@ txhash=$(printf '%s' "$resp" | jq -r '.txhash // empty' 2>/dev/null || true)
 [ "$code" = "0" ] && [ -n "$txhash" ] || fail "CheckTx did not accept the transaction: $resp"
 echo "accepted txhash=$txhash"
 
-step "not visible on public mempools"
-for node in $PUBLIC_NODES; do
-  # CometBFT pages at most 100; a total past the page would hide a tail.
-  pending=$(curl -sf "http://$node:26657/unconfirmed_txs?limit=100") || fail "cannot read $node's mempool"
-  [ "$(printf '%s' "$pending" | jq -r '.result.total')" = "$(printf '%s' "$pending" | jq -r '.result.n_txs')" ] \
-    || fail "$node holds more pending transactions than one page shows"
-  for b64 in $(printf '%s' "$pending" | jq -r '.result.txs[]? // empty'); do
-    [ "$(tx_hash_of "$b64")" != "$txhash" ] || fail "transaction leaked to $node's mempool"
+step "not visible beyond the carrier"
+# Gossip trails CheckTx by a peer loop (100 ms), so one read straight after
+# acceptance misses a leak; keep reading for about two seconds.
+polls=0
+while [ "$polls" -lt 10 ]; do
+  for node in $SENTRY $PUBLIC_NODES; do
+    # CometBFT pages at most 100; a total past the page would hide a tail.
+    pending=$(curl -sf "http://$node:26657/unconfirmed_txs?limit=100") || fail "cannot read $node's mempool"
+    [ "$(printf '%s' "$pending" | jq -r '.result.total')" = "$(printf '%s' "$pending" | jq -r '.result.n_txs')" ] \
+      || fail "$node holds more pending transactions than one page shows"
+    for b64 in $(printf '%s' "$pending" | jq -r '.result.txs[]? // empty'); do
+      [ "$(tx_hash_of "$b64")" != "$txhash" ] || fail "transaction leaked to $node's mempool"
+    done
   done
-  echo "$node: absent"
+  polls=$((polls + 1))
+  sleep 0.2
 done
+for node in $SENTRY $PUBLIC_NODES; do echo "$node: absent"; done
 
 step "inclusion"
 polls=0

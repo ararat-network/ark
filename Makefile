@@ -230,8 +230,13 @@ localnet-init: localnet-check
 localnet-up: localnet-check
 	$(localnetCompose) $(localnetProfile) up -d
 
-# Validators and price-feed sidecars, RPC on 26657, REST on 1317.
-localnet-start: localnet-stop localnet-build-env localnet-init localnet-up
+# Validators and price-feed sidecars, RPC on 26657, REST on 1317. Sub-makes
+# keep the steps ordered under -j.
+localnet-start: localnet-check
+	@$(MAKE) --no-print-directory localnet-stop
+	@$(MAKE) --no-print-directory localnet-build-env
+	@$(MAKE) --no-print-directory localnet-init
+	@$(MAKE) --no-print-directory localnet-up
 
 # Every profile is named so their services come down too: a service in a
 # profile that is not enabled is not an orphan, and down would skip it.
