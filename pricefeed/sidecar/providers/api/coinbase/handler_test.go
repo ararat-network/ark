@@ -86,6 +86,7 @@ func TestParseResponse(t *testing.T) {
 		body      string
 		wantPrice string
 		wantCode  types.ErrorCode
+		wantErr   string
 	}{
 		{
 			name:      "resolves the spot amount",
@@ -126,6 +127,13 @@ func TestParseResponse(t *testing.T) {
 			wantCode: types.ErrorFailedToDecode,
 		},
 		{
+			name:     "venue error body carries the venue's message",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"errors":[{"id":"not_found","message":"Invalid currency"}]}`,
+			wantCode: types.ErrorAPIGeneral,
+			wantErr:  "coinbase error: not_found: Invalid currency",
+		},
+		{
 			// A multi-ticker batch cannot be attributed to one product, so
 			// the whole batch is refused rather than guessed at.
 			name:     "more than one ticker is invalid",
@@ -144,6 +152,9 @@ func TestParseResponse(t *testing.T) {
 				require.Len(t, response.Unresolved, len(tt.tickers))
 				for _, ticker := range tt.tickers {
 					require.Equal(t, tt.wantCode, response.Unresolved[ticker].Code())
+					if tt.wantErr != "" {
+						require.EqualError(t, response.Unresolved[ticker], tt.wantErr)
+					}
 				}
 				return
 			}

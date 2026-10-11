@@ -37,3 +37,7 @@ go test ./pricefeed/sidecar/providers/api/coinbase
 ```json
 {"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}
 ```
+
+A request Coinbase refuses answers with an `errors` envelope instead, such as
+`{"errors":[{"id":"not_found","message":"Invalid currency"}]}`; the adapter reports each id and message as a general
+API error.

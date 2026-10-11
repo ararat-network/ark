@@ -66,6 +66,19 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 			types.NewErrorWithCode(err, types.ErrorFailedToDecode),
 		)
 	}
+	if len(result.Errors) > 0 {
+		messages := make([]string, 0, len(result.Errors))
+		for _, apiErr := range result.Errors {
+			messages = append(messages, apiErr.ID+": "+apiErr.Message)
+		}
+		return types.NewErrorResponse(
+			tickers,
+			types.NewErrorWithCode(
+				fmt.Errorf("coinbase error: %s", strings.Join(messages, ", ")),
+				types.ErrorAPIGeneral,
+			),
+		)
+	}
 
 	ticker := tickers[0]
 	quote, err := quoteCurrency(ticker)

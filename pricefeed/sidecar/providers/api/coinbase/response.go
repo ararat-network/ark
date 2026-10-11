@@ -15,6 +15,14 @@ type (
 	// wire shape.
 	Response struct {
 		Data Data `json:"data"`
+		// Errors is set instead of Data when Coinbase refuses the request.
+		Errors []APIError `json:"errors"`
+	}
+
+	// APIError is one entry of Coinbase's error envelope.
+	APIError struct {
+		ID      string `json:"id"`
+		Message string `json:"message"`
 	}
 
 	// Data carries the fields this adapter reads from one spot price.
