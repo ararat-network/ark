@@ -1,5 +1,5 @@
 # Application simulations. These run nightly rather than per pull request:
-# each drives tens of thousands of blocks and takes minutes, and a failure
+# each drives 10 to 100 blocks per simulated chain and takes minutes, and a failure
 # is a property violation worth investigating rather than a merge blocker.
 name: Sims
 

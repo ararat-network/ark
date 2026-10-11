@@ -136,6 +136,18 @@ test-sim-after-import:
 test-sim-fuzz:
 	@go test ./app -failfast -mod=readonly -timeout 3m -tags=sims -run ^$$ -fuzz FuzzFullAppSimulation -fuzztime 2m -NumBlocks=10 -BlockSize=50
 
+# Every native fuzz target outside the simulations, each for FUZZ_TIME: go test takes one -fuzz
+# target per run. The simulation fuzz runs through test-sim-fuzz.
+FUZZ_TIME ?= 1m
+test-fuzz:
+	@set -e; for file in $$(grep -rl --include='*_test.go' '^func Fuzz' abci app cmd pkg pricefeed x); do \
+		grep -q '^//go:build sims' "$$file" && continue; \
+		for target in $$(sed -n 's/^func \(Fuzz[A-Za-z0-9_]*\)(.*/\1/p' "$$file"); do \
+			echo "fuzzing $$target in ./$$(dirname "$$file") for $(FUZZ_TIME)"; \
+			go test -mod=readonly "./$$(dirname "$$file")" -run '^$$' -fuzz "^$$target$$" -fuzztime $(FUZZ_TIME); \
+		done; \
+	done
+
 test-sim-benchmark:
 	@go test ./app -failfast -mod=readonly -timeout 24h -tags=sims -benchmem -run ^$$ -bench BenchmarkFullAppSimulation -NumBlocks=100 -BlockSize=200
 
@@ -285,7 +297,7 @@ upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
 .PHONY: build build-pricefeed install clean release release-pricefeed source-bundle verify-source test test-race test-cover test-e2e test-e2e-vet \
-	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
+	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
-	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
+	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
 	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook localnet-saturation localnet-statesync upgrade-rehearsal

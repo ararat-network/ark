@@ -1,0 +1,51 @@
+# Native Go fuzz targets. Pull requests run each against its seed corpus through go test; this runs
+# the fuzzing engine nightly, each target for a few minutes, so the targets explore past their seeds.
+# The simulation fuzz runs with the simulations.
+name: Fuzz
+
+on:
+  schedule:
+    # 06:00 UTC daily, after the e2e suites.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - run: make test-fuzz FUZZ_TIME=3m
+
+      # A failing input lands under its target's testdata/fuzz; print it so the run carries the
+      # reproducer.
+      - name: Failing inputs
+        if: failure()
+        run: |
+          git status --porcelain --untracked-files=all | grep 'testdata/fuzz/' | while read -r _ path; do
+            echo "=== $path"
+            cat "$path"
+          done
+
+  report:
+    needs: fuzz
+    if: failure() && github.event_name == 'schedule'
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/nightly-failure.yml
+    with:
+      workflow: Fuzz
