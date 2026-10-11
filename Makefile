@@ -59,8 +59,8 @@ verify-source:
 release:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no vX.Y.Z tag" >&2; exit 1; }; \
-	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = arkd || exit 1; \
-	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = arkd || { echo "$$tag is not a vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || { echo "$$tag does not point at HEAD" >&2; exit 1; }; \
 	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
 	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish --parallelism=1 --timeout=5h
 
@@ -70,8 +70,8 @@ release:
 release-pricefeed:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
-	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = pricefeed || exit 1; \
-	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = pricefeed || { echo "$$tag is not a pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || { echo "$$tag does not point at HEAD" >&2; exit 1; }; \
 	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
 	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish,validate --parallelism=1 --timeout=5h -f .goreleaser.pricefeed.yml
 

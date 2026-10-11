@@ -39,6 +39,7 @@ jobs:
         with:
           context: .
           file: contrib/images/arkd-env/Dockerfile
+          target: local
           load: true
           tags: ark/arkd
           build-args: |
