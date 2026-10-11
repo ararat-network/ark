@@ -58,6 +58,25 @@ class SourceArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "local module replacements"):
             source.effective({"Path": "example.org/lib", "Replace": {"Path": "../private"}})
 
+    def test_busl_must_be_the_locked_crates_own(self):
+        lock = '[[package]]\nname = "wasmer-compiler-singlepass"\nversion = "7.4.2"\n'
+        for name, lock_text, licence, error in (
+            ("matching", lock, b"terms", None),
+            ("changed terms", lock, b"new terms", "differs"),
+            ("crate gone", '[[package]]\nname = "other"\nversion = "1.0.0"\n', b"terms", "no longer locked"),
+        ):
+            with self.subTest(name), tempfile.TemporaryDirectory() as tmp:
+                manifest = Path(tmp)
+                (manifest / "Cargo.lock").write_text(lock_text)
+                vendored = manifest / "vendor/wasmer-compiler-singlepass-7.4.2/LICENSE"
+                vendored.parent.mkdir(parents=True)
+                vendored.write_bytes(licence)
+                if error is None:
+                    source.check_busl(manifest, b"terms")
+                else:
+                    with self.assertRaisesRegex(ValueError, error):
+                        source.check_busl(manifest, b"terms")
+
     def test_module_proxy_case_and_major_version(self):
         self.assertEqual(str(source.proxy_path({"Path": "github.com/CosmWasm/wasmvm/v3", "Version": "v3.0.7"})),
                          "github.com/!cosm!wasm/wasmvm/v3/@v/v3.0.7")

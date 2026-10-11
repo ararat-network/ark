@@ -59,7 +59,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - COPYING
+      - LICENSES/*
       - NOTICE
       - THIRD_PARTY_NOTICES.md
       - build/source/pricefeed-source-{{ .FullCommit }}-notices.tar.gz

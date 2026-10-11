@@ -33,10 +33,10 @@ The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets
 
 ## Documentation
 
-Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides by
-reading path: understanding the chain, launching a network, operating and monitoring services, governing and responding,
-integrating clients, future direction, and the decision register. Each subsystem's README owns its own behaviour, design,
-and development guidance; the [repository map](#repository-map) links them.
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
+by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
+responding, integrating clients, future direction, and the decision register. Each subsystem's README owns its own
+behaviour, design, and development guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 
@@ -77,8 +77,8 @@ simulation, and failure handling for external transaction builders.
 | [contrib](contrib/README.md)                                             | Images, localnet, probes, and operational rehearsals.                                |
 
 On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Disbursement](x/disbursement/README.md),
-[Market](x/market/README.md), [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and
-[Treasury](x/treasury/README.md).
+[Market](x/market/README.md), [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md),
+[Security](x/security/README.md), and [Treasury](x/treasury/README.md).
 
 ## Build and run locally
 
@@ -140,15 +140,13 @@ everywhere else.
 
 ## Licensing and releases
 
-Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links
-third-party code under LGPLv3 and the Business Source License 1.1, whose
-production-use terms operators should read.
-[Licensing and corresponding source](THIRD_PARTY_NOTICES.md) explains component
-licences, attribution, source downloads, and the release verification procedure.
+Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links third-party code under LGPL 2.1 and 3
+and the Business Source License 1.1, whose production-use terms operators should read.
+[Licensing and corresponding source](THIRD_PARTY_NOTICES.md) explains component licences, attribution, source downloads,
+and the release verification procedure.
 
 The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
-[The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags.
-A suffix such as `-rc1` marks the draft as a pre-release. Maintainers review and publish through GitHub;
-only stable chain releases should be marked latest.
-[Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging, and
-consumer checks.
+[The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags. A suffix such as `-rc1`
+marks the draft as a pre-release. Maintainers review and publish through GitHub; only stable chain releases should be
+marked latest. [Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging,
+and consumer checks.
