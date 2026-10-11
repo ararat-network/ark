@@ -130,7 +130,11 @@ New fields must preserve operation with older peers; a new RPC is unavailable on
 so callers need a fallback to retain compatibility with them. Incompatible changes require a new
 service version, such as v2. A missing required service or RPC returns `Unimplemented`.
 Prices use the compact encoding in `pkg/encoding`, also carried by vote extensions, so that
-encoding is part of the compatibility contract.
+encoding is part of the compatibility contract; fixed byte vectors in its tests pin it.
+
+v1 is frozen from the first `pricefeed/vX.Y.Z` release, since that is the first sidecar an operator can run
+beside a newer node. Until then it may still change. From then, `make proto-check-pricefeed`, which CI runs on
+every pull request, refuses a breaking change to `proto/ark/pricefeed` against the newest release.
 
 The sidecar's reported build version identifies the build for operators. The node logs it at Info on
 first contact and whenever it changes, exports no metric for it, and never gates compatibility on it;

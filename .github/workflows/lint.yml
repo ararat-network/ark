@@ -35,8 +35,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The pricefeed check compares against the newest pricefeed/vX.Y.Z tag.
+          fetch-depth: 0
 
       - run: make proto-lint
+
+      # ark.pricefeed.v1 only grows from the newest pricefeed release; before the first, nothing is
+      # frozen and the step passes.
+      - run: make proto-check-pricefeed
 
   proto-gen:
     runs-on: ubuntu-latest

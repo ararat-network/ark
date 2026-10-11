@@ -1,6 +1,7 @@
 package encoding_test
 
 import (
+	"encoding/hex"
 	"math/big"
 	"testing"
 
@@ -36,6 +37,40 @@ func TestEncodeDecodeCompactLegacyDec(t *testing.T) {
 			decoded, err := encoding.DecodeCompactLegacyDec(encoded)
 			require.NoError(t, err)
 			require.True(t, tc.value.Equal(decoded))
+		})
+	}
+}
+
+// TestCompactLegacyDecBytesAreFixed pins the bytes themselves, which a round trip cannot: sidecars
+// and vote extensions of other releases decode them, so a layout that still round-trips would break
+// them all the same.
+func TestCompactLegacyDecBytesAreFixed(t *testing.T) {
+	tests := []struct {
+		value string
+		bytes string
+	}{
+		{value: "0.000000000000000001", bytes: "01"},
+		{value: "1", bytes: "0de0b6b3a7640000"},
+		{value: "0.729394602479941648", bytes: "0a1f5486c5e77810"},
+		{value: "1371.25", bytes: "4a55eaa1ce5e650000"},
+		{
+			value: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)).String(),
+			bytes: "0de0b6b3a763fffffffffffffffffffffffffffffffffffffffffffffffffffff21f494c589c0000",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.value, func(t *testing.T) {
+			value := math.LegacyMustNewDecFromStr(tc.value)
+			encoded, err := encoding.EncodeCompactLegacyDec(value)
+			require.NoError(t, err)
+			require.Equal(t, tc.bytes, hex.EncodeToString(encoded))
+
+			raw, err := hex.DecodeString(tc.bytes)
+			require.NoError(t, err)
+			decoded, err := encoding.DecodeCompactLegacyDec(raw)
+			require.NoError(t, err)
+			require.True(t, value.Equal(decoded))
 		})
 	}
 }

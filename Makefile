@@ -190,6 +190,16 @@ proto-lint:
 proto-check-breaking:
 	@$(protoImage) buf breaking proto --against $(HTTPS_GIT)#branch=main
 
+# The newest pricefeed release: ark.pricefeed.v1 only grows from it, since operators may run that
+# sidecar beside any newer node. Empty before the first release, when v1 is not yet frozen.
+PRICEFEED_BASE ?= $(shell git describe --tags --abbrev=0 --match 'pricefeed/v[0-9]*' 2>/dev/null)
+
+proto-check-pricefeed:
+	@if [ -z "$(PRICEFEED_BASE)" ]; then echo "no pricefeed release yet: ark.pricefeed.v1 is not frozen"; exit 0; fi; \
+	echo "checking proto/ark/pricefeed against $(PRICEFEED_BASE)"; \
+	$(protoImage) sh -c "git config --global --add safe.directory '*' && cd proto && \
+		buf breaking . --path ark/pricefeed --against '../.git#ref=$(PRICEFEED_BASE),subdir=proto'"
+
 proto-update-deps:
 	@echo "Updating Protobuf dependencies"
 	@$(protoImage) buf dep update proto

@@ -8,8 +8,8 @@ import (
 )
 
 // MaxEncodedCompactLegacyDecBytes bounds the minimal big-endian encoding of a
-// positive LegacyDec raw value. Valid raw values stay under 2^315, which is
-// 40 bytes.
+// positive LegacyDec raw value. Valid raw values stay below 2^256·10^18, about
+// 2^315.8, which fits in 40 bytes.
 const MaxEncodedCompactLegacyDecBytes = 40
 
 // EncodeCompactLegacyDec encodes a strictly positive LegacyDec as the minimal
