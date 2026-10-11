@@ -808,14 +808,17 @@ governance decided to extinguish.
 
 Insurance provides another response to covered losses, but holding an Ark currency does not create automatic eligibility
 or a guaranteed payout. Governance or the authorised Claims committee decides which claims to submit. Each claim fixes a
-recipient and NOAH amount, reserves existing unencumbered Insurance funds, and enters a cancellation period. Committee
-submissions must also fit their remaining gross allowance and close within the term.
+recipient and an amount in NOAH or an Ark currency, reserves existing unencumbered Insurance funds, and enters a
+cancellation period; a currency claim converts what Insurance does not already hold when it is submitted. Committee
+submissions must also fit their remaining gross allowance, which counts what a claim's conversion spent, and close
+within the term.
 
 Before the closing time, governance can cancel a pending claim; the committee's cancellation power is narrower. At the
 closing time the chain pays automatically, without requiring the recipient to submit another transaction. A claim that
 cannot be paid under the specified record and custody checks ends as failed and releases its reservation. Reservations
 prevent the same NOAH being promised twice, but they cannot make an adjudication fair or an unfunded loss disappear.
-Insurance payment in NOAH also retains exposure to NOAH's market value. [Ark: Claims][ark-claims]
+A claim paid in NOAH also retains exposure to NOAH's market value; one paid in an Ark currency fixes its amount when it
+is submitted, and its conversion stays spent if the claim is later cancelled. [Ark: Claims][ark-claims]
 
 ## 10 Network and launch
 

@@ -164,9 +164,10 @@ governed burn.
 ### 3.8 Insurance
 
 The `claims_insurance` account, owned by `x/claims`, used only for covered-loss payments through recorded claims. It
-is never a redemption source and receives and pays `anoah` alone. The Claims committee is an ordinary threshold
-multisig appointed for one termed, half-open window of block time with a fixed gross claim allowance; it signs typed
-submissions and cancellations and holds no custody, module permission, or generic send. Governance owns the mandate,
+is never a redemption source. It is funded in `anoah`, pays claims in NOAH or any active registry asset, and holds the
+registry paper a stablecoin claim buys through Market when it is submitted (D140). The Claims committee is an ordinary
+threshold multisig appointed for one termed, half-open window of block time with a fixed gross claim limit in the
+reference unit; it signs typed submissions and cancellations and holds no custody, module permission, or generic send. Governance owns the mandate,
 submits without consuming the committee's allowance, and may cancel any pending claim during the shared cancellation
 period, which is an `x/claims` parameter (D30, D38, D54).
 
@@ -225,10 +226,11 @@ produce that table:
   pool and the Buffer, `x/claims` over Insurance, `x/reserve` over the Reserve. Bank collects them in a named order,
   and a module providing one must appear in that order or the app fails to construct. Owning the restriction beside
   the account is why the Reserve's rule could diverge from the other three without touching them.
-- The subsidy pool, the Buffer, and Insurance admit only a positive, `anoah`-only credit; a mixed or non-NOAH credit
-  fails atomically after the whole restriction chain, whatever surface it came through (D25, D26). The Reserve admits
-  NOAH and registry members by membership and refuses everything else (D65, D70); that membership rule is what admits
-  the derecognised transfer tax settlement routes there, with no sender exemption.
+- The subsidy pool and the Buffer admit only a positive, `anoah`-only credit; a mixed or non-NOAH credit fails
+  atomically after the whole restriction chain, whatever surface it came through (D25, D26). The Reserve and Insurance
+  admit NOAH and registry members by membership and refuse everything else (D65, D70, D140); that membership rule is
+  what admits the derecognised transfer tax settlement routes to the Reserve and the paper a stablecoin claim buys into
+  Insurance, with no sender exemption.
 - Deposits ride ordinary Bank rails. They need no module message, receipt, or ledger, are accepted above target, and
   grant no refund, ownership, withdrawal, coverage, priority, governance, or deployment right. A taxable stablecoin
   deposit is taxed like the same transfer to any other account; the recipient creates no exemption.
@@ -364,7 +366,7 @@ no transfer-history collection, because the passed proposal is the authorisation
 ### 6.6 Insurance claims
 
 Governance stores one Claims mandate: the shared envelope (chain-derived term, exact committee, half-open activation
-and expiry times) and a fixed gross claim allowance for the term (D30, D38). The window and the cancellation period
+and expiry times) and a fixed gross claim limit for the term in the reference unit (D30, D38, D140). The window and the cancellation period
 are seconds of block time, as the governance vote the period must fit is, so a faster block pace cannot shorten
 either (D133). An empty committee is the disabled
 mandate; replacing or disabling advances the term, resets the allowance used, and never touches an existing claim or
@@ -372,16 +374,20 @@ the reservation. Appointment requires an active span no shorter than the cancell
 
 A claim is submitted, encumbered, then paid by the chain:
 
-- **Submission.** The committee submits a positive `anoah` claim with its expected term during the active window; the
-  claim must fit the remaining allowance, consumes it permanently, stores the term, and must close before the mandate
-  expires. Governance submits at any time with no term and consumes no allowance. Both derive the closing time
-  from the cancellation period, name a recipient Bank can pay, and must be covered by the Insurance balance less what
-  is already reserved. The keeper assigns a monotonic claim ID, reserves the amount without moving coins, and emits
-  `EventClaimSubmitted`.
+- **Submission.** A claim pays a positive amount of NOAH or an active registry asset. The committee submits with its
+  expected term during the active window; the claim charges the limit with what it draws, its custody and any NOAH it
+  converts, in the reference unit at the fresh rates, consumes it permanently, stores the term and the charge, and must
+  close before the mandate expires. Governance submits at any time with no term and charges nothing. Both derive the
+  closing time from the cancellation period, name a recipient Bank can pay, and must be covered by what Insurance holds
+  in the claim's denomination beyond what is already reserved. A stablecoin claim custody cannot cover buys the rest
+  through Market with uncommitted Insurance NOAH, inside the submitting message and within the claim's `max_offer`;
+  every other check runs first. The keeper assigns a monotonic claim ID, reserves the amount in its denomination, and
+  emits `EventClaimSubmitted`, with `EventClaimConverted` when it bought.
 - **Cancellation.** Before the closing time, governance may cancel any pending claim without reading the mandate, and
   the current committee may cancel a non-governance claim with its exact term. Cancellation releases the reservation,
   records which authority vetoed, and restores no allowance, so approve-and-cancel cycles cannot redirect expansion
-  funding (D32).
+  funding (D32). It never reaches Market: a converted claim's paper stays uncommitted for the next claim in its
+  denomination, and the spread it cost stays spent, which is why the limit charges it.
 - **Settlement.** At the closing time cancellation closes for everyone and the `x/claims` EndBlocker pays the
   immutable recipient and amount. Payment needs no signer because nothing about it is discretionary, and the recipient,
   who has just suffered the covered loss, is the party least able to send a transaction; an unsettled claim would
@@ -394,7 +400,8 @@ A claim is submitted, encumbered, then paid by the chain:
 
 The reservation is an encumbrance, not a movement: submission lowers the unencumbered balance and opens only the
 passive target gap, execution lowers balance and reservation together and creates no second gap shock, and the
-reservation never exceeds the balance. There is no guardian, pause, category, per-claim cap, or clawback of a paid
+reservation never exceeds the balance in its denomination. A stablecoin claim's conversion spends Insurance NOAH at
+submission instead, which opens the same passive gap, and the paper it buys is never recognised (D28, D140). There is no guardian, pause, category, per-claim cap, or clawback of a paid
 claim (D32).
 
 The record is one closing time, two enums, and a reference. `closing_time` is scheduled while pending and actual once not:
@@ -480,8 +487,9 @@ capital_gap        = max(required_capital - recognised_capital, 0)
 ```
 
 The Buffer counts its `anoah` balance at par; Treasury reads it directly, since the Buffer has no operator. Insurance
-counts its balance less the reservation held against pending claims, because an approved claim cannot cover a second
-loss. The Reserve counts its `anoah` at par plus a haircut credit for each attested position:
+counts its `anoah` balance less the NOAH reserved against pending claims, because an approved claim cannot cover a
+second loss; the registry paper it holds for stablecoin claims counts for nothing (D28). The Reserve counts its `anoah`
+at par plus a haircut credit for each attested position:
 
 ```text
 credit_a = min(haircut_a * attested_quantity_a * rate_a, cap_ratio_a * recognised_capital)
@@ -623,7 +631,7 @@ a product too large to represent reads as uncapped, its true ceiling being past 
 `Params.reference_denom` equals the Oracle's reference at every height, and every guard sits at a write, never at a
 read: `InitGenesis` refuses a mismatch, `MsgUpdateParams` rejects any denomination change so governance moves the
 amount alone, and the Oracle's `MsgSetReferenceDenom` is the one denomination-moving path, running every wired
-consumer's rebase, Treasury's cap, Market's pool, and Disbursement's compensation figures, before storing the new
+consumer's rebase, Treasury's cap, Market's pool, Disbursement's compensation figures, and Claims' limit and charges, before storing the new
 reference and failing whole if any fails (`EventReferenceTaxCapRebased`). Nothing re-checks the pair at runtime: a
 derive-time guard would fire only when a rebuild was owed and make the derivation depend on state it never uses. The obligation is on any future writer of
 `Params`: an upgrade that touches either side repeats the genesis check and tests the pair rather than each side alone.

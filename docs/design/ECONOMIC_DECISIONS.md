@@ -10,7 +10,7 @@ rewritten in place when its rule changes; a number with no entry has no rule.
 - D1–D40: [D1](#d1), [D2](#d2), [D3](#d3), [D4](#d4), [D5](#d5), [D6](#d6), [D7](#d7), [D8](#d8), [D9](#d9), [D10](#d10), [D11](#d11), [D12](#d12), [D13](#d13), [D14](#d14), [D15](#d15), [D16](#d16), [D17](#d17), [D18](#d18), [D19](#d19), [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38), [D40](#d40).
 - D41–D83: [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D49](#d49), [D53](#d53), [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D69](#d69), [D70](#d70), [D71](#d71), [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83).
 - D84–D111: [D84](#d84), [D85](#d85), [D87](#d87), [D88](#d88), [D89](#d89), [D91](#d91), [D92](#d92), [D93](#d93), [D95](#d95), [D96](#d96), [D101](#d101), [D102](#d102), [D103](#d103), [D104](#d104), [D105](#d105), [D106](#d106), [D107](#d107), [D108](#d108), [D109](#d109), [D110](#d110), [D111](#d111).
-- D112–D139: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123), [D124](#d124), [D125](#d125), [D126](#d126), [D127](#d127), [D128](#d128), [D129](#d129), [D130](#d130), [D131](#d131), [D132](#d132), [D133](#d133), [D134](#d134), [D135](#d135), [D136](#d136), [D137](#d137), [D138](#d138), [D139](#d139).
+- D112–D140: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123), [D124](#d124), [D125](#d125), [D126](#d126), [D127](#d127), [D128](#d128), [D129](#d129), [D130](#d130), [D131](#d131), [D132](#d132), [D133](#d133), [D134](#d134), [D135](#d135), [D136](#d136), [D137](#d137), [D138](#d138), [D139](#d139), [D140](#d140).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -72,10 +72,10 @@ custody; passive targets leave every fund movement either a conversion's own flo
 
 Every fund's target is sized on one shared basis, the stablecoin liability valued in NOAH ([D24](#d24)) and scaled by
 the exposure multiplier ([D72](#d72)); there is no per-fund covered-risk model. The Buffer counts its NOAH balance,
-Insurance its NOAH balance less pending claim reservations, and the Reserve its NOAH plus haircut-and-capped credit for
-attested holdings ([D58](#d58)). Under NOAH-only fund custody every fund's exposure has liability as its only base, and
-Reserve deployment risk is priced by recognition haircuts and caps, so a separate per-fund model would collapse to the
-existing ratios and multiplier; one earns a place only when a fund carries material risk that does not scale with
+Insurance its NOAH balance less pending NOAH claim reservations, and the Reserve its NOAH plus haircut-and-capped credit
+for attested holdings ([D58](#d58)). With every fund's capital counted in NOAH, every fund's exposure has liability as
+its only base, and Reserve deployment risk is priced by recognition haircuts and caps, so a separate per-fund model
+would collapse to the existing ratios and multiplier; one earns a place only when a fund carries material risk that does not scale with
 liability.
 
 ## D9
@@ -175,7 +175,7 @@ Market's `BasePool` is a denomination-bearing `sdk.DecCoin` in `ConversionPolicy
 reference, which launches as `axdr`. Market's `MsgUpdatePolicy` and, inside the conversion corridor,
 `MsgCommitteeUpdatePolicy` move its amount and refuse a denomination change; the denomination moves only through
 Oracle's `MsgSetReferenceDenom`, which requires the successor's feed Active and freshly priced and runs Market's rebase
-with every other wired `ReferenceRebaser`, Treasury's and Disbursement's, in one transaction or fails whole. Treasury
+with every other wired `ReferenceRebaser`, Treasury's, Disbursement's, and Claims', in one transaction or fails whole. Treasury
 never drives or intermediates the pool transition. The delta never exists without its unit being observable, and the
 pool's unit decides no stablecoin's convertibility, so a re-denomination changes no eligibility ([current
 contract](ECONOMIC_DESIGN.md#310-live-pool-unit-transition)).
@@ -201,11 +201,13 @@ no automatic refill exists. A deposit changes neither supply nor the reward targ
 
 ## D26
 
-The subsidy pool, the Redemption Buffer, and Insurance admit only positive `anoah` credits; a mixed or non-NOAH credit
-fails atomically, whatever surface it came through, and no sender is exempt. The strategic Reserve admits NOAH and
-asset-registry members by membership alone ([D65](#d65), [D70](#d70)), which is what admits the derecognised transfer
-tax Treasury settlement routes there as inert custody that earns no credit and waits for a burn ([D61](#d61)). Each
-NOAH-only fund counts its balance at par, so a non-NOAH coin there would be custody its capital figure cannot see.
+The subsidy pool and the Redemption Buffer admit only positive `anoah` credits; a mixed or non-NOAH credit fails
+atomically, whatever surface it came through, and no sender is exempt. The strategic Reserve and Insurance admit NOAH
+and asset-registry members by membership alone ([D65](#d65), [D70](#d70)): the Reserve's rule admits the derecognised
+transfer tax Treasury settlement routes there as inert custody that earns no credit and waits for a burn
+([D61](#d61)), and Insurance's admits the paper a stablecoin claim buys ([D140](#d140)). Each NOAH-only fund counts its
+balance at par, so a non-NOAH coin there would be custody its capital figure cannot see; Insurance counts its NOAH
+alone ([D28](#d28)).
 
 ## D27
 
@@ -223,7 +225,8 @@ cannot fail the proposal.
 
 Required capital is sized on the liability a fund covers, never on the gross value of what it holds: held assets satisfy
 a requirement without defining it. A non-NOAH holding reduces a gap only through explicit, risk-adjusted recognition,
-the Reserve's haircut and capped eligibility policy ([D58](#d58), [D64](#d64)); Insurance admits and counts NOAH alone.
+the Reserve's haircut and capped eligibility policy ([D58](#d58), [D64](#d64)); Insurance counts NOAH alone, and the
+registry paper it holds for stablecoin claims is custody for those claims, never capital ([D140](#d140)).
 Liquidity sits apart from recognition, in the Buffer as the liability-scaled liquid tranche and in the Reserve mandate's
 NOAH floor ([D56](#d56)). Ark-issued stablecoins always receive zero credit and cannot be named by an eligibility entry
 ([D69](#d69)), because Ark paper is a liability until burned. Full credit for a holding would close a gap that is not
@@ -234,8 +237,8 @@ principal; a haircut reopens exactly the unrecognised part.
 
 Governance owns the Insurance Claims mandate. The shared cancellation period, `claim_cancellation_period` in seconds of
 block time ([D133](#d133)), is an `x/claims` parameter applying to both origins. Committee submissions are bound to the
-active mandate window and the exact term and consume a fixed gross term allowance; governance submissions depend only on
-params and record no mandate term. Governance may cancel any pending claim regardless of the current mandate, while the
+active mandate window and the exact term and consume a fixed gross term allowance in the reference unit ([D140](#d140));
+governance submissions depend only on params, record no mandate term, and charge nothing. Governance may cancel any pending claim regardless of the current mandate, while the
 current committee may cancel only non-governance claims. A period held in the mandate would make governance claims
 depend on an enabled committee, and the committee may not overturn a governance decision.
 
@@ -248,8 +251,9 @@ key never reaches another's powers.
 
 ## D32
 
-Claims are submit-then-pay with encumbered pending amounts: submission reserves the amount without moving coins, and the
-`x/claims` EndBlocker pays the immutable recipient at the closing time with no signer. Cancellation ends for every actor
+Claims are submit-then-pay with encumbered pending amounts: submission reserves the amount, moving coins only to buy what
+a stablecoin claim's custody lacks ([D140](#d140)), and the `x/claims` EndBlocker pays the immutable recipient at the
+closing time with no signer. Cancellation ends for every actor
 at the closing time, block time in Unix seconds ([D133](#d133)), and a cancelled claim's allowance stays consumed. No
 authority can claw back a paid claim or bypass the held-balance, denomination, uniqueness, no-mint, no-borrow, or
 no-cross-fund invariants. Payment needs no signer because nothing about it is discretionary, and the recipient of a
@@ -319,7 +323,8 @@ mandate is claims-only, and its cancellation period is an `x/claims` parameter (
 
 Claims stays minimal. The mandate stores the shared envelope, a monotonic term, the exact committee, and a half-open
 activation and expiry window in block time ([D133](#d133)), plus a fixed gross committee claim limit,
-`committee_claim_limit`; an appointment's active span must be at least the cancellation period, which lives in
+`committee_claim_limit`, in the reference unit and charged with what each claim draws ([D140](#d140)); an appointment's
+active span must be at least the cancellation period, which lives in
 `x/claims` `Params` ([D30](#d30)). Claims carry no category or per-claim cap, and there is no guardian or
 governance-cancellation flag: the term allowance bounds what a committee can commit, governance can veto any claim
 before it closes, and which authority cancelled reads off the typed `ClaimAuthority` domain rather than a flag callers
@@ -445,7 +450,7 @@ governance-supplied fallback price, and a slow-cadence feed is served by the ent
 strictly positive, because an entry granting no credit would be indistinguishable from no entry while still occupying
 the policy and raising no feed-guard claim; refusing zero makes every stored entry a live claim and the guard
 ([D63](#d63)) total over the policy. The list is credit policy alone: custody admission never reads it ([D65](#d65)).
-Cross-fund concentration caps are per-asset Reserve caps because Insurance holds only NOAH. The `RecognisedCapital`
+Cross-fund concentration caps are per-asset Reserve caps because Insurance recognises only NOAH. The `RecognisedCapital`
 query decomposes every row, attested-but-unlisted holdings included, so each zero credit shows its reason. Bank
 custody other than NOAH is not a subject of the decomposition and the fold reads no other balance: a listed name is an
 external symbol the account can never hold ([D70](#d70)), and the only other custody, registry-member paper, can never
@@ -695,7 +700,7 @@ stored price of the reference unit — the exposure anchor — moves by the reci
 (`p × rate[new] / rate[old]`), which is the same `Convert` call with the two units passed in the opposite order, so
 the chain keeps one arithmetic path and reversed arguments at a price site are the operation rather than a bug. Every
 rebase site states which it holds: the Market base pool, the Treasury tax cap, base-fee floor, and base gas price, and
-Disbursement's compensation figures ([D123](#d123)) are quantities; the exposure anchor and the conversion-factor
+Disbursement's compensation figures and Claims' limit and charges ([D123](#d123)) are quantities; the exposure anchor and the conversion-factor
 table, each a figure per one reference unit, are prices, the table rebased through the one-unit cross.
 
 ## D77
@@ -1165,14 +1170,15 @@ params vote; and a record with many grants pays a longer walk at award time.
 ## D110
 
 The grants committee's term allowance is one figure, `compensation_allowance`, in the reference unit: every committee
-award, NOAH or any active asset, charges the reference value [D109](#d109) writes on the grant, so the check reads no
-rate the award did not already need. There is no denomination list. Why: compensation is pay, and the reference unit
+award, NOAH or any active asset, charges what it drew, its custody and the NOAH it converted, at the rates
+[D109](#d109) values it at, written on the grant as its charge ([D140](#d140)), so the check reads no rate the award did
+not already need. There is no denomination list. Why: compensation is pay, and the reference unit
 holds pay steady where a NOAH figure would float with NOAH's price. Rejected: one figure in NOAH, which charges nothing
 for an award custody already holds; and a denomination list, since every compensation award already needs a live
 reference rate, so restricting pay to NOAH bounds nothing. What it costs: the live term's usage is one figure the module
 keeps and genesis carries, zeroed at appointment as Claims zeroes its allowance and checked against the term's grants at
 import; it and the allowance follow a reference re-point ([D123](#d123)); and there is no per-asset bound on what the
-committee converts through Market, which the compensation figure bounds in value.
+committee converts through Market, which the allowance bounds in value, the spread included.
 
 ## D111
 
@@ -1438,10 +1444,11 @@ older than a quarter need a separate award, which counts in the window it is mad
 ## D123
 
 Disbursement's compensation figures rebase with the protocol reference ([D23](#d23), [D76](#d76)): the cap, every
-compensation award's value, the live term's usage, and its allowance, in the same `MsgSetReferenceDenom` transaction as
-Market's pool and Treasury's reference state, or the transaction fails whole. All four are quantities, so each converts
-as `Convert(from → to)` and rounds up as the award-time valuation does; the usage is re-derived as the sum of the live
-term's rebased awards rather than converted, so the import equality between the two holds exactly; the allowance is then
+compensation award's value and charge, the live term's usage, and its allowance, in the same `MsgSetReferenceDenom`
+transaction as Market's pool and Treasury's reference state, or the transaction fails whole. Claims' committee claim
+limit, every committee claim's charge, and the live term's usage rebase the same way ([D140](#d140)). All are
+quantities, so each converts as `Convert(from → to)` and rounds up as the award-time valuation does; the usage is
+re-derived as the sum of the live term's rebased charges rather than converted, so the import equality between the two holds exactly; the allowance is then
 raised to the usage where the per-award ceilings outran its own ceiling, by under one base unit an award. A figure past
 the module's 128-bit amount bound refuses the re-point at the write rather than the next export. Oracle dispatches
 through one `ReferenceRebaser` contract and a variadic `SetReferenceRebasers` registration in the app, mirroring the
@@ -1752,6 +1759,30 @@ signing whoever proposes but add a permanent PreBlock execution path, a carrier 
 carrier set holding over a third of stake for the guarantee. Revisit only if a mandate is expected to suspend ahead of
 public information, where the transaction would be the first signal. What it costs: a suspension waits for a carrier's
 proposer slot, and one sent publicly is visible for a block and can be left out by a hostile proposer.
+
+## D140
+
+Claims pay in NOAH or any active registry asset. A stablecoin claim is funded when it is submitted, as a compensation
+award is: it draws uncommitted paper in Insurance custody first and buys the rest through Market's ordinary buy with
+uncommitted Insurance NOAH, inside the submitting message and within the claim's `max_offer`; settlement only sends.
+The committee claim limit is in the reference unit, and both committee allowances, it and the grants committee's
+`compensation_allowance` ([D110](#d110)), charge what a committee award drew rather than its face value: its custody and
+the NOAH it converted, valued at the fresh rates Market quoted with, each rounded up, and written on the record as its
+`charge`. Every other check runs before the buy, the allowance at face value, which a buy can only raise. A governance
+claim charges nothing and reads no rate. A cancelled or failed claim's paper stays uncommitted for the next claim in its
+denomination; a claim pays even if its asset is suspended after submission; Insurance admits NOAH and registry members
+from any sender ([D26](#d26)) and counts NOAH alone ([D28](#d28)). Why: a converted claim's NOAH is spent at
+submission, so cancellation, which makes a stolen key's NOAH claims harmless, cannot undo it, and Market's buy prices on
+a constant-product pool, where buying 90% of its depth costs ten times the value bought; a limit on face value would
+bound nothing a stolen key burns through the spread. Converting at payout would put a buy in the Claims EndBlocker,
+after Market's block settlement ([D33](#d33)), fail an approved claim on a stale price, and leave a NOAH reservation
+unable to cover a fixed stablecoin amount after a week of price movement. Rejected: payout-time conversion, as above; a
+NOAH-denominated limit, which floats with NOAH's price; selling a cancelled claim's paper back to NOAH on cancel, which
+would make the veto depend on Market; and admitting paper only from Market's mint, a sender exemption [D26](#d26)
+refuses. What it costs: a committee claim, a NOAH one included, needs a fresh reference rate, so through an oracle
+outage only governance submits claims, which Insurance does not cover; a cancelled conversion's spread stays spent; a
+claim near the pool's depth is ruinous or refused until the pool is resized; and paper in Insurance custody earns no
+credit, so Treasury refills NOAH behind it until a claim in its denomination draws it.
 
 ## P1
 

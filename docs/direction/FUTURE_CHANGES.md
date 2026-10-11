@@ -223,7 +223,8 @@ no sidecar release. Docs that move with it: `x/oracle/README.md`, `FUTURE_CHANGE
 
 Create the basket, let it print, register the asset, then `MsgSetReferenceDenom` re-points from `axdr` to it, running
 every wired rebaser at one fresh cross: Market's pool; Treasury's tax cap, base-fee floor and live price, factor
-table, and exposure anchor; and Disbursement's compensation cap, award values, term usage, and allowance. The asset's lifecycle stays
+table, and exposure anchor; Disbursement's compensation cap, award values and charges, term usage, and allowance; and Claims'
+committee claim limit, claim charges, and term usage. The asset's lifecycle stays
 independent of the reference, as it is for any denomination today. Once unreferenced, `axdr` may be removed as a feed.
 Later rebalances of the reference need no rebase, because the basket's NOAH value is continuous across them.
 

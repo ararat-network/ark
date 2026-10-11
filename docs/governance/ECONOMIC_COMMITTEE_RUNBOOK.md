@@ -153,7 +153,8 @@ bracket the live rebased depth; review that explicitly.
 
 The old corridor is not silently reinterpreted in new units. Treasury's corridor has no denomination and requires no
 corresponding appointment; its reference-valued state rebases atomically. Disbursement's compensation figures, the cap,
-every award's value, and the live grants term's usage and allowance, rebase atomically too, so the grants committee
-needs no reappointment. Query fresh incoming pricing and either
+every award's value and charge, and the live grants term's usage and allowance, rebase atomically too, so the grants
+committee needs no reappointment, and so do the Claims committee's limit, every committee claim's charge, and the live
+term's usage. Query fresh incoming pricing and either
 fresh outgoing pricing or the explicitly governed outgoing-rate override under
 [Oracle's reference contract](../../x/oracle/README.md#13-protocol-reference-denom).

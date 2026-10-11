@@ -57,8 +57,8 @@ survives, so the artefact and the code obey these rules rather than a migration:
   which Distribution's InitGenesis requires.
 - Distribution's `community_tax` is zero in the artefact itself (D13); `arkd init` still emits the SDK default, so a
   genesis built from `arkd init` must set it.
-- The four custody accounts are unblocked for inbound sends. The subsidy pool, Buffer, and Insurance admit only
-  positive `anoah` (D26) and the Reserve `anoah` and registry members (D70); each owner's InitGenesis runs after
+- The four custody accounts are unblocked for inbound sends. The subsidy pool and Buffer admit only positive `anoah`
+  (D26), and the Reserve and Insurance `anoah` and registry members (D70, D140); each owner's InitGenesis runs after
   Bank's and re-checks its own balances.
 - Bank supply equals the sum of balances at every step: the artefact carries the disbursement pools and the community
   pool before seats, and assembly moves each seat's grant out of the community pool rather than adding supply.
@@ -96,7 +96,7 @@ Module accounts are code (`app/app_config.go`), listed here because the genesis 
 | `treasury_subsidy_pool` | none | `anoah` only | Balance-constrained subsidy pool; permissionless NOAH deposits are the only refill (D9, D25). |
 | `treasury_redemption_buffer` | none | `anoah` only | Coverage-based redemption inventory (D4, D26). |
 | `strategic_reserve` | Burner | `anoah` and registry members | Reserve custody; the burn authority is split between committee and governance (D61). External symbols are refused at the restriction, permanently (D70). |
-| `claims_insurance` | none | `anoah` only | Insurance custody, paid only through recorded claims (D15, D26). |
+| `claims_insurance` | none | `anoah` and registry members | Insurance custody, paid only through recorded claims; registry members are what a stablecoin claim buys, and count for nothing (D15, D26, D140). |
 | `transfer_tax_collector` | none | Blocked | Holds the funding window's transfer tax until settlement routes it. Its send of written-off and retired residue into `strategic_reserve` meets the Reserve's ordinary NOAH-or-member admission; no sender is exempt (D65). |
 | `oracle` | none | Blocked | Oracle reward pool. |
 | `fee_collector` | none | Blocked | Gas fees before Distribution. |
@@ -220,7 +220,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | --- | --- | --- | --- |
 | `params.claim_cancellation_period` | `604800` | Decided | One week of block time, so the veto window fits a governance deposit period and vote whatever the block pace; positive by validation, capped at a year (D30, D38, D54, D133). |
 | `claims_mandate` | empty | Decided | Appointed when Insurance has a charter naming the perils it covers (§13). Governance files claims itself meanwhile. |
-| `claims`, `claims_allowance_used`, `insurance_reserved`, `next_claim_id` | none, `0`, `0`, `1` | Decided | Zero accounting at launch. |
+| `claims`, `claims_allowance_used`, `insurance_reserved`, `next_claim_id` | none, `0`, none, `1` | Decided | Zero accounting at launch. |
 
 ## 7. Reserve
 

@@ -300,8 +300,9 @@ buyer's balance left out, which is what makes the purchase a bad trade. Nothing 
 spend past its vote, and nothing opens a step without one; both are open items under D93.
 
 The grants committee holds a term-limited committee mandate whose messages ride the committee lane. It can appoint the
-registrar, suspend member payments, reinstate them, and award compensation within its term's allowance at reference
-value, converting NOAH through Market for a stablecoin award within the award's cap, each under its exact term and
+registrar, suspend member payments, reinstate them, and award compensation within its term's allowance, which charges
+what each award draws in the reference unit, converting NOAH through Market for a stablecoin award within the award's
+cap, each under its exact term and
 active window; it awards no ownership, which is governance's alone (D113), and cannot redirect or cancel a grant.
 Registration is the registrar's (D120): a single key, the hottest on the chain, on the member platform's signing
 service, appointed by the committee under its term for a window inside the committee's, which the committee rotates
@@ -337,7 +338,8 @@ like any other (D136). Stablecoin custody comes from
 the award itself: a stablecoin award draws uncommitted custody first and converts the rest from the contributor
 pool through Market, inside the message that creates it, offering at most its `max_offer`. The module sizes the
 smallest offer that funds the award, so a committee key cannot overpay beyond market price and the slippage of the
-award's own size, and the compensation allowance bounds that size. The permanent journal and typed events
+award's own size, and the compensation allowance charges that offer, slippage included, so a stolen key's buys, which
+cancelling the award would not undo, stay within the term's allowance (D140). The permanent journal and typed events
 make awards, destinations, payments, suspensions, and control changes publicly auditable; governance actions are
 auditable in their proposals. Private personnel data does
 not belong in public references, the registration batch reference included. Admission runs off-chain in the
@@ -346,6 +348,15 @@ dedup token, never the document, beside the vouch graph. The verifier's API is a
 attestation store is the platform's second asset after the committee key, since it links a person to an address; the
 plan's counsel item covers what it obliges. The wallet holds the member's key, and the member app, a layer on it, holds
 none and asks for every signature through the wallet kit.
+
+The Claims committee submits and cancels claims within its term's limit, under its exact term and window; nothing it
+submits pays before the cancellation period, a week at launch, closes, and governance may cancel any of it before
+then. A stablecoin claim is the one committee act that moves value at once: it buys what Insurance custody lacks
+through Market with Insurance NOAH when it is submitted, which a cancel cannot undo. The limit therefore charges what a
+claim draws, its custody and the NOAH offer in the reference unit at the fresh rates, rather than its face value, so a
+stolen key spends at most the term's limit through the pool's spread; the paper bought stays in custody for the next
+claim in its denomination, and Treasury counts none of it as Insurance capital (D28, D140). Insurance admits NOAH and
+registry members from any sender, so a deposit can only add custody a later claim draws.
 
 The security committee holds the one committee power that can stop the chain without moving a coin: it schedules an
 upgrade when the slot is empty or holds its own plan, and cancels only its own, through `MsgCommitteePlanUpgrade` and

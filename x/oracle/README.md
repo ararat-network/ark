@@ -196,7 +196,7 @@ a reference names an Active feed and need not name a registered asset. It is re-
 
 `MsgSetReferenceDenom` is the governance writer. First configuration has no old unit to rebase. Changing an existing
 reference loads the conversion rates once and atomically invokes every consumer wired by `SetReferenceRebasers`, one
-`ReferenceRebaser` each: Market, Treasury, and Disbursement, in that order. No wired consumer or a failed rebase rejects
+`ReferenceRebaser` each: Market, Treasury, Disbursement, and Claims, in that order. No wired consumer or a failed rebase rejects
 the whole action. The app's one wiring line is the registry: a consumer left off it rebases nothing and fails nothing,
 which the real-app re-point tests guard by requiring every consumer's event.
 
