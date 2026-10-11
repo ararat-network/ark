@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewGenesisState creates a Claims genesis state.
@@ -12,7 +14,7 @@ func NewGenesisState(
 	params Params,
 	claimsMandate ClaimsMandate,
 	claimsAllowanceUsed math.Int,
-	insuranceReserved math.Int,
+	insuranceReserved sdk.Coins,
 	nextClaimID uint64,
 	claims []Claim,
 ) *GenesisState {
@@ -32,7 +34,7 @@ func DefaultGenesisState() *GenesisState {
 		DefaultParams(),
 		DefaultClaimsMandate(),
 		math.ZeroInt(),
-		math.ZeroInt(),
+		sdk.NewCoins(),
 		1,
 		[]Claim{},
 	)
@@ -56,22 +58,19 @@ func (gs GenesisState) Validate() error {
 	if gs.ClaimsAllowanceUsed.IsNegative() {
 		return errors.New("Claims allowance usage must be zero or positive")
 	}
-	if gs.ClaimsAllowanceUsed.GT(claimsMandate.CommitteeClaimLimit.Amount) {
+	if gs.ClaimsAllowanceUsed.GT(claimsMandate.CommitteeClaimLimit) {
 		return fmt.Errorf(
 			"Claims allowance usage %s exceeds mandate limit %s",
 			gs.ClaimsAllowanceUsed,
 			claimsMandate.CommitteeClaimLimit,
 		)
 	}
-	if gs.InsuranceReserved.IsNil() {
-		return errors.New("insurance reservation must be set")
-	}
-	if gs.InsuranceReserved.IsNegative() {
-		return errors.New("insurance reservation must be zero or positive")
+	if err := gs.InsuranceReserved.Validate(); err != nil {
+		return fmt.Errorf("insurance reservation: %w", err)
 	}
 
 	allowanceUsed := math.ZeroInt()
-	insuranceReserved := math.ZeroInt()
+	insuranceReserved := sdk.NewCoins()
 	for i, claim := range gs.Claims {
 		// Claims are permanent, so IDs run from one without a gap and the sequence sits one past
 		// them; an export that lost a claim cannot import.
@@ -107,17 +106,16 @@ func (gs GenesisState) Validate() error {
 		if claim.Origin == ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE &&
 			claim.MandateTerm == claimsMandate.Term {
 			var err error
-			allowanceUsed, err = allowanceUsed.SafeAdd(claim.Amount.Amount)
+			allowanceUsed, err = allowanceUsed.SafeAdd(claim.Charge)
 			if err != nil {
 				return fmt.Errorf("summing current-term committee claims: %w", err)
 			}
 		}
 		if claim.Status == ClaimStatus_CLAIM_STATUS_PENDING {
-			var err error
-			insuranceReserved, err = insuranceReserved.SafeAdd(claim.Amount.Amount)
-			if err != nil {
+			if _, err := insuranceReserved.AmountOf(claim.Amount.Denom).SafeAdd(claim.Amount.Amount); err != nil {
 				return fmt.Errorf("summing pending claims: %w", err)
 			}
+			insuranceReserved = insuranceReserved.Add(claim.Amount) // The sum fits, checked above.
 		}
 	}
 	if gs.NextClaimId != uint64(len(gs.Claims))+1 {
@@ -125,7 +123,7 @@ func (gs GenesisState) Validate() error {
 	}
 	if !allowanceUsed.Equal(gs.ClaimsAllowanceUsed) {
 		return fmt.Errorf(
-			"Claims allowance usage %s does not equal current-term committee claim sum %s",
+			"Claims allowance usage %s does not equal current-term committee charge sum %s",
 			gs.ClaimsAllowanceUsed,
 			allowanceUsed,
 		)

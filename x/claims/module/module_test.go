@@ -75,7 +75,7 @@ func TestAppModuleStandalone(t *testing.T) {
 	require.NoError(t, appModule.ValidateGenesis(cdc, nil, defaultGenesis))
 
 	invalidGenesis := types.DefaultGenesisState()
-	invalidGenesis.ClaimsAllowanceUsed = invalidGenesis.ClaimsMandate.CommitteeClaimLimit.Amount.AddRaw(1)
+	invalidGenesis.ClaimsAllowanceUsed = invalidGenesis.ClaimsMandate.CommitteeClaimLimit.AddRaw(1)
 	require.Error(
 		t,
 		appModule.ValidateGenesis(cdc, nil, cdc.MustMarshalJSON(invalidGenesis)),

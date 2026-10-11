@@ -15,19 +15,6 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// submitGovernanceClaim records one pending governance claim of the supplied
-// amount at the current block time and returns its identifier.
-func (s *KeeperTestSuite) submitGovernanceClaim(amount int64) uint64 {
-	resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
-		Authority: s.authority,
-		Reference: "incident",
-		Recipient: testAddress(3),
-		Amount:    noahCoin(amount),
-	})
-	s.Require().NoError(err)
-	return resp.ClaimId
-}
-
 func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 	recipient := testAddress(3)
 
@@ -58,7 +45,7 @@ func (s *KeeperTestSuite) TestEndBlockerSettlesDueClaims() {
 		// Nobody signs for a settlement, so a paid claim names no canceller.
 		s.Require().Empty(claim.CancelledBy)
 
-		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+		reserved, err := s.reserved(chain.NoahBaseDenom)
 		s.Require().NoError(err)
 		s.Require().True(reserved.IsZero())
 		s.requireDueClaims()
@@ -270,7 +257,7 @@ func (s *KeeperTestSuite) TestEndBlockerBoundsSettlementsPerBlock() {
 	s.requireStatus(last, types.ClaimStatus_CLAIM_STATUS_PAID)
 	s.requireDueClaims()
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero())
 }
@@ -293,7 +280,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsRefusedPayment() {
 			if amount.Equal(math.NewInt(100)) {
 				return errors.New("restricted recipient")
 			}
-			s.insuranceBalance = s.insuranceBalance.Sub(amount)
+			s.insurance = s.insurance.Sub(coins...)
 			return nil
 		}).
 		Times(2)
@@ -304,9 +291,9 @@ func (s *KeeperTestSuite) TestEndBlockerFailsRefusedPayment() {
 	s.requireStatus(refused, types.ClaimStatus_CLAIM_STATUS_FAILED)
 	s.requireStatus(paid, types.ClaimStatus_CLAIM_STATUS_PAID)
 	s.requireDueClaims()
-	s.Require().Equal(math.NewInt(4_800), s.insuranceBalance)
+	s.Require().Equal("4800", s.insurance.AmountOf(chain.NoahBaseDenom).String())
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a refused claim must release its reservation")
 }
@@ -340,7 +327,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsUncoveredClaim() {
 	s.Require().Equal(uint64(25), failed.ClosingTime)
 	s.Require().Empty(failed.CancelledBy)
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 
@@ -372,7 +359,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsBlockedRecipient() {
 	s.requireStatus(claimID, types.ClaimStatus_CLAIM_STATUS_FAILED)
 	s.requireDueClaims()
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 }
@@ -403,7 +390,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsInsuranceSelfPayment() {
 	s.requireStatus(claimID, types.ClaimStatus_CLAIM_STATUS_FAILED)
 	s.requireDueClaims()
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 }
@@ -444,7 +431,7 @@ func (s *KeeperTestSuite) TestEndBlockerDropsDivergentQueueEntry() {
 func (s *KeeperTestSuite) queueClaimBypassingSubmission(claim types.Claim) {
 	s.Require().NoError(s.keeper.Claims.Set(s.ctx, claim.ClaimId, claim))
 	s.Require().NoError(s.keeper.DueClaims.Set(s.ctx, collections.Join(claim.ClosingTime, claim.ClaimId)))
-	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, claim.Amount.Amount))
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, claim.Amount.Amount))
 }
 
 // TestEndBlockerFailsUnparseableRecipient proves a stored recipient the current
@@ -473,7 +460,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsUnparseableRecipient() {
 	s.requireStatus(1, types.ClaimStatus_CLAIM_STATUS_FAILED)
 	s.requireDueClaims()
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 }
@@ -504,7 +491,7 @@ func (s *KeeperTestSuite) TestEndBlockerFailsRecordFailingValidation() {
 	s.requireStatus(1, types.ClaimStatus_CLAIM_STATUS_FAILED)
 	s.requireDueClaims()
 
-	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+	reserved, err := s.reserved(chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().True(reserved.IsZero(), "a failed claim must release its reservation")
 }

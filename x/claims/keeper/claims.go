@@ -15,23 +15,21 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// claimSubmission carries one already-authorized claim request into the shared
-// submission core. Origin is decided by the message type that authorized it.
-// The three mandate fields are committee-only facts supplied by the committee
-// handler after its window and term checks; governance leaves them zero.
+// claimSubmission carries one already-authorized claim request into the shared submission core.
+// Mandate is the appointment the committee handler checked for window and term, nil for governance,
+// so its presence is the claim's origin.
 type claimSubmission struct {
-	Submitter           string
-	Origin              types.ClaimAuthority
-	MandateTerm         uint64
-	MandateExpiryTime   uint64
-	CommitteeClaimLimit sdk.Coin
-	Reference           string
-	Recipient           string
-	Amount              sdk.Coin
+	Submitter string
+	Mandate   *types.ClaimsMandate
+	Reference string
+	Recipient string
+	Amount    sdk.Coin
+	MaxOffer  math.Int
 }
 
-// submitClaim reserves covered Insurance funds without transferring coins. Both origins use Claims
-// params; committee facts come from the handler and enforce expiry plus permanent gross term usage.
+// submitClaim funds and reserves a claim without paying it: a stablecoin claim converts what custody
+// lacks here, so settlement only sends. Both origins use Claims params; a committee claim also closes
+// inside its mandate and charges the term's gross limit with what it drew.
 func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, error) {
 	// The claim record stores both address strings, so they are canonicalised
 	// here — the single point where submissions of either origin become state —
@@ -51,12 +49,16 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	}
 	// Block time fits the header's int64 and the period is capped at a year, so this cannot wrap.
 	closingTime := now + params.ClaimCancellationPeriod
-	if sub.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE && closingTime > sub.MandateExpiryTime {
-		return 0, fmt.Errorf(
-			"claim closing time %d exceeds Claims mandate expiry time %d",
-			closingTime,
-			sub.MandateExpiryTime,
-		)
+	origin, term := types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE, uint64(0)
+	if sub.Mandate != nil {
+		origin, term = types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE, sub.Mandate.Term
+		if closingTime > sub.Mandate.ExpiryTime {
+			return 0, fmt.Errorf(
+				"claim closing time %d exceeds Claims mandate expiry time %d",
+				closingTime,
+				sub.Mandate.ExpiryTime,
+			)
+		}
 	}
 	claimID, err := k.NextClaimID.Peek(ctx)
 	if err != nil {
@@ -65,8 +67,8 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	claim := types.Claim{
 		ClaimId:         claimID,
 		Submitter:       sub.Submitter,
-		Origin:          sub.Origin,
-		MandateTerm:     sub.MandateTerm,
+		Origin:          origin,
+		MandateTerm:     term,
 		Reference:       sub.Reference,
 		Recipient:       sub.Recipient,
 		Amount:          sub.Amount,
@@ -74,8 +76,13 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 		SubmittedHeight: chain.BlockHeight(ctx),
 		SubmittedTime:   now,
 		ClosingTime:     closingTime,
+		Charge:          math.ZeroInt(),
 	}
-	if err := claim.Validate(); err != nil {
+	// The asset lookup and the valuation below need a well-formed amount before Validate runs.
+	if err := types.ValidateClaimAmount(claim.Amount); err != nil {
+		return 0, err
+	}
+	if err := k.validateDenom(ctx, claim.Amount.Denom); err != nil {
 		return 0, err
 	}
 	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
@@ -85,47 +92,46 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	if k.bankKeeper.BlockedAddr(recipient) {
 		return 0, fmt.Errorf("claim recipient %s is blocked from receiving funds", claim.Recipient)
 	}
-	amount := claim.Amount.Amount
-	allowanceUsed := math.ZeroInt()
-	if claim.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE {
-		currentAllowanceUsed, err := k.ClaimsAllowanceUsed.Get(ctx)
-		if err != nil {
-			return 0, fmt.Errorf("getting Claims allowance usage: %w", err)
+	// Every check runs before a stablecoin claim buys what custody lacks, so a refused claim never
+	// trades. A committee claim charges at least its face value, which stands in for the charge until
+	// the buy is known and refuses a claim past the limit, or one the oracle cannot value, before it
+	// reaches Market.
+	var value valuation
+	if sub.Mandate != nil {
+		if value, err = k.valuation(ctx, claim.Amount.Denom); err != nil {
+			return 0, err
 		}
-		allowanceUsed, err = currentAllowanceUsed.SafeAdd(amount)
-		if err != nil {
-			return 0, fmt.Errorf("adding Claims allowance usage: %w", err)
+		if claim.Charge, err = value.charge(claim.Amount, math.ZeroInt()); err != nil {
+			return 0, err
 		}
-		// Term allowance is gross: every submission consumes it permanently. Submission and genesis
-		// enforce its limit; only mandate replacement resets usage.
-		if allowanceUsed.GT(sub.CommitteeClaimLimit.Amount) {
-			return 0, fmt.Errorf(
-				"claim amount %s takes Claims allowance usage to %s, past mandate limit %s",
-				amount,
-				allowanceUsed,
-				sub.CommitteeClaimLimit,
-			)
+		if _, err := k.usageAfter(ctx, claim.Charge, sub.Mandate.CommitteeClaimLimit); err != nil {
+			return 0, err
 		}
 	}
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
+	if err := claim.Validate(); err != nil {
+		return 0, err
+	}
+	funded, err := k.fund(ctx, claim.Amount, sub.MaxOffer)
 	if err != nil {
-		return 0, fmt.Errorf("getting Insurance reservation: %w", err)
+		return 0, err
 	}
-	nextInsuranceReserved, err := insuranceReserved.SafeAdd(amount)
-	if err != nil {
-		return 0, fmt.Errorf("adding Insurance reservation: %w", err)
-	}
-	balance := k.balance(ctx)
-	if balance.LT(nextInsuranceReserved) {
-		return 0, fmt.Errorf("insurance balance %s cannot cover Insurance reservation %s", balance, nextInsuranceReserved)
-	}
-	if claim.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE {
-		if err := k.ClaimsAllowanceUsed.Set(ctx, allowanceUsed); err != nil {
+	if sub.Mandate != nil {
+		// Only a buy moves the charge past face value.
+		if c := funded.conversion; c != nil {
+			if claim.Charge, err = value.charge(sdk.NewCoin(claim.Amount.Denom, funded.custody), c.offer); err != nil {
+				return 0, err
+			}
+		}
+		used, err := k.usageAfter(ctx, claim.Charge, sub.Mandate.CommitteeClaimLimit)
+		if err != nil {
+			return 0, err
+		}
+		if err := k.ClaimsAllowanceUsed.Set(ctx, used); err != nil {
 			return 0, fmt.Errorf("setting Claims allowance usage: %w", err)
 		}
 	}
-	if err := k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
-		return 0, fmt.Errorf("setting Insurance reservation: %w", err)
+	if err := k.reserve(ctx, claim.Amount); err != nil {
+		return 0, err
 	}
 	if err := k.NextClaimID.Set(ctx, claimID+1); err != nil {
 		return 0, fmt.Errorf("setting next claim ID: %w", err)
@@ -141,7 +147,35 @@ func (k *Keeper) submitClaim(ctx context.Context, sub claimSubmission) (uint64, 
 	}); err != nil {
 		return 0, fmt.Errorf("emitting claim submission event: %w", err)
 	}
+	if c := funded.conversion; c != nil {
+		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimConverted{
+			ClaimId:     claim.ClaimId,
+			AmountDenom: c.output.Denom,
+			Amount:      c.output.Amount,
+			Offer:       c.offer,
+		}); err != nil {
+			return 0, fmt.Errorf("emitting claim conversion event: %w", err)
+		}
+	}
 	return claim.ClaimId, nil
+}
+
+// usageAfter is the term's usage once charge is added, refused past the limit. Term allowance is
+// gross: every submission consumes it permanently. Submission and genesis enforce its limit; only
+// mandate replacement resets usage.
+func (k *Keeper) usageAfter(ctx context.Context, charge, limit math.Int) (math.Int, error) {
+	used, err := k.ClaimsAllowanceUsed.Get(ctx)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("getting Claims allowance usage: %w", err)
+	}
+	used, err = used.SafeAdd(charge)
+	if err != nil {
+		return math.Int{}, fmt.Errorf("adding Claims allowance usage: %w", err)
+	}
+	if used.GT(limit) {
+		return math.Int{}, fmt.Errorf("claim charge %s takes Claims allowance usage to %s, past mandate limit %s", charge, used, limit)
+	}
+	return used, nil
 }
 
 // cancelClaim releases the Insurance reservation of one pending claim before
@@ -164,7 +198,6 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 		claim.Origin == types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE {
 		return fmt.Errorf("Claims committee cannot cancel governance-submitted claim %d", claim.ClaimId)
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := chain.BlockSeconds(ctx)
 	scheduled := claim.ClosingTime
 	if now >= scheduled {
@@ -175,20 +208,15 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 		)
 	}
 
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
-	if err != nil {
-		return fmt.Errorf("getting Insurance reservation: %w", err)
-	}
-	amount := claim.Amount.Amount
-	nextInsuranceReserved := insuranceReserved.Sub(amount)
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_CANCELLED
 	claim.ClosingTime = now
 	claim.CancelledBy = canceller
 	if err := claim.Validate(); err != nil {
 		return fmt.Errorf("invalid cancelled claim: %w", err)
 	}
-	if err := k.InsuranceReserved.Set(ctx, nextInsuranceReserved); err != nil {
-		return fmt.Errorf("setting Insurance reservation: %w", err)
+	// A converted claim's stablecoin stays in custody, uncommitted, for the next claim in it.
+	if err := k.release(ctx, claim.Amount); err != nil {
+		return err
 	}
 	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return fmt.Errorf("cancelling claim %d: %w", claim.ClaimId, err)
@@ -198,7 +226,7 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 	if err := k.DueClaims.Remove(ctx, collections.Join(scheduled, claim.ClaimId)); err != nil {
 		return fmt.Errorf("clearing settlement index for claim %d: %w", claim.ClaimId, err)
 	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimCancelled{
+	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventClaimCancelled{
 		ClaimId:     claim.ClaimId,
 		CancelledBy: canceller,
 	}); err != nil {
@@ -211,52 +239,29 @@ func (k *Keeper) cancelClaim(ctx context.Context, canceller types.ClaimAuthority
 // Record and recipient checks use current rules. Store and event errors propagate; unpayable claims,
 // a payment Bank refuses included, release their reservations. See x/claims/README.md.
 func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
+	// fail logs why the claim cannot be paid and ends it; the reason stays in node logs, not the event.
+	fail := func(reason string, details ...any) error {
+		k.Logger(ctx).Error("failing unpayable claim", append([]any{"claim_id", claim.ClaimId, "reason", reason}, details...)...)
+		return k.failClaim(ctx, claim)
+	}
 	recipient, err := chain.ParseCanonicalAccountAddress("claim recipient", claim.Recipient)
 	if err != nil {
-		k.Logger(ctx).Error(
-			"failing unpayable claim",
-			"claim_id", claim.ClaimId,
-			"reason", "recipient can no longer be parsed",
-			"error", err,
-		)
-		return k.failClaim(ctx, claim)
+		return fail("recipient can no longer be parsed", "error", err)
 	}
 	if k.bankKeeper.BlockedAddr(recipient) {
-		k.Logger(ctx).Error(
-			"failing unpayable claim",
-			"claim_id", claim.ClaimId,
-			"reason", "recipient is blocked from receiving funds",
-		)
-		return k.failClaim(ctx, claim)
+		return fail("recipient is blocked from receiving funds")
 	}
-	if balance := k.balance(ctx); balance.LT(claim.Amount.Amount) {
-		k.Logger(ctx).Error(
-			"failing unpayable claim",
-			"claim_id", claim.ClaimId,
-			"reason", "insurance balance is below claim amount",
-			"balance", balance,
-			"amount", claim.Amount.Amount,
-		)
-		return k.failClaim(ctx, claim)
+	if balance := k.balance(ctx, claim.Amount.Denom); balance.LT(claim.Amount.Amount) {
+		return fail("insurance balance is below claim amount", "balance", balance, "amount", claim.Amount.Amount)
 	}
 
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
-	if err != nil {
-		return fmt.Errorf("getting Insurance reservation: %w", err)
-	}
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
 	if err := claim.Validate(); err != nil {
 		// A record that stops passing validation is a fact about the claim, not
 		// about the store: the rules moved under a stored, immutable record. It
 		// is refused like any other unpayable claim rather than allowed to fail
 		// the block.
-		k.Logger(ctx).Error(
-			"failing unpayable claim",
-			"claim_id", claim.ClaimId,
-			"reason", "record no longer passes validation",
-			"error", err,
-		)
-		return k.failClaim(ctx, claim)
+		return fail("record no longer passes validation", "error", err)
 	}
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
@@ -266,16 +271,10 @@ func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 	); err != nil {
 		// Coverage passed above, so Bank refused the recipient before moving a coin. The recipient is
 		// fixed, so the claim fails like any other unpayable one.
-		k.Logger(ctx).Error(
-			"failing unpayable claim",
-			"claim_id", claim.ClaimId,
-			"reason", "bank refused the payment",
-			"error", err,
-		)
-		return k.failClaim(ctx, claim)
+		return fail("bank refused the payment", "error", err)
 	}
-	if err := k.InsuranceReserved.Set(ctx, insuranceReserved.Sub(claim.Amount.Amount)); err != nil {
-		return fmt.Errorf("setting Insurance reservation: %w", err)
+	if err := k.release(ctx, claim.Amount); err != nil {
+		return err
 	}
 	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return fmt.Errorf("finalising claim %d: %w", claim.ClaimId, err)
@@ -294,13 +293,9 @@ func (k *Keeper) settleClaim(ctx context.Context, claim types.Claim) error {
 // failClaim marks an unpayable claim terminal and releases its reservation without retry. It must
 // not revalidate the record: invalid stored records are one reason settlement calls this fallback.
 func (k *Keeper) failClaim(ctx context.Context, claim types.Claim) error {
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
-	if err != nil {
-		return fmt.Errorf("getting Insurance reservation: %w", err)
-	}
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_FAILED
-	if err := k.InsuranceReserved.Set(ctx, insuranceReserved.Sub(claim.Amount.Amount)); err != nil {
-		return fmt.Errorf("setting Insurance reservation: %w", err)
+	if err := k.release(ctx, claim.Amount); err != nil {
+		return err
 	}
 	if err := k.Claims.Set(ctx, claim.ClaimId, claim); err != nil {
 		return fmt.Errorf("failing claim %d: %w", claim.ClaimId, err)

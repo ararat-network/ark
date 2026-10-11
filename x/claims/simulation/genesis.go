@@ -17,7 +17,7 @@ import (
 
 const claimsParamsKey = "claims_params"
 
-// maxSimulatedClaimLimit is the total the seeded committee may pay out.
+// maxSimulatedClaimLimit is the total the seeded committee's claims may charge, in the reference unit.
 const maxSimulatedClaimLimit = int64(1_000_000_000_000)
 
 // RandomisedParams returns valid governance-owned launch parameters.
@@ -44,7 +44,7 @@ func GenClaimsMandate(r *rand.Rand, accounts []string) types.ClaimsMandate {
 	// simulation draws.
 	appointment.ActivationTime = 1
 	appointment.ExpiryTime = chain.MaxBlockSeconds
-	appointment.CommitteeClaimLimit = chain.NoahCoin(math.NewInt(maxSimulatedClaimLimit))
+	appointment.CommitteeClaimLimit = math.NewInt(maxSimulatedClaimLimit)
 
 	return appointment
 }

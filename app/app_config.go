@@ -176,7 +176,9 @@ var (
 					stakingtypes.ModuleName,
 					feegrant.ModuleName,
 					// Claims sweeps after governance. The cancellation cutoff independently
-					// prevents a claim from being both vetoable and executable.
+					// prevents a claim from being both vetoable and executable. It pays from
+					// custody it already holds: a stablecoin claim's buy fills in the
+					// transaction that submits it.
 					claimstypes.ModuleName,
 					// Disbursement pays from custody it already holds: a stablecoin
 					// award's buy fills in the transaction that makes it. It follows gov,
@@ -210,6 +212,8 @@ var (
 					// Oracle initialises before asset: asset genesis validates
 					// every asset's feed against the registry.
 					oracletypes.ModuleName,
+					// Asset initialises before Claims and Disbursement, which refuse
+					// custody in a denomination the registry does not know.
 					assettypes.ModuleName,
 					markettypes.ModuleName,
 					treasurytypes.ModuleName,

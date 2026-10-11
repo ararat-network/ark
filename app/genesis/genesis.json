@@ -144,10 +144,7 @@
       "claims": [],
       "claims_allowance_used": "0",
       "claims_mandate": {
-        "committee_claim_limit": {
-          "amount": "0",
-          "denom": "anoah"
-        },
+        "committee_claim_limit": "0",
         "envelope": {
           "activation_time": "0",
           "committee": "",
@@ -162,7 +159,7 @@
           "term": "0"
         }
       },
-      "insurance_reserved": "0",
+      "insurance_reserved": [],
       "next_claim_id": "1",
       "params": {
         "claim_cancellation_period": "604800"

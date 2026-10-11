@@ -9,6 +9,7 @@ import (
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -236,8 +237,8 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 		arkApp.BankKeeper.GetBalance(ctx, reserveAddress, chain.EURBaseDenom),
 	)
 
-	// Insurance has its own positive-NOAH-only deposit restriction. This deposit funds the
-	// withdrawal below.
+	// Insurance has its own restriction: positive NOAH or registry members, which a stablecoin
+	// claim's buy delivers, and never external custody. The NOAH deposit funds the withdrawal below.
 	fundedAccounts := append(treasurytypes.FundAccountNames(), claimstypes.InsuranceName)
 	for _, moduleName := range fundedAccounts {
 		require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
@@ -247,11 +248,17 @@ func TestTreasuryFundRestrictionsRunThroughBank(t *testing.T) {
 			sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1)),
 		))
 	}
-	require.Error(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
+	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToModule(
 		ctx,
 		markettypes.ModuleName,
 		claimstypes.InsuranceName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.EURBaseDenom, 1)),
+	))
+	require.Error(t, arkApp.BankKeeper.SendCoinsFromAccountToModule(
+		ctx,
+		sender,
+		claimstypes.InsuranceName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 1)),
 	))
 	require.NoError(t, arkApp.BankKeeper.SendCoinsFromModuleToAccount(
 		ctx,
@@ -336,7 +343,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		Committee:           claimsCommittee.String(),
 		ActivationTime:      0,
 		ExpiryTime:          chain.MaxBlockSeconds,
-		CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 50),
+		CommitteeClaimLimit: math.NewInt(50),
 	}
 	minimumPolicy := treasurytypes.DefaultEconomicPolicy()
 	maximumPolicy := treasurytypes.EconomicPolicy{
@@ -386,12 +393,14 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, claimsCommittee.String(), storedClaimsMandate.Committee)
 	require.Equal(t, uint64(1), storedClaimsMandate.Term)
-	require.Equal(t, sdk.NewInt64Coin(chain.NoahBaseDenom, 50), storedClaimsMandate.CommitteeClaimLimit)
+	require.Equal(t, "50", storedClaimsMandate.CommitteeClaimLimit.String())
 	storedEconomicMandate, err := arkApp.TreasuryKeeper.EconomicMandate.Get(ctx)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), storedEconomicMandate.Term)
 	require.Equal(t, economicCommittee.String(), storedEconomicMandate.Committee)
 
+	// A committee claim is valued in the reference unit when it is submitted.
+	setRate(t, arkApp, ctx, chain.XDRBaseDenom, math.LegacyOneDec())
 	submission := &claimstypes.MsgCommitteeSubmitClaim{
 		Committee:    claimsCommittee.String(),
 		ExpectedTerm: storedClaimsMandate.Term,
@@ -424,9 +433,9 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, claimstypes.ClaimStatus_CLAIM_STATUS_CANCELLED, cancelledClaim.Status)
 	require.Equal(t, claimstypes.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE, cancelledClaim.CancelledBy)
-	insuranceReserved, err := arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx)
-	require.NoError(t, err)
-	require.True(t, insuranceReserved.IsZero())
+	// A released reservation leaves no entry.
+	_, err = arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx, chain.NoahBaseDenom)
+	require.ErrorIs(t, err, collections.ErrNotFound)
 
 	govGenesis, err := govkeeper.ExportGenesis(ctx, arkApp.GovKeeper)
 	require.NoError(t, err)

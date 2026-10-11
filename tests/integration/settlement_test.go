@@ -8,6 +8,7 @@ import (
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -170,8 +171,12 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		}
 		return target.Sub(balance)
 	}
-	insuranceReserved, err := arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx)
-	require.NoError(t, err)
+	insuranceReserved := math.ZeroInt()
+	if reserved, err := arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx, chain.NoahBaseDenom); err == nil {
+		insuranceReserved = reserved
+	} else {
+		require.ErrorIs(t, err, collections.ErrNotFound)
+	}
 
 	remaining := gross
 	bufferCredit := math.MinInt(remaining, gap(target(policy.RedemptionBufferTargetRatio), bufferBefore))

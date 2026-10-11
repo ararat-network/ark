@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
@@ -28,17 +29,16 @@ func DefaultClaimsMandate() ClaimsMandate {
 func NewDisabledClaimsMandate(term uint64) ClaimsMandate {
 	return ClaimsMandate{
 		Envelope:            mandate.Disabled(term),
-		CommitteeClaimLimit: chain.NoahCoin(math.ZeroInt()),
+		CommitteeClaimLimit: math.ZeroInt(),
 	}
 }
 
 // Validate validates either the exact unconfigured sentinel or one complete
 // governed Claims mandate.
 func (mandate ClaimsMandate) Validate() error {
-	// ValidateNoahCoin rejects an unset or negative amount, so the checks below
-	// can read the amount directly.
-	if err := chain.ValidateNoahCoin("Claims committee claim limit", mandate.CommitteeClaimLimit); err != nil {
-		return err
+	// ValidateAmount rejects an unset or negative limit, so the checks below can read it directly.
+	if err := chain.ValidateAmount(mandate.CommitteeClaimLimit, false); err != nil {
+		return fmt.Errorf("Claims committee claim limit: %w", err)
 	}
 	if err := mandate.Envelope.Validate(); err != nil {
 		return fmt.Errorf("%s: %w", ClaimsMandateLabel, err)
@@ -56,6 +56,23 @@ func (mandate ClaimsMandate) Validate() error {
 	return nil
 }
 
+// ValidateClaimAmount checks a claim pays a positive amount of NOAH or an Ark-native asset; whether
+// the asset is registered and active is the keeper's to check.
+func ValidateClaimAmount(amount sdk.Coin) error {
+	if err := amount.Validate(); err != nil {
+		return fmt.Errorf("invalid claim amount: %w", err)
+	}
+	if !amount.IsPositive() {
+		return errors.New("claim amount must be positive")
+	}
+	if amount.Denom != chain.NoahBaseDenom {
+		if err := chain.ValidatePricedDenom(amount.Denom); err != nil {
+			return fmt.Errorf("claim amount: %w", err)
+		}
+	}
+	return nil
+}
+
 // Validate validates the immutable shape of one claim record.
 func (claim Claim) Validate() error {
 	if claim.ClaimId == 0 {
@@ -69,9 +86,15 @@ func (claim Claim) Validate() error {
 		if claim.MandateTerm == 0 {
 			return errors.New("committee claim must record its authorising mandate term")
 		}
+		if err := chain.ValidateAmount(claim.Charge, true); err != nil {
+			return fmt.Errorf("committee claim charge: %w", err)
+		}
 	case ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE:
 		if claim.MandateTerm != 0 {
 			return errors.New("governance claim must not record a mandate term")
+		}
+		if claim.Charge.IsNil() || !claim.Charge.IsZero() {
+			return errors.New("governance claim charges nothing")
 		}
 	default:
 		return errors.New("claim origin is invalid")
@@ -85,11 +108,8 @@ func (claim Claim) Validate() error {
 	if claim.Recipient == authtypes.NewModuleAddress(InsuranceName).String() {
 		return errors.New("claim recipient cannot be the Insurance module account")
 	}
-	if err := chain.ValidateNoahCoin("claim amount", claim.Amount); err != nil {
+	if err := ValidateClaimAmount(claim.Amount); err != nil {
 		return err
-	}
-	if !claim.Amount.IsPositive() {
-		return errors.New("claim amount must be positive")
 	}
 	// Pending and settled records retain a closing time strictly after submission. Cancelled
 	// records use the veto time, which may equal submission time.

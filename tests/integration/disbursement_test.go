@@ -1680,6 +1680,7 @@ func TestNativeDisbursementReferenceRepoint(t *testing.T) {
 		"ark.market.v1.EventPoolUpdated",
 		"ark.treasury.v1.EventReferenceTaxCapRebased",
 		"ark.disbursement.v1.EventCompensationRebased",
+		"ark.claims.v1.EventClaimsRebased",
 	} {
 		require.True(t, moved[consumer], consumer)
 	}

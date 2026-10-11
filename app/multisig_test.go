@@ -32,6 +32,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -147,7 +148,7 @@ func TestTreasuryClaimsCommitteeLegacyAminoMultisig(t *testing.T) {
 							ActivationTime: 0,
 							ExpiryTime:     chain.MaxBlockSeconds,
 						},
-						CommitteeClaimLimit: sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
+						CommitteeClaimLimit: math.NewInt(100),
 					}
 				},
 			)
@@ -370,6 +371,15 @@ func setupTreasuryMultisigApp(
 	configureGenesis(treasuryGenesis, claimsGenesis, committee.String())
 	genesisState[treasurytypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(treasuryGenesis)
 	genesisState[claimstypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(claimsGenesis)
+	// A committee claim is valued in the reference unit when it is submitted, so the reference
+	// carries a rate the first block reads as fresh.
+	var oracleGenesis oracletypes.GenesisState
+	arkApp.AppCodec().MustUnmarshalJSON(genesisState[oracletypes.ModuleName], &oracleGenesis)
+	oracleGenesis.ExchangeRates = append(oracleGenesis.ExchangeRates, oracletypes.ExchangeRate{
+		Denom: chain.XDRBaseDenom,
+		Rate:  math.LegacyOneDec(),
+	})
+	genesisState[oracletypes.ModuleName] = arkApp.AppCodec().MustMarshalJSON(&oracleGenesis)
 
 	stateBytes, err := json.Marshal(genesisState)
 	require.NoError(t, err)

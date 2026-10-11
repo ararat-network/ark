@@ -6,11 +6,43 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/claims/keeper"
 	"github.com/ararat-network/ark/x/claims/types"
 )
+
+// registry is the run's asset registry, the default one, whose currencies a claim may pay in. The
+// handler refuses one the run has since suspended, and the factories skip it.
+var registry = func() []string {
+	assets := assettypes.DefaultGenesisState().Assets
+	denoms := make([]string, len(assets))
+	for i, asset := range assets {
+		denoms[i] = asset.Denom
+	}
+	return denoms
+}()
+
+// drawClaim draws what a simulated claim pays within ceiling NOAH base units: NOAH half the time,
+// otherwise a registry currency the handler buys through Market, offering up to all uncommitted
+// NOAH. The run's rates span 0.001 to 1,000 NOAH a unit, so a currency claim draws within a
+// thousandth of the ceiling to stay affordable at the dearest.
+func drawClaim(r *simsx.XRand, ceiling, uncommitted math.Int) (sdk.Coin, math.Int, error) {
+	if stable := ceiling.QuoRaw(1_000); stable.IsPositive() && r.Intn(2) == 0 {
+		amount, err := r.PositiveSDKIntn(stable)
+		if err != nil {
+			return sdk.Coin{}, math.Int{}, err
+		}
+		return sdk.NewCoin(registry[r.Intn(len(registry))], amount), uncommitted, nil
+	}
+	amount, err := r.PositiveSDKIntn(ceiling)
+	if err != nil {
+		return sdk.Coin{}, math.Int{}, err
+	}
+	return chain.NoahCoin(amount), math.ZeroInt(), nil
+}
 
 // MsgSetClaimsMandateFactory appoints a simulation-owned signer and a gross claim limit. Its window
 // spans at least the cancellation period so submitted claims can close before expiry.
@@ -52,27 +84,27 @@ func MsgSetClaimsMandateFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.M
 			// cover the cancellation period.
 			ExpiryTime: activation + params.ClaimCancellationPeriod + r.Uint64InRange(1, 100_000),
 			// A configured mandate must allow the committee to pay something.
-			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(int64(r.IntInRange(1, 1_000_000_000)))),
+			CommitteeClaimLimit: math.NewInt(int64(r.IntInRange(1, 1_000_000_000))),
 		}
 	}
 }
 
-// MsgSubmitClaimFactory books a governance claim against Insurance. The amount
-// stays inside what Insurance holds beyond what is already reserved, which is
-// the balance the handler checks the claim against.
+// MsgSubmitClaimFactory books a governance claim against Insurance, in NOAH or a registry currency
+// bought through Market. The amount stays inside what Insurance holds beyond what is already
+// reserved, and the factory runs the handler on a discarded cache and skips a claim it refuses; the
+// proposal still executes later against whatever state it meets.
 func MsgSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSubmitClaim] {
 	return func(
 		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSubmitClaim) {
-		reserved, err := k.InsuranceReserved.Get(ctx)
+		unreserved, err := k.Uncommitted(ctx, chain.NoahBaseDenom)
 		if err != nil {
-			reporter.Skip("get insurance reservation: " + err.Error())
+			reporter.Skip("get uncommitted insurance: " + err.Error())
 
 			return nil, nil
 		}
-		unreserved := k.InsuranceBalance(ctx).Sub(reserved)
 		if !unreserved.IsPositive() {
 			reporter.Skip("insurance holds nothing beyond what is already reserved")
 
@@ -84,20 +116,28 @@ func MsgSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSub
 			return nil, nil
 		}
 		r := testData.Rand()
-		amount, err := r.PositiveSDKIntn(unreserved)
+		amount, maxOffer, err := drawClaim(r, unreserved, unreserved)
 		if err != nil {
 			reporter.Skip("draw claim amount: " + err.Error())
 
 			return nil, nil
 		}
 
-		return nil, &types.MsgSubmitClaim{
+		msg := &types.MsgSubmitClaim{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			// A claim must carry a non-empty reference.
 			Reference: "sim-claim-" + r.StringN(8),
 			Recipient: recipient.AddressBech32,
-			Amount:    chain.NoahCoin(amount),
+			Amount:    amount,
+			MaxOffer:  maxOffer,
 		}
+		cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+		if _, err := keeper.NewMsgServerImpl(k).SubmitClaim(cache, msg); err != nil {
+			reporter.Skip("claim would be refused: " + err.Error())
+
+			return nil, nil
+		}
+		return nil, msg
 	}
 }
 

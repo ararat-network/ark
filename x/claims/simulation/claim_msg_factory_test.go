@@ -2,6 +2,7 @@ package simulation_test
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -25,10 +26,12 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/claims/keeper"
 	"github.com/ararat-network/ark/x/claims/simulation"
 	"github.com/ararat-network/ark/x/claims/testutil"
 	"github.com/ararat-network/ark/x/claims/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type claimFixture struct {
@@ -39,11 +42,14 @@ type claimFixture struct {
 	reporter  *simsx.BasicSimulationReporter
 	accounts  []simtypes.Account
 	rand      *rand.Rand
+	// insurance is what Bank reports Insurance holds; Market's fills move it.
+	insurance *sdk.Coins
 }
 
 // newClaimFixture builds a real Claims keeper over mocks, with Insurance
-// holding the given balance, so an emitted message can be delivered through
-// the handler it targets.
+// holding the given NOAH balance, so an emitted message can be delivered through
+// the handler it targets. The default registry's currencies are active and priced
+// at one NOAH, and Market fills a buy at par.
 func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 	t.Helper()
 
@@ -61,20 +67,60 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 	accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	accountKeeper.EXPECT().GetModuleAddress(types.InsuranceName).Return(insuranceAddr).AnyTimes()
 	accountKeeper.EXPECT().GetModuleAddress(govtypes.ModuleName).Return(authtypes.NewModuleAddress(govtypes.ModuleName)).AnyTimes()
+	held := sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, insurance))
 	bankKeeper := testutil.NewMockBankKeeper(ctrl)
 	bankKeeper.EXPECT().
 		GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
-			if !addr.Equals(insuranceAddr) || denom != chain.NoahBaseDenom {
+			if !addr.Equals(insuranceAddr) {
 				return sdk.NewCoin(denom, math.ZeroInt())
 			}
-			return sdk.NewCoin(denom, math.NewInt(insurance))
+			return sdk.NewCoin(denom, held.AmountOf(denom))
 		}).
 		AnyTimes()
 	bankKeeper.EXPECT().BlockedAddr(gomock.Any()).Return(false).AnyTimes()
 
 	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+	// The reference is axdr at one NOAH, so a NOAH claim charges its amount.
+	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
+	oracleKeeper.EXPECT().GetReferenceDenom(gomock.Any()).Return(chain.XDRBaseDenom, nil).AnyTimes()
+	oracleKeeper.EXPECT().
+		GetRateSet(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denoms ...string) (oracletypes.RateSet, error) {
+			rates := oracletypes.NewRateSet()
+			for _, denom := range denoms {
+				rates[denom] = math.LegacyOneDec()
+			}
+			return rates, nil
+		}).
+		AnyTimes()
+	registered := map[string]bool{}
+	for _, asset := range assettypes.DefaultGenesisState().Assets {
+		registered[asset.Denom] = true
+	}
+	assetKeeper := testutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().
+		GetAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (assettypes.Asset, error) {
+			if !registered[denom] {
+				return assettypes.Asset{}, fmt.Errorf("asset %s is not registered", denom)
+			}
+			return assettypes.Asset{Denom: denom, Status: assettypes.AssetStatus_ASSET_STATUS_ACTIVE}, nil
+		}).
+		AnyTimes()
+	marketKeeper := testutil.NewMockMarketKeeper(ctrl)
+	marketKeeper.EXPECT().
+		Buy(gomock.Any(), insuranceAddr, gomock.Any(), chain.NoahBaseDenom, gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ sdk.AccAddress, ask sdk.Coin, _ string, maximumOffer sdk.Coin) (sdk.Coin, sdk.Coin, sdk.DecCoin, error) {
+			offer := chain.NoahCoin(ask.Amount)
+			if offer.Amount.GT(maximumOffer.Amount) {
+				return sdk.Coin{}, sdk.Coin{}, sdk.DecCoin{}, fmt.Errorf("maximum %s, needed %s", maximumOffer, offer)
+			}
+			held = held.Sub(offer).Add(ask)
+			return offer, ask, sdk.NewDecCoin(chain.NoahBaseDenom, math.ZeroInt()), nil
+		}).
+		AnyTimes()
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(key),
@@ -82,11 +128,13 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 		accountKeeper,
 		wasmKeeper,
 		bankKeeper,
+		oracleKeeper,
+		assetKeeper,
 	)
+	k.SetMarketKeeper(marketKeeper)
 	require.NoError(t, k.Params.Set(ctx, types.DefaultParams()))
 	require.NoError(t, k.ClaimsMandate.Set(ctx, types.DefaultClaimsMandate()))
 	require.NoError(t, k.ClaimsAllowanceUsed.Set(ctx, math.ZeroInt()))
-	require.NoError(t, k.InsuranceReserved.Set(ctx, math.ZeroInt()))
 	require.NoError(t, k.NextClaimID.Set(ctx, 1))
 
 	r := rand.New(rand.NewSource(1))
@@ -108,6 +156,7 @@ func newClaimFixture(t *testing.T, insurance int64) claimFixture {
 		reporter:  simsx.NewBasicSimulationReporter(),
 		accounts:  accounts,
 		rand:      r,
+		insurance: &held,
 	}
 }
 

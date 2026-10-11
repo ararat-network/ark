@@ -48,7 +48,9 @@ import (
 	"github.com/ararat-network/ark/app/params"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
@@ -414,6 +416,17 @@ func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
 	)
+}
+
+// TestAssetRegistryLoadsBeforeItsCustodians checks that the registry is in place when the modules
+// holding registered assets import: Claims and Disbursement refuse custody in a denomination the
+// registry does not know, so loading them first would refuse any genesis where they hold one.
+func TestAssetRegistryLoadsBeforeItsCustodians(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	order := arkApp.ModuleManager.OrderInitGenesis
+
+	requireOrderBefore(t, order, assettypes.ModuleName, claimstypes.ModuleName)
+	requireOrderBefore(t, order, assettypes.ModuleName, disbursementtypes.ModuleName)
 }
 
 // TestOracleJailsBeforeStakingEmitsValidatorUpdates checks that attendance jails affect this

@@ -137,10 +137,10 @@ func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (
 	}
 	claimID, err := m.k.submitClaim(ctx, claimSubmission{
 		Submitter: msg.Authority,
-		Origin:    types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE,
 		Reference: msg.Reference,
 		Recipient: msg.Recipient,
 		Amount:    msg.Amount,
+		MaxOffer:  msg.MaxOffer,
 	})
 	if err != nil {
 		return nil, err
@@ -159,14 +159,12 @@ func (m msgServer) CommitteeSubmitClaim(ctx context.Context, msg *types.MsgCommi
 		return nil, err
 	}
 	claimID, err := m.k.submitClaim(ctx, claimSubmission{
-		Submitter:           msg.Committee,
-		Origin:              types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE,
-		MandateTerm:         claimsMandate.Term,
-		MandateExpiryTime:   claimsMandate.ExpiryTime,
-		CommitteeClaimLimit: claimsMandate.CommitteeClaimLimit,
-		Reference:           msg.Reference,
-		Recipient:           msg.Recipient,
-		Amount:              msg.Amount,
+		Submitter: msg.Committee,
+		Mandate:   &claimsMandate,
+		Reference: msg.Reference,
+		Recipient: msg.Recipient,
+		Amount:    msg.Amount,
+		MaxOffer:  msg.MaxOffer,
 	})
 	if err != nil {
 		return nil, err

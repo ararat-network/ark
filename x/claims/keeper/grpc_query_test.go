@@ -3,8 +3,10 @@ package keeper_test
 import (
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
@@ -27,8 +29,8 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
-		s.Require().Equal(noahCoin(0), resp.AllowanceUsed)
-		s.Require().Equal(noahCoin(0), resp.AllowanceRemaining)
+		s.Require().Equal("0", resp.AllowanceUsed.String())
+		s.Require().Equal("0", resp.AllowanceRemaining.String())
 	})
 
 	s.Run("active mandate reports remaining allowance", func() {
@@ -41,8 +43,8 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 		s.Require().Equal(committee, resp.Mandate.Committee)
-		s.Require().Equal(noahCoin(400), resp.AllowanceUsed)
-		s.Require().Equal(noahCoin(600), resp.AllowanceRemaining)
+		s.Require().Equal("400", resp.AllowanceUsed.String())
+		s.Require().Equal("600", resp.AllowanceRemaining.String())
 	})
 
 	s.Run("activity is derived from the block time", func() {
@@ -79,25 +81,37 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(0), resp.Balance)
-		s.Require().Equal(noahCoin(0), resp.Reserved)
+		s.Require().True(resp.Balance.Empty())
+		s.Require().True(resp.Reserved.Empty())
 	})
 
 	s.Run("reports custody and encumbrance", func() {
 		s.SetupTest()
 		s.fundInsurance(5_000)
-		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(250)))
+		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, math.NewInt(250)))
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(5_000), resp.Balance)
-		s.Require().Equal(noahCoin(250), resp.Reserved)
+		s.Require().Equal(sdk.NewCoins(noahCoin(5_000)).String(), resp.Balance.String())
+		s.Require().Equal(sdk.NewCoins(noahCoin(250)).String(), resp.Reserved.String())
 
-		// The difference is what Treasury sizes against, so the two must agree
+		// The NOAH difference is what Treasury sizes against, so the two must agree
 		// with the operator interface rather than merely resemble it.
 		recognised, err := s.keeper.RecognisedCapital(s.ctx)
 		s.Require().NoError(err)
-		s.Require().Equal(resp.Balance.Amount.Sub(resp.Reserved.Amount), recognised)
+		s.Require().True(resp.Balance.AmountOf(chain.NoahBaseDenom).Sub(resp.Reserved.AmountOf(chain.NoahBaseDenom)).Equal(recognised))
+	})
+
+	s.Run("reports every denomination", func() {
+		s.SetupTest()
+		s.fundInsurance(5_000)
+		s.hold(sdk.NewInt64Coin(chain.USDBaseDenom, 700))
+		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.USDBaseDenom, math.NewInt(300)))
+
+		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
+		s.Require().NoError(err)
+		s.Require().Equal(sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin(chain.USDBaseDenom, 700)).String(), resp.Balance.String())
+		s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300)).String(), resp.Reserved.String())
 	})
 
 	// A replacement resets the committee allowance; the encumbrance it does not
@@ -123,17 +137,17 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 			Committee:           testAddress(2),
 			ActivationTime:      10,
 			ExpiryTime:          100,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().NoError(err)
 
 		mandate, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(0), mandate.AllowanceUsed)
+		s.Require().Equal("0", mandate.AllowanceUsed.String())
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(100), resp.Reserved)
+		s.Require().Equal(sdk.NewCoins(noahCoin(100)).String(), resp.Reserved.String())
 	})
 }
 

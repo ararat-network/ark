@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"bytes"
+	"math/big"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestClaimsMandateValidate(t *testing.T) {
 		{
 			name:      "partial sentinel",
 			mandate:   types.DefaultClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = noahCoin(1) },
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.NewInt(1) },
 			expectErr: "must be empty",
 		},
 		{
@@ -60,26 +61,35 @@ func TestClaimsMandateValidate(t *testing.T) {
 		{
 			name:      "unset committee claim limit",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = sdk.Coin{} },
-			expectErr: "invalid Claims committee claim limit",
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.Int{} },
+			expectErr: "Claims committee claim limit: amount must be nonnegative",
 		},
 		{
 			name:      "zero committee claim limit",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = noahCoin(0) },
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.ZeroInt() },
 			expectErr: "claim limit must be positive",
 		},
 		{
-			name:    "negative committee claim limit",
+			name:      "negative committee claim limit",
+			mandate:   validClaimsMandate,
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.NewInt(-1) },
+			expectErr: "amount must be nonnegative",
+		},
+		{
+			name:    "committee claim limit at 128 bits",
 			mandate: validClaimsMandate,
-			// Built by hand rather than through a constructor: sdk.NewInt64Coin
-			// panics on a negative amount, so the only way a negative limit
-			// reaches Validate is decoded off the wire, which is exactly the
-			// case worth pinning.
 			mutate: func(mandate *types.ClaimsMandate) {
-				mandate.CommitteeClaimLimit = sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}
+				mandate.CommitteeClaimLimit = math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))
 			},
-			expectErr: "negative coin amount",
+		},
+		{
+			name:    "committee claim limit past 128 bits",
+			mandate: validClaimsMandate,
+			mutate: func(mandate *types.ClaimsMandate) {
+				mandate.CommitteeClaimLimit = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
+			},
+			expectErr: "at most 128 bits",
 		},
 	}
 
@@ -148,7 +158,64 @@ func TestClaimValidate(t *testing.T) {
 			mutate: func(claim *types.Claim) {
 				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
 				claim.MandateTerm = 0
+				claim.Charge = math.ZeroInt()
 			},
+		},
+		{
+			name:      "committee claim without a charge",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Charge = math.ZeroInt() },
+			expectErr: "committee claim charge: amount must be positive",
+		},
+		{
+			name:      "committee claim with an unset charge",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Charge = math.Int{} },
+			expectErr: "committee claim charge",
+		},
+		{
+			name:  "committee claim charge past 128 bits",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Charge = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
+			},
+			expectErr: "at most 128 bits",
+		},
+		{
+			name:  "governance claim with a charge",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
+				claim.MandateTerm = 0
+			},
+			expectErr: "governance claim charges nothing",
+		},
+		{
+			name:  "governance claim with an unset charge",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
+				claim.MandateTerm = 0
+				claim.Charge = math.Int{}
+			},
+			expectErr: "governance claim charges nothing",
+		},
+		{
+			name:   "stablecoin amount",
+			claim:  validPendingClaim,
+			mutate: func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 100) },
+		},
+		{
+			name:      "amount outside the Ark denomination shape",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin("uatom", 100) },
+			expectErr: "denom must be an Ark-native base denom",
+		},
+		{
+			name:      "zero amount",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 0) },
+			expectErr: "claim amount must be positive",
 		},
 		{
 			name:  "governance claim with mandate term",
@@ -274,7 +341,7 @@ func validClaimsMandate() types.ClaimsMandate {
 			ActivationTime: 10,
 			ExpiryTime:     100,
 		},
-		CommitteeClaimLimit: noahCoin(1_000),
+		CommitteeClaimLimit: math.NewInt(1_000),
 	}
 }
 
@@ -291,6 +358,7 @@ func validPendingClaim() types.Claim {
 		SubmittedHeight: 20,
 		SubmittedTime:   20,
 		ClosingTime:     25,
+		Charge:          math.NewInt(100),
 	}
 }
 

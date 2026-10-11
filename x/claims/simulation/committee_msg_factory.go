@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/keeper"
@@ -39,8 +40,10 @@ func activeClaimsCommittee(
 	return mandate, committee, true
 }
 
-// MsgCommitteeSubmitClaimFactory bounds claims by unreserved Insurance and remaining gross term
-// allowance. Closing must also precede mandate expiry.
+// MsgCommitteeSubmitClaimFactory books claims, in NOAH or a registry currency bought through Market,
+// from at most a tenth of uncommitted Insurance. Closing must precede mandate expiry. The charge reads oracle rates the keeper does not expose, and
+// a run's genesis rates go stale, so the factory runs the handler on a discarded cache and skips if
+// it refuses.
 func MsgCommitteeSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeSubmitClaim] {
 	return func(
 		ctx context.Context,
@@ -65,25 +68,15 @@ func MsgCommitteeSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 			return nil, nil
 		}
 
-		reserved, err := k.InsuranceReserved.Get(ctx)
+		unreserved, err := k.Uncommitted(ctx, chain.NoahBaseDenom)
 		if err != nil {
-			reporter.Skip("get insurance reservation: " + err.Error())
+			reporter.Skip("get uncommitted insurance: " + err.Error())
 
 			return nil, nil
 		}
-		used, err := k.ClaimsAllowanceUsed.Get(ctx)
-		if err != nil {
-			reporter.Skip("get claims allowance usage: " + err.Error())
-
-			return nil, nil
-		}
-
-		ceiling := k.InsuranceBalance(ctx).Sub(reserved)
-		if remaining := mandate.CommitteeClaimLimit.Amount.Sub(used); remaining.LT(ceiling) {
-			ceiling = remaining
-		}
+		ceiling := unreserved.QuoRaw(10)
 		if !ceiling.IsPositive() {
-			reporter.Skip("no headroom under the Insurance balance and the mandate limit")
+			reporter.Skip("no uncommitted Insurance NOAH to claim")
 
 			return nil, nil
 		}
@@ -93,21 +86,29 @@ func MsgCommitteeSubmitClaimFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 			return nil, nil
 		}
 		r := testData.Rand()
-		amount, err := r.PositiveSDKIntn(ceiling)
+		amount, maxOffer, err := drawClaim(r, ceiling, unreserved)
 		if err != nil {
 			reporter.Skip("draw claim amount: " + err.Error())
 
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{committee}, &types.MsgCommitteeSubmitClaim{
+		msg := &types.MsgCommitteeSubmitClaim{
 			Committee:    mandate.Committee,
 			ExpectedTerm: mandate.Term,
 			// A claim must carry a non-empty reference.
 			Reference: "sim-committee-claim-" + r.StringN(8),
 			Recipient: recipient.AddressBech32,
-			Amount:    chain.NoahCoin(amount),
+			Amount:    amount,
+			MaxOffer:  maxOffer,
 		}
+		cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+		if _, err := keeper.NewMsgServerImpl(k).CommitteeSubmitClaim(cache, msg); err != nil {
+			reporter.Skip("claim would be refused: " + err.Error())
+
+			return nil, nil
+		}
+		return []simsx.SimAccount{committee}, msg
 	}
 }
 

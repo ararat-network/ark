@@ -49,7 +49,7 @@ func TestClaimsCommitteeShapeRecordsRegisteredMultisig(t *testing.T) {
 			Committee:           committee.String(),
 			ActivationTime:      0,
 			ExpiryTime:          chain.MaxBlockSeconds,
-			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(1_000)),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		},
 	)
 	require.NoError(t, err)

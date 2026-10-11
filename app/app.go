@@ -205,10 +205,14 @@ func NewArkApp(
 	app.OracleKeeper.SetFeedReferentGuards(app.AssetKeeper, app.ReserveKeeper)
 
 	// Every reference-unit consumer exists from this line on, so a reference re-point rebases
-	// Market's base pool, Treasury's reference figures, and Disbursement's compensation figures
-	// inside the same MsgSetReferenceDenom transaction. This line is the registry: a consumer
-	// left off it rebases nothing and fails nothing.
-	app.OracleKeeper.SetReferenceRebasers(app.MarketKeeper, app.TreasuryKeeper, app.DisbursementKeeper)
+	// Market's base pool, Treasury's reference figures, Disbursement's compensation figures, and
+	// Claims' limit and charges inside the same MsgSetReferenceDenom transaction. This line is the
+	// registry: a consumer left off it rebases nothing and fails nothing.
+	app.OracleKeeper.SetReferenceRebasers(app.MarketKeeper, app.TreasuryKeeper, app.DisbursementKeeper, app.ClaimsKeeper)
+
+	// Treasury injects Claims to read Insurance capital and Market injects Treasury, so Claims takes
+	// Market here: a stablecoin claim buys what custody lacks when it is submitted.
+	app.ClaimsKeeper.SetMarketKeeper(app.MarketKeeper)
 
 	// The capital contract runs both ways, and only this direction is wired by
 	// hand: Treasury injects the Reserve to read recognised capital, so the

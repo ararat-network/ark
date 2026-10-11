@@ -198,7 +198,7 @@ func TestReferenceRepointRebasesEveryConsumer(t *testing.T) {
 		require.Equal(t, chain.USDBaseDenom, treasuryParams.ReferenceDenom)
 		require.Equal(t, capAmount, treasuryParams.ReferenceTaxCap)
 
-		var sawPoolUpdate, sawCapRebase, sawCompensationRebase bool
+		var sawPoolUpdate, sawCapRebase, sawCompensationRebase, sawClaimsRebase bool
 		for _, event := range ctx.EventManager().Events() {
 			switch event.Type {
 			case "ark.market.v1.EventPoolUpdated":
@@ -207,11 +207,14 @@ func TestReferenceRepointRebasesEveryConsumer(t *testing.T) {
 				sawCapRebase = true
 			case "ark.disbursement.v1.EventCompensationRebased":
 				sawCompensationRebase = true
+			case "ark.claims.v1.EventClaimsRebased":
+				sawClaimsRebase = true
 			}
 		}
 		require.True(t, sawPoolUpdate, "market pool rebase event")
 		require.True(t, sawCapRebase, "treasury cap rebase event")
 		require.True(t, sawCompensationRebase, "disbursement compensation rebase event")
+		require.True(t, sawClaimsRebase, "claims rebase event")
 	})
 
 	// The chain keeps pricing conversion in the new unit on the next block.

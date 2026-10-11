@@ -62,7 +62,10 @@ message ClaimsMandate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  cosmos.base.v1beta1.Coin committee_claim_limit = 2 [
+  // committee_claim_limit caps the term's claim charges, in the reference unit.
+  string committee_claim_limit = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -81,6 +84,7 @@ message Claim {
   // chain stores it and never interprets it.
   string reference = 5;
   string recipient = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // amount is NOAH or a registered asset.
   cosmos.base.v1beta1.Coin amount = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -93,4 +97,13 @@ message Claim {
   ClaimAuthority cancelled_by = 11 [(amino.dont_omitempty) = true];
   // submitted_time is the block time of submission, in Unix seconds.
   uint64 submitted_time = 12 [(amino.dont_omitempty) = true];
+  // charge is what a committee claim drew from Insurance, its custody and the NOAH it converted,
+  // valued at submission and rounded up, in the reference unit, which a re-point restates it in;
+  // zero for governance.
+  string charge = 13 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }

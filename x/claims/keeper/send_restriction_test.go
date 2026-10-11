@@ -24,6 +24,21 @@ func (s *KeeperTestSuite) TestSendRestrictionAdmitsNoah() {
 	s.Require().Equal(insurance, got)
 }
 
+// TestSendRestrictionAdmitsRegisteredAssets pins that any sender may deposit a registered asset:
+// a stablecoin claim's buy lands this way, and a deposit waits uncommitted for the next claim in it.
+func (s *KeeperTestSuite) TestSendRestrictionAdmitsRegisteredAssets() {
+	s.SetupTest()
+	insurance := authtypes.NewModuleAddress(types.InsuranceName)
+	for _, amount := range []sdk.Coins{
+		sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1)),
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin(chain.USDBaseDenom, 1)),
+	} {
+		got, err := s.keeper.SendRestriction(s.ctx, sdk.AccAddress{1}, insurance, amount)
+		s.Require().NoError(err)
+		s.Require().Equal(insurance, got)
+	}
+}
+
 func (s *KeeperTestSuite) TestSendRestrictionIgnoresOtherRecipients() {
 	s.SetupTest()
 	unrelated := sdk.AccAddress{2}

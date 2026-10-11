@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
@@ -91,7 +92,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           committee,
 			ActivationTime:      10,
 			ExpiryTime:          100,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().NoError(err)
 
@@ -99,7 +100,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(1), stored.Term)
 		s.Require().Equal(committee, stored.Committee)
-		s.Require().Equal(noahCoin(1_000), stored.CommitteeClaimLimit)
+		s.Require().Equal("1000", stored.CommitteeClaimLimit.String())
 	})
 
 	s.Run("replacement resets allowance usage", func() {
@@ -113,7 +114,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           testAddress(2),
 			ActivationTime:      10,
 			ExpiryTime:          100,
-			CommitteeClaimLimit: noahCoin(500),
+			CommitteeClaimLimit: math.NewInt(500),
 		})
 		s.Require().NoError(err)
 
@@ -134,7 +135,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           committee,
 			ActivationTime:      10,
 			ExpiryTime:          100,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().ErrorContains(err, "not after the current block time")
 	})
@@ -149,7 +150,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           committee,
 			ActivationTime:      10,
 			ExpiryTime:          100,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().NoError(err)
 	})
@@ -165,7 +166,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           committee,
 			ActivationTime:      10,
 			ExpiryTime:          16,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().ErrorContains(err, "cannot be shorter than the claim cancellation period")
 
@@ -174,7 +175,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 			Committee:           committee,
 			ActivationTime:      10,
 			ExpiryTime:          17,
-			CommitteeClaimLimit: noahCoin(1_000),
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().NoError(err)
 	})
@@ -183,18 +184,18 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(committee)
-		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(70)))
+		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, math.NewInt(70)))
 
 		_, err := s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
-			CommitteeClaimLimit: noahCoin(0),
+			CommitteeClaimLimit: math.NewInt(0),
 		})
 		s.Require().NoError(err)
 
 		stored, err := s.keeper.ClaimsMandate.Get(s.ctx)
 		s.Require().NoError(err)
 		s.Require().True(stored.IsDisabled())
-		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+		reserved, err := s.reserved(chain.NoahBaseDenom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(70), reserved)
 	})
@@ -211,7 +212,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 				Committee:           committee,
 				ActivationTime:      10,
 				ExpiryTime:          100,
-				CommitteeClaimLimit: noahCoin(1_000),
+				CommitteeClaimLimit: math.NewInt(1_000),
 			},
 			expectErr: "invalid authority",
 		},
@@ -222,7 +223,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 				Committee:           s.authority,
 				ActivationTime:      10,
 				ExpiryTime:          100,
-				CommitteeClaimLimit: noahCoin(1_000),
+				CommitteeClaimLimit: math.NewInt(1_000),
 			},
 			expectErr: "must be distinct from the Claims authority",
 		},
@@ -233,7 +234,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 				Committee:           committee,
 				ActivationTime:      10,
 				ExpiryTime:          13,
-				CommitteeClaimLimit: noahCoin(1_000),
+				CommitteeClaimLimit: math.NewInt(1_000),
 			},
 			expectErr: "cannot be shorter than the claim cancellation period",
 		},
@@ -244,7 +245,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 				Committee:           committee,
 				ActivationTime:      10,
 				ExpiryTime:          15,
-				CommitteeClaimLimit: noahCoin(1_000),
+				CommitteeClaimLimit: math.NewInt(1_000),
 			},
 		},
 		{
@@ -254,7 +255,7 @@ func (s *KeeperTestSuite) TestSetClaimsMandate() {
 				Committee:           committee,
 				ActivationTime:      10,
 				ExpiryTime:          100,
-				CommitteeClaimLimit: noahCoin(0),
+				CommitteeClaimLimit: math.NewInt(0),
 			},
 			expectErr: "claim limit must be positive",
 		},
@@ -300,7 +301,7 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 		s.Require().Equal(uint64(20), claim.SubmittedTime)
 		s.Require().Equal(uint64(25), claim.ClosingTime)
 
-		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+		reserved, err := s.reserved(chain.NoahBaseDenom)
 		s.Require().NoError(err)
 		s.Require().Equal(math.NewInt(100), reserved)
 
@@ -389,12 +390,12 @@ func (s *KeeperTestSuite) TestSubmitClaim() {
 			expectErr: "blocked from receiving funds",
 		},
 		{
-			name:      "non-NOAH amount",
+			name:      "unregistered asset amount",
 			balance:   500,
-			amount:    sdk.NewInt64Coin("usdr", 100),
+			amount:    sdk.NewInt64Coin("aeur", 100),
 			authority: s.authority,
 			recipient: recipient,
-			expectErr: "claim amount must be denominated in anoah",
+			expectErr: "asset aeur is not registered",
 		},
 		{
 			name:      "zero amount",
@@ -435,15 +436,7 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 	committee := testAddress(1)
 	recipient := testAddress(3)
 
-	submit := func(amount int64) (*types.MsgCommitteeSubmitClaimResponse, error) {
-		return s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
-			Committee:    committee,
-			ExpectedTerm: 1,
-			Reference:    "incident",
-			Recipient:    recipient,
-			Amount:       noahCoin(amount),
-		})
-	}
+	submit := func(amount int64) (uint64, error) { return s.submitCommittee(noahCoin(amount), 0) }
 
 	s.Run("consumes the term allowance", func() {
 		s.SetupTest()
@@ -452,10 +445,10 @@ func (s *KeeperTestSuite) TestCommitteeSubmitClaim() {
 		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
-		resp, err := submit(400)
+		id, err := submit(400)
 		s.Require().NoError(err)
 
-		claim, err := s.keeper.Claims.Get(s.ctx, resp.ClaimId)
+		claim, err := s.keeper.Claims.Get(s.ctx, id)
 		s.Require().NoError(err)
 		s.Require().Equal(types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE, claim.Origin)
 		s.Require().Equal(uint64(1), claim.MandateTerm)
@@ -586,25 +579,16 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 	committee := testAddress(1)
 	recipient := testAddress(3)
 
-	// submitGovernance returns a pending governance claim at time 20 with a
-	// five-second veto window.
-	submitGovernance := func() uint64 {
-		s.setCancellationPeriod(5)
-		s.setBlockTime(20)
+	// pending returns a pending governance claim at time 20 with a five-second veto window.
+	pending := func() uint64 {
+		s.atSubmission()
 		s.fundInsurance(5_000)
-		resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
-			Authority: s.authority,
-			Reference: "incident",
-			Recipient: recipient,
-			Amount:    noahCoin(100),
-		})
-		s.Require().NoError(err)
-		return resp.ClaimId
+		return s.submitGovernanceClaim(100)
 	}
 
 	s.Run("releases the reservation", func() {
 		s.SetupTest()
-		claimID := submitGovernance()
+		claimID := pending()
 		s.setBlockTime(24)
 
 		_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
@@ -618,7 +602,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.Require().Equal(types.ClaimStatus_CLAIM_STATUS_CANCELLED, claim.Status)
 		s.Require().Equal(types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE, claim.CancelledBy)
 
-		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+		reserved, err := s.reserved(chain.NoahBaseDenom)
 		s.Require().NoError(err)
 		s.Require().True(reserved.IsZero())
 
@@ -629,7 +613,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 
 	s.Run("cancels in the submission block", func() {
 		s.SetupTest()
-		claimID := submitGovernance()
+		claimID := pending()
 
 		// Still at the submission time: a veto may land in the very block
 		// that submitted the claim.
@@ -644,7 +628,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 		s.Require().Equal(types.ClaimStatus_CLAIM_STATUS_CANCELLED, claim.Status)
 		s.Require().Equal(claim.SubmittedTime, claim.ClosingTime)
 
-		reserved, err := s.keeper.InsuranceReserved.Get(s.ctx)
+		reserved, err := s.reserved(chain.NoahBaseDenom)
 		s.Require().NoError(err)
 		s.Require().True(reserved.IsZero())
 		s.requireDueClaims()
@@ -680,7 +664,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 
 	s.Run("at closing time the window has closed", func() {
 		s.SetupTest()
-		claimID := submitGovernance()
+		claimID := pending()
 		s.setBlockTime(25)
 
 		_, err := s.msgServer.CancelClaim(s.ctx, &types.MsgCancelClaim{
@@ -692,7 +676,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 
 	s.Run("committee cannot cancel a governance claim", func() {
 		s.SetupTest()
-		claimID := submitGovernance()
+		claimID := pending()
 		s.appointCommittee(committee)
 		s.setBlockTime(24)
 
@@ -736,7 +720,7 @@ func (s *KeeperTestSuite) TestCancelClaim() {
 
 	s.Run("already cancelled claim is not pending", func() {
 		s.SetupTest()
-		claimID := submitGovernance()
+		claimID := pending()
 		s.setBlockTime(22)
 
 		cancel := &types.MsgCancelClaim{

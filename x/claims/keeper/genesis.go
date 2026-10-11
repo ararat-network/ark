@@ -6,13 +6,15 @@ import (
 
 	"cosmossdk.io/collections"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
 // InitGenesis validates and imports Claims state. Insurance custody is
 // imported by Bank and is inspected here, never duplicated or minted.
-func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
+func (k *Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error {
 	if data == nil {
 		return fmt.Errorf("claims genesis state is nil")
 	}
@@ -31,21 +33,31 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		return fmt.Errorf("%s module account has not been set", types.InsuranceName)
 	}
 	balances := k.bankKeeper.GetAllBalances(ctx, moduleAccount.GetAddress())
+	// Custody holds what the send restriction admits: NOAH and registered assets.
 	for _, balance := range balances {
-		if balance.Denom != chain.NoahBaseDenom {
+		if balance.Denom == chain.NoahBaseDenom {
+			continue
+		}
+		registered, err := k.assetKeeper.HasAsset(ctx, balance.Denom)
+		if err != nil {
+			return fmt.Errorf("checking the asset registry for %s: %w", balance.Denom, err)
+		}
+		if !registered {
 			return fmt.Errorf(
-				"%s account contains unsupported genesis denom %s",
+				"%s account contains unregistered genesis denom %s",
 				types.InsuranceName,
 				balance.Denom,
 			)
 		}
 	}
-	if data.InsuranceReserved.GT(balances.AmountOf(chain.NoahBaseDenom)) {
-		return fmt.Errorf(
-			"pending Insurance reservation %s exceeds Insurance balance %s",
-			data.InsuranceReserved,
-			balances.AmountOf(chain.NoahBaseDenom),
-		)
+	for _, reserved := range data.InsuranceReserved {
+		if held := balances.AmountOf(reserved.Denom); reserved.Amount.GT(held) {
+			return fmt.Errorf(
+				"pending Insurance reservation %s exceeds Insurance balance %s",
+				reserved,
+				sdk.NewCoin(reserved.Denom, held),
+			)
+		}
 	}
 
 	if err := k.Params.Set(ctx, data.Params); err != nil {
@@ -57,8 +69,10 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	if err := k.ClaimsAllowanceUsed.Set(ctx, data.ClaimsAllowanceUsed); err != nil {
 		return fmt.Errorf("setting Claims allowance usage: %w", err)
 	}
-	if err := k.InsuranceReserved.Set(ctx, data.InsuranceReserved); err != nil {
-		return fmt.Errorf("setting Insurance reservation: %w", err)
+	for _, reserved := range data.InsuranceReserved {
+		if err := k.InsuranceReserved.Set(ctx, reserved.Denom, reserved.Amount); err != nil {
+			return fmt.Errorf("setting %s Insurance reservation: %w", reserved.Denom, err)
+		}
 	}
 	if err := k.NextClaimID.Set(ctx, data.NextClaimId); err != nil {
 		return fmt.Errorf("setting next claim ID: %w", err)
@@ -83,7 +97,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 
 // ExportGenesis exports exactly the Claims-owned state. The Insurance balance
 // remains part of Bank genesis.
-func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
+func (k *Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims params: %w", err)
@@ -96,9 +110,9 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims allowance usage: %w", err)
 	}
-	insuranceReserved, err := k.InsuranceReserved.Get(ctx)
+	insuranceReserved, err := k.reservations(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting Insurance reservation: %w", err)
+		return nil, err
 	}
 	nextClaimID, err := k.NextClaimID.Peek(ctx)
 	if err != nil {

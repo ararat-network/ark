@@ -54,7 +54,7 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 	if err != nil {
 		return nil, fmt.Errorf("getting Claims allowance usage: %w", err)
 	}
-	allowanceRemaining, err := claimsMandate.CommitteeClaimLimit.Amount.SafeSub(allowanceUsed)
+	allowanceRemaining, err := claimsMandate.CommitteeClaimLimit.SafeSub(allowanceUsed)
 	if err != nil || allowanceRemaining.IsNegative() {
 		return nil, fmt.Errorf("claims allowance usage %s exceeds mandate limit %s", allowanceUsed, claimsMandate.CommitteeClaimLimit)
 	}
@@ -62,8 +62,8 @@ func (q queryServer) ClaimsMandate(ctx context.Context, req *types.QueryClaimsMa
 	return &types.QueryClaimsMandateResponse{
 		Mandate:            claimsMandate,
 		Active:             claimsMandate.IsActive(chain.BlockSeconds(ctx)),
-		AllowanceUsed:      chain.NoahCoin(allowanceUsed),
-		AllowanceRemaining: chain.NoahCoin(allowanceRemaining),
+		AllowanceUsed:      allowanceUsed,
+		AllowanceRemaining: allowanceRemaining,
 	}, nil
 }
 
@@ -74,14 +74,14 @@ func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	reserved, err := q.k.InsuranceReserved.Get(ctx)
+	reserved, err := q.k.reservations(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("getting Insurance reservation: %w", err)
+		return nil, err
 	}
 
 	return &types.QueryBalanceResponse{
-		Balance:  chain.NoahCoin(q.k.balance(ctx)),
-		Reserved: chain.NoahCoin(reserved),
+		Balance:  q.k.bankKeeper.GetAllBalances(ctx, q.k.insuranceAddress),
+		Reserved: reserved,
 	}, nil
 }
 
