@@ -50,7 +50,8 @@ identity between declaration and charge. This is deferred collection, with no es
 Execution-generated messages use the [policy router](../README.md#wasm-integration), whose tax and transfer
 share the dispatch cache under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
 
-Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
+A fee whose every coin is zero is fee-less, as in the SDK; it is what `--gas auto --gas-prices` estimates under. A zero
+coin beside a paying one is refused in every mode. Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
 the two-denomination stable-base-fee plus NOAH-tip path conservatively; a simulation with a payable fee meters its
 actual transfer. The tax post handler still runs during simulation so its transfer cost is included. With no leg to
 price, the estimate reads NOAH's gas factor in place of the one the fee will name and charges the registry read a

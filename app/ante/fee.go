@@ -135,6 +135,11 @@ func (d FeeDecorator) settle(
 	ctx sdk.Context, params treasurytypes.Params, feeTx sdk.FeeTx, tax sdk.Coins, enforce bool,
 ) (settlement, error) {
 	fee := feeTx.GetFee()
+	if fee.IsZero() {
+		// No fee, as the SDK reads it: what `--gas auto --gas-prices` estimates under is the price
+		// times a zero gas limit. A zero leg beside a paying one still fails validation.
+		fee = nil
+	}
 	gas := feeTx.GetGas()
 	settled := settlement{tip: math.ZeroInt()}
 

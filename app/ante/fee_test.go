@@ -389,8 +389,8 @@ func TestFeeDecoratorRanksOnlyTheNoahTip(t *testing.T) {
 }
 
 // TestFeeDecoratorReadsAFeeTwoWays checks payer-order gas selection and denomination-based tax/NOAH
-// lookup. Validation sorts a copy and rejects repeated denominations, zero legs, and invalid
-// denominations.
+// lookup. Validation sorts a copy and rejects repeated denominations, zero legs beside paying ones,
+// and invalid denominations; a fee whose every leg is zero is no fee.
 func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 	arkApp, ctx, tx := setupTreasuryAnteTest(t)
 	for _, denom := range []string{chain.USDBaseDenom, chain.KRWBaseDenom} {
@@ -456,12 +456,38 @@ func TestFeeDecoratorReadsAFeeTwoWays(t *testing.T) {
 		require.Empty(t, r.tax)
 	})
 
-	t.Run("a zero leg is refused", func(t *testing.T) {
+	t.Run("a zero leg beside a paying one is refused", func(t *testing.T) {
 		r := run(sdk.Coins{
 			sdk.NewInt64Coin(chain.USDBaseDenom, 50_010),
 			sdk.NewInt64Coin(chain.KRWBaseDenom, 0),
 		})
 		require.ErrorContains(t, r.err, "not positive")
+		require.Empty(t, r.gas)
+		require.Empty(t, r.tax)
+	})
+
+	t.Run("a fee whose every leg is zero is no fee", func(t *testing.T) {
+		// What `--gas auto --gas-prices` estimates under: the price times a zero gas limit.
+		zero := sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 0)}
+		estimate := func(fee sdk.Coins) (storetypes.Gas, error) {
+			tx.fee = fee
+			cached, _ := ctx.CacheContext()
+			var err error
+			gas := gasOf(t, cached, func(ctx sdk.Context) error {
+				_, err = runFee(t, arkApp, ctx, tx, true)
+				return err
+			})
+			return gas, err
+		}
+		zeroGas, err := estimate(zero)
+		require.NoError(t, err)
+		noneGas, err := estimate(nil)
+		require.NoError(t, err)
+		require.Equal(t, noneGas, zeroGas, "it estimates as the fee-less transaction does")
+
+		// Executed, it is refused as a fee-less transaction is: short of the tax it declares.
+		r := run(zero)
+		require.ErrorIs(t, r.err, errortypes.ErrInsufficientFee)
 		require.Empty(t, r.gas)
 		require.Empty(t, r.tax)
 	})
