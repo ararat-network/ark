@@ -61,6 +61,10 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	wasmOpts := []wasmkeeper.Option{
 		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
 		wasmkeeper.WithMessageHandler(app.wasmMessageHandler()),
+		wasmkeeper.WithWasmEngineDecorator(func(engine wasmtypes.WasmEngine) wasmtypes.WasmEngine {
+			app.wasmEngine = engine
+			return engine
+		}),
 	}
 	if registerer, ok := appOpts.Get(WasmVMCacheMetricsRegistererOpt).(prometheus.Registerer); ok {
 		wasmOpts = append(wasmOpts, wasmkeeper.WithVMCacheMetrics(registerer))

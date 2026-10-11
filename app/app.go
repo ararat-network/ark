@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
 
@@ -122,6 +123,8 @@ type ArkApp struct {
 
 	// wired by hand after Build: wasmd ships no depinject module
 	WasmKeeper wasmkeeper.Keeper
+	// wasmEngine is the keeper's contract VM, held so Close can release it.
+	wasmEngine wasmtypes.WasmEngine
 
 	// simulation manager
 	sm *module.SimulationManager
@@ -342,6 +345,10 @@ func (app *ArkApp) RunPriceFeed(ctx context.Context) error {
 func (app *ArkApp) Close() error {
 	app.closeOnce.Do(func() {
 		app.closeErr = app.App.Close()
+		// The VM holds its cache directory's lock until released.
+		if app.wasmEngine != nil {
+			app.wasmEngine.Cleanup()
+		}
 	})
 
 	return app.closeErr
