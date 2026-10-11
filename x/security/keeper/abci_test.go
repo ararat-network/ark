@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"errors"
+
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/ararat-network/ark/x/security/types"
@@ -34,6 +36,22 @@ func (s *KeeperTestSuite) TestBeginBlockerReconcilesThePlanRecord() {
 			s.Require().Equal(tc.kept, !stored.IsZero())
 		})
 	}
+
+	// A store fault is not an empty slot, so the record is kept and the fault surfaces.
+	s.Run("an unreadable slot keeps the record", func() {
+		s.SetupTest()
+		s.Require().NoError(s.keeper.CommitteePlan.Set(s.ctx, record))
+		fault := errors.New("upgrade store corrupted")
+		s.upgrade.err = fault
+
+		err := s.keeper.BeginBlocker(s.ctx)
+
+		s.Require().ErrorIs(err, fault)
+		s.Require().ErrorContains(err, "getting upgrade plan")
+		stored, getErr := s.keeper.CommitteePlan.Get(s.ctx)
+		s.Require().NoError(getErr)
+		s.Require().Equal(record, stored)
+	})
 
 	s.Run("an empty record reads nothing else", func() {
 		s.SetupTest()

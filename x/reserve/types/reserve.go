@@ -95,9 +95,6 @@ func (position Position) Validate() error {
 	if err := position.Quantity.Validate(); err != nil {
 		return fmt.Errorf("invalid position quantity: %w", err)
 	}
-	if position.Quantity.Amount.IsNegative() {
-		return errors.New("position quantity must be zero or positive")
-	}
 	// The one bound on the attestation, and the reason the recognition fold's
 	// arithmetic cannot be driven out of range by what a committee writes here.
 	if position.Quantity.Amount.GT(MaxAttestedQuantity) {
@@ -178,17 +175,11 @@ func (entry AccountingEntry) Validate() error {
 	if err := entry.Quantity.Validate(); err != nil {
 		return fmt.Errorf("invalid entry quantity: %w", err)
 	}
-	if entry.Quantity.Amount.IsNegative() {
-		return errors.New("entry quantity must be zero or positive")
-	}
 	if err := chain.ValidateNoahCoin("entry moved noah value", entry.MovedNoahValue); err != nil {
 		return err
 	}
 	if err := entry.MovedCoin.Validate(); err != nil {
 		return fmt.Errorf("invalid entry moved coin: %w", err)
-	}
-	if entry.MovedCoin.Amount.IsNegative() {
-		return errors.New("entry moved coin must be zero or positive")
 	}
 
 	// The movement kinds each require a coin to have moved; the judgment kinds

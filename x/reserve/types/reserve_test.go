@@ -3,6 +3,7 @@ package types_test
 import (
 	"bytes"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -477,4 +478,189 @@ func TestAccountingEntryValidateRestatement(t *testing.T) {
 			require.ErrorContains(t, entry.Validate(), "may name a restated entry", kind.String())
 		}
 	})
+}
+
+func TestPositionValidateFields(t *testing.T) {
+	tests := []struct {
+		name      string
+		mutate    func(*types.Position)
+		expectErr string
+	}{
+		{name: "minimal valid position", mutate: func(*types.Position) {}},
+		{
+			// Boundary-valid: a holding attested down to nothing is still a record.
+			name:   "zero quantity",
+			mutate: func(p *types.Position) { p.Quantity.Amount = math.ZeroInt() },
+		},
+		{
+			name:   "closed at its opening height",
+			mutate: func(p *types.Position) { p.ClosedHeight = p.OpenedHeight },
+		},
+		{
+			name:      "zero position ID",
+			mutate:    func(p *types.Position) { p.PositionId = 0 },
+			expectErr: "position ID must be positive",
+		},
+		{
+			name:      "unset quantity",
+			mutate:    func(p *types.Position) { p.Quantity.Amount = math.Int{} },
+			expectErr: "invalid position quantity: amount is nil",
+		},
+		{
+			name:      "negative quantity",
+			mutate:    func(p *types.Position) { p.Quantity.Amount = math.NewInt(-1) },
+			expectErr: "invalid position quantity: negative coin amount",
+		},
+		{
+			name:      "quantity in a denomination no position may hold",
+			mutate:    func(p *types.Position) { p.Quantity.Denom = "uatom" },
+			expectErr: "invalid position asset",
+		},
+		{
+			name:      "deployed outside NOAH",
+			mutate:    func(p *types.Position) { p.Deployed = sdk.NewInt64Coin(chain.USDBaseDenom, 100) },
+			expectErr: "position deployed must be denominated in anoah",
+		},
+		{
+			name:      "returned outside NOAH",
+			mutate:    func(p *types.Position) { p.Returned = sdk.NewInt64Coin(chain.USDBaseDenom, 0) },
+			expectErr: "position returned must be denominated in anoah",
+		},
+		{
+			name:      "unset returned",
+			mutate:    func(p *types.Position) { p.Returned.Amount = math.Int{} },
+			expectErr: "invalid position returned",
+		},
+		{
+			name:      "nothing deployed",
+			mutate:    func(p *types.Position) { p.Deployed.Amount = math.ZeroInt() },
+			expectErr: "position deployed must be positive",
+		},
+		{
+			name:      "blank venue reference",
+			mutate:    func(p *types.Position) { p.VenueReference = " " },
+			expectErr: "venue reference must not be empty",
+		},
+		{
+			name:      "oversized venue reference",
+			mutate:    func(p *types.Position) { p.VenueReference = strings.Repeat("v", chain.MaxReferenceBytes+1) },
+			expectErr: "venue reference must not exceed",
+		},
+		{
+			name:      "zero opened height",
+			mutate:    func(p *types.Position) { p.OpenedHeight = 0 },
+			expectErr: "position opened height must be positive",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			position := validPosition()
+			tc.mutate(&position)
+
+			err := position.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
+}
+
+func TestAccountingEntryValidateFields(t *testing.T) {
+	tests := []struct {
+		name      string
+		kind      types.EntryKind
+		mutate    func(*types.AccountingEntry)
+		expectErr string
+	}{
+		{name: "minimal valid deployment", kind: types.EntryKind_ENTRY_KIND_DEPLOYMENT, mutate: func(*types.AccountingEntry) {}},
+		{
+			// Boundary-valid: a judgment may restate the holding to nothing.
+			name:   "zero quantity",
+			kind:   types.EntryKind_ENTRY_KIND_QUANTITY_UPDATE,
+			mutate: func(e *types.AccountingEntry) { e.Quantity.Amount = math.ZeroInt() },
+		},
+		{
+			name:      "zero entry ID",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.EntryId = 0 },
+			expectErr: "entry ID must be positive",
+		},
+		{
+			name:      "no position",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.PositionId = 0 },
+			expectErr: "entry must name a position",
+		},
+		{
+			name:      "unspecified kind",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.Kind = types.EntryKind_ENTRY_KIND_UNSPECIFIED },
+			expectErr: "entry kind is invalid",
+		},
+		{
+			name:      "unknown kind",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.Kind = types.EntryKind(99) },
+			expectErr: "entry kind is invalid",
+		},
+		{
+			name:      "unset quantity",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.Quantity.Amount = math.Int{} },
+			expectErr: "invalid entry quantity: amount is nil",
+		},
+		{
+			name:      "negative quantity",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.Quantity.Amount = math.NewInt(-1) },
+			expectErr: "invalid entry quantity: negative coin amount",
+		},
+		{
+			name:      "booked value outside NOAH",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.MovedNoahValue = sdk.NewInt64Coin(chain.USDBaseDenom, 100) },
+			expectErr: "entry moved noah value must be denominated in anoah",
+		},
+		{
+			name:      "unset moved coin",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.MovedCoin.Amount = math.Int{} },
+			expectErr: "invalid entry moved coin: amount is nil",
+		},
+		{
+			name:      "negative moved coin",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.MovedCoin.Amount = math.NewInt(-1) },
+			expectErr: "invalid entry moved coin: negative coin amount",
+		},
+		{
+			name:      "recorder not an account address",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.RecordedBy = "committee" },
+			expectErr: "entry recorded by is invalid",
+		},
+		{
+			name:      "zero height",
+			kind:      types.EntryKind_ENTRY_KIND_DEPLOYMENT,
+			mutate:    func(e *types.AccountingEntry) { e.Height = 0 },
+			expectErr: "entry height must be positive",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			entry := validEntry(tc.kind)
+			tc.mutate(&entry)
+
+			err := entry.Validate()
+			if tc.expectErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.expectErr)
+		})
+	}
 }

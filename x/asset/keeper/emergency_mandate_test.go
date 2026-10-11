@@ -1,12 +1,11 @@
 package keeper_test
 
 import (
-	"time"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/ararat-network/ark/pkg/mandate"
+	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
@@ -22,8 +21,8 @@ func emergencyCommittee() string {
 	return authtypes.NewModuleAddress("asset-emergency-committee").String()
 }
 
-// seedLiveMandate appoints the committee over a window containing height 10
-// and leaves the context at that height.
+// seedLiveMandate appoints the committee over a window from block 1 to block 1,000 and leaves the
+// context at block 10.
 func (s *KeeperTestSuite) seedLiveMandate() uint64 {
 	s.Require().NoError(s.keeper.EmergencyMandate.Set(
 		s.ctx,
@@ -32,8 +31,8 @@ func (s *KeeperTestSuite) seedLiveMandate() uint64 {
 	s.Require().NoError(s.keeper.SetEmergencyMandate(
 		s.ctx,
 		emergencyCommittee(),
-		1,
-		1_000,
+		blockTime(1),
+		blockTime(1_000),
 	))
 	s.at(10)
 
@@ -52,8 +51,8 @@ func (s *KeeperTestSuite) TestSetMandateAdvancesTerm() {
 	s.Require().NoError(s.keeper.SetEmergencyMandate(
 		s.ctx,
 		emergencyCommittee(),
-		1,
-		1_000,
+		blockTime(1),
+		blockTime(1_000),
 	))
 	stored, err := s.keeper.EmergencyMandate.Get(s.ctx)
 	s.Require().NoError(err)
@@ -73,8 +72,8 @@ func (s *KeeperTestSuite) TestSetMandateAdvancesTerm() {
 		&types.EventEmergencyMandateSet{
 			Term:           1,
 			Committee:      emergencyCommittee(),
-			ActivationTime: 1,
-			ExpiryTime:     1_000,
+			ActivationTime: blockTime(1),
+			ExpiryTime:     blockTime(1_000),
 			CommitteeShape: absentCommitteeShape,
 		},
 		&types.EventEmergencyMandateSet{Term: 2},
@@ -86,13 +85,13 @@ func (s *KeeperTestSuite) TestSetMandateRefusesAnElapsedWindow() {
 		s.ctx,
 		types.DefaultEmergencyMandate(),
 	))
-	// The window is half-open, so its expiry height is already inactive.
+	// The window is half-open, so its expiry time is already inactive.
 	s.at(1_000)
 	s.Require().ErrorContains(s.keeper.SetEmergencyMandate(
 		s.ctx,
 		emergencyCommittee(),
-		1,
-		1_000,
+		blockTime(1),
+		blockTime(1_000),
 	), "not after the current block time")
 }
 
@@ -180,9 +179,9 @@ func (s *KeeperTestSuite) TestEmergencySuspendRejectsInactiveMandate() {
 	)
 	s.Require().ErrorIs(err, types.ErrEmergencyMandateInactive)
 
-	expired := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(1_000).WithBlockTime(time.Unix(1_000, 0))
+	s.at(1_000)
 	err = s.keeper.EmergencySuspendAsset(
-		expired,
+		s.ctx,
 		emergencyCommittee(),
 		asset.Denom,
 		term,
@@ -212,8 +211,8 @@ func (s *KeeperTestSuite) TestSetMandateClearsConsumedSuspensions() {
 	s.Require().NoError(s.keeper.SetEmergencyMandate(
 		s.ctx,
 		emergencyCommittee(),
-		1,
-		1_000,
+		blockTime(1),
+		blockTime(1_000),
 	))
 	used, err := s.keeper.EmergencySuspensions.Has(s.ctx, asset.Denom)
 	s.Require().NoError(err)
@@ -227,4 +226,68 @@ func (s *KeeperTestSuite) TestSetMandateClearsConsumedSuspensions() {
 		term,
 	)
 	s.Require().ErrorIs(err, types.ErrEmergencyMandateInactive)
+}
+
+// TestEmergencyMandateWindowFollowsBlockTime pins the committee window to block time: appointment,
+// authorisation, and the queried activity follow the clock whatever the height reads.
+func (s *KeeperTestSuite) TestEmergencyMandateWindowFollowsBlockTime() {
+	const activation, expiry = 500, 1_000
+	s.Require().NoError(s.keeper.EmergencyMandate.Set(s.ctx, types.DefaultEmergencyMandate()))
+
+	for _, test := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		expErr  string
+	}{
+		{"appointed with height past expiry, time short of it", expiry + 500, expiry - 1, ""},
+		{"refused with time at expiry, height short of it", 1, expiry, "not after the current block time"},
+	} {
+		s.Run(test.name, func() {
+			s.atClock(test.height, test.seconds)
+			err := s.keeper.SetEmergencyMandate(s.ctx, emergencyCommittee(), activation, expiry)
+			if test.expErr != "" {
+				s.Require().ErrorContains(err, test.expErr)
+				return
+			}
+			s.Require().NoError(err)
+		})
+	}
+
+	assets := types.DefaultGenesisState().Assets
+	server := keeper.NewQueryServerImpl(s.keeper)
+	for i, test := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		active  bool
+	}{
+		{"height inside, time short of activation", 700, activation - 1, false},
+		{"time at activation, height short of it", 1, activation, true},
+		{"height inside, time at expiry", 700, expiry, false},
+		{"time short of expiry, height past it", expiry + 500, expiry - 1, true},
+	} {
+		s.Run(test.name, func() {
+			asset := assets[i]
+			s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
+			s.atClock(0, 0)
+			s.Require().NoError(s.keeper.SetEmergencyMandate(s.ctx, emergencyCommittee(), activation, expiry))
+			stored, err := s.keeper.EmergencyMandate.Get(s.ctx)
+			s.Require().NoError(err)
+			s.atClock(test.height, test.seconds)
+
+			response, err := server.EmergencyMandate(s.ctx, &types.QueryEmergencyMandateRequest{})
+			s.Require().NoError(err)
+			s.Require().Equal(test.active, response.Active)
+
+			err = s.keeper.EmergencySuspendAsset(s.ctx, emergencyCommittee(), asset.Denom, stored.Term)
+			if !test.active {
+				s.Require().ErrorIs(err, types.ErrEmergencyMandateInactive)
+				s.requireStoredAsset(asset.Denom, types.AssetStatus_ASSET_STATUS_ACTIVE, asset.Version)
+				return
+			}
+			s.Require().NoError(err)
+			s.requireStoredAsset(asset.Denom, types.AssetStatus_ASSET_STATUS_SUSPENDED, asset.Version+1)
+		})
+	}
 }

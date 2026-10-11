@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -71,8 +70,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	// The clock starts at the epoch, so height and block time read alike until a test moves both.
-	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
+	s.ctx = testCtx.Ctx
+	s.setBlockHeight(0)
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())

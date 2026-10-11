@@ -46,10 +46,26 @@ func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
 
-// at moves the suite to block height h with block time h seconds, one clock for heights and times
-// alike.
+// Block time runs on its own clock, offset from height and faster than it, so a rule reading the
+// wrong one fails.
+const (
+	testGenesisTime  = 1_000_000
+	testBlockSeconds = 5
+)
+
+// blockTime is the block time, in Unix seconds, of the suite's block h.
+func blockTime(h int64) uint64 {
+	return testGenesisTime + uint64(h)*testBlockSeconds
+}
+
+// at moves the suite to block h at its block time.
 func (s *KeeperTestSuite) at(h int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(h).WithBlockTime(time.Unix(h, 0))
+	s.atClock(h, blockTime(h))
+}
+
+// atClock sets height and block time independently.
+func (s *KeeperTestSuite) atClock(h int64, seconds uint64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(h).WithBlockTime(time.Unix(int64(seconds), 0))
 }
 
 func (s *KeeperTestSuite) SetupTest() {
@@ -65,8 +81,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		key,
 		storetypes.NewTransientStoreKey("transient_test"),
 	)
-	// The clock starts at the epoch, so height and block time read alike until a test moves both.
-	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
+	s.ctx = testCtx.Ctx
+	s.at(0)
 
 	ctrl := gomock.NewController(s.T())
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)

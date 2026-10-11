@@ -30,6 +30,7 @@ func (am AppModule) RegisterStoreDecoder(
 // whose starting status no asset currently occupies.
 func (am AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_update_params", 100), simulation.MsgUpdateParamsFactory())
+	reg.Add(weights.Get("msg_register_asset", 20), simulation.MsgRegisterAssetFactory(am.k))
 	reg.Add(weights.Get("msg_halt_issuance", 50), simulation.MsgHaltIssuanceFactory(am.k))
 	reg.Add(weights.Get("msg_resume_issuance", 50), simulation.MsgResumeIssuanceFactory(am.k))
 	reg.Add(weights.Get("msg_suspend_asset", 30), simulation.MsgSuspendAssetFactory(am.k))

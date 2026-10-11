@@ -1,6 +1,7 @@
 package simulation_test
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 	"time"
@@ -21,8 +22,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/simulation"
 	"github.com/ararat-network/ark/x/asset/testutil"
@@ -47,6 +50,9 @@ type assetFixture struct {
 	reporter *simsx.BasicSimulationReporter
 	accounts []simtypes.Account
 	rand     *rand.Rand
+
+	// phases overrides the feed phase the oracle reports per denomination; feeds default to Active.
+	phases map[string]oracletypes.FeedPhase
 }
 
 // newAssetFixture builds a real Asset keeper over mocks at height 10, so a
@@ -66,8 +72,17 @@ func newAssetFixture(t *testing.T) assetFixture {
 	bank := testutil.NewMockBankKeeper(ctrl)
 	// Every asset in the launch registry is priced, which is what the
 	// lifecycle demands of one being recovered.
+	phases := map[string]oracletypes.FeedPhase{}
 	oracle := testutil.NewMockOracleKeeper(ctrl)
-	oracle.EXPECT().FeedPhase(gomock.Any(), gomock.Any()).Return(oracletypes.FeedPhaseActive, nil).AnyTimes()
+	oracle.EXPECT().
+		FeedPhase(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (oracletypes.FeedPhase, error) {
+			if phase, overridden := phases[denom]; overridden {
+				return phase, nil
+			}
+			return oracletypes.FeedPhaseActive, nil
+		}).
+		AnyTimes()
 	// An appointee the chain has never seen has no account yet, which is what
 	// a freshly drawn simulation address is.
 	accounts := testutil.NewMockAccountKeeper(ctrl)
@@ -108,6 +123,7 @@ func newAssetFixture(t *testing.T) assetFixture {
 		reporter: simsx.NewBasicSimulationReporter(),
 		accounts: simAccounts,
 		rand:     r,
+		phases:   phases,
 	}
 }
 
@@ -209,6 +225,93 @@ func TestMsgFinaliseRetirementFactory(t *testing.T) {
 			require.NoError(t, f.keeper.FinaliseRetirement(
 				f.ctx, msg.Denom, msg.ExpectedVersion, msg.MaxResidualSupply,
 			))
+		})
+	}
+}
+
+// TestMsgRegisterAssetFactory registers a priced launch currency the registry leaves free, never
+// XDR, and declines when the handler would refuse every candidate.
+func TestMsgRegisterAssetFactory(t *testing.T) {
+	free := chain.EURBaseDenom
+	tests := []struct {
+		name    string
+		prepare func(t *testing.T, f assetFixture)
+		skip    bool
+	}{
+		{
+			name: "registers the free priced denomination",
+			prepare: func(_ *testing.T, f assetFixture) {
+				f.bank.EXPECT().GetSupply(gomock.Any(), free).Return(sdk.NewInt64Coin(free, 0)).AnyTimes()
+				f.bank.EXPECT().GetDenomMetaData(gomock.Any(), free).Return(banktypes.Metadata{}, false).AnyTimes()
+				f.bank.EXPECT().SetDenomMetaData(gomock.Any(), chain.NativeAssetMetadata(free)).AnyTimes()
+			},
+		},
+		{
+			name: "free denomination whose feed is not active",
+			prepare: func(_ *testing.T, f assetFixture) {
+				f.phases[free] = oracletypes.FeedPhaseAdding
+				f.bank.EXPECT().GetSupply(gomock.Any(), free).Return(sdk.NewInt64Coin(free, 0)).AnyTimes()
+				f.bank.EXPECT().GetDenomMetaData(gomock.Any(), free).Return(banktypes.Metadata{}, false).AnyTimes()
+			},
+			skip: true,
+		},
+		{
+			name: "free denomination already carrying supply",
+			prepare: func(_ *testing.T, f assetFixture) {
+				f.bank.EXPECT().GetSupply(gomock.Any(), free).Return(sdk.NewInt64Coin(free, 1)).AnyTimes()
+			},
+			skip: true,
+		},
+		{
+			name: "every currency registered, XDR alone free",
+			prepare: func(t *testing.T, f assetFixture) {
+				t.Helper()
+				require.NoError(t, f.keeper.Assets.Set(f.ctx, free, types.Asset{
+					Denom:    free,
+					Metadata: chain.NativeAssetMetadata(free),
+					Status:   types.AssetStatus_ASSET_STATUS_RETIRED,
+					Version:  1,
+				}))
+			},
+			skip: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newAssetFixture(t)
+			for _, asset := range types.DefaultGenesisState().Assets {
+				if asset.Denom != free {
+					require.NoError(t, f.keeper.Assets.Set(f.ctx, asset.Denom, asset))
+				}
+			}
+			tt.prepare(t, f)
+
+			before, err := f.keeper.ListAssets(f.ctx)
+			require.NoError(t, err)
+
+			_, msg := simulation.MsgRegisterAssetFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			// The candidate check is a dry run: it must leave neither state nor events behind.
+			after, err := f.keeper.ListAssets(f.ctx)
+			require.NoError(t, err)
+			require.Equal(t, before, after)
+			require.Empty(t, f.ctx.EventManager().Events())
+			if tt.skip {
+				require.True(t, f.reporter.IsSkipped())
+				require.Contains(t, f.reporter.Comment(), "no priced denomination is free to register")
+				require.Nil(t, msg)
+
+				return
+			}
+			require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
+			require.Equal(t, govAuthority(), msg.Authority)
+			require.Equal(t, free, msg.Denom)
+			_, err = keeper.NewMsgServerImpl(f.keeper).RegisterAsset(f.ctx, msg)
+			require.NoError(t, err)
+			registered, err := f.keeper.GetAsset(f.ctx, free)
+			require.NoError(t, err)
+			require.Equal(t, types.AssetStatus_ASSET_STATUS_ACTIVE, registered.Status)
 		})
 	}
 }

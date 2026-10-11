@@ -205,7 +205,7 @@ func (s *KeeperTestSuite) TestMsgServerRoutesSettlementMutation() {
 		Denom:               asset.Denom,
 		ExpectedVersion:     asset.Version,
 		RedemptionRate:      math.LegacyOneDec(),
-		EarliestClosingTime: 110 + types.DefaultSettlementActivationDelay,
+		EarliestClosingTime: testSettlementActivationTime() + 100,
 	})
 	s.Require().NoError(err)
 	s.Require().NotNil(response)
@@ -214,6 +214,126 @@ func (s *KeeperTestSuite) TestMsgServerRoutesSettlementMutation() {
 		types.AssetStatus_ASSET_STATUS_SUSPENDED,
 		asset.Version+1,
 	)
+}
+
+// TestMsgServerRoutesEveryGovernanceTransition drives each governance transition through the msg
+// server as the authority. A row's start and outcome identify its keeper method, so a handler wired
+// to the wrong one fails here.
+func (s *KeeperTestSuite) TestMsgServerRoutesEveryGovernanceTransition() {
+	s.at(10)
+	server := keeper.NewMsgServerImpl(s.keeper)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	assets := types.DefaultGenesisState().Assets
+
+	tests := []struct {
+		name  string
+		from  types.AssetStatus
+		setup func(denom string)
+		call  func(denom string, version uint64) error
+		want  types.AssetStatus
+	}{
+		{
+			name: "halt issuance",
+			from: types.AssetStatus_ASSET_STATUS_ACTIVE,
+			call: func(denom string, version uint64) error {
+				_, err := server.HaltIssuance(s.ctx, &types.MsgHaltIssuance{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
+		},
+		{
+			name: "resume issuance",
+			from: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
+			call: func(denom string, version uint64) error {
+				_, err := server.ResumeIssuance(s.ctx, &types.MsgResumeIssuance{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_ACTIVE,
+		},
+		{
+			name: "suspend asset",
+			from: types.AssetStatus_ASSET_STATUS_ACTIVE,
+			call: func(denom string, version uint64) error {
+				_, err := server.SuspendAsset(s.ctx, &types.MsgSuspendAsset{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+		},
+		{
+			name: "recover asset",
+			from: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			call: func(denom string, version uint64) error {
+				_, err := server.RecoverAsset(s.ctx, &types.MsgRecoverAsset{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
+		},
+		{
+			name: "cancel settlement",
+			from: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			setup: func(denom string) {
+				s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, denom, types.SettlementPlan{
+					Denom:               denom,
+					RedemptionRate:      math.LegacyOneDec(),
+					ActivationTime:      blockTime(20),
+					EarliestClosingTime: blockTime(30),
+					OpenedHeight:        1,
+					OpenedTime:          blockTime(1),
+				}))
+			},
+			call: func(denom string, version uint64) error {
+				_, err := server.CancelSettlement(s.ctx, &types.MsgCancelSettlement{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+		},
+		{
+			name: "write off asset",
+			from: types.AssetStatus_ASSET_STATUS_SUSPENDED,
+			setup: func(denom string) {
+				s.bankKeeper.EXPECT().GetSupply(s.ctx, denom).Return(sdk.NewInt64Coin(denom, 100))
+			},
+			call: func(denom string, version uint64) error {
+				_, err := server.WriteOffAsset(s.ctx, &types.MsgWriteOffAsset{Authority: authority, Denom: denom, ExpectedVersion: version})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_WRITTEN_OFF,
+		},
+		{
+			name: "finalise retirement",
+			from: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
+			setup: func(denom string) {
+				s.bankKeeper.EXPECT().GetSupply(s.ctx, denom).Return(sdk.NewInt64Coin(denom, 0))
+			},
+			call: func(denom string, version uint64) error {
+				_, err := server.FinaliseRetirement(s.ctx, &types.MsgFinaliseRetirement{
+					Authority: authority, Denom: denom, ExpectedVersion: version, MaxResidualSupply: math.ZeroInt(),
+				})
+				return err
+			},
+			want: types.AssetStatus_ASSET_STATUS_RETIRED,
+		},
+	}
+
+	for i, tc := range tests {
+		s.Run(tc.name, func() {
+			asset := assets[i]
+			asset.Status = tc.from
+			asset.Version = 2
+			s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
+			if tc.setup != nil {
+				tc.setup(asset.Denom)
+			}
+
+			s.Require().NoError(tc.call(asset.Denom, asset.Version))
+			s.requireStoredAsset(asset.Denom, tc.want, asset.Version+1)
+		})
+	}
+
+	// Cancellation is the one row whose status does not move; the plan it removed is its outcome.
+	hasPlan, err := s.keeper.SettlementPlans.Has(s.ctx, assets[4].Denom)
+	s.Require().NoError(err)
+	s.Require().False(hasPlan)
 }
 
 func (s *KeeperTestSuite) TestMsgServerRejectsNilLifecycleMessages() {

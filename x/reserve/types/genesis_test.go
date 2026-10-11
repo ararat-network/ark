@@ -302,6 +302,12 @@ func TestGenesisReconcilesAllowanceUsedWithTheLedger(t *testing.T) {
 		{name: "usage above the ledger is refused", mutate: func(gs *types.GenesisState) {
 			gs.AllowanceUsed = chain.NoahCoin(math.NewInt(150))
 		}, err: "does not equal the current term's NOAH deployments"},
+		{name: "usage equal to the mandate allowance is valid", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.DeploymentAllowance = chain.NoahCoin(math.NewInt(100))
+		}},
+		{name: "usage above the mandate allowance is refused", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.DeploymentAllowance = chain.NoahCoin(math.NewInt(99))
+		}, err: "reserve allowance usage 100anoah exceeds mandate allowance 99anoah"},
 		{name: "an in-kind deployment consumes no allowance", mutate: func(gs *types.GenesisState) {
 			gs.Ledger[0].MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(50))
 			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
@@ -405,6 +411,15 @@ func TestGenesisFoldsReversalsOutOfTheRecovery(t *testing.T) {
 		genesisState.NextEntryId = 11
 
 		require.ErrorContains(t, genesisState.Validate(), "must run from entry ID 1 without a gap: entry 10 at index 2")
+	})
+
+	// Entry validation refuses a forward restatement, so the single pass always holds its target.
+	t.Run("a restatement of a later entry is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		reversal := &genesisState.Ledger[len(genesisState.Ledger)-1]
+		reversal.Corrects = reversal.EntryId + 1
+
+		require.ErrorContains(t, genesisState.Validate(), "invalid ledger entry 3: a correction or reversal must restate an earlier entry")
 	})
 
 	t.Run("a next entry ID ahead of the ledger is refused", func(t *testing.T) {

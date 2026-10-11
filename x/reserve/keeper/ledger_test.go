@@ -44,8 +44,8 @@ func (s *KeeperTestSuite) appointCommittee(committee string, allowance, floor in
 		Envelope: mandate.Envelope{
 			Term:           1,
 			Committee:      committee,
-			ActivationTime: 10,
-			ExpiryTime:     1_000,
+			ActivationTime: blockTime(10),
+			ExpiryTime:     blockTime(1_000),
 		},
 		DeploymentAllowance: noahCoin(allowance),
 		MinimumNoahBalance:  noahCoin(floor),
@@ -55,8 +55,26 @@ func (s *KeeperTestSuite) appointCommittee(committee string, allowance, floor in
 	s.Require().NoError(s.keeper.AllowanceUsed.Set(s.ctx, math.ZeroInt()))
 }
 
+// Block time runs on its own clock, offset from height and faster than it, so a rule reading the
+// wrong one fails.
+const (
+	testGenesisTime  = 1_000_000
+	testBlockSeconds = 5
+)
+
+// blockTime is the block time, in Unix seconds, of the suite's block h.
+func blockTime(h int64) uint64 {
+	return testGenesisTime + uint64(h)*testBlockSeconds
+}
+
+// setBlockHeight moves the suite to block height at its block time.
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
+	s.atClock(height, blockTime(height))
+}
+
+// atClock sets height and block time independently.
+func (s *KeeperTestSuite) atClock(height int64, seconds uint64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(int64(seconds), 0))
 }
 
 func testAddress(seed byte) string {
@@ -106,13 +124,13 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 
 	s.Run("elapsed window is rejected", func() {
 		s.SetupTest()
-		// The window is half-open, so its expiry height is already inactive.
+		// The window is half-open, so its expiry time is already inactive.
 		s.setBlockHeight(1_000)
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationTime:      10,
-			ExpiryTime:          1_000,
+			ActivationTime:      blockTime(10),
+			ExpiryTime:          blockTime(1_000),
 			DeploymentAllowance: noahCoin(1_000),
 			MinimumNoahBalance:  noahCoin(100),
 			Destinations:        []string{destination},
@@ -125,8 +143,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           committee,
-			ActivationTime:      10,
-			ExpiryTime:          1_000,
+			ActivationTime:      blockTime(10),
+			ExpiryTime:          blockTime(1_000),
 			DeploymentAllowance: noahCoin(1_000),
 			MinimumNoahBalance:  noahCoin(100),
 			Destinations:        []string{destination},
@@ -148,8 +166,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 		_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
 			Authority:           s.authority,
 			Committee:           testAddress(3),
-			ActivationTime:      10,
-			ExpiryTime:          1_000,
+			ActivationTime:      blockTime(10),
+			ExpiryTime:          blockTime(1_000),
 			DeploymentAllowance: noahCoin(500),
 			MinimumNoahBalance:  noahCoin(0),
 			Destinations:        []string{testAddress(4)},
@@ -191,8 +209,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           testAddress(9),
 				Committee:           committee,
-				ActivationTime:      10,
-				ExpiryTime:          1_000,
+				ActivationTime:      blockTime(10),
+				ExpiryTime:          blockTime(1_000),
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -204,8 +222,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           s.authority,
-				ActivationTime:      10,
-				ExpiryTime:          1_000,
+				ActivationTime:      blockTime(10),
+				ExpiryTime:          blockTime(1_000),
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -217,8 +235,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationTime:      10,
-				ExpiryTime:          1_000,
+				ActivationTime:      blockTime(10),
+				ExpiryTime:          blockTime(1_000),
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 			},
@@ -229,8 +247,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationTime:      10,
-				ExpiryTime:          1_000,
+				ActivationTime:      blockTime(10),
+				ExpiryTime:          blockTime(1_000),
 				DeploymentAllowance: noahCoin(0),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination},
@@ -242,8 +260,8 @@ func (s *KeeperTestSuite) TestSetReserveMandate() {
 			msg: &types.MsgSetReserveMandate{
 				Authority:           s.authority,
 				Committee:           committee,
-				ActivationTime:      10,
-				ExpiryTime:          1_000,
+				ActivationTime:      blockTime(10),
+				ExpiryTime:          blockTime(1_000),
 				DeploymentAllowance: noahCoin(1_000),
 				MinimumNoahBalance:  noahCoin(0),
 				Destinations:        []string{destination, destination},
@@ -1017,6 +1035,45 @@ func (s *KeeperTestSuite) TestCorrectionRestatesWithoutErasing() {
 	s.Require().Equal(noahCoin(400), corrected.Deployed)
 }
 
+// TestCorrectPositionRejectsAnUnauthorisedSigner pins that only the authority restates through the
+// governance path, the appointed committee included, and that a refusal writes nothing.
+func (s *KeeperTestSuite) TestCorrectPositionRejectsAnUnauthorisedSigner() {
+	committee := testAddress(1)
+	destination := testAddress(2)
+
+	for _, tc := range []struct {
+		name   string
+		signer string
+	}{
+		{"the appointed committee", committee},
+		{"a stranger", testAddress(9)},
+	} {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.appointCommittee(committee, 1_000, 0, destination)
+			s.setBlockHeight(20)
+			s.fundReserve(1_000)
+			positionID := s.deploy(committee, destination, 400, 4, 0)
+			before, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+			s.Require().NoError(err)
+
+			_, err = s.msgServer.CorrectPosition(s.ctx, &types.MsgCorrectPosition{
+				Authority:  tc.signer,
+				PositionId: positionID,
+				Corrects:   s.ledgerFor(positionID)[0].EntryId,
+				Quantity:   assetCoin(40),
+				Reference:  "decimal-error",
+			})
+
+			s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+			after, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+			s.Require().NoError(err)
+			s.Require().Equal(before, after)
+			s.Require().Len(s.wholeLedger(), 1)
+		})
+	}
+}
+
 // TestClosePositionAuthority pins that either authority may close, and that
 // the ledger records which one did. Closure is safe for both because the
 // realised figure comes from proven coin movements rather than an attestation,
@@ -1451,4 +1508,136 @@ func (s *KeeperTestSuite) ledgerFor(positionID uint64) []types.AccountingEntry {
 		return false, nil
 	}))
 	return entries
+}
+
+// TestCommitteeDeployRefusesInvalidInput covers the request checks on the path coins leave custody
+// by: each is refused by name before any Bank send, and leaves nothing booked.
+func (s *KeeperTestSuite) TestCommitteeDeployRefusesInvalidInput() {
+	committee := testAddress(1)
+	destination := testAddress(2)
+
+	for _, tc := range []struct {
+		name     string
+		amount   sdk.Coin
+		acquired sdk.Coin
+		expErr   string
+	}{
+		{"zero amount", noahCoin(0), assetCoin(1), "deployment amount must be positive"},
+		{"unset amount", sdk.Coin{Denom: chain.NoahBaseDenom}, assetCoin(1), "invalid deployment amount"},
+		{"negative amount", sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}, assetCoin(1), "invalid deployment amount"},
+		{"malformed amount denomination", sdk.Coin{Denom: "1noah", Amount: math.NewInt(1)}, assetCoin(1), "invalid deployment amount"},
+		{"zero acquired holding", noahCoin(100), assetCoin(0), "acquired holding must be positive"},
+		{"unset acquired holding", noahCoin(100), sdk.Coin{Denom: testAsset}, "invalid acquired holding"},
+		{"negative acquired holding", noahCoin(100), sdk.Coin{Denom: testAsset, Amount: math.NewInt(-1)}, "invalid acquired holding"},
+		// Half a NOAH to the unit floors one unit of paper to nothing.
+		{"deployment valued at zero", paperCoin(1), assetCoin(1), "values to zero anoah"},
+	} {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.appointCommittee(committee, 1_000, 0, destination)
+			s.setBlockHeight(20)
+			s.fundReserve(5_000)
+			s.registerAsset(chain.USDBaseDenom)
+			s.fundReserveAsset(chain.USDBaseDenom, 10)
+			s.stubRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1)})
+			s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+			_, err := s.msgServer.CommitteeDeploy(s.ctx, &types.MsgCommitteeDeploy{
+				Committee: committee, ExpectedTerm: 1, Destination: destination,
+				Amount: tc.amount, Acquired: tc.acquired,
+				VenueReference: "custodian-alpha", Reference: "tx-0x01",
+			})
+
+			s.Require().ErrorContains(err, tc.expErr)
+			has, err := s.keeper.OpenPositions.Has(s.ctx, 1)
+			s.Require().NoError(err)
+			s.Require().False(has)
+			s.Require().Empty(s.wholeLedger())
+			used, err := s.keeper.AllowanceUsed.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().True(used.IsZero())
+		})
+	}
+}
+
+// TestReserveMandateWindowFollowsBlockTime pins the committee window to block time: appointment,
+// authorisation, and the queried activity follow the clock whatever the height reads, while the
+// records a deployment writes carry the height.
+func (s *KeeperTestSuite) TestReserveMandateWindowFollowsBlockTime() {
+	const activation, expiry = 500, 1_000
+	committee := testAddress(1)
+	destination := testAddress(2)
+
+	for _, tc := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		expErr  string
+	}{
+		{"appointed with height past expiry, time short of it", expiry + 500, expiry - 1, ""},
+		{"refused with time at expiry, height short of it", 1, expiry, "not after the current block time"},
+	} {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.atClock(tc.height, tc.seconds)
+			_, err := s.msgServer.SetReserveMandate(s.ctx, &types.MsgSetReserveMandate{
+				Authority:           s.authority,
+				Committee:           committee,
+				ActivationTime:      activation,
+				ExpiryTime:          expiry,
+				DeploymentAllowance: noahCoin(1_000),
+				MinimumNoahBalance:  noahCoin(0),
+				Destinations:        []string{destination},
+			})
+			if tc.expErr != "" {
+				s.Require().ErrorContains(err, tc.expErr)
+				return
+			}
+			s.Require().NoError(err)
+		})
+	}
+
+	for _, tc := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		active  bool
+	}{
+		{"height inside, time short of activation", 700, activation - 1, false},
+		{"time at activation, height short of it", 1, activation, true},
+		{"height inside, time at expiry", 700, expiry, false},
+		{"time short of expiry, height past it", expiry + 500, expiry - 1, true},
+	} {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.appointCommittee(committee, 1_000, 0, destination)
+			reserveMandate, err := s.keeper.Mandate.Get(s.ctx)
+			s.Require().NoError(err)
+			reserveMandate.ActivationTime = activation
+			reserveMandate.ExpiryTime = expiry
+			s.Require().NoError(s.keeper.Mandate.Set(s.ctx, reserveMandate))
+			s.fundReserve(5_000)
+			s.atClock(tc.height, tc.seconds)
+
+			response, err := s.queryServer.Mandate(s.ctx, &types.QueryMandateRequest{})
+			s.Require().NoError(err)
+			s.Require().Equal(tc.active, response.Active)
+
+			if !tc.active {
+				s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+				_, err := s.msgServer.CommitteeDeploy(s.ctx, &types.MsgCommitteeDeploy{
+					Committee: committee, ExpectedTerm: 1, Destination: destination,
+					Amount: noahCoin(100), Acquired: assetCoin(1),
+					VenueReference: "custodian-alpha", Reference: "tx-0x01",
+				})
+				s.Require().ErrorContains(err, "mandate is not active")
+				return
+			}
+			positionID := s.deploy(committee, destination, 100, 1, 0)
+			position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+			s.Require().NoError(err)
+			s.Require().Equal(uint64(tc.height), position.OpenedHeight)
+			s.Require().Equal(uint64(tc.height), s.ledgerFor(positionID)[0].Height)
+		})
+	}
 }

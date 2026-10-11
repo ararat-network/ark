@@ -3,10 +3,13 @@ package simulation
 import (
 	"context"
 
+	"cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/reserve/keeper"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
@@ -471,5 +474,145 @@ func MsgCommitteeReverseReturnFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*t
 			Reverses:     entry.EntryId,
 			Reference:    "sim-reverse-" + testData.Rand().StringN(8),
 		}
+	}
+}
+
+// fundTransfer draws a committee top-up of one fund. A one-unit dry run through the handler answers
+// with the shortfall it leaves, so the draw is bounded by the keeper's own shortfall and the
+// mandate floor rather than by a figure the factory recomputes.
+func fundTransfer(
+	ctx context.Context,
+	k *keeper.Keeper,
+	testData *simsx.ChainDataSource,
+	reporter simsx.SimulationReporter,
+	fund string,
+	transfer func(ctx context.Context, mandate types.ReserveMandate, amount sdk.Coin) (math.Int, error),
+) (types.ReserveMandate, simsx.SimAccount, sdk.Coin, bool) {
+	mandate, committee, ok := activeReserveCommittee(ctx, k, testData, reporter)
+	if !ok {
+		return types.ReserveMandate{}, simsx.SimAccount{}, sdk.Coin{}, false
+	}
+	cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+	left, err := transfer(cache, mandate, chain.NoahCoin(math.OneInt()))
+	if err != nil {
+		reporter.Skip(fund + " takes no committee transfer: " + err.Error())
+
+		return types.ReserveMandate{}, simsx.SimAccount{}, sdk.Coin{}, false
+	}
+
+	ceiling := left.AddRaw(1)
+	if spendable := k.ReserveBalance(ctx).Sub(mandate.MinimumNoahBalance.Amount); spendable.LT(ceiling) {
+		ceiling = spendable
+	}
+	amount, err := testData.Rand().PositiveSDKIntn(ceiling)
+	if err != nil {
+		reporter.Skip("draw transfer amount: " + err.Error())
+
+		return types.ReserveMandate{}, simsx.SimAccount{}, sdk.Coin{}, false
+	}
+
+	return mandate, committee, chain.NoahCoin(amount), true
+}
+
+// MsgCommitteeFundBufferFactory tops the Redemption Buffer up toward its target.
+func MsgCommitteeFundBufferFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeFundBuffer] {
+	server := keeper.NewMsgServerImpl(k)
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgCommitteeFundBuffer) {
+		mandate, committee, amount, ok := fundTransfer(ctx, k, testData, reporter, "the Buffer",
+			func(ctx context.Context, mandate types.ReserveMandate, amount sdk.Coin) (math.Int, error) {
+				response, err := server.CommitteeFundBuffer(ctx, &types.MsgCommitteeFundBuffer{
+					Committee: mandate.Committee, ExpectedTerm: mandate.Term, Amount: amount,
+				})
+				if err != nil {
+					return math.Int{}, err
+				}
+
+				return response.RemainingShortfall.Amount, nil
+			},
+		)
+		if !ok {
+			return nil, nil
+		}
+
+		return []simsx.SimAccount{committee}, &types.MsgCommitteeFundBuffer{
+			Committee:    mandate.Committee,
+			ExpectedTerm: mandate.Term,
+			Amount:       amount,
+		}
+	}
+}
+
+// MsgCommitteeFundInsuranceFactory tops Insurance up toward its target. It is
+// MsgCommitteeFundBufferFactory's twin.
+func MsgCommitteeFundInsuranceFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeFundInsurance] {
+	server := keeper.NewMsgServerImpl(k)
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgCommitteeFundInsurance) {
+		mandate, committee, amount, ok := fundTransfer(ctx, k, testData, reporter, "Insurance",
+			func(ctx context.Context, mandate types.ReserveMandate, amount sdk.Coin) (math.Int, error) {
+				response, err := server.CommitteeFundInsurance(ctx, &types.MsgCommitteeFundInsurance{
+					Committee: mandate.Committee, ExpectedTerm: mandate.Term, Amount: amount,
+				})
+				if err != nil {
+					return math.Int{}, err
+				}
+
+				return response.RemainingShortfall.Amount, nil
+			},
+		)
+		if !ok {
+			return nil, nil
+		}
+
+		return []simsx.SimAccount{committee}, &types.MsgCommitteeFundInsurance{
+			Committee:    mandate.Committee,
+			ExpectedTerm: mandate.Term,
+			Amount:       amount,
+		}
+	}
+}
+
+// MsgCommitteeBurnPaperFactory burns Ark-issued paper the Reserve holds. The keeper reads only NOAH
+// custody, so a paper burn cannot be sized: each registry denomination a run can carry, the launch
+// feed set, is dry-run as a one-unit burn, which the handler admits only for uncredited paper the
+// Reserve actually holds, and one admitted unit is burnt.
+func MsgCommitteeBurnPaperFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgCommitteeBurnPaper] {
+	server := keeper.NewMsgServerImpl(k)
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgCommitteeBurnPaper) {
+		mandate, committee, ok := activeReserveCommittee(ctx, k, testData, reporter)
+		if !ok {
+			return nil, nil
+		}
+
+		var burnable []*types.MsgCommitteeBurnPaper
+		for _, denom := range oracletypes.DefaultFeedDenoms {
+			msg := &types.MsgCommitteeBurnPaper{
+				Committee:    mandate.Committee,
+				ExpectedTerm: mandate.Term,
+				Amounts:      sdk.NewCoins(sdk.NewCoin(denom, math.OneInt())),
+			}
+			cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+			if _, err := server.CommitteeBurnPaper(cache, msg); err == nil {
+				burnable = append(burnable, msg)
+			}
+		}
+		if len(burnable) == 0 {
+			reporter.Skip("the Reserve holds no burnable paper")
+
+			return nil, nil
+		}
+
+		return []simsx.SimAccount{committee}, burnable[testData.Rand().IntInRange(0, len(burnable))]
 	}
 }

@@ -7,10 +7,12 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // pickAsset returns a registered asset in one of the given statuses, skipping
@@ -57,6 +59,39 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			Params:    RandomisedParams(testData.Rand().Rand),
+		}
+	}
+}
+
+// MsgRegisterAssetFactory registers a priced denomination not yet in the registry. A run's feeds are
+// the launch denominations, the only ones the Oracle's simulation adds, so those are the candidates;
+// each is dry-run against the keeper, which alone reads Bank supply, Bank metadata, and feed phase.
+func MsgRegisterAssetFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgRegisterAsset] {
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgRegisterAsset) {
+		candidates := make([]string, 0, len(oracletypes.DefaultFeedDenoms))
+		for _, denom := range oracletypes.DefaultFeedDenoms {
+			// XDR prices Market's pool and has a feed, never an asset.
+			if denom == chain.XDRBaseDenom {
+				continue
+			}
+			cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+			if err := k.RegisterAsset(cache, denom); err == nil {
+				candidates = append(candidates, denom)
+			}
+		}
+		if len(candidates) == 0 {
+			reporter.Skip("no priced denomination is free to register")
+
+			return nil, nil
+		}
+
+		return nil, &types.MsgRegisterAsset{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:     candidates[testData.Rand().IntInRange(0, len(candidates))],
 		}
 	}
 }

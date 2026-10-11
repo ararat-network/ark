@@ -329,6 +329,46 @@ func (s *KeeperTestSuite) TestCommitteeBurnPaper() {
 		})
 		s.Require().ErrorContains(err, "term")
 	})
+
+	// The committee twin of governance's request checks: each refusal names its fault and burns
+	// nothing.
+	s.Run("rejects invalid amounts", func() {
+		tests := []struct {
+			name    string
+			amounts sdk.Coins
+			want    string
+		}{
+			{name: "no coins", amounts: sdk.NewCoins(), want: "burn must name at least one coin"},
+			{name: "unset coins", amounts: nil, want: "burn must name at least one coin"},
+			{name: "zero coin", amounts: sdk.Coins{paperCoin(0)}, want: "invalid burn amounts: coin 0ausd amount is not positive"},
+			{
+				name:    "negative coin",
+				amounts: sdk.Coins{{Denom: chain.USDBaseDenom, Amount: math.NewInt(-1)}},
+				want:    "invalid burn amounts: coin -1ausd amount is not positive",
+			},
+			{
+				name:    "repeated denomination",
+				amounts: sdk.Coins{paperCoin(1), paperCoin(1)},
+				want:    "invalid burn amounts: duplicate denomination ausd",
+			},
+		}
+
+		for _, tc := range tests {
+			s.Run(tc.name, func() {
+				s.SetupTest()
+				s.appointCommittee(committee, 1_000, 0, destination)
+				s.setBlockHeight(20)
+				s.registerAsset(chain.USDBaseDenom)
+				s.fundReserveAsset(chain.USDBaseDenom, 25)
+				s.bankKeeper.EXPECT().BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+				_, err := s.msgServer.CommitteeBurnPaper(s.ctx, &types.MsgCommitteeBurnPaper{
+					Committee: committee, ExpectedTerm: 1, Amounts: tc.amounts,
+				})
+				s.Require().ErrorContains(err, tc.want)
+			})
+		}
+	})
 }
 
 // TestCommitteeBurnSurplus pins the bound that makes a supply-moving committee
@@ -393,6 +433,22 @@ func (s *KeeperTestSuite) TestCommitteeBurnSurplus() {
 			Committee: committee, ExpectedTerm: 1, Amount: noahCoin(101),
 		})
 		s.Require().ErrorContains(err, "exceeds the burnable Reserve surplus")
+	})
+
+	// Surplus above the requirement is not spendable when custody sits at or under the floor.
+	s.Run("custody at or under the floor burns nothing", func() {
+		for _, balance := range []int64{400, 300} {
+			activeCommittee(balance, 400, 0)
+
+			bound, err := s.queryServer.BurnableSurplus(s.ctx, &types.QueryBurnableSurplusRequest{})
+			s.Require().NoError(err)
+			s.Require().Equal(noahCoin(0), bound.Burnable)
+
+			_, err = s.msgServer.CommitteeBurnSurplus(s.ctx, &types.MsgCommitteeBurnSurplus{
+				Committee: committee, ExpectedTerm: 1, Amount: noahCoin(1),
+			})
+			s.Require().ErrorContains(err, "exceeds the burnable Reserve surplus 0anoah")
+		}
 	})
 
 	// A clipped stake levers the balance: its credit is its ratio of the total,

@@ -20,6 +20,7 @@ import (
 	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -49,6 +50,14 @@ type reserveFixture struct {
 	accounts  []simtypes.Account
 	rand      *rand.Rand
 	ctrl      *gomock.Controller
+	custody   *paperCustody
+}
+
+// paperCustody is the non-NOAH side of the Reserve account: the paper Bank holds for it and the
+// denominations the asset registry lists.
+type paperCustody struct {
+	held       sdk.Coins
+	registered map[string]bool
 }
 
 // reserveOption seeds fixture state a factory reads before it will emit
@@ -87,9 +96,29 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		AnyTimes()
 	bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	bankKeeper.EXPECT().BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	custody := &paperCustody{registered: map[string]bool{}}
+	// Bank refuses to burn paper the account does not hold.
+	bankKeeper.EXPECT().
+		BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, amounts sdk.Coins) error {
+			for _, coin := range amounts {
+				if coin.Denom != chain.NoahBaseDenom && custody.held.AmountOf(coin.Denom).LT(coin.Amount) {
+					return errortypes.ErrInsufficientFunds
+				}
+			}
+			return nil
+		}).
+		AnyTimes()
 	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
 	oracleKeeper.EXPECT().FeedPhase(gomock.Any(), gomock.Any()).Return(oracletypes.FeedPhaseActive, nil).AnyTimes()
+
+	assetKeeper := testutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().
+		HasAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			return custody.registered[denom], nil
+		}).
+		AnyTimes()
 
 	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
@@ -101,7 +130,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		wasmKeeper,
 		bankKeeper,
 		oracleKeeper,
-		testutil.NewMockAssetKeeper(ctrl),
+		assetKeeper,
 	)
 	require.NoError(t, k.Mandate.Set(ctx, types.DefaultReserveMandate()))
 	require.NoError(t, k.AllowanceUsed.Set(ctx, math.ZeroInt()))
@@ -132,6 +161,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		accounts:  accounts,
 		rand:      r,
 		ctrl:      ctrl,
+		custody:   custody,
 	}
 	for _, opt := range opts {
 		opt(t, &fixture)
@@ -173,6 +203,29 @@ func withTreasuryRequirement(required math.Int) reserveOption {
 
 		reader := testutil.NewMockTreasuryCapitalReader(f.ctrl)
 		reader.EXPECT().RequiredReserveCapital(gomock.Any()).Return(required, nil).AnyTimes()
+		f.keeper.SetTreasuryCapitalReader(reader)
+	}
+}
+
+// withPaper places paper in Reserve custody, listing each denomination in the registry when
+// registered is set.
+func withPaper(held sdk.Coins, registered bool) reserveOption {
+	return func(_ *testing.T, f *reserveFixture) {
+		f.custody.held = held
+		for _, coin := range held {
+			f.custody.registered[coin.Denom] = registered
+		}
+	}
+}
+
+// withFundShortfalls wires how far the Buffer and Insurance fall below their targets.
+func withFundShortfalls(buffer, insurance math.Int) reserveOption {
+	return func(t *testing.T, f *reserveFixture) {
+		t.Helper()
+
+		reader := testutil.NewMockTreasuryCapitalReader(f.ctrl)
+		reader.EXPECT().RedemptionBufferShortfall(gomock.Any()).Return(buffer, nil).AnyTimes()
+		reader.EXPECT().InsuranceShortfall(gomock.Any()).Return(insurance, nil).AnyTimes()
 		f.keeper.SetTreasuryCapitalReader(reader)
 	}
 }

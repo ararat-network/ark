@@ -7,10 +7,9 @@ import (
 
 	"cosmossdk.io/math"
 
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 func TestDefaultGenesisState(t *testing.T) {
@@ -25,9 +24,8 @@ func TestDefaultGenesisState(t *testing.T) {
 	}
 	for _, asset := range genesis.Assets {
 		require.Equal(t, assettypes.AssetStatus_ASSET_STATUS_ACTIVE, asset.Status)
-		// Launch feeds are named after their denoms, so rate-store keys are
-		// unchanged by decoupling.
-		require.Equal(t, asset.Denom, asset.Denom)
+		// Each launch asset is priced by the launch feed its denomination keys.
+		require.Equal(t, oracletypes.FeedPhaseActive, oracletypes.DefaultFeeds().Phase(asset.Denom))
 		require.Len(t, asset.Metadata.DenomUnits, 2)
 		require.Equal(t, asset.Denom, asset.Metadata.DenomUnits[0].Denom)
 		require.Zero(t, asset.Metadata.DenomUnits[0].Exponent)
@@ -99,6 +97,122 @@ func TestGenesisValidateLifecycleConsistency(t *testing.T) {
 			expectErr: "must not have a settlement plan",
 		},
 		{
+			name: "settlement plan on a suspended asset",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Status = assettypes.AssetStatus_ASSET_STATUS_SUSPENDED
+				genesis.SettlementPlans = []assettypes.SettlementPlan{testPlan(genesis.Assets[0].Denom)}
+			},
+		},
+		{
+			name: "repeated settlement plan",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Status = assettypes.AssetStatus_ASSET_STATUS_SUSPENDED
+				plan := testPlan(genesis.Assets[0].Denom)
+				genesis.SettlementPlans = []assettypes.SettlementPlan{plan, plan}
+			},
+			expectErr: "genesis settlement plans must be sorted by unique denom",
+		},
+		{
+			name: "settlement plan without an asset",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.SettlementPlans = []assettypes.SettlementPlan{testPlan("azzz")}
+			},
+			expectErr: "settlement plan azzz has no registered asset",
+		},
+		{
+			name: "resolution records sorted by denom and version",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Version = 3
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[0].Denom, 2),
+					testWriteOff(genesis.Assets[0].Denom, 3),
+					testWriteOff(genesis.Assets[1].Denom, 1),
+				}
+			},
+		},
+		{
+			name: "resolution records out of denom order",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[1].Denom, 1),
+					testWriteOff(genesis.Assets[0].Denom, 1),
+				}
+			},
+			expectErr: "genesis resolution records must be sorted by unique denom and version",
+		},
+		{
+			name: "repeated resolution record version",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Version = 3
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[0].Denom, 2),
+					testWriteOff(genesis.Assets[0].Denom, 2),
+				}
+			},
+			expectErr: "genesis resolution records must be sorted by unique denom and version",
+		},
+		{
+			name: "resolution record without an asset",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{testWriteOff("azzz", 1)}
+			},
+			expectErr: "resolution record azzz has no registered asset",
+		},
+		{
+			name: "resolution record ahead of its asset",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[0].Denom, 2),
+				}
+			},
+			expectErr: "version 2 exceeds asset version 1",
+		},
+		{
+			name: "repeated emergency suspension",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.EmergencyMandate = testAppointment()
+				genesis.EmergencySuspensions = []string{genesis.Assets[0].Denom, genesis.Assets[0].Denom}
+			},
+			expectErr: "genesis emergency suspensions must be sorted by unique denom",
+		},
+		{
+			name: "emergency suspension without an asset",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.EmergencyMandate = testAppointment()
+				genesis.EmergencySuspensions = []string{"azzz"}
+			},
+			expectErr: "emergency suspension azzz has no registered asset",
+		},
+		{
+			name: "written-off asset with its write-off record",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Status = assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF
+				genesis.Assets[0].Version = 2
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[0].Denom, 2),
+				}
+			},
+		},
+		{
+			name: "written-off asset without a write-off record",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Status = assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF
+			},
+			expectErr: "written-off asset aaud version 1 must have a matching write-off record",
+		},
+		{
+			// A reinstated and again written-off asset needs the later record.
+			name: "written-off asset with only an earlier write-off record",
+			mutate: func(genesis *assettypes.GenesisState) {
+				genesis.Assets[0].Status = assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF
+				genesis.Assets[0].Version = 4
+				genesis.ResolutionRecords = []assettypes.ResolutionRecord{
+					testWriteOff(genesis.Assets[0].Denom, 2),
+				}
+			},
+			expectErr: "written-off asset aaud version 4 must have a matching write-off record",
+		},
+		{
 			// Only a live committee records a suspension and every replacement
 			// clears them, so this pair is one no running chain can produce.
 			name: "recorded suspension under a disabled mandate",
@@ -113,11 +227,7 @@ func TestGenesisValidateLifecycleConsistency(t *testing.T) {
 			// export taken after the window closed must round-trip.
 			name: "recorded suspension under an expired appointment",
 			mutate: func(genesis *assettypes.GenesisState) {
-				appointment := assettypes.NewDisabledEmergencyMandate(1)
-				appointment.Committee = authtypes.NewModuleAddress("emergency-committee").String()
-				appointment.ActivationTime = 10
-				appointment.ExpiryTime = 20
-				genesis.EmergencyMandate = appointment
+				genesis.EmergencyMandate = testAppointment()
 				genesis.EmergencySuspensions = []string{genesis.Assets[0].Denom}
 			},
 		},

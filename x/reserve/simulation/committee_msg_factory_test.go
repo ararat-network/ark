@@ -7,6 +7,9 @@ import (
 
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/reserve/simulation"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
@@ -21,7 +24,7 @@ func requireActiveMandate(t *testing.T, f reserveFixture) types.ReserveMandate {
 
 	mandate, err := f.keeper.Mandate.Get(f.ctx)
 	require.NoError(t, err)
-	require.True(t, mandate.IsActive(uint64(f.ctx.BlockHeight())))
+	require.True(t, mandate.IsActive(chain.BlockSeconds(f.ctx)))
 
 	return mandate
 }
@@ -167,6 +170,21 @@ func TestCommitteeFactoriesSkipWithoutAnActiveMandate(t *testing.T) {
 		},
 		"reverse return": func(f reserveFixture) any {
 			_, msg := simulation.MsgCommitteeReverseReturnFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			return msg
+		},
+		"burn paper": func(f reserveFixture) any {
+			_, msg := simulation.MsgCommitteeBurnPaperFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			return msg
+		},
+		"fund buffer": func(f reserveFixture) any {
+			_, msg := simulation.MsgCommitteeFundBufferFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			return msg
+		},
+		"fund insurance": func(f reserveFixture) any {
+			_, msg := simulation.MsgCommitteeFundInsuranceFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 
 			return msg
 		},
@@ -333,4 +351,113 @@ func TestGenReserveMandateFallsBackWithoutEnoughAccounts(t *testing.T) {
 
 	require.Equal(t, types.DefaultReserveMandate(), simulation.GenReserveMandate(f.rand, nil))
 	require.Equal(t, types.DefaultReserveMandate(), simulation.GenReserveMandate(f.rand, f.addresses()[:1]))
+}
+
+// TestCommitteeFundFactories draws each top-up inside both bounds the handler applies, the fund's
+// shortfall and the mandate floor, and declines when the handler would refuse a single unit.
+func TestCommitteeFundFactories(t *testing.T) {
+	const balance = 1_000_000
+	// Each emits its factory's draw and delivers it, reporting no amount when the factory declined.
+	funds := map[string]func(f reserveFixture) (*sdk.Coin, error){
+		"buffer": func(f reserveFixture) (*sdk.Coin, error) {
+			_, msg := simulation.MsgCommitteeFundBufferFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+			if msg == nil {
+				return nil, nil
+			}
+			_, err := f.msgServer.CommitteeFundBuffer(f.ctx, msg)
+			return &msg.Amount, err
+		},
+		"insurance": func(f reserveFixture) (*sdk.Coin, error) {
+			_, msg := simulation.MsgCommitteeFundInsuranceFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+			if msg == nil {
+				return nil, nil
+			}
+			_, err := f.msgServer.CommitteeFundInsurance(f.ctx, msg)
+			return &msg.Amount, err
+		},
+	}
+	tests := []struct {
+		name      string
+		shortfall int64
+		floor     int64
+		ceiling   int64
+		skip      string
+	}{
+		{name: "bounded by the shortfall", shortfall: 300, ceiling: 300},
+		{name: "bounded by the floor", shortfall: 10 * balance, floor: balance - 40, ceiling: 40},
+		{name: "a funded target takes nothing", shortfall: 0, skip: "takes no committee transfer"},
+		{name: "custody at the floor gives nothing", shortfall: 300, floor: balance, skip: "mandate floor"},
+	}
+
+	for fund, emit := range funds {
+		for _, tc := range tests {
+			t.Run(fund+": "+tc.name, func(t *testing.T) {
+				f := newReserveFixture(t, balance, withActiveCommittee(),
+					withFundShortfalls(math.NewInt(tc.shortfall), math.NewInt(tc.shortfall)))
+				mandate := requireActiveMandate(t, f)
+				mandate.MinimumNoahBalance = chain.NoahCoin(math.NewInt(tc.floor))
+				require.NoError(t, f.keeper.Mandate.Set(f.ctx, mandate))
+
+				amount, err := emit(f)
+
+				if tc.skip != "" {
+					require.True(t, f.reporter.IsSkipped())
+					require.Contains(t, f.reporter.Comment(), tc.skip)
+					require.Nil(t, amount)
+					return
+				}
+				require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
+				require.NoError(t, err)
+				require.True(t, amount.Amount.IsPositive())
+				require.True(t, amount.Amount.LTE(math.NewInt(tc.ceiling)), "%s above %d", amount, tc.ceiling)
+			})
+		}
+	}
+
+	t.Run("skips without a Treasury reader", func(t *testing.T) {
+		f := newReserveFixture(t, balance, withActiveCommittee())
+
+		_, msg := simulation.MsgCommitteeFundBufferFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+		require.True(t, f.reporter.IsSkipped())
+		require.Contains(t, f.reporter.Comment(), "not wired")
+		require.Nil(t, msg)
+	})
+}
+
+// TestMsgCommitteeBurnPaperFactory burns a unit of held, uncredited Ark paper and declines when the
+// Reserve holds none the handler would let the committee burn.
+func TestMsgCommitteeBurnPaperFactory(t *testing.T) {
+	paper := sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 50))
+	tests := []struct {
+		name string
+		opts []reserveOption
+		skip bool
+	}{
+		{name: "burns held registry paper", opts: []reserveOption{withPaper(paper, true)}},
+		{name: "holds no paper", skip: true},
+		{name: "holds custody the registry does not list", opts: []reserveOption{withPaper(paper, false)}, skip: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newReserveFixture(t, 1_000_000, append([]reserveOption{withActiveCommittee()}, tc.opts...)...)
+			mandate := requireActiveMandate(t, f)
+
+			signers, msg := simulation.MsgCommitteeBurnPaperFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			if tc.skip {
+				require.True(t, f.reporter.IsSkipped())
+				require.Contains(t, f.reporter.Comment(), "holds no burnable paper")
+				require.Nil(t, msg)
+				return
+			}
+			require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
+			require.Len(t, signers, 1)
+			require.Equal(t, mandate.Committee, signers[0].Address.String())
+			require.Equal(t, sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1)), msg.Amounts)
+			_, err := f.msgServer.CommitteeBurnPaper(f.ctx, msg)
+			require.NoError(t, err)
+		})
+	}
 }

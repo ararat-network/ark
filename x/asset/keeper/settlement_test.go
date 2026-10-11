@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	"time"
+	"fmt"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
@@ -42,7 +42,7 @@ func (s *KeeperTestSuite) TestOpenSettlement() {
 		ActivationTime:      testSettlementActivationTime(),
 		EarliestClosingTime: testSettlementActivationTime() + 100,
 		OpenedHeight:        10,
-		OpenedTime:          10,
+		OpenedTime:          blockTime(10),
 	}, plan)
 	s.requireTypedEvents(
 		sdk.UnwrapSDKContext(s.ctx).EventManager().Events(),
@@ -196,10 +196,10 @@ func (s *KeeperTestSuite) TestCancelSettlementBeforeActivation() {
 	plan := types.SettlementPlan{
 		Denom:               asset.Denom,
 		RedemptionRate:      math.LegacyOneDec(),
-		ActivationTime:      20,
-		EarliestClosingTime: 30,
+		ActivationTime:      blockTime(20),
+		EarliestClosingTime: blockTime(30),
 		OpenedHeight:        1,
-		OpenedTime:          1,
+		OpenedTime:          blockTime(1),
 	}
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	s.Require().NoError(s.keeper.SettlementPlans.Set(
@@ -236,7 +236,7 @@ func (s *KeeperTestSuite) TestCancelSettlementBeforeActivation() {
 	)
 }
 
-// From the activation height onward the plan is a hard commitment. Cancellation
+// From the activation time onward the plan is a hard commitment. Cancellation
 // is the correction window only, so the boundary block is already too late.
 func (s *KeeperTestSuite) TestCancelSettlementRejectedFromActivation() {
 	assets := types.DefaultGenesisState().Assets
@@ -246,12 +246,12 @@ func (s *KeeperTestSuite) TestCancelSettlementRejectedFromActivation() {
 	plan := types.SettlementPlan{
 		Denom:               boundary.Denom,
 		RedemptionRate:      math.LegacyOneDec(),
-		ActivationTime:      20,
-		EarliestClosingTime: 30,
+		ActivationTime:      blockTime(20),
+		EarliestClosingTime: blockTime(30),
 		OpenedHeight:        1,
-		OpenedTime:          1,
+		OpenedTime:          blockTime(1),
 	}
-	s.at(int64(plan.ActivationTime))
+	s.at(20)
 	s.Require().NoError(s.keeper.Assets.Set(
 		s.ctx,
 		boundary.Denom,
@@ -295,10 +295,10 @@ func (s *KeeperTestSuite) TestWriteOffAsset() {
 	plan := types.SettlementPlan{
 		Denom:               asset.Denom,
 		RedemptionRate:      math.LegacyNewDecWithPrec(25, 1),
-		ActivationTime:      10,
-		EarliestClosingTime: 20,
+		ActivationTime:      blockTime(10),
+		EarliestClosingTime: blockTime(20),
 		OpenedHeight:        5,
-		OpenedTime:          5,
+		OpenedTime:          blockTime(5),
 	}
 	supply := sdk.NewInt64Coin(asset.Denom, 100)
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
@@ -472,9 +472,9 @@ func (s *KeeperTestSuite) TestResolutionRecordsAccumulateAcrossVersions() {
 }
 
 // testSettlementActivationTime returns the settlement activation time derived for a plan opened at
-// time 10, under the launch delay.
+// block 10, under the launch delay.
 func testSettlementActivationTime() uint64 {
-	return 10 + types.DefaultSettlementActivationDelay
+	return blockTime(10) + types.DefaultSettlementActivationDelay
 }
 
 // An active settlement plan prevents write-off inside its committed redemption window. Other
@@ -486,10 +486,10 @@ func (s *KeeperTestSuite) TestWriteOffHonoursCommittedWindow() {
 	plan := types.SettlementPlan{
 		Denom:               asset.Denom,
 		RedemptionRate:      math.LegacyOneDec(),
-		ActivationTime:      10,
-		EarliestClosingTime: 40,
+		ActivationTime:      blockTime(10),
+		EarliestClosingTime: blockTime(40),
 		OpenedHeight:        5,
-		OpenedTime:          5,
+		OpenedTime:          blockTime(5),
 	}
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, asset.Denom, plan))
@@ -502,7 +502,7 @@ func (s *KeeperTestSuite) TestWriteOffHonoursCommittedWindow() {
 
 		err := s.keeper.WriteOffAsset(s.ctx, asset.Denom, asset.Version)
 		s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
-		s.Require().ErrorContains(err, "committed until time 40")
+		s.Require().ErrorContains(err, fmt.Sprintf("committed until time %d", plan.EarliestClosingTime))
 	}
 	s.requireStoredAsset(
 		asset.Denom,
@@ -522,10 +522,10 @@ func (s *KeeperTestSuite) TestWriteOffAfterCommittedWindow() {
 	plan := types.SettlementPlan{
 		Denom:               asset.Denom,
 		RedemptionRate:      math.LegacyOneDec(),
-		ActivationTime:      10,
-		EarliestClosingTime: 40,
+		ActivationTime:      blockTime(10),
+		EarliestClosingTime: blockTime(40),
 		OpenedHeight:        5,
-		OpenedTime:          5,
+		OpenedTime:          blockTime(5),
 	}
 	supply := sdk.NewInt64Coin(asset.Denom, 100)
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
@@ -551,7 +551,7 @@ func (s *KeeperTestSuite) TestWriteOffAfterCommittedWindow() {
 }
 
 // A suspended asset carrying no settlement plan has no announced window to
-// honour, so write-off is unconditional on height.
+// honour, so write-off is unconditional on time.
 func (s *KeeperTestSuite) TestWriteOffAssetWithoutSettlementPlan() {
 	s.at(25)
 	asset := types.DefaultGenesisState().Assets[0]
@@ -602,10 +602,9 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 
 	// Well inside the committed window, which recovery is exempt from. The
 	// event manager is reset so the assertion below sees only recovery's own.
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).
-		WithBlockHeight(int64(activation + 1)).
-		WithBlockTime(time.Unix(int64(activation+1), 0)).
-		WithEventManager(sdk.NewEventManager())
+	const recoveryHeight = 11
+	s.atClock(recoveryHeight, activation+1)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithEventManager(sdk.NewEventManager())
 	s.Require().NoError(s.keeper.RecoverAsset(
 		s.ctx,
 		asset.Denom,
@@ -630,7 +629,7 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        asset.Version + 2,
-			ClosedHeight:   activation + 1,
+			ClosedHeight:   recoveryHeight,
 		},
 	)
 }
@@ -646,10 +645,10 @@ func (s *KeeperTestSuite) TestFinaliseRetirementClosesSpentSettlement() {
 	plan := types.SettlementPlan{
 		Denom:               asset.Denom,
 		RedemptionRate:      math.LegacyOneDec(),
-		ActivationTime:      10,
-		EarliestClosingTime: 40,
+		ActivationTime:      blockTime(10),
+		EarliestClosingTime: blockTime(40),
 		OpenedHeight:        5,
-		OpenedTime:          5,
+		OpenedTime:          blockTime(5),
 	}
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, asset.Denom, plan))
@@ -675,7 +674,7 @@ func (s *KeeperTestSuite) TestFinaliseRetirementClosesSpentSettlement() {
 
 // TestOpenSettlementDelayFollowsParams proves the correction window is the
 // parameter and not the launch constant: a shortened delay activates the plan
-// that many blocks out, well before the launch delay would have reached.
+// that many seconds out, well before the launch delay would have reached.
 func (s *KeeperTestSuite) TestOpenSettlementDelayFollowsParams() {
 	const openHeight = 10
 
@@ -697,13 +696,107 @@ func (s *KeeperTestSuite) TestOpenSettlementDelayFollowsParams() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		openHeight+200,
+		blockTime(openHeight)+200,
 	))
 
 	plan, err := s.keeper.SettlementPlans.Get(s.ctx, asset.Denom)
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(openHeight+100), plan.ActivationTime)
+	s.Require().Equal(blockTime(openHeight)+100, plan.ActivationTime)
 	// The launch delay would have put activation far beyond this, so only the
 	// configured one can have produced it.
 	s.Require().Less(plan.ActivationTime, testSettlementActivationTime())
+}
+
+// TestSettlementActivationFollowsBlockTime pins activation to block time: the redemption gate and
+// the cancellation window follow the clock whatever the height reads.
+func (s *KeeperTestSuite) TestSettlementActivationFollowsBlockTime() {
+	const activation = 500
+	assets := types.DefaultGenesisState().Assets
+
+	for i, test := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		active  bool
+	}{
+		{"height past activation, time short of it", activation + 100, activation - 1, false},
+		{"time at activation, height short of it", activation - 100, activation, true},
+	} {
+		s.Run(test.name, func() {
+			asset := assets[i]
+			asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
+			asset.Version = 2
+			s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
+			s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, asset.Denom, types.SettlementPlan{
+				Denom:               asset.Denom,
+				RedemptionRate:      math.LegacyOneDec(),
+				ActivationTime:      activation,
+				EarliestClosingTime: activation + 100,
+				OpenedHeight:        1,
+				OpenedTime:          1,
+			}))
+			s.atClock(test.height, test.seconds)
+
+			_, active, err := s.keeper.ActiveSettlementPlan(s.ctx, asset.Denom)
+			s.Require().NoError(err)
+			s.Require().Equal(test.active, active)
+
+			err = s.keeper.CancelSettlement(s.ctx, asset.Denom, asset.Version)
+			if test.active {
+				s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
+				s.Require().ErrorContains(err, "can no longer be cancelled")
+				return
+			}
+			s.Require().NoError(err)
+		})
+	}
+}
+
+// TestWriteOffClosingFollowsBlockTime pins the committed window to block time, and the record to
+// the height it was written at.
+func (s *KeeperTestSuite) TestWriteOffClosingFollowsBlockTime() {
+	const closing = 500
+	assets := types.DefaultGenesisState().Assets
+
+	for i, test := range []struct {
+		name    string
+		height  int64
+		seconds uint64
+		closed  bool
+	}{
+		{"height past closing, time short of it", closing + 100, closing - 1, false},
+		{"time at closing, height short of it", closing - 100, closing, true},
+	} {
+		s.Run(test.name, func() {
+			asset := assets[i]
+			asset.Status = types.AssetStatus_ASSET_STATUS_SUSPENDED
+			asset.Version = 2
+			s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
+			s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, asset.Denom, types.SettlementPlan{
+				Denom:               asset.Denom,
+				RedemptionRate:      math.LegacyOneDec(),
+				ActivationTime:      closing - 100,
+				EarliestClosingTime: closing,
+				OpenedHeight:        1,
+				OpenedTime:          1,
+			}))
+			s.atClock(test.height, test.seconds)
+			s.bankKeeper.EXPECT().
+				GetSupply(s.ctx, asset.Denom).
+				Return(sdk.NewInt64Coin(asset.Denom, 100))
+
+			err := s.keeper.WriteOffAsset(s.ctx, asset.Denom, asset.Version)
+			if !test.closed {
+				s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
+				s.Require().ErrorContains(err, "committed until time 500")
+				s.requireStoredAsset(asset.Denom, types.AssetStatus_ASSET_STATUS_SUSPENDED, asset.Version)
+				return
+			}
+			s.Require().NoError(err)
+			s.requireStoredAsset(asset.Denom, types.AssetStatus_ASSET_STATUS_WRITTEN_OFF, asset.Version+1)
+			record, err := s.keeper.ResolutionRecords.Get(s.ctx, collections.Join(asset.Denom, asset.Version+1))
+			s.Require().NoError(err)
+			s.Require().Equal(uint64(test.height), record.ResolutionHeight)
+		})
+	}
 }

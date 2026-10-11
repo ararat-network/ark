@@ -95,9 +95,14 @@ func (stubWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool { re
 // stubUpgradeKeeper serves one optional pending plan.
 type stubUpgradeKeeper struct {
 	plan *upgradetypes.Plan
+	// err, when set, fails the read, standing in for a store fault.
+	err error
 }
 
 func (s *stubUpgradeKeeper) GetUpgradePlan(context.Context) (upgradetypes.Plan, error) {
+	if s.err != nil {
+		return upgradetypes.Plan{}, s.err
+	}
 	if s.plan == nil {
 		return upgradetypes.Plan{}, upgradetypes.ErrNoUpgradePlanFound
 	}
@@ -243,4 +248,39 @@ func (s *KeeperTestSuite) TestDispatchFailuresSurface() {
 		s.Require().NoError(recordErr)
 		s.Require().True(record.IsZero())
 	})
+
+	// A refused cancel leaves the committee's claim on the plan it still holds.
+	cancelFailures := []struct {
+		name   string
+		fail   func()
+		expErr string
+	}{
+		{"cancel target unroutable", func() { s.router.unroutable = true }, "no handler registered for /cosmos.upgrade.v1beta1.MsgCancelUpgrade"},
+		{"cancel target rejects", func() { s.router.err = errors.New("upgrade store unavailable") }, "dispatching /cosmos.upgrade.v1beta1.MsgCancelUpgrade: upgrade store unavailable"},
+	}
+	for _, tc := range cancelFailures {
+		s.Run(tc.name, func() {
+			record := types.CommitteePlan{Name: committeeUpgradeName, Height: 200, Term: 1}
+			s.upgrade.plan = &upgradetypes.Plan{Name: committeeUpgradeName, Height: 200}
+			s.Require().NoError(s.keeper.CommitteePlan.Set(s.ctx, record))
+			ctx := s.ctx.WithEventManager(sdk.NewEventManager())
+			tc.fail()
+			defer func() {
+				s.router.unroutable = false
+				s.router.err = nil
+				s.upgrade.plan = nil
+			}()
+
+			_, err := s.msgServer.CommitteeCancelUpgrade(ctx, &types.MsgCommitteeCancelUpgrade{
+				Committee:    s.committee,
+				ExpectedTerm: 1,
+			})
+
+			s.Require().ErrorContains(err, tc.expErr)
+			stored, getErr := s.keeper.CommitteePlan.Get(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().Equal(record, stored)
+			s.Require().Empty(ctx.EventManager().Events())
+		})
+	}
 }
