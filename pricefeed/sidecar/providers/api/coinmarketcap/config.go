@@ -30,11 +30,15 @@ const (
 	QuoteCurrency = "USD"
 )
 
+// DefaultInterval fits the free Basic plan: 288 calls a day under its 333,
+// at one credit per call of up to 100 ids.
+const DefaultInterval = 5 * time.Minute
+
 // DefaultAPIConfig is the default configuration for the CoinMarketCap API.
 var DefaultAPIConfig = api.Config{
 	Name:              Name,
 	Timeout:           3000 * time.Millisecond,
-	Interval:          2000 * time.Millisecond,
+	Interval:          DefaultInterval,
 	RequestsPerSecond: 0,
 	Endpoints: []types.Endpoint{{
 		URL: URL,

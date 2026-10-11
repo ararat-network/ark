@@ -11,9 +11,12 @@ symbols through `Markets`; the adapter does not perform denom conversion itself.
 
 ## Request Shape
 
-`Handler.BatchTickers` groups requested symbols and `Handler.CreateURL` encodes a batch into Binance's `symbols`
-query parameter. A request for `BTCUSDT` and
-`ETHUSDT` becomes a single ticker-price request containing both symbols.
+`Handler.BatchTickers` groups requested symbols and `Handler.CreateURL` sets a batch as a JSON array in the configured
+endpoint's `symbols` query parameter, so an override such as `https://api.binance.us/api/v3/ticker/price` is a plain
+URL. A request for `BTCUSDT` and `ETHUSDT` becomes a single ticker-price request containing both symbols. Binance answers
+a batch naming one symbol it does not list with HTTP 400 (`-1121 Invalid symbol`) for the whole request; the
+[shared fetcher](../../base/README.md#failed-fetches) then asks for each symbol alone and requests the batch without the
+refused one.
 
 `Handler.ParseResponse` only accepts prices for the requested tickers. Missing, malformed, or unexpected values are
 returned as unresolved ticker errors so the shared provider runtime can record the outcome without confusing missing data

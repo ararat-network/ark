@@ -29,6 +29,8 @@ type (
 	Data struct {
 		// Amount is the spot price in the quote currency.
 		Amount string `json:"amount"`
+		// Base is the currency priced.
+		Base string `json:"base"`
 		// Currency is the quote currency.
 		Currency string `json:"currency"`
 	}

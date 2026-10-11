@@ -51,6 +51,9 @@ func (h *Handler) CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (st
 	}
 	query := parsedURL.Query()
 	query.Set("id", strings.Join(ids, ","))
+	// Without it one id CoinMarketCap no longer lists refuses the whole
+	// request; with it the id is left out and goes unresolved alone.
+	query.Set("skip_invalid", "true")
 	parsedURL.RawQuery = query.Encode()
 
 	return parsedURL.String(), nil

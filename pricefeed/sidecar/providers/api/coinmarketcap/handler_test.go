@@ -65,6 +65,7 @@ func TestCreateURL(t *testing.T) {
 			require.Equal(t, "pro-api.coinmarketcap.com", parsed.Host)
 			require.Equal(t, "/v2/cryptocurrency/quotes/latest", parsed.Path)
 			require.Equal(t, tt.wantID, parsed.Query().Get("id"))
+			require.Equal(t, "true", parsed.Query().Get("skip_invalid"))
 		})
 	}
 }

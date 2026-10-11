@@ -7,6 +7,10 @@ is an aggregator, not a venue; treat it as a secondary source.
 in the `X-CMC_PRO_API_KEY` header through endpoint authentication. The default config ships a placeholder key that must
 be replaced before the provider can fetch anything.
 
+The default five-minute interval fits the free Basic plan's daily credits, at one credit per call of up to 100 ids.
+A paid plan can poll down to 60 seconds, the endpoint's own refresh cadence; anything faster re-reads the same cached
+quote. Set `max_price_age` above the interval.
+
 ## Symbol Format
 
 A provider symbol is the CoinMarketCap numeric id of the asset, such as `825` for Tether or `1` for Bitcoin. Every
@@ -15,7 +19,9 @@ denom conversion itself.
 
 ## Request Shape
 
-`Handler.CreateURL` joins the requested ids into the `id` query parameter, so a batch is one request.
+`Handler.CreateURL` joins the requested ids into the `id` query parameter, so a batch is one request. It sets
+`skip_invalid=true`: an id CoinMarketCap no longer lists is left out of the answer and goes unresolved alone instead of
+refusing the batch.
 `Handler.ParseResponse` reads `data.<id>.quote.USD.price`, decoded as a JSON number and kept as text. A non-zero
 `status.error_code` fails every ticker in the batch with the venue's message; missing or malformed values are returned
 as unresolved ticker errors.

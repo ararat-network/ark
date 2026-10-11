@@ -91,7 +91,7 @@ func TestParseResponse(t *testing.T) {
 		{
 			name:      "resolves the spot amount",
 			tickers:   []types.Ticker{"USDT-USD"},
-			body:      `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:      `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantPrice: "1.0001",
 		},
 		{
@@ -99,25 +99,37 @@ func TestParseResponse(t *testing.T) {
 			// means the wrong product was priced.
 			name:     "quoted in another currency is invalid",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"amount":"0.9","currency":"EUR"}}`,
+			body:     `{"data":{"amount":"0.9","base":"USDT","currency":"EUR"}}`,
+			wantCode: types.ErrorInvalidResponse,
+		},
+		{
+			name:     "another base is invalid",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"data":{"amount":"67000.12","base":"BTC","currency":"USD"}}`,
+			wantCode: types.ErrorInvalidResponse,
+		},
+		{
+			name:     "missing base is invalid",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
 			wantCode: types.ErrorInvalidResponse,
 		},
 		{
 			name:     "malformed ticker",
 			tickers:  []types.Ticker{"USDTUSD"},
-			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:     `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorUnknownPair,
 		},
 		{
 			name:     "missing amount is no response",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"currency":"USD"}}`,
+			body:     `{"data":{"base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorNoResponse,
 		},
 		{
 			name:     "unparseable amount",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"amount":"not-a-price","currency":"USD"}}`,
+			body:     `{"data":{"amount":"not-a-price","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorFailedToParsePrice,
 		},
 		{
@@ -138,7 +150,7 @@ func TestParseResponse(t *testing.T) {
 			// the whole batch is refused rather than guessed at.
 			name:     "more than one ticker is invalid",
 			tickers:  []types.Ticker{"USDT-USD", "BTC-USD"},
-			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:     `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorInvalidResponse,
 		},
 	}

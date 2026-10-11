@@ -13,8 +13,8 @@ symbols through `Markets`; the adapter does not perform denom conversion itself.
 
 The spot endpoint prices one product per request, so `Handler.BatchTickers` puts each ticker in its own request
 whatever the configured batch size, and `Handler.CreateURL` appends `/<product>/spot` to the configured endpoint.
-`Handler.ParseResponse` reads `data.amount` and requires `data.currency` to be the product's quote, so a response for
-the wrong product is refused. The public v2 API allows 10,000 requests per hour per IP; the default
+`Handler.ParseResponse` reads `data.amount` and requires `data.base` and `data.currency` to be the product's base and
+quote, so a response for the wrong product is refused. The public v2 API allows 10,000 requests per hour per IP; the default
 interval polls each product once a second, so size the market set accordingly.
 
 ## Market Checks

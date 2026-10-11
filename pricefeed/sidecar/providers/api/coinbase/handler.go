@@ -39,7 +39,7 @@ func (h *Handler) CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (st
 	if len(tickers) != 1 {
 		return "", fmt.Errorf("expected 1 ticker, got %d", len(tickers))
 	}
-	if _, err := quoteCurrency(tickers[0]); err != nil {
+	if _, _, err := productCurrencies(tickers[0]); err != nil {
 		return "", err
 	}
 
@@ -47,7 +47,7 @@ func (h *Handler) CreateURL(endpoint types.Endpoint, tickers []types.Ticker) (st
 }
 
 // ParseResponse parses the spot price response for the single requested
-// product. The response must be quoted in the product's quote currency.
+// product. The response must price the product's base in its quote.
 func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) types.Response {
 	if len(tickers) != 1 {
 		return types.NewErrorResponse(
@@ -81,18 +81,21 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 	}
 
 	ticker := tickers[0]
-	quote, err := quoteCurrency(ticker)
+	base, quote, err := productCurrencies(ticker)
 	if err != nil {
 		return types.NewErrorResponse(
 			tickers,
 			types.NewErrorWithCode(err, types.ErrorUnknownPair),
 		)
 	}
-	if !strings.EqualFold(result.Data.Currency, quote) {
+	if !strings.EqualFold(result.Data.Base, base) || !strings.EqualFold(result.Data.Currency, quote) {
 		return types.NewErrorResponse(
 			tickers,
 			types.NewErrorWithCode(
-				fmt.Errorf("spot price for %s is quoted in %q, expected %s", ticker, result.Data.Currency, quote),
+				fmt.Errorf(
+					"spot price for %s is %q in %q, expected %s in %s",
+					ticker, result.Data.Base, result.Data.Currency, base, quote,
+				),
 				types.ErrorInvalidResponse,
 			),
 		)
@@ -119,11 +122,11 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 	)
 }
 
-// quoteCurrency returns the quote of a BASE-QUOTE product.
-func quoteCurrency(ticker types.Ticker) (string, error) {
+// productCurrencies returns the base and quote of a BASE-QUOTE product.
+func productCurrencies(ticker types.Ticker) (string, string, error) {
 	base, quote, ok := strings.Cut(string(ticker), ProductSeparator)
 	if !ok || base == "" || quote == "" {
-		return "", fmt.Errorf("ticker %q is not in BASE-QUOTE form", ticker)
+		return "", "", fmt.Errorf("ticker %q is not in BASE-QUOTE form", ticker)
 	}
-	return quote, nil
+	return base, quote, nil
 }
