@@ -53,18 +53,47 @@ type SubscribeMessageRequest struct {
 	ID int64 `json:"id"`
 }
 
-// SubscribeMessageResponse matches its request by ID. A null result indicates successful
-// subscription; see README.md for the wire contract.
+// SubscribeMessageResponse matches its request by ID. A null result and no
+// error is a successful subscription; Binance reports a refusal as a code and
+// message, nested under error or at the top level. See README.md for the wire
+// contract.
 type SubscribeMessageResponse struct {
 	// Result is the result of the subscription.
 	Result any `json:"result"`
 	// ID is the unique identifier for the message.
 	ID int64 `json:"id"`
+	// Error is a refusal in the nested form.
+	Error *ErrorResponse `json:"error"`
+	// Code is a refusal's code in the top-level form.
+	Code int `json:"code"`
+	// Message is a refusal's message in the top-level form.
+	Message string `json:"msg"`
+}
+
+// ErrorResponse is the code and message of a refused request.
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"msg"`
 }
 
 // IsEmpty returns true if no data has been set for the message.
 func (m *SubscribeMessageResponse) IsEmpty() bool {
-	return m.ID == 0 && m.Result == nil
+	return m.ID == 0 && m.Result == nil && m.Error == nil && m.Message == ""
+}
+
+// Refusal returns why the request was refused, if it was. A non-null result
+// is refused too: Binance answers a subscription with null.
+func (m *SubscribeMessageResponse) Refusal() (ErrorResponse, bool) {
+	switch {
+	case m.Error != nil:
+		return *m.Error, true
+	case m.Message != "":
+		return ErrorResponse{Code: m.Code, Message: m.Message}, true
+	case m.Result != nil:
+		return ErrorResponse{Message: fmt.Sprintf("unexpected result %v", m.Result)}, true
+	default:
+		return ErrorResponse{}, false
+	}
 }
 
 // StreamMessageResponse wraps combined-stream payloads with stream and data fields. See README.md
@@ -91,6 +120,8 @@ type AggregatedTradeMessageResponse struct {
 		Ticker string `json:"s"`
 		// Price is the price.
 		Price string `json:"p"`
+		// LastTradeID is the last trade the aggregate covers.
+		LastTradeID int64 `json:"l"`
 	} `json:"data"`
 }
 
@@ -102,11 +133,13 @@ type TickerMessageResponse struct {
 		Ticker string `json:"s"`
 		// LastPrice is the last price.
 		LastPrice string `json:"c"`
-		// StatisticsCloseTime is the statistics close time.
-		//
-		// Note: This is unused but is included since json.Unmarshal requires all fields with same character but different casing
-		// to be present.
-		StatisticsCloseTime int64 `json:"C"`
+		// LastTradeID is the trade LastPrice comes from.
+		LastTradeID int64 `json:"L"`
+		// StatisticsCloseTime and LowPrice are unused, but json.Unmarshal
+		// matches keys case-insensitively, so C and l would otherwise
+		// decode into LastPrice and LastTradeID.
+		StatisticsCloseTime int64  `json:"C"`
+		LowPrice            string `json:"l"`
 	} `json:"data"`
 }
 

@@ -111,8 +111,9 @@ func TestHeartBeatMessagesAreNil(t *testing.T) {
 }
 
 // TestHandleMessageSubscriptionResponses covers the correlation half of the
-// protocol: a failed subscription must re-subscribe the same symbols, and a
-// response nobody asked for must not be silently accepted.
+// protocol: a refused subscription publishes its symbols unresolved rather
+// than resubscribing, and a response nobody asked for must not be silently
+// accepted.
 func TestHandleMessageSubscriptionResponses(t *testing.T) {
 	t.Run("success returns no follow-up", func(t *testing.T) {
 		handler := newSubscribedHandler(t, "BTCUSDT")
@@ -125,16 +126,33 @@ func TestHandleMessageSubscriptionResponses(t *testing.T) {
 		require.Empty(t, resp.Unresolved)
 	})
 
-	t.Run("failure re-subscribes the same symbols", func(t *testing.T) {
+	for _, refusal := range []struct {
+		name    string
+		message string
+	}{
+		{name: "nested error", message: `{"error":{"code":2,"msg":"Invalid request: invalid stream"},"id":1}`},
+		{name: "top-level error", message: `{"code":2,"msg":"Invalid request: invalid stream","id":1}`},
+		{name: "unexpected result", message: `{"result":"error","id":1}`},
+	} {
+		t.Run("refusal as "+refusal.name+" publishes the symbols unresolved", func(t *testing.T) {
+			handler := newSubscribedHandler(t, "BTCUSDT")
+
+			resp, toSend, err := handler.HandleMessage([]byte(refusal.message))
+
+			require.NoError(t, err)
+			require.Nil(t, toSend)
+			require.Empty(t, resp.Resolved)
+			require.Len(t, resp.Unresolved, 1)
+			require.Equal(t, types.ErrorInvalidWebSocketTopic, resp.Unresolved["BTCUSDT"].Code())
+		})
+	}
+
+	t.Run("refusal of an unknown id is an error", func(t *testing.T) {
 		handler := newSubscribedHandler(t, "BTCUSDT")
 
-		_, toSend, err := handler.HandleMessage([]byte(`{"result":"error","id":1}`))
+		_, _, err := handler.HandleMessage([]byte(`{"code":2,"msg":"Invalid request: invalid stream","id":99}`))
 
-		require.NoError(t, err)
-		require.Len(t, toSend, 1)
-		var request SubscribeMessageRequest
-		require.NoError(t, json.Unmarshal(toSend[0], &request))
-		require.Equal(t, []string{"btcusdt@aggTrade", "btcusdt@ticker"}, request.Params)
+		require.ErrorContains(t, err, "binance refused request 99: 2 Invalid request: invalid stream")
 	})
 
 	t.Run("unknown id is an error", func(t *testing.T) {
@@ -144,6 +162,38 @@ func TestHandleMessageSubscriptionResponses(t *testing.T) {
 
 		require.ErrorContains(t, err, "failed to find instruments for message ID 99")
 	})
+}
+
+// TestTickerCannotRollBackANewerTrade pins the ordering between Binance's two
+// streams: a ticker push whose last trade is behind one already published is
+// dropped, while one carrying the same or a newer trade resolves.
+func TestTickerCannotRollBackANewerTrade(t *testing.T) {
+	handler := newSubscribedHandler(t, "BTCUSDT")
+	send := func(message string) types.Response {
+		t.Helper()
+		resp, _, err := handler.HandleMessage([]byte(message))
+		require.NoError(t, err)
+		return resp
+	}
+	price := func(resp types.Response) string {
+		t.Helper()
+		result, ok := resp.Resolved["BTCUSDT"]
+		require.True(t, ok)
+		return result.Price.Text('f', -1)
+	}
+
+	require.Equal(t, "2", price(send(`{"stream":"btcusdt@aggTrade","data":{"s":"BTCUSDT","p":"2","l":200}}`)))
+	require.True(t, send(`{"stream":"btcusdt@ticker","data":{"s":"BTCUSDT","c":"1","L":199,"l":"0.5","C":1}}`).Empty())
+	require.Equal(t, "2", price(send(`{"stream":"btcusdt@ticker","data":{"s":"BTCUSDT","c":"2","L":200,"l":"0.5","C":1}}`)))
+	require.Equal(t, "3", price(send(`{"stream":"btcusdt@ticker","data":{"s":"BTCUSDT","c":"3","L":201,"l":"0.5","C":1}}`)))
+	require.True(t, send(`{"stream":"btcusdt@aggTrade","data":{"s":"BTCUSDT","p":"2.5","l":200}}`).Empty())
+
+	fresh := handler.Copy()
+	_, err := fresh.CreateMessages([]types.Ticker{"BTCUSDT"})
+	require.NoError(t, err)
+	resp, _, err := fresh.HandleMessage([]byte(`{"stream":"btcusdt@aggTrade","data":{"s":"BTCUSDT","p":"2.5","l":150}}`))
+	require.NoError(t, err)
+	require.Equal(t, "2.5", price(resp))
 }
 
 // TestHandleMessagePriceUpdates is the path that feeds the oracle. Both stream
@@ -158,12 +208,12 @@ func TestHandleMessagePriceUpdates(t *testing.T) {
 	}{
 		{
 			name:      "ticker stream resolves the last price",
-			message:   `{"stream":"btcusdt@ticker","data":{"s":"BTCUSDT","c":"67734.00000000","C":1716915868145}}`,
+			message:   `{"stream":"btcusdt@ticker","data":{"s":"BTCUSDT","c":"67734.00000000","C":1716915868145,"L":12,"l":"66000.00000000"}}`,
 			wantPrice: "67734",
 		},
 		{
 			name:      "aggregate trade stream resolves the trade price",
-			message:   `{"stream":"btcusdt@aggTrade","data":{"s":"BTCUSDT","p":"67734.50000000"}}`,
+			message:   `{"stream":"btcusdt@aggTrade","data":{"s":"BTCUSDT","p":"67734.50000000","l":12}}`,
 			wantPrice: "67734.5",
 		},
 		{
@@ -231,6 +281,8 @@ func TestSubscribeMessageResponseIsEmpty(t *testing.T) {
 		{name: "zero value", message: SubscribeMessageResponse{}, want: true},
 		{name: "id set", message: SubscribeMessageResponse{ID: 1}},
 		{name: "result set", message: SubscribeMessageResponse{Result: "error"}},
+		{name: "nested error set", message: SubscribeMessageResponse{Error: &ErrorResponse{Code: 2}}},
+		{name: "top-level error set", message: SubscribeMessageResponse{Message: "Invalid request"}},
 	}
 
 	for _, tt := range tests {

@@ -96,6 +96,21 @@ func NewResult(price *big.Float, timestamp time.Time) Result {
 	}
 }
 
+// NewObservedResult returns a result received at timestamp for a price the venue
+// observed at observed, such as a match's trade time. A venue clock ahead of
+// this one is clamped, so a price is never observed after it arrived.
+func NewObservedResult(price *big.Float, timestamp, observed time.Time) Result {
+	if observed.After(timestamp) {
+		observed = timestamp
+	}
+
+	return Result{
+		Price:        price,
+		Timestamp:    timestamp,
+		LastObserved: observed,
+	}
+}
+
 // NewUnchangedResult returns a result indicating that the previous price remains valid.
 func NewUnchangedResult(timestamp time.Time) Result {
 	return Result{

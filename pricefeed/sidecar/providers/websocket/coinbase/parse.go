@@ -15,7 +15,9 @@ import (
 )
 
 // parseTickerMessage converts a match into a provider response and records
-// its trade id for the heartbeats that follow.
+// its trade id for the heartbeats that follow. The price is observed when it
+// traded: the ticker Coinbase sends on subscribe repeats the last match,
+// however old, and must not pass as a fresh one.
 func (h *Handler) parseTickerMessage(msg TickerResponseMessage) (types.Response, error) {
 	resolved := make(map[types.Ticker]types.Result)
 	unresolved := make(map[types.Ticker]types.ErrorWithCode)
@@ -36,9 +38,17 @@ func (h *Handler) parseTickerMessage(msg TickerResponseMessage) (types.Response,
 		unresolved[ticker] = types.NewErrorWithCode(err, types.ErrorFailedToParsePrice)
 		return types.NewResponse(resolved, unresolved), nil
 	}
+	traded, err := time.Parse(time.RFC3339Nano, msg.Time)
+	if err != nil {
+		unresolved[ticker] = types.NewErrorWithCode(
+			fmt.Errorf("invalid match time %q: %w", msg.Time, err),
+			types.ErrorInvalidResponse,
+		)
+		return types.NewResponse(resolved, unresolved), nil
+	}
 
 	h.tradeIDs[ticker] = msg.TradeID
-	resolved[ticker] = types.NewResult(price, time.Now().UTC())
+	resolved[ticker] = types.NewObservedResult(price, time.Now().UTC(), traded.UTC())
 	return types.NewResponse(resolved, unresolved), nil
 }
 

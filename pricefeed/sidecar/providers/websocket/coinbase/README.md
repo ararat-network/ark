@@ -12,15 +12,17 @@ Products use the `BASE-QUOTE` form, such as `USDT-USD`. The subscribe message mu
 connecting. The handler processes:
 
 - `subscriptions` listings of the channels held
-- `error` notices, reported with the venue's reason
-- `ticker` matches, whose `price` is the observation; the `trade_id` is recorded for the heartbeats that follow
+- `error` notices, logged as a warning with the venue's reason
+- `ticker` matches, whose `price` is the observation, observed at the match's `time` (never later than its arrival);
+  the `trade_id` is recorded for the heartbeats that follow. The ticker Coinbase sends on subscribe repeats the last
+  match however old, so it ages from its trade rather than passing as fresh; a ticker without a parseable `time` is
+  refused
 - `heartbeat` messages, sent every second per product; one whose `last_trade_id` matches the last match seen resolves
   an unchanged result, which the provider's `max_unchanged_age` decides whether to honour, and one naming another
   trade means a match was missed
 
 Every message carries a `sequence`; a message older than the last seen for its product is refused so a late match
-cannot roll a price back. Upstream's heartbeat result carried the last price again; the unchanged result here carries
-none, so the runtime bounds how long a heartbeat may extend a price.
+cannot roll a price back.
 
 ## Session State
 

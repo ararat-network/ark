@@ -3,6 +3,7 @@ package coinbase_test
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -105,7 +106,7 @@ func TestHandleMessage(t *testing.T) {
 	}{
 		{
 			name:      "ticker resolves the price",
-			message:   `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5}`,
+			message:   `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`,
 			wantPrice: "1.0001",
 		},
 		{
@@ -118,8 +119,14 @@ func TestHandleMessage(t *testing.T) {
 			errContains: "coinbase error: Failed to subscribe: NOPE-USD is not a valid product",
 		},
 		{
+			// A match without its trade time cannot be aged, so it fails closed.
+			name:        "missing match time is unresolved",
+			message:     `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5}`,
+			wantErrCode: types.ErrorInvalidResponse,
+		},
+		{
 			name:        "unparseable price is unresolved",
-			message:     `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"x","trade_id":5}`,
+			message:     `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"x","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`,
 			wantErrCode: types.ErrorFailedToParsePrice,
 		},
 		{
@@ -131,7 +138,7 @@ func TestHandleMessage(t *testing.T) {
 		},
 		{
 			name:        "unsubscribed product is refused",
-			message:     `{"type":"ticker","sequence":10,"product_id":"LTC-USD","price":"70.5","trade_id":5}`,
+			message:     `{"type":"ticker","sequence":10,"product_id":"LTC-USD","price":"70.5","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`,
 			errContains: "unsupported market LTC-USD",
 		},
 		{
@@ -176,13 +183,47 @@ func TestHandleMessage(t *testing.T) {
 	}
 }
 
+// TestTickerIsObservedWhenItTraded pins that a match counts as observed when
+// it traded, not when it arrived: the ticker Coinbase sends on subscribe
+// repeats the last match, however old, and must age from its trade. A venue
+// clock ahead of this one never dates a match after its arrival.
+func TestTickerIsObservedWhenItTraded(t *testing.T) {
+	tests := []struct {
+		name   string
+		traded time.Time
+		future bool
+	}{
+		{name: "old match on subscribe", traded: time.Now().UTC().Add(-40 * time.Minute)},
+		{name: "venue clock ahead", traded: time.Now().UTC().Add(time.Hour), future: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := newSubscribedHandler(t, "USDT-USD")
+			message := `{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5,"time":"` +
+				tt.traded.Format(time.RFC3339Nano) + `"}`
+
+			resp, _, err := handler.HandleMessage([]byte(message))
+			require.NoError(t, err)
+			result, ok := resp.Resolved["USDT-USD"]
+			require.True(t, ok)
+			require.WithinDuration(t, time.Now(), result.Timestamp, time.Minute)
+			if tt.future {
+				require.True(t, result.LastObserved.Equal(result.Timestamp))
+				return
+			}
+			require.True(t, result.LastObserved.Equal(tt.traded))
+		})
+	}
+}
+
 // TestHeartbeatConfirmsTheLastMatch covers the unchanged path: a heartbeat
 // naming the last seen trade confirms the price; one naming another trade
 // means a match was missed.
 func TestHeartbeatConfirmsTheLastMatch(t *testing.T) {
 	handler := newSubscribedHandler(t, "USDT-USD")
 
-	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5}`))
+	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`))
 	require.NoError(t, err)
 
 	resp, _, err := handler.HandleMessage([]byte(`{"type":"heartbeat","sequence":11,"last_trade_id":5,"product_id":"USDT-USD"}`))
@@ -203,10 +244,10 @@ func TestHeartbeatConfirmsTheLastMatch(t *testing.T) {
 func TestOutOfOrderMessagesAreRefused(t *testing.T) {
 	handler := newSubscribedHandler(t, "USDT-USD")
 
-	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5}`))
+	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`))
 	require.NoError(t, err)
 
-	resp, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":9,"product_id":"USDT-USD","price":"0.9","trade_id":4}`))
+	resp, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":9,"product_id":"USDT-USD","price":"0.9","trade_id":4,"time":"2026-10-11T08:00:00.123456Z"}`))
 	require.NoError(t, err)
 	require.Empty(t, resp.Resolved)
 	require.Equal(t, types.ErrorInvalidResponse, resp.Unresolved["USDT-USD"].Code())
@@ -219,7 +260,7 @@ func TestOutOfOrderMessagesAreRefused(t *testing.T) {
 
 func TestCopyResetsState(t *testing.T) {
 	handler := newSubscribedHandler(t, "USDT-USD")
-	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5}`))
+	_, _, err := handler.HandleMessage([]byte(`{"type":"ticker","sequence":10,"product_id":"USDT-USD","price":"1.0001","trade_id":5,"time":"2026-10-11T08:00:00.123456Z"}`))
 	require.NoError(t, err)
 
 	fresh := handler.Copy().(*Handler)

@@ -83,6 +83,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal error message: %w", err)
 		}
 
+		h.logger.Warn("coinbase refused a request", "message", msg.Message, "reason", msg.Reason)
 		return resp, nil, fmt.Errorf("coinbase error: %s: %s", msg.Message, msg.Reason)
 	case TickerMessage:
 		var msg TickerResponseMessage

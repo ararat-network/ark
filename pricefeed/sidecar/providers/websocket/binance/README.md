@@ -15,8 +15,13 @@ handler processes:
 - ticker stream messages
 - subscription acknowledgement messages
 
-Both price-bearing stream types are parsed into the same Ark `types.Response` shape. Subscription failures can produce
-follow-up subscription messages, which the shared WebSocket fetcher writes back to the same connection.
+Both price-bearing stream types are parsed into the same Ark `types.Response` shape. They arrive on separate streams,
+so each carries its last trade id (`l` on an aggregate trade, `L` on a ticker) and a message behind a trade already
+published is dropped: a ticker push cannot roll a newer trade's price back. A refused subscription, which Binance reports
+as a code and message (`{"error":{"code":2,"msg":"..."},"id":1}`, or the same fields at the top level), is logged as a
+warning and publishes the request's symbols unresolved; it is not resubscribed, since the venue refuses the same
+request again. Binance accepts a subscription to a stream that does not exist and sends nothing on it, which the
+provider's last-success gauge shows.
 
 ## Session State
 
@@ -24,6 +29,7 @@ The Binance handler keeps per-session state:
 
 - a ticker cache for symbols currently known to the connection
 - subscription request IDs mapped to the instruments in each request
+- the last trade id published per ticker
 - the next subscription request ID
 
 `Copy()` resets that state for each new connection session. This keeps reconnects and sharded connections independent.
@@ -46,12 +52,12 @@ go test ./pricefeed/sidecar/providers/websocket/binance
 ## Wire reference
 
 Subscription messages correlate a per-session sequential `id` with an acknowledgement whose `result` is null on
-success. Combined streams wrap the observation in `stream` and `data`:
+success and which carries a `code` and `msg` on refusal. Combined streams wrap the observation in `stream` and `data`:
 
 ```json
 {"method":"SUBSCRIBE","params":["btcusdt@aggTrade","btcusdt@ticker"],"id":1}
 {"result":null,"id":1}
-{"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","s":"BTCUSDT","p":"67734.00000000"}}
+{"stream":"btcusdt@aggTrade","data":{"e":"aggTrade","s":"BTCUSDT","p":"67734.00000000","l":3613459102}}
 ```
 
 The last example shows only the fields needed to identify a price. The complete upstream contracts are
