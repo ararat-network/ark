@@ -12,6 +12,7 @@ gas charged, and when state writes occur, so edits must account for the surround
 | [transfer_tax.go](transfer_tax.go) | Transfer tax committed with successful message execution in the post handler. |
 | [gas_tally.go](gas_tally.go) | Per-block gas accounting consumed by Treasury's fee controller. |
 | [privilege.go](privilege.go) | Authenticated lane classification after signature verification. |
+| [sig_gas.go](sig_gas.go) | Signature gas; simulation prices the SDK client's multisig placeholder, which the SDK's consumer refuses. |
 | [gov.go](gov.go), [gov_vote.go](gov_vote.go) | Governance eligibility/validation and the vote stake floor. |
 | [authz.go](authz.go), [multisend.go](multisend.go) | Wrapped-message and multisend policy. |
 

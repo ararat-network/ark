@@ -73,7 +73,7 @@ func NewAnteHandler(
 		// SetPubKey must precede every signature-verification decorator.
 		sdkante.NewSetPubKeyDecorator(accountKeeper),
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
-		sdkante.NewSigGasConsumeDecorator(accountKeeper, sdkante.DefaultSigVerificationGasConsumer),
+		NewSigGasConsumeDecorator(accountKeeper),
 		sdkante.NewSigVerificationDecorator(accountKeeper, txConfig.SignModeHandler()),
 		NewPrivilegeDecorator(privileges),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),

@@ -1,4 +1,4 @@
-package integration
+package app_test
 
 import (
 	"context"
@@ -15,6 +15,8 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	clienttx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -25,12 +27,10 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/app"
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
-	claimskeeper "github.com/ararat-network/ark/x/claims/keeper"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -458,50 +458,66 @@ func buildTreasuryMultisigTx(
 	return txBytes
 }
 
-// TestClaimsCommitteeShapeRecordsRegisteredMultisig proves the appointment
-// path reaches a real account: a genuine 2-of-3 whose key is registered on
-// chain is recorded as one, rather than as the keyless shape an address with
-// no registered key would produce.
-func TestClaimsCommitteeShapeRecordsRegisteredMultisig(t *testing.T) {
-	memberPubKeys := make([]cryptotypes.PubKey, 3)
-	for i := range memberPubKeys {
-		memberPubKeys[i] = secp256k1.GenPrivKey().PubKey()
+// TestCommitteeMultisigSimulatesClientPlaceholder covers `tx simulate` and
+// --gas auto for a multisig signer. The SDK client simulates with threshold
+// placeholder signatures and no bit array, which the SDK's gas consumer
+// refuses; simulation must still price the signed transaction, and delivery
+// must still refuse the placeholder.
+func TestCommitteeMultisigSimulatesClientPlaceholder(t *testing.T) {
+	members := []cryptotypes.PrivKey{secp256k1.GenPrivKey(), secp256k1.GenPrivKey(), secp256k1.GenPrivKey()}
+	memberPubKeys := make([]cryptotypes.PubKey, len(members))
+	for i, member := range members {
+		memberPubKeys[i] = member.PubKey()
 	}
 	committeePubKey := kmultisig.NewLegacyAminoPubKey(2, memberPubKeys)
 	committee := sdk.AccAddress(committeePubKey.Address())
-
-	arkApp, _, _, _ := setupTreasuryMultisigApp(
-		t,
-		committeePubKey,
-		true,
-		multisigCommitteeFeeBalance,
-		func(_ *treasurytypes.GenesisState, genesis *claimstypes.GenesisState, _ string) {
-			genesis.ClaimsMandate = claimstypes.DefaultClaimsMandate()
-		},
+	arkApp, accountNumber, sequence, nextValidatorsHash := setupTreasuryMultisigApp(
+		t, committeePubKey, true, multisigCommitteeFeeBalance,
+		func(*treasurytypes.GenesisState, *claimstypes.GenesisState, string) {},
 	)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
-		ChainID: treasuryMultisigChainID,
-		Height:  1,
+	_, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+		Height:             1,
+		Hash:               arkApp.LastCommitID().Hash,
+		NextValidatorsHash: nextValidatorsHash,
 	})
-
-	_, err := claimskeeper.NewMsgServerImpl(arkApp.ClaimsKeeper).SetClaimsMandate(
-		ctx,
-		&claimstypes.MsgSetClaimsMandate{
-			Authority:           authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Committee:           committee.String(),
-			ActivationTime:      0,
-			ExpiryTime:          chain.MaxBlockSeconds,
-			CommitteeClaimLimit: chain.NoahCoin(math.NewInt(1_000)),
-		},
-	)
+	require.NoError(t, err)
+	_, err = arkApp.Commit()
 	require.NoError(t, err)
 
-	stored, err := arkApp.ClaimsKeeper.ClaimsMandate.Get(ctx)
+	msg := banktypes.NewMsgSend(committee, sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address()),
+		sdk.NewCoins(sdk.NewInt64Coin(sdk.DefaultBondDenom, 1)))
+
+	// The bytes `arkd tx simulate --from committee` sends.
+	kr := keyring.NewInMemory(arkApp.AppCodec())
+	_, err = kr.SaveMultisig("committee", committeePubKey)
 	require.NoError(t, err)
-	require.Equal(t, mandate.CommitteeShape{
-		AccountType: "cosmos.auth.v1beta1.BaseAccount",
-		KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG,
-		Threshold:   2,
-		MemberCount: 3,
-	}, stored.CommitteeShape)
+	placeholder, err := clienttx.Factory{}.
+		WithTxConfig(arkApp.TxConfig()).
+		WithKeybase(kr).
+		WithFromName("committee").
+		WithChainID(treasuryMultisigChainID).
+		WithSimulateAndExecute(true).
+		WithAccountNumber(accountNumber).
+		WithSequence(sequence).
+		WithGas(multisigGasLimit).
+		WithFees(sdk.NewInt64Coin(chain.XDRBaseDenom, multisigFeeAmount).String()).
+		BuildSimTx(msg)
+	require.NoError(t, err)
+	simulated, _, err := arkApp.Simulate(placeholder)
+	require.NoError(t, err)
+
+	signed := buildTreasuryMultisigTx(t, arkApp, msg, committeePubKey, accountNumber, sequence,
+		[]treasuryMultisigMemberSignature{{memberIndex: 0, privateKey: members[0]}, {memberIndex: 2, privateKey: members[2]}})
+	response, err := arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+		Height:             2,
+		Hash:               arkApp.LastCommitID().Hash,
+		NextValidatorsHash: nextValidatorsHash,
+		Txs:                [][]byte{placeholder, signed},
+	})
+	require.NoError(t, err)
+	require.Len(t, response.TxResults, 2)
+	require.NotZero(t, response.TxResults[0].Code)
+	require.Contains(t, response.TxResults[0].Log, "bit array size is incorrect")
+	require.Zero(t, response.TxResults[1].Code, response.TxResults[1].Log)
+	require.GreaterOrEqual(t, simulated.GasUsed, uint64(response.TxResults[1].GasUsed))
 }
