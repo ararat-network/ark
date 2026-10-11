@@ -23,6 +23,9 @@ const PricePrecisionBits uint = 256
 // LegacyDec whole-number ceiling of 2^256.
 const maxLegacyDecExponent = 256
 
+// minFeedPrice is one LegacyDec unit, the smallest positive rate the chain holds.
+var minFeedPrice, _ = new(big.Float).SetPrec(PricePrecisionBits).SetString("0.000000000000000001")
+
 // Clone returns a deep copy of p.
 func (p FeedPrices) Clone() FeedPrices {
 	copied := make(FeedPrices, len(p))
@@ -82,6 +85,22 @@ func ValidatePrice(price *big.Float) error {
 	}
 	if price.MantExp(nil) > maxLegacyDecExponent {
 		return fmt.Errorf("oracle price magnitude exceeds LegacyDec range")
+	}
+
+	return nil
+}
+
+// ValidateFeedPrice checks that price is a rate the chain can hold: positive and at least one
+// LegacyDec unit, so the 18-place text the transport encodes is never zero.
+func ValidateFeedPrice(price *big.Float) error {
+	if err := ValidatePrice(price); err != nil {
+		return err
+	}
+	if price.Sign() != 1 {
+		return fmt.Errorf("oracle price is not positive")
+	}
+	if price.Cmp(minFeedPrice) < 0 {
+		return fmt.Errorf("oracle price is below one LegacyDec unit")
 	}
 
 	return nil

@@ -146,11 +146,12 @@ func resolveRoutePrice(prices types.Prices, steps []types.Pair) (*big.Float, boo
 }
 
 // recordFinalPrices returns a defensive copy and records the aggregate-price
-// metric for each resolved pair.
+// metric for each resolved pair. A price the chain cannot hold is dropped here,
+// per feed, rather than failing the transport for every feed.
 func recordFinalPrices(snapshot *sidecarmetrics.AggregationSnapshot, prices types.Prices) types.Prices {
 	finalPrices := make(types.Prices, len(prices))
 	for pair, price := range prices {
-		if !validPrice(price) {
+		if types.ValidateFeedPrice(price) != nil {
 			continue
 		}
 

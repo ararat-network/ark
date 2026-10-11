@@ -47,6 +47,43 @@ func TestParsePriceBoundsLegacyDecMagnitude(t *testing.T) {
 	}
 }
 
+// TestValidateFeedPrice pins the floor at one LegacyDec unit: anything smaller
+// renders as zero at 18 places, which the transport cannot encode.
+func TestValidateFeedPrice(t *testing.T) {
+	tests := []struct {
+		name    string
+		price   string
+		wantErr string
+	}{
+		{name: "one unit", price: "0.000000000000000001"},
+		{name: "ordinary rate", price: "2"},
+		{name: "largest magnitude", price: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1)).String()},
+		{name: "below one unit", price: "0.0000000000000000004", wantErr: "below one LegacyDec unit"},
+		{name: "zero", price: "0", wantErr: "not positive"},
+		{name: "negative", price: "-1", wantErr: "not positive"},
+		{name: "beyond range", price: new(big.Int).Lsh(big.NewInt(1), 256).String(), wantErr: "magnitude"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			price, ok := new(big.Float).SetPrec(PricePrecisionBits).SetString(tc.price)
+			if !ok {
+				t.Fatalf("SetString(%q) failed", tc.price)
+			}
+			err := ValidateFeedPrice(price)
+			if tc.wantErr == "" {
+				if err != nil {
+					t.Fatalf("ValidateFeedPrice(%s) error = %v, want nil", tc.price, err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+				t.Fatalf("ValidateFeedPrice(%s) error = %v, want %q", tc.price, err, tc.wantErr)
+			}
+		})
+	}
+}
+
 // TestPricesByFeedProjectsPairPricesToFeeds pins that a resolved UNIT/NOAH
 // price is the published price: the projection re-keys and copies, and turns
 // nothing over.

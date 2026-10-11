@@ -194,6 +194,13 @@ func TestToReqPricesRejectsOutOfRangePriceBeforeFormatting(t *testing.T) {
 	require.ErrorContains(t, err, "magnitude exceeds LegacyDec range")
 }
 
+func TestToReqPricesRejectsPriceBelowOneUnit(t *testing.T) {
+	got, err := toReqPrices(sidecartypes.FeedPrices{"ausd": mustBigFloat(t, "0.0000000000000000004")})
+
+	require.Nil(t, got)
+	require.ErrorContains(t, err, "below one LegacyDec unit")
+}
+
 func mustBigFloat(t *testing.T, value string) *big.Float {
 	t.Helper()
 
