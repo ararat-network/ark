@@ -65,6 +65,9 @@ type KeeperTestSuite struct {
 	// balance stubs those funds used before they moved out.
 	insuranceRecognised math.Int
 	reserveRecognised   math.Int
+	// insuranceRecognisedErr and reserveRecognisedErr fail the matching report.
+	insuranceRecognisedErr error
+	reserveRecognisedErr   error
 	// reserveHoldings contains the strategic Reserve balances netted from flow liability. It is
 	// empty by default, so gross and net liability agree unless the test parks protocol paper.
 	reserveHoldings       sdk.Coins
@@ -93,6 +96,9 @@ type KeeperTestSuite struct {
 	// omission, never an error, so this stands for a genuine store or state
 	// fault — the only thing a valuation is allowed to propagate.
 	ratesErr error
+	// pricedAssetsErr fails the registry-wide fold alone, leaving every rate
+	// capture to ratesErr.
+	pricedAssetsErr error
 	// rateCaptures records each rate capture's denom list, newest last, so a
 	// test can assert the capture shape without its own mock expectation.
 	rateCaptures [][]string
@@ -139,16 +145,18 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.distributionKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.insuranceRecognised = math.ZeroInt()
 	s.reserveRecognised = math.ZeroInt()
+	s.insuranceRecognisedErr = nil
+	s.reserveRecognisedErr = nil
 	s.claimsKeeper.EXPECT().
 		RecognisedCapital(gomock.Any()).
 		DoAndReturn(func(context.Context) (math.Int, error) {
-			return s.insuranceRecognised, nil
+			return s.insuranceRecognised, s.insuranceRecognisedErr
 		}).
 		AnyTimes()
 	s.reserveKeeper.EXPECT().
 		RecognisedCapital(gomock.Any()).
 		DoAndReturn(func(context.Context) (math.Int, error) {
-			return s.reserveRecognised, nil
+			return s.reserveRecognised, s.reserveRecognisedErr
 		}).
 		AnyTimes()
 	// The liability fold asks what the Reserve holds of every member it counts.
@@ -199,6 +207,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.rates = oracletypes.NewRateSet()
 	s.lastRates = oracletypes.NewRateSet()
 	s.ratesErr = nil
+	s.pricedAssetsErr = nil
 	s.rateCaptures = nil
 	s.reference = chain.XDRBaseDenom
 	for _, denom := range []string{chain.KRWBaseDenom, chain.XDRBaseDenom, chain.USDBaseDenom} {
@@ -259,6 +268,9 @@ func (s *KeeperTestSuite) SetupTest() {
 		DoAndReturn(func(
 			_ context.Context,
 		) ([]string, assettypes.AssetPricings, error) {
+			if s.pricedAssetsErr != nil {
+				return nil, nil, s.pricedAssetsErr
+			}
 			// Key order, like the real registry walk. Tests that stub
 			// per-denomination supply reads rely on this order.
 			denoms := slices.Sorted(maps.Keys(s.assets))

@@ -202,6 +202,68 @@ func (s *KeeperTestSuite) TestRebaseReferenceUnrepresentableRescaleHoldsThatFact
 	noah, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(cross, noah.Factor)
+	// Both gas prices re-quote below the Dec quantum and land on its smallest positive.
+	s.Require().Equal(math.LegacySmallestDec(), params.MinBaseGasPrice)
+	price, err := s.keeper.BaseGasPrice.Get(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(math.LegacySmallestDec(), price)
+}
+
+// TestRebaseReferenceSaturatesGasPrices pins each bound a re-quoted gas price
+// lands on: a product past the Dec domain or past the ceiling saturates at
+// the ceiling, and one below the quantum floors at the smallest positive.
+func (s *KeeperTestSuite) TestRebaseReferenceSaturatesGasPrices() {
+	tests := []struct {
+		name string
+		// price is both the floor and the live price before the move.
+		price math.LegacyDec
+		// cross is the reference rate in NOAH; the destination's is one.
+		cross math.LegacyDec
+		want  math.LegacyDec
+	}{
+		{
+			name:  "past the Dec domain",
+			price: types.MaxBaseGasPrice,
+			cross: math.LegacyNewDec(10).Power(60),
+			want:  types.MaxBaseGasPrice,
+		},
+		{
+			name:  "past the ceiling",
+			price: testMinBaseGasPrice,
+			cross: math.LegacyNewDec(10).Power(20),
+			want:  types.MaxBaseGasPrice,
+		},
+		{
+			name:  "below the quantum",
+			price: testMinBaseGasPrice,
+			cross: math.LegacySmallestDec(),
+			want:  math.LegacySmallestDec(),
+		},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			params, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			params.MinBaseGasPrice = tc.price
+			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
+			s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, tc.price))
+
+			s.Require().NoError(s.keeper.RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, oracletypes.RateSet{
+				chain.NoahBaseDenom: math.LegacyOneDec(),
+				chain.XDRBaseDenom:  tc.cross,
+				chain.USDBaseDenom:  math.LegacyOneDec(),
+			}))
+
+			stored, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.want, stored.MinBaseGasPrice)
+			price, err := s.keeper.BaseGasPrice.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(tc.want, price)
+			s.requireTypedEvent(&types.EventBaseGasPriceUpdated{BaseGasPrice: tc.want})
+		})
+	}
 }
 
 // TestRebaseReferenceSubPrecisionRescaleHoldsThatFactor is the underflow

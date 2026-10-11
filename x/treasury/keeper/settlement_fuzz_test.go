@@ -36,57 +36,82 @@ func ratCoverageDraw(liability, redeemed, buffer, output *big.Int) *big.Int {
 	return new(big.Int).Quo(drawn.Num(), drawn.Denom())
 }
 
+// wide joins two words into one amount below 2^128.
+func wide(hi, lo uint64) *big.Int {
+	amount := new(big.Int).Lsh(new(big.Int).SetUint64(hi), 64)
+	return amount.Or(amount, new(big.Int).SetUint64(lo))
+}
+
 // FuzzSettlementCoverageMatchesExactArithmetic compares multiply-before-divide coverage with a
 // rational reference. Decimal rounding permits at most one extra base unit; output and custody
 // bounds must hold exactly. See x/treasury/README.md for the tolerance.
 func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
-	f.Add(int64(100), int64(25), int64(40), int64(10), int64(0))
-	f.Add(int64(0), int64(1), int64(1), int64(1), int64(1_000))
-	f.Add(int64(1), int64(1), int64(1_000_000), int64(1), int64(3_000))
-	f.Add(int64(999_999_999), int64(1), int64(3), int64(1), int64(1))
-	f.Add(int64(7), int64(3), int64(5), int64(3), int64(2_500))
+	// Each amount is a (high, low) word pair; narrow seeds carry theirs in the low word.
+	f.Add(uint64(0), uint64(100), uint64(0), uint64(25), uint64(0), uint64(40), uint64(0), uint64(10), int64(0))
+	f.Add(uint64(0), uint64(0), uint64(0), uint64(1), uint64(0), uint64(1), uint64(0), uint64(1), int64(1_000))
+	f.Add(uint64(0), uint64(1), uint64(0), uint64(1), uint64(0), uint64(1_000_000), uint64(0), uint64(1), int64(3_000))
+	f.Add(uint64(0), uint64(999_999_999), uint64(0), uint64(1), uint64(0), uint64(3), uint64(0), uint64(1), int64(1))
+	f.Add(uint64(0), uint64(7), uint64(0), uint64(3), uint64(0), uint64(5), uint64(0), uint64(3), int64(2_500))
 	// The rounding-to-one adjacency: the whole float redeems while the Buffer
 	// sits one anoah short of the basis.
 	f.Add(
-		int64(0),
-		int64(3_000_000_000_000_000_000),
-		int64(2_999_999_999_999_999_999),
-		int64(3_000_000_000_000_000_000),
+		uint64(0), uint64(0),
+		uint64(0), uint64(3_000_000_000_000_000_000),
+		uint64(0), uint64(2_999_999_999_999_999_999),
+		uint64(0), uint64(3_000_000_000_000_000_000),
 		int64(3_000),
 	)
 	// Found by a fuzz run against an earlier draw, kept as a regression seed.
 	// The second is the same block swept to the top of the multiplier domain.
-	f.Add(int64(128), int64(145), int64(84), int64(39), int64(0))
-	f.Add(int64(128), int64(145), int64(84), int64(39), int64(3_000))
+	f.Add(uint64(0), uint64(128), uint64(0), uint64(145), uint64(0), uint64(84), uint64(0), uint64(39), int64(0))
+	f.Add(uint64(0), uint64(128), uint64(0), uint64(145), uint64(0), uint64(84), uint64(0), uint64(39), int64(3_000))
+	// Every amount at the top of the domain: the output-by-Buffer product nears 2^256.
+	f.Add(
+		^uint64(0), ^uint64(0),
+		^uint64(0), ^uint64(0),
+		^uint64(0), ^uint64(0),
+		^uint64(0), ^uint64(0),
+		int64(0),
+	)
+	// A wide output against a Buffer near half the basis, where a rounded ratio's
+	// error times the output is many anoah.
+	f.Add(
+		uint64(1)<<36, uint64(0),
+		uint64(1)<<63, uint64(12_345),
+		uint64(1)<<62, uint64(999),
+		uint64(1)<<63, uint64(0),
+		int64(1_500),
+	)
 
-	f.Fuzz(func(t *testing.T, supply, redeemed, buffer, output, multiplierMilli int64) {
+	f.Fuzz(func(t *testing.T, supplyHi, supplyLo, redeemedHi, redeemedLo, bufferHi, bufferLo, outputHi, outputLo uint64, multiplierMilli int64) {
 		// The domain settlement can actually be handed: supply and buffer are
 		// bank figures, a redeemed value exists whenever an output does, and the
 		// bound the recorder enforces per conversion means the block's output
-		// never exceeds the value it retired.
-		if supply < 0 || buffer < 0 || redeemed <= 0 || output <= 0 || output > redeemed {
+		// never exceeds the value it retired. The pair is ordered rather than
+		// skipped, so the basis bounds the redeemed value, which bounds the output.
+		supply, buffer := wide(supplyHi, supplyLo), wide(bufferHi, bufferLo)
+		redeemed, output := wide(redeemedHi, redeemedLo), wide(outputHi, outputLo)
+		if output.Cmp(redeemed) > 0 {
+			output, redeemed = redeemed, output
+		}
+		if output.Sign() == 0 {
 			t.Skip()
 		}
 
-		suite := newSettlementFuzzSuite(t, supply, buffer)
+		suite := newSettlementFuzzSuite(t, math.NewIntFromBigInt(supply), math.NewIntFromBigInt(buffer))
 		// Sweep the exposure multiplier to verify it never changes coverage payments. The rational
 		// reference intentionally omits it.
 		suite.setFuzzMultiplier(multiplierMilli)
 		drawn, err := suite.keeper.SettleConversions(suite.ctx, markettypes.ConversionTotals{
 			GrossOffer:        math.ZeroInt(),
 			EligiblePrincipal: math.ZeroInt(),
-			RedemptionOutput:  math.NewInt(output),
-			RedeemedValue:     math.LegacyNewDec(redeemed),
+			RedemptionOutput:  math.NewIntFromBigInt(output),
+			RedeemedValue:     math.LegacyNewDecFromInt(math.NewIntFromBigInt(redeemed)),
 		})
 		require.NoError(t, err)
 
 		// Computed without the multiplier, deliberately.
-		want := ratCoverageDraw(
-			big.NewInt(supply),
-			big.NewInt(redeemed),
-			big.NewInt(buffer),
-			big.NewInt(output),
-		)
+		want := ratCoverageDraw(supply, redeemed, buffer, output)
 		// One rounding on the final quantity, so the draw is the exact floor or
 		// a single anoah above it — a structural bound, not a scale-dependent
 		// tolerance.
@@ -95,8 +120,8 @@ func FuzzSettlementCoverageMatchesExactArithmetic(f *testing.F) {
 			"draw %s falls below the exact floored share %s", drawn, want)
 		require.LessOrEqual(t, gap.Cmp(big.NewInt(1)), 0,
 			"draw %s exceeds the exact floored share %s by more than one anoah", drawn, want)
-		require.True(t, drawn.LTE(math.NewInt(buffer)), "draw exceeds the Buffer")
-		require.True(t, drawn.LTE(math.NewInt(output)), "draw exceeds the output it funds")
+		require.True(t, drawn.LTE(math.NewIntFromBigInt(buffer)), "draw exceeds the Buffer")
+		require.True(t, drawn.LTE(math.NewIntFromBigInt(output)), "draw exceeds the output it funds")
 	})
 }
 
@@ -119,7 +144,7 @@ func (s *KeeperTestSuite) setFuzzMultiplier(milli int64) {
 // lets a fuzz target reuse the mocks every other settlement test is written
 // against. One priced member carries the whole aggregate, so the liability the
 // draw divides by is exactly the supply the case names.
-func newSettlementFuzzSuite(t *testing.T, supply, buffer int64) *KeeperTestSuite {
+func newSettlementFuzzSuite(t *testing.T, supply, buffer math.Int) *KeeperTestSuite {
 	t.Helper()
 	suite := new(KeeperTestSuite)
 	suite.SetT(t)
@@ -128,14 +153,14 @@ func newSettlementFuzzSuite(t *testing.T, supply, buffer int64) *KeeperTestSuite
 	suite.setAssets(chain.USDBaseDenom)
 	suite.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
 	suite.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
-		Return(sdk.NewInt64Coin(chain.USDBaseDenom, supply)).AnyTimes()
+		Return(sdk.NewCoin(chain.USDBaseDenom, supply)).AnyTimes()
 	suite.bankKeeper.EXPECT().
 		GetBalance(
 			gomock.Any(),
 			authtypes.NewModuleAddress(types.RedemptionBufferName),
 			chain.NoahBaseDenom,
 		).
-		Return(chain.NoahCoin(math.NewInt(buffer))).AnyTimes()
+		Return(chain.NoahCoin(buffer)).AnyTimes()
 	suite.bankKeeper.EXPECT().
 		SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil).AnyTimes()

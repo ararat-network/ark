@@ -137,6 +137,48 @@ func (s *KeeperTestSuite) TestTallyBlockGasSaturates() {
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.1025"), price)
 }
 
+// TestEndBlockerSaturatesBaseFeeAtTheCeiling pins the upper clamp: a full
+// block over a price near the ceiling lands exactly on it, and a price
+// already there holds without news.
+func (s *KeeperTestSuite) TestEndBlockerSaturatesBaseFeeAtTheCeiling() {
+	tests := []struct {
+		name    string
+		stored  math.LegacyDec
+		updated bool
+	}{
+		{
+			// 0.99 × 1.025 of the ceiling is past it.
+			name:    "near the ceiling",
+			stored:  types.MaxBaseGasPrice.MulInt64(99).QuoInt64(100),
+			updated: true,
+		},
+		{
+			name:   "at the ceiling",
+			stored: types.MaxBaseGasPrice,
+		},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.withMaxGas(1_000_000)
+			s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, tc.stored))
+			s.Require().NoError(s.keeper.TallyBlockGas(s.ctx, 1_000_000))
+			s.expectValidatorFees(sdk.NewCoins())
+
+			s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+
+			price, err := s.keeper.BaseGasPrice.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(types.MaxBaseGasPrice, price)
+			if tc.updated {
+				s.requireTypedEvent(&types.EventBaseGasPriceUpdated{BaseGasPrice: types.MaxBaseGasPrice})
+			} else {
+				s.requireNoTypedEvent(&types.EventBaseGasPriceUpdated{})
+			}
+		})
+	}
+}
+
 // TestGetRequiredGasFeeCeilsInTheReferenceDenom pins the requirement's
 // rounding direction and unit: it sizes a payment floor, so it rounds up,
 // in the reference denom.

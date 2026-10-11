@@ -1,6 +1,8 @@
 package keeper_test
 
 import (
+	"errors"
+
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -170,6 +172,44 @@ func (s *KeeperTestSuite) TestSettleConversionsWaterfallsPrincipalOnce() {
 		InsuranceCredit:        math.NewInt(10),
 		OverflowBurn:           math.NewInt(15),
 	})
+}
+
+// TestSettleConversionsPropagatesRecognisedCapitalFailure checks a fund that
+// cannot report its capital fails settlement before any Buffer read or
+// transfer, both of which the strict bank mock would refuse.
+func (s *KeeperTestSuite) TestSettleConversionsPropagatesRecognisedCapitalFailure() {
+	failure := errors.New("custody read failure")
+	tests := []struct {
+		name    string
+		fail    func()
+		wantErr string
+	}{
+		{
+			name:    "Insurance",
+			fail:    func() { s.insuranceRecognisedErr = failure },
+			wantErr: "getting Insurance recognised capital",
+		},
+		{
+			name:    "Reserve",
+			fail:    func() { s.reserveRecognisedErr = failure },
+			wantErr: "getting Reserve recognised capital",
+		},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.setAssets(chain.USDBaseDenom)
+			s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+				Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+			s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+			tc.fail()
+
+			_, err := s.keeper.SettleConversions(s.ctx, expansionTotals(45))
+			s.Require().ErrorIs(err, failure)
+			s.Require().ErrorContains(err, tc.wantErr)
+			s.requireNoTypedEvent(&types.EventExpansionAllocated{})
+		})
+	}
 }
 
 // TestSettleConversionsParksWholeBlockOnIncompleteValuation checks that one unpriced member parks
