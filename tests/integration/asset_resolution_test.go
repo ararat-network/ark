@@ -787,40 +787,17 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	// Settlement must have seen the suspension: an incomplete valuation sizes
 	// no targets, so nothing overflows and the whole eligible principal parks
 	// in the Reserve.
-	var allocations int
-	for _, event := range f.blockEvents {
-		if event.Type != "ark.treasury.v1.EventExpansionAllocated" {
-			continue
-		}
-		allocations++
-		for _, attribute := range event.Attributes {
-			switch attribute.Key {
-			case "overflow_burn":
-				require.Equal(t, `"0"`, attribute.Value,
-					"an incomplete valuation burns no principal")
-			case "redemption_buffer_credit":
-				require.Equal(t, `"0"`, attribute.Value,
-					"an incomplete valuation commits nothing to the Buffer")
-			}
-		}
-	}
-	require.Equal(t, 1, allocations, "the block settled its expansions once")
+	allocations := attributesOf(f.blockEvents, "ark.treasury.v1.EventExpansionAllocated")
+	require.Len(t, allocations, 1, "the block settled its expansions once")
+	require.Equal(t, `"0"`, allocations[0]["overflow_burn"], "an incomplete valuation burns no principal")
+	require.Equal(t, `"0"`, allocations[0]["redemption_buffer_credit"],
+		"an incomplete valuation commits nothing to the Buffer")
 
 	// One fold, one disclosure. A block whose valuation degraded inside it
 	// reports that degradation exactly once, because the only valuation it
 	// takes happens after everything that could degrade it.
-	var disclosures int
-	for _, event := range f.blockEvents {
-		if event.Type != "ark.treasury.v1.EventLiabilityIncomplete" {
-			continue
-		}
-		disclosures++
-		for _, attribute := range event.Attributes {
-			if attribute.Key == "untrusted_suspended_supply" {
-				require.Contains(t, attribute.Value, chain.KRWBaseDenom,
-					"the disclosure must name the suspended member")
-			}
-		}
-	}
-	require.Equal(t, 1, disclosures, "the block disclosed its degraded valuation once")
+	disclosures := attributesOf(f.blockEvents, "ark.treasury.v1.EventLiabilityIncomplete")
+	require.Len(t, disclosures, 1, "the block disclosed its degraded valuation once")
+	require.Contains(t, disclosures[0]["untrusted_suspended_supply"], chain.KRWBaseDenom,
+		"the disclosure must name the suspended member")
 }

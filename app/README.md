@@ -104,8 +104,8 @@ it remains payable. These adapters enforce that contract at distinct signed-mess
 
 From the repository root, run `go test ./app/...` for application changes. Integration scenarios live under
 [tests/integration/](../tests/README.md); simulation commands and prerequisites are in the [test guide](../tests/README.md).
-[testutil/](testutil/) supplies app, validator, funding, and genesis fixtures. Native grant flows are covered by
-[disbursement_test.go](disbursement_test.go), including custody, failure rollback, founder limits, and continuation export/import.
+[testutil/](testutil/) supplies app, validator, funding, and genesis fixtures. The [test guide](../tests/README.md#where-a-test-lives)
+says which tests belong here and which in integration.
 Use `go build ./...` before claiming
 repository-wide compilation.
 

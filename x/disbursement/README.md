@@ -328,13 +328,13 @@ complete the public accounting surface. Queries carry `module_query_safe`; of th
 | [simulation](simulation) | Simulation genesis on run-owned appointments and a seeded tranche; governance, committee, registrar, and controller factories |
 | [testutil](testutil) | Generated mocks of the expected keepers |
 | [keeper/keeper_test.go](keeper/keeper_test.go) | Keeper suite over mocked neighbours: query codes and pages, each handler's refusals, the import checks Validate cannot make, and the block's zero-payment, deferred, and stray-key looks |
-| [app/disbursement_test.go](../../app/disbursement_test.go) | Real-app custody, authority, accounting, failure, and continuation tests |
+| [tests/integration/disbursement_test.go](../../tests/integration/disbursement_test.go) | Real-app custody, authority, accounting, failure, and continuation tests |
 | [tests/integration/disbursement_funding_test.go](../../tests/integration/disbursement_funding_test.go) | Stablecoin awards funded through real Market settlement |
 
 ```sh
-go test ./x/disbursement/... ./app/genesis ./app -run 'TestNativeDisbursement|TestAddValidatorSeats|TestParamsValidation|TestScheduleShares|TestAccrualBoundaries|TestAccrualGate|TestRandomisedAccrualNext|TestRetryAt|TestGrantValidation|TestValidateStartTime|TestRandomisedShareConservation|TestGenesis|TestDefaultGenesisState|TestSortBeneficiaries'
-go test ./app ./app/genesis ./x/disbursement/...
-go test ./tests/integration -run TestDisbursementFundsAwardsThroughMarket
+go test ./x/disbursement/... ./app/genesis ./tests/integration -run 'TestNativeDisbursement|TestAddValidatorSeats|TestParamsValidation|TestScheduleShares|TestAccrualBoundaries|TestAccrualGate|TestRandomisedAccrualNext|TestRetryAt|TestGrantValidation|TestValidateStartTime|TestRandomisedShareConservation|TestGenesis|TestDefaultGenesisState|TestSortBeneficiaries'
+go test ./app/genesis ./x/disbursement/...
+go test ./tests/integration -run 'TestNativeDisbursement|TestDisbursementFundsAwardsThroughMarket'
 ```
 
 The Docker delegator E2E suite additionally exercises opening a member tranche, appointing the registrar through the

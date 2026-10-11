@@ -46,12 +46,7 @@ func TestReserveCommitteeTransferBoundIsTreasurys(t *testing.T) {
 	// Every listed denomination carries a rate, so the aggregate values
 	// completely and the targets can be sized at all.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        math.LegacyOneDec(),
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	// Stablecoin in circulation is the liability every fund target scales.
@@ -191,12 +186,7 @@ func TestReserveBurnableSurplusQueryIsTheHandlersBound(t *testing.T) {
 	committee := sdk.AccAddress([]byte("reserve-committee---")).String()
 
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        math.LegacyOneDec(),
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
 		ctx,
@@ -449,12 +439,7 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	require.NoError(t, arkApp.OracleKeeper.Feeds.Set(ctx, feeds))
 
 	for _, denom := range []string{externalFeed, chain.USDBaseDenom, chain.XDRBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        rate,
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, rate)
 	}
 
 	quantity := math.NewInt(1_000_000)

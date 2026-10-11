@@ -459,9 +459,9 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 	})
 }
 
-// TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport checks Oracle-directed reference rebasing
+// TestMarketPoolDenomRebasePreservesQuotesAndExport checks Oracle-directed reference rebasing
 // preserves quotes, proportional pool delta, and exported units.
-func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
+func TestMarketPoolDenomRebasePreservesQuotesAndExport(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewNextBlockContext(cmtproto.Header{
 		Height: arkApp.LastBlockHeight() + 1,
@@ -476,12 +476,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 		chain.EURBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 	} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        rate,
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, rate)
 	}
 
 	current := markettypes.DefaultConversionPolicy()

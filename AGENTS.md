@@ -210,8 +210,9 @@ string field_name = N [
 - Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
   change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
   verification, report the exact blocker.
-- Native grants: `go test ./app -run TestNativeDisbursement` verifies funded commitments, EndBlock
-  payment and deferral, cancellation, ownership limits, stablecoin compensation, and continuation export/import on the real app
+- Native grants: `go test ./tests/integration -run TestNativeDisbursement` verifies funded commitments, EndBlock
+  payment and deferral, cancellation, ownership limits, stablecoin compensation, and continuation export/import through the
+  real app's keepers and message router
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`

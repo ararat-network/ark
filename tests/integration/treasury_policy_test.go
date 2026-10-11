@@ -344,18 +344,18 @@ func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 	})
 }
 
-type phase3AIntegrationResult struct {
+type redemptionOutcome struct {
 	output       math.Int
 	bufferPaid   math.Int
 	residualMint math.Int
 	endingDelta  math.LegacyDec
 }
 
-// TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer checks a never-priced dust
+// TestIncompleteValuationStillFundsRedemptionFromBuffer checks a never-priced dust
 // member is disclosed without disabling healthy redemption coverage.
-func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *testing.T) {
-	complete := runPhase3AIntegrationRedemption(t, true)
-	incomplete := runPhase3AIntegrationRedemption(t, false)
+func TestIncompleteValuationStillFundsRedemptionFromBuffer(t *testing.T) {
+	complete := runRedemptionWithValuation(t, true)
+	incomplete := runRedemptionWithValuation(t, false)
 
 	require.True(t, incomplete.bufferPaid.IsPositive())
 	require.True(t, incomplete.residualMint.LT(incomplete.output))
@@ -365,7 +365,7 @@ func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *te
 	require.True(t, complete.endingDelta.Equal(incomplete.endingDelta))
 }
 
-func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase3AIntegrationResult {
+func runRedemptionWithValuation(t *testing.T, valuationComplete bool) redemptionOutcome {
 	t.Helper()
 
 	arkApp := apptestutil.Setup(t, false)
@@ -386,12 +386,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	// but no asset is listed against it, so the traded stable is a listed one
 	// carrying the same rate.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        math.LegacyOneDec(),
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	stableSupply := math.NewInt(1_000_000_000_000)
@@ -448,7 +443,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	require.Equal(t, totalOffer, stableSupplyBefore.Sub(stableSupplyAfter))
 	require.True(t, endingDelta.Equal(initialDelta.Add(math.LegacyNewDecFromInt(totalOffer))))
 
-	return phase3AIntegrationResult{
+	return redemptionOutcome{
 		output:       totalOutput,
 		bufferPaid:   bufferPaid,
 		residualMint: residualMint,

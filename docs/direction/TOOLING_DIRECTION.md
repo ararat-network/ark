@@ -91,8 +91,8 @@ such as slippage, tax, oracle freshness, or transaction finality would make the 
 The [Disbursement module](../../x/disbursement/README.md) provides the distribution and compensation ledger through typed protobuf
 messages, gRPC/REST queries, AutoCLI, and a permanent journal. SDK, wallet, and explorer integrations should share those
 schemas and decode typed events. The e2e tier opens member tranches through governance, registers members, and sees
-their tenths queued behind the two-week hold; `go test ./app -run TestNativeDisbursement` covers the block paying them,
-deferral, cancellation, and committee recovery on the real app. Contributor interfaces need the original agreement, current payee,
+their tenths queued behind the two-week hold; `go test ./tests/integration -run TestNativeDisbursement` covers the block
+paying them, deferral, cancellation, and committee recovery through the real app's keepers. Contributor interfaces need the original agreement, current payee,
 paid and remaining principal, the record's room under the ownership cap, and cancellation history; stablecoin compensation uses the same API.
 
 CosmWasm upload and instantiation remain permissionless from launch

@@ -29,7 +29,6 @@ import (
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
 	markettypes "github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
@@ -49,12 +48,7 @@ func TestMarketTreasurySettlementMaintainsBlockLiability(t *testing.T) {
 		chain.USDBaseDenom,
 		chain.EURBaseDenom,
 	} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:       denom,
-			Rate:        math.LegacyOneDec(),
-			BlockTime:   uint64(ctx.BlockTime().Unix()),
-			BlockHeight: uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	require.NoError(t, arkApp.BankKeeper.MintCoins(
@@ -463,11 +457,7 @@ func TestTreasuryGovernanceFundAndPolicyConfiguration(t *testing.T) {
 		markettypes.ModuleName,
 		sdk.NewCoins(sdk.NewInt64Coin(chain.EURBaseDenom, 10)),
 	))
-	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, chain.EURBaseDenom, oracletypes.ExchangeRate{
-		Denom:     chain.EURBaseDenom,
-		Rate:      math.LegacyOneDec(),
-		BlockTime: uint64(ctx.BlockTime().Unix()),
-	}))
+	setRate(t, arkApp, ctx, chain.EURBaseDenom, math.LegacyOneDec())
 	// The mint above bypasses Market and needs no priming: settlement folds the
 	// registry itself, so it values the new supply as soon as its rate exists.
 	// A one-unit redemption draws its whole output from a Buffer that dwarfs
