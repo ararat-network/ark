@@ -83,6 +83,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal error message: %w", err)
 		}
 
+		h.logger.Warn("bitfinex refused a request", "code", msg.Code, "reason", msg.Msg)
 		return resp, nil, fmt.Errorf("bitfinex error %d (%s): %w", msg.Code, msg.Msg, ErrorCode(msg.Code).Error())
 	case EventInfo:
 		h.logger.Debug("received info message")

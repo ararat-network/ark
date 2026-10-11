@@ -40,6 +40,16 @@ func NewHandler(logger log.Logger, config websocket.Config) (websocket.DataHandl
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid websocket config for %s: %w", Name, err)
 	}
+	// MEXC ignores streams past its limit, so a shard over it would leave
+	// tickers silently unsubscribed; refusing the config fails the reload.
+	if config.MaxTickersPerConnection <= 0 || config.MaxTickersPerConnection > MaxSubscriptionsPerConnection {
+		return nil, fmt.Errorf(
+			"invalid websocket config for %s: max_tickers_per_connection must be between 1 and %d, got %d",
+			Name,
+			MaxSubscriptionsPerConnection,
+			config.MaxTickersPerConnection,
+		)
+	}
 
 	return &Handler{
 		logger: logger.With("websocket_data_handler", config.Name),
@@ -77,6 +87,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 
 	switch {
 	case base.Code != 0:
+		h.logger.Warn("mexc refused a request", "code", base.Code, "reason", base.Message)
 		return resp, nil, fmt.Errorf("mexc error %d: %s", base.Code, base.Message)
 	case strings.HasPrefix(base.Message, string(MiniTickerChannel)):
 		h.logger.Debug("successfully subscribed", "streams", base.Message)
@@ -85,19 +96,20 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 		h.logger.Debug("received pong")
 		return resp, nil, nil
 	default:
+		h.logger.Warn("mexc refused a request", "reason", base.Message)
 		return resp, nil, fmt.Errorf("mexc refused: %q", base.Message)
 	}
 }
 
 // CreateMessages subscribes to the mini ticker stream of each requested
-// symbol. The fetcher shards tickers under MaxTickersPerConnection; the
-// check here refuses a shard that would exceed the venue's limit anyway.
+// symbol. The fetcher shards tickers under MaxTickersPerConnection, which
+// NewHandler holds under the venue's limit; the check here is the backstop.
 func (h *Handler) CreateMessages(tickers []types.Ticker) ([][]byte, error) {
-	if h.config.MaxTickersPerConnection > 0 && len(tickers) > h.config.MaxTickersPerConnection {
+	if len(tickers) > MaxSubscriptionsPerConnection {
 		return nil, fmt.Errorf(
 			"cannot subscribe to %d tickers on one connection; the limit is %d",
 			len(tickers),
-			h.config.MaxTickersPerConnection,
+			MaxSubscriptionsPerConnection,
 		)
 	}
 

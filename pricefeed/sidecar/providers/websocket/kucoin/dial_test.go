@@ -111,21 +111,43 @@ func TestNewDialFunc(t *testing.T) {
 }
 
 // TestDialErrorRedactsTheToken pins the log hygiene: a dial error names the
-// URL it tried, and that URL carries the token.
+// URL it tried, and that URL carries the token, query-escaped. KuCoin tokens
+// end in base64 padding, which escaping rewrites.
 func TestDialErrorRedactsTheToken(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		_, _ = w.Write([]byte(tokenBody))
-	}))
-	defer server.Close()
-
-	dial := func(_ context.Context, endpoint string, _ *coderws.DialOptions) (*coderws.Conn, *http.Response, error) {
-		return nil, nil, errors.New("failed to WebSocket dial: " + endpoint)
+	tests := []struct {
+		name   string
+		token  string
+		decode bool
+	}{
+		{name: "plain token", token: "tok-abc"},
+		{name: "padded token as dialled", token: "2neAiuYvAU61ZDXANA+/Kw==.Ae71RuYOROFoB_JvnfL7Bg=="},
+		{name: "padded token decoded", token: "2neAiuYvAU61ZDXANA+/Kw==.Ae71RuYOROFoB_JvnfL7Bg==", decode: true},
 	}
 
-	_, _, err := NewDialFunc(server.Client(), server.URL, dial)(context.Background(), URL, nil)
-	require.Error(t, err)
-	require.NotContains(t, err.Error(), "tok-abc")
-	require.Contains(t, err.Error(), "token=<token>")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(strings.Replace(tokenBody, "tok-abc", tt.token, 1)))
+			}))
+			defer server.Close()
+
+			dial := func(_ context.Context, endpoint string, _ *coderws.DialOptions) (*coderws.Conn, *http.Response, error) {
+				if tt.decode {
+					decoded, err := url.QueryUnescape(endpoint)
+					require.NoError(t, err)
+					endpoint = decoded
+				}
+				return nil, nil, errors.New("failed to WebSocket dial: " + endpoint)
+			}
+
+			_, _, err := NewDialFunc(server.Client(), server.URL, dial)(context.Background(), URL, nil)
+			require.Error(t, err)
+			require.NotContains(t, err.Error(), tt.token)
+			require.NotContains(t, err.Error(), url.QueryEscape(tt.token))
+			require.NotContains(t, err.Error(), "Ae71RuYOROFoB")
+			require.Contains(t, err.Error(), "token=<token>")
+		})
+	}
 }
 
 // TestTokenRequestHonoursTheContext pins that a dial deadline bounds the

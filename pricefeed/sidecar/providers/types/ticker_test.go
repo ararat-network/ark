@@ -38,6 +38,17 @@ func TestTickersAddReplacesMatchingKey(t *testing.T) {
 	require.Equal(t, Ticker("atomusd"), ticker)
 }
 
+func TestTickersRemoveIgnoresCase(t *testing.T) {
+	tickers := NewTickers("ATOMUSD", "BTCUSD")
+
+	tickers.Remove("atomusd")
+	tickers.Remove("ETHUSD")
+
+	_, ok := tickers.Lookup("ATOMUSD")
+	require.False(t, ok)
+	require.Equal(t, []Ticker{"BTCUSD"}, tickers.All())
+}
+
 func TestTickersAllReturnsEveryTicker(t *testing.T) {
 	tickers := NewTickers("ATOMUSD", "btcusd")
 

@@ -8,9 +8,9 @@ responses. Upstream's handler read the JSON stream on `wss://wbs.mexc.com/ws`; t
 ## Stream Shape
 
 Requested symbols are subscribed as `spot@public.miniTicker.v3.api.pb@<SYMBOL>@UTC+8` streams, one per subscription
-request; the symbol is upper-cased whatever the configured case. MEXC allows 30 subscriptions per connection, which
-the default ticker-per-connection limit stays under; the handler refuses a shard over the configured limit, not
-the venue's.
+request; the symbol is upper-cased whatever the configured case. MEXC allows 30 subscriptions per connection and ignores
+streams past it, so the handler refuses a `max_tickers_per_connection` of zero or above 30 (a reload with one fails)
+and refuses a shard over 30 as a backstop; the default is 20.
 
 Acknowledgements are JSON objects; data arrives as binary protobuf frames, and the handler tells them apart by the
 first byte. It processes:

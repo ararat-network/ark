@@ -116,6 +116,12 @@ func TestHandleMessageObjects(t *testing.T) {
 			errContains: "bitfinex error 10001 (symbol: invalid): unknown pair",
 		},
 		{
+			// 10300 is the subscribe failure; 10400 is the unsubscribe one.
+			name:        "subscription failure names it",
+			message:     `{"event":"error","msg":"subscribe: generic","code":10300}`,
+			errContains: "bitfinex error 10300 (subscribe: generic): subscription failed",
+		},
+		{
 			name:        "unknown event",
 			message:     `{"event":"conf","status":"OK"}`,
 			errContains: `unknown event "conf"`,

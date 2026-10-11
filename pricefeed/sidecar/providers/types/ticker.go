@@ -38,6 +38,14 @@ func (t *Tickers) Add(ticker Ticker) {
 	t.cache[ticker.Key()] = ticker
 }
 
+// Remove deletes the ticker with the same key, if present.
+func (t *Tickers) Remove(ticker Ticker) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	delete(t.cache, ticker.Key())
+}
+
 // Lookup returns the ticker matching raw, ignoring case.
 func (t *Tickers) Lookup(raw string) (Ticker, bool) {
 	t.mu.RLock()

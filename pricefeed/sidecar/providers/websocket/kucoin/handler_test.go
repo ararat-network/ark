@@ -138,6 +138,21 @@ func TestPongRefreshesOnlyObservedTickers(t *testing.T) {
 			messages: []string{`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"x","price":"1"}}`},
 		},
 		{
+			// A refused report stops the pong vouching for the older price.
+			name: "price then an unparseable price",
+			messages: []string{
+				`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"1","price":"1"}}`,
+				`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"2","price":"x"}}`,
+			},
+		},
+		{
+			name: "price then an out of order report",
+			messages: []string{
+				`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"5","price":"1"}}`,
+				`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"4","price":"1"}}`,
+			},
+		},
+		{
 			name:        "only one ticker observed",
 			messages:    []string{`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"1","price":"1"}}`},
 			wantTickers: []types.Ticker{"USDC-USDT"},
@@ -287,6 +302,30 @@ func TestOutOfOrderTickersAreRefused(t *testing.T) {
 	resp, _, err = handler.HandleMessage(ticker("11", "1.0002"))
 	require.NoError(t, err)
 	require.Contains(t, resp.Resolved, types.Ticker("USDC-USDT"))
+}
+
+// TestSequenceRestartTakesTheNewSequence pins recovery from a venue restart:
+// a run of refused sequences takes the new one, while a late message between
+// accepted ones stays refused.
+func TestSequenceRestartTakesTheNewSequence(t *testing.T) {
+	handler := newSubscribedHandler(t, "USDC-USDT")
+	send := func(sequence string) types.Response {
+		t.Helper()
+		resp, _, err := handler.HandleMessage([]byte(`{"type":"message","topic":"/market/ticker:USDC-USDT","subject":"trade.ticker","data":{"sequence":"` + sequence + `","price":"1"}}`))
+		require.NoError(t, err)
+		return resp
+	}
+
+	require.Contains(t, send("1000").Resolved, types.Ticker("USDC-USDT"))
+	require.Contains(t, send("999").Unresolved, types.Ticker("USDC-USDT"))
+	require.Contains(t, send("1001").Resolved, types.Ticker("USDC-USDT"))
+
+	for _, sequence := range []string{"5", "6"} {
+		require.Contains(t, send(sequence).Unresolved, types.Ticker("USDC-USDT"), sequence)
+	}
+	require.Contains(t, send("7").Resolved, types.Ticker("USDC-USDT"))
+	require.Contains(t, send("8").Resolved, types.Ticker("USDC-USDT"))
+	require.Contains(t, send("7").Unresolved, types.Ticker("USDC-USDT"))
 }
 
 func TestCopyResetsState(t *testing.T) {

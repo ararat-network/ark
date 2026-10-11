@@ -82,6 +82,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal error message: %w", err)
 		}
 
+		h.logger.Warn("bitstamp refused a request", "code", msg.Data.Code, "reason", msg.Data.Message)
 		return resp, nil, fmt.Errorf("bitstamp error %d: %s", msg.Data.Code, msg.Data.Message)
 	case TradeEvent:
 		var msg TradeMessage

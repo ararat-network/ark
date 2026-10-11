@@ -29,6 +29,7 @@ func (h *Handler) parseStatusMessage(msg StatusMessage) error {
 // parseSubscribeResponse checks that a subscription succeeded.
 func (h *Handler) parseSubscribeResponse(msg MethodResponse) error {
 	if !msg.Success {
+		h.logger.Warn("kraken refused a subscription", "symbol", msg.Symbol, "reason", msg.Error)
 		return fmt.Errorf("subscription to %s failed: %s", msg.Symbol, msg.Error)
 	}
 

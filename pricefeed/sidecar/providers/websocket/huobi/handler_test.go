@@ -116,6 +116,14 @@ func TestServerPingRefreshesOnlyObservedTickers(t *testing.T) {
 			messages: []string{`{"ch":"market.usdcusdt.ticker","tick":{"lastPrice":1e999}}`},
 		},
 		{
+			// A refused report stops the ping vouching for the older price.
+			name: "price then an invalid price",
+			messages: []string{
+				`{"ch":"market.usdcusdt.ticker","tick":{"lastPrice":1}}`,
+				`{"ch":"market.usdcusdt.ticker","tick":{"lastPrice":1e999}}`,
+			},
+		},
+		{
 			name:        "only one ticker observed",
 			messages:    []string{`{"ch":"market.usdcusdt.ticker","tick":{"lastPrice":1}}`},
 			wantTickers: []types.Ticker{"usdcusdt"},
