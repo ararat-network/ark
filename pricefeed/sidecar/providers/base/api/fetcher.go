@@ -150,7 +150,9 @@ func (f *Fetcher) ResponseBufferSize(tickers []types.Ticker) int {
 	return len(batches)
 }
 
-// runBatchLoop repeatedly queries one ticker batch until ctx is cancelled or a fatal query error occurs.
+// runBatchLoop repeatedly queries one ticker batch until ctx is cancelled. A batch that cannot be
+// queried stays unresolved and is retried next interval, so the provider's other batches keep
+// running and a cause that clears lets this one recover.
 func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
 	for {
 		if ctx.Err() != nil {
@@ -169,7 +171,11 @@ func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, resp
 				"tickers", len(tickers),
 			)
 
-			return fmt.Errorf("api batch query failed: %w", err)
+			code := types.ErrorAPIGeneral
+			if errors.Is(err, ErrCreateURL) {
+				code = types.ErrorUnableToCreateURL
+			}
+			response = types.NewErrorResponse(tickers, types.NewErrorWithCode(err, code))
 		}
 
 		select {
@@ -194,9 +200,8 @@ func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, resp
 	}
 }
 
-// query performs one HTTP polling attempt for tickers. Provider request failures
-// are returned as unresolved responses; lifecycle, local setup, and fatal task
-// errors are returned as errors.
+// query performs one HTTP polling attempt for tickers. Provider request failures are returned as
+// unresolved responses; cancellation and local setup failures are returned as errors.
 func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Response, error) {
 	endpoint, err := f.endpointSelector(f.config.Endpoints)
 	if err != nil {

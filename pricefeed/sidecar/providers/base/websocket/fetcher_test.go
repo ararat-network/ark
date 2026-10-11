@@ -188,6 +188,84 @@ func TestRunReconnectsAfterDialError(t *testing.T) {
 	require.GreaterOrEqual(t, attempts.Load(), int32(2))
 }
 
+// A session that cannot start publishes its tickers as unresolved and reconnects, so a cause that
+// clears lets the shard recover without restarting the provider.
+func TestRunReconnectsAfterSessionStartFailure(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T, handler *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option)
+		wantErr string
+	}{
+		{
+			name: "endpoint selection",
+			setup: func(*testing.T, *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option) {
+				return websocketConfig("wss://example.invalid"), []basewebsocket.Option{
+					basewebsocket.WithEndpointSelector(func([]types.Endpoint) (types.Endpoint, error) {
+						return types.Endpoint{}, errors.New("no endpoint available")
+					}),
+				}
+			},
+			wantErr: "no endpoint available",
+		},
+		{
+			name: "subscription messages",
+			setup: func(t *testing.T, handler *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option) {
+				t.Helper()
+				handler.EXPECT().CreateMessages(tickers).Return(nil, errors.New("unsupported ticker")).AnyTimes()
+				server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+					_, _, _ = conn.Read(context.Background())
+					return nil
+				})
+				return websocketConfig(server.URL), []basewebsocket.Option{basewebsocket.WithHTTPClient(server.Client())}
+			},
+			wantErr: "unsupported ticker",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			handler := wstestutil.NewMockDataHandler(ctrl)
+			handler.EXPECT().Copy().Return(handler).AnyTimes()
+			cfg, opts := tt.setup(t, handler)
+			cfg.ReconnectionTimeout = time.Millisecond
+			fetcher, err := basewebsocket.NewFetcher(cfg, handler, opts...)
+			require.NoError(t, err)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			responseCh := make(chan types.Response)
+			errCh := make(chan error, 1)
+			go func() {
+				errCh <- fetcher.Run(ctx, tickers, responseCh)
+			}()
+
+			for range 2 {
+				select {
+				case response := <-responseCh:
+					providerErr := response.Unresolved["ATOMUSD"]
+					require.Equal(t, types.ErrorWebsocketStartFail, providerErr.Code())
+					require.ErrorContains(t, providerErr, tt.wantErr)
+				case err := <-errCh:
+					t.Fatalf("fetcher stopped before retrying the session: %v", err)
+				case <-time.After(5 * time.Second):
+					t.Fatal("timed out waiting for the session failure response")
+				}
+			}
+
+			cancel()
+			select {
+			case err := <-errCh:
+				require.ErrorIs(t, err, context.Canceled)
+			case <-time.After(5 * time.Second):
+				t.Fatal("fetcher did not stop")
+			}
+		})
+	}
+}
+
 func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)

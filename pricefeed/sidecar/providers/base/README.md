@@ -17,6 +17,14 @@ The [provider registry](../README.md) constructs it; [sidecar runtime](../../run
 `GetPrices` returns copied results for configured pairs. Runtime, provider, and fetcher ownership are distinct: changing
 market mappings must preserve the configured identity and the intended retained-price semantics while retargeting transport work.
 
+## Failed fetches
+
+A fetch that fails publishes its tickers as unresolved, counted by error code in `ark.pricefeed.provider.responses`,
+and is retried: an API batch on its next interval, a WebSocket shard after its reconnect delay. That holds for failures
+before anything is sent too, such as a URL the adapter cannot build, a request that would leave its configured origin,
+or subscription messages the adapter cannot construct. Only a panic or a failed API ticker batching ends a provider's
+run.
+
 ## Unchanged results
 
 A venue heartbeat that vouches for a subscription reports an unchanged result: no price, only a timestamp. [receive.go](receive.go)

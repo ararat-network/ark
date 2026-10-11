@@ -83,11 +83,13 @@ func TestRunRejectsNilResponseChannelAndEmptyTickers(t *testing.T) {
 	require.NoError(t, fetcher.Run(context.Background(), nil, make(chan types.Response)))
 }
 
-func TestRunReturnsErrorWhenEndpointSelectionFails(t *testing.T) {
+func TestRunPublishesUnresolvedBatchWhenEndpointSelectionFails(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
+	cfg := apiConfig()
+	cfg.BatchSize = len(tickers)
 
 	fetcher, err := NewFetcher(
-		apiConfig(),
+		cfg,
 		&http.Client{},
 		newMockDataHandler(t),
 		WithEndpointSelector(func([]types.Endpoint) (types.Endpoint, error) {
@@ -96,9 +98,16 @@ func TestRunReturnsErrorWhenEndpointSelectionFails(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
-	require.ErrorIs(t, err, ErrSelectEndpoint)
-	require.ErrorContains(t, err, "no endpoint available")
+	response, err := runAPIOnce(fetcher, tickers)
+	require.NoError(t, err)
+	require.Empty(t, response.Resolved)
+	require.Len(t, response.Unresolved, len(tickers))
+	for _, ticker := range tickers {
+		providerErr := response.Unresolved[ticker]
+		require.Equal(t, types.ErrorAPIGeneral, providerErr.Code())
+		require.ErrorContains(t, providerErr, ErrSelectEndpoint.Error())
+		require.ErrorContains(t, providerErr, "no endpoint available")
+	}
 }
 
 func TestRunReturnsTickerBatcherError(t *testing.T) {
@@ -118,7 +127,7 @@ func TestRunReturnsTickerBatcherError(t *testing.T) {
 	require.EqualError(t, err, "batching API tickers: unsupported ticker group")
 }
 
-func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
+func TestRunPublishesUnresolvedBatchWhenCreateURLFails(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
 	cfg := apiConfig()
 	cfg.BatchSize = len(tickers)
@@ -130,9 +139,58 @@ func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
 	fetcher, err := NewFetcher(cfg, &http.Client{}, handler)
 	require.NoError(t, err)
 
-	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
-	require.ErrorIs(t, err, ErrCreateURL)
-	require.ErrorContains(t, err, "missing ticker")
+	response, err := runAPIOnce(fetcher, tickers)
+	require.NoError(t, err)
+	require.Empty(t, response.Resolved)
+	require.Len(t, response.Unresolved, len(tickers))
+	for _, ticker := range tickers {
+		providerErr := response.Unresolved[ticker]
+		require.Equal(t, types.ErrorUnableToCreateURL, providerErr.Code())
+		require.ErrorContains(t, providerErr, ErrCreateURL.Error())
+		require.ErrorContains(t, providerErr, "missing ticker")
+	}
+}
+
+// A batch that cannot be queried is retried on the next interval, so a cause that clears lets it
+// resolve without restarting the provider.
+func TestRunRetriesAFailedBatchNextInterval(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	expected := types.NewResponse(map[types.Ticker]types.Result{
+		"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
+	}, nil)
+
+	cfg := apiConfig()
+	cfg.Interval = time.Millisecond
+	handler := newMockDataHandler(t)
+	gomock.InOrder(
+		handler.EXPECT().
+			CreateURL(cfg.Endpoints[0], tickers).
+			Return("", errors.New("missing ticker")),
+		handler.EXPECT().
+			CreateURL(cfg.Endpoints[0], tickers).
+			Return(testURL, nil),
+	)
+	handler.EXPECT().
+		ParseResponse(tickers, gomock.Any()).
+		Return(expected)
+
+	requests := make(chan *http.Request, 1)
+	fetcher, err := NewFetcher(cfg, &http.Client{Transport: recordingTransport(requests, `{"ok":true}`)}, handler)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	responses := make(chan types.Response)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fetcher.Run(ctx, tickers, responses)
+	}()
+
+	failed := receiveResponse(t, responses)
+	require.Equal(t, types.ErrorUnableToCreateURL, failed.Unresolved["ATOMUSD"].Code())
+	require.Equal(t, expected, receiveResponse(t, responses))
+	cancel()
+	require.ErrorIs(t, <-errCh, context.Canceled)
 }
 
 func TestRunReturnsErrorWhenBatchLoopPanics(t *testing.T) {
@@ -793,8 +851,11 @@ func TestRunRefusesChangedRequestOriginBeforeSendingCredentials(t *testing.T) {
 				return nil, errors.New("unexpected request")
 			})}, handler)
 			require.NoError(t, err)
-			_, err = runAPIOnce(fetcher, tickers)
-			require.ErrorContains(t, err, "retain its configured HTTPS origin")
+			response, err := runAPIOnce(fetcher, tickers)
+			require.NoError(t, err)
+			providerErr := response.Unresolved["ATOMUSD"]
+			require.Equal(t, types.ErrorAPIGeneral, providerErr.Code())
+			require.ErrorContains(t, providerErr, "retain its configured HTTPS origin")
 		})
 	}
 }
