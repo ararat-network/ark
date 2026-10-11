@@ -26,8 +26,8 @@ func (AppModule) ProposalMsgsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_set_security_mandate", 100), simulation.MsgSetSecurityMandateFactory())
 }
 
-// WeightedOperations is empty: pending upgrades do not round-trip through SDK export and client
-// recovery needs IBC state absent from simulation. App integration tests exercise these powers.
+// WeightedOperations is empty: pending upgrades do not round-trip through SDK export. App
+// integration tests exercise these powers.
 func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.WeightedOperation {
 	return nil
 }

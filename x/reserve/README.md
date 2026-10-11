@@ -9,12 +9,12 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 | Entry point | Responsibility |
 | --- | --- |
-| [keeper/position.go](keeper/position.go) | Open/closed positions and their lifecycle. |
-| [keeper/ledger.go](keeper/ledger.go) | Accounting journal and return attribution. |
+| [keeper/position.go](keeper/position.go) | Open/closed positions, their lifecycle, and return attribution. |
+| [keeper/ledger.go](keeper/ledger.go) | Append-only accounting journal. |
 | [keeper/recognition.go](keeper/recognition.go) | Live recognition calculation. |
 | [keeper/fund_transfer.go](keeper/fund_transfer.go) | Reserve-to-Buffer and Reserve-to-Insurance transfers. |
 | [keeper/burn.go](keeper/burn.go) | Burn authorisation and execution. |
-| [keeper/feed_guard.go](keeper/feed_guard.go) | Feed dependencies of recognition entries. |
+| [keeper/feed_guard.go](keeper/feed_guard.go) | Feed dependencies of recognition entries and open positions. |
 
 [keeper/keeper.go](keeper/keeper.go) declares the collections and narrow keeper dependencies.
 [msg_server.go](keeper/msg_server.go) and [grpc_query.go](keeper/grpc_query.go) are the transaction/query boundaries;
@@ -23,14 +23,15 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 ## State and integration
 
-`OpenPositions`, `ClosedPositions`, `Ledger`, `RecognitionPolicy`, and `ReversedReturns` separate current positions, permanent records, and policy. `Mandate` and `AllowanceUsed` track delegated authority. Valuation is calculated from current inputs rather than stored as a cached capital figure. App wiring sets the Treasury reader after construction.
+`OpenPositions`, `ClosedPositions`, `Ledger`, `RecognitionPolicy`, and `ReversedReturns` separate current positions, permanent records, and policy. `LedgerByPosition` indexes the ledger by position, so the position-filtered `Ledger` query reads only that position's entries; it and `ReversedReturns` are derived from the ledger at import, never exported. `Mandate` and `AllowanceUsed` track delegated authority. Valuation is calculated from current inputs rather than stored as a cached capital figure. App wiring sets the Treasury reader after construction.
 
 ## Mandate, custody, and journal
 
 The mandate contains an exact committee, term window, gross deployment allowance, minimum NOAH balance, and approved
-destinations. Deployments consume allowance permanently for the term, enforce the remaining balance floor, and send
-only to those destinations. Recognition policy outlives appointments. There is no separate guardian or pause state:
-governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
+destinations. A NOAH deployment consumes allowance permanently for the term and enforces the remaining balance floor;
+any other held denomination deploys in kind against the holding alone, since that capital was charged when it first
+went out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no
+separate guardian or pause state: governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
 rejected because the bounded on-chain outflow and the off-chain custody relationship have different evidence.
 
 A `Position` holds attested quantity and venue reference beside proven deployed/returned amounts, impairment, and
@@ -38,11 +39,13 @@ opening/closing heights. Every mutation appends an `AccountingEntry`; correction
 editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a Bank fact, but assigning
 it to a position is an accounting act. Return value is crystallised at attribution with a fresh rate; realised profit
 or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven movements or their dates.
+Venue and entry references are free-form evidence the chain never interprets, at most 2,048 bytes
+(`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value.
 
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
-loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism, since opening requires a
-real allowance-consuming deployment. No deployment veto window exists; governance pre-approves payees and prices its
-veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
+loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
+allowance again, and an in-kind reopening is booked at the live Oracle value. No deployment veto window exists;
+governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
 and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
@@ -80,24 +83,29 @@ The feed always derives from the prefix: `abtc-cb` and `abtc-osl` use the same s
 There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates.
 A different price series needs a different prefix. Governance sizes the combined cap ratios of entries sharing a series.
 
-Each entry supplies its own positive `max_rate_age`, bounded by `MaxRecognitionRateAge`; Oracle evaluates that request
-through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property; acceptable age is
-consumer risk policy. Oracle-wide per-denomination age overrides were removed because one series can serve conversion
-and reserve recognition with different tolerances.
+Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
+that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
+acceptable age is consumer risk policy. Oracle carries no per-denomination age override, because one series can serve
+conversion and reserve recognition with different tolerances. Each `RecognisedCapital` row reports its entry's
+window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses.
 
-Feed guards derive two kinds of claims at read time: every eligibility entry, and an open position whose returns
-still need attribution. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
+Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
+external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
 Bank custody admits NOAH and registered protocol paper, never external-shaped tokens: external holdings remain at
 attested destinations, and no native mint path produces those symbols.
 
 ## Queries, events, and genesis
 
 The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, balances, positions, ledger, recognition
-policy, and capital decomposition with per-row reasons. Bank transfer/burn events record custody movements;
+policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound,
+solved as the burn handler solves it. Bank transfer/burn events record custody movements;
 `EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
-Genesis preserves open and closed positions and their unpruned history, then recomputes proven position figures and
-term usage from the ledger. IDs, correction references, position references, and closure rules must agree. Oracle
-imports first so recognition entries can validate their feeds. Non-NOAH Bank balances must be registry members.
+Genesis preserves open and closed positions and their unpruned history, reconciles the stated position figures and
+term usage against the ledger, refusing a mismatch, and rebuilds the per-position and reversal indexes. IDs,
+correction references, position references, and closure rules must agree. Positions and entries are permanent: IDs
+run from one without a gap and each sequence sits one past its records, so an export
+that lost a record cannot import. Oracle imports first so recognition entries can validate their feeds. Non-NOAH Bank
+balances must be registry members.
 
 ## Development
 
@@ -120,6 +128,13 @@ The `types/` package mixes handwritten domain code with generated Go; do not edi
 The authoritative service and event definitions are [transactions](../../proto/ark/reserve/v1/tx.proto),
 [queries](../../proto/ark/reserve/v1/query.proto), and [events](../../proto/ark/reserve/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
+
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+missing position is `NotFound`, on the transaction path as on the query path, and an operation that needs an open
+position reports a closed one the same way. Every other failure in the module is a plain error, since nothing
+branches on it. Handlers classify only the request itself.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 

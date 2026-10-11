@@ -9,19 +9,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	clientmetrics "github.com/ararat-network/ark/pricefeed/client/metrics"
 )
 
 func TestRecordSidecarResponse(t *testing.T) {
-	originalProvider := otel.GetMeterProvider()
-	t.Cleanup(func() {
-		otel.SetMeterProvider(originalProvider)
-	})
-
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
@@ -30,8 +25,10 @@ func TestRecordSidecarResponse(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
+	// Success stamps are package state and outlive a run.
+	clientmetrics.SetEndpoints(context.Background(), nil)
 	clientmetrics.SetEndpoints(context.Background(), []string{"sidecar-a:8080", "sidecar-b:8080"})
 	initial, err := registry.Gather()
 	require.NoError(t, err)

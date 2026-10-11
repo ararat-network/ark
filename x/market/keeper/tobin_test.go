@@ -16,7 +16,7 @@ func (s *KeeperTestSuite) seedTobinTaxOverride(denom string, tobinTax math.Legac
 	s.Require().NoError(s.keeper.TobinTaxOverrides.Set(s.ctx, denom, tobinTax))
 }
 
-func (s *KeeperTestSuite) TestGetTobinTax() {
+func (s *KeeperTestSuite) TestGetTobinTaxes() {
 	// Every case uses its own denomination: overrides are suite state that
 	// survives between subtests, and a shared denomination would let one case
 	// decide the next one's answer.
@@ -66,17 +66,24 @@ func (s *KeeperTestSuite) TestGetTobinTax() {
 				s.seedTobinTaxOverride(tc.denom, tc.override)
 			}
 
-			tobinTax, err := s.keeper.GetTobinTax(s.ctx, tc.denom)
+			taxes, err := s.keeper.GetTobinTaxes(s.ctx, tc.denom)
 			s.Require().NoError(err)
-			s.Require().True(tc.expected.Equal(tobinTax), "expected %s, got %s", tc.expected, tobinTax)
+			s.Require().True(tc.expected.Equal(taxes[tc.denom]), "expected %s, got %s", tc.expected, taxes[tc.denom])
 		})
 	}
+
+	// One call resolves a pair, the override and the default side by side.
+	taxes, err := s.keeper.GetTobinTaxes(s.ctx, chain.KRWBaseDenom, chain.USDBaseDenom)
+	s.Require().NoError(err)
+	s.Require().Len(taxes, 2)
+	s.Require().True(math.LegacyNewDecWithPrec(1, 2).Equal(taxes[chain.KRWBaseDenom]))
+	s.Require().True(types.DefaultTobinTax.Equal(taxes[chain.USDBaseDenom]))
 }
 
-func (s *KeeperTestSuite) TestGetTobinTaxRequiresParams() {
+func (s *KeeperTestSuite) TestGetTobinTaxesRequiresParams() {
 	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
 
-	_, err := s.keeper.GetTobinTax(s.ctx, chain.USDBaseDenom)
+	_, err := s.keeper.GetTobinTaxes(s.ctx, chain.USDBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 	s.Require().ErrorContains(err, "getting params")
 }

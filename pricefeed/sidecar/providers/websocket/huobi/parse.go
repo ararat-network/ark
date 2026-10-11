@@ -16,6 +16,7 @@ import (
 // parseSubscriptionResponse checks that a subscription succeeded.
 func (h *Handler) parseSubscriptionResponse(msg SubscriptionResponse) error {
 	if Status(msg.Status) != StatusOK {
+		h.logger.Warn("huobi refused a subscription", "id", msg.ID, "status", msg.Status, "reason", msg.ErrMsg)
 		return fmt.Errorf("subscription %s failed with status %q: %s", msg.ID, msg.Status, msg.ErrMsg)
 	}
 	if SymbolFromTopic(msg.Subbed) == "" {
@@ -44,6 +45,8 @@ func (h *Handler) parseTickerStream(msg TickerStream) (types.Response, error) {
 
 	price, err := sidecartypes.ParsePrice(msg.Tick.LastPrice.String())
 	if err != nil {
+		// Pings stop vouching for the older price until a valid one arrives.
+		h.observed.Remove(ticker)
 		unresolved[ticker] = types.NewErrorWithCode(err, types.ErrorFailedToParsePrice)
 		return types.NewResponse(resolved, unresolved), nil
 	}

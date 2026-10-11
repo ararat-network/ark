@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -19,6 +20,7 @@ import (
 	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -48,6 +50,14 @@ type reserveFixture struct {
 	accounts  []simtypes.Account
 	rand      *rand.Rand
 	ctrl      *gomock.Controller
+	custody   *paperCustody
+}
+
+// paperCustody is the non-NOAH side of the Reserve account: the paper Bank holds for it and the
+// denominations the asset registry lists.
+type paperCustody struct {
+	held       sdk.Coins
+	registered map[string]bool
 }
 
 // reserveOption seeds fixture state a factory reads before it will emit
@@ -67,7 +77,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 	cdc := codec.NewProtoCodec(interfaceRegistry)
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	testCtx := sdktestutil.DefaultContextWithDB(t, key, storetypes.NewTransientStoreKey("transient_test"))
-	ctx := testCtx.Ctx.WithBlockHeight(10)
+	ctx := testCtx.Ctx.WithBlockHeight(10).WithBlockTime(time.Unix(10, 0))
 
 	ctrl := gomock.NewController(t)
 	reserveAddr := authtypes.NewModuleAddress(types.StrategicReserveName)
@@ -86,9 +96,29 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		AnyTimes()
 	bankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	bankKeeper.EXPECT().BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	custody := &paperCustody{registered: map[string]bool{}}
+	// Bank refuses to burn paper the account does not hold.
+	bankKeeper.EXPECT().
+		BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, _ string, amounts sdk.Coins) error {
+			for _, coin := range amounts {
+				if coin.Denom != chain.NoahBaseDenom && custody.held.AmountOf(coin.Denom).LT(coin.Amount) {
+					return errortypes.ErrInsufficientFunds
+				}
+			}
+			return nil
+		}).
+		AnyTimes()
 	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
 	oracleKeeper.EXPECT().FeedPhase(gomock.Any(), gomock.Any()).Return(oracletypes.FeedPhaseActive, nil).AnyTimes()
+
+	assetKeeper := testutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().
+		HasAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			return custody.registered[denom], nil
+		}).
+		AnyTimes()
 
 	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
@@ -100,7 +130,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		wasmKeeper,
 		bankKeeper,
 		oracleKeeper,
-		testutil.NewMockAssetKeeper(ctrl),
+		assetKeeper,
 	)
 	require.NoError(t, k.Mandate.Set(ctx, types.DefaultReserveMandate()))
 	require.NoError(t, k.AllowanceUsed.Set(ctx, math.ZeroInt()))
@@ -131,6 +161,7 @@ func newReserveFixture(t *testing.T, balance int64, opts ...reserveOption) reser
 		accounts:  accounts,
 		rand:      r,
 		ctrl:      ctrl,
+		custody:   custody,
 	}
 	for _, opt := range opts {
 		opt(t, &fixture)
@@ -176,6 +207,29 @@ func withTreasuryRequirement(required math.Int) reserveOption {
 	}
 }
 
+// withPaper places paper in Reserve custody, listing each denomination in the registry when
+// registered is set.
+func withPaper(held sdk.Coins, registered bool) reserveOption {
+	return func(_ *testing.T, f *reserveFixture) {
+		f.custody.held = held
+		for _, coin := range held {
+			f.custody.registered[coin.Denom] = registered
+		}
+	}
+}
+
+// withFundShortfalls wires how far the Buffer and Insurance fall below their targets.
+func withFundShortfalls(buffer, insurance math.Int) reserveOption {
+	return func(t *testing.T, f *reserveFixture) {
+		t.Helper()
+
+		reader := testutil.NewMockTreasuryCapitalReader(f.ctrl)
+		reader.EXPECT().RedemptionBufferShortfall(gomock.Any()).Return(buffer, nil).AnyTimes()
+		reader.EXPECT().InsuranceShortfall(gomock.Any()).Return(insurance, nil).AnyTimes()
+		f.keeper.SetTreasuryCapitalReader(reader)
+	}
+}
+
 func TestMsgSetReserveMandateFactory(t *testing.T) {
 	f := newReserveFixture(t, 0)
 
@@ -185,7 +239,7 @@ func TestMsgSetReserveMandateFactory(t *testing.T) {
 	require.NotNil(t, msg)
 	require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), msg.Authority)
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	require.True(t, msg.DeploymentAllowance.Amount.IsPositive())
 	require.NotEmpty(t, msg.Destinations)
 	// The factory's whole job is to emit what the handler accepts.

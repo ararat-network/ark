@@ -256,7 +256,8 @@ func (s *ConfigSuite) TestDisableAPI() {
 		map[string]testutil.Toml{"config/app.toml": appToml},
 	))
 	_, _, err = s.Chain.Validators[0].Exec(s.GetContext(), curl, nil)
-	s.Require().Error(err)
+	// curl's code for a refused connection: nothing listens on the API port.
+	s.Require().ErrorContains(err, "exit code 7")
 }
 
 func TestConfig(t *testing.T) {

@@ -74,6 +74,73 @@ func TestFetchPricesCallsSidecar(t *testing.T) {
 	require.Equal(t, sidecarServer.response, resp)
 }
 
+// The command dials the sidecar named by its flags, decodes the snapshot, and
+// renders it in the requested format.
+func TestPricesCmdRendersTheSidecarSnapshot(t *testing.T) {
+	address := servePrices(t, &pricesPriceFeedServer{response: pricesResponse(t)})
+
+	tests := []struct {
+		output string
+		check  func(t *testing.T, out string)
+	}{
+		{
+			output: pricesOutputJSON,
+			check: func(t *testing.T, out string) {
+				t.Helper()
+				var got pricesView
+				require.NoError(t, json.Unmarshal([]byte(out), &got))
+				require.Equal(t, map[string]string{
+					"akrw": "1234.500000000000000000",
+					"ausd": "1.000000000000000000",
+				}, got.Prices)
+				require.True(t, got.Timestamp.Equal(pricesResponse(t).Timestamp))
+				require.Equal(t, "v1.2.3", got.Version)
+				require.NotEqual(t, "unknown", got.Age)
+			},
+		},
+		{
+			output: pricesOutputTable,
+			check: func(t *testing.T, out string) {
+				t.Helper()
+				require.Contains(t, out, "TIMESTAMP  2026-07-10T10:11:12Z")
+				require.Contains(t, out, "VERSION    v1.2.3")
+				require.Contains(t, out, "akrw   1234.500000000000000000")
+				require.Contains(t, out, "ausd   1.000000000000000000")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.output, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			out := new(bytes.Buffer)
+			cmd := newPricesCmd()
+			cmd.SetOut(out)
+			cmd.SetArgs([]string{"--" + flagAddress, address, "--" + flagOutput, tt.output})
+
+			require.NoError(t, cmd.ExecuteContext(ctx))
+			tt.check(t, out.String())
+		})
+	}
+}
+
+// servePrices serves server on a loopback port and returns its address.
+func servePrices(t *testing.T, server api.PriceFeedServer) string {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	grpcServer := grpc.NewServer()
+	api.RegisterPriceFeedServer(grpcServer, server)
+	go func() {
+		_ = grpcServer.Serve(listener)
+	}()
+	t.Cleanup(grpcServer.Stop)
+
+	return listener.Addr().String()
+}
+
 func TestWritePricesTableSortsDenoms(t *testing.T) {
 	resp := pricesResponse(t)
 	view, err := newPricesView(resp, resp.Timestamp.Add(2*time.Second))

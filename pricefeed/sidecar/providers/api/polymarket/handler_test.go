@@ -137,6 +137,14 @@ func TestParseResponse(t *testing.T) {
 			wantCode: types.ErrorFailedToDecode,
 		},
 		{
+			// The error object carries no tokens, so the requested token is
+			// absent: no response, as for a market that lists other tokens.
+			name:     "venue error body is no response",
+			tickers:  []types.Ticker{yesTicker},
+			body:     `{"error":"market not found"}`,
+			wantCode: types.ErrorNoResponse,
+		},
+		{
 			name:     "more than one ticker is invalid",
 			tickers:  []types.Ticker{yesTicker, noTicker},
 			body:     market,

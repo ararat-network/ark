@@ -15,76 +15,85 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	disbursementkeeper "github.com/ararat-network/ark/x/disbursement/keeper"
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
+	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 )
 
-// TestDisbursementConvertsThroughMarket runs authorised conversion orders through real blocks:
-// Market escrows and settles disbursement's NOAH like any trader's, the stablecoin lands in
-// custody for compensation, and an order's spread cap refuses a fill it did not authorise.
-func TestDisbursementConvertsThroughMarket(t *testing.T) {
+// TestDisbursementFundsAwardsThroughMarket runs stablecoin awards through real blocks: an award
+// converts only its shortfall from the contributor pool, Market escrows and settles the NOAH like
+// any trader's, the stablecoin is reserved for the award, a cap that buys too little or a pool that
+// cannot cover the offer refuses it, and cancelled pay funds the next award without a conversion.
+func TestDisbursementFundsAwardsThroughMarket(t *testing.T) {
 	f := newActivationFixture(t)
 	msgServer := disbursementkeeper.NewMsgServerImpl(f.app.DisbursementKeeper)
 	queryServer := disbursementkeeper.NewQueryServerImpl(f.app.DisbursementKeeper)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
-	custody := authtypes.NewModuleAddress(disbursementtypes.ModuleName)
+	contributors := authtypes.NewModuleAddress(disbursementtypes.ContributorsName)
 	escrow := authtypes.NewModuleAddress(markettypes.ModuleName)
+	pool := chain.NativeBaseAmount(1_000_000)
 	// Small against the fixture pool's depth, so the fill pays the 2% floor rather than slippage.
-	amount := chain.NativeBaseAmount(10)
-
-	f.nextBlock(func(ctx sdk.Context) {
-		params, err := f.app.DisbursementKeeper.Params.Get(ctx)
-		require.NoError(t, err)
-		params.CompensationDenoms = []string{chain.KRWBaseDenom, chain.NoahBaseDenom, chain.USDBaseDenom}
-		_, err = msgServer.UpdateParams(ctx, &disbursementtypes.MsgUpdateParams{Authority: authority, Params: params})
-		require.NoError(t, err)
-		// Stands in for genesis funding: only genesis grows a pool.
-		apptestutil.FundModule(t, f.app, ctx, disbursementtypes.ModuleName, sdk.NewCoins(chain.NoahCoin(amount.MulRaw(2))))
-		require.NoError(t, f.app.DisbursementKeeper.ContributorPool.Set(ctx, disbursementtypes.PoolBalance{Unallocated: amount.MulRaw(2), Open: amount.MulRaw(2)}))
-		// The KRW cap sits below Market's 2% floor, so no fill can satisfy it.
-		for denom, maxSpread := range map[string]string{chain.USDBaseDenom: "0.03", chain.KRWBaseDenom: "0.01"} {
-			_, err := msgServer.AuthoriseConversion(ctx, &disbursementtypes.MsgAuthoriseConversion{
-				Authority: authority, Denom: denom, Amount: amount, MaxSpread: math.LegacyMustNewDecFromStr(maxSpread),
-			})
-			require.NoError(t, err)
+	pay := sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(10))
+	// A lump on the default fortnight: nothing accrues before the cancellation below.
+	award := func(ctx sdk.Context, maxOffer math.Int) (uint64, error) {
+		res, err := msgServer.Compensate(ctx, &disbursementtypes.MsgCompensate{
+			Authority: authority, Beneficiary: f.trader.String(),
+			Amount: pay, StartTime: uint64(ctx.BlockTime().Unix()), Periods: 1, Reference: "converted pay", MaxOffer: maxOffer,
+		})
+		if err != nil {
+			return 0, err
 		}
-	})
+		return res.GrantId, nil
+	}
 
-	var output sdk.Coin
+	var offer, output sdk.Coin
+	var first uint64
 	f.nextBlock(func(ctx sdk.Context) {
-		refused, _ := ctx.CacheContext()
-		_, err := msgServer.Convert(refused, &disbursementtypes.MsgConvert{Sender: f.trader.String(), Denom: chain.KRWBaseDenom, Amount: amount})
-		require.ErrorContains(t, err, "exceeds the order's cap")
-
-		res, err := msgServer.Convert(ctx, &disbursementtypes.MsgConvert{Sender: f.trader.String(), Denom: chain.USDBaseDenom, Amount: amount})
+		// Stands in for genesis funding; the contributor pool needs no opening.
+		apptestutil.FundModule(t, f.app, ctx, disbursementtypes.ContributorsName, sdk.NewCoins(chain.NoahCoin(pool)))
+		quote, err := marketkeeper.NewQueryServerImpl(f.app.MarketKeeper).Buy(ctx, &markettypes.QueryBuyRequest{AskCoin: pay.String(), OfferDenom: chain.NoahBaseDenom})
 		require.NoError(t, err)
-		output = res.Output
-		require.True(t, output.IsPositive())
+		offer, output = quote.OfferCoin, quote.SwapCoin
+		require.True(t, output.Amount.GTE(pay.Amount))
+		// A cap below the sized offer refuses the award whole; the sized offer funds it.
+		refused, _ := ctx.CacheContext()
+		_, err = award(refused, offer.Amount.SubRaw(1))
+		require.ErrorIs(t, err, markettypes.ErrMaximumOfferExceeded)
+		// Reserved principal is not for sale: an offer the pool cannot cover is refused though the balance holds it.
+		short, _ := ctx.CacheContext()
+		_, err = msgServer.GrantOwnership(short, &disbursementtypes.MsgGrantOwnership{
+			Authority: authority, Beneficiary: f.trader.String(),
+			Amount: pool.Sub(offer.Amount).AddRaw(1), StartTime: uint64(ctx.BlockTime().Unix()), Reference: "reserved",
+		})
+		require.NoError(t, err)
+		_, err = award(short, offer.Amount)
+		require.ErrorContains(t, err, "exceeds the contributor pool")
+		first, err = award(ctx, offer.Amount)
+		require.NoError(t, err)
 	})
 
 	ctx := f.readCtx()
 	require.True(t, f.app.BankKeeper.GetBalance(ctx, escrow, chain.NoahBaseDenom).IsZero(), "settlement allocated or burned the whole offer")
-	require.Equal(t, output, f.app.BankKeeper.GetBalance(ctx, custody, chain.USDBaseDenom))
-	require.Equal(t, amount, f.app.BankKeeper.GetBalance(ctx, custody, chain.NoahBaseDenom).Amount, "only the executed order left custody")
-	has, err := f.app.DisbursementKeeper.ConversionOrders.Has(ctx, chain.USDBaseDenom)
+	require.Equal(t, pool.Sub(offer.Amount), f.app.BankKeeper.GetBalance(ctx, contributors, chain.NoahBaseDenom).Amount, "only the sized offer left the account")
+	balance, err := queryServer.Balance(ctx, &disbursementtypes.QueryBalanceRequest{Denom: pay.Denom})
 	require.NoError(t, err)
-	require.False(t, has, "an exhausted order is removed")
-	krw, err := f.app.DisbursementKeeper.ConversionOrders.Get(ctx, chain.KRWBaseDenom)
+	require.Len(t, balance.Accounts, 1)
+	require.Equal(t, pay.Amount, balance.Accounts[0].Reserved.Amount)
+	require.Equal(t, output.Amount.Sub(pay.Amount), balance.Accounts[0].Uncommitted.Amount, "the surplus waits for the next award")
+	journal, err := queryServer.GrantJournal(ctx, &disbursementtypes.QueryGrantJournalRequest{GrantId: first})
 	require.NoError(t, err)
-	require.Equal(t, amount, krw.Remaining)
-
-	balance, err := queryServer.Balance(ctx, &disbursementtypes.QueryBalanceRequest{Denom: chain.USDBaseDenom})
-	require.NoError(t, err)
-	require.Equal(t, output.Amount, balance.Unallocated, "converted stablecoins fund the next compensation award")
-	noah, err := queryServer.Balance(ctx, &disbursementtypes.QueryBalanceRequest{Denom: chain.NoahBaseDenom})
-	require.NoError(t, err)
-	require.Equal(t, amount, noah.Converting)
-	require.True(t, noah.Unallocated.IsZero())
+	actions := make([]disbursementtypes.GrantAction, 0, len(journal.Entries))
+	for _, e := range journal.Entries {
+		actions = append(actions, e.Action)
+	}
+	require.Equal(t, []disbursementtypes.GrantAction{disbursementtypes.GrantAction_GRANT_ACTION_CREATED, disbursementtypes.GrantAction_GRANT_ACTION_CONVERTED}, actions)
 
 	f.nextBlock(func(ctx sdk.Context) {
-		_, err := msgServer.CreateGrant(ctx, &disbursementtypes.MsgCreateGrant{
-			Authority: authority, Kind: disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: f.trader.String(),
-			Amount: output, Schedule: []disbursementtypes.Period{{Length: 1, Parts: 1}}, Reference: "converted pay",
-		})
+		_, err := msgServer.CancelGrants(ctx, &disbursementtypes.MsgCancelGrants{Authority: authority, GrantIds: []uint64{first}})
+		require.NoError(t, err)
+		// Cancelled pay funds the next award, so it needs no cap and converts nothing.
+		_, err = award(ctx, math.ZeroInt())
 		require.NoError(t, err)
 	})
+	ctx = f.readCtx()
+	require.Equal(t, pool.Sub(offer.Amount), f.app.BankKeeper.GetBalance(ctx, contributors, chain.NoahBaseDenom).Amount, "the second award converted nothing")
 }

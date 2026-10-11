@@ -27,17 +27,17 @@ func (s *KeeperTestSuite) TestQueryParams() {
 	s.Require().Equal(params, res.Params)
 }
 
-func (s *KeeperTestSuite) TestQuerySwap() {
+func (s *KeeperTestSuite) TestQuerySell() {
 	tests := []struct {
 		name      string
 		setup     func()
-		req       *types.QuerySwapRequest
+		req       *types.QuerySellRequest
 		code      codes.Code
 		expectErr string
 	}{
 		{
 			name: "empty offer coin",
-			req: &types.QuerySwapRequest{
+			req: &types.QuerySellRequest{
 				OfferCoin: "",
 				AskDenom:  "akrw",
 			},
@@ -46,16 +46,16 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 		},
 		{
 			name: "empty ask denom",
-			req: &types.QuerySwapRequest{
+			req: &types.QuerySellRequest{
 				OfferCoin: "1000000ausd",
 				AskDenom:  "",
 			},
 			code:      codes.InvalidArgument,
-			expectErr: "invalid ask denom",
+			expectErr: "invalid denom",
 		},
 		{
 			name: "invalid offer coin format",
-			req: &types.QuerySwapRequest{
+			req: &types.QuerySellRequest{
 				OfferCoin: "notacoin",
 				AskDenom:  "akrw",
 			},
@@ -63,17 +63,17 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 			expectErr: "invalid decimal coin expression",
 		},
 		{
-			name: "missing oracle price returns failed precondition",
+			name: "missing oracle price returns not found",
 			setup: func() {
 				s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "unknown").
 					Return(nil, oracletypes.ErrUnknownDenom)
 			},
-			req: &types.QuerySwapRequest{
+			req: &types.QuerySellRequest{
 				OfferCoin: "1000000ausd",
 				AskDenom:  "unknown",
 			},
-			code:      codes.FailedPrecondition,
-			expectErr: "no price registered with oracle",
+			code:      codes.NotFound,
+			expectErr: "unknown denom",
 		},
 		{
 			name: "stale oracle price returns failed precondition",
@@ -81,7 +81,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 				s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 					Return(nil, oracletypes.ErrStaleExchangeRate)
 			},
-			req: &types.QuerySwapRequest{
+			req: &types.QuerySellRequest{
 				OfferCoin: "1000000ausd",
 				AskDenom:  "akrw",
 			},
@@ -96,7 +96,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 				tc.setup()
 			}
 
-			_, err := s.queryClient.Swap(s.ctx, tc.req)
+			_, err := s.queryClient.Sell(s.ctx, tc.req)
 			s.Require().Error(err)
 			s.Require().Equal(tc.code, status.Code(err))
 			s.Require().ErrorContains(err, tc.expectErr)
@@ -104,7 +104,7 @@ func (s *KeeperTestSuite) TestQuerySwap() {
 	}
 }
 
-func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
+func (s *KeeperTestSuite) TestQuerySellAcceptsLargeRepresentableAmount() {
 	largeAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 200))
 	offerCoin := sdk.NewCoin("ausd", largeAmount)
 
@@ -119,7 +119,7 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	s.seedTobinTaxOverride("ausd", math.LegacyZeroDec())
 	s.seedTobinTaxOverride("akrw", math.LegacyZeroDec())
 
-	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	res, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  "akrw",
 	})
@@ -127,7 +127,7 @@ func (s *KeeperTestSuite) TestQuerySwapAcceptsLargeRepresentableAmount() {
 	s.Require().Equal(sdk.NewCoin("akrw", largeAmount), res.SwapCoin)
 }
 
-func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentablePoolUnitIntermediate() {
+func (s *KeeperTestSuite) TestQuerySellDirectStableConversionAvoidsUnrepresentablePoolUnitIntermediate() {
 	offerAmount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
 	offerCoin := sdk.NewCoin("ausd", offerAmount)
 
@@ -142,7 +142,7 @@ func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentab
 	s.seedTobinTaxOverride("ausd", math.LegacyZeroDec())
 	s.seedTobinTaxOverride("akrw", math.LegacyZeroDec())
 
-	res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+	res, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  "akrw",
 	})
@@ -150,7 +150,7 @@ func (s *KeeperTestSuite) TestQuerySwapDirectStableConversionAvoidsUnrepresentab
 	s.Require().Equal(sdk.NewCoin("akrw", offerAmount), res.SwapCoin)
 }
 
-func (s *KeeperTestSuite) TestQuerySwapOutcome() {
+func (s *KeeperTestSuite) TestQuerySellOutcome() {
 	tests := []struct {
 		name             string
 		offerRate        math.LegacyDec
@@ -197,9 +197,9 @@ func (s *KeeperTestSuite) TestQuerySwapOutcome() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			s.setupQuerySwapMocks(tc.offerRate, tc.askRate, tc.tobinTax)
+			s.setupQuerySellMocks(tc.offerRate, tc.askRate, tc.tobinTax)
 
-			res, err := s.queryClient.Swap(s.ctx, &types.QuerySwapRequest{
+			res, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{
 				OfferCoin: "1ausd",
 				AskDenom:  "akrw",
 			})
@@ -357,10 +357,10 @@ func ptr[T any](value T) *T {
 	return &value
 }
 
-// setupQuerySwapMocks pins both the rates and the spread of a stable pair. Both
+// setupQuerySellMocks pins both the rates and the spread of a stable pair. Both
 // legs are overridden to the same rate so the wider-of-two rule cannot influence
 // the arithmetic under test; the rule itself is covered in the swap tests.
-func (s *KeeperTestSuite) setupQuerySwapMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
+func (s *KeeperTestSuite) setupQuerySellMocks(offerRate math.LegacyDec, askRate math.LegacyDec, tobinTax math.LegacyDec) {
 	s.oracleKeeper.EXPECT().GetRateSet(s.ctx, "ausd", "akrw").
 		Return(oracletypes.RateSet{
 			"ausd":             offerRate,

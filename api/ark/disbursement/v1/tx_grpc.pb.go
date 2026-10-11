@@ -21,23 +21,19 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Msg_UpdateParams_FullMethodName        = "/ark.disbursement.v1.Msg/UpdateParams"
 	Msg_SetGrantsMandate_FullMethodName    = "/ark.disbursement.v1.Msg/SetGrantsMandate"
-	Msg_CreateGrant_FullMethodName         = "/ark.disbursement.v1.Msg/CreateGrant"
-	Msg_CommitteeRegister_FullMethodName   = "/ark.disbursement.v1.Msg/CommitteeRegister"
-	Msg_Release_FullMethodName             = "/ark.disbursement.v1.Msg/Release"
+	Msg_OpenTranche_FullMethodName         = "/ark.disbursement.v1.Msg/OpenTranche"
+	Msg_ReturnUnallocated_FullMethodName   = "/ark.disbursement.v1.Msg/ReturnUnallocated"
+	Msg_GrantOwnership_FullMethodName      = "/ark.disbursement.v1.Msg/GrantOwnership"
+	Msg_Compensate_FullMethodName          = "/ark.disbursement.v1.Msg/Compensate"
 	Msg_CancelGrants_FullMethodName        = "/ark.disbursement.v1.Msg/CancelGrants"
+	Msg_ReinstateMembers_FullMethodName    = "/ark.disbursement.v1.Msg/ReinstateMembers"
+	Msg_CommitteeRegistrar_FullMethodName  = "/ark.disbursement.v1.Msg/CommitteeRegistrar"
+	Msg_RegisterMembers_FullMethodName     = "/ark.disbursement.v1.Msg/RegisterMembers"
 	Msg_CommitteeSuspend_FullMethodName    = "/ark.disbursement.v1.Msg/CommitteeSuspend"
 	Msg_CommitteeReinstate_FullMethodName  = "/ark.disbursement.v1.Msg/CommitteeReinstate"
-	Msg_ReinstateMembers_FullMethodName    = "/ark.disbursement.v1.Msg/ReinstateMembers"
-	Msg_VoidSuspensions_FullMethodName     = "/ark.disbursement.v1.Msg/VoidSuspensions"
+	Msg_CommitteeCompensate_FullMethodName = "/ark.disbursement.v1.Msg/CommitteeCompensate"
 	Msg_SetPayee_FullMethodName            = "/ark.disbursement.v1.Msg/SetPayee"
 	Msg_SetController_FullMethodName       = "/ark.disbursement.v1.Msg/SetController"
-	Msg_ReturnUnallocated_FullMethodName   = "/ark.disbursement.v1.Msg/ReturnUnallocated"
-	Msg_OpenTranche_FullMethodName         = "/ark.disbursement.v1.Msg/OpenTranche"
-	Msg_AuthoriseConversion_FullMethodName = "/ark.disbursement.v1.Msg/AuthoriseConversion"
-	Msg_CancelConversion_FullMethodName    = "/ark.disbursement.v1.Msg/CancelConversion"
-	Msg_Convert_FullMethodName             = "/ark.disbursement.v1.Msg/Convert"
-	Msg_CommitteeCompensate_FullMethodName = "/ark.disbursement.v1.Msg/CommitteeCompensate"
-	Msg_CancelTermGrants_FullMethodName    = "/ark.disbursement.v1.Msg/CancelTermGrants"
 )
 
 // MsgClient is the client API for Msg service.
@@ -50,40 +46,38 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	// SetGrantsMandate appoints, replaces, or disables the grants committee.
 	SetGrantsMandate(ctx context.Context, in *MsgSetGrantsMandate, opts ...grpc.CallOption) (*MsgSetGrantsMandateResponse, error)
-	// CreateGrant reserves a fully funded ownership or compensation award under governance authority.
-	CreateGrant(ctx context.Context, in *MsgCreateGrant, opts ...grpc.CallOption) (*MsgCreateGrantResponse, error)
-	// CommitteeRegister permanently registers members and pays their first period atomically.
-	CommitteeRegister(ctx context.Context, in *MsgCommitteeRegister, opts ...grpc.CallOption) (*MsgCommitteeRegisterResponse, error)
-	// Release pays currently available entitlement to the stored payees.
-	Release(ctx context.Context, in *MsgRelease, opts ...grpc.CallOption) (*MsgReleaseResponse, error)
-	// CancelGrants freezes earned debt and frees only unearned principal without paying recipients.
+	// OpenTranche opens member-pool NOAH to registration under governance authority.
+	OpenTranche(ctx context.Context, in *MsgOpenTranche, opts ...grpc.CallOption) (*MsgOpenTrancheResponse, error)
+	// ReturnUnallocated returns uncommitted contributor custody to the community pool under
+	// governance authority.
+	ReturnUnallocated(ctx context.Context, in *MsgReturnUnallocated, opts ...grpc.CallOption) (*MsgReturnUnallocatedResponse, error)
+	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance
+	// authority.
+	GrantOwnership(ctx context.Context, in *MsgGrantOwnership, opts ...grpc.CallOption) (*MsgGrantOwnershipResponse, error)
+	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin
+	// award.
+	Compensate(ctx context.Context, in *MsgCompensate, opts ...grpc.CallOption) (*MsgCompensateResponse, error)
+	// CancelGrants freezes earned debt and frees only unearned principal; the block pays the debt.
 	CancelGrants(ctx context.Context, in *MsgCancelGrants, opts ...grpc.CallOption) (*MsgCancelGrantsResponse, error)
+	// ReinstateMembers resumes suspended members under governance authority.
+	ReinstateMembers(ctx context.Context, in *MsgReinstateMembers, opts ...grpc.CallOption) (*MsgReinstateMembersResponse, error)
+	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term,
+	// for a window inside the committee's.
+	CommitteeRegistrar(ctx context.Context, in *MsgCommitteeRegistrar, opts ...grpc.CallOption) (*MsgCommitteeRegistrarResponse, error)
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its
+	// first period, under the live registrar term and within the open member tranche.
+	RegisterMembers(ctx context.Context, in *MsgRegisterMembers, opts ...grpc.CallOption) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(ctx context.Context, in *MsgCommitteeSuspend, opts ...grpc.CallOption) (*MsgCommitteeSuspendResponse, error)
 	// CommitteeReinstate resumes suspended members under the live committee term.
 	CommitteeReinstate(ctx context.Context, in *MsgCommitteeReinstate, opts ...grpc.CallOption) (*MsgCommitteeReinstateResponse, error)
-	// ReinstateMembers resumes suspended members under governance authority.
-	ReinstateMembers(ctx context.Context, in *MsgReinstateMembers, opts ...grpc.CallOption) (*MsgReinstateMembersResponse, error)
-	// VoidSuspensions invalidates every suspension made under a replaced committee term.
-	VoidSuspensions(ctx context.Context, in *MsgVoidSuspensions, opts ...grpc.CallOption) (*MsgVoidSuspensionsResponse, error)
+	// CommitteeCompensate awards compensation within the live term's allowance, converting NOAH for a
+	// stablecoin award. Ownership is governance's alone (D113).
+	CommitteeCompensate(ctx context.Context, in *MsgCommitteeCompensate, opts ...grpc.CallOption) (*MsgCommitteeCompensateResponse, error)
 	// SetPayee changes a destination under member or contributor controller authority.
 	SetPayee(ctx context.Context, in *MsgSetPayee, opts ...grpc.CallOption) (*MsgSetPayeeResponse, error)
 	// SetController rotates contributor control without changing beneficiary identity.
 	SetController(ctx context.Context, in *MsgSetController, opts ...grpc.CallOption) (*MsgSetControllerResponse, error)
-	// ReturnUnallocated returns unreserved custody to the community pool under governance authority.
-	ReturnUnallocated(ctx context.Context, in *MsgReturnUnallocated, opts ...grpc.CallOption) (*MsgReturnUnallocatedResponse, error)
-	// OpenTranche opens pool NOAH to new grants under governance authority.
-	OpenTranche(ctx context.Context, in *MsgOpenTranche, opts ...grpc.CallOption) (*MsgOpenTrancheResponse, error)
-	// AuthoriseConversion adds open contributor NOAH to a stablecoin conversion order.
-	AuthoriseConversion(ctx context.Context, in *MsgAuthoriseConversion, opts ...grpc.CallOption) (*MsgAuthoriseConversionResponse, error)
-	// CancelConversion returns an order's remaining NOAH to the open contributor tranche.
-	CancelConversion(ctx context.Context, in *MsgCancelConversion, opts ...grpc.CallOption) (*MsgCancelConversionResponse, error)
-	// Convert executes part of an authorised order; any sender may submit it.
-	Convert(ctx context.Context, in *MsgConvert, opts ...grpc.CallOption) (*MsgConvertResponse, error)
-	// CommitteeCompensate awards compensation within the live term's allowance.
-	CommitteeCompensate(ctx context.Context, in *MsgCommitteeCompensate, opts ...grpc.CallOption) (*MsgCommitteeCompensateResponse, error)
-	// CancelTermGrants cancels every unfinished committee award of one term.
-	CancelTermGrants(ctx context.Context, in *MsgCancelTermGrants, opts ...grpc.CallOption) (*MsgCancelTermGrantsResponse, error)
 }
 
 type msgClient struct {
@@ -114,30 +108,40 @@ func (c *msgClient) SetGrantsMandate(ctx context.Context, in *MsgSetGrantsMandat
 	return out, nil
 }
 
-func (c *msgClient) CreateGrant(ctx context.Context, in *MsgCreateGrant, opts ...grpc.CallOption) (*MsgCreateGrantResponse, error) {
+func (c *msgClient) OpenTranche(ctx context.Context, in *MsgOpenTranche, opts ...grpc.CallOption) (*MsgOpenTrancheResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCreateGrantResponse)
-	err := c.cc.Invoke(ctx, Msg_CreateGrant_FullMethodName, in, out, cOpts...)
+	out := new(MsgOpenTrancheResponse)
+	err := c.cc.Invoke(ctx, Msg_OpenTranche_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) CommitteeRegister(ctx context.Context, in *MsgCommitteeRegister, opts ...grpc.CallOption) (*MsgCommitteeRegisterResponse, error) {
+func (c *msgClient) ReturnUnallocated(ctx context.Context, in *MsgReturnUnallocated, opts ...grpc.CallOption) (*MsgReturnUnallocatedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCommitteeRegisterResponse)
-	err := c.cc.Invoke(ctx, Msg_CommitteeRegister_FullMethodName, in, out, cOpts...)
+	out := new(MsgReturnUnallocatedResponse)
+	err := c.cc.Invoke(ctx, Msg_ReturnUnallocated_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *msgClient) Release(ctx context.Context, in *MsgRelease, opts ...grpc.CallOption) (*MsgReleaseResponse, error) {
+func (c *msgClient) GrantOwnership(ctx context.Context, in *MsgGrantOwnership, opts ...grpc.CallOption) (*MsgGrantOwnershipResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgReleaseResponse)
-	err := c.cc.Invoke(ctx, Msg_Release_FullMethodName, in, out, cOpts...)
+	out := new(MsgGrantOwnershipResponse)
+	err := c.cc.Invoke(ctx, Msg_GrantOwnership_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) Compensate(ctx context.Context, in *MsgCompensate, opts ...grpc.CallOption) (*MsgCompensateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCompensateResponse)
+	err := c.cc.Invoke(ctx, Msg_Compensate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +152,36 @@ func (c *msgClient) CancelGrants(ctx context.Context, in *MsgCancelGrants, opts 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MsgCancelGrantsResponse)
 	err := c.cc.Invoke(ctx, Msg_CancelGrants_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) ReinstateMembers(ctx context.Context, in *MsgReinstateMembers, opts ...grpc.CallOption) (*MsgReinstateMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgReinstateMembersResponse)
+	err := c.cc.Invoke(ctx, Msg_ReinstateMembers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) CommitteeRegistrar(ctx context.Context, in *MsgCommitteeRegistrar, opts ...grpc.CallOption) (*MsgCommitteeRegistrarResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgCommitteeRegistrarResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeRegistrar_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) RegisterMembers(ctx context.Context, in *MsgRegisterMembers, opts ...grpc.CallOption) (*MsgRegisterMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgRegisterMembersResponse)
+	err := c.cc.Invoke(ctx, Msg_RegisterMembers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,20 +208,10 @@ func (c *msgClient) CommitteeReinstate(ctx context.Context, in *MsgCommitteeRein
 	return out, nil
 }
 
-func (c *msgClient) ReinstateMembers(ctx context.Context, in *MsgReinstateMembers, opts ...grpc.CallOption) (*MsgReinstateMembersResponse, error) {
+func (c *msgClient) CommitteeCompensate(ctx context.Context, in *MsgCommitteeCompensate, opts ...grpc.CallOption) (*MsgCommitteeCompensateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgReinstateMembersResponse)
-	err := c.cc.Invoke(ctx, Msg_ReinstateMembers_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) VoidSuspensions(ctx context.Context, in *MsgVoidSuspensions, opts ...grpc.CallOption) (*MsgVoidSuspensionsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgVoidSuspensionsResponse)
-	err := c.cc.Invoke(ctx, Msg_VoidSuspensions_FullMethodName, in, out, cOpts...)
+	out := new(MsgCommitteeCompensateResponse)
+	err := c.cc.Invoke(ctx, Msg_CommitteeCompensate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -214,76 +238,6 @@ func (c *msgClient) SetController(ctx context.Context, in *MsgSetController, opt
 	return out, nil
 }
 
-func (c *msgClient) ReturnUnallocated(ctx context.Context, in *MsgReturnUnallocated, opts ...grpc.CallOption) (*MsgReturnUnallocatedResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgReturnUnallocatedResponse)
-	err := c.cc.Invoke(ctx, Msg_ReturnUnallocated_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) OpenTranche(ctx context.Context, in *MsgOpenTranche, opts ...grpc.CallOption) (*MsgOpenTrancheResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgOpenTrancheResponse)
-	err := c.cc.Invoke(ctx, Msg_OpenTranche_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) AuthoriseConversion(ctx context.Context, in *MsgAuthoriseConversion, opts ...grpc.CallOption) (*MsgAuthoriseConversionResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgAuthoriseConversionResponse)
-	err := c.cc.Invoke(ctx, Msg_AuthoriseConversion_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) CancelConversion(ctx context.Context, in *MsgCancelConversion, opts ...grpc.CallOption) (*MsgCancelConversionResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCancelConversionResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelConversion_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) Convert(ctx context.Context, in *MsgConvert, opts ...grpc.CallOption) (*MsgConvertResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgConvertResponse)
-	err := c.cc.Invoke(ctx, Msg_Convert_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) CommitteeCompensate(ctx context.Context, in *MsgCommitteeCompensate, opts ...grpc.CallOption) (*MsgCommitteeCompensateResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCommitteeCompensateResponse)
-	err := c.cc.Invoke(ctx, Msg_CommitteeCompensate_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *msgClient) CancelTermGrants(ctx context.Context, in *MsgCancelTermGrants, opts ...grpc.CallOption) (*MsgCancelTermGrantsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MsgCancelTermGrantsResponse)
-	err := c.cc.Invoke(ctx, Msg_CancelTermGrants_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility.
@@ -294,40 +248,38 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	// SetGrantsMandate appoints, replaces, or disables the grants committee.
 	SetGrantsMandate(context.Context, *MsgSetGrantsMandate) (*MsgSetGrantsMandateResponse, error)
-	// CreateGrant reserves a fully funded ownership or compensation award under governance authority.
-	CreateGrant(context.Context, *MsgCreateGrant) (*MsgCreateGrantResponse, error)
-	// CommitteeRegister permanently registers members and pays their first period atomically.
-	CommitteeRegister(context.Context, *MsgCommitteeRegister) (*MsgCommitteeRegisterResponse, error)
-	// Release pays currently available entitlement to the stored payees.
-	Release(context.Context, *MsgRelease) (*MsgReleaseResponse, error)
-	// CancelGrants freezes earned debt and frees only unearned principal without paying recipients.
+	// OpenTranche opens member-pool NOAH to registration under governance authority.
+	OpenTranche(context.Context, *MsgOpenTranche) (*MsgOpenTrancheResponse, error)
+	// ReturnUnallocated returns uncommitted contributor custody to the community pool under
+	// governance authority.
+	ReturnUnallocated(context.Context, *MsgReturnUnallocated) (*MsgReturnUnallocatedResponse, error)
+	// GrantOwnership reserves a NOAH ownership grant on the ownership schedule under governance
+	// authority.
+	GrantOwnership(context.Context, *MsgGrantOwnership) (*MsgGrantOwnershipResponse, error)
+	// Compensate awards compensation under governance authority, converting NOAH for a stablecoin
+	// award.
+	Compensate(context.Context, *MsgCompensate) (*MsgCompensateResponse, error)
+	// CancelGrants freezes earned debt and frees only unearned principal; the block pays the debt.
 	CancelGrants(context.Context, *MsgCancelGrants) (*MsgCancelGrantsResponse, error)
+	// ReinstateMembers resumes suspended members under governance authority.
+	ReinstateMembers(context.Context, *MsgReinstateMembers) (*MsgReinstateMembersResponse, error)
+	// CommitteeRegistrar appoints, replaces, or disables the registrar under the live committee term,
+	// for a window inside the committee's.
+	CommitteeRegistrar(context.Context, *MsgCommitteeRegistrar) (*MsgCommitteeRegistrarResponse, error)
+	// RegisterMembers permanently registers members, reserving each grant whole and queueing its
+	// first period, under the live registrar term and within the open member tranche.
+	RegisterMembers(context.Context, *MsgRegisterMembers) (*MsgRegisterMembersResponse, error)
 	// CommitteeSuspend pauses member payments under the live committee term.
 	CommitteeSuspend(context.Context, *MsgCommitteeSuspend) (*MsgCommitteeSuspendResponse, error)
 	// CommitteeReinstate resumes suspended members under the live committee term.
 	CommitteeReinstate(context.Context, *MsgCommitteeReinstate) (*MsgCommitteeReinstateResponse, error)
-	// ReinstateMembers resumes suspended members under governance authority.
-	ReinstateMembers(context.Context, *MsgReinstateMembers) (*MsgReinstateMembersResponse, error)
-	// VoidSuspensions invalidates every suspension made under a replaced committee term.
-	VoidSuspensions(context.Context, *MsgVoidSuspensions) (*MsgVoidSuspensionsResponse, error)
+	// CommitteeCompensate awards compensation within the live term's allowance, converting NOAH for a
+	// stablecoin award. Ownership is governance's alone (D113).
+	CommitteeCompensate(context.Context, *MsgCommitteeCompensate) (*MsgCommitteeCompensateResponse, error)
 	// SetPayee changes a destination under member or contributor controller authority.
 	SetPayee(context.Context, *MsgSetPayee) (*MsgSetPayeeResponse, error)
 	// SetController rotates contributor control without changing beneficiary identity.
 	SetController(context.Context, *MsgSetController) (*MsgSetControllerResponse, error)
-	// ReturnUnallocated returns unreserved custody to the community pool under governance authority.
-	ReturnUnallocated(context.Context, *MsgReturnUnallocated) (*MsgReturnUnallocatedResponse, error)
-	// OpenTranche opens pool NOAH to new grants under governance authority.
-	OpenTranche(context.Context, *MsgOpenTranche) (*MsgOpenTrancheResponse, error)
-	// AuthoriseConversion adds open contributor NOAH to a stablecoin conversion order.
-	AuthoriseConversion(context.Context, *MsgAuthoriseConversion) (*MsgAuthoriseConversionResponse, error)
-	// CancelConversion returns an order's remaining NOAH to the open contributor tranche.
-	CancelConversion(context.Context, *MsgCancelConversion) (*MsgCancelConversionResponse, error)
-	// Convert executes part of an authorised order; any sender may submit it.
-	Convert(context.Context, *MsgConvert) (*MsgConvertResponse, error)
-	// CommitteeCompensate awards compensation within the live term's allowance.
-	CommitteeCompensate(context.Context, *MsgCommitteeCompensate) (*MsgCommitteeCompensateResponse, error)
-	// CancelTermGrants cancels every unfinished committee award of one term.
-	CancelTermGrants(context.Context, *MsgCancelTermGrants) (*MsgCancelTermGrantsResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -344,17 +296,29 @@ func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*
 func (UnimplementedMsgServer) SetGrantsMandate(context.Context, *MsgSetGrantsMandate) (*MsgSetGrantsMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetGrantsMandate not implemented")
 }
-func (UnimplementedMsgServer) CreateGrant(context.Context, *MsgCreateGrant) (*MsgCreateGrantResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateGrant not implemented")
+func (UnimplementedMsgServer) OpenTranche(context.Context, *MsgOpenTranche) (*MsgOpenTrancheResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method OpenTranche not implemented")
 }
-func (UnimplementedMsgServer) CommitteeRegister(context.Context, *MsgCommitteeRegister) (*MsgCommitteeRegisterResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitteeRegister not implemented")
+func (UnimplementedMsgServer) ReturnUnallocated(context.Context, *MsgReturnUnallocated) (*MsgReturnUnallocatedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReturnUnallocated not implemented")
 }
-func (UnimplementedMsgServer) Release(context.Context, *MsgRelease) (*MsgReleaseResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Release not implemented")
+func (UnimplementedMsgServer) GrantOwnership(context.Context, *MsgGrantOwnership) (*MsgGrantOwnershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GrantOwnership not implemented")
+}
+func (UnimplementedMsgServer) Compensate(context.Context, *MsgCompensate) (*MsgCompensateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Compensate not implemented")
 }
 func (UnimplementedMsgServer) CancelGrants(context.Context, *MsgCancelGrants) (*MsgCancelGrantsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelGrants not implemented")
+}
+func (UnimplementedMsgServer) ReinstateMembers(context.Context, *MsgReinstateMembers) (*MsgReinstateMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReinstateMembers not implemented")
+}
+func (UnimplementedMsgServer) CommitteeRegistrar(context.Context, *MsgCommitteeRegistrar) (*MsgCommitteeRegistrarResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeRegistrar not implemented")
+}
+func (UnimplementedMsgServer) RegisterMembers(context.Context, *MsgRegisterMembers) (*MsgRegisterMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterMembers not implemented")
 }
 func (UnimplementedMsgServer) CommitteeSuspend(context.Context, *MsgCommitteeSuspend) (*MsgCommitteeSuspendResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeSuspend not implemented")
@@ -362,38 +326,14 @@ func (UnimplementedMsgServer) CommitteeSuspend(context.Context, *MsgCommitteeSus
 func (UnimplementedMsgServer) CommitteeReinstate(context.Context, *MsgCommitteeReinstate) (*MsgCommitteeReinstateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitteeReinstate not implemented")
 }
-func (UnimplementedMsgServer) ReinstateMembers(context.Context, *MsgReinstateMembers) (*MsgReinstateMembersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReinstateMembers not implemented")
-}
-func (UnimplementedMsgServer) VoidSuspensions(context.Context, *MsgVoidSuspensions) (*MsgVoidSuspensionsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method VoidSuspensions not implemented")
+func (UnimplementedMsgServer) CommitteeCompensate(context.Context, *MsgCommitteeCompensate) (*MsgCommitteeCompensateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitteeCompensate not implemented")
 }
 func (UnimplementedMsgServer) SetPayee(context.Context, *MsgSetPayee) (*MsgSetPayeeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetPayee not implemented")
 }
 func (UnimplementedMsgServer) SetController(context.Context, *MsgSetController) (*MsgSetControllerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetController not implemented")
-}
-func (UnimplementedMsgServer) ReturnUnallocated(context.Context, *MsgReturnUnallocated) (*MsgReturnUnallocatedResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReturnUnallocated not implemented")
-}
-func (UnimplementedMsgServer) OpenTranche(context.Context, *MsgOpenTranche) (*MsgOpenTrancheResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OpenTranche not implemented")
-}
-func (UnimplementedMsgServer) AuthoriseConversion(context.Context, *MsgAuthoriseConversion) (*MsgAuthoriseConversionResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AuthoriseConversion not implemented")
-}
-func (UnimplementedMsgServer) CancelConversion(context.Context, *MsgCancelConversion) (*MsgCancelConversionResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelConversion not implemented")
-}
-func (UnimplementedMsgServer) Convert(context.Context, *MsgConvert) (*MsgConvertResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Convert not implemented")
-}
-func (UnimplementedMsgServer) CommitteeCompensate(context.Context, *MsgCommitteeCompensate) (*MsgCommitteeCompensateResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitteeCompensate not implemented")
-}
-func (UnimplementedMsgServer) CancelTermGrants(context.Context, *MsgCancelTermGrants) (*MsgCancelTermGrantsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CancelTermGrants not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 func (UnimplementedMsgServer) testEmbeddedByValue()             {}
@@ -452,56 +392,74 @@ func _Msg_SetGrantsMandate_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CreateGrant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCreateGrant)
+func _Msg_OpenTranche_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgOpenTranche)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CreateGrant(ctx, in)
+		return srv.(MsgServer).OpenTranche(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CreateGrant_FullMethodName,
+		FullMethod: Msg_OpenTranche_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CreateGrant(ctx, req.(*MsgCreateGrant))
+		return srv.(MsgServer).OpenTranche(ctx, req.(*MsgOpenTranche))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_CommitteeRegister_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCommitteeRegister)
+func _Msg_ReturnUnallocated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReturnUnallocated)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).CommitteeRegister(ctx, in)
+		return srv.(MsgServer).ReturnUnallocated(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_CommitteeRegister_FullMethodName,
+		FullMethod: Msg_ReturnUnallocated_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CommitteeRegister(ctx, req.(*MsgCommitteeRegister))
+		return srv.(MsgServer).ReturnUnallocated(ctx, req.(*MsgReturnUnallocated))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_Release_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgRelease)
+func _Msg_GrantOwnership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgGrantOwnership)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).Release(ctx, in)
+		return srv.(MsgServer).GrantOwnership(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_Release_FullMethodName,
+		FullMethod: Msg_GrantOwnership_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).Release(ctx, req.(*MsgRelease))
+		return srv.(MsgServer).GrantOwnership(ctx, req.(*MsgGrantOwnership))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_Compensate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCompensate)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).Compensate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_Compensate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).Compensate(ctx, req.(*MsgCompensate))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -520,6 +478,60 @@ func _Msg_CancelGrants_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).CancelGrants(ctx, req.(*MsgCancelGrants))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_ReinstateMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgReinstateMembers)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).ReinstateMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_ReinstateMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).ReinstateMembers(ctx, req.(*MsgReinstateMembers))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_CommitteeRegistrar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeRegistrar)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).CommitteeRegistrar(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_CommitteeRegistrar_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).CommitteeRegistrar(ctx, req.(*MsgCommitteeRegistrar))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_RegisterMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgRegisterMembers)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).RegisterMembers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_RegisterMembers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).RegisterMembers(ctx, req.(*MsgRegisterMembers))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -560,38 +572,20 @@ func _Msg_CommitteeReinstate_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_ReinstateMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgReinstateMembers)
+func _Msg_CommitteeCompensate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgCommitteeCompensate)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MsgServer).ReinstateMembers(ctx, in)
+		return srv.(MsgServer).CommitteeCompensate(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Msg_ReinstateMembers_FullMethodName,
+		FullMethod: Msg_CommitteeCompensate_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ReinstateMembers(ctx, req.(*MsgReinstateMembers))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_VoidSuspensions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgVoidSuspensions)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).VoidSuspensions(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_VoidSuspensions_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).VoidSuspensions(ctx, req.(*MsgVoidSuspensions))
+		return srv.(MsgServer).CommitteeCompensate(ctx, req.(*MsgCommitteeCompensate))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -632,132 +626,6 @@ func _Msg_SetController_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Msg_ReturnUnallocated_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgReturnUnallocated)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).ReturnUnallocated(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_ReturnUnallocated_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).ReturnUnallocated(ctx, req.(*MsgReturnUnallocated))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_OpenTranche_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgOpenTranche)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).OpenTranche(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_OpenTranche_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).OpenTranche(ctx, req.(*MsgOpenTranche))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_AuthoriseConversion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAuthoriseConversion)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).AuthoriseConversion(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_AuthoriseConversion_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AuthoriseConversion(ctx, req.(*MsgAuthoriseConversion))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_CancelConversion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelConversion)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CancelConversion(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CancelConversion_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelConversion(ctx, req.(*MsgCancelConversion))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_Convert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgConvert)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).Convert(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_Convert_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).Convert(ctx, req.(*MsgConvert))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_CommitteeCompensate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCommitteeCompensate)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CommitteeCompensate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CommitteeCompensate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CommitteeCompensate(ctx, req.(*MsgCommitteeCompensate))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Msg_CancelTermGrants_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgCancelTermGrants)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).CancelTermGrants(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Msg_CancelTermGrants_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).CancelTermGrants(ctx, req.(*MsgCancelTermGrants))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -774,20 +642,36 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_SetGrantsMandate_Handler,
 		},
 		{
-			MethodName: "CreateGrant",
-			Handler:    _Msg_CreateGrant_Handler,
+			MethodName: "OpenTranche",
+			Handler:    _Msg_OpenTranche_Handler,
 		},
 		{
-			MethodName: "CommitteeRegister",
-			Handler:    _Msg_CommitteeRegister_Handler,
+			MethodName: "ReturnUnallocated",
+			Handler:    _Msg_ReturnUnallocated_Handler,
 		},
 		{
-			MethodName: "Release",
-			Handler:    _Msg_Release_Handler,
+			MethodName: "GrantOwnership",
+			Handler:    _Msg_GrantOwnership_Handler,
+		},
+		{
+			MethodName: "Compensate",
+			Handler:    _Msg_Compensate_Handler,
 		},
 		{
 			MethodName: "CancelGrants",
 			Handler:    _Msg_CancelGrants_Handler,
+		},
+		{
+			MethodName: "ReinstateMembers",
+			Handler:    _Msg_ReinstateMembers_Handler,
+		},
+		{
+			MethodName: "CommitteeRegistrar",
+			Handler:    _Msg_CommitteeRegistrar_Handler,
+		},
+		{
+			MethodName: "RegisterMembers",
+			Handler:    _Msg_RegisterMembers_Handler,
 		},
 		{
 			MethodName: "CommitteeSuspend",
@@ -798,12 +682,8 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Msg_CommitteeReinstate_Handler,
 		},
 		{
-			MethodName: "ReinstateMembers",
-			Handler:    _Msg_ReinstateMembers_Handler,
-		},
-		{
-			MethodName: "VoidSuspensions",
-			Handler:    _Msg_VoidSuspensions_Handler,
+			MethodName: "CommitteeCompensate",
+			Handler:    _Msg_CommitteeCompensate_Handler,
 		},
 		{
 			MethodName: "SetPayee",
@@ -812,34 +692,6 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetController",
 			Handler:    _Msg_SetController_Handler,
-		},
-		{
-			MethodName: "ReturnUnallocated",
-			Handler:    _Msg_ReturnUnallocated_Handler,
-		},
-		{
-			MethodName: "OpenTranche",
-			Handler:    _Msg_OpenTranche_Handler,
-		},
-		{
-			MethodName: "AuthoriseConversion",
-			Handler:    _Msg_AuthoriseConversion_Handler,
-		},
-		{
-			MethodName: "CancelConversion",
-			Handler:    _Msg_CancelConversion_Handler,
-		},
-		{
-			MethodName: "Convert",
-			Handler:    _Msg_Convert_Handler,
-		},
-		{
-			MethodName: "CommitteeCompensate",
-			Handler:    _Msg_CommitteeCompensate_Handler,
-		},
-		{
-			MethodName: "CancelTermGrants",
-			Handler:    _Msg_CancelTermGrants_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

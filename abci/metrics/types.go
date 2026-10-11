@@ -5,6 +5,8 @@
 
 package metrics
 
+import "errors"
+
 const notImplemented = "not_implemented"
 
 // Status is a stable, low-cardinality ABCI request outcome used by metrics.
@@ -24,6 +26,7 @@ const (
 	StatusInvalidPrices            Status = "InvalidPricesError"
 	StatusVoteExtensionValidation  Status = "VoteExtensionValidationError"
 	StatusOracleKeeper             Status = "OracleKeeperError"
+	StatusCommitOnly               Status = "CommitOnly"
 )
 
 func (s Status) String() string {
@@ -31,6 +34,33 @@ func (s Status) String() string {
 		return string(StatusFailure)
 	}
 	return string(s)
+}
+
+// Error is a boundary failure that carries the status it records under, so the label travels with
+// the error through every wrap and no handler keeps a table.
+type Error struct {
+	status Status
+	text   string
+}
+
+// NewError makes a sentinel that records under status.
+func NewError(status Status, text string) *Error {
+	return &Error{status: status, text: text}
+}
+
+func (e *Error) Error() string { return e.text }
+
+// StatusOf is the status a handler outcome records under: success for no error, the status of the
+// outermost labelled error in the chain, failure for anything else.
+func StatusOf(err error) Status {
+	if err == nil {
+		return StatusSuccess
+	}
+	var labelled *Error
+	if errors.As(err, &labelled) {
+		return labelled.status
+	}
+	return StatusFailure
 }
 
 type Method int

@@ -62,6 +62,13 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/reserve/v1/recognised_capital";
   }
+
+  // BurnableSurplus queries the largest NOAH burn CommitteeBurnSurplus would
+  // admit at this height. It fails while liability valuation is incomplete.
+  rpc BurnableSurplus(QueryBurnableSurplusRequest) returns (QueryBurnableSurplusResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/reserve/v1/burnable_surplus";
+  }
 }
 
 // QueryMandateRequest is the request type for Query/Mandate.
@@ -179,9 +186,9 @@ message QueryRecognitionPolicyResponse {
 message QueryRecognisedCapitalRequest {}
 
 // QueryRecognisedCapitalResponse reports recognised capital and its complete
-// decomposition. Every zero credit is attributable to a visible zero factor:
-// an absent rate, a zero haircut, a zero cap ratio, nothing held, or an asset
-// held outside the policy.
+// decomposition. Every zero credit has a visible cause in its row: no usable
+// rate, no unimpaired attested quantity, a zero effective cap, an asset outside
+// the policy, or a raw credit below one anoah.
 message QueryRecognisedCapitalResponse {
   // recognised is the figure Treasury sees: the anoah balance plus every
   // asset's credit.
@@ -198,6 +205,17 @@ message QueryRecognisedCapitalResponse {
   // assets covers the union of the policy and everything actually held, so a
   // holding outside the policy is visible here rather than silently absent.
   repeated AssetRecognition assets = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryBurnableSurplusRequest is the request type for Query/BurnableSurplus.
+message QueryBurnableSurplusRequest {}
+
+// QueryBurnableSurplusResponse is the response type for Query/BurnableSurplus.
+message QueryBurnableSurplusResponse {
+  cosmos.base.v1beta1.Coin burnable = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

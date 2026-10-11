@@ -7,10 +7,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	. "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
@@ -24,7 +24,7 @@ func TestRecordResponse(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	SetTickers(context.Background(), "kraken", []types.Ticker{"ATOM/USD", "BTC/USD"})
 	RecordResponse(

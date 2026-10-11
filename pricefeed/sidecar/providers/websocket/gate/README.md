@@ -3,7 +3,7 @@
 The Gate.io WebSocket provider subscribes to the Gate.io spot tickers channel and publishes last prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `gate_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 

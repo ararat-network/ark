@@ -140,7 +140,7 @@ func (s *KeeperTestSuite) TestScheduleFeedTransitionsInOneBlockShareOneBatch() {
 	s.Require().NoError(err)
 	s.Require().Len(feeds.Transitions, 2)
 	for _, transition := range feeds.Transitions {
-		s.Require().Equal(activationHeight, transition.ActivationVoteHeight)
+		s.Require().Equal(uint64(activationHeight), transition.ActivationVoteHeight)
 	}
 
 	// One batch is one version bump, however many feeds it carries.
@@ -178,13 +178,13 @@ func (s *KeeperTestSuite) TestScheduleFeedTransitionCountsPendingBatchesInResult
 		&types.EventFeedTransitionScheduled{
 			Denom:                feedGold,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: baseHeight + types.FeedActivationDelayBlocks,
+			ActivationVoteHeight: uint64(baseHeight + types.FeedActivationDelayBlocks),
 			ResultingVersion:     types.InitialFeedVersion + 1,
 		},
 		&types.EventFeedTransitionScheduled{
 			Denom:                feedSilver,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: baseHeight + 1 + types.FeedActivationDelayBlocks,
+			ActivationVoteHeight: uint64(baseHeight + 1 + types.FeedActivationDelayBlocks),
 			ResultingVersion:     types.InitialFeedVersion + 2,
 		},
 	)
@@ -204,13 +204,13 @@ func (s *KeeperTestSuite) TestScheduleFeedTransitionSharesResultingVersionWithin
 		&types.EventFeedTransitionScheduled{
 			Denom:                feedGold,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: activationHeight,
+			ActivationVoteHeight: uint64(activationHeight),
 			ResultingVersion:     types.InitialFeedVersion + 1,
 		},
 		&types.EventFeedTransitionScheduled{
 			Denom:                feedSilver,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: activationHeight,
+			ActivationVoteHeight: uint64(activationHeight),
 			ResultingVersion:     types.InitialFeedVersion + 1,
 		},
 	)
@@ -228,7 +228,7 @@ func (s *KeeperTestSuite) TestScheduleFeedTransitionExcludesLaterPendingBatches(
 		Transitions: []types.FeedTransition{{
 			Denom:                feedSilver,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: baseHeight + 1000,
+			ActivationVoteHeight: uint64(baseHeight + 1000),
 		}},
 	}
 	s.Require().NoError(imported.Validate())
@@ -241,7 +241,7 @@ func (s *KeeperTestSuite) TestScheduleFeedTransitionExcludesLaterPendingBatches(
 		&types.EventFeedTransitionScheduled{
 			Denom:                feedGold,
 			Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
-			ActivationVoteHeight: baseHeight + types.FeedActivationDelayBlocks,
+			ActivationVoteHeight: uint64(baseHeight + types.FeedActivationDelayBlocks),
 			ResultingVersion:     types.InitialFeedVersion + 1,
 		},
 	)
@@ -308,11 +308,11 @@ func (s *KeeperTestSuite) TestAdvanceFeedsPromotesConsecutiveBatchesInOrder() {
 	s.Require().NoError(err)
 	s.Require().Len(feeds.Transitions, 2)
 	s.Require().Equal(
-		baseHeight+types.FeedActivationDelayBlocks,
+		uint64(baseHeight+types.FeedActivationDelayBlocks),
 		feeds.Transitions[0].ActivationVoteHeight,
 	)
 	s.Require().Equal(
-		baseHeight+1+types.FeedActivationDelayBlocks,
+		uint64(baseHeight+1+types.FeedActivationDelayBlocks),
 		feeds.Transitions[1].ActivationVoteHeight,
 	)
 

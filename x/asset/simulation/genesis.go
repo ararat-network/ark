@@ -13,8 +13,8 @@ import (
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
-// GenEmergencyMandate appoints an account the simulation can sign for and opens its window from the
-// first block beyond the expected run length.
+// GenEmergencyMandate appoints an account the simulation can sign for, its window open for the whole
+// run.
 func GenEmergencyMandate(r *rand.Rand, accounts []string) types.EmergencyMandate {
 	if len(accounts) == 0 {
 		return types.DefaultEmergencyMandate()
@@ -22,8 +22,10 @@ func GenEmergencyMandate(r *rand.Rand, accounts []string) types.EmergencyMandate
 
 	appointment := types.NewDisabledEmergencyMandate(1)
 	appointment.Committee = accounts[r.Intn(len(accounts))]
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = chain.BlocksPerYear
+	// Open from the epoch to the header's last instant, so the window spans whatever genesis time the
+	// simulation draws.
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = chain.MaxBlockSeconds
 
 	return appointment
 }

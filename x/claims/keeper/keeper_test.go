@@ -3,7 +3,10 @@ package keeper_test
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -24,9 +27,11 @@ import (
 
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/claims/keeper"
 	"github.com/ararat-network/ark/x/claims/testutil"
 	"github.com/ararat-network/ark/x/claims/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type KeeperTestSuite struct {
@@ -37,22 +42,28 @@ type KeeperTestSuite struct {
 	keeper      *keeper.Keeper
 	msgServer   types.MsgServer
 	queryClient types.QueryClient
-	// queryServer serves height-sensitive query assertions. queryClient pins
+	// queryServer serves clock-sensitive query assertions. queryClient pins
 	// the context it was built with (baseapp.NewQueryServerTestHelper stores
-	// Ctx at construction), so a later setBlockHeight never reaches it.
+	// Ctx at construction), so a later setBlockTime never reaches it.
 	queryServer   types.QueryServer
 	authority     string
 	accountKeeper *testutil.MockAccountKeeper
 	bankKeeper    *testutil.MockBankKeeper
+	marketKeeper  *testutil.MockMarketKeeper
 
-	// insuranceBalance is what Bank reports for the Insurance account. It is a
+	// insurance is what Bank reports the Insurance account holds. It is a
 	// suite fixture rather than a per-test expectation because nearly every
 	// claims path reads it, and what a test actually varies is the coverage it
 	// implies, not the fact of the read.
-	insuranceBalance math.Int
+	insurance sdk.Coins
 	// blockedAddrs are the recipients Bank refuses to pay. Empty by default:
 	// blocking is the exception each test that cares opts into.
 	blockedAddrs map[string]struct{}
+	// rates is what the oracle reports fresh, NOAH per unit. The reference is axdr at one NOAH, so a
+	// NOAH claim charges its amount.
+	rates oracletypes.RateSet
+	// assets are the registered assets and their statuses.
+	assets map[string]assettypes.AssetStatus
 }
 
 func TestKeeperTestSuite(t *testing.T) {
@@ -68,7 +79,9 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	s.ctx = testCtx.Ctx
+	// Height starts far from every block time the suite uses, so a window read off the height
+	// fails.
+	s.ctx = testCtx.Ctx.WithBlockHeight(heightOrigin).WithBlockTime(time.Unix(0, 0))
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
@@ -78,8 +91,13 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.accountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 
-	s.insuranceBalance = math.ZeroInt()
+	s.insurance = sdk.NewCoins()
 	s.blockedAddrs = map[string]struct{}{}
+	s.rates = oracletypes.NewRateSetFrom(map[string]math.LegacyDec{
+		chain.XDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyNewDecWithPrec(8, 1),
+	})
+	s.assets = map[string]assettypes.AssetStatus{chain.USDBaseDenom: assettypes.AssetStatus_ASSET_STATUS_ACTIVE}
 
 	insuranceAddr := authtypes.NewModuleAddress(types.InsuranceName)
 	s.accountKeeper.EXPECT().
@@ -87,13 +105,17 @@ func (s *KeeperTestSuite) SetupTest() {
 		Return(insuranceAddr).
 		AnyTimes()
 	s.bankKeeper.EXPECT().
-		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		GetBalance(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 			if !addr.Equals(insuranceAddr) {
 				return sdk.NewCoin(denom, math.ZeroInt())
 			}
-			return sdk.NewCoin(denom, s.insuranceBalance)
+			return sdk.NewCoin(denom, s.insurance.AmountOf(denom))
 		}).
+		AnyTimes()
+	s.bankKeeper.EXPECT().
+		GetAllBalances(gomock.Any(), insuranceAddr).
+		DoAndReturn(func(context.Context, sdk.AccAddress) sdk.Coins { return s.insurance }).
 		AnyTimes()
 	s.bankKeeper.EXPECT().
 		BlockedAddr(gomock.Any()).
@@ -105,6 +127,41 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	wasmKeeper := testutil.NewMockWasmKeeper(ctrl)
 	wasmKeeper.EXPECT().HasContractInfo(gomock.Any(), gomock.Any()).Return(false).AnyTimes()
+	oracleKeeper := testutil.NewMockOracleKeeper(ctrl)
+	oracleKeeper.EXPECT().GetReferenceDenom(gomock.Any()).Return(chain.XDRBaseDenom, nil).AnyTimes()
+	oracleKeeper.EXPECT().
+		GetRateSet(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denoms ...string) (oracletypes.RateSet, error) {
+			rates := oracletypes.NewRateSet()
+			for _, denom := range denoms {
+				rate, ok := s.rates[denom]
+				if !ok {
+					return nil, fmt.Errorf("no fresh rate for %s", denom)
+				}
+				rates[denom] = rate
+			}
+			return rates, nil
+		}).
+		AnyTimes()
+	assetKeeper := testutil.NewMockAssetKeeper(ctrl)
+	assetKeeper.EXPECT().
+		GetAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (assettypes.Asset, error) {
+			status, ok := s.assets[denom]
+			if !ok {
+				return assettypes.Asset{}, fmt.Errorf("asset %s is not registered", denom)
+			}
+			return assettypes.Asset{Denom: denom, Status: status}, nil
+		}).
+		AnyTimes()
+	assetKeeper.EXPECT().
+		HasAsset(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			_, ok := s.assets[denom]
+			return ok, nil
+		}).
+		AnyTimes()
+	s.marketKeeper = testutil.NewMockMarketKeeper(ctrl)
 	s.keeper = keeper.NewKeeper(
 		s.cdc,
 		runtime.NewKVStoreService(key),
@@ -112,11 +169,13 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.accountKeeper,
 		wasmKeeper,
 		s.bankKeeper,
+		oracleKeeper,
+		assetKeeper,
 	)
+	s.keeper.SetMarketKeeper(s.marketKeeper)
 	s.Require().NoError(s.keeper.Params.Set(s.ctx, types.DefaultParams()))
 	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, types.DefaultClaimsMandate()))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.ZeroInt()))
-	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.ZeroInt()))
 	s.Require().NoError(s.keeper.NextClaimID.Set(s.ctx, 1))
 
 	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
@@ -126,13 +185,39 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.msgServer = keeper.NewMsgServerImpl(s.keeper)
 }
 
+// heightOrigin is the suite's first height.
+const heightOrigin = 1_000_000
+
+// setBlockTime moves to the next block at the given block time.
+func (s *KeeperTestSuite) setBlockTime(seconds int64) {
+	ctx := sdk.UnwrapSDKContext(s.ctx)
+	s.ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1).WithBlockTime(time.Unix(seconds, 0))
+}
+
+// setBlockHeight moves the height alone, leaving the block time.
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }
 
-// fundInsurance sets what Bank reports for the Insurance account.
+// blockHeight is the current height as a claim records it.
+func (s *KeeperTestSuite) blockHeight() uint64 {
+	return uint64(sdk.UnwrapSDKContext(s.ctx).BlockHeight())
+}
+
+// fundInsurance sets what Bank reports Insurance holds in NOAH.
 func (s *KeeperTestSuite) fundInsurance(amount int64) {
-	s.insuranceBalance = math.NewInt(amount)
+	s.hold(noahCoin(amount))
+}
+
+// hold sets what Bank reports Insurance holds in coin's denomination.
+func (s *KeeperTestSuite) hold(coin sdk.Coin) {
+	rest := sdk.NewCoins()
+	for _, held := range s.insurance {
+		if held.Denom != coin.Denom {
+			rest = rest.Add(held)
+		}
+	}
+	s.insurance = rest.Add(coin)
 }
 
 // expectPayouts arranges for Bank to pay claims and to drop the Insurance
@@ -142,10 +227,76 @@ func (s *KeeperTestSuite) expectPayouts(times int) {
 	s.bankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ any, _ string, _ sdk.AccAddress, coins sdk.Coins) error {
-			s.insuranceBalance = s.insuranceBalance.Sub(coins.AmountOf(chain.NoahBaseDenom))
+			s.insurance = s.insurance.Sub(coins...)
 			return nil
 		}).
 		Times(times)
+}
+
+// expectBuy arranges one Market buy that costs offer and delivers output into Insurance custody.
+func (s *KeeperTestSuite) expectBuy(ask, output sdk.Coin, maxOffer, offer math.Int) {
+	insurance := authtypes.NewModuleAddress(types.InsuranceName)
+	s.marketKeeper.EXPECT().
+		Buy(gomock.Any(), insurance, ask, chain.NoahBaseDenom, chain.NoahCoin(maxOffer)).
+		DoAndReturn(func(context.Context, sdk.AccAddress, sdk.Coin, string, sdk.Coin) (sdk.Coin, sdk.Coin, sdk.DecCoin, error) {
+			s.insurance = s.insurance.Sub(chain.NoahCoin(offer)).Add(output)
+			return chain.NoahCoin(offer), output, sdk.NewDecCoin(chain.NoahBaseDenom, math.ZeroInt()), nil
+		})
+}
+
+// atSubmission pins a five-second veto window and moves to block time 20, inside the suite's
+// appointment window.
+func (s *KeeperTestSuite) atSubmission() {
+	s.setCancellationPeriod(5)
+	s.setBlockTime(20)
+}
+
+// submitGovernance submits a governance claim to testAddress(3) at the current block time.
+func (s *KeeperTestSuite) submitGovernance(amount sdk.Coin, maxOffer int64) (uint64, error) {
+	resp, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
+		Authority: s.authority,
+		Reference: "incident",
+		Recipient: testAddress(3),
+		Amount:    amount,
+		MaxOffer:  math.NewInt(maxOffer),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return resp.ClaimId, nil
+}
+
+// submitGovernanceClaim submits a NOAH governance claim that must be accepted.
+func (s *KeeperTestSuite) submitGovernanceClaim(amount int64) uint64 {
+	id, err := s.submitGovernance(noahCoin(amount), 0)
+	s.Require().NoError(err)
+	return id
+}
+
+// submitCommittee submits a committee claim to testAddress(3) under the suite's appointment at the
+// current block time.
+func (s *KeeperTestSuite) submitCommittee(amount sdk.Coin, maxOffer int64) (uint64, error) {
+	resp, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
+		Committee:    testAddress(1),
+		ExpectedTerm: 1,
+		Reference:    "incident",
+		Recipient:    testAddress(3),
+		Amount:       amount,
+		MaxOffer:     math.NewInt(maxOffer),
+	})
+	if err != nil {
+		return 0, err
+	}
+	return resp.ClaimId, nil
+}
+
+// reserved reads a denomination's reservation, zero when none is stored.
+func (s *KeeperTestSuite) reserved(denom string) (math.Int, error) {
+	reserved, err := s.keeper.InsuranceReserved.Get(s.ctx, denom)
+	if errors.Is(err, collections.ErrNotFound) {
+		return math.ZeroInt(), nil
+	}
+	return reserved, err
 }
 
 // requireStatus asserts the stored lifecycle state of one claim.
@@ -169,18 +320,18 @@ func (s *KeeperTestSuite) requireDueClaims(expected ...uint64) {
 	s.Require().Equal(expected, due)
 }
 
-// appointCommittee stores an active mandate spanning heights 10–100 with a
-// 1000-noah limit and resets allowance usage, mirroring a successful
-// MsgSetClaimsMandate.
+// appointCommittee stores an active mandate spanning block times 10–100 with a
+// 1000-unit limit, a thousand NOAH at the suite's rates, and resets allowance usage, mirroring a
+// successful MsgSetClaimsMandate.
 func (s *KeeperTestSuite) appointCommittee(committee string) types.ClaimsMandate {
 	claimsMandate := types.ClaimsMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        committee,
-			ActivationHeight: 10,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      committee,
+			ActivationTime: 10,
+			ExpiryTime:     100,
 		},
-		CommitteeClaimLimit: noahCoin(1_000),
+		CommitteeClaimLimit: math.NewInt(1_000),
 	}
 	s.Require().NoError(s.keeper.ClaimsMandate.Set(s.ctx, claimsMandate))
 	s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.ZeroInt()))

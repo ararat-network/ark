@@ -3,7 +3,7 @@
 The Bitfinex WebSocket provider subscribes to Bitfinex ticker channels and publishes last-trade prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `bitfinex_ws`, endpoint and transport defaults. This adapter requires no API key.
 Bitfinex names Tether `UST`, so the USDT market is `USTUSD`.
 
 ## Stream Shape

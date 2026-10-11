@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -136,6 +137,48 @@ func (s *KeeperTestSuite) TestTallyBlockGasSaturates() {
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.1025"), price)
 }
 
+// TestEndBlockerSaturatesBaseFeeAtTheCeiling pins the upper clamp: a full
+// block over a price near the ceiling lands exactly on it, and a price
+// already there holds without news.
+func (s *KeeperTestSuite) TestEndBlockerSaturatesBaseFeeAtTheCeiling() {
+	tests := []struct {
+		name    string
+		stored  math.LegacyDec
+		updated bool
+	}{
+		{
+			// 0.99 × 1.025 of the ceiling is past it.
+			name:    "near the ceiling",
+			stored:  types.MaxBaseGasPrice.MulInt64(99).QuoInt64(100),
+			updated: true,
+		},
+		{
+			name:   "at the ceiling",
+			stored: types.MaxBaseGasPrice,
+		},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.withMaxGas(1_000_000)
+			s.Require().NoError(s.keeper.BaseGasPrice.Set(s.ctx, tc.stored))
+			s.Require().NoError(s.keeper.TallyBlockGas(s.ctx, 1_000_000))
+			s.expectValidatorFees(sdk.NewCoins())
+
+			s.Require().NoError(s.keeper.EndBlocker(s.ctx))
+
+			price, err := s.keeper.BaseGasPrice.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(types.MaxBaseGasPrice, price)
+			if tc.updated {
+				s.requireTypedEvent(&types.EventBaseGasPriceUpdated{BaseGasPrice: types.MaxBaseGasPrice})
+			} else {
+				s.requireNoTypedEvent(&types.EventBaseGasPriceUpdated{})
+			}
+		})
+	}
+}
+
 // TestGetRequiredGasFeeCeilsInTheReferenceDenom pins the requirement's
 // rounding direction and unit: it sizes a payment floor, so it rounds up,
 // in the reference denom.
@@ -198,4 +241,39 @@ func (s *KeeperTestSuite) TestGetRequiredGasFeePricesEveryAcceptedSource() {
 
 	_, _, err = s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.KRWBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
+}
+
+// TestGetRequiredGasFeeRefusesDepartedMembers pins that a stored factor alone does not sell block
+// space: a member the Oracle no longer prices keeps its cross for the tax cap and loses fee
+// acceptance, while a halted issuer, still priced, keeps both.
+func (s *KeeperTestSuite) TestGetRequiredGasFeeRefusesDepartedMembers() {
+	params, price := s.gasPricing()
+	s.Require().NoError(s.keeper.ConversionFactors.Set(s.ctx, chain.USDBaseDenom, types.ConversionFactor{
+		Denom:         chain.USDBaseDenom,
+		Factor:        math.LegacyNewDec(2),
+		DerivedHeight: 5,
+	}))
+
+	tests := []struct {
+		name     string
+		status   assettypes.AssetStatus
+		accepted bool
+	}{
+		{name: "active", status: assettypes.AssetStatus_ASSET_STATUS_ACTIVE, accepted: true},
+		{name: "issuance halted", status: assettypes.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED, accepted: true},
+		{name: "suspended", status: assettypes.AssetStatus_ASSET_STATUS_SUSPENDED, accepted: false},
+		{name: "written off", status: assettypes.AssetStatus_ASSET_STATUS_WRITTEN_OFF, accepted: false},
+		{name: "retired", status: assettypes.AssetStatus_ASSET_STATUS_RETIRED, accepted: false},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.seedAsset(chain.USDBaseDenom, tc.status)
+			_, _, err := s.keeper.GetRequiredGasFee(s.ctx, params, price, 200_000, chain.USDBaseDenom)
+			if tc.accepted {
+				s.Require().NoError(err)
+			} else {
+				s.Require().ErrorIs(err, collections.ErrNotFound)
+			}
+		})
+	}
 }

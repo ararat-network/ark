@@ -9,7 +9,7 @@ COMMIT            := $(shell git rev-parse HEAD)
 all: arkd-env
 
 arkd-env:
-	docker build --tag ark/arkd -f arkd-env/Dockerfile \
+	docker build --tag ark/arkd -f arkd-env/Dockerfile --target local \
 		--build-arg VERSION=$(VERSION) --build-arg PRICEFEED_VERSION=$(PRICEFEED_VERSION) \
 		--build-arg COMMIT=$(COMMIT) $(ROOT)
 

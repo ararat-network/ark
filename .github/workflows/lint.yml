@@ -1,6 +1,7 @@
-# Go and protobuf linting. Both jobs run the same Makefile targets a
-# developer runs, against the checked-in .golangci.yml and buf config, so a
-# green run here means `make lint` and `make proto-lint` are green locally.
+# Go and protobuf linting, plus a generated-code check. Every job runs the same
+# Makefile targets a developer runs, against the checked-in .golangci.yml and
+# buf config: a green run means `make lint` and `make proto-lint` pass locally
+# and `make proto-gen` leaves the checked-in tree unchanged.
 name: Lint
 
 on:
@@ -34,5 +35,40 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The pricefeed check compares against the newest pricefeed/vX.Y.Z tag.
+          fetch-depth: 0
 
       - run: make proto-lint
+
+      # ark.pricefeed.v1 only grows from the newest pricefeed release; before the first, nothing is
+      # frozen and the step passes.
+      - run: make proto-check-pricefeed
+
+  proto-gen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # proto-gen runs go mod tidy on the host; Go-only jobs read go.mod.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # The proto-builder image runs as uid 1000 and the runner checks out as
+      # another user, so the generator could neither format nor replace files.
+      # Git records no mode but the executable bit, which X leaves alone, so the
+      # drift check below is unaffected.
+      - run: chmod -R a+rwX .
+
+      # Regenerating from the checked-in schemas must reproduce the checked-in
+      # tree: stale, missing, or hand-edited generated code fails here.
+      - run: make proto-gen
+      - run: |
+          git status --short
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Generated code is out of date: run make proto-gen and commit the result." >&2
+            exit 1
+          fi

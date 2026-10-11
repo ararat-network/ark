@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math/big"
+	"regexp"
 	"time"
 )
 
@@ -22,6 +23,9 @@ const PricePrecisionBits uint = 256
 // maxLegacyDecExponent is the largest binary exponent strictly below the
 // LegacyDec whole-number ceiling of 2^256.
 const maxLegacyDecExponent = 256
+
+// minFeedPrice is one LegacyDec unit, the smallest positive rate the chain holds.
+var minFeedPrice, _ = new(big.Float).SetPrec(PricePrecisionBits).SetString("0.000000000000000001")
 
 // Clone returns a deep copy of p.
 func (p FeedPrices) Clone() FeedPrices {
@@ -87,10 +91,32 @@ func ValidatePrice(price *big.Float) error {
 	return nil
 }
 
+// ValidateFeedPrice checks that price is a rate the chain can hold: positive and at least one
+// LegacyDec unit, so the 18-place text the transport encodes is never zero.
+func ValidateFeedPrice(price *big.Float) error {
+	if err := ValidatePrice(price); err != nil {
+		return err
+	}
+	if price.Sign() != 1 {
+		return fmt.Errorf("oracle price is not positive")
+	}
+	if price.Cmp(minFeedPrice) < 0 {
+		return fmt.Errorf("oracle price is below one LegacyDec unit")
+	}
+
+	return nil
+}
+
 // MaxPriceTextBytes bounds the decimal text ParsePrice accepts. The full
 // LegacyDec range renders within 97 characters plus a point; 128 retains
 // headroom while refusing unbounded inputs before big.Float parsing.
 const MaxPriceTextBytes = 128
+
+// plainDecimal is decimal digits with an optional sign, point, and exponent. big.Float also reads
+// base prefixes, binary exponents, digit separators, a leading plus, and Inf; refusing them leaves a
+// venue that changes format unresolved rather than read as another number. A venue that sends scaled
+// hex integers is decoded by its adapter, which knows the scale.
+var plainDecimal = regexp.MustCompile(`^-?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?$`)
 
 // ParsePrice parses a finite, LegacyDec-representable decimal string into an
 // oracle price.
@@ -101,6 +127,9 @@ func ParsePrice(s string) (*big.Float, error) {
 			len(s),
 			MaxPriceTextBytes,
 		)
+	}
+	if !plainDecimal.MatchString(s) {
+		return nil, fmt.Errorf("oracle price %q is not a plain decimal", s)
 	}
 
 	price, ok := new(big.Float).SetPrec(PricePrecisionBits).SetString(s)

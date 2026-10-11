@@ -46,8 +46,8 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return nil, err
@@ -65,12 +65,23 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		reserveMandate.DeploymentAllowance = msg.DeploymentAllowance
 		reserveMandate.MinimumNoahBalance = msg.MinimumNoahBalance
 		reserveMandate.Destinations = msg.Destinations
-	}
-	if err := reserveMandate.Validate(); err != nil {
-		return nil, err
-	}
-	if reserveMandate.Committee == m.k.authority || reserveMandate.Committee == msg.Authority {
-		return nil, errors.New("reserve committee must be distinct from the Reserve authority")
+		if err := reserveMandate.Validate(); err != nil {
+			return nil, err
+		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
+		if reserveMandate.Committee == m.k.authority || reserveMandate.Committee == msg.Authority {
+			return nil, errors.New("reserve committee must be distinct from the Reserve authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); reserveMandate.ExpiryTime <= now {
+			return nil, fmt.Errorf(
+				"%s expires at time %d, which is not after the current block time %d",
+				types.ReserveMandateLabel,
+				reserveMandate.ExpiryTime,
+				now,
+			)
+		}
 	}
 	if err := m.k.Mandate.Set(ctx, reserveMandate); err != nil {
 		return nil, fmt.Errorf("setting Reserve mandate: %w", err)
@@ -79,11 +90,11 @@ func (m msgServer) SetReserveMandate(ctx context.Context, msg *types.MsgSetReser
 		return nil, fmt.Errorf("resetting Reserve allowance usage: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventReserveMandateSet{
-		Term:             reserveMandate.Term,
-		Committee:        reserveMandate.Committee,
-		ActivationHeight: reserveMandate.ActivationHeight,
-		ExpiryHeight:     reserveMandate.ExpiryHeight,
-		CommitteeShape:   reserveMandate.CommitteeShape,
+		Term:           reserveMandate.Term,
+		Committee:      reserveMandate.Committee,
+		ActivationTime: reserveMandate.ActivationTime,
+		ExpiryTime:     reserveMandate.ExpiryTime,
+		CommitteeShape: reserveMandate.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Reserve mandate: %w", err)
 	}
@@ -446,7 +457,8 @@ func (m msgServer) CommitteeBurnPaper(ctx context.Context, msg *types.MsgCommitt
 
 // CommitteeBurnSurplus destroys Reserve NOAH above the fund's capital
 // requirement. The keeper derives the bound rather than trusting the message,
-// and refuses the burn when the requirement cannot be computed.
+// certifies the requirement at the post-burn balance, and refuses the burn
+// when the requirement cannot be computed.
 func (m msgServer) CommitteeBurnSurplus(ctx context.Context, msg *types.MsgCommitteeBurnSurplus) (*types.MsgCommitteeBurnSurplusResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee burn surplus message")
@@ -461,16 +473,9 @@ func (m msgServer) CommitteeBurnSurplus(ctx context.Context, msg *types.MsgCommi
 		return nil, errors.New("burn amount must be positive")
 	}
 
-	surplus, err := m.k.BurnableSurplus(ctx)
+	surplus, err := m.k.CheckSurplusBurn(ctx, msg.Amount.Amount)
 	if err != nil {
 		return nil, err
-	}
-	if msg.Amount.Amount.GT(surplus) {
-		return nil, fmt.Errorf(
-			"burn %s exceeds the burnable Reserve surplus %s",
-			msg.Amount,
-			chain.NoahCoin(surplus),
-		)
 	}
 	if err := m.k.bankKeeper.BurnCoins(
 		ctx,

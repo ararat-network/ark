@@ -98,13 +98,15 @@ type ErrorResponseMessage struct {
 }
 
 // TickerResponseMessage carries a match; Price is the observation used by
-// this adapter, and Sequence and TradeID order it against heartbeats.
+// this adapter, Time when it traded, and Sequence and TradeID order it
+// against heartbeats.
 type TickerResponseMessage struct {
 	Type      string `json:"type"`
 	Sequence  int64  `json:"sequence"`
 	ProductID string `json:"product_id"`
 	Price     string `json:"price"`
 	TradeID   int64  `json:"trade_id"`
+	Time      string `json:"time"`
 }
 
 // HeartbeatResponseMessage confirms a product's last trade id once a second.

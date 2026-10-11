@@ -210,7 +210,7 @@ func (s *KeeperTestSuite) TestCommitteeReverseReturn() {
 			Committee: testAddress(9), ExpectedTerm: 1, PositionId: positionID,
 			Reverses: attributionID, Reference: anyEvidence,
 		})
-		s.Require().ErrorContains(err, "not the exact appointed committee")
+		s.Require().ErrorContains(err, "not the exact appointed account")
 	})
 
 	// A reversal contradicts a recorded movement, so it names its evidence.

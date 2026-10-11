@@ -28,6 +28,8 @@ type Handler struct {
 	cache types.Tickers
 	// messageIDs maps subscription request IDs to the Binance symbols in the request.
 	messageIDs map[int64][]string
+	// lastTrades holds the last trade id published per ticker.
+	lastTrades map[types.Ticker]int64
 	// nextID is the next subscription request ID.
 	nextID int64
 }
@@ -50,12 +52,13 @@ func NewHandler(logger log.Logger, config websocket.Config) (websocket.DataHandl
 		config:     config,
 		cache:      types.NewTickers(),
 		messageIDs: make(map[int64][]string),
+		lastTrades: make(map[types.Ticker]int64),
 		nextID:     1,
 	}, nil
 }
 
-// HandleMessage handles subscription acknowledgements and aggregate-trade/ticker updates. Failed
-// subscriptions may return retry messages; price messages produce provider responses.
+// HandleMessage handles subscription acknowledgements and aggregate-trade/ticker updates. A refused
+// subscription publishes its tickers unresolved; price messages produce provider responses.
 func (h *Handler) HandleMessage(
 	message []byte,
 ) (types.Response, [][]byte, error) {
@@ -69,20 +72,23 @@ func (h *Handler) HandleMessage(
 	// that we likely received a price update message.
 	if err := json.Unmarshal(message, &msg); err == nil && !msg.IsEmpty() {
 		instruments, ok := h.messageIDs[msg.ID]
+		if refusal, refused := msg.Refusal(); refused {
+			h.logger.Warn(
+				"binance refused a subscription",
+				"id", msg.ID,
+				"code", refusal.Code,
+				"reason", refusal.Message,
+				"instruments", instruments,
+			)
+			if !ok {
+				return resp, nil, fmt.Errorf("binance refused request %d: %d %s", msg.ID, refusal.Code, refusal.Message)
+			}
+			return h.refusedResponse(instruments, refusal), nil, nil
+		}
 		if !ok {
 			return resp, nil, fmt.Errorf("failed to find instruments for message ID %d", msg.ID)
 		}
 
-		if msg.Result != nil {
-			// If the result is not nil, this means that the subscription failed to be made. Return
-			// an update message with the same subscription.
-			h.logger.Debug("failed to make subscription; attempting to re-subscribe", "instruments", msg)
-			subscriptionMsgs, err := h.NewSubscribeRequestMessage(instruments)
-			return resp, subscriptionMsgs, err
-		}
-
-		// If the result is nil, this means that the subscription was successful. Return an empty
-		// response.
 		h.logger.Debug("successfully subscribed to instruments", "instruments", instruments)
 		return resp, nil, nil
 	}
@@ -102,7 +108,7 @@ func (h *Handler) HandleMessage(
 		}
 
 		h.logger.Debug("received ticker message", "ticker", tickerResp.Data.Ticker)
-		resp, err := h.parsePriceUpdateMessage(tickerResp.Data.Ticker, tickerResp.Data.LastPrice)
+		resp, err := h.parsePriceUpdateMessage(tickerResp.Data.Ticker, tickerResp.Data.LastPrice, tickerResp.Data.LastTradeID)
 		return resp, nil, err
 	case AggregateTradeStream:
 		// Aggregate trade stream is sent when a trade is executed on the Binance exchange.
@@ -112,7 +118,7 @@ func (h *Handler) HandleMessage(
 		}
 
 		h.logger.Debug("received aggregate trade message", "ticker", aggTradeResp.Data.Ticker)
-		resp, err := h.parsePriceUpdateMessage(aggTradeResp.Data.Ticker, aggTradeResp.Data.Price)
+		resp, err := h.parsePriceUpdateMessage(aggTradeResp.Data.Ticker, aggTradeResp.Data.Price, aggTradeResp.Data.LastTradeID)
 		return resp, nil, err
 	default:
 		return resp, nil, fmt.Errorf("unknown stream type %s", streamMsg.Stream)
@@ -148,6 +154,7 @@ func (h *Handler) Copy() websocket.DataHandler {
 		config:     h.config,
 		cache:      types.NewTickers(),
 		messageIDs: make(map[int64][]string),
+		lastTrades: make(map[types.Ticker]int64),
 		nextID:     1,
 	}
 }

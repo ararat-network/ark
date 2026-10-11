@@ -4,14 +4,23 @@ Ark-authored source is licensed under Apache 2.0 (`LICENSE`). Third-party materi
 retains its original licence and copyright notices. This does not grant ownership
 of upstream code to Ark or replace upstream licence terms.
 
-The `arkd` executable links go-ethereum library packages under LGPLv3 or later;
-`COPYING` holds the GPLv3 text that licence incorporates. It also links wasmvm's
-Wasmer Singlepass compiler, licensed under the Business Source License 1.1: it may
-be copied, modified, redistributed and used outside production, while production
-use, including running a validator or RPC node, requires a grant from Wasmer.
+The `arkd` executable links go-ethereum library packages under LGPLv3 or later.
+On Linux, the Ledger keyring (the `ledger` build tag, set for releases and images)
+compiles in libusb, bundled by zondax/hid, under LGPL 2.1 or later. The executable
+also links wasmvm's Wasmer Singlepass compiler, licensed under the Business Source
+License 1.1: it may be copied, modified, redistributed and used outside
+production, while production use, including running a validator or RPC node,
+requires a grant from Wasmer.
 [CWA-2026-006](https://github.com/CosmWasm/advisories/blob/main/CWAs/CWA-2026-006.md)
 states that Cosmos Labs holds a licence covering downstream use. Each Singlepass
 version becomes available under MPL 2.0 four years after its publication.
+
+`LICENSES/` holds these licence texts, each named by its SPDX identifier: both
+LGPL versions, the GPLv3 text that LGPLv3 incorporates, and Wasmer's BUSL 1.1
+terms for the Singlepass version wasmvm locks. Those terms name versions and a
+change date, so source packaging refuses a `BUSL-1.1.txt` that differs from the
+locked crate's own: a wasmvm upgrade that changes them fails the release until
+the file is replaced.
 
 ## Upstream attribution
 
@@ -28,6 +37,7 @@ is not a substitute for the dependency notices and sources included with release
 | [Terra oracle-feeder](https://github.com/terra-money/oracle-feeder) | Oracle sidecar reference | Apache 2.0 |
 | [CosmWasm / wasmvm](https://github.com/CosmWasm/wasmvm) | Contract runtime and native Rust library | Apache 2.0, with separately licensed dependencies, including Wasmer Singlepass under BUSL 1.1 |
 | [go-ethereum](https://github.com/ethereum/go-ethereum) | Ethereum library packages imported by node dependencies | LGPLv3 or later for those library files |
+| [zondax/hid](https://github.com/zondax/hid) | USB HID transport for the Ledger keyring, bundling libusb and hidapi C sources | LGPL 2.1 or later on Linux (bundled libusb), 3-clause BSD elsewhere; hidapi under its BSD option |
 
 `NOTICE` preserves Terra Classic, Gaia, and Cosmos SDK copyright statements and
 reproduces the Cosmos SDK and wasmvm notices. Dependency versions come
@@ -70,6 +80,7 @@ Comparison revision: `486b89779f22760e3282202fb08e29cce292b87d`.
 | [cmd/arkd/cmd/testnet.go](cmd/arkd/cmd/testnet.go) | [simapp/simd/cmd/testnet.go](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/simapp/simd/cmd/testnet.go) |
 | [cmd/arkd/cmd/testnet_test.go](cmd/arkd/cmd/testnet_test.go) | [simapp/simd/cmd/testnet_test.go](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/simapp/simd/cmd/testnet_test.go) |
 | [proto/scripts/protocgen.sh](proto/scripts/protocgen.sh) | [scripts/protocgen.sh](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/scripts/protocgen.sh) |
+| [proto/scripts/protocgen-pulsar.sh](proto/scripts/protocgen-pulsar.sh) | [scripts/protocgen-pulsar.sh](https://github.com/cosmos/cosmos-sdk/blob/486b89779f22760e3282202fb08e29cce292b87d/scripts/protocgen-pulsar.sh) |
 
 ### Gaia
 
@@ -82,7 +93,6 @@ Comparison revision: `aa5f96b6534f973458b7ccb2dbced281d384b825`.
 | [tests/e2e/chainsuite/chain.go](tests/e2e/chainsuite/chain.go) | [tests/interchain/chainsuite/chain.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/chain.go) |
 | [tests/e2e/chainsuite/config.go](tests/e2e/chainsuite/config.go) | [tests/interchain/chainsuite/config.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/config.go) |
 | [tests/e2e/chainsuite/context.go](tests/e2e/chainsuite/context.go) | [tests/interchain/chainsuite/context.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/context.go) |
-| [tests/e2e/chainsuite/relayer.go](tests/e2e/chainsuite/relayer.go) | [tests/interchain/chainsuite/relayer.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/relayer.go) |
 | [tests/e2e/chainsuite/suite.go](tests/e2e/chainsuite/suite.go) | [tests/interchain/chainsuite/suite.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/chainsuite/suite.go) |
 | [tests/e2e/integrator/endpoints_test.go](tests/e2e/integrator/endpoints_test.go) | [tests/interchain/integrator/endpoints_test.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/integrator/endpoints_test.go) |
 | [tests/e2e/validator/config_test.go](tests/e2e/validator/config_test.go) | [tests/interchain/validator/config_test.go](https://github.com/cosmos/gaia/blob/aa5f96b6534f973458b7ccb2dbced281d384b825/tests/interchain/validator/config_test.go) |
@@ -183,7 +193,9 @@ The Terra comparison revision above also applies to these source links.
 | [x/market/keeper/grpc_query.go](x/market/keeper/grpc_query.go) | [x/market/keeper/querier.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/querier.go) |
 | [x/market/keeper/keeper.go](x/market/keeper/keeper.go) | [x/market/keeper/keeper.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/keeper.go) |
 | [x/market/keeper/msg_server.go](x/market/keeper/msg_server.go) | [x/market/keeper/msg_server.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/msg_server.go) |
-| [x/market/keeper/swap.go](x/market/keeper/swap.go) | [x/market/keeper/swap.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/swap.go) |
+| [x/market/keeper/price.go](x/market/keeper/price.go) | [x/market/keeper/swap.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/swap.go) |
+| [x/market/keeper/orders.go](x/market/keeper/orders.go) | [x/market/keeper/swap.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/swap.go) |
+| [x/market/keeper/ledger.go](x/market/keeper/ledger.go) | [x/market/keeper/swap.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/keeper/swap.go) |
 | [x/market/module/module.go](x/market/module/module.go) | [x/market/module.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/module.go) |
 | [x/market/types/conversion_policy.go](x/market/types/conversion_policy.go) | [x/market/types/params.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/types/params.go) |
 | [x/market/types/expected_keepers.go](x/market/types/expected_keepers.go) | [x/market/types/expected_keepers.go](https://github.com/terra-money/classic-core/blob/59a5b744c2dade15983907f05e00b4b2d07ffc67/x/market/types/expected_keepers.go) |
@@ -263,7 +275,7 @@ Alpine versions. The application bundle covers Go, Rust and wasmvm sources.
 The OS bundle covers the linked Alpine runtimes as well as the separate OS tools.
 
 OS programs retain their individual licences. For example, BusyBox is GPLv2-only;
-the GPLv3 text in `COPYING` does not replace that licence. Refer to the per-image manifest
+the GPLv3 text in `LICENSES/` does not replace that licence. Refer to the per-image manifest
 and preserved source notices for the actual component terms, including compiler
 runtime exceptions. `os/notices/` provides readable extracted notices; keep the
 complete source archives and embedded notices too. Its `licence-texts/` directory
@@ -343,9 +355,8 @@ need Cargo or Docker to vendor the locked Rust dependencies.
 Verification requires Docker, including support for Linux amd64 and arm64.
 Preparing the verifier images downloads general-purpose compiler and OS build
 tools. The verifier pins Rust 1.95.0, the minimum compiler of wasmvm v3.0.8's
-Alpine builder.
-Compilation then runs with networking disabled and empty Go caches. Both
-node architectures rebuild wasmvm from source; sidecar verification
+Alpine builder. Compilation then runs with networking disabled and empty Go
+caches. Both node architectures rebuild wasmvm from source; sidecar verification
 cross-compiles its four published OS/architecture combinations. A successful
 check proves the bundle supplies buildable source, not bit-for-bit reproducibility
 of upstream prebuilt native libraries or the final release executable. This gate

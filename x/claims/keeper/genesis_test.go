@@ -12,20 +12,15 @@ import (
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
-// expectInsuranceBalances stubs the account and multi-denom balance reads
-// InitGenesis makes, which the suite's single-denom GetBalance stub does not
-// cover.
+// expectInsuranceBalances stubs the module-account read InitGenesis makes and sets the custody the
+// suite's Bank stubs report.
 func (s *KeeperTestSuite) expectInsuranceBalances(balances sdk.Coins) {
-	insuranceAddr := authtypes.NewModuleAddress(types.InsuranceName)
 	moduleAccount := authtypes.NewEmptyModuleAccount(types.InsuranceName)
 	s.accountKeeper.EXPECT().
 		GetModuleAccount(gomock.Any(), types.InsuranceName).
 		Return(moduleAccount).
 		AnyTimes()
-	s.bankKeeper.EXPECT().
-		GetAllBalances(gomock.Any(), insuranceAddr).
-		Return(balances).
-		AnyTimes()
+	s.insurance = balances
 }
 
 func (s *KeeperTestSuite) TestInitGenesisRoundTrip() {
@@ -42,15 +37,16 @@ func (s *KeeperTestSuite) TestInitGenesisRoundTrip() {
 		Amount:          noahCoin(100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		ClosingTime:     25,
+		Charge:          math.NewInt(100),
 	}
 	claimsMandate := s.appointCommittee(testAddress(1))
 
 	genesis := types.NewGenesisState(
-		types.Params{ClaimCancellationPeriodBlocks: 5},
+		types.Params{ClaimCancellationPeriod: 5},
 		claimsMandate,
 		math.NewInt(100),
-		math.NewInt(100),
+		sdk.NewCoins(noahCoin(100)),
 		2,
 		[]types.Claim{claim},
 	)
@@ -89,18 +85,23 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			Amount:          noahCoin(100),
 			Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 			SubmittedHeight: 20,
-			ClosingHeight:   25,
+			ClosingTime:     25,
+			Charge:          math.ZeroInt(),
 		}
 	}
 	valid := func() *types.GenesisState {
 		return types.NewGenesisState(
-			types.Params{ClaimCancellationPeriodBlocks: 5},
+			types.Params{ClaimCancellationPeriod: 5},
 			types.DefaultClaimsMandate(),
 			math.ZeroInt(),
-			math.NewInt(100),
+			sdk.NewCoins(noahCoin(100)),
 			2,
 			[]types.Claim{pendingClaim()},
 		)
+	}
+	stablecoin := func(genesis *types.GenesisState) {
+		genesis.Claims[0].Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 100)
+		genesis.InsuranceReserved = sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
 	}
 
 	tests := []struct {
@@ -127,10 +128,37 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			expectErr: "exceeds Insurance balance",
 		},
 		{
-			name:      "non-NOAH Insurance balance",
-			balances:  sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin("usdr", 1)),
+			name:     "registered asset in Insurance custody",
+			balances: sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin(chain.USDBaseDenom, 1)),
+			mutate:   func(*types.GenesisState) {},
+		},
+		{
+			name:      "unregistered denomination in Insurance custody",
+			balances:  sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin("aeur", 1)),
 			mutate:    func(*types.GenesisState) {},
-			expectErr: "unsupported genesis denom",
+			expectErr: "unregistered genesis denom aeur",
+		},
+		{
+			name:     "stablecoin reservation covered by its own custody",
+			balances: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
+			mutate:   stablecoin,
+		},
+		{
+			// NOAH never backs a stablecoin reservation: the claim's coins were bought at submission.
+			name:      "stablecoin reservation against NOAH alone",
+			balances:  sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin(chain.USDBaseDenom, 99)),
+			mutate:    stablecoin,
+			expectErr: "exceeds Insurance balance",
+		},
+		{
+			// The message server refuses the authority as committee; the import
+			// must too, or a file could seat a delegation to nobody as a live fast path.
+			name:     "committee equal to the authority",
+			balances: sdk.NewCoins(noahCoin(5_000)),
+			mutate: func(genesis *types.GenesisState) {
+				genesis.ClaimsMandate = s.appointCommittee(s.authority)
+			},
+			expectErr: "must be distinct from the Claims authority",
 		},
 		{
 			// A recipient blocked while its claim was pending is a state the
@@ -146,7 +174,7 @@ func (s *KeeperTestSuite) TestInitGenesisRejections() {
 			name:      "invalid genesis is rejected before Bank is read",
 			balances:  sdk.NewCoins(noahCoin(5_000)),
 			mutate:    func(genesis *types.GenesisState) { genesis.NextClaimId = 0 },
-			expectErr: "next claim ID must be positive",
+			expectErr: "next claim ID 0 must follow the 1 genesis claims",
 		},
 	}
 
@@ -192,7 +220,7 @@ func (s *KeeperTestSuite) TestRecognisedCapital() {
 		s.Run(tc.name, func() {
 			s.SetupTest()
 			s.fundInsurance(tc.balance)
-			s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(tc.reserved)))
+			s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, math.NewInt(tc.reserved)))
 
 			recognised, err := s.keeper.RecognisedCapital(s.ctx)
 			s.Require().NoError(err)
@@ -207,12 +235,25 @@ func (s *KeeperTestSuite) TestRecognisedCapital() {
 	}
 }
 
+// TestRecognisedCapitalIgnoresOtherCustody pins that stablecoin custody, reserved or not, counts for
+// nothing: it is Ark paper, a liability until burned (D28).
+func (s *KeeperTestSuite) TestRecognisedCapitalIgnoresOtherCustody() {
+	s.SetupTest()
+	s.fundInsurance(500)
+	s.hold(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000))
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.USDBaseDenom, math.NewInt(400)))
+
+	recognised, err := s.keeper.RecognisedCapital(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal("500", recognised.String())
+}
+
 // TestRecognisedCapitalRefusesAnOverReservation injects unreachable corrupt state and checks that
 // negative Insurance capital cannot enter Treasury's settlement waterfall.
 func (s *KeeperTestSuite) TestRecognisedCapitalRefusesAnOverReservation() {
 	s.SetupTest()
 	s.fundInsurance(100)
-	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(101)))
+	s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, math.NewInt(101)))
 
 	_, err := s.keeper.RecognisedCapital(s.ctx)
 	s.Require().ErrorContains(err, "exceeds the Insurance balance")
@@ -223,7 +264,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalRefusesAnOverReservation() {
 func (s *KeeperTestSuite) TestRecognisedCapitalTracksClaimLifecycle() {
 	s.SetupTest()
 	s.setCancellationPeriod(5)
-	s.setBlockHeight(20)
+	s.setBlockTime(20)
 	s.fundInsurance(500)
 
 	recognised, err := s.keeper.RecognisedCapital(s.ctx)
@@ -243,12 +284,12 @@ func (s *KeeperTestSuite) TestRecognisedCapitalTracksClaimLifecycle() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(400), recognised)
 
-	s.setBlockHeight(25)
+	s.setBlockTime(25)
 	s.bankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ any, _ string, _ sdk.AccAddress, coins sdk.Coins) error {
 			// Bank moves the coins out, so the balance falls by the paid amount.
-			s.insuranceBalance = s.insuranceBalance.Sub(coins.AmountOf(chain.NoahBaseDenom))
+			s.insurance = s.insurance.Sub(coins...)
 			return nil
 		})
 	s.Require().NoError(s.keeper.EndBlocker(s.ctx))

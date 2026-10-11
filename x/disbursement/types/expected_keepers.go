@@ -3,17 +3,17 @@ package types
 import (
 	"context"
 
-	"cosmossdk.io/collections"
-	"cosmossdk.io/math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// AccountKeeper resolves the custody address and the committee account an appointment observes.
+// AccountKeeper resolves the custody address, creates the custody accounts at genesis, and reads the
+// committee account an appointment observes.
 type AccountKeeper interface {
 	GetModuleAddress(string) sdk.AccAddress
+	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI
 }
 
@@ -27,6 +27,7 @@ type WasmKeeper interface {
 type BankKeeper interface {
 	BlockedAddr(sdk.AccAddress) bool
 	GetBalance(context.Context, sdk.AccAddress, string) sdk.Coin
+	GetAllBalances(context.Context, sdk.AccAddress) sdk.Coins
 	SendCoinsFromModuleToAccount(context.Context, string, sdk.AccAddress, sdk.Coins) error
 }
 
@@ -35,15 +36,19 @@ type DistributionKeeper interface {
 	FundCommunityPool(context.Context, sdk.Coins, sdk.AccAddress) error
 }
 
-// MarketKeeper converts contributor NOAH through Market's ordinary swap path.
+// MarketKeeper executes the buy that funds a stablecoin award.
 type MarketKeeper interface {
-	Swap(ctx context.Context, trader, receiver sdk.AccAddress, offerCoin sdk.Coin, askDenom string, minimumReceive sdk.Coin) (sdk.Coin, sdk.DecCoin, error)
+	Buy(ctx context.Context, trader sdk.AccAddress, ask sdk.Coin, offerDenom string, maximumOffer sdk.Coin) (sdk.Coin, sdk.Coin, sdk.DecCoin, error)
 }
 
-// StakingKeeper supplies the live bonded denominator for ownership payments.
-type StakingKeeper interface {
-	TotalValidatorPower(context.Context) (math.Int, error)
+// OracleKeeper values a compensation award in the reference unit at the fresh rates Market quotes with.
+type OracleKeeper interface {
+	GetRateSet(ctx context.Context, denoms ...string) (oracletypes.RateSet, error)
+	GetReferenceDenom(ctx context.Context) (string, error)
 }
 
-// AssetReader is the public collection used to validate new compensation assets.
-type AssetReader = collections.Map[string, assettypes.Asset]
+// AssetKeeper validates compensation denominations and admits registered deposits.
+type AssetKeeper interface {
+	GetAsset(ctx context.Context, denom string) (assettypes.Asset, error)
+	HasAsset(ctx context.Context, denom string) (bool, error)
+}

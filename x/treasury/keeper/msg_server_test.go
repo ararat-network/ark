@@ -68,23 +68,70 @@ func (s *KeeperTestSuite) TestMsgUpdateParamsDefersRewardFundingWindowChange() {
 	s.Require().Equal(uint64(2), storedFunding.BlocksRemaining)
 }
 
-// TestMsgUpdateParamsBoundsTheFundingWindow checks the context-free window cap that combines with
-// the reward-target cap to bound accrual arithmetic.
-func (s *KeeperTestSuite) TestMsgUpdateParamsBoundsTheFundingWindow() {
-	currentParams := types.DefaultParams()
-	currentParams.RewardFundingWindow = 1
-	s.Require().NoError(s.keeper.Params.Set(s.ctx, currentParams))
+// TestMsgUpdateParamsRefusals checks every refusal leaves the stored params as
+// they were; the strict oracle mock also proves each precedes any rate capture.
+func (s *KeeperTestSuite) TestMsgUpdateParamsRefusals() {
+	tests := []struct {
+		name    string
+		msg     func(types.Params) *types.MsgUpdateParams
+		errIs   error
+		wantErr string
+	}{
+		{
+			name:    "nil message",
+			msg:     func(types.Params) *types.MsgUpdateParams { return nil },
+			wantErr: "nil update params message",
+		},
+		{
+			name: "signer is not the authority",
+			msg: func(params types.Params) *types.MsgUpdateParams {
+				params.RewardFundingWindow++
+				return &types.MsgUpdateParams{
+					Authority: sdk.AccAddress(bytes.Repeat([]byte{7}, 20)).String(),
+					Params:    params,
+				}
+			},
+			errIs: errortypes.ErrUnauthorized,
+		},
+		{
+			// The window cap combines with the reward-target cap to bound accrual arithmetic.
+			name: "funding window past its cap",
+			msg: func(params types.Params) *types.MsgUpdateParams {
+				params.RewardFundingWindow = types.MaxRewardFundingWindow + 1
+				return &types.MsgUpdateParams{Authority: s.authority, Params: params}
+			},
+			wantErr: "RewardFundingWindow must be between one and",
+		},
+		{
+			// The cap's unit is the protocol reference, so only MsgSetReferenceDenom, which
+			// rebases every reference-unit consumer in one transaction, may move it.
+			name: "reference denomination change",
+			msg: func(params types.Params) *types.MsgUpdateParams {
+				params.ReferenceDenom = chain.USDBaseDenom
+				return &types.MsgUpdateParams{Authority: s.authority, Params: params}
+			},
+			errIs:   errortypes.ErrInvalidRequest,
+			wantErr: "re-point it with MsgSetReferenceDenom, not ausd",
+		},
+	}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			current, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
 
-	candidate := currentParams
-	candidate.RewardFundingWindow = types.MaxRewardFundingWindow + 1
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    candidate,
-	})
-	s.Require().ErrorContains(err, "RewardFundingWindow must be between one and")
-	stored, getErr := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(getErr)
-	s.Require().Equal(currentParams, stored)
+			_, err = s.msgServer.UpdateParams(s.ctx, tc.msg(current))
+			if tc.errIs != nil {
+				s.Require().ErrorIs(err, tc.errIs)
+			}
+			if tc.wantErr != "" {
+				s.Require().ErrorContains(err, tc.wantErr)
+			}
+			stored, err := s.keeper.Params.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(current, stored)
+		})
+	}
 }
 
 // TestMsgUpdateParamsAcceptsAWindowUnderAMaximalPolicy checks independent domain caps admit the
@@ -209,26 +256,18 @@ func (s *KeeperTestSuite) TestMsgUpdatePolicyIgnoresTheOpenFundingWindow() {
 	s.Require().True(candidate.Equal(stored))
 }
 
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsInvalidAuthority() {
-	_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: "not-authority",
-		Params:    types.DefaultParams(),
-	})
-	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
-}
-
 func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 	s.setBlockHeight(10)
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
@@ -236,11 +275,11 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 	s.Equal(uint64(1), mandate.Term)
 	s.Equal(committee, mandate.Committee)
 	s.requireTypedEvent(&types.EventEconomicMandateSet{
-		Term:             1,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		CommitteeShape:   absentCommitteeShape,
+		Term:           1,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		CommitteeShape: absentCommitteeShape,
 	})
 
 	policy := committeePolicyCandidate()
@@ -262,7 +301,7 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 
 	_, err = s.msgServer.CommitteeUpdatePolicy(s.ctx, &types.MsgCommitteeUpdatePolicy{
 		Committee:    committee,
@@ -308,7 +347,7 @@ func (s *KeeperTestSuite) TestEconomicMandateAndCommitteeUpdate() {
 		ExpectedTerm: disabled.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 }
 
 // TestEconomicPolicyMessagesAreRoleDisjoint proves the split messages cannot be
@@ -319,12 +358,12 @@ func (s *KeeperTestSuite) TestEconomicPolicyMessagesAreRoleDisjoint() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 10,
+		ExpiryTime:     20,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 	mandate, err := s.keeper.EconomicMandate.Get(s.ctx)
@@ -342,73 +381,148 @@ func (s *KeeperTestSuite) TestEconomicPolicyMessagesAreRoleDisjoint() {
 		ExpectedTerm: mandate.Term,
 		Policy:       policy,
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 
 	stored, err := s.keeper.EconomicPolicy.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().True(types.DefaultEconomicPolicy().Equal(stored))
 }
 
-func (s *KeeperTestSuite) TestEconomicMandateAuthorityAndRoleSeparation() {
+// TestSetEconomicMandateRefusals checks every refusal leaves the incumbent
+// mandate in place and announces no appointment.
+func (s *KeeperTestSuite) TestSetEconomicMandateRefusals() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
-	minimum, maximum := economicPolicyBounds()
-	message := &types.MsgSetEconomicMandate{
-		Authority:        "not-authority",
-		Committee:        committee,
-		ActivationHeight: 1,
-		ExpiryHeight:     2,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
-	}
-	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
-
-	message.Authority = s.authority
-	message.Committee = s.authority
-	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
-
-	message.Committee = committee
-	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().NoError(err)
-	// An address may hold both Economic and Claims mandates: each role is separated from Treasury
-	// authority, but not from the other role. app/claims_test.go checks the cross-module case.
-}
-
-func (s *KeeperTestSuite) TestConsensusAuthorityCannotBecomeEconomicRole() {
 	consensusAuthority := sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String()
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
-		Authority: &cmtproto.AuthorityParams{Authority: consensusAuthority},
-	})
 	minimum, maximum := economicPolicyBounds()
-	message := &types.MsgSetEconomicMandate{
-		Authority:        consensusAuthority,
-		Committee:        consensusAuthority,
-		ActivationHeight: 1,
-		ExpiryHeight:     2,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+	tests := []struct {
+		name string
+		// consensus overrides the fallback authority when set.
+		consensus string
+		height    int64
+		msg       func(types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate
+		errIs     error
+		wantErr   string
+	}{
+		{
+			name:    "nil message",
+			msg:     func(types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate { return nil },
+			wantErr: "nil set economic mandate message",
+		},
+		{
+			name: "signer is not the authority",
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.Authority = "not-authority"
+				return &msg
+			},
+			errIs: errortypes.ErrUnauthorized,
+		},
+		{
+			// Only the Treasury authority is refused: an address may also hold the Claims
+			// mandate, which app/claims_test.go checks.
+			name: "committee is the authority",
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.Committee = s.authority
+				return &msg
+			},
+			wantErr: "distinct from the Treasury authority",
+		},
+		{
+			name:      "committee is the consensus authority",
+			consensus: consensusAuthority,
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.Authority = consensusAuthority
+				msg.Committee = consensusAuthority
+				return &msg
+			},
+			wantErr: "distinct from the Treasury authority",
+		},
+		{
+			// The fallback stays refused as a committee while consensus params override it.
+			name:      "committee is the overridden fallback authority",
+			consensus: consensusAuthority,
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.Authority = consensusAuthority
+				msg.Committee = s.authority
+				return &msg
+			},
+			wantErr: "distinct from the Treasury authority",
+		},
+		{
+			name: "malformed committee",
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.Committee = "not-an-address"
+				return &msg
+			},
+			wantErr: "committee is invalid",
+		},
+		{
+			name: "inverted window",
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.ActivationTime, msg.ExpiryTime = msg.ExpiryTime, msg.ActivationTime
+				return &msg
+			},
+			wantErr: "activation time must precede expiry time",
+		},
+		{
+			// The window is half-open, so its expiry time is already inactive.
+			name:   "elapsed window",
+			height: 100,
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				return &msg
+			},
+			wantErr: "not after the current block time",
+		},
+		{
+			name: "minimum above maximum",
+			msg: func(msg types.MsgSetEconomicMandate) *types.MsgSetEconomicMandate {
+				msg.MinimumPolicy, msg.MaximumPolicy = msg.MaximumPolicy, msg.MinimumPolicy
+				return &msg
+			},
+			wantErr: "invalid economic-policy bounds",
+		},
 	}
-	_, err := s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.setBlockHeight(tc.height)
+			if tc.consensus != "" {
+				s.ctx = sdk.UnwrapSDKContext(s.ctx).WithConsensusParams(cmtproto.ConsensusParams{
+					Authority: &cmtproto.AuthorityParams{Authority: tc.consensus},
+				})
+			}
 
-	// The fallback authority stays rejected as a committee even while a
-	// consensus-params authority overrides it.
-	message.Committee = s.authority
-	_, err = s.msgServer.SetEconomicMandate(s.ctx, message)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+			_, err := s.msgServer.SetEconomicMandate(s.ctx, tc.msg(types.MsgSetEconomicMandate{
+				Authority:      s.authority,
+				Committee:      committee,
+				ActivationTime: 10,
+				ExpiryTime:     100,
+				MinimumPolicy:  minimum,
+				MaximumPolicy:  maximum,
+			}))
+			if tc.errIs != nil {
+				s.Require().ErrorIs(err, tc.errIs)
+			}
+			if tc.wantErr != "" {
+				s.Require().ErrorContains(err, tc.wantErr)
+			}
+			stored, err := s.keeper.EconomicMandate.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().Equal(types.DefaultEconomicMandate(), stored)
+			s.requireNoTypedEvent(&types.EventEconomicMandateSet{})
+		})
+	}
 }
 
 func (s *KeeperTestSuite) TestGovernanceReferenceCapChangePreservesCommittee() {
 	committee := sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String()
 	minimum, maximum := economicPolicyBounds()
 	_, err := s.msgServer.SetEconomicMandate(s.ctx, &types.MsgSetEconomicMandate{
-		Authority:        s.authority,
-		Committee:        committee,
-		ActivationHeight: 1,
-		ExpiryHeight:     100,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      s.authority,
+		Committee:      committee,
+		ActivationTime: 1,
+		ExpiryTime:     100,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	s.Require().NoError(err)
 
@@ -455,29 +569,6 @@ func committeePolicyCandidate() types.EconomicPolicy {
 		VolatilityWeight:            math.LegacyZeroDec(),
 		FlowWeight:                  math.LegacyZeroDec(),
 	}
-}
-
-// TestMsgUpdateParamsRejectsReferenceDenomChange pins the ownership split:
-// the cap's unit is the protocol reference, so governance cannot re-anchor it
-// through ordinary params — only MsgSetReferenceDenom, which rebases every
-// reference-unit consumer in one transaction, may move it.
-func (s *KeeperTestSuite) TestMsgUpdateParamsRejectsReferenceDenomChange() {
-	current, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	params := types.DefaultParams()
-	params.ReferenceDenom = chain.USDBaseDenom
-
-	// The strict oracle mock also proves the rejection precedes any rate
-	// capture or cap rebuild.
-	_, err = s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
-		Authority: s.authority,
-		Params:    params,
-	})
-	s.Require().ErrorIs(err, errortypes.ErrInvalidRequest)
-	s.Require().ErrorContains(err, "re-point it with MsgSetReferenceDenom, not ausd")
-	stored, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(current, stored)
 }
 
 func (s *KeeperTestSuite) setConversionFactors(factors ...types.ConversionFactor) {

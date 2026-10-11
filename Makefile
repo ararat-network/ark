@@ -8,6 +8,8 @@ VERSION := $(shell git describe --tags --match 'v[0-9]*' --always --dirty)
 PRICEFEED_VERSION := $(shell git describe --tags --match 'pricefeed/v[0-9]*' --always --dirty | sed 's|^pricefeed/||')
 COMMIT := $(shell git rev-parse HEAD)
 
+DOCKER := $(shell which docker)
+
 # Comma-separated go build tags. ledger compiles the hardware-wallet keyring
 # (cgo), matching what goreleaser ships; override empty for a cgo-free build.
 BUILD_TAGS ?= ledger
@@ -55,22 +57,23 @@ verify-source:
 	@contrib/scripts/verify-source.sh $(SOURCE_BUNDLE) $(SOURCE_KIND)
 
 # Package the chain tag on HEAD without publishing. CI supplies the selected tag;
-# local callers default to an exact chain tag. See README.md, "Release builds".
+# local callers default to an exact chain tag. See docs/operations/RELEASE_VERIFICATION.md, "Local packaging".
 release:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no vX.Y.Z tag" >&2; exit 1; }; \
-	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = arkd || exit 1; \
-	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = arkd || { echo "$$tag is not a vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || { echo "$$tag does not point at HEAD" >&2; exit 1; }; \
 	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
 	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish --parallelism=1 --timeout=5h
 
 # Package the sidecar tag on HEAD without publishing. Explicit tag selection and
-# validation skip support the pricefeed/vX.Y.Z prefix; see README.md, "Release builds".
+# validation skip support the pricefeed/vX.Y.Z prefix; see docs/operations/RELEASE_VERIFICATION.md,
+# "Local packaging".
 release-pricefeed:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
-	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = pricefeed || exit 1; \
-	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || exit 1; \
+	test "$$(python3 -B contrib/scripts/release-assets.py identity "$$tag" "$(COMMIT)")" = pricefeed || { echo "$$tag is not a pricefeed/vX.Y.Z tag" >&2; exit 1; }; \
+	test "$$(git rev-parse "$$tag^{commit}")" = "$(COMMIT)" || { echo "$$tag does not point at HEAD" >&2; exit 1; }; \
 	git diff --quiet HEAD || { echo "working tree is dirty" >&2; exit 1; }; \
 	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish,validate --parallelism=1 --timeout=5h -f .goreleaser.pricefeed.yml
 
@@ -98,14 +101,15 @@ E2E_PACKAGES ?= ./...
 E2E_RUN ?=
 # The Go Docker client dials DOCKER_HOST or /var/run/docker.sock; it does not
 # read the CLI's context, which is where OrbStack and Colima put their socket.
-DOCKER_HOST ?= $(shell $(DOCKER) context inspect --format '{{(index .Endpoints "docker").Host}}' 2>/dev/null)
-export DOCKER_HOST
+# Recursive, so only test-e2e pays for the lookup.
+E2E_DOCKER_HOST = $(or $(DOCKER_HOST),$(shell $(DOCKER) context inspect --format '{{(index .Endpoints "docker").Host}}' 2>/dev/null))
 test-e2e:
-	@cd tests/e2e && go test -mod=readonly -v -p 1 -count=1 -timeout 90m $(if $(E2E_RUN),-run '$(E2E_RUN)',) $(E2E_PACKAGES)
+	@cd tests/e2e && DOCKER_HOST='$(E2E_DOCKER_HOST)' go test -mod=readonly -v -p 1 -count=1 -timeout 90m $(if $(E2E_RUN),-run '$(E2E_RUN)',) $(E2E_PACKAGES)
 
-# Compiles the suites without Docker, so the module cannot rot between runs.
+# Compiles the suites and runs the harness's own unit tests, without Docker, so the module cannot
+# rot between runs.
 test-e2e-vet:
-	@cd tests/e2e && go vet ./...
+	@cd tests/e2e && go vet ./... && go test -mod=readonly -count=1 ./chainsuite/
 
 ###############################################################################
 ###                               Simulation                                ###
@@ -131,6 +135,18 @@ test-sim-after-import:
 # "hung or terminated unexpectedly".
 test-sim-fuzz:
 	@go test ./app -failfast -mod=readonly -timeout 3m -tags=sims -run ^$$ -fuzz FuzzFullAppSimulation -fuzztime 2m -NumBlocks=10 -BlockSize=50
+
+# Every native fuzz target outside the simulations, each for FUZZ_TIME: go test takes one -fuzz
+# target per run. The simulation fuzz runs through test-sim-fuzz.
+FUZZ_TIME ?= 1m
+test-fuzz:
+	@set -e; for file in $$(grep -rl --include='*_test.go' '^func Fuzz' abci app cmd pkg pricefeed x); do \
+		grep -q '^//go:build sims' "$$file" && continue; \
+		for target in $$(sed -n 's/^func \(Fuzz[A-Za-z0-9_]*\)(.*/\1/p' "$$file"); do \
+			echo "fuzzing $$target in ./$$(dirname "$$file") for $(FUZZ_TIME)"; \
+			go test -mod=readonly "./$$(dirname "$$file")" -run '^$$' -fuzz "^$$target$$" -fuzztime $(FUZZ_TIME); \
+		done; \
+	done
 
 test-sim-benchmark:
 	@go test ./app -failfast -mod=readonly -timeout 24h -tags=sims -benchmem -run ^$$ -bench BenchmarkFullAppSimulation -NumBlocks=100 -BlockSize=200
@@ -167,7 +183,6 @@ vulncheck:
 
 HTTPS_GIT := https://github.com/ararat-network/ark.git
 
-DOCKER := $(shell which docker)
 protoVer=0.18.1
 protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
 # expanded per-recipe so only the proto targets require docker
@@ -189,9 +204,19 @@ proto-lint:
 proto-check-breaking:
 	@$(protoImage) buf breaking proto --against $(HTTPS_GIT)#branch=main
 
+# The newest pricefeed release: ark.pricefeed.v1 only grows from it, since operators may run that
+# sidecar beside any newer node. Empty before the first release, when v1 is not yet frozen.
+PRICEFEED_BASE ?= $(shell git describe --tags --abbrev=0 --match 'pricefeed/v[0-9]*' 2>/dev/null)
+
+proto-check-pricefeed:
+	@if [ -z "$(PRICEFEED_BASE)" ]; then echo "no pricefeed release yet: ark.pricefeed.v1 is not frozen"; exit 0; fi; \
+	echo "checking proto/ark/pricefeed against $(PRICEFEED_BASE)"; \
+	$(protoImage) sh -c "git config --global --add safe.directory '*' && cd proto && \
+		buf breaking . --path ark/pricefeed --against '../.git#ref=$(PRICEFEED_BASE),subdir=proto'"
+
 proto-update-deps:
 	@echo "Updating Protobuf dependencies"
-	@$(protoImage) buf mod update proto
+	@$(protoImage) buf dep update proto
 
 ###############################################################################
 ###                                Localnet                                 ###
@@ -229,8 +254,13 @@ localnet-init: localnet-check
 localnet-up: localnet-check
 	$(localnetCompose) $(localnetProfile) up -d
 
-# Validators and price-feed sidecars, RPC on 26657, REST on 1317.
-localnet-start: localnet-stop localnet-build-env localnet-init localnet-up
+# Validators and price-feed sidecars, RPC on 26657, REST on 1317. Sub-makes
+# keep the steps ordered under -j.
+localnet-start: localnet-check
+	@$(MAKE) --no-print-directory localnet-stop
+	@$(MAKE) --no-print-directory localnet-build-env
+	@$(MAKE) --no-print-directory localnet-init
+	@$(MAKE) --no-print-directory localnet-up
 
 # Every profile is named so their services come down too: a service in a
 # profile that is not enabled is not an orphan, and down would skip it.
@@ -267,7 +297,7 @@ upgrade-rehearsal:
 	@contrib/scripts/upgrade-rehearsal.sh
 
 .PHONY: build build-pricefeed install clean release release-pricefeed source-bundle verify-source test test-race test-cover test-e2e test-e2e-vet \
-	test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
+	test-fuzz test-sim test-sim-nondeterminism test-sim-import-export test-sim-after-import test-sim-fuzz test-sim-benchmark \
 	lint lint-fix format vulncheck \
-	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-update-deps \
+	proto-all proto-gen proto-format proto-lint proto-check-breaking proto-check-pricefeed proto-update-deps \
 	localnet-check localnet-build-env localnet-init localnet-up localnet-start localnet-stop localnet-liveness localnet-runbook localnet-saturation localnet-statesync upgrade-rehearsal

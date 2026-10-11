@@ -11,7 +11,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/mock/gomock"
@@ -23,9 +22,12 @@ import (
 	"cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/abci/codec"
+	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
+	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/abci/voteextension"
 	vetypes "github.com/ararat-network/ark/abci/voteextension/types"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	"github.com/ararat-network/ark/pricefeed/api"
 	pricefeedclient "github.com/ararat-network/ark/pricefeed/client"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -61,9 +63,10 @@ func TestExtendVoteHandler(t *testing.T) {
 		expectedErrIs     error
 	}{
 		{
-			name:      "nil request returns error",
-			req:       nil,
-			expectErr: true,
+			name:          "nil request returns error",
+			req:           nil,
+			expectErr:     true,
+			expectedErrIs: abcitypes.ErrNilRequest,
 		},
 		{
 			name:              "feed lookup error returns empty vote extension",
@@ -294,6 +297,7 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 	wrongVersionVoteExt.TargetVersion++
 	unversionedVoteExt := validVoteExt
 	unversionedVoteExt.TargetVersion = 0
+	feedsUnavailable := errors.New("feeds unavailable")
 
 	testCases := []struct {
 		name           string
@@ -302,11 +306,18 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 		expectedStatus cmtabci.ResponseVerifyVoteExtension_VerifyStatus
 		expectResp     bool
 		expectErr      bool
+		// expectedErrIs, expectedErrStatus, and expectedErrMsg identify the refusal: a
+		// sentinel in the chain, the metrics status it records, and the cause.
+		expectedErrIs     error
+		expectedErrStatus abcimetrics.Status
+		expectedErrMsg    string
 	}{
 		{
-			name:      "nil request returns error",
-			req:       nil,
-			expectErr: true,
+			name:              "nil request returns error",
+			req:               nil,
+			expectErr:         true,
+			expectedErrIs:     abcitypes.ErrNilRequest,
+			expectedErrStatus: abcimetrics.StatusNilRequest,
 		},
 		{
 			name: "empty vote extension is accepted",
@@ -321,11 +332,13 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 			name: "decode error rejects vote extension",
 			req: &cmtabci.RequestVerifyVoteExtension{
 				Height:        10,
-				VoteExtension: []byte("not-zlib"),
+				VoteExtension: []byte("undecodable"),
 			},
-			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
-			expectResp:     true,
-			expectErr:      true,
+			expectedStatus:    cmtabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:        true,
+			expectErr:         true,
+			expectedErrIs:     abcitypes.ErrCodec,
+			expectedErrStatus: abcimetrics.StatusCodec,
 		},
 		{
 			name: "decoded invalid prices reject vote extension",
@@ -333,9 +346,11 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, invalidVoteExt),
 			},
-			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
-			expectResp:     true,
-			expectErr:      true,
+			expectedStatus:    cmtabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:        true,
+			expectErr:         true,
+			expectedErrStatus: abcimetrics.StatusVoteExtensionValidation,
+			expectedErrMsg:    "target bad denom is not in expected targets",
 		},
 		{
 			name: "feed lookup error rejects vote extension",
@@ -343,10 +358,12 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, validVoteExt),
 			},
-			targetErr:      errors.New("feeds unavailable"),
-			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
-			expectResp:     true,
-			expectErr:      true,
+			targetErr:         feedsUnavailable,
+			expectedStatus:    cmtabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:        true,
+			expectErr:         true,
+			expectedErrIs:     feedsUnavailable,
+			expectedErrStatus: abcimetrics.StatusOracleKeeper,
 		},
 		{
 			name: "wrong target version rejects vote extension",
@@ -354,9 +371,11 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, wrongVersionVoteExt),
 			},
-			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
-			expectResp:     true,
-			expectErr:      true,
+			expectedStatus:    cmtabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:        true,
+			expectErr:         true,
+			expectedErrStatus: abcimetrics.StatusVoteExtensionValidation,
+			expectedErrMsg:    "target version 2 does not match expected version 1",
 		},
 		{
 			name: "unversioned report is rejected",
@@ -364,9 +383,11 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 				Height:        10,
 				VoteExtension: abcitestutil.MustEncodeVoteExtension(t, unversionedVoteExt),
 			},
-			expectedStatus: cmtabci.ResponseVerifyVoteExtension_REJECT,
-			expectResp:     true,
-			expectErr:      true,
+			expectedStatus:    cmtabci.ResponseVerifyVoteExtension_REJECT,
+			expectResp:        true,
+			expectErr:         true,
+			expectedErrStatus: abcimetrics.StatusVoteExtensionValidation,
+			expectedErrMsg:    "target version 0 does not match expected version 1",
 		},
 		{
 			name: "decoded valid prices accept vote extension",
@@ -396,7 +417,13 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 
 			resp, err := handler(newVoteExtensionContext(10, 2), tc.req)
 			if tc.expectErr {
-				require.Error(t, err)
+				require.Equal(t, tc.expectedErrStatus, abcimetrics.StatusOf(err))
+				if tc.expectedErrIs != nil {
+					require.ErrorIs(t, err, tc.expectedErrIs)
+				}
+				if tc.expectedErrMsg != "" {
+					require.ErrorContains(t, err, tc.expectedErrMsg)
+				}
 			} else {
 				require.NoError(t, err)
 			}
@@ -410,8 +437,6 @@ func TestVerifyVoteExtensionHandler(t *testing.T) {
 	}
 }
 
-// The global binds package-level instruments to the first provider installed
-// in the process, so this package gets one provider-installing test.
 func TestExtendVoteHandlerRecordsCoverage(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
@@ -420,7 +445,7 @@ func TestExtendVoteHandlerRecordsCoverage(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	t.Run("verify panic propagates and counts as panic", func(t *testing.T) {
 		keeper := abcitestutil.NewMockOracleKeeper(gomock.NewController(t))

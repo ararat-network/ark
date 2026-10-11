@@ -8,8 +8,7 @@ import "cosmos/app/v1alpha1/module.proto";
 message Module {
   option (cosmos.app.v1alpha1.module) = {go_import: "github.com/ararat-network/ark/x/oracle/module"};
 
-  // distribution_name defines the module account name to
-  // which the community pool remainder is sent. If not set, defaults to
-  // "distribution".
+  // distribution_name names the module account oracle rewards are paid into
+  // for allocation to validators. If not set, defaults to "distribution".
   string distribution_name = 1;
 }

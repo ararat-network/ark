@@ -49,6 +49,12 @@ const (
 	// DefaultMaxSubscriptionsPerBatch is the default provider-handler limit for
 	// subscriptions in one subscription message.
 	DefaultMaxSubscriptionsPerBatch = 1
+
+	// MaxMessageBytes caps one inbound frame. It is coder/websocket's own default,
+	// set here so the bound is this package's to document and test: a ticker is a
+	// few hundred bytes, and a venue batching past it is a fault to surface, not a
+	// frame to buffer.
+	MaxMessageBytes int64 = 32 << 10
 )
 
 // Config defines websocket fetcher settings for one provider.
@@ -70,8 +76,8 @@ type Config struct {
 	// messages.
 	PostConnectionTimeout time.Duration `mapstructure:"post_connection_timeout"`
 
-	// Endpoints are provider endpoints that may be selected for each connection
-	// attempt.
+	// Endpoints are dialled in turn: each reconnect, which follows a failed
+	// session, moves to the next, wrapping round.
 	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// HandshakeTimeout is the maximum duration allowed for websocket dial and

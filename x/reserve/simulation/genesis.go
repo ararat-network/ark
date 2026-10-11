@@ -34,8 +34,10 @@ func GenReserveMandate(r *rand.Rand, accounts []string) types.ReserveMandate {
 
 	appointment := types.NewDisabledReserveMandate(1)
 	appointment.Committee = accounts[committee]
-	appointment.ActivationHeight = 1
-	appointment.ExpiryHeight = chain.BlocksPerYear
+	// Open from the epoch to the header's last instant, so the window spans whatever genesis time the
+	// simulation draws.
+	appointment.ActivationTime = 1
+	appointment.ExpiryTime = chain.MaxBlockSeconds
 	appointment.DeploymentAllowance = chain.NoahCoin(math.NewInt(simulatedDeploymentAllowance))
 	appointment.MinimumNoahBalance = chain.NoahCoin(math.NewInt(simulatedMinimumNoahBalance))
 	appointment.Destinations = []string{accounts[destination]}

@@ -2,7 +2,7 @@
 
 The Kraken API provider fetches spot prices from Kraken's public ticker endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `kraken_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 
@@ -15,7 +15,9 @@ maps chain denoms to these provider symbols through `Markets`; the adapter does 
 `Handler.CreateURL` joins the requested pairs into the `pair` query parameter, so a batch is one request.
 `Handler.ParseResponse` reads the first element of each pair's `c` (last trade closed) array. A non-empty `error`
 array fails every ticker in the batch with the venue's message; missing, malformed, or unexpected values are returned
-as unresolved ticker errors.
+as unresolved ticker errors. Kraken refuses a whole request naming one pair it does not list
+(`EQuery:Unknown asset pair`); that is reported as an unknown pair, so the [shared fetcher](../../base/README.md#failed-fetches)
+asks for each pair alone and requests the batch without the refused one.
 
 ## Market Checks
 

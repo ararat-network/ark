@@ -3,8 +3,8 @@ version: 2
 project_name: pricefeed
 
 # Package the pure-Go sidecar from pricefeed/vX.Y.Z through make release-pricefeed. Templates use
-# .Tag because prefixed tags require explicit selection and validated skip handling. See README.md,
-# "Release builds".
+# .Tag because prefixed tags require explicit selection and validated skip handling. See
+# docs/operations/RELEASE_VERIFICATION.md, "Local packaging".
 
 release:
   name_template: "{{ .Tag }}"
@@ -59,7 +59,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - COPYING
+      - LICENSES/*
       - NOTICE
       - THIRD_PARTY_NOTICES.md
       - build/source/pricefeed-source-{{ .FullCommit }}-notices.tar.gz

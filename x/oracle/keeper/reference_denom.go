@@ -93,16 +93,25 @@ func (k Keeper) requireFeedActive(ctx context.Context, denom string) error {
 	return nil
 }
 
-// rebaseReferenceDenom supplies one captured rate pair to both required executors. Both rates must
-// be fresh unless governance supplies the outgoing rate, which bypasses that feed read. Any
-// executor failure aborts the action; see x/oracle/README.md.
+// rebaseReferenceDenom supplies one captured rate pair to every wired consumer. Both rates must be
+// fresh unless governance supplies the outgoing rate, which bypasses that feed read. Any consumer
+// failure aborts the action; see x/oracle/README.md.
 func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string, outgoingRate math.LegacyDec) error {
-	if k.marketReferenceKeeper == nil || k.treasuryReferenceKeeper == nil {
+	if len(k.referenceRebasers) == 0 {
 		return errorsmod.Wrapf(
 			types.ErrReferenceDenomRebaseUnavailable,
 			"moving reference denom %s with no rebase executors wired",
 			from,
 		)
+	}
+	for _, rebaser := range k.referenceRebasers {
+		if rebaser == nil {
+			return errorsmod.Wrapf(
+				types.ErrReferenceDenomRebaseUnavailable,
+				"moving reference denom %s with a nil rebase executor wired",
+				from,
+			)
+		}
 	}
 
 	// A supplied rate makes the outgoing feed irrelevant, so it is not priced
@@ -125,23 +134,17 @@ func (k Keeper) rebaseReferenceDenom(ctx context.Context, from string, to string
 		rates[from] = outgoingRate
 	}
 
-	if err := k.marketReferenceKeeper.RebaseBasePool(ctx, from, to, rates); err != nil {
-		return errorsmod.Wrapf(
-			types.ErrReferenceDenomRebaseUnavailable,
-			"rebasing Market base pool from %s to %s: %v",
-			from,
-			to,
-			err,
-		)
-	}
-	if err := k.treasuryReferenceKeeper.RebaseReferenceState(ctx, from, to, rates); err != nil {
-		return errorsmod.Wrapf(
-			types.ErrReferenceDenomRebaseUnavailable,
-			"rebasing Treasury reference state from %s to %s: %v",
-			from,
-			to,
-			err,
-		)
+	// Each consumer names its own state in its error, so the wrap adds only the move.
+	for _, rebaser := range k.referenceRebasers {
+		if err := rebaser.RebaseReference(ctx, from, to, rates); err != nil {
+			return errorsmod.Wrapf(
+				types.ErrReferenceDenomRebaseUnavailable,
+				"rebasing from %s to %s: %v",
+				from,
+				to,
+				err,
+			)
+		}
 	}
 
 	return nil

@@ -3,14 +3,14 @@
 ## Project Context
 
 This is a Cosmos SDK blockchain project porting the full Terra Classic chain to modern Cosmos SDK conventions. Active
-modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/disbursement/`, `x/reserve/`, `x/security/`. The chain
-currently uses **cosmos-sdk v0.54.3** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
+modules: `x/market/`, `x/oracle/`, `x/treasury/`, `x/asset/`, `x/claims/`, `x/disbursement/`, `x/reserve/`, `x/security/`. The
+chain currently uses **cosmos-sdk v0.54.4** with depinject and `cosmossdk.io/*` packages; always verify `go.mod` before
 SDK-specific work because the SDK version can move.
 
 Key differences between legacy (Terra Classic / cosmos-sdk v0.45) and modern patterns to always consider:
 
 - **Dependency injection**: depinject-based module wiring, not manual constructor calls
-- **Logging**: `cosmossdk.io/log` not `tendermint/libs/log`
+- **Logging**: `cosmossdk.io/log/v2` not `tendermint/libs/log`
 - **Protobuf codegen**: dual generation — gogo (`x/*/types/*.pb.go`) + pulsar (`api/*.pulsar.go`), following current
   upstream SDK dual-generation patterns
 - **Proto annotations**: key rules:
@@ -39,7 +39,7 @@ Reference codebases:
 ## Project Structure
 
 ```text
-x/market/       # DEX swap module (Noah ↔ stablecoins)
+x/market/       # Conversion module (NOAH ↔ stablecoins at oracle prices)
 x/oracle/       # Price oracle module (validator price voting, feed registry)
 x/treasury/     # Macro policy module (tax, reward funding, liability, fund targets)
 x/asset/        # Asset registry and lifecycle owner for every non-NOAH Bank asset
@@ -50,50 +50,54 @@ x/security/     # Security committee over the standard-module emergency surface
 abci/           # Vote-extension, proposal, and preblock oracle pipeline
 pricefeed/      # Off-chain price-feed sidecar, node-side client, providers, and transport API
 pkg/            # Shared primitives such as encoding, telemetry, TLS file loading, and minimal metrics
-proto/ark/     # Proto definitions (modules, ABCI, pricefeed)
-api/ark/       # Pulsar-generated code (runtime only, never import in module code)
-app/            # App wiring, depinject config, manual IBC/Wasm/GMP registration, launch genesis
+proto/ark/      # Proto definitions (modules, ABCI, pricefeed)
+api/ark/        # Pulsar-generated code (runtime only, never import in module code)
+app/            # App wiring, depinject config, manual Wasm registration, launch genesis
 app/mempool/    # Pending transactions, lane eligibility, admission limits, and scheduling
+cmd/            # arkd and pricefeed binary startup and CLI
+tests/          # Integration fixtures, simulations, and the separate e2e module
+contrib/        # Images, localnet, probes, release scripts, and operational rehearsals
+docs/           # Cross-subsystem design, operations, governance, and papers
 ```
 
 ## Oracle, Price Feed, And ABCI Boundaries
 
-- Keep `x/oracle/` as the on-chain module. Top-level `pricefeed/` is split into `pricefeed/client` for the app-side
-  cached client, `pricefeed/api` for generated transport API types, and `pricefeed/sidecar` for the off-chain sidecar.
+- Keep `x/oracle/` as the on-chain module. Top-level `pricefeed/` is split into `pricefeed/client` for the app-side cached
+  client, `pricefeed/api` for generated transport API types, and `pricefeed/sidecar` for the off-chain sidecar.
 - `pricefeed/sidecar` owns the sidecar process and transport: the sidecar `Service` implements the generated RPC server,
   owns gRPC/gateway listener machinery, and delegates provider/resolver price work to `pricefeed/sidecar/runtime`.
   `pricefeed/sidecar/runtime` owns the price-fetch loop and runtime updates.
-- Keep `pricefeed/api` generated transport API only. Sidecar domain structs live under `pricefeed/sidecar/types`; routes
-  use `/ark/pricefeed/v1/...`.
-- `pricefeed/sidecar/providers` owns full provider config and construction. `pricefeed/sidecar/providers/base` owns
-  provider runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`,
-  and `TransportType`.
+- Keep `pricefeed/api` generated transport API only. Sidecar domain structs live under `pricefeed/sidecar/types`; routes use
+  `/ark/pricefeed/v1/...`.
+- `pricefeed/sidecar/providers` owns full provider config and construction. `pricefeed/sidecar/providers/base` owns provider
+  runtime fields, fetch loop, ticker resolution, response ingestion, cached prices, runtime updates, `Fetcher`, and
+  `TransportType`.
 - `abci/` is fixed protocol code, not a pluggable strategy layer. Lifecycle hooks stay thin; `abci/oracle` owns vote
   extraction, aggregation, scoring, price application, and oracle-specific encoding policy.
 - Keep primitive codecs and per-value encoding limits in `pkg/encoding`; keep aggregate vote-extension wire and decoded
   size limits in `abci/codec`.
-- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `pricefeed/client/metrics`,
-  `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup wiring.
+- Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`,
+  `pricefeed/client/metrics`, `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup
+  wiring.
 - The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
-  within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files through `pkg/tlsconfig` and
-  their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via
-  `.goreleaser.pricefeed.yml`.
+  within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
+  through `pkg/tlsconfig` and their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via `.goreleaser.pricefeed.yml`.
 
 ## Cosmos SDK Conventions
 
 When making code changes:
 
 - Always check the exact cosmos-sdk version in go.mod before suggesting imports or patterns
-- **msgServer/queryServer pattern**: use named `k *Keeper` field + embed
-  `UnimplementedMsgServer`/`UnimplementedQueryServer` in both. Query RPCs collide with public collection fields
-  (`Params`, `TaxRate`, etc.); oracle msg RPCs also collide (`AggregateExchangeRatePrevote`). Named fields everywhere
-  for consistency.
+- **msgServer/queryServer pattern**: use a named `k *Keeper` field and do not embed
+  `UnimplementedMsgServer`/`UnimplementedQueryServer`: every RPC is implemented explicitly, so a missing handler
+  fails to compile rather than answering Unimplemented at runtime. Query RPCs collide with public collection fields
+  (`Params`, `EconomicPolicy`, `RewardFunding`, etc.). Named fields everywhere for consistency.
 - When editing proto files, explain proposed changes before applying them and wait for confirmation
 
 When porting from Classic, always modernize:
 
 - `github.com/cosmos/cosmos-sdk/types.Dec` → `cosmossdk.io/math.LegacyDec`
-- `gopkg.in/yaml.v2` → remove (YAML marshaling not needed in v0.53)
+- `gopkg.in/yaml.v2` → remove (YAML marshaling not needed on the current SDK)
 - `yaml.Marshal` custom `String()` methods → remove (gogo auto-generates `String()` via `proto.CompactTextString`)
 - `github.com/tendermint/tendermint/crypto/tmhash` → `crypto/sha256` (stdlib)
 - `gogoproto.moretags` yaml tags → remove (amino annotations replace these)
@@ -111,30 +115,29 @@ When porting from Classic, always modernize:
 These are consensus rules, not style. All three were violated in reviewed code before being written down here.
 
 - **Round in the direction of what the number funds.** A division producing a payment floors; a division sizing a
-  requirement ceils; round-to-nearest is only for figures nothing pays from. Fund targets use `MulRoundUp(...).Ceil()`;
-  the subsidy split and the redemption coverage draw floor.
+  requirement ceils; round-to-nearest is only for figures nothing pays from. Fund targets use
+  `MulRoundUp(...).Ceil()`; the subsidy split and the redemption coverage draw floor.
 - **Multiply before dividing, and check the product.** Forming a ratio first rounds an intermediate against its own
-  bound, and the other operand then amplifies that error past the bound — the coverage draw could exceed the Buffer it
-  was paid from. Multiplying first leaves one rounding on a quantity whose bounds are whole base units, which monotone
-  rounding cannot cross, so the bound becomes a theorem rather than a guarded hope. Use `SafeMul` for the product:
-  unlike `Mul` it errors rather than panicking.
+  bound, and the other operand then amplifies that error past the bound — the coverage draw could exceed the Buffer
+  it was paid from. Multiplying first leaves one rounding on a quantity whose bounds are whole base units, which
+  monotone rounding cannot cross, so the bound becomes a theorem rather than a guarded hope. Use `SafeMul` for the
+  product: unlike `Mul` it errors rather than panicking.
 - **Bound governance inputs with domain caps, not projections.** For a governance-set number feeding halt-class
-  arithmetic, cap the field in its own `Validate` with orders of magnitude of headroom (`MaxBlockRewardTarget`,
-  `MaxRewardFundingWindow`). Reach for a projection — "this value plus live state over N blocks will still fit" — only
-  when the domain genuinely cannot be bounded, and treat needing one as a signal that something in the state design is
-  compounding: a projection has to be re-proved by every future writer of every input it reads, and its verdict moves
-  with live state, so the same value can be valid today and invalid next month.
-- **Oracle rates are NOAH per unit.** A rate is NOAH per one unit of its denomination, so valuing in NOAH multiplies and
-  `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a _price_ of the reference unit (the
-  exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the two units passed in the
-  opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at
-  `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity by it stay representable. (D75–D77,
-  `x/oracle/README.md` §1.4.)
+  arithmetic, cap the field in its own `Validate` with orders of magnitude of headroom
+  (`MaxBlockRewardTarget`, `MaxRewardFundingWindow`). Reach for a projection — "this value plus live state over N
+  blocks will still fit" — only when the domain genuinely cannot be bounded, and treat needing one as a signal that
+  something in the state design is compounding: a projection has to be re-proved by every future writer of every
+  input it reads, and its verdict moves with live state, so the same value can be valid today and invalid next month.
+- **Oracle rates are NOAH per unit.** A rate is NOAH per one unit of its denomination, so valuing in NOAH
+  multiplies and `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a *price* of the
+  reference unit (the exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the
+  two units passed in the opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity
+  by it stay representable. (D75–D77, `x/oracle/README.md` §1.4.)
 
 The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
 outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The
-defence is refusing the input at the write, where a human is in the loop; `Safe*` is the loud backstop behind it. Keep
-the backstop even when it is provably unreachable, and say so in a comment naming what makes it unreachable.
+defence is refusing the input at the write, where a human is in the loop; `Safe*` is the loud backstop behind it.
+Keep the backstop even when it is provably unreachable, and say so in a comment naming what makes it unreachable.
 
 ## Git Workflow
 
@@ -157,8 +160,8 @@ the backstop even when it is provably unreachable, and say so in a comment namin
   deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
-- `docs/design/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a message
-  type, an inbound parser, a credential, or a release step updates it in the same change.
+- `docs/design/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
+  message type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation
 
@@ -194,10 +197,12 @@ string field_name = N [
   every rotation; cons addrs belong at attribution boundaries only
 - Default param values: use `const` for compile-time literals (integers, strings); `var` only for runtime init (function
   calls, struct/slice literals)
+- Token amounts in constants are whole display units (`int64`); convert with `chain.NativeBaseAmount` where the value is
+  built. Sub-unit figures, such as per-block rates and gas prices, stay in base units.
 - **Collection access convention** (matches upstream SDK: mint, gov, bank):
-  - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTax.Get(ctx, denom)` directly
-  - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetFeederDelegation`
-    defaults to validator itself), domain checks (e.g., `GetExchangeRate` has NoahBaseDenom identity), side effects
+  - Collection fields are **public** — callers use `k.Params.Get(ctx)`, `k.TobinTaxOverrides.Get(ctx, denom)` directly
+  - Only wrap with a keeper method when there's **real logic**: default-on-not-found (e.g., `GetTobinTaxes` falls
+    back to `Params.DefaultTobinTax`), domain checks (e.g., `GetExchangeRate` has NoahBaseDenom identity), side effects
     (e.g., `SetExchangeRateWithEvent` emits events)
   - If a wrapper is just `return k.Collection.Get(ctx, key)` with no extra logic, delete it — the collection IS the
     getter
@@ -208,6 +213,9 @@ string field_name = N [
 - Use scope-matched verification first. Run focused package tests for narrow changes; use `go build ./...` when the
   change should affect the whole repo or before claiming repo-wide compile. If unrelated checkout drift blocks repo-wide
   verification, report the exact blocker.
+- Native grants: `go test ./tests/integration -run TestNativeDisbursement` verifies funded commitments, EndBlock
+  payment and deferral, cancellation, ownership limits, stablecoin compensation, and continuation export/import through the
+  real app's keepers and message router
 - Proto generation: `make proto-gen` (also runs `go mod tidy`)
 - Proto formatting: `make proto-format`
 - Proto linting: `make proto-lint`
@@ -217,11 +225,14 @@ string field_name = N [
 
 ## Export & Relaunch
 
-- `arkd export` is a continuation export: heights stay absolute and the genesis starts at the next height, so every
-  height-anchored record (mandate windows, claim schedules, settlement plans, oracle windows) resumes as is. A relaunch
-  takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
-  simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that lost
-  more than a third of its power.
+- `arkd export` is a continuation export: heights and block times stay absolute and the genesis starts at the next
+  height, so every anchored record resumes as is. Height-anchored records (oracle windows, reward windows) pause through
+  an outage; time-anchored ones (mandate windows, claim closing times, settlement plans, grant schedules) lose it, which
+  the relaunch runbook in `docs/operations/NODE_OPERATIONS.md` handles. A relaunch takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
+  simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that
+  lost more than a third of its power.
+- `arkd genesis dry-run <file>` boots a genesis in memory through InitChain and its first block at the file's initial
+  height. Run it on an export before publishing a relaunch genesis, as assembly runs it on the gentxs before launch.
 
 ## Testing Conventions
 

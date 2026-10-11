@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/security/types"
 )
 
@@ -25,7 +26,7 @@ func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expect
 	if err := securityMandate.Authorise(
 		committee,
 		expectedTerm,
-		uint64(sdk.UnwrapSDKContext(ctx).BlockHeight()),
+		chain.BlockSeconds(ctx),
 	); err != nil {
 		return types.SecurityMandate{}, fmt.Errorf("%s: %w", types.SecurityMandateLabel, err)
 	}
@@ -85,8 +86,8 @@ func (k Keeper) dispatch(ctx context.Context, msg sdk.Msg) error {
 		return fmt.Errorf("dispatching %s: %w", sdk.MsgTypeURL(msg), err)
 	}
 	// The router gives the target its own event manager and returns what it
-	// emitted on the result, so events not forwarded here are lost: a client
-	// recovery would be invisible to every relayer watching for it.
+	// emitted on the result, so events not forwarded here are lost: a
+	// scheduled upgrade would be invisible to anyone watching for it.
 	sdkCtx.EventManager().EmitEvents(res.GetEvents())
 
 	return nil

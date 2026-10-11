@@ -18,10 +18,10 @@ func testCommittee() string {
 
 func validEnvelope() mandate.Envelope {
 	return mandate.Envelope{
-		Term:             1,
-		Committee:        testCommittee(),
-		ActivationHeight: 10,
-		ExpiryHeight:     20,
+		Term:           1,
+		Committee:      testCommittee(),
+		ActivationTime: 10,
+		ExpiryTime:     20,
 	}
 }
 
@@ -50,14 +50,14 @@ func TestEnvelopeValidate(t *testing.T) {
 		{
 			name:      "disabled with activation height",
 			envelope:  func() mandate.Envelope { return mandate.Disabled(1) },
-			mutate:    func(e *mandate.Envelope) { e.ActivationHeight = 1 },
-			expectErr: "disabled envelope must not have an activation or expiry height",
+			mutate:    func(e *mandate.Envelope) { e.ActivationTime = 1 },
+			expectErr: "disabled envelope must not have an activation or expiry time",
 		},
 		{
 			name:      "disabled with expiry height",
 			envelope:  func() mandate.Envelope { return mandate.Disabled(1) },
-			mutate:    func(e *mandate.Envelope) { e.ExpiryHeight = 1 },
-			expectErr: "disabled envelope must not have an activation or expiry height",
+			mutate:    func(e *mandate.Envelope) { e.ExpiryTime = 1 },
+			expectErr: "disabled envelope must not have an activation or expiry time",
 		},
 		{
 			name:      "configured zero term",
@@ -74,14 +74,14 @@ func TestEnvelopeValidate(t *testing.T) {
 		{
 			name:      "empty window",
 			envelope:  validEnvelope,
-			mutate:    func(e *mandate.Envelope) { e.ActivationHeight = e.ExpiryHeight },
-			expectErr: "activation height must precede expiry height",
+			mutate:    func(e *mandate.Envelope) { e.ActivationTime = e.ExpiryTime },
+			expectErr: "activation time must precede expiry time",
 		},
 		{
 			name:      "inverted window",
 			envelope:  validEnvelope,
-			mutate:    func(e *mandate.Envelope) { e.ActivationHeight = e.ExpiryHeight + 1 },
-			expectErr: "activation height must precede expiry height",
+			mutate:    func(e *mandate.Envelope) { e.ActivationTime = e.ExpiryTime + 1 },
+			expectErr: "activation time must precede expiry time",
 		},
 	}
 
@@ -143,34 +143,34 @@ func TestEnvelopeNextTerm(t *testing.T) {
 
 func TestNext(t *testing.T) {
 	tests := []struct {
-		name             string
-		current          func() mandate.Envelope
-		committee        string
-		activationHeight uint64
-		expiryHeight     uint64
-		expect           mandate.Envelope
-		expectErr        string
+		name           string
+		current        func() mandate.Envelope
+		committee      string
+		activationTime uint64
+		expiryTime     uint64
+		expect         mandate.Envelope
+		expectErr      string
 	}{
 		{
-			name:             "configured successor advances the term",
-			current:          validEnvelope,
-			committee:        testCommittee(),
-			activationHeight: 30,
-			expiryHeight:     40,
+			name:           "configured successor advances the term",
+			current:        validEnvelope,
+			committee:      testCommittee(),
+			activationTime: 30,
+			expiryTime:     40,
 			expect: mandate.Envelope{
-				Term:             2,
-				Committee:        testCommittee(),
-				ActivationHeight: 30,
-				ExpiryHeight:     40,
+				Term:           2,
+				Committee:      testCommittee(),
+				ActivationTime: 30,
+				ExpiryTime:     40,
 			},
 		},
 		{
-			name:             "empty committee disables at the advanced term",
-			current:          validEnvelope,
-			committee:        "",
-			activationHeight: 30,
-			expiryHeight:     40,
-			expect:           mandate.Disabled(2),
+			name:           "empty committee disables at the advanced term",
+			current:        validEnvelope,
+			committee:      "",
+			activationTime: 30,
+			expiryTime:     40,
+			expect:         mandate.Disabled(2),
 		},
 		{
 			name:      "disabled predecessor still advances the term",
@@ -191,16 +191,16 @@ func TestNext(t *testing.T) {
 			// Bech32 accepts an all-uppercase spelling of the same account, so
 			// the appointment stores the canonical form to keep state, events,
 			// and every later string comparison on one spelling.
-			name:             "uppercase committee is stored canonical",
-			current:          validEnvelope,
-			committee:        strings.ToUpper(testCommittee()),
-			activationHeight: 30,
-			expiryHeight:     40,
+			name:           "uppercase committee is stored canonical",
+			current:        validEnvelope,
+			committee:      strings.ToUpper(testCommittee()),
+			activationTime: 30,
+			expiryTime:     40,
 			expect: mandate.Envelope{
-				Term:             2,
-				Committee:        testCommittee(),
-				ActivationHeight: 30,
-				ExpiryHeight:     40,
+				Term:           2,
+				Committee:      testCommittee(),
+				ActivationTime: 30,
+				ExpiryTime:     40,
 			},
 		},
 		{
@@ -216,8 +216,8 @@ func TestNext(t *testing.T) {
 			envelope, committeeAddress, err := mandate.Next(
 				testCase.current(),
 				testCase.committee,
-				testCase.activationHeight,
-				testCase.expiryHeight,
+				testCase.activationTime,
+				testCase.expiryTime,
 			)
 			if testCase.expectErr != "" {
 				require.ErrorContains(t, err, testCase.expectErr)
@@ -268,7 +268,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       testCommittee(),
 			expectedTerm: 3,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			name:         "disabled envelope rejects its own empty committee",
@@ -276,7 +276,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       "",
 			expectedTerm: 3,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			name:         "wrong signer",
@@ -284,7 +284,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       authtypes.NewModuleAddress("impostor").String(),
 			expectedTerm: 1,
 			height:       10,
-			expectErr:    "signer is not the exact appointed committee",
+			expectErr:    "signer is not the exact appointed account",
 		},
 		{
 			// The ante handler authenticates the signer by decoded bytes, so an
@@ -301,7 +301,7 @@ func TestEnvelopeAuthorise(t *testing.T) {
 			signer:       "not-an-address",
 			expectedTerm: 1,
 			height:       10,
-			expectErr:    "committee signer is invalid",
+			expectErr:    "appointed signer is invalid",
 		},
 		{
 			name:         "stale term",

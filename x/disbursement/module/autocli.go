@@ -1,47 +1,195 @@
 package disbursement
 
 import (
+	"fmt"
+
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
+
+	"github.com/cosmos/cosmos-sdk/version"
 
 	disbursementv1 "github.com/ararat-network/ark/api/ark/disbursement/v1"
 )
 
-// AutoCLIOptions exposes typed disbursement messages and public queries.
+// AutoCLIOptions returns the disbursement module's AutoCLI configuration.
 func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
-		Query: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Query_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-			{RpcMethod: "Params", Use: "params", Short: "Show operational params and immutable ownership policy"},
-			{RpcMethod: "GrantsMandate", Use: "grants-mandate", Short: "Show the committee appointment, whether it is active, and the term's awards"},
-			{RpcMethod: "Grant", Use: "grant [id]", Short: "Show a grant and its original terms", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}}},
-			{RpcMethod: "Grants", Use: "grants", Short: "List grants, optionally by beneficiary"},
-			{RpcMethod: "Member", Use: "member [address]", Short: "Look up a permanent member registration", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}}},
-			{RpcMethod: "Beneficiary", Use: "beneficiary [address]", Short: "Show contributor control, cumulative ownership, and founding status", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}}},
-			{RpcMethod: "Releasable", Use: "releasable [id]", Short: "Show earned principal, payable funds, and live ownership limits", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}}},
-			{RpcMethod: "Balance", Use: "balance [denom]", Short: "Show custody, reservations, payments, and unallocated funds", PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "denom"}}},
-			{RpcMethod: "Totals", Use: "totals", Short: "List per-denomination accounting totals"},
-			{RpcMethod: "Journal", Use: "journal", Short: "List permanent operations, optionally by grant ID"},
-			{RpcMethod: "Issuance", Use: "issuance", Short: "Show usage of the current rolling member window"},
-			{RpcMethod: "ConversionOrders", Use: "conversion-orders", Short: "List open stablecoin conversion orders"},
-		}}, Tx: &autocliv1.ServiceCommandDescriptor{Service: disbursementv1.Msg_ServiceDesc.ServiceName, RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-			{RpcMethod: "UpdateParams", Use: "update-params-proposal", Short: "Propose operational disbursement parameters", GovProposal: true},
-			{RpcMethod: "SetGrantsMandate", Use: "set-grants-mandate-proposal", Short: "Propose appointing, replacing, or disabling the grants committee", GovProposal: true},
-			{RpcMethod: "CreateGrant", Use: "create-grant-proposal", Short: "Propose a fully funded ownership or compensation award", GovProposal: true},
-			{RpcMethod: "CommitteeRegister", Use: "committee-register", Short: "Register members and pay their first period as the committee", GovProposal: false},
-			{RpcMethod: "Release", Use: "release", Short: "Pay available entitlement to each recorded payee", GovProposal: false},
-			{RpcMethod: "CancelGrants", Use: "cancel-grants-proposal", Short: "Propose cancellation while retaining earned debt", GovProposal: true},
-			{RpcMethod: "CommitteeSuspend", Use: "committee-suspend", Short: "Suspend member payments as the committee", GovProposal: false},
-			{RpcMethod: "CommitteeReinstate", Use: "committee-reinstate", Short: "Resume suspended member payments as the committee", GovProposal: false},
-			{RpcMethod: "ReinstateMembers", Use: "reinstate-members-proposal", Short: "Propose resuming suspended member payments", GovProposal: true},
-			{RpcMethod: "VoidSuspensions", Use: "void-suspensions-proposal", Short: "Propose invalidating every suspension of a replaced committee term", GovProposal: true},
-			{RpcMethod: "SetPayee", Use: "set-payee", Short: "Change a grant destination without changing beneficiary identity", GovProposal: false},
-			{RpcMethod: "SetController", Use: "set-controller", Short: "Rotate a contributor's controller", GovProposal: false},
-			{RpcMethod: "ReturnUnallocated", Use: "return-unallocated-proposal", Short: "Propose returning idle custody or contributor-pool NOAH to the community pool", GovProposal: true},
-			{RpcMethod: "OpenTranche", Use: "open-tranche-proposal", Short: "Propose opening pool NOAH to new grants", GovProposal: true},
-			{RpcMethod: "AuthoriseConversion", Use: "authorise-conversion-proposal", Short: "Propose converting open contributor NOAH into a stablecoin", GovProposal: true},
-			{RpcMethod: "CancelConversion", Use: "cancel-conversion-proposal", Short: "Propose returning a conversion order to the open contributor tranche", GovProposal: true},
-			{RpcMethod: "Convert", Use: "convert", Short: "Execute part of an authorised conversion order", GovProposal: false},
-			{RpcMethod: "CommitteeCompensate", Use: "committee-compensate", Short: "Award compensation within the term's allowance as the committee", GovProposal: false},
-			{RpcMethod: "CancelTermGrants", Use: "cancel-term-grants-proposal", Short: "Propose cancelling every unfinished committee award of one term", GovProposal: true},
-		}},
+		Query: &autocliv1.ServiceCommandDescriptor{
+			Service: disbursementv1.Query_ServiceDesc.ServiceName,
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
+				{
+					RpcMethod: "Params",
+					Use:       "params",
+					Short:     "Query the disbursement parameters, the ownership cap among them",
+					Example:   fmt.Sprintf("%s query disbursement params", version.AppName),
+				},
+				{
+					RpcMethod: "GrantsMandate",
+					Use:       "grants-mandate",
+					Short:     "Query the grants committee appointment, whether it is active, and the term's compensation usage",
+					Example:   fmt.Sprintf("%s query disbursement grants-mandate", version.AppName),
+				},
+				{
+					RpcMethod: "RegistrarMandate",
+					Use:       "registrar-mandate",
+					Short:     "Query the registrar appointment and whether it is active",
+					Example:   fmt.Sprintf("%s query disbursement registrar-mandate", version.AppName),
+				},
+				{
+					RpcMethod: "Balance",
+					Use:       "balance [denom]",
+					Short:     "Query each account's custody, reservations, and uncommitted amount, and the member tranche; NOAH and every registered asset held by default",
+					Example:   fmt.Sprintf("%s query disbursement balance anoah", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "denom", Optional: true},
+					},
+				},
+				{
+					RpcMethod: "Grant",
+					Use:       "grant [id]",
+					Short:     "Query a grant and its original terms",
+					Example:   fmt.Sprintf("%s query disbursement grant 1", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "id"},
+					},
+				},
+				{
+					RpcMethod: "Grants",
+					Use:       "grants",
+					Short:     "Query grants, optionally by beneficiary, committee term, registrar term, or kind",
+					Example:   fmt.Sprintf("%s query disbursement grants --beneficiary ark1...", version.AppName),
+				},
+				{
+					RpcMethod: "GrantJournal",
+					Use:       "grant-journal",
+					Short:     "Query the permanent grant journal, optionally by grant ID",
+					Example:   fmt.Sprintf("%s query disbursement grant-journal --grant-id 1", version.AppName),
+				},
+				{
+					RpcMethod: "Member",
+					Use:       "member [address]",
+					Short:     "Query a permanent member registration",
+					Example:   fmt.Sprintf("%s query disbursement member ark1...", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "address"},
+					},
+				},
+				{
+					RpcMethod: "Members",
+					Use:       "members",
+					Short:     "Query member registrations in address order",
+					Example:   fmt.Sprintf("%s query disbursement members", version.AppName),
+				},
+				{
+					RpcMethod: "Beneficiary",
+					Use:       "beneficiary [address]",
+					Short:     "Query contributor control, committed ownership, the recorded seat, and the remaining ownership under the cap",
+					Example:   fmt.Sprintf("%s query disbursement beneficiary ark1...", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "address"},
+					},
+				},
+				{
+					RpcMethod: "BeneficiaryJournal",
+					Use:       "beneficiary-journal [address]",
+					Short:     "Query a beneficiary's controller changes",
+					Example:   fmt.Sprintf("%s query disbursement beneficiary-journal ark1...", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "address"},
+					},
+				},
+			},
+		},
+		Tx: &autocliv1.ServiceCommandDescriptor{
+			Service: disbursementv1.Msg_ServiceDesc.ServiceName,
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
+				{
+					RpcMethod:   "UpdateParams",
+					Use:         "update-params-proposal [params]",
+					Short:       "Submit a governance proposal to replace the disbursement parameters",
+					Example:     fmt.Sprintf(`%s tx disbursement update-params-proposal '{"member_amount":"20000000000000000000000",...}'`, version.AppName),
+					GovProposal: true,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "params"},
+					},
+				},
+				{
+					RpcMethod:   "SetGrantsMandate",
+					Use:         "set-grants-mandate-proposal",
+					Short:       "Submit a governance proposal to appoint, replace, or disable the grants committee",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "OpenTranche",
+					Use:         "open-tranche-proposal",
+					Short:       "Submit a governance proposal to open member-pool NOAH to registration",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "ReturnUnallocated",
+					Use:         "return-unallocated-proposal",
+					Short:       "Submit a governance proposal to return uncommitted contributor custody to the community pool",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "GrantOwnership",
+					Use:         "grant-ownership-proposal",
+					Short:       "Submit a governance proposal to award a NOAH ownership grant",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "Compensate",
+					Use:         "compensate-proposal",
+					Short:       "Submit a governance proposal to award a fully funded compensation grant",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "CancelGrants",
+					Use:         "cancel-grants-proposal",
+					Short:       "Submit a governance proposal to cancel grants while retaining earned debt",
+					GovProposal: true,
+				},
+				{
+					RpcMethod:   "ReinstateMembers",
+					Use:         "reinstate-members-proposal",
+					Short:       "Submit a governance proposal to resume suspended member payments",
+					GovProposal: true,
+				},
+				{
+					RpcMethod: "CommitteeRegistrar",
+					Use:       "committee-registrar",
+					Short:     "Appoint, replace, or disable the registrar as the grants committee",
+				},
+				{
+					RpcMethod: "RegisterMembers",
+					Use:       "register-members",
+					Short:     "Register members as the registrar; the block pays each first period after the hold",
+				},
+				{
+					RpcMethod: "CommitteeSuspend",
+					Use:       "committee-suspend",
+					Short:     "Suspend member payments as the grants committee",
+				},
+				{
+					RpcMethod: "CommitteeReinstate",
+					Use:       "committee-reinstate",
+					Short:     "Resume suspended member payments as the grants committee",
+				},
+				{
+					RpcMethod: "CommitteeCompensate",
+					Use:       "committee-compensate",
+					Short:     "Award compensation within the term's allowance as the grants committee",
+				},
+				{
+					RpcMethod: "SetPayee",
+					Use:       "set-payee",
+					Short:     "Change a grant destination without changing beneficiary identity",
+				},
+				{
+					RpcMethod: "SetController",
+					Use:       "set-controller",
+					Short:     "Rotate a contributor's controller",
+				},
+			},
+		},
 	}
 }

@@ -5,7 +5,10 @@ provider-specific subscription messages and translates incoming provider message
 
 The shared WebSocket fetcher in `base/websocket` owns dial, reconnect, sharding, subscription writes, read/write
 timeouts, heartbeat scheduling, response publication, and WebSocket metrics. Provider packages under this directory
-should only own exchange-specific protocol messages and message parsing.
+should only own exchange-specific protocol messages and message parsing. Endpoints must be `wss`. The shared defaults
+are a 10 s reconnect delay, 10 s handshake, 10 s read and 5 s write timeouts, 100 ms between subscription writes,
+heartbeats off, and all tickers on one connection unless `max_tickers_per_connection` shards them; provider configs
+override them. Every inbound frame is capped at 32 KiB (`MaxMessageBytes`), which no provider overrides.
 
 ## Adapter Contract
 

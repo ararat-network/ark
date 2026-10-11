@@ -31,9 +31,9 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type EventSecurityMandateSet struct {
 	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	// committee is empty when the mandate is disabled.
-	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
-	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	Committee      string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
+	ExpiryTime     uint64 `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
 	// committee_shape is the appointment-time observation of the committee
 	// account, zeroed on a disabling.
 	CommitteeShape mandate.CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape"`
@@ -86,16 +86,16 @@ func (m *EventSecurityMandateSet) GetCommittee() string {
 	return ""
 }
 
-func (m *EventSecurityMandateSet) GetActivationHeight() uint64 {
+func (m *EventSecurityMandateSet) GetActivationTime() uint64 {
 	if m != nil {
-		return m.ActivationHeight
+		return m.ActivationTime
 	}
 	return 0
 }
 
-func (m *EventSecurityMandateSet) GetExpiryHeight() uint64 {
+func (m *EventSecurityMandateSet) GetExpiryTime() uint64 {
 	if m != nil {
-		return m.ExpiryHeight
+		return m.ExpiryTime
 	}
 	return 0
 }
@@ -113,7 +113,7 @@ func (m *EventSecurityMandateSet) GetCommitteeShape() mandate.CommitteeShape {
 type EventCommitteeUpgradeScheduled struct {
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (m *EventCommitteeUpgradeScheduled) Reset()         { *m = EventCommitteeUpgradeScheduled{} }
@@ -163,7 +163,7 @@ func (m *EventCommitteeUpgradeScheduled) GetName() string {
 	return ""
 }
 
-func (m *EventCommitteeUpgradeScheduled) GetHeight() int64 {
+func (m *EventCommitteeUpgradeScheduled) GetHeight() uint64 {
 	if m != nil {
 		return m.Height
 	}
@@ -175,7 +175,7 @@ func (m *EventCommitteeUpgradeScheduled) GetHeight() int64 {
 type EventCommitteeUpgradeCancelled struct {
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (m *EventCommitteeUpgradeCancelled) Reset()         { *m = EventCommitteeUpgradeCancelled{} }
@@ -225,116 +225,50 @@ func (m *EventCommitteeUpgradeCancelled) GetName() string {
 	return ""
 }
 
-func (m *EventCommitteeUpgradeCancelled) GetHeight() int64 {
+func (m *EventCommitteeUpgradeCancelled) GetHeight() uint64 {
 	if m != nil {
 		return m.Height
 	}
 	return 0
 }
 
-// EventCommitteeClientRecovered is emitted when the committee substitutes an
-// expired or frozen IBC client.
-type EventCommitteeClientRecovered struct {
-	Term               uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	SubjectClientId    string `protobuf:"bytes,2,opt,name=subject_client_id,json=subjectClientId,proto3" json:"subject_client_id,omitempty"`
-	SubstituteClientId string `protobuf:"bytes,3,opt,name=substitute_client_id,json=substituteClientId,proto3" json:"substitute_client_id,omitempty"`
-}
-
-func (m *EventCommitteeClientRecovered) Reset()         { *m = EventCommitteeClientRecovered{} }
-func (m *EventCommitteeClientRecovered) String() string { return proto.CompactTextString(m) }
-func (*EventCommitteeClientRecovered) ProtoMessage()    {}
-func (*EventCommitteeClientRecovered) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac52f843538f4b47, []int{3}
-}
-func (m *EventCommitteeClientRecovered) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventCommitteeClientRecovered) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_EventCommitteeClientRecovered.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *EventCommitteeClientRecovered) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventCommitteeClientRecovered.Merge(m, src)
-}
-func (m *EventCommitteeClientRecovered) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventCommitteeClientRecovered) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventCommitteeClientRecovered.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventCommitteeClientRecovered proto.InternalMessageInfo
-
-func (m *EventCommitteeClientRecovered) GetTerm() uint64 {
-	if m != nil {
-		return m.Term
-	}
-	return 0
-}
-
-func (m *EventCommitteeClientRecovered) GetSubjectClientId() string {
-	if m != nil {
-		return m.SubjectClientId
-	}
-	return ""
-}
-
-func (m *EventCommitteeClientRecovered) GetSubstituteClientId() string {
-	if m != nil {
-		return m.SubstituteClientId
-	}
-	return ""
-}
-
 func init() {
 	proto.RegisterType((*EventSecurityMandateSet)(nil), "ark.security.v1.EventSecurityMandateSet")
 	proto.RegisterType((*EventCommitteeUpgradeScheduled)(nil), "ark.security.v1.EventCommitteeUpgradeScheduled")
 	proto.RegisterType((*EventCommitteeUpgradeCancelled)(nil), "ark.security.v1.EventCommitteeUpgradeCancelled")
-	proto.RegisterType((*EventCommitteeClientRecovered)(nil), "ark.security.v1.EventCommitteeClientRecovered")
 }
 
 func init() { proto.RegisterFile("ark/security/v1/event.proto", fileDescriptor_ac52f843538f4b47) }
 
 var fileDescriptor_ac52f843538f4b47 = []byte{
-	// 480 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x53, 0x3f, 0x6f, 0xd3, 0x40,
-	0x14, 0x8f, 0x9b, 0xb4, 0x52, 0x8e, 0x3f, 0x21, 0x56, 0x24, 0xd2, 0xa2, 0x98, 0xa8, 0x53, 0x14,
-	0xa9, 0x36, 0x29, 0x12, 0x3b, 0x89, 0x90, 0xca, 0xc0, 0x92, 0x88, 0x85, 0x25, 0xba, 0x9c, 0x9f,
-	0xec, 0x23, 0xf1, 0x9d, 0x75, 0xf7, 0x6c, 0x9a, 0x6f, 0xc1, 0xc8, 0xc8, 0xc8, 0xc8, 0xc0, 0x87,
-	0xe8, 0x58, 0x31, 0x31, 0x21, 0x94, 0x0c, 0x7c, 0x0d, 0xe4, 0xf3, 0xb9, 0x49, 0x07, 0x3a, 0x75,
-	0xb1, 0xee, 0xde, 0xef, 0x9f, 0xfd, 0x93, 0x1f, 0x79, 0x46, 0xd5, 0x32, 0xd0, 0xc0, 0x32, 0xc5,
-	0x71, 0x1d, 0xe4, 0xa3, 0x00, 0x72, 0x10, 0xe8, 0xa7, 0x4a, 0xa2, 0x74, 0x5b, 0x54, 0x2d, 0xfd,
-	0x0a, 0xf4, 0xf3, 0xd1, 0x49, 0x9b, 0x26, 0x5c, 0xc8, 0xc0, 0x3c, 0x4b, 0xce, 0x49, 0xaf, 0x30,
-	0x48, 0xa8, 0x08, 0x29, 0x82, 0xd1, 0x8b, 0x1c, 0x56, 0x32, 0x05, 0x0b, 0x1f, 0x33, 0xa9, 0x13,
-	0xa9, 0xe7, 0xe6, 0x16, 0x94, 0x17, 0x0b, 0x75, 0x22, 0x19, 0xc9, 0x72, 0x5e, 0x9c, 0xca, 0xe9,
-	0xe9, 0xd7, 0x03, 0xf2, 0xf4, 0x4d, 0xf1, 0x0e, 0x33, 0x9b, 0xfb, 0xae, 0xf4, 0x9e, 0x01, 0xba,
-	0xc7, 0xa4, 0x81, 0xa0, 0x92, 0xae, 0xd3, 0x77, 0x06, 0x8d, 0xf1, 0xe1, 0xb7, 0xbf, 0xdf, 0x87,
-	0xce, 0xd4, 0x8c, 0xdc, 0x57, 0xa4, 0xc9, 0x64, 0x92, 0x70, 0x44, 0x80, 0xee, 0x41, 0xdf, 0x19,
-	0x34, 0xc7, 0xdd, 0x9f, 0x3f, 0xce, 0x3a, 0x36, 0xf1, 0x75, 0x18, 0x2a, 0xd0, 0x7a, 0x86, 0x8a,
-	0x8b, 0x68, 0xba, 0xa3, 0xba, 0xe7, 0xa4, 0x4d, 0x19, 0xf2, 0x9c, 0x22, 0x97, 0x62, 0x1e, 0x03,
-	0x8f, 0x62, 0xec, 0xd6, 0xf7, 0xfd, 0x9f, 0xec, 0xf0, 0x0b, 0x03, 0xbb, 0x43, 0xf2, 0x08, 0x2e,
-	0x53, 0xae, 0xd6, 0x15, 0xbf, 0xb1, 0xcf, 0x7f, 0x58, 0x62, 0x96, 0x3b, 0x25, 0xad, 0x9b, 0xb0,
-	0xb9, 0x8e, 0x69, 0x0a, 0xdd, 0xc3, 0xbe, 0x33, 0x78, 0x70, 0xee, 0xf9, 0x45, 0xb9, 0xb6, 0x38,
-	0x3f, 0x1f, 0xf9, 0x93, 0x8a, 0x36, 0x2b, 0x58, 0xe3, 0xe6, 0xd5, 0xef, 0xe7, 0xb5, 0xd2, 0xf1,
-	0x31, 0xbb, 0x05, 0x9d, 0x0a, 0xe2, 0x99, 0x86, 0x6e, 0x14, 0xef, 0xd3, 0x48, 0xd1, 0x10, 0x66,
-	0x2c, 0x86, 0x30, 0x5b, 0x41, 0x78, 0x57, 0x51, 0x2e, 0x69, 0x08, 0x9a, 0xd8, 0x8e, 0xa6, 0xe6,
-	0xec, 0xf6, 0xc8, 0xd1, 0xde, 0x97, 0xd7, 0x2b, 0x81, 0x1d, 0xfe, 0x37, 0x6f, 0x42, 0x05, 0x83,
-	0xd5, 0xfd, 0xe7, 0x7d, 0x71, 0x48, 0xef, 0x76, 0xe0, 0x64, 0xc5, 0x41, 0xe0, 0x14, 0x98, 0xcc,
-	0x41, 0xdd, 0x9d, 0x37, 0x24, 0x6d, 0x9d, 0x2d, 0x3e, 0x02, 0xc3, 0x39, 0x33, 0xaa, 0x39, 0x0f,
-	0x6d, 0x78, 0xcb, 0x02, 0xa5, 0xdb, 0xdb, 0xd0, 0x7d, 0x41, 0x3a, 0x3a, 0x5b, 0x68, 0xe4, 0x98,
-	0x21, 0xec, 0xd1, 0xeb, 0x86, 0xee, 0xee, 0xb0, 0x4a, 0x31, 0xbe, 0xb8, 0xda, 0x78, 0xce, 0xf5,
-	0xc6, 0x73, 0xfe, 0x6c, 0x3c, 0xe7, 0xf3, 0xd6, 0xab, 0x5d, 0x6f, 0xbd, 0xda, 0xaf, 0xad, 0x57,
-	0xfb, 0xe0, 0x47, 0x1c, 0xe3, 0x6c, 0xe1, 0x33, 0x99, 0x04, 0x54, 0x51, 0x45, 0xf1, 0x4c, 0x00,
-	0x7e, 0x92, 0x6a, 0x19, 0x14, 0x1b, 0x72, 0xb9, 0x5b, 0x32, 0x5c, 0xa7, 0xa0, 0x17, 0x47, 0xe6,
-	0x77, 0x7f, 0xf9, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x88, 0xa1, 0xcd, 0xea, 0x81, 0x03, 0x00, 0x00,
+	// 424 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x52, 0xb1, 0x6e, 0x13, 0x41,
+	0x10, 0xf5, 0x06, 0x27, 0x92, 0x37, 0x12, 0x16, 0xa7, 0x48, 0x5c, 0x82, 0xb2, 0x58, 0x29, 0x90,
+	0x85, 0x94, 0x3d, 0x19, 0x24, 0x7a, 0x1c, 0x21, 0xd1, 0xd0, 0xdc, 0x41, 0x43, 0x63, 0x6d, 0xf6,
+	0x46, 0x77, 0x2b, 0x7b, 0x77, 0x4f, 0x7b, 0xe3, 0x23, 0xfe, 0x0b, 0x4a, 0x3e, 0x81, 0x92, 0x82,
+	0x8f, 0x48, 0x19, 0x51, 0x51, 0x21, 0x64, 0x17, 0xfc, 0x06, 0xba, 0xbd, 0x4d, 0x9c, 0x14, 0x50,
+	0xa5, 0x39, 0xcd, 0xbc, 0xf7, 0x66, 0xde, 0xed, 0xd3, 0xd0, 0x27, 0xc2, 0xcd, 0x93, 0x1a, 0xe4,
+	0xd2, 0x29, 0x5c, 0x25, 0xcd, 0x24, 0x81, 0x06, 0x0c, 0xf2, 0xca, 0x59, 0xb4, 0xd1, 0x50, 0xb8,
+	0x39, 0xbf, 0x26, 0x79, 0x33, 0x39, 0x7a, 0x24, 0xb4, 0x32, 0x36, 0xf1, 0xdf, 0x4e, 0x73, 0x74,
+	0xdc, 0x2e, 0xd0, 0xc2, 0xe4, 0x02, 0xc1, 0xcf, 0x9b, 0x06, 0x16, 0xb6, 0x82, 0x40, 0x1f, 0x4a,
+	0x5b, 0x6b, 0x5b, 0xcf, 0x7c, 0x97, 0x74, 0x4d, 0xa0, 0x0e, 0x0a, 0x5b, 0xd8, 0x0e, 0x6f, 0xab,
+	0x0e, 0x3d, 0xf9, 0xb2, 0x43, 0x1f, 0xbf, 0x69, 0xff, 0x21, 0x0b, 0xbe, 0xef, 0xba, 0xdd, 0x19,
+	0x60, 0x74, 0x48, 0xfb, 0x08, 0x4e, 0xc7, 0x64, 0x44, 0xc6, 0xfd, 0xe9, 0xee, 0xd7, 0x3f, 0xdf,
+	0x9e, 0x93, 0xd4, 0x43, 0xd1, 0x2b, 0x3a, 0x90, 0x56, 0x6b, 0x85, 0x08, 0x10, 0xef, 0x8c, 0xc8,
+	0x78, 0x30, 0x8d, 0x7f, 0x7c, 0x3f, 0x3d, 0x08, 0x8e, 0xaf, 0xf3, 0xdc, 0x41, 0x5d, 0x67, 0xe8,
+	0x94, 0x29, 0xd2, 0xad, 0x34, 0xe2, 0x74, 0x28, 0x24, 0xaa, 0x46, 0xa0, 0xb2, 0x66, 0x86, 0x4a,
+	0x43, 0xfc, 0xe0, 0xf6, 0xf6, 0x87, 0x5b, 0xf6, 0xbd, 0xd2, 0x10, 0x3d, 0xa3, 0xfb, 0x70, 0x51,
+	0x29, 0xb7, 0xea, 0xb4, 0xfd, 0xdb, 0x5a, 0xda, 0x31, 0x5e, 0x97, 0xd2, 0xe1, 0x8d, 0xc9, 0xac,
+	0x2e, 0x45, 0x05, 0xf1, 0xee, 0x88, 0x8c, 0xf7, 0x5f, 0x30, 0xde, 0x86, 0x1a, 0x02, 0xe3, 0xcd,
+	0x84, 0x9f, 0x5d, 0xcb, 0xb2, 0x56, 0x35, 0x1d, 0x5c, 0xfe, 0x7a, 0xda, 0x0b, 0xde, 0xf2, 0x0e,
+	0x75, 0x62, 0x28, 0xf3, 0xc9, 0xdc, 0x4c, 0x7c, 0xa8, 0x0a, 0x27, 0x72, 0xc8, 0x64, 0x09, 0xf9,
+	0x72, 0x01, 0xf9, 0xff, 0x02, 0x8a, 0x68, 0xdf, 0x08, 0x1d, 0xb2, 0x49, 0x7d, 0x1d, 0x1d, 0xd3,
+	0xbd, 0x12, 0x54, 0x51, 0xe2, 0xdd, 0x37, 0x07, 0xf0, 0x9f, 0x7e, 0x67, 0xc2, 0x48, 0x58, 0xdc,
+	0xbb, 0xdf, 0xf4, 0xed, 0xe5, 0x9a, 0x91, 0xab, 0x35, 0x23, 0xbf, 0xd7, 0x8c, 0x7c, 0xde, 0xb0,
+	0xde, 0xd5, 0x86, 0xf5, 0x7e, 0x6e, 0x58, 0xef, 0x23, 0x2f, 0x14, 0x96, 0xcb, 0x73, 0x2e, 0xad,
+	0x4e, 0x84, 0x13, 0x4e, 0xe0, 0xa9, 0x01, 0xfc, 0x64, 0xdd, 0x3c, 0x69, 0xcf, 0xef, 0x62, 0x7b,
+	0xc1, 0xb8, 0xaa, 0xa0, 0x3e, 0xdf, 0xf3, 0xb7, 0xf4, 0xf2, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0x89, 0x1c, 0xfb, 0xea, 0xde, 0x02, 0x00, 0x00,
 }
 
 func (m *EventSecurityMandateSet) Marshal() (dAtA []byte, err error) {
@@ -367,13 +301,13 @@ func (m *EventSecurityMandateSet) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	}
 	i--
 	dAtA[i] = 0x2a
-	if m.ExpiryHeight != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryHeight))
+	if m.ExpiryTime != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpiryTime))
 		i--
 		dAtA[i] = 0x20
 	}
-	if m.ActivationHeight != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationHeight))
+	if m.ActivationTime != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ActivationTime))
 		i--
 		dAtA[i] = 0x18
 	}
@@ -472,48 +406,6 @@ func (m *EventCommitteeUpgradeCancelled) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *EventCommitteeClientRecovered) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventCommitteeClientRecovered) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventCommitteeClientRecovered) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.SubstituteClientId) > 0 {
-		i -= len(m.SubstituteClientId)
-		copy(dAtA[i:], m.SubstituteClientId)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SubstituteClientId)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.SubjectClientId) > 0 {
-		i -= len(m.SubjectClientId)
-		copy(dAtA[i:], m.SubjectClientId)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.SubjectClientId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.Term != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.Term))
-		i--
-		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEvent(v)
 	base := offset
@@ -538,11 +430,11 @@ func (m *EventSecurityMandateSet) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	if m.ActivationHeight != 0 {
-		n += 1 + sovEvent(uint64(m.ActivationHeight))
+	if m.ActivationTime != 0 {
+		n += 1 + sovEvent(uint64(m.ActivationTime))
 	}
-	if m.ExpiryHeight != 0 {
-		n += 1 + sovEvent(uint64(m.ExpiryHeight))
+	if m.ExpiryTime != 0 {
+		n += 1 + sovEvent(uint64(m.ExpiryTime))
 	}
 	l = m.CommitteeShape.Size()
 	n += 1 + l + sovEvent(uint64(l))
@@ -583,26 +475,6 @@ func (m *EventCommitteeUpgradeCancelled) Size() (n int) {
 	}
 	if m.Height != 0 {
 		n += 1 + sovEvent(uint64(m.Height))
-	}
-	return n
-}
-
-func (m *EventCommitteeClientRecovered) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.Term != 0 {
-		n += 1 + sovEvent(uint64(m.Term))
-	}
-	l = len(m.SubjectClientId)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	l = len(m.SubstituteClientId)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -695,9 +567,9 @@ func (m *EventSecurityMandateSet) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ActivationTime", wireType)
 			}
-			m.ActivationHeight = 0
+			m.ActivationTime = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -707,16 +579,16 @@ func (m *EventSecurityMandateSet) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ActivationHeight |= uint64(b&0x7F) << shift
+				m.ActivationTime |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryTime", wireType)
 			}
-			m.ExpiryHeight = 0
+			m.ExpiryTime = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -726,7 +598,7 @@ func (m *EventSecurityMandateSet) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ExpiryHeight |= uint64(b&0x7F) << shift
+				m.ExpiryTime |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -879,7 +751,7 @@ func (m *EventCommitteeUpgradeScheduled) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Height |= int64(b&0x7F) << shift
+				m.Height |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -999,144 +871,11 @@ func (m *EventCommitteeUpgradeCancelled) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Height |= int64(b&0x7F) << shift
+				m.Height |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventCommitteeClientRecovered) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventCommitteeClientRecovered: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventCommitteeClientRecovered: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
-			}
-			m.Term = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Term |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SubjectClientId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SubjectClientId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SubstituteClientId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SubstituteClientId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

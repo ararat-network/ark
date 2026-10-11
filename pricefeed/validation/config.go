@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 	"time"
+
+	"github.com/ararat-network/ark/pricefeed/client"
 )
 
 const (
@@ -11,10 +13,12 @@ const (
 	DefaultRequiredPriceLivenessPercent = 99.0
 	DefaultValidationPeriod             = 10 * time.Minute
 	DefaultBurnInPeriod                 = time.Minute
-	DefaultMaxResponseAge               = time.Minute
-	DefaultMaxFutureSkew                = 5 * time.Second
-	DefaultRequestTimeout               = 5 * time.Second
-	DefaultFeedRefreshInterval          = 5 * time.Second
+	// DefaultMaxResponseAge is the node's default price_ttl, so the check
+	// passes no snapshot a default node would refuse.
+	DefaultMaxResponseAge      = client.DefaultPriceTTL
+	DefaultMaxFutureSkew       = 5 * time.Second
+	DefaultRequestTimeout      = 5 * time.Second
+	DefaultFeedRefreshInterval = 5 * time.Second
 )
 
 // Config configures a validation run against the public oracle price API.

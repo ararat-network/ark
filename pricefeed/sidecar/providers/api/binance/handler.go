@@ -6,10 +6,11 @@
 package binance
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
 	"time"
 
 	api "github.com/ararat-network/ark/pricefeed/sidecar/providers/base/api"
@@ -36,26 +37,33 @@ func (h *Handler) BatchTickers(tickers []types.Ticker, batchSize int) ([][]types
 }
 
 // CreateURL returns the URL that is used to fetch data from the Binance API for the
-// given tickers.
+// given tickers: the endpoint with the symbols as a JSON array in its symbols
+// query parameter.
 func (h *Handler) CreateURL(
 	endpoint types.Endpoint,
 	tickers []types.Ticker,
 ) (string, error) {
-	var tickerStrings strings.Builder
+	if len(tickers) == 0 {
+		return "", errors.New("no tickers provided")
+	}
+
+	parsedURL, err := url.Parse(endpoint.URL)
+	if err != nil {
+		return "", fmt.Errorf("parsing Binance endpoint: %w", err)
+	}
+	symbols := make([]string, 0, len(tickers))
 	for _, ticker := range tickers {
-		fmt.Fprintf(&tickerStrings, "%s%s%s%s", Quotation, ticker, Quotation, Separator)
+		symbols = append(symbols, string(ticker))
 	}
-
-	if len(tickerStrings.String()) == 0 {
-		return "", errors.New("empty url created. invalid or no ticker were provided")
+	list, err := json.Marshal(symbols)
+	if err != nil {
+		return "", fmt.Errorf("encoding Binance symbols: %w", err)
 	}
+	query := parsedURL.Query()
+	query.Set(SymbolsParameter, string(list))
+	parsedURL.RawQuery = query.Encode()
 
-	return fmt.Sprintf(
-		endpoint.URL,
-		LeftBracket,
-		strings.TrimSuffix(tickerStrings.String(), Separator),
-		RightBracket,
-	), nil
+	return parsedURL.String(), nil
 }
 
 // ParseResponse parses the response from the Binance API and returns a types.Response. Each

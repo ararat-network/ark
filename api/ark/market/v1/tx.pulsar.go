@@ -23,31 +23,31 @@ import (
 )
 
 var (
-	md_MsgSwap                 protoreflect.MessageDescriptor
-	fd_MsgSwap_trader          protoreflect.FieldDescriptor
-	fd_MsgSwap_offer_coin      protoreflect.FieldDescriptor
-	fd_MsgSwap_ask_denom       protoreflect.FieldDescriptor
-	fd_MsgSwap_minimum_receive protoreflect.FieldDescriptor
+	md_MsgSell                 protoreflect.MessageDescriptor
+	fd_MsgSell_trader          protoreflect.FieldDescriptor
+	fd_MsgSell_offer_coin      protoreflect.FieldDescriptor
+	fd_MsgSell_ask_denom       protoreflect.FieldDescriptor
+	fd_MsgSell_minimum_receive protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgSwap = File_ark_market_v1_tx_proto.Messages().ByName("MsgSwap")
-	fd_MsgSwap_trader = md_MsgSwap.Fields().ByName("trader")
-	fd_MsgSwap_offer_coin = md_MsgSwap.Fields().ByName("offer_coin")
-	fd_MsgSwap_ask_denom = md_MsgSwap.Fields().ByName("ask_denom")
-	fd_MsgSwap_minimum_receive = md_MsgSwap.Fields().ByName("minimum_receive")
+	md_MsgSell = File_ark_market_v1_tx_proto.Messages().ByName("MsgSell")
+	fd_MsgSell_trader = md_MsgSell.Fields().ByName("trader")
+	fd_MsgSell_offer_coin = md_MsgSell.Fields().ByName("offer_coin")
+	fd_MsgSell_ask_denom = md_MsgSell.Fields().ByName("ask_denom")
+	fd_MsgSell_minimum_receive = md_MsgSell.Fields().ByName("minimum_receive")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSwap)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSell)(nil)
 
-type fastReflection_MsgSwap MsgSwap
+type fastReflection_MsgSell MsgSell
 
-func (x *MsgSwap) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSwap)(x)
+func (x *MsgSell) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSell)(x)
 }
 
-func (x *MsgSwap) slowProtoReflect() protoreflect.Message {
+func (x *MsgSell) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,43 +59,43 @@ func (x *MsgSwap) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSwap_messageType fastReflection_MsgSwap_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSwap_messageType{}
+var _fastReflection_MsgSell_messageType fastReflection_MsgSell_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSell_messageType{}
 
-type fastReflection_MsgSwap_messageType struct{}
+type fastReflection_MsgSell_messageType struct{}
 
-func (x fastReflection_MsgSwap_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSwap)(nil)
+func (x fastReflection_MsgSell_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSell)(nil)
 }
-func (x fastReflection_MsgSwap_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSwap)
+func (x fastReflection_MsgSell_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSell)
 }
-func (x fastReflection_MsgSwap_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwap
+func (x fastReflection_MsgSell_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSell
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSwap) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwap
+func (x *fastReflection_MsgSell) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSell
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSwap) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSwap_messageType
+func (x *fastReflection_MsgSell) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSell_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSwap) New() protoreflect.Message {
-	return new(fastReflection_MsgSwap)
+func (x *fastReflection_MsgSell) New() protoreflect.Message {
+	return new(fastReflection_MsgSell)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSwap) Interface() protoreflect.ProtoMessage {
-	return (*MsgSwap)(x)
+func (x *fastReflection_MsgSell) Interface() protoreflect.ProtoMessage {
+	return (*MsgSell)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -103,28 +103,28 @@ func (x *fastReflection_MsgSwap) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSwap) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSell) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Trader != "" {
 		value := protoreflect.ValueOfString(x.Trader)
-		if !f(fd_MsgSwap_trader, value) {
+		if !f(fd_MsgSell_trader, value) {
 			return
 		}
 	}
 	if x.OfferCoin != nil {
 		value := protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
-		if !f(fd_MsgSwap_offer_coin, value) {
+		if !f(fd_MsgSell_offer_coin, value) {
 			return
 		}
 	}
 	if x.AskDenom != "" {
 		value := protoreflect.ValueOfString(x.AskDenom)
-		if !f(fd_MsgSwap_ask_denom, value) {
+		if !f(fd_MsgSell_ask_denom, value) {
 			return
 		}
 	}
 	if x.MinimumReceive != nil {
 		value := protoreflect.ValueOfMessage(x.MinimumReceive.ProtoReflect())
-		if !f(fd_MsgSwap_minimum_receive, value) {
+		if !f(fd_MsgSell_minimum_receive, value) {
 			return
 		}
 	}
@@ -141,21 +141,21 @@ func (x *fastReflection_MsgSwap) Range(f func(protoreflect.FieldDescriptor, prot
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSwap) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSell) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwap.trader":
+	case "ark.market.v1.MsgSell.trader":
 		return x.Trader != ""
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		return x.OfferCoin != nil
-	case "ark.market.v1.MsgSwap.ask_denom":
+	case "ark.market.v1.MsgSell.ask_denom":
 		return x.AskDenom != ""
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		return x.MinimumReceive != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -165,21 +165,21 @@ func (x *fastReflection_MsgSwap) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwap) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSell) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwap.trader":
+	case "ark.market.v1.MsgSell.trader":
 		x.Trader = ""
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		x.OfferCoin = nil
-	case "ark.market.v1.MsgSwap.ask_denom":
+	case "ark.market.v1.MsgSell.ask_denom":
 		x.AskDenom = ""
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		x.MinimumReceive = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -189,25 +189,25 @@ func (x *fastReflection_MsgSwap) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSwap) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSell) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.MsgSwap.trader":
+	case "ark.market.v1.MsgSell.trader":
 		value := x.Trader
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		value := x.OfferCoin
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.MsgSwap.ask_denom":
+	case "ark.market.v1.MsgSell.ask_denom":
 		value := x.AskDenom
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		value := x.MinimumReceive
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -221,21 +221,21 @@ func (x *fastReflection_MsgSwap) Get(descriptor protoreflect.FieldDescriptor) pr
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwap) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSell) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwap.trader":
+	case "ark.market.v1.MsgSell.trader":
 		x.Trader = value.Interface().(string)
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		x.OfferCoin = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.market.v1.MsgSwap.ask_denom":
+	case "ark.market.v1.MsgSell.ask_denom":
 		x.AskDenom = value.Interface().(string)
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		x.MinimumReceive = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -249,60 +249,60 @@ func (x *fastReflection_MsgSwap) Set(fd protoreflect.FieldDescriptor, value prot
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwap) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSell) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		if x.OfferCoin == nil {
 			x.OfferCoin = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		if x.MinimumReceive == nil {
 			x.MinimumReceive = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.MinimumReceive.ProtoReflect())
-	case "ark.market.v1.MsgSwap.trader":
-		panic(fmt.Errorf("field trader of message ark.market.v1.MsgSwap is not mutable"))
-	case "ark.market.v1.MsgSwap.ask_denom":
-		panic(fmt.Errorf("field ask_denom of message ark.market.v1.MsgSwap is not mutable"))
+	case "ark.market.v1.MsgSell.trader":
+		panic(fmt.Errorf("field trader of message ark.market.v1.MsgSell is not mutable"))
+	case "ark.market.v1.MsgSell.ask_denom":
+		panic(fmt.Errorf("field ask_denom of message ark.market.v1.MsgSell is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSwap) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSell) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwap.trader":
+	case "ark.market.v1.MsgSell.trader":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSwap.offer_coin":
+	case "ark.market.v1.MsgSell.offer_coin":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.MsgSwap.ask_denom":
+	case "ark.market.v1.MsgSell.ask_denom":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSwap.minimum_receive":
+	case "ark.market.v1.MsgSell.minimum_receive":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwap"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSell"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwap does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSell does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSwap) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSell) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSwap", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSell", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -310,7 +310,7 @@ func (x *fastReflection_MsgSwap) WhichOneof(d protoreflect.OneofDescriptor) prot
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSwap) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSell) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -321,7 +321,7 @@ func (x *fastReflection_MsgSwap) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwap) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSell) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -333,7 +333,7 @@ func (x *fastReflection_MsgSwap) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSwap) IsValid() bool {
+func (x *fastReflection_MsgSell) IsValid() bool {
 	return x != nil
 }
 
@@ -343,9 +343,9 @@ func (x *fastReflection_MsgSwap) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSwap) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSell) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSwap)
+		x := input.Message.Interface().(*MsgSell)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -383,7 +383,7 @@ func (x *fastReflection_MsgSwap) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwap)
+		x := input.Message.Interface().(*MsgSell)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -455,7 +455,7 @@ func (x *fastReflection_MsgSwap) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwap)
+		x := input.Message.Interface().(*MsgSell)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -487,10 +487,10 @@ func (x *fastReflection_MsgSwap) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwap: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSell: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwap: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSell: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -665,27 +665,27 @@ func (x *fastReflection_MsgSwap) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgSwapResponse           protoreflect.MessageDescriptor
-	fd_MsgSwapResponse_swap_coin protoreflect.FieldDescriptor
-	fd_MsgSwapResponse_swap_fee  protoreflect.FieldDescriptor
+	md_MsgSellResponse           protoreflect.MessageDescriptor
+	fd_MsgSellResponse_swap_coin protoreflect.FieldDescriptor
+	fd_MsgSellResponse_swap_fee  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgSwapResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgSwapResponse")
-	fd_MsgSwapResponse_swap_coin = md_MsgSwapResponse.Fields().ByName("swap_coin")
-	fd_MsgSwapResponse_swap_fee = md_MsgSwapResponse.Fields().ByName("swap_fee")
+	md_MsgSellResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgSellResponse")
+	fd_MsgSellResponse_swap_coin = md_MsgSellResponse.Fields().ByName("swap_coin")
+	fd_MsgSellResponse_swap_fee = md_MsgSellResponse.Fields().ByName("swap_fee")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSwapResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgSellResponse)(nil)
 
-type fastReflection_MsgSwapResponse MsgSwapResponse
+type fastReflection_MsgSellResponse MsgSellResponse
 
-func (x *MsgSwapResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSwapResponse)(x)
+func (x *MsgSellResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgSellResponse)(x)
 }
 
-func (x *MsgSwapResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgSellResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -697,43 +697,43 @@ func (x *MsgSwapResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSwapResponse_messageType fastReflection_MsgSwapResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSwapResponse_messageType{}
+var _fastReflection_MsgSellResponse_messageType fastReflection_MsgSellResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgSellResponse_messageType{}
 
-type fastReflection_MsgSwapResponse_messageType struct{}
+type fastReflection_MsgSellResponse_messageType struct{}
 
-func (x fastReflection_MsgSwapResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSwapResponse)(nil)
+func (x fastReflection_MsgSellResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgSellResponse)(nil)
 }
-func (x fastReflection_MsgSwapResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapResponse)
+func (x fastReflection_MsgSellResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgSellResponse)
 }
-func (x fastReflection_MsgSwapResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapResponse
+func (x fastReflection_MsgSellResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSellResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSwapResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapResponse
+func (x *fastReflection_MsgSellResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgSellResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSwapResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSwapResponse_messageType
+func (x *fastReflection_MsgSellResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgSellResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSwapResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapResponse)
+func (x *fastReflection_MsgSellResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgSellResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSwapResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgSwapResponse)(x)
+func (x *fastReflection_MsgSellResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgSellResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -741,16 +741,16 @@ func (x *fastReflection_MsgSwapResponse) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSwapResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgSellResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.SwapCoin != nil {
 		value := protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-		if !f(fd_MsgSwapResponse_swap_coin, value) {
+		if !f(fd_MsgSellResponse_swap_coin, value) {
 			return
 		}
 	}
 	if x.SwapFee != nil {
 		value := protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
-		if !f(fd_MsgSwapResponse_swap_fee, value) {
+		if !f(fd_MsgSellResponse_swap_fee, value) {
 			return
 		}
 	}
@@ -767,17 +767,17 @@ func (x *fastReflection_MsgSwapResponse) Range(f func(protoreflect.FieldDescript
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSwapResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgSellResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		return x.SwapCoin != nil
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		return x.SwapFee != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -787,17 +787,17 @@ func (x *fastReflection_MsgSwapResponse) Has(fd protoreflect.FieldDescriptor) bo
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgSellResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		x.SwapCoin = nil
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		x.SwapFee = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -807,19 +807,19 @@ func (x *fastReflection_MsgSwapResponse) Clear(fd protoreflect.FieldDescriptor) 
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSwapResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSellResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		value := x.SwapCoin
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		value := x.SwapFee
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -833,17 +833,17 @@ func (x *fastReflection_MsgSwapResponse) Get(descriptor protoreflect.FieldDescri
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgSellResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		x.SwapCoin = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		x.SwapFee = value.Message().Interface().(*v1beta1.DecCoin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -857,52 +857,52 @@ func (x *fastReflection_MsgSwapResponse) Set(fd protoreflect.FieldDescriptor, va
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSellResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		if x.SwapCoin == nil {
 			x.SwapCoin = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		if x.SwapFee == nil {
 			x.SwapFee = new(v1beta1.DecCoin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSwapResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgSellResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapResponse.swap_coin":
+	case "ark.market.v1.MsgSellResponse.swap_coin":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.MsgSwapResponse.swap_fee":
+	case "ark.market.v1.MsgSellResponse.swap_fee":
 		m := new(v1beta1.DecCoin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgSellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSwapResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgSellResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSwapResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSellResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -910,7 +910,7 @@ func (x *fastReflection_MsgSwapResponse) WhichOneof(d protoreflect.OneofDescript
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSwapResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgSellResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -921,7 +921,7 @@ func (x *fastReflection_MsgSwapResponse) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgSellResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -933,7 +933,7 @@ func (x *fastReflection_MsgSwapResponse) SetUnknown(fields protoreflect.RawField
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSwapResponse) IsValid() bool {
+func (x *fastReflection_MsgSellResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -943,9 +943,9 @@ func (x *fastReflection_MsgSwapResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSwapResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgSellResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSwapResponse)
+		x := input.Message.Interface().(*MsgSellResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -975,7 +975,7 @@ func (x *fastReflection_MsgSwapResponse) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapResponse)
+		x := input.Message.Interface().(*MsgSellResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1033,7 +1033,7 @@ func (x *fastReflection_MsgSwapResponse) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapResponse)
+		x := input.Message.Interface().(*MsgSellResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1065,10 +1065,10 @@ func (x *fastReflection_MsgSwapResponse) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSellResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSellResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1179,33 +1179,31 @@ func (x *fastReflection_MsgSwapResponse) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgSwapSend                 protoreflect.MessageDescriptor
-	fd_MsgSwapSend_from_address    protoreflect.FieldDescriptor
-	fd_MsgSwapSend_to_address      protoreflect.FieldDescriptor
-	fd_MsgSwapSend_offer_coin      protoreflect.FieldDescriptor
-	fd_MsgSwapSend_ask_denom       protoreflect.FieldDescriptor
-	fd_MsgSwapSend_minimum_receive protoreflect.FieldDescriptor
+	md_MsgBuy               protoreflect.MessageDescriptor
+	fd_MsgBuy_trader        protoreflect.FieldDescriptor
+	fd_MsgBuy_ask_coin      protoreflect.FieldDescriptor
+	fd_MsgBuy_offer_denom   protoreflect.FieldDescriptor
+	fd_MsgBuy_maximum_offer protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgSwapSend = File_ark_market_v1_tx_proto.Messages().ByName("MsgSwapSend")
-	fd_MsgSwapSend_from_address = md_MsgSwapSend.Fields().ByName("from_address")
-	fd_MsgSwapSend_to_address = md_MsgSwapSend.Fields().ByName("to_address")
-	fd_MsgSwapSend_offer_coin = md_MsgSwapSend.Fields().ByName("offer_coin")
-	fd_MsgSwapSend_ask_denom = md_MsgSwapSend.Fields().ByName("ask_denom")
-	fd_MsgSwapSend_minimum_receive = md_MsgSwapSend.Fields().ByName("minimum_receive")
+	md_MsgBuy = File_ark_market_v1_tx_proto.Messages().ByName("MsgBuy")
+	fd_MsgBuy_trader = md_MsgBuy.Fields().ByName("trader")
+	fd_MsgBuy_ask_coin = md_MsgBuy.Fields().ByName("ask_coin")
+	fd_MsgBuy_offer_denom = md_MsgBuy.Fields().ByName("offer_denom")
+	fd_MsgBuy_maximum_offer = md_MsgBuy.Fields().ByName("maximum_offer")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSwapSend)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgBuy)(nil)
 
-type fastReflection_MsgSwapSend MsgSwapSend
+type fastReflection_MsgBuy MsgBuy
 
-func (x *MsgSwapSend) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSwapSend)(x)
+func (x *MsgBuy) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgBuy)(x)
 }
 
-func (x *MsgSwapSend) slowProtoReflect() protoreflect.Message {
+func (x *MsgBuy) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1217,43 +1215,43 @@ func (x *MsgSwapSend) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSwapSend_messageType fastReflection_MsgSwapSend_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSwapSend_messageType{}
+var _fastReflection_MsgBuy_messageType fastReflection_MsgBuy_messageType
+var _ protoreflect.MessageType = fastReflection_MsgBuy_messageType{}
 
-type fastReflection_MsgSwapSend_messageType struct{}
+type fastReflection_MsgBuy_messageType struct{}
 
-func (x fastReflection_MsgSwapSend_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSwapSend)(nil)
+func (x fastReflection_MsgBuy_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgBuy)(nil)
 }
-func (x fastReflection_MsgSwapSend_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapSend)
+func (x fastReflection_MsgBuy_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgBuy)
 }
-func (x fastReflection_MsgSwapSend_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapSend
+func (x fastReflection_MsgBuy_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgBuy
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSwapSend) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapSend
+func (x *fastReflection_MsgBuy) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgBuy
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSwapSend) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSwapSend_messageType
+func (x *fastReflection_MsgBuy) Type() protoreflect.MessageType {
+	return _fastReflection_MsgBuy_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSwapSend) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapSend)
+func (x *fastReflection_MsgBuy) New() protoreflect.Message {
+	return new(fastReflection_MsgBuy)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSwapSend) Interface() protoreflect.ProtoMessage {
-	return (*MsgSwapSend)(x)
+func (x *fastReflection_MsgBuy) Interface() protoreflect.ProtoMessage {
+	return (*MsgBuy)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1261,34 +1259,28 @@ func (x *fastReflection_MsgSwapSend) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSwapSend) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.FromAddress != "" {
-		value := protoreflect.ValueOfString(x.FromAddress)
-		if !f(fd_MsgSwapSend_from_address, value) {
+func (x *fastReflection_MsgBuy) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Trader != "" {
+		value := protoreflect.ValueOfString(x.Trader)
+		if !f(fd_MsgBuy_trader, value) {
 			return
 		}
 	}
-	if x.ToAddress != "" {
-		value := protoreflect.ValueOfString(x.ToAddress)
-		if !f(fd_MsgSwapSend_to_address, value) {
+	if x.AskCoin != nil {
+		value := protoreflect.ValueOfMessage(x.AskCoin.ProtoReflect())
+		if !f(fd_MsgBuy_ask_coin, value) {
 			return
 		}
 	}
-	if x.OfferCoin != nil {
-		value := protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
-		if !f(fd_MsgSwapSend_offer_coin, value) {
+	if x.OfferDenom != "" {
+		value := protoreflect.ValueOfString(x.OfferDenom)
+		if !f(fd_MsgBuy_offer_denom, value) {
 			return
 		}
 	}
-	if x.AskDenom != "" {
-		value := protoreflect.ValueOfString(x.AskDenom)
-		if !f(fd_MsgSwapSend_ask_denom, value) {
-			return
-		}
-	}
-	if x.MinimumReceive != nil {
-		value := protoreflect.ValueOfMessage(x.MinimumReceive.ProtoReflect())
-		if !f(fd_MsgSwapSend_minimum_receive, value) {
+	if x.MaximumOffer != nil {
+		value := protoreflect.ValueOfMessage(x.MaximumOffer.ProtoReflect())
+		if !f(fd_MsgBuy_maximum_offer, value) {
 			return
 		}
 	}
@@ -1305,23 +1297,21 @@ func (x *fastReflection_MsgSwapSend) Range(f func(protoreflect.FieldDescriptor, 
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSwapSend) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgBuy) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSend.from_address":
-		return x.FromAddress != ""
-	case "ark.market.v1.MsgSwapSend.to_address":
-		return x.ToAddress != ""
-	case "ark.market.v1.MsgSwapSend.offer_coin":
-		return x.OfferCoin != nil
-	case "ark.market.v1.MsgSwapSend.ask_denom":
-		return x.AskDenom != ""
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
-		return x.MinimumReceive != nil
+	case "ark.market.v1.MsgBuy.trader":
+		return x.Trader != ""
+	case "ark.market.v1.MsgBuy.ask_coin":
+		return x.AskCoin != nil
+	case "ark.market.v1.MsgBuy.offer_denom":
+		return x.OfferDenom != ""
+	case "ark.market.v1.MsgBuy.maximum_offer":
+		return x.MaximumOffer != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1331,23 +1321,21 @@ func (x *fastReflection_MsgSwapSend) Has(fd protoreflect.FieldDescriptor) bool {
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSend) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgBuy) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSend.from_address":
-		x.FromAddress = ""
-	case "ark.market.v1.MsgSwapSend.to_address":
-		x.ToAddress = ""
-	case "ark.market.v1.MsgSwapSend.offer_coin":
-		x.OfferCoin = nil
-	case "ark.market.v1.MsgSwapSend.ask_denom":
-		x.AskDenom = ""
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
-		x.MinimumReceive = nil
+	case "ark.market.v1.MsgBuy.trader":
+		x.Trader = ""
+	case "ark.market.v1.MsgBuy.ask_coin":
+		x.AskCoin = nil
+	case "ark.market.v1.MsgBuy.offer_denom":
+		x.OfferDenom = ""
+	case "ark.market.v1.MsgBuy.maximum_offer":
+		x.MaximumOffer = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1357,28 +1345,25 @@ func (x *fastReflection_MsgSwapSend) Clear(fd protoreflect.FieldDescriptor) {
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSwapSend) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuy) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.MsgSwapSend.from_address":
-		value := x.FromAddress
+	case "ark.market.v1.MsgBuy.trader":
+		value := x.Trader
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSwapSend.to_address":
-		value := x.ToAddress
-		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSwapSend.offer_coin":
-		value := x.OfferCoin
+	case "ark.market.v1.MsgBuy.ask_coin":
+		value := x.AskCoin
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.MsgSwapSend.ask_denom":
-		value := x.AskDenom
+	case "ark.market.v1.MsgBuy.offer_denom":
+		value := x.OfferDenom
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
-		value := x.MinimumReceive
+	case "ark.market.v1.MsgBuy.maximum_offer":
+		value := x.MaximumOffer
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1392,23 +1377,21 @@ func (x *fastReflection_MsgSwapSend) Get(descriptor protoreflect.FieldDescriptor
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSend) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgBuy) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSend.from_address":
-		x.FromAddress = value.Interface().(string)
-	case "ark.market.v1.MsgSwapSend.to_address":
-		x.ToAddress = value.Interface().(string)
-	case "ark.market.v1.MsgSwapSend.offer_coin":
-		x.OfferCoin = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.market.v1.MsgSwapSend.ask_denom":
-		x.AskDenom = value.Interface().(string)
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
-		x.MinimumReceive = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.market.v1.MsgBuy.trader":
+		x.Trader = value.Interface().(string)
+	case "ark.market.v1.MsgBuy.ask_coin":
+		x.AskCoin = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.market.v1.MsgBuy.offer_denom":
+		x.OfferDenom = value.Interface().(string)
+	case "ark.market.v1.MsgBuy.maximum_offer":
+		x.MaximumOffer = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1422,64 +1405,60 @@ func (x *fastReflection_MsgSwapSend) Set(fd protoreflect.FieldDescriptor, value 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSend) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuy) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSend.offer_coin":
-		if x.OfferCoin == nil {
-			x.OfferCoin = new(v1beta1.Coin)
+	case "ark.market.v1.MsgBuy.ask_coin":
+		if x.AskCoin == nil {
+			x.AskCoin = new(v1beta1.Coin)
 		}
-		return protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
-		if x.MinimumReceive == nil {
-			x.MinimumReceive = new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(x.AskCoin.ProtoReflect())
+	case "ark.market.v1.MsgBuy.maximum_offer":
+		if x.MaximumOffer == nil {
+			x.MaximumOffer = new(v1beta1.Coin)
 		}
-		return protoreflect.ValueOfMessage(x.MinimumReceive.ProtoReflect())
-	case "ark.market.v1.MsgSwapSend.from_address":
-		panic(fmt.Errorf("field from_address of message ark.market.v1.MsgSwapSend is not mutable"))
-	case "ark.market.v1.MsgSwapSend.to_address":
-		panic(fmt.Errorf("field to_address of message ark.market.v1.MsgSwapSend is not mutable"))
-	case "ark.market.v1.MsgSwapSend.ask_denom":
-		panic(fmt.Errorf("field ask_denom of message ark.market.v1.MsgSwapSend is not mutable"))
+		return protoreflect.ValueOfMessage(x.MaximumOffer.ProtoReflect())
+	case "ark.market.v1.MsgBuy.trader":
+		panic(fmt.Errorf("field trader of message ark.market.v1.MsgBuy is not mutable"))
+	case "ark.market.v1.MsgBuy.offer_denom":
+		panic(fmt.Errorf("field offer_denom of message ark.market.v1.MsgBuy is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSwapSend) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuy) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSend.from_address":
+	case "ark.market.v1.MsgBuy.trader":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSwapSend.to_address":
-		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSwapSend.offer_coin":
+	case "ark.market.v1.MsgBuy.ask_coin":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.MsgSwapSend.ask_denom":
+	case "ark.market.v1.MsgBuy.offer_denom":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSwapSend.minimum_receive":
+	case "ark.market.v1.MsgBuy.maximum_offer":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSend"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuy"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSend does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuy does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSwapSend) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgBuy) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSwapSend", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgBuy", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1487,7 +1466,7 @@ func (x *fastReflection_MsgSwapSend) WhichOneof(d protoreflect.OneofDescriptor) 
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSwapSend) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgBuy) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1498,7 +1477,7 @@ func (x *fastReflection_MsgSwapSend) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSend) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgBuy) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1510,7 +1489,7 @@ func (x *fastReflection_MsgSwapSend) SetUnknown(fields protoreflect.RawFields) {
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSwapSend) IsValid() bool {
+func (x *fastReflection_MsgBuy) IsValid() bool {
 	return x != nil
 }
 
@@ -1520,9 +1499,9 @@ func (x *fastReflection_MsgSwapSend) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgBuy) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSwapSend)
+		x := input.Message.Interface().(*MsgBuy)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1534,24 +1513,20 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.FromAddress)
+		l = len(x.Trader)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ToAddress)
+		if x.AskCoin != nil {
+			l = options.Size(x.AskCoin)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.OfferDenom)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.OfferCoin != nil {
-			l = options.Size(x.OfferCoin)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.AskDenom)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.MinimumReceive != nil {
-			l = options.Size(x.MinimumReceive)
+		if x.MaximumOffer != nil {
+			l = options.Size(x.MaximumOffer)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -1564,7 +1539,7 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapSend)
+		x := input.Message.Interface().(*MsgBuy)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1583,8 +1558,8 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.MinimumReceive != nil {
-			encoded, err := options.Marshal(x.MinimumReceive)
+		if x.MaximumOffer != nil {
+			encoded, err := options.Marshal(x.MaximumOffer)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1594,18 +1569,18 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 			i -= len(encoded)
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x2a
-		}
-		if len(x.AskDenom) > 0 {
-			i -= len(x.AskDenom)
-			copy(dAtA[i:], x.AskDenom)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AskDenom)))
 			i--
 			dAtA[i] = 0x22
 		}
-		if x.OfferCoin != nil {
-			encoded, err := options.Marshal(x.OfferCoin)
+		if len(x.OfferDenom) > 0 {
+			i -= len(x.OfferDenom)
+			copy(dAtA[i:], x.OfferDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OfferDenom)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.AskCoin != nil {
+			encoded, err := options.Marshal(x.AskCoin)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1616,19 +1591,12 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x1a
-		}
-		if len(x.ToAddress) > 0 {
-			i -= len(x.ToAddress)
-			copy(dAtA[i:], x.ToAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ToAddress)))
-			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.FromAddress) > 0 {
-			i -= len(x.FromAddress)
-			copy(dAtA[i:], x.FromAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.FromAddress)))
+		if len(x.Trader) > 0 {
+			i -= len(x.Trader)
+			copy(dAtA[i:], x.Trader)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Trader)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -1643,7 +1611,7 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapSend)
+		x := input.Message.Interface().(*MsgBuy)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1675,15 +1643,15 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapSend: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBuy: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapSend: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBuy: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field FromAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Trader", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1711,43 +1679,11 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.FromAddress = string(dAtA[iNdEx:postIndex])
+				x.Trader = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ToAddress", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.ToAddress = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OfferCoin", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AskCoin", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1774,16 +1710,16 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.OfferCoin == nil {
-					x.OfferCoin = &v1beta1.Coin{}
+				if x.AskCoin == nil {
+					x.AskCoin = &v1beta1.Coin{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.OfferCoin); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.AskCoin); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 4:
+			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AskDenom", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OfferDenom", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1811,11 +1747,11 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AskDenom = string(dAtA[iNdEx:postIndex])
+				x.OfferDenom = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 5:
+			case 4:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinimumReceive", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaximumOffer", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1842,10 +1778,10 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.MinimumReceive == nil {
-					x.MinimumReceive = &v1beta1.Coin{}
+				if x.MaximumOffer == nil {
+					x.MaximumOffer = &v1beta1.Coin{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MinimumReceive); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MaximumOffer); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1885,27 +1821,29 @@ func (x *fastReflection_MsgSwapSend) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_MsgSwapSendResponse           protoreflect.MessageDescriptor
-	fd_MsgSwapSendResponse_swap_coin protoreflect.FieldDescriptor
-	fd_MsgSwapSendResponse_swap_fee  protoreflect.FieldDescriptor
+	md_MsgBuyResponse            protoreflect.MessageDescriptor
+	fd_MsgBuyResponse_offer_coin protoreflect.FieldDescriptor
+	fd_MsgBuyResponse_swap_coin  protoreflect.FieldDescriptor
+	fd_MsgBuyResponse_swap_fee   protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_tx_proto_init()
-	md_MsgSwapSendResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgSwapSendResponse")
-	fd_MsgSwapSendResponse_swap_coin = md_MsgSwapSendResponse.Fields().ByName("swap_coin")
-	fd_MsgSwapSendResponse_swap_fee = md_MsgSwapSendResponse.Fields().ByName("swap_fee")
+	md_MsgBuyResponse = File_ark_market_v1_tx_proto.Messages().ByName("MsgBuyResponse")
+	fd_MsgBuyResponse_offer_coin = md_MsgBuyResponse.Fields().ByName("offer_coin")
+	fd_MsgBuyResponse_swap_coin = md_MsgBuyResponse.Fields().ByName("swap_coin")
+	fd_MsgBuyResponse_swap_fee = md_MsgBuyResponse.Fields().ByName("swap_fee")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgSwapSendResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgBuyResponse)(nil)
 
-type fastReflection_MsgSwapSendResponse MsgSwapSendResponse
+type fastReflection_MsgBuyResponse MsgBuyResponse
 
-func (x *MsgSwapSendResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgSwapSendResponse)(x)
+func (x *MsgBuyResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgBuyResponse)(x)
 }
 
-func (x *MsgSwapSendResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgBuyResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_tx_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1917,43 +1855,43 @@ func (x *MsgSwapSendResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgSwapSendResponse_messageType fastReflection_MsgSwapSendResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgSwapSendResponse_messageType{}
+var _fastReflection_MsgBuyResponse_messageType fastReflection_MsgBuyResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgBuyResponse_messageType{}
 
-type fastReflection_MsgSwapSendResponse_messageType struct{}
+type fastReflection_MsgBuyResponse_messageType struct{}
 
-func (x fastReflection_MsgSwapSendResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgSwapSendResponse)(nil)
+func (x fastReflection_MsgBuyResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgBuyResponse)(nil)
 }
-func (x fastReflection_MsgSwapSendResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapSendResponse)
+func (x fastReflection_MsgBuyResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgBuyResponse)
 }
-func (x fastReflection_MsgSwapSendResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapSendResponse
+func (x fastReflection_MsgBuyResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgBuyResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgSwapSendResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgSwapSendResponse
+func (x *fastReflection_MsgBuyResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgBuyResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgSwapSendResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgSwapSendResponse_messageType
+func (x *fastReflection_MsgBuyResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgBuyResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgSwapSendResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgSwapSendResponse)
+func (x *fastReflection_MsgBuyResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgBuyResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgSwapSendResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgSwapSendResponse)(x)
+func (x *fastReflection_MsgBuyResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgBuyResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1961,16 +1899,22 @@ func (x *fastReflection_MsgSwapSendResponse) Interface() protoreflect.ProtoMessa
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgSwapSendResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgBuyResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.OfferCoin != nil {
+		value := protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
+		if !f(fd_MsgBuyResponse_offer_coin, value) {
+			return
+		}
+	}
 	if x.SwapCoin != nil {
 		value := protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-		if !f(fd_MsgSwapSendResponse_swap_coin, value) {
+		if !f(fd_MsgBuyResponse_swap_coin, value) {
 			return
 		}
 	}
 	if x.SwapFee != nil {
 		value := protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
-		if !f(fd_MsgSwapSendResponse_swap_fee, value) {
+		if !f(fd_MsgBuyResponse_swap_fee, value) {
 			return
 		}
 	}
@@ -1987,17 +1931,19 @@ func (x *fastReflection_MsgSwapSendResponse) Range(f func(protoreflect.FieldDesc
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgSwapSendResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgBuyResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
+		return x.OfferCoin != nil
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
 		return x.SwapCoin != nil
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		return x.SwapFee != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2007,17 +1953,19 @@ func (x *fastReflection_MsgSwapSendResponse) Has(fd protoreflect.FieldDescriptor
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSendResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgBuyResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
+		x.OfferCoin = nil
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
 		x.SwapCoin = nil
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		x.SwapFee = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2027,19 +1975,22 @@ func (x *fastReflection_MsgSwapSendResponse) Clear(fd protoreflect.FieldDescript
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgSwapSendResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuyResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
+		value := x.OfferCoin
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
 		value := x.SwapCoin
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		value := x.SwapFee
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2053,17 +2004,19 @@ func (x *fastReflection_MsgSwapSendResponse) Get(descriptor protoreflect.FieldDe
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSendResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgBuyResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
+		x.OfferCoin = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
 		x.SwapCoin = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		x.SwapFee = value.Message().Interface().(*v1beta1.DecCoin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2077,52 +2030,60 @@ func (x *fastReflection_MsgSwapSendResponse) Set(fd protoreflect.FieldDescriptor
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSendResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuyResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
+		if x.OfferCoin == nil {
+			x.OfferCoin = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
 		if x.SwapCoin == nil {
 			x.SwapCoin = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		if x.SwapFee == nil {
 			x.SwapFee = new(v1beta1.DecCoin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgSwapSendResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgBuyResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.MsgSwapSendResponse.swap_coin":
+	case "ark.market.v1.MsgBuyResponse.offer_coin":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.MsgSwapSendResponse.swap_fee":
+	case "ark.market.v1.MsgBuyResponse.swap_coin":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.MsgBuyResponse.swap_fee":
 		m := new(v1beta1.DecCoin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgSwapSendResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.MsgBuyResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.MsgSwapSendResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.MsgBuyResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgSwapSendResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgBuyResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgSwapSendResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.MsgBuyResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2130,7 +2091,7 @@ func (x *fastReflection_MsgSwapSendResponse) WhichOneof(d protoreflect.OneofDesc
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgSwapSendResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgBuyResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2141,7 +2102,7 @@ func (x *fastReflection_MsgSwapSendResponse) GetUnknown() protoreflect.RawFields
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgSwapSendResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgBuyResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2153,7 +2114,7 @@ func (x *fastReflection_MsgSwapSendResponse) SetUnknown(fields protoreflect.RawF
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgSwapSendResponse) IsValid() bool {
+func (x *fastReflection_MsgBuyResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2163,9 +2124,9 @@ func (x *fastReflection_MsgSwapSendResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgBuyResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgSwapSendResponse)
+		x := input.Message.Interface().(*MsgBuyResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2177,6 +2138,10 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 		var n int
 		var l int
 		_ = l
+		if x.OfferCoin != nil {
+			l = options.Size(x.OfferCoin)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.SwapCoin != nil {
 			l = options.Size(x.SwapCoin)
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -2195,7 +2160,7 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapSendResponse)
+		x := input.Message.Interface().(*MsgBuyResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2226,10 +2191,24 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x1a
 		}
 		if x.SwapCoin != nil {
 			encoded, err := options.Marshal(x.SwapCoin)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.OfferCoin != nil {
+			encoded, err := options.Marshal(x.OfferCoin)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2253,7 +2232,7 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgSwapSendResponse)
+		x := input.Message.Interface().(*MsgBuyResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2285,13 +2264,49 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapSendResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBuyResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgSwapSendResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgBuyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OfferCoin", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.OfferCoin == nil {
+					x.OfferCoin = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.OfferCoin); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SwapCoin", wireType)
 				}
@@ -2327,7 +2342,7 @@ func (x *fastReflection_MsgSwapSendResponse) ProtoMethods() *protoiface.Methods 
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 2:
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SwapFee", wireType)
 				}
@@ -5932,14 +5947,14 @@ func (x *fastReflection_MsgRemoveTobinTaxOverrideResponse) ProtoMethods() *proto
 }
 
 var (
-	md_MsgSetConversionMandate                   protoreflect.MessageDescriptor
-	fd_MsgSetConversionMandate_authority         protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_committee         protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_activation_height protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_expiry_height     protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_minimum_policy    protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_maximum_policy    protoreflect.FieldDescriptor
-	fd_MsgSetConversionMandate_max_tobin_tax     protoreflect.FieldDescriptor
+	md_MsgSetConversionMandate                 protoreflect.MessageDescriptor
+	fd_MsgSetConversionMandate_authority       protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_committee       protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_activation_time protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_expiry_time     protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_minimum_policy  protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_maximum_policy  protoreflect.FieldDescriptor
+	fd_MsgSetConversionMandate_max_tobin_tax   protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -5947,8 +5962,8 @@ func init() {
 	md_MsgSetConversionMandate = File_ark_market_v1_tx_proto.Messages().ByName("MsgSetConversionMandate")
 	fd_MsgSetConversionMandate_authority = md_MsgSetConversionMandate.Fields().ByName("authority")
 	fd_MsgSetConversionMandate_committee = md_MsgSetConversionMandate.Fields().ByName("committee")
-	fd_MsgSetConversionMandate_activation_height = md_MsgSetConversionMandate.Fields().ByName("activation_height")
-	fd_MsgSetConversionMandate_expiry_height = md_MsgSetConversionMandate.Fields().ByName("expiry_height")
+	fd_MsgSetConversionMandate_activation_time = md_MsgSetConversionMandate.Fields().ByName("activation_time")
+	fd_MsgSetConversionMandate_expiry_time = md_MsgSetConversionMandate.Fields().ByName("expiry_time")
 	fd_MsgSetConversionMandate_minimum_policy = md_MsgSetConversionMandate.Fields().ByName("minimum_policy")
 	fd_MsgSetConversionMandate_maximum_policy = md_MsgSetConversionMandate.Fields().ByName("maximum_policy")
 	fd_MsgSetConversionMandate_max_tobin_tax = md_MsgSetConversionMandate.Fields().ByName("max_tobin_tax")
@@ -6031,15 +6046,15 @@ func (x *fastReflection_MsgSetConversionMandate) Range(f func(protoreflect.Field
 			return
 		}
 	}
-	if x.ActivationHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ActivationHeight)
-		if !f(fd_MsgSetConversionMandate_activation_height, value) {
+	if x.ActivationTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationTime)
+		if !f(fd_MsgSetConversionMandate_activation_time, value) {
 			return
 		}
 	}
-	if x.ExpiryHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
-		if !f(fd_MsgSetConversionMandate_expiry_height, value) {
+	if x.ExpiryTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryTime)
+		if !f(fd_MsgSetConversionMandate_expiry_time, value) {
 			return
 		}
 	}
@@ -6080,10 +6095,10 @@ func (x *fastReflection_MsgSetConversionMandate) Has(fd protoreflect.FieldDescri
 		return x.Authority != ""
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		return x.Committee != ""
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
-		return x.ActivationHeight != uint64(0)
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
-		return x.ExpiryHeight != uint64(0)
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
+		return x.ActivationTime != uint64(0)
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
+		return x.ExpiryTime != uint64(0)
 	case "ark.market.v1.MsgSetConversionMandate.minimum_policy":
 		return x.MinimumPolicy != nil
 	case "ark.market.v1.MsgSetConversionMandate.maximum_policy":
@@ -6110,10 +6125,10 @@ func (x *fastReflection_MsgSetConversionMandate) Clear(fd protoreflect.FieldDesc
 		x.Authority = ""
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		x.Committee = ""
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
-		x.ActivationHeight = uint64(0)
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
-		x.ExpiryHeight = uint64(0)
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
+		x.ActivationTime = uint64(0)
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
+		x.ExpiryTime = uint64(0)
 	case "ark.market.v1.MsgSetConversionMandate.minimum_policy":
 		x.MinimumPolicy = nil
 	case "ark.market.v1.MsgSetConversionMandate.maximum_policy":
@@ -6142,11 +6157,11 @@ func (x *fastReflection_MsgSetConversionMandate) Get(descriptor protoreflect.Fie
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
-		value := x.ActivationHeight
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
+		value := x.ActivationTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
-		value := x.ExpiryHeight
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
+		value := x.ExpiryTime
 		return protoreflect.ValueOfUint64(value)
 	case "ark.market.v1.MsgSetConversionMandate.minimum_policy":
 		value := x.MinimumPolicy
@@ -6181,10 +6196,10 @@ func (x *fastReflection_MsgSetConversionMandate) Set(fd protoreflect.FieldDescri
 		x.Authority = value.Interface().(string)
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		x.Committee = value.Interface().(string)
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
-		x.ActivationHeight = value.Uint()
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
-		x.ExpiryHeight = value.Uint()
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
+		x.ActivationTime = value.Uint()
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
+		x.ExpiryTime = value.Uint()
 	case "ark.market.v1.MsgSetConversionMandate.minimum_policy":
 		x.MinimumPolicy = value.Message().Interface().(*ConversionPolicy)
 	case "ark.market.v1.MsgSetConversionMandate.maximum_policy":
@@ -6225,10 +6240,10 @@ func (x *fastReflection_MsgSetConversionMandate) Mutable(fd protoreflect.FieldDe
 		panic(fmt.Errorf("field authority of message ark.market.v1.MsgSetConversionMandate is not mutable"))
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		panic(fmt.Errorf("field committee of message ark.market.v1.MsgSetConversionMandate is not mutable"))
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.market.v1.MsgSetConversionMandate is not mutable"))
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
-		panic(fmt.Errorf("field expiry_height of message ark.market.v1.MsgSetConversionMandate is not mutable"))
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
+		panic(fmt.Errorf("field activation_time of message ark.market.v1.MsgSetConversionMandate is not mutable"))
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
+		panic(fmt.Errorf("field expiry_time of message ark.market.v1.MsgSetConversionMandate is not mutable"))
 	case "ark.market.v1.MsgSetConversionMandate.max_tobin_tax":
 		panic(fmt.Errorf("field max_tobin_tax of message ark.market.v1.MsgSetConversionMandate is not mutable"))
 	default:
@@ -6248,9 +6263,9 @@ func (x *fastReflection_MsgSetConversionMandate) NewField(fd protoreflect.FieldD
 		return protoreflect.ValueOfString("")
 	case "ark.market.v1.MsgSetConversionMandate.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.MsgSetConversionMandate.activation_height":
+	case "ark.market.v1.MsgSetConversionMandate.activation_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.market.v1.MsgSetConversionMandate.expiry_height":
+	case "ark.market.v1.MsgSetConversionMandate.expiry_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.market.v1.MsgSetConversionMandate.minimum_policy":
 		m := new(ConversionPolicy)
@@ -6337,11 +6352,11 @@ func (x *fastReflection_MsgSetConversionMandate) ProtoMethods() *protoiface.Meth
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationTime))
 		}
-		if x.ExpiryHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryTime))
 		}
 		if x.MinimumPolicy != nil {
 			l = options.Size(x.MinimumPolicy)
@@ -6419,13 +6434,13 @@ func (x *fastReflection_MsgSetConversionMandate) ProtoMethods() *protoiface.Meth
 			i--
 			dAtA[i] = 0x2a
 		}
-		if x.ExpiryHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryTime))
 			i--
 			dAtA[i] = 0x20
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationTime))
 			i--
 			dAtA[i] = 0x18
 		}
@@ -6558,9 +6573,9 @@ func (x *fastReflection_MsgSetConversionMandate) ProtoMethods() *protoiface.Meth
 				iNdEx = postIndex
 			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationTime", wireType)
 				}
-				x.ActivationHeight = 0
+				x.ActivationTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -6570,16 +6585,16 @@ func (x *fastReflection_MsgSetConversionMandate) ProtoMethods() *protoiface.Meth
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= uint64(b&0x7F) << shift
+					x.ActivationTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryTime", wireType)
 				}
-				x.ExpiryHeight = 0
+				x.ExpiryTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -6589,7 +6604,7 @@ func (x *fastReflection_MsgSetConversionMandate) ProtoMethods() *protoiface.Meth
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					x.ExpiryTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -9817,8 +9832,9 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MsgSwap represents a message to swap coin to another denom.
-type MsgSwap struct {
+// MsgSell converts offer_coin to ask_denom for the trader: the offer is stated and the output
+// follows the quote.
+type MsgSell struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -9831,8 +9847,8 @@ type MsgSwap struct {
 	MinimumReceive *v1beta1.Coin `protobuf:"bytes,4,opt,name=minimum_receive,json=minimumReceive,proto3" json:"minimum_receive,omitempty"`
 }
 
-func (x *MsgSwap) Reset() {
-	*x = MsgSwap{}
+func (x *MsgSell) Reset() {
+	*x = MsgSell{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -9840,47 +9856,47 @@ func (x *MsgSwap) Reset() {
 	}
 }
 
-func (x *MsgSwap) String() string {
+func (x *MsgSell) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSwap) ProtoMessage() {}
+func (*MsgSell) ProtoMessage() {}
 
-// Deprecated: Use MsgSwap.ProtoReflect.Descriptor instead.
-func (*MsgSwap) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSell.ProtoReflect.Descriptor instead.
+func (*MsgSell) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *MsgSwap) GetTrader() string {
+func (x *MsgSell) GetTrader() string {
 	if x != nil {
 		return x.Trader
 	}
 	return ""
 }
 
-func (x *MsgSwap) GetOfferCoin() *v1beta1.Coin {
+func (x *MsgSell) GetOfferCoin() *v1beta1.Coin {
 	if x != nil {
 		return x.OfferCoin
 	}
 	return nil
 }
 
-func (x *MsgSwap) GetAskDenom() string {
+func (x *MsgSell) GetAskDenom() string {
 	if x != nil {
 		return x.AskDenom
 	}
 	return ""
 }
 
-func (x *MsgSwap) GetMinimumReceive() *v1beta1.Coin {
+func (x *MsgSell) GetMinimumReceive() *v1beta1.Coin {
 	if x != nil {
 		return x.MinimumReceive
 	}
 	return nil
 }
 
-// MsgSwapResponse defines the Msg/Swap response type.
-type MsgSwapResponse struct {
+// MsgSellResponse defines the Msg/Sell response type.
+type MsgSellResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -9889,8 +9905,8 @@ type MsgSwapResponse struct {
 	SwapFee  *v1beta1.DecCoin `protobuf:"bytes,2,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee,omitempty"`
 }
 
-func (x *MsgSwapResponse) Reset() {
-	*x = MsgSwapResponse{}
+func (x *MsgSellResponse) Reset() {
+	*x = MsgSellResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -9898,49 +9914,47 @@ func (x *MsgSwapResponse) Reset() {
 	}
 }
 
-func (x *MsgSwapResponse) String() string {
+func (x *MsgSellResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSwapResponse) ProtoMessage() {}
+func (*MsgSellResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgSwapResponse.ProtoReflect.Descriptor instead.
-func (*MsgSwapResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgSellResponse.ProtoReflect.Descriptor instead.
+func (*MsgSellResponse) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *MsgSwapResponse) GetSwapCoin() *v1beta1.Coin {
+func (x *MsgSellResponse) GetSwapCoin() *v1beta1.Coin {
 	if x != nil {
 		return x.SwapCoin
 	}
 	return nil
 }
 
-func (x *MsgSwapResponse) GetSwapFee() *v1beta1.DecCoin {
+func (x *MsgSellResponse) GetSwapFee() *v1beta1.DecCoin {
 	if x != nil {
 		return x.SwapFee
 	}
 	return nil
 }
 
-// MsgSwapSend represents a message to swap coin and send all result coin to
-// recipient
-type MsgSwapSend struct {
+// MsgBuy converts the least offer of offer_denom whose quote returns at least ask_coin.
+type MsgBuy struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	FromAddress string        `protobuf:"bytes,1,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
-	ToAddress   string        `protobuf:"bytes,2,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	OfferCoin   *v1beta1.Coin `protobuf:"bytes,3,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
-	AskDenom    string        `protobuf:"bytes,4,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
-	// minimum_receive optionally bounds the final ask-denom output. The empty coin accepts market
-	// execution; a denominated zero is invalid.
-	MinimumReceive *v1beta1.Coin `protobuf:"bytes,5,opt,name=minimum_receive,json=minimumReceive,proto3" json:"minimum_receive,omitempty"`
+	Trader     string        `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
+	AskCoin    *v1beta1.Coin `protobuf:"bytes,2,opt,name=ask_coin,json=askCoin,proto3" json:"ask_coin,omitempty"`
+	OfferDenom string        `protobuf:"bytes,3,opt,name=offer_denom,json=offerDenom,proto3" json:"offer_denom,omitempty"`
+	// maximum_offer is the most the buy may spend: a positive coin in offer_denom. A buy states no
+	// spend of its own, so the cap is what bounds the trader's loss, and it is required.
+	MaximumOffer *v1beta1.Coin `protobuf:"bytes,4,opt,name=maximum_offer,json=maximumOffer,proto3" json:"maximum_offer,omitempty"`
 }
 
-func (x *MsgSwapSend) Reset() {
-	*x = MsgSwapSend{}
+func (x *MsgBuy) Reset() {
+	*x = MsgBuy{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -9948,64 +9962,58 @@ func (x *MsgSwapSend) Reset() {
 	}
 }
 
-func (x *MsgSwapSend) String() string {
+func (x *MsgBuy) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSwapSend) ProtoMessage() {}
+func (*MsgBuy) ProtoMessage() {}
 
-// Deprecated: Use MsgSwapSend.ProtoReflect.Descriptor instead.
-func (*MsgSwapSend) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgBuy.ProtoReflect.Descriptor instead.
+func (*MsgBuy) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *MsgSwapSend) GetFromAddress() string {
+func (x *MsgBuy) GetTrader() string {
 	if x != nil {
-		return x.FromAddress
+		return x.Trader
 	}
 	return ""
 }
 
-func (x *MsgSwapSend) GetToAddress() string {
+func (x *MsgBuy) GetAskCoin() *v1beta1.Coin {
 	if x != nil {
-		return x.ToAddress
-	}
-	return ""
-}
-
-func (x *MsgSwapSend) GetOfferCoin() *v1beta1.Coin {
-	if x != nil {
-		return x.OfferCoin
+		return x.AskCoin
 	}
 	return nil
 }
 
-func (x *MsgSwapSend) GetAskDenom() string {
+func (x *MsgBuy) GetOfferDenom() string {
 	if x != nil {
-		return x.AskDenom
+		return x.OfferDenom
 	}
 	return ""
 }
 
-func (x *MsgSwapSend) GetMinimumReceive() *v1beta1.Coin {
+func (x *MsgBuy) GetMaximumOffer() *v1beta1.Coin {
 	if x != nil {
-		return x.MinimumReceive
+		return x.MaximumOffer
 	}
 	return nil
 }
 
-// MsgSwapSendResponse defines the Msg/SwapSend response type.
-type MsgSwapSendResponse struct {
+// MsgBuyResponse defines the Msg/Buy response type.
+type MsgBuyResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SwapCoin *v1beta1.Coin    `protobuf:"bytes,1,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin,omitempty"`
-	SwapFee  *v1beta1.DecCoin `protobuf:"bytes,2,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee,omitempty"`
+	OfferCoin *v1beta1.Coin    `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
+	SwapCoin  *v1beta1.Coin    `protobuf:"bytes,2,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin,omitempty"`
+	SwapFee   *v1beta1.DecCoin `protobuf:"bytes,3,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee,omitempty"`
 }
 
-func (x *MsgSwapSendResponse) Reset() {
-	*x = MsgSwapSendResponse{}
+func (x *MsgBuyResponse) Reset() {
+	*x = MsgBuyResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_tx_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -10013,25 +10021,32 @@ func (x *MsgSwapSendResponse) Reset() {
 	}
 }
 
-func (x *MsgSwapSendResponse) String() string {
+func (x *MsgBuyResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgSwapSendResponse) ProtoMessage() {}
+func (*MsgBuyResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgSwapSendResponse.ProtoReflect.Descriptor instead.
-func (*MsgSwapSendResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgBuyResponse.ProtoReflect.Descriptor instead.
+func (*MsgBuyResponse) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_tx_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MsgSwapSendResponse) GetSwapCoin() *v1beta1.Coin {
+func (x *MsgBuyResponse) GetOfferCoin() *v1beta1.Coin {
+	if x != nil {
+		return x.OfferCoin
+	}
+	return nil
+}
+
+func (x *MsgBuyResponse) GetSwapCoin() *v1beta1.Coin {
 	if x != nil {
 		return x.SwapCoin
 	}
 	return nil
 }
 
-func (x *MsgSwapSendResponse) GetSwapFee() *v1beta1.DecCoin {
+func (x *MsgBuyResponse) GetSwapFee() *v1beta1.DecCoin {
 	if x != nil {
 		return x.SwapFee
 	}
@@ -10362,12 +10377,12 @@ type MsgSetConversionMandate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Authority        string            `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
-	Committee        string            `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
-	ActivationHeight uint64            `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	ExpiryHeight     uint64            `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
-	MinimumPolicy    *ConversionPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
-	MaximumPolicy    *ConversionPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
+	Authority      string            `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	Committee      string            `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationTime uint64            `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
+	ExpiryTime     uint64            `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
+	MinimumPolicy  *ConversionPolicy `protobuf:"bytes,5,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
+	MaximumPolicy  *ConversionPolicy `protobuf:"bytes,6,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`
 	// max_tobin_tax is the explicit upper bound of the committee band; Params.default_tobin_tax is
 	// its lower bound. Zero delegates no Tobin authority.
 	MaxTobinTax string `protobuf:"bytes,7,opt,name=max_tobin_tax,json=maxTobinTax,proto3" json:"max_tobin_tax,omitempty"`
@@ -10407,16 +10422,16 @@ func (x *MsgSetConversionMandate) GetCommittee() string {
 	return ""
 }
 
-func (x *MsgSetConversionMandate) GetActivationHeight() uint64 {
+func (x *MsgSetConversionMandate) GetActivationTime() uint64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.ActivationTime
 	}
 	return 0
 }
 
-func (x *MsgSetConversionMandate) GetExpiryHeight() uint64 {
+func (x *MsgSetConversionMandate) GetExpiryTime() uint64 {
 	if x != nil {
-		return x.ExpiryHeight
+		return x.ExpiryTime
 	}
 	return 0
 }
@@ -10481,7 +10496,7 @@ type MsgUpdatePolicy struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// policy is the complete conversion pair to apply. The base pool denomination
 	// must match the live pool: re-denomination happens only through
-	// MsgSetReference.
+	// MsgSetReferenceDenom.
 	Policy *ConversionPolicy `protobuf:"bytes,2,opt,name=policy,proto3" json:"policy,omitempty"`
 }
 
@@ -10734,7 +10749,7 @@ var file_ark_market_v1_tx_proto_rawDesc = []byte{
 	0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f,
 	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x22, 0x90, 0x02, 0x0a, 0x07, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x12, 0x30, 0x0a, 0x06,
+	0x22, 0x90, 0x02, 0x0a, 0x07, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x6c, 0x6c, 0x12, 0x30, 0x0a, 0x06,
 	0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
 	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
 	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x12, 0x43,
@@ -10751,7 +10766,7 @@ var file_ark_market_v1_tx_proto_rawDesc = []byte{
 	0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x52, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x3a,
 	0x22, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a,
 	0x12, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53,
-	0x77, 0x61, 0x70, 0x22, 0x98, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x52,
+	0x65, 0x6c, 0x6c, 0x22, 0x98, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x6c, 0x6c, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x09, 0x73, 0x77, 0x61, 0x70, 0x5f,
 	0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
@@ -10760,114 +10775,112 @@ var file_ark_market_v1_tx_proto_rawDesc = []byte{
 	0x61, 0x70, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74,
 	0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46, 0x65, 0x65, 0x22, 0xe2,
-	0x02, 0x0a, 0x0b, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e, 0x64, 0x12, 0x3b,
-	0x0a, 0x0c, 0x66, 0x72, 0x6f, 0x6d, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0b,
-	0x66, 0x72, 0x6f, 0x6d, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x37, 0x0a, 0x0a, 0x74,
-	0x6f, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x74, 0x6f, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x43, 0x0a, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x63, 0x6f,
-	0x69, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
-	0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09,
-	0x6f, 0x66, 0x66, 0x65, 0x72, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x73, 0x6b,
-	0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x61, 0x73,
-	0x6b, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x4d, 0x0a, 0x0f, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75,
-	0x6d, 0x5f, 0x72, 0x65, 0x63, 0x65, 0x69, 0x76, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00,
-	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x6d, 0x69, 0x6e, 0x69, 0x6d, 0x75, 0x6d, 0x52, 0x65,
-	0x63, 0x65, 0x69, 0x76, 0x65, 0x3a, 0x2c, 0x82, 0xe7, 0xb0, 0x2a, 0x0c, 0x66, 0x72, 0x6f, 0x6d,
-	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x8a, 0xe7, 0xb0, 0x2a, 0x16, 0x61, 0x72, 0x6b,
-	0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53,
-	0x65, 0x6e, 0x64, 0x22, 0x9c, 0x01, 0x0a, 0x13, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53,
-	0x65, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x09, 0x73,
-	0x77, 0x61, 0x70, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
-	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
-	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x73, 0x77, 0x61, 0x70, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x42,
-	0x0a, 0x08, 0x73, 0x77, 0x61, 0x70, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
-	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09,
-	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46,
-	0x65, 0x65, 0x22, 0xb2, 0x01, 0x0a, 0x0f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
-	0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
+	0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46, 0x65, 0x65, 0x22, 0x8a,
+	0x02, 0x0a, 0x06, 0x4d, 0x73, 0x67, 0x42, 0x75, 0x79, 0x12, 0x30, 0x0a, 0x06, 0x74, 0x72, 0x61,
+	0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x38,
-	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
-	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50,
-	0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
-	0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x3a, 0x2d, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61,
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x1a, 0x61, 0x72, 0x6b,
-	0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70,
-	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0xa8, 0x01, 0x0a, 0x09, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65,
-	0x12, 0x30, 0x0a, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x06, 0x74, 0x72, 0x61, 0x64,
-	0x65, 0x72, 0x12, 0x43, 0x0a, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x69, 0x6e,
+	0x69, 0x6e, 0x67, 0x52, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x12, 0x3f, 0x0a, 0x08, 0x61,
+	0x73, 0x6b, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65,
+	0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x07, 0x61, 0x73, 0x6b, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x1f, 0x0a, 0x0b,
+	0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x49, 0x0a,
+	0x0d, 0x6d, 0x61, 0x78, 0x69, 0x6d, 0x75, 0x6d, 0x5f, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42,
+	0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x6d, 0x61, 0x78, 0x69,
+	0x6d, 0x75, 0x6d, 0x4f, 0x66, 0x66, 0x65, 0x72, 0x3a, 0x21, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x74,
+	0x72, 0x61, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x11, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x42, 0x75, 0x79, 0x22, 0xdc, 0x01, 0x0a, 0x0e,
+	0x4d, 0x73, 0x67, 0x42, 0x75, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43,
+	0x0a, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
+	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x43,
+	0x6f, 0x69, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x73, 0x77, 0x61, 0x70, 0x5f, 0x63, 0x6f, 0x69, 0x6e,
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
 	0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69,
-	0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6f, 0x66,
-	0x66, 0x65, 0x72, 0x43, 0x6f, 0x69, 0x6e, 0x3a, 0x24, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x74, 0x72,
-	0x61, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a, 0x14, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x22, 0x5e, 0x0a,
-	0x11, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x49, 0x0a, 0x0d, 0x72, 0x65, 0x64, 0x65, 0x65, 0x6d, 0x65, 0x64, 0x5f, 0x63,
-	0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e,
-	0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52,
-	0x0c, 0x72, 0x65, 0x64, 0x65, 0x65, 0x6d, 0x65, 0x64, 0x43, 0x6f, 0x69, 0x6e, 0x22, 0xf1, 0x01,
-	0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
-	0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68,
-	0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
-	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
-	0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x53, 0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f,
-	0x74, 0x61, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda,
-	0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
-	0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4,
-	0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a,
-	0x01, 0x52, 0x08, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x3a, 0x34, 0x82, 0xe7, 0xb0,
-	0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x21,
-	0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65,
-	0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
-	0x65, 0x22, 0x20, 0x0a, 0x1e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e,
-	0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0xa2, 0x01, 0x0a, 0x19, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76,
-	0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
-	0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
-	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e,
-	0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x3a,
-	0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a,
-	0xe7, 0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d,
-	0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
-	0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x22, 0x23, 0x0a, 0x21, 0x4d, 0x73, 0x67, 0x52,
-	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65,
-	0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa2, 0x04,
-	0x0a, 0x17, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74,
+	0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x73, 0x77,
+	0x61, 0x70, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x42, 0x0a, 0x08, 0x73, 0x77, 0x61, 0x70, 0x5f, 0x66,
+	0x65, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44,
+	0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46, 0x65, 0x65, 0x22, 0xb2, 0x01, 0x0a, 0x0f, 0x4d,
+	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x36,
+	0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x38, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8,
+	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x3a, 0x2d, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79,
+	0x8a, 0xe7, 0xb0, 0x2a, 0x1a, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f,
+	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22,
+	0x19, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa8, 0x01, 0x0a, 0x09, 0x4d,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x12, 0x30, 0x0a, 0x06, 0x74, 0x72, 0x61, 0x64,
+	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x12, 0x43, 0x0a, 0x0a, 0x6f, 0x66,
+	0x66, 0x65, 0x72, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x43, 0x6f, 0x69, 0x6e, 0x3a,
+	0x24, 0x82, 0xe7, 0xb0, 0x2a, 0x06, 0x74, 0x72, 0x61, 0x64, 0x65, 0x72, 0x8a, 0xe7, 0xb0, 0x2a,
+	0x14, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53,
+	0x65, 0x74, 0x74, 0x6c, 0x65, 0x22, 0x5e, 0x0a, 0x11, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74,
+	0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x49, 0x0a, 0x0d, 0x72, 0x65,
+	0x64, 0x65, 0x65, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x72, 0x65, 0x64, 0x65, 0x65, 0x6d, 0x65,
+	0x64, 0x43, 0x6f, 0x69, 0x6e, 0x22, 0xf1, 0x01, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
+	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
+	0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f,
+	0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x12, 0x53,
+	0x0a, 0x09, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67,
+	0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x74, 0x6f, 0x62, 0x69, 0x6e,
+	0x54, 0x61, 0x78, 0x3a, 0x34, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72,
+	0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x21, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
+	0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x22, 0x20, 0x0a, 0x1e, 0x4d, 0x73, 0x67,
+	0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72,
+	0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xa2, 0x01, 0x0a, 0x19,
+	0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
+	0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74,
 	0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
 	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
 	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74,
-	0x79, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02,
+	0x79, 0x12, 0x14, 0x0a, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x05, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x3a, 0x37, 0x82, 0xe7, 0xb0, 0x2a, 0x09, 0x61, 0x75,
+	0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x8a, 0xe7, 0xb0, 0x2a, 0x24, 0x61, 0x72, 0x6b, 0x2f,
+	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
+	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
+	0x22, 0x23, 0x0a, 0x21, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x9a, 0x04, 0x0a, 0x17, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
+	0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
+	0x65, 0x12, 0x36, 0x0a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09,
-	0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x12, 0x32, 0x0a, 0x11, 0x61, 0x63, 0x74,
-	0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x10, 0x61, 0x63, 0x74,
-	0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a,
-	0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70,
-	0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65,
+	0x65, 0x12, 0x2e, 0x0a, 0x0f, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
+	0x74, 0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
+	0x01, 0x52, 0x0e, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d,
+	0x65, 0x12, 0x26, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x74, 0x69, 0x6d, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x65,
+	0x78, 0x70, 0x69, 0x72, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x51, 0x0a, 0x0e, 0x6d, 0x69, 0x6e,
 	0x69, 0x6d, 0x75, 0x6d, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
 	0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69,
@@ -10941,80 +10954,79 @@ var file_ark_market_v1_tx_proto_rawDesc = []byte{
 	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54,
 	0x61, 0x78, 0x22, 0x21, 0x0a, 0x1f, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
 	0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xd2, 0x07, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x3e, 0x0a,
-	0x04, 0x53, 0x77, 0x61, 0x70, 0x12, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x1a, 0x1e, 0x2e,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xc3, 0x07, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x3e, 0x0a,
+	0x04, 0x53, 0x65, 0x6c, 0x6c, 0x12, 0x16, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x6c, 0x6c, 0x1a, 0x1e, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x53, 0x77, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a,
-	0x08, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e, 0x64, 0x12, 0x1a, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61,
-	0x70, 0x53, 0x65, 0x6e, 0x64, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x77, 0x61, 0x70, 0x53, 0x65, 0x6e,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x06, 0x53, 0x65, 0x74,
-	0x74, 0x6c, 0x65, 0x12, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
-	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x1a, 0x20, 0x2e,
-	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
-	0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12,
-	0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a,
-	0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x13, 0x53, 0x65, 0x74,
-	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
-	0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f,
-	0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61,
-	0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f,
-	0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x76, 0x0a, 0x16, 0x52, 0x65, 0x6d, 0x6f,
-	0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69,
-	0x64, 0x65, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69,
-	0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x30, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67,
-	0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76,
-	0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
-	0x12, 0x70, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43,
-	0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65,
-	0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
-	0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a, 0x15,
-	0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50,
-	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74,
-	0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a, 0x2f,
+	0x67, 0x53, 0x65, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a,
+	0x03, 0x42, 0x75, 0x79, 0x12, 0x15, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x42, 0x75, 0x79, 0x1a, 0x1d, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x42,
+	0x75, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x06, 0x53, 0x65,
+	0x74, 0x74, 0x6c, 0x65, 0x12, 0x18, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x1a, 0x20,
 	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d,
-	0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x00, 0x12, 0x70, 0x0a, 0x14, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65,
-	0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
-	0x78, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65,
-	0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xac, 0x01, 0x0a, 0x11, 0x63,
-	0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
-	0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x38, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61,
-	0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72,
-	0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72,
-	0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72,
-	0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x73, 0x67, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x6d, 0x0a, 0x13, 0x53, 0x65,
+	0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64,
+	0x65, 0x12, 0x25, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78,
+	0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x54,
+	0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x76, 0x0a, 0x16, 0x52, 0x65, 0x6d,
+	0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72,
+	0x69, 0x64, 0x65, 0x12, 0x28, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x1a, 0x30, 0x2e,
+	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73,
+	0x67, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f,
+	0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x12, 0x70, 0x0a, 0x14, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74,
+	0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74,
+	0x65, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
+	0x31, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x1a, 0x26, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c,
+	0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x73, 0x0a,
+	0x15, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x27, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x1a,
+	0x2f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x70, 0x0a, 0x14, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53,
+	0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x26, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f,
+	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54,
+	0x61, 0x78, 0x1a, 0x2e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
+	0x76, 0x31, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53,
+	0x65, 0x74, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x00, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xac, 0x01, 0x0a, 0x11,
+	0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
+	0x31, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x38, 0x67, 0x69,
+	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d,
+	0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41,
+	0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41,
+	0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41,
+	0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -11031,10 +11043,10 @@ func file_ark_market_v1_tx_proto_rawDescGZIP() []byte {
 
 var file_ark_market_v1_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_ark_market_v1_tx_proto_goTypes = []interface{}{
-	(*MsgSwap)(nil),                           // 0: ark.market.v1.MsgSwap
-	(*MsgSwapResponse)(nil),                   // 1: ark.market.v1.MsgSwapResponse
-	(*MsgSwapSend)(nil),                       // 2: ark.market.v1.MsgSwapSend
-	(*MsgSwapSendResponse)(nil),               // 3: ark.market.v1.MsgSwapSendResponse
+	(*MsgSell)(nil),                           // 0: ark.market.v1.MsgSell
+	(*MsgSellResponse)(nil),                   // 1: ark.market.v1.MsgSellResponse
+	(*MsgBuy)(nil),                            // 2: ark.market.v1.MsgBuy
+	(*MsgBuyResponse)(nil),                    // 3: ark.market.v1.MsgBuyResponse
 	(*MsgUpdateParams)(nil),                   // 4: ark.market.v1.MsgUpdateParams
 	(*MsgUpdateParamsResponse)(nil),           // 5: ark.market.v1.MsgUpdateParamsResponse
 	(*MsgSettle)(nil),                         // 6: ark.market.v1.MsgSettle
@@ -11057,46 +11069,47 @@ var file_ark_market_v1_tx_proto_goTypes = []interface{}{
 	(*ConversionPolicy)(nil),                  // 23: ark.market.v1.ConversionPolicy
 }
 var file_ark_market_v1_tx_proto_depIdxs = []int32{
-	20, // 0: ark.market.v1.MsgSwap.offer_coin:type_name -> cosmos.base.v1beta1.Coin
-	20, // 1: ark.market.v1.MsgSwap.minimum_receive:type_name -> cosmos.base.v1beta1.Coin
-	20, // 2: ark.market.v1.MsgSwapResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
-	21, // 3: ark.market.v1.MsgSwapResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
-	20, // 4: ark.market.v1.MsgSwapSend.offer_coin:type_name -> cosmos.base.v1beta1.Coin
-	20, // 5: ark.market.v1.MsgSwapSend.minimum_receive:type_name -> cosmos.base.v1beta1.Coin
-	20, // 6: ark.market.v1.MsgSwapSendResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
-	21, // 7: ark.market.v1.MsgSwapSendResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
-	22, // 8: ark.market.v1.MsgUpdateParams.params:type_name -> ark.market.v1.Params
-	20, // 9: ark.market.v1.MsgSettle.offer_coin:type_name -> cosmos.base.v1beta1.Coin
-	20, // 10: ark.market.v1.MsgSettleResponse.redeemed_coin:type_name -> cosmos.base.v1beta1.Coin
-	23, // 11: ark.market.v1.MsgSetConversionMandate.minimum_policy:type_name -> ark.market.v1.ConversionPolicy
-	23, // 12: ark.market.v1.MsgSetConversionMandate.maximum_policy:type_name -> ark.market.v1.ConversionPolicy
-	23, // 13: ark.market.v1.MsgUpdatePolicy.policy:type_name -> ark.market.v1.ConversionPolicy
-	23, // 14: ark.market.v1.MsgCommitteeUpdatePolicy.policy:type_name -> ark.market.v1.ConversionPolicy
-	0,  // 15: ark.market.v1.Msg.Swap:input_type -> ark.market.v1.MsgSwap
-	2,  // 16: ark.market.v1.Msg.SwapSend:input_type -> ark.market.v1.MsgSwapSend
-	6,  // 17: ark.market.v1.Msg.Settle:input_type -> ark.market.v1.MsgSettle
-	4,  // 18: ark.market.v1.Msg.UpdateParams:input_type -> ark.market.v1.MsgUpdateParams
-	8,  // 19: ark.market.v1.Msg.SetTobinTaxOverride:input_type -> ark.market.v1.MsgSetTobinTaxOverride
-	10, // 20: ark.market.v1.Msg.RemoveTobinTaxOverride:input_type -> ark.market.v1.MsgRemoveTobinTaxOverride
-	12, // 21: ark.market.v1.Msg.SetConversionMandate:input_type -> ark.market.v1.MsgSetConversionMandate
-	14, // 22: ark.market.v1.Msg.UpdatePolicy:input_type -> ark.market.v1.MsgUpdatePolicy
-	16, // 23: ark.market.v1.Msg.CommitteeUpdatePolicy:input_type -> ark.market.v1.MsgCommitteeUpdatePolicy
-	18, // 24: ark.market.v1.Msg.CommitteeSetTobinTax:input_type -> ark.market.v1.MsgCommitteeSetTobinTax
-	1,  // 25: ark.market.v1.Msg.Swap:output_type -> ark.market.v1.MsgSwapResponse
-	3,  // 26: ark.market.v1.Msg.SwapSend:output_type -> ark.market.v1.MsgSwapSendResponse
-	7,  // 27: ark.market.v1.Msg.Settle:output_type -> ark.market.v1.MsgSettleResponse
-	5,  // 28: ark.market.v1.Msg.UpdateParams:output_type -> ark.market.v1.MsgUpdateParamsResponse
-	9,  // 29: ark.market.v1.Msg.SetTobinTaxOverride:output_type -> ark.market.v1.MsgSetTobinTaxOverrideResponse
-	11, // 30: ark.market.v1.Msg.RemoveTobinTaxOverride:output_type -> ark.market.v1.MsgRemoveTobinTaxOverrideResponse
-	13, // 31: ark.market.v1.Msg.SetConversionMandate:output_type -> ark.market.v1.MsgSetConversionMandateResponse
-	15, // 32: ark.market.v1.Msg.UpdatePolicy:output_type -> ark.market.v1.MsgUpdatePolicyResponse
-	17, // 33: ark.market.v1.Msg.CommitteeUpdatePolicy:output_type -> ark.market.v1.MsgCommitteeUpdatePolicyResponse
-	19, // 34: ark.market.v1.Msg.CommitteeSetTobinTax:output_type -> ark.market.v1.MsgCommitteeSetTobinTaxResponse
-	25, // [25:35] is the sub-list for method output_type
-	15, // [15:25] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	20, // 0: ark.market.v1.MsgSell.offer_coin:type_name -> cosmos.base.v1beta1.Coin
+	20, // 1: ark.market.v1.MsgSell.minimum_receive:type_name -> cosmos.base.v1beta1.Coin
+	20, // 2: ark.market.v1.MsgSellResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
+	21, // 3: ark.market.v1.MsgSellResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
+	20, // 4: ark.market.v1.MsgBuy.ask_coin:type_name -> cosmos.base.v1beta1.Coin
+	20, // 5: ark.market.v1.MsgBuy.maximum_offer:type_name -> cosmos.base.v1beta1.Coin
+	20, // 6: ark.market.v1.MsgBuyResponse.offer_coin:type_name -> cosmos.base.v1beta1.Coin
+	20, // 7: ark.market.v1.MsgBuyResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
+	21, // 8: ark.market.v1.MsgBuyResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
+	22, // 9: ark.market.v1.MsgUpdateParams.params:type_name -> ark.market.v1.Params
+	20, // 10: ark.market.v1.MsgSettle.offer_coin:type_name -> cosmos.base.v1beta1.Coin
+	20, // 11: ark.market.v1.MsgSettleResponse.redeemed_coin:type_name -> cosmos.base.v1beta1.Coin
+	23, // 12: ark.market.v1.MsgSetConversionMandate.minimum_policy:type_name -> ark.market.v1.ConversionPolicy
+	23, // 13: ark.market.v1.MsgSetConversionMandate.maximum_policy:type_name -> ark.market.v1.ConversionPolicy
+	23, // 14: ark.market.v1.MsgUpdatePolicy.policy:type_name -> ark.market.v1.ConversionPolicy
+	23, // 15: ark.market.v1.MsgCommitteeUpdatePolicy.policy:type_name -> ark.market.v1.ConversionPolicy
+	0,  // 16: ark.market.v1.Msg.Sell:input_type -> ark.market.v1.MsgSell
+	2,  // 17: ark.market.v1.Msg.Buy:input_type -> ark.market.v1.MsgBuy
+	6,  // 18: ark.market.v1.Msg.Settle:input_type -> ark.market.v1.MsgSettle
+	4,  // 19: ark.market.v1.Msg.UpdateParams:input_type -> ark.market.v1.MsgUpdateParams
+	8,  // 20: ark.market.v1.Msg.SetTobinTaxOverride:input_type -> ark.market.v1.MsgSetTobinTaxOverride
+	10, // 21: ark.market.v1.Msg.RemoveTobinTaxOverride:input_type -> ark.market.v1.MsgRemoveTobinTaxOverride
+	12, // 22: ark.market.v1.Msg.SetConversionMandate:input_type -> ark.market.v1.MsgSetConversionMandate
+	14, // 23: ark.market.v1.Msg.UpdatePolicy:input_type -> ark.market.v1.MsgUpdatePolicy
+	16, // 24: ark.market.v1.Msg.CommitteeUpdatePolicy:input_type -> ark.market.v1.MsgCommitteeUpdatePolicy
+	18, // 25: ark.market.v1.Msg.CommitteeSetTobinTax:input_type -> ark.market.v1.MsgCommitteeSetTobinTax
+	1,  // 26: ark.market.v1.Msg.Sell:output_type -> ark.market.v1.MsgSellResponse
+	3,  // 27: ark.market.v1.Msg.Buy:output_type -> ark.market.v1.MsgBuyResponse
+	7,  // 28: ark.market.v1.Msg.Settle:output_type -> ark.market.v1.MsgSettleResponse
+	5,  // 29: ark.market.v1.Msg.UpdateParams:output_type -> ark.market.v1.MsgUpdateParamsResponse
+	9,  // 30: ark.market.v1.Msg.SetTobinTaxOverride:output_type -> ark.market.v1.MsgSetTobinTaxOverrideResponse
+	11, // 31: ark.market.v1.Msg.RemoveTobinTaxOverride:output_type -> ark.market.v1.MsgRemoveTobinTaxOverrideResponse
+	13, // 32: ark.market.v1.Msg.SetConversionMandate:output_type -> ark.market.v1.MsgSetConversionMandateResponse
+	15, // 33: ark.market.v1.Msg.UpdatePolicy:output_type -> ark.market.v1.MsgUpdatePolicyResponse
+	17, // 34: ark.market.v1.Msg.CommitteeUpdatePolicy:output_type -> ark.market.v1.MsgCommitteeUpdatePolicyResponse
+	19, // 35: ark.market.v1.Msg.CommitteeSetTobinTax:output_type -> ark.market.v1.MsgCommitteeSetTobinTaxResponse
+	26, // [26:36] is the sub-list for method output_type
+	16, // [16:26] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_ark_market_v1_tx_proto_init() }
@@ -11107,7 +11120,7 @@ func file_ark_market_v1_tx_proto_init() {
 	file_ark_market_v1_market_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_ark_market_v1_tx_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSwap); i {
+			switch v := v.(*MsgSell); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11119,7 +11132,7 @@ func file_ark_market_v1_tx_proto_init() {
 			}
 		}
 		file_ark_market_v1_tx_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSwapResponse); i {
+			switch v := v.(*MsgSellResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11131,7 +11144,7 @@ func file_ark_market_v1_tx_proto_init() {
 			}
 		}
 		file_ark_market_v1_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSwapSend); i {
+			switch v := v.(*MsgBuy); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -11143,7 +11156,7 @@ func file_ark_market_v1_tx_proto_init() {
 			}
 		}
 		file_ark_market_v1_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSwapSendResponse); i {
+			switch v := v.(*MsgBuyResponse); i {
 			case 0:
 				return &v.state
 			case 1:

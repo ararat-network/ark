@@ -32,7 +32,7 @@ func TestSwapGatedByAssetLifecycle(t *testing.T) {
 	queryServer := marketkeeper.NewQueryServerImpl(f.app.MarketKeeper)
 
 	quote := func(ctx sdk.Context, offerDenom, askDenom string) error {
-		_, err := queryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+		_, err := queryServer.Sell(ctx, &markettypes.QuerySellRequest{
 			OfferCoin: sdk.NewCoin(offerDenom, chain.NativeBaseAmount(1)).String(),
 			AskDenom:  askDenom,
 		})
@@ -88,7 +88,7 @@ func TestTobinOverrideAppliesToSpread(t *testing.T) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	quoteFee := func(ctx sdk.Context) math.LegacyDec {
-		response, err := queryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+		response, err := queryServer.Sell(ctx, &markettypes.QuerySellRequest{
 			OfferCoin: sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1)).String(),
 			AskDenom:  chain.KRWBaseDenom,
 		})
@@ -99,9 +99,9 @@ func TestTobinOverrideAppliesToSpread(t *testing.T) {
 
 	f.nextBlock(func(ctx sdk.Context) {
 		// The genesis override sits on amnt, so this pair starts at the default.
-		effective, err := f.app.MarketKeeper.GetTobinTax(ctx, chain.KRWBaseDenom)
+		taxes, err := f.app.MarketKeeper.GetTobinTaxes(ctx, chain.KRWBaseDenom)
 		require.NoError(t, err)
-		require.True(t, markettypes.DefaultTobinTax.Equal(effective))
+		require.True(t, markettypes.DefaultTobinTax.Equal(taxes[chain.KRWBaseDenom]))
 		defaultFee := quoteFee(ctx)
 
 		// A raise on one leg governs the pair: the spread must cover whichever
@@ -136,7 +136,7 @@ func TestSettlementRedeemsAtPlanRate(t *testing.T) {
 	offer := sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000))
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      offer,
 			AskDenom:       chain.KRWBaseDenom,
@@ -159,10 +159,11 @@ func TestSettlementRedeemsAtPlanRate(t *testing.T) {
 			ctx,
 			chain.KRWBaseDenom,
 			assettypes.SettlementPlan{
-				Denom:            chain.KRWBaseDenom,
-				RedemptionRate:   redemptionRate,
-				OpenedHeight:     ctx.BlockHeight(),
-				ActivationHeight: ctx.BlockHeight() + 1,
+				Denom:          chain.KRWBaseDenom,
+				RedemptionRate: redemptionRate,
+				OpenedHeight:   uint64(ctx.BlockHeight()),
+				OpenedTime:     chain.BlockSeconds(ctx),
+				ActivationTime: chain.BlockSeconds(ctx) + 1,
 			},
 		))
 	})
@@ -170,7 +171,7 @@ func TestSettlementRedeemsAtPlanRate(t *testing.T) {
 	f.nextBlock(func(ctx sdk.Context) {
 		// Ordinary conversion stays refused for the same denomination, so the
 		// plan rate is reachable only through the settlement path.
-		_, err := queryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+		_, err := queryServer.Sell(ctx, &markettypes.QuerySellRequest{
 			OfferCoin: acquired.String(),
 			AskDenom:  chain.NoahBaseDenom,
 		})
@@ -280,13 +281,13 @@ func TestCapacityCommitteeResizesWithinCorridor(t *testing.T) {
 		}
 
 		_, err = msgServer.SetConversionMandate(ctx, &markettypes.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
-			MinimumPolicy:    minimum,
-			MaximumPolicy:    maximum,
-			MaxTobinTax:      math.LegacyZeroDec(),
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
+			MinimumPolicy:  minimum,
+			MaximumPolicy:  maximum,
+			MaxTobinTax:    math.LegacyZeroDec(),
 		})
 		require.NoError(t, err)
 
@@ -379,13 +380,13 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = msgServer.SetConversionMandate(ctx, &markettypes.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
-			MinimumPolicy:    launch,
-			MaximumPolicy:    launch,
-			MaxTobinTax:      tobinCap,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
+			MinimumPolicy:  launch,
+			MaximumPolicy:  launch,
+			MaxTobinTax:    tobinCap,
 		})
 		require.NoError(t, err)
 
@@ -407,9 +408,9 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		effective, err := f.app.MarketKeeper.GetTobinTax(ctx, chain.KRWBaseDenom)
+		taxes, err := f.app.MarketKeeper.GetTobinTaxes(ctx, chain.KRWBaseDenom)
 		require.NoError(t, err)
-		require.Equal(t, raise, effective)
+		require.Equal(t, raise, taxes[chain.KRWBaseDenom])
 
 		// Past the cap is refused.
 		_, err = msgServer.CommitteeSetTobinTax(ctx, &markettypes.MsgCommitteeSetTobinTax{
@@ -429,9 +430,9 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 			TobinTax:     markettypes.DefaultTobinTax,
 		})
 		require.NoError(t, err)
-		effective, err = f.app.MarketKeeper.GetTobinTax(ctx, chain.KRWBaseDenom)
+		taxes, err = f.app.MarketKeeper.GetTobinTaxes(ctx, chain.KRWBaseDenom)
 		require.NoError(t, err)
-		require.Equal(t, markettypes.DefaultTobinTax, effective)
+		require.Equal(t, markettypes.DefaultTobinTax, taxes[chain.KRWBaseDenom])
 
 		// Below the default is still governance's alone.
 		_, err = msgServer.CommitteeSetTobinTax(ctx, &markettypes.MsgCommitteeSetTobinTax{
@@ -452,15 +453,15 @@ func TestConversionCommitteeRaisesTobinWithinCap(t *testing.T) {
 
 		params, err := f.app.MarketKeeper.Params.Get(ctx)
 		require.NoError(t, err)
-		effective, err = f.app.MarketKeeper.GetTobinTax(ctx, chain.KRWBaseDenom)
+		taxes, err = f.app.MarketKeeper.GetTobinTaxes(ctx, chain.KRWBaseDenom)
 		require.NoError(t, err)
-		require.Equal(t, params.DefaultTobinTax, effective)
+		require.Equal(t, params.DefaultTobinTax, taxes[chain.KRWBaseDenom])
 	})
 }
 
-// TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport checks Oracle-directed reference rebasing
+// TestMarketPoolDenomRebasePreservesQuotesAndExport checks Oracle-directed reference rebasing
 // preserves quotes, proportional pool delta, and exported units.
-func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
+func TestMarketPoolDenomRebasePreservesQuotesAndExport(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	ctx := arkApp.NewNextBlockContext(cmtproto.Header{
 		Height: arkApp.LastBlockHeight() + 1,
@@ -475,12 +476,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 		chain.EURBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 	} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           rate,
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, rate)
 	}
 
 	current := markettypes.DefaultConversionPolicy()
@@ -491,7 +487,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 
 	stableOffer := sdk.NewInt64Coin(chain.USDBaseDenom, 1_000_000)
 	queryServer := marketkeeper.NewQueryServerImpl(arkApp.MarketKeeper)
-	beforeQuote, err := queryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+	beforeQuote, err := queryServer.Sell(ctx, &markettypes.QuerySellRequest{
 		OfferCoin: stableOffer.String(),
 		AskDenom:  chain.EURBaseDenom,
 	})
@@ -502,7 +498,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 	// the pool across, and the depth it lands on is derived from rates rather
 	// than proposed. The rates arrive from x/asset, which reads the pair once
 	// for both executors.
-	require.NoError(t, arkApp.MarketKeeper.RebaseBasePool(
+	require.NoError(t, arkApp.MarketKeeper.RebaseReference(
 		ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -526,7 +522,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 	require.Equal(t, stored.BasePool, poolResponse.BasePool)
 	require.True(t, newDelta.Equal(poolResponse.ArkPoolDelta))
 
-	afterQuote, err := queryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+	afterQuote, err := queryServer.Sell(ctx, &markettypes.QuerySellRequest{
 		OfferCoin: stableOffer.String(),
 		AskDenom:  chain.EURBaseDenom,
 	})
@@ -537,7 +533,7 @@ func TestMarketPoolDenomRebasePreservesQuotesAndUSDRSupport(t *testing.T) {
 	noahOffer := sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000_000)
 	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(noahOffer))
 
-	response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+	response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      noahOffer,
 		AskDenom:       chain.EURBaseDenom,

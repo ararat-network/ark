@@ -4,15 +4,21 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"slices"
 	"strings"
 	"testing"
 
 	dbm "github.com/cosmos/cosmos-db"
+	gogoproto "github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
+	protov2 "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	msgv1 "cosmossdk.io/api/cosmos/msg/v1"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/log/v2"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -20,6 +26,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
@@ -37,7 +44,7 @@ func TestLaneMempoolOrdersCommitteeAndGovernanceFirst(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	pool := arkApp.Pool()
 	r := rand.New(rand.NewSource(1))
-	txConfig := arkApp.GetTxConfig()
+	txConfig := arkApp.TxConfig()
 
 	sender := func() (*secp256k1.PrivKey, string) {
 		priv := secp256k1.GenPrivKey()
@@ -102,7 +109,8 @@ func TestMempoolSizingFollowsAppConfig(t *testing.T) {
 
 // TestPriorityMsgURLsCoverCommitteeSurface pins the lane list to the
 // registered message surface in both directions: no phantom entries after a
-// rename, and no committee message shipping without a lane decision.
+// rename, and no committee message shipping without a lane decision. A
+// committee message is one its proto signs by the committee field.
 func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
@@ -117,14 +125,24 @@ func TestPriorityMsgURLsCoverCommitteeSurface(t *testing.T) {
 		require.Contains(t, registeredSet, url, "priority lane entry is not a registered message: %s", url)
 	}
 
+	committee := 0
 	for _, url := range registered {
 		if !strings.HasPrefix(url, "/ark.") {
 			continue
 		}
-		if strings.Contains(url, ".MsgCommittee") || strings.HasSuffix(url, ".MsgEmergencySuspendAsset") {
-			require.Contains(t, priority, url, "committee message missing from the priority lane: %s", url)
+		descriptor, err := gogoproto.GogoResolver.FindDescriptorByName(protoreflect.FullName(strings.TrimPrefix(url, "/")))
+		require.NoError(t, err, url)
+		message, ok := descriptor.(protoreflect.MessageDescriptor)
+		require.True(t, ok, url)
+		signers, _ := protov2.GetExtension(message.Options(), msgv1.E_Signer).([]string)
+		signedByCommittee := slices.Equal(signers, []string{"committee"})
+		if signedByCommittee {
+			committee++
 		}
+		_, prioritised := priority[url]
+		require.Equal(t, signedByCommittee, prioritised, "%s is signed by %v: committee messages, and no other Ark message, ride the priority lane", url, signers)
 	}
+	require.Positive(t, committee, "the registry lists committee messages")
 }
 
 // The SDK's default ProcessProposal skips verification for its own NoOpMempool;
@@ -141,17 +159,41 @@ func TestLaneMempoolKeepsProposalVerification(t *testing.T) {
 	require.Equal(t, cmtabci.ResponseProcessProposal_ACCEPT, response.Status, "NoOpMempool would disable verification")
 }
 
+// TestMempoolByteLimitsReachAdmission pins the configured transaction byte limit at CheckTx: a
+// transaction that passes ante is still refused as too large past it.
 func TestMempoolByteLimitsReachAdmission(t *testing.T) {
-	t.Run("configured bytes reach pool and CheckTx", func(t *testing.T) {
-		a := app.NewArkApp(log.NewNopLogger(), dbm.NewMemDB(), true, simtestutil.AppOptionsMap{
-			flags.FlagHome:                 t.TempDir(),
-			mempool.MaxPoolBytesKey:        8000,
-			mempool.MaxTransactionBytesKey: 512,
+	const limit = 512
+	f := newAdmissionFixtureWith(t, admissionConfig{options: simtestutil.AppOptionsMap{
+		mempool.MaxPoolBytesKey:        8000,
+		mempool.MaxTransactionBytesKey: limit,
+	}}, 1)
+	a := f.apps[0]
+	within := signedPending(t, a, f.normal, 0, sendMsg(f.normal))
+	require.LessOrEqual(t, len(within), limit)
+	over := signedPendingFee(t, a, f.voter, 0, admissionFee, sendMsg(f.voter), sendMsg(f.voter), sendMsg(f.voter))
+	require.Greater(t, len(over), limit)
+
+	tests := []struct {
+		name    string
+		tx      []byte
+		wantErr *errorsmod.Error // nil when admitted
+	}{
+		{name: "malformed bytes fail decoding", tx: make([]byte, limit+1), wantErr: sdkerrors.ErrTxDecode},
+		{name: "a signed transaction past the limit is too large", tx: over, wantErr: sdkerrors.ErrTxTooLarge},
+		{name: "a signed transaction within the limit is admitted", tx: within},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := a.CheckTx(&cmtabci.RequestCheckTx{Tx: tc.tx})
+			require.NoError(t, err)
+			if tc.wantErr == nil {
+				require.Zero(t, result.Code, result.Log)
+				require.True(t, a.Pool().Has(tc.tx))
+				return
+			}
+			require.Equal(t, tc.wantErr.Codespace(), result.Codespace, result.Log)
+			require.Equal(t, tc.wantErr.ABCICode(), result.Code, result.Log)
+			require.False(t, a.Pool().Has(tc.tx))
 		})
-		t.Cleanup(func() { require.NoError(t, a.Close()) })
-		result, err := a.CheckTx(&cmtabci.RequestCheckTx{Tx: make([]byte, 513)})
-		require.NoError(t, err)
-		require.NotZero(t, result.Code)
-		require.NotEmpty(t, result.Log)
-	})
+	}
 }

@@ -43,6 +43,9 @@ type Keeper struct {
 	Ledger            collections.Map[uint64, types.AccountingEntry]
 	RecognitionPolicy collections.Map[string, types.EligibilityEntry]
 	ReversedReturns   collections.KeySet[uint64]
+	// LedgerByPosition indexes the ledger by (position ID, entry ID), so a position's entries page
+	// without scanning the rest. Derived from the ledger, rebuilt at import, never exported.
+	LedgerByPosition collections.KeySet[collections.Pair[uint64, uint64]]
 }
 
 // NewKeeper creates a Reserve keeper.
@@ -126,6 +129,12 @@ func NewKeeper(
 			types.ReversedReturnsKey,
 			"reversed_returns",
 			collections.Uint64Key,
+		),
+		LedgerByPosition: collections.NewKeySet(
+			sb,
+			types.LedgerByPositionKey,
+			"ledger_by_position",
+			collections.PairKeyCodec(collections.Uint64Key, collections.Uint64Key),
 		),
 	}
 

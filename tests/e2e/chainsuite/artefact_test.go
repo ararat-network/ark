@@ -2,6 +2,7 @@ package chainsuite
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -46,8 +47,12 @@ func TestOverlayArtefact(t *testing.T) {
 	bank := out.Get("app_state.bank")
 	require.True(t, bank.Get("params.default_send_enabled").Bool(), "bank params are the artefact's")
 	require.Len(t, bank.Get("denom_metadata").Array(), 1, "the NOAH metadata comes from the artefact")
-	balances := bank.Get("balances").Array()
-	require.Len(t, balances, 7, "six artefact balances plus the generated account")
+	path, err := artefactPath()
+	require.NoError(t, err)
+	artefact, err := os.ReadFile(path)
+	require.NoError(t, err)
+	require.Len(t, bank.Get("balances").Array(), len(gjson.GetBytes(artefact, "app_state.bank.balances").Array())+1,
+		"the artefact's balances plus the generated account")
 	require.Equal(t, "1000010000000000000000000000", bank.Get("supply.0.amount").String(),
 		"supply is the artefact's billion plus the generated 10,000 NOAH")
 

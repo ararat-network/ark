@@ -1,6 +1,7 @@
 package integrator_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -13,6 +14,8 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 
+	sdkmath "cosmossdk.io/math"
+
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	"github.com/ararat-network/ark/tests/e2e/chainsuite"
@@ -23,8 +26,12 @@ import (
 const relauncherMnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon " +
 	"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
 
+// registrarMnemonic recovers the registrar on the relaunched chain, where its appointment carries.
+const registrarMnemonic = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo vote"
+
 // ExportSuite relaunches exported state under a new chain ID with the same keys and next absolute
-// height, checking validators, balances, transactions, and resumed oracle reporting.
+// height, checking validators, balances, transactions, resumed oracle reporting, and a member grant
+// resuming with its registrar.
 type ExportSuite struct {
 	*chainsuite.Suite
 }
@@ -37,6 +44,52 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 	s.Require().NoError(s.Chain.SendFunds(ctx, chainsuite.FaucetKeyName, ibc.WalletAmount{
 		Address: relauncher.FormattedAddress(), Denom: chainsuite.Denom, Amount: funds,
 	}))
+
+	// A member grant and its registrar ride the export. Both are anchored in block time, so on the
+	// relaunched chain they run on against its clock, the outage included.
+	gov, err := s.Chain.GovAuthority(ctx)
+	s.Require().NoError(err)
+	committee := s.FundedWallet("committee", chainsuite.GovDeposit+10)
+	registrar, err := s.Chain.BuildWallet(ctx, "registrar", registrarMnemonic)
+	s.Require().NoError(err)
+	s.Require().NoError(s.Chain.SendFunds(ctx, chainsuite.FaucetKeyName, ibc.WalletAmount{
+		Address: registrar.FormattedAddress(), Denom: chainsuite.Denom, Amount: chainsuite.NOAH(10),
+	}))
+	memberAmount, err := s.Chain.QueryJSON(ctx, "params.member_amount", "disbursement", "params")
+	s.Require().NoError(err)
+	// Every grant waits out the two-week floor, longer than the suite runs, so a member's tenth is
+	// queued rather than paid on both sides of the export (D126).
+	const hold = 14 * 24 * 3600
+	queued := func(grant gjson.Result) {
+		s.Require().Equal("0", grant.Get("paid").String(), "nothing pays inside the hold")
+		s.Require().Equal(grant.Get("created_time").Uint()+hold, grant.Get("due_time").Uint(), "queued for the end of the hold")
+	}
+	// Two member grants: one registered before the export, one after the relaunch.
+	tranche, ok := sdkmath.NewIntFromString(memberAmount.String())
+	s.Require().True(ok, memberAmount.String())
+	open, err := json.Marshal(map[string]any{
+		"@type": "/ark.disbursement.v1.MsgOpenTranche", "authority": gov, "amount": tranche.MulRaw(2).String(),
+	})
+	s.Require().NoError(err)
+	appoint, err := json.Marshal(map[string]any{
+		"@type": "/ark.disbursement.v1.MsgSetGrantsMandate", "authority": gov, "committee": committee.FormattedAddress(),
+		"activation_time": "1", "expiry_time": "4102444800",
+	})
+	s.Require().NoError(err)
+	_, err = s.Chain.SubmitAndPassProposal(ctx, committee.KeyName(), "a tranche and its committee", open, appoint)
+	s.Require().NoError(err)
+	_, err = s.Chain.GetNode().ExecTx(ctx, committee.KeyName(), "disbursement", "committee-registrar",
+		"--expected-term", "1", "--registrar", registrar.FormattedAddress(), "--activation-time", "1", "--expiry-time", "4102444800")
+	s.Require().NoError(err)
+	member, err := s.Chain.BuildWallet(ctx, "member", "")
+	s.Require().NoError(err)
+	_, err = s.Chain.GetNode().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members",
+		"--reference", "before the export", "--expected-term", "1", "--addresses", member.FormattedAddress())
+	s.Require().NoError(err)
+	grant, err := s.Chain.QueryJSON(ctx, "grant", "disbursement", "member", member.FormattedAddress())
+	s.Require().NoError(err)
+	queued(grant)
+	remaining, due := grant.Get("remaining").String(), grant.Get("due_time").String()
 
 	consAddrs := make([]string, len(s.Chain.Validators))
 	for i := range s.Chain.Validators {
@@ -131,6 +184,29 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 	after, err := relaunched.GetBalance(ctx, recipient, chainsuite.Denom)
 	s.Require().NoError(err)
 	s.Require().Equal(before.Add(chainsuite.NOAH(1)).String(), after.String())
+
+	// The member's record and custody and the registrar's appointment come across as exported,
+	// and a registration under the carried term lands on the relaunch.
+	grant, err = relaunched.QueryJSON(ctx, "grant", "disbursement", "member", member.FormattedAddress())
+	s.Require().NoError(err)
+	queued(grant)
+	s.Require().Equal(remaining, grant.Get("remaining").String())
+	s.Require().Equal(due, grant.Get("due_time").String(), "the queued look carries across the relaunch")
+	balance, err = relaunched.GetBalance(ctx, member.FormattedAddress(), chainsuite.Denom)
+	s.Require().NoError(err)
+	s.Require().True(balance.IsZero())
+	active, err := relaunched.QueryJSON(ctx, "active", "disbursement", "registrar-mandate")
+	s.Require().NoError(err)
+	s.Require().True(active.Bool(), "the registrar's window is absolute heights")
+	s.Require().NoError(relaunched.RecoverKey(ctx, registrar.KeyName(), registrarMnemonic))
+	another, err := relaunched.BuildWallet(ctx, "member-2", "")
+	s.Require().NoError(err)
+	_, err = relaunched.GetNode().ExecTx(ctx, registrar.KeyName(), "disbursement", "register-members",
+		"--reference", "after the relaunch", "--expected-term", "1", "--addresses", another.FormattedAddress())
+	s.Require().NoError(err)
+	grant, err = relaunched.QueryJSON(ctx, "grant", "disbursement", "member", another.FormattedAddress())
+	s.Require().NoError(err)
+	queued(grant)
 
 	// Vote extensions stay enabled across the relaunch, and the extended
 	// commit rides in every block after the first.

@@ -57,7 +57,7 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 		policy.RedemptionBufferTargetRatio = math.LegacyNewDecWithPrec(1, 1)
 		require.NoError(t, f.app.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
 
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -106,10 +106,11 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 			ctx,
 			chain.KRWBaseDenom,
 			assettypes.SettlementPlan{
-				Denom:            chain.KRWBaseDenom,
-				RedemptionRate:   redemptionRate,
-				OpenedHeight:     ctx.BlockHeight(),
-				ActivationHeight: ctx.BlockHeight() + 1,
+				Denom:          chain.KRWBaseDenom,
+				RedemptionRate: redemptionRate,
+				OpenedHeight:   uint64(ctx.BlockHeight()),
+				OpenedTime:     chain.BlockSeconds(ctx),
+				ActivationTime: chain.BlockSeconds(ctx) + 1,
 			},
 		))
 
@@ -141,9 +142,11 @@ func TestLiabilityPartitionTracksLifecycle(t *testing.T) {
 	})
 }
 
-// TestReferenceRepointRebasesPoolAndCap checks both wired executors re-denominate pool and cap
-// atomically. Equal fixture rates isolate unit changes from amount changes.
-func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
+// TestReferenceRepointRebasesEveryConsumer checks every wired consumer re-denominates in the one
+// transaction: Market's pool, Treasury's cap, and Disbursement's compensation figures. Equal
+// fixture rates isolate unit changes from amount changes; the three events are what a consumer
+// left off the app's wiring line would fail to emit.
+func TestReferenceRepointRebasesEveryConsumer(t *testing.T) {
 	f := newActivationFixture(t)
 	oracleMsgServer := oraclekeeper.NewMsgServerImpl(f.app.OracleKeeper)
 	marketQueryServer := marketkeeper.NewQueryServerImpl(f.app.MarketKeeper)
@@ -195,22 +198,28 @@ func TestReferenceRepointRebasesPoolAndCap(t *testing.T) {
 		require.Equal(t, chain.USDBaseDenom, treasuryParams.ReferenceDenom)
 		require.Equal(t, capAmount, treasuryParams.ReferenceTaxCap)
 
-		var sawPoolUpdate, sawCapRebase bool
+		var sawPoolUpdate, sawCapRebase, sawCompensationRebase, sawClaimsRebase bool
 		for _, event := range ctx.EventManager().Events() {
 			switch event.Type {
 			case "ark.market.v1.EventPoolUpdated":
 				sawPoolUpdate = true
 			case "ark.treasury.v1.EventReferenceTaxCapRebased":
 				sawCapRebase = true
+			case "ark.disbursement.v1.EventCompensationRebased":
+				sawCompensationRebase = true
+			case "ark.claims.v1.EventClaimsRebased":
+				sawClaimsRebase = true
 			}
 		}
 		require.True(t, sawPoolUpdate, "market pool rebase event")
 		require.True(t, sawCapRebase, "treasury cap rebase event")
+		require.True(t, sawCompensationRebase, "disbursement compensation rebase event")
+		require.True(t, sawClaimsRebase, "claims rebase event")
 	})
 
 	// The chain keeps pricing conversion in the new unit on the next block.
 	f.nextBlock(func(ctx sdk.Context) {
-		_, err := marketQueryServer.Swap(ctx, &markettypes.QuerySwapRequest{
+		_, err := marketQueryServer.Sell(ctx, &markettypes.QuerySellRequest{
 			OfferCoin: sdk.NewCoin(chain.USDBaseDenom, chain.NativeBaseAmount(1)).String(),
 			AskDenom:  chain.KRWBaseDenom,
 		})
@@ -240,7 +249,7 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 		params.ReferenceTaxCap = math.ZeroInt()
 		require.NoError(t, f.app.TreasuryKeeper.Params.Set(ctx, params))
 
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -275,7 +284,7 @@ func TestIssuanceHaltPreservesTreasuryPolicy(t *testing.T) {
 		require.True(t, expectedPriced.Equal(status.PricedLiability.Amount))
 
 		// Still redeemable: conversion out draws the ordinary redemption path.
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      acquired,
 			AskDenom:       chain.NoahBaseDenom,
@@ -338,18 +347,18 @@ func TestTaxCapsFollowMembershipEpoch(t *testing.T) {
 	})
 }
 
-type phase3AIntegrationResult struct {
+type redemptionOutcome struct {
 	output       math.Int
 	bufferPaid   math.Int
 	residualMint math.Int
 	endingDelta  math.LegacyDec
 }
 
-// TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer checks a never-priced dust
+// TestIncompleteValuationStillFundsRedemptionFromBuffer checks a never-priced dust
 // member is disclosed without disabling healthy redemption coverage.
-func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *testing.T) {
-	complete := runPhase3AIntegrationRedemption(t, true)
-	incomplete := runPhase3AIntegrationRedemption(t, false)
+func TestIncompleteValuationStillFundsRedemptionFromBuffer(t *testing.T) {
+	complete := runRedemptionWithValuation(t, true)
+	incomplete := runRedemptionWithValuation(t, false)
 
 	require.True(t, incomplete.bufferPaid.IsPositive())
 	require.True(t, incomplete.residualMint.LT(incomplete.output))
@@ -359,7 +368,7 @@ func TestPhase3ACapacityIntegrationIncompleteValuationStillFundsFromBuffer(t *te
 	require.True(t, complete.endingDelta.Equal(incomplete.endingDelta))
 }
 
-func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase3AIntegrationResult {
+func runRedemptionWithValuation(t *testing.T, valuationComplete bool) redemptionOutcome {
 	t.Helper()
 
 	arkApp := apptestutil.Setup(t, false)
@@ -380,12 +389,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	// but no asset is listed against it, so the traded stable is a listed one
 	// carrying the same rate.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	stableSupply := math.NewInt(1_000_000_000_000)
@@ -414,7 +418,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 
 	totalOffer := math.NewInt(500_000_000_000)
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
-	response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+	response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 		Trader:         trader.String(),
 		OfferCoin:      sdk.NewCoin(chain.USDBaseDenom, totalOffer),
 		AskDenom:       chain.NoahBaseDenom,
@@ -442,7 +446,7 @@ func runPhase3AIntegrationRedemption(t *testing.T, valuationComplete bool) phase
 	require.Equal(t, totalOffer, stableSupplyBefore.Sub(stableSupplyAfter))
 	require.True(t, endingDelta.Equal(initialDelta.Add(math.LegacyNewDecFromInt(totalOffer))))
 
-	return phase3AIntegrationResult{
+	return redemptionOutcome{
 		output:       totalOutput,
 		bufferPaid:   bufferPaid,
 		residualMint: residualMint,

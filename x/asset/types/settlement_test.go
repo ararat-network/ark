@@ -10,6 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -24,10 +25,23 @@ func TestSettlementPlanValidate(t *testing.T) {
 			name: "valid open settlement",
 		},
 		{
-			name: "valid earliest closing height",
+			name: "valid earliest closing time",
 			mutate: func(plan *assettypes.SettlementPlan) {
-				plan.EarliestClosingHeight = 20
+				plan.EarliestClosingTime = 20
 			},
+		},
+		{
+			name: "earliest closing time at the header's last instant",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.EarliestClosingTime = chain.MaxBlockSeconds
+			},
+		},
+		{
+			name: "earliest closing time past the header's int64",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.EarliestClosingTime = chain.MaxBlockSeconds + 1
+			},
+			expectErr: "exceeds the header's int64",
 		},
 		{
 			name: "invalid denom",
@@ -80,25 +94,39 @@ func TestSettlementPlanValidate(t *testing.T) {
 			expectErr: "exceeds",
 		},
 		{
-			name: "zero activation height",
+			name: "zero opened height",
 			mutate: func(plan *assettypes.SettlementPlan) {
-				plan.ActivationHeight = 0
+				plan.OpenedHeight = 0
 			},
-			expectErr: "activation height must be positive",
+			expectErr: "opened height must be positive",
 		},
 		{
-			name: "earliest closing height before activation",
+			name: "zero opened time",
 			mutate: func(plan *assettypes.SettlementPlan) {
-				plan.EarliestClosingHeight = -1
+				plan.OpenedTime = 0
 			},
-			expectErr: "must be after activation height",
+			expectErr: "opened time must be positive",
 		},
 		{
-			name: "earliest closing height equals activation",
+			name: "activation at the opening",
 			mutate: func(plan *assettypes.SettlementPlan) {
-				plan.EarliestClosingHeight = plan.ActivationHeight
+				plan.ActivationTime = plan.OpenedTime
 			},
-			expectErr: "must be after activation height",
+			expectErr: "must precede activation time",
+		},
+		{
+			name: "earliest closing time before activation",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.EarliestClosingTime = plan.ActivationTime - 1
+			},
+			expectErr: "must be after activation time",
+		},
+		{
+			name: "earliest closing time equals activation",
+			mutate: func(plan *assettypes.SettlementPlan) {
+				plan.EarliestClosingTime = plan.ActivationTime
+			},
+			expectErr: "must be after activation time",
 		},
 	}
 
@@ -167,7 +195,7 @@ func TestResolutionRecordValidate(t *testing.T) {
 			name: "invalid settlement plan",
 			mutate: func(record *assettypes.ResolutionRecord) {
 				plan := testSettlementPlan()
-				plan.ActivationHeight = 0
+				plan.ActivationTime = 0
 				record.SettlementPlan = &plan
 			},
 			expectErr: "resolution settlement plan is invalid",
@@ -202,11 +230,12 @@ func TestResolutionRecordValidate(t *testing.T) {
 
 func testSettlementPlan() assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
-		Denom:                 "agold",
-		RedemptionRate:        math.LegacyMustNewDecFromStr("1.25"),
-		ActivationHeight:      10,
-		EarliestClosingHeight: 110,
-		OpenedHeight:          1,
+		Denom:               "agold",
+		RedemptionRate:      math.LegacyMustNewDecFromStr("1.25"),
+		ActivationTime:      10,
+		EarliestClosingTime: 110,
+		OpenedHeight:        1,
+		OpenedTime:          1,
 	}
 }
 

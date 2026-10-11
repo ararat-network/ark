@@ -2,285 +2,290 @@ package keeper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"cosmossdk.io/collections"
-	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	query "github.com/cosmos/cosmos-sdk/types/query"
+	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/pagination"
 	"github.com/ararat-network/ark/x/disbursement/types"
 )
 
+var _ types.QueryServer = (*queryServer)(nil)
+
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
-	types.UnimplementedQueryServer
 	k *Keeper
 }
 
-var _ types.QueryServer = queryServer{}
-
 // NewQueryServerImpl exposes indexed grant queries.
-func NewQueryServerImpl(k *Keeper) types.QueryServer { return queryServer{k: k} }
-
-func queryError(err error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, collections.ErrNotFound) {
-		return status.Error(codes.NotFound, err.Error())
-	}
-	return status.Error(codes.Internal, err.Error())
-}
-
-func page(p *query.PageRequest) (*query.PageRequest, error) {
-	if p == nil {
-		return &query.PageRequest{Limit: types.MaxPageSize}, nil
-	}
-	if p.Offset != 0 || p.CountTotal || p.Limit > types.MaxPageSize {
-		return nil, status.Error(codes.InvalidArgument, "use key pagination, without total counting, with a limit at most 100")
-	}
-	copied := *p
-	if copied.Limit == 0 {
-		copied.Limit = types.MaxPageSize
-	}
-	return &copied, nil
+func NewQueryServerImpl(k *Keeper) types.QueryServer {
+	return &queryServer{k: k}
 }
 
 func (q queryServer) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 	p, err := q.k.Params.Get(ctx)
 	if err != nil {
-		return nil, queryError(err)
+		return nil, fmt.Errorf("getting disbursement params: %w", err)
 	}
-	policy, err := q.k.OwnershipPolicy.Get(ctx)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	founding, err := q.k.FoundingStake.Get(ctx)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	return &types.QueryParamsResponse{Params: p, OwnershipPolicy: policy, FoundingStake: founding}, nil
+	return &types.QueryParamsResponse{Params: p}, nil
 }
 
 func (q queryServer) GrantsMandate(ctx context.Context, req *types.QueryGrantsMandateRequest) (*types.QueryGrantsMandateResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 	appointment, err := q.k.GrantsMandate.Get(ctx)
 	if err != nil {
-		return nil, queryError(err)
+		return nil, fmt.Errorf("getting grants mandate: %w", err)
 	}
-	used, count, err := q.k.termUsage(ctx, appointment.Term)
+	compensation, err := q.k.CompensationUsed.Get(ctx)
 	if err != nil {
-		return nil, queryError(err)
+		return nil, fmt.Errorf("getting compensation usage: %w", err)
+	}
+	remaining, err := appointment.CompensationAllowance.SafeSub(compensation)
+	if err != nil || remaining.IsNegative() {
+		return nil, fmt.Errorf("compensation usage %s exceeds the term's allowance %s", compensation, appointment.CompensationAllowance)
 	}
 	return &types.QueryGrantsMandateResponse{
-		Mandate: appointment, Active: appointment.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
-		CompensationUsed: used, CompensationGrants: count,
+		Mandate:               appointment,
+		Active:                appointment.IsActive(chain.BlockSeconds(ctx)),
+		CompensationUsed:      compensation,
+		CompensationRemaining: remaining,
 	}, nil
+}
+
+func (q queryServer) RegistrarMandate(ctx context.Context, req *types.QueryRegistrarMandateRequest) (*types.QueryRegistrarMandateResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	appointment, err := q.k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting registrar mandate: %w", err)
+	}
+	return &types.QueryRegistrarMandateResponse{
+		Mandate: appointment,
+		Active:  appointment.IsActive(chain.BlockSeconds(ctx)),
+	}, nil
+}
+
+func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	if req.Denom != "" {
+		if err := sdk.ValidateDenom(req.Denom); err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+	}
+	tranche, err := q.k.MemberTranche.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting the member tranche: %w", err)
+	}
+	res := &types.QueryBalanceResponse{MemberTranche: tranche}
+	for _, account := range types.PoolAccountNames() {
+		b, err := q.k.getBook(ctx, account)
+		if err != nil {
+			return nil, fmt.Errorf("getting %s book: %w", account, err)
+		}
+		for _, balance := range q.custody(ctx, account, req.Denom) {
+			uncommitted, err := b.Uncommitted(balance)
+			if err != nil {
+				return nil, fmt.Errorf("getting %s balance: %w", balance.Denom, err)
+			}
+			res.Accounts = append(res.Accounts, types.AccountBalance{
+				Account:     account,
+				Balance:     balance,
+				Reserved:    sdk.NewCoin(balance.Denom, b.Reserved.AmountOf(balance.Denom)),
+				Uncommitted: sdk.NewCoin(balance.Denom, uncommitted),
+			})
+		}
+	}
+	return res, nil
+}
+
+// custody lists the balances to report: the requested denomination, or NOAH, even at zero, then every
+// other denomination the account holds. The send restriction admits only NOAH and registered assets,
+// so that is all of custody.
+func (q queryServer) custody(ctx context.Context, account, denom string) []sdk.Coin {
+	address := q.k.accountKeeper.GetModuleAddress(account)
+	if denom != "" {
+		if account == types.MembersName && denom != chain.NoahBaseDenom {
+			return nil
+		}
+		return []sdk.Coin{q.k.bankKeeper.GetBalance(ctx, address, denom)}
+	}
+	balances := []sdk.Coin{q.k.bankKeeper.GetBalance(ctx, address, chain.NoahBaseDenom)}
+	for _, c := range q.k.bankKeeper.GetAllBalances(ctx, address) {
+		if c.Denom != chain.NoahBaseDenom {
+			balances = append(balances, c)
+		}
+	}
+	return balances
 }
 
 func (q queryServer) Grant(ctx context.Context, req *types.QueryGrantRequest) (*types.QueryGrantResponse, error) {
 	if req == nil || req.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "grant ID required")
 	}
-	g, err := q.k.Grants.Get(ctx, req.Id)
+	g, err := q.k.getGrant(ctx, req.Id)
 	if err != nil {
-		return nil, queryError(err)
+		return nil, err
 	}
 	return &types.QueryGrantResponse{Grant: g}, nil
 }
 
 func (q queryServer) Grants(ctx context.Context, req *types.QueryGrantsRequest) (*types.QueryGrantsResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	p, err := page(req.Pagination)
+	p, err := pagination.Bounded(req.Pagination)
 	if err != nil {
 		return nil, err
 	}
 	var grants []types.Grant
-	var response *query.PageResponse
+	var response *sdkquery.PageResponse
+	byTerm := func(key collections.Pair[uint64, uint64], _ collections.NoValue) (types.Grant, error) {
+		return q.k.Grants.Get(ctx, key.K2())
+	}
+	byKind := func(key collections.Pair[int32, uint64], _ collections.NoValue) (types.Grant, error) {
+		return q.k.Grants.Get(ctx, key.K2())
+	}
+	filters := 0
+	for _, set := range []bool{req.Beneficiary != "", req.CommitteeTerm != 0, req.RegistrarTerm != 0, req.Kind != types.GrantKind_GRANT_KIND_UNSPECIFIED} {
+		if set {
+			filters++
+		}
+	}
 	switch {
-	case req.MandateTerm != 0 && req.Beneficiary != "":
-		return nil, status.Error(codes.InvalidArgument, "filter by beneficiary or by term, not both")
-	case req.MandateTerm != 0:
-		grants, response, err = query.CollectionPaginate(ctx, q.k.TermGrants, p, func(key collections.Pair[uint64, uint64], _ sdk.Coin) (types.Grant, error) {
-			return q.k.Grants.Get(ctx, key.K2())
-		}, query.WithCollectionPaginationPairPrefix[uint64, uint64](req.MandateTerm))
+	case filters > 1:
+		return nil, status.Error(codes.InvalidArgument, "filter by beneficiary, committee term, registrar term, or kind, not two")
+	case req.Kind != types.GrantKind_GRANT_KIND_UNSPECIFIED:
+		if _, known := types.GrantKind_name[int32(req.Kind)]; !known {
+			return nil, status.Error(codes.InvalidArgument, "unknown grant kind")
+		}
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.GrantsByKind, p, byKind, sdkquery.WithCollectionPaginationPairPrefix[int32, uint64](int32(req.Kind)))
+	case req.CommitteeTerm != 0:
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.CommitteeTermGrants, p, byTerm, sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.CommitteeTerm))
+	case req.RegistrarTerm != 0:
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.RegistrarTermGrants, p, byTerm, sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.RegistrarTerm))
 	case req.Beneficiary == "":
-		grants, response, err = query.CollectionPaginate(ctx, q.k.Grants, p, func(_ uint64, g types.Grant) (types.Grant, error) { return g, nil })
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.Grants, p, func(_ uint64, g types.Grant) (types.Grant, error) { return g, nil })
 	default:
 		a, parseErr := chain.ParseCanonicalAccountAddress("beneficiary", req.Beneficiary)
 		if parseErr != nil {
 			return nil, status.Error(codes.InvalidArgument, parseErr.Error())
 		}
-		grants, response, err = query.CollectionPaginate(ctx, q.k.GrantsByBeneficiary, p, func(key collections.Pair[sdk.AccAddress, uint64], _ bool) (types.Grant, error) {
+		grants, response, err = sdkquery.CollectionPaginate(ctx, q.k.GrantsByBeneficiary, p, func(key collections.Pair[sdk.AccAddress, uint64], _ bool) (types.Grant, error) {
 			return q.k.Grants.Get(ctx, key.K2())
-		}, query.WithCollectionPaginationPairPrefix[sdk.AccAddress, uint64](a))
+		}, sdkquery.WithCollectionPaginationPairPrefix[sdk.AccAddress, uint64](a))
 	}
 	if err != nil {
-		return nil, queryError(err)
+		return nil, fmt.Errorf("listing grants: %w", err)
 	}
 	return &types.QueryGrantsResponse{Grants: grants, Pagination: response}, nil
 }
 
+func (q queryServer) GrantJournal(ctx context.Context, req *types.QueryGrantJournalRequest) (*types.QueryGrantJournalResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	p, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
+	}
+	var entries []types.GrantEntry
+	var response *sdkquery.PageResponse
+	keep := func(_ collections.Pair[uint64, uint64], e types.GrantEntry) (types.GrantEntry, error) { return e, nil }
+	if req.GrantId != 0 {
+		entries, response, err = sdkquery.CollectionPaginate(ctx, q.k.GrantJournal, p, keep, sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.GrantId))
+	} else {
+		entries, response, err = sdkquery.CollectionPaginate(ctx, q.k.GrantJournal, p, keep)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("listing grant journal: %w", err)
+	}
+	return &types.QueryGrantJournalResponse{Entries: entries, Pagination: response}, nil
+}
+
 func (q queryServer) Member(ctx context.Context, req *types.QueryMemberRequest) (*types.QueryMemberResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 	a, err := chain.ParseCanonicalAccountAddress("member", req.Address)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := q.k.Members.Get(ctx, a)
+	g, err := q.k.getMember(ctx, a)
 	if err != nil {
-		return nil, queryError(err)
-	}
-	g, err := q.k.Grants.Get(ctx, id)
-	if err != nil {
-		return nil, queryError(err)
+		return nil, err
 	}
 	return &types.QueryMemberResponse{Grant: g}, nil
 }
 
+func (q queryServer) Members(ctx context.Context, req *types.QueryMembersRequest) (*types.QueryMembersResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+	p, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
+	}
+	grants, response, err := sdkquery.CollectionPaginate(ctx, q.k.Members, p, func(_ sdk.AccAddress, id uint64) (types.Grant, error) {
+		return q.k.Grants.Get(ctx, id)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("listing members: %w", err)
+	}
+	return &types.QueryMembersResponse{Grants: grants, Pagination: response}, nil
+}
+
 func (q queryServer) Beneficiary(ctx context.Context, req *types.QueryBeneficiaryRequest) (*types.QueryBeneficiaryResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 	a, err := chain.ParseCanonicalAccountAddress("beneficiary", req.Address)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	p, err := q.k.Beneficiaries.Get(ctx, a)
+	p, err := q.k.getBeneficiary(ctx, a)
 	if err != nil {
-		return nil, queryError(err)
+		return nil, err
 	}
-	return &types.QueryBeneficiaryResponse{Beneficiary: p}, nil
+	remaining, err := q.k.ownershipRemaining(ctx, p.OwnershipCommitted)
+	if err != nil {
+		return nil, fmt.Errorf("reading the ownership cap for %s: %w", req.Address, err)
+	}
+	return &types.QueryBeneficiaryResponse{Beneficiary: p, OwnershipRemaining: remaining}, nil
 }
 
-func (q queryServer) Releasable(ctx context.Context, req *types.QueryReleasableRequest) (*types.QueryReleasableResponse, error) {
-	if req == nil || req.Id == 0 {
-		return nil, status.Error(codes.InvalidArgument, "grant ID required")
-	}
-	g, err := q.k.Grants.Get(ctx, req.Id)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	r, err := q.k.releasable(ctx, g)
-	return r, queryError(err)
-}
-
-func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
+func (q queryServer) BeneficiaryJournal(ctx context.Context, req *types.QueryBeneficiaryJournalRequest) (*types.QueryBeneficiaryJournalResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	if err := sdk.ValidateDenom(req.Denom); err != nil {
+	address, err := chain.ParseCanonicalAccountAddress("beneficiary", req.Address)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	t, err := q.k.totals(ctx, req.Denom)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	available, err := q.k.unallocated(ctx, req.Denom)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	res := &types.QueryBalanceResponse{
-		Balance: q.k.bank.GetBalance(ctx, q.k.address, req.Denom), Totals: t, Unallocated: available,
-		MemberPool: types.EmptyPool(), ContributorPool: types.EmptyPool(), Converting: math.ZeroInt(),
-	}
-	if req.Denom != chain.NoahBaseDenom {
-		return res, nil
-	}
-	if res.MemberPool, err = q.k.MemberPool.Get(ctx); err != nil {
-		return nil, queryError(err)
-	}
-	if res.ContributorPool, err = q.k.ContributorPool.Get(ctx); err != nil {
-		return nil, queryError(err)
-	}
-	if res.Converting, err = q.k.converting(ctx); err != nil {
-		return nil, queryError(err)
-	}
-	return res, nil
-}
-
-func (q queryServer) ConversionOrders(ctx context.Context, req *types.QueryConversionOrdersRequest) (*types.QueryConversionOrdersResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
-	}
-	p, err := page(req.Pagination)
+	p, err := pagination.Bounded(req.Pagination)
 	if err != nil {
 		return nil, err
 	}
-	orders, response, err := query.CollectionPaginate(ctx, q.k.ConversionOrders, p, func(_ string, o types.ConversionOrder) (types.ConversionOrder, error) { return o, nil })
+	entries, response, err := sdkquery.CollectionPaginate(ctx, q.k.BeneficiaryJournal, p, func(_ collections.Pair[sdk.AccAddress, uint64], e types.BeneficiaryEntry) (types.BeneficiaryEntry, error) {
+		return e, nil
+	}, sdkquery.WithCollectionPaginationPairPrefix[sdk.AccAddress, uint64](address))
 	if err != nil {
-		return nil, queryError(err)
+		return nil, fmt.Errorf("listing beneficiary journal: %w", err)
 	}
-	return &types.QueryConversionOrdersResponse{Orders: orders, Pagination: response}, nil
-}
-
-func (q queryServer) Totals(ctx context.Context, req *types.QueryTotalsRequest) (*types.QueryTotalsResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
-	}
-	p, err := page(req.Pagination)
-	if err != nil {
-		return nil, err
-	}
-	totals, response, err := query.CollectionPaginate(ctx, q.k.Totals, p, func(_ string, t types.DenomTotals) (types.DenomTotals, error) { return t, nil })
-	if err != nil {
-		return nil, queryError(err)
-	}
-	return &types.QueryTotalsResponse{Totals: totals, Pagination: response}, nil
-}
-
-func (q queryServer) Journal(ctx context.Context, req *types.QueryJournalRequest) (*types.QueryJournalResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
-	}
-	p, err := page(req.Pagination)
-	if err != nil {
-		return nil, err
-	}
-	var entries []types.JournalEntry
-	var response *query.PageResponse
-	if req.GrantId == 0 {
-		entries, response, err = query.CollectionPaginate(ctx, q.k.Journal, p, func(_ uint64, e types.JournalEntry) (types.JournalEntry, error) { return e, nil })
-	} else {
-		entries, response, err = query.CollectionPaginate(ctx, q.k.JournalByGrant, p, func(key collections.Pair[uint64, uint64], _ bool) (types.JournalEntry, error) {
-			return q.k.Journal.Get(ctx, key.K2())
-		}, query.WithCollectionPaginationPairPrefix[uint64, uint64](req.GrantId))
-	}
-	if err != nil {
-		return nil, queryError(err)
-	}
-	return &types.QueryJournalResponse{Entries: entries, Pagination: response}, nil
-}
-
-func (q queryServer) Issuance(ctx context.Context, req *types.QueryIssuanceRequest) (*types.QueryIssuanceResponse, error) {
-	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "nil request")
-	}
-	p, err := q.k.Params.Get(ctx)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	log, used, err := q.k.issuanceWindow(ctx, p)
-	if err != nil {
-		return nil, queryError(err)
-	}
-	remaining := uint64(0)
-	if used < p.MaxMembers {
-		remaining = p.MaxMembers - used
-	}
-	return &types.QueryIssuanceResponse{Issuance: log, Used: used, Remaining: remaining}, nil
+	return &types.QueryBeneficiaryJournalResponse{Entries: entries, Pagination: response}, nil
 }

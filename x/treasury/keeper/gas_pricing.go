@@ -2,15 +2,19 @@ package keeper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
@@ -204,8 +208,11 @@ func convertGasPrice(price, unit math.LegacyDec) math.LegacyDec {
 	return converted
 }
 
-// gasFactor returns reference identity at height zero or a stored denomination cross and derivation
-// height, including NOAH. Missing crosses return collections.ErrNotFound and cannot pay gas.
+// gasFactor returns reference identity at height zero, or the stored cross and derivation height
+// of a denomination the Oracle still prices, NOAH included. A missing cross, or a member the
+// registry no longer prices, returns collections.ErrNotFound and cannot pay gas: the table keeps a
+// departed member's factor for its tax cap, which prices lifecycle-changed supply, but block space
+// is sold only for what the chain can still value.
 func (k Keeper) gasFactor(ctx context.Context, reference, denom string) (math.LegacyDec, uint64, error) {
 	if denom == reference {
 		return math.LegacyOneDec(), 0, nil
@@ -213,6 +220,15 @@ func (k Keeper) gasFactor(ctx context.Context, reference, denom string) (math.Le
 	entry, err := k.ConversionFactors.Get(ctx, denom)
 	if err != nil {
 		return math.LegacyDec{}, 0, err
+	}
+	if denom != chain.NoahBaseDenom {
+		priced, err := k.assetKeeper.IsOraclePriced(ctx, denom)
+		if err != nil && !errors.Is(err, assettypes.ErrAssetNotFound) {
+			return math.LegacyDec{}, 0, fmt.Errorf("checking whether %s is oracle-priced: %w", denom, err)
+		}
+		if err != nil || !priced {
+			return math.LegacyDec{}, 0, fmt.Errorf("%s is no longer oracle-priced: %w", denom, collections.ErrNotFound)
+		}
 	}
 	return entry.Factor, entry.DerivedHeight, nil
 }

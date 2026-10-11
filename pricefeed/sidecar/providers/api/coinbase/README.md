@@ -2,7 +2,7 @@
 
 The Coinbase API provider fetches spot prices from the Coinbase v2 prices endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `coinbase_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 
@@ -13,8 +13,8 @@ symbols through `Markets`; the adapter does not perform denom conversion itself.
 
 The spot endpoint prices one product per request, so `Handler.BatchTickers` puts each ticker in its own request
 whatever the configured batch size, and `Handler.CreateURL` appends `/<product>/spot` to the configured endpoint.
-`Handler.ParseResponse` reads `data.amount` and requires `data.currency` to be the product's quote, so a response for
-the wrong product is refused. The public v2 API allows 10,000 requests per hour per IP; the default
+`Handler.ParseResponse` reads `data.amount` and requires `data.base` and `data.currency` to be the product's base and
+quote, so a response for the wrong product is refused. The public v2 API allows 10,000 requests per hour per IP; the default
 interval polls each product once a second, so size the market set accordingly.
 
 ## Market Checks
@@ -37,3 +37,7 @@ go test ./pricefeed/sidecar/providers/api/coinbase
 ```json
 {"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}
 ```
+
+A request Coinbase refuses answers with an `errors` envelope instead, such as
+`{"errors":[{"id":"not_found","message":"Invalid currency"}]}`; the adapter reports each id and message as a general
+API error.

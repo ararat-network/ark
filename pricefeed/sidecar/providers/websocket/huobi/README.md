@@ -3,7 +3,7 @@
 The Huobi (HTX) WebSocket provider subscribes to Huobi market ticker topics and publishes last prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `huobi_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 
@@ -13,17 +13,17 @@ subscribed as `market.<symbol>.ticker` topics, one per message; symbols are lowe
 handler processes:
 
 - `ping` messages, sent by the server every five seconds, which are answered with a `pong` carrying the same value;
-  a ping also resolves an unchanged result for tickers with a valid price observed in the current connection,
-  which the provider's `max_unchanged_age` decides whether to honour
-- subscription responses, reported as errors when `status` is not `ok`
+  a ping also resolves an unchanged result for tickers whose latest report in the current connection was a valid
+  price, which the provider's `max_unchanged_age` decides whether to honour
+- subscription responses, logged as a warning when `status` is not `ok`
 - ticker streams on `market.<symbol>.ticker`, whose `tick.lastPrice` is the observation, decoded as a JSON number and
   kept as text
 
 ## Session State
 
-The handler keeps requested tickers and the set of tickers with valid price observations per session; `Copy()`
+The handler keeps requested tickers and the set of tickers whose latest report was a valid price per session; `Copy()`
 resets both for each new connection. A subscription request or acknowledgement alone does not qualify a ticker
-for heartbeat refreshes.
+for heartbeat refreshes; upstream's handler refreshed every cached ticker on each ping.
 
 ## Market Checks
 

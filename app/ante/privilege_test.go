@@ -26,28 +26,30 @@ import (
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
 )
 
 const committeeTerm = 3
 
 // setupPrivilegeTest returns a chain whose security mandate appoints a
-// committee for a window opening at the context height.
+// committee for a window opening at the context's block time.
 func setupPrivilegeTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress) {
 	t.Helper()
 
 	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight()})
-	height := uint64(ctx.BlockHeight())
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: arkApp.LastBlockHeight(), Time: time.Unix(1_800_000_000, 0)})
+	now := chain.BlockSeconds(ctx)
 
 	committee := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
 	require.NoError(t, arkApp.SecurityKeeper.Mandate.Set(ctx, securitytypes.SecurityMandate{
 		Envelope: mandate.Envelope{
-			Term:             committeeTerm,
-			Committee:        committee.String(),
-			ActivationHeight: height,
-			ExpiryHeight:     height + 100,
+			Term:           committeeTerm,
+			Committee:      committee.String(),
+			ActivationTime: now,
+			ExpiryTime:     now + 100,
 		},
 	}))
 
@@ -82,10 +84,10 @@ func TestCommitteeVouch(t *testing.T) {
 		wantErr  string
 	}{
 		{"appointed committee", ctx, planUpgrade(committee, committeeTerm), true, ""},
-		{"stranger", ctx, planUpgrade(stranger, committeeTerm), false, "not the exact appointed committee"},
+		{"stranger", ctx, planUpgrade(stranger, committeeTerm), false, "not the exact appointed account"},
 		{"stale term", ctx, planUpgrade(committee, committeeTerm-1), false, "term mismatch"},
-		{"expired", ctx.WithBlockHeight(ctx.BlockHeight() + 100), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
-		{"not yet active", ctx.WithBlockHeight(ctx.BlockHeight() - 1), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
+		{"expired", ctx.WithBlockTime(ctx.BlockTime().Add(100 * time.Second)), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
+		{"not yet active", ctx.WithBlockTime(ctx.BlockTime().Add(-time.Second)), planUpgrade(committee, committeeTerm), false, "mandate is not active"},
 		{"unregistered", ctx, &banktypes.MsgSend{}, false, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -104,7 +106,7 @@ func TestCommitteeVouchDisabledMandate(t *testing.T) {
 	arkApp, ctx, committee := setupPrivilegeTest(t)
 	require.NoError(t, arkApp.SecurityKeeper.Mandate.Set(ctx, securitytypes.SecurityMandate{Envelope: mandate.Disabled(committeeTerm)}))
 	eligible, err := arkApp.Privileges().Vouch(ctx, planUpgrade(committee, committeeTerm))
-	require.ErrorContains(t, err, "not the exact appointed committee")
+	require.ErrorContains(t, err, "not the exact appointed account")
 	require.False(t, eligible)
 }
 
@@ -130,7 +132,7 @@ func TestPrivilegeDecoratorAssignsLane(t *testing.T) {
 				reached := false
 				got, err := decorator.AnteHandle(ctx, treasuryFeeTx{msgs: tc.msgs}, simulate, passThrough(t, &reached))
 				if tc.wantErr {
-					require.ErrorContains(t, err, "not the exact appointed committee")
+					require.ErrorContains(t, err, "not the exact appointed account")
 					require.False(t, reached)
 					continue
 				}
@@ -170,7 +172,7 @@ func TestGovernanceDepositThenVoteUsesNormalLane(t *testing.T) {
 
 			// Exercise the independent vote policy as well as classification.
 			handler := sdk.ChainAnteDecorators(
-				ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper),
+				ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper, arkApp.GovKeeper),
 				ante.NewPrivilegeDecorator(set),
 			)
 			got, err := handler(ctx, tx, simulate)
@@ -468,4 +470,47 @@ func TestVouchPreservesUnexpectedStoreErrors(t *testing.T) {
 // laneOf reads the lane the privilege decorator recorded in SDK context.
 func laneOf(ctx sdk.Context) int8 {
 	return mempool.Lane(ctx)
+}
+
+// Each module's own mandate backs its vouch: the disbursement committee rides the lane under its
+// appointment, a stranger and a stale term are refused, and a registration batch is unprivileged
+// by design (D120).
+func TestCommitteeVouchDisbursement(t *testing.T) {
+	arkApp, ctx, _ := setupPrivilegeTest(t)
+	now := chain.BlockSeconds(ctx)
+	committee := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	stranger := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	require.NoError(t, arkApp.DisbursementKeeper.GrantsMandate.Set(ctx, disbursementtypes.GrantsMandate{
+		Envelope: mandate.Envelope{
+			Term:           committeeTerm,
+			Committee:      committee.String(),
+			ActivationTime: now,
+			ExpiryTime:     now + 100,
+		},
+		CompensationAllowance: math.ZeroInt(),
+	}))
+	suspend := func(who sdk.AccAddress, term uint64) *disbursementtypes.MsgCommitteeSuspend {
+		return &disbursementtypes.MsgCommitteeSuspend{Committee: who.String(), ExpectedTerm: term, Addresses: []string{stranger.String()}}
+	}
+	for _, tc := range []struct {
+		name     string
+		msg      sdk.Msg
+		eligible bool
+		wantErr  string
+	}{
+		{"appointed committee", suspend(committee, committeeTerm), true, ""},
+		{"stranger", suspend(stranger, committeeTerm), false, "not the exact appointed account"},
+		{"stale term", suspend(committee, committeeTerm-1), false, "term mismatch"},
+		{"registration is normal traffic", &disbursementtypes.MsgRegisterMembers{Registrar: committee.String(), ExpectedTerm: committeeTerm}, false, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			eligible, err := arkApp.Privileges().Vouch(ctx, tc.msg)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tc.eligible, eligible)
+		})
+	}
 }

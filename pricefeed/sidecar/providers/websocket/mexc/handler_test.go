@@ -2,6 +2,7 @@ package mexc_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -50,6 +51,36 @@ func TestNewHandler(t *testing.T) {
 			},
 			errContains: "invalid websocket config",
 		},
+		{
+			// Zero puts every ticker on one connection, past the venue's limit.
+			name:   "unsharded",
+			logger: log.NewNopLogger(),
+			config: func() websocket.Config {
+				cfg := DefaultWebSocketConfig
+				cfg.MaxTickersPerConnection = 0
+				return cfg
+			},
+			errContains: "max_tickers_per_connection must be between 1 and 30, got 0",
+		},
+		{
+			name:   "shards over the venue limit",
+			logger: log.NewNopLogger(),
+			config: func() websocket.Config {
+				cfg := DefaultWebSocketConfig
+				cfg.MaxTickersPerConnection = MaxSubscriptionsPerConnection + 1
+				return cfg
+			},
+			errContains: "max_tickers_per_connection must be between 1 and 30, got 31",
+		},
+		{
+			name:   "shards at the venue limit",
+			logger: log.NewNopLogger(),
+			config: func() websocket.Config {
+				cfg := DefaultWebSocketConfig
+				cfg.MaxTickersPerConnection = MaxSubscriptionsPerConnection
+				return cfg
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -93,13 +124,16 @@ func TestCreateMessages(t *testing.T) {
 // TestCreateMessagesRefusesAnOversizedShard pins the venue limit as a
 // handler-side check, independent of the fetcher's sharding.
 func TestCreateMessagesRefusesAnOversizedShard(t *testing.T) {
-	cfg := DefaultWebSocketConfig
-	cfg.MaxTickersPerConnection = 2
-	handler, err := NewHandler(log.NewNopLogger(), cfg)
-	require.NoError(t, err)
+	handler := newTestHandler(t)
+	tickers := make([]types.Ticker, MaxSubscriptionsPerConnection+1)
+	for i := range tickers {
+		tickers[i] = types.Ticker(fmt.Sprintf("T%dUSDT", i))
+	}
 
-	_, err = handler.CreateMessages([]types.Ticker{"A", "B", "C"})
-	require.ErrorContains(t, err, "cannot subscribe to 3 tickers on one connection; the limit is 2")
+	_, err := handler.CreateMessages(tickers[:MaxSubscriptionsPerConnection])
+	require.NoError(t, err)
+	_, err = handler.CreateMessages(tickers)
+	require.ErrorContains(t, err, "cannot subscribe to 31 tickers on one connection; the limit is 30")
 }
 
 func TestHeartBeatMessages(t *testing.T) {

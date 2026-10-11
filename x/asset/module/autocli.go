@@ -60,10 +60,10 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "ResolutionHistory",
-					Use:       "write-off-history [denom]",
-					Short:     "Query an asset's append-only write-off history",
+					Use:       "resolution-history [denom]",
+					Short:     "Query an asset's append-only resolution history: write-offs and retirement residuals",
 					Example: fmt.Sprintf(
-						"%s query asset write-off-history ausd",
+						"%s query asset resolution-history ausd",
 						version.AppName,
 					),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
@@ -89,7 +89,7 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "update-params-proposal [params]",
 					Short:     "Submit a proposal to update asset parameters",
 					Example: fmt.Sprintf(
-						`%s tx asset update-params-proposal '{"settlement_activation_delay_blocks":"14400"}'`,
+						`%s tx asset update-params-proposal '{"settlement_activation_delay":"604800"}'`,
 						version.AppName,
 					),
 					GovProposal: true,
@@ -126,12 +126,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				),
 				assetProposalCommand(
 					"OpenSettlement",
-					"open-settlement-proposal [denom] [expected-version] [redemption-rate] [earliest-closing-height]",
+					"open-settlement-proposal [denom] [expected-version] [redemption-rate] [earliest-closing-time]",
 					"Submit a proposal to open asset settlement",
 					"denom",
 					"expected_version",
 					"redemption_rate",
-					"earliest_closing_height",
+					"earliest_closing_time",
 				),
 				assetProposalCommand(
 					"CancelSettlement",
@@ -164,11 +164,11 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				),
 				assetProposalCommand(
 					"SetEmergencyMandate",
-					"set-emergency-mandate-proposal [committee] [activation-height] [expiry-height]",
+					"set-emergency-mandate-proposal [committee] [activation-time] [expiry-time]",
 					"Submit a proposal to replace or disable the emergency mandate",
 					"committee",
-					"activation_height",
-					"expiry_height",
+					"activation_time",
+					"expiry_time",
 				),
 				{
 					RpcMethod: "EmergencySuspendAsset",

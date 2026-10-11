@@ -36,7 +36,7 @@ const (
 type MsgClient interface {
 	// UpdateParams updates the governance-owned claims parameters.
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
-	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+	// SetClaimsMandate appoints, replaces, or disables the time-scoped Claims
 	// committee.
 	SetClaimsMandate(ctx context.Context, in *MsgSetClaimsMandate, opts ...grpc.CallOption) (*MsgSetClaimsMandateResponse, error)
 	// SubmitClaim records a governance-submitted pending claim, which never
@@ -130,7 +130,7 @@ func (c *msgClient) CommitteeCancelClaim(ctx context.Context, in *MsgCommitteeCa
 type MsgServer interface {
 	// UpdateParams updates the governance-owned claims parameters.
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
-	// SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+	// SetClaimsMandate appoints, replaces, or disables the time-scoped Claims
 	// committee.
 	SetClaimsMandate(context.Context, *MsgSetClaimsMandate) (*MsgSetClaimsMandateResponse, error)
 	// SubmitClaim records a governance-submitted pending claim, which never

@@ -13,7 +13,8 @@
 4. [prices.go](prices.go) synchronises feeds, reads fresh provider caches, calls the resolver, and commits one snapshot.
    Missing feeds remain absent; [freshness](#freshness) filtering happens before aggregation.
 5. [update.go](update.go) serialises replacement with aggregation and lifecycle changes. It builds replacement providers
-   and loads client material before changing live state, so preparation errors leave the active runtime intact.
+   and loads client material before changing live state, so preparation errors leave the active runtime intact. A changed
+   `update_interval` resets the fetch ticker at once rather than after the old interval elapses.
 
 ## Freshness
 
@@ -23,6 +24,13 @@ price refreshes; it is zero, which allows no extension, or at least `max_price_a
 between. A heartbeat-driven [unchanged result](../providers/base/README.md#unchanged-results) moves the first and not
 the second, so the difference between the two windows is how long a heartbeat may extend a price. A provider whose
 heartbeat vouches for the connection rather than the subscription warrants a small difference or none.
+
+Both windows run from arrival: a result is stamped when the sidecar receives it, so `max_price_age` bounds how long ago
+the venue last reported the price, not when the price last traded. A ticker stream re-sending its last price, a
+subscription snapshot, and an API poll are all reports, and fiat references publish daily or hourly, so no venue clock
+could serve as the bound for them. On a quiet market a last-price stream therefore keeps an old trade's price fresh;
+set `max_price_age` with that in mind. Coinbase's matches are the exception: they carry their trade time, which dates
+`LastObserved` (never later than arrival), so the last match Coinbase repeats on subscribe ages from its trade.
 
 `updateMu` serialises aggregation/config/lifecycle transitions. [provider.go](provider.go) holds cancellation and completion
 state for owned provider runs, including retained providers whose markets change. Snapshot ownership is explicit: callers

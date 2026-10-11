@@ -16,12 +16,16 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import tomllib
 import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[2]
 WASMVM = "github.com/CosmWasm/wasmvm/v3"
-LEGAL = ("LICENSE", "COPYING", "NOTICE", "THIRD_PARTY_NOTICES.md")
+SINGLEPASS = "wasmer-compiler-singlepass"
+BUSL = "LICENSES/BUSL-1.1.txt"
+LEGAL = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", BUSL, "LICENSES/GPL-3.0-or-later.txt",
+         "LICENSES/LGPL-2.1-or-later.txt", "LICENSES/LGPL-3.0-or-later.txt")
 
 
 def run(*args, cwd=None, env=None):
@@ -165,7 +169,20 @@ def module_sources(ark, bundle, kind, env):
     return records, downloads, targets
 
 
-def native_sources(bundle, downloads):
+# Wasmer's BUSL parameters can change between Singlepass releases, so the shipped text must be the
+# locked crate's own.
+def check_busl(manifest, text):
+    lock = tomllib.loads((manifest / "Cargo.lock").read_text())
+    versions = [package["version"] for package in lock.get("package", []) if package["name"] == SINGLEPASS]
+    if not versions:
+        raise ValueError(SINGLEPASS + " is no longer locked by wasmvm; review " + BUSL)
+    for version in versions:
+        licence = manifest / "vendor" / f"{SINGLEPASS}-{version}" / "LICENSE"
+        if not licence.is_file() or licence.read_bytes() != text:
+            raise ValueError(f"{BUSL} differs from {SINGLEPASS} {version}'s LICENSE; copy the locked crate's text")
+
+
+def native_sources(bundle, downloads, ark):
     wasm = bundle / "native" / "wasmvm"
     extract_module(downloads[WASMVM]["Zip"], wasm)
     manifest = wasm / "libwasmvm"
@@ -174,10 +191,13 @@ def native_sources(bundle, downloads):
         config = run("cargo", "vendor", "--locked", "--versioned-dirs", "vendor", cwd=manifest)
     else:
         image = run(str(ROOT / "contrib/scripts/verify-source.sh"), "--prepare").strip().splitlines()[-1]
-        config = run("docker", "run", "--rm", "-v", str(manifest) + ":/crate", "-w", "/crate", image,
+        # As the caller, so vendor/ stays removable on a Linux host; the image's CARGO_HOME is root's.
+        config = run("docker", "run", "--rm", "--user", f"{os.getuid()}:{os.getgid()}", "-e", "CARGO_HOME=/tmp/cargo",
+                     "-v", str(manifest) + ":/crate", "-w", "/crate", image,
                      "cargo", "vendor", "--locked", "--versioned-dirs", "vendor")
     if digest(manifest / "Cargo.lock") != lock_hash:
         raise ValueError("cargo vendor changed the locked dependency graph")
+    check_busl(manifest, (ark / BUSL).read_bytes())
     (manifest / ".cargo").mkdir(exist_ok=True)
     (manifest / ".cargo/config.toml").write_text(config)
     for path in (bundle / "native").rglob("*"):
@@ -218,7 +238,7 @@ def main():
         for name, original in original_module_files.items():
             if (ark / name).read_bytes() != original:
                 raise ValueError("source resolution changed " + name)
-        native = native_sources(bundle, downloads) if args.kind != "pricefeed" else {}
+        native = native_sources(bundle, downloads, ark) if args.kind != "pricefeed" else {}
         goroot = Path(run("go", "env", "GOROOT", cwd=ark, env=env).strip())
         for name in ("LICENSE", "PATENTS"):
             if (goroot / name).exists():

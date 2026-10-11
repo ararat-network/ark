@@ -17,14 +17,25 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: marketv1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "Swap",
-					Use:       "swap [offer-coin] [ask-denom]",
-					Short:     "Query a swap quote",
-					Long:      "Simulate a swap and return the estimated output coin and swap fee. Quotes use current oracle and pool state and may change before execution.",
-					Example:   fmt.Sprintf("%s query market swap 5000000000000000000anoah axdr", version.AppName),
+					RpcMethod: "Sell",
+					Use:       "sell [offer-coin] [ask-denom]",
+					Short:     "Quote a sell",
+					Long:      "Quote a sell of the offer coin for the ask denomination: the output it returns and the spread it pays. Quotes use current oracle and pool state and may change before execution.",
+					Example:   fmt.Sprintf("%s query market sell 5000000000000000000anoah axdr", version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},
+					},
+				},
+				{
+					RpcMethod: "Buy",
+					Use:       "buy [ask-coin] [offer-denom]",
+					Short:     "Quote a buy",
+					Long:      "Quote a buy of the ask coin with the offer denomination: the least offer whose quote returns at least the ask, with that quote's output and spread. Quotes use current oracle and pool state and may change before execution.",
+					Example:   fmt.Sprintf("%s query market buy 1000000000000000000000ausd anoah", version.AppName),
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "ask_coin"},
+						{ProtoField: "offer_denom"},
 					},
 				},
 				{
@@ -68,7 +79,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "ConversionMandate",
 					Use:       "conversion-mandate",
 					Short:     "Query the governed conversion committee mandate",
-					Long:      "Query the committee appointed to resize conversion capacity, the corridor it may act within, and whether that appointment is usable at the current height.",
+					Long:      "Query the committee appointed to resize conversion capacity, the corridor it may act within, and whether that appointment is usable at the current block time.",
 					Example:   fmt.Sprintf("%s query market conversion-mandate", version.AppName),
 				},
 			},
@@ -77,11 +88,11 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 			Service: marketv1.Msg_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				{
-					RpcMethod: "Swap",
-					Use:       "swap [offer-coin] [ask-denom] [minimum-receive]",
-					Short:     "Atomically swap currencies at their target exchange rate",
-					Long:      "Swap the offer coin to the ask denomination at the oracle's effective exchange rate. Supply minimum-receive to fail the swap unless it returns at least that much; omit it to accept market execution.",
-					Example:   fmt.Sprintf(`%s tx market swap "1000000000000000000akrw" "ausd" "740000000000000ausd"`, version.AppName),
+					RpcMethod: "Sell",
+					Use:       "sell [offer-coin] [ask-denom] [minimum-receive]",
+					Short:     "Sell a stated offer for the ask denomination",
+					Long:      "Sell the offer coin for the ask denomination at the oracle rate less spread. Supply minimum-receive to fail the sell unless it returns at least that much; omit it to accept market execution.",
+					Example:   fmt.Sprintf(`%s tx market sell "1000000000000000000akrw" "ausd" "740000000000000ausd"`, version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
 						{ProtoField: "offer_coin"},
 						{ProtoField: "ask_denom"},
@@ -89,16 +100,15 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					},
 				},
 				{
-					RpcMethod: "SwapSend",
-					Use:       "swap-send [offer-coin] [ask-denom] [to-address] [minimum-receive]",
-					Short:     "Atomically swap currencies and send the output to another address",
-					Long:      "Swap the offer coin to the ask denomination at the oracle's effective exchange rate and send the output to to-address. Supply minimum-receive to fail the swap unless it returns at least that much; omit it to accept market execution.",
-					Example:   fmt.Sprintf(`%s tx market swap-send "1000000000000000000akrw" "ausd" "ark1..." "740000000000000ausd"`, version.AppName),
+					RpcMethod: "Buy",
+					Use:       "buy [ask-coin] [offer-denom] [maximum-offer]",
+					Short:     "Buy a stated ask with the least offer that returns it",
+					Long:      "Buy the ask coin with the least offer of the offer denomination whose quote returns at least it. The buy fails unless that offer stays within maximum-offer, the most it may spend.",
+					Example:   fmt.Sprintf(`%s tx market buy "740000000000000ausd" "akrw" "1000000000000000000akrw"`, version.AppName),
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "offer_coin"},
-						{ProtoField: "ask_denom"},
-						{ProtoField: "to_address"},
-						{ProtoField: "minimum_receive", Optional: true},
+						{ProtoField: "ask_coin"},
+						{ProtoField: "offer_denom"},
+						{ProtoField: "maximum_offer"},
 					},
 				},
 				{

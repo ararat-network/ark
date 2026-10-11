@@ -1,7 +1,6 @@
 package proposals
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -28,6 +27,9 @@ type Handler struct {
 
 	// validatorStore resolves consensus public keys used to authenticate vote extensions.
 	validatorStore baseapp.ValidatorStore
+
+	// oracleParams supplies the freshness limit a proposal's prices are held to.
+	oracleParams abcitypes.OracleParamsReader
 }
 
 // NewHandler returns a new Handler.
@@ -35,18 +37,21 @@ func NewHandler(
 	prepareProposalHandler sdk.PrepareProposalHandler,
 	processProposalHandler sdk.ProcessProposalHandler,
 	validatorStore baseapp.ValidatorStore,
+	oracleParams abcitypes.OracleParamsReader,
 ) *Handler {
 	return &Handler{
 		prepareProposalHandler: prepareProposalHandler,
 		processProposalHandler: processProposalHandler,
 		validatorStore:         validatorStore,
+		oracleParams:           oracleParams,
 	}
 }
 
 // PrepareProposalHandler reserves extended-commit bytes before transaction
 // selection and prepends the commit to the result when extensions are enabled.
-// It fails if the commit exceeds MaxTxBytes; selector errors yield a commit-only
-// proposal when extensions are enabled.
+// It fails if the commit exceeds MaxTxBytes; selector errors, and prices older
+// than the oracle's freshness limit, yield a commit-only proposal when
+// extensions are enabled.
 func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *cmtabci.RequestPrepareProposal) (resp *cmtabci.ResponsePrepareProposal, err error) {
 		start := time.Now()
@@ -63,7 +68,7 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 			if statusErr == nil {
 				statusErr = err
 			}
-			status := proposalStatus(statusErr)
+			status := abcimetrics.StatusOf(statusErr)
 			if !completed {
 				status = abcimetrics.StatusPanic
 			}
@@ -105,6 +110,10 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				}
 				// Give the wrapped handler only the remaining protobuf transaction
 				// budget. Use a request copy so this wrapper does not mutate its input.
+				// On any error here baseapp proposes CometBFT's raw transaction list
+				// instead, which ProcessProposal rejects for want of the commit, so the
+				// round is lost. The ante's block data budget floor keeps governance
+				// from making this branch permanent.
 				extInfoBzSize := cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{extInfoBz})
 				if extInfoBzSize > req.MaxTxBytes {
 					err = fmt.Errorf(
@@ -118,6 +127,29 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 				wrappedReqCopy := *req
 				wrappedReqCopy.MaxTxBytes -= extInfoBzSize
 				wrappedReq = &wrappedReqCopy
+
+				// The block applies prices observed as the previous block committed and carries
+				// that commit's median time, so after a stall both predate it while its
+				// transactions do not. Past the oracle's freshness limit by this proposer's clock,
+				// the block carries prices only and transactions trade on the next block's.
+				age, limit, ageErr := h.priceAge(ctx, req.Time)
+				if ageErr != nil || age > limit {
+					statusErr = errCommitOnly
+					if ageErr != nil {
+						statusErr = fmt.Errorf("%w: %w", errCommitOnly, ageErr)
+					}
+					if logger := ctx.Logger(); logger != nil {
+						if ageErr != nil {
+							logger.Error("cannot age proposal prices; using commit-only proposal",
+								"height", req.Height, "err", ageErr)
+						} else {
+							logger.Warn("proposal prices older than the oracle's freshness limit; using commit-only proposal",
+								"height", req.Height, "age_seconds", age, "limit_seconds", limit)
+						}
+					}
+
+					return &cmtabci.ResponsePrepareProposal{Txs: [][]byte{extInfoBz}}, nil
+				}
 			}
 
 			// Build the proposal. Get the duration that the wrapped prepare proposal handler executed for.
@@ -156,6 +188,18 @@ func (h *Handler) PrepareProposalHandler() sdk.PrepareProposalHandler {
 	}
 }
 
+// priceAge is how old, by this node's clock in whole seconds, the prices a proposal applies are,
+// dated by the proposal's time, against the oracle's freshness limit. A clock behind the proposal
+// reads age zero.
+func (h *Handler) priceAge(ctx sdk.Context, proposalTime time.Time) (age, limit uint64, err error) {
+	params, err := h.oracleParams.GetParams(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("reading oracle params: %w", err)
+	}
+	age = uint64(max(time.Now().Unix()-proposalTime.Unix(), 0))
+	return age, params.MaxExchangeRateAge, nil
+}
+
 // ProcessProposalHandler returns a ProcessProposalHandler that will be called
 // by base app when a new block proposal needs to be verified. The ProcessProposalHandler
 // will verify that the vote extensions included in the proposal are valid and compose
@@ -169,7 +213,7 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		// Defer a function to record the total time it took to process the proposal.
 		defer func() {
 			totalLatency := time.Since(start)
-			status := proposalStatus(err)
+			status := abcimetrics.StatusOf(err)
 			if err == nil && resp != nil && resp.Status == cmtabci.ResponseProcessProposal_REJECT {
 				status = abcimetrics.StatusRejected
 			}
@@ -236,24 +280,5 @@ func (h *Handler) ProcessProposalHandler() sdk.ProcessProposalHandler {
 		}()
 		completed = true
 		return resp, err
-	}
-}
-
-func proposalStatus(err error) abcimetrics.Status {
-	switch {
-	case err == nil:
-		return abcimetrics.StatusSuccess
-	case errors.Is(err, abcitypes.ErrNilRequest):
-		return abcimetrics.StatusNilRequest
-	case errors.Is(err, abcitypes.ErrWrappedHandler):
-		return abcimetrics.StatusWrappedHandler
-	case errors.Is(err, ErrExtendedCommitValidation):
-		return abcimetrics.StatusExtendedCommitValidation
-	case errors.Is(err, abcitypes.ErrCodec):
-		return abcimetrics.StatusCodec
-	case errors.Is(err, abcitypes.ErrMissingCommitInfo):
-		return abcimetrics.StatusMissingCommitInfo
-	default:
-		return abcimetrics.StatusFailure
 	}
 }

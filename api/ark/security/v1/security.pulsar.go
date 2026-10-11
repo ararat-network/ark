@@ -536,8 +536,8 @@ func (x *fastReflection_CommitteePlan) Range(f func(protoreflect.FieldDescriptor
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_CommitteePlan_height, value) {
 			return
 		}
@@ -566,7 +566,7 @@ func (x *fastReflection_CommitteePlan) Has(fd protoreflect.FieldDescriptor) bool
 	case "ark.security.v1.CommitteePlan.name":
 		return x.Name != ""
 	case "ark.security.v1.CommitteePlan.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	case "ark.security.v1.CommitteePlan.term":
 		return x.Term != uint64(0)
 	default:
@@ -588,7 +588,7 @@ func (x *fastReflection_CommitteePlan) Clear(fd protoreflect.FieldDescriptor) {
 	case "ark.security.v1.CommitteePlan.name":
 		x.Name = ""
 	case "ark.security.v1.CommitteePlan.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	case "ark.security.v1.CommitteePlan.term":
 		x.Term = uint64(0)
 	default:
@@ -612,7 +612,7 @@ func (x *fastReflection_CommitteePlan) Get(descriptor protoreflect.FieldDescript
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.CommitteePlan.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	case "ark.security.v1.CommitteePlan.term":
 		value := x.Term
 		return protoreflect.ValueOfUint64(value)
@@ -639,7 +639,7 @@ func (x *fastReflection_CommitteePlan) Set(fd protoreflect.FieldDescriptor, valu
 	case "ark.security.v1.CommitteePlan.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.CommitteePlan.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	case "ark.security.v1.CommitteePlan.term":
 		x.Term = value.Uint()
 	default:
@@ -684,7 +684,7 @@ func (x *fastReflection_CommitteePlan) NewField(fd protoreflect.FieldDescriptor)
 	case "ark.security.v1.CommitteePlan.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.CommitteePlan.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.security.v1.CommitteePlan.term":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
@@ -907,7 +907,7 @@ func (x *fastReflection_CommitteePlan) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -979,14 +979,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// SecurityMandate appoints a time-scoped committee for code repair, never funds.
 // Empty committee disables it; every replacement advances the term.
 type SecurityMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	Envelope *v1.Envelope `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 }
 
@@ -1025,7 +1025,7 @@ type CommitteePlan struct {
 	unknownFields protoimpl.UnknownFields
 
 	Name   string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty"`
 	// term is the appointment that scheduled it.
 	Term uint64 `protobuf:"varint,3,opt,name=term,proto3" json:"term,omitempty"`
 }
@@ -1057,7 +1057,7 @@ func (x *CommitteePlan) GetName() string {
 	return ""
 }
 
-func (x *CommitteePlan) GetHeight() int64 {
+func (x *CommitteePlan) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
@@ -1090,7 +1090,7 @@ var file_ark_security_v1_security_proto_rawDesc = []byte{
 	0x65, 0x22, 0x5d, 0x0a, 0x0d, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x50, 0x6c,
 	0x61, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68,
 	0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x03, 0x20,
 	0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d,
 	0x42, 0xc0, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x73, 0x65, 0x63,

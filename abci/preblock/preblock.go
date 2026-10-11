@@ -1,7 +1,6 @@
 package preblock
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -43,7 +42,7 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 			// manager preblockers
 			if ctx.ExecMode() == sdk.ExecModeFinalize {
 				latency := time.Since(start) - wrappedPreBlockLatency
-				status := preblockStatus(err)
+				status := abcimetrics.StatusOf(err)
 				if !completed {
 					status = abcimetrics.StatusPanic
 				}
@@ -91,24 +90,5 @@ func (h *Handler) WrappedPreBlocker(mm *module.Manager) sdk.PreBlocker {
 		}()
 		completed = true
 		return response, err
-	}
-}
-
-func preblockStatus(err error) abcimetrics.Status {
-	switch {
-	case err == nil:
-		return abcimetrics.StatusSuccess
-	case errors.Is(err, abcitypes.ErrNilRequest):
-		return abcimetrics.StatusNilRequest
-	case errors.Is(err, abcitypes.ErrWrappedHandler):
-		return abcimetrics.StatusWrappedHandler
-	case errors.Is(err, abcitypes.ErrOracleKeeper):
-		return abcimetrics.StatusOracleKeeper
-	case errors.Is(err, abcitypes.ErrCodec):
-		return abcimetrics.StatusCodec
-	case errors.Is(err, abcitypes.ErrMissingCommitInfo):
-		return abcimetrics.StatusMissingCommitInfo
-	default:
-		return abcimetrics.StatusFailure
 	}
 }

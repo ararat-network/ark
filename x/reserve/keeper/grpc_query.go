@@ -2,7 +2,7 @@ package keeper
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,15 +10,17 @@ import (
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/pagination"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 var _ types.QueryServer = (*queryServer)(nil)
 
+// queryServer validates each request itself and otherwise returns the keeper's error: a registered
+// error carries its gRPC code, so no handler classifies.
 type queryServer struct {
 	k *Keeper
 }
@@ -36,25 +38,20 @@ func (q queryServer) Mandate(ctx context.Context, req *types.QueryMandateRequest
 
 	reserveMandate, err := q.k.Mandate.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Reserve mandate: %v", err)
+		return nil, fmt.Errorf("getting Reserve mandate: %w", err)
 	}
 	used, err := q.k.AllowanceUsed.Get(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "getting Reserve allowance usage: %v", err)
+		return nil, fmt.Errorf("getting Reserve allowance usage: %w", err)
 	}
 	remaining, err := reserveMandate.DeploymentAllowance.Amount.SafeSub(used)
 	if err != nil || remaining.IsNegative() {
-		return nil, status.Errorf(
-			codes.Internal,
-			"Reserve allowance usage %s exceeds mandate allowance %s",
-			used,
-			reserveMandate.DeploymentAllowance.Amount,
-		)
+		return nil, fmt.Errorf("reserve allowance usage %s exceeds mandate allowance %s", used, reserveMandate.DeploymentAllowance.Amount)
 	}
 
 	return &types.QueryMandateResponse{
 		Mandate:            reserveMandate,
-		Active:             reserveMandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())),
+		Active:             reserveMandate.IsActive(chain.BlockSeconds(ctx)),
 		AllowanceUsed:      chain.NoahCoin(used),
 		AllowanceRemaining: chain.NoahCoin(remaining),
 	}, nil
@@ -70,42 +67,34 @@ func (q queryServer) Position(ctx context.Context, req *types.QueryPositionReque
 		return nil, status.Error(codes.InvalidArgument, "position ID must be positive")
 	}
 
-	position, err := q.k.OpenPositions.Get(ctx, req.PositionId)
-	if errors.Is(err, collections.ErrNotFound) {
-		position, err = q.k.ClosedPositions.Get(ctx, req.PositionId)
-	}
+	position, _, err := q.k.anyPosition(ctx, req.PositionId)
 	if err != nil {
-		if errors.Is(err, collections.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "position %d not found", req.PositionId)
-		}
-		return nil, status.Errorf(codes.Internal, "getting position %d: %v", req.PositionId, err)
+		return nil, err
 	}
 	return &types.QueryPositionResponse{Position: position}, nil
 }
 
 // OpenPositions queries the paginated open set: what recognition credits and
-// outstanding_deployed sums over. The page walks only the open store, so a
-// counting page request totals the open set rather than the whole record.
+// outstanding_deployed sums over. The page walks only the open store.
 func (q queryServer) OpenPositions(ctx context.Context, req *types.QueryOpenPositionsRequest) (*types.QueryOpenPositionsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	positions, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.OpenPositions,
-		req.Pagination,
+		page,
 		func(_ uint64, position types.Position) (types.Position, error) {
 			return position, nil
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing open positions: %v", err)
+		return nil, fmt.Errorf("listing open positions: %w", err)
 	}
 	return &types.QueryOpenPositionsResponse{Positions: positions, Pagination: pageResponse}, nil
 }
@@ -115,22 +104,21 @@ func (q queryServer) ClosedPositions(ctx context.Context, req *types.QueryClosed
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
 	positions, pageResponse, err := sdkquery.CollectionPaginate(
 		ctx,
 		q.k.ClosedPositions,
-		req.Pagination,
+		page,
 		func(_ uint64, position types.Position) (types.Position, error) {
 			return position, nil
 		},
 	)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing closed positions: %v", err)
+		return nil, fmt.Errorf("listing closed positions: %w", err)
 	}
 	return &types.QueryClosedPositionsResponse{Positions: positions, Pagination: pageResponse}, nil
 }
@@ -141,28 +129,38 @@ func (q queryServer) Ledger(ctx context.Context, req *types.QueryLedgerRequest) 
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	// Key and offset together is the one page request the SDK accepts but
-	// cannot answer coherently.
-	if req.Pagination != nil && req.Pagination.Offset > 0 && len(req.Pagination.Key) != 0 {
-		return nil, status.Error(codes.InvalidArgument, "pagination must not specify both key and offset")
+	page, err := pagination.Bounded(req.Pagination)
+	if err != nil {
+		return nil, err
 	}
 
-	// Filtering happens before pagination selects a page, so a filtered answer
-	// is a page of that position's entries. The scan is over the whole ledger,
-	// keyed by entry ID.
-	entries, pageResponse, err := sdkquery.CollectionFilteredPaginate(
-		ctx,
-		q.k.Ledger,
-		req.Pagination,
-		func(_ uint64, entry types.AccountingEntry) (bool, error) {
-			return req.PositionId == 0 || entry.PositionId == req.PositionId, nil
-		},
-		func(_ uint64, entry types.AccountingEntry) (types.AccountingEntry, error) {
-			return entry, nil
-		},
-	)
+	// A position's entries page through its index, so a page reads only that
+	// position's entries; the whole ledger pages by entry ID. Either way the
+	// next key belongs to the form of the request that returned it.
+	var entries []types.AccountingEntry
+	var pageResponse *sdkquery.PageResponse
+	if req.PositionId == 0 {
+		entries, pageResponse, err = sdkquery.CollectionPaginate(
+			ctx,
+			q.k.Ledger,
+			page,
+			func(_ uint64, entry types.AccountingEntry) (types.AccountingEntry, error) {
+				return entry, nil
+			},
+		)
+	} else {
+		entries, pageResponse, err = sdkquery.CollectionPaginate(
+			ctx,
+			q.k.LedgerByPosition,
+			page,
+			func(key collections.Pair[uint64, uint64], _ collections.NoValue) (types.AccountingEntry, error) {
+				return q.k.Ledger.Get(ctx, key.K2())
+			},
+			sdkquery.WithCollectionPaginationPairPrefix[uint64, uint64](req.PositionId),
+		)
+	}
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "listing ledger: %v", err)
+		return nil, fmt.Errorf("listing ledger: %w", err)
 	}
 	return &types.QueryLedgerResponse{Ledger: entries, Pagination: pageResponse}, nil
 }
@@ -179,7 +177,7 @@ func (q queryServer) Balance(ctx context.Context, req *types.QueryBalanceRequest
 		outstanding, err = outstanding.SafeAdd(position.Deployed.Amount)
 		return false, err
 	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "summing outstanding deployment: %v", err)
+		return nil, fmt.Errorf("summing outstanding deployment: %w", err)
 	}
 
 	return &types.QueryBalanceResponse{
@@ -199,7 +197,7 @@ func (q queryServer) RecognitionPolicy(ctx context.Context, req *types.QueryReco
 		entries = append(entries, entry)
 		return false, nil
 	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "iterating Reserve recognition policy: %v", err)
+		return nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
 	}
 	return &types.QueryRecognitionPolicyResponse{Entries: entries}, nil
 }
@@ -212,12 +210,12 @@ func (q queryServer) RecognisedCapital(ctx context.Context, req *types.QueryReco
 
 	assets, err := q.k.AssetRecognitions(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "decomposing recognised capital: %v", err)
+		return nil, fmt.Errorf("decomposing recognised capital: %w", err)
 	}
 	balance := q.k.balance(ctx)
 	recognised, err := sumRecognised(balance, assets)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "%v", err)
+		return nil, err
 	}
 
 	return &types.QueryRecognisedCapitalResponse{
@@ -225,4 +223,18 @@ func (q queryServer) RecognisedCapital(ctx context.Context, req *types.QueryReco
 		NoahBalance: chain.NoahCoin(balance),
 		Assets:      assets,
 	}, nil
+}
+
+// BurnableSurplus queries the committee's NOAH burn bound.
+func (q queryServer) BurnableSurplus(ctx context.Context, req *types.QueryBurnableSurplusRequest) (*types.QueryBurnableSurplusResponse, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid request")
+	}
+
+	burnable, err := q.k.BurnableSurplus(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("sizing the burnable surplus: %w", err)
+	}
+
+	return &types.QueryBurnableSurplusResponse{Burnable: chain.NoahCoin(burnable)}, nil
 }

@@ -3,7 +3,7 @@
 The KuCoin WebSocket provider subscribes to the KuCoin spot ticker topic and publishes last-trade prices as provider
 responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `kucoin_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Connect Token
 
@@ -11,9 +11,12 @@ KuCoin refuses a dial that carries no connect token, so the handler implements t
 contract: [dial.go](dial.go) requests a public token with an empty POST to the fixed bullet-public endpoint, then
 dials the configured endpoint with the token in its `token` query parameter, where KuCoin's protocol reads it. The
 token is a short-lived public value, not a credential. The token response also names an instance server and ping
-timings; the adapter keeps the configured endpoint and the static timings in config, so the endpoint stays an
-operator decision and the read deadline stays a config value. A dial error is returned with the token redacted,
+timings; the adapter keeps the configured endpoint and the static timings in config (a 10 s ping under the 18 s KuCoin
+advertises, a 20 s read deadline that outlasts a ping round trip, 300 ms between writes under its 100 messages per 10 s,
+and 25 tickers a connection under its 300 subscriptions), so the endpoint stays an operator decision and the read
+deadline stays a config value. A dial error is returned with the token redacted, raw and query-escaped,
 because the URL it names would otherwise reach the logs. The token request and the dial share the handshake timeout.
+Upstream's handler followed the token response's instance server; this one keeps the configured endpoint.
 
 ## Stream Shape
 
@@ -22,17 +25,18 @@ with a sequential request id. Symbols use the `BASE-QUOTE` form, such as `USDC-U
 
 - the `welcome` message sent on connect
 - `pong` answers to the client ping, which the fetcher sends on its ping interval; a pong also resolves an unchanged
-  result for tickers with a valid price observed in the current connection, which the provider's
+  result for tickers whose latest report in the current connection was a valid price, which the provider's
   `max_unchanged_age` decides whether to honour
 - `ack` acknowledgements of subscriptions
-- `error` notices, reported with the venue's code
+- `error` notices, logged as a warning with the venue's code
 - `message` data on the `trade.ticker` subject, whose `data.price` is the observation; a `sequence` at or below the
-  last seen for the symbol is refused so a late or repeated message cannot roll a price back
+  last seen for the symbol is refused so a late or repeated message cannot roll a price back, until three arrive in a
+  row, which reads as KuCoin restarting the sequence and takes the new one
 
 ## Session State
 
-The handler keeps requested tickers, the set of tickers with valid price observations, per-symbol sequence numbers,
-and the next request id per session; `Copy()` resets them for each new connection. A subscription request or
+The handler keeps requested tickers, the set of tickers whose latest report was a valid price, per-symbol sequence
+numbers and refusal runs, and the next request id per session; `Copy()` resets them for each new connection. A subscription request or
 acknowledgement alone does not qualify a ticker for heartbeat refreshes.
 
 ## Market Checks

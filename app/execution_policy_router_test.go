@@ -5,12 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cosmos/gogoproto/proto"
-	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v11/modules/core/04-channel/types"
-	channeltypesv2 "github.com/cosmos/ibc-go/v11/modules/core/04-channel/v2/types"
 	"github.com/stretchr/testify/require"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -117,8 +111,7 @@ func multiSend(from sdk.AccAddress, n int) *banktypes.MsgMultiSend {
 }
 
 // TestTreasuryRouterEnforcesVoteStakeFloor pins the second seam: a vote
-// dispatched by a contract, derived account, or interchain account meets the
-// same floor before any tax or execution.
+// dispatched by a contract meets the same floor before any tax or execution.
 func TestTreasuryRouterEnforcesVoteStakeFloor(t *testing.T) {
 	arkApp, ctx, rich, poor := setupRouterSeamTest(t)
 	router := arkApp.ExecutionPolicyRouter()
@@ -138,8 +131,7 @@ func TestTreasuryRouterEnforcesVoteStakeFloor(t *testing.T) {
 }
 
 // TestTreasuryRouterEnforcesMultiSendGuard pins the second seam: a MultiSend
-// dispatched by a contract, derived account, or interchain account meets the
-// same cap before any tax or execution.
+// dispatched by a contract meets the same cap before any tax or execution.
 func TestTreasuryRouterEnforcesMultiSendGuard(t *testing.T) {
 	arkApp, ctx, _, _ := setupRouterSeamTest(t)
 	router := arkApp.ExecutionPolicyRouter()
@@ -209,44 +201,6 @@ func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 		math.NewInt(9_900),
 		arkApp.BankKeeper.GetBalance(ctx, contract, chain.USDBaseDenom).Amount,
 		"the contract pays tax in addition to the principal it is about to move")
-}
-
-// Wasmd copies a contract's chosen source port into the v2 send message it
-// dispatches, so a contract shipping stablecoins through the raw v2 path pays
-// the same tax as one dispatching MsgTransfer.
-func TestExecutionGeneratedTaxChargesTheContractForV2SendPacket(t *testing.T) {
-	arkApp, ctx, contract := setupExecutionTaxFixture(t)
-
-	inner := &stubRouter{}
-	router := app.NewExecutionPolicyRouter(inner, arkApp.TreasuryKeeper, arkApp.BankKeeper, nil, arkApp.AppCodec())
-
-	data := ibctransfertypes.NewFungibleTokenPacketData(
-		chain.USDBaseDenom, "1000", contract.String(), "receiver", "")
-	msg := &channeltypesv2.MsgSendPacket{
-		SourceClient:     "07-tendermint-0",
-		TimeoutTimestamp: 1,
-		Payloads: []channeltypesv2.Payload{{
-			SourcePort:      ibctransfertypes.PortID,
-			DestinationPort: ibctransfertypes.PortID,
-			Version:         ibctransfertypes.V1,
-			Encoding:        ibctransfertypes.EncodingJSON,
-			Value:           data.GetBytes(),
-		}},
-		Signer: contract.String(),
-	}
-
-	_, err := router.Handler(msg)(ctx, msg)
-	require.NoError(t, err)
-	require.True(t, inner.called, "the underlying handler must still run")
-
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
-	require.Equal(t,
-		math.NewInt(100),
-		arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
-	require.Equal(t,
-		math.NewInt(9_900),
-		arkApp.BankKeeper.GetBalance(ctx, contract, chain.USDBaseDenom).Amount,
-		"the contract pays tax in addition to the principal the packet escrows")
 }
 
 // A failure below the wrapper takes the tax with it. Wasmd dispatches inside a
@@ -332,95 +286,4 @@ func setupExecutionTaxFixture(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAd
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
 
 	return arkApp, ctx, taxedStandIn(t, arkApp, ctx, "contract-stand-in", 10_000)
-}
-
-// The ICA host dispatches through the policy router, so an interchain
-// account pays transfer tax exactly as a contract does. The launch allowlist
-// is empty, but the tax must not depend on it staying that way: this drives a
-// packet through the host under allow-all params and watches the send pay.
-func TestInterchainAccountPaysExecutionTax(t *testing.T) {
-	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{Height: 1})
-
-	ica := taxedStandIn(t, arkApp, ctx, "interchain-account-stand-in", 2_000)
-	arkApp.ICAHostKeeper.SetParams(ctx, icahosttypes.NewParams(true, []string{"*"}))
-
-	const (
-		controllerPort = "icacontroller-owner"
-		hostChannel    = "channel-7"
-		connectionID   = "connection-0"
-	)
-	recipient := authtypes.NewModuleAddress("ica-recipient")
-
-	// The state an ICS-27 handshake would have left behind: an open channel
-	// whose version carries the account metadata, and the registered account.
-	metadata := icatypes.NewMetadata(
-		icatypes.Version,
-		connectionID,
-		connectionID,
-		ica.String(),
-		icatypes.EncodingProtobuf,
-		icatypes.TxTypeSDKMultiMsg,
-	)
-	arkApp.IBCKeeper.ChannelKeeper.SetChannel(ctx, icatypes.HostPortID, hostChannel, channeltypes.Channel{
-		State:          channeltypes.OPEN,
-		Ordering:       channeltypes.ORDERED,
-		Counterparty:   channeltypes.NewCounterparty(controllerPort, "channel-1"),
-		ConnectionHops: []string{connectionID},
-		Version:        string(icatypes.ModuleCdc.MustMarshalJSON(&metadata)),
-	})
-	arkApp.ICAHostKeeper.SetInterchainAccountAddress(ctx, connectionID, controllerPort, ica.String())
-
-	send := &banktypes.MsgSend{
-		FromAddress: ica.String(),
-		ToAddress:   recipient.String(),
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
-	}
-	data, err := icatypes.SerializeCosmosTx(arkApp.AppCodec(), []proto.Message{send}, icatypes.EncodingProtobuf)
-	require.NoError(t, err)
-	packetData := icatypes.InterchainAccountPacketData{Type: icatypes.EXECUTE_TX, Data: data}
-
-	_, err = arkApp.ICAHostKeeper.OnRecvPacket(ctx, channeltypes.Packet{
-		Sequence:           1,
-		SourcePort:         controllerPort,
-		SourceChannel:      "channel-1",
-		DestinationPort:    icatypes.HostPortID,
-		DestinationChannel: hostChannel,
-		Data:               packetData.GetBytes(),
-	})
-	require.NoError(t, err)
-
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
-	require.Equal(t, math.NewInt(1_000), arkApp.BankKeeper.GetBalance(ctx, recipient, chain.USDBaseDenom).Amount)
-	require.Equal(t, math.NewInt(100), arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
-	require.Equal(t, math.NewInt(900), arkApp.BankKeeper.GetBalance(ctx, ica, chain.USDBaseDenom).Amount)
-}
-
-// A derived account pays tax from its own balance, on top of the principal it
-// moves — the same charge a contract takes, through the same wrapper. GMP has
-// already refused any message not signed by the derived account before this
-// point, so the signer the router bills is that account by construction.
-func TestGMPDerivedAccountPaysExecutionTax(t *testing.T) {
-	arkApp := apptestutil.Setup(t, false)
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
-
-	// Stands in for the account GMP derives for a remote caller: an ordinary
-	// account holding an ordinary balance.
-	derived := taxedStandIn(t, arkApp, ctx, "gmp-derived-stand-in", 10_000)
-
-	inner := &stubRouter{}
-	router := arkApp.ExecutionPolicyRouter().WithInner(inner)
-
-	msg := &banktypes.MsgSend{
-		FromAddress: derived.String(),
-		ToAddress:   authtypes.NewModuleAddress("recipient").String(),
-		Amount:      sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 1_000)),
-	}
-	_, err := router.Handler(msg)(ctx, msg)
-	require.NoError(t, err)
-	require.True(t, inner.called)
-
-	collector := arkApp.AccountKeeper.GetModuleAddress(treasurytypes.TransferTaxCollectorName)
-	require.Equal(t, math.NewInt(100), arkApp.BankKeeper.GetBalance(ctx, collector, chain.USDBaseDenom).Amount)
-	require.Equal(t, math.NewInt(9_900), arkApp.BankKeeper.GetBalance(ctx, derived, chain.USDBaseDenom).Amount)
 }

@@ -23,11 +23,12 @@ func (s *KeeperTestSuite) seedPricingAsset(status types.AssetStatus) {
 
 func (s *KeeperTestSuite) seedPricingPlan(rate math.LegacyDec) {
 	s.Require().NoError(s.keeper.SettlementPlans.Set(s.ctx, pricingDenom, types.SettlementPlan{
-		Denom:                 pricingDenom,
-		RedemptionRate:        rate,
-		OpenedHeight:          1,
-		ActivationHeight:      2,
-		EarliestClosingHeight: 3,
+		Denom:               pricingDenom,
+		RedemptionRate:      rate,
+		OpenedHeight:        1,
+		OpenedTime:          1,
+		ActivationTime:      2,
+		EarliestClosingTime: 3,
 	}))
 }
 

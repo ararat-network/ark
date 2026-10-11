@@ -26,10 +26,10 @@ import (
 )
 
 // TestnetValidatorTokens is the self-bond of the validator an in-place
-// testnet installs, one seat's grant, and TestnetValidatorFloat the liquid
-// balance minted beside it: a bond cannot pay fees.
+// testnet installs, one seat, and TestnetValidatorFloat the liquid balance
+// minted beside it: a bond cannot pay fees.
 var (
-	TestnetValidatorTokens = chain.NativeBaseAmount(chain.SeatGrantNoah)
+	TestnetValidatorTokens = chain.SeatGrant
 	TestnetValidatorFloat  = chain.NativeBaseAmount(chain.SeatFloatNoah)
 )
 

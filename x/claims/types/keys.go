@@ -19,7 +19,7 @@ var (
 	InsuranceReservedKey   = collections.NewPrefix(3)
 	NextClaimIDKey         = collections.NewPrefix(4)
 	ClaimsKey              = collections.NewPrefix(5)
-	// DueClaimsKey indexes pending claims by the height they become payable,
+	// DueClaimsKey indexes pending claims by the block time they become payable,
 	// which is the order EndBlock settles them in. It is derived state: genesis
 	// rebuilds it from the pending claims rather than importing it.
 	DueClaimsKey = collections.NewPrefix(6)

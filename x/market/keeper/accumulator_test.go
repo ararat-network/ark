@@ -3,6 +3,7 @@ package keeper
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -22,13 +23,13 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/market/testutil"
 	"github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 type AccumulatorTestSuite struct {
 	suite.Suite
 
 	ctx    sdk.Context
+	cms    storetypes.CommitMultiStore
 	keeper *Keeper
 }
 
@@ -45,7 +46,9 @@ func (s *AccumulatorTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
+	s.cms = testCtx.CMS
 
 	ctrl := gomock.NewController(s.T())
 	accountKeeper := testutil.NewMockAccountKeeper(ctrl)
@@ -70,6 +73,12 @@ func (s *AccumulatorTestSuite) SetupTest() {
 	)
 }
 
+// SetupSubTest gives each table case its own stores, so a case that recorded cannot leak into the
+// next one's totals.
+func (s *AccumulatorTestSuite) SetupSubTest() {
+	s.SetupTest()
+}
+
 // TestEmptyBlockTotals covers the EndBlocker's licence to skip settlement: a
 // block that recorded nothing must read back as zero rather than as absent
 // state the caller has to interpret.
@@ -86,13 +95,6 @@ func (s *AccumulatorTestSuite) TestEmptyBlockTotals() {
 // expansionRates prices one stable at one NOAH, which makes a conversion's
 // eligible principal its output amount and its spread whatever the offer holds
 // above that.
-func expansionRates() oracletypes.RateSet {
-	return oracletypes.RateSet{
-		chain.NoahBaseDenom: math.LegacyOneDec(),
-		chain.USDBaseDenom:  math.LegacyOneDec(),
-	}
-}
-
 // TestExpansionAccumulates covers what the waterfall is handed: the gross
 // offer, spread included, beside the principal liability grew by, so the block
 // total is exactly what settlement has to place and the flow indicator reads.
@@ -100,14 +102,12 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
-		expansionRates(),
+		math.LegacyNewDec(990),
 	))
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 500),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 495),
-		expansionRates(),
+		math.LegacyNewDec(495),
 	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
@@ -123,15 +123,11 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 // output valued below one base unit: the whole offer is spread, so it leaves no
 // principal but still obliges the EndBlocker to place it (D6).
 func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
-	rates := expansionRates()
 	// Half a NOAH per unit: the one unit of output values below one anoah.
-	rates[chain.USDBaseDenom] = math.LegacyNewDecWithPrec(5, 1)
-
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 1),
-		rates,
+		math.LegacyNewDecWithPrec(5, 1),
 	))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
@@ -143,38 +139,44 @@ func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 }
 
 // TestExpansionRejections checks accumulator-specific refusals, including minted value above the
-// NOAH offer received in custody.
+// NOAH offer received in custody. The offer's positivity is the swap path's to guarantee; here a
+// zero offer is refused only because any whole unit of value outvalues it.
 func (s *AccumulatorTestSuite) TestExpansionRejections() {
 	testCases := []struct {
-		name   string
-		offer  sdk.Coin
-		output sdk.Coin
+		name      string
+		offer     sdk.Coin
+		value     math.LegacyDec
+		expectErr string
 	}{
 		{
-			name:   "non-positive offer",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 990),
+			name:      "any whole unit of value against a zero offer",
+			offer:     sdk.NewInt64Coin(chain.NoahBaseDenom, 0),
+			value:     math.LegacyOneDec(),
+			expectErr: "stable output value 1anoah exceeds gross offer 0anoah",
 		},
 		{
-			name:   "non-positive output",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 0),
+			name:      "unset value",
+			offer:     sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
+			value:     math.LegacyDec{},
+			expectErr: "stable output value must be set and non-negative",
 		},
 		{
-			name:   "output the rate set cannot price",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-			output: sdk.NewInt64Coin(chain.XDRBaseDenom, 990),
+			name:      "negative value",
+			offer:     sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
+			value:     math.LegacyNewDec(-1),
+			expectErr: "stable output value must be set and non-negative",
 		},
 		{
-			name:   "output outvalues the offer",
-			offer:  sdk.NewInt64Coin(chain.NoahBaseDenom, 989),
-			output: sdk.NewInt64Coin(chain.USDBaseDenom, 990),
+			name:      "value outvalues the offer",
+			offer:     sdk.NewInt64Coin(chain.NoahBaseDenom, 989),
+			value:     math.LegacyNewDec(990),
+			expectErr: "stable output value 990anoah exceeds gross offer 989anoah",
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.Require().Error(s.keeper.recordExpansion(s.ctx, tc.offer, tc.output, expansionRates()))
+			s.Require().ErrorContains(s.keeper.recordExpansion(s.ctx, tc.offer, tc.value), tc.expectErr)
 
 			totals, err := s.keeper.conversionTotals(s.ctx)
 			s.Require().NoError(err)
@@ -240,23 +242,29 @@ func (s *AccumulatorTestSuite) TestAccumulatorOverflowIsRefused() {
 }
 
 // TestTotalsResetWithTheBlock pins the property that lets the recorders skip
-// clearing entirely: the accumulators are transient, so a new block starts from
-// nothing without anyone deleting a key.
+// clearing entirely: the accumulators are transient, so committing the block
+// leaves the next one starting from nothing without anyone deleting a key,
+// while persistent state carries over.
 func (s *AccumulatorTestSuite) TestTotalsResetWithTheBlock() {
+	s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, math.LegacyNewDec(7)))
 	s.Require().NoError(s.keeper.recordExpansion(
 		s.ctx,
 		sdk.NewInt64Coin(chain.NoahBaseDenom, 1_000),
-		sdk.NewInt64Coin(chain.USDBaseDenom, 990),
-		expansionRates(),
+		math.LegacyNewDec(990),
 	))
+	s.Require().NoError(s.keeper.recordRedemption(s.ctx, math.LegacyNewDec(100), math.NewInt(90)))
 
 	totals, err := s.keeper.conversionTotals(s.ctx)
 	s.Require().NoError(err)
 	s.Require().False(totals.IsZero())
 
-	s.SetupTest()
+	s.cms.Commit()
+	next := s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1)
 
-	totals, err = s.keeper.conversionTotals(s.ctx)
+	totals, err = s.keeper.conversionTotals(next)
 	s.Require().NoError(err)
-	s.Require().True(totals.IsZero())
+	s.Require().True(totals.IsZero(), "totals survived the commit: %+v", totals)
+	delta, err := s.keeper.ArkPoolDelta.Get(next)
+	s.Require().NoError(err)
+	s.Require().True(math.LegacyNewDec(7).Equal(delta), "pool delta is %s", delta)
 }

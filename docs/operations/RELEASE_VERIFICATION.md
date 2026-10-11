@@ -1,8 +1,8 @@
 # Release verification
 
-Use this procedure before running an Ark image or installing a standalone binary.
-It covers artifacts produced by the signed workflows after this support was added;
-older artifacts may lack attestations. [Third-party notices](../../THIRD_PARTY_NOTICES.md)
+Use this procedure before running an Ark image or installing a standalone binary
+produced by the signed release workflows; an artifact without attestations fails it.
+[Third-party notices](../../THIRD_PARTY_NOTICES.md)
 owns corresponding-source availability and licence instructions.
 
 ## Verify an image
@@ -112,6 +112,29 @@ that user-generated publication event triggers the existing Docker workflow for
 chain tags. Do not mark sidecar releases latest. Mark a stable chain release latest
 only when it is the intended recommended version. Do not replace assets after review;
 consumers must still verify the files they actually download.
+
+### Local packaging
+
+`make release` packages locally without uploading or signing. It checks a clean tree and the chain tag on HEAD,
+selects it explicitly, and runs the [chain configuration](../../.goreleaser.yml), which builds static Linux binaries
+for amd64 and arm64. GoReleaser passes its build command to
+[the release adapter](../../contrib/scripts/release-build.py), which builds the committed source export with each
+architecture's compiler in the pinned base from the [image Dockerfile](../../contrib/images/arkd-env/Dockerfile).
+Docker must support running both Linux architectures, either natively or through emulation. The builder checks the
+wasmvm version and archive digests, records the linked system libraries and packages their corresponding runtime
+sources. The adapter verifies the binary, target, source revision and runtime-source pairing before returning it to
+GoReleaser. macOS node use remains a source build.
+
+`make release-pricefeed` also packages locally without uploading or signing. It checks a clean tree and the sidecar
+tag on HEAD, selects it explicitly, then skips GoReleaser's bare-semver validation. The
+[sidecar configuration](../../.goreleaser.pricefeed.yml) derives version strings from `.Tag` and cross-compiles
+without cgo. Both release configurations prepare a corresponding source bundle, verify builds from it, and generate
+per-archive SPDX inventories with pinned Syft. Checksums cover the archives, SPDX files and every attached
+source/notice asset. This requires Python 3.12+, Docker with both Linux architectures, and the source-packaging
+prerequisites listed in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md). Published images carry their source
+bundle and notices inside `/usr/share/ark/`, including nightly builds. Standalone node releases attach both
+`arkd-source-<commit>` application sources and `arkd-runtime-source-<commit>-linux-<arch>` runtime sources. Retain
+both with the matching binaries. Neither release command is part of ordinary verification.
 
 ## Verify a standalone download
 

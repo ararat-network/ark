@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"cosmossdk.io/log/v2"
 
 	"github.com/ararat-network/ark/pkg/encoding"
+	"github.com/ararat-network/ark/pkg/tlsconfig"
 	"github.com/ararat-network/ark/pricefeed/api"
 	apitestutil "github.com/ararat-network/ark/pricefeed/api/testutil"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
@@ -212,7 +214,58 @@ func TestCachedPriceClientProtectsCachedResponse(t *testing.T) {
 	require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
 }
 
+// Each case pairs an otherwise valid snapshot with the failure, so caching it
+// would serve it.
 func TestCachedPriceClientDoesNotCacheFailedFetch(t *testing.T) {
+	tests := []struct {
+		name     string
+		response *api.PricesResponse
+		err      error
+		wantErr  string
+	}{
+		{
+			name:     "rpc error",
+			response: freshResponse(),
+			err:      status.Error(codes.Unavailable, "sidecar unavailable"),
+			wantErr:  "rpc error: code = Unavailable desc = sidecar unavailable",
+		},
+		{
+			name:     "incompatible sidecar",
+			response: freshResponse(),
+			err:      status.Error(codes.Unimplemented, "unknown service"),
+			wantErr:  "not compatible with this node",
+		},
+		{
+			name:    "nil response",
+			wantErr: "sidecar returned a nil price response",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rpc := apitestutil.NewMockPriceFeedClient(gomock.NewController(t))
+			rpc.EXPECT().
+				Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(tt.response, tt.err).
+				Times(2)
+			client := newTestCachedPriceClient(t, validClientConfig())
+			endpoints := testEndpoints(rpc)
+
+			_, err := client.fetchFrom(context.Background(), endpoints[0])
+			require.ErrorContains(t, err, tt.wantErr)
+
+			client.fetchPrices(context.Background(), endpoints)
+
+			response, err := client.Prices(context.Background(), &api.PricesRequest{})
+			require.Nil(t, response)
+			require.EqualError(t, err, "no prices fetched from the sidecar yet")
+		})
+	}
+}
+
+// A failed sweep leaves the last accepted snapshot in place; its own
+// timestamp, not the failure, decides when it stops being served.
+func TestCachedPriceClientKeepsSnapshotThroughFailedSweep(t *testing.T) {
 	tests := []struct {
 		name     string
 		response *api.PricesResponse
@@ -223,32 +276,138 @@ func TestCachedPriceClientDoesNotCacheFailedFetch(t *testing.T) {
 			err:  status.Error(codes.Unavailable, "sidecar unavailable"),
 		},
 		{
-			name: "nil response",
+			name:     "stale snapshot",
+			response: &api.PricesResponse{Timestamp: time.Now().Add(-time.Minute)},
+		},
+		{
+			name:     "oversized snapshot",
+			response: oversizedPriceResponse(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetched := make(chan struct{})
-			rpc := apitestutil.NewMockPriceFeedClient(gomock.NewController(t))
-			rpc.EXPECT().
-				Prices(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(context.Context, *api.PricesRequest, ...grpc.CallOption) (*api.PricesResponse, error) {
-					close(fetched)
-					return tt.response, tt.err
-				})
+			accepted := freshResponse()
+			accepted.Version = "accepted"
+			ctrl := gomock.NewController(t)
+			primary := apitestutil.NewMockPriceFeedClient(ctrl)
+			secondary := apitestutil.NewMockPriceFeedClient(ctrl)
+			gomock.InOrder(
+				primary.EXPECT().
+					Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(accepted, nil),
+				primary.EXPECT().
+					Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(tt.response, tt.err),
+				secondary.EXPECT().
+					Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(tt.response, tt.err),
+			)
 			client := newTestCachedPriceClient(t, validClientConfig())
-			cancel, resultCh := runCachedPricePoller(client, testEndpoints(rpc))
-			requireSignal(t, fetched)
+			endpoints := testEndpoints(primary, secondary)
 
-			response, err := client.Prices(context.Background(), &api.PricesRequest{})
-			require.Nil(t, response)
-			require.EqualError(t, err, "no prices fetched from the sidecar yet")
+			client.fetchPrices(context.Background(), endpoints)
+			client.fetchPrices(context.Background(), endpoints)
 
-			cancel()
-			require.ErrorIs(t, receiveError(t, resultCh), context.Canceled)
+			got, err := client.Prices(context.Background(), &api.PricesRequest{})
+			require.NoError(t, err)
+			require.Equal(t, "accepted", got.Version)
+			require.True(t, got.Timestamp.Equal(accepted.Timestamp))
+			require.Equal(t, 0, client.active)
 		})
 	}
+}
+
+// An unresponsive active sidecar costs one ClientTimeout, not the sweep: the
+// attempt carries its own deadline even when the poll context has none.
+func TestCachedPriceClientAttemptTimeoutReachesNextSidecar(t *testing.T) {
+	const timeout = 50 * time.Millisecond
+	deadlines := make(chan time.Duration, 1)
+	ctrl := gomock.NewController(t)
+	primary := apitestutil.NewMockPriceFeedClient(ctrl)
+	secondary := apitestutil.NewMockPriceFeedClient(ctrl)
+	gomock.InOrder(
+		primary.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+			DoAndReturn(func(ctx context.Context, _ *api.PricesRequest, _ ...grpc.CallOption) (*api.PricesResponse, error) {
+				remaining := time.Duration(-1)
+				if deadline, ok := ctx.Deadline(); ok {
+					remaining = time.Until(deadline)
+				}
+				deadlines <- remaining
+				<-ctx.Done()
+				return nil, status.FromContextError(ctx.Err()).Err()
+			}),
+		secondary.EXPECT().
+			Prices(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(freshResponse(), nil),
+	)
+	cfg := validClientConfig()
+	cfg.ClientTimeout = timeout
+	client := newTestCachedPriceClient(t, cfg)
+
+	done := make(chan struct{})
+	go func() {
+		client.fetchPrices(context.Background(), testEndpoints(primary, secondary))
+		close(done)
+	}()
+	remaining := <-deadlines
+	require.Positive(t, remaining, "attempt context carried no deadline")
+	require.LessOrEqual(t, remaining, timeout)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		require.FailNow(t, "sweep stalled on the unresponsive sidecar")
+	}
+
+	_, err := client.Prices(context.Background(), &api.PricesRequest{})
+	require.NoError(t, err)
+	require.Equal(t, 1, client.active)
+}
+
+// A sidecar that accepts TCP and never speaks HTTP/2 holds a WaitForReady call
+// until the attempt's deadline; the next sidecar then serves.
+func TestCachedPriceClientFailsOverFromBlackHoledSidecar(t *testing.T) {
+	blackHole := blackHoleAddress(t)
+	serving := serveSidecar(t, tlsconfig.Server{}, &staticPriceFeedServer{version: "v1"})
+	cfg := validClientConfig()
+	cfg.SidecarAddresses = []string{blackHole, serving}
+	cfg.ClientTimeout = 100 * time.Millisecond
+	client := newTestCachedPriceClient(t, cfg)
+	runClient(t, client)
+
+	require.Eventually(t, pricesServed(client), 5*time.Second, 10*time.Millisecond)
+}
+
+// blackHoleAddress accepts connections and never reads or writes them.
+func blackHoleAddress(t *testing.T) string {
+	t.Helper()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	var mu sync.Mutex
+	var conns []net.Conn
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			mu.Lock()
+			conns = append(conns, conn)
+			mu.Unlock()
+		}
+	}()
+	t.Cleanup(func() {
+		_ = ln.Close()
+		mu.Lock()
+		defer mu.Unlock()
+		for _, conn := range conns {
+			_ = conn.Close()
+		}
+	})
+
+	return ln.Addr().String()
 }
 
 func TestCachedPriceClientDoesNotCacheOversizedSnapshot(t *testing.T) {

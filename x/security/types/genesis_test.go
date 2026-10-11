@@ -49,10 +49,10 @@ func TestGenesisStateValidate(t *testing.T) {
 			name: "invalid mandate",
 			mutate: func(genesisState *types.GenesisState) {
 				appointment := enabledSecurityMandate()
-				appointment.ExpiryHeight = appointment.ActivationHeight
+				appointment.ExpiryTime = appointment.ActivationTime
 				genesisState.SecurityMandate = appointment
 			},
-			expected: "security mandate: activation height must precede expiry height",
+			expected: "security mandate: activation time must precede expiry time",
 		},
 		{
 			name: "half-populated plan record",

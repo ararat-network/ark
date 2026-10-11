@@ -15,6 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/market/types"
 )
@@ -31,43 +32,40 @@ func NewMsgServerImpl(k *Keeper) types.MsgServer {
 	return msgServer{k: k}
 }
 
-// Swap validates the trader address and executes a swap back to the same account.
-func (m msgServer) Swap(ctx context.Context, msg *types.MsgSwap) (*types.MsgSwapResponse, error) {
+// Sell validates the trader address and sells the offer back to the same account.
+func (m msgServer) Sell(ctx context.Context, msg *types.MsgSell) (*types.MsgSellResponse, error) {
 	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
 		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
-	swapCoin, swapFee, err := m.k.Swap(ctx, addr, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
+	swapCoin, swapFee, err := m.k.Sell(ctx, addr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.MsgSwapResponse{
+	return &types.MsgSellResponse{
 		SwapCoin: swapCoin,
 		SwapFee:  swapFee,
 	}, nil
 }
 
-// SwapSend validates the sender and recipient addresses and settles the swap to the recipient.
-func (m msgServer) SwapSend(ctx context.Context, msg *types.MsgSwapSend) (*types.MsgSwapSendResponse, error) {
-	fromAddr, err := sdk.AccAddressFromBech32(msg.FromAddress)
+// Buy validates the trader address and converts the least sufficient offer back to the same account.
+func (m msgServer) Buy(ctx context.Context, msg *types.MsgBuy) (*types.MsgBuyResponse, error) {
+	addr, err := sdk.AccAddressFromBech32(msg.Trader)
 	if err != nil {
-		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "from address is invalid: %s", err)
-	}
-	toAddr, err := sdk.AccAddressFromBech32(msg.ToAddress)
-	if err != nil {
-		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "to address is invalid: %s", err)
+		return nil, errorsmod.Wrapf(errortypes.ErrInvalidAddress, "trader is invalid: %s", err)
 	}
 
-	swapCoin, swapFee, err := m.k.Swap(ctx, fromAddr, toAddr, msg.OfferCoin, msg.AskDenom, msg.MinimumReceive)
+	offerCoin, swapCoin, swapFee, err := m.k.Buy(ctx, addr, msg.AskCoin, msg.OfferDenom, msg.MaximumOffer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.MsgSwapSendResponse{
-		SwapCoin: swapCoin,
-		SwapFee:  swapFee,
+	return &types.MsgBuyResponse{
+		OfferCoin: offerCoin,
+		SwapCoin:  swapCoin,
+		SwapFee:   swapFee,
 	}, nil
 }
 
@@ -146,7 +144,7 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 	if err != nil {
 		return nil, fmt.Errorf("getting conversion mandate: %w", err)
 	}
-	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationTime, msg.ExpiryTime)
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +165,18 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
-			return nil, errors.New("conversion committee must be distinct from Market authority")
+			return nil, errors.New("conversion committee must be distinct from the Market authority")
 		}
-		if updated.ExpiryHeight <= uint64(sdkCtx.BlockHeight()) {
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"conversion mandate expires at height %d, which is not above the current height %d",
-				updated.ExpiryHeight,
-				sdkCtx.BlockHeight(),
+				"%s expires at time %d, which is not after the current block time %d",
+				types.ConversionMandateLabel,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 		capacity, err := m.k.ConversionPolicy.Get(ctx)
@@ -207,13 +209,13 @@ func (m msgServer) SetConversionMandate(ctx context.Context, msg *types.MsgSetCo
 		return nil, fmt.Errorf("setting conversion mandate: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventConversionMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Market conversion mandate: %w", err)
+		return nil, fmt.Errorf("emitting conversion mandate: %w", err)
 	}
 
 	return &types.MsgSetConversionMandateResponse{}, nil

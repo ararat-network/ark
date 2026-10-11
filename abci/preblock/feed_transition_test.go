@@ -37,7 +37,7 @@ func TestFeedTransitionAcrossVoteAndFinaliseHeights(t *testing.T) {
 				{
 					Denom:                "akrw",
 					Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
-					ActivationVoteHeight: activationVoteHeight,
+					ActivationVoteHeight: uint64(activationVoteHeight),
 				},
 			},
 		},
@@ -125,12 +125,12 @@ func TestFeedTransitionsAtConsecutiveHeights(t *testing.T) {
 				{
 					Denom:                "akrw",
 					Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
-					ActivationVoteHeight: firstActivation,
+					ActivationVoteHeight: uint64(firstActivation),
 				},
 				{
 					Denom:                "ajpy",
 					Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
-					ActivationVoteHeight: firstActivation + 1,
+					ActivationVoteHeight: uint64(firstActivation + 1),
 				},
 			},
 		},
@@ -211,7 +211,7 @@ func TestPreblockConsumesVoteExtensionsBeforePromotingFeeds(t *testing.T) {
 					{
 						Denom:                "akrw",
 						Direction:            oracletypes.FeedDirection_FEED_DIRECTION_ADD,
-						ActivationVoteHeight: activationVoteHeight,
+						ActivationVoteHeight: uint64(activationVoteHeight),
 					},
 				},
 			},
@@ -301,7 +301,7 @@ func (k *transitionOracleKeeper) RecordVoteAccounting(
 // AdvanceFeeds mirrors the keeper's batch promotion: every batch whose
 // activation height has arrived folds in, advancing the version once per batch.
 func (k *transitionOracleKeeper) AdvanceFeeds(ctx context.Context) error {
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	blockHeight := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
 	for len(k.feeds.Transitions) > 0 &&
 		k.feeds.Transitions[0].ActivationVoteHeight <= blockHeight {
 		batchHeight := k.feeds.Transitions[0].ActivationVoteHeight

@@ -3,6 +3,7 @@ package ark.claims.v1;
 
 import "amino/amino.proto";
 import "ark/claims/v1/claims.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
@@ -24,11 +25,12 @@ message GenesisState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string insurance_reserved = 4 [
-    (cosmos_proto.scalar) = "cosmos.Int",
-    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+  // insurance_reserved sums pending claims by denomination.
+  repeated cosmos.base.v1beta1.Coin insurance_reserved = 4 [
     (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // next_claim_id is the next globally available claim identifier.
   uint64 next_claim_id = 5 [(amino.dont_omitempty) = true];

@@ -5,6 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/cosmos/cosmos-sdk/testutil/simsx"
+
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/simulation"
 	"github.com/ararat-network/ark/x/claims/types"
 )
@@ -42,7 +45,7 @@ func TestCommitteeClaimFactoriesSubmitAndWithdraw(t *testing.T) {
 	require.Equal(t, mandate.Term, submit.ExpectedTerm)
 	require.NotEmpty(t, submit.Reference, "a claim must carry a reference")
 	require.True(t, submit.Amount.Amount.IsPositive())
-	require.True(t, submit.Amount.Amount.LTE(mandate.CommitteeClaimLimit.Amount))
+	require.True(t, submit.Amount.Amount.LTE(mandate.CommitteeClaimLimit))
 	submitted, err := f.msgServer.CommitteeSubmitClaim(f.ctx, submit)
 	require.NoError(t, err)
 
@@ -85,9 +88,8 @@ func TestCommitteeClaimFactoriesSkipWithoutAnActiveMandate(t *testing.T) {
 	}
 }
 
-// TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom pins the tighter of
-// the two ceilings the factory works under. An empty Insurance is the state a
-// run spends its opening blocks in.
+// TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom pins the Insurance ceiling. An empty
+// Insurance is the state a run spends its opening blocks in.
 func TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom(t *testing.T) {
 	f := newClaimFixture(t, 0)
 	f.appointCommittee(t)
@@ -95,7 +97,21 @@ func TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom(t *testing.T) {
 	_, msg := simulation.MsgCommitteeSubmitClaimFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 
 	require.True(t, f.reporter.IsSkipped())
-	require.Contains(t, f.reporter.Comment(), "no headroom")
+	require.Contains(t, f.reporter.Comment(), "no uncommitted Insurance NOAH")
+	require.Nil(t, msg)
+}
+
+// TestMsgCommitteeSubmitClaimFactorySkipsARefusedClaim covers the limit, which the factory learns
+// only by running the handler: the charge reads rates the keeper does not expose.
+func TestMsgCommitteeSubmitClaimFactorySkipsARefusedClaim(t *testing.T) {
+	f := newClaimFixture(t, 1_000_000)
+	mandate := f.appointCommittee(t)
+	require.NoError(t, f.keeper.ClaimsAllowanceUsed.Set(f.ctx, mandate.CommitteeClaimLimit))
+
+	_, msg := simulation.MsgCommitteeSubmitClaimFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+	require.True(t, f.reporter.IsSkipped())
+	require.Contains(t, f.reporter.Comment(), "past mandate limit")
 	require.Nil(t, msg)
 }
 
@@ -105,7 +121,7 @@ func TestMsgCommitteeSubmitClaimFactorySkipsWithoutHeadroom(t *testing.T) {
 func TestMsgCommitteeSubmitClaimFactorySkipsWhenTheClaimWouldOutliveTheMandate(t *testing.T) {
 	f := newClaimFixture(t, 1_000_000)
 	mandate := f.appointCommittee(t)
-	mandate.ExpiryHeight = uint64(f.ctx.BlockHeight()) + 1
+	mandate.ExpiryTime = uint64(f.ctx.BlockHeight()) + 1
 	require.NoError(t, f.keeper.ClaimsMandate.Set(f.ctx, mandate))
 
 	_, msg := simulation.MsgCommitteeSubmitClaimFactory(f.keeper)(f.ctx, f.testData, f.reporter)
@@ -126,4 +142,36 @@ func TestMsgCommitteeCancelClaimFactorySkipsWithoutACommitteeClaim(t *testing.T)
 	require.True(t, f.reporter.IsSkipped())
 	require.Contains(t, f.reporter.Comment(), "no pending committee claim to cancel")
 	require.Nil(t, msg)
+}
+
+// TestClaimFactoriesDrawStablecoinClaims is the reachability proof for currency claims: across draws
+// both submission factories emit NOAH claims and registry-currency claims the handler funds through
+// Market, each accepted when delivered.
+func TestClaimFactoriesDrawStablecoinClaims(t *testing.T) {
+	f := newClaimFixture(t, 1_000_000_000)
+	f.appointCommittee(t)
+	drawn := map[string]map[bool]int{"governance": {}, "committee": {}}
+	for range 40 {
+		reporter := simsx.NewBasicSimulationReporter()
+		_, gov := simulation.MsgSubmitClaimFactory(f.keeper)(f.ctx, f.testData, reporter)
+		if !reporter.IsSkipped() {
+			_, err := f.msgServer.SubmitClaim(f.ctx, gov)
+			require.NoError(t, err)
+			drawn["governance"][gov.Amount.Denom == chain.NoahBaseDenom]++
+			require.Equal(t, gov.Amount.Denom != chain.NoahBaseDenom, gov.MaxOffer.IsPositive(), "only a currency claim offers NOAH")
+		}
+
+		reporter = simsx.NewBasicSimulationReporter()
+		_, committee := simulation.MsgCommitteeSubmitClaimFactory(f.keeper)(f.ctx, f.testData, reporter)
+		if !reporter.IsSkipped() {
+			_, err := f.msgServer.CommitteeSubmitClaim(f.ctx, committee)
+			require.NoError(t, err)
+			drawn["committee"][committee.Amount.Denom == chain.NoahBaseDenom]++
+		}
+	}
+	for origin, counts := range drawn {
+		require.Positive(t, counts[true], "%s NOAH claims", origin)
+		require.Positive(t, counts[false], "%s currency claims", origin)
+	}
+	require.Greater(t, len(*f.insurance), 1, "the currency buys landed in Insurance custody")
 }

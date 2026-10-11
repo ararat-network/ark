@@ -86,11 +86,12 @@ func TestParseResponse(t *testing.T) {
 		body      string
 		wantPrice string
 		wantCode  types.ErrorCode
+		wantErr   string
 	}{
 		{
 			name:      "resolves the spot amount",
 			tickers:   []types.Ticker{"USDT-USD"},
-			body:      `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:      `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantPrice: "1.0001",
 		},
 		{
@@ -98,25 +99,37 @@ func TestParseResponse(t *testing.T) {
 			// means the wrong product was priced.
 			name:     "quoted in another currency is invalid",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"amount":"0.9","currency":"EUR"}}`,
+			body:     `{"data":{"amount":"0.9","base":"USDT","currency":"EUR"}}`,
+			wantCode: types.ErrorInvalidResponse,
+		},
+		{
+			name:     "another base is invalid",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"data":{"amount":"67000.12","base":"BTC","currency":"USD"}}`,
+			wantCode: types.ErrorInvalidResponse,
+		},
+		{
+			name:     "missing base is invalid",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
 			wantCode: types.ErrorInvalidResponse,
 		},
 		{
 			name:     "malformed ticker",
 			tickers:  []types.Ticker{"USDTUSD"},
-			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:     `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorUnknownPair,
 		},
 		{
 			name:     "missing amount is no response",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"currency":"USD"}}`,
+			body:     `{"data":{"base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorNoResponse,
 		},
 		{
 			name:     "unparseable amount",
 			tickers:  []types.Ticker{"USDT-USD"},
-			body:     `{"data":{"amount":"not-a-price","currency":"USD"}}`,
+			body:     `{"data":{"amount":"not-a-price","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorFailedToParsePrice,
 		},
 		{
@@ -126,11 +139,18 @@ func TestParseResponse(t *testing.T) {
 			wantCode: types.ErrorFailedToDecode,
 		},
 		{
+			name:     "venue error body carries the venue's message",
+			tickers:  []types.Ticker{"USDT-USD"},
+			body:     `{"errors":[{"id":"not_found","message":"Invalid currency"}]}`,
+			wantCode: types.ErrorAPIGeneral,
+			wantErr:  "coinbase error: not_found: Invalid currency",
+		},
+		{
 			// A multi-ticker batch cannot be attributed to one product, so
 			// the whole batch is refused rather than guessed at.
 			name:     "more than one ticker is invalid",
 			tickers:  []types.Ticker{"USDT-USD", "BTC-USD"},
-			body:     `{"data":{"amount":"1.0001","currency":"USD"}}`,
+			body:     `{"data":{"amount":"1.0001","base":"USDT","currency":"USD"}}`,
 			wantCode: types.ErrorInvalidResponse,
 		},
 	}
@@ -144,6 +164,9 @@ func TestParseResponse(t *testing.T) {
 				require.Len(t, response.Unresolved, len(tt.tickers))
 				for _, ticker := range tt.tickers {
 					require.Equal(t, tt.wantCode, response.Unresolved[ticker].Code())
+					if tt.wantErr != "" {
+						require.EqualError(t, response.Unresolved[ticker], tt.wantErr)
+					}
 				}
 				return
 			}

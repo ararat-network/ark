@@ -81,8 +81,35 @@ func TestExposureStateValidate(t *testing.T) {
 		{
 			// The sample clamp bounds the series here by induction, so exactly
 			// one is reachable and anything above it is a corrupted import.
-			name:   "variance of exactly one",
-			mutate: func(s *types.ExposureState) { s.VolatilityVariance = math.LegacyOneDec() },
+			name: "variance of exactly one",
+			mutate: func(s *types.ExposureState) {
+				s.VolatilityVariance, s.SampleInterval = math.LegacyOneDec(), math.LegacyOneDec()
+			},
+		},
+		{
+			name:      "unset sample interval",
+			mutate:    func(s *types.ExposureState) { s.SampleInterval = math.LegacyDec{} },
+			expectErr: "SampleInterval must be set",
+		},
+		{
+			name:      "negative sample interval",
+			mutate:    func(s *types.ExposureState) { s.SampleInterval = math.LegacyNewDec(-1) },
+			expectErr: "SampleInterval must be zero or positive",
+		},
+		{
+			// Every sample folds a squared return of at most one beside an interval of at least a
+			// second under one set of weights, so variance above the interval is a corrupted import.
+			name: "variance above its interval",
+			mutate: func(s *types.ExposureState) {
+				s.VolatilityVariance, s.SampleInterval = math.LegacyMustNewDecFromStr("0.5"), math.LegacyMustNewDecFromStr("0.4")
+			},
+			expectErr: "must not exceed SampleInterval",
+		},
+		{
+			name: "variance at its interval",
+			mutate: func(s *types.ExposureState) {
+				s.VolatilityVariance, s.SampleInterval = math.LegacyMustNewDecFromStr("0.5"), math.LegacyMustNewDecFromStr("0.5")
+			},
 		},
 		{
 			name: "variance above one",
@@ -114,11 +141,33 @@ func TestExposureStateValidate(t *testing.T) {
 		{
 			name:      "multiplier below one",
 			mutate:    func(s *types.ExposureState) { s.Multiplier = math.LegacyMustNewDecFromStr("0.5") },
-			expectErr: "Multiplier must be at least one",
+			expectErr: "Multiplier must be between one and",
 		},
 		{
 			name:   "multiplier above one",
 			mutate: func(s *types.ExposureState) { s.Multiplier = math.LegacyNewDec(3) },
+		},
+		{
+			name:   "multiplier at the domain cap",
+			mutate: func(s *types.ExposureState) { s.Multiplier = types.MaxExposureMultiplierCap },
+		},
+		{
+			name: "multiplier above the domain cap",
+			mutate: func(s *types.ExposureState) {
+				s.Multiplier = types.MaxExposureMultiplierCap.Add(math.LegacySmallestDec())
+			},
+			expectErr: "Multiplier must be between one and",
+		},
+		{
+			name:   "flow pressure at the domain cap",
+			mutate: func(s *types.ExposureState) { s.FlowPressure = types.MaxExposureFlowPressure },
+		},
+		{
+			name: "flow pressure above the domain cap",
+			mutate: func(s *types.ExposureState) {
+				s.FlowPressure = types.MaxExposureFlowPressure.Add(math.LegacySmallestDec())
+			},
+			expectErr: "FlowPressure must be at most",
 		},
 	}
 

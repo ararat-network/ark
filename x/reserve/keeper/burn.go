@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/reserve/types"
 )
 
 // requirePaperBurnable permits only uncredited registry paper. Eligibility symbols and registry
@@ -51,17 +52,57 @@ func (k *Keeper) requirePaperBurnable(ctx context.Context, amounts sdk.Coins) er
 	return nil
 }
 
-// BurnableSurplus bounds NOAH disposal by both recognised capital above requirement and custody
-// above the mandate floor. An unavailable requirement is an error, never permission to burn.
+// BurnableSurplus is the largest NOAH burn that leaves recognised capital at the requirement and
+// custody at the mandate floor. An unavailable requirement is an error, never permission to burn.
 func (k Keeper) BurnableSurplus(ctx context.Context) (math.Int, error) {
-	if k.treasuryReader == nil {
-		return math.Int{}, errors.New("reserve capital requirement reader is not wired")
-	}
-	required, err := k.treasuryReader.RequiredReserveCapital(ctx)
+	required, stakes, floor, err := k.burnInputs(ctx)
 	if err != nil {
-		return math.Int{}, fmt.Errorf("getting Reserve capital requirement: %w", err)
+		return math.Int{}, err
 	}
-	recognised, err := k.RecognisedCapital(ctx)
+	return burnableSurplus(k.balance(ctx), floor, required, stakes)
+}
+
+// CheckSurplusBurn admits one committee NOAH burn: within the bound, and certified by the solve at
+// the balance it leaves, so the requirement holds after the burn by construction rather than by
+// the search's monotonicity. It returns the bound for the caller's report.
+func (k Keeper) CheckSurplusBurn(ctx context.Context, amount math.Int) (math.Int, error) {
+	required, stakes, floor, err := k.burnInputs(ctx)
+	if err != nil {
+		return math.Int{}, err
+	}
+	balance := k.balance(ctx)
+	surplus, err := burnableSurplus(balance, floor, required, stakes)
+	if err != nil {
+		return math.Int{}, err
+	}
+	if amount.GT(surplus) {
+		return math.Int{}, fmt.Errorf(
+			"burn %s exceeds the burnable Reserve surplus %s",
+			chain.NoahCoin(amount),
+			chain.NoahCoin(surplus),
+		)
+	}
+	remaining, err := recognisedAt(balance.Sub(amount), stakes)
+	if err != nil {
+		return math.Int{}, err
+	}
+	if remaining.LT(required) {
+		return math.Int{}, fmt.Errorf(
+			"burn %s leaves recognised capital %s below the requirement %s",
+			chain.NoahCoin(amount),
+			chain.NoahCoin(remaining),
+			chain.NoahCoin(required),
+		)
+	}
+	return surplus, nil
+}
+
+// burnableSurplus sizes the bound. Recognised capital levers the balance through every clipped
+// stake, T = (base + unclipped) / (1 - clipped ratios), so a burn lowers it by more than itself
+// and the pre-burn surplus overstates the power; the bound is searched on the post-burn solve
+// instead, whose verdict is monotone in the balance.
+func burnableSurplus(balance, floor, required math.Int, stakes []types.RecognitionStake) (math.Int, error) {
+	recognised, err := recognisedAt(balance, stakes)
 	if err != nil {
 		return math.Int{}, err
 	}
@@ -69,14 +110,46 @@ func (k Keeper) BurnableSurplus(ctx context.Context) (math.Int, error) {
 	if !surplus.IsPositive() {
 		return math.ZeroInt(), nil
 	}
-
-	reserveMandate, err := k.Mandate.Get(ctx)
-	if err != nil {
-		return math.Int{}, fmt.Errorf("getting Reserve mandate: %w", err)
-	}
-	spendable := k.balance(ctx).Sub(reserveMandate.MinimumNoahBalance.Amount)
+	spendable := balance.Sub(floor)
 	if !spendable.IsPositive() {
 		return math.ZeroInt(), nil
 	}
-	return math.MinInt(surplus, spendable), nil
+
+	// A unit burned lowers recognised capital by at least a unit, so the pre-burn surplus bounds
+	// the search from above and the floor independently.
+	low, high := math.ZeroInt(), math.MinInt(surplus, spendable)
+	for low.LT(high) {
+		mid := low.Add(high).AddRaw(1).QuoRaw(2)
+		remaining, err := recognisedAt(balance.Sub(mid), stakes)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if remaining.GTE(required) {
+			low = mid
+		} else {
+			high = mid.SubRaw(1)
+		}
+	}
+	return low, nil
+}
+
+// burnInputs reads what a burn is sized against: the requirement, the recognition stakes, and the
+// mandate's NOAH floor.
+func (k Keeper) burnInputs(ctx context.Context) (math.Int, []types.RecognitionStake, math.Int, error) {
+	if k.treasuryReader == nil {
+		return math.Int{}, nil, math.Int{}, errors.New("reserve capital requirement reader is not wired")
+	}
+	required, err := k.treasuryReader.RequiredReserveCapital(ctx)
+	if err != nil {
+		return math.Int{}, nil, math.Int{}, fmt.Errorf("getting Reserve capital requirement: %w", err)
+	}
+	_, stakes, err := k.recognitionStakes(ctx)
+	if err != nil {
+		return math.Int{}, nil, math.Int{}, err
+	}
+	reserveMandate, err := k.Mandate.Get(ctx)
+	if err != nil {
+		return math.Int{}, nil, math.Int{}, fmt.Errorf("getting Reserve mandate: %w", err)
+	}
+	return required, stakes, reserveMandate.MinimumNoahBalance.Amount, nil
 }

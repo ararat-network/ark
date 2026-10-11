@@ -150,10 +150,10 @@ func usdSettlementPlan() assettypes.SettlementPlan {
 	return assettypes.SettlementPlan{
 		Denom: chain.USDBaseDenom,
 		// Two NOAH per unit of settled ausd.
-		RedemptionRate:        math.LegacyNewDec(2),
-		OpenedHeight:          1,
-		ActivationHeight:      1_000,
-		EarliestClosingHeight: 1100,
+		RedemptionRate:      math.LegacyNewDec(2),
+		OpenedHeight:        1,
+		ActivationTime:      1_000,
+		EarliestClosingTime: 1100,
 	}
 }
 

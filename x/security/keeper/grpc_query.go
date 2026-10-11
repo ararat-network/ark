@@ -7,13 +7,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/security/types"
 )
 
 var _ types.QueryServer = queryServer{}
 
+// queryServer validates each request itself and otherwise returns the keeper's error. Security
+// registers no errors: nothing branches on one of its failures.
 type queryServer struct {
 	k *Keeper
 }
@@ -25,7 +26,7 @@ func NewQueryServerImpl(k *Keeper) types.QueryServer {
 }
 
 // SecurityMandate returns the committee appointment and whether it may act at
-// the current height.
+// the current block time.
 func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecurityMandateRequest) (*types.QuerySecurityMandateResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -33,13 +34,11 @@ func (q queryServer) SecurityMandate(ctx context.Context, req *types.QuerySecuri
 
 	securityMandate, err := q.k.Mandate.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("getting security mandate: %s", err))
+		return nil, fmt.Errorf("getting security mandate: %w", err)
 	}
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	return &types.QuerySecurityMandateResponse{
 		Mandate: securityMandate,
-		Active:  securityMandate.IsActive(uint64(sdkCtx.BlockHeight())),
+		Active:  securityMandate.IsActive(chain.BlockSeconds(ctx)),
 	}, nil
 }
 
@@ -52,14 +51,14 @@ func (q queryServer) CommitteePlan(ctx context.Context, req *types.QueryCommitte
 
 	record, err := q.k.CommitteePlan.Get(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("getting committee plan: %s", err))
+		return nil, fmt.Errorf("getting committee plan: %w", err)
 	}
 
 	matchesPending := false
 	if !record.IsZero() {
 		pending, hasPending, err := q.k.pendingUpgradePlan(ctx)
 		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, fmt.Errorf("reading the pending upgrade plan: %w", err)
 		}
 		matchesPending = hasPending && record.Matches(pending.Name, pending.Height)
 	}

@@ -11,10 +11,11 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// RebaseReferenceState converts the tax cap, base-fee floor and live price, conversion factors, and
-// exposure price anchor in the reference-change transaction. Every stored old-unit value must
+// RebaseReference converts the tax cap, base-fee floor and live price, conversion factors, and
+// exposure price anchor in the reference-change transaction. It implements the oracle module's
+// ReferenceRebaser, and MsgSetReferenceDenom is its only caller. Every stored old-unit value must
 // retain its meaning.
-func (k Keeper) RebaseReferenceState(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
+func (k Keeper) RebaseReference(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting params: %w", err)

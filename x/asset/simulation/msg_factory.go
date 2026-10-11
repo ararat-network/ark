@@ -9,8 +9,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // pickAsset returns a registered asset in one of the given statuses, skipping
@@ -57,6 +59,39 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 		return nil, &types.MsgUpdateParams{
 			Authority: testData.ModuleAccountAddress(reporter, "gov"),
 			Params:    RandomisedParams(testData.Rand().Rand),
+		}
+	}
+}
+
+// MsgRegisterAssetFactory registers a priced denomination not yet in the registry. A run's feeds are
+// the launch denominations, the only ones the Oracle's simulation adds, so those are the candidates;
+// each is dry-run against the keeper, which alone reads Bank supply, Bank metadata, and feed phase.
+func MsgRegisterAssetFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgRegisterAsset] {
+	return func(
+		ctx context.Context,
+		testData *simsx.ChainDataSource,
+		reporter simsx.SimulationReporter,
+	) ([]simsx.SimAccount, *types.MsgRegisterAsset) {
+		candidates := make([]string, 0, len(oracletypes.DefaultFeedDenoms))
+		for _, denom := range oracletypes.DefaultFeedDenoms {
+			// XDR prices Market's pool and has a feed, never an asset.
+			if denom == chain.XDRBaseDenom {
+				continue
+			}
+			cache, _ := sdk.UnwrapSDKContext(ctx).CacheContext()
+			if err := k.RegisterAsset(cache, denom); err == nil {
+				candidates = append(candidates, denom)
+			}
+		}
+		if len(candidates) == 0 {
+			reporter.Skip("no priced denomination is free to register")
+
+			return nil, nil
+		}
+
+		return nil, &types.MsgRegisterAsset{
+			Authority: testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:     candidates[testData.Rand().IntInRange(0, len(candidates))],
 		}
 	}
 }
@@ -223,7 +258,7 @@ func MsgCancelSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.M
 // surface be exercised later rather than merely stored.
 func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergencyMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetEmergencyMandate) {
@@ -241,14 +276,16 @@ func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergenc
 		}
 
 		r := testData.Rand()
-		activationHeight := r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activationTime := now + r.Uint64InRange(1, 1_000)
 
 		return nil, &types.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activationHeight,
-			// Validation demands activation strictly precede expiry.
-			ExpiryHeight: activationHeight + r.Uint64InRange(1, 100_000),
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activationTime,
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current block time.
+			ExpiryTime: activationTime + r.Uint64InRange(1, 100_000),
 		}
 	}
 }
@@ -303,14 +340,14 @@ func MsgOpenSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.Msg
 
 		r := testData.Rand()
 		asset := candidates[r.IntInRange(0, len(candidates))]
-		activation := sdk.UnwrapSDKContext(ctx).BlockHeight() + int64(params.SettlementActivationDelayBlocks)
+		activation := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 
 		return nil, &types.MsgOpenSettlement{
-			Authority:             testData.ModuleAccountAddress(reporter, "gov"),
-			Denom:                 asset.Denom,
-			ExpectedVersion:       asset.Version,
-			RedemptionRate:        math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
-			EarliestClosingHeight: activation + int64(r.IntInRange(1_000, 10_000)),
+			Authority:           testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:               asset.Denom,
+			ExpectedVersion:     asset.Version,
+			RedemptionRate:      math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
+			EarliestClosingTime: activation + r.Uint64InRange(1_000, 10_000),
 		}
 	}
 }

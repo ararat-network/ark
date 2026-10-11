@@ -13,7 +13,10 @@ packages under `api/` and `websocket/` should stay focused on exchange-specific 
 - `config.go` defines the provider-level config, including provider identity, markets, and transport-specific config.
 - `registry.go` maps provider names to handler factories and wires a `providers.Config` to the correct API or WebSocket
   fetcher.
-- `api/` contains HTTP API provider adapters.
+- `http_client.go` builds the HTTP client every API fetcher and WebSocket dial shares; it refuses redirects, so a second
+  request cannot carry credentials off the configured origin.
+- `api/` contains HTTP API provider adapters; `api/internal/fiat/` holds the `BASE/QUOTE` batching the fiat adapters
+  share.
 - `websocket/` contains WebSocket provider adapters.
 - `base/` contains the provider runtime, transport fetcher interfaces, metrics, and shared lifecycle logic.
 - `base/api/` and `base/websocket/` contain the shared API and WebSocket fetcher implementations.

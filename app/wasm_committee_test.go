@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"testing"
+	"time"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
@@ -14,6 +15,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/app/mempool"
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
@@ -49,23 +51,22 @@ func committeePolicy() treasurytypes.EconomicPolicy {
 	}
 }
 
-// committeeExpiry is the first height at which the appointed contract may no
-// longer act.
-const committeeExpiry = 100
+// committeeWindow is how many seconds after the fixture's block time the appointed contract may act.
+const committeeWindow = 100
 
-// appointEconomicCommittee appoints committee to the economic mandate as
-// governance, active from height one until committeeExpiry, and returns the
-// term it received.
+// appointEconomicCommittee appoints committee to the economic mandate as governance, active from the
+// epoch until committeeWindow seconds past the fixture's block time, and returns the term it
+// received.
 func appointEconomicCommittee(t *testing.T, f reflectFixture, committee sdk.AccAddress) uint64 {
 	t.Helper()
 	minimum, maximum := economicCorridor()
 	_, err := treasurykeeper.NewMsgServerImpl(f.app.TreasuryKeeper).SetEconomicMandate(f.ctx, &treasurytypes.MsgSetEconomicMandate{
-		Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Committee:        committee.String(),
-		ActivationHeight: 1,
-		ExpiryHeight:     committeeExpiry,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
+		Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Committee:      committee.String(),
+		ActivationTime: 1,
+		ExpiryTime:     chain.BlockSeconds(f.ctx) + committeeWindow,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
 	})
 	require.NoError(t, err)
 	stored, err := f.app.TreasuryKeeper.EconomicMandate.Get(f.ctx)
@@ -135,17 +136,17 @@ func TestContractCommitteeDispatchIsRefused(t *testing.T) {
 		name      string
 		committee sdk.AccAddress
 		term      uint64
-		height    int64
+		later     time.Duration
 		want      string
 	}{
-		{name: "another committee in the message", committee: f.owner, term: term, height: 1, want: "contract doesn't have permission"},
-		{name: "stale term", committee: contract, term: term + 1, height: 1, want: "term mismatch"},
-		{name: "expired window", committee: contract, term: term, height: committeeExpiry, want: "mandate is not active"},
+		{name: "another committee in the message", committee: f.owner, term: term, want: "contract doesn't have permission"},
+		{name: "stale term", committee: contract, term: term + 1, want: "term mismatch"},
+		{name: "expired window", committee: contract, term: term, later: committeeWindow * time.Second, want: "mandate is not active"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			at := f
-			at.ctx = f.ctx.WithBlockHeight(test.height)
+			at.ctx = f.ctx.WithBlockTime(f.ctx.BlockTime().Add(test.later))
 			err := at.execute(t, contract, f.owner, committeeUpdate(t, f, test.committee, test.term))
 			require.ErrorContains(t, err, test.want)
 			require.True(t, before.Equal(storedPolicy(t, f)))

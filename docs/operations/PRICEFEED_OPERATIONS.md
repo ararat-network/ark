@@ -20,6 +20,12 @@ routes, and bootstrap expiry before starting. Defaults include placeholder crede
 a structurally valid file does not prove that every requested feed can be priced. Defaults live in
 [pricefeed/config/default.go](../../pricefeed/config/default.go).
 
+Every default route ends on the `USD/NOAH` leg, which the generated config prices with an expiring bootstrap price,
+0.729394602479941648 NOAH per dollar, one NOAH a XDR at the 1.371 cross (D128), until its `valid_until`, used only while no provider has a fresh NOAH sample. Do not add NOAH markets
+to a provider until the [opening runbook](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion) calls for it:
+the first live sample replaces the bootstrap price on every sidecar that carries the venue, and the
+`ark.pricefeed.bootstrap.price.uses` counter shows which legs still rely on it (D95).
+
 In the node's `config/app.toml`, enable its client and select the sidecar addresses. For a sidecar on the same host:
 
 ```toml
@@ -64,6 +70,10 @@ a different file for that process. Runtime prepares replacement providers and ch
 an update. Invalid replacements leave the active runtime intact. Public/admin listener addresses, process TLS selection,
 and process telemetry options are startup settings; use `pricefeed start --help` and restart to change them.
 
+A panic in a provider or the chain-state client, or a listener failing, stops the whole sidecar: the process exits
+non-zero rather than keep pricing from a component in an unknown state. Run it under a supervisor that restarts it, such
+as systemd with `Restart=on-failure`; a node listing a second sidecar in `sidecar_addresses` fails over to it meanwhile.
+
 ## Transport, identity rotation, and releases
 
 `pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for
@@ -84,10 +94,9 @@ TLS uses version 1.3 or newer with normal hostname and certificate verification.
   apply. `pricefeed prices` and `pricefeed check` accept `--tls-mode` and `--tls-*` files;
   `check` also accepts `--chain-tls-mode` and `--chain-tls-*` for its chain connection.
 
-**Upgrading existing configurations:** add TLS mode wherever certificate files are already set.
-For remote plaintext, explicitly select plaintext mode; the default now refuses those endpoints.
-Local plaintext configurations continue to work. The Docker localnet selects plaintext explicitly
-for its container-to-container links.
+**Mode is explicit:** a configuration that sets certificate files must also set the TLS mode, and remote
+plaintext must select plaintext mode, since the default refuses remote endpoints. Local plaintext needs no
+mode. The Docker localnet selects plaintext explicitly for its container-to-container links.
 
 Long-lived connections check certificate/key contents every minute, including timestamp-preserving
 file replacements and symlink swaps. Handshakes read only the current certificate from memory.
@@ -125,16 +134,23 @@ New fields must preserve operation with older peers; a new RPC is unavailable on
 so callers need a fallback to retain compatibility with them. Incompatible changes require a new
 service version, such as v2. A missing required service or RPC returns `Unimplemented`.
 Prices use the compact encoding in `pkg/encoding`, also carried by vote extensions, so that
-encoding is part of the compatibility contract.
+encoding is part of the compatibility contract; fixed byte vectors in its tests pin it.
 
-The sidecar's reported build version identifies the build for operators. The node logs and exports
-it but never gates compatibility on it; nodes and sidecars release independently.
+v1 is frozen from the first `pricefeed/vX.Y.Z` release, since that is the first sidecar an operator can run
+beside a newer node. Until then it may still change. From then, `make proto-check-pricefeed`, which CI runs on
+every pull request, refuses a breaking change to `proto/ark/pricefeed` against the newest release.
+
+The sidecar's reported build version identifies the build for operators. The node logs it at Info on
+first contact and whenever it changes, exports no metric for it, and never gates compatibility on it;
+nodes and sidecars release independently.
 
 ## Replacing a sidecar
 
 Preconfigure two sidecar endpoints in the node's `sidecar_addresses` and warm the replacement before stopping the old
 process. The node stays on its active endpoint until failure, then tries alternatives. Each attempt has its own
-`client_timeout`; the last successful snapshot remains usable only within `price_ttl`. Continuity therefore depends on
+`client_timeout`; the last successful snapshot remains usable only within `price_ttl`. The node refuses to start unless
+`client_timeout` is less than `price_ttl` minus `interval`, so a sweep that waits out one hung sidecar still lands in
+time; each further hung sidecar costs another `client_timeout`. Continuity therefore depends on
 replacement readiness, feed coverage, and the failover sweep completing before the usable snapshot expires.
 
 Changing the node's address list requires a node restart. Existing connections do not acquire new trust roots when a CA

@@ -1064,9 +1064,8 @@ type GenesisState struct {
 	// calm-market multiplier during whatever conditions prompted the export.
 	ExposureState *ExposureState `protobuf:"bytes,6,opt,name=exposure_state,json=exposureState,proto3" json:"exposure_state,omitempty"`
 	// exposure_refresh_pending records a refresh period that elapsed without a
-	// successful recomputation, on the same terms as tax_cap_refresh_pending: the
-	// boundary is an instant rather than a state, so an owed refresh survives
-	// export instead of being forgiven by the migration.
+	// successful recomputation. The boundary is an instant rather than a state,
+	// so an owed refresh survives export instead of being forgiven at import.
 	ExposureRefreshPending bool `protobuf:"varint,7,opt,name=exposure_refresh_pending,json=exposureRefreshPending,proto3" json:"exposure_refresh_pending,omitempty"`
 	// base_gas_price is the base-fee controller's live price, in reference_denom
 	// base units per gas unit. At least min_base_gas_price: a fresh chain starts

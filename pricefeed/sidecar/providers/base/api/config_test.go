@@ -91,13 +91,6 @@ func TestAPIConfigValidateBasicRejectsInvalidFields(t *testing.T) {
 			errContains: "batch size cannot be negative",
 		},
 		{
-			name: "negative max block height age",
-			mutate: func(cfg *Config) {
-				cfg.MaxBlockHeightAge = -time.Second
-			},
-			errContains: "max block height age cannot be negative",
-		},
-		{
 			name: "partial auth missing header",
 			mutate: func(cfg *Config) {
 				cfg.Endpoints[0].Authentication.APIKey = "secret"
@@ -174,12 +167,6 @@ func TestConfigEqual(t *testing.T) {
 				cfg.BatchSize++
 			},
 		},
-		{
-			name: "max block height age differs",
-			mutate: func(cfg *Config) {
-				cfg.MaxBlockHeightAge += time.Second
-			},
-		},
 	}
 
 	for _, tc := range testCases {
@@ -191,7 +178,6 @@ func TestConfigEqual(t *testing.T) {
 				RequestsPerSecond: 10,
 				Endpoints:         []types.Endpoint{{URL: "https://provider.test"}},
 				BatchSize:         100,
-				MaxBlockHeightAge: time.Minute,
 			}
 			b := a
 			if tc.mutate != nil {

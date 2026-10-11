@@ -7,16 +7,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
-// The global binds package-level instruments to the first provider installed
-// in the process, so this package gets one provider-installing test.
 func TestUnaryMetricsPassesThroughAndRecords(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
@@ -25,7 +24,7 @@ func TestUnaryMetricsPassesThroughAndRecords(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/ark.pricefeed.v1.PriceFeed/Prices"}
 	resp, err := unaryMetrics(context.Background(), "req", info, func(_ context.Context, req any) (any, error) {

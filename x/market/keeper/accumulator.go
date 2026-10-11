@@ -11,7 +11,6 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/decimal"
 	"github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // Transient NOAH totals accumulate expansion and redemption facts for EndBlock settlement. The
@@ -23,15 +22,14 @@ var (
 	grossOfferKey        = []byte{0x04}
 )
 
-// recordExpansion accumulates gross NOAH offered and the quoted NOAH value of minted stable supply.
-// The swap path guarantees valid positive coins and a NOAH offer; valuation truncates once per
-// conversion.
-func (k Keeper) recordExpansion(ctx context.Context, offer sdk.Coin, output sdk.Coin, rates oracletypes.RateSet) error {
-	converted, err := rates.Convert(sdk.NewDecCoinFromCoin(output), chain.NoahBaseDenom)
-	if err != nil {
-		return fmt.Errorf("valuing stable output: %w", err)
+// recordExpansion accumulates gross NOAH offered and the quoted NOAH value of the stable supply it
+// minted. The swap path guarantees a positive NOAH offer and values the output at the rate that
+// priced it; the valuation truncates once per conversion.
+func (k Keeper) recordExpansion(ctx context.Context, offer sdk.Coin, value math.LegacyDec) error {
+	if value.IsNil() || value.IsNegative() {
+		return fmt.Errorf("stable output value must be set and non-negative, is %s", value)
 	}
-	eligible := converted.Amount.TruncateInt()
+	eligible := value.TruncateInt()
 	// Reject minted value above custody received before recording totals, so a bad quote fails its
 	// transaction rather than block settlement.
 	if eligible.GT(offer.Amount) {

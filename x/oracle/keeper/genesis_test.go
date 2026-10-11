@@ -14,6 +14,13 @@ import (
 
 func (s *KeeperTestSuite) TestInitGenesis() {
 	blockTime := time.Unix(1_700_000_000, 0).UTC()
+	expectModuleAccount := func() {
+		s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(
+			authtypes.NewEmptyModuleAccount(types.ModuleName),
+		)
+	}
+	// pendingHeight is where a transition written at genesis activates.
+	pendingHeight := uint64(oracleTestGenesisHeight + types.FeedActivationDelayBlocks)
 
 	tests := []struct {
 		name                string
@@ -21,6 +28,7 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 		expected            func() *types.GenesisState
 		setup               func()
 		expectErr           string
+		expectErrIs         error
 		expectNoRate        string
 		expectAccountingOld bool
 	}{
@@ -32,8 +40,8 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 					Params:     params,
 					Accounting: types.NewAccounting(params),
 					ExchangeRates: []types.ExchangeRate{
-						{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-						{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+						{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTime: uint64(blockTime.Unix()), BlockHeight: 10},
+						{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTime: uint64(blockTime.Unix()), BlockHeight: 11},
 					},
 					RewardWeights: []types.RewardWeight{
 						{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -136,14 +144,14 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.USDBaseDenom,
-						Rate:           math.LegacyOneDec(),
-						BlockTimestamp: oracleTestBlockTime.Add(time.Second),
+						Denom:     chain.USDBaseDenom,
+						Rate:      math.LegacyOneDec(),
+						BlockTime: uint64(oracleTestBlockTime.Add(time.Second).Unix()),
 					},
 				}
 				return gs
 			},
-			expectErr:    "timestamp 2026-07-12 12:00:01 +0000 UTC after genesis block time",
+			expectErr:    "has time 1783857601 after genesis block time 1783857600",
 			expectNoRate: chain.USDBaseDenom,
 		},
 		{
@@ -152,9 +160,9 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 				gs := types.DefaultGenesisState()
 				gs.ExchangeRates = []types.ExchangeRate{
 					{
-						Denom:          chain.USDBaseDenom,
-						Rate:           math.LegacyOneDec(),
-						BlockTimestamp: oracleTestBlockTime,
+						Denom:     chain.USDBaseDenom,
+						Rate:      math.LegacyOneDec(),
+						BlockTime: uint64(oracleTestBlockTime.Unix()),
 					},
 				}
 				return gs
@@ -164,6 +172,51 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			},
 			expectErr:    "module account has not been set",
 			expectNoRate: chain.USDBaseDenom,
+		},
+		{
+			// Validate only checks the reference is a feed key; whether that
+			// feed is Active is the keeper's to check against the imported set.
+			name: "reference names no feed",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom, chain.USDBaseDenom})
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
+		},
+		{
+			name: "reference names a feed still being added",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom})
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                chain.XDRBaseDenom,
+					Direction:            types.FeedDirection_FEED_DIRECTION_ADD,
+					ActivationVoteHeight: pendingHeight,
+				}}
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
+		},
+		{
+			name: "reference names a feed being removed",
+			genesis: func() *types.GenesisState {
+				gs := types.DefaultGenesisState()
+				gs.Feeds = types.NewFeeds([]string{chain.KRWBaseDenom, chain.XDRBaseDenom})
+				gs.Feeds.Transitions = []types.FeedTransition{{
+					Denom:                chain.XDRBaseDenom,
+					Direction:            types.FeedDirection_FEED_DIRECTION_REMOVE,
+					ActivationVoteHeight: pendingHeight,
+				}}
+				return gs
+			},
+			setup:       expectModuleAccount,
+			expectErr:   "feed axdr is not active",
+			expectErrIs: types.ErrInvalidReferenceDenom,
 		},
 	}
 
@@ -185,8 +238,10 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 
 			err := s.keeper.InitGenesis(s.ctx, genesis)
 			if tc.expectErr != "" {
-				s.Require().Error(err)
 				s.Require().ErrorContains(err, tc.expectErr)
+				if tc.expectErrIs != nil {
+					s.Require().ErrorIs(err, tc.expectErrIs)
+				}
 				if tc.expectNoRate != "" {
 					hasRate, hasErr := s.keeper.ExchangeRate.Has(s.ctx, tc.expectNoRate)
 					s.Require().NoError(hasErr)
@@ -203,6 +258,25 @@ func (s *KeeperTestSuite) TestInitGenesis() {
 			}
 		})
 	}
+}
+
+// A fresh chain runs InitGenesis at height zero though its first block is one,
+// so a window may open at one but not at two.
+func (s *KeeperTestSuite) TestInitGenesisOnAFreshChain() {
+	ctx := sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(0)
+
+	gs := types.DefaultGenesisState()
+	gs.Accounting.RewardWindowStartHeight = 2
+	s.Require().ErrorContains(s.keeper.InitGenesis(ctx, gs), "reward window start height 2 is after genesis block height 1")
+
+	s.accountKeeper.EXPECT().GetModuleAccount(ctx, types.ModuleName).Return(
+		authtypes.NewEmptyModuleAccount(types.ModuleName),
+	)
+	s.Require().NoError(s.keeper.InitGenesis(ctx, types.DefaultGenesisState()))
+	accounting, err := s.keeper.Accounting.Get(ctx)
+	s.Require().NoError(err)
+	s.Require().EqualValues(1, accounting.RewardWindowStartHeight)
+	s.Require().EqualValues(1, accounting.AttendanceWindowStartHeight)
 }
 
 func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
@@ -235,7 +309,7 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 		s.Require().NoError(err)
 		s.Require().Equal(item.Denom, exchangeRate.Denom)
 		s.Require().True(item.Rate.Equal(exchangeRate.Rate), "expected %s for %s, got %s", item.Rate, item.Denom, exchangeRate.Rate)
-		s.Require().True(item.BlockTimestamp.Equal(exchangeRate.BlockTimestamp))
+		s.Require().Equal(item.BlockTime, exchangeRate.BlockTime)
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 
@@ -278,6 +352,8 @@ func (s *KeeperTestSuite) requireGenesisState(expected *types.GenesisState) {
 	voteTargets, err := s.keeper.Feeds.Get(s.ctx)
 	s.Require().NoError(err)
 	s.Require().Equal(expected.Feeds, voteTargets)
+
+	s.requireStoredReferenceDenom(expected.ReferenceDenom)
 }
 
 func (s *KeeperTestSuite) TestExportGenesis() {
@@ -294,8 +370,8 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 			AttendanceWindowStartHeight: 11,
 		},
 		ExchangeRates: []types.ExchangeRate{
-			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTimestamp: blockTime, BlockHeight: 10},
-			{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTimestamp: blockTime, BlockHeight: 11},
+			{Denom: chain.KRWBaseDenom, Rate: math.LegacyNewDec(1000), BlockTime: uint64(blockTime.Unix()), BlockHeight: 10},
+			{Denom: chain.USDBaseDenom, Rate: math.LegacyNewDecWithPrec(123, 2), BlockTime: uint64(blockTime.Unix()), BlockHeight: 11},
 		},
 		RewardWeights: []types.RewardWeight{
 			{ValidatorAddress: valAddr1.String(), RewardWeight: math.NewInt(5)},
@@ -360,7 +436,7 @@ func (s *KeeperTestSuite) TestExportGenesis() {
 	for _, item := range expected.ExchangeRates {
 		exchangeRate := exchangeRates[item.Denom]
 		s.Require().True(item.Rate.Equal(exchangeRate.Rate))
-		s.Require().True(item.BlockTimestamp.Equal(exchangeRate.BlockTimestamp))
+		s.Require().Equal(item.BlockTime, exchangeRate.BlockTime)
 		s.Require().Equal(item.BlockHeight, exchangeRate.BlockHeight)
 	}
 

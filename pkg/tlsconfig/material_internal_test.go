@@ -3,6 +3,8 @@ package tlsconfig
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"os"
 	"sync"
 	"testing"
@@ -69,6 +71,42 @@ func TestMaterialMonitorReportsFailureAndRecovery(t *testing.T) {
 	require.Contains(t, output.String(), "certificate rotated")
 	require.Equal(t, 1, bytes.Count([]byte(output.String()), []byte("reload failed")))
 	require.Equal(t, "next", m.pair.cert.Load().Leaf.Subject.CommonName)
+}
+
+// The served chain expires with its earliest certificate: a long-lived leaf
+// under an intermediate about to expire still warns, at the intermediate's date.
+func TestMaterialMonitorWarnsOnExpiringIntermediate(t *testing.T) {
+	root := tlstestutil.NewAuthority(t)
+	intermediate := root.Intermediate(t)
+	certPath, keyPath := intermediate.IssueWith(t, "server", func(leaf *x509.Certificate) {
+		leaf.NotAfter = time.Now().Add(30 * 24 * time.Hour)
+	}, "localhost")
+	leafPEM, err := os.ReadFile(certPath)
+	require.NoError(t, err)
+	intermediatePEM, err := os.ReadFile(intermediate.CAFile)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(certPath, append(leafPEM, intermediatePEM...), 0o600)) //nolint:gosec // certPath is issued under t.TempDir().
+	block, _ := pem.Decode(intermediatePEM)
+	require.NotNil(t, block)
+	intermediateCert, err := x509.ParseCertificate(block.Bytes)
+	require.NoError(t, err)
+
+	m, err := (Server{Mode: TLS, CertFile: certPath, KeyFile: keyPath}).Load()
+	require.NoError(t, err)
+	output := &safeLog{}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		m.run(ctx, log.NewLogger(output, log.ColorOption(false)), time.Hour)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
+
+	require.Eventually(t, func() bool { return bytes.Contains([]byte(output.String()), []byte("expires soon")) }, 5*time.Second, time.Millisecond)
+	require.Contains(t, output.String(), "expires_at="+intermediateCert.NotAfter.Format(time.RFC3339))
 }
 
 func TestMaterialStartStopsAndHandlesNoIdentity(t *testing.T) {

@@ -10,12 +10,6 @@ import (
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
-	ibcwasmtypes "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/types"
-	icagenesistypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/genesis/types"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	ibcexported "github.com/cosmos/ibc-go/v11/modules/core/exported"
-	ibctypes "github.com/cosmos/ibc-go/v11/modules/core/types"
 	"github.com/stretchr/testify/require"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
@@ -69,9 +63,8 @@ func (unwiredWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool {
 }
 
 // cliBasicManager rebuilds the manager the arkd commands generate genesis
-// from: the depinject-resolved set, plus the IBC, Wasm, and GMP basics
-// NewRootCmd merges in by hand because those modules are wired outside
-// depinject.
+// from: the depinject-resolved set, plus the Wasm basics NewRootCmd merges in
+// by hand because that module is wired outside depinject.
 func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 	t.Helper()
 
@@ -85,14 +78,8 @@ func cliBasicManager(t *testing.T) (module.BasicManager, codec.Codec) {
 		&cdc,
 	))
 
-	for _, manual := range []module.BasicManager{
-		app.IBCModuleBasics(),
-		app.WasmModuleBasics(),
-		app.GMPModuleBasics(),
-	} {
-		for name, basic := range manual {
-			basics[name] = basic
-		}
+	for name, basic := range app.WasmModuleBasics() {
+		basics[name] = basic
 	}
 
 	return basics, cdc
@@ -321,17 +308,8 @@ func TestLaunchGenesisBoots(t *testing.T) {
 				string(arkApp.AppCodec().MustMarshalJSON(&metadata)),
 			)
 
-			// The IBC and Wasm modules are registered by hand, outside depinject, so
-			// a module whose InitGenesis the wiring skipped would boot on its code
-			// defaults — which open every IBC surface the artefact shuts.
-			require.Empty(t, arkApp.IBCKeeper.ClientKeeper.GetParams(ctx).AllowedClients)
-			transferParams := arkApp.TransferKeeper.GetParams(ctx)
-			require.False(t, transferParams.SendEnabled)
-			require.False(t, transferParams.ReceiveEnabled)
-			require.False(t, arkApp.ICAControllerKeeper.GetParams(ctx).ControllerEnabled)
-			hostParams := arkApp.ICAHostKeeper.GetParams(ctx)
-			require.False(t, hostParams.HostEnabled)
-			require.Empty(t, hostParams.AllowMessages)
+			// Wasm is registered by hand, outside depinject, so an InitGenesis the
+			// wiring skipped would boot it on its code defaults.
 			wasmParams := arkApp.WasmKeeper.GetParams(ctx)
 			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.CodeUploadAccess.Permission)
 			require.Equal(t, wasmtypes.AccessTypeEverybody, wasmParams.InstantiateDefaultPermission)
@@ -339,31 +317,16 @@ func TestLaunchGenesisBoots(t *testing.T) {
 	}
 }
 
-// The launch genesis disables all IBC client types and separately disables transfer and ICA.
-// Admitting a client type alone therefore opens only client creation; Wasm client checksums remain
-// empty.
-func TestLaunchGenesisHoldsTheHubShut(t *testing.T) {
+// The launch genesis carries no section for a module the app does not wire:
+// no mint (D1), and nothing of the IBC stack the chain removed.
+func TestLaunchGenesisCarriesNoForeignModules(t *testing.T) {
 	_, state := launchGenesis(t)
-	_, cdc := cliBasicManager(t)
-
-	var ibcGenesis ibctypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[ibcexported.ModuleName], &ibcGenesis))
-	require.Empty(t, ibcGenesis.ClientGenesis.Params.AllowedClients,
-		"no client type may be created at launch; governance admits 07-tendermint when it opens the hub (D45, D50)")
-
-	var transferGenesis ibctransfertypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[ibctransfertypes.ModuleName], &transferGenesis))
-	require.False(t, transferGenesis.Params.SendEnabled, "ICS-20 send is off until the activation matrix passes")
-	require.False(t, transferGenesis.Params.ReceiveEnabled, "ICS-20 receive is off until the activation matrix passes")
-
-	var icaGenesis icagenesistypes.GenesisState
-	require.NoError(t, cdc.UnmarshalJSON(state[icatypes.ModuleName], &icaGenesis))
-	require.False(t, icaGenesis.ControllerGenesisState.Params.ControllerEnabled, "ICA controller launches disabled")
-	require.False(t, icaGenesis.HostGenesisState.Params.HostEnabled, "ICA host launches disabled")
-	require.Empty(t, icaGenesis.HostGenesisState.Params.AllowMessages,
-		"the host allowlist ships empty; activation names explicit type URLs, never the wildcard")
-
-	require.NotContains(t, state, "mint", "Ark has no mint module (D1)")
+	for _, name := range []string{
+		"mint", "ibc", "transfer", "interchainaccounts", "ratelimit",
+		"packetfowardmiddleware", "07-tendermint", "08-wasm", "gmp",
+	} {
+		require.NotContains(t, state, name)
+	}
 }
 
 // The launch genesis enables vote extensions from the first height so oracle pricing is available.
@@ -374,8 +337,7 @@ func TestLaunchGenesisEnablesVoteExtensions(t *testing.T) {
 }
 
 // The launch genesis permits contract upload and instantiation from height one and contains no
-// deployed code or contracts. Execution policy, query restrictions, and the empty IBC client
-// allowlist bound the runtime.
+// deployed code or contracts. Execution policy and query restrictions bound the runtime.
 func TestWasmGenesisShipsOpen(t *testing.T) {
 	_, appState := launchGenesis(t)
 	require.NotNil(t, appState[wasmtypes.ModuleName], "wasm genesis must be present")
@@ -391,29 +353,18 @@ func TestWasmGenesisShipsOpen(t *testing.T) {
 	require.Empty(t, state.Contracts, "launch genesis carries no contracts")
 }
 
-// The 08-wasm light-client host ships the same way: present, with no client
-// code. Uploading a light client is a governance action after launch.
-func TestWasmLightClientGenesisShipsEmpty(t *testing.T) {
-	_, appState := launchGenesis(t)
-	require.NotNil(t, appState[ibcwasmtypes.ModuleName], "08-wasm genesis must be present")
-
-	var state ibcwasmtypes.GenesisState
-	require.NoError(t, json.Unmarshal(appState[ibcwasmtypes.ModuleName], &state))
-	require.Empty(t, state.Contracts, "launch genesis carries no light-client code")
-}
-
 // Launch supply ledger, mirrored in docs/governance/GENESIS.md §3. The
 // artefact carries the disbursement pools, the community pool before seats, and
 // zero reward targets; each seat assembly adds moves its grant and float out of
 // the community pool and adds one seat's share to both targets (app/genesis).
 const (
 	launchTotalSupplyNoah     = 1_000_000_000
-	launchSubsidyNoah         = 100_000_000
+	launchSubsidyNoah         = 50_000_000
 	launchReserveNoah         = 50_000_000
 	launchBufferNoah          = 10_000_000
 	launchInsuranceNoah       = 5_000_000
-	launchMemberPoolNoah      = 439_200_000
-	launchContributorPoolNoah = 292_800_000
+	launchMemberPoolNoah      = 469_200_000
+	launchContributorPoolNoah = 312_800_000
 	launchCommunityPoolNoah   = 103_000_000
 )
 
@@ -464,14 +415,14 @@ func TestLaunchGenesisPinsChainParams(t *testing.T) {
 
 	var authGenesis authtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authGenesis)
-	require.EqualValues(t, 7, authGenesis.Params.TxSigLimit, "committee multisigs hold at most seven member keys")
+	require.EqualValues(t, 10, authGenesis.Params.TxSigLimit, "committee multisigs hold at most ten member keys")
 	require.Empty(t, authGenesis.Accounts, "seats are added at assembly and committees appointed after launch")
 }
 
 // TestLaunchGenesisSupplyLedger pins the billion-NOAH supply and its
-// allocation: four fund seeds as plain balances and the rest in the community
-// pool, whose fee-pool entry must match the module balance or Distribution's
-// InitGenesis panics.
+// allocation: four fund seeds and the two distribution accounts as plain
+// balances and the rest in the community pool, whose fee-pool entry must match
+// the module balance or Distribution's InitGenesis panics.
 func TestLaunchGenesisSupplyLedger(t *testing.T) {
 	_, state := launchGenesis(t)
 	_, cdc := cliBasicManager(t)
@@ -483,7 +434,8 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		authtypes.NewModuleAddress(treasurytypes.RedemptionBufferName).String(): noah(launchBufferNoah),
 		authtypes.NewModuleAddress(claimstypes.InsuranceName).String():          noah(launchInsuranceNoah),
 		authtypes.NewModuleAddress(distrtypes.ModuleName).String():              noah(launchCommunityPoolNoah),
-		authtypes.NewModuleAddress(disbursementtypes.ModuleName).String():       noah(launchMemberPoolNoah + launchContributorPoolNoah),
+		authtypes.NewModuleAddress(disbursementtypes.MembersName).String():      noah(launchMemberPoolNoah),
+		authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String(): noah(launchContributorPoolNoah),
 	}
 	require.Len(t, bankGenesis.Balances, len(want))
 	total := math.ZeroInt()
@@ -503,12 +455,10 @@ func TestLaunchGenesisSupplyLedger(t *testing.T) {
 		distrGenesis.FeePool.CommunityPool,
 	)
 
-	// The pools split 60/40 and open nothing; each step's tranche is a governance act.
+	// The accounts split 60/40 and open nothing; the member tranche is a governance act.
 	var disbursementGenesis disbursementtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementGenesis)
-	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchMemberPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.MemberPool)
-	require.Equal(t, disbursementtypes.PoolBalance{Unallocated: noah(launchContributorPoolNoah), Open: math.ZeroInt()}, disbursementGenesis.ContributorPool)
-	require.Empty(t, disbursementGenesis.ConversionOrders)
+	require.Empty(t, disbursementGenesis.Books)
 }
 
 // TestLaunchGenesisPinsArkEconomics pins the launch values of the Ark modules.
@@ -520,7 +470,7 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
 	params := treasuryGenesis.Params
 	require.Equal(t, chain.XDRBaseDenom, params.ReferenceDenom)
-	require.Equal(t, noah(1_000), params.ReferenceTaxCap, "1,000 XDR: proportional up to 200,000 XDR at 0.5%")
+	require.Equal(t, noah(100), params.ReferenceTaxCap, "100 XDR: proportional up to 20,000 XDR at 0.5%")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.005"), params.TransferTaxRate)
 	require.Equal(t, math.LegacyNewDec(2), params.MultiplierCap, "ratios summing to 0.5 reach full retention at 2")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.1"), params.MultiplierMaxStep)
@@ -536,13 +486,14 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 
 	require.Len(t, treasuryGenesis.ConversionFactors, 1)
 	require.Equal(t, chain.NoahBaseDenom, treasuryGenesis.ConversionFactors[0].Denom)
-	require.Equal(t, math.LegacyMustNewDecFromStr("1.371"), treasuryGenesis.ConversionFactors[0].Factor,
-		"NOAH opens at 1 USD with XDR at 1.371 USD; the first axdr rate replaces it")
+	require.Equal(t, math.LegacyOneDec(), treasuryGenesis.ConversionFactors[0].Factor,
+		"NOAH opens at one XDR (D128); the first axdr rate replaces it")
 
 	var marketGenesis markettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
 	conversion := marketGenesis.ConversionPolicy
-	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(5_000_000))), conversion.BasePool)
+	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(100_000))), conversion.BasePool,
+		"opens small, with no NOAH market history behind it (D95)")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.02"), conversion.MinStabilitySpread)
 	require.Equal(t, chain.BlocksPerDay, conversion.PoolRecoveryPeriod)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.0025"), marketGenesis.Params.DefaultTobinTax)
@@ -551,29 +502,18 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	var oracleGenesis oracletypes.GenesisState
 	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
 	require.Equal(t, chain.BlocksPerWeek, oracleGenesis.Params.RewardWindow)
-	require.Equal(t, 13*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
-		"a quarter: steady subsidy inflow needs no year of smoothing")
+	require.Equal(t, 4*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
+		"four weeks: the subsidy floors oracle income, so smoothing only spreads tax windfalls (D135)")
 	require.Equal(t, oracleGenesis.Params.RewardDistributionWindow, oracleGenesis.Accounting.RewardDistributionWindow)
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
-	require.Equal(t, 3*chain.BlocksPerDay, assetGenesis.Params.SettlementActivationDelayBlocks, "outlasts the two-day vote")
-	currencies := map[string]string{
-		chain.AUDBaseDenom: "Australian dollar",
-		chain.CADBaseDenom: "Canadian dollar",
-		chain.CNYBaseDenom: "Chinese yuan",
-		chain.EURBaseDenom: "euro",
-		chain.GBPBaseDenom: "pound sterling",
-		chain.JPYBaseDenom: "Japanese yen",
-		chain.KRWBaseDenom: "South Korean won",
-		chain.MXNBaseDenom: "Mexican peso",
-		chain.SGDBaseDenom: "Singapore dollar",
-		chain.USDBaseDenom: "United States dollar",
-	}
-	require.Len(t, assetGenesis.Assets, len(currencies))
-	for _, asset := range assetGenesis.Assets {
-		require.Equal(t, "An Ark currency tracking the "+currencies[asset.Denom]+".", asset.Metadata.Description, asset.Denom)
-	}
+	require.Equal(t, uint64(7*86_400), assetGenesis.Params.SettlementActivationDelay, "a week of block time fits a deposit period and a vote")
+	var claimsGenesis claimstypes.GenesisState
+	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
+	require.Equal(t, uint64(7*86_400), claimsGenesis.Params.ClaimCancellationPeriod, "a week of block time fits a deposit period and a vote")
+	require.Empty(t, assetGenesis.Assets,
+		"conversion is closed at launch: the currencies are registered by vote once NOAH has a market price (D95)")
 }
 
 // TestLaunchGenesisBootsVestingSeat boots the artefact the way assembly
@@ -603,9 +543,10 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			operator, err := record.GetAddress()
 			require.NoError(t, err)
 
-			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)))
+			// One operator is seated with the seat grant.
+			grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant))
 			float := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatFloatNoah)))
-			require.NoError(t, arkgenesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{operator}, genesisTime))
+			require.NoError(t, arkgenesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{operator}, operator, genesisTime))
 
 			privVal := mock.NewPV()
 			consPub, err := privVal.GetPubKey()
@@ -615,7 +556,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			createValidator, err := stakingtypes.NewMsgCreateValidator(
 				sdk.ValAddress(operator).String(),
 				consPubKey,
-				sdk.NewCoin(chain.NoahBaseDenom, noah(chain.SeatGrantNoah)),
+				sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant),
 				stakingtypes.NewDescription("seat", "", "", "", ""),
 				stakingtypes.NewCommissionRates(
 					math.LegacyMustNewDecFromStr("0.05"),
@@ -660,7 +601,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			validator, err := arkApp.StakingKeeper.GetValidator(ctx, sdk.ValAddress(operator))
 			require.NoError(t, err)
 			require.True(t, validator.IsBonded())
-			require.Equal(t, noah(chain.SeatGrantNoah), validator.Tokens)
+			require.Equal(t, chain.SeatGrant, validator.Tokens)
 
 			account, ok := arkApp.AccountKeeper.GetAccount(ctx, operator).(*vestingtypes.ContinuousVestingAccount)
 			require.True(t, ok, "the seat stays a continuous vesting account")
@@ -673,7 +614,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			feePool, err := arkApp.DistrKeeper.FeePool.Get(ctx)
 			require.NoError(t, err)
 			require.Equal(t,
-				math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(noah(chain.SeatGrantNoah+chain.SeatFloatNoah))),
+				math.LegacyNewDecFromInt(noah(launchCommunityPoolNoah).Sub(chain.SeatGrant.Add(noah(chain.SeatFloatNoah)))),
 				feePool.CommunityPool.AmountOf(chain.NoahBaseDenom),
 			)
 			require.Equal(t, noah(launchTotalSupplyNoah), arkApp.BankKeeper.GetSupply(ctx, chain.NoahBaseDenom).Amount)
@@ -682,6 +623,37 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, chain.SeatValidatorShare, policy.ValidatorBlockRewardTarget, "one seat, one share")
 			require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
+
+			// The founder's grant and stream import as governance awards, and the stream's first
+			// period pays one period after genesis (D136).
+			ownership, err := arkApp.DisbursementKeeper.Grants.Get(ctx, 1)
+			require.NoError(t, err)
+			require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, ownership.Kind)
+			require.Equal(t, noah(chain.FounderGrantNoah), ownership.Remaining)
+			stream, err := arkApp.DisbursementKeeper.Grants.Get(ctx, 2)
+			require.NoError(t, err)
+			require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, stream.Kind)
+			require.Equal(t, operator.String(), stream.Payee)
+			first, _, _, err := stream.Schedule.Shares(stream.Amount.Amount)
+			require.NoError(t, err)
+
+			_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
+				Height:             arkApp.LastBlockHeight() + 1,
+				Time:               time.Unix(int64(stream.DueTime), 0),
+				Hash:               arkApp.LastCommitID().Hash,
+				NextValidatorsHash: valSet.Hash(),
+			})
+			require.NoError(t, err)
+			_, err = arkApp.Commit()
+			require.NoError(t, err)
+			ctx = arkApp.NewContext(true)
+			stream, err = arkApp.DisbursementKeeper.Grants.Get(ctx, 2)
+			require.NoError(t, err)
+			require.Equal(t, first, stream.Paid, "the stream's first period")
+			require.Equal(t, float.AmountOf(chain.NoahBaseDenom).Add(first), arkApp.BankKeeper.SpendableCoins(ctx, operator).AmountOf(chain.NoahBaseDenom))
+			ownership, err = arkApp.DisbursementKeeper.Grants.Get(ctx, 1)
+			require.NoError(t, err)
+			require.True(t, ownership.Paid.IsZero(), "the grant waits for its first period")
 		})
 	}
 }
@@ -690,6 +662,14 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 // the launch artefact: time compressed so a governance cycle, an unbonding, a
 // settlement, and an oracle payout each complete inside a test day, and
 // nothing else. Mirrored in docs/governance/GENESIS.md §15.
+// launchCurrencies is the launch currency set in the artefact's order, the
+// denominations the testnet registers from genesis and the launch chain
+// registers by vote (D95).
+var launchCurrencies = []string{
+	chain.AUDBaseDenom, chain.CADBaseDenom, chain.CNYBaseDenom, chain.EURBaseDenom, chain.GBPBaseDenom,
+	chain.JPYBaseDenom, chain.KRWBaseDenom, chain.MXNBaseDenom, chain.SGDBaseDenom, chain.USDBaseDenom,
+}
+
 func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state map[string]json.RawMessage) {
 	launch.ChainID = "ark-testnet-1"
 	launch.Consensus.Params.Evidence.MaxAgeNumBlocks = int64(chain.BlocksPerDay)
@@ -705,12 +685,28 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
-	assetGenesis.Params.SettlementActivationDelayBlocks = 2 * chain.BlocksPerHour
+	assetGenesis.Params.SettlementActivationDelay = 4 * 3_600
+	// The testnet opens conversion from genesis, as the launch chain does by
+	// vote (D95): the ten currencies as registration would store them, and the
+	// pre-D95 depth.
+	for _, denom := range launchCurrencies {
+		assetGenesis.Assets = append(assetGenesis.Assets, assettypes.Asset{
+			Denom:    denom,
+			Metadata: chain.NativeAssetMetadata(denom),
+			Status:   assettypes.AssetStatus_ASSET_STATUS_ACTIVE,
+			Version:  1,
+		})
+	}
 	state[assettypes.ModuleName] = cdc.MustMarshalJSON(&assetGenesis)
+
+	var marketGenesis markettypes.GenesisState
+	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
+	marketGenesis.ConversionPolicy.BasePool = sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(5_000_000)))
+	state[markettypes.ModuleName] = cdc.MustMarshalJSON(&marketGenesis)
 
 	var claimsGenesis claimstypes.GenesisState
 	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
-	claimsGenesis.Params.ClaimCancellationPeriodBlocks = 4 * chain.BlocksPerHour
+	claimsGenesis.Params.ClaimCancellationPeriod = 4 * 3_600
 	state[claimstypes.ModuleName] = cdc.MustMarshalJSON(&claimsGenesis)
 
 	var stakingGenesis stakingtypes.GenesisState
@@ -727,11 +723,35 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
 	oracleGenesis.Params.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Params.AttendanceWindow = chain.BlocksPerDay
-	oracleGenesis.Params.RewardDistributionWindow = chain.BlocksPerWeek
+	oracleGenesis.Params.RewardDistributionWindow = 4 * chain.BlocksPerDay
 	oracleGenesis.Accounting.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.AttendanceWindow = chain.BlocksPerDay
-	oracleGenesis.Accounting.RewardDistributionWindow = chain.BlocksPerWeek
+	oracleGenesis.Accounting.RewardDistributionWindow = 4 * chain.BlocksPerDay
 	state[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracleGenesis)
+}
+
+// The Oracle's windows open at the chain's first block and its reward window
+// matches Treasury's funding window, so each reward settlement lands on a
+// funding block. Treasury ends the block first, so the Oracle pays from the
+// window it just funded rather than finding the first one empty.
+func TestGenesisAlignsOracleSettlementWithFunding(t *testing.T) {
+	for _, artefact := range artefacts() {
+		t.Run(artefact.name, func(t *testing.T) {
+			appGenesis, state := loadGenesis(t, artefact.path)
+			_, cdc := cliBasicManager(t)
+
+			var oracleGenesis oracletypes.GenesisState
+			cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
+			var treasuryGenesis treasurytypes.GenesisState
+			cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryGenesis)
+
+			accounting := oracleGenesis.Accounting
+			require.EqualValues(t, appGenesis.InitialHeight, accounting.RewardWindowStartHeight)
+			require.EqualValues(t, appGenesis.InitialHeight, accounting.AttendanceWindowStartHeight)
+			require.Equal(t, treasuryGenesis.Params.RewardFundingWindow, accounting.RewardWindow)
+			require.Zero(t, treasuryGenesis.RewardFunding.BlocksRemaining, "the first funding window opens at the first block")
+		})
+	}
 }
 
 // TestTestnetGenesisDerivesFromLaunch pins the testnet artefact to the launch

@@ -65,6 +65,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 	}
 
 	if StatusCode(msg.Code) != SuccessStatusCode {
+		h.logger.Warn("crypto.com refused a request", "id", msg.ID, "method", msg.Method, "code", msg.Code)
 		return resp, nil, fmt.Errorf("crypto.com error code %d for %s request %d", msg.Code, msg.Method, msg.ID)
 	}
 

@@ -5,7 +5,8 @@ translates the HTTP response back into `types.Response`.
 
 The shared API fetcher in `base/api` owns polling, batching, request timing, endpoint selection, response publication,
 and API metrics. Provider packages under this directory should only own exchange-specific URL construction and response
-parsing.
+parsing. Endpoints must be `https`; a handler may add path segments and query parameters but not change the scheme or
+host, and response bodies are read up to 1 MiB (`MaxResponseBodyBytes`).
 
 ## Adapter Contract
 
@@ -14,9 +15,14 @@ API adapters implement `api.DataHandler`:
 - `BatchTickers(tickers, batchSize)` groups tickers into independently fetched requests.
 - `CreateURL(endpoint, tickers)` builds the request URL for the selected endpoint and requested tickers.
 - `ParseResponse(tickers, response)` returns resolved prices and unresolved errors for exactly the request tickers.
+  A venue that refuses the whole request over one symbol it does not list in a successful response, as Kraken does,
+  reports it as `ErrorUnknownPair` so the shared fetcher can [set the symbol aside](../base/README.md#failed-fetches).
 
-The factory builds the `http.Client`, applies endpoint authentication as request headers, and passes the adapter into the
-shared fetcher. Endpoint authentication belongs in config; adapters should not hard-code secrets or environment lookups.
+The fetcher calls the adapter from one goroutine per batch, so an adapter must be safe for concurrent use.
+
+The factory builds the `http.Client` and passes the adapter into the shared fetcher, which applies endpoint
+authentication as a request header once the request's origin is confirmed. Endpoint authentication belongs in
+config; adapters should not hard-code secrets or environment lookups.
 
 ## Supported Providers
 

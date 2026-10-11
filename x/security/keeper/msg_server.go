@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/security/types"
 )
@@ -45,8 +44,8 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return nil, err
@@ -65,20 +64,18 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
-		// A committee that is also the authority is a delegation to nobody that
-		// still reads as a live fast path.
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
 			return nil, errors.New("security committee must be distinct from the chain authority")
 		}
-		// An expiry already behind the chain reads as live and authorises
-		// nothing; the window is half-open, so landing on it is already too
-		// late. Genesis applies no such check: an import must carry a mandate
-		// that expired before the export.
-		if updated.ExpiryHeight <= uint64(sdkCtx.BlockHeight()) {
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"security mandate expires at height %d, which is not above the current height %d",
-				updated.ExpiryHeight,
-				sdkCtx.BlockHeight(),
+				"%s expires at time %d, which is not after the current block time %d",
+				types.SecurityMandateLabel,
+				updated.ExpiryTime,
+				now,
 			)
 		}
 	}
@@ -90,13 +87,13 @@ func (m msgServer) SetSecurityMandate(ctx context.Context, msg *types.MsgSetSecu
 	// appointment neither cancels nor inherits, so carrying it across tells the
 	// next committee whose plan holds the slot.
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventSecurityMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("emitting security mandate: %w", err)
 	}
 
 	return &types.MsgSetSecurityMandateResponse{}, nil
@@ -121,6 +118,10 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 	if msg.Name == "" {
 		return nil, errors.New("upgrade plan must have a name")
 	}
+	if msg.Height > types.MaxPlanHeight {
+		return nil, fmt.Errorf("upgrade height %d exceeds x/upgrade's maximum %d", msg.Height, types.MaxPlanHeight)
+	}
+	height := int64(msg.Height)
 
 	pending, hasPending, err := m.k.pendingUpgradePlan(ctx)
 	if err != nil {
@@ -138,13 +139,18 @@ func (m msgServer) CommitteePlanUpgrade(ctx context.Context, msg *types.MsgCommi
 				pending.Height,
 			)
 		}
+		// x/upgrade accepts the same plan again, and this module would then record
+		// and announce a schedule that changed nothing.
+		if pending.Name == msg.Name && pending.Height == height && pending.Info == msg.Info {
+			return nil, fmt.Errorf("upgrade %s is already pending at height %d", pending.Name, pending.Height)
+		}
 	}
 
 	if err := m.k.dispatch(ctx, &upgradetypes.MsgSoftwareUpgrade{
 		Authority: m.k.effectiveAuthority(ctx),
 		Plan: upgradetypes.Plan{
 			Name:   msg.Name,
-			Height: msg.Height,
+			Height: height,
 			Info:   msg.Info,
 		},
 	}); err != nil {
@@ -216,50 +222,10 @@ func (m msgServer) CommitteeCancelUpgrade(ctx context.Context, msg *types.MsgCom
 	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventCommitteeUpgradeCancelled{
 		Term:   securityMandate.Term,
 		Name:   pending.Name,
-		Height: pending.Height,
+		Height: uint64(max(pending.Height, 0)),
 	}); err != nil {
 		return nil, err
 	}
 
 	return &types.MsgCommitteeCancelUpgradeResponse{}, nil
-}
-
-// CommitteeRecoverClient substitutes an expired or frozen IBC client as the
-// exact appointed committee, during the active term and window.
-func (m msgServer) CommitteeRecoverClient(ctx context.Context, msg *types.MsgCommitteeRecoverClient) (*types.MsgCommitteeRecoverClientResponse, error) {
-	if msg == nil {
-		return nil, fmt.Errorf("nil committee recover client message")
-	}
-	securityMandate, err := m.k.AuthoriseCommittee(
-		ctx,
-		msg.Committee,
-		msg.ExpectedTerm,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if msg.SubjectClientId == "" || msg.SubstituteClientId == "" {
-		return nil, errors.New("subject and substitute client identifiers must be set")
-	}
-	if msg.SubjectClientId == msg.SubstituteClientId {
-		return nil, errors.New("subject and substitute clients must differ")
-	}
-
-	if err := m.k.dispatch(ctx, &clienttypes.MsgRecoverClient{
-		SubjectClientId:    msg.SubjectClientId,
-		SubstituteClientId: msg.SubstituteClientId,
-		Signer:             m.k.effectiveAuthority(ctx),
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(&types.EventCommitteeClientRecovered{
-		Term:               securityMandate.Term,
-		SubjectClientId:    msg.SubjectClientId,
-		SubstituteClientId: msg.SubstituteClientId,
-	}); err != nil {
-		return nil, err
-	}
-
-	return &types.MsgCommitteeRecoverClientResponse{}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
@@ -65,7 +66,8 @@ func (s *KeeperTestSuite) SetupTest() {
 	storeService := runtime.NewKVStoreService(key)
 	transientStoreService := runtime.NewTransientStoreService(transientKey)
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 
 	ctrl := gomock.NewController(s.T())
 
@@ -126,7 +128,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.Require().NoError(s.keeper.ConversionMandate.Set(s.ctx, types.DefaultConversionMandate()))
 
 	// Wire gRPC query client
-	queryHelper := baseapp.NewQueryServerTestHelper(testCtx.Ctx, interfaceRegistry)
+	queryHelper := baseapp.NewQueryServerTestHelper(sdk.UnwrapSDKContext(s.ctx), interfaceRegistry)
 	types.RegisterQueryServer(queryHelper, keeper.NewQueryServerImpl(s.keeper))
 	s.queryClient = types.NewQueryClient(queryHelper)
 

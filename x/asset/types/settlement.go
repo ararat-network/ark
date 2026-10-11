@@ -9,8 +9,8 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// Validate checks a settlement plan's denomination, redemption rate, and
-// heights.
+// Validate checks a settlement plan's denomination, redemption rate, opening, and
+// times.
 func (p SettlementPlan) Validate() error {
 	if err := chain.ValidatePricedDenom(p.Denom); err != nil {
 		return fmt.Errorf("settlement plan %w", err)
@@ -38,37 +38,41 @@ func (p SettlementPlan) Validate() error {
 			oracletypes.MaxExchangeRate,
 		)
 	}
-	if p.ActivationHeight <= 0 {
-		return fmt.Errorf("settlement activation height must be positive: %d", p.ActivationHeight)
-	}
 	if p.OpenedHeight <= 0 {
 		return fmt.Errorf("settlement opened height must be positive: %d", p.OpenedHeight)
 	}
-	if p.OpenedHeight >= p.ActivationHeight {
+	if p.OpenedTime == 0 {
+		return fmt.Errorf("settlement opened time must be positive")
+	}
+	if p.OpenedTime >= p.ActivationTime {
 		return fmt.Errorf(
-			"settlement opened height %d must precede activation height %d",
-			p.OpenedHeight,
-			p.ActivationHeight,
+			"settlement opened time %d must precede activation time %d",
+			p.OpenedTime,
+			p.ActivationTime,
 		)
 	}
 	// The window is mandatory, so every plan carries a guarantee holders can
-	// state: redemption opens at the activation height and cannot be
+	// state: redemption opens at the activation time and cannot be
 	// derecognized before this one.
-	if p.EarliestClosingHeight <= p.ActivationHeight {
+	if p.EarliestClosingTime <= p.ActivationTime {
 		return fmt.Errorf(
-			"settlement earliest closing height %d must be after activation height %d",
-			p.EarliestClosingHeight,
-			p.ActivationHeight,
+			"settlement earliest closing time %d must be after activation time %d",
+			p.EarliestClosingTime,
+			p.ActivationTime,
 		)
+	}
+	// A deadline past the header's int64 is one no block reaches.
+	if p.EarliestClosingTime > chain.MaxBlockSeconds {
+		return fmt.Errorf("settlement earliest closing time %d exceeds the header's int64", p.EarliestClosingTime)
 	}
 	return nil
 }
 
-// IsActive reports whether the plan's activation delay has elapsed at the given
-// height. It is the single question that separates an announced plan from a
-// binding one, asked by the redemption gate and the cancellation window alike.
-func (p SettlementPlan) IsActive(blockHeight int64) bool {
-	return blockHeight >= p.ActivationHeight
+// IsActive reports whether the plan's activation delay has elapsed at block time now, in Unix
+// seconds. It is the single question that separates an announced plan from a binding one, asked by
+// the redemption gate and the cancellation window alike.
+func (p SettlementPlan) IsActive(now uint64) bool {
+	return now >= p.ActivationTime
 }
 
 // Validate checks an immutable resolution snapshot.

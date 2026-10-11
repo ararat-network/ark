@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/collections"
+
 	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
@@ -39,7 +41,7 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 		if !member {
 			return fmt.Errorf(
 				"%s account contains unsupported genesis denom %s: deposits must be %s "+
-					"or an Ark-issued asset",
+					"or a registered asset",
 				types.StrategicReserveName,
 				balance.Denom,
 				chain.NoahBaseDenom,
@@ -78,6 +80,9 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	for _, entry := range data.Ledger {
 		if err := k.Ledger.Set(ctx, entry.EntryId, entry); err != nil {
 			return fmt.Errorf("setting ledger entry %d: %w", entry.EntryId, err)
+		}
+		if err := k.LedgerByPosition.Set(ctx, collections.Join(entry.PositionId, entry.EntryId)); err != nil {
+			return fmt.Errorf("indexing ledger entry %d: %w", entry.EntryId, err)
 		}
 		// Derived rather than imported, so no genesis field can contradict the
 		// ledger about what has been reversed.

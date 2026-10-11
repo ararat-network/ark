@@ -11,8 +11,8 @@ import (
 // block and stops at the domain cap.
 func RandomisedParams(r *rand.Rand) types.Params {
 	return types.Params{
-		SettlementActivationDelayBlocks: 1 + uint64(
-			r.Int63n(int64(types.MaxSettlementActivationDelayBlocks)),
+		SettlementActivationDelay: 1 + uint64(
+			r.Int63n(int64(types.MaxSettlementActivationDelay)),
 		),
 	}
 }

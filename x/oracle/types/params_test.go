@@ -2,7 +2,6 @@ package types_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +15,7 @@ import (
 const (
 	voteThresholdOutOfRange        = "VoteThreshold must be between"
 	functioningThresholdOutOfRange = "FunctioningBlockThreshold must be between"
-	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be greater than zero and at most"
+	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be between"
 )
 
 func TestParamsValidate(t *testing.T) {
@@ -32,7 +31,7 @@ func TestParamsValidate(t *testing.T) {
 			check: func(t *testing.T, p types.Params) {
 				t.Helper()
 				require.Equal(t, math.LegacyMustNewDecFromStr("0.666666666666666667"), p.VoteThreshold)
-				require.Equal(t, time.Minute, p.MaxExchangeRateAge)
+				require.Equal(t, uint64(60), p.MaxExchangeRateAge)
 			},
 		},
 		// VoteThreshold
@@ -95,8 +94,12 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: "RewardWindow must be between one and",
 		},
 		{
-			name:   "reward window at the domain cap",
-			mutate: func(p *types.Params) { p.RewardWindow = types.MaxRewardWindow },
+			// The distribution window rises with it: it may not be shorter.
+			name: "reward window at the domain cap",
+			mutate: func(p *types.Params) {
+				p.RewardWindow = types.MaxRewardWindow
+				p.RewardDistributionWindow = types.MaxRewardWindow
+			},
 		},
 		{
 			// A cadence no chain reaches does not slow settlement down, it
@@ -157,8 +160,24 @@ func TestParamsValidate(t *testing.T) {
 			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyZeroDec() },
 		},
 		{
-			name:   "min attendance per window at one",
-			mutate: func(p *types.Params) { p.MinAttendancePerWindow = math.LegacyOneDec() },
+			name: "min attendance per window at one",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = math.LegacyOneDec()
+				p.FunctioningBlockThreshold = math.LegacyOneDec()
+			},
+		},
+		{
+			name: "min attendance per window equal to the functioning block threshold",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = types.MinFunctioningBlockThreshold
+			},
+		},
+		{
+			name: "min attendance per window above the functioning block threshold",
+			mutate: func(p *types.Params) {
+				p.MinAttendancePerWindow = types.MinFunctioningBlockThreshold.Add(math.LegacySmallestDec())
+			},
+			expectErr: "MinAttendancePerWindow 0.500000000000000001 must not exceed FunctioningBlockThreshold",
 		},
 		// FunctioningBlockThreshold
 		{
@@ -225,9 +244,14 @@ func TestParamsValidate(t *testing.T) {
 			expectErr: exchangeRateAgeOutOfRange,
 		},
 		{
-			name:      "max exchange rate age negative",
-			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = -time.Second },
+			// Under the floor, proposers would leave every block empty.
+			name:      "max exchange rate age below the floor",
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MinExchangeRateAge - 1 },
 			expectErr: exchangeRateAgeOutOfRange,
+		},
+		{
+			name:   "max exchange rate age at the floor",
+			mutate: func(p *types.Params) { p.MaxExchangeRateAge = types.MinExchangeRateAge },
 		},
 		{
 			name:   "max exchange rate age at the domain cap",
@@ -237,7 +261,7 @@ func TestParamsValidate(t *testing.T) {
 			// A window that never elapses does not loosen the staleness gate,
 			// it removes it: every rate reads fresh forever.
 			name:      "max exchange rate age above the domain cap",
-			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + time.Second },
+			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + 1 },
 			expectErr: exchangeRateAgeOutOfRange,
 		},
 	}

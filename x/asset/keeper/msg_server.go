@@ -120,7 +120,7 @@ func (m msgServer) OpenSettlement(ctx context.Context, msg *types.MsgOpenSettlem
 		msg.Denom,
 		msg.ExpectedVersion,
 		msg.RedemptionRate,
-		msg.EarliestClosingHeight,
+		msg.EarliestClosingTime,
 	); err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (m msgServer) SetEmergencyMandate(ctx context.Context, msg *types.MsgSetEme
 	if committee == m.k.authority || committee == msg.Authority {
 		return nil, errors.New("emergency committee must be distinct from the Asset authority")
 	}
-	if err := m.k.SetEmergencyMandate(ctx, committee, msg.ActivationHeight, msg.ExpiryHeight); err != nil {
+	if err := m.k.SetEmergencyMandate(ctx, committee, msg.ActivationTime, msg.ExpiryTime); err != nil {
 		return nil, err
 	}
 

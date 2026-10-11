@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,59 +15,78 @@ import (
 )
 
 // SetGrantsMandate replaces or disables the committee appointment. Every replacement advances the
-// term, and awards are counted by term, so a new appointment starts with nothing used. Suspensions
-// stay effective until governance voids their term.
+// term, zeroes the term's usage, and clears the registrar the outgoing committee appointed.
+// Suspensions stand until reinstated.
 func (k *Keeper) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMandate) error {
 	current, err := k.GrantsMandate.Get(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting grants mandate: %w", err)
 	}
-	envelope, address, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, address, err := mandate.Next(
+		current.Envelope,
+		msg.Committee,
+		msg.ActivationTime,
+		msg.ExpiryTime,
+	)
 	if err != nil {
 		return err
 	}
+	// A disabling has no committee to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(k.accountKeeper.GetAccount(ctx, address), k.wasmKeeper.HasContractInfo(ctx, address))
+	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	updated := types.NewDisabledGrantsMandate(envelope.Term)
-	if !envelope.IsDisabled() {
-		envelope.Observe(k.account.GetAccount(ctx, address), k.wasm.HasContractInfo(ctx, address))
-		// Governance holds the unbounded path already, so appointing itself delegates nothing.
-		if envelope.Committee == k.authority || envelope.Committee == msg.Authority {
-			return errors.New("committee must be distinct from the disbursement authority")
+	updated.Envelope = envelope
+	if msg.Committee != "" {
+		// An allowance left out of the message is none, as max_offer is.
+		updated.CompensationAllowance = msg.CompensationAllowance
+		if updated.CompensationAllowance.IsNil() {
+			updated.CompensationAllowance = math.ZeroInt()
 		}
-		// A window already behind the chain authorises nothing. Genesis applies no such check: an
-		// export taken after expiry must round-trip.
-		if height := uint64(sdkCtx.BlockHeight()); envelope.ExpiryHeight <= height {
-			return fmt.Errorf("grants mandate expires at height %d, not above the current height %d", envelope.ExpiryHeight, height)
-		}
-		params, err := k.Params.Get(ctx)
-		if err != nil {
+		if err := updated.Validate(); err != nil {
 			return err
 		}
-		// An allowance the chain could never award in is a stillborn delegation.
-		for _, c := range msg.CompensationAllowance {
-			if err := k.validateCompensation(ctx, c.Denom, params); err != nil {
-				return fmt.Errorf("compensation allowance: %w", err)
-			}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
+		if updated.Committee == k.authority || updated.Committee == msg.Authority {
+			return errors.New("grants committee must be distinct from the disbursement authority")
 		}
-		updated.CompensationAllowance, updated.MinFirstPeriod = msg.CompensationAllowance, msg.MinFirstPeriod
-	}
-	updated.Envelope = envelope
-	if err := updated.Validate(); err != nil {
-		return err
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
+			return fmt.Errorf(
+				"%s expires at time %d, which is not after the current block time %d",
+				types.GrantsMandateLabel,
+				updated.ExpiryTime,
+				now,
+			)
+		}
 	}
 	if err := k.GrantsMandate.Set(ctx, updated); err != nil {
-		return err
+		return fmt.Errorf("setting grants mandate: %w", err)
 	}
-	if err := k.record(ctx, 0, "grants_mandate", msg.Authority, chain.NoahCoin(math.ZeroInt()), updated); err != nil {
-		return err
+	if err := k.CompensationUsed.Set(ctx, math.ZeroInt()); err != nil {
+		return fmt.Errorf("resetting compensation usage: %w", err)
 	}
-	return sdkCtx.EventManager().EmitTypedEvent(&types.EventGrantsMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
-	})
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventGrantsMandateSet{
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
+	}); err != nil {
+		return fmt.Errorf("emitting grants mandate: %w", err)
+	}
+	// The registrar is the committee's delegate: a committee appointment clears it, so no key
+	// registers under a replaced or disabled committee.
+	registrar, err := k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting registrar mandate: %w", err)
+	}
+	if registrar.IsDisabled() {
+		return nil
+	}
+	return k.SetRegistrarMandate(ctx, updated, "", 0, 0)
 }
 
 // AuthoriseCommittee checks exact signer, term, and active window, returning the live mandate.
@@ -76,21 +94,79 @@ func (k *Keeper) SetGrantsMandate(ctx context.Context, msg *types.MsgSetGrantsMa
 func (k *Keeper) AuthoriseCommittee(ctx context.Context, committee string, expectedTerm uint64) (types.GrantsMandate, error) {
 	appointment, err := k.GrantsMandate.Get(ctx)
 	if err != nil {
-		return types.GrantsMandate{}, err
+		return types.GrantsMandate{}, fmt.Errorf("getting grants mandate: %w", err)
 	}
-	if err := appointment.Authorise(committee, expectedTerm, uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())); err != nil {
+	if err := appointment.Authorise(committee, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.GrantsMandate{}, fmt.Errorf("%s: %w", types.GrantsMandateLabel, err)
 	}
 	return appointment, nil
 }
 
-// termUsage sums and counts a term's committee awards, cancelled ones included.
-func (k *Keeper) termUsage(ctx context.Context, term uint64) (sdk.Coins, uint64, error) {
-	used, count := sdk.NewCoins(), uint64(0)
-	err := k.TermGrants.Walk(ctx, collections.NewPrefixedPairRange[uint64, uint64](term), func(_ collections.Pair[uint64, uint64], amount sdk.Coin) (bool, error) {
-		used = used.Add(amount) // At most MaxTermGrants 128-bit amounts.
-		count++
-		return false, nil
-	})
-	return used, count, err
+// SetRegistrarMandate replaces or disables the registrar appointment under committee, the live grants
+// mandate, for a window inside the committee's. Every replacement advances the term; the open member
+// tranche is the registrar's only bound.
+func (k *Keeper) SetRegistrarMandate(ctx context.Context, committee types.GrantsMandate, registrar string, activationTime, expiryTime uint64) error {
+	current, err := k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("getting registrar mandate: %w", err)
+	}
+	envelope, address, err := mandate.Next(current.Envelope, registrar, activationTime, expiryTime)
+	if err != nil {
+		return err
+	}
+	// A disabling has no registrar to look up.
+	if !envelope.IsDisabled() {
+		envelope.Observe(k.accountKeeper.GetAccount(ctx, address), k.wasmKeeper.HasContractInfo(ctx, address))
+	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	updated := types.NewDisabledRegistrarMandate(envelope.Term)
+	updated.Envelope = envelope
+	if registrar != "" {
+		if err := updated.Validate(); err != nil {
+			return err
+		}
+		if err := updated.WithinCommittee(committee); err != nil {
+			return err
+		}
+		// Governance already holds the unbounded path; the committee may name itself.
+		if updated.Committee == k.authority {
+			return errors.New("registrar must be distinct from the disbursement authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
+			return fmt.Errorf(
+				"%s expires at time %d, which is not after the current block time %d",
+				types.RegistrarMandateLabel,
+				updated.ExpiryTime,
+				now,
+			)
+		}
+	}
+	if err := k.RegistrarMandate.Set(ctx, updated); err != nil {
+		return fmt.Errorf("setting registrar mandate: %w", err)
+	}
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventRegistrarMandateSet{
+		Term:           updated.Term,
+		Registrar:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
+	}); err != nil {
+		return fmt.Errorf("emitting registrar mandate: %w", err)
+	}
+	return nil
+}
+
+// AuthoriseRegistrar checks exact signer, term, and active window, returning the live registrar
+// appointment. Registration rides the normal lane, so only the handler runs it.
+func (k *Keeper) AuthoriseRegistrar(ctx context.Context, registrar string, expectedTerm uint64) (types.RegistrarMandate, error) {
+	appointment, err := k.RegistrarMandate.Get(ctx)
+	if err != nil {
+		return types.RegistrarMandate{}, fmt.Errorf("getting registrar mandate: %w", err)
+	}
+	if err := appointment.Authorise(registrar, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
+		return types.RegistrarMandate{}, fmt.Errorf("%s: %w", types.RegistrarMandateLabel, err)
+	}
+	return appointment, nil
 }

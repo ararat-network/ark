@@ -5,8 +5,11 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -224,39 +227,44 @@ func (s *KeeperTestSuite) TestFinaliseRetirement() {
 	assets := types.DefaultGenesisState().Assets
 
 	direct := []struct {
+		name   string
 		asset  types.Asset
 		status types.AssetStatus
 	}{
 		{
+			name:   "issuance halted",
 			asset:  assets[0],
 			status: types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED,
 		},
 		{
+			name:   "suspended",
 			asset:  assets[1],
 			status: types.AssetStatus_ASSET_STATUS_SUSPENDED,
 		},
 	}
 	for _, test := range direct {
-		test.asset.Status = test.status
-		s.Require().NoError(s.keeper.Assets.Set(
-			s.ctx,
-			test.asset.Denom,
-			test.asset,
-		))
-		s.bankKeeper.EXPECT().
-			GetSupply(s.ctx, test.asset.Denom).
-			Return(zeroAssetCoin(test.asset.Denom))
-		s.Require().NoError(s.keeper.FinaliseRetirement(
-			s.ctx,
-			test.asset.Denom,
-			test.asset.Version,
-			math.ZeroInt(),
-		))
-		s.requireStoredAsset(
-			test.asset.Denom,
-			types.AssetStatus_ASSET_STATUS_RETIRED,
-			test.asset.Version+1,
-		)
+		s.Run(test.name, func() {
+			test.asset.Status = test.status
+			s.Require().NoError(s.keeper.Assets.Set(
+				s.ctx,
+				test.asset.Denom,
+				test.asset,
+			))
+			s.bankKeeper.EXPECT().
+				GetSupply(s.ctx, test.asset.Denom).
+				Return(zeroAssetCoin(test.asset.Denom))
+			s.Require().NoError(s.keeper.FinaliseRetirement(
+				s.ctx,
+				test.asset.Denom,
+				test.asset.Version,
+				math.ZeroInt(),
+			))
+			s.requireStoredAsset(
+				test.asset.Denom,
+				types.AssetStatus_ASSET_STATUS_RETIRED,
+				test.asset.Version+1,
+			)
+		})
 	}
 
 	// A written-off asset retires directly, residual permitted, and appends no
@@ -341,7 +349,7 @@ func (s *KeeperTestSuite) TestFinaliseRetirement() {
 }
 
 func (s *KeeperTestSuite) TestFinaliseRetirementDerecognisesApprovedResidual() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
+	s.at(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
 	asset.Version = 4
@@ -393,7 +401,7 @@ func (s *KeeperTestSuite) TestFinaliseRetirementDerecognisesApprovedResidual() {
 // derecognition that cannot record its outcome must not have moved the asset or
 // closed its plan on the way to finding out.
 func (s *KeeperTestSuite) TestFinaliseRetirementRejectsDuplicateResidualBeforeWriting() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(30)
+	s.at(30)
 	asset := types.DefaultGenesisState().Assets[0]
 	asset.Status = types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED
 	asset.Version = 4
@@ -501,6 +509,50 @@ func (s *KeeperTestSuite) TestFinaliseRetirementRejectsUnapprovableResidual() {
 	}
 }
 
+// TestFinaliseRetirementRejectsInvalidResidualBound checks an unset or negative bound is refused in
+// every retirable status before supply is read; a nil bound would otherwise reach the comparisons.
+func (s *KeeperTestSuite) TestFinaliseRetirementRejectsInvalidResidualBound() {
+	assets := types.DefaultGenesisState().Assets
+	server := keeper.NewMsgServerImpl(s.keeper)
+
+	for i, test := range []struct {
+		name   string
+		status types.AssetStatus
+		bound  math.Int
+		viaMsg bool
+	}{
+		{"issuance halted, unset", types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED, math.Int{}, false},
+		{"issuance halted, negative", types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED, math.NewInt(-1), false},
+		{"suspended, unset", types.AssetStatus_ASSET_STATUS_SUSPENDED, math.Int{}, false},
+		{"written off, negative", types.AssetStatus_ASSET_STATUS_WRITTEN_OFF, math.NewInt(-1), false},
+		{"message, unset", types.AssetStatus_ASSET_STATUS_ISSUANCE_HALTED, math.Int{}, true},
+		{"message, negative", types.AssetStatus_ASSET_STATUS_SUSPENDED, math.NewInt(-1), true},
+	} {
+		s.Run(test.name, func() {
+			asset := assets[i]
+			asset.Status = test.status
+			s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
+
+			var err error
+			if test.viaMsg {
+				_, err = server.FinaliseRetirement(s.ctx, &types.MsgFinaliseRetirement{
+					Authority:         authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+					Denom:             asset.Denom,
+					ExpectedVersion:   asset.Version,
+					MaxResidualSupply: test.bound,
+				})
+			} else {
+				err = s.keeper.FinaliseRetirement(s.ctx, asset.Denom, asset.Version, test.bound)
+			}
+
+			s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
+			s.Require().ErrorContains(err, "maximum residual supply must be set and non-negative")
+			s.requireStoredAsset(asset.Denom, test.status, asset.Version)
+		})
+	}
+	s.Require().Empty(sdk.UnwrapSDKContext(s.ctx).EventManager().Events())
+}
+
 // TestRetirementIsTerminal checks every transition refuses the same retired tombstone before
 // querying supply or feed state. Unconfigured mocks enforce that ordering.
 func (s *KeeperTestSuite) TestRetirementIsTerminal() {
@@ -533,7 +585,7 @@ func (s *KeeperTestSuite) TestRetirementIsTerminal() {
 				asset.Denom,
 				asset.Version,
 				math.LegacyOneDec(),
-				sdk.UnwrapSDKContext(s.ctx).BlockHeight()+1,
+				chain.BlockSeconds(s.ctx)+1,
 			)
 		}},
 		{"cancel a settlement", func() error {
@@ -614,7 +666,7 @@ func (s *KeeperTestSuite) TestSuspendAssetHasNoBlockerBeyondStatus() {
 }
 
 func (s *KeeperTestSuite) TestRecoverAsset() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 	assets := types.DefaultGenesisState().Assets
 
 	// Recovery takes effect in the block it executes: governance has already
@@ -669,7 +721,7 @@ func (s *KeeperTestSuite) TestRecoverAsset() {
 // An adding feed has no rate yet, so a transition taking effect immediately
 // cannot use it; a removing feed was already cleared of referents.
 func (s *KeeperTestSuite) TestRecoverAssetRequiresActiveFeed() {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
+	s.at(10)
 	assets := types.DefaultGenesisState().Assets
 
 	for _, tc := range []struct {

@@ -6,8 +6,6 @@ import (
 	"fmt"
 
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	channeltypesv2 "github.com/cosmos/ibc-go/v11/modules/core/04-channel/v2/types"
 
 	"cosmossdk.io/collections"
 	errorsmod "cosmossdk.io/errors"
@@ -19,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	markettypes "github.com/ararat-network/ark/x/market/types"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -166,8 +163,10 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 		if typed == nil {
 			return fmt.Errorf("nil bank multi-send message")
 		}
-		for _, input := range typed.Inputs {
-			if err := addCoins(input.Coins); err != nil {
+		// Each recipient is its own principal, as separate sends would be, so a
+		// batch of payouts cannot share one cap.
+		for _, output := range typed.Outputs {
+			if err := addCoins(output.Coins); err != nil {
 				return err
 			}
 		}
@@ -203,48 +202,6 @@ func extractTaxInputs(msg sdk.Msg, inputs *[]sdk.Coins, depth int) error {
 			}
 		}
 		return addCoins(totals.coins())
-	case *markettypes.MsgSwapSend:
-		if typed == nil {
-			return fmt.Errorf("nil Market swap-send message")
-		}
-		return addCoins(sdk.Coins{typed.OfferCoin})
-	case *markettypes.MsgSwap:
-		if typed == nil {
-			return fmt.Errorf("nil Market swap message")
-		}
-		return nil
-	case *ibctransfertypes.MsgTransfer:
-		if typed == nil {
-			return fmt.Errorf("nil IBC transfer message")
-		}
-		// Only the outbound leg is an input. A forwarded hop, acknowledgement,
-		// timeout, or refund is protocol continuation of this same transfer and
-		// is never re-presented here (D46).
-		return addCoins(sdk.Coins{typed.Token})
-	case *channeltypesv2.MsgSendPacket:
-		if typed == nil {
-			return fmt.Errorf("nil IBC v2 send packet message")
-		}
-		// Raw IBC v2 transfer payloads expose the same principal as MsgTransfer. Decode with the
-		// transfer module's own arguments; Wasm and GMP ports move no coins here. Each payload is a
-		// separate tax input.
-		for i, payload := range typed.Payloads {
-			if payload.SourcePort != ibctransfertypes.PortID {
-				continue
-			}
-			data, err := ibctransfertypes.UnmarshalPacketData(payload.Value, payload.Version, payload.Encoding)
-			if err != nil {
-				return fmt.Errorf("decoding transfer payload %d: %w", i, err)
-			}
-			coin, err := data.Token.ToCoin()
-			if err != nil {
-				return fmt.Errorf("transfer payload %d token: %w", i, err)
-			}
-			if err := addCoins(sdk.Coins{coin}); err != nil {
-				return err
-			}
-		}
-		return nil
 	case *wasmtypes.MsgExecuteContract:
 		if typed == nil {
 			return fmt.Errorf("nil Wasm execute message")

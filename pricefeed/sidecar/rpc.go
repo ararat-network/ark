@@ -61,7 +61,7 @@ func toReqPrices(prices sidecartypes.FeedPrices) (map[string][]byte, error) {
 		if price == nil {
 			return nil, fmt.Errorf("nil price for %s", ticker)
 		}
-		if err := sidecartypes.ValidatePrice(price); err != nil {
+		if err := sidecartypes.ValidateFeedPrice(price); err != nil {
 			return nil, fmt.Errorf("invalid price for %s: %w", ticker, err)
 		}
 

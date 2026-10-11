@@ -76,19 +76,6 @@ func (s *KeeperTestSuite) TestPositionQueriesPartitionByStatus() {
 		s.Require().True(held)
 	})
 
-	// The total counts the open set, excluding closed records.
-	s.Run("a counting request totals one store", func() {
-		s.SetupTest()
-		open, _ := s.openAndClosed(committee, destination)
-
-		resp, err := s.queryServer.OpenPositions(s.ctx, &types.QueryOpenPositionsRequest{
-			Pagination: &sdkquery.PageRequest{Limit: 1, CountTotal: true},
-		})
-		s.Require().NoError(err)
-		s.Require().Len(resp.Positions, 1)
-		s.Require().Equal(uint64(len(open)), resp.Pagination.Total)
-	})
-
 	// A page of one must return one: the closed position is in another store
 	// and cannot consume a page here.
 	s.Run("a page fills with open positions", func() {
@@ -109,17 +96,6 @@ func (s *KeeperTestSuite) TestPositionQueriesPartitionByStatus() {
 		s.Require().Equal(open, seen)
 	})
 
-	s.Run("offset skips open positions", func() {
-		s.SetupTest()
-		open, _ := s.openAndClosed(committee, destination)
-
-		resp, err := s.queryServer.OpenPositions(s.ctx, &types.QueryOpenPositionsRequest{
-			Pagination: &sdkquery.PageRequest{Offset: 1},
-		})
-		s.Require().NoError(err)
-		s.Require().Equal(open[1:], s.positionIDs(resp.Positions))
-	})
-
 	s.Run("an emptied open set is not an error", func() {
 		s.SetupTest()
 		open, closed := s.openAndClosed(committee, destination)
@@ -138,19 +114,17 @@ func (s *KeeperTestSuite) TestPositionQueriesPartitionByStatus() {
 		s.Require().Equal([]uint64{open[0], closed, open[1]}, s.positionIDs(closedResp.Positions))
 	})
 
-	s.Run("both queries validate pagination", func() {
+	// Offsets and totals read every entry skipped or counted, so both queries refuse them.
+	s.Run("both queries refuse offsets and totals", func() {
 		s.SetupTest()
 		s.openAndClosed(committee, destination)
 
-		_, err := s.queryServer.OpenPositions(s.ctx, &types.QueryOpenPositionsRequest{
-			Pagination: &sdkquery.PageRequest{Offset: 1, Key: []byte("key")},
-		})
-		s.Require().ErrorContains(err, "must not specify both key and offset")
-
-		_, err = s.queryServer.ClosedPositions(s.ctx, &types.QueryClosedPositionsRequest{
-			Pagination: &sdkquery.PageRequest{Offset: 1, Key: []byte("key")},
-		})
-		s.Require().ErrorContains(err, "must not specify both key and offset")
+		for _, page := range []*sdkquery.PageRequest{{Offset: 1}, {CountTotal: true}} {
+			_, err := s.queryServer.OpenPositions(s.ctx, &types.QueryOpenPositionsRequest{Pagination: page})
+			s.Require().ErrorContains(err, "use key pagination")
+			_, err = s.queryServer.ClosedPositions(s.ctx, &types.QueryClosedPositionsRequest{Pagination: page})
+			s.Require().ErrorContains(err, "use key pagination")
+		}
 	})
 }
 
@@ -193,4 +167,55 @@ func (s *KeeperTestSuite) TestBalanceReportsOutstandingDeployment() {
 	s.Require().Equal(noahCoin(9_400), resp.Balance)
 	// 300 + 100 open; the closed 200 is out.
 	s.Require().Equal(noahCoin(400), resp.OutstandingDeployed)
+}
+
+// pageLedger walks the Ledger query a page of one at a time, following each next key.
+func (s *KeeperTestSuite) pageLedger(positionID uint64) []types.AccountingEntry {
+	entries := make([]types.AccountingEntry, 0)
+	var key []byte
+	for {
+		resp, err := s.queryServer.Ledger(s.ctx, &types.QueryLedgerRequest{
+			PositionId: positionID,
+			Pagination: &sdkquery.PageRequest{Limit: 1, Key: key},
+		})
+		s.Require().NoError(err)
+		entries = append(entries, resp.Ledger...)
+		if len(resp.Pagination.NextKey) == 0 {
+			return entries
+		}
+		key = resp.Pagination.NextKey
+	}
+}
+
+// TestLedgerQueryPagesByPosition pins that a position filter pages through that
+// position's own entries, interleaved with another's, and that import rebuilds
+// the index it reads.
+func (s *KeeperTestSuite) TestLedgerQueryPagesByPosition() {
+	committee := testAddress(1)
+	destination := testAddress(2)
+
+	s.SetupTest()
+	s.appointCommittee(committee, 10_000, 0, destination)
+	s.setBlockHeight(20)
+	s.fundReserve(10_000)
+	first := s.deploy(committee, destination, 300, 3, 0)
+	second := s.deploy(committee, destination, 200, 2, 0)
+	s.deploy(committee, destination, 100, 1, first)
+	s.closePosition(committee, second)
+
+	check := func() {
+		s.Require().Len(s.ledgerFor(first), 2)
+		s.Require().Equal(s.ledgerFor(first), s.pageLedger(first))
+		s.Require().Equal(s.ledgerFor(second), s.pageLedger(second))
+		s.Require().Equal(s.wholeLedger(), s.pageLedger(0))
+		s.Require().Empty(s.pageLedger(second + 1))
+	}
+	check()
+
+	exported, err := s.keeper.ExportGenesis(s.ctx)
+	s.Require().NoError(err)
+	s.SetupTest()
+	s.fundReserve(10_000)
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
+	check()
 }

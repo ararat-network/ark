@@ -29,7 +29,7 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-var benchmarkSwapQuote swapQuote
+var benchmarkQuote quote
 
 // BenchmarkStableToStableQuote varies Oracle registry size to detect registry-scaled quote work.
 // Each leg should require only point lookups plus fixed-size params.
@@ -37,18 +37,18 @@ func BenchmarkStableToStableQuote(b *testing.B) {
 	for _, pricedCount := range []int{len(oracletypes.DefaultFeedDenoms), oracletypes.MaxFeeds} {
 		b.Run(fmt.Sprintf("priced_denoms_%d", pricedCount), func(b *testing.B) {
 			keeper, ctx, offerCoin, askDenom := benchmarkMarketKeeper(b, pricedCount)
-			if _, err := keeper.quoteSwap(ctx, offerCoin, askDenom); err != nil {
+			if _, err := keeper.priceSell(ctx, offerCoin, askDenom); err != nil {
 				b.Fatal(err)
 			}
 
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
-				quote, err := keeper.quoteSwap(ctx, offerCoin, askDenom)
+				priced, err := keeper.priceSell(ctx, offerCoin, askDenom)
 				if err != nil {
 					b.Fatal(err)
 				}
-				benchmarkSwapQuote = quote
+				benchmarkQuote = priced
 			}
 		})
 	}
@@ -107,9 +107,9 @@ func benchmarkMarketKeeper(
 	for i := range pricedCount {
 		pricedDenoms[i] = fmt.Sprintf("uasset%03d", i)
 		if err := oracleKeeper.ExchangeRate.Set(ctx, pricedDenoms[i], oracletypes.ExchangeRate{
-			Denom:          pricedDenoms[i],
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: sdk.UnwrapSDKContext(ctx).BlockTime(),
+			Denom:     pricedDenoms[i],
+			Rate:      math.LegacyOneDec(),
+			BlockTime: uint64(sdk.UnwrapSDKContext(ctx).BlockTime().Unix()),
 		}); err != nil {
 			b.Fatal(err)
 		}

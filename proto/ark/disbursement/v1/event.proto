@@ -2,20 +2,12 @@ syntax = "proto3";
 package ark.disbursement.v1;
 
 import "amino/amino.proto";
-import "ark/disbursement/v1/disbursement.proto";
 import "ark/mandate/v1/envelope.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/disbursement/types";
-
-// EventOperation publishes the journal entry committed with an operation.
-message EventOperation {
-  JournalEntry entry = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
-}
 
 // EventGrantsMandateSet is emitted after governance appoints, replaces, or disables the
 // grants committee.
@@ -23,12 +15,137 @@ message EventGrantsMandateSet {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when governance disabled the mandate.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee account, zeroed on a
   // disabling.
   ark.mandate.v1.CommitteeShape committee_shape = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// EventRegistrarMandateSet is emitted after the committee appoints, replaces, or disables the
+// registrar, and after a committee appointment clears it.
+message EventRegistrarMandateSet {
+  uint64 term = 1 [(amino.dont_omitempty) = true];
+  // registrar is empty when the mandate was disabled.
+  string registrar = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
+  // committee_shape is the appointment-time observation of the registrar account, zeroed on a
+  // disabling.
+  ark.mandate.v1.CommitteeShape committee_shape = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventTrancheOpened records governance opening member NOAH to registration.
+message EventTrancheOpened {
+  string amount = 1 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // member_tranche is the open member tranche after this opening.
+  string member_tranche = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventUnallocatedReturned records governance returning uncommitted contributor custody to the
+// community pool.
+message EventUnallocatedReturned {
+  string denom = 1;
+  string amount = 2 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventGrantEntryRecorded publishes each grant journal entry as flat attributes, the action by name
+// so an indexer need not track the enum's numbering. The block carries the height and time.
+message EventGrantEntryRecorded {
+  uint64 id = 1 [(amino.dont_omitempty) = true];
+  uint64 grant_id = 2 [(amino.dont_omitempty) = true];
+  string action = 3;
+  string actor = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string amount_denom = 5;
+  string amount = 6 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // subject is the payee paid or the new payee; empty for other actions.
+  string subject = 7 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // offer is the NOAH a conversion spent; zero for other actions.
+  string offer = 8 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventPaymentDeferred records a payment Bank refused at the payee, held for a later block.
+message EventPaymentDeferred {
+  uint64 grant_id = 1 [(amino.dont_omitempty) = true];
+  string payee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string amount_denom = 3;
+  string amount = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // due_time is when the module tries again. The refusal itself goes to the node log.
+  uint64 due_time = 5 [(amino.dont_omitempty) = true];
+}
+
+// EventBeneficiaryEntryRecorded publishes each beneficiary journal entry, a controller change.
+message EventBeneficiaryEntryRecorded {
+  uint64 id = 1 [(amino.dont_omitempty) = true];
+  string beneficiary = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string actor = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string controller = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// EventCompensationRebased records the compensation figures re-expressed in a new protocol
+// reference unit: the cap, the live term's allowance and usage, and how many awards moved with
+// them. Emitted only by RebaseReference, whose only caller is MsgSetReferenceDenom.
+message EventCompensationRebased {
+  cosmos.base.v1beta1.Coin old_cap = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin new_cap = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin old_allowance = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin new_allowance = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin old_used = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin new_used = 6 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // grants counts the compensation awards whose value moved.
+  uint64 grants = 7 [(amino.dont_omitempty) = true];
 }

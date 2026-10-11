@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,12 @@ type SetupOptions struct {
 	AppOpts servertypes.AppOptions
 }
 
+// ChainID and GenesisTime are the chain identity and the genesis and first-block time of every
+// app SetupWithGenesisValSet builds.
+const ChainID = "ark-testutil"
+
+var GenesisTime = time.Unix(1_700_000_000, 0).UTC()
+
 // defaultFunderCoins is the opening balance of the genesis account Setup and
 // NewArkappWithCustomOptions create.
 func defaultFunderCoins() sdk.Coins {
@@ -56,7 +63,7 @@ func setup(tb testing.TB, withGenesis bool) (*app.ArkApp, map[string]json.RawMes
 	appOptions := make(simtestutil.AppOptionsMap, 0)
 	appOptions[flags.FlagHome] = tb.TempDir()
 
-	arkApp := app.NewArkApp(log.NewNopLogger(), db, true, appOptions)
+	arkApp := app.NewArkApp(log.NewNopLogger(), db, true, appOptions, baseapp.SetChainID(ChainID))
 	if withGenesis {
 		return arkApp, arkApp.DefaultGenesis()
 	}
@@ -93,7 +100,8 @@ func NewArkappWithCustomOptions(tb testing.TB, isCheckTx bool, options SetupOpti
 	return arkApp
 }
 
-// Setup initialises a new ArkApp. A Nop logger is set in ArkApp.
+// Setup initialises a new ArkApp through SetupWithGenesisValSet with one validator and one funded
+// account, leaving it in the same state. isCheckTx is unused. A Nop logger is set in ArkApp.
 func Setup(tb testing.TB, isCheckTx bool) *app.ArkApp {
 	tb.Helper()
 
@@ -106,6 +114,12 @@ func Setup(tb testing.TB, isCheckTx bool) *app.ArkApp {
 // that also act as delegators. For simplicity, each validator is bonded with a delegation
 // of one consensus engine unit in the default token of the ArkApp from first genesis
 // account. A Nop logger is set in ArkApp.
+//
+// The app runs InitChain and FinalizeBlock for block 1 under ChainID at GenesisTime, and does
+// not commit: LastBlockHeight is 0, block 1 is finalised, and check-state reads see an empty
+// store until a Commit. A context from NewContextLegacy(false, ...) reads and writes the finalise
+// state, which FinalizeBlock has already flushed, so a Commit seals block 1 without those writes;
+// NewUncachedContext writes reach it.
 func SetupWithGenesisValSet(tb testing.TB, validators Validators, genAccs []authtypes.GenesisAccount, balances ...banktypes.Balance) *app.ArkApp {
 	tb.Helper()
 
@@ -119,6 +133,8 @@ func SetupWithGenesisValSet(tb testing.TB, validators Validators, genAccs []auth
 
 	// init chain will set the validator set and initialise the genesis accounts
 	_, err = arkApp.InitChain(&cmtabci.RequestInitChain{
+		ChainId:         ChainID,
+		Time:            GenesisTime,
 		Validators:      []cmtabci.ValidatorUpdate{},
 		ConsensusParams: simtestutil.DefaultConsensusParams,
 		AppStateBytes:   stateBytes,
@@ -129,6 +145,7 @@ func SetupWithGenesisValSet(tb testing.TB, validators Validators, genAccs []auth
 	_, err = arkApp.FinalizeBlock(&cmtabci.RequestFinalizeBlock{
 		Height:             arkApp.LastBlockHeight() + 1,
 		Hash:               arkApp.LastCommitID().Hash,
+		Time:               GenesisTime,
 		NextValidatorsHash: validators.Set.Hash(),
 	})
 	require.NoError(tb, err)
@@ -162,7 +179,7 @@ func NewTestNetworkFixture() network.TestFixture {
 		EncodingConfig: moduletestutil.TestEncodingConfig{
 			InterfaceRegistry: arkApp.InterfaceRegistry(),
 			Codec:             arkApp.AppCodec(),
-			TxConfig:          arkApp.GetTxConfig(),
+			TxConfig:          arkApp.TxConfig(),
 			Amino:             arkApp.LegacyAmino(),
 		},
 	}

@@ -1158,8 +1158,8 @@ func (x *fastReflection_EventFeedTransitionScheduled) Range(f func(protoreflect.
 			return
 		}
 	}
-	if x.ActivationVoteHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.ActivationVoteHeight)
+	if x.ActivationVoteHeight != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationVoteHeight)
 		if !f(fd_EventFeedTransitionScheduled_activation_vote_height, value) {
 			return
 		}
@@ -1190,7 +1190,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) Has(fd protoreflect.FieldD
 	case "ark.oracle.v1.EventFeedTransitionScheduled.direction":
 		return x.Direction != 0
 	case "ark.oracle.v1.EventFeedTransitionScheduled.activation_vote_height":
-		return x.ActivationVoteHeight != int64(0)
+		return x.ActivationVoteHeight != uint64(0)
 	case "ark.oracle.v1.EventFeedTransitionScheduled.resulting_version":
 		return x.ResultingVersion != uint64(0)
 	default:
@@ -1214,7 +1214,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) Clear(fd protoreflect.Fiel
 	case "ark.oracle.v1.EventFeedTransitionScheduled.direction":
 		x.Direction = 0
 	case "ark.oracle.v1.EventFeedTransitionScheduled.activation_vote_height":
-		x.ActivationVoteHeight = int64(0)
+		x.ActivationVoteHeight = uint64(0)
 	case "ark.oracle.v1.EventFeedTransitionScheduled.resulting_version":
 		x.ResultingVersion = uint64(0)
 	default:
@@ -1241,7 +1241,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) Get(descriptor protoreflec
 		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
 	case "ark.oracle.v1.EventFeedTransitionScheduled.activation_vote_height":
 		value := x.ActivationVoteHeight
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	case "ark.oracle.v1.EventFeedTransitionScheduled.resulting_version":
 		value := x.ResultingVersion
 		return protoreflect.ValueOfUint64(value)
@@ -1270,7 +1270,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) Set(fd protoreflect.FieldD
 	case "ark.oracle.v1.EventFeedTransitionScheduled.direction":
 		x.Direction = (FeedDirection)(value.Enum())
 	case "ark.oracle.v1.EventFeedTransitionScheduled.activation_vote_height":
-		x.ActivationVoteHeight = value.Int()
+		x.ActivationVoteHeight = value.Uint()
 	case "ark.oracle.v1.EventFeedTransitionScheduled.resulting_version":
 		x.ResultingVersion = value.Uint()
 	default:
@@ -1319,7 +1319,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) NewField(fd protoreflect.F
 	case "ark.oracle.v1.EventFeedTransitionScheduled.direction":
 		return protoreflect.ValueOfEnum(0)
 	case "ark.oracle.v1.EventFeedTransitionScheduled.activation_vote_height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.oracle.v1.EventFeedTransitionScheduled.resulting_version":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
@@ -1569,7 +1569,7 @@ func (x *fastReflection_EventFeedTransitionScheduled) ProtoMethods() *protoiface
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationVoteHeight |= int64(b&0x7F) << shift
+					x.ActivationVoteHeight |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -3386,7 +3386,7 @@ type EventFeedTransitionScheduled struct {
 
 	Denom                string        `protobuf:"bytes,1,opt,name=denom,proto3" json:"denom,omitempty"`
 	Direction            FeedDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=ark.oracle.v1.FeedDirection" json:"direction,omitempty"`
-	ActivationVoteHeight int64         `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
+	ActivationVoteHeight uint64        `protobuf:"varint,3,opt,name=activation_vote_height,json=activationVoteHeight,proto3" json:"activation_vote_height,omitempty"`
 	ResultingVersion     uint64        `protobuf:"varint,4,opt,name=resulting_version,json=resultingVersion,proto3" json:"resulting_version,omitempty"`
 }
 
@@ -3424,7 +3424,7 @@ func (x *EventFeedTransitionScheduled) GetDirection() FeedDirection {
 	return FeedDirection_FEED_DIRECTION_UNSPECIFIED
 }
 
-func (x *EventFeedTransitionScheduled) GetActivationVoteHeight() int64 {
+func (x *EventFeedTransitionScheduled) GetActivationVoteHeight() uint64 {
 	if x != nil {
 		return x.ActivationVoteHeight
 	}
@@ -3617,7 +3617,7 @@ var file_ark_oracle_v1_event_proto_rawDesc = []byte{
 	0x64, 0x44, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a,
 	0x01, 0x52, 0x09, 0x64, 0x69, 0x72, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3b, 0x0a, 0x16,
 	0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x76, 0x6f, 0x74, 0x65, 0x5f,
-	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
 	0xb0, 0x2a, 0x01, 0x52, 0x14, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x56,
 	0x6f, 0x74, 0x65, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x32, 0x0a, 0x11, 0x72, 0x65, 0x73,
 	0x75, 0x6c, 0x74, 0x69, 0x6e, 0x67, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x04,

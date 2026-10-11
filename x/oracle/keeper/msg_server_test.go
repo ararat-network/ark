@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
@@ -70,11 +71,19 @@ func (s *KeeperTestSuite) TestUpdateParams() {
 	})
 
 	s.Run("rejects invalid authority", func() {
+		params := types.DefaultParams()
+		params.RewardBand = math.LegacyNewDecWithPrec(5, 2)
+
 		_, err := s.msgServer.UpdateParams(s.ctx, &types.MsgUpdateParams{
 			Authority: sdk.AccAddress("not-gov").String(),
-			Params:    types.DefaultParams(),
+			Params:    params,
 		})
-		s.Require().Error(err)
+		s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+		stored, err := s.keeper.Params.Get(s.ctx)
+		s.Require().NoError(err)
+		defaults := types.DefaultParams()
+		s.Require().True(defaults.Equal(&stored), "params changed to %v", stored)
 	})
 
 	s.Run("rejects invalid params", func() {
@@ -151,7 +160,11 @@ func (s *KeeperTestSuite) TestAddFeed() {
 			Authority: sdk.AccAddress("not-gov").String(),
 			Denom:     feedGold,
 		})
-		s.Require().Error(err)
+		s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(types.NewFeeds([]string{feedUSD}), feeds)
 	})
 
 	s.Run("rejects an invalid feed denom", func() {
@@ -354,6 +367,10 @@ func (s *KeeperTestSuite) TestRemoveFeed() {
 			Authority: sdk.AccAddress("not-gov").String(),
 			Denom:     feedGold,
 		})
-		s.Require().Error(err)
+		s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+		feeds, err := s.keeper.Feeds.Get(s.ctx)
+		s.Require().NoError(err)
+		s.Require().Equal(types.NewFeeds([]string{feedGold}), feeds)
 	})
 }

@@ -15,7 +15,6 @@ func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
 	legacy.RegisterAminoMsg(cdc, &MsgSetSecurityMandate{}, "ark/security/MsgSetSecurityMandate")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteePlanUpgrade{}, "ark/security/MsgCommitteePlanUpgrade")
 	legacy.RegisterAminoMsg(cdc, &MsgCommitteeCancelUpgrade{}, "ark/security/MsgCommitteeCancelUpgrade")
-	legacy.RegisterAminoMsg(cdc, &MsgCommitteeRecoverClient{}, "ark/security/MsgCommitteeRecoverClient")
 }
 
 // RegisterInterfaces registers the interfaces types with the interface registry.
@@ -25,7 +24,6 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		&MsgSetSecurityMandate{},
 		&MsgCommitteePlanUpgrade{},
 		&MsgCommitteeCancelUpgrade{},
-		&MsgCommitteeRecoverClient{},
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)

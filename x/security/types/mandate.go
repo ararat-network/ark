@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/ararat-network/ark/pkg/mandate"
 )
@@ -10,6 +11,9 @@ import (
 // SecurityMandateLabel names the shared appointment envelope in security
 // committee errors.
 const SecurityMandateLabel = "security mandate"
+
+// MaxPlanHeight is the largest height x/upgrade can schedule: its Plan.Height is int64.
+const MaxPlanHeight = uint64(math.MaxInt64)
 
 // DefaultSecurityMandate returns the canonical disabled committee mandate. The
 // term may increase later while the mandate remains disabled.
@@ -43,11 +47,11 @@ func (committeePlan CommitteePlan) IsZero() bool {
 // plan. Both name and height must agree, since x/upgrade allows a plan to be
 // replaced under the same name at a different height.
 func (committeePlan CommitteePlan) Matches(name string, height int64) bool {
-	if committeePlan.IsZero() {
+	if committeePlan.IsZero() || height <= 0 {
 		return false
 	}
 
-	return committeePlan.Name == name && committeePlan.Height == height
+	return committeePlan.Name == name && committeePlan.Height == uint64(height)
 }
 
 // Validate checks a recorded committee plan. The record is all-or-nothing: a
@@ -63,8 +67,8 @@ func (committeePlan CommitteePlan) Validate() error {
 	if committeePlan.Name == "" {
 		return errors.New("committee plan must have a name")
 	}
-	if committeePlan.Height <= 0 {
-		return errors.New("committee plan height must be positive")
+	if committeePlan.Height == 0 || committeePlan.Height > MaxPlanHeight {
+		return fmt.Errorf("committee plan height must be in [1, %d]", MaxPlanHeight)
 	}
 
 	return nil

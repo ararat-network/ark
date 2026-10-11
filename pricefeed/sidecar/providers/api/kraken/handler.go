@@ -66,13 +66,21 @@ func (h *Handler) ParseResponse(tickers []types.Ticker, resp *http.Response) typ
 		)
 	}
 
-	// A request-level failure fills error and leaves result empty.
+	// A request-level failure fills error and leaves result empty. An unknown
+	// pair refuses the whole request; reporting it as one lets the fetcher
+	// find the pair by asking for each alone.
 	if len(result.Errors) > 0 {
+		code := types.ErrorAPIGeneral
+		for _, venueErr := range result.Errors {
+			if strings.HasPrefix(venueErr, UnknownPairError) {
+				code = types.ErrorUnknownPair
+			}
+		}
 		return types.NewErrorResponse(
 			tickers,
 			types.NewErrorWithCode(
 				fmt.Errorf("kraken error: %s", strings.Join(result.Errors, ", ")),
-				types.ErrorAPIGeneral,
+				code,
 			),
 		)
 	}

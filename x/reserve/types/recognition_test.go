@@ -3,13 +3,11 @@ package types_test
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"cosmossdk.io/math"
 
-	"github.com/ararat-network/ark/pkg/decimal"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
@@ -39,7 +37,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			Denom:               "axau-lbma",
 			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
 			RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.2"),
-			MaxRateAge:          72 * time.Hour,
+			MaxRateAge:          72 * 3_600,
 		}
 	}
 
@@ -113,11 +111,6 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: rateAgeOutOfRange,
 		},
 		{
-			name:    "negative window",
-			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = -time.Second },
-			wantErr: rateAgeOutOfRange,
-		},
-		{
 			// The cap itself is admissible: it bounds absurdity, it does not
 			// express an opinion about sensible windows.
 			name:   "window at the domain cap",
@@ -125,7 +118,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 		},
 		{
 			name:    "window past the domain cap",
-			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + time.Second },
+			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + 1 },
 			wantErr: rateAgeOutOfRange,
 		},
 	}
@@ -302,18 +295,36 @@ func TestSolveRecognition(t *testing.T) {
 	}
 }
 
-// TestSolveRecognitionRefusesAnUnrepresentableStake pins the policy the
-// checked arithmetic buys: a stake past LegacyDec's range is an error, not a
-// saturated figure. Only a clerical attestation reaches this magnitude, and
-// the caller that produced it is where it should be answered.
-func TestSolveRecognitionRefusesAnUnrepresentableStake(t *testing.T) {
+// TestSolveRecognitionClipsWithoutDividing pins that the split is found without
+// a quotient: a credit near the decimal ceiling, or a ratio at the decimal
+// floor, clips to its share of the total rather than failing to sort. Both
+// shapes once overflowed the threshold division and would have failed the
+// block that priced them.
+func TestSolveRecognitionClipsWithoutDividing(t *testing.T) {
 	absurd := math.LegacyNewDecFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
-	stakes := []types.RecognitionStake{
-		{Ratio: math.LegacyMustNewDecFromStr("0.5"), Raw: absurd},
+	tests := []struct {
+		name   string
+		stakes []types.RecognitionStake
+		credit math.Int
+	}{
+		{
+			name:   "credit near the ceiling",
+			stakes: []types.RecognitionStake{{Ratio: math.LegacyMustNewDecFromStr("0.5"), Raw: absurd}},
+			credit: math.NewInt(1_000),
+		},
+		{
+			name:   "ratio at the floor",
+			stakes: []types.RecognitionStake{{Ratio: math.LegacySmallestDec(), Raw: absurd}},
+			credit: math.ZeroInt(),
+		},
 	}
-
-	_, err := types.SolveRecognition(math.NewInt(1_000), stakes)
-	require.ErrorIs(t, err, decimal.ErrOutOfRange)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			results, err := types.SolveRecognition(math.NewInt(1_000), tc.stakes)
+			require.NoError(t, err)
+			require.True(t, tc.credit.Equal(results[0].Credit), "credit %s", results[0].Credit)
+		})
+	}
 }
 
 // TestSolveRecognitionReportsSharesExactly pins the invariant the ratio

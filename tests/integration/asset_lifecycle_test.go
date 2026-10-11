@@ -319,7 +319,7 @@ func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 
 		// And Market issues it: conversion into a new denomination is the only
 		// way its supply comes into existence.
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       goldDenom,
@@ -338,7 +338,7 @@ func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, f.app.AssetKeeper.HaltIssuance(ctx, goldDenom, asset.Version))
 
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       goldDenom,
@@ -358,7 +358,7 @@ func TestAssetLifecycleActivationThroughRetirement(t *testing.T) {
 
 		// Redeem down to the dust the bound covers. The exit was open the whole
 		// time the halt was in force, so this is the ordinary conversion path.
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(goldDenom, acquired.Amount.Sub(residual)),
 			AskDenom:       chain.NoahBaseDenom,

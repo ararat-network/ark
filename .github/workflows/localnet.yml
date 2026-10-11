@@ -39,6 +39,7 @@ jobs:
         with:
           context: .
           file: contrib/images/arkd-env/Dockerfile
+          target: local
           load: true
           tags: ark/arkd
           build-args: |
@@ -52,6 +53,8 @@ jobs:
       - run: make localnet-up
       - run: make localnet-liveness
       - run: make localnet-runbook
+      # A duplicate series fails the whole scrape, which nothing else here reads.
+      - run: curl -sf http://localhost:9464/metrics | grep -q '^ark_mempool_transactions'
       - run: make localnet-statesync
 
       - name: Container logs

@@ -2,6 +2,7 @@ package chain_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -92,4 +93,22 @@ func TestIsPeriodLastBlockFromPanicsForZeroPeriod(t *testing.T) {
 	require.Panics(t, func() {
 		chain.IsPeriodLastBlockFrom(ctx, 0, 0)
 	})
+}
+
+func TestBlockSeconds(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		at      time.Time
+		seconds uint64
+	}{
+		{"epoch", time.Unix(0, 0), 0},
+		{"whole second", time.Unix(1_798_761_600, 0), 1_798_761_600},
+		{"truncates the fraction", time.Unix(1_798_761_600, 999_999_999), 1_798_761_600},
+		{"before the epoch reads as the epoch", time.Unix(-1, 0), 0},
+		{"zero time reads as the epoch", time.Time{}, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.seconds, chain.BlockSeconds(sdk.Context{}.WithBlockTime(tc.at)))
+		})
+	}
 }

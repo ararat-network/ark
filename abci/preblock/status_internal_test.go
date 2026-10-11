@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/mock/gomock"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
@@ -20,6 +19,7 @@ import (
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/pkg/telemetry"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
 func TestPreblockStatus(t *testing.T) {
@@ -43,7 +43,7 @@ func TestPreblockStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, preblockStatus(tt.err))
+			require.Equal(t, tt.want, abcimetrics.StatusOf(tt.err))
 		})
 	}
 }
@@ -53,7 +53,7 @@ func TestPreblockPanicMetrics(t *testing.T) {
 	provider, err := telemetry.NewPrometheusProvider("test", registry)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 	for _, tc := range []struct {
 		name string
 		mode sdk.ExecMode

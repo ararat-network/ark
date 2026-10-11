@@ -29,6 +29,16 @@ func (s *TxSuite) TestBankSend() {
 	s.Require().True(s.Balance(s.Wallet.FormattedAddress()).LT(sender.Sub(amount)), "sender paid no fee")
 }
 
+// TestBankSendWithGasPrices runs the flags an operator brings from other Cosmos chains. The estimate
+// is built with the price times a zero gas limit, a fee of zero coins, which reads as no fee.
+func (s *TxSuite) TestBankSendWithGasPrices() {
+	price, err := s.Chain.GasPrice(s.GetContext(), chainsuite.Denom)
+	s.Require().NoError(err)
+	// Twice the live price, so a base fee that moves before inclusion still clears.
+	s.Send(s.Wallet, s.Wallet2.FormattedAddress(), chainsuite.NOAH(1),
+		"--gas", "auto", "--gas-prices", price.MulInt64(2).String()+chainsuite.Denom)
+}
+
 func (s *TxSuite) TestEncodeDecode() {
 	ctx := s.GetContext()
 	node := s.Node()
@@ -98,7 +108,7 @@ func (s *TxSuite) TestMultisig() {
 	signed1, err := sign(s.Wallet2)
 	s.Require().NoError(err)
 	_, err = sign(bogus)
-	s.Require().Error(err, "a key outside the multisig must not sign for it")
+	s.Require().ErrorContains(err, "signing key is not a part of multisig key")
 
 	s.Require().NoError(node.WriteFile(ctx, signed0, "signed0.json"))
 	s.Require().NoError(node.WriteFile(ctx, signed1, "signed1.json"))
@@ -135,7 +145,7 @@ func (s *TxSuite) TestFeeGrant() {
 		"bank", "send", grantee.FormattedAddress(), recipient.FormattedAddress(), chainsuite.NOAHCoin(1),
 		"--fee-granter", granter.FormattedAddress(),
 	)
-	s.Require().Error(err, "a revoked grant must not pay")
+	s.Require().ErrorContains(err, "does not allow to pay fees", "a revoked grant must not pay")
 }
 
 func (s *TxSuite) TestAuthzSend() {
@@ -169,7 +179,7 @@ func (s *TxSuite) TestAuthzSend() {
 	)
 	s.Require().NoError(err)
 	_, err = node.ExecTx(ctx, grantee.KeyName(), "authz", "exec", path.Join(node.HomeDir(), "authz-send.json"))
-	s.Require().Error(err, "a revoked authorization must not execute")
+	s.Require().ErrorContains(err, "authorization not found", "a revoked authorization must not execute")
 }
 
 func (s *TxSuite) TestDelayedVesting() {
@@ -197,7 +207,7 @@ func (s *TxSuite) TestDelayedVesting() {
 	_, err = node.ExecTx(ctx, vester.KeyName(),
 		"bank", "send", vester.FormattedAddress(), s.Wallet3.FormattedAddress(), chainsuite.NOAHCoin(4),
 	)
-	s.Require().Error(err, "locked coins must not leave before the end time")
+	s.Require().ErrorContains(err, "insufficient funds", "locked coins must not leave before the end time")
 	s.Send(vester, s.Wallet3.FormattedAddress(), chainsuite.NOAH(2))
 
 	time.Sleep(time.Until(end) + 2*chainsuite.BlockTime)

@@ -33,9 +33,9 @@ const (
 	GovernanceAdmissionByteShare  = 500
 )
 
-// Block shares cap service for transactions that fit their lane allowance.
-// An individual transaction larger than the entire allowance competes as normal
-// for this proposal; smaller transactions above the remaining allowance wait.
+// Block shares cap privileged service. A transaction past what its lane has left,
+// and its sender's later ordered entries, compete at ordinary fee priority for
+// this proposal.
 const (
 	CommitteeBlockGasShare   = 500
 	GovernanceBlockGasShare  = 500
@@ -78,8 +78,19 @@ func (c Config) Validate() error {
 	if c.MaxTxBytes <= 0 {
 		return fmt.Errorf("config.toml [mempool] max_tx_bytes must be positive")
 	}
+	if caps := c.byteCaps(); int64(c.MaxTxBytes) > caps[LaneNormal] {
+		return fmt.Errorf("config.toml [mempool] max_tx_bytes = %d exceeds the %d bytes normal admission can hold of max_txs_bytes = %d; such a transaction would never be admitted", c.MaxTxBytes, caps[LaneNormal], c.MaxTxsBytes)
+	}
 	return nil
 }
 
-//nolint:unparam // Count, byte and gas shares remain independently tunable constants.
-func fraction(n, bps uint64) uint64 { return n/10000*bps + n%10000*bps/10000 }
+// byteCaps reserves lane bytes; normal storage takes the remainder, including rounding.
+func (c Config) byteCaps() [3]int64 {
+	var caps [3]int64
+	caps[LaneGovernance] = fraction(c.MaxTxsBytes, GovernanceAdmissionByteShare)
+	caps[LaneCommittee] = fraction(c.MaxTxsBytes, CommitteeAdmissionByteShare)
+	caps[LaneNormal] = c.MaxTxsBytes - caps[LaneGovernance] - caps[LaneCommittee]
+	return caps
+}
+
+func fraction[T int | int64 | uint64](n, bps T) T { return n/10000*bps + n%10000*bps/10000 }

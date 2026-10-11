@@ -320,8 +320,8 @@ func (m *MsgRemoveFeedResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgRemoveFeedResponse proto.InternalMessageInfo
 
-// MsgSetReferenceDenom changes the shared reference and atomically rebases Market and Treasury
-// state. An established reference cannot be cleared.
+// MsgSetReferenceDenom changes the shared reference and atomically rebases Market, Treasury, and
+// Disbursement state. An established reference cannot be cleared.
 type MsgSetReferenceDenom struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// reference_denom keys the feed the reference unit is priced from.

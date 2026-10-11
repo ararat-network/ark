@@ -11,13 +11,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/types"
 )
 
 // GetSettlementPlan returns the stored settlement plan whether or not its
-// activation height has arrived. Treasury recognises the liability from plan
-// open — the commitment is irrevocable from that block — while Market's
-// activation-gated ActiveSettlementPlan governs when holders may execute.
+// activation time has arrived. Treasury recognises the liability at the plan
+// rate from plan open, and a cancelled pending plan drops it again, while
+// Market's activation-gated ActiveSettlementPlan governs when holders may execute.
 func (k Keeper) GetSettlementPlan(ctx context.Context, denom string) (types.SettlementPlan, bool, error) {
 	plan, err := k.SettlementPlans.Get(ctx, denom)
 	if err != nil {
@@ -43,7 +44,7 @@ func (k Keeper) ActiveSettlementPlan(ctx context.Context, denom string) (types.S
 	if err != nil || !found {
 		return types.SettlementPlan{}, false, err
 	}
-	if !plan.IsActive(sdk.UnwrapSDKContext(ctx).BlockHeight()) {
+	if !plan.IsActive(chain.BlockSeconds(ctx)) {
 		return types.SettlementPlan{}, false, nil
 	}
 
@@ -51,14 +52,14 @@ func (k Keeper) ActiveSettlementPlan(ctx context.Context, denom string) (types.S
 }
 
 // OpenSettlement establishes fixed asset-to-NOAH redemption. Activation is derived from the
-// execution height and governed delay; governance supplies a closing height after activation. See
+// execution time and governed delay; governance supplies a closing time after activation. See
 // x/asset/README.md for the correction-window contract.
 func (k Keeper) OpenSettlement(
 	ctx context.Context,
 	denom string,
 	expectedVersion uint64,
 	redemptionRate math.LegacyDec,
-	earliestClosingHeight int64,
+	earliestClosingTime uint64,
 ) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
@@ -96,19 +97,18 @@ func (k Keeper) OpenSettlement(
 	if err != nil {
 		return fmt.Errorf("getting asset params: %w", err)
 	}
-	// Validation caps the delay at a chain year, so the widening to int64 and
-	// the addition below cannot overflow for any stored value.
-	delayBlocks := int64(params.SettlementActivationDelayBlocks)
+	// Validation caps the delay at a year and block time fits the header's int64, so the addition
+	// cannot overflow for any stored value.
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	blockHeight := sdkCtx.BlockHeight()
-	activationHeight := blockHeight + delayBlocks
+	now := chain.BlockSeconds(ctx)
 
 	plan := types.SettlementPlan{
-		Denom:                 denom,
-		RedemptionRate:        redemptionRate,
-		ActivationHeight:      activationHeight,
-		EarliestClosingHeight: earliestClosingHeight,
-		OpenedHeight:          blockHeight,
+		Denom:               denom,
+		RedemptionRate:      redemptionRate,
+		ActivationTime:      now + params.SettlementActivationDelay,
+		EarliestClosingTime: earliestClosingTime,
+		OpenedHeight:        chain.BlockHeight(ctx),
+		OpenedTime:          now,
 	}
 	if err := plan.Validate(); err != nil {
 		return errorsmod.Wrapf(
@@ -171,13 +171,12 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 		return errorsmod.Wrap(types.ErrSettlementPlanNotFound, denom)
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	blockHeight := sdkCtx.BlockHeight()
-	if plan.IsActive(blockHeight) {
+	if plan.IsActive(chain.BlockSeconds(ctx)) {
 		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
-			"asset %s settlement activated at height %d and can no longer be cancelled",
+			"asset %s settlement activated at time %d and can no longer be cancelled",
 			denom,
-			plan.ActivationHeight,
+			plan.ActivationTime,
 		)
 	}
 
@@ -207,7 +206,7 @@ func (k Keeper) CancelSettlement(ctx context.Context, denom string, expectedVers
 }
 
 // WriteOffAsset derecognises suspended exposure without changing balances. Any settlement's
-// earliest closing height must have passed before its redemption entitlement can end.
+// earliest closing time must have passed before its redemption entitlement can end.
 func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion uint64) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
@@ -237,14 +236,14 @@ func (k Keeper) WriteOffAsset(ctx context.Context, denom string, expectedVersion
 
 	// Closing follows activation, so this comparison also protects pending plans. Derecognition
 	// before activation requires cancelling the plan first.
-	blockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
-	if hasPlan && blockHeight < plan.EarliestClosingHeight {
+	blockHeight := chain.BlockHeight(ctx)
+	if now := chain.BlockSeconds(ctx); hasPlan && now < plan.EarliestClosingTime {
 		return errorsmod.Wrapf(
 			types.ErrInvalidAssetTransition,
-			"asset %s settlement is committed until height %d and cannot be written off at height %d",
+			"asset %s settlement is committed until time %d and cannot be written off at time %d",
 			denom,
-			plan.EarliestClosingHeight,
-			blockHeight,
+			plan.EarliestClosingTime,
+			now,
 		)
 	}
 	record := types.ResolutionRecord{
@@ -295,7 +294,7 @@ func (k Keeper) closeSettlementPlan(ctx context.Context, denom string, version u
 		&types.EventSettlementClosed{
 			SettlementPlan: plan,
 			Version:        version,
-			ClosedHeight:   sdkCtx.BlockHeight(),
+			ClosedHeight:   chain.BlockHeight(ctx),
 		},
 	); err != nil {
 		return fmt.Errorf(

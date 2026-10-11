@@ -41,7 +41,7 @@ while [ "$i" -le "$size" ]; do
     [ "$(printf '%s' "$resp" | jq -r '.code // empty')" = 0 ] || fail "fill transaction $i: $resp"
   else
     # A full pool answers Ark's capacity code without committing fee or sequence state.
-    printf '%s' "$resp" | jq -e '.codespace == "lanes" and .code == 3' > /dev/null \
+    printf '%s' "$resp" | jq -e '.codespace == "lanes" and .code == 1' > /dev/null \
       || fail "public node did not reject at capacity: $resp"
   fi
   i=$((i + 1))

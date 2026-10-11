@@ -3,6 +3,7 @@ package genesis_test
 import (
 	"encoding/json"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -19,11 +20,13 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/app/genesis"
 	"github.com/ararat-network/ark/app/params"
 	"github.com/ararat-network/ark/pkg/chain"
 	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -40,7 +43,13 @@ func seatCodec() codec.Codec {
 // artefactState loads the launch artefact's app state from this directory.
 func artefactState(t *testing.T) map[string]json.RawMessage {
 	t.Helper()
-	appGenesis, err := genutiltypes.AppGenesisFromFile("genesis.json")
+	return artefactStateFrom(t, "genesis.json")
+}
+
+// artefactStateFrom loads an artefact's app state from this directory.
+func artefactStateFrom(t *testing.T, file string) map[string]json.RawMessage {
+	t.Helper()
+	appGenesis, err := genutiltypes.AppGenesisFromFile(file)
 	require.NoError(t, err)
 	var state map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(appGenesis.AppState, &state))
@@ -58,12 +67,13 @@ func TestAddValidatorSeats(t *testing.T) {
 	cdc := seatCodec()
 	state := artefactState(t)
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
-	custody := authtypes.NewModuleAddress(disbursementtypes.ModuleName).String()
-	grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)))
+	members := authtypes.NewModuleAddress(disbursementtypes.MembersName).String()
+	contributors := authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String()
+	grant := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant))
 	seat := grant.Add(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatFloatNoah)))
 	first, second := operatorAddress(), operatorAddress()
 
-	require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{first, second}, genesisTime))
+	require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{first, second}, first, genesisTime))
 
 	var authState authtypes.GenesisState
 	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
@@ -80,7 +90,8 @@ func TestAddValidatorSeats(t *testing.T) {
 		require.Nil(t, vesting.GetPubKey(), "the gentx supplies the key")
 		require.True(t, vesting.GetVestedCoins(genesisTime).IsZero(), "unvested at launch")
 		require.True(t, vesting.GetVestedCoins(cliff).IsZero(), "unvested at the cliff")
-		require.Equal(t, grant.QuoInt(math.NewInt(2)), vesting.GetVestedCoins(genesisTime.AddDate(7, 0, 0)), "half way through the window")
+		midpoint := time.Unix(vesting.StartTime+(vesting.EndTime-vesting.StartTime)/2, 0)
+		require.Equal(t, grant.QuoInt(math.NewInt(2)), vesting.GetVestedCoins(midpoint), "half way through the window")
 		require.Equal(t, grant, vesting.GetVestedCoins(end))
 	}
 
@@ -97,8 +108,10 @@ func TestAddValidatorSeats(t *testing.T) {
 				chain.NativeBaseAmount(103_000_000).Sub(seat.AmountOf(chain.NoahBaseDenom).MulRaw(2)),
 				balance.Coins.AmountOf(chain.NoahBaseDenom),
 			)
-		case custody:
-			require.Equal(t, chain.NativeBaseAmount(732_000_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the disbursement pools")
+		case members:
+			require.Equal(t, chain.NativeBaseAmount(469_200_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "seats never draw on the member pool")
+		case contributors:
+			require.Equal(t, chain.NativeBaseAmount(312_800_000), balance.Coins.AmountOf(chain.NoahBaseDenom), "the founder's awards reserve the contributor pool without moving it")
 		}
 	}
 	require.Equal(t, bankState.Supply, total, "supply still equals the balances")
@@ -119,26 +132,254 @@ func TestAddValidatorSeats(t *testing.T) {
 	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementState)
 	require.NoError(t, disbursementState.Validate())
 	require.Len(t, disbursementState.Beneficiaries, 2)
-	for i, address := range []sdk.AccAddress{first, second} {
-		require.Equal(t, address.String(), disbursementState.Beneficiaries[i].Address)
-		require.Equal(t, chain.NativeBaseAmount(chain.SeatGrantNoah), disbursementState.Beneficiaries[i].Seat)
-		require.Equal(t, address.String(), disbursementState.Beneficiaries[i].Controller)
-		require.True(t, disbursementState.Beneficiaries[i].OwnershipPaid.IsZero())
+	seated := make(map[string]disbursementtypes.Beneficiary, 2)
+	for _, p := range disbursementState.Beneficiaries {
+		seated[p.Address] = p
 	}
+	for _, address := range []sdk.AccAddress{first, second} {
+		p, ok := seated[address.String()]
+		require.True(t, ok, "%s holds a seat", address)
+		require.Equal(t, address.String(), p.Controller)
+		if address.Equals(first) {
+			require.Equal(t, chain.FounderSeat(2), p.Seat)
+			require.Equal(t, chain.NativeBaseAmount(chain.FounderGrantNoah), p.OwnershipCommitted, "the founder's grant")
+			continue
+		}
+		require.Equal(t, chain.SeatGrant, p.Seat)
+		require.True(t, p.OwnershipCommitted.IsZero())
+	}
+}
+
+// TestAddValidatorSeatsAwardsFounder checks the founder's grant and stream are
+// governance awards made in the first block: clocked from genesis on the
+// file's params, queued for their first boundaries, journaled, reserved from
+// the contributor pool without moving it, and the grant committed on the
+// founder's record (D136).
+func TestAddValidatorSeatsAwardsFounder(t *testing.T) {
+	cdc := seatCodec()
+	state := artefactState(t)
+	other, founder := operatorAddress(), operatorAddress()
+	require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{other, founder}, founder, genesisTime))
+
+	var d disbursementtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &d)
+	require.NoError(t, d.Validate())
+	at := uint64(genesisTime.Unix())
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	grant, pay := chain.NativeBaseAmount(chain.FounderGrantNoah), chain.NativeBaseAmount(chain.FounderStreamNoah)
+	require.Len(t, d.Grants, 2)
+	require.Len(t, d.GrantJournal, 2)
+	require.Equal(t, uint64(3), d.NextGrantId)
+	require.Equal(t, uint64(3), d.NextGrantEntryId)
+
+	ownership := d.Grants[0]
+	require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, ownership.Kind)
+	require.Equal(t, chain.NoahCoin(grant), ownership.Amount)
+	require.Equal(t, d.Params.OwnershipCap, grant, "the grant is the cap exactly")
+	require.Equal(t, d.Params.OwnershipSchedule, ownership.Schedule)
+	require.True(t, ownership.AwardValue.IsZero())
+	require.Equal(t, chain.FounderGrantReference, ownership.Reference)
+	require.Equal(t, at+d.Params.OwnershipSchedule.FirstLength, ownership.DueTime, "nothing before the first period's end")
+
+	stream := d.Grants[1]
+	require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, stream.Kind)
+	require.Equal(t, chain.NoahCoin(pay), stream.Amount)
+	want, err := disbursementtypes.CompensationSchedule(d.Params.CompensationPeriod, chain.FounderStreamPeriods)
+	require.NoError(t, err)
+	require.Equal(t, want, stream.Schedule)
+	require.Equal(t, pay, stream.AwardValue, "one NOAH is one XDR at the bootstrap price")
+	require.Equal(t, chain.FounderStreamReference, stream.Reference)
+	require.Equal(t, at+d.Params.CompensationPeriod, stream.DueTime, "the first period pays a period in")
+	charge, err := disbursementtypes.CompensationCharge(stream.AwardValue, stream.Schedule.Duration(), d.Params.CompensationWindow)
+	require.NoError(t, err)
+	require.Equal(t, d.Params.CompensationCap, charge, "the stream fills the record's compensation cap exactly")
+
+	for i, g := range d.Grants {
+		require.Equal(t, uint64(i+1), g.Id)
+		require.Equal(t, founder.String(), g.Beneficiary)
+		require.Equal(t, founder.String(), g.Payee)
+		require.Equal(t, authority, g.CreatedBy, "a governance award")
+		require.Zero(t, g.MandateTerm)
+		require.Equal(t, uint64(1), g.CreatedHeight, "the first block")
+		require.Equal(t, at, g.CreatedTime)
+		require.Equal(t, at, g.StartTime)
+		require.True(t, g.Paid.IsZero())
+		require.Equal(t, g.Amount.Amount, g.Remaining)
+
+		e := d.GrantJournal[i]
+		require.Equal(t, uint64(i+1), e.Id)
+		require.Equal(t, g.Id, e.GrantId)
+		require.Equal(t, disbursementtypes.GrantAction_GRANT_ACTION_CREATED, e.Action)
+		require.Equal(t, authority, e.Actor)
+		require.Equal(t, g.CreatedHeight, e.Height)
+		require.Equal(t, g.CreatedTime, e.Time)
+		require.Equal(t, g.Amount, e.Amount)
+	}
+
+	require.Len(t, d.Books, 1)
+	require.Equal(t, disbursementtypes.ContributorsName, d.Books[0].Account)
+	require.Equal(t, chain.NoahCoins(grant.Add(pay)), d.Books[0].Reserved)
+	for _, p := range d.Beneficiaries {
+		if p.Address == founder.String() {
+			require.Equal(t, grant, p.OwnershipCommitted)
+			continue
+		}
+		require.True(t, p.OwnershipCommitted.IsZero(), "the other seats hold no award")
+	}
+}
+
+// TestAddValidatorSeatsAtAnyCount seats seven: every seat is the same grant
+// but the founder's, half the other seats' sum, all from the community pool,
+// and each seat is recorded on its operator's beneficiary.
+func TestAddValidatorSeatsAtAnyCount(t *testing.T) {
+	cdc := seatCodec()
+	state := artefactState(t)
+	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
+	contributors := authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String()
+	operators := make([]sdk.AccAddress, 7)
+	for i := range operators {
+		operators[i] = operatorAddress()
+	}
+	founder := operators[3]
+	founderSeat := chain.FounderSeat(len(operators))
+	require.Equal(t, chain.SeatGrant.MulRaw(3), founderSeat, "a third of seven seats' genesis stake")
+	extra := founderSeat.Sub(chain.SeatGrant)
+
+	require.NoError(t, genesis.AddValidatorSeats(cdc, state, operators, founder, genesisTime))
+
+	var bankState banktypes.GenesisState
+	cdc.MustUnmarshalJSON(state[banktypes.ModuleName], &bankState)
+	seat := chain.SeatGrant.Add(chain.NativeBaseAmount(chain.SeatFloatNoah))
+	require.Equal(t,
+		chain.NativeBaseAmount(103_000_000).Sub(seat.MulRaw(int64(len(operators)))).Sub(extra),
+		bankState.Balances[balanceIndex(t, bankState.Balances, pool)].Coins.AmountOf(chain.NoahBaseDenom),
+		"the community pool pays one seat an operator and the founder's excess")
+	require.Equal(t,
+		chain.NativeBaseAmount(312_800_000),
+		bankState.Balances[balanceIndex(t, bankState.Balances, contributors)].Coins.AmountOf(chain.NoahBaseDenom),
+		"seats never draw on the contributor pool")
+	require.Equal(t, seat.Add(extra), bankState.Balances[balanceIndex(t, bankState.Balances, founder.String())].Coins.AmountOf(chain.NoahBaseDenom))
+	total := sdk.NewCoins()
+	for _, balance := range bankState.Balances {
+		total = total.Add(balance.Coins...)
+	}
+	require.Equal(t, bankState.Supply, total, "supply still equals the balances")
+
+	var authState authtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[authtypes.ModuleName], &authState)
+	accounts, err := authtypes.UnpackAccounts(authState.Accounts)
+	require.NoError(t, err)
+	for _, account := range accounts {
+		vesting, ok := account.(*vestingtypes.ContinuousVestingAccount)
+		require.True(t, ok)
+		want := chain.SeatGrant
+		if account.GetAddress().Equals(founder) {
+			want = founderSeat
+		}
+		require.Equal(t, want, vesting.OriginalVesting.AmountOf(chain.NoahBaseDenom))
+		require.Equal(t, genesisTime.AddDate(chain.SeatVestingCliffYears, 0, 0).Unix(), vesting.StartTime, "one schedule for every seat")
+	}
+
+	var treasuryState treasurytypes.GenesisState
+	cdc.MustUnmarshalJSON(state[treasurytypes.ModuleName], &treasuryState)
+	require.Equal(t, chain.SeatValidatorShare.MulRaw(int64(len(operators))), treasuryState.EconomicPolicy.ValidatorBlockRewardTarget,
+		"the targets are sized per validator, so the founder's seat raises them one share")
+
+	var disbursementState disbursementtypes.GenesisState
+	cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &disbursementState)
+	require.NoError(t, disbursementState.Validate())
+	require.Len(t, disbursementState.Beneficiaries, len(operators))
+	for _, p := range disbursementState.Beneficiaries {
+		require.True(t, slices.ContainsFunc(operators, func(o sdk.AccAddress) bool { return o.String() == p.Address }))
+		want := chain.SeatGrant
+		if p.Address == founder.String() {
+			want = founderSeat
+		}
+		require.Equal(t, want, p.Seat)
+	}
+}
+
+// poolSeatCeiling is the most seats the artefacts' community pool funds, the
+// founder's included: the limit GENESIS.md §12 gives --any-count.
+const poolSeatCeiling = 14
+
+// TestArtefactPoolSeatCeiling seats the top of the launch range and the
+// pool's ceiling on both artefacts, and is refused one seat past it, so a pool
+// change that moves the ceiling fails here rather than at assembly.
+func TestArtefactPoolSeatCeiling(t *testing.T) {
+	cdc := seatCodec()
+	tests := []struct {
+		name      string
+		count     int
+		errPhrase string
+	}{
+		{name: "the launch bound", count: chain.MaxLaunchSeats},
+		{name: "the pool's ceiling", count: poolSeatCeiling},
+		{name: "one seat past it", count: poolSeatCeiling + 1, errPhrase: "short of the"},
+	}
+	for _, file := range []string{"genesis.json", "testnet.json"} {
+		for _, tt := range tests {
+			t.Run(file+"/"+tt.name, func(t *testing.T) {
+				operators := make([]sdk.AccAddress, tt.count)
+				for i := range operators {
+					operators[i] = operatorAddress()
+				}
+				err := genesis.AddValidatorSeats(cdc, artefactStateFrom(t, file), operators, operators[0], genesisTime)
+				if tt.errPhrase == "" {
+					require.NoError(t, err)
+					return
+				}
+				require.ErrorContains(t, err, tt.errPhrase)
+			})
+		}
+	}
+}
+
+func balanceIndex(t *testing.T, balances []banktypes.Balance, address string) int {
+	t.Helper()
+	for i, balance := range balances {
+		if balance.Address == address {
+			return i
+		}
+	}
+	t.Fatalf("no balance for %s", address)
+	return -1
 }
 
 func TestAddValidatorSeatsRefusals(t *testing.T) {
 	cdc := seatCodec()
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
+	contributors := authtypes.NewModuleAddress(disbursementtypes.ContributorsName).String()
 	taken := operatorAddress()
+	disbursementParams := func(state map[string]json.RawMessage, mutate func(*disbursementtypes.Params)) {
+		var d disbursementtypes.GenesisState
+		cdc.MustUnmarshalJSON(state[disbursementtypes.ModuleName], &d)
+		mutate(&d.Params)
+		state[disbursementtypes.ModuleName] = cdc.MustMarshalJSON(&d)
+	}
 
 	tests := []struct {
 		name      string
 		mutate    func(state map[string]json.RawMessage)
 		operators []sdk.AccAddress
+		founder   sdk.AccAddress
 		unsetTime bool
 		errPhrase string
 	}{
+		{
+			name:      "founder outside the operators",
+			mutate:    func(map[string]json.RawMessage) {},
+			operators: []sdk.AccAddress{operatorAddress()},
+			founder:   operatorAddress(),
+			errPhrase: "is not among the operators",
+		},
+		{
+			name:      "no founder",
+			mutate:    func(map[string]json.RawMessage) {},
+			operators: []sdk.AccAddress{operatorAddress()},
+			founder:   sdk.AccAddress{},
+			errPhrase: "founder address must be set",
+		},
 		{
 			name:      "missing disbursement state",
 			mutate:    func(state map[string]json.RawMessage) { delete(state, disbursementtypes.ModuleName) },
@@ -146,18 +387,18 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 			errPhrase: "carries no disbursement state",
 		},
 		{
-			name: "operator already seated",
+			name: "file already seated",
 			mutate: func(state map[string]json.RawMessage) {
-				require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{taken}, genesisTime))
+				require.NoError(t, genesis.AddValidatorSeats(cdc, state, []sdk.AccAddress{taken}, taken, genesisTime))
 			},
-			operators: []sdk.AccAddress{taken},
-			errPhrase: "already holds an account",
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "seats already granted",
 		},
 		{
 			name:      "operator repeated in one grant",
 			mutate:    func(map[string]json.RawMessage) {},
 			operators: []sdk.AccAddress{operatorAddress(), taken, taken},
-			errPhrase: "already holds an account",
+			errPhrase: "named twice",
 		},
 		{
 			name: "operator already holds a balance",
@@ -192,6 +433,54 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 			},
 			operators: []sdk.AccAddress{operatorAddress()},
 			errPhrase: "short of the",
+		},
+		{
+			name: "ownership cap under the founder's grant",
+			mutate: func(state map[string]json.RawMessage) {
+				disbursementParams(state, func(p *disbursementtypes.Params) {
+					p.OwnershipCap = chain.NativeBaseAmount(chain.FounderGrantNoah).SubRaw(1)
+				})
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "exceeds the ownership cap",
+		},
+		{
+			name: "compensation cap under the founder's stream",
+			mutate: func(state map[string]json.RawMessage) {
+				disbursementParams(state, func(p *disbursementtypes.Params) { p.CompensationCap = p.CompensationCap.SubRaw(1) })
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "past the compensation cap",
+		},
+		{
+			name: "reference other than the XDR",
+			mutate: func(state map[string]json.RawMessage) {
+				var oracle oracletypes.GenesisState
+				cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracle)
+				oracle.ReferenceDenom = chain.USDBaseDenom
+				state[oracletypes.ModuleName] = cdc.MustMarshalJSON(&oracle)
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "bootstrap price",
+		},
+		{
+			name: "contributor account short of the founder's awards",
+			mutate: func(state map[string]json.RawMessage) {
+				var bankState banktypes.GenesisState
+				cdc.MustUnmarshalJSON(state[banktypes.ModuleName], &bankState)
+				for i := range bankState.Balances {
+					if bankState.Balances[i].Address == contributors {
+						bankState.Balances[i].Coins = sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)))
+					}
+				}
+				bankState.Supply = nil
+				for _, balance := range bankState.Balances {
+					bankState.Supply = bankState.Supply.Add(balance.Coins...)
+				}
+				state[banktypes.ModuleName] = cdc.MustMarshalJSON(&bankState)
+			},
+			operators: []sdk.AccAddress{operatorAddress()},
+			errPhrase: "its grants reserve",
 		},
 		{
 			name:      "missing module state",
@@ -233,7 +522,11 @@ func TestAddValidatorSeatsRefusals(t *testing.T) {
 			if tt.unsetTime {
 				at = time.Time{}
 			}
-			err := genesis.AddValidatorSeats(cdc, state, tt.operators, at)
+			founder := tt.founder
+			if founder == nil && len(tt.operators) > 0 {
+				founder = tt.operators[0]
+			}
+			err := genesis.AddValidatorSeats(cdc, state, tt.operators, founder, at)
 			require.ErrorContains(t, err, tt.errPhrase)
 			require.Len(t, state, len(before))
 			for module, raw := range state {

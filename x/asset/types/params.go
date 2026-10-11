@@ -2,35 +2,33 @@ package types
 
 import (
 	"fmt"
-
-	"github.com/ararat-network/ark/pkg/chain"
 )
 
-// DefaultSettlementActivationDelayBlocks allows three days of blocks for governance correction
-// before settlement binds: a two-day voting period with a day's margin. Governance must keep
-// this window longer than its voting period.
-const DefaultSettlementActivationDelayBlocks = 3 * chain.BlocksPerDay
+// DefaultSettlementActivationDelay allows a week, in seconds, for governance correction before
+// settlement binds, the Claims cancellation period: a full deposit period and vote fit with margin.
+// It is block time, as the voting period is, so block pace cannot shorten it.
+const DefaultSettlementActivationDelay = uint64(7 * 86_400)
 
-// MaxSettlementActivationDelayBlocks caps the correction window at a chain year. Height addition
-// still requires overflow checking near the int64 limit.
-const MaxSettlementActivationDelayBlocks = chain.BlocksPerYear
+// MaxSettlementActivationDelay caps the correction window at a year, so opening time plus delay
+// stays far inside the header's int64.
+const MaxSettlementActivationDelay = uint64(365 * 86_400)
 
 // DefaultParams returns the launch asset module parameters.
 func DefaultParams() Params {
 	return Params{
-		SettlementActivationDelayBlocks: DefaultSettlementActivationDelayBlocks,
+		SettlementActivationDelay: DefaultSettlementActivationDelay,
 	}
 }
 
 // Validate requires a positive, bounded settlement delay so every plan has a correction window
 // before activation.
 func (p Params) Validate() error {
-	if p.SettlementActivationDelayBlocks == 0 ||
-		p.SettlementActivationDelayBlocks > MaxSettlementActivationDelayBlocks {
+	if p.SettlementActivationDelay == 0 ||
+		p.SettlementActivationDelay > MaxSettlementActivationDelay {
 		return fmt.Errorf(
-			"asset parameter SettlementActivationDelayBlocks must be between one and %d, is %d",
-			MaxSettlementActivationDelayBlocks,
-			p.SettlementActivationDelayBlocks,
+			"asset parameter SettlementActivationDelay must be between one and %d, is %d",
+			MaxSettlementActivationDelay,
+			p.SettlementActivationDelay,
 		)
 	}
 

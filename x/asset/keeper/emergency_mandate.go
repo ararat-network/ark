@@ -8,6 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/asset/types"
 )
@@ -16,12 +17,12 @@ import (
 // replacement advances the term and clears recorded per-term suspensions;
 // because replacement always advances the term, clearing on replacement is
 // exactly term-scoping. Mandate mutations never touch asset versions.
-func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activationHeight uint64, expiryHeight uint64) error {
+func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activationTime uint64, expiryTime uint64) error {
 	current, err := k.EmergencyMandate.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting emergency mandate: %w", err)
 	}
-	envelope, committeeAddress, err := mandate.Next(current.Envelope, committee, activationHeight, expiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, committee, activationTime, expiryTime)
 	if err != nil {
 		return err
 	}
@@ -33,11 +34,24 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 		)
 	}
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// The mandate carries no fields of its own, so the derived envelope is the
 	// whole appointment.
 	updated := types.EmergencyMandate{Envelope: envelope}
-	if err := updated.Validate(); err != nil {
-		return err
+	if committee != "" {
+		if err := updated.Validate(); err != nil {
+			return err
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
+			return fmt.Errorf(
+				"%s expires at time %d, which is not after the current block time %d",
+				types.EmergencyMandateLabel,
+				updated.ExpiryTime,
+				now,
+			)
+		}
 	}
 
 	if err := k.EmergencyMandate.Set(ctx, updated); err != nil {
@@ -46,13 +60,13 @@ func (k Keeper) SetEmergencyMandate(ctx context.Context, committee string, activ
 	if err := k.EmergencySuspensions.Clear(ctx, nil); err != nil {
 		return fmt.Errorf("clearing emergency suspension usage: %w", err)
 	}
-	if err := sdk.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(
+	if err := sdkCtx.EventManager().EmitTypedEvent(
 		&types.EventEmergencyMandateSet{
-			Term:             updated.Term,
-			Committee:        updated.Committee,
-			ActivationHeight: updated.ActivationHeight,
-			ExpiryHeight:     updated.ExpiryHeight,
-			CommitteeShape:   updated.CommitteeShape,
+			Term:           updated.Term,
+			Committee:      updated.Committee,
+			ActivationTime: updated.ActivationTime,
+			ExpiryTime:     updated.ExpiryTime,
+			CommitteeShape: updated.CommitteeShape,
 		},
 	); err != nil {
 		return fmt.Errorf("emitting emergency mandate: %w", err)
@@ -68,8 +82,7 @@ func (k Keeper) AuthoriseCommittee(ctx context.Context, committee string, expect
 	if err != nil {
 		return types.EmergencyMandate{}, fmt.Errorf("getting emergency mandate: %w", err)
 	}
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
-	if err := emergencyMandate.Authorise(committee, expectedTerm, height); err != nil {
+	if err := emergencyMandate.Authorise(committee, expectedTerm, chain.BlockSeconds(ctx)); err != nil {
 		return types.EmergencyMandate{}, errorsmod.Wrap(types.ErrEmergencyMandateInactive, err.Error())
 	}
 	return emergencyMandate, nil

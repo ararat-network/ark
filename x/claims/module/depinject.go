@@ -36,6 +36,9 @@ type ModuleInputs struct {
 	AccountKeeper types.AccountKeeper
 	WasmKeeper    types.WasmKeeper
 	BankKeeper    types.BankKeeper
+	OracleKeeper  types.OracleKeeper
+	AssetKeeper   types.AssetKeeper
+	// Market is wired in app.go: Treasury injects Claims and Market injects Treasury.
 }
 
 type ModuleOutputs struct {
@@ -57,6 +60,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.AccountKeeper,
 		in.WasmKeeper,
 		in.BankKeeper,
+		in.OracleKeeper,
+		in.AssetKeeper,
 	)
 
 	m := NewAppModule(k)

@@ -8,9 +8,9 @@ import (
 
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 
-	abcimetrics "github.com/ararat-network/ark/abci/metrics"
 	"github.com/ararat-network/ark/app/ante"
 	"github.com/ararat-network/ark/app/mempool"
+	mempoolmetrics "github.com/ararat-network/ark/app/mempool/metrics"
 	"github.com/ararat-network/ark/pkg/mandate"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
@@ -43,7 +43,7 @@ func (app *ArkApp) CheckTx(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, err
 	} else if res != nil && res.Codespace == mempool.ErrCapacity.Codespace() && res.Code == mempool.ErrCapacity.ABCICode() {
 		status = "full"
 	}
-	abcimetrics.RecordAdmission(status)
+	mempoolmetrics.RecordAdmission(status)
 	return res, err
 }
 

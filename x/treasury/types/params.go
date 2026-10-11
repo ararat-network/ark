@@ -8,6 +8,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
 	"cosmossdk.io/math"
 
@@ -37,6 +38,10 @@ var (
 	// MaxExposureMultiplierCap bounds both multiplier cap and update step before block-hook
 	// arithmetic. The one-million domain cap is independent of live state.
 	MaxExposureMultiplierCap = math.LegacyNewDec(1_000_000)
+	// MaxExposureFlowPressure bounds the imported flow series at 2^128 anoah, orders of magnitude
+	// over any redemption value the chain can settle, so the ratio taken from it in BeginBlock stays
+	// representable whatever a genesis carries.
+	MaxExposureFlowPressure = math.LegacyNewDecFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
 	// DefaultExposureVolatilityDecay is per-block EWMA retention with a roughly 13,863-block
 	// half-life. The fold uses retention directly, avoiding on-chain logarithms.
@@ -58,9 +63,9 @@ var (
 	// force.
 	DefaultExposureMultiplierMaxStep = math.LegacyMustNewDecFromStr("0.25")
 
-	// DefaultBaseFeeTargetUtilisation opens the base-fee controller's rails
-	// (dynamic fees, phase 2a). It holds price at half-full blocks —
-	// EIP-1559's choice: symmetric headroom for demand in both directions.
+	// DefaultBaseFeeTargetUtilisation opens the base-fee controller's rails. It
+	// holds price at half-full blocks — EIP-1559's choice: symmetric headroom
+	// for demand in both directions.
 	DefaultBaseFeeTargetUtilisation = math.LegacyMustNewDecFromStr("0.5")
 	// DefaultBaseFeeAdjustmentRate moves the price at most 2.5% per block.
 	// Sustained full blocks double it in about 28 blocks and sustained empty
@@ -75,7 +80,7 @@ var (
 	// MaxBaseGasPrice caps the governance floor and saturates the live controller at one reference
 	// unit per gas. Checked requirement arithmetic remains a backstop; price saturation does not
 	// fail EndBlock.
-	MaxBaseGasPrice = math.LegacyNewDec(1_000_000_000_000_000_000)
+	MaxBaseGasPrice = math.LegacyNewDecFromInt(chain.NativeBaseAmount(1))
 	// MaxBaseFeeAdjustmentRate caps the per-block move at a doubling.
 	MaxBaseFeeAdjustmentRate = math.LegacyOneDec()
 )

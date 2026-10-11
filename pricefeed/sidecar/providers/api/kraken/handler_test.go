@@ -140,10 +140,20 @@ func TestParseResponse(t *testing.T) {
 			// with the venue's message rather than a bare no-response.
 			name:    "request level error fails every ticker",
 			tickers: []types.Ticker{"USDTZUSD", "XXBTZUSD"},
-			body:    `{"error":["EQuery:Unknown asset pair"],"result":{}}`,
+			body:    `{"error":["EGeneral:Temporary lockout"],"result":{}}`,
 			wantErrors: map[types.Ticker]types.ErrorCode{
 				"USDTZUSD": types.ErrorAPIGeneral,
 				"XXBTZUSD": types.ErrorAPIGeneral,
+			},
+		},
+		{
+			// An unknown pair is a refusal the fetcher isolates.
+			name:    "unknown pair refuses every ticker",
+			tickers: []types.Ticker{"USDTZUSD", "XXBTZUSD"},
+			body:    `{"error":["EQuery:Unknown asset pair"],"result":{}}`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"USDTZUSD": types.ErrorUnknownPair,
+				"XXBTZUSD": types.ErrorUnknownPair,
 			},
 		},
 		{

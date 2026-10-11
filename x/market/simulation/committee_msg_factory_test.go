@@ -125,7 +125,7 @@ func TestMsgCommitteeSetTobinTaxFactorySkipsWithoutADelegatedCap(t *testing.T) {
 // With nothing registered there is no denomination to price, which is the
 // state a chain is in before the first oracle window closes.
 func TestMsgCommitteeSetTobinTaxFactorySkipsWithoutARegisteredDenom(t *testing.T) {
-	f := newMarketFixture(t, 1, withPricedDenoms())
+	f := newMarketFixture(t, 1, withNothingPriced())
 	f.appointCommittee(t)
 
 	_, msg := simulation.MsgCommitteeSetTobinTaxFactory(f.keeper)(f.ctx, f.testData, f.reporter)

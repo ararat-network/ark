@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -66,7 +65,7 @@ func TestMsgUpdateParamsFactory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, oracleKeeper, accountKeeper := newOracleSimulationKeeper(t)
 			stored := types.DefaultParams()
-			stored.MaxExchangeRateAge = 2 * time.Minute
+			stored.MaxExchangeRateAge = 120
 			stored.ParticipationThreshold = math.LegacyNewDecWithPrec(37, 2)
 			if tt.storeParams {
 				require.NoError(t, oracleKeeper.Params.Set(ctx, stored))

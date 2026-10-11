@@ -27,6 +27,8 @@ type Handler struct {
 	config websocket.Config
 	// sequences holds the latest sequence number seen per ticker.
 	sequences map[types.Ticker]int64
+	// backward counts the sequences refused in a row per ticker.
+	backward map[types.Ticker]int
 	// cache maps requested symbols to their configured tickers.
 	cache types.Tickers
 	// observed contains tickers with a valid price received in this connection.
@@ -51,6 +53,7 @@ func NewHandler(logger log.Logger, config websocket.Config) (websocket.DataHandl
 		logger:    logger.With("websocket_data_handler", config.Name),
 		config:    config,
 		sequences: make(map[types.Ticker]int64),
+		backward:  make(map[types.Ticker]int),
 		cache:     types.NewTickers(),
 		observed:  types.NewTickers(),
 		nextID:    1,
@@ -86,6 +89,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal error message: %w", err)
 		}
 
+		h.logger.Warn("kucoin refused a request", "id", msg.ID, "code", msg.Code, "reason", msg.Data)
 		return resp, nil, fmt.Errorf("kucoin error %d for request %s: %s", msg.Code, msg.ID, msg.Data)
 	case DataMessage:
 		var msg TickerResponseMessage
@@ -122,6 +126,7 @@ func (h *Handler) Copy() websocket.DataHandler {
 		logger:    h.logger,
 		config:    h.config,
 		sequences: make(map[types.Ticker]int64),
+		backward:  make(map[types.Ticker]int),
 		cache:     types.NewTickers(),
 		observed:  types.NewTickers(),
 		nextID:    1,

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/cosmos/cosmos-sdk/testutil/simsx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/asset/keeper"
 	"github.com/ararat-network/ark/x/asset/types"
 )
@@ -24,8 +24,8 @@ func MsgEmergencySuspendAssetFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*ty
 
 			return nil, nil
 		}
-		if !mandate.IsActive(uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())) {
-			reporter.Skip("emergency mandate is not active at this height")
+		if !mandate.IsActive(chain.BlockSeconds(ctx)) {
+			reporter.Skip("emergency mandate is not active at this block time")
 
 			return nil, nil
 		}

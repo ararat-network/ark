@@ -90,18 +90,21 @@ func newFactoryFixture(
 func TestMsgSetEconomicMandateFactory(t *testing.T) {
 	reporter, testData := newFactoryFixture(t, 1, authtypes.NewModuleAddress(govtypes.ModuleName))
 
-	_, msg := simulation.MsgSetEconomicMandateFactory()(context.Background(), testData, reporter)
+	// The handler refuses an expiry at or below the current height, so the window starts above it.
+	ctx := sdk.Context{}.WithBlockHeight(50)
+	_, msg := simulation.MsgSetEconomicMandateFactory()(ctx, testData, reporter)
 
 	require.False(t, reporter.IsSkipped(), reporter.Comment())
 	require.NotNil(t, msg)
 	require.Equal(t, authtypes.NewModuleAddress(govtypes.ModuleName).String(), msg.Authority)
 	require.NotEqual(t, msg.Authority, msg.Committee)
-	require.Less(t, msg.ActivationHeight, msg.ExpiryHeight)
+	require.Greater(t, msg.ActivationTime, uint64(50))
+	require.Less(t, msg.ActivationTime, msg.ExpiryTime)
 	// A configured mandate must carry bounds that validate as a corridor.
 	mandate := types.NewDisabledEconomicMandate(1)
 	mandate.Committee = msg.Committee
-	mandate.ActivationHeight = msg.ActivationHeight
-	mandate.ExpiryHeight = msg.ExpiryHeight
+	mandate.ActivationTime = msg.ActivationTime
+	mandate.ExpiryTime = msg.ExpiryTime
 	mandate.MinimumPolicy = msg.MinimumPolicy
 	mandate.MaximumPolicy = msg.MaximumPolicy
 	require.NoError(t, mandate.Validate())

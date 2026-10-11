@@ -36,7 +36,7 @@ message Params {
 
   // Exposure sampling cadence, decay, cap, and step limits are governance parameters; indicator
   // weights belong to EconomicPolicy. Domain validation bounds block-hook arithmetic and constrains
-  // delegated policy. See x/treasury/README.md.
+  // delegated policy.
 
   // volatility_decay is the per-block EWMA retention for the variance
   // series, in [0, 1). A value at or above one would never forget a sample.
@@ -75,13 +75,12 @@ message Params {
   ];
   // exposure_refresh_period_blocks is how often the multiplier is recomputed
   // from the sampled series. Sampling itself is per block; only the
-  // recomputation waits. It keeps the exposure qualifier the four fields above
-  // drop so the cadence reads as the multiplier's rather than the module's.
+  // recomputation waits.
   uint64 exposure_refresh_period_blocks = 8 [(amino.dont_omitempty) = true];
 
-  // The base-fee controller's rails (dynamic fees, phase 2a). The live price
-  // is state the controller rewrites every block, not a parameter; these
-  // three bound where it rests and how fast it moves.
+  // The base-fee controller's rails. The live price is state the controller
+  // rewrites every block, not a parameter; these three bound where it rests
+  // and how fast it moves.
 
   // base_fee_target_utilisation is the block-gas utilisation the controller
   // holds price at, in (0, 1]. Above it the price rises, below it decays.
@@ -126,8 +125,9 @@ message Params {
 message ExposureState {
   // last_reference_price is the previous block's protocol reference rate — NOAH
   // per one reference unit — held to form the next return. It is a price, so a
-  // reference move re-expresses it by the reciprocal of a quantity's factor. Zero means no sample has been taken yet, so the
-  // next one records a price and produces no return.
+  // reference move re-expresses it by the reciprocal of a quantity's factor.
+  // Zero means no sample has been taken yet, so the next one records a price
+  // and produces no return.
   string last_reference_price = 1 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -135,8 +135,9 @@ message ExposureState {
     (amino.dont_omitempty) = true
   ];
   // volatility_variance is the EWMA of squared per-block returns. Each sample
-  // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and
-  // so bounds annualised volatility by the square root of a year in blocks.
+  // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and,
+  // against sample_interval, bounds annualised volatility by the square root of
+  // a year in seconds.
   string volatility_variance = 2 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -178,6 +179,18 @@ message ExposureState {
   // last_refresh_height identifies the block that produced liability_ratio, flow_ratio, and
   // multiplier. Zero means no refresh. Continuation exports preserve this absolute height.
   uint64 last_refresh_height = 7 [(amino.dont_omitempty) = true];
+  // last_sample_time is the block time, in Unix seconds, of last_reference_price.
+  uint64 last_sample_time = 8 [(amino.dont_omitempty) = true];
+  // sample_interval is the EWMA of seconds between samples, folded with
+  // volatility_variance's retention, so their ratio is variance per second over
+  // the same window. Each interval counts at least one second, which keeps
+  // volatility_variance at or below it.
+  string sample_interval = 9 [
+    (cosmos_proto.scalar) = "cosmos.Dec",
+    (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // EconomicPolicy is the complete set of reversible Treasury levers delegated
@@ -249,7 +262,7 @@ message EconomicPolicy {
 // increases on replacement so previously prepared committee transactions
 // cannot become valid again.
 message EconomicMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,

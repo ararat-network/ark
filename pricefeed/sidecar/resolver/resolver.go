@@ -124,7 +124,9 @@ func providerSamples(providerPrices map[string]types.Prices, pair types.Pair) []
 	return samples
 }
 
-// resolveRoutePrice multiplies normalised median prices for each route step.
+// resolveRoutePrice multiplies normalised median prices for each route step. Only the product is a
+// feed price, so only the product is judged, where routes are averaged and feed prices recorded;
+// an intermediate past the range cannot overflow a 256-bit float.
 func resolveRoutePrice(prices types.Prices, steps []types.Pair) (*big.Float, bool) {
 	var finalPrice *big.Float
 	for _, pair := range steps {
@@ -137,20 +139,18 @@ func resolveRoutePrice(prices types.Prices, steps []types.Pair) (*big.Float, boo
 			continue
 		}
 		finalPrice = newPriceFloat().Mul(finalPrice, price)
-		if !validPrice(finalPrice) {
-			return nil, false
-		}
 	}
 
 	return finalPrice, finalPrice != nil
 }
 
 // recordFinalPrices returns a defensive copy and records the aggregate-price
-// metric for each resolved pair.
+// metric for each resolved pair. A price the chain cannot hold is dropped here,
+// per feed, rather than failing the transport for every feed.
 func recordFinalPrices(snapshot *sidecarmetrics.AggregationSnapshot, prices types.Prices) types.Prices {
 	finalPrices := make(types.Prices, len(prices))
 	for pair, price := range prices {
-		if !validPrice(price) {
+		if types.ValidateFeedPrice(price) != nil {
 			continue
 		}
 

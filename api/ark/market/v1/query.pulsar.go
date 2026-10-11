@@ -24,27 +24,27 @@ import (
 )
 
 var (
-	md_QuerySwapRequest            protoreflect.MessageDescriptor
-	fd_QuerySwapRequest_offer_coin protoreflect.FieldDescriptor
-	fd_QuerySwapRequest_ask_denom  protoreflect.FieldDescriptor
+	md_QuerySellRequest            protoreflect.MessageDescriptor
+	fd_QuerySellRequest_offer_coin protoreflect.FieldDescriptor
+	fd_QuerySellRequest_ask_denom  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_query_proto_init()
-	md_QuerySwapRequest = File_ark_market_v1_query_proto.Messages().ByName("QuerySwapRequest")
-	fd_QuerySwapRequest_offer_coin = md_QuerySwapRequest.Fields().ByName("offer_coin")
-	fd_QuerySwapRequest_ask_denom = md_QuerySwapRequest.Fields().ByName("ask_denom")
+	md_QuerySellRequest = File_ark_market_v1_query_proto.Messages().ByName("QuerySellRequest")
+	fd_QuerySellRequest_offer_coin = md_QuerySellRequest.Fields().ByName("offer_coin")
+	fd_QuerySellRequest_ask_denom = md_QuerySellRequest.Fields().ByName("ask_denom")
 }
 
-var _ protoreflect.Message = (*fastReflection_QuerySwapRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QuerySellRequest)(nil)
 
-type fastReflection_QuerySwapRequest QuerySwapRequest
+type fastReflection_QuerySellRequest QuerySellRequest
 
-func (x *QuerySwapRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QuerySwapRequest)(x)
+func (x *QuerySellRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QuerySellRequest)(x)
 }
 
-func (x *QuerySwapRequest) slowProtoReflect() protoreflect.Message {
+func (x *QuerySellRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_query_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -56,43 +56,43 @@ func (x *QuerySwapRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QuerySwapRequest_messageType fastReflection_QuerySwapRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QuerySwapRequest_messageType{}
+var _fastReflection_QuerySellRequest_messageType fastReflection_QuerySellRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QuerySellRequest_messageType{}
 
-type fastReflection_QuerySwapRequest_messageType struct{}
+type fastReflection_QuerySellRequest_messageType struct{}
 
-func (x fastReflection_QuerySwapRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QuerySwapRequest)(nil)
+func (x fastReflection_QuerySellRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QuerySellRequest)(nil)
 }
-func (x fastReflection_QuerySwapRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QuerySwapRequest)
+func (x fastReflection_QuerySellRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QuerySellRequest)
 }
-func (x fastReflection_QuerySwapRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QuerySwapRequest
+func (x fastReflection_QuerySellRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QuerySellRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QuerySwapRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QuerySwapRequest
+func (x *fastReflection_QuerySellRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QuerySellRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QuerySwapRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QuerySwapRequest_messageType
+func (x *fastReflection_QuerySellRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QuerySellRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QuerySwapRequest) New() protoreflect.Message {
-	return new(fastReflection_QuerySwapRequest)
+func (x *fastReflection_QuerySellRequest) New() protoreflect.Message {
+	return new(fastReflection_QuerySellRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QuerySwapRequest) Interface() protoreflect.ProtoMessage {
-	return (*QuerySwapRequest)(x)
+func (x *fastReflection_QuerySellRequest) Interface() protoreflect.ProtoMessage {
+	return (*QuerySellRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -100,16 +100,16 @@ func (x *fastReflection_QuerySwapRequest) Interface() protoreflect.ProtoMessage 
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QuerySwapRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QuerySellRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.OfferCoin != "" {
 		value := protoreflect.ValueOfString(x.OfferCoin)
-		if !f(fd_QuerySwapRequest_offer_coin, value) {
+		if !f(fd_QuerySellRequest_offer_coin, value) {
 			return
 		}
 	}
 	if x.AskDenom != "" {
 		value := protoreflect.ValueOfString(x.AskDenom)
-		if !f(fd_QuerySwapRequest_ask_denom, value) {
+		if !f(fd_QuerySellRequest_ask_denom, value) {
 			return
 		}
 	}
@@ -126,17 +126,17 @@ func (x *fastReflection_QuerySwapRequest) Range(f func(protoreflect.FieldDescrip
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QuerySwapRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QuerySellRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
+	case "ark.market.v1.QuerySellRequest.offer_coin":
 		return x.OfferCoin != ""
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
+	case "ark.market.v1.QuerySellRequest.ask_denom":
 		return x.AskDenom != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -146,17 +146,17 @@ func (x *fastReflection_QuerySwapRequest) Has(fd protoreflect.FieldDescriptor) b
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QuerySellRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
+	case "ark.market.v1.QuerySellRequest.offer_coin":
 		x.OfferCoin = ""
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
+	case "ark.market.v1.QuerySellRequest.ask_denom":
 		x.AskDenom = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -166,19 +166,19 @@ func (x *fastReflection_QuerySwapRequest) Clear(fd protoreflect.FieldDescriptor)
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QuerySwapRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
+	case "ark.market.v1.QuerySellRequest.offer_coin":
 		value := x.OfferCoin
 		return protoreflect.ValueOfString(value)
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
+	case "ark.market.v1.QuerySellRequest.ask_denom":
 		value := x.AskDenom
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -192,17 +192,17 @@ func (x *fastReflection_QuerySwapRequest) Get(descriptor protoreflect.FieldDescr
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QuerySellRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
+	case "ark.market.v1.QuerySellRequest.offer_coin":
 		x.OfferCoin = value.Interface().(string)
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
+	case "ark.market.v1.QuerySellRequest.ask_denom":
 		x.AskDenom = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -216,44 +216,44 @@ func (x *fastReflection_QuerySwapRequest) Set(fd protoreflect.FieldDescriptor, v
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
-		panic(fmt.Errorf("field offer_coin of message ark.market.v1.QuerySwapRequest is not mutable"))
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
-		panic(fmt.Errorf("field ask_denom of message ark.market.v1.QuerySwapRequest is not mutable"))
+	case "ark.market.v1.QuerySellRequest.offer_coin":
+		panic(fmt.Errorf("field offer_coin of message ark.market.v1.QuerySellRequest is not mutable"))
+	case "ark.market.v1.QuerySellRequest.ask_denom":
+		panic(fmt.Errorf("field ask_denom of message ark.market.v1.QuerySellRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QuerySwapRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapRequest.offer_coin":
+	case "ark.market.v1.QuerySellRequest.offer_coin":
 		return protoreflect.ValueOfString("")
-	case "ark.market.v1.QuerySwapRequest.ask_denom":
+	case "ark.market.v1.QuerySellRequest.ask_denom":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellRequest"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QuerySwapRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QuerySellRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QuerySwapRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QuerySellRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -261,7 +261,7 @@ func (x *fastReflection_QuerySwapRequest) WhichOneof(d protoreflect.OneofDescrip
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QuerySwapRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QuerySellRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -272,7 +272,7 @@ func (x *fastReflection_QuerySwapRequest) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QuerySellRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -284,7 +284,7 @@ func (x *fastReflection_QuerySwapRequest) SetUnknown(fields protoreflect.RawFiel
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QuerySwapRequest) IsValid() bool {
+func (x *fastReflection_QuerySellRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -294,9 +294,9 @@ func (x *fastReflection_QuerySwapRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QuerySwapRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QuerySellRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QuerySwapRequest)
+		x := input.Message.Interface().(*QuerySellRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -326,7 +326,7 @@ func (x *fastReflection_QuerySwapRequest) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QuerySwapRequest)
+		x := input.Message.Interface().(*QuerySellRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -370,7 +370,7 @@ func (x *fastReflection_QuerySwapRequest) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QuerySwapRequest)
+		x := input.Message.Interface().(*QuerySellRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -402,10 +402,10 @@ func (x *fastReflection_QuerySwapRequest) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySwapRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySellRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySwapRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySellRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -508,27 +508,27 @@ func (x *fastReflection_QuerySwapRequest) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_QuerySwapResponse           protoreflect.MessageDescriptor
-	fd_QuerySwapResponse_swap_coin protoreflect.FieldDescriptor
-	fd_QuerySwapResponse_swap_fee  protoreflect.FieldDescriptor
+	md_QuerySellResponse           protoreflect.MessageDescriptor
+	fd_QuerySellResponse_swap_coin protoreflect.FieldDescriptor
+	fd_QuerySellResponse_swap_fee  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_ark_market_v1_query_proto_init()
-	md_QuerySwapResponse = File_ark_market_v1_query_proto.Messages().ByName("QuerySwapResponse")
-	fd_QuerySwapResponse_swap_coin = md_QuerySwapResponse.Fields().ByName("swap_coin")
-	fd_QuerySwapResponse_swap_fee = md_QuerySwapResponse.Fields().ByName("swap_fee")
+	md_QuerySellResponse = File_ark_market_v1_query_proto.Messages().ByName("QuerySellResponse")
+	fd_QuerySellResponse_swap_coin = md_QuerySellResponse.Fields().ByName("swap_coin")
+	fd_QuerySellResponse_swap_fee = md_QuerySellResponse.Fields().ByName("swap_fee")
 }
 
-var _ protoreflect.Message = (*fastReflection_QuerySwapResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QuerySellResponse)(nil)
 
-type fastReflection_QuerySwapResponse QuerySwapResponse
+type fastReflection_QuerySellResponse QuerySellResponse
 
-func (x *QuerySwapResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QuerySwapResponse)(x)
+func (x *QuerySellResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QuerySellResponse)(x)
 }
 
-func (x *QuerySwapResponse) slowProtoReflect() protoreflect.Message {
+func (x *QuerySellResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_ark_market_v1_query_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -540,43 +540,43 @@ func (x *QuerySwapResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QuerySwapResponse_messageType fastReflection_QuerySwapResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QuerySwapResponse_messageType{}
+var _fastReflection_QuerySellResponse_messageType fastReflection_QuerySellResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QuerySellResponse_messageType{}
 
-type fastReflection_QuerySwapResponse_messageType struct{}
+type fastReflection_QuerySellResponse_messageType struct{}
 
-func (x fastReflection_QuerySwapResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QuerySwapResponse)(nil)
+func (x fastReflection_QuerySellResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QuerySellResponse)(nil)
 }
-func (x fastReflection_QuerySwapResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QuerySwapResponse)
+func (x fastReflection_QuerySellResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QuerySellResponse)
 }
-func (x fastReflection_QuerySwapResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QuerySwapResponse
+func (x fastReflection_QuerySellResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QuerySellResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QuerySwapResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QuerySwapResponse
+func (x *fastReflection_QuerySellResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QuerySellResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QuerySwapResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QuerySwapResponse_messageType
+func (x *fastReflection_QuerySellResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QuerySellResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QuerySwapResponse) New() protoreflect.Message {
-	return new(fastReflection_QuerySwapResponse)
+func (x *fastReflection_QuerySellResponse) New() protoreflect.Message {
+	return new(fastReflection_QuerySellResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QuerySwapResponse) Interface() protoreflect.ProtoMessage {
-	return (*QuerySwapResponse)(x)
+func (x *fastReflection_QuerySellResponse) Interface() protoreflect.ProtoMessage {
+	return (*QuerySellResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -584,16 +584,16 @@ func (x *fastReflection_QuerySwapResponse) Interface() protoreflect.ProtoMessage
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QuerySwapResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QuerySellResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.SwapCoin != nil {
 		value := protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-		if !f(fd_QuerySwapResponse_swap_coin, value) {
+		if !f(fd_QuerySellResponse_swap_coin, value) {
 			return
 		}
 	}
 	if x.SwapFee != nil {
 		value := protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
-		if !f(fd_QuerySwapResponse_swap_fee, value) {
+		if !f(fd_QuerySellResponse_swap_fee, value) {
 			return
 		}
 	}
@@ -610,17 +610,17 @@ func (x *fastReflection_QuerySwapResponse) Range(f func(protoreflect.FieldDescri
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QuerySwapResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QuerySellResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		return x.SwapCoin != nil
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		return x.SwapFee != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -630,17 +630,17 @@ func (x *fastReflection_QuerySwapResponse) Has(fd protoreflect.FieldDescriptor) 
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QuerySellResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		x.SwapCoin = nil
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		x.SwapFee = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -650,19 +650,19 @@ func (x *fastReflection_QuerySwapResponse) Clear(fd protoreflect.FieldDescriptor
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QuerySwapResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		value := x.SwapCoin
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		value := x.SwapFee
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -676,17 +676,17 @@ func (x *fastReflection_QuerySwapResponse) Get(descriptor protoreflect.FieldDesc
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QuerySellResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		x.SwapCoin = value.Message().Interface().(*v1beta1.Coin)
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		x.SwapFee = value.Message().Interface().(*v1beta1.DecCoin)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -700,52 +700,52 @@ func (x *fastReflection_QuerySwapResponse) Set(fd protoreflect.FieldDescriptor, 
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		if x.SwapCoin == nil {
 			x.SwapCoin = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		if x.SwapFee == nil {
 			x.SwapFee = new(v1beta1.DecCoin)
 		}
 		return protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QuerySwapResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QuerySellResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "ark.market.v1.QuerySwapResponse.swap_coin":
+	case "ark.market.v1.QuerySellResponse.swap_coin":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "ark.market.v1.QuerySwapResponse.swap_fee":
+	case "ark.market.v1.QuerySellResponse.swap_fee":
 		m := new(v1beta1.DecCoin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySwapResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QuerySellResponse"))
 		}
-		panic(fmt.Errorf("message ark.market.v1.QuerySwapResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message ark.market.v1.QuerySellResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QuerySwapResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QuerySellResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QuerySwapResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QuerySellResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -753,7 +753,7 @@ func (x *fastReflection_QuerySwapResponse) WhichOneof(d protoreflect.OneofDescri
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QuerySwapResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QuerySellResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -764,7 +764,7 @@ func (x *fastReflection_QuerySwapResponse) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QuerySwapResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QuerySellResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -776,7 +776,7 @@ func (x *fastReflection_QuerySwapResponse) SetUnknown(fields protoreflect.RawFie
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QuerySwapResponse) IsValid() bool {
+func (x *fastReflection_QuerySellResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -786,9 +786,9 @@ func (x *fastReflection_QuerySwapResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QuerySellResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QuerySwapResponse)
+		x := input.Message.Interface().(*QuerySellResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -818,7 +818,7 @@ func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QuerySwapResponse)
+		x := input.Message.Interface().(*QuerySellResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -876,7 +876,7 @@ func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QuerySwapResponse)
+		x := input.Message.Interface().(*QuerySellResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -908,10 +908,10 @@ func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySwapResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySellResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySwapResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QuerySellResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1022,6 +1022,1083 @@ func (x *fastReflection_QuerySwapResponse) ProtoMethods() *protoiface.Methods {
 }
 
 var (
+	md_QueryBuyRequest             protoreflect.MessageDescriptor
+	fd_QueryBuyRequest_ask_coin    protoreflect.FieldDescriptor
+	fd_QueryBuyRequest_offer_denom protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_market_v1_query_proto_init()
+	md_QueryBuyRequest = File_ark_market_v1_query_proto.Messages().ByName("QueryBuyRequest")
+	fd_QueryBuyRequest_ask_coin = md_QueryBuyRequest.Fields().ByName("ask_coin")
+	fd_QueryBuyRequest_offer_denom = md_QueryBuyRequest.Fields().ByName("offer_denom")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryBuyRequest)(nil)
+
+type fastReflection_QueryBuyRequest QueryBuyRequest
+
+func (x *QueryBuyRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryBuyRequest)(x)
+}
+
+func (x *QueryBuyRequest) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_market_v1_query_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryBuyRequest_messageType fastReflection_QueryBuyRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryBuyRequest_messageType{}
+
+type fastReflection_QueryBuyRequest_messageType struct{}
+
+func (x fastReflection_QueryBuyRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryBuyRequest)(nil)
+}
+func (x fastReflection_QueryBuyRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryBuyRequest)
+}
+func (x fastReflection_QueryBuyRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBuyRequest
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryBuyRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBuyRequest
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryBuyRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryBuyRequest_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryBuyRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryBuyRequest)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryBuyRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryBuyRequest)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryBuyRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.AskCoin != "" {
+		value := protoreflect.ValueOfString(x.AskCoin)
+		if !f(fd_QueryBuyRequest_ask_coin, value) {
+			return
+		}
+	}
+	if x.OfferDenom != "" {
+		value := protoreflect.ValueOfString(x.OfferDenom)
+		if !f(fd_QueryBuyRequest_offer_denom, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryBuyRequest) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		return x.AskCoin != ""
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		return x.OfferDenom != ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyRequest) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		x.AskCoin = ""
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		x.OfferDenom = ""
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryBuyRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		value := x.AskCoin
+		return protoreflect.ValueOfString(value)
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		value := x.OfferDenom
+		return protoreflect.ValueOfString(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		x.AskCoin = value.Interface().(string)
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		x.OfferDenom = value.Interface().(string)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		panic(fmt.Errorf("field ask_coin of message ark.market.v1.QueryBuyRequest is not mutable"))
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		panic(fmt.Errorf("field offer_denom of message ark.market.v1.QueryBuyRequest is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryBuyRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyRequest.ask_coin":
+		return protoreflect.ValueOfString("")
+	case "ark.market.v1.QueryBuyRequest.offer_denom":
+		return protoreflect.ValueOfString("")
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyRequest"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyRequest does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryBuyRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QueryBuyRequest", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryBuyRequest) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyRequest) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryBuyRequest) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryBuyRequest) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryBuyRequest)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.AskCoin)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.OfferDenom)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryBuyRequest)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.OfferDenom) > 0 {
+			i -= len(x.OfferDenom)
+			copy(dAtA[i:], x.OfferDenom)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OfferDenom)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.AskCoin) > 0 {
+			i -= len(x.AskCoin)
+			copy(dAtA[i:], x.AskCoin)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AskCoin)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryBuyRequest)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBuyRequest: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBuyRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AskCoin", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AskCoin = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OfferDenom", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.OfferDenom = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_QueryBuyResponse            protoreflect.MessageDescriptor
+	fd_QueryBuyResponse_offer_coin protoreflect.FieldDescriptor
+	fd_QueryBuyResponse_swap_coin  protoreflect.FieldDescriptor
+	fd_QueryBuyResponse_swap_fee   protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_ark_market_v1_query_proto_init()
+	md_QueryBuyResponse = File_ark_market_v1_query_proto.Messages().ByName("QueryBuyResponse")
+	fd_QueryBuyResponse_offer_coin = md_QueryBuyResponse.Fields().ByName("offer_coin")
+	fd_QueryBuyResponse_swap_coin = md_QueryBuyResponse.Fields().ByName("swap_coin")
+	fd_QueryBuyResponse_swap_fee = md_QueryBuyResponse.Fields().ByName("swap_fee")
+}
+
+var _ protoreflect.Message = (*fastReflection_QueryBuyResponse)(nil)
+
+type fastReflection_QueryBuyResponse QueryBuyResponse
+
+func (x *QueryBuyResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryBuyResponse)(x)
+}
+
+func (x *QueryBuyResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_ark_market_v1_query_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_QueryBuyResponse_messageType fastReflection_QueryBuyResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryBuyResponse_messageType{}
+
+type fastReflection_QueryBuyResponse_messageType struct{}
+
+func (x fastReflection_QueryBuyResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryBuyResponse)(nil)
+}
+func (x fastReflection_QueryBuyResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryBuyResponse)
+}
+func (x fastReflection_QueryBuyResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBuyResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_QueryBuyResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryBuyResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_QueryBuyResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryBuyResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_QueryBuyResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryBuyResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_QueryBuyResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryBuyResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_QueryBuyResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.OfferCoin != nil {
+		value := protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
+		if !f(fd_QueryBuyResponse_offer_coin, value) {
+			return
+		}
+	}
+	if x.SwapCoin != nil {
+		value := protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
+		if !f(fd_QueryBuyResponse_swap_coin, value) {
+			return
+		}
+	}
+	if x.SwapFee != nil {
+		value := protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
+		if !f(fd_QueryBuyResponse_swap_fee, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_QueryBuyResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		return x.OfferCoin != nil
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		return x.SwapCoin != nil
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		return x.SwapFee != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		x.OfferCoin = nil
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		x.SwapCoin = nil
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		x.SwapFee = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_QueryBuyResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		value := x.OfferCoin
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		value := x.SwapCoin
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		value := x.SwapFee
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		x.OfferCoin = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		x.SwapCoin = value.Message().Interface().(*v1beta1.Coin)
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		x.SwapFee = value.Message().Interface().(*v1beta1.DecCoin)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		if x.OfferCoin == nil {
+			x.OfferCoin = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.OfferCoin.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		if x.SwapCoin == nil {
+			x.SwapCoin = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.SwapCoin.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		if x.SwapFee == nil {
+			x.SwapFee = new(v1beta1.DecCoin)
+		}
+		return protoreflect.ValueOfMessage(x.SwapFee.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_QueryBuyResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "ark.market.v1.QueryBuyResponse.offer_coin":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_coin":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "ark.market.v1.QueryBuyResponse.swap_fee":
+		m := new(v1beta1.DecCoin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.market.v1.QueryBuyResponse"))
+		}
+		panic(fmt.Errorf("message ark.market.v1.QueryBuyResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_QueryBuyResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in ark.market.v1.QueryBuyResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_QueryBuyResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_QueryBuyResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_QueryBuyResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_QueryBuyResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*QueryBuyResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.OfferCoin != nil {
+			l = options.Size(x.OfferCoin)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SwapCoin != nil {
+			l = options.Size(x.SwapCoin)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SwapFee != nil {
+			l = options.Size(x.SwapFee)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*QueryBuyResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SwapFee != nil {
+			encoded, err := options.Marshal(x.SwapFee)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.SwapCoin != nil {
+			encoded, err := options.Marshal(x.SwapCoin)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if x.OfferCoin != nil {
+			encoded, err := options.Marshal(x.OfferCoin)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*QueryBuyResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBuyResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryBuyResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OfferCoin", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.OfferCoin == nil {
+					x.OfferCoin = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.OfferCoin); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SwapCoin", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.SwapCoin == nil {
+					x.SwapCoin = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.SwapCoin); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SwapFee", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.SwapFee == nil {
+					x.SwapFee = &v1beta1.DecCoin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.SwapFee); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_QueryPoolRequest protoreflect.MessageDescriptor
 )
 
@@ -1039,7 +2116,7 @@ func (x *QueryPoolRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryPoolRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[2]
+	mi := &file_ark_market_v1_query_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1399,7 +2476,7 @@ func (x *QueryPoolResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryPoolResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[3]
+	mi := &file_ark_market_v1_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1894,7 +2971,7 @@ func (x *QueryParamsRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[4]
+	mi := &file_ark_market_v1_query_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2252,7 +3329,7 @@ func (x *QueryParamsResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryParamsResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[5]
+	mi := &file_ark_market_v1_query_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2687,7 +3764,7 @@ func (x *QueryTobinTaxRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTobinTaxRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[6]
+	mi := &file_ark_market_v1_query_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3107,7 +4184,7 @@ func (x *QueryTobinTaxResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTobinTaxResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[7]
+	mi := &file_ark_market_v1_query_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3525,7 +4602,7 @@ func (x *QueryTobinTaxOverridesRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTobinTaxOverridesRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[8]
+	mi := &file_ark_market_v1_query_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3934,7 +5011,7 @@ func (x *QueryTobinTaxOverridesResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryTobinTaxOverridesResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[9]
+	mi := &file_ark_market_v1_query_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4375,7 +5452,7 @@ func (x *QueryConversionPolicyRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryConversionPolicyRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[10]
+	mi := &file_ark_market_v1_query_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4733,7 +5810,7 @@ func (x *QueryConversionPolicyResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryConversionPolicyResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[11]
+	mi := &file_ark_market_v1_query_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5166,7 +6243,7 @@ func (x *QueryConversionMandateRequest) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryConversionMandateRequest) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[12]
+	mi := &file_ark_market_v1_query_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5526,7 +6603,7 @@ func (x *QueryConversionMandateResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *QueryConversionMandateResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_market_v1_query_proto_msgTypes[13]
+	mi := &file_ark_market_v1_query_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6011,20 +7088,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// QuerySwapRequest is the request type for the Query/Swap RPC method.
-type QuerySwapRequest struct {
+// QuerySellRequest is the request type for the Query/Sell RPC method.
+type QuerySellRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// offer_coin defines the coin being offered (i.e. 1000000000000000000anoah)
+	// offer_coin defines the coin being offered (e.g. 1000000000000000000anoah)
 	OfferCoin string `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
 	// ask_denom defines the denom of the coin to swap to
 	AskDenom string `protobuf:"bytes,2,opt,name=ask_denom,json=askDenom,proto3" json:"ask_denom,omitempty"`
 }
 
-func (x *QuerySwapRequest) Reset() {
-	*x = QuerySwapRequest{}
+func (x *QuerySellRequest) Reset() {
+	*x = QuerySellRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_query_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6032,45 +7109,45 @@ func (x *QuerySwapRequest) Reset() {
 	}
 }
 
-func (x *QuerySwapRequest) String() string {
+func (x *QuerySellRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QuerySwapRequest) ProtoMessage() {}
+func (*QuerySellRequest) ProtoMessage() {}
 
-// Deprecated: Use QuerySwapRequest.ProtoReflect.Descriptor instead.
-func (*QuerySwapRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QuerySellRequest.ProtoReflect.Descriptor instead.
+func (*QuerySellRequest) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *QuerySwapRequest) GetOfferCoin() string {
+func (x *QuerySellRequest) GetOfferCoin() string {
 	if x != nil {
 		return x.OfferCoin
 	}
 	return ""
 }
 
-func (x *QuerySwapRequest) GetAskDenom() string {
+func (x *QuerySellRequest) GetAskDenom() string {
 	if x != nil {
 		return x.AskDenom
 	}
 	return ""
 }
 
-// QuerySwapResponse is the response type for the Query/Swap RPC method.
-type QuerySwapResponse struct {
+// QuerySellResponse is the response type for the Query/Sell RPC method.
+type QuerySellResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// return_coin defines the coin returned as a result of the swap simulation.
+	// swap_coin is the coin the sell returns.
 	SwapCoin *v1beta1.Coin `protobuf:"bytes,1,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin,omitempty"`
 	// swap_fee defines the fee deducted from the simulated swap result.
 	SwapFee *v1beta1.DecCoin `protobuf:"bytes,2,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee,omitempty"`
 }
 
-func (x *QuerySwapResponse) Reset() {
-	*x = QuerySwapResponse{}
+func (x *QuerySellResponse) Reset() {
+	*x = QuerySellResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_ark_market_v1_query_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -6078,25 +7155,126 @@ func (x *QuerySwapResponse) Reset() {
 	}
 }
 
-func (x *QuerySwapResponse) String() string {
+func (x *QuerySellResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QuerySwapResponse) ProtoMessage() {}
+func (*QuerySellResponse) ProtoMessage() {}
 
-// Deprecated: Use QuerySwapResponse.ProtoReflect.Descriptor instead.
-func (*QuerySwapResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QuerySellResponse.ProtoReflect.Descriptor instead.
+func (*QuerySellResponse) Descriptor() ([]byte, []int) {
 	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QuerySwapResponse) GetSwapCoin() *v1beta1.Coin {
+func (x *QuerySellResponse) GetSwapCoin() *v1beta1.Coin {
 	if x != nil {
 		return x.SwapCoin
 	}
 	return nil
 }
 
-func (x *QuerySwapResponse) GetSwapFee() *v1beta1.DecCoin {
+func (x *QuerySellResponse) GetSwapFee() *v1beta1.DecCoin {
+	if x != nil {
+		return x.SwapFee
+	}
+	return nil
+}
+
+// QueryBuyRequest is the request type for the Query/Buy RPC method.
+type QueryBuyRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// ask_coin is the least amount the offer must buy (e.g. 1000000000000000000ausd)
+	AskCoin string `protobuf:"bytes,1,opt,name=ask_coin,json=askCoin,proto3" json:"ask_coin,omitempty"`
+	// offer_denom is the denom offered
+	OfferDenom string `protobuf:"bytes,2,opt,name=offer_denom,json=offerDenom,proto3" json:"offer_denom,omitempty"`
+}
+
+func (x *QueryBuyRequest) Reset() {
+	*x = QueryBuyRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_market_v1_query_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryBuyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryBuyRequest) ProtoMessage() {}
+
+// Deprecated: Use QueryBuyRequest.ProtoReflect.Descriptor instead.
+func (*QueryBuyRequest) Descriptor() ([]byte, []int) {
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *QueryBuyRequest) GetAskCoin() string {
+	if x != nil {
+		return x.AskCoin
+	}
+	return ""
+}
+
+func (x *QueryBuyRequest) GetOfferDenom() string {
+	if x != nil {
+		return x.OfferDenom
+	}
+	return ""
+}
+
+// QueryBuyResponse is the response type for the Query/Buy RPC method.
+type QueryBuyResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// offer_coin is the least offer whose quote buys at least the ask.
+	OfferCoin *v1beta1.Coin `protobuf:"bytes,1,opt,name=offer_coin,json=offerCoin,proto3" json:"offer_coin,omitempty"`
+	// swap_coin is that offer's quoted output.
+	SwapCoin *v1beta1.Coin `protobuf:"bytes,2,opt,name=swap_coin,json=swapCoin,proto3" json:"swap_coin,omitempty"`
+	// swap_fee is the spread that quote charges.
+	SwapFee *v1beta1.DecCoin `protobuf:"bytes,3,opt,name=swap_fee,json=swapFee,proto3" json:"swap_fee,omitempty"`
+}
+
+func (x *QueryBuyResponse) Reset() {
+	*x = QueryBuyResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_ark_market_v1_query_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *QueryBuyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryBuyResponse) ProtoMessage() {}
+
+// Deprecated: Use QueryBuyResponse.ProtoReflect.Descriptor instead.
+func (*QueryBuyResponse) Descriptor() ([]byte, []int) {
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *QueryBuyResponse) GetOfferCoin() *v1beta1.Coin {
+	if x != nil {
+		return x.OfferCoin
+	}
+	return nil
+}
+
+func (x *QueryBuyResponse) GetSwapCoin() *v1beta1.Coin {
+	if x != nil {
+		return x.SwapCoin
+	}
+	return nil
+}
+
+func (x *QueryBuyResponse) GetSwapFee() *v1beta1.DecCoin {
 	if x != nil {
 		return x.SwapFee
 	}
@@ -6113,7 +7291,7 @@ type QueryPoolRequest struct {
 func (x *QueryPoolRequest) Reset() {
 	*x = QueryPoolRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[2]
+		mi := &file_ark_market_v1_query_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6127,7 +7305,7 @@ func (*QueryPoolRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryPoolRequest.ProtoReflect.Descriptor instead.
 func (*QueryPoolRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{2}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{4}
 }
 
 // QueryPoolResponse is the response type for the Query/Pool RPC method.
@@ -6147,7 +7325,7 @@ type QueryPoolResponse struct {
 func (x *QueryPoolResponse) Reset() {
 	*x = QueryPoolResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[3]
+		mi := &file_ark_market_v1_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6161,7 +7339,7 @@ func (*QueryPoolResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryPoolResponse.ProtoReflect.Descriptor instead.
 func (*QueryPoolResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{3}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *QueryPoolResponse) GetBasePool() *v1beta1.DecCoin {
@@ -6188,7 +7366,7 @@ type QueryParamsRequest struct {
 func (x *QueryParamsRequest) Reset() {
 	*x = QueryParamsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[4]
+		mi := &file_ark_market_v1_query_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6202,7 +7380,7 @@ func (*QueryParamsRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsRequest.ProtoReflect.Descriptor instead.
 func (*QueryParamsRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{4}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{6}
 }
 
 // QueryParamsResponse is the response type for the Query/Params RPC method.
@@ -6218,7 +7396,7 @@ type QueryParamsResponse struct {
 func (x *QueryParamsResponse) Reset() {
 	*x = QueryParamsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[5]
+		mi := &file_ark_market_v1_query_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6232,7 +7410,7 @@ func (*QueryParamsResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryParamsResponse.ProtoReflect.Descriptor instead.
 func (*QueryParamsResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{5}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QueryParamsResponse) GetParams() *Params {
@@ -6254,7 +7432,7 @@ type QueryTobinTaxRequest struct {
 func (x *QueryTobinTaxRequest) Reset() {
 	*x = QueryTobinTaxRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[6]
+		mi := &file_ark_market_v1_query_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6268,7 +7446,7 @@ func (*QueryTobinTaxRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryTobinTaxRequest.ProtoReflect.Descriptor instead.
 func (*QueryTobinTaxRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{6}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *QueryTobinTaxRequest) GetDenom() string {
@@ -6294,7 +7472,7 @@ type QueryTobinTaxResponse struct {
 func (x *QueryTobinTaxResponse) Reset() {
 	*x = QueryTobinTaxResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[7]
+		mi := &file_ark_market_v1_query_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6308,7 +7486,7 @@ func (*QueryTobinTaxResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryTobinTaxResponse.ProtoReflect.Descriptor instead.
 func (*QueryTobinTaxResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{7}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *QueryTobinTaxResponse) GetTobinTax() string {
@@ -6329,7 +7507,7 @@ type QueryTobinTaxOverridesRequest struct {
 func (x *QueryTobinTaxOverridesRequest) Reset() {
 	*x = QueryTobinTaxOverridesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[8]
+		mi := &file_ark_market_v1_query_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6343,7 +7521,7 @@ func (*QueryTobinTaxOverridesRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryTobinTaxOverridesRequest.ProtoReflect.Descriptor instead.
 func (*QueryTobinTaxOverridesRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{8}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{10}
 }
 
 // QueryTobinTaxOverridesResponse is the response type for the
@@ -6359,7 +7537,7 @@ type QueryTobinTaxOverridesResponse struct {
 func (x *QueryTobinTaxOverridesResponse) Reset() {
 	*x = QueryTobinTaxOverridesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[9]
+		mi := &file_ark_market_v1_query_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6373,7 +7551,7 @@ func (*QueryTobinTaxOverridesResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryTobinTaxOverridesResponse.ProtoReflect.Descriptor instead.
 func (*QueryTobinTaxOverridesResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{9}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *QueryTobinTaxOverridesResponse) GetTobinTaxOverrides() []*TobinTaxOverride {
@@ -6394,7 +7572,7 @@ type QueryConversionPolicyRequest struct {
 func (x *QueryConversionPolicyRequest) Reset() {
 	*x = QueryConversionPolicyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[10]
+		mi := &file_ark_market_v1_query_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6408,7 +7586,7 @@ func (*QueryConversionPolicyRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryConversionPolicyRequest.ProtoReflect.Descriptor instead.
 func (*QueryConversionPolicyRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{10}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{12}
 }
 
 // QueryConversionPolicyResponse is the response type for the
@@ -6424,7 +7602,7 @@ type QueryConversionPolicyResponse struct {
 func (x *QueryConversionPolicyResponse) Reset() {
 	*x = QueryConversionPolicyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[11]
+		mi := &file_ark_market_v1_query_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6438,7 +7616,7 @@ func (*QueryConversionPolicyResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryConversionPolicyResponse.ProtoReflect.Descriptor instead.
 func (*QueryConversionPolicyResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{11}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *QueryConversionPolicyResponse) GetConversionPolicy() *ConversionPolicy {
@@ -6459,7 +7637,7 @@ type QueryConversionMandateRequest struct {
 func (x *QueryConversionMandateRequest) Reset() {
 	*x = QueryConversionMandateRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[12]
+		mi := &file_ark_market_v1_query_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6473,11 +7651,11 @@ func (*QueryConversionMandateRequest) ProtoMessage() {}
 
 // Deprecated: Use QueryConversionMandateRequest.ProtoReflect.Descriptor instead.
 func (*QueryConversionMandateRequest) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{12}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{14}
 }
 
 // QueryConversionMandateResponse returns the stored mandate and whether it is
-// usable at the current height.
+// usable at the current block time.
 type QueryConversionMandateResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6490,7 +7668,7 @@ type QueryConversionMandateResponse struct {
 func (x *QueryConversionMandateResponse) Reset() {
 	*x = QueryConversionMandateResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_market_v1_query_proto_msgTypes[13]
+		mi := &file_ark_market_v1_query_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -6504,7 +7682,7 @@ func (*QueryConversionMandateResponse) ProtoMessage() {}
 
 // Deprecated: Use QueryConversionMandateResponse.ProtoReflect.Descriptor instead.
 func (*QueryConversionMandateResponse) Descriptor() ([]byte, []int) {
-	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{13}
+	return file_ark_market_v1_query_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *QueryConversionMandateResponse) GetMandate() *ConversionMandate {
@@ -6538,18 +7716,37 @@ var file_ark_market_v1_query_proto_rawDesc = []byte{
 	0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67,
 	0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f,
 	0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4e, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x77,
-	0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x6f, 0x66, 0x66,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x4e, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65,
+	0x6c, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x6f, 0x66, 0x66,
 	0x65, 0x72, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6f,
 	0x66, 0x66, 0x65, 0x72, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x61, 0x73, 0x6b, 0x5f,
 	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x61, 0x73, 0x6b,
 	0x44, 0x65, 0x6e, 0x6f, 0x6d, 0x22, 0x9a, 0x01, 0x0a, 0x11, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53,
-	0x77, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x09, 0x73,
+	0x65, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x09, 0x73,
 	0x77, 0x61, 0x70, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
 	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
 	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
 	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x73, 0x77, 0x61, 0x70, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x42,
 	0x0a, 0x08, 0x73, 0x77, 0x61, 0x70, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
+	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09,
+	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46,
+	0x65, 0x65, 0x22, 0x4d, 0x0a, 0x0f, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x79, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x19, 0x0a, 0x08, 0x61, 0x73, 0x6b, 0x5f, 0x63, 0x6f, 0x69,
+	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x73, 0x6b, 0x43, 0x6f, 0x69, 0x6e,
+	0x12, 0x1f, 0x0a, 0x0b, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x44, 0x65, 0x6e, 0x6f,
+	0x6d, 0x22, 0xde, 0x01, 0x0a, 0x10, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x79, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x0a, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x5f,
+	0x63, 0x6f, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
+	0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x09, 0x6f, 0x66, 0x66, 0x65, 0x72, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x41, 0x0a, 0x09, 0x73,
+	0x77, 0x61, 0x70, 0x5f, 0x63, 0x6f, 0x69, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x08, 0x73, 0x77, 0x61, 0x70, 0x43, 0x6f, 0x69, 0x6e, 0x12, 0x42,
+	0x0a, 0x08, 0x73, 0x77, 0x61, 0x70, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x1c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76,
 	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x44, 0x65, 0x63, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x09,
 	0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07, 0x73, 0x77, 0x61, 0x70, 0x46,
@@ -6612,79 +7809,85 @@ var file_ark_market_v1_query_proto_rawDesc = []byte{
 	0x61, 0x74, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x07,
 	0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x1d, 0x0a, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76,
 	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
-	0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x32, 0xc3, 0x07, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x12, 0x6b, 0x0a, 0x04, 0x53, 0x77, 0x61, 0x70, 0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x77,
-	0x61, 0x70, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
+	0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x32, 0xac, 0x08, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x12, 0x6b, 0x0a, 0x04, 0x53, 0x65, 0x6c, 0x6c, 0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53, 0x65,
+	0x6c, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
 	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x53,
-	0x77, 0x61, 0x70, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x20, 0x88, 0xe7, 0xb0,
+	0x65, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x20, 0x88, 0xe7, 0xb0,
 	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x15, 0x12, 0x13, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x77, 0x61, 0x70, 0x12, 0x6b, 0x0a,
-	0x04, 0x50, 0x6f, 0x6f, 0x6c, 0x12, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x6f, 0x6f, 0x6c, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x6f, 0x6f, 0x6c,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x20, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82,
-	0xd3, 0xe4, 0x93, 0x02, 0x15, 0x12, 0x13, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b,
-	0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x6f, 0x6f, 0x6c, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x12, 0x21, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
-	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61,
-	0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0,
-	0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d,
-	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12,
-	0x84, 0x01, 0x0a, 0x08, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x23, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65,
-	0x74, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x2f, 0x7b,
-	0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x12, 0xa1, 0x01, 0x0a, 0x11, 0x54, 0x6f, 0x62, 0x69, 0x6e,
-	0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x73, 0x12, 0x2c, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69,
-	0x64, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b,
-	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2f, 0x88, 0xe7, 0xb0, 0x2a, 0x01,
-	0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78,
-	0x5f, 0x6f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x73, 0x12, 0x9c, 0x01, 0x0a, 0x10, 0x43,
-	0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12,
-	0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50,
-	0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61,
-	0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69,
-	0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a,
-	0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61,
-	0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
-	0x6f, 0x6e, 0x5f, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0xa0, 0x01, 0x0a, 0x11, 0x43, 0x6f,
-	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12,
-	0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d,
-	0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x65, 0x6c, 0x6c, 0x12, 0x67, 0x0a,
+	0x03, 0x42, 0x75, 0x79, 0x12, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x79, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x42, 0x75, 0x79, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x1f, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x14, 0x12, 0x12, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f,
+	0x76, 0x31, 0x2f, 0x62, 0x75, 0x79, 0x12, 0x6b, 0x0a, 0x04, 0x50, 0x6f, 0x6f, 0x6c, 0x12, 0x1f,
+	0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x50, 0x6f, 0x6f, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x20, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x6f, 0x6f, 0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x20, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x15, 0x12, 0x13,
+	0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x70,
+	0x6f, 0x6f, 0x6c, 0x12, 0x73, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x21, 0x2e,
 	0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e,
-	0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7,
-	0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72,
-	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0xaf, 0x01, 0x0a,
-	0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e,
-	0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
-	0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61,
-	0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76,
-	0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58,
-	0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31,
-	0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31,
-	0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41,
-	0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x22, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x22, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x17, 0x12, 0x15, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76,
+	0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x84, 0x01, 0x0a, 0x08, 0x54, 0x6f, 0x62,
+	0x69, 0x6e, 0x54, 0x61, 0x78, 0x12, 0x23, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e,
+	0x54, 0x61, 0x78, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x61, 0x72, 0x6b,
+	0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f,
+	0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f,
+	0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x2f, 0x7b, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x7d, 0x12,
+	0xa1, 0x01, 0x0a, 0x11, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72,
+	0x72, 0x69, 0x64, 0x65, 0x73, 0x12, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e,
+	0x54, 0x61, 0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x62, 0x69, 0x6e, 0x54, 0x61,
+	0x78, 0x4f, 0x76, 0x65, 0x72, 0x72, 0x69, 0x64, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x22, 0x2f, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12,
+	0x22, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x2f,
+	0x74, 0x6f, 0x62, 0x69, 0x6e, 0x5f, 0x74, 0x61, 0x78, 0x5f, 0x6f, 0x76, 0x65, 0x72, 0x72, 0x69,
+	0x64, 0x65, 0x73, 0x12, 0x9c, 0x01, 0x0a, 0x10, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x12, 0x2b, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f,
+	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76, 0x65,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x50, 0x6f, 0x6c, 0x69, 0x63, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x2d, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22,
+	0x12, 0x20, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31,
+	0x2f, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x70, 0x6f, 0x6c, 0x69,
+	0x63, 0x79, 0x12, 0xa0, 0x01, 0x0a, 0x11, 0x43, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f,
+	0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x12, 0x2c, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f,
+	0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x43, 0x6f, 0x6e, 0x76,
+	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x88, 0xe7, 0xb0, 0x2a, 0x01, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x23, 0x12, 0x21, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f,
+	0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61,
+	0x6e, 0x64, 0x61, 0x74, 0x65, 0x42, 0xaf, 0x01, 0x0a, 0x11, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72,
+	0x6b, 0x2e, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74,
+	0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b,
+	0x2f, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x6d, 0x61, 0x72, 0x6b, 0x65,
+	0x74, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x4d, 0x58, 0xaa, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x2e,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0d, 0x41, 0x72, 0x6b, 0x5c,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x19, 0x41, 0x72, 0x6b, 0x5c,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x3a, 0x3a, 0x4d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -6699,56 +7902,63 @@ func file_ark_market_v1_query_proto_rawDescGZIP() []byte {
 	return file_ark_market_v1_query_proto_rawDescData
 }
 
-var file_ark_market_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_ark_market_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_ark_market_v1_query_proto_goTypes = []interface{}{
-	(*QuerySwapRequest)(nil),               // 0: ark.market.v1.QuerySwapRequest
-	(*QuerySwapResponse)(nil),              // 1: ark.market.v1.QuerySwapResponse
-	(*QueryPoolRequest)(nil),               // 2: ark.market.v1.QueryPoolRequest
-	(*QueryPoolResponse)(nil),              // 3: ark.market.v1.QueryPoolResponse
-	(*QueryParamsRequest)(nil),             // 4: ark.market.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),            // 5: ark.market.v1.QueryParamsResponse
-	(*QueryTobinTaxRequest)(nil),           // 6: ark.market.v1.QueryTobinTaxRequest
-	(*QueryTobinTaxResponse)(nil),          // 7: ark.market.v1.QueryTobinTaxResponse
-	(*QueryTobinTaxOverridesRequest)(nil),  // 8: ark.market.v1.QueryTobinTaxOverridesRequest
-	(*QueryTobinTaxOverridesResponse)(nil), // 9: ark.market.v1.QueryTobinTaxOverridesResponse
-	(*QueryConversionPolicyRequest)(nil),   // 10: ark.market.v1.QueryConversionPolicyRequest
-	(*QueryConversionPolicyResponse)(nil),  // 11: ark.market.v1.QueryConversionPolicyResponse
-	(*QueryConversionMandateRequest)(nil),  // 12: ark.market.v1.QueryConversionMandateRequest
-	(*QueryConversionMandateResponse)(nil), // 13: ark.market.v1.QueryConversionMandateResponse
-	(*v1beta1.Coin)(nil),                   // 14: cosmos.base.v1beta1.Coin
-	(*v1beta1.DecCoin)(nil),                // 15: cosmos.base.v1beta1.DecCoin
-	(*Params)(nil),                         // 16: ark.market.v1.Params
-	(*TobinTaxOverride)(nil),               // 17: ark.market.v1.TobinTaxOverride
-	(*ConversionPolicy)(nil),               // 18: ark.market.v1.ConversionPolicy
-	(*ConversionMandate)(nil),              // 19: ark.market.v1.ConversionMandate
+	(*QuerySellRequest)(nil),               // 0: ark.market.v1.QuerySellRequest
+	(*QuerySellResponse)(nil),              // 1: ark.market.v1.QuerySellResponse
+	(*QueryBuyRequest)(nil),                // 2: ark.market.v1.QueryBuyRequest
+	(*QueryBuyResponse)(nil),               // 3: ark.market.v1.QueryBuyResponse
+	(*QueryPoolRequest)(nil),               // 4: ark.market.v1.QueryPoolRequest
+	(*QueryPoolResponse)(nil),              // 5: ark.market.v1.QueryPoolResponse
+	(*QueryParamsRequest)(nil),             // 6: ark.market.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),            // 7: ark.market.v1.QueryParamsResponse
+	(*QueryTobinTaxRequest)(nil),           // 8: ark.market.v1.QueryTobinTaxRequest
+	(*QueryTobinTaxResponse)(nil),          // 9: ark.market.v1.QueryTobinTaxResponse
+	(*QueryTobinTaxOverridesRequest)(nil),  // 10: ark.market.v1.QueryTobinTaxOverridesRequest
+	(*QueryTobinTaxOverridesResponse)(nil), // 11: ark.market.v1.QueryTobinTaxOverridesResponse
+	(*QueryConversionPolicyRequest)(nil),   // 12: ark.market.v1.QueryConversionPolicyRequest
+	(*QueryConversionPolicyResponse)(nil),  // 13: ark.market.v1.QueryConversionPolicyResponse
+	(*QueryConversionMandateRequest)(nil),  // 14: ark.market.v1.QueryConversionMandateRequest
+	(*QueryConversionMandateResponse)(nil), // 15: ark.market.v1.QueryConversionMandateResponse
+	(*v1beta1.Coin)(nil),                   // 16: cosmos.base.v1beta1.Coin
+	(*v1beta1.DecCoin)(nil),                // 17: cosmos.base.v1beta1.DecCoin
+	(*Params)(nil),                         // 18: ark.market.v1.Params
+	(*TobinTaxOverride)(nil),               // 19: ark.market.v1.TobinTaxOverride
+	(*ConversionPolicy)(nil),               // 20: ark.market.v1.ConversionPolicy
+	(*ConversionMandate)(nil),              // 21: ark.market.v1.ConversionMandate
 }
 var file_ark_market_v1_query_proto_depIdxs = []int32{
-	14, // 0: ark.market.v1.QuerySwapResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
-	15, // 1: ark.market.v1.QuerySwapResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
-	15, // 2: ark.market.v1.QueryPoolResponse.base_pool:type_name -> cosmos.base.v1beta1.DecCoin
-	16, // 3: ark.market.v1.QueryParamsResponse.params:type_name -> ark.market.v1.Params
-	17, // 4: ark.market.v1.QueryTobinTaxOverridesResponse.tobin_tax_overrides:type_name -> ark.market.v1.TobinTaxOverride
-	18, // 5: ark.market.v1.QueryConversionPolicyResponse.conversion_policy:type_name -> ark.market.v1.ConversionPolicy
-	19, // 6: ark.market.v1.QueryConversionMandateResponse.mandate:type_name -> ark.market.v1.ConversionMandate
-	0,  // 7: ark.market.v1.Query.Swap:input_type -> ark.market.v1.QuerySwapRequest
-	2,  // 8: ark.market.v1.Query.Pool:input_type -> ark.market.v1.QueryPoolRequest
-	4,  // 9: ark.market.v1.Query.Params:input_type -> ark.market.v1.QueryParamsRequest
-	6,  // 10: ark.market.v1.Query.TobinTax:input_type -> ark.market.v1.QueryTobinTaxRequest
-	8,  // 11: ark.market.v1.Query.TobinTaxOverrides:input_type -> ark.market.v1.QueryTobinTaxOverridesRequest
-	10, // 12: ark.market.v1.Query.ConversionPolicy:input_type -> ark.market.v1.QueryConversionPolicyRequest
-	12, // 13: ark.market.v1.Query.ConversionMandate:input_type -> ark.market.v1.QueryConversionMandateRequest
-	1,  // 14: ark.market.v1.Query.Swap:output_type -> ark.market.v1.QuerySwapResponse
-	3,  // 15: ark.market.v1.Query.Pool:output_type -> ark.market.v1.QueryPoolResponse
-	5,  // 16: ark.market.v1.Query.Params:output_type -> ark.market.v1.QueryParamsResponse
-	7,  // 17: ark.market.v1.Query.TobinTax:output_type -> ark.market.v1.QueryTobinTaxResponse
-	9,  // 18: ark.market.v1.Query.TobinTaxOverrides:output_type -> ark.market.v1.QueryTobinTaxOverridesResponse
-	11, // 19: ark.market.v1.Query.ConversionPolicy:output_type -> ark.market.v1.QueryConversionPolicyResponse
-	13, // 20: ark.market.v1.Query.ConversionMandate:output_type -> ark.market.v1.QueryConversionMandateResponse
-	14, // [14:21] is the sub-list for method output_type
-	7,  // [7:14] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	16, // 0: ark.market.v1.QuerySellResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
+	17, // 1: ark.market.v1.QuerySellResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
+	16, // 2: ark.market.v1.QueryBuyResponse.offer_coin:type_name -> cosmos.base.v1beta1.Coin
+	16, // 3: ark.market.v1.QueryBuyResponse.swap_coin:type_name -> cosmos.base.v1beta1.Coin
+	17, // 4: ark.market.v1.QueryBuyResponse.swap_fee:type_name -> cosmos.base.v1beta1.DecCoin
+	17, // 5: ark.market.v1.QueryPoolResponse.base_pool:type_name -> cosmos.base.v1beta1.DecCoin
+	18, // 6: ark.market.v1.QueryParamsResponse.params:type_name -> ark.market.v1.Params
+	19, // 7: ark.market.v1.QueryTobinTaxOverridesResponse.tobin_tax_overrides:type_name -> ark.market.v1.TobinTaxOverride
+	20, // 8: ark.market.v1.QueryConversionPolicyResponse.conversion_policy:type_name -> ark.market.v1.ConversionPolicy
+	21, // 9: ark.market.v1.QueryConversionMandateResponse.mandate:type_name -> ark.market.v1.ConversionMandate
+	0,  // 10: ark.market.v1.Query.Sell:input_type -> ark.market.v1.QuerySellRequest
+	2,  // 11: ark.market.v1.Query.Buy:input_type -> ark.market.v1.QueryBuyRequest
+	4,  // 12: ark.market.v1.Query.Pool:input_type -> ark.market.v1.QueryPoolRequest
+	6,  // 13: ark.market.v1.Query.Params:input_type -> ark.market.v1.QueryParamsRequest
+	8,  // 14: ark.market.v1.Query.TobinTax:input_type -> ark.market.v1.QueryTobinTaxRequest
+	10, // 15: ark.market.v1.Query.TobinTaxOverrides:input_type -> ark.market.v1.QueryTobinTaxOverridesRequest
+	12, // 16: ark.market.v1.Query.ConversionPolicy:input_type -> ark.market.v1.QueryConversionPolicyRequest
+	14, // 17: ark.market.v1.Query.ConversionMandate:input_type -> ark.market.v1.QueryConversionMandateRequest
+	1,  // 18: ark.market.v1.Query.Sell:output_type -> ark.market.v1.QuerySellResponse
+	3,  // 19: ark.market.v1.Query.Buy:output_type -> ark.market.v1.QueryBuyResponse
+	5,  // 20: ark.market.v1.Query.Pool:output_type -> ark.market.v1.QueryPoolResponse
+	7,  // 21: ark.market.v1.Query.Params:output_type -> ark.market.v1.QueryParamsResponse
+	9,  // 22: ark.market.v1.Query.TobinTax:output_type -> ark.market.v1.QueryTobinTaxResponse
+	11, // 23: ark.market.v1.Query.TobinTaxOverrides:output_type -> ark.market.v1.QueryTobinTaxOverridesResponse
+	13, // 24: ark.market.v1.Query.ConversionPolicy:output_type -> ark.market.v1.QueryConversionPolicyResponse
+	15, // 25: ark.market.v1.Query.ConversionMandate:output_type -> ark.market.v1.QueryConversionMandateResponse
+	18, // [18:26] is the sub-list for method output_type
+	10, // [10:18] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_ark_market_v1_query_proto_init() }
@@ -6759,7 +7969,7 @@ func file_ark_market_v1_query_proto_init() {
 	file_ark_market_v1_market_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_ark_market_v1_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QuerySwapRequest); i {
+			switch v := v.(*QuerySellRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6771,7 +7981,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QuerySwapResponse); i {
+			switch v := v.(*QuerySellResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6783,7 +7993,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryPoolRequest); i {
+			switch v := v.(*QueryBuyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6795,7 +8005,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryPoolResponse); i {
+			switch v := v.(*QueryBuyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6807,7 +8017,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryParamsRequest); i {
+			switch v := v.(*QueryPoolRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6819,7 +8029,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryParamsResponse); i {
+			switch v := v.(*QueryPoolResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6831,7 +8041,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTobinTaxRequest); i {
+			switch v := v.(*QueryParamsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6843,7 +8053,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTobinTaxResponse); i {
+			switch v := v.(*QueryParamsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6855,7 +8065,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTobinTaxOverridesRequest); i {
+			switch v := v.(*QueryTobinTaxRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6867,7 +8077,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTobinTaxOverridesResponse); i {
+			switch v := v.(*QueryTobinTaxResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6879,7 +8089,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryConversionPolicyRequest); i {
+			switch v := v.(*QueryTobinTaxOverridesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6891,7 +8101,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryConversionPolicyResponse); i {
+			switch v := v.(*QueryTobinTaxOverridesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6903,7 +8113,7 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryConversionMandateRequest); i {
+			switch v := v.(*QueryConversionPolicyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6915,6 +8125,30 @@ func file_ark_market_v1_query_proto_init() {
 			}
 		}
 		file_ark_market_v1_query_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryConversionPolicyResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_market_v1_query_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*QueryConversionMandateRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_ark_market_v1_query_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryConversionMandateResponse); i {
 			case 0:
 				return &v.state
@@ -6933,7 +8167,7 @@ func file_ark_market_v1_query_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_market_v1_query_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

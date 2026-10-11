@@ -2,6 +2,8 @@
 .github
 .testnets
 build
+dist
 arkd
+coverage.out
 **/*.test
 .DS_Store

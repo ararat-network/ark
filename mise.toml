@@ -8,6 +8,6 @@ golangci-lint = "2.13.2"
 goreleaser = "2.18.0"
 # Generates per-archive SPDX inventories for standalone release packaging.
 syft = "1.51.1"
-# Install govulncheck from source with the pinned Go toolchain so it can parse this module's
-# sources. The aqua entry delegates installation to the Go backend.
+# Installed from source by mise's Go backend with the pinned toolchain, so govulncheck can parse
+# this module's sources.
 "go:golang.org/x/vuln/cmd/govulncheck" = "1.7.0"

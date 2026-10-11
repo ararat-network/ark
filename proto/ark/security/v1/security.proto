@@ -7,10 +7,10 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/security/types";
 
-// SecurityMandate appoints a height-scoped committee for code and connectivity repair, never funds.
+// SecurityMandate appoints a time-scoped committee for code repair, never funds.
 // Empty committee disables it; every replacement advances the term.
 message SecurityMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,
@@ -22,7 +22,7 @@ message SecurityMandate {
 // ownership only while both match x/upgrade's pending plan.
 message CommitteePlan {
   string name = 1;
-  int64 height = 2 [(amino.dont_omitempty) = true];
+  uint64 height = 2 [(amino.dont_omitempty) = true];
   // term is the appointment that scheduled it.
   uint64 term = 3 [(amino.dont_omitempty) = true];
 }

@@ -45,9 +45,8 @@ message GenesisState {
     (amino.dont_omitempty) = true
   ];
   // exposure_refresh_pending records a refresh period that elapsed without a
-  // successful recomputation, on the same terms as tax_cap_refresh_pending: the
-  // boundary is an instant rather than a state, so an owed refresh survives
-  // export instead of being forgiven by the migration.
+  // successful recomputation. The boundary is an instant rather than a state,
+  // so an owed refresh survives export instead of being forgiven at import.
   bool exposure_refresh_pending = 7 [(amino.dont_omitempty) = true];
   // base_gas_price is the base-fee controller's live price, in reference_denom
   // base units per gas unit. At least min_base_gas_price: a fresh chain starts

@@ -83,22 +83,31 @@ func TestRunRejectsNilResponseChannelAndEmptyTickers(t *testing.T) {
 	require.NoError(t, fetcher.Run(context.Background(), nil, make(chan types.Response)))
 }
 
-func TestRunReturnsErrorWhenEndpointSelectionFails(t *testing.T) {
+func TestRunPublishesUnresolvedBatchWhenEndpointSelectionFails(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
+	cfg := apiConfig()
+	cfg.BatchSize = len(tickers)
 
 	fetcher, err := NewFetcher(
-		apiConfig(),
+		cfg,
 		&http.Client{},
 		newMockDataHandler(t),
-		WithEndpointSelector(func([]types.Endpoint) (types.Endpoint, error) {
+		WithEndpointSelector(func([]types.Endpoint, int) (types.Endpoint, error) {
 			return types.Endpoint{}, errors.New("no endpoint available")
 		}),
 	)
 	require.NoError(t, err)
 
-	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
-	require.ErrorIs(t, err, ErrSelectEndpoint)
-	require.ErrorContains(t, err, "no endpoint available")
+	response, err := runAPIOnce(fetcher, tickers)
+	require.NoError(t, err)
+	require.Empty(t, response.Resolved)
+	require.Len(t, response.Unresolved, len(tickers))
+	for _, ticker := range tickers {
+		providerErr := response.Unresolved[ticker]
+		require.Equal(t, types.ErrorAPIGeneral, providerErr.Code())
+		require.ErrorContains(t, providerErr, ErrSelectEndpoint.Error())
+		require.ErrorContains(t, providerErr, "no endpoint available")
+	}
 }
 
 func TestRunReturnsTickerBatcherError(t *testing.T) {
@@ -118,7 +127,7 @@ func TestRunReturnsTickerBatcherError(t *testing.T) {
 	require.EqualError(t, err, "batching API tickers: unsupported ticker group")
 }
 
-func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
+func TestRunPublishesUnresolvedBatchWhenCreateURLFails(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
 	cfg := apiConfig()
 	cfg.BatchSize = len(tickers)
@@ -130,9 +139,58 @@ func TestRunReturnsErrorWhenCreateURLFails(t *testing.T) {
 	fetcher, err := NewFetcher(cfg, &http.Client{}, handler)
 	require.NoError(t, err)
 
-	err = fetcher.Run(context.Background(), tickers, make(chan types.Response, 1))
-	require.ErrorIs(t, err, ErrCreateURL)
-	require.ErrorContains(t, err, "missing ticker")
+	response, err := runAPIOnce(fetcher, tickers)
+	require.NoError(t, err)
+	require.Empty(t, response.Resolved)
+	require.Len(t, response.Unresolved, len(tickers))
+	for _, ticker := range tickers {
+		providerErr := response.Unresolved[ticker]
+		require.Equal(t, types.ErrorUnableToCreateURL, providerErr.Code())
+		require.ErrorContains(t, providerErr, ErrCreateURL.Error())
+		require.ErrorContains(t, providerErr, "missing ticker")
+	}
+}
+
+// A batch that cannot be queried is retried on the next interval, so a cause that clears lets it
+// resolve without restarting the provider.
+func TestRunRetriesAFailedBatchNextInterval(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	expected := types.NewResponse(map[types.Ticker]types.Result{
+		"ATOMUSD": types.NewResult(big.NewFloat(12.34), time.Unix(10, 0).UTC()),
+	}, nil)
+
+	cfg := apiConfig()
+	cfg.Interval = time.Millisecond
+	handler := newMockDataHandler(t)
+	gomock.InOrder(
+		handler.EXPECT().
+			CreateURL(cfg.Endpoints[0], tickers).
+			Return("", errors.New("missing ticker")),
+		handler.EXPECT().
+			CreateURL(cfg.Endpoints[0], tickers).
+			Return(testURL, nil),
+	)
+	handler.EXPECT().
+		ParseResponse(tickers, gomock.Any()).
+		Return(expected)
+
+	requests := make(chan *http.Request, 1)
+	fetcher, err := NewFetcher(cfg, &http.Client{Transport: recordingTransport(requests, `{"ok":true}`)}, handler)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	responses := make(chan types.Response)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fetcher.Run(ctx, tickers, responses)
+	}()
+
+	failed := receiveResponse(t, responses)
+	require.Equal(t, types.ErrorUnableToCreateURL, failed.Unresolved["ATOMUSD"].Code())
+	require.Equal(t, expected, receiveResponse(t, responses))
+	cancel()
+	require.ErrorIs(t, <-errCh, context.Canceled)
 }
 
 func TestRunReturnsErrorWhenBatchLoopPanics(t *testing.T) {
@@ -166,22 +224,13 @@ func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
 		CreateURL(cfg.Endpoints[0], tickers).
 		Return(testURL, nil)
 	handler.EXPECT().
-		ParseResponse(tickers, gomock.Any()).
-		DoAndReturn(func(gotTickers []types.Ticker, response *http.Response) types.Response {
-			require.Equal(t, tickers, gotTickers)
-			require.NotNil(t, response)
-			return expected
-		})
+		ParseResponse(tickers, gomock.Not(gomock.Nil())).
+		Return(expected)
 
+	requests := make(chan *http.Request, 1)
 	fetcher, err := NewFetcher(
 		cfg,
-		&http.Client{
-			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-				require.Equal(t, http.MethodPost, req.Method)
-				require.Equal(t, "secret", req.Header.Get("X-API-Key"))
-				return httpResponse(`{"ok":true}`), nil
-			}),
-		},
+		&http.Client{Transport: recordingTransport(requests, `{"ok":true}`)},
 		handler,
 		WithHTTPMethod(http.MethodPost),
 		WithHTTPHeaders(map[string]string{"X-API-Key": "secret"}),
@@ -191,6 +240,9 @@ func TestRunSendsMethodHeadersAndParsesSuccessfulResponse(t *testing.T) {
 	response, err := runAPIOnce(fetcher, tickers)
 	require.NoError(t, err)
 	require.Equal(t, expected, response)
+	req := receiveRequest(t, requests)
+	require.Equal(t, http.MethodPost, req.Method)
+	require.Equal(t, "secret", req.Header.Get("X-API-Key"))
 }
 
 func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
@@ -226,17 +278,12 @@ func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
 		ParseResponse(tickers, gomock.Any()).
 		Return(expected)
 
+	requests := make(chan *http.Request, 1)
 	fetcher, err := NewFetcher(
 		cfg,
-		&http.Client{
-			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-				require.Empty(t, req.Header.Get("X-First-Key"))
-				require.Equal(t, "second-secret", req.Header.Get("X-Second-Key"))
-				return httpResponse(`{"ok":true}`), nil
-			}),
-		},
+		&http.Client{Transport: recordingTransport(requests, `{"ok":true}`)},
 		handler,
-		WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+		WithEndpointSelector(func(endpoints []types.Endpoint, _ int) (types.Endpoint, error) {
 			return endpoints[1], nil
 		}),
 	)
@@ -245,6 +292,9 @@ func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
 	response, err := runAPIOnce(fetcher, tickers)
 	require.NoError(t, err)
 	require.Equal(t, expected, response)
+	req := receiveRequest(t, requests)
+	require.Empty(t, req.Header.Get("X-First-Key"))
+	require.Equal(t, "second-secret", req.Header.Get("X-Second-Key"))
 }
 
 func TestRunMapsHTTPFailuresToUnresolvedResponses(t *testing.T) {
@@ -399,40 +449,21 @@ func TestRunPublishesBatchedResponsesAndStopsOnContextCancellation(t *testing.T)
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD", "ETHUSD"}
 
 	cfg := apiConfig()
+	first := []types.Ticker{"ATOMUSD", "BTCUSD"}
+	second := []types.Ticker{"ETHUSD"}
 	handler := newMockDataHandler(t)
 	handler.EXPECT().
-		CreateURL(cfg.Endpoints[0], gomock.Any()).
-		DoAndReturn(func(endpoint types.Endpoint, gotTickers []types.Ticker) (string, error) {
-			require.Equal(t, cfg.Endpoints[0], endpoint)
-			switch {
-			case len(gotTickers) == 2:
-				require.Equal(t, []types.Ticker{"ATOMUSD", "BTCUSD"}, gotTickers)
-				return "https://provider.test/batch-1", nil
-			case len(gotTickers) == 1:
-				require.Equal(t, []types.Ticker{"ETHUSD"}, gotTickers)
-				return "https://provider.test/batch-2", nil
-			default:
-				t.Fatalf("unexpected tickers: %v", gotTickers)
-				return "", nil
-			}
-		}).
-		Times(2)
+		CreateURL(cfg.Endpoints[0], first).
+		Return("https://provider.test/batch-1", nil)
 	handler.EXPECT().
-		ParseResponse(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(gotTickers []types.Ticker, _ *http.Response) types.Response {
-			switch {
-			case len(gotTickers) == 2:
-				require.Equal(t, []types.Ticker{"ATOMUSD", "BTCUSD"}, gotTickers)
-				return types.NewResponse(map[types.Ticker]types.Result{"ATOMUSD": types.NewResult(big.NewFloat(1), time.Now())}, nil)
-			case len(gotTickers) == 1:
-				require.Equal(t, []types.Ticker{"ETHUSD"}, gotTickers)
-				return types.NewResponse(map[types.Ticker]types.Result{"ETHUSD": types.NewResult(big.NewFloat(2), time.Now())}, nil)
-			default:
-				t.Fatalf("unexpected tickers: %v", gotTickers)
-				return types.Response{}
-			}
-		}).
-		Times(2)
+		CreateURL(cfg.Endpoints[0], second).
+		Return("https://provider.test/batch-2", nil)
+	handler.EXPECT().
+		ParseResponse(first, gomock.Any()).
+		Return(types.NewResponse(map[types.Ticker]types.Result{"ATOMUSD": types.NewResult(big.NewFloat(1), time.Now())}, nil))
+	handler.EXPECT().
+		ParseResponse(second, gomock.Any()).
+		Return(types.NewResponse(map[types.Ticker]types.Result{"ETHUSD": types.NewResult(big.NewFloat(2), time.Now())}, nil))
 
 	cfg.BatchSize = 2
 	cfg.Interval = time.Hour
@@ -576,6 +607,127 @@ func TestResponseBufferSizeReturnsBatchCount(t *testing.T) {
 	require.Equal(t, 1, fetcher.ResponseBufferSize(nil))
 }
 
+// Each batch loop polls again once Interval has passed.
+func TestRunPollsAgainAfterInterval(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	cfg := apiConfig()
+	cfg.Interval = 10 * time.Millisecond
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(cfg.Endpoints[0], tickers).
+		Return(testURL, nil).
+		MinTimes(2)
+	handler.EXPECT().
+		ParseResponse(tickers, gomock.Any()).
+		Return(types.NewResponse(map[types.Ticker]types.Result{"ATOMUSD": types.NewResult(big.NewFloat(1), time.Now())}, nil)).
+		MinTimes(2)
+
+	fetcher, err := NewFetcher(cfg, &http.Client{
+		Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+			return httpResponse(`{}`), nil
+		}),
+	}, handler)
+	require.NoError(t, err)
+
+	responses, stop := runAPI(t, fetcher, tickers)
+	for range 2 {
+		require.Contains(t, receiveResponse(t, responses).Resolved, types.Ticker("ATOMUSD"))
+	}
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// A request still unanswered at Timeout becomes an unresolved response, and
+// the loop polls again rather than ending.
+func TestRunReportsTimedOutRequestAndKeepsPolling(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+	cfg := apiConfig()
+	cfg.Timeout = 20 * time.Millisecond
+	cfg.Interval = 10 * time.Millisecond
+	handler := newMockDataHandler(t)
+	handler.EXPECT().
+		CreateURL(cfg.Endpoints[0], tickers).
+		Return(testURL, nil).
+		MinTimes(2)
+
+	fetcher, err := NewFetcher(cfg, &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			<-req.Context().Done()
+			return nil, req.Context().Err()
+		}),
+	}, handler)
+	require.NoError(t, err)
+
+	responses, stop := runAPI(t, fetcher, tickers)
+	for range 2 {
+		response := receiveResponse(t, responses)
+		require.Empty(t, response.Resolved)
+		unresolved := response.Unresolved["ATOMUSD"]
+		require.Equal(t, types.ErrorUnknown, unresolved.Code())
+		require.ErrorContains(t, unresolved, "api fetcher failed to make request")
+		require.ErrorContains(t, unresolved, context.DeadlineExceeded.Error())
+	}
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// runAPI runs fetcher until stop, which cancels it and returns Run's error.
+func runAPI(t *testing.T, fetcher *Fetcher, tickers []types.Ticker) (<-chan types.Response, func() error) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	responses := make(chan types.Response)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fetcher.Run(ctx, tickers, responses)
+	}()
+	t.Cleanup(cancel)
+
+	return responses, func() error {
+		cancel()
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(time.Second):
+			return errors.New("timed out waiting for API fetcher shutdown")
+		}
+	}
+}
+
+func receiveResponse(t *testing.T, responses <-chan types.Response) types.Response {
+	t.Helper()
+
+	select {
+	case response := <-responses:
+		return response
+	case <-time.After(5 * time.Second):
+		require.FailNow(t, "timed out waiting for API response")
+		return types.Response{}
+	}
+}
+
+// recordingTransport answers every request with body and hands the first to
+// requests, so assertions run on the test goroutine.
+func recordingTransport(requests chan<- *http.Request, body string) roundTripFunc {
+	return func(req *http.Request) (*http.Response, error) {
+		select {
+		case requests <- req:
+		default:
+		}
+		return httpResponse(body), nil
+	}
+}
+
+func receiveRequest(t *testing.T, requests <-chan *http.Request) *http.Request {
+	t.Helper()
+
+	select {
+	case req := <-requests:
+		return req
+	case <-time.After(time.Second):
+		require.FailNow(t, "no request reached the transport")
+		return nil
+	}
+}
+
 func runAPIOnce(fetcher interface {
 	Run(context.Context, []types.Ticker, chan<- types.Response) error
 }, tickers []types.Ticker,
@@ -699,8 +851,11 @@ func TestRunRefusesChangedRequestOriginBeforeSendingCredentials(t *testing.T) {
 				return nil, errors.New("unexpected request")
 			})}, handler)
 			require.NoError(t, err)
-			_, err = runAPIOnce(fetcher, tickers)
-			require.ErrorContains(t, err, "retain its configured HTTPS origin")
+			response, err := runAPIOnce(fetcher, tickers)
+			require.NoError(t, err)
+			providerErr := response.Unresolved["ATOMUSD"]
+			require.Equal(t, types.ErrorAPIGeneral, providerErr.Code())
+			require.ErrorContains(t, providerErr, "retain its configured HTTPS origin")
 		})
 	}
 }

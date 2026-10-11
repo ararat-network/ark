@@ -40,11 +40,11 @@ func TestDefaultIsValid(t *testing.T) {
 	require.NotEmpty(t, cfg.Providers)
 	require.NotEmpty(t, cfg.FallbackFeeds)
 	require.Equal(t, DefaultClientInterval, cfg.Client.Interval)
-	require.Equal(t, 90*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
+	require.Equal(t, 150*time.Second, cfg.Providers["frankfurter_api"].MaxPriceAge)
 	require.NotNil(t, cfg.Resolver.BootstrapPrices)
 	require.Equal(t, []resolver.BootstrapPrice{{
 		Pair:       "USD/NOAH",
-		Price:      "1",
+		Price:      "0.729394602479941648",
 		ValidUntil: "2027-10-29T00:00:00Z",
 	}}, cfg.Resolver.BootstrapPrices)
 }

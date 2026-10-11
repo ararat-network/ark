@@ -13,6 +13,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -26,27 +27,29 @@ func (k Keeper) InitGenesis(ctx context.Context, data *types.GenesisState) error
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	genesisTime := sdkCtx.BlockTime()
+	genesisTime := chain.BlockSeconds(ctx)
 	for _, er := range data.ExchangeRates {
-		if er.BlockTimestamp.After(genesisTime) {
+		if er.BlockTime > genesisTime {
 			return fmt.Errorf(
-				"genesis exchange rate for denom %s has timestamp %s after genesis block time %s",
+				"genesis exchange rate for denom %s has time %d after genesis block time %d",
 				er.Denom,
-				er.BlockTimestamp,
+				er.BlockTime,
 				genesisTime,
 			)
 		}
 	}
 
-	genesisHeight := sdkCtx.BlockHeight()
-	if data.Accounting.RewardWindowStartHeight > uint64(genesisHeight) {
+	// InitChain runs at height zero for a chain starting at one: baseapp sets the header height only
+	// above one. The first block the chain runs is the later of the two, and a window may open there.
+	genesisHeight := uint64(max(sdkCtx.BlockHeight(), 1))
+	if data.Accounting.RewardWindowStartHeight > genesisHeight {
 		return fmt.Errorf(
 			"genesis accounting reward window start height %d is after genesis block height %d",
 			data.Accounting.RewardWindowStartHeight,
 			genesisHeight,
 		)
 	}
-	if data.Accounting.AttendanceWindowStartHeight > uint64(genesisHeight) {
+	if data.Accounting.AttendanceWindowStartHeight > genesisHeight {
 		return fmt.Errorf(
 			"genesis accounting attendance window start height %d is after genesis block height %d",
 			data.Accounting.AttendanceWindowStartHeight,
@@ -125,10 +128,10 @@ func (k Keeper) ExportGenesis(ctx context.Context) (*types.GenesisState, error) 
 	exchangeRates := []types.ExchangeRate{}
 	if err := k.ExchangeRate.Walk(ctx, nil, func(denom string, exchangeRate types.ExchangeRate) (bool, error) {
 		exchangeRates = append(exchangeRates, types.ExchangeRate{
-			Denom:          denom,
-			Rate:           exchangeRate.Rate,
-			BlockTimestamp: exchangeRate.BlockTimestamp,
-			BlockHeight:    exchangeRate.BlockHeight,
+			Denom:       denom,
+			Rate:        exchangeRate.Rate,
+			BlockTime:   exchangeRate.BlockTime,
+			BlockHeight: exchangeRate.BlockHeight,
 		})
 		return false, nil
 	}); err != nil {

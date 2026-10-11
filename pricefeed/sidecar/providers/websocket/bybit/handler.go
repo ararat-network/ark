@@ -63,6 +63,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 	switch Operation(base.Op) {
 	case OperationSubscribe:
 		if !base.Success {
+			h.logger.Warn("bybit refused a subscription", "reason", base.RetMsg)
 			return resp, nil, fmt.Errorf("subscription failed: %s", base.RetMsg)
 		}
 

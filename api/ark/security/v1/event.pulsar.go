@@ -17,12 +17,12 @@ import (
 )
 
 var (
-	md_EventSecurityMandateSet                   protoreflect.MessageDescriptor
-	fd_EventSecurityMandateSet_term              protoreflect.FieldDescriptor
-	fd_EventSecurityMandateSet_committee         protoreflect.FieldDescriptor
-	fd_EventSecurityMandateSet_activation_height protoreflect.FieldDescriptor
-	fd_EventSecurityMandateSet_expiry_height     protoreflect.FieldDescriptor
-	fd_EventSecurityMandateSet_committee_shape   protoreflect.FieldDescriptor
+	md_EventSecurityMandateSet                 protoreflect.MessageDescriptor
+	fd_EventSecurityMandateSet_term            protoreflect.FieldDescriptor
+	fd_EventSecurityMandateSet_committee       protoreflect.FieldDescriptor
+	fd_EventSecurityMandateSet_activation_time protoreflect.FieldDescriptor
+	fd_EventSecurityMandateSet_expiry_time     protoreflect.FieldDescriptor
+	fd_EventSecurityMandateSet_committee_shape protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -30,8 +30,8 @@ func init() {
 	md_EventSecurityMandateSet = File_ark_security_v1_event_proto.Messages().ByName("EventSecurityMandateSet")
 	fd_EventSecurityMandateSet_term = md_EventSecurityMandateSet.Fields().ByName("term")
 	fd_EventSecurityMandateSet_committee = md_EventSecurityMandateSet.Fields().ByName("committee")
-	fd_EventSecurityMandateSet_activation_height = md_EventSecurityMandateSet.Fields().ByName("activation_height")
-	fd_EventSecurityMandateSet_expiry_height = md_EventSecurityMandateSet.Fields().ByName("expiry_height")
+	fd_EventSecurityMandateSet_activation_time = md_EventSecurityMandateSet.Fields().ByName("activation_time")
+	fd_EventSecurityMandateSet_expiry_time = md_EventSecurityMandateSet.Fields().ByName("expiry_time")
 	fd_EventSecurityMandateSet_committee_shape = md_EventSecurityMandateSet.Fields().ByName("committee_shape")
 }
 
@@ -112,15 +112,15 @@ func (x *fastReflection_EventSecurityMandateSet) Range(f func(protoreflect.Field
 			return
 		}
 	}
-	if x.ActivationHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ActivationHeight)
-		if !f(fd_EventSecurityMandateSet_activation_height, value) {
+	if x.ActivationTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ActivationTime)
+		if !f(fd_EventSecurityMandateSet_activation_time, value) {
 			return
 		}
 	}
-	if x.ExpiryHeight != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ExpiryHeight)
-		if !f(fd_EventSecurityMandateSet_expiry_height, value) {
+	if x.ExpiryTime != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ExpiryTime)
+		if !f(fd_EventSecurityMandateSet_expiry_time, value) {
 			return
 		}
 	}
@@ -149,10 +149,10 @@ func (x *fastReflection_EventSecurityMandateSet) Has(fd protoreflect.FieldDescri
 		return x.Term != uint64(0)
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		return x.Committee != ""
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
-		return x.ActivationHeight != uint64(0)
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
-		return x.ExpiryHeight != uint64(0)
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
+		return x.ActivationTime != uint64(0)
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
+		return x.ExpiryTime != uint64(0)
 	case "ark.security.v1.EventSecurityMandateSet.committee_shape":
 		return x.CommitteeShape != nil
 	default:
@@ -175,10 +175,10 @@ func (x *fastReflection_EventSecurityMandateSet) Clear(fd protoreflect.FieldDesc
 		x.Term = uint64(0)
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		x.Committee = ""
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
-		x.ActivationHeight = uint64(0)
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
-		x.ExpiryHeight = uint64(0)
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
+		x.ActivationTime = uint64(0)
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
+		x.ExpiryTime = uint64(0)
 	case "ark.security.v1.EventSecurityMandateSet.committee_shape":
 		x.CommitteeShape = nil
 	default:
@@ -203,11 +203,11 @@ func (x *fastReflection_EventSecurityMandateSet) Get(descriptor protoreflect.Fie
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		value := x.Committee
 		return protoreflect.ValueOfString(value)
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
-		value := x.ActivationHeight
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
+		value := x.ActivationTime
 		return protoreflect.ValueOfUint64(value)
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
-		value := x.ExpiryHeight
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
+		value := x.ExpiryTime
 		return protoreflect.ValueOfUint64(value)
 	case "ark.security.v1.EventSecurityMandateSet.committee_shape":
 		value := x.CommitteeShape
@@ -236,10 +236,10 @@ func (x *fastReflection_EventSecurityMandateSet) Set(fd protoreflect.FieldDescri
 		x.Term = value.Uint()
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		x.Committee = value.Interface().(string)
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
-		x.ActivationHeight = value.Uint()
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
-		x.ExpiryHeight = value.Uint()
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
+		x.ActivationTime = value.Uint()
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
+		x.ExpiryTime = value.Uint()
 	case "ark.security.v1.EventSecurityMandateSet.committee_shape":
 		x.CommitteeShape = value.Message().Interface().(*v1.CommitteeShape)
 	default:
@@ -271,10 +271,10 @@ func (x *fastReflection_EventSecurityMandateSet) Mutable(fd protoreflect.FieldDe
 		panic(fmt.Errorf("field term of message ark.security.v1.EventSecurityMandateSet is not mutable"))
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		panic(fmt.Errorf("field committee of message ark.security.v1.EventSecurityMandateSet is not mutable"))
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
-		panic(fmt.Errorf("field activation_height of message ark.security.v1.EventSecurityMandateSet is not mutable"))
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
-		panic(fmt.Errorf("field expiry_height of message ark.security.v1.EventSecurityMandateSet is not mutable"))
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
+		panic(fmt.Errorf("field activation_time of message ark.security.v1.EventSecurityMandateSet is not mutable"))
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
+		panic(fmt.Errorf("field expiry_time of message ark.security.v1.EventSecurityMandateSet is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventSecurityMandateSet"))
@@ -292,9 +292,9 @@ func (x *fastReflection_EventSecurityMandateSet) NewField(fd protoreflect.FieldD
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.security.v1.EventSecurityMandateSet.committee":
 		return protoreflect.ValueOfString("")
-	case "ark.security.v1.EventSecurityMandateSet.activation_height":
+	case "ark.security.v1.EventSecurityMandateSet.activation_time":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.security.v1.EventSecurityMandateSet.expiry_height":
+	case "ark.security.v1.EventSecurityMandateSet.expiry_time":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "ark.security.v1.EventSecurityMandateSet.committee_shape":
 		m := new(v1.CommitteeShape)
@@ -375,11 +375,11 @@ func (x *fastReflection_EventSecurityMandateSet) ProtoMethods() *protoiface.Meth
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.ActivationHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ActivationTime))
 		}
-		if x.ExpiryHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			n += 1 + runtime.Sov(uint64(x.ExpiryTime))
 		}
 		if x.CommitteeShape != nil {
 			l = options.Size(x.CommitteeShape)
@@ -428,13 +428,13 @@ func (x *fastReflection_EventSecurityMandateSet) ProtoMethods() *protoiface.Meth
 			i--
 			dAtA[i] = 0x2a
 		}
-		if x.ExpiryHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryHeight))
+		if x.ExpiryTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ExpiryTime))
 			i--
 			dAtA[i] = 0x20
 		}
-		if x.ActivationHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationHeight))
+		if x.ActivationTime != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ActivationTime))
 			i--
 			dAtA[i] = 0x18
 		}
@@ -552,9 +552,9 @@ func (x *fastReflection_EventSecurityMandateSet) ProtoMethods() *protoiface.Meth
 				iNdEx = postIndex
 			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ActivationTime", wireType)
 				}
-				x.ActivationHeight = 0
+				x.ActivationTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -564,16 +564,16 @@ func (x *fastReflection_EventSecurityMandateSet) ProtoMethods() *protoiface.Meth
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ActivationHeight |= uint64(b&0x7F) << shift
+					x.ActivationTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpiryTime", wireType)
 				}
-				x.ExpiryHeight = 0
+				x.ExpiryTime = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -583,7 +583,7 @@ func (x *fastReflection_EventSecurityMandateSet) ProtoMethods() *protoiface.Meth
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ExpiryHeight |= uint64(b&0x7F) << shift
+					x.ExpiryTime |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -751,8 +751,8 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Range(f func(protoreflec
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_EventCommitteeUpgradeScheduled_height, value) {
 			return
 		}
@@ -777,7 +777,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Has(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		return x.Name != ""
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -799,7 +799,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Clear(fd protoreflect.Fi
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		x.Name = ""
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -824,7 +824,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Get(descriptor protorefl
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -850,7 +850,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) Set(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -895,7 +895,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) NewField(fd protoreflect
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.EventCommitteeUpgradeScheduled.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeScheduled"))
@@ -1135,7 +1135,7 @@ func (x *fastReflection_EventCommitteeUpgradeScheduled) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -1267,8 +1267,8 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Range(f func(protoreflec
 			return
 		}
 	}
-	if x.Height != int64(0) {
-		value := protoreflect.ValueOfInt64(x.Height)
+	if x.Height != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.Height)
 		if !f(fd_EventCommitteeUpgradeCancelled_height, value) {
 			return
 		}
@@ -1293,7 +1293,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Has(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		return x.Name != ""
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		return x.Height != int64(0)
+		return x.Height != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1315,7 +1315,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Clear(fd protoreflect.Fi
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		x.Name = ""
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		x.Height = int64(0)
+		x.Height = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1340,7 +1340,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Get(descriptor protorefl
 		return protoreflect.ValueOfString(value)
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
 		value := x.Height
-		return protoreflect.ValueOfInt64(value)
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1366,7 +1366,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) Set(fd protoreflect.Fiel
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		x.Name = value.Interface().(string)
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		x.Height = value.Int()
+		x.Height = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1411,7 +1411,7 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) NewField(fd protoreflect
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.name":
 		return protoreflect.ValueOfString("")
 	case "ark.security.v1.EventCommitteeUpgradeCancelled.height":
-		return protoreflect.ValueOfInt64(int64(0))
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeUpgradeCancelled"))
@@ -1651,543 +1651,11 @@ func (x *fastReflection_EventCommitteeUpgradeCancelled) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.Height |= int64(b&0x7F) << shift
+					x.Height |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
-var (
-	md_EventCommitteeClientRecovered                      protoreflect.MessageDescriptor
-	fd_EventCommitteeClientRecovered_term                 protoreflect.FieldDescriptor
-	fd_EventCommitteeClientRecovered_subject_client_id    protoreflect.FieldDescriptor
-	fd_EventCommitteeClientRecovered_substitute_client_id protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_ark_security_v1_event_proto_init()
-	md_EventCommitteeClientRecovered = File_ark_security_v1_event_proto.Messages().ByName("EventCommitteeClientRecovered")
-	fd_EventCommitteeClientRecovered_term = md_EventCommitteeClientRecovered.Fields().ByName("term")
-	fd_EventCommitteeClientRecovered_subject_client_id = md_EventCommitteeClientRecovered.Fields().ByName("subject_client_id")
-	fd_EventCommitteeClientRecovered_substitute_client_id = md_EventCommitteeClientRecovered.Fields().ByName("substitute_client_id")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventCommitteeClientRecovered)(nil)
-
-type fastReflection_EventCommitteeClientRecovered EventCommitteeClientRecovered
-
-func (x *EventCommitteeClientRecovered) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventCommitteeClientRecovered)(x)
-}
-
-func (x *EventCommitteeClientRecovered) slowProtoReflect() protoreflect.Message {
-	mi := &file_ark_security_v1_event_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventCommitteeClientRecovered_messageType fastReflection_EventCommitteeClientRecovered_messageType
-var _ protoreflect.MessageType = fastReflection_EventCommitteeClientRecovered_messageType{}
-
-type fastReflection_EventCommitteeClientRecovered_messageType struct{}
-
-func (x fastReflection_EventCommitteeClientRecovered_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventCommitteeClientRecovered)(nil)
-}
-func (x fastReflection_EventCommitteeClientRecovered_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventCommitteeClientRecovered)
-}
-func (x fastReflection_EventCommitteeClientRecovered_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventCommitteeClientRecovered
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventCommitteeClientRecovered) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventCommitteeClientRecovered
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventCommitteeClientRecovered) Type() protoreflect.MessageType {
-	return _fastReflection_EventCommitteeClientRecovered_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventCommitteeClientRecovered) New() protoreflect.Message {
-	return new(fastReflection_EventCommitteeClientRecovered)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventCommitteeClientRecovered) Interface() protoreflect.ProtoMessage {
-	return (*EventCommitteeClientRecovered)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventCommitteeClientRecovered) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Term != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.Term)
-		if !f(fd_EventCommitteeClientRecovered_term, value) {
-			return
-		}
-	}
-	if x.SubjectClientId != "" {
-		value := protoreflect.ValueOfString(x.SubjectClientId)
-		if !f(fd_EventCommitteeClientRecovered_subject_client_id, value) {
-			return
-		}
-	}
-	if x.SubstituteClientId != "" {
-		value := protoreflect.ValueOfString(x.SubstituteClientId)
-		if !f(fd_EventCommitteeClientRecovered_substitute_client_id, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventCommitteeClientRecovered) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		return x.Term != uint64(0)
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		return x.SubjectClientId != ""
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		return x.SubstituteClientId != ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCommitteeClientRecovered) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		x.Term = uint64(0)
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		x.SubjectClientId = ""
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		x.SubstituteClientId = ""
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventCommitteeClientRecovered) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		value := x.Term
-		return protoreflect.ValueOfUint64(value)
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		value := x.SubjectClientId
-		return protoreflect.ValueOfString(value)
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		value := x.SubstituteClientId
-		return protoreflect.ValueOfString(value)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCommitteeClientRecovered) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		x.Term = value.Uint()
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		x.SubjectClientId = value.Interface().(string)
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		x.SubstituteClientId = value.Interface().(string)
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCommitteeClientRecovered) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		panic(fmt.Errorf("field term of message ark.security.v1.EventCommitteeClientRecovered is not mutable"))
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		panic(fmt.Errorf("field subject_client_id of message ark.security.v1.EventCommitteeClientRecovered is not mutable"))
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		panic(fmt.Errorf("field substitute_client_id of message ark.security.v1.EventCommitteeClientRecovered is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventCommitteeClientRecovered) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "ark.security.v1.EventCommitteeClientRecovered.term":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "ark.security.v1.EventCommitteeClientRecovered.subject_client_id":
-		return protoreflect.ValueOfString("")
-	case "ark.security.v1.EventCommitteeClientRecovered.substitute_client_id":
-		return protoreflect.ValueOfString("")
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: ark.security.v1.EventCommitteeClientRecovered"))
-		}
-		panic(fmt.Errorf("message ark.security.v1.EventCommitteeClientRecovered does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventCommitteeClientRecovered) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in ark.security.v1.EventCommitteeClientRecovered", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventCommitteeClientRecovered) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventCommitteeClientRecovered) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventCommitteeClientRecovered) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventCommitteeClientRecovered) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventCommitteeClientRecovered)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		if x.Term != 0 {
-			n += 1 + runtime.Sov(uint64(x.Term))
-		}
-		l = len(x.SubjectClientId)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		l = len(x.SubstituteClientId)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventCommitteeClientRecovered)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.SubstituteClientId) > 0 {
-			i -= len(x.SubstituteClientId)
-			copy(dAtA[i:], x.SubstituteClientId)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SubstituteClientId)))
-			i--
-			dAtA[i] = 0x1a
-		}
-		if len(x.SubjectClientId) > 0 {
-			i -= len(x.SubjectClientId)
-			copy(dAtA[i:], x.SubjectClientId)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SubjectClientId)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if x.Term != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.Term))
-			i--
-			dAtA[i] = 0x8
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventCommitteeClientRecovered)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventCommitteeClientRecovered: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventCommitteeClientRecovered: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Term", wireType)
-				}
-				x.Term = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.Term |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SubjectClientId", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.SubjectClientId = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SubstituteClientId", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.SubstituteClientId = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2245,9 +1713,9 @@ type EventSecurityMandateSet struct {
 
 	Term uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	// committee is empty when the mandate is disabled.
-	Committee        string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
-	ActivationHeight uint64 `protobuf:"varint,3,opt,name=activation_height,json=activationHeight,proto3" json:"activation_height,omitempty"`
-	ExpiryHeight     uint64 `protobuf:"varint,4,opt,name=expiry_height,json=expiryHeight,proto3" json:"expiry_height,omitempty"`
+	Committee      string `protobuf:"bytes,2,opt,name=committee,proto3" json:"committee,omitempty"`
+	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
+	ExpiryTime     uint64 `protobuf:"varint,4,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
 	// committee_shape is the appointment-time observation of the committee
 	// account, zeroed on a disabling.
 	CommitteeShape *v1.CommitteeShape `protobuf:"bytes,5,opt,name=committee_shape,json=committeeShape,proto3" json:"committee_shape,omitempty"`
@@ -2287,16 +1755,16 @@ func (x *EventSecurityMandateSet) GetCommittee() string {
 	return ""
 }
 
-func (x *EventSecurityMandateSet) GetActivationHeight() uint64 {
+func (x *EventSecurityMandateSet) GetActivationTime() uint64 {
 	if x != nil {
-		return x.ActivationHeight
+		return x.ActivationTime
 	}
 	return 0
 }
 
-func (x *EventSecurityMandateSet) GetExpiryHeight() uint64 {
+func (x *EventSecurityMandateSet) GetExpiryTime() uint64 {
 	if x != nil {
-		return x.ExpiryHeight
+		return x.ExpiryTime
 	}
 	return 0
 }
@@ -2318,7 +1786,7 @@ type EventCommitteeUpgradeScheduled struct {
 
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *EventCommitteeUpgradeScheduled) Reset() {
@@ -2355,7 +1823,7 @@ func (x *EventCommitteeUpgradeScheduled) GetName() string {
 	return ""
 }
 
-func (x *EventCommitteeUpgradeScheduled) GetHeight() int64 {
+func (x *EventCommitteeUpgradeScheduled) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
@@ -2371,7 +1839,7 @@ type EventCommitteeUpgradeCancelled struct {
 
 	Term   uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
 	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Height int64  `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	Height uint64 `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
 }
 
 func (x *EventCommitteeUpgradeCancelled) Reset() {
@@ -2408,64 +1876,11 @@ func (x *EventCommitteeUpgradeCancelled) GetName() string {
 	return ""
 }
 
-func (x *EventCommitteeUpgradeCancelled) GetHeight() int64 {
+func (x *EventCommitteeUpgradeCancelled) GetHeight() uint64 {
 	if x != nil {
 		return x.Height
 	}
 	return 0
-}
-
-// EventCommitteeClientRecovered is emitted when the committee substitutes an
-// expired or frozen IBC client.
-type EventCommitteeClientRecovered struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Term               uint64 `protobuf:"varint,1,opt,name=term,proto3" json:"term,omitempty"`
-	SubjectClientId    string `protobuf:"bytes,2,opt,name=subject_client_id,json=subjectClientId,proto3" json:"subject_client_id,omitempty"`
-	SubstituteClientId string `protobuf:"bytes,3,opt,name=substitute_client_id,json=substituteClientId,proto3" json:"substitute_client_id,omitempty"`
-}
-
-func (x *EventCommitteeClientRecovered) Reset() {
-	*x = EventCommitteeClientRecovered{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_ark_security_v1_event_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventCommitteeClientRecovered) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventCommitteeClientRecovered) ProtoMessage() {}
-
-// Deprecated: Use EventCommitteeClientRecovered.ProtoReflect.Descriptor instead.
-func (*EventCommitteeClientRecovered) Descriptor() ([]byte, []int) {
-	return file_ark_security_v1_event_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EventCommitteeClientRecovered) GetTerm() uint64 {
-	if x != nil {
-		return x.Term
-	}
-	return 0
-}
-
-func (x *EventCommitteeClientRecovered) GetSubjectClientId() string {
-	if x != nil {
-		return x.SubjectClientId
-	}
-	return ""
-}
-
-func (x *EventCommitteeClientRecovered) GetSubstituteClientId() string {
-	if x != nil {
-		return x.SubstituteClientId
-	}
-	return ""
 }
 
 var File_ark_security_v1_event_proto protoreflect.FileDescriptor
@@ -2480,61 +1895,51 @@ var file_ark_security_v1_event_proto_rawDesc = []byte{
 	0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67,
 	0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0xa0, 0x02, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x63, 0x75, 0x72,
+	0x6f, 0x22, 0x98, 0x02, 0x0a, 0x17, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x53, 0x65, 0x63, 0x75, 0x72,
 	0x69, 0x74, 0x79, 0x4d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x53, 0x65, 0x74, 0x12, 0x19, 0x0a,
 	0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
 	0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x36, 0x0a, 0x09, 0x63, 0x6f, 0x6d, 0x6d,
 	0x69, 0x74, 0x74, 0x65, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
 	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
 	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65,
-	0x12, 0x32, 0x0a, 0x11, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x10, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x12, 0x2a, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x68,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0,
-	0x2a, 0x01, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
-	0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x5f, 0x73, 0x68,
-	0x61, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e,
-	0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69,
-	0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53,
-	0x68, 0x61, 0x70, 0x65, 0x22, 0x6e, 0x0a, 0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x53, 0x63, 0x68,
-	0x65, 0x64, 0x75, 0x6c, 0x65, 0x64, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72,
-	0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x22, 0x6e, 0x0a, 0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70, 0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x61, 0x6e,
-	0x63, 0x65, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72,
-	0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x22, 0x98, 0x01, 0x0a, 0x1d, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f,
-	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x63,
-	0x6f, 0x76, 0x65, 0x72, 0x65, 0x64, 0x12, 0x19, 0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72,
-	0x6d, 0x12, 0x2a, 0x0a, 0x11, 0x73, 0x75, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x5f, 0x63, 0x6c, 0x69,
-	0x65, 0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x75,
-	0x62, 0x6a, 0x65, 0x63, 0x74, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x12, 0x30, 0x0a,
-	0x14, 0x73, 0x75, 0x62, 0x73, 0x74, 0x69, 0x74, 0x75, 0x74, 0x65, 0x5f, 0x63, 0x6c, 0x69, 0x65,
-	0x6e, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x12, 0x73, 0x75, 0x62,
-	0x73, 0x74, 0x69, 0x74, 0x75, 0x74, 0x65, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x49, 0x64, 0x42,
-	0xbd, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x73, 0x65, 0x63, 0x75,
-	0x72, 0x69, 0x74, 0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x61, 0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
-	0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x73, 0x65, 0x63,
-	0x75, 0x72, 0x69, 0x74, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74,
-	0x79, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x41, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e,
-	0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72,
-	0x6b, 0x5c, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b,
-	0x41, 0x72, 0x6b, 0x5c, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0x5c,
-	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72,
-	0x6b, 0x3a, 0x3a, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x2e, 0x0a, 0x0f, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x74,
+	0x69, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01,
+	0x52, 0x0e, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x69, 0x6d, 0x65,
+	0x12, 0x26, 0x0a, 0x0b, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x18,
+	0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x65, 0x78,
+	0x70, 0x69, 0x72, 0x79, 0x54, 0x69, 0x6d, 0x65, 0x12, 0x52, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x6d,
+	0x69, 0x74, 0x74, 0x65, 0x65, 0x5f, 0x73, 0x68, 0x61, 0x70, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1e, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x6d, 0x61, 0x6e, 0x64, 0x61, 0x74, 0x65, 0x2e,
+	0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70,
+	0x65, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0e, 0x63, 0x6f,
+	0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x53, 0x68, 0x61, 0x70, 0x65, 0x22, 0x6e, 0x0a, 0x1e,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70,
+	0x67, 0x72, 0x61, 0x64, 0x65, 0x53, 0x63, 0x68, 0x65, 0x64, 0x75, 0x6c, 0x65, 0x64, 0x12, 0x19,
+	0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a,
+	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x6e, 0x0a, 0x1e,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x74, 0x65, 0x65, 0x55, 0x70,
+	0x67, 0x72, 0x61, 0x64, 0x65, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x65, 0x64, 0x12, 0x19,
+	0x0a, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x04, 0x74, 0x65, 0x72, 0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
+	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1d, 0x0a,
+	0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x05, 0xa8,
+	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xbd, 0x01, 0x0a,
+	0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x61, 0x72, 0x6b, 0x2e, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74,
+	0x79, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x3c, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61,
+	0x72, 0x61, 0x72, 0x61, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x61, 0x72,
+	0x6b, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x72, 0x6b, 0x2f, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69,
+	0x74, 0x79, 0x2f, 0x76, 0x31, 0x3b, 0x73, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x76, 0x31,
+	0xa2, 0x02, 0x03, 0x41, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x2e, 0x53, 0x65, 0x63,
+	0x75, 0x72, 0x69, 0x74, 0x79, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0f, 0x41, 0x72, 0x6b, 0x5c, 0x53,
+	0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1b, 0x41, 0x72, 0x6b,
+	0x5c, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x41, 0x72, 0x6b, 0x3a, 0x3a,
+	0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2549,16 +1954,15 @@ func file_ark_security_v1_event_proto_rawDescGZIP() []byte {
 	return file_ark_security_v1_event_proto_rawDescData
 }
 
-var file_ark_security_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_ark_security_v1_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_ark_security_v1_event_proto_goTypes = []interface{}{
 	(*EventSecurityMandateSet)(nil),        // 0: ark.security.v1.EventSecurityMandateSet
 	(*EventCommitteeUpgradeScheduled)(nil), // 1: ark.security.v1.EventCommitteeUpgradeScheduled
 	(*EventCommitteeUpgradeCancelled)(nil), // 2: ark.security.v1.EventCommitteeUpgradeCancelled
-	(*EventCommitteeClientRecovered)(nil),  // 3: ark.security.v1.EventCommitteeClientRecovered
-	(*v1.CommitteeShape)(nil),              // 4: ark.mandate.v1.CommitteeShape
+	(*v1.CommitteeShape)(nil),              // 3: ark.mandate.v1.CommitteeShape
 }
 var file_ark_security_v1_event_proto_depIdxs = []int32{
-	4, // 0: ark.security.v1.EventSecurityMandateSet.committee_shape:type_name -> ark.mandate.v1.CommitteeShape
+	3, // 0: ark.security.v1.EventSecurityMandateSet.committee_shape:type_name -> ark.mandate.v1.CommitteeShape
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -2608,18 +2012,6 @@ func file_ark_security_v1_event_proto_init() {
 				return nil
 			}
 		}
-		file_ark_security_v1_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventCommitteeClientRecovered); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2627,7 +2019,7 @@ func file_ark_security_v1_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_ark_security_v1_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

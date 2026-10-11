@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
@@ -45,6 +46,28 @@ func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
 }
 
+// Block time runs on its own clock, offset from height and faster than it, so a rule reading the
+// wrong one fails.
+const (
+	testGenesisTime  = 1_000_000
+	testBlockSeconds = 5
+)
+
+// blockTime is the block time, in Unix seconds, of the suite's block h.
+func blockTime(h int64) uint64 {
+	return testGenesisTime + uint64(h)*testBlockSeconds
+}
+
+// at moves the suite to block h at its block time.
+func (s *KeeperTestSuite) at(h int64) {
+	s.atClock(h, blockTime(h))
+}
+
+// atClock sets height and block time independently.
+func (s *KeeperTestSuite) atClock(h int64, seconds uint64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(h).WithBlockTime(time.Unix(int64(seconds), 0))
+}
+
 func (s *KeeperTestSuite) SetupTest() {
 	interfaceRegistry := codectestutil.CodecOptions{}.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
@@ -59,6 +82,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		storetypes.NewTransientStoreKey("transient_test"),
 	)
 	s.ctx = testCtx.Ctx
+	s.at(0)
 
 	ctrl := gomock.NewController(s.T())
 	s.accountKeeper = testutil.NewMockAccountKeeper(ctrl)
@@ -102,11 +126,12 @@ func (s *KeeperTestSuite) TestCollectionsPersistState() {
 	s.Require().Equal(asset, storedAsset)
 
 	settlementPlan := types.SettlementPlan{
-		Denom:                 asset.Denom,
-		RedemptionRate:        math.LegacyOneDec(),
-		ActivationHeight:      10,
-		EarliestClosingHeight: 110,
-		OpenedHeight:          1,
+		Denom:               asset.Denom,
+		RedemptionRate:      math.LegacyOneDec(),
+		ActivationTime:      10,
+		EarliestClosingTime: 110,
+		OpenedHeight:        1,
+		OpenedTime:          1,
 	}
 	s.Require().NoError(s.keeper.SettlementPlans.Set(
 		s.ctx,

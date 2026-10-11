@@ -1,6 +1,9 @@
 package chain_test
 
 import (
+	"context"
+	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -8,6 +11,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/ararat-network/ark/pkg/chain"
 )
@@ -63,6 +67,49 @@ func TestValidateNoahCoin(t *testing.T) {
 				return
 			}
 			require.ErrorContains(t, err, tt.wantErr)
+		})
+	}
+}
+
+// TestValidateRegisteredDeposit covers admission by the registry: NOAH always, another denomination
+// only when the registry holds it, every coin positive, and a registry failure passed through.
+func TestValidateRegisteredDeposit(t *testing.T) {
+	registry := func(_ context.Context, denom string) (bool, error) {
+		switch denom {
+		case chain.USDBaseDenom:
+			return true, nil
+		case "broken":
+			return false, errors.New("store unavailable")
+		}
+		return false, nil
+	}
+	tests := []struct {
+		name    string
+		amount  sdk.Coins
+		invalid bool
+		wantErr string
+	}{
+		{name: "noah", amount: sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 1)}},
+		{name: "registered", amount: sdk.Coins{sdk.NewInt64Coin(chain.USDBaseDenom, 1)}},
+		{name: "noah and registered", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin(chain.USDBaseDenom, 1))},
+		{name: "empty", amount: sdk.Coins{}, invalid: true, wantErr: "test deposits must contain at least one coin"},
+		{name: "unset amount", amount: sdk.Coins{{Denom: chain.NoahBaseDenom}}, invalid: true, wantErr: "test deposits must be positive"},
+		{name: "zero", amount: sdk.Coins{sdk.NewInt64Coin(chain.NoahBaseDenom, 0)}, invalid: true, wantErr: "test deposits must be positive"},
+		{name: "negative", amount: sdk.Coins{{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}}, invalid: true, wantErr: "test deposits must be positive"},
+		{name: "unregistered", amount: sdk.Coins{sdk.NewInt64Coin("aother", 1)}, invalid: true, wantErr: "test deposits must be anoah or a registered asset"},
+		{name: "noah and unregistered", amount: sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 1), sdk.NewInt64Coin("aother", 1)), invalid: true, wantErr: "a registered asset"},
+		{name: "registry failure", amount: sdk.Coins{sdk.NewInt64Coin("broken", 1)}, wantErr: "checking the asset registry for broken: store unavailable"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := chain.ValidateRegisteredDeposit(context.Background(), "test", tt.amount, registry)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tt.wantErr)
+			require.Equal(t, tt.invalid, errors.Is(err, errortypes.ErrInvalidCoins))
 		})
 	}
 }
@@ -149,4 +196,31 @@ func TestCoinConstructorsPanicOnUnusableAmounts(t *testing.T) {
 	t.Run("unset decimal", func(t *testing.T) {
 		require.Panics(t, func() { chain.NoahDecCoin(math.LegacyDec{}) })
 	})
+}
+
+func TestValidateAmount(t *testing.T) {
+	top := math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))
+	for _, tc := range []struct {
+		name     string
+		amount   math.Int
+		positive bool
+		err      string
+	}{
+		{"zero", math.ZeroInt(), false, ""},
+		{"zero where positive", math.ZeroInt(), true, "amount must be positive"},
+		{"one where positive", math.OneInt(), true, ""},
+		{"at 128 bits", top, true, ""},
+		{"past 128 bits", top.AddRaw(1), false, "at most 128 bits"},
+		{"negative", math.NewInt(-1), false, "nonnegative"},
+		{"unset", math.Int{}, false, "nonnegative"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := chain.ValidateAmount(tc.amount, tc.positive)
+			if tc.err == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
 }

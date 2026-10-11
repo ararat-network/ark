@@ -87,6 +87,10 @@ func (b benchAssetKeeper) OraclePricedDenoms(context.Context) ([]string, error) 
 	return slices.Clone(b.denoms), nil
 }
 
+func (b benchAssetKeeper) IsOraclePriced(_ context.Context, denom string) (bool, error) {
+	return slices.Contains(b.denoms, denom), nil
+}
+
 func (b benchAssetKeeper) HasAsset(_ context.Context, denom string) (bool, error) {
 	return slices.Contains(b.denoms, denom), nil
 }
@@ -188,9 +192,9 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 		stableDenom := denoms[0]
 		fees = sdk.NewCoins(sdk.NewInt64Coin(stableDenom, 1))
 		if err := oracleKeeper.ExchangeRate.Set(ctx, stableDenom, oracletypes.ExchangeRate{
-			Denom:          stableDenom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: sdk.UnwrapSDKContext(ctx).BlockTime(),
+			Denom:     stableDenom,
+			Rate:      math.LegacyOneDec(),
+			BlockTime: uint64(sdk.UnwrapSDKContext(ctx).BlockTime().Unix()),
 		}); err != nil {
 			b.Fatal(err)
 		}

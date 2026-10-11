@@ -10,12 +10,15 @@ and endpoint bounds; node configuration is fixed when the application is constru
 polls until cancellation, and cleans up before returning. The owner must cancel and wait; concurrent runs are unsupported.
 A disabled client waits for cancellation without dialling.
 
-Polling tries the active endpoint first, then alternatives in configured order, with a timeout per attempt. A successful
-endpoint remains active until failure. Responses are validated before replacing the cached snapshot; the snapshot's own
+Polling tries the active endpoint first, then alternatives in configured order, with a timeout per attempt. Validation
+holds that timeout below `price_ttl` minus `interval`, so a sweep that waits out one hung endpoint still lands before the
+snapshot expires. A successful endpoint remains active until failure. Responses are validated before replacing the cached snapshot; the snapshot's own
 timestamp is checked at acceptance and again when served, so a cached response cannot remain usable indefinitely after
-polling fails. Responses are copied across the cache/caller boundary.
+polling fails; a zero timestamp, or one more than five seconds ahead of the node's clock, is refused as well, so a fast
+sidecar clock cannot carry a stale snapshot past the TTL. Responses are copied across the cache/caller boundary.
 
-The sidecar build version is observed for operators and never used as a compatibility gate. The authoritative
+The sidecar build version is observed for operators and never used as a compatibility gate; an `Unimplemented` answer
+to the prices RPC is what marks a sidecar incompatible, and the client reports it as such. The authoritative
 [compatibility and failover guidance](../../docs/operations/PRICEFEED_OPERATIONS.md) explains what operators configure and what a
 rolling sidecar replacement can preserve.
 

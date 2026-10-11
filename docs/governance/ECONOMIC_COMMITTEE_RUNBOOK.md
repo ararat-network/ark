@@ -1,7 +1,8 @@
 # Economic committee runbook
 
-For Treasury and Reserve committees sizing bounded economic actions, and governance coordinating a conversion-mandate
-reference change. This guide owns action selection and preflight; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
+For Treasury, Reserve, and Market committees sizing bounded economic actions, and governance coordinating a
+conversion-mandate reference change. This guide owns action selection and preflight;
+[protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
 alert conditions and diagnosis. Security incident delivery lives in the [emergency runbook](EMERGENCY_SUBMISSION_RUNBOOK.md).
 
 **Why this exists.** Three of the committee's bounds — what it may burn, what it may move into the Redemption
@@ -12,7 +13,7 @@ Reserve having changed. That is the mechanism working as designed, and this docu
 it somewhere calm rather than from a rejected transaction.
 
 Monitoring is `docs/operations/PROTOCOL_MONITORING.md`; §5 below answers its alerts by ID. The governance message table is
-`docs/governance/GOVERNANCE_OPERATIONS.md` §5, and the mechanism itself is [local design](../../x/treasury/README.md#exposure-sampling-and-refresh).
+`docs/governance/GOVERNANCE_OPERATIONS.md` §3, and the mechanism itself is [local design](../../x/treasury/README.md#exposure-sampling-and-refresh).
 
 Before any action, query the live appointment and its term/window, the relevant policy, balances, and bounds. After
 inclusion, verify transaction success and the resulting policy or custody state. A simulation is a preflight against
@@ -20,8 +21,9 @@ one state, so a later refusal requires fresh reads before resizing or signing ag
 
 ## 1. The levers
 
-The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`, clamped field by field by the
-`minimum_policy` and `maximum_policy` of its mandate. Eight fields, in three groups:
+The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`. Each field must lie inside the
+`minimum_policy` and `maximum_policy` of its mandate, inclusive, or the whole update is refused; nothing is
+clamped. Eight fields, in three groups:
 
 | Group | Fields | What it sets |
 | --- | --- | --- |
@@ -29,7 +31,7 @@ The committee writes `EconomicPolicy` through `MsgCommitteeUpdatePolicy`, clampe
 | Fund ratios | `redemption_buffer_target_ratio`, `strategic_reserve_target_ratio`, `insurance_target_ratio` | how much capital it holds against liability |
 | Exposure weights | `liability_ratio_weight`, `volatility_weight`, `flow_weight` | how much extra a unit of measured risk demands |
 
-D79 counts these as six levers by taking the three weights as one; the mandate clamps them as eight
+D79 counts these as six levers by taking the three weights as one; the mandate bounds them as eight
 independent fields, which is the number that matters when drafting a policy update.
 
 **The transfer tax is not a committee lever.** `transfer_tax_rate` lives in `Params` and moves only by
@@ -44,28 +46,20 @@ organic stress already produces.
 
 ## 2. Before drafting a burn
 
-**Check `ExposureStatus` first.** `BurnableSurplus` is evaluated when the transaction executes, against the
+**Check `ExposureStatus` first.** The burn bound is evaluated when the transaction executes, against the
 multiplier *then* — not against the one that held when the proposal was written. A surplus sized last week can
 be zero today with no change to the Reserve's own holdings.
 
-**There is no query that reports the bound.** `BurnableSurplus` is a keeper function with no RPC. To
-reconstruct it:
-
-```text
-surplus   = reserve/RecognisedCapital − treasury/FundStatus.strategic_reserve_target
-spendable = reserve/Balance − ReserveMandate.minimum_noah_balance
-burnable  = min(surplus, spendable), floored at zero
-```
-
-Use `strategic_reserve_target`, not `strategic_reserve_net_target`: the requirement reads the gross target.
-
-**Both terms bind, and the second is easy to forget.** A burn can fail because the mandate's NOAH floor leaves
-nothing spendable even while the surplus is comfortably positive. Alert A5 watches only the first term, so this
-failure arrives unannounced.
+**Read the bound with `reserve/BurnableSurplus`** (`arkd query reserve burnable-surplus`). It runs the handler's
+own solve: the largest burn after which recognised capital, re-solved at the balance the burn leaves, still covers
+the requirement, and never more than the balance above the mandate's NOAH floor. Clipped stakes and the floor are
+both included, so the figure is exact at the queried height. The handler solves again at execution, so leave
+margin for the multiplier and prices to move between the query and inclusion.
 
 **A refused burn is not necessarily an error.** If `RequiredReserveCapital` errors rather than returning a
 number, the liability valuation is incomplete and the refusal is deliberate: a fund that cannot size its
-requirement must not dispose of capital. Check for alert A4 before treating it as a bug.
+requirement must not dispose of capital. `BurnableSurplus` fails in the same condition rather than reporting zero.
+Check for alert A4 before treating either as a bug.
 
 ## 3. Transfers into the Buffer and Insurance
 
@@ -113,6 +107,42 @@ from, and no amount of waiting will change that.
 **A2 and A3** are engineering conditions with no committee action. A2 is a stalled refresh, A3 a rate limiter
 binding; both are diagnosed against `FundStatus` and the oracle, not decided by vote.
 
+## Conversion depth
+
+Market's depth is the throttle on how fast NOAH mints and burns, and nothing raises it automatically (D95). The
+Market committee moves it with `MsgCommitteeUpdatePolicy` inside its corridor; governance moves it beyond with
+`MsgUpdatePolicy`. Both size it by one rule (D104), in the pool unit, valuing every currency at the oracle rate:
+
+```text
+depth      = max(100 × daily net one-way flow, 50 × largest routine swap)
+daily flow = liquid NOAH × NOAH price × share converting in a month ÷ 30
+```
+
+The factors hold at a 2% floor and a one-day recovery; in general they are `2 / floor × recovery period in days` and
+`1 / floor`. [Market's quote contract](../../x/market/README.md#local-quote-and-admission-contracts) derives them.
+
+**When to run it.** With a live NOAH price before conversion opens
+([opening conversion](GOVERNANCE_OPERATIONS.md#6-opening-conversion)), when a grant tranche adds liquid NOAH, and
+when `Query/Pool` shows `ark_pool_delta` held more negative than a hundredth of `base_pool`, which is expansion flow
+paying above the floor.
+
+**Before raising.**
+
+- A positive `ark_pool_delta` is redemption pressure. Do not raise into it: a deeper pool retires currency into NOAH
+  faster, the May 2022 Terra proposal the whitepaper records (§2.3).
+- A mint at a wrong price stays profitable up to roughly the mispricing times the depth. If that is more than the
+  venues pricing NOAH justify, raise by less; flow above the sizing still converts, at the spreads below.
+- Capacity is added by depth, never by shortening `pool_recovery_period`.
+
+| Daily one-way flow over depth | Marginal spread |
+| --- | --- |
+| 1% | 2%, the floor |
+| 2.5% | about 5% |
+| 5% | about 10% |
+
+A depth change rescales the delta in proportion, so a raise keeps the imbalance it found. After inclusion, verify
+with `Query/Pool` and `EventPoolUpdated`.
+
 ## Reference change and conversion mandate
 
 When changing the protocol reference, put `MsgSetReferenceDenom` before `MsgSetConversionMandate` in the same
@@ -122,6 +152,9 @@ new depth corridor. The corridor constrains future candidates, so an appointment
 bracket the live rebased depth; review that explicitly.
 
 The old corridor is not silently reinterpreted in new units. Treasury's corridor has no denomination and requires no
-corresponding appointment; its reference-valued state rebases atomically. Query fresh incoming pricing and either
+corresponding appointment; its reference-valued state rebases atomically. Disbursement's compensation figures, the cap,
+every award's value and charge, and the live grants term's usage and allowance, rebase atomically too, so the grants
+committee needs no reappointment, and so do the Claims committee's limit, every committee claim's charge, and the live
+term's usage. Query fresh incoming pricing and either
 fresh outgoing pricing or the explicitly governed outgoing-rate override under
 [Oracle's reference contract](../../x/oracle/README.md#13-protocol-reference-denom).

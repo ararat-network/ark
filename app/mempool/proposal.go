@@ -4,7 +4,6 @@ import (
 	"context"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,8 +26,8 @@ func (p proposalPool) SelectBy(ctx context.Context, txs [][]byte, visit func(sdk
 }
 
 // PrepareProposalHandler assigns proposal-local lanes and delegates selection to the SDK after
-// oracle-byte reservation. Saturated lanes and nonce successors wait; only transactions larger than
-// a full lane allowance use ordinary priority. See README.md for index and selector accounting.
+// oracle-byte reservation. A privileged entry past what its lane has left, and its sender's later
+// ordered entries, use ordinary fee priority. See README.md for index and selector accounting.
 func (p *Pool) PrepareProposalHandler(app baseapp.ProposalTxVerifier) sdk.PrepareProposalHandler {
 	return func(ctx sdk.Context, req *abci.RequestPrepareProposal) (*abci.ResponsePrepareProposal, error) {
 		if req.MaxTxBytes <= 0 {
@@ -41,31 +40,31 @@ func (p *Pool) PrepareProposalHandler(app baseapp.ProposalTxVerifier) sdk.Prepar
 		index := sdkmempool.NewPriorityMempool(priorityConfig())
 		selector := &txSelector{lanes: make(map[senderNonce]int8)}
 		var laneUsed [3]resources
-		waiting := make(map[string]bool)
+		spilled := make(map[string]bool)
 		for _, entry := range p.Snapshot() {
 			key := entry.key
 			unordered := false
 			if tx, ok := entry.Tx.(sdk.TxWithUnordered); ok {
 				unordered = tx.GetUnordered()
 			}
-			if !unordered && waiting[key.sender] {
-				continue
-			}
 			lane := entry.Lane
+			// A spilled sender's later ordered entries follow it, so none outranks its predecessor.
+			if lane != LaneNormal && !unordered && spilled[key.sender] {
+				lane = LaneNormal
+			}
 			if lane != LaneNormal {
 				allowance := blockAllowance(lane, uint64(req.MaxTxBytes), maxGas)
 				// Encoding failures still go through SDK verification/removal handling.
 				if bz, err := app.TxEncode(entry.Tx); err == nil {
-					need := resources{uint64(cmttypes.ComputeProtoSizeForTxs([]cmttypes.Tx{bz})), entry.Tx.(sdk.FeeTx).GetGas()}
-					switch {
-					case need.bytes > allowance.bytes || (maxGas > 0 && need.gas > allowance.gas):
+					need := resources{txSize(bz), txGas(entry.Tx)}
+					// Past what the lane has left, oversized or not: ordinary fee priority. Use never
+					// exceeds the allowance, so the differences cannot wrap.
+					if need.bytes > allowance.bytes-laneUsed[lane].bytes || (maxGas > 0 && need.gas > allowance.gas-laneUsed[lane].gas) {
 						lane = LaneNormal
-					case need.bytes > allowance.bytes-laneUsed[lane].bytes || (maxGas > 0 && need.gas > allowance.gas-laneUsed[lane].gas):
 						if !unordered {
-							waiting[key.sender] = true
+							spilled[key.sender] = true
 						}
-						continue
-					default:
+					} else {
 						laneUsed[lane].bytes += need.bytes
 						laneUsed[lane].gas += need.gas
 					}

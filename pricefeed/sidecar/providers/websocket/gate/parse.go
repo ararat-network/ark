@@ -16,9 +16,11 @@ import (
 // parseSubscribeResponse checks that a subscription succeeded.
 func (h *Handler) parseSubscribeResponse(msg SubscribeResponse) error {
 	if msg.Error != nil {
+		h.logger.Warn("gate refused a subscription", "id", msg.ID, "code", msg.Error.Code, "reason", msg.Error.Message)
 		return fmt.Errorf("gate error %d (%s): %w", msg.Error.Code, msg.Error.Message, ErrorCode(msg.Error.Code).Error())
 	}
 	if Status(msg.Result.Status) != StatusSuccess {
+		h.logger.Warn("gate refused a subscription", "id", msg.ID, "status", msg.Result.Status)
 		return fmt.Errorf("subscription was not successful: %q", msg.Result.Status)
 	}
 

@@ -38,9 +38,9 @@ For multiple developers, generate the intended validator count and host addresse
 and agree on a single genesis. `--single-host` is for separate ports on one machine; omit it when using distinct hosts.
 
 Each generated home carries a `client.toml` with its chain ID, keyring backend, key name, and node address, so client
-commands against it need none of those as flags. `arkd testnet start` runs the same network inside one process; its
-commit timeout must leave the first block inside the SDK network's five-second start budget, which its one-second
-default does.
+commands against it need none of those as flags. `arkd testnet start` runs an in-process multi-validator network
+from code defaults instead: no artefact, no seats. Its commit timeout must leave the first block inside the SDK
+network's five-second start budget, which its one-second default does.
 
 To test against real state, copy a node's home and run `arkd in-place-testnet <new-chain-id> <operator-address> --home
 <copy>`: every validator is replaced by one bonded at the operator with the copy's consensus key, CometBFT's validator
@@ -56,13 +56,15 @@ Keep each participant's mnemonic and private validator key local to that partici
 
 The coordinator starts from the curated testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json),
 copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
-seat in one `arkd genesis add-validator-seats <address>... --home <home>`
-([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+seat in one `arkd genesis add-validator-seats --founder <address> --any-count <address>... --home <home>`, the
+founder's at half the others' sum, with the founder's grant and stream written beside it, and the launch count bounds
+lifted for the testnet, up to what its community pool funds ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,
-the whole seat grant at the commission floor. The coordinator collects all gentxs under `config/gentx`, runs
-`arkd genesis collect-gentxs --home <home>`, validates the resulting genesis, and distributes the same final file to everyone.
+one seat at the commission floor, the founder's too. The coordinator collects all gentxs under `config/gentx`, runs
+`arkd genesis collect-gentxs --home <home>`, checks the result with `arkd genesis validate` and `arkd genesis dry-run`,
+and distributes the same final file to everyone.
 
 In each `config/config.toml`, set `[p2p] persistent_peers` to the intended `<node-id>@<host>:<p2p-port>` peers. Obtain the
 P2P node ID with `arkd comet show-node-id --home <home>`; it is not the validator operator address. Start only after all
@@ -82,7 +84,8 @@ The default home is `~/.ark`; `--home` selects another. `config.toml` controls C
 and `client.toml` CLI defaults. Use `arkd config diff` to compare app settings with this binary's defaults and
 `arkd config migrate --stdout` to inspect a migration before writing. `arkd config set <app|config|client> <key> <value>`
 changes an existing key in that file, app.toml against the validation start applies and config.toml against CometBFT's;
-it does not create missing keys, which migrate adds. `arkd config validate [app|config|client]` runs those checks over a
+it does not create missing keys. `migrate` adds missing app.toml keys and leaves config.toml and client.toml alone.
+`arkd config validate [app|config|client]` runs those checks over a
 file alone. Both take a path to a `.toml` file in place of the name. Use `--help` for each command's options.
 [Mempool policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour) explains the coupled CometBFT/application admission configuration.
 
@@ -95,6 +98,11 @@ COSMOS_SDK_CONFIG_SCOPE=arkd
 The scope must remain non-empty and constant for the process lifetime. It pins SDK configuration lookup to a stable scope,
 so address parsing does not depend on a hostname-derived lookup changing while the node runs.
 
+Keep validator clocks synchronised. A proposer leaves transactions out of its block when its clock finds the block's
+prices older than the Oracle's `max_exchange_rate_age`, so a clock running a minute fast proposes empty blocks and one
+running slow weakens that guard ([proposal handlers](../../abci/README.md#proposal-handlers)). The first block after an
+upgrade or any stall past that limit carries no transactions by design.
+
 ## Upgrades and relaunch
 
 [Upgrade authoring](../../app/upgrade/README.md) and the [rehearsal](../../contrib/scripts/README.md#upgrade-rehearsal)
@@ -105,9 +113,16 @@ interrupt its signing; a coordinated consensus upgrade requires the network to r
 compatible code. Do not run the same validator signing key concurrently in old and replacement processes.
 
 `arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis resumes
-at the next height with a new chain ID for relaunch. Zero-height export is refused. `--jail-allowed-addrs` limits the exported
-validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help` for
-height and output options, and validate the exported genesis before the coordinated relaunch.
+at the next height. The export keeps the original `chain_id` and `genesis_time`. Set `chain_id` to the relaunch's new ID,
+and `genesis_time` to the coordinated restart time, at or after the export height's block time and identical in every
+validator's file, because Oracle and
+Disbursement import refuse records dated after genesis. Records anchored in block time keep their absolute times, so the
+outage counts against them: committee terms, pending claims' closing times, unactivated settlement plans, and grant
+schedules. Before the relaunch, decide whether to push pending claims' `closing_time` and unactivated plans'
+`activation_time` forward by the outage in the exported genesis, returning to governance the veto and cancel windows the
+outage ate, and whether any committee term lapsed during it (D133). Zero-height export is refused. `--jail-allowed-addrs` limits the
+exported validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help`
+for height and output options, and validate the exported genesis before the coordinated relaunch.
 
 A node that stops on an app-hash mismatch reports which module store differs with `arkd module-hash-by-height <height>
 --home <home>`, run against the stopped node's data; compare the hashes with those from a node that stayed in

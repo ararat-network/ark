@@ -19,18 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Params_FullMethodName           = "/ark.disbursement.v1.Query/Params"
-	Query_GrantsMandate_FullMethodName    = "/ark.disbursement.v1.Query/GrantsMandate"
-	Query_Grant_FullMethodName            = "/ark.disbursement.v1.Query/Grant"
-	Query_Grants_FullMethodName           = "/ark.disbursement.v1.Query/Grants"
-	Query_Member_FullMethodName           = "/ark.disbursement.v1.Query/Member"
-	Query_Beneficiary_FullMethodName      = "/ark.disbursement.v1.Query/Beneficiary"
-	Query_Releasable_FullMethodName       = "/ark.disbursement.v1.Query/Releasable"
-	Query_Balance_FullMethodName          = "/ark.disbursement.v1.Query/Balance"
-	Query_Totals_FullMethodName           = "/ark.disbursement.v1.Query/Totals"
-	Query_Journal_FullMethodName          = "/ark.disbursement.v1.Query/Journal"
-	Query_Issuance_FullMethodName         = "/ark.disbursement.v1.Query/Issuance"
-	Query_ConversionOrders_FullMethodName = "/ark.disbursement.v1.Query/ConversionOrders"
+	Query_Params_FullMethodName             = "/ark.disbursement.v1.Query/Params"
+	Query_GrantsMandate_FullMethodName      = "/ark.disbursement.v1.Query/GrantsMandate"
+	Query_RegistrarMandate_FullMethodName   = "/ark.disbursement.v1.Query/RegistrarMandate"
+	Query_Balance_FullMethodName            = "/ark.disbursement.v1.Query/Balance"
+	Query_Grant_FullMethodName              = "/ark.disbursement.v1.Query/Grant"
+	Query_Grants_FullMethodName             = "/ark.disbursement.v1.Query/Grants"
+	Query_GrantJournal_FullMethodName       = "/ark.disbursement.v1.Query/GrantJournal"
+	Query_Member_FullMethodName             = "/ark.disbursement.v1.Query/Member"
+	Query_Members_FullMethodName            = "/ark.disbursement.v1.Query/Members"
+	Query_Beneficiary_FullMethodName        = "/ark.disbursement.v1.Query/Beneficiary"
+	Query_BeneficiaryJournal_FullMethodName = "/ark.disbursement.v1.Query/BeneficiaryJournal"
 )
 
 // QueryClient is the client API for Query service.
@@ -39,30 +38,30 @@ const (
 //
 // Query exposes grant records, obligations and their audit history.
 type QueryClient interface {
-	// Params queries params state.
+	// Params queries the module parameters.
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's awards.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(ctx context.Context, in *QueryGrantsMandateRequest, opts ...grpc.CallOption) (*QueryGrantsMandateResponse, error)
-	// Grant queries grant state.
-	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
-	// Grants queries grants state.
-	Grants(ctx context.Context, in *QueryGrantsRequest, opts ...grpc.CallOption) (*QueryGrantsResponse, error)
-	// Member queries member state.
-	Member(ctx context.Context, in *QueryMemberRequest, opts ...grpc.CallOption) (*QueryMemberResponse, error)
-	// Beneficiary queries beneficiary state.
-	Beneficiary(ctx context.Context, in *QueryBeneficiaryRequest, opts ...grpc.CallOption) (*QueryBeneficiaryResponse, error)
-	// Releasable queries releasable state.
-	Releasable(ctx context.Context, in *QueryReleasableRequest, opts ...grpc.CallOption) (*QueryReleasableResponse, error)
-	// Balance queries balance state.
+	// RegistrarMandate queries the registrar appointment and whether it is active.
+	RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error)
+	// Balance shows each account's custody beside its reservations, and the member tranche.
 	Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error)
-	// Totals queries totals state.
-	Totals(ctx context.Context, in *QueryTotalsRequest, opts ...grpc.CallOption) (*QueryTotalsResponse, error)
-	// Journal queries journal state.
-	Journal(ctx context.Context, in *QueryJournalRequest, opts ...grpc.CallOption) (*QueryJournalResponse, error)
-	// Issuance queries issuance state.
-	Issuance(ctx context.Context, in *QueryIssuanceRequest, opts ...grpc.CallOption) (*QueryIssuanceResponse, error)
-	// ConversionOrders lists open stablecoin conversion orders.
-	ConversionOrders(ctx context.Context, in *QueryConversionOrdersRequest, opts ...grpc.CallOption) (*QueryConversionOrdersResponse, error)
+	// Grant queries one grant by ID.
+	Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error)
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
+	Grants(ctx context.Context, in *QueryGrantsRequest, opts ...grpc.CallOption) (*QueryGrantsResponse, error)
+	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
+	GrantJournal(ctx context.Context, in *QueryGrantJournalRequest, opts ...grpc.CallOption) (*QueryGrantJournalResponse, error)
+	// Member queries one member's grant.
+	Member(ctx context.Context, in *QueryMemberRequest, opts ...grpc.CallOption) (*QueryMemberResponse, error)
+	// Members lists member grants in address order.
+	Members(ctx context.Context, in *QueryMembersRequest, opts ...grpc.CallOption) (*QueryMembersResponse, error)
+	// Beneficiary queries one beneficiary record and the ownership it can still be awarded.
+	Beneficiary(ctx context.Context, in *QueryBeneficiaryRequest, opts ...grpc.CallOption) (*QueryBeneficiaryResponse, error)
+	// BeneficiaryJournal lists one beneficiary's controller changes in ID order.
+	BeneficiaryJournal(ctx context.Context, in *QueryBeneficiaryJournalRequest, opts ...grpc.CallOption) (*QueryBeneficiaryJournalResponse, error)
 }
 
 type queryClient struct {
@@ -93,6 +92,26 @@ func (c *queryClient) GrantsMandate(ctx context.Context, in *QueryGrantsMandateR
 	return out, nil
 }
 
+func (c *queryClient) RegistrarMandate(ctx context.Context, in *QueryRegistrarMandateRequest, opts ...grpc.CallOption) (*QueryRegistrarMandateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryRegistrarMandateResponse)
+	err := c.cc.Invoke(ctx, Query_RegistrarMandate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryBalanceResponse)
+	err := c.cc.Invoke(ctx, Query_Balance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) Grant(ctx context.Context, in *QueryGrantRequest, opts ...grpc.CallOption) (*QueryGrantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryGrantResponse)
@@ -113,10 +132,30 @@ func (c *queryClient) Grants(ctx context.Context, in *QueryGrantsRequest, opts .
 	return out, nil
 }
 
+func (c *queryClient) GrantJournal(ctx context.Context, in *QueryGrantJournalRequest, opts ...grpc.CallOption) (*QueryGrantJournalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryGrantJournalResponse)
+	err := c.cc.Invoke(ctx, Query_GrantJournal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) Member(ctx context.Context, in *QueryMemberRequest, opts ...grpc.CallOption) (*QueryMemberResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryMemberResponse)
 	err := c.cc.Invoke(ctx, Query_Member_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Members(ctx context.Context, in *QueryMembersRequest, opts ...grpc.CallOption) (*QueryMembersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryMembersResponse)
+	err := c.cc.Invoke(ctx, Query_Members_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,60 +172,10 @@ func (c *queryClient) Beneficiary(ctx context.Context, in *QueryBeneficiaryReque
 	return out, nil
 }
 
-func (c *queryClient) Releasable(ctx context.Context, in *QueryReleasableRequest, opts ...grpc.CallOption) (*QueryReleasableResponse, error) {
+func (c *queryClient) BeneficiaryJournal(ctx context.Context, in *QueryBeneficiaryJournalRequest, opts ...grpc.CallOption) (*QueryBeneficiaryJournalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryReleasableResponse)
-	err := c.cc.Invoke(ctx, Query_Releasable_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Balance(ctx context.Context, in *QueryBalanceRequest, opts ...grpc.CallOption) (*QueryBalanceResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryBalanceResponse)
-	err := c.cc.Invoke(ctx, Query_Balance_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Totals(ctx context.Context, in *QueryTotalsRequest, opts ...grpc.CallOption) (*QueryTotalsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryTotalsResponse)
-	err := c.cc.Invoke(ctx, Query_Totals_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Journal(ctx context.Context, in *QueryJournalRequest, opts ...grpc.CallOption) (*QueryJournalResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryJournalResponse)
-	err := c.cc.Invoke(ctx, Query_Journal_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) Issuance(ctx context.Context, in *QueryIssuanceRequest, opts ...grpc.CallOption) (*QueryIssuanceResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryIssuanceResponse)
-	err := c.cc.Invoke(ctx, Query_Issuance_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *queryClient) ConversionOrders(ctx context.Context, in *QueryConversionOrdersRequest, opts ...grpc.CallOption) (*QueryConversionOrdersResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QueryConversionOrdersResponse)
-	err := c.cc.Invoke(ctx, Query_ConversionOrders_FullMethodName, in, out, cOpts...)
+	out := new(QueryBeneficiaryJournalResponse)
+	err := c.cc.Invoke(ctx, Query_BeneficiaryJournal_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,30 +188,30 @@ func (c *queryClient) ConversionOrders(ctx context.Context, in *QueryConversionO
 //
 // Query exposes grant records, obligations and their audit history.
 type QueryServer interface {
-	// Params queries params state.
+	// Params queries the module parameters.
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
-	// GrantsMandate queries the committee appointment, whether it is active, and the term's awards.
+	// GrantsMandate queries the committee appointment, whether it is active, and the term's
+	// compensation usage.
 	GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error)
-	// Grant queries grant state.
-	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
-	// Grants queries grants state.
-	Grants(context.Context, *QueryGrantsRequest) (*QueryGrantsResponse, error)
-	// Member queries member state.
-	Member(context.Context, *QueryMemberRequest) (*QueryMemberResponse, error)
-	// Beneficiary queries beneficiary state.
-	Beneficiary(context.Context, *QueryBeneficiaryRequest) (*QueryBeneficiaryResponse, error)
-	// Releasable queries releasable state.
-	Releasable(context.Context, *QueryReleasableRequest) (*QueryReleasableResponse, error)
-	// Balance queries balance state.
+	// RegistrarMandate queries the registrar appointment and whether it is active.
+	RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error)
+	// Balance shows each account's custody beside its reservations, and the member tranche.
 	Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error)
-	// Totals queries totals state.
-	Totals(context.Context, *QueryTotalsRequest) (*QueryTotalsResponse, error)
-	// Journal queries journal state.
-	Journal(context.Context, *QueryJournalRequest) (*QueryJournalResponse, error)
-	// Issuance queries issuance state.
-	Issuance(context.Context, *QueryIssuanceRequest) (*QueryIssuanceResponse, error)
-	// ConversionOrders lists open stablecoin conversion orders.
-	ConversionOrders(context.Context, *QueryConversionOrdersRequest) (*QueryConversionOrdersResponse, error)
+	// Grant queries one grant by ID.
+	Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error)
+	// Grants lists grants in ID order: all, one beneficiary's, one committee term's awards, one
+	// registrar term's registrations, or one kind's.
+	Grants(context.Context, *QueryGrantsRequest) (*QueryGrantsResponse, error)
+	// GrantJournal lists grant entries by grant, then entry: all, or one grant's.
+	GrantJournal(context.Context, *QueryGrantJournalRequest) (*QueryGrantJournalResponse, error)
+	// Member queries one member's grant.
+	Member(context.Context, *QueryMemberRequest) (*QueryMemberResponse, error)
+	// Members lists member grants in address order.
+	Members(context.Context, *QueryMembersRequest) (*QueryMembersResponse, error)
+	// Beneficiary queries one beneficiary record and the ownership it can still be awarded.
+	Beneficiary(context.Context, *QueryBeneficiaryRequest) (*QueryBeneficiaryResponse, error)
+	// BeneficiaryJournal lists one beneficiary's controller changes in ID order.
+	BeneficiaryJournal(context.Context, *QueryBeneficiaryJournalRequest) (*QueryBeneficiaryJournalResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -239,35 +228,32 @@ func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*Q
 func (UnimplementedQueryServer) GrantsMandate(context.Context, *QueryGrantsMandateRequest) (*QueryGrantsMandateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GrantsMandate not implemented")
 }
+func (UnimplementedQueryServer) RegistrarMandate(context.Context, *QueryRegistrarMandateRequest) (*QueryRegistrarMandateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegistrarMandate not implemented")
+}
+func (UnimplementedQueryServer) Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Balance not implemented")
+}
 func (UnimplementedQueryServer) Grant(context.Context, *QueryGrantRequest) (*QueryGrantResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Grant not implemented")
 }
 func (UnimplementedQueryServer) Grants(context.Context, *QueryGrantsRequest) (*QueryGrantsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Grants not implemented")
 }
+func (UnimplementedQueryServer) GrantJournal(context.Context, *QueryGrantJournalRequest) (*QueryGrantJournalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GrantJournal not implemented")
+}
 func (UnimplementedQueryServer) Member(context.Context, *QueryMemberRequest) (*QueryMemberResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Member not implemented")
+}
+func (UnimplementedQueryServer) Members(context.Context, *QueryMembersRequest) (*QueryMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Members not implemented")
 }
 func (UnimplementedQueryServer) Beneficiary(context.Context, *QueryBeneficiaryRequest) (*QueryBeneficiaryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Beneficiary not implemented")
 }
-func (UnimplementedQueryServer) Releasable(context.Context, *QueryReleasableRequest) (*QueryReleasableResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Releasable not implemented")
-}
-func (UnimplementedQueryServer) Balance(context.Context, *QueryBalanceRequest) (*QueryBalanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Balance not implemented")
-}
-func (UnimplementedQueryServer) Totals(context.Context, *QueryTotalsRequest) (*QueryTotalsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Totals not implemented")
-}
-func (UnimplementedQueryServer) Journal(context.Context, *QueryJournalRequest) (*QueryJournalResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Journal not implemented")
-}
-func (UnimplementedQueryServer) Issuance(context.Context, *QueryIssuanceRequest) (*QueryIssuanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Issuance not implemented")
-}
-func (UnimplementedQueryServer) ConversionOrders(context.Context, *QueryConversionOrdersRequest) (*QueryConversionOrdersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ConversionOrders not implemented")
+func (UnimplementedQueryServer) BeneficiaryJournal(context.Context, *QueryBeneficiaryJournalRequest) (*QueryBeneficiaryJournalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BeneficiaryJournal not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -326,6 +312,42 @@ func _Query_GrantsMandate_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_RegistrarMandate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRegistrarMandateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).RegistrarMandate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_RegistrarMandate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).RegistrarMandate(ctx, req.(*QueryRegistrarMandateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Balance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Balance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Balance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Balance(ctx, req.(*QueryBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_Grant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryGrantRequest)
 	if err := dec(in); err != nil {
@@ -362,6 +384,24 @@ func _Query_Grants_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_GrantJournal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGrantJournalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).GrantJournal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_GrantJournal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).GrantJournal(ctx, req.(*QueryGrantJournalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_Member_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryMemberRequest)
 	if err := dec(in); err != nil {
@@ -376,6 +416,24 @@ func _Query_Member_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(QueryServer).Member(ctx, req.(*QueryMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Members_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMembersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Members(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Members_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Members(ctx, req.(*QueryMembersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -398,110 +456,20 @@ func _Query_Beneficiary_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_Releasable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryReleasableRequest)
+func _Query_BeneficiaryJournal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBeneficiaryJournalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Releasable(ctx, in)
+		return srv.(QueryServer).BeneficiaryJournal(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_Releasable_FullMethodName,
+		FullMethod: Query_BeneficiaryJournal_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Releasable(ctx, req.(*QueryReleasableRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Balance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryBalanceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Balance(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Balance_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Balance(ctx, req.(*QueryBalanceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Totals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTotalsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Totals(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Totals_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Totals(ctx, req.(*QueryTotalsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Journal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryJournalRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Journal(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Journal_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Journal(ctx, req.(*QueryJournalRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_Issuance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryIssuanceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).Issuance(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_Issuance_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Issuance(ctx, req.(*QueryIssuanceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Query_ConversionOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryConversionOrdersRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(QueryServer).ConversionOrders(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Query_ConversionOrders_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).ConversionOrders(ctx, req.(*QueryConversionOrdersRequest))
+		return srv.(QueryServer).BeneficiaryJournal(ctx, req.(*QueryBeneficiaryJournalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -522,6 +490,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_GrantsMandate_Handler,
 		},
 		{
+			MethodName: "RegistrarMandate",
+			Handler:    _Query_RegistrarMandate_Handler,
+		},
+		{
+			MethodName: "Balance",
+			Handler:    _Query_Balance_Handler,
+		},
+		{
 			MethodName: "Grant",
 			Handler:    _Query_Grant_Handler,
 		},
@@ -530,36 +506,24 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Query_Grants_Handler,
 		},
 		{
+			MethodName: "GrantJournal",
+			Handler:    _Query_GrantJournal_Handler,
+		},
+		{
 			MethodName: "Member",
 			Handler:    _Query_Member_Handler,
+		},
+		{
+			MethodName: "Members",
+			Handler:    _Query_Members_Handler,
 		},
 		{
 			MethodName: "Beneficiary",
 			Handler:    _Query_Beneficiary_Handler,
 		},
 		{
-			MethodName: "Releasable",
-			Handler:    _Query_Releasable_Handler,
-		},
-		{
-			MethodName: "Balance",
-			Handler:    _Query_Balance_Handler,
-		},
-		{
-			MethodName: "Totals",
-			Handler:    _Query_Totals_Handler,
-		},
-		{
-			MethodName: "Journal",
-			Handler:    _Query_Journal_Handler,
-		},
-		{
-			MethodName: "Issuance",
-			Handler:    _Query_Issuance_Handler,
-		},
-		{
-			MethodName: "ConversionOrders",
-			Handler:    _Query_ConversionOrders_Handler,
+			MethodName: "BeneficiaryJournal",
+			Handler:    _Query_BeneficiaryJournal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

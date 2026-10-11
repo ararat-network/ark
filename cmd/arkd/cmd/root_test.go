@@ -67,21 +67,17 @@ func TestHomeFlagRegistration(t *testing.T) {
 func TestMarketTxCommands(t *testing.T) {
 	rootCmd := NewRootCmd()
 
-	swapCmd, args, err := rootCmd.Find([]string{"tx", "market", "swap"})
+	sellCmd, args, err := rootCmd.Find([]string{"tx", "market", "sell"})
 	require.NoError(t, err)
 	require.Empty(t, args)
-	require.Equal(t, "swap", swapCmd.Name())
-	require.Equal(t, "swap [offer-coin] [ask-denom] [minimum-receive]", swapCmd.Use)
+	require.Equal(t, "sell", sellCmd.Name())
+	require.Equal(t, "sell [offer-coin] [ask-denom] [minimum-receive]", sellCmd.Use)
 
-	swapSendCmd, args, err := rootCmd.Find([]string{"tx", "market", "swap-send"})
+	buyCmd, args, err := rootCmd.Find([]string{"tx", "market", "buy"})
 	require.NoError(t, err)
 	require.Empty(t, args)
-	require.Equal(t, "swap-send", swapSendCmd.Name())
-	require.Equal(
-		t,
-		"swap-send [offer-coin] [ask-denom] [to-address] [minimum-receive]",
-		swapSendCmd.Use,
-	)
+	require.Equal(t, "buy", buyCmd.Name())
+	require.Equal(t, "buy [ask-coin] [offer-denom] [maximum-offer]", buyCmd.Use)
 }
 
 // TestTxCommandsArePriced pins the pricing walk through the one
@@ -93,9 +89,8 @@ func TestTxCommandsArePriced(t *testing.T) {
 
 	for _, path := range [][]string{
 		{"tx", "bank", "send"},
-		{"tx", "ibc-transfer", "transfer"},
 		{"tx", "wasm", "execute"},
-		{"tx", "market", "swap-send"},
+		{"tx", "market", "sell"},
 	} {
 		command, _, err := rootCmd.Find(path)
 		require.NoError(t, err)
@@ -105,31 +100,6 @@ func TestTxCommandsArePriced(t *testing.T) {
 	signCmd, _, err := rootCmd.Find([]string{"tx", "sign"})
 	require.NoError(t, err)
 	require.NotEqual(t, appclient.TipFlagUsage, signCmd.Flags().Lookup(flags.FlagTip).Usage)
-}
-
-func TestIBCCommands(t *testing.T) {
-	rootCmd := NewRootCmd()
-
-	transferCmd, args, err := rootCmd.Find([]string{"tx", "ibc-transfer", "transfer"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "transfer", transferCmd.Name())
-	require.Equal(t, "transfer [src-port] [src-channel] [receiver] [coin]", transferCmd.Use)
-
-	paramsCmd, args, err := rootCmd.Find([]string{"query", "ibc-transfer", "params"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "params", paramsCmd.Name())
-
-	ibcCmd, args, err := rootCmd.Find([]string{"query", "ibc"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "ibc", ibcCmd.Name())
-
-	icaCmd, args, err := rootCmd.Find([]string{"tx", "interchain-accounts", "controller", "register"})
-	require.NoError(t, err)
-	require.Empty(t, args)
-	require.Equal(t, "register", icaCmd.Name())
 }
 
 // TestExportCommandRelaunchFlags pins the export command's relaunch surface:
@@ -156,7 +126,7 @@ func TestExportCommandRelaunchFlags(t *testing.T) {
 func TestTxCommandsDefaultGasAdjustment(t *testing.T) {
 	rootCmd := NewRootCmd()
 
-	for _, path := range [][]string{{"tx", "bank", "send"}, {"tx", "gov", "vote"}, {"tx", "market", "swap"}} {
+	for _, path := range [][]string{{"tx", "bank", "send"}, {"tx", "gov", "vote"}, {"tx", "market", "sell"}} {
 		sub, _, err := rootCmd.Find(path)
 		require.NoError(t, err)
 		flag := sub.Flags().Lookup(flags.FlagGasAdjustment)

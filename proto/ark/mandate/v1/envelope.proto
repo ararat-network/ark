@@ -65,11 +65,12 @@ message Envelope {
   // committee is the exact appointed account, empty when the mandate is
   // disabled.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  // activation_height is the first height at which the committee may act.
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  // expiry_height is the first height at which the committee may no longer
-  // act, forming a half-open window with activation_height.
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  // activation_time is the first block time, in Unix seconds, at which the
+  // committee may act.
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  // expiry_time is the first block time at which the committee may no longer
+  // act, forming a half-open window with activation_time.
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   // committee_shape is what the chain proved about the committee account when
   // it was appointed. A key-backed address commits to its key, so that shape
   // cannot go stale within the term. A contract's shape names only the kind:

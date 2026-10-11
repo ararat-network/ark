@@ -117,11 +117,12 @@ func (s *KeeperTestSuite) TestQuerySettlementPlan() {
 	asset := assettypes.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
 	plan := assettypes.SettlementPlan{
-		Denom:                 asset.Denom,
-		RedemptionRate:        math.LegacyOneDec(),
-		ActivationHeight:      10,
-		EarliestClosingHeight: 110,
-		OpenedHeight:          1,
+		Denom:               asset.Denom,
+		RedemptionRate:      math.LegacyOneDec(),
+		ActivationTime:      10,
+		EarliestClosingTime: 110,
+		OpenedHeight:        1,
+		OpenedTime:          1,
 	}
 	s.Require().NoError(s.keeper.SettlementPlans.Set(
 		s.ctx,
@@ -186,14 +187,12 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
 			Pagination: &sdkquery.PageRequest{
-				Limit:      2,
-				CountTotal: true,
+				Limit: 2,
 			},
 		},
 	)
 	s.Require().NoError(err)
 	s.Require().Equal([]uint64{2, 4}, writeOffVersions(first.ResolutionRecords))
-	s.Require().Equal(uint64(3), first.Pagination.Total)
 	s.Require().NotEmpty(first.Pagination.NextKey)
 
 	second, err := server.ResolutionHistory(
@@ -217,12 +216,26 @@ func (s *KeeperTestSuite) TestQueryResolutionHistoryPagination() {
 	)
 	s.requireQueryCode(err, codes.NotFound)
 
+	// Reverse key pagination stays within the denomination's records.
+	reversed, err := server.ResolutionHistory(
+		s.ctx,
+		&assettypes.QueryResolutionHistoryRequest{
+			Denom: assets[0].Denom,
+			Pagination: &sdkquery.PageRequest{
+				Limit:   2,
+				Reverse: true,
+			},
+		},
+	)
+	s.Require().NoError(err)
+	s.Require().Equal([]uint64{7, 4}, writeOffVersions(reversed.ResolutionRecords))
+
 	_, err = server.ResolutionHistory(
 		s.ctx,
 		&assettypes.QueryResolutionHistoryRequest{
 			Denom: assets[0].Denom,
 			Pagination: &sdkquery.PageRequest{
-				Reverse: true,
+				CountTotal: true,
 			},
 		},
 	)
@@ -363,7 +376,8 @@ func (s *KeeperTestSuite) TestQueryAssetPricingByStatus() {
 
 // TestQueryAssetExchangeRateFault checks that an Oracle fault, as opposed to a
 // denomination it simply does not price, fails the query rather than passing
-// as an unpriced asset.
+// as an unpriced asset. An unregistered fault carries no code, so it surfaces
+// as unknown rather than as a precondition or not-found.
 func (s *KeeperTestSuite) TestQueryAssetExchangeRateFault() {
 	asset := assettypes.DefaultGenesisState().Assets[0]
 	s.Require().NoError(s.keeper.Assets.Set(s.ctx, asset.Denom, asset))
@@ -377,10 +391,10 @@ func (s *KeeperTestSuite) TestQueryAssetExchangeRateFault() {
 		s.ctx,
 		&assettypes.QueryAssetRequest{Denom: asset.Denom},
 	)
-	s.requireQueryCode(err, codes.Internal)
+	s.requireQueryCode(err, codes.Unknown)
 
 	_, err = server.Assets(s.ctx, &assettypes.QueryAssetsRequest{})
-	s.requireQueryCode(err, codes.Internal)
+	s.requireQueryCode(err, codes.Unknown)
 }
 
 func assetDenoms(assets []assettypes.PricedAsset) []string {

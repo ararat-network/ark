@@ -3,7 +3,7 @@
 The Kraken WebSocket provider subscribes to the Kraken websocket v2 ticker channel and publishes last-trade prices as
 provider responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `kraken_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 

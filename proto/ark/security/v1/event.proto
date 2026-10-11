@@ -14,8 +14,8 @@ message EventSecurityMandateSet {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when the mandate is disabled.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
   ark.mandate.v1.CommitteeShape committee_shape = 5 [
@@ -30,7 +30,7 @@ message EventSecurityMandateSet {
 message EventCommitteeUpgradeScheduled {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   string name = 2;
-  int64 height = 3 [(amino.dont_omitempty) = true];
+  uint64 height = 3 [(amino.dont_omitempty) = true];
 }
 
 // EventCommitteeUpgradeCancelled is emitted when the committee cancels its own
@@ -38,13 +38,5 @@ message EventCommitteeUpgradeScheduled {
 message EventCommitteeUpgradeCancelled {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   string name = 2;
-  int64 height = 3 [(amino.dont_omitempty) = true];
-}
-
-// EventCommitteeClientRecovered is emitted when the committee substitutes an
-// expired or frozen IBC client.
-message EventCommitteeClientRecovered {
-  uint64 term = 1 [(amino.dont_omitempty) = true];
-  string subject_client_id = 2;
-  string substitute_client_id = 3;
+  uint64 height = 3 [(amino.dont_omitempty) = true];
 }

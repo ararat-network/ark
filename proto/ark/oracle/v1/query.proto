@@ -6,6 +6,7 @@ syntax = "proto3";
 package ark.oracle.v1;
 
 import "amino/amino.proto";
+import "ark/oracle/v1/genesis.proto";
 import "ark/oracle/v1/oracle.proto";
 import "cosmos/query/v1/query.proto";
 import "cosmos_proto/cosmos.proto";
@@ -26,6 +27,13 @@ service Query {
   rpc ExchangeRates(QueryExchangeRatesRequest) returns (QueryExchangeRatesResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/ark/oracle/v1/denoms/exchange_rates";
+  }
+
+  // StoredRates returns every stored rate whatever its age, with the block that set it. Kept off
+  // the Wasm accept list: a contract must never read a stale rate as usable.
+  rpc StoredRates(QueryStoredRatesRequest) returns (QueryStoredRatesResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/ark/oracle/v1/denoms/stored_rates";
   }
 
   // Feeds returns the active feed set and scheduled transitions.
@@ -134,6 +142,21 @@ message QueryExchangeRatesResponse {
   ];
 }
 
+// QueryStoredRatesRequest is the request type for the Query/StoredRates RPC
+// method.
+message QueryStoredRatesRequest {}
+
+// QueryStoredRatesResponse is the response type for the Query/StoredRates RPC
+// method.
+message QueryStoredRatesResponse {
+  // rates lists every stored rate in denomination order, fresh or not;
+  // freshness is the reader's judgement against its own window.
+  repeated ExchangeRate rates = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
 // QueryFeedsRequest is the request type for the Query/Feeds RPC method.
 message QueryFeedsRequest {}
 
@@ -180,7 +203,7 @@ message QueryReferenceDenomResponse {
 // QueryRewardWeightRequest is the request type for the Query/RewardWeight RPC
 // method.
 message QueryRewardWeightRequest {
-  // validator defines the validator address to query for.
+  // validator_addr is the validator operator address to query.
   string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 
@@ -199,7 +222,7 @@ message QueryRewardWeightResponse {
 // QueryAttendanceRequest is the request type for the Query/Attendance RPC
 // method.
 message QueryAttendanceRequest {
-  // validator defines the validator address to query for.
+  // validator_addr is the validator operator address to query.
   string validator_addr = 1 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
 }
 

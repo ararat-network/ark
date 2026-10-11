@@ -5817,7 +5817,7 @@ type QueryEmergencyMandateResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	Mandate *EmergencyMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate,omitempty"`
-	// active reports whether the committee may act at the current height.
+	// active reports whether the committee may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 	// suspended_denoms lists the assets whose per-term suspension the committee
 	// has already consumed under the current term, sorted.

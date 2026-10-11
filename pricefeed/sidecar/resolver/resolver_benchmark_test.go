@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
@@ -28,12 +28,12 @@ func BenchmarkResolvePricesWithPrometheus(b *testing.B) {
 	}
 
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(exporter))
-	otel.SetMeterProvider(provider)
 	b.Cleanup(func() {
 		if err := provider.Shutdown(context.Background()); err != nil {
 			b.Error(err)
 		}
 	})
+	telemetrytest.SetMeterProvider(b, provider)
 
 	benchmarkResolvePrices(b)
 
@@ -126,7 +126,7 @@ func benchmarkResolverInput(
 	feeds := make([]string, feedCount)
 	pairs := make([]types.Pair, feedCount)
 	for i := 0; i < feedCount; i++ {
-		denom := fmt.Sprintf("uasset%03d", i)
+		denom := fmt.Sprintf("aasset%03d", i)
 		quote := fmt.Sprintf("ASSET%03d", i)
 		feeds[i] = denom
 

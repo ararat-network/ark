@@ -73,6 +73,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal subscribe response: %w", err)
 		}
 		if EventType(msg.Event) == EventError {
+			h.logger.Warn("okx refused a request", "code", msg.Code, "reason", msg.Message)
 			return resp, nil, fmt.Errorf("okx error %s: %s", msg.Code, msg.Message)
 		}
 
@@ -84,6 +85,7 @@ func (h *Handler) HandleMessage(message []byte) (types.Response, [][]byte, error
 			return resp, nil, fmt.Errorf("failed to unmarshal connection count message: %w", err)
 		}
 		if EventType(msg.Event) == EventChannelConnCountError {
+			h.logger.Warn("okx refused a connection over its limit", "channel", msg.Channel, "count", msg.ConnCount)
 			return resp, nil, fmt.Errorf("okx channel %s connection limit exceeded at %s connections", msg.Channel, msg.ConnCount)
 		}
 

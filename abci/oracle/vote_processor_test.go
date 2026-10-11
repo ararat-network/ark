@@ -166,7 +166,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				}))
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
 					Votes: []cmtabci.ExtendedVoteInfo{
-						abcitestutil.NewCommitExtendedVoteInfo(val1, 40, []byte("not-zlib")),
+						abcitestutil.NewCommitExtendedVoteInfo(val1, 40, []byte("undecodable")),
 						abcitestutil.NewCommitExtendedVoteInfo(val2, 30, emptyReportBz),
 						abcitestutil.NewCommitExtendedVoteInfo(val3, 30, positiveBz),
 					},
@@ -201,7 +201,7 @@ func TestProcessVoteExtensions(t *testing.T) {
 				commitBz := abcitestutil.MustEncodeExtendedCommit(t, cmtabci.ExtendedCommitInfo{
 					Votes: []cmtabci.ExtendedVoteInfo{
 						abcitestutil.NewCommitExtendedVoteInfo(val1, 67, validBz),
-						abcitestutil.NewCommitExtendedVoteInfo(val2, 33, []byte("not-zlib")),
+						abcitestutil.NewCommitExtendedVoteInfo(val2, 33, []byte("undecodable")),
 					},
 				})
 				keeper.EXPECT().GetParams(gomock.Any()).Return(params, nil)

@@ -4,8 +4,8 @@
 // See NOTICE and THIRD_PARTY_NOTICES.md for upstream attribution.
 
 // Package app assembles Ark's modules, transaction and consensus handlers, and execution policy for
-// IBC, GMP, and CosmWasm. It owns application genesis, continuation export, upgrades, and
-// cross-module integration tests.
+// CosmWasm. It owns application genesis, continuation export, upgrades, and cross-module
+// integration tests.
 package app
 
 import (
@@ -17,16 +17,9 @@ import (
 	"sync"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
-	ibcwasmkeeper "github.com/cosmos/ibc-go/modules/light-clients/08-wasm/v11/keeper"
-	gmpkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/keeper"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/controller/keeper"
-	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
-	packetforwardkeeper "github.com/cosmos/ibc-go/v11/modules/apps/packet-forward-middleware/keeper"
-	ratelimitkeeper "github.com/cosmos/ibc-go/v11/modules/apps/rate-limiting/keeper"
-	transferkeeper "github.com/cosmos/ibc-go/v11/modules/apps/transfer/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
@@ -128,17 +121,10 @@ type ArkApp struct {
 	AssetKeeper           *assetkeeper.Keeper
 	SecurityKeeper        *securitykeeper.Keeper
 
-	// keepers wired by hand after Build (ibc-go and wasmd ship no depinject
-	// modules), in setup order
-	IBCKeeper           *ibckeeper.Keeper
-	TransferKeeper      *transferkeeper.Keeper
-	RateLimitKeeper     *ratelimitkeeper.Keeper
-	PacketForwardKeeper *packetforwardkeeper.Keeper
-	ICAControllerKeeper *icacontrollerkeeper.Keeper
-	ICAHostKeeper       *icahostkeeper.Keeper
-	WasmKeeper          wasmkeeper.Keeper
-	WasmClientKeeper    ibcwasmkeeper.Keeper
-	GMPKeeper           *gmpkeeper.Keeper
+	// wired by hand after Build: wasmd ships no depinject module
+	WasmKeeper wasmkeeper.Keeper
+	// wasmEngine is the keeper's contract VM, held so Close can release it.
+	wasmEngine wasmtypes.WasmEngine
 
 	// simulation manager
 	sm *module.SimulationManager
@@ -218,11 +204,15 @@ func NewArkApp(
 	// eligibility or open positions. Oracle guards its own reference denomination.
 	app.OracleKeeper.SetFeedReferentGuards(app.AssetKeeper, app.ReserveKeeper)
 
-	// Both reference-unit executors exist from this line on, so a reference
-	// re-point executes atomically — Market's base pool and Treasury's tax cap
-	// re-denominate inside the same MsgSetReferenceDenom transaction — instead of
-	// failing atomically as it did while either executor was missing.
-	app.OracleKeeper.SetReferenceDenomConsumers(app.MarketKeeper, app.TreasuryKeeper)
+	// Every reference-unit consumer exists from this line on, so a reference re-point rebases
+	// Market's base pool, Treasury's reference figures, Disbursement's compensation figures, and
+	// Claims' limit and charges inside the same MsgSetReferenceDenom transaction. This line is the
+	// registry: a consumer left off it rebases nothing and fails nothing.
+	app.OracleKeeper.SetReferenceRebasers(app.MarketKeeper, app.TreasuryKeeper, app.DisbursementKeeper, app.ClaimsKeeper)
+
+	// Treasury injects Claims to read Insurance capital and Market injects Treasury, so Claims takes
+	// Market here: a stablecoin claim buys what custody lacks when it is submitted.
+	app.ClaimsKeeper.SetMarketKeeper(app.MarketKeeper)
 
 	// The capital contract runs both ways, and only this direction is wired by
 	// hand: Treasury injects the Reserve to read recognised capital, so the
@@ -247,22 +237,8 @@ func NewArkApp(
 
 	app.App = appBuilder.Build(db, baseAppOptions...)
 
-	// Keepers, then the contract runtime, then the routes: Wasm needs the IBC
-	// channel keepers, and the IBC routers need Wasm's contract handlers.
-	if err := app.setupIBCKeepers(); err != nil {
-		panic(err)
-	}
 	wasmNodeConfig, wasmTxCounterStore, err := app.setupWasm(appOpts)
 	if err != nil {
-		panic(err)
-	}
-	if err := app.setupGMP(); err != nil {
-		panic(err)
-	}
-	if err := app.setupWasmLightClient(appOpts); err != nil {
-		panic(err)
-	}
-	if err := app.setupIBCRoutes(); err != nil {
 		panic(err)
 	}
 
@@ -275,9 +251,9 @@ func NewArkApp(
 		app.BankKeeper,
 		app.FeeGrantKeeper,
 		app.StakingKeeper,
+		app.GovKeeper,
 		app.TreasuryKeeper,
 		app.privileges,
-		app.IBCKeeper,
 		app.WasmKeeper.GetGasRegister(),
 		wasmNodeConfig,
 		wasmTxCounterStore,
@@ -304,9 +280,9 @@ func NewArkApp(
 		panic(err)
 	}
 
-	// Streaming must follow the hand-wired RegisterStores calls above:
+	// Streaming must follow the hand-wired RegisterStores call above:
 	// kvStoreKeys reads the runtime's key list, so registering earlier would
-	// silently hide the IBC, Wasm, GMP, and 08-wasm stores from listeners.
+	// silently hide the Wasm store from listeners.
 	if err := app.RegisterStreamingServices(appOpts, app.kvStoreKeys()); err != nil {
 		panic(err)
 	}
@@ -316,16 +292,12 @@ func NewArkApp(
 	if err := app.Load(loadLatest); err != nil {
 		panic(err)
 	}
-	// Re-warm the pinned-code caches over the loaded store: the pin lists live
-	// in state, but both VM caches are per-process, so a restart that skips
-	// this silently demotes every pinned code to the slow path.
+	// Re-warm the pinned-code cache over the loaded store: the pin list lives
+	// in state, but the VM cache is per-process, so a restart that skips this
+	// silently demotes every pinned code to the slow path.
 	if loadLatest {
-		ctx := app.NewContext(true)
-		if err := app.WasmKeeper.InitializePinnedCodes(ctx); err != nil {
+		if err := app.WasmKeeper.InitializePinnedCodes(app.NewContext(true)); err != nil {
 			panic(fmt.Errorf("initialise pinned Wasm codes: %w", err))
-		}
-		if err := app.WasmClientKeeper.InitializePinnedCodes(ctx); err != nil {
-			panic(fmt.Errorf("initialise pinned 08-wasm codes: %w", err))
 		}
 	}
 
@@ -377,6 +349,10 @@ func (app *ArkApp) RunPriceFeed(ctx context.Context) error {
 func (app *ArkApp) Close() error {
 	app.closeOnce.Do(func() {
 		app.closeErr = app.App.Close()
+		// The VM holds its cache directory's lock until released.
+		if app.wasmEngine != nil {
+			app.wasmEngine.Cleanup()
+		}
 	})
 
 	return app.closeErr
@@ -421,8 +397,7 @@ func (app *ArkApp) LegacyAmino() *codec.LegacyAmino {
 	return app.legacyAmino
 }
 
-// AppCodec returns the application codec; it also serves the IBC-Go testing
-// application interface next to the Get* accessors in ibc.go.
+// AppCodec returns the application codec.
 func (app *ArkApp) AppCodec() codec.Codec {
 	return app.appCodec
 }
@@ -432,9 +407,7 @@ func (app *ArkApp) InterfaceRegistry() codectypes.InterfaceRegistry {
 	return app.interfaceRegistry
 }
 
-// TxConfig returns the transaction encoding configuration. The simulation
-// harness asks for it under this name; the IBC-Go testing interface asks for
-// the same object as GetTxConfig, in ibc.go.
+// TxConfig returns the transaction encoding configuration.
 func (app *ArkApp) TxConfig() client.TxConfig {
 	return app.txConfig
 }

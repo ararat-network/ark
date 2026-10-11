@@ -2,17 +2,21 @@
 
 The Binance API provider fetches spot prices from Binance's public ticker price endpoint.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `binance_api`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Symbol Format
 
 Binance spot symbols use the `BASEQUOTE` form, such as `BTCUSDT` or `ETHUSDT`. Ark maps chain denoms to these provider
-symbols through `base.Config.Markets`; the adapter does not perform denom conversion itself.
+symbols through `Markets`; the adapter does not perform denom conversion itself.
 
 ## Request Shape
 
-`Handler.CreateURL` batches requested symbols into Binance's `symbols` query parameter. A request for `BTCUSDT` and
-`ETHUSDT` becomes a single ticker-price request containing both symbols.
+`Handler.BatchTickers` groups requested symbols and `Handler.CreateURL` sets a batch as a JSON array in the configured
+endpoint's `symbols` query parameter, so an override such as `https://api.binance.us/api/v3/ticker/price` is a plain
+URL. A request for `BTCUSDT` and `ETHUSDT` becomes a single ticker-price request containing both symbols. Binance answers
+a batch naming one symbol it does not list with HTTP 400 (`-1121 Invalid symbol`) for the whole request; the
+[shared fetcher](../../base/README.md#failed-fetches) then asks for each symbol alone and requests the batch without the
+refused one.
 
 `Handler.ParseResponse` only accepts prices for the requested tickers. Missing, malformed, or unexpected values are
 returned as unresolved ticker errors so the shared provider runtime can record the outcome without confusing missing data

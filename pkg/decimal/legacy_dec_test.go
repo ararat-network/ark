@@ -285,6 +285,56 @@ func TestCheckedArithmeticReturnsErrors(t *testing.T) {
 	}
 }
 
+// Every operation refuses a nil or out-of-range operand in either position.
+// Each out-of-range case pairs the operand with one that brings the raw result
+// back into range, so only the operand check can refuse it.
+func TestCheckedArithmeticValidatesBothOperands(t *testing.T) {
+	max := maxLegacyDec()
+	wide := math.LegacyNewDecFromBigIntWithPrec(bitValue(316), math.LegacyPrecision)
+	one := math.LegacyOneDec()
+	two := math.LegacyNewDec(2)
+	smallest := math.LegacySmallestDec()
+	ops := map[string]func(math.LegacyDec, math.LegacyDec) (math.LegacyDec, error){
+		"Add": decimal.Add,
+		"Sub": decimal.Sub,
+		"Mul": decimal.Mul,
+		"Quo": decimal.Quo,
+	}
+	tests := []struct {
+		name    string
+		op      string
+		a, b    math.LegacyDec
+		wantErr error
+	}{
+		{name: "Add nil first", op: "Add", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
+		{name: "Add nil second", op: "Add", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
+		{name: "Add out of range first", op: "Add", a: wide, b: max.Neg(), wantErr: decimal.ErrOutOfRange},
+		{name: "Add out of range second", op: "Add", a: max.Neg(), b: wide, wantErr: decimal.ErrOutOfRange},
+		{name: "Sub nil first", op: "Sub", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
+		{name: "Sub nil second", op: "Sub", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
+		{name: "Sub out of range first", op: "Sub", a: wide, b: max, wantErr: decimal.ErrOutOfRange},
+		{name: "Sub out of range second", op: "Sub", a: max, b: wide, wantErr: decimal.ErrOutOfRange},
+		{name: "Mul nil first", op: "Mul", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
+		{name: "Mul nil second", op: "Mul", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
+		{name: "Mul out of range first", op: "Mul", a: wide, b: smallest, wantErr: decimal.ErrOutOfRange},
+		{name: "Mul out of range second", op: "Mul", a: smallest, b: wide, wantErr: decimal.ErrOutOfRange},
+		{name: "Quo nil first", op: "Quo", a: math.LegacyDec{}, b: one, wantErr: decimal.ErrNil},
+		{name: "Quo nil second", op: "Quo", a: one, b: math.LegacyDec{}, wantErr: decimal.ErrNil},
+		{name: "Quo out of range first", op: "Quo", a: wide, b: two, wantErr: decimal.ErrOutOfRange},
+		{name: "Quo out of range second", op: "Quo", a: one, b: wide, wantErr: decimal.ErrOutOfRange},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NotPanics(t, func() {
+				got, err := ops[tc.op](tc.a, tc.b)
+				require.ErrorIs(t, err, tc.wantErr)
+				require.True(t, got.IsNil(), "%s returned %s alongside its error", tc.op, got)
+			})
+		})
+	}
+}
+
 var (
 	benchmarkResult math.LegacyDec
 	benchmarkErr    error

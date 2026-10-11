@@ -5,12 +5,14 @@ import (
 	"maps"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/core/store"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -63,6 +65,9 @@ type KeeperTestSuite struct {
 	// balance stubs those funds used before they moved out.
 	insuranceRecognised math.Int
 	reserveRecognised   math.Int
+	// insuranceRecognisedErr and reserveRecognisedErr fail the matching report.
+	insuranceRecognisedErr error
+	reserveRecognisedErr   error
 	// reserveHoldings contains the strategic Reserve balances netted from flow liability. It is
 	// empty by default, so gross and net liability agree unless the test parks protocol paper.
 	reserveHoldings       sdk.Coins
@@ -91,6 +96,9 @@ type KeeperTestSuite struct {
 	// omission, never an error, so this stands for a genuine store or state
 	// fault — the only thing a valuation is allowed to propagate.
 	ratesErr error
+	// pricedAssetsErr fails the registry-wide fold alone, leaving every rate
+	// capture to ratesErr.
+	pricedAssetsErr error
 	// rateCaptures records each rate capture's denom list, newest last, so a
 	// test can assert the capture shape without its own mock expectation.
 	rateCaptures [][]string
@@ -120,7 +128,8 @@ func (s *KeeperTestSuite) SetupTest() {
 		key,
 		transientKey,
 	)
-	s.ctx = testCtx.Ctx
+	// The clock starts at the epoch, so height and block time read alike until a test moves both.
+	s.ctx = testCtx.Ctx.WithBlockTime(time.Unix(0, 0))
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())
@@ -136,16 +145,18 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.distributionKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.insuranceRecognised = math.ZeroInt()
 	s.reserveRecognised = math.ZeroInt()
+	s.insuranceRecognisedErr = nil
+	s.reserveRecognisedErr = nil
 	s.claimsKeeper.EXPECT().
 		RecognisedCapital(gomock.Any()).
 		DoAndReturn(func(context.Context) (math.Int, error) {
-			return s.insuranceRecognised, nil
+			return s.insuranceRecognised, s.insuranceRecognisedErr
 		}).
 		AnyTimes()
 	s.reserveKeeper.EXPECT().
 		RecognisedCapital(gomock.Any()).
 		DoAndReturn(func(context.Context) (math.Int, error) {
-			return s.reserveRecognised, nil
+			return s.reserveRecognised, s.reserveRecognisedErr
 		}).
 		AnyTimes()
 	// The liability fold asks what the Reserve holds of every member it counts.
@@ -196,6 +207,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.rates = oracletypes.NewRateSet()
 	s.lastRates = oracletypes.NewRateSet()
 	s.ratesErr = nil
+	s.pricedAssetsErr = nil
 	s.rateCaptures = nil
 	s.reference = chain.XDRBaseDenom
 	for _, denom := range []string{chain.KRWBaseDenom, chain.XDRBaseDenom, chain.USDBaseDenom} {
@@ -212,6 +224,18 @@ func (s *KeeperTestSuite) SetupTest() {
 			}
 			slices.Sort(denoms)
 			return denoms, nil
+		}).
+		AnyTimes()
+	// The pricing-authority verdict reads the fixture's status as the registry would, and
+	// answers an unknown denomination with the registry's own not-found error.
+	s.assetKeeper.EXPECT().
+		IsOraclePriced(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, denom string) (bool, error) {
+			asset, member := s.assets[denom]
+			if !member {
+				return false, errorsmod.Wrap(assettypes.ErrAssetNotFound, denom)
+			}
+			return asset.IsOraclePriced(), nil
 		}).
 		AnyTimes()
 	// Membership is presence in the fixture registry regardless of status,
@@ -244,6 +268,9 @@ func (s *KeeperTestSuite) SetupTest() {
 		DoAndReturn(func(
 			_ context.Context,
 		) ([]string, assettypes.AssetPricings, error) {
+			if s.pricedAssetsErr != nil {
+				return nil, nil, s.pricedAssetsErr
+			}
 			// Key order, like the real registry walk. Tests that stub
 			// per-denomination supply reads rely on this order.
 			denoms := slices.Sorted(maps.Keys(s.assets))
@@ -395,7 +422,7 @@ func (s *KeeperTestSuite) setReserveRecognised(amount int64) {
 }
 
 func (s *KeeperTestSuite) setBlockHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
 }
 
 // setDerivedTaxCap binds testutil.SetDerivedTaxCap to the suite's keeper and
@@ -420,6 +447,13 @@ func (s *KeeperTestSuite) beginBlock() error {
 
 func (s *KeeperTestSuite) endBlock() error {
 	return s.keeper.EndBlocker(s.ctx)
+}
+
+// endBlockWithoutFees runs EndBlock over a block that collected no fees, for tests of the factor
+// pass it ends with.
+func (s *KeeperTestSuite) endBlockWithoutFees() error {
+	s.expectValidatorFees(sdk.NewCoins())
+	return s.endBlock()
 }
 
 // seedAsset registers or overwrites one asset in the mock registry. The

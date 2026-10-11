@@ -74,12 +74,19 @@ func TestCreateURL(t *testing.T) {
 			endpoint: types.Endpoint{URL: URL},
 			tickers:  []types.Ticker{"BTCUSDT", "ETHUSDT", "ATOMUSDT"},
 			wantURL: `https://api.binance.com/api/v3/ticker/price?symbols=` +
-				`%5B%22BTCUSDT%22,%22ETHUSDT%22,%22ATOMUSDT%22%5D`,
+				`%5B%22BTCUSDT%22%2C%22ETHUSDT%22%2C%22ATOMUSDT%22%5D`,
+		},
+		{
+			// An override is the plain endpoint URL another Binance serves.
+			name:     "plain endpoint override",
+			endpoint: types.Endpoint{URL: "https://api.binance.us/api/v3/ticker/price"},
+			tickers:  []types.Ticker{"USDTUSD"},
+			wantURL:  `https://api.binance.us/api/v3/ticker/price?symbols=%5B%22USDTUSD%22%5D`,
 		},
 		{
 			name:        "empty tickers",
 			endpoint:    types.Endpoint{URL: URL},
-			errContains: "invalid or no ticker were provided",
+			errContains: "no tickers provided",
 		},
 	}
 
@@ -125,13 +132,13 @@ func TestDefaultMarketsCreateOneUSDRequest(t *testing.T) {
 }
 
 // encodedSymbolList is what the query parameter decodes to once net/url has
-// undone the percent-encoding CreateURL builds by hand.
+// undone the percent-encoding.
 func encodedSymbolList(tickers []types.Ticker) string {
 	quoted := make([]string, 0, len(tickers))
 	for _, ticker := range tickers {
 		quoted = append(quoted, `"`+string(ticker)+`"`)
 	}
-	return "[" + strings.Join(quoted, Separator) + "]"
+	return "[" + strings.Join(quoted, ",") + "]"
 }
 
 func TestParseResponse(t *testing.T) {
@@ -195,6 +202,17 @@ func TestParseResponse(t *testing.T) {
 			name:    "marks malformed json as a decode failure",
 			tickers: []types.Ticker{"BTCUSDT", "ETHUSDT"},
 			body:    `{`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"BTCUSDT": types.ErrorFailedToDecode,
+				"ETHUSDT": types.ErrorFailedToDecode,
+			},
+		},
+		{
+			// Binance reports a refused request as a code/msg object, not
+			// the price array, so every ticker fails to decode.
+			name:    "venue error body fails every ticker",
+			tickers: []types.Ticker{"BTCUSDT", "ETHUSDT"},
+			body:    `{"code":-1121,"msg":"Invalid symbol."}`,
 			wantErrors: map[types.Ticker]types.ErrorCode{
 				"BTCUSDT": types.ErrorFailedToDecode,
 				"ETHUSDT": types.ErrorFailedToDecode,

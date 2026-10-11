@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"bytes"
+	"time"
 
 	"go.uber.org/mock/gomock"
 
@@ -74,13 +75,13 @@ func (s *KeeperTestSuite) seedLiveConversionMandate() types.ConversionMandate {
 
 	minimum, maximum := capacityCorridor()
 	_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{
-		Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Committee:        capacityCommittee(),
-		ActivationHeight: capacityActivation,
-		ExpiryHeight:     capacityExpiry,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
-		MaxTobinTax:      math.LegacyZeroDec(),
+		Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Committee:      capacityCommittee(),
+		ActivationTime: capacityActivation,
+		ExpiryTime:     capacityExpiry,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
+		MaxTobinTax:    math.LegacyZeroDec(),
 	})
 	s.Require().NoError(err)
 
@@ -91,7 +92,7 @@ func (s *KeeperTestSuite) seedLiveConversionMandate() types.ConversionMandate {
 }
 
 func (s *KeeperTestSuite) setCapacityHeight(height int64) {
-	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height).WithBlockTime(time.Unix(height, 0))
 }
 
 // oracleRateSetForRebase is the pair x/asset hands in when it re-points the
@@ -124,11 +125,11 @@ func (s *KeeperTestSuite) TestSetMandate() {
 	s.Require().NoError(err)
 	s.Require().True(appointment.IsActive(live, capacityActivation))
 	s.requireTypedEvent(&types.EventConversionMandateSet{
-		Term:             1,
-		Committee:        capacityCommittee(),
-		ActivationHeight: capacityActivation,
-		ExpiryHeight:     capacityExpiry,
-		CommitteeShape:   absentCommitteeShape,
+		Term:           1,
+		Committee:      capacityCommittee(),
+		ActivationTime: capacityActivation,
+		ExpiryTime:     capacityExpiry,
+		CommitteeShape: absentCommitteeShape,
 	})
 
 	// Replacement advances the term, so a transaction prepared under the old
@@ -149,7 +150,7 @@ func (s *KeeperTestSuite) TestSetMandate() {
 		ExpectedTerm: appointment.Term,
 		Policy:       candidateInsideCorridor(),
 	})
-	s.Require().ErrorContains(err, "not the exact appointed committee")
+	s.Require().ErrorContains(err, "not the exact appointed account")
 }
 
 func (s *KeeperTestSuite) TestSetMandateRejections() {
@@ -173,12 +174,12 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 			// is a delegation to nobody that still reads as a live fast path.
 			name:      "committee is the authority",
 			mutate:    func(msg *types.MsgSetConversionMandate) { msg.Committee = authority },
-			expectErr: "must be distinct from Market authority",
+			expectErr: "must be distinct from the Market authority",
 		},
 		{
 			name:      "inverted window",
-			mutate:    func(msg *types.MsgSetConversionMandate) { msg.ExpiryHeight = msg.ActivationHeight },
-			expectErr: "conversion mandate: activation height must precede expiry height",
+			mutate:    func(msg *types.MsgSetConversionMandate) { msg.ExpiryTime = msg.ActivationTime },
+			expectErr: "conversion mandate: activation time must precede expiry time",
 		},
 		{
 			name: "inverted corridor",
@@ -215,13 +216,13 @@ func (s *KeeperTestSuite) TestSetMandateRejections() {
 			s.Require().NoError(err)
 
 			msg := &types.MsgSetConversionMandate{
-				Authority:        authority,
-				Committee:        capacityCommittee(),
-				ActivationHeight: capacityActivation,
-				ExpiryHeight:     capacityExpiry,
-				MinimumPolicy:    minimum,
-				MaximumPolicy:    maximum,
-				MaxTobinTax:      math.LegacyZeroDec(),
+				Authority:      authority,
+				Committee:      capacityCommittee(),
+				ActivationTime: capacityActivation,
+				ExpiryTime:     capacityExpiry,
+				MinimumPolicy:  minimum,
+				MaximumPolicy:  maximum,
+				MaxTobinTax:    math.LegacyZeroDec(),
 			}
 			tc.mutate(msg)
 
@@ -254,7 +255,7 @@ func (s *KeeperTestSuite) TestExportAfterRebaseRoundTrips() {
 		Return(chain.USDBaseDenom, nil).
 		AnyTimes()
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -280,7 +281,7 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 	s.Require().NoError(err)
 	s.Require().True(appointment.IsActive(live, capacityActivation))
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -307,13 +308,13 @@ func (s *KeeperTestSuite) TestStrandedMandateIsNotActive() {
 	minimum.BasePool = sdk.NewDecCoinFromDec(chain.USDBaseDenom, minimum.BasePool.Amount)
 	maximum.BasePool = sdk.NewDecCoinFromDec(chain.USDBaseDenom, maximum.BasePool.Amount.MulInt64(4))
 	_, err = s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{
-		Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Committee:        capacityCommittee(),
-		ActivationHeight: capacityActivation,
-		ExpiryHeight:     capacityExpiry,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
-		MaxTobinTax:      math.LegacyZeroDec(),
+		Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Committee:      capacityCommittee(),
+		ActivationTime: capacityActivation,
+		ExpiryTime:     capacityExpiry,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
+		MaxTobinTax:    math.LegacyZeroDec(),
 	})
 	s.Require().NoError(err)
 
@@ -328,7 +329,7 @@ func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	appointment := s.seedLiveConversionMandate()
 	s.Require().Equal(chain.XDRBaseDenom, appointment.MinimumPolicy.BasePool.Denom)
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -341,7 +342,7 @@ func (s *KeeperTestSuite) TestRebaseBackRevivesAStrandedMandate() {
 	s.Require().False(stranded.IsActive(usdPool, capacityActivation))
 
 	// Back to the original unit at the inverse rate.
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.USDBaseDenom,
 		chain.XDRBaseDenom,
@@ -380,24 +381,24 @@ func (s *KeeperTestSuite) TestSetMandateRejectsClosedWindow() {
 	s.Require().NoError(err)
 
 	msg := &types.MsgSetConversionMandate{
-		Authority:        authority,
-		Committee:        capacityCommittee(),
-		ActivationHeight: capacityActivation,
-		ExpiryHeight:     capacityExpiry,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
-		MaxTobinTax:      math.LegacyZeroDec(),
+		Authority:      authority,
+		Committee:      capacityCommittee(),
+		ActivationTime: capacityActivation,
+		ExpiryTime:     capacityExpiry,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
+		MaxTobinTax:    math.LegacyZeroDec(),
 	}
 
 	// The window is half-open, so the appointment's own expiry is the first
 	// height at which it could never act.
 	s.setCapacityHeight(capacityExpiry)
 	_, err = s.msgServer.SetConversionMandate(s.ctx, msg)
-	s.Require().ErrorContains(err, "expires at height 20, which is not above the current height 20")
+	s.Require().ErrorContains(err, "expires at time 20, which is not after the current block time 20")
 
 	s.setCapacityHeight(capacityExpiry + 5)
 	_, err = s.msgServer.SetConversionMandate(s.ctx, msg)
-	s.Require().ErrorContains(err, "not above the current height 25")
+	s.Require().ErrorContains(err, "not after the current block time 25")
 
 	// A refused appointment leaves the previous one untouched, term included.
 	after, err := s.keeper.ConversionMandate.Get(s.ctx)
@@ -712,14 +713,14 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: sdk.AccAddress(bytes.Repeat([]byte{8}, 20)).String(),
 			policy:    candidateInsideCorridor(),
-			expectErr: "conversion mandate: signer is not the exact appointed committee",
+			expectErr: "conversion mandate: signer is not the exact appointed account",
 		},
 		{
 			name:      "governance authority cannot use the committee path",
 			height:    capacityActivation,
 			committee: authority,
 			policy:    candidateInsideCorridor(),
-			expectErr: "conversion mandate: signer is not the exact appointed committee",
+			expectErr: "conversion mandate: signer is not the exact appointed account",
 		},
 		{
 			name:      "stale term",
@@ -816,7 +817,7 @@ func (s *KeeperTestSuite) TestCommitteeUpdatePolicyRejections() {
 			height:    capacityActivation,
 			committee: "not-an-address",
 			policy:    candidateInsideCorridor(),
-			expectErr: "committee signer is invalid",
+			expectErr: "appointed signer is invalid",
 		},
 	}
 
@@ -880,7 +881,7 @@ func (s *KeeperTestSuite) TestGovernanceCapacityPathIgnoresCorridor() {
 func (s *KeeperTestSuite) TestRebaseStrandsConversionMandate() {
 	appointment := s.seedLiveConversionMandate()
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -972,13 +973,13 @@ func (s *KeeperTestSuite) seedLiveTobinMandate(tobinCap math.LegacyDec) types.Co
 
 	minimum, maximum := capacityCorridor()
 	_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{
-		Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Committee:        capacityCommittee(),
-		ActivationHeight: capacityActivation,
-		ExpiryHeight:     capacityExpiry,
-		MinimumPolicy:    minimum,
-		MaximumPolicy:    maximum,
-		MaxTobinTax:      tobinCap,
+		Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Committee:      capacityCommittee(),
+		ActivationTime: capacityActivation,
+		ExpiryTime:     capacityExpiry,
+		MinimumPolicy:  minimum,
+		MaximumPolicy:  maximum,
+		MaxTobinTax:    tobinCap,
 	})
 	s.Require().NoError(err)
 
@@ -1066,9 +1067,10 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 	tests := []struct {
 		name string
 		// tobinCap seeds the appointment; nil skips seeding entirely so the
-		// suite's default disabled mandate stays live.
+		// fresh store's disabled mandate stays live.
 		tobinCap math.LegacyDec
-		// setup runs after the seed, before the message.
+		// setup runs after the seed, before the message, which carries the
+		// term then current.
 		setup       func()
 		msg         func(term uint64) *types.MsgCommitteeSetTobinTax
 		expectErr   string
@@ -1097,7 +1099,26 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
 				}
 			},
-			expectErr: "signer is not the exact appointed committee",
+			expectErr: "signer is not the exact appointed account",
+		},
+		{
+			// Governance withdraws a live appointment; the committee it named
+			// holds nothing at the term the withdrawal advanced to.
+			name:     "withdrawn appointment",
+			tobinCap: tobinCapForTest(),
+			setup: func() {
+				_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{Authority: authority})
+				s.Require().NoError(err)
+			},
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
+					Committee:    capacityCommittee(),
+					ExpectedTerm: term,
+					Denom:        chain.USDBaseDenom,
+					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
+				}
+			},
+			expectErr: "signer is not the exact appointed account",
 		},
 		{
 			name:     "wrong signer",
@@ -1110,7 +1131,7 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
 				}
 			},
-			expectErr: "signer is not the exact appointed committee",
+			expectErr: "signer is not the exact appointed account",
 		},
 		{
 			name:     "stale term",
@@ -1198,24 +1219,19 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			var term uint64
-			if tc.tobinCap.IsNil() {
-				// Replace whatever the previous subtest appointed with the
-				// canonical disabled mandate.
-				_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{Authority: authority})
-				s.Require().NoError(err)
-				current, err := s.keeper.ConversionMandate.Get(s.ctx)
-				s.Require().NoError(err)
-				term = current.Term
-			} else {
-				term = s.seedLiveTobinMandate(tc.tobinCap).Term
+			// Each case starts from a fresh store, so none inherits the last
+			// case's appointment, height, or overrides.
+			s.SetupTest()
+			if !tc.tobinCap.IsNil() {
+				s.seedLiveTobinMandate(tc.tobinCap)
 			}
-			s.assetStatuses = map[string]assettypes.AssetStatus{}
 			if tc.setup != nil {
 				tc.setup()
 			}
+			current, err := s.keeper.ConversionMandate.Get(s.ctx)
+			s.Require().NoError(err)
 
-			_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, tc.msg(term))
+			_, err = s.msgServer.CommitteeSetTobinTax(s.ctx, tc.msg(current.Term))
 			s.Require().Error(err)
 			if tc.expectErr != "" {
 				s.Require().ErrorContains(err, tc.expectErr)
@@ -1279,7 +1295,7 @@ func (s *KeeperTestSuite) TestGovernanceRestoresCommitteeRate() {
 func (s *KeeperTestSuite) TestStrandedCorridorLeavesTobinPowerUsable() {
 	appointment := s.seedLiveTobinMandate(tobinCapForTest())
 
-	s.Require().NoError(s.keeper.RebaseBasePool(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -1323,13 +1339,13 @@ func (s *KeeperTestSuite) TestSetConversionMandateRejectsEmptyTobinBand() {
 	minimum, maximum := capacityCorridor()
 	appoint := func(cap math.LegacyDec) error {
 		_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{
-			Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-			Committee:        capacityCommittee(),
-			ActivationHeight: capacityActivation,
-			ExpiryHeight:     capacityExpiry,
-			MinimumPolicy:    minimum,
-			MaximumPolicy:    maximum,
-			MaxTobinTax:      cap,
+			Authority:      authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+			Committee:      capacityCommittee(),
+			ActivationTime: capacityActivation,
+			ExpiryTime:     capacityExpiry,
+			MinimumPolicy:  minimum,
+			MaximumPolicy:  maximum,
+			MaxTobinTax:    cap,
 		})
 
 		return err

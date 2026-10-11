@@ -6,10 +6,16 @@ prepare() {
     platform=${1:-$(docker info --format '{{.Architecture}}')}
     case "$platform" in aarch64|arm64) platform=arm64 ;; x86_64|amd64) platform=amd64 ;; *) exit 1 ;; esac
     image="ark-source-verifier:$platform"
+    # The Go base is the image builder's, so one Dependabot bump moves both.
+    root=$(cd "$(dirname "$0")/../.." && pwd)
+    golang=$(sed -n 's/^FROM \(golang:[^ ]*\) AS builder-base$/\1/p' "$root/contrib/images/arkd-env/Dockerfile")
+    [ -n "$golang" ] || { echo "no builder-base FROM in the arkd-env Dockerfile" >&2; exit 1; }
     # General-purpose build tools are prerequisites, not part of the source bundle.
-    docker build --platform "linux/$platform" -t "$image" - >&2 <<'DOCKERFILE'
+    docker build --platform "linux/$platform" --build-arg "GOLANG=$golang" -t "$image" - >&2 <<'DOCKERFILE'
+# check=skip=InvalidDefaultArgInFrom
+ARG GOLANG
 FROM rust:1.95.0-alpine@sha256:606fd313a0f49743ee2a7bd49a0914bab7deedb12791f3a846a34a4711db7ed2 AS rust
-FROM golang:1.27-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125
+FROM ${GOLANG}
 RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-dev clang22-static llvm22-dev llvm22-static python3 perl bash cmake nasm
 # Match wasmvm v3.0.8's builders/Dockerfile.alpine: Rust 1.95.0, its minimum
 # compiler, with clang and LLVM headers and static libraries.

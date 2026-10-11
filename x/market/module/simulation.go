@@ -36,6 +36,6 @@ func (am AppModule) WeightedOperations(_ module.SimulationState) []simtypes.Weig
 func (am AppModule) WeightedOperationsX(weights simsx.WeightSource, reg simsx.Registry) {
 	reg.Add(weights.Get("msg_committee_update_policy", 50), simulation.MsgCommitteeUpdatePolicyFactory(am.k))
 	reg.Add(weights.Get("msg_committee_set_tobin_tax", 50), simulation.MsgCommitteeSetTobinTaxFactory(am.k))
-	reg.Add(weights.Get("msg_swap", 100), simulation.MsgSwapFactory(am.k))
-	reg.Add(weights.Get("msg_swap_send", 100), simulation.MsgSwapSendFactory(am.k))
+	reg.Add(weights.Get("msg_sell", 100), simulation.MsgSellFactory(am.k))
+	reg.Add(weights.Get("msg_buy", 50), simulation.MsgBuyFactory(am.k))
 }

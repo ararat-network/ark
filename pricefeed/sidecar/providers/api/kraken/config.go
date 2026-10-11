@@ -21,6 +21,10 @@ const (
 
 	// Separator separates pairs in the query parameter.
 	Separator = ","
+
+	// UnknownPairError prefixes the error Kraken answers a request naming a
+	// pair it does not list, refusing every pair in it.
+	UnknownPairError = "EQuery:Unknown asset pair"
 )
 
 // DefaultAPIConfig is the default configuration for the Kraken API.
@@ -31,7 +35,6 @@ var DefaultAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         0,
-	MaxBlockHeightAge: 0,
 }
 
 // DefaultMarkets defines the built-in Kraken API pair mappings. Responses are

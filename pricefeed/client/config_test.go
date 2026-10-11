@@ -109,6 +109,26 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "strictly less",
 		},
 		{
+			name: "client timeout below price ttl minus interval",
+			mutate: func(cfg *pricefeedclient.Config) {
+				cfg.ClientTimeout = cfg.PriceTTL - cfg.Interval - time.Nanosecond
+			},
+		},
+		{
+			name: "client timeout equals price ttl minus interval",
+			mutate: func(cfg *pricefeedclient.Config) {
+				cfg.ClientTimeout = cfg.PriceTTL - cfg.Interval
+			},
+			wantErr: "client_timeout 8.5s must be less than price_ttl 10s minus interval 1.5s",
+		},
+		{
+			name: "client timeout above price ttl",
+			mutate: func(cfg *pricefeedclient.Config) {
+				cfg.ClientTimeout = cfg.PriceTTL + time.Second
+			},
+			wantErr: "must be less than price_ttl",
+		},
+		{
 			name: "tls ca alone",
 			mutate: func(cfg *pricefeedclient.Config) {
 				cfg.TLS.Mode = tlsconfig.TLS

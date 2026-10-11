@@ -71,6 +71,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	transientKey := storetypes.NewTransientStoreKey("transient_test")
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, transientKey)
 	s.ctx = testCtx.Ctx
+	s.setBlockHeight(0)
 	s.authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	ctrl := gomock.NewController(s.T())

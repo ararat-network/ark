@@ -234,6 +234,17 @@ func TestParseResponse(t *testing.T) {
 			},
 		},
 		{
+			// Frankfurter reports a refused request as a message object, not
+			// the rate array, so every ticker fails to decode.
+			name:    "venue error body fails every ticker",
+			tickers: []types.Ticker{"EUR/USD", "EUR/GBP"},
+			body:    `{"message":"not found"}`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"EUR/USD": types.ErrorFailedToDecode,
+				"EUR/GBP": types.ErrorFailedToDecode,
+			},
+		},
+		{
 			name:    "marks unexpected pairs as no response",
 			tickers: []types.Ticker{"EUR/USD"},
 			body:    `[{"date":"2026-03-25","base":"EUR","quote":"GBP","rate":0.8623}]`,

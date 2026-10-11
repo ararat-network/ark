@@ -211,10 +211,10 @@ consumers apply the keeper's freshness policy to its stored rate. Reward funding
 `oracle_votes.go` enforces vote-extension rate cardinality, target membership, and the vote-rate size bound before
 decoding each `LegacyDec` value through `pkg/encoding`. Vote rates are prices, so `MaxEncodedVoteRateBytes` sits far
 below the state-level encoding bound, and the codec's wire and decoded limits derive from it: the codec admits exactly
-the payloads this validation could accept, so wire padding — oversized rates, duplicate map keys, stored-block zlib —
+the payloads this validation could accept, so wire padding — oversized rates, duplicate map keys, padded vote lists —
 buys an attacker nothing.
 
-Aggregate wire/decompression bounds belong to [abci/codec](../codec/codec.go); per-value codecs belong to
+Aggregate wire-size and vote-count bounds belong to [abci/codec](../codec/codec.go); per-value codecs belong to
 [pkg/encoding](../../pkg/encoding/legacy_dec.go). These are separate from feed cardinality and `MaxExchangeRate`.
 
 ## Internal values

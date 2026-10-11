@@ -51,16 +51,14 @@ const (
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgClient interface {
-	// SetReserveMandate appoints, replaces, or disables the height-scoped
+	// SetReserveMandate appoints, replaces, or disables the time-scoped
 	// Reserve committee.
 	SetReserveMandate(ctx context.Context, in *MsgSetReserveMandate, opts ...grpc.CallOption) (*MsgSetReserveMandateResponse, error)
 	// SetRecognitionPolicy replaces the complete asset eligibility set.
 	SetRecognitionPolicy(ctx context.Context, in *MsgSetRecognitionPolicy, opts ...grpc.CallOption) (*MsgSetRecognitionPolicyResponse, error)
 	// FundBuffer transfers strategic Reserve NOAH to the Redemption Buffer.
 	FundBuffer(ctx context.Context, in *MsgFundBuffer, opts ...grpc.CallOption) (*MsgFundBufferResponse, error)
-	// FundInsurance transfers strategic Reserve NOAH to Insurance. With
-	// FundBuffer these are the only production paths that may debit the
-	// Reserve without opening a position.
+	// FundInsurance transfers strategic Reserve NOAH to Insurance.
 	FundInsurance(ctx context.Context, in *MsgFundInsurance, opts ...grpc.CallOption) (*MsgFundInsuranceResponse, error)
 	// CorrectPosition restates a position as the governance authority, through
 	// a correcting ledger entry.
@@ -350,16 +348,14 @@ func (c *msgClient) CommitteeFundInsurance(ctx context.Context, in *MsgCommittee
 // take is its own message type, so the complete committee surface is
 // enumerable from this service.
 type MsgServer interface {
-	// SetReserveMandate appoints, replaces, or disables the height-scoped
+	// SetReserveMandate appoints, replaces, or disables the time-scoped
 	// Reserve committee.
 	SetReserveMandate(context.Context, *MsgSetReserveMandate) (*MsgSetReserveMandateResponse, error)
 	// SetRecognitionPolicy replaces the complete asset eligibility set.
 	SetRecognitionPolicy(context.Context, *MsgSetRecognitionPolicy) (*MsgSetRecognitionPolicyResponse, error)
 	// FundBuffer transfers strategic Reserve NOAH to the Redemption Buffer.
 	FundBuffer(context.Context, *MsgFundBuffer) (*MsgFundBufferResponse, error)
-	// FundInsurance transfers strategic Reserve NOAH to Insurance. With
-	// FundBuffer these are the only production paths that may debit the
-	// Reserve without opening a position.
+	// FundInsurance transfers strategic Reserve NOAH to Insurance.
 	FundInsurance(context.Context, *MsgFundInsurance) (*MsgFundInsuranceResponse, error)
 	// CorrectPosition restates a position as the governance authority, through
 	// a correcting ledger entry.

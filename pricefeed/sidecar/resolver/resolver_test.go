@@ -9,10 +9,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	"github.com/ararat-network/ark/pricefeed/sidecar/resolver"
 	"github.com/ararat-network/ark/pricefeed/sidecar/types"
 )
@@ -26,7 +26,7 @@ func TestAggregatePricesRecordsMetrics(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	resolved := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
 		"binance": {
@@ -252,6 +252,102 @@ func TestResolvePricesIgnoresPricesOutsideLegacyDecRange(t *testing.T) {
 	}, []string{"ausd"}, time.Now().UTC())
 
 	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
+}
+
+// TestResolvePricesDropsOnlyAFeedTheChainCannotHold inverts a huge quote into a
+// rate below one LegacyDec unit. That feed is dropped; the others still resolve.
+func TestResolvePricesDropsOnlyAFeedTheChainCannotHold(t *testing.T) {
+	cfg := testResolverConfig("aeur", "eur-usd-noah", "EUR/USD", "USD/NOAH")
+	prices := resolver.ResolvePrices(context.Background(), cfg, map[string]types.Prices{
+		"binance": {
+			"USD/NOAH": mustBigFloat(t, "2"),
+			"USD/EUR":  mustBigFloat(t, "1e20"),
+		},
+	}, []string{"ausd", "aeur"}, time.Now().UTC())
+
+	require.Len(t, prices, 1)
+	requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
+	require.NotContains(t, prices, types.Pair("EUR/NOAH"))
+}
+
+// ParsePrice accepts zero and negative text, so the resolver is where a
+// non-positive sample stops, in either orientation.
+func TestResolvePricesDropsNonPositiveSamples(t *testing.T) {
+	tests := []struct {
+		name string
+		pair types.Pair
+		raw  string
+	}{
+		{name: "zero", pair: "USD/NOAH", raw: "0"},
+		{name: "negative", pair: "USD/NOAH", raw: "-5"},
+		{name: "zero inverse", pair: "NOAH/USD", raw: "0"},
+		{name: "negative inverse", pair: "NOAH/USD", raw: "-5"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			price, err := types.ParsePrice(tt.raw)
+			require.NoError(t, err)
+			bad := types.Prices{tt.pair: price}
+
+			prices := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
+				"bad":   bad,
+				"valid": {"USD/NOAH": mustBigFloat(t, "2")},
+			}, []string{"ausd"}, time.Now().UTC())
+			requireBigFloatEqual(t, "2", prices[types.Pair("USD/NOAH")])
+
+			alone := resolver.ResolvePrices(context.Background(), resolver.Config{}, map[string]types.Prices{
+				"bad": bad,
+			}, []string{"ausd"}, time.Now().UTC())
+			require.Empty(t, alone)
+		})
+	}
+}
+
+// Legs each inside the LegacyDec range can multiply past it. A route is judged by
+// its product: one that ends past the range is dropped and the feed rests on its
+// other routes, and one that passes beyond it and comes back resolves.
+func TestResolvePricesJudgesARouteByItsProduct(t *testing.T) {
+	pow2 := func(exp int) *big.Float {
+		return new(big.Float).SetPrec(types.PricePrecisionBits).SetMantExp(big.NewFloat(0.5), exp+1)
+	}
+	twoLegs := resolver.Route{Name: "krw-usd-noah", Pairs: []types.Pair{"KRW/USD", "USD/NOAH"}}
+	threeLegs := resolver.Route{Name: "krw-usd-eur-noah", Pairs: []types.Pair{"KRW/USD", "USD/EUR", "EUR/NOAH"}}
+	fallback := resolver.Route{Name: "krw-jpy-noah", Pairs: []types.Pair{"KRW/JPY", "JPY/NOAH"}}
+	providerPrices := map[string]types.Prices{
+		"provider": {
+			"KRW/USD":  pow2(200),
+			"USD/NOAH": pow2(100),
+			"USD/EUR":  pow2(100),
+			"EUR/NOAH": pow2(-150),
+			"KRW/JPY":  mustBigFloat(t, "3"),
+			"JPY/NOAH": mustBigFloat(t, "2"),
+		},
+	}
+	tests := []struct {
+		name   string
+		routes []resolver.Route
+		want   string
+	}{
+		{name: "with another route", routes: []resolver.Route{twoLegs, fallback}, want: "6"},
+		{name: "alone", routes: []resolver.Route{twoLegs}},
+		{name: "past the range and back", routes: []resolver.Route{threeLegs}, want: "1427247692705959881058285969449495136382746624"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := resolver.Config{Routes: map[string][]resolver.Route{"akrw": tt.routes}}
+
+			prices := resolver.ResolvePrices(context.Background(), cfg, providerPrices, []string{"akrw"}, time.Now().UTC())
+
+			if tt.want == "" {
+				require.Empty(t, prices)
+				return
+			}
+			require.Len(t, prices, 1)
+			requireBigFloatEqual(t, tt.want, prices[types.Pair("KRW/NOAH")])
+		})
+	}
 }
 
 func TestResolvePricesPreservesInputPrecision(t *testing.T) {

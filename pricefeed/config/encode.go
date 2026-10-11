@@ -85,8 +85,6 @@ interval = {{ dur $p.API.Interval }}
 requests_per_second = {{ $p.API.RequestsPerSecond }}
 # Tickers per request. Zero: one request per provider-defined group.
 batch_size = {{ $p.API.BatchSize }}
-# Longest an on-chain source may repeat a block height. Zero: unchecked.
-max_block_height_age = {{ dur $p.API.MaxBlockHeightAge }}
 {{- range $p.API.Endpoints }}
 
 [[providers.{{ key $name }}.api.endpoints]]

@@ -8,7 +8,7 @@ are changed here; generated outputs are reviewed but not edited directly.
 | Source | gogo output | Pulsar / standard gRPC output |
 | --- | --- | --- |
 | `ark/<module>/v1` | `x/<module>/types` | `api/ark/<module>/v1` |
-| `ark/<module>/module/v1` | As selected by `go_package` | `api/ark/<module>/module/v1` |
+| `ark/<module>/module/v1` | None: no `go_package`, Pulsar only | `api/ark/<module>/module/v1` |
 | `ark/abci/v1` | `abci/voteextension/types` | `api/ark/abci/v1` |
 | `ark/pricefeed/v1` | `pricefeed/api` | `api/ark/pricefeed/v1` |
 | `ark/mandate/v1` | `pkg/mandate` | `api/ark/mandate/v1` |
@@ -32,9 +32,12 @@ make proto-gen
 ```
 
 The [Makefile](../Makefile) pins the proto-builder image. It mounts the workspace and the `ark-proto-cache` named volume;
-[protocgen.sh](scripts/protocgen.sh) generates and relocates gogo output, then invokes
-[protocgen-pulsar.sh](scripts/protocgen-pulsar.sh) to refresh generated API files. Scripts run under the image's shell.
-`make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files.
+[protocgen.sh](scripts/protocgen.sh) clears the gogo output Ark schemas own, regenerates and relocates it, then invokes
+[protocgen-pulsar.sh](scripts/protocgen-pulsar.sh) to refresh generated API files, which prepends the schema notices
+through [protocgen-notices.sh](scripts/protocgen-notices.sh). Scripts run under the image's shell. `make proto-all`
+chains format, lint, and generation; `make proto-update-deps` refreshes the BSR dependency lock.
+`make proto-gen` also runs `go mod tidy` on the host, so inspect dependency changes as well as generated files. CI
+runs `make proto-gen` and fails if the tree changes, so commit regenerated output with every schema change.
 
 Run focused module/transport tests, `git diff --check`, and a build appropriate to the changed surface. Do not run
 generation for Markdown-only edits; regenerate when schema comments change so Go documentation stays in sync. `make proto-check-breaking` compares schemas against the configured main branch and
@@ -43,24 +46,3 @@ constrains changes to the independently released node–sidecar service.
 
 Protocol semantics live in [docs/](../docs/README.md); fields and local contracts belong in schema comments. The
 [application map](../app/README.md) and module READMEs explain how generated services are wired.
-
-## Compatibility names and tags
-
-Do not reuse names retired from `ark.asset.v1`, even though protobuf cannot reserve top-level message or RPC names:
-
-- Pricing wrapper: `AssetPricing`; `PricedAsset` carries the pricing fields directly.
-- Feed registry types: `OracleTargets`, `OracleTargetTransition`, `OracleTargetDirection`.
-- Reference types and services: `ReferenceState`, `MsgSetReference`, `MsgSetReferenceResponse`,
-  `QueryReferenceRequest`, `QueryReferenceResponse`, the `Reference` query, and `EventReferenceUpdated`.
-- Lifecycle services: `AmendRegistration`, `ActivateAsset`, `ReactivateAsset`, `MsgReactivateAsset`, and
-  `MsgReactivateAssetResponse`, `MsgAmendRegistration`, `MsgAmendRegistrationResponse`, `MsgActivateAsset`, and
-  `MsgActivateAssetResponse`.
-- Feed queries and events: `OracleTargets`, `EventOracleTargetTransitionScheduled`, and `EventOracleTargetsActivated`.
-- Metadata event: `EventRegistrationAmended`.
-
-Oracle owns the feed registry and reference denomination. Its current reference services are `ReferenceDenom` and
-`SetReferenceDenom`; Asset uses the feed keyed by its own denomination. The unavailable names above remain distinct
-from those current contracts.
-
-`ark.oracle.v1.GenesisState` field 8 carried per-feed staleness windows. Consumer-specific `GetRateSetWithin` windows
-and the default `Params.max_exchange_rate_age` govern freshness; keep the retired field number unavailable for reuse.

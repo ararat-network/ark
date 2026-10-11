@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
-	gmptypes "github.com/cosmos/ibc-go/v11/modules/apps/27-gmp/types"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,14 +16,10 @@ import (
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-var (
-	_ wasmkeeper.MessageRouter = executionPolicyRouter{}
-	_ gmptypes.MessageRouter   = executionPolicyRouter{}
-	_ icatypes.MessageRouter   = executionPolicyRouter{}
-)
+var _ wasmkeeper.MessageRouter = executionPolicyRouter{}
 
-// executionPolicyRouter shares message policy across contracts, GMP-derived accounts, and ICA
-// accounts. Each dispatch surface authenticates its sender before consulting the router.
+// executionPolicyRouter applies message policy to what contracts dispatch. Wasmd authenticates the
+// dispatching contract before consulting the router.
 func (app *ArkApp) executionPolicyRouter() executionPolicyRouter {
 	return executionPolicyRouter{
 		inner:    app.MsgServiceRouter(),
@@ -61,6 +55,11 @@ func (r executionPolicyRouter) Handler(msg sdk.Msg) baseapp.MsgServiceHandler {
 		if err := ante.ValidateGovVoteMsg(ctx, r.cdc, r.staking, req, 0); err != nil {
 			return nil, err
 		}
+		// A proposal dispatched here meets the same block data budget floor
+		// as a signed one.
+		if err := ante.ValidateConsensusParamsMsg(r.cdc, req, 0); err != nil {
+			return nil, err
+		}
 		// A MultiSend dispatched here meets the same fan-out cap and pays the
 		// same quadratic surcharge as a signed one.
 		if err := ante.ValidateMultiSendMsg(ctx, r.cdc, req, 0); err != nil {
@@ -86,8 +85,8 @@ func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
 		return nil
 	}
 
-	// Each dispatch surface authenticates all message signers against its contract, derived
-	// account, or interchain account before routing. That signer is therefore the tax payer.
+	// Wasmd authenticates every message signer against the dispatching contract before
+	// routing. That signer is therefore the tax payer.
 	signers, _, err := r.cdc.GetMsgV1Signers(msg)
 	if err != nil {
 		return fmt.Errorf("resolving execution-generated tax payer: %w", err)

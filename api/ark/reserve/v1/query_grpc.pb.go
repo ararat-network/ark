@@ -27,6 +27,7 @@ const (
 	Query_Balance_FullMethodName           = "/ark.reserve.v1.Query/Balance"
 	Query_RecognitionPolicy_FullMethodName = "/ark.reserve.v1.Query/RecognitionPolicy"
 	Query_RecognisedCapital_FullMethodName = "/ark.reserve.v1.Query/RecognisedCapital"
+	Query_BurnableSurplus_FullMethodName   = "/ark.reserve.v1.Query/BurnableSurplus"
 )
 
 // QueryClient is the client API for Query service.
@@ -53,6 +54,9 @@ type QueryClient interface {
 	// RecognisedCapital queries the figure Treasury sees and its complete
 	// per-asset decomposition.
 	RecognisedCapital(ctx context.Context, in *QueryRecognisedCapitalRequest, opts ...grpc.CallOption) (*QueryRecognisedCapitalResponse, error)
+	// BurnableSurplus queries the largest NOAH burn CommitteeBurnSurplus would
+	// admit at this height. It fails while liability valuation is incomplete.
+	BurnableSurplus(ctx context.Context, in *QueryBurnableSurplusRequest, opts ...grpc.CallOption) (*QueryBurnableSurplusResponse, error)
 }
 
 type queryClient struct {
@@ -143,6 +147,16 @@ func (c *queryClient) RecognisedCapital(ctx context.Context, in *QueryRecognised
 	return out, nil
 }
 
+func (c *queryClient) BurnableSurplus(ctx context.Context, in *QueryBurnableSurplusRequest, opts ...grpc.CallOption) (*QueryBurnableSurplusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryBurnableSurplusResponse)
+	err := c.cc.Invoke(ctx, Query_BurnableSurplus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -167,6 +181,9 @@ type QueryServer interface {
 	// RecognisedCapital queries the figure Treasury sees and its complete
 	// per-asset decomposition.
 	RecognisedCapital(context.Context, *QueryRecognisedCapitalRequest) (*QueryRecognisedCapitalResponse, error)
+	// BurnableSurplus queries the largest NOAH burn CommitteeBurnSurplus would
+	// admit at this height. It fails while liability valuation is incomplete.
+	BurnableSurplus(context.Context, *QueryBurnableSurplusRequest) (*QueryBurnableSurplusResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -200,6 +217,9 @@ func (UnimplementedQueryServer) RecognitionPolicy(context.Context, *QueryRecogni
 }
 func (UnimplementedQueryServer) RecognisedCapital(context.Context, *QueryRecognisedCapitalRequest) (*QueryRecognisedCapitalResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RecognisedCapital not implemented")
+}
+func (UnimplementedQueryServer) BurnableSurplus(context.Context, *QueryBurnableSurplusRequest) (*QueryBurnableSurplusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BurnableSurplus not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -366,6 +386,24 @@ func _Query_RecognisedCapital_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_BurnableSurplus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBurnableSurplusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).BurnableSurplus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_BurnableSurplus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).BurnableSurplus(ctx, req.(*QueryBurnableSurplusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -404,6 +442,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecognisedCapital",
 			Handler:    _Query_RecognisedCapital_Handler,
+		},
+		{
+			MethodName: "BurnableSurplus",
+			Handler:    _Query_BurnableSurplus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,12 +1,15 @@
 package delegator_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/cosmos/interchaintest/v10"
 	"github.com/cosmos/interchaintest/v10/testutil"
 	"github.com/stretchr/testify/suite"
+
+	sdkmath "cosmossdk.io/math"
 
 	"github.com/ararat-network/ark/tests/e2e/chainsuite"
 	"github.com/ararat-network/ark/tests/e2e/delegator"
@@ -24,7 +27,8 @@ func (s *OracleSuite) SetupSuite() {
 		s.T().Skip("TEST_PRICEFEED is off")
 	}
 	s.Suite.SetupSuite()
-	// ausd prices from the bootstrap NOAH/USD alone; axdr needs a live FX provider.
+	// Pinned, axdr prices from the sidecars' bootstrap legs within blocks; live, it waits on an FX
+	// venue.
 	s.Require().NoError(s.Chain.WaitForExchangeRate(s.GetContext(), "axdr", 4*time.Minute))
 }
 
@@ -38,6 +42,22 @@ func (s *OracleSuite) TestEveryValidatorReportsRates() {
 	s.Require().NoError(err)
 	s.Require().Contains(rates, "ausd")
 	s.Require().Contains(rates, "axdr")
+	if s.Env.PriceFeedLive {
+		return
+	}
+	// Every sidecar reports the same pinned legs, so each feed is its leg times USD/NOAH. The chain
+	// tallies a feed as a cross against the reference, whose two roundings can move the last place.
+	usd := sdkmath.LegacyMustNewDecFromStr(rates["ausd"])
+	for _, leg := range chainsuite.PinnedPrices {
+		denom := "a" + strings.ToLower(strings.TrimSuffix(leg.Pair, "/USD"))
+		rate, ok := rates[denom]
+		if !ok {
+			continue
+		}
+		want := sdkmath.LegacyMustNewDecFromStr(leg.Price).Mul(usd)
+		got := sdkmath.LegacyMustNewDecFromStr(rate)
+		s.Require().True(got.Sub(want).Abs().LTE(want.QuoInt64(1_000_000_000_000)), "%s: %s, pinned %s", denom, got, want)
+	}
 }
 
 func (s *OracleSuite) TestGasPriceSheetPricesNoah() {
@@ -52,7 +72,7 @@ func (s *OracleSuite) TestConversionClears() {
 	trader := s.Wallet
 	before, err := s.Chain.GetBalance(ctx, trader.FormattedAddress(), "ausd")
 	s.Require().NoError(err)
-	_, err = s.Node().ExecTx(ctx, trader.KeyName(), "market", "swap", chainsuite.NOAHCoin(1), "ausd")
+	_, err = s.Node().ExecTx(ctx, trader.KeyName(), "market", "sell", chainsuite.NOAHCoin(1), "ausd")
 	s.Require().NoError(err)
 	// Settlement runs in the EndBlocker after placement.
 	s.Require().NoError(testutil.WaitForBlocks(ctx, 2, s.Chain))

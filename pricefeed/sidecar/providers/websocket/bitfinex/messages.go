@@ -52,11 +52,18 @@ const (
 	ErrorUnknownEvent ErrorCode = 10000
 	// ErrorUnknownPair is returned for an unknown pair.
 	ErrorUnknownPair ErrorCode = 10001
+	// ErrorSubscriptionFailed is returned when a subscription fails.
+	ErrorSubscriptionFailed ErrorCode = 10300
+	// ErrorAlreadySubscribed is returned for a channel already subscribed.
+	ErrorAlreadySubscribed ErrorCode = 10301
+	// ErrorUnknownChannel is returned for a channel Bitfinex does not serve.
+	ErrorUnknownChannel ErrorCode = 10302
 	// ErrorLimitOpenChannels is returned when the connection holds too many
 	// channels.
 	ErrorLimitOpenChannels ErrorCode = 10305
-	// ErrorSubscriptionFailed is returned when a subscription fails.
-	ErrorSubscriptionFailed ErrorCode = 10400
+	// ErrorUnsubscriptionFailed is returned when an unsubscribe fails;
+	// Bitfinex's docs list it under unsubscribing as "Subscription failed".
+	ErrorUnsubscriptionFailed ErrorCode = 10400
 	// ErrorNotSubscribed is returned for an unsubscribe of a channel that
 	// was never subscribed.
 	ErrorNotSubscribed ErrorCode = 10401
@@ -69,10 +76,16 @@ func (e ErrorCode) Error() error {
 		return errors.New("unknown event")
 	case ErrorUnknownPair:
 		return errors.New("unknown pair")
-	case ErrorLimitOpenChannels:
-		return errors.New("limit of open channels reached")
 	case ErrorSubscriptionFailed:
 		return errors.New("subscription failed")
+	case ErrorAlreadySubscribed:
+		return errors.New("already subscribed")
+	case ErrorUnknownChannel:
+		return errors.New("unknown channel")
+	case ErrorLimitOpenChannels:
+		return errors.New("limit of open channels reached")
+	case ErrorUnsubscriptionFailed:
+		return errors.New("unsubscription failed")
 	case ErrorNotSubscribed:
 		return errors.New("not subscribed")
 	default:

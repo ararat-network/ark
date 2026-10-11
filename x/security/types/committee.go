@@ -7,5 +7,4 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 var CommitteeMsgs = []sdk.Msg{
 	&MsgCommitteePlanUpgrade{},
 	&MsgCommitteeCancelUpgrade{},
-	&MsgCommitteeRecoverClient{},
 }

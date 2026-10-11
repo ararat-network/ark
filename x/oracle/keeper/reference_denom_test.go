@@ -154,11 +154,11 @@ func (s *KeeperTestSuite) TestSetReferenceDenomChangeRebasesConsumers() {
 		chain.XDRBaseDenom:  outgoing,
 	}
 
-	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
+	s.marketRebaser.EXPECT().
+		RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
-	s.treasuryReferenceDenom.EXPECT().
-		RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
+	s.treasuryRebaser.EXPECT().
+		RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{}))
@@ -221,11 +221,11 @@ func (s *KeeperTestSuite) TestSetReferenceDenomSuppliedRateSkipsOutgoingPricing(
 	// Both executors must receive the supplied rate and the same set: a rebase
 	// converting Market and Treasury at different rates would leave the two
 	// disagreeing about the unit.
-	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
+	s.marketRebaser.EXPECT().
+		RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
-	s.treasuryReferenceDenom.EXPECT().
-		RebaseReferenceState(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
+	s.treasuryRebaser.EXPECT().
+		RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, handed).
 		Return(nil)
 
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, supplied))
@@ -246,7 +246,19 @@ func (s *KeeperTestSuite) TestSetReferenceDenomUnchangedDenomSkipsRebase() {
 }
 
 func (s *KeeperTestSuite) TestSetReferenceDenomChangeWithoutExecutorsFails() {
-	s.keeper.SetReferenceDenomConsumers(nil, nil)
+	s.keeper.SetReferenceRebasers()
+	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
+
+	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
+	s.Require().ErrorIs(err, types.ErrReferenceDenomRebaseUnavailable)
+	s.requireStoredReferenceDenom(chain.XDRBaseDenom)
+}
+
+// A nil entry is a wiring fault and is refused before any rate is priced or
+// any other consumer runs; the strict market mock registering no expectation
+// is the assertion.
+func (s *KeeperTestSuite) TestSetReferenceDenomChangeWithNilExecutorFails() {
+	s.keeper.SetReferenceRebasers(s.marketRebaser, nil)
 	s.Require().NoError(s.keeper.SetReferenceDenom(s.ctx, chain.XDRBaseDenom, math.LegacyDec{}))
 
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
@@ -261,8 +273,8 @@ func (s *KeeperTestSuite) TestSetReferenceDenomExecutorErrorFailsAtomically() {
 		chain.USDBaseDenom: math.LegacyNewDec(2),
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
-	s.marketReferenceDenom.EXPECT().
-		RebaseBasePool(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, gomock.Any()).
+	s.marketRebaser.EXPECT().
+		RebaseReference(s.ctx, chain.XDRBaseDenom, chain.USDBaseDenom, gomock.Any()).
 		Return(errors.New("pool rebase failed"))
 
 	err := s.keeper.SetReferenceDenom(s.ctx, chain.USDBaseDenom, math.LegacyDec{})
@@ -315,7 +327,8 @@ func (s *KeeperTestSuite) TestMsgSetReferenceDenom() {
 		Authority:      sdk.AccAddress("not-gov").String(),
 		ReferenceDenom: chain.XDRBaseDenom,
 	})
-	s.Require().Error(err)
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+	s.requireStoredReferenceDenom("")
 
 	_, err = s.msgServer.SetReferenceDenom(s.ctx, &types.MsgSetReferenceDenom{
 		Authority:      authority,

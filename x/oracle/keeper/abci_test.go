@@ -44,7 +44,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 	})
 
 	s.Run("reward window settles rewards and clears reward weights", func() {
-		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(9)
+		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(10)
 
 		params, err := s.keeper.Params.Get(s.ctx)
 		s.Require().NoError(err)
@@ -84,7 +84,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 	})
 
 	s.Run("attendance window jails absentees and clears records", func() {
-		height := int64(19)
+		height := int64(20)
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 
 		params, err := s.keeper.Params.Get(s.ctx)
@@ -92,6 +92,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		params.RewardWindow = 30
 		params.AttendanceWindow = 20
 		params.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		params.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 		// valAddr1: 0/20 attended -> jailed.
@@ -120,7 +121,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 	})
 
 	s.Run("zero minimum attendance disables jailing", func() {
-		height := int64(19)
+		height := int64(20)
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 
 		params, err := s.keeper.Params.Get(s.ctx)
@@ -138,13 +139,14 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 	})
 
 	s.Run("already jailed validators are not re-jailed", func() {
-		height := int64(19)
+		height := int64(20)
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 
 		params, err := s.keeper.Params.Get(s.ctx)
 		s.Require().NoError(err)
 		params.AttendanceWindow = 20
 		params.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		params.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 		s.Require().NoError(s.keeper.Accounting.Set(s.ctx, types.NewAccounting(params)))
 		s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{EligibleBlocks: 20, AttendedBlocks: 0}))
@@ -161,7 +163,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 	})
 
 	s.Run("window changes activate after the current period settles", func() {
-		height := int64(19)
+		height := int64(20)
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 
 		activeParams := types.DefaultParams()
@@ -176,6 +178,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		desiredParams.RewardDistributionWindow = 40
 		desiredParams.AttendanceWindow = 100
 		desiredParams.MinAttendancePerWindow = math.LegacyNewDecWithPrec(90, 2)
+		desiredParams.FunctioningBlockThreshold = math.LegacyOneDec()
 		s.Require().NoError(s.keeper.Params.Set(s.ctx, desiredParams))
 		// This case is about window activation, not jailing: a perfect record
 		// clears the 90% ratio, so the settlement fires no staking calls and the
@@ -188,13 +191,13 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		s.Require().NoError(err)
 		s.Require().Equal(uint64(4), updated.RewardWindow)
 		s.Require().Equal(uint64(40), updated.RewardDistributionWindow)
-		s.Require().Equal(uint64(20), updated.RewardWindowStartHeight)
+		s.Require().Equal(uint64(21), updated.RewardWindowStartHeight)
 		s.Require().Equal(uint64(100), updated.AttendanceWindow)
-		s.Require().Equal(uint64(20), updated.AttendanceWindowStartHeight)
+		s.Require().Equal(uint64(21), updated.AttendanceWindowStartHeight)
 
-		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(22)
-		s.Require().False(chain.IsPeriodLastBlockFrom(s.ctx, updated.RewardWindowStartHeight, updated.RewardWindow))
 		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(23)
+		s.Require().False(chain.IsPeriodLastBlockFrom(s.ctx, updated.RewardWindowStartHeight, updated.RewardWindow))
+		s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockHeight(24)
 		s.Require().True(chain.IsPeriodLastBlockFrom(s.ctx, updated.RewardWindowStartHeight, updated.RewardWindow))
 	})
 }

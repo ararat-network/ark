@@ -1,14 +1,14 @@
 package voteextension
 
-import "errors"
+import abcimetrics "github.com/ararat-network/ark/abci/metrics"
 
 var (
 	// errPanic identifies a panic recovered from an ABCI vote-extension handler.
-	errPanic = errors.New("panic")
+	errPanic = abcimetrics.NewError(abcimetrics.StatusPanic, "panic")
 	// errPriceFeedClient identifies an invalid response from the oracle client.
-	errPriceFeedClient = errors.New("oracle client error")
+	errPriceFeedClient = abcimetrics.NewError(abcimetrics.StatusPriceFeedClient, "oracle client error")
 	// errInvalidPrices identifies prices that cannot form a valid vote extension.
-	errInvalidPrices = errors.New("invalid oracle prices")
+	errInvalidPrices = abcimetrics.NewError(abcimetrics.StatusInvalidPrices, "invalid oracle prices")
 	// errVoteExtensionValidation identifies a vote extension that fails validation.
-	errVoteExtensionValidation = errors.New("vote extension validation failed")
+	errVoteExtensionValidation = abcimetrics.NewError(abcimetrics.StatusVoteExtensionValidation, "vote extension validation failed")
 )

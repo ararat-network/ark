@@ -12,6 +12,30 @@ import (
 	"go.uber.org/zap"
 )
 
+// PinnedPrices are the route legs a pinned sidecar reports besides the default config's USD/NOAH
+// bootstrap leg, in USD per unit. XDR/USD is chain.BootstrapUSDPerXDR, so axdr stays at one NOAH.
+var PinnedPrices = []struct{ Pair, Price string }{
+	{"AUD/USD", "0.65"},
+	{"CAD/USD", "0.73"},
+	{"CNY/USD", "0.14"},
+	{"EUR/USD", "1.08"},
+	{"GBP/USD", "1.27"},
+	{"JPY/USD", "0.0067"},
+	{"KRW/USD", "0.00075"},
+	{"MXN/USD", "0.055"},
+	{"SGD/USD", "0.74"},
+	{"XDR/USD", "1.371"},
+}
+
+const (
+	// pinnedEndpoint never resolves: .invalid is reserved for that, so a pinned provider fails
+	// fast and every leg falls back to its bootstrap price.
+	pinnedEndpoint = "https://offline.invalid/"
+	// pinnedUntil outlives any run, including the default USD/NOAH leg's own expiry.
+	pinnedUntil    = "2100-01-01T00:00:00Z"
+	bootstrapTable = "[[resolver.bootstrap_prices]]"
+)
+
 const (
 	SidecarProcess    = "pricefeed"
 	SidecarPort       = "8080"
@@ -45,6 +69,7 @@ func PriceFeedSidecar(image ibc.DockerImage) ibc.SidecarConfig {
 // the sidecar. Neither address is known until interchaintest has named the
 // containers, which is why this is a PreGenesis hook rather than config.
 func WirePriceFeed(ctx context.Context, log *zap.Logger, chain *cosmos.CosmosChain) error {
+	live := GetEnvironment().PriceFeedLive
 	for _, val := range chain.Validators {
 		sidecar := priceFeedSidecar(val)
 		if sidecar == nil {
@@ -53,6 +78,11 @@ func WirePriceFeed(ctx context.Context, log *zap.Logger, chain *cosmos.CosmosCha
 		cfg, err := sidecarConfig(ctx, val)
 		if err != nil {
 			return err
+		}
+		if !live {
+			if cfg, err = pinPrices(cfg); err != nil {
+				return err
+			}
 		}
 		fw := dockerutil.NewFileWriter(log, val.DockerClient, val.TestName)
 		if err := fw.WriteFile(ctx, sidecar.VolumeName, SidecarConfigFile, cfg); err != nil {
@@ -113,4 +143,40 @@ func rewriteClient(cfg []byte, address string) []byte {
 		}
 	}
 	return []byte(strings.Join(lines, "\n"))
+}
+
+// pinPrices takes the sidecar off the internet: every provider endpoint points nowhere, every
+// bootstrap leg outlives the run, and the legs in PinnedPrices join the default USD/NOAH one.
+func pinPrices(cfg []byte) ([]byte, error) {
+	lines := strings.Split(string(cfg), "\n")
+	out := make([]string, 0, len(lines)+4*len(PinnedPrices))
+	section, pinned := "", false
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "[") {
+			section = trimmed
+			if section == bootstrapTable && !pinned {
+				for _, leg := range PinnedPrices {
+					out = append(out, bootstrapTable,
+						fmt.Sprintf("pair = %q", leg.Pair),
+						fmt.Sprintf("price = %q", leg.Price),
+						fmt.Sprintf("valid_until = %q", pinnedUntil),
+						"")
+				}
+				pinned = true
+			}
+		}
+		switch {
+		case strings.HasPrefix(section, "[[providers.") && strings.HasSuffix(section, ".endpoints]]") &&
+			strings.HasPrefix(trimmed, "url ="):
+			line = fmt.Sprintf("url = %q", pinnedEndpoint)
+		case section == bootstrapTable && strings.HasPrefix(trimmed, "valid_until ="):
+			line = fmt.Sprintf("valid_until = %q", pinnedUntil)
+		}
+		out = append(out, line)
+	}
+	if !pinned {
+		return nil, fmt.Errorf("pricefeed config has no %s table to pin", bootstrapTable)
+	}
+	return []byte(strings.Join(out, "\n")), nil
 }

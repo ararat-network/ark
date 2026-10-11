@@ -6,19 +6,33 @@
 package types
 
 import (
+	"errors"
+
+	"google.golang.org/grpc/codes"
+
 	errorsmod "cosmossdk.io/errors"
 )
 
-// Oracle Errors
+// Oracle errors carry their gRPC code from registration, so a query handler returns the keeper's
+// error and the code follows it through every wrap.
 var (
-	ErrInvalidExchangeRate             = errorsmod.Register(ModuleName, 1, "invalid exchange rate")
-	ErrUnknownDenom                    = errorsmod.Register(ModuleName, 2, "unknown denom")
-	ErrStaleExchangeRate               = errorsmod.Register(ModuleName, 3, "stale exchange rate")
-	ErrConversionOutOfRange            = errorsmod.Register(ModuleName, 4, "conversion result is out of range")
-	ErrFeedTransitionPending           = errorsmod.Register(ModuleName, 5, "conflicting feed transition is pending")
-	ErrFeedReferenced                  = errorsmod.Register(ModuleName, 6, "feed is referenced by a consumer")
-	ErrFeedNotFound                    = errorsmod.Register(ModuleName, 7, "no active or in-flight feed for denom")
-	ErrInvalidReferenceDenom           = errorsmod.Register(ModuleName, 8, "invalid protocol reference denom")
-	ErrReferenceDenomRebaseUnavailable = errorsmod.Register(ModuleName, 9, "protocol reference denom cannot be rebased")
-	ErrInvalidMaxExchangeRateAge       = errorsmod.Register(ModuleName, 10, "invalid max exchange rate age")
+	ErrInvalidExchangeRate             = errorsmod.RegisterWithGRPCCode(ModuleName, 1, codes.InvalidArgument, "invalid exchange rate")
+	ErrUnknownDenom                    = errorsmod.RegisterWithGRPCCode(ModuleName, 2, codes.NotFound, "unknown denom")
+	ErrStaleExchangeRate               = errorsmod.RegisterWithGRPCCode(ModuleName, 3, codes.FailedPrecondition, "stale exchange rate")
+	ErrConversionOutOfRange            = errorsmod.RegisterWithGRPCCode(ModuleName, 4, codes.OutOfRange, "conversion result is out of range")
+	ErrFeedTransitionPending           = errorsmod.RegisterWithGRPCCode(ModuleName, 5, codes.FailedPrecondition, "conflicting feed transition is pending")
+	ErrFeedReferenced                  = errorsmod.RegisterWithGRPCCode(ModuleName, 6, codes.FailedPrecondition, "feed is referenced by a consumer")
+	ErrFeedNotFound                    = errorsmod.RegisterWithGRPCCode(ModuleName, 7, codes.NotFound, "no active or in-flight feed for denom")
+	ErrInvalidReferenceDenom           = errorsmod.RegisterWithGRPCCode(ModuleName, 8, codes.InvalidArgument, "invalid protocol reference denom")
+	ErrReferenceDenomRebaseUnavailable = errorsmod.RegisterWithGRPCCode(ModuleName, 9, codes.FailedPrecondition, "protocol reference denom cannot be rebased")
 )
+
+// IsRateUnavailable reports a failure of the rate inputs rather than of the caller's own
+// arithmetic: no rate, a stale or invalid one, or a conversion the rates cannot represent. A
+// consumer that falls back on bad inputs branches on it instead of naming the oracle's errors.
+func IsRateUnavailable(err error) bool {
+	return errors.Is(err, ErrUnknownDenom) ||
+		errors.Is(err, ErrStaleExchangeRate) ||
+		errors.Is(err, ErrInvalidExchangeRate) ||
+		errors.Is(err, ErrConversionOutOfRange)
+}

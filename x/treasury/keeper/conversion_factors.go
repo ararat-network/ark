@@ -19,14 +19,12 @@ import (
 
 // refreshConversionFactors updates derivable member cross-rates each block, retains unavailable
 // factors, and seeds uncovered members at one. This keeps outstanding member transfers taxable
-// during feed outages.
+// during feed outages. The NOAH factor derives from the reference alone, so it follows a live
+// reference rate while the registry is still empty (D95).
 func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 	if err != nil {
 		return fmt.Errorf("getting oracle-priced denominations: %w", err)
-	}
-	if len(denoms) == 0 {
-		return nil
 	}
 	params, err := k.Params.Get(ctx)
 	if err != nil {
@@ -47,7 +45,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 		return fmt.Errorf("capturing conversion-factor rates: %w", err)
 	}
 
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	height := chain.BlockHeight(ctx)
 	one := sdk.NewDecCoin(reference, math.OneInt())
 	changed := make([]types.ConversionFactor, 0, len(denoms))
 	for _, denom := range denoms {
@@ -56,7 +54,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 			factor = math.LegacyOneDec()
 		} else {
 			converted, err := rates.Convert(one, denom)
-			if err != nil && !isUnusableRateInput(err) {
+			if err != nil && !oracletypes.IsRateUnavailable(err) {
 				return fmt.Errorf("deriving conversion factor for %s: %w", denom, err)
 			}
 			if err == nil && converted.Amount.IsPositive() {
@@ -93,7 +91,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	// GetTaxCap. NOAH has no arrival seed; genesis supplies its initial factor until a live
 	// reference rate refreshes it.
 	converted, err := rates.Convert(one, chain.NoahBaseDenom)
-	if err != nil && !isUnusableRateInput(err) {
+	if err != nil && !oracletypes.IsRateUnavailable(err) {
 		return fmt.Errorf("deriving the NOAH conversion factor: %w", err)
 	}
 	if err == nil && converted.Amount.IsPositive() {
@@ -154,7 +152,7 @@ func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to st
 		return nil
 	}
 
-	height := uint64(sdk.UnwrapSDKContext(ctx).BlockHeight())
+	height := chain.BlockHeight(ctx)
 	rescaled := make([]types.ConversionFactor, 0)
 	if err := k.ConversionFactors.Walk(ctx, nil, func(denom string, entry types.ConversionFactor) (bool, error) {
 		// Positive, not merely representable — refresh's own write gate: an
@@ -197,13 +195,4 @@ func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to st
 		return fmt.Errorf("emitting Treasury conversion-factor rescale event: %w", err)
 	}
 	return nil
-}
-
-// isUnusableRateInput reports whether a conversion failed on the block's rate
-// inputs rather than on Treasury's own arithmetic.
-func isUnusableRateInput(err error) bool {
-	return errors.Is(err, oracletypes.ErrUnknownDenom) ||
-		errors.Is(err, oracletypes.ErrStaleExchangeRate) ||
-		errors.Is(err, oracletypes.ErrInvalidExchangeRate) ||
-		errors.Is(err, oracletypes.ErrConversionOutOfRange)
 }

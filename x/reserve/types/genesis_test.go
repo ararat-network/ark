@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
@@ -52,6 +53,9 @@ func closed(position types.Position, height uint64) types.Position {
 // the ledger that funded them, with the identifier bounds set to fit.
 func genesisWithPositions(open, closedPositions []types.Position) *types.GenesisState {
 	genesisState := types.DefaultGenesisState()
+	// The fixture deployments were made under term 1, so this is the export
+	// of a chain whose committee has since been replaced by nobody.
+	genesisState.Mandate = types.NewDisabledReserveMandate(2)
 	ledger := make([]types.AccountingEntry, 0, len(open)+len(closedPositions))
 	nextPositionID := uint64(1)
 	entryID := uint64(1)
@@ -197,7 +201,8 @@ func TestGenesisPositionIdentifiers(t *testing.T) {
 
 // TestGenesisPositionsBoundedBySequence pins that both lists answer to the one
 // sequence that issues them, so neither can import a position the keeper would
-// later hand out again.
+// later hand out again, and that the sequence sits exactly one past the
+// records: positions are never deleted, so a gap is a lost record.
 func TestGenesisPositionsBoundedBySequence(t *testing.T) {
 	open, _ := positionFixture(1, 1)
 
@@ -213,6 +218,20 @@ func TestGenesisPositionsBoundedBySequence(t *testing.T) {
 		genesisState.NextPositionId = open.PositionId
 
 		require.ErrorContains(t, genesisState.Validate(), "must be below next position ID")
+	})
+
+	t.Run("a next position ID ahead of the positions is refused", func(t *testing.T) {
+		genesisState := genesisWithPositions([]types.Position{open}, nil)
+		genesisState.NextPositionId = 3
+
+		require.ErrorContains(t, genesisState.Validate(), "next position ID 3 must follow the 1 genesis positions")
+	})
+
+	t.Run("a gap in position IDs is refused", func(t *testing.T) {
+		second, _ := positionFixture(3, 2)
+		genesisState := genesisWithPositions([]types.Position{open, second}, nil)
+
+		require.ErrorContains(t, genesisState.Validate(), "next position ID 4 must follow the 2 genesis positions")
 	})
 }
 
@@ -248,6 +267,71 @@ func TestGenesisReconcilesBothListsAgainstTheLedger(t *testing.T) {
 
 		require.ErrorContains(t, genesisState.Validate(), "names unknown position 42")
 	})
+}
+
+// configuredTermGenesis returns a genesis whose committee is live in the
+// supplied term and whose one NOAH deployment was made under term 1, with
+// allowance_used carrying what that deployment consumed if it is current.
+func configuredTermGenesis(term uint64) *types.GenesisState {
+	position, _ := positionFixture(1, 1)
+	genesisState := genesisWithPositions([]types.Position{position}, nil)
+	genesisState.Mandate = types.ReserveMandate{
+		Envelope:            mandate.Envelope{Term: term, Committee: testAddress(2), ActivationTime: 1, ExpiryTime: 100},
+		DeploymentAllowance: chain.NoahCoin(math.NewInt(1_000)),
+		MinimumNoahBalance:  chain.NoahCoin(math.ZeroInt()),
+		Destinations:        []string{testAddress(3)},
+	}
+	if term == 1 {
+		genesisState.AllowanceUsed = chain.NoahCoin(math.NewInt(100))
+	}
+	return genesisState
+}
+
+// TestGenesisReconcilesAllowanceUsedWithTheLedger pins that term usage is
+// re-derived from the current term's NOAH deployments rather than trusted.
+func TestGenesisReconcilesAllowanceUsedWithTheLedger(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		mutate func(*types.GenesisState)
+		err    string
+	}{
+		{name: "usage equal to the current term's NOAH deployments is valid", mutate: func(*types.GenesisState) {}},
+		{name: "usage below the ledger is refused", mutate: func(gs *types.GenesisState) {
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}, err: "does not equal the current term's NOAH deployments"},
+		{name: "usage above the ledger is refused", mutate: func(gs *types.GenesisState) {
+			gs.AllowanceUsed = chain.NoahCoin(math.NewInt(150))
+		}, err: "does not equal the current term's NOAH deployments"},
+		{name: "usage equal to the mandate allowance is valid", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.DeploymentAllowance = chain.NoahCoin(math.NewInt(100))
+		}},
+		{name: "usage above the mandate allowance is refused", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.DeploymentAllowance = chain.NoahCoin(math.NewInt(99))
+		}, err: "reserve allowance usage 100anoah exceeds mandate allowance 99anoah"},
+		{name: "an in-kind deployment consumes no allowance", mutate: func(gs *types.GenesisState) {
+			gs.Ledger[0].MovedCoin = sdk.NewCoin(chain.XDRBaseDenom, math.NewInt(50))
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}},
+		{name: "a prior term's deployment consumes no allowance", mutate: func(gs *types.GenesisState) {
+			gs.Mandate.Term = 2
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}},
+		{name: "an entry from a term that has not existed is refused", mutate: func(gs *types.GenesisState) {
+			gs.Ledger[0].Term = 2
+			gs.AllowanceUsed = chain.NoahCoin(math.ZeroInt())
+		}, err: "exceeds current Reserve mandate term 1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			genesisState := configuredTermGenesis(1)
+			tc.mutate(genesisState)
+			err := genesisState.Validate()
+			if tc.err == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
 }
 
 // attributedRecovery is the anoah one attribution books.
@@ -318,16 +402,31 @@ func TestGenesisFoldsReversalsOutOfTheRecovery(t *testing.T) {
 		require.ErrorContains(t, genesisState.Validate(), "does not equal its ledger sum")
 	})
 
-	// Validate enforces "earlier" on shape alone; existence is separate, which
-	// a gap in the identifier space is what exercises.
-	t.Run("a reversal of an unknown entry is refused", func(t *testing.T) {
+	// Entries are never deleted, so the ledger runs from one without a gap and
+	// the sequence sits one past it; a restated entry therefore always exists.
+	t.Run("a gap in entry IDs is refused", func(t *testing.T) {
 		genesisState := withReversal(attributedGenesis(t))
 		reversal := &genesisState.Ledger[len(genesisState.Ledger)-1]
 		reversal.EntryId = 10
-		reversal.Corrects = 5
 		genesisState.NextEntryId = 11
 
-		require.ErrorContains(t, genesisState.Validate(), "restates unknown entry 5")
+		require.ErrorContains(t, genesisState.Validate(), "must run from entry ID 1 without a gap: entry 10 at index 2")
+	})
+
+	// Entry validation refuses a forward restatement, so the single pass always holds its target.
+	t.Run("a restatement of a later entry is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		reversal := &genesisState.Ledger[len(genesisState.Ledger)-1]
+		reversal.Corrects = reversal.EntryId + 1
+
+		require.ErrorContains(t, genesisState.Validate(), "invalid ledger entry 3: a correction or reversal must restate an earlier entry")
+	})
+
+	t.Run("a next entry ID ahead of the ledger is refused", func(t *testing.T) {
+		genesisState := withReversal(attributedGenesis(t))
+		genesisState.NextEntryId++
+
+		require.ErrorContains(t, genesisState.Validate(), "next entry ID 5 must follow the 3 genesis ledger entries")
 	})
 
 	// Only an attribution adds to the recovery, so only one can be taken out.

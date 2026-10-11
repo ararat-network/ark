@@ -13,7 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	types "github.com/cosmos/cosmos-sdk/types"
+	types "github.com/ararat-network/ark/x/asset/types"
+	types0 "github.com/ararat-network/ark/x/oracle/types"
+	types1 "github.com/cosmos/cosmos-sdk/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,10 +44,10 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // GetAccount mocks base method.
-func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types.AccAddress) types.AccountI {
+func (m *MockAccountKeeper) GetAccount(ctx context.Context, addr types1.AccAddress) types1.AccountI {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccount", ctx, addr)
-	ret0, _ := ret[0].(types.AccountI)
+	ret0, _ := ret[0].(types1.AccountI)
 	return ret0
 }
 
@@ -56,10 +58,10 @@ func (mr *MockAccountKeeperMockRecorder) GetAccount(ctx, addr any) *gomock.Call 
 }
 
 // GetModuleAccount mocks base method.
-func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types.ModuleAccountI {
+func (m *MockAccountKeeper) GetModuleAccount(ctx context.Context, moduleName string) types1.ModuleAccountI {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAccount", ctx, moduleName)
-	ret0, _ := ret[0].(types.ModuleAccountI)
+	ret0, _ := ret[0].(types1.ModuleAccountI)
 	return ret0
 }
 
@@ -70,10 +72,10 @@ func (mr *MockAccountKeeperMockRecorder) GetModuleAccount(ctx, moduleName any) *
 }
 
 // GetModuleAddress mocks base method.
-func (m *MockAccountKeeper) GetModuleAddress(name string) types.AccAddress {
+func (m *MockAccountKeeper) GetModuleAddress(name string) types1.AccAddress {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModuleAddress", name)
-	ret0, _ := ret[0].(types.AccAddress)
+	ret0, _ := ret[0].(types1.AccAddress)
 	return ret0
 }
 
@@ -108,7 +110,7 @@ func (m *MockWasmKeeper) EXPECT() *MockWasmKeeperMockRecorder {
 }
 
 // HasContractInfo mocks base method.
-func (m *MockWasmKeeper) HasContractInfo(ctx context.Context, address types.AccAddress) bool {
+func (m *MockWasmKeeper) HasContractInfo(ctx context.Context, address types1.AccAddress) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasContractInfo", ctx, address)
 	ret0, _ := ret[0].(bool)
@@ -146,7 +148,7 @@ func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 }
 
 // BlockedAddr mocks base method.
-func (m *MockBankKeeper) BlockedAddr(addr types.AccAddress) bool {
+func (m *MockBankKeeper) BlockedAddr(addr types1.AccAddress) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BlockedAddr", addr)
 	ret0, _ := ret[0].(bool)
@@ -160,10 +162,10 @@ func (mr *MockBankKeeperMockRecorder) BlockedAddr(addr any) *gomock.Call {
 }
 
 // GetAllBalances mocks base method.
-func (m *MockBankKeeper) GetAllBalances(ctx context.Context, addr types.AccAddress) types.Coins {
+func (m *MockBankKeeper) GetAllBalances(ctx context.Context, addr types1.AccAddress) types1.Coins {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllBalances", ctx, addr)
-	ret0, _ := ret[0].(types.Coins)
+	ret0, _ := ret[0].(types1.Coins)
 	return ret0
 }
 
@@ -174,10 +176,10 @@ func (mr *MockBankKeeperMockRecorder) GetAllBalances(ctx, addr any) *gomock.Call
 }
 
 // GetBalance mocks base method.
-func (m *MockBankKeeper) GetBalance(ctx context.Context, addr types.AccAddress, denom string) types.Coin {
+func (m *MockBankKeeper) GetBalance(ctx context.Context, addr types1.AccAddress, denom string) types1.Coin {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBalance", ctx, addr, denom)
-	ret0, _ := ret[0].(types.Coin)
+	ret0, _ := ret[0].(types1.Coin)
 	return ret0
 }
 
@@ -188,7 +190,7 @@ func (mr *MockBankKeeperMockRecorder) GetBalance(ctx, addr, denom any) *gomock.C
 }
 
 // SendCoinsFromModuleToAccount mocks base method.
-func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types.AccAddress, amt types.Coins) error {
+func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr types1.AccAddress, amt types1.Coins) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCoinsFromModuleToAccount", ctx, senderModule, recipientAddr, amt)
 	ret0, _ := ret[0].(error)
@@ -199,4 +201,158 @@ func (m *MockBankKeeper) SendCoinsFromModuleToAccount(ctx context.Context, sende
 func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToAccount", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToAccount), ctx, senderModule, recipientAddr, amt)
+}
+
+// MockMarketKeeper is a mock of MarketKeeper interface.
+type MockMarketKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockMarketKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockMarketKeeperMockRecorder is the mock recorder for MockMarketKeeper.
+type MockMarketKeeperMockRecorder struct {
+	mock *MockMarketKeeper
+}
+
+// NewMockMarketKeeper creates a new mock instance.
+func NewMockMarketKeeper(ctrl *gomock.Controller) *MockMarketKeeper {
+	mock := &MockMarketKeeper{ctrl: ctrl}
+	mock.recorder = &MockMarketKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockMarketKeeper) EXPECT() *MockMarketKeeperMockRecorder {
+	return m.recorder
+}
+
+// Buy mocks base method.
+func (m *MockMarketKeeper) Buy(ctx context.Context, trader types1.AccAddress, ask types1.Coin, offerDenom string, maximumOffer types1.Coin) (types1.Coin, types1.Coin, types1.DecCoin, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Buy", ctx, trader, ask, offerDenom, maximumOffer)
+	ret0, _ := ret[0].(types1.Coin)
+	ret1, _ := ret[1].(types1.Coin)
+	ret2, _ := ret[2].(types1.DecCoin)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// Buy indicates an expected call of Buy.
+func (mr *MockMarketKeeperMockRecorder) Buy(ctx, trader, ask, offerDenom, maximumOffer any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Buy", reflect.TypeOf((*MockMarketKeeper)(nil).Buy), ctx, trader, ask, offerDenom, maximumOffer)
+}
+
+// MockOracleKeeper is a mock of OracleKeeper interface.
+type MockOracleKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockOracleKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockOracleKeeperMockRecorder is the mock recorder for MockOracleKeeper.
+type MockOracleKeeperMockRecorder struct {
+	mock *MockOracleKeeper
+}
+
+// NewMockOracleKeeper creates a new mock instance.
+func NewMockOracleKeeper(ctrl *gomock.Controller) *MockOracleKeeper {
+	mock := &MockOracleKeeper{ctrl: ctrl}
+	mock.recorder = &MockOracleKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockOracleKeeper) EXPECT() *MockOracleKeeperMockRecorder {
+	return m.recorder
+}
+
+// GetRateSet mocks base method.
+func (m *MockOracleKeeper) GetRateSet(ctx context.Context, denoms ...string) (types0.RateSet, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range denoms {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRateSet", varargs...)
+	ret0, _ := ret[0].(types0.RateSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRateSet indicates an expected call of GetRateSet.
+func (mr *MockOracleKeeperMockRecorder) GetRateSet(ctx any, denoms ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, denoms...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRateSet", reflect.TypeOf((*MockOracleKeeper)(nil).GetRateSet), varargs...)
+}
+
+// GetReferenceDenom mocks base method.
+func (m *MockOracleKeeper) GetReferenceDenom(ctx context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferenceDenom", ctx)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferenceDenom indicates an expected call of GetReferenceDenom.
+func (mr *MockOracleKeeperMockRecorder) GetReferenceDenom(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferenceDenom", reflect.TypeOf((*MockOracleKeeper)(nil).GetReferenceDenom), ctx)
+}
+
+// MockAssetKeeper is a mock of AssetKeeper interface.
+type MockAssetKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockAssetKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockAssetKeeperMockRecorder is the mock recorder for MockAssetKeeper.
+type MockAssetKeeperMockRecorder struct {
+	mock *MockAssetKeeper
+}
+
+// NewMockAssetKeeper creates a new mock instance.
+func NewMockAssetKeeper(ctrl *gomock.Controller) *MockAssetKeeper {
+	mock := &MockAssetKeeper{ctrl: ctrl}
+	mock.recorder = &MockAssetKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockAssetKeeper) EXPECT() *MockAssetKeeperMockRecorder {
+	return m.recorder
+}
+
+// GetAsset mocks base method.
+func (m *MockAssetKeeper) GetAsset(ctx context.Context, denom string) (types.Asset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAsset", ctx, denom)
+	ret0, _ := ret[0].(types.Asset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAsset indicates an expected call of GetAsset.
+func (mr *MockAssetKeeperMockRecorder) GetAsset(ctx, denom any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAsset", reflect.TypeOf((*MockAssetKeeper)(nil).GetAsset), ctx, denom)
+}
+
+// HasAsset mocks base method.
+func (m *MockAssetKeeper) HasAsset(ctx context.Context, denom string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasAsset", ctx, denom)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasAsset indicates an expected call of HasAsset.
+func (mr *MockAssetKeeperMockRecorder) HasAsset(ctx, denom any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasAsset", reflect.TypeOf((*MockAssetKeeper)(nil).HasAsset), ctx, denom)
 }

@@ -10,10 +10,10 @@
 package testutil
 
 import (
-	types "github.com/ararat-network/ark/x/oracle/types"
 	context "context"
 	reflect "reflect"
 
+	types "github.com/ararat-network/ark/x/oracle/types"
 	types0 "github.com/cosmos/cosmos-sdk/types"
 	types1 "github.com/cosmos/cosmos-sdk/x/staking/types"
 	gomock "go.uber.org/mock/gomock"
@@ -229,78 +229,40 @@ func (mr *MockBankKeeperMockRecorder) SendCoinsFromModuleToModule(ctx, senderMod
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCoinsFromModuleToModule", reflect.TypeOf((*MockBankKeeper)(nil).SendCoinsFromModuleToModule), ctx, senderModule, recipientModule, amt)
 }
 
-// MockMarketReferenceDenomKeeper is a mock of MarketReferenceDenomKeeper interface.
-type MockMarketReferenceDenomKeeper struct {
+// MockReferenceRebaser is a mock of ReferenceRebaser interface.
+type MockReferenceRebaser struct {
 	ctrl     *gomock.Controller
-	recorder *MockMarketReferenceDenomKeeperMockRecorder
+	recorder *MockReferenceRebaserMockRecorder
 	isgomock struct{}
 }
 
-// MockMarketReferenceDenomKeeperMockRecorder is the mock recorder for MockMarketReferenceDenomKeeper.
-type MockMarketReferenceDenomKeeperMockRecorder struct {
-	mock *MockMarketReferenceDenomKeeper
+// MockReferenceRebaserMockRecorder is the mock recorder for MockReferenceRebaser.
+type MockReferenceRebaserMockRecorder struct {
+	mock *MockReferenceRebaser
 }
 
-// NewMockMarketReferenceDenomKeeper creates a new mock instance.
-func NewMockMarketReferenceDenomKeeper(ctrl *gomock.Controller) *MockMarketReferenceDenomKeeper {
-	mock := &MockMarketReferenceDenomKeeper{ctrl: ctrl}
-	mock.recorder = &MockMarketReferenceDenomKeeperMockRecorder{mock}
+// NewMockReferenceRebaser creates a new mock instance.
+func NewMockReferenceRebaser(ctrl *gomock.Controller) *MockReferenceRebaser {
+	mock := &MockReferenceRebaser{ctrl: ctrl}
+	mock.recorder = &MockReferenceRebaserMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMarketReferenceDenomKeeper) EXPECT() *MockMarketReferenceDenomKeeperMockRecorder {
+func (m *MockReferenceRebaser) EXPECT() *MockReferenceRebaserMockRecorder {
 	return m.recorder
 }
 
-// RebaseBasePool mocks base method.
-func (m *MockMarketReferenceDenomKeeper) RebaseBasePool(ctx context.Context, from, to string, rates types.RateSet) error {
+// RebaseReference mocks base method.
+func (m *MockReferenceRebaser) RebaseReference(ctx context.Context, from, to string, rates types.RateSet) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RebaseBasePool", ctx, from, to, rates)
+	ret := m.ctrl.Call(m, "RebaseReference", ctx, from, to, rates)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RebaseBasePool indicates an expected call of RebaseBasePool.
-func (mr *MockMarketReferenceDenomKeeperMockRecorder) RebaseBasePool(ctx, from, to, rates any) *gomock.Call {
+// RebaseReference indicates an expected call of RebaseReference.
+func (mr *MockReferenceRebaserMockRecorder) RebaseReference(ctx, from, to, rates any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseBasePool", reflect.TypeOf((*MockMarketReferenceDenomKeeper)(nil).RebaseBasePool), ctx, from, to, rates)
-}
-
-// MockTreasuryReferenceDenomKeeper is a mock of TreasuryReferenceDenomKeeper interface.
-type MockTreasuryReferenceDenomKeeper struct {
-	ctrl     *gomock.Controller
-	recorder *MockTreasuryReferenceDenomKeeperMockRecorder
-	isgomock struct{}
-}
-
-// MockTreasuryReferenceDenomKeeperMockRecorder is the mock recorder for MockTreasuryReferenceDenomKeeper.
-type MockTreasuryReferenceDenomKeeperMockRecorder struct {
-	mock *MockTreasuryReferenceDenomKeeper
-}
-
-// NewMockTreasuryReferenceDenomKeeper creates a new mock instance.
-func NewMockTreasuryReferenceDenomKeeper(ctrl *gomock.Controller) *MockTreasuryReferenceDenomKeeper {
-	mock := &MockTreasuryReferenceDenomKeeper{ctrl: ctrl}
-	mock.recorder = &MockTreasuryReferenceDenomKeeperMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockTreasuryReferenceDenomKeeper) EXPECT() *MockTreasuryReferenceDenomKeeperMockRecorder {
-	return m.recorder
-}
-
-// RebaseReferenceState mocks base method.
-func (m *MockTreasuryReferenceDenomKeeper) RebaseReferenceState(ctx context.Context, from, to string, rates types.RateSet) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RebaseReferenceState", ctx, from, to, rates)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RebaseReferenceState indicates an expected call of RebaseReferenceState.
-func (mr *MockTreasuryReferenceDenomKeeperMockRecorder) RebaseReferenceState(ctx, from, to, rates any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseReferenceState", reflect.TypeOf((*MockTreasuryReferenceDenomKeeper)(nil).RebaseReferenceState), ctx, from, to, rates)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RebaseReference", reflect.TypeOf((*MockReferenceRebaser)(nil).RebaseReference), ctx, from, to, rates)
 }

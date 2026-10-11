@@ -4,6 +4,7 @@ package ark.claims.v1;
 import "amino/amino.proto";
 import "ark/claims/v1/claims.proto";
 import "ark/mandate/v1/envelope.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
@@ -33,7 +34,7 @@ message EventClaimPaid {
 // follow the transition without polling.
 message EventClaimCancelled {
   uint64 claim_id = 1 [(amino.dont_omitempty) = true];
-  ClaimAuthority cancelled_by = 2;
+  ClaimAuthority cancelled_by = 2 [(amino.dont_omitempty) = true];
 }
 
 // EventClaimFailed records terminal non-payment and reservation release. Failure details are node
@@ -49,12 +50,56 @@ message EventClaimsMandateSet {
   uint64 term = 1 [(amino.dont_omitempty) = true];
   // committee is empty when governance disabled the mandate.
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
   // committee_shape is the appointment-time observation of the committee
   // account, zeroed on a disabling.
   ark.mandate.v1.CommitteeShape committee_shape = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+}
+
+// EventClaimConverted records the Market buy that funded a stablecoin claim's shortfall, as flat
+// attributes like every event that moves value, so a node query can match its denomination.
+message EventClaimConverted {
+  uint64 claim_id = 1 [(amino.dont_omitempty) = true];
+  // amount_denom and amount are the stablecoin bought.
+  string amount_denom = 2;
+  string amount = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // offer is the Insurance NOAH it cost.
+  string offer = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// EventClaimsRebased records a reference re-point's restatement of the committee claim limit, the
+// term's usage, and every committee claim's charge.
+message EventClaimsRebased {
+  cosmos.base.v1beta1.Coin old_limit = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin new_limit = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin old_used = 3 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  cosmos.base.v1beta1.Coin new_used = 4 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // claims counts the committee claims whose charge moved.
+  uint64 claims = 5 [(amino.dont_omitempty) = true];
 }

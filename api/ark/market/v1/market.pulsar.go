@@ -2190,8 +2190,7 @@ func (x *Params) GetDefaultTobinTax() string {
 }
 
 // ConversionPolicy defines NOAH-pair depth, recovery period, and spread floor as one curve. The
-// pool uses the protocol reference unit; only reference rebasing changes that unit. See
-// x/market/README.md for policy and authority boundaries.
+// pool uses the protocol reference unit; only reference rebasing changes that unit.
 type ConversionPolicy struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2251,13 +2250,13 @@ func (x *ConversionPolicy) GetMinStabilitySpread() string {
 
 // ConversionMandate appoints a committee within inclusive policy bounds and a Tobin cap.
 // Replacement advances the term; an empty committee disables it. Policy authority requires corridor
-// and pool units to match; Tobin authority is independent. See x/market/README.md.
+// and pool units to match; Tobin authority is independent.
 type ConversionMandate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// envelope carries the shared term, committee, and half-open height window.
+	// envelope carries the shared term, committee, and half-open time window.
 	Envelope      *v1.Envelope      `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	MinimumPolicy *ConversionPolicy `protobuf:"bytes,2,opt,name=minimum_policy,json=minimumPolicy,proto3" json:"minimum_policy,omitempty"`
 	MaximumPolicy *ConversionPolicy `protobuf:"bytes,3,opt,name=maximum_policy,json=maximumPolicy,proto3" json:"maximum_policy,omitempty"`

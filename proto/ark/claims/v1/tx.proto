@@ -17,7 +17,7 @@ service Msg {
 
   // UpdateParams updates the governance-owned claims parameters.
   rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse) {}
-  // SetClaimsMandate appoints, replaces, or disables the height-scoped Claims
+  // SetClaimsMandate appoints, replaces, or disables the time-scoped Claims
   // committee.
   rpc SetClaimsMandate(MsgSetClaimsMandate) returns (MsgSetClaimsMandateResponse) {}
   // SubmitClaim records a governance-submitted pending claim, which never
@@ -51,17 +51,19 @@ message MsgUpdateParamsResponse {}
 
 // MsgSetClaimsMandate is the governance request for a complete Claims
 // committee replacement. An empty committee disables the mandate; the chain
-// derives the next term. The committee claim limit is a fixed gross base-unit
-// NOAH allowance for the new term.
+// derives the next term. The committee claim limit is a fixed gross allowance
+// for the new term, in the reference unit.
 message MsgSetClaimsMandate {
   option (cosmos.msg.v1.signer) = "authority";
   option (amino.name) = "ark/claims/MsgSetClaimsMandate";
 
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string committee = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  uint64 activation_height = 3 [(amino.dont_omitempty) = true];
-  uint64 expiry_height = 4 [(amino.dont_omitempty) = true];
-  cosmos.base.v1beta1.Coin committee_claim_limit = 5 [
+  uint64 activation_time = 3 [(amino.dont_omitempty) = true];
+  uint64 expiry_time = 4 [(amino.dont_omitempty) = true];
+  string committee_claim_limit = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -84,6 +86,13 @@ message MsgSubmitClaim {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // max_offer bounds the Insurance NOAH converted to fund a stablecoin claim; zero for a NOAH claim.
+  string max_offer = 5 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // MsgSubmitClaimResponse is the response for a governance claim submission.
@@ -92,7 +101,7 @@ message MsgSubmitClaimResponse {
 }
 
 // MsgCommitteeSubmitClaim is an exact committee-signed claim submission. It
-// permanently consumes the current term's gross claim allowance.
+// charges the current term's gross claim limit with what it draws, permanently.
 message MsgCommitteeSubmitClaim {
   option (cosmos.msg.v1.signer) = "committee";
   option (amino.name) = "ark/claims/MsgCommitteeSubmitClaim";
@@ -102,6 +111,13 @@ message MsgCommitteeSubmitClaim {
   string reference = 3;
   string recipient = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   cosmos.base.v1beta1.Coin amount = 5 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // max_offer bounds the Insurance NOAH converted to fund a stablecoin claim; zero for a NOAH claim.
+  string max_offer = 6 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

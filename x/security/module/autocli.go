@@ -53,15 +53,6 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "committee-cancel-upgrade",
 					Short:     "Cancel the pending upgrade plan as the security committee",
 				},
-				{
-					RpcMethod: "CommitteeRecoverClient",
-					Use:       "committee-recover-client [subject-client-id] [substitute-client-id]",
-					Short:     "Substitute an expired or frozen IBC client as the security committee",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
-						{ProtoField: "subject_client_id"},
-						{ProtoField: "substitute_client_id"},
-					},
-				},
 			},
 		},
 	}

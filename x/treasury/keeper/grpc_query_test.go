@@ -409,8 +409,9 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesOutOfRangeTotal() {
 	s.Require().Equal(codes.OutOfRange, status.Code(err))
 }
 
-func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
-	// Params carry the rate, so they are the first read the calculator makes.
+func (s *KeeperTestSuite) TestQueryComputeTaxSurfacesUnexpectedStateError() {
+	// Params carry the rate, so they are the first read the calculator makes. The
+	// failure is unregistered, so it carries no code and surfaces as unknown.
 	s.Require().NoError(s.keeper.Params.Remove(s.ctx))
 	message, err := codectypes.NewAnyWithValue(&banktypes.MsgSend{
 		Amount: sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 100)),
@@ -421,7 +422,7 @@ func (s *KeeperTestSuite) TestQueryComputeTaxClassifiesUnexpectedStateError() {
 		s.ctx,
 		&treasurytypes.QueryComputeTaxRequest{Messages: []*codectypes.Any{message}},
 	)
-	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().Equal(codes.Unknown, status.Code(err))
 }
 
 func (s *KeeperTestSuite) TestQueryFundStatus() {
@@ -552,7 +553,7 @@ func (s *KeeperTestSuite) TestQueryFundStatusClassifiesUnexpectedStateError() {
 		&treasurytypes.QueryFundStatusRequest{},
 	)
 	s.Require().Nil(response)
-	s.Require().Equal(codes.Internal, status.Code(err))
+	s.Require().Equal(codes.Unknown, status.Code(err))
 	s.Require().Equal(
 		"getting treasury fund status: pricing aggregate liability: oracle store failure",
 		status.Convert(err).Message(),
@@ -575,9 +576,11 @@ func (s *KeeperTestSuite) TestQueryRewardFundingDoesNotRequireFundValuation() {
 // or registry reads.
 func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	state := treasurytypes.DefaultExposureState()
-	// A variance of one annualises to the square root of a year in blocks,
-	// which is the bound the sample clamp buys.
+	// A variance of one over an interval of one second annualises to the square root of a year in
+	// seconds, which is the bound the sample clamp and the interval floor buy.
 	state.VolatilityVariance = math.LegacyOneDec()
+	state.SampleInterval = math.LegacyOneDec()
+	state.LastSampleTime = 5
 	state.FlowPressure = math.LegacyNewDec(12)
 	state.LiabilityRatio = math.LegacyMustNewDecFromStr("0.4")
 	state.FlowRatio = math.LegacyMustNewDecFromStr("0.05")
@@ -594,7 +597,7 @@ func (s *KeeperTestSuite) TestQueryExposureStatusReportsStoredRisk() {
 	s.Require().Equal(state, response.ExposureState)
 	s.Require().True(response.RefreshPending)
 
-	expected, err := math.LegacyNewDec(int64(chain.BlocksPerYear)).ApproxSqrt()
+	expected, err := math.LegacyNewDec(365 * 86_400).ApproxSqrt()
 	s.Require().NoError(err)
 	s.Require().Equal(expected, response.AnnualisedVolatility)
 }

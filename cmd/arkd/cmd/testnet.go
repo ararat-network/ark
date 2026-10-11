@@ -219,7 +219,7 @@ Example:
 
 	addTestnetFlagsToCmd(cmd, defaultCommitTimeout)
 	cmd.Flags().String(flagNodeDirPrefix, defaultNodeDirPrefix, "Prefix for the name of per-validator subdirectories (to be number-suffixed like node0, node1, ...)")
-	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, and its chain ID is the default")
+	cmd.Flags().String(flagGenesis, "", "Curated genesis to start from: every validator becomes a seat granted from its community pool, which bounds the count, and its chain ID is the default")
 	cmd.Flags().String(flagNodeDaemonHome, serviceName, "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, defaultStartingIPAddress, "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(flagListenIPAddress, defaultListenIPAddress, "TCP or UNIX socket IP address for the RPC server to listen on")
@@ -420,7 +420,7 @@ func initTestnetFiles(
 		// From code defaults each validator holds test balances and bonds a
 		// token; from an artefact it is a seat, bonding its whole grant at
 		// the artefact's commission floor.
-		bond := sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction))
+		bond := sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(100))
 		commission := stakingtypes.NewCommissionRates(math.LegacyOneDec(), math.LegacyOneDec(), math.LegacyOneDec())
 		if base != nil {
 			seats = append(seats, addr)
@@ -429,8 +429,8 @@ func initTestnetFiles(
 			}
 		} else {
 			coins := sdk.Coins{
-				sdk.NewCoin("testtoken", sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)),
-				sdk.NewCoin(args.bondTokenDenom, sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)),
+				sdk.NewCoin("testtoken", chain.NativeBaseAmount(1_000)),
+				sdk.NewCoin(args.bondTokenDenom, chain.NativeBaseAmount(500)),
 			}
 			genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 			genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
@@ -526,7 +526,7 @@ func initGenFiles(
 			return err
 		}
 		for i := range numValidators {
-			if err := appGenesis.SaveAs(genFiles[i]); err != nil {
+			if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
 				return err
 			}
 		}
@@ -566,7 +566,7 @@ func initGenFiles(
 	appGenesis := genutiltypes.NewAppGenesisWithVersion(chainID, appGenStateJSON)
 	// generate empty genesis files for each validator and save
 	for i := range numValidators {
-		if err := appGenesis.SaveAs(genFiles[i]); err != nil {
+		if err := saveGenesis(appGenesis, genFiles[i]); err != nil {
 			return err
 		}
 	}
@@ -636,7 +636,7 @@ func collectGenFiles(
 		genFile := nodeConfig.GenesisFile()
 
 		// overwrite each validator's genesis file to have a canonical genesis time
-		if err := genutil.ExportGenesisFileWithTime(genFile, chainID, nil, appState, genTime); err != nil {
+		if err := exportGenesisFileWithTime(genFile, chainID, nil, appState, genTime); err != nil {
 			return err
 		}
 	}
@@ -664,7 +664,7 @@ func finaliseGenesisConsensusParams(genFile string, base *genutiltypes.AppGenesi
 
 	genesis.Consensus.Params.Authority.Authority = authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	genesis.Consensus.Params.ABCI.VoteExtensionsEnableHeight = 1
-	if err := genesis.SaveAs(genFile); err != nil {
+	if err := saveGenesis(genesis, genFile); err != nil {
 		return fmt.Errorf("saving generated genesis %s: %w", genFile, err)
 	}
 	return nil
@@ -695,7 +695,7 @@ func calculateIP(ip string, i int) (string, error) {
 	if i < 0 || int(ipv4[3])+i > maxOctet {
 		return "", fmt.Errorf("%s: offset %d overflows the last octet", ip, i)
 	}
-	ipv4[3] += byte(i)
+	ipv4[3] += byte(i) //nolint:gosec // G115: the check above holds the sum within the octet.
 
 	return ipv4.String(), nil
 }
@@ -803,8 +803,9 @@ node = "tcp://localhost:%d"
 broadcast-mode = "sync"
 `
 
-// seatGentx is a seat's self-delegation: the whole grant at the artefact's
-// commission floor, with a 20% ceiling and a 1% daily change.
+// seatGentx is a seat's self-delegation: one seat, the founder's included,
+// at the artefact's commission floor, with a 20% ceiling and a 1% daily
+// change.
 func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakingtypes.CommissionRates, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
@@ -816,20 +817,20 @@ func seatGentx(cdc codec.Codec, base *genutiltypes.AppGenesis) (sdk.Coin, stakin
 	}
 	floor := stakingGenesis.Params.MinCommissionRate
 	ceiling := math.LegacyMaxDec(floor, math.LegacyMustNewDecFromStr("0.2"))
-	return sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(chain.SeatGrantNoah)),
+	return sdk.NewCoin(chain.NoahBaseDenom, chain.SeatGrant),
 		stakingtypes.NewCommissionRates(floor, ceiling, math.LegacyMustNewDecFromStr("0.01")),
 		nil
 }
 
 // seatedGenesis is the artefact under chainID and genTime with one seat
-// granted per validator, vesting from genTime; its consensus block is kept
-// as written.
+// granted per validator, the first validator's the founder's, vesting from
+// genTime; its consensus block is kept as written.
 func seatedGenesis(cdc codec.Codec, base *genutiltypes.AppGenesis, chainID string, genTime time.Time, seats []sdk.AccAddress) (*genutiltypes.AppGenesis, error) {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(base.AppState, &appState); err != nil {
 		return nil, fmt.Errorf("unmarshal base app state: %w", err)
 	}
-	if err := arkgenesis.AddValidatorSeats(cdc, appState, seats, genTime); err != nil {
+	if err := arkgenesis.AddValidatorSeats(cdc, appState, seats, seats[0], genTime); err != nil {
 		return nil, err
 	}
 	appStateJSON, err := json.MarshalIndent(appState, "", "  ")

@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	errorsmod "cosmossdk.io/errors"
@@ -9,6 +11,19 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
+
+// ValidateAmount caps a stored commitment, reservation, or reference-unit figure at 128 bits, far
+// past any real supply, so the folds and rebases that multiply it by a bounded rate stay
+// representable. positive additionally refuses zero.
+func ValidateAmount(amount math.Int, positive bool) error {
+	if amount.IsNil() || amount.IsNegative() || amount.BigInt().BitLen() > 128 {
+		return errors.New("amount must be nonnegative and at most 128 bits")
+	}
+	if positive && amount.IsZero() {
+		return errors.New("amount must be positive")
+	}
+	return nil
+}
 
 // ValidateNoahOnlyDeposit requires exactly one positive NOAH coin. Modules apply this shared
 // predicate to their own custody accounts; fundLabel identifies the refusing account set.
@@ -36,6 +51,43 @@ func ValidateNoahCoin(field string, coin sdk.Coin) error {
 	}
 	if coin.Denom != NoahBaseDenom {
 		return fmt.Errorf("%s must be denominated in %s", field, NoahBaseDenom)
+	}
+
+	return nil
+}
+
+// ValidateRegisteredDeposit requires at least one coin, each positive and either NOAH or a
+// denomination hasAsset finds in the asset registry. It is ValidateNoahOnlyDeposit's counterpart for
+// custody that also holds registered assets; fundLabel identifies the refusing account set.
+func ValidateRegisteredDeposit(
+	ctx context.Context,
+	fundLabel string,
+	amount sdk.Coins,
+	hasAsset func(context.Context, string) (bool, error),
+) error {
+	if len(amount) == 0 {
+		return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "%s deposits must contain at least one coin", fundLabel)
+	}
+	for _, coin := range amount {
+		if coin.Amount.IsNil() || !coin.Amount.IsPositive() {
+			return errorsmod.Wrapf(errortypes.ErrInvalidCoins, "%s deposits must be positive, got %s", fundLabel, coin)
+		}
+		if coin.Denom == NoahBaseDenom {
+			continue
+		}
+		registered, err := hasAsset(ctx, coin.Denom)
+		if err != nil {
+			return errorsmod.Wrapf(err, "checking the asset registry for %s", coin.Denom)
+		}
+		if !registered {
+			return errorsmod.Wrapf(
+				errortypes.ErrInvalidCoins,
+				"%s deposits must be %s or a registered asset, got %s",
+				fundLabel,
+				NoahBaseDenom,
+				coin,
+			)
+		}
 	}
 
 	return nil

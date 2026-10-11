@@ -49,7 +49,7 @@ func TestSelectorLaneCaps(t *testing.T) {
 			p := newTestPool(100)
 			normal := fixtureTx(1)
 			require.NoError(t, admit(p, LaneNormal, math.MaxInt64, normal))
-			var want [][]byte
+			var want, spills [][]byte
 			for _, lane := range []int8{LaneCommittee, LaneGovernance} {
 				first := fixtureTx(byte(10 * lane))
 				for i := range 6 {
@@ -59,6 +59,8 @@ func TestSelectorLaneCaps(t *testing.T) {
 					require.NoError(t, admit(p, lane, 0, tx))
 					if i < 5 {
 						want = append(want, encodePoolTx(tx))
+					} else {
+						spills = append(spills, encodePoolTx(tx))
 					}
 				}
 			}
@@ -67,9 +69,14 @@ func TestSelectorLaneCaps(t *testing.T) {
 			if resource == "bytes" {
 				maxBytes, maxGas = 10000, 100000
 			}
-			require.Equal(t, want, prepareEntries(t, p, maxBytes, maxGas, nil))
+			// The sixth of each lane finds its allowance spent and spills to ordinary fee
+			// priority, behind the higher-fee normal transaction.
+			got := prepareEntries(t, p, maxBytes, maxGas, nil)
+			require.Len(t, got, len(want)+len(spills))
+			require.Equal(t, want, got[:len(want)])
+			require.ElementsMatch(t, spills, got[len(want):])
 			counts, _ := p.Usage()
-			require.Equal(t, [3]int{3, 5, 5}, counts, "overflow storage does not avoid service caps")
+			require.Equal(t, [3]int{3, 5, 5}, counts, "each class's sixth entry overflowed into normal storage")
 		})
 	}
 }
@@ -135,9 +142,9 @@ func TestSelectorUnboundedGasAndEmptyBudget(t *testing.T) {
 	}
 }
 
-// A saturated lane bounds proposal verification: entries past the allowance
-// never reach the SDK loop, which verifies before it can decline.
-func TestSelectorSaturatedLaneBoundsVerification(t *testing.T) {
+// Entries past a lane's allowance compete by fee with normal traffic, and a full
+// block bounds proposal verification for them as it does for normal transactions.
+func TestSelectorSpillCompetesByFee(t *testing.T) {
 	for _, resource := range []string{"gas", "bytes"} {
 		t.Run(resource, func(t *testing.T) {
 			p := newTestPool(1000)
@@ -145,52 +152,54 @@ func TestSelectorSaturatedLaneBoundsVerification(t *testing.T) {
 			if resource == "bytes" {
 				maxBytes, maxGas = 10000, 100000
 			}
-			// Forty voters; the allowance holds five 100-gas, 100-byte votes.
-			var want [][]byte
-			for i := range 40 {
+			// 120 voters against a block of 100 entries whose allowance holds five votes.
+			var votes [][]byte
+			for i := range 120 {
 				tx := fixtureTx(byte(i + 1))
 				tx.size = 98
-				require.NoError(t, admit(p, LaneGovernance, int64(40-i), tx))
-				if i < 5 {
-					want = append(want, encodePoolTx(tx))
-				}
+				require.NoError(t, admit(p, LaneGovernance, int64(10000-10*i), tx))
+				votes = append(votes, encodePoolTx(tx))
 			}
-			normal := fixtureTx(50)
-			require.NoError(t, admit(p, LaneNormal, 0, normal))
-			want = append(want, encodePoolTx(normal))
+			normal := fixtureTx(200)
+			normal.size = 98
+			require.NoError(t, admit(p, LaneNormal, 9905, normal))
+			// Five votes ride the lane; spilled votes outbidding the normal entry precede it,
+			// the rest follow it until the block is full.
+			want := append(append(append([][]byte{}, votes[:10]...), encodePoolTx(normal)), votes[10:99]...)
 			var verified int
 			got := prepareEntries(t, p, maxBytes, maxGas, func(sdk.Tx) error { verified++; return nil })
 			require.Equal(t, want, got)
-			require.Equal(t, len(want), verified, "entries past the allowance are not verified")
+			require.Equal(t, len(want), verified, "entries past a full block are not verified")
 		})
 	}
 }
 
-// An ordered successor of an entry left out waits with it, unverified; an
-// unordered action from the same sender is independent and still served.
-func TestSelectorWaitingSenderSuccessors(t *testing.T) {
+// A spilled entry's ordered successors follow it to ordinary priority even when
+// they would fit, so none outranks its predecessor; the room left goes to others.
+// The sender's unordered entries carry no nonce and stay independent.
+func TestSelectorSpilledSenderSuccessors(t *testing.T) {
 	p := newTestPool(1000)
-	voter := fixtureTx(1)
-	var want [][]byte
-	for i := range 6 {
-		tx := fixtureTx(byte(i + 1))
-		tx.key, tx.seq, tx.size = voter.key, uint64(i), 98
-		require.NoError(t, admit(p, LaneGovernance, 0, tx))
-		if i < 5 {
-			want = append(want, encodePoolTx(tx))
-		}
+	a, b := fixtureTx(1), fixtureTx(2)
+	var spender []*poolTx
+	for i, gas := range []uint64{300, 300, 100} {
+		tx := fixtureTx(byte(10 + i))
+		tx.key, tx.seq, tx.gas = a.key, uint64(i), gas
+		require.NoError(t, admit(p, LaneGovernance, 2, tx))
+		spender = append(spender, tx)
 	}
-	send := fixtureTx(10)
-	send.key, send.seq = voter.key, 6
-	require.NoError(t, admit(p, LaneNormal, 5, send))
-	unordered := fixtureTx(11)
-	unordered.key, unordered.unordered, unordered.timeout = voter.key, true, time.Unix(1_800_000_000, 0)
-	require.NoError(t, admit(p, LaneNormal, 3, unordered))
-	other := fixtureTx(12)
+	b.gas = 100
+	require.NoError(t, admit(p, LaneGovernance, 1, b))
+	unordered := fixtureTx(3)
+	unordered.key, unordered.unordered, unordered.timeout = a.key, true, time.Unix(1_800_000_000, 0)
+	require.NoError(t, admit(p, LaneGovernance, 0, unordered))
+	other := fixtureTx(4)
 	require.NoError(t, admit(p, LaneNormal, 1, other))
-	want = append(want, encodePoolTx(unordered), encodePoolTx(other))
 	var verified []byte
+	// The allowance is 500 gas: the first entry fits, the second spills, the third
+	// follows it, the other sender takes 100 of the 200 left, and the spilling
+	// sender's unordered entry keeps the lane for the last 100. Demoted, it would
+	// trail the normal entry instead of preceding it.
 	got := prepareEntries(t, p, 100000, 10000, func(tx sdk.Tx) error { verified = append(verified, tx.(*poolTx).id); return nil })
-	require.Equal(t, want, got, "the ordered successor waits with the sixth vote; the unordered action does not")
-	require.Equal(t, []byte{1, 2, 3, 4, 5, 11, 12}, verified)
+	require.Equal(t, [][]byte{encodePoolTx(spender[0]), encodePoolTx(b), encodePoolTx(spender[1]), encodePoolTx(spender[2]), encodePoolTx(unordered), encodePoolTx(other)}, got)
+	require.Equal(t, []byte{10, 2, 11, 12, 3, 4}, verified)
 }

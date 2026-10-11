@@ -24,7 +24,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Query_Swap_FullMethodName              = "/ark.market.v1.Query/Swap"
+	Query_Sell_FullMethodName              = "/ark.market.v1.Query/Sell"
+	Query_Buy_FullMethodName               = "/ark.market.v1.Query/Buy"
 	Query_Pool_FullMethodName              = "/ark.market.v1.Query/Pool"
 	Query_Params_FullMethodName            = "/ark.market.v1.Query/Params"
 	Query_TobinTax_FullMethodName          = "/ark.market.v1.Query/TobinTax"
@@ -39,8 +40,10 @@ const (
 //
 // Query defines the gRPC querier service.
 type QueryClient interface {
-	// Swap returns simulated swap amount.
-	Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error)
+	// Sell quotes a stated offer: the output a sell returns and the spread it pays.
+	Sell(ctx context.Context, in *QuerySellRequest, opts ...grpc.CallOption) (*QuerySellResponse, error)
+	// Buy quotes a stated ask: the least offer that buys it, that offer's output, and the spread.
+	Buy(ctx context.Context, in *QueryBuyRequest, opts ...grpc.CallOption) (*QueryBuyResponse, error)
 	// Pool returns the live virtual-pool state: the policy depth and the signed
 	// deviation from it, in one snapshot. The effective pools derive from these
 	// two numbers, so a caller never has to join queries across heights.
@@ -67,10 +70,20 @@ func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) Swap(ctx context.Context, in *QuerySwapRequest, opts ...grpc.CallOption) (*QuerySwapResponse, error) {
+func (c *queryClient) Sell(ctx context.Context, in *QuerySellRequest, opts ...grpc.CallOption) (*QuerySellResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QuerySwapResponse)
-	err := c.cc.Invoke(ctx, Query_Swap_FullMethodName, in, out, cOpts...)
+	out := new(QuerySellResponse)
+	err := c.cc.Invoke(ctx, Query_Sell_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) Buy(ctx context.Context, in *QueryBuyRequest, opts ...grpc.CallOption) (*QueryBuyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryBuyResponse)
+	err := c.cc.Invoke(ctx, Query_Buy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +156,10 @@ func (c *queryClient) ConversionMandate(ctx context.Context, in *QueryConversion
 //
 // Query defines the gRPC querier service.
 type QueryServer interface {
-	// Swap returns simulated swap amount.
-	Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error)
+	// Sell quotes a stated offer: the output a sell returns and the spread it pays.
+	Sell(context.Context, *QuerySellRequest) (*QuerySellResponse, error)
+	// Buy quotes a stated ask: the least offer that buys it, that offer's output, and the spread.
+	Buy(context.Context, *QueryBuyRequest) (*QueryBuyResponse, error)
 	// Pool returns the live virtual-pool state: the policy depth and the signed
 	// deviation from it, in one snapshot. The effective pools derive from these
 	// two numbers, so a caller never has to join queries across heights.
@@ -171,8 +186,11 @@ type QueryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedQueryServer struct{}
 
-func (UnimplementedQueryServer) Swap(context.Context, *QuerySwapRequest) (*QuerySwapResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Swap not implemented")
+func (UnimplementedQueryServer) Sell(context.Context, *QuerySellRequest) (*QuerySellResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Sell not implemented")
+}
+func (UnimplementedQueryServer) Buy(context.Context, *QueryBuyRequest) (*QueryBuyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Buy not implemented")
 }
 func (UnimplementedQueryServer) Pool(context.Context, *QueryPoolRequest) (*QueryPoolResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Pool not implemented")
@@ -213,20 +231,38 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 	s.RegisterService(&Query_ServiceDesc, srv)
 }
 
-func _Query_Swap_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QuerySwapRequest)
+func _Query_Sell_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QuerySellRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).Swap(ctx, in)
+		return srv.(QueryServer).Sell(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_Swap_FullMethodName,
+		FullMethod: Query_Sell_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).Swap(ctx, req.(*QuerySwapRequest))
+		return srv.(QueryServer).Sell(ctx, req.(*QuerySellRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_Buy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryBuyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).Buy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_Buy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).Buy(ctx, req.(*QueryBuyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -347,8 +383,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Swap",
-			Handler:    _Query_Swap_Handler,
+			MethodName: "Sell",
+			Handler:    _Query_Sell_Handler,
+		},
+		{
+			MethodName: "Buy",
+			Handler:    _Query_Buy_Handler,
 		},
 		{
 			MethodName: "Pool",

@@ -8,7 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 
 	cmtabci "github.com/cometbft/cometbft/abci/types"
 
@@ -18,6 +17,7 @@ import (
 	abcitestutil "github.com/ararat-network/ark/abci/testutil"
 	abcitypes "github.com/ararat-network/ark/abci/types"
 	"github.com/ararat-network/ark/pkg/telemetry"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
 func TestProposalStatus(t *testing.T) {
@@ -33,6 +33,8 @@ func TestProposalStatus(t *testing.T) {
 		{name: "codec", err: fmt.Errorf("%w: %w", abcitypes.ErrCodec, errors.New("boom")), want: abcimetrics.StatusCodec},
 		{name: "missing commit info", err: abcitypes.ErrMissingCommitInfo, want: abcimetrics.StatusMissingCommitInfo},
 		{name: "unknown error is failure", err: errors.New("boom"), want: abcimetrics.StatusFailure},
+		{name: "commit-only fallback", err: errCommitOnly, want: abcimetrics.StatusCommitOnly},
+		{name: "commit-only outranks its cause", err: fmt.Errorf("%w: %w", errCommitOnly, errors.New("boom")), want: abcimetrics.StatusCommitOnly},
 		// The outer error names the stage that failed, so it wins over the
 		// sentinel it wraps.
 		{name: "wrapped handler outranks codec", err: fmt.Errorf("%w: %w", abcitypes.ErrWrappedHandler, abcitypes.ErrCodec), want: abcimetrics.StatusWrappedHandler},
@@ -41,7 +43,7 @@ func TestProposalStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, proposalStatus(tt.err))
+			require.Equal(t, tt.want, abcimetrics.StatusOf(tt.err))
 		})
 	}
 }
@@ -51,7 +53,7 @@ func TestProposalOutcomeMetrics(t *testing.T) {
 	provider, err := telemetry.NewPrometheusProvider("test", registry)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 	count := func(method, status string) float64 {
 		families, err := registry.Gather()
 		require.NoError(t, err)
@@ -94,7 +96,7 @@ func TestProposalOutcomeMetrics(t *testing.T) {
 						panic(cause)
 					}
 					return &cmtabci.ResponseProcessProposal{Status: tc.verdict}, tc.err
-				}, nil)
+				}, nil, nil)
 			invoke := func() {
 				ctx := abcitestutil.NewSDKContext(1, 2)
 				if tc.method == "prepare_proposal" {

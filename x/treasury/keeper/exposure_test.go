@@ -2,10 +2,13 @@ package keeper_test
 
 import (
 	"errors"
+	"time"
 
+	"github.com/cosmos/gogoproto/proto"
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +16,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	"github.com/ararat-network/ark/x/treasury/keeper"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -95,6 +99,66 @@ func (s *KeeperTestSuite) TestExposureFoldsSquaredReturnIntoVariance() {
 	state := s.getExposureState()
 	s.Require().Equal(math.LegacyNewDec(3), state.LastReferencePrice)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.125"), state.VolatilityVariance)
+	// Both samples share a second, which counts as one; folded at half retention, one half.
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.5"), state.SampleInterval)
+}
+
+// atTime moves the suite's block time, leaving its height.
+func (s *KeeperTestSuite) atTime(seconds int64) {
+	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithBlockTime(time.Unix(seconds, 0))
+}
+
+func (s *KeeperTestSuite) annualisedVolatility() math.LegacyDec {
+	response, err := keeper.NewQueryServerImpl(s.keeper).ExposureStatus(s.ctx, &types.QueryExposureStatusRequest{})
+	s.Require().NoError(err)
+	return response.AnnualisedVolatility
+}
+
+// TestExposureVolatilityPairsReturnsWithSeconds pins the per-second reading: the same return over
+// six seconds annualises as variance per six seconds, so block pace does not move it.
+func (s *KeeperTestSuite) TestExposureVolatilityPairsReturnsWithSeconds() {
+	s.setExposureParams(func(p *types.Params) {
+		p.VolatilityDecay = math.LegacyZeroDec()
+	})
+	s.atTime(1_000)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
+	s.settleEmpty()
+	s.atTime(1_006)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(3)})
+	s.settleEmpty()
+
+	state := s.getExposureState()
+	s.Require().Equal(uint64(1_006), state.LastSampleTime)
+	s.Require().Equal(math.LegacyNewDec(6), state.SampleInterval)
+	// A return of one half squared over six seconds, a year of seconds on top.
+	expected, err := math.LegacyMustNewDecFromStr("0.25").MulInt64(365 * 86_400).QuoInt64(6).ApproxSqrt()
+	s.Require().NoError(err)
+	s.Require().Equal(expected, s.annualisedVolatility())
+}
+
+// TestExposureGapCountsTheTimeItSpanned pins the halt case: a return carried across a long gap is
+// weighed by the seconds it spanned rather than as one block's move, so a move in step with the
+// market's per-second variance leaves the reading where it was.
+func (s *KeeperTestSuite) TestExposureGapCountsTheTimeItSpanned() {
+	s.setExposureParams(func(p *types.Params) {
+		p.VolatilityDecay = math.LegacyMustNewDecFromStr("0.5")
+	})
+	s.atTime(1_000)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
+	s.settleEmpty()
+	// One percent over six seconds.
+	s.atTime(1_006)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1.01")})
+	s.settleEmpty()
+	before := s.annualisedVolatility()
+	s.Require().True(before.IsPositive())
+
+	// Ten percent over six hundred seconds: a hundred times the squared return over a hundred times
+	// the time, the same variance per second.
+	s.atTime(1_606)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1.111")})
+	s.settleEmpty()
+	s.Require().Equal(before, s.annualisedVolatility())
 }
 
 // TestExposureClampsReturnSample pins the bound that keeps the variance series
@@ -285,6 +349,279 @@ func (s *KeeperTestSuite) TestExposureUpdateSkippedOnOffCadenceBlock() {
 	s.Require().Equal(math.LegacyOneDec(), s.getExposureState().Multiplier)
 }
 
+// expectRefreshSupply stubs a refresh's reads over a USD-only registry: the
+// member's supply, NOAH supply, and empty protocol funds.
+func (s *KeeperTestSuite) expectRefreshSupply(usd, noah math.Int) {
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewCoin(chain.USDBaseDenom, usd)).AnyTimes()
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewCoin(chain.NoahBaseDenom, noah)).AnyTimes()
+	s.bankKeeper.EXPECT().
+		GetBalance(gomock.Any(), gomock.Any(), chain.NoahBaseDenom).
+		Return(sdk.NewInt64Coin(chain.NoahBaseDenom, 0)).AnyTimes()
+}
+
+// exposureRefreshed decodes the block's last refresh event.
+func (s *KeeperTestSuite) exposureRefreshed() *types.EventExposureRefreshed {
+	events := sdk.UnwrapSDKContext(s.ctx).EventManager().Events()
+	for i := len(events) - 1; i >= 0; i-- {
+		if events[i].Type != proto.MessageName(&types.EventExposureRefreshed{}) {
+			continue
+		}
+		parsed, err := sdk.ParseTypedEvent(sdk.Events{events[i]}.ToABCIEvents()[0])
+		s.Require().NoError(err)
+		event, ok := parsed.(*types.EventExposureRefreshed)
+		s.Require().True(ok)
+		return event
+	}
+	s.FailNow("exposure refresh event not found")
+	return nil
+}
+
+// TestExposureRefreshBoundsTheMultiplier pins every bound between the composed
+// target and the stored multiplier: the step either way, the governance cap,
+// saturation, and the floor.
+func (s *KeeperTestSuite) TestExposureRefreshBoundsTheMultiplier() {
+	maxWeight := types.MaxExposureWeight
+	tests := []struct {
+		name    string
+		weights func(*types.EconomicPolicy)
+		params  func(*types.Params)
+		// state writes the stored series straight to the store, unvalidated.
+		state      func(*types.ExposureState)
+		usd, noah  math.Int
+		previous   string
+		uncapped   string
+		multiplier string
+	}{
+		{
+			// A ratio of one half at a weight of ten composes to six.
+			name:       "an upward target past one step moves one step",
+			weights:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyNewDec(10) },
+			previous:   "1",
+			uncapped:   "6",
+			multiplier: "1.25",
+		},
+		{
+			name:       "an upward target within one step lands on it",
+			weights:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyMustNewDecFromStr("0.2") },
+			previous:   "1",
+			uncapped:   "1.1",
+			multiplier: "1.1",
+		},
+		{
+			name:       "a downward target past one step moves one step",
+			state:      func(st *types.ExposureState) { st.Multiplier = math.LegacyNewDec(2) },
+			previous:   "2",
+			uncapped:   "1",
+			multiplier: "1.75",
+		},
+		{
+			name:       "a downward target within one step lands on it",
+			weights:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyMustNewDecFromStr("0.2") },
+			state:      func(st *types.ExposureState) { st.Multiplier = math.LegacyMustNewDecFromStr("1.2") },
+			previous:   "1.2",
+			uncapped:   "1.1",
+			multiplier: "1.1",
+		},
+		{
+			// A whole step of one would reach two; the cap holds it at one and a half.
+			name:    "a target above the cap lands on the cap",
+			weights: func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyNewDec(10) },
+			params: func(p *types.Params) {
+				p.MultiplierCap = math.LegacyMustNewDecFromStr("1.5")
+				p.MultiplierMaxStep = math.LegacyOneDec()
+			},
+			previous:   "1",
+			uncapped:   "6",
+			multiplier: "1.5",
+		},
+		{
+			// The step down reaches 2.75, still above the cap governance lowered to two.
+			name:       "a lowered cap clamps a stored multiplier",
+			params:     func(p *types.Params) { p.MultiplierCap = math.LegacyNewDec(2) },
+			state:      func(st *types.ExposureState) { st.Multiplier = math.LegacyNewDec(3) },
+			previous:   "3",
+			uncapped:   "1",
+			multiplier: "2",
+		},
+		{
+			// A ratio of 10^72 at the weight ceiling leaves the Dec domain.
+			name:       "an unrepresentable surcharge saturates at the cap",
+			weights:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = maxWeight },
+			usd:        math.NewIntWithDecimal(1, 72),
+			noah:       math.OneInt(),
+			previous:   "1",
+			uncapped:   "4",
+			multiplier: "1.25",
+		},
+		{
+			// The surcharge is the largest representable integer, so adding one overflows.
+			name:       "an unrepresentable factor saturates at the cap",
+			weights:    func(p *types.EconomicPolicy) { p.LiabilityRatioWeight = math.LegacyOneDec() },
+			usd:        maxRepresentableInt(),
+			noah:       math.OneInt(),
+			previous:   "1",
+			uncapped:   "4",
+			multiplier: "1.25",
+		},
+		{
+			// A liability factor of 10^76 fits; the full-variance volatility factor on top does not.
+			name: "an unrepresentable product saturates at the cap",
+			weights: func(p *types.EconomicPolicy) {
+				p.LiabilityRatioWeight = maxWeight
+				p.VolatilityWeight = maxWeight
+			},
+			state: func(st *types.ExposureState) {
+				st.VolatilityVariance = math.LegacyOneDec()
+				st.SampleInterval = math.LegacyOneDec()
+			},
+			usd:        math.NewIntWithDecimal(1, 70),
+			noah:       math.OneInt(),
+			previous:   "1",
+			uncapped:   "4",
+			multiplier: "1.25",
+		},
+		{
+			// Backstop: validation refuses a stored multiplier below one.
+			name:       "a stored multiplier below one restarts from one",
+			state:      func(st *types.ExposureState) { st.Multiplier = math.LegacyMustNewDecFromStr("0.5") },
+			previous:   "1",
+			uncapped:   "1",
+			multiplier: "1",
+		},
+		{
+			// Backstop: non-negative weights, liability, and flow keep every target at one or
+			// above; a negative flow series, which validation refuses, composes to one half.
+			name:       "a target below one clamps to one",
+			weights:    func(p *types.EconomicPolicy) { p.FlowWeight = math.LegacyOneDec() },
+			state:      func(st *types.ExposureState) { st.FlowPressure = math.LegacyNewDec(-50) },
+			previous:   "1",
+			uncapped:   "0.5",
+			multiplier: "1",
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			if tc.weights != nil {
+				s.setExposureWeights(tc.weights)
+			}
+			s.setExposureParams(func(p *types.Params) {
+				p.ExposureRefreshPeriodBlocks = 10
+				if tc.params != nil {
+					tc.params(p)
+				}
+			})
+			if tc.state != nil {
+				state := types.DefaultExposureState()
+				tc.state(&state)
+				s.Require().NoError(s.keeper.ExposureState.Set(s.ctx, state))
+			}
+			usd, noah := math.NewInt(100), math.NewInt(200)
+			if !tc.usd.IsNil() {
+				usd, noah = tc.usd, tc.noah
+			}
+			s.setAssets(chain.USDBaseDenom)
+			s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+			s.expectRefreshSupply(usd, noah)
+			s.setBlockHeight(9)
+
+			s.Require().NoError(s.beginBlock())
+
+			multiplier := math.LegacyMustNewDecFromStr(tc.multiplier)
+			s.Require().True(multiplier.Equal(s.getExposureState().Multiplier),
+				"stored multiplier %s", s.getExposureState().Multiplier)
+			event := s.exposureRefreshed()
+			s.Require().True(math.LegacyMustNewDecFromStr(tc.previous).Equal(event.PreviousMultiplier),
+				"previous multiplier %s", event.PreviousMultiplier)
+			s.Require().True(math.LegacyMustNewDecFromStr(tc.uncapped).Equal(event.UncappedMultiplier),
+				"uncapped multiplier %s", event.UncappedMultiplier)
+			s.Require().True(multiplier.Equal(event.Multiplier), "multiplier %s", event.Multiplier)
+		})
+	}
+}
+
+// TestExposureRefreshRetriesUnavailableInputs pins the owed flag as the retry:
+// a rate the block cannot supply holds the refresh for the next block, which
+// settles it off cadence, while any other fault fails the block.
+func (s *KeeperTestSuite) TestExposureRefreshRetriesUnavailableInputs() {
+	tests := []struct {
+		name string
+		// fold fails the registry-wide pricing fold.
+		fold error
+		// rate, when set, values the largest supply past the Dec domain.
+		rate  math.LegacyDec
+		holds bool
+	}{
+		{
+			name:  "stale rate",
+			fold:  errorsmod.Wrap(oracletypes.ErrStaleExchangeRate, chain.USDBaseDenom),
+			holds: true,
+		},
+		{
+			name:  "unknown denomination",
+			fold:  errorsmod.Wrap(oracletypes.ErrUnknownDenom, chain.USDBaseDenom),
+			holds: true,
+		},
+		{
+			name:  "unrepresentable valuation",
+			rate:  math.LegacyNewDec(2),
+			holds: true,
+		},
+		{
+			name: "store fault",
+			fold: errors.New("registry store failure"),
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.SetupTest()
+			s.setExposureWeights(func(p *types.EconomicPolicy) {
+				p.LiabilityRatioWeight = math.LegacyNewDec(10)
+			})
+			s.setExposureParams(func(p *types.Params) {
+				p.ExposureRefreshPeriodBlocks = 10
+			})
+			s.setAssets(chain.USDBaseDenom)
+			supply := math.NewInt(100)
+			rate := math.LegacyOneDec()
+			if !tc.rate.IsNil() {
+				supply, rate = maxRepresentableInt(), tc.rate
+			}
+			s.setRates(oracletypes.RateSet{chain.USDBaseDenom: rate})
+			s.expectRefreshSupply(supply, math.NewInt(200))
+			s.pricedAssetsErr = tc.fold
+			s.setBlockHeight(9)
+
+			err := s.beginBlock()
+			if !tc.holds {
+				s.Require().ErrorIs(err, tc.fold)
+				return
+			}
+			s.Require().NoError(err)
+			s.requireNoTypedEvent(&types.EventExposureRefreshed{})
+			s.Require().Equal(math.LegacyOneDec(), s.getExposureState().Multiplier)
+			pending, err := s.keeper.ExposureRefreshPending.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().True(pending)
+
+			// The input returns, and the next block settles what was owed.
+			s.pricedAssetsErr = nil
+			s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+			s.setBlockHeight(10)
+			s.Require().NoError(s.beginBlock())
+			s.Require().Equal(math.LegacyMustNewDecFromStr("1.25"), s.getExposureState().Multiplier)
+			s.Require().Equal(uint64(10), s.getExposureState().LastRefreshHeight)
+			pending, err = s.keeper.ExposureRefreshPending.Get(s.ctx)
+			s.Require().NoError(err)
+			s.Require().False(pending)
+		})
+	}
+}
+
 // TestExposureRescalesAnchorAcrossReferenceMove pins the unit change as a unit
 // change: without the rescale the next block would read a new-unit price
 // against an old-unit anchor and record the cross rate as a market move.
@@ -296,7 +633,7 @@ func (s *KeeperTestSuite) TestExposureRescalesAnchorAcrossReferenceMove() {
 	// One USD is two XDR, so an anchor of two NOAH per XDR is four NOAH per USD
 	// — the anchor is a price, and moves by the reciprocal of what a quantity
 	// of XDR would.
-	s.Require().NoError(s.keeper.RebaseReferenceState(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,
@@ -322,7 +659,7 @@ func (s *KeeperTestSuite) TestExposureRebasedAnchorRecordsNoReturnWithoutAMove()
 
 	// One USD is two NOAH and one XDR is one, so an anchor of one NOAH per
 	// XDR is two NOAH per USD.
-	s.Require().NoError(s.keeper.RebaseReferenceState(
+	s.Require().NoError(s.keeper.RebaseReference(
 		s.ctx,
 		chain.XDRBaseDenom,
 		chain.USDBaseDenom,

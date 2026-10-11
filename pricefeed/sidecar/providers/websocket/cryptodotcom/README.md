@@ -3,13 +3,14 @@
 The Crypto.com WebSocket provider subscribes to Crypto.com Exchange ticker channels and publishes latest-trade prices
 as provider responses.
 
-[config.go](config.go) owns the provider name, endpoint and transport defaults. This adapter requires no API key.
+[config.go](config.go) owns the provider name `crypto_dot_com_ws`, endpoint and transport defaults. This adapter requires no API key.
 
 ## Stream Shape
 
 Requested instruments are subscribed as `ticker.<instrument>` channels, one per subscribe request with a sequential
 id. Instruments use the `BASE_QUOTE` form, such as `USDT_USD`. Crypto.com asks clients to wait one second after
-connecting before subscribing, which the default post-connection timeout does. The handler processes:
+connecting before subscribing, which the default post-connection timeout does, and allows 400 subscriptions a
+connection, which the default of 200 tickers a connection stays under. The handler processes:
 
 - `public/heartbeat` messages, sent by the server every 30 seconds, which are answered with
   `public/respond-heartbeat` and the same id; an unanswered heartbeat closes the connection

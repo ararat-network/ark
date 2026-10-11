@@ -73,7 +73,7 @@ func newCheckCmd(root *rootOptions) *cobra.Command {
 		options.cfg.RequiredPriceLivenessPercent,
 		"Minimum required price liveness percentage per feed.",
 	)
-	flags.DurationVar(&options.cfg.MaxResponseAge, flagMaxResponseAge, options.cfg.MaxResponseAge, "Maximum accepted age of a price response.")
+	flags.DurationVar(&options.cfg.MaxResponseAge, flagMaxResponseAge, options.cfg.MaxResponseAge, "Maximum accepted age of a price response; defaults to the node's default price_ttl.")
 	flags.DurationVar(&options.cfg.MaxFutureSkew, flagMaxFutureSkew, options.cfg.MaxFutureSkew, "Maximum accepted future skew of a price response.")
 	flags.DurationVar(&options.cfg.RequestTimeout, flagRequestTimeout, options.cfg.RequestTimeout, "Timeout for each RPC.")
 	flags.DurationVar(

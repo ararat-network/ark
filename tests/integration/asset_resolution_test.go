@@ -42,7 +42,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.USDBaseDenom,
@@ -82,14 +82,14 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 		// Both conversion directions close in the block the suspension lands:
 		// the failed claim can neither be issued nor exited at a market price.
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
 			MinimumReceive: sdk.NewCoin(chain.USDBaseDenom, math.OneInt()),
 		})
 		require.ErrorIs(t, err, markettypes.ErrIneligibleAsset)
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      acquired,
 			AskDenom:       chain.NoahBaseDenom,
@@ -122,13 +122,13 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.NoError(t, err)
 		params, err := f.app.AssetKeeper.Params.Get(ctx)
 		require.NoError(t, err)
-		activationHeight := ctx.BlockHeight() + int64(params.SettlementActivationDelayBlocks)
+		activationTime := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 		require.NoError(t, f.app.AssetKeeper.OpenSettlement(
 			ctx,
 			chain.USDBaseDenom,
 			asset.Version,
 			redemptionRate,
-			activationHeight+1,
+			activationTime+1,
 		))
 
 		status := fundStatus(ctx)
@@ -151,14 +151,15 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 	// the delay itself is covered in the keeper suite. Bring the plan forward in
 	// place to reach the executable state, and fund the buffer below the
 	// recognised liability so the draw is partial and provably proportional.
-	var earliestClosing int64
+	var earliestClosing uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		plan, found, err := f.app.AssetKeeper.GetSettlementPlan(ctx, chain.USDBaseDenom)
 		require.NoError(t, err)
 		require.True(t, found)
-		plan.ActivationHeight = ctx.BlockHeight()
-		earliestClosing = ctx.BlockHeight() + 4
-		plan.EarliestClosingHeight = earliestClosing
+		// The fixture's blocks are a second apart, so four seconds is four blocks.
+		plan.ActivationTime = chain.BlockSeconds(ctx)
+		earliestClosing = chain.BlockSeconds(ctx) + 4
+		plan.EarliestClosingTime = earliestClosing
 		require.NoError(t, f.app.AssetKeeper.SettlementPlans.Set(ctx, chain.USDBaseDenom, plan))
 
 		half := noahFor(acquired.Amount).QuoInt64(2).TruncateInt()
@@ -239,14 +240,14 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 
 		err = f.app.AssetKeeper.WriteOffAsset(ctx, chain.USDBaseDenom, asset.Version)
 		require.ErrorIs(t, err, assettypes.ErrInvalidAssetTransition)
-		require.ErrorContains(t, err, "committed until height")
+		require.ErrorContains(t, err, "committed until time")
 	})
 
 	// Blocks pass inside the window and the guarantee holds on every one of
 	// them. The bound stops one short: nextBlock runs its transaction at the
 	// following height, so this walks up to the last block still inside the
 	// commitment.
-	for f.height < earliestClosing-1 {
+	for uint64(f.blockTime.Unix()) < earliestClosing-1 {
 		f.nextBlock(func(ctx sdk.Context) {
 			asset, err := f.app.AssetKeeper.Assets.Get(ctx, chain.USDBaseDenom)
 			require.NoError(t, err)
@@ -296,7 +297,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.True(t, status.PricedLiability.Amount.IsPositive())
 		require.Empty(t, status.UntrustedSuspendedSupply)
 
-		_, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
@@ -308,7 +309,7 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, f.app.AssetKeeper.ResumeIssuance(ctx, chain.USDBaseDenom, asset.Version))
 
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1)),
 			AskDenom:       chain.USDBaseDenom,
@@ -409,7 +410,7 @@ func TestWriteOffAndReinstatement(t *testing.T) {
 
 	var acquired sdk.Coin
 	f.nextBlock(func(ctx sdk.Context) {
-		response, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -539,10 +540,10 @@ func TestEmergencyMandateSingleProposal(t *testing.T) {
 	var term uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 
@@ -676,10 +677,10 @@ func TestEmergencyMandateSingleProposal(t *testing.T) {
 	f.nextBlock(func(ctx sdk.Context) {
 		successor := sdk.AccAddress([]byte("successor-committee.")).String()
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        successor,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      successor,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 
@@ -733,7 +734,7 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	// The asset must carry supply, or the partition skips it and suspending it
 	// changes nothing about completeness.
 	f.nextBlock(func(ctx sdk.Context) {
-		_, err := marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err := marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(1_000)),
 			AskDenom:       chain.KRWBaseDenom,
@@ -745,10 +746,10 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	var term uint64
 	f.nextBlock(func(ctx sdk.Context) {
 		_, err := assetMsgServer.SetEmergencyMandate(ctx, &assettypes.MsgSetEmergencyMandate{
-			Authority:        authority,
-			Committee:        committee,
-			ActivationHeight: uint64(ctx.BlockHeight()),
-			ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+			Authority:      authority,
+			Committee:      committee,
+			ActivationTime: chain.BlockSeconds(ctx),
+			ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 		})
 		require.NoError(t, err)
 		mandate, err := f.app.AssetKeeper.EmergencyMandate.Get(ctx)
@@ -774,7 +775,7 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = marketMsgServer.Swap(ctx, &markettypes.MsgSwap{
+		_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         f.trader.String(),
 			OfferCoin:      sdk.NewCoin(chain.NoahBaseDenom, chain.NativeBaseAmount(10)),
 			AskDenom:       chain.USDBaseDenom,
@@ -786,40 +787,17 @@ func TestEmergencySuspensionIsSeenByBlockSettlement(t *testing.T) {
 	// Settlement must have seen the suspension: an incomplete valuation sizes
 	// no targets, so nothing overflows and the whole eligible principal parks
 	// in the Reserve.
-	var allocations int
-	for _, event := range f.blockEvents {
-		if event.Type != "ark.treasury.v1.EventExpansionAllocated" {
-			continue
-		}
-		allocations++
-		for _, attribute := range event.Attributes {
-			switch attribute.Key {
-			case "overflow_burn":
-				require.Equal(t, `"0"`, attribute.Value,
-					"an incomplete valuation burns no principal")
-			case "redemption_buffer_credit":
-				require.Equal(t, `"0"`, attribute.Value,
-					"an incomplete valuation commits nothing to the Buffer")
-			}
-		}
-	}
-	require.Equal(t, 1, allocations, "the block settled its expansions once")
+	allocations := attributesOf(f.blockEvents, "ark.treasury.v1.EventExpansionAllocated")
+	require.Len(t, allocations, 1, "the block settled its expansions once")
+	require.Equal(t, `"0"`, allocations[0]["overflow_burn"], "an incomplete valuation burns no principal")
+	require.Equal(t, `"0"`, allocations[0]["redemption_buffer_credit"],
+		"an incomplete valuation commits nothing to the Buffer")
 
 	// One fold, one disclosure. A block whose valuation degraded inside it
 	// reports that degradation exactly once, because the only valuation it
 	// takes happens after everything that could degrade it.
-	var disclosures int
-	for _, event := range f.blockEvents {
-		if event.Type != "ark.treasury.v1.EventLiabilityIncomplete" {
-			continue
-		}
-		disclosures++
-		for _, attribute := range event.Attributes {
-			if attribute.Key == "untrusted_suspended_supply" {
-				require.Contains(t, attribute.Value, chain.KRWBaseDenom,
-					"the disclosure must name the suspended member")
-			}
-		}
-	}
-	require.Equal(t, 1, disclosures, "the block disclosed its degraded valuation once")
+	disclosures := attributesOf(f.blockEvents, "ark.treasury.v1.EventLiabilityIncomplete")
+	require.Len(t, disclosures, 1, "the block disclosed its degraded valuation once")
+	require.Contains(t, disclosures[0]["untrusted_suspended_supply"], chain.KRWBaseDenom,
+		"the disclosure must name the suspended member")
 }

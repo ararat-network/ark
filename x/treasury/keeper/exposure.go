@@ -19,9 +19,9 @@ import (
 	"github.com/ararat-network/ark/x/treasury/types"
 )
 
-// blocksPerYear is the annualisation factor for the variance series, held as a
-// Dec so the square root below takes one argument rather than composing two.
-var blocksPerYear = math.LegacyNewDec(int64(chain.BlocksPerYear))
+// secondsPerYear annualises variance per second, held as a Dec so the square root below takes one
+// argument rather than composing two.
+var secondsPerYear = math.LegacyNewDec(365 * 86_400)
 
 // maxReturn clamps volatility samples to [-1, 1], limiting feed discontinuities. Squared samples
 // and convex EWMA weights keep variance in [0, 1], bounding annualised volatility.
@@ -71,8 +71,9 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 		return nil
 	}
 
-	previous := state.LastReferencePrice
-	state.LastReferencePrice = price
+	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
+	now := chain.BlockSeconds(ctx)
+	state.LastReferencePrice, state.LastSampleTime = price, now
 	// The first sample of a chain's life, or the first after a reference move
 	// that reset the anchor: a price with nothing to compare against yields no
 	// return, and the next block measures from here.
@@ -99,11 +100,22 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 		return fmt.Errorf("squaring the reference return: %w", err)
 	}
 
+	// The return is paired with the seconds it spanned, so a gap counts as the time it was rather
+	// than as one block. An interval counts at least a second, which with every squared sample at
+	// most one keeps the variance at or below the interval under the shared weights.
+	elapsed := uint64(1)
+	if now > previousTime {
+		elapsed = now - previousTime
+	}
 	variance, err := ewma(state.VolatilityVariance, squared, params.VolatilityDecay)
 	if err != nil {
 		return fmt.Errorf("folding the volatility series: %w", err)
 	}
-	state.VolatilityVariance = variance
+	interval, err := ewma(state.SampleInterval, math.LegacyNewDecFromInt(math.NewIntFromUint64(elapsed)), params.VolatilityDecay)
+	if err != nil {
+		return fmt.Errorf("folding the sample interval: %w", err)
+	}
+	state.VolatilityVariance, state.SampleInterval = variance, interval
 	return nil
 }
 
@@ -196,7 +208,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 
 	partition, err := k.liabilityPartitionValue(ctx)
 	if err != nil {
-		if isUnusableRateInput(err) {
+		if oracletypes.IsRateUnavailable(err) {
 			k.Logger(ctx).Warn("skipping Treasury exposure refresh", "error", err)
 			return false, nil
 		}
@@ -229,7 +241,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 	if err != nil {
 		return false, fmt.Errorf("valuing the liability ratio: %w", err)
 	}
-	volatility, err := annualisedVolatility(state.VolatilityVariance)
+	volatility, err := annualisedVolatility(state.VolatilityVariance, state.SampleInterval)
 	if err != nil {
 		return false, err
 	}
@@ -263,7 +275,7 @@ func (k Keeper) applyExposureRefresh(ctx context.Context, params types.Params) (
 	state.LiabilityRatio = ratio
 	state.FlowRatio = flow
 	state.Multiplier = multiplier
-	state.LastRefreshHeight = uint64(sdkCtx.BlockHeight())
+	state.LastRefreshHeight = chain.BlockHeight(ctx)
 	if err := k.ExposureState.Set(ctx, state); err != nil {
 		return false, fmt.Errorf("setting exposure state: %w", err)
 	}
@@ -334,19 +346,23 @@ func limitStep(previous, target, step math.LegacyDec) (math.LegacyDec, error) {
 	return math.LegacyMaxDec(target, floor), nil
 }
 
-// annualisedVolatility scales the per-block variance to a year and takes its
-// root, in that order: one square root over the scaled figure rather than a
-// root and a multiplication by a stored constant, which keeps the annualisation
-// factor out of state and the error paths down to one.
-func annualisedVolatility(variance math.LegacyDec) (math.LegacyDec, error) {
-	if variance.IsNil() || !variance.IsPositive() {
+// annualisedVolatility scales variance per second to a year and takes its root. Variance and
+// interval fold the same samples under the same weights, so their ratio is variance per second over
+// that window whatever the block pace. Multiplying before dividing leaves one rounding, and variance
+// at or below the interval keeps the scaled figure within a year of seconds.
+func annualisedVolatility(variance, interval math.LegacyDec) (math.LegacyDec, error) {
+	if variance.IsNil() || !variance.IsPositive() || interval.IsNil() || !interval.IsPositive() {
 		return math.LegacyZeroDec(), nil
 	}
-	scaled, err := decimal.Mul(variance, blocksPerYear)
+	scaled, err := decimal.Mul(variance, secondsPerYear)
 	if err != nil {
 		return math.LegacyDec{}, fmt.Errorf("annualising the volatility series: %w", err)
 	}
-	volatility, err := scaled.ApproxSqrt()
+	perYear, err := decimal.Quo(scaled, interval)
+	if err != nil {
+		return math.LegacyDec{}, fmt.Errorf("annualising the volatility series: %w", err)
+	}
+	volatility, err := perYear.ApproxSqrt()
 	if err != nil {
 		return math.LegacyDec{}, fmt.Errorf("rooting the annualised variance: %w", err)
 	}

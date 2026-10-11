@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/suite"
 
@@ -30,9 +31,7 @@ const (
 	committeeUpgradeName     = "v2-emergency"
 	committeeUpgradeNameB    = "v2-emergency-b"
 	governanceUpgradeName    = "v3-planned"
-	testSubjectClient        = "07-tendermint-0"
-	testSubstituteClient     = "07-tendermint-1"
-	notAppointedCommitteeErr = "security mandate: signer is not the exact appointed committee"
+	notAppointedCommitteeErr = "security mandate: signer is not the exact appointed account"
 )
 
 // stubRouter records what the keeper dispatched instead of executing it. The
@@ -96,9 +95,14 @@ func (stubWasmKeeper) HasContractInfo(context.Context, sdk.AccAddress) bool { re
 // stubUpgradeKeeper serves one optional pending plan.
 type stubUpgradeKeeper struct {
 	plan *upgradetypes.Plan
+	// err, when set, fails the read, standing in for a store fault.
+	err error
 }
 
 func (s *stubUpgradeKeeper) GetUpgradePlan(context.Context) (upgradetypes.Plan, error) {
+	if s.err != nil {
+		return upgradetypes.Plan{}, s.err
+	}
 	if s.plan == nil {
 		return upgradetypes.Plan{}, upgradetypes.ErrNoUpgradePlanFound
 	}
@@ -134,7 +138,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	key := storetypes.NewKVStoreKey(types.StoreKey)
 	storeService := runtime.NewKVStoreService(key)
 	testCtx := sdktestutil.DefaultContextWithDB(s.T(), key, storetypes.NewTransientStoreKey("transient_test"))
-	s.ctx = testCtx.Ctx.WithBlockHeight(100)
+	s.ctx = testCtx.Ctx.WithBlockHeight(100).WithBlockTime(time.Unix(100, 0))
 
 	s.router = &stubRouter{}
 	s.account = &stubAccountKeeper{accounts: map[string]sdk.AccountI{}}
@@ -160,8 +164,8 @@ func (s *KeeperTestSuite) SetupTest() {
 func (s *KeeperTestSuite) appoint() {
 	appointment := types.NewDisabledSecurityMandate(1)
 	appointment.Committee = s.committee
-	appointment.ActivationHeight = 50
-	appointment.ExpiryHeight = 500
+	appointment.ActivationTime = 50
+	appointment.ExpiryTime = 500
 	s.Require().NoError(appointment.Validate())
 	s.Require().NoError(s.keeper.Mandate.Set(s.ctx, appointment))
 }
@@ -244,4 +248,39 @@ func (s *KeeperTestSuite) TestDispatchFailuresSurface() {
 		s.Require().NoError(recordErr)
 		s.Require().True(record.IsZero())
 	})
+
+	// A refused cancel leaves the committee's claim on the plan it still holds.
+	cancelFailures := []struct {
+		name   string
+		fail   func()
+		expErr string
+	}{
+		{"cancel target unroutable", func() { s.router.unroutable = true }, "no handler registered for /cosmos.upgrade.v1beta1.MsgCancelUpgrade"},
+		{"cancel target rejects", func() { s.router.err = errors.New("upgrade store unavailable") }, "dispatching /cosmos.upgrade.v1beta1.MsgCancelUpgrade: upgrade store unavailable"},
+	}
+	for _, tc := range cancelFailures {
+		s.Run(tc.name, func() {
+			record := types.CommitteePlan{Name: committeeUpgradeName, Height: 200, Term: 1}
+			s.upgrade.plan = &upgradetypes.Plan{Name: committeeUpgradeName, Height: 200}
+			s.Require().NoError(s.keeper.CommitteePlan.Set(s.ctx, record))
+			ctx := s.ctx.WithEventManager(sdk.NewEventManager())
+			tc.fail()
+			defer func() {
+				s.router.unroutable = false
+				s.router.err = nil
+				s.upgrade.plan = nil
+			}()
+
+			_, err := s.msgServer.CommitteeCancelUpgrade(ctx, &types.MsgCommitteeCancelUpgrade{
+				Committee:    s.committee,
+				ExpectedTerm: 1,
+			})
+
+			s.Require().ErrorContains(err, tc.expErr)
+			stored, getErr := s.keeper.CommitteePlan.Get(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().Equal(record, stored)
+			s.Require().Empty(ctx.EventManager().Events())
+		})
+	}
 }

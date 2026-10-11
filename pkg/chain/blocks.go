@@ -7,6 +7,7 @@ package chain
 
 import (
 	"context"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -19,6 +20,22 @@ const (
 	BlocksPerMonth  = BlocksPerDay * 30
 	BlocksPerYear   = BlocksPerDay * 365
 )
+
+// MaxBlockSeconds is the last block time the header's int64 carries: a chain instant past it is one
+// no block reaches.
+const MaxBlockSeconds = uint64(math.MaxInt64)
+
+// BlockSeconds is the block's Unix time in whole seconds. A time before the epoch, which only a test
+// harness produces, reads as the epoch.
+func BlockSeconds(ctx context.Context) uint64 {
+	return uint64(max(sdk.UnwrapSDKContext(ctx).BlockTime().Unix(), 0))
+}
+
+// BlockHeight is the block's height. No header carries a negative one; the clamp keeps the
+// conversion total.
+func BlockHeight(ctx context.Context) uint64 {
+	return uint64(max(sdk.UnwrapSDKContext(ctx).BlockHeight(), 0))
+}
 
 // IsPeriodLastBlock returns true if we are at the last block of the period
 func IsPeriodLastBlock(ctx context.Context, blocksPerPeriod uint64) bool {

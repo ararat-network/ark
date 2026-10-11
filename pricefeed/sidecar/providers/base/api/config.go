@@ -25,17 +25,13 @@ type Config struct {
 	// RequestsPerSecond limits request rate. If zero, requests are not rate limited.
 	RequestsPerSecond int `mapstructure:"requests_per_second"`
 
-	// Endpoints is a list of endpoints that the provider can query.
+	// Endpoints are tried in order: each batch stays on one until a request to
+	// it fails, then moves to the next, wrapping round.
 	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// BatchSize is the maximum number of tickers in each provider-defined request
 	// group. If zero, each complete provider-defined group is queried in one request.
 	BatchSize int `mapstructure:"batch_size"`
-
-	// MaxBlockHeightAge is the maximum time an on-chain data source may report the
-	// same block height before its data is considered stale. If zero, block height
-	// freshness is not checked by the provider-specific fetcher.
-	MaxBlockHeightAge time.Duration `mapstructure:"max_block_height_age"`
 }
 
 // Validate performs validation of the API config.
@@ -66,9 +62,6 @@ func (c *Config) Validate() error {
 	if c.BatchSize < 0 {
 		return errors.New("batch size cannot be negative")
 	}
-	if c.MaxBlockHeightAge < 0 {
-		return errors.New("max block height age cannot be negative")
-	}
 
 	return nil
 }
@@ -80,6 +73,5 @@ func (c Config) Equal(other Config) bool {
 		c.Interval == other.Interval &&
 		c.RequestsPerSecond == other.RequestsPerSecond &&
 		slices.Equal(c.Endpoints, other.Endpoints) &&
-		c.BatchSize == other.BatchSize &&
-		c.MaxBlockHeightAge == other.MaxBlockHeightAge
+		c.BatchSize == other.BatchSize
 }

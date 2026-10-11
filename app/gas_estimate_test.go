@@ -102,7 +102,7 @@ func TestGasEstimateMatchesExecution(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	txConfig := arkApp.GetTxConfig()
+	txConfig := arkApp.TxConfig()
 	// Use a fixed transaction without a random memo so unrelated byte gas cannot dilute the
 	// simulation-to-execution ratio.
 	sign := func(msg sdk.Msg, sequence uint64, fee sdk.Coins, gas uint64) []byte {

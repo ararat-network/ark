@@ -6,7 +6,6 @@ import "ark/mandate/v1/envelope.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/duration.proto";
 
 option go_package = "github.com/ararat-network/ark/x/reserve/types";
 
@@ -38,12 +37,12 @@ enum EntryKind {
   ENTRY_KIND_RETURN_REVERSAL = 7;
 }
 
-// ReserveMandate stores one governance-created, height-scoped Reserve
+// ReserveMandate stores one governance-created, time-scoped Reserve
 // committee appointment and the deployment authority delegated to it for the
 // term. An empty committee identifies a disabled mandate; term still increases
 // on replacement so old committee transactions cannot become valid again.
 message ReserveMandate {
-  // envelope carries the shared term, committee, and half-open height window.
+  // envelope carries the shared term, committee, and half-open time window.
   ark.mandate.v1.Envelope envelope = 1 [
     (gogoproto.embed) = true,
     (gogoproto.nullable) = false,
@@ -84,25 +83,21 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // recognition_cap_ratio in (0, 1) bounds this asset's credit to ratio ×
+  // recognition_cap_ratio is positive and bounds this asset's credit to ratio ×
   // recognised capital itself, resolved per block by SolveRecognition's closed
   // form. Clipping one asset shrinks the total and can tighten its neighbours,
-  // so ratios across the whole policy must sum strictly below one.
+  // so ratios across the whole policy must sum strictly below one, which also
+  // keeps each ratio below one.
   string recognition_cap_ratio = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // max_rate_age is how old the derived feed's rate may be and still back this
-  // claim's credit. Required and positive, and bounded by
-  // MaxRecognitionRateAge: a claim states its own tolerance rather than
-  // inheriting the Oracle default.
-  google.protobuf.Duration max_rate_age = 4 [
-    (gogoproto.nullable) = false,
-    (gogoproto.stdduration) = true,
-    (amino.dont_omitempty) = true
-  ];
+  // max_rate_age is how old, in seconds, the derived feed's rate may be and still back this
+  // claim's credit. Required and positive, and bounded by MaxRecognitionRateAge: a claim states
+  // its own tolerance rather than inheriting the Oracle default.
+  uint64 max_rate_age = 4 [(amino.dont_omitempty) = true];
 }
 
 // Position is the current view of one deployment: quantity is what the
@@ -189,8 +184,8 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // rate is the Oracle rate used this block, in units of this asset per one
-  // NOAH, so the credit below divides by it. It is zero when no rate was used:
+  // rate is the Oracle rate used this block, NOAH per one unit of this asset,
+  // so the credit below multiplies by it. It is zero when no rate was used:
   // the feed is dark, stale, or non-positive, or the asset was never priced.
   string rate = 5 [
     (cosmos_proto.scalar) = "cosmos.Dec",
@@ -217,9 +212,12 @@ message AssetRecognition {
     (amino.dont_omitempty) = true
   ];
   // credit is the anoah this asset contributes: the gross quantity haircut,
-  // divided by the rate, truncated, then clipped by the cap.
+  // multiplied by the rate, truncated, then clipped by the cap.
   cosmos.base.v1beta1.Coin credit = 9 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // max_rate_age is the entry's rate window in seconds; zero on an
+  // ineligible row.
+  uint64 max_rate_age = 10 [(amino.dont_omitempty) = true];
 }

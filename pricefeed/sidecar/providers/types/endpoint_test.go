@@ -71,17 +71,27 @@ func TestAuthenticationEnabled(t *testing.T) {
 	require.True(t, Authentication{APIKey: "secret", APIKeyHeader: "X-API-Key"}.Enabled())
 }
 
-func TestFirstEndpoint(t *testing.T) {
+func TestRotateEndpoints(t *testing.T) {
 	endpoints := []Endpoint{
 		{URL: "https://first.provider.test"},
 		{URL: "https://second.provider.test"},
 	}
 
-	endpoint, err := FirstEndpoint(endpoints)
-	require.NoError(t, err)
-	require.Equal(t, endpoints[0], endpoint)
+	for _, tc := range []struct {
+		attempt int
+		want    Endpoint
+	}{
+		{attempt: 0, want: endpoints[0]},
+		{attempt: 1, want: endpoints[1]},
+		{attempt: 2, want: endpoints[0]},
+		{attempt: -1, want: endpoints[0]},
+	} {
+		endpoint, err := RotateEndpoints(endpoints, tc.attempt)
+		require.NoError(t, err)
+		require.Equal(t, tc.want, endpoint, "attempt %d", tc.attempt)
+	}
 
-	_, err = FirstEndpoint(nil)
+	_, err := RotateEndpoints(nil, 0)
 	require.ErrorContains(t, err, "endpoints cannot be empty")
 }
 

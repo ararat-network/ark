@@ -8,22 +8,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 
 	"github.com/ararat-network/ark/abci/metrics"
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 )
 
-// The global binds this package's instruments to the first provider
-// installed in the process, so one test installs one provider and every
-// exposition check lives under it.
 func TestExposition(t *testing.T) {
-	originalProvider := otel.GetMeterProvider()
-	t.Cleanup(func() {
-		otel.SetMeterProvider(originalProvider)
-	})
-
 	registry := prometheus.NewRegistry()
 	exporter, err := otelprometheus.New(otelprometheus.WithRegisterer(registry))
 	require.NoError(t, err)
@@ -32,7 +24,7 @@ func TestExposition(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	metrics.RecordLatencyAndStatus(1500*time.Millisecond, metrics.StatusCodec, metrics.PrepareProposal)
 	metrics.RecordLatencyAndStatus(500*time.Millisecond, metrics.StatusSuccess, metrics.PrepareProposal)

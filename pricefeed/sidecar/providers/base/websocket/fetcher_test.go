@@ -3,6 +3,7 @@ package websocket_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -187,6 +188,84 @@ func TestRunReconnectsAfterDialError(t *testing.T) {
 	require.GreaterOrEqual(t, attempts.Load(), int32(2))
 }
 
+// A session that cannot start publishes its tickers as unresolved and reconnects, so a cause that
+// clears lets the shard recover without restarting the provider.
+func TestRunReconnectsAfterSessionStartFailure(t *testing.T) {
+	tickers := []types.Ticker{"ATOMUSD"}
+
+	tests := []struct {
+		name    string
+		setup   func(t *testing.T, handler *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option)
+		wantErr string
+	}{
+		{
+			name: "endpoint selection",
+			setup: func(*testing.T, *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option) {
+				return websocketConfig("wss://example.invalid"), []basewebsocket.Option{
+					basewebsocket.WithEndpointSelector(func([]types.Endpoint, int) (types.Endpoint, error) {
+						return types.Endpoint{}, errors.New("no endpoint available")
+					}),
+				}
+			},
+			wantErr: "no endpoint available",
+		},
+		{
+			name: "subscription messages",
+			setup: func(t *testing.T, handler *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option) {
+				t.Helper()
+				handler.EXPECT().CreateMessages(tickers).Return(nil, errors.New("unsupported ticker")).AnyTimes()
+				server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+					_, _, _ = conn.Read(context.Background())
+					return nil
+				})
+				return websocketConfig(server.URL), []basewebsocket.Option{basewebsocket.WithHTTPClient(server.Client())}
+			},
+			wantErr: "unsupported ticker",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			handler := wstestutil.NewMockDataHandler(ctrl)
+			handler.EXPECT().Copy().Return(handler).AnyTimes()
+			cfg, opts := tt.setup(t, handler)
+			cfg.ReconnectionTimeout = time.Millisecond
+			fetcher, err := basewebsocket.NewFetcher(cfg, handler, opts...)
+			require.NoError(t, err)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			responseCh := make(chan types.Response)
+			errCh := make(chan error, 1)
+			go func() {
+				errCh <- fetcher.Run(ctx, tickers, responseCh)
+			}()
+
+			for range 2 {
+				select {
+				case response := <-responseCh:
+					providerErr := response.Unresolved["ATOMUSD"]
+					require.Equal(t, types.ErrorWebsocketStartFail, providerErr.Code())
+					require.ErrorContains(t, providerErr, tt.wantErr)
+				case err := <-errCh:
+					t.Fatalf("fetcher stopped before retrying the session: %v", err)
+				case <-time.After(5 * time.Second):
+					t.Fatal("timed out waiting for the session failure response")
+				}
+			}
+
+			cancel()
+			select {
+			case err := <-errCh:
+				require.ErrorIs(t, err, context.Canceled)
+			case <-time.After(5 * time.Second):
+				t.Fatal("fetcher did not stop")
+			}
+		})
+	}
+}
+
 func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
@@ -224,7 +303,7 @@ func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 		cfg,
 		handler,
 		basewebsocket.WithHeaders(staticHeaders),
-		basewebsocket.WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+		basewebsocket.WithEndpointSelector(func(endpoints []types.Endpoint, _ int) (types.Endpoint, error) {
 			return endpoints[1], nil
 		}),
 		basewebsocket.WithDialFunc(func(_ context.Context, url string, opts *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
@@ -245,6 +324,46 @@ func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 	require.Equal(t, "stale-secret", staticHeaders.Get("X-Second-Key"))
 }
 
+// TestRunDialsTheNextEndpointOnEachReconnect pins failover: every reconnect
+// follows a failed session, so it dials the next endpoint, wrapping round.
+func TestRunDialsTheNextEndpointOnEachReconnect(t *testing.T) {
+	cfg := websocketConfigWithEndpoints([]types.Endpoint{
+		{URL: "wss://first.example.invalid"},
+		{URL: "wss://second.example.invalid"},
+	})
+	cfg.ReconnectionTimeout = time.Millisecond
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	handler.EXPECT().Copy().Return(handler).AnyTimes()
+
+	dials := make(chan string, 3)
+	fetcher, err := basewebsocket.NewFetcher(
+		cfg,
+		handler,
+		basewebsocket.WithDialFunc(func(_ context.Context, url string, _ *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
+			select {
+			case dials <- url:
+			default:
+			}
+			return nil, nil, errors.New("dial failed")
+		}),
+	)
+	require.NoError(t, err)
+
+	responses, stop := runFetcher(t, fetcher, []types.Ticker{"ATOMUSD"})
+	for range 3 {
+		select {
+		case <-responses:
+		case <-time.After(5 * time.Second):
+			require.FailNow(t, "no failed session was published")
+		}
+	}
+	require.ErrorIs(t, stop(), context.Canceled)
+	require.Equal(t, "wss://first.example.invalid", <-dials)
+	require.Equal(t, "wss://second.example.invalid", <-dials)
+	require.Equal(t, "wss://first.example.invalid", <-dials)
+}
+
 func TestRunPublishesSubscribeWriteErrorResponse(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	handler := wstestutil.NewMockDataHandler(ctrl)
@@ -254,11 +373,9 @@ func TestRunPublishesSubscribeWriteErrorResponse(t *testing.T) {
 	handler.EXPECT().Copy().Return(handler)
 	handler.EXPECT().CreateMessages(tickers).Return([][]byte{[]byte("subscribe")}, nil)
 
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
-		if err := conn.CloseNow(); err != nil {
-			t.Errorf("CloseNow() error = %v", err)
-		}
-		close(closed)
+	server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		defer close(closed)
+		return conn.CloseNow()
 	})
 	cfg := websocketConfig(strings.Replace(server.URL, "https://", "wss://", 1))
 	fetcher, err := basewebsocket.NewFetcher(
@@ -292,17 +409,25 @@ func TestRunPublishesHandledMessageAndWritesUpdate(t *testing.T) {
 		"ATOMUSD": types.NewResult(nil, time.Unix(10, 0).UTC()),
 	}, nil)
 
+	subscriptions := make(chan []byte, 1)
 	readUpdate := make(chan []byte, 1)
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
 		_, subscription, err := conn.Read(context.Background())
-		require.NoError(t, err)
-		require.Equal(t, []byte("subscribe"), subscription)
+		if err != nil {
+			return err
+		}
+		subscriptions <- subscription
 
-		require.NoError(t, conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price")))
+		if err := conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price")); err != nil {
+			return err
+		}
 
 		_, update, err := conn.Read(context.Background())
-		require.NoError(t, err)
+		if err != nil {
+			return err
+		}
 		readUpdate <- update
+		return nil
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -325,12 +450,17 @@ func TestRunPublishesHandledMessageAndWritesUpdate(t *testing.T) {
 		require.Equal(t, expected, response)
 	case err := <-errCh:
 		t.Fatalf("fetcher stopped before responding: %v", err)
+	case err := <-serverErrs:
+		t.Fatalf("server: %v", err)
 	case <-time.After(time.Second):
 		t.Fatal("timed out waiting for websocket response")
 	}
+	require.Equal(t, []byte("subscribe"), <-subscriptions)
 	select {
 	case update := <-readUpdate:
 		require.Equal(t, []byte("update"), update)
+	case err := <-serverErrs:
+		t.Fatalf("server: %v", err)
 	case <-time.After(time.Second):
 		t.Fatal("timed out waiting for the update write")
 	}
@@ -341,8 +471,8 @@ func TestRunReturnsErrorWhenReceivePanics(t *testing.T) {
 	handler := wstestutil.NewMockDataHandler(ctrl)
 	tickers := []types.Ticker{"ATOMUSD"}
 
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
-		require.NoError(t, conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price")))
+	server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		return conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price"))
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -372,9 +502,11 @@ func TestRunSkipsParseErrorAndPublishesNextValidMessage(t *testing.T) {
 		"ATOMUSD": types.NewResult(nil, time.Unix(10, 0).UTC()),
 	}, nil)
 
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
-		require.NoError(t, conn.Write(context.Background(), coderwebsocket.MessageText, []byte("bad")))
-		require.NoError(t, conn.Write(context.Background(), coderwebsocket.MessageText, []byte("good")))
+	server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		if err := conn.Write(context.Background(), coderwebsocket.MessageText, []byte("bad")); err != nil {
+			return err
+		}
+		return conn.Write(context.Background(), coderwebsocket.MessageText, []byte("good"))
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -395,10 +527,8 @@ func TestRunPublishesUnresolvedResponseAfterReadError(t *testing.T) {
 	handler := wstestutil.NewMockDataHandler(ctrl)
 	tickers := []types.Ticker{"ATOMUSD", "BTCUSD"}
 
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
-		if err := conn.CloseNow(); err != nil {
-			t.Errorf("CloseNow() error = %v", err)
-		}
+	server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		return conn.CloseNow()
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -424,8 +554,9 @@ func TestRunReturnsErrorWhenHeartbeatPanics(t *testing.T) {
 	handler := wstestutil.NewMockDataHandler(ctrl)
 	tickers := []types.Ticker{"ATOMUSD"}
 
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
+	server, _ := websocketServer(t, func(conn *coderwebsocket.Conn) error {
 		_, _, _ = conn.Read(context.Background())
+		return nil
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -454,10 +585,13 @@ func TestRunSendsHeartbeatMessages(t *testing.T) {
 	tickers := []types.Ticker{"ATOMUSD"}
 
 	readHeartbeat := make(chan []byte, 1)
-	server := websocketServer(t, func(conn *coderwebsocket.Conn) {
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
 		_, heartbeat, err := conn.Read(context.Background())
-		require.NoError(t, err)
+		if err != nil {
+			return err
+		}
 		readHeartbeat <- heartbeat
+		return nil
 	})
 
 	handler.EXPECT().Copy().Return(handler)
@@ -476,9 +610,379 @@ func TestRunSendsHeartbeatMessages(t *testing.T) {
 		errCh <- fetcher.Run(ctx, tickers, make(chan types.Response, 1))
 	}()
 
-	require.Equal(t, []byte("ping"), <-readHeartbeat)
+	select {
+	case heartbeat := <-readHeartbeat:
+		require.Equal(t, []byte("ping"), heartbeat)
+	case err := <-serverErrs:
+		t.Fatalf("server: %v", err)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for the heartbeat")
+	}
 	cancel()
 	require.ErrorIs(t, <-errCh, context.Canceled)
+}
+
+// A server that subscribes and then stays silent trips ReadTimeout: the
+// tickers are reported unresolved and the session is redialled.
+func TestRunRedialsAfterReadTimeout(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD"}
+	handler.EXPECT().Copy().Return(handler).MinTimes(1)
+	handler.EXPECT().CreateMessages(tickers).Return([][]byte{[]byte("subscribe")}, nil).MinTimes(1)
+
+	accepted := make(chan struct{}, 8)
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		accepted <- struct{}{}
+		if _, _, err := conn.Read(context.Background()); err != nil {
+			return fmt.Errorf("reading subscription: %w", err)
+		}
+		// Silent until the fetcher gives up on the connection.
+		_, _, _ = conn.Read(context.Background())
+		return nil
+	})
+	cfg := websocketConfig(server.URL)
+	cfg.ReadTimeout = 20 * time.Millisecond
+	cfg.ReconnectionTimeout = time.Millisecond
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
+	require.NoError(t, err)
+
+	responses, stop := runFetcher(t, fetcher, tickers)
+	response := receiveWebsocketResponse(t, responses, serverErrs)
+	require.Empty(t, response.Resolved)
+	unresolved := response.Unresolved["ATOMUSD"]
+	require.Equal(t, types.ErrorWebSocketGeneral, unresolved.Code())
+	require.ErrorContains(t, unresolved, basewebsocket.ErrRead.Error())
+	require.ErrorContains(t, unresolved, context.DeadlineExceeded.Error())
+	receiveSignals(t, accepted, 2)
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// A heartbeat that cannot be written reports the tickers unresolved with the
+// write failure and redials.
+func TestRunRedialsAfterHeartbeatWriteFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD"}
+	handler.EXPECT().Copy().Return(handler).MinTimes(1)
+	handler.EXPECT().CreateMessages(tickers).Return([][]byte{[]byte("subscribe")}, nil).MinTimes(1)
+	handler.EXPECT().HeartBeatMessages().Return([][]byte{[]byte("ping")}, nil).AnyTimes()
+
+	subscribed := make(chan struct{}, 8)
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		if _, _, err := conn.Read(context.Background()); err != nil {
+			return fmt.Errorf("reading subscription: %w", err)
+		}
+		subscribed <- struct{}{}
+		for {
+			if _, _, err := conn.Read(context.Background()); err != nil {
+				return nil
+			}
+		}
+	})
+	conns := make(chan *failableConn, 8)
+	cfg := websocketConfig(server.URL)
+	cfg.PingInterval = 5 * time.Millisecond
+	cfg.ReadTimeout = time.Hour
+	cfg.ReconnectionTimeout = time.Millisecond
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(failableClient(server, conns)))
+	require.NoError(t, err)
+
+	responses, stop := runFetcher(t, fetcher, tickers)
+	first := receiveConn(t, conns)
+	receiveSignals(t, subscribed, 1)
+	first.failWrites()
+
+	requireWriteFailure(t, responses, serverErrs, "ATOMUSD")
+	receiveConn(t, conns)
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// A follow-up message the handler asks for that cannot be written reports the
+// tickers unresolved with the write failure and redials.
+func TestRunRedialsAfterUpdateWriteFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD"}
+	handler.EXPECT().Copy().Return(handler).MinTimes(1)
+	handler.EXPECT().CreateMessages(tickers).Return([][]byte{[]byte("subscribe")}, nil).MinTimes(1)
+	handler.EXPECT().HandleMessage([]byte("price")).Return(types.Response{}, [][]byte{[]byte("update")}, nil).MinTimes(1)
+
+	subscribed := make(chan struct{}, 8)
+	send := make(chan struct{})
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		if _, _, err := conn.Read(context.Background()); err != nil {
+			return fmt.Errorf("reading subscription: %w", err)
+		}
+		subscribed <- struct{}{}
+		select {
+		case <-send:
+		case <-time.After(5 * time.Second):
+			return errors.New("never told to send")
+		}
+		if err := conn.Write(context.Background(), coderwebsocket.MessageText, []byte("price")); err != nil {
+			return fmt.Errorf("writing price: %w", err)
+		}
+		_, _, _ = conn.Read(context.Background())
+		return nil
+	})
+	conns := make(chan *failableConn, 8)
+	cfg := websocketConfig(server.URL)
+	cfg.ReadTimeout = time.Hour
+	cfg.ReconnectionTimeout = time.Millisecond
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(failableClient(server, conns)))
+	require.NoError(t, err)
+
+	responses, stop := runFetcher(t, fetcher, tickers)
+	first := receiveConn(t, conns)
+	receiveSignals(t, subscribed, 1)
+	first.failWrites()
+	send <- struct{}{}
+
+	requireWriteFailure(t, responses, serverErrs, "ATOMUSD")
+	receiveConn(t, conns)
+	close(send)
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// MaxTickersPerConnection shards tickers across connections, each with its own
+// handler copy and subscription.
+func TestRunShardsTickersAcrossConnections(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	first := wstestutil.NewMockDataHandler(ctrl)
+	second := wstestutil.NewMockDataHandler(ctrl)
+	tickers := []types.Ticker{"ATOMUSD", "BTCUSD", "ETHUSD"}
+	gomock.InOrder(
+		handler.EXPECT().Copy().Return(first),
+		handler.EXPECT().Copy().Return(second),
+	)
+	// The two connections start in either order, so each copy may serve either shard.
+	for _, copied := range []*wstestutil.MockDataHandler{first, second} {
+		copied.EXPECT().CreateMessages(gomock.Any()).DoAndReturn(func(shard []types.Ticker) ([][]byte, error) {
+			return [][]byte{[]byte(strings.Join(tickerStrings(shard), ","))}, nil
+		})
+	}
+
+	subscriptions := make(chan string, 8)
+	server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+		_, subscription, err := conn.Read(context.Background())
+		if err != nil {
+			return fmt.Errorf("reading subscription: %w", err)
+		}
+		subscriptions <- string(subscription)
+		_, _, _ = conn.Read(context.Background())
+		return nil
+	})
+	cfg := websocketConfig(server.URL)
+	cfg.MaxTickersPerConnection = 2
+	cfg.ReadTimeout = time.Hour
+	fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
+	require.NoError(t, err)
+
+	_, stop := runFetcher(t, fetcher, tickers)
+	got := make([]string, 0, 2)
+	for range 2 {
+		select {
+		case subscription := <-subscriptions:
+			got = append(got, subscription)
+		case err := <-serverErrs:
+			t.Fatalf("server: %v", err)
+		case <-time.After(5 * time.Second):
+			t.Fatalf("timed out waiting for subscriptions; got %v", got)
+		}
+	}
+	require.ElementsMatch(t, []string{"ATOMUSD,BTCUSD", "ETHUSD"}, got)
+	require.ErrorIs(t, stop(), context.Canceled)
+}
+
+// An inbound frame is read up to 32 KiB; a larger one fails the read, reports
+// the tickers unresolved, and is never handed to the handler.
+func TestRunBoundsInboundFrameSize(t *testing.T) {
+	const limit = 32 << 10
+	tests := []struct {
+		name    string
+		size    int
+		handled bool
+	}{
+		{name: "at the limit", size: limit, handled: true},
+		{name: "over the limit", size: limit + 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			handler := wstestutil.NewMockDataHandler(ctrl)
+			tickers := []types.Ticker{"ATOMUSD"}
+			frame := []byte(strings.Repeat("x", tt.size))
+			handled := types.NewResponse(map[types.Ticker]types.Result{
+				"ATOMUSD": types.NewResult(nil, time.Unix(10, 0).UTC()),
+			}, nil)
+			handler.EXPECT().Copy().Return(handler).AnyTimes()
+			handler.EXPECT().CreateMessages(tickers).Return(nil, nil).AnyTimes()
+			if tt.handled {
+				handler.EXPECT().HandleMessage(frame).Return(handled, nil, nil)
+			}
+
+			server, serverErrs := websocketServer(t, func(conn *coderwebsocket.Conn) error {
+				if err := conn.Write(context.Background(), coderwebsocket.MessageText, frame); err != nil {
+					return fmt.Errorf("writing frame: %w", err)
+				}
+				_, _, _ = conn.Read(context.Background())
+				return nil
+			})
+			cfg := websocketConfig(server.URL)
+			cfg.ReadTimeout = time.Hour
+			fetcher, err := basewebsocket.NewFetcher(cfg, handler, basewebsocket.WithHTTPClient(server.Client()))
+			require.NoError(t, err)
+
+			responses, stop := runFetcher(t, fetcher, tickers)
+			response := receiveWebsocketResponse(t, responses, serverErrs)
+			if tt.handled {
+				require.Equal(t, handled, response)
+			} else {
+				require.Empty(t, response.Resolved)
+				unresolved := response.Unresolved["ATOMUSD"]
+				require.Equal(t, types.ErrorWebSocketGeneral, unresolved.Code())
+				require.ErrorContains(t, unresolved, basewebsocket.ErrRead.Error())
+				require.ErrorContains(t, unresolved, fmt.Sprintf("read limited at %d bytes", limit+1))
+			}
+			require.ErrorIs(t, stop(), context.Canceled)
+		})
+	}
+}
+
+func tickerStrings(tickers []types.Ticker) []string {
+	out := make([]string, len(tickers))
+	for i, ticker := range tickers {
+		out[i] = string(ticker)
+	}
+	return out
+}
+
+// runFetcher runs fetcher until stop, which cancels it and returns Run's error.
+func runFetcher(t *testing.T, fetcher *basewebsocket.Fetcher, tickers []types.Ticker) (<-chan types.Response, func() error) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	responses := make(chan types.Response, 8)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- fetcher.Run(ctx, tickers, responses)
+	}()
+	t.Cleanup(cancel)
+
+	return responses, func() error {
+		cancel()
+		select {
+		case err := <-errCh:
+			return err
+		case <-time.After(5 * time.Second):
+			return errors.New("timed out waiting for websocket fetcher shutdown")
+		}
+	}
+}
+
+func receiveWebsocketResponse(t *testing.T, responses <-chan types.Response, serverErrs <-chan error) types.Response {
+	t.Helper()
+
+	select {
+	case response := <-responses:
+		return response
+	case err := <-serverErrs:
+		t.Fatalf("server: %v", err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for websocket response")
+	}
+	return types.Response{}
+}
+
+// requireWriteFailure waits for a response reporting ticker unresolved by a
+// write failure. Closing the connection after a failed write can also fail its
+// read, so read failures on the way are skipped.
+func requireWriteFailure(t *testing.T, responses <-chan types.Response, serverErrs <-chan error, ticker types.Ticker) {
+	t.Helper()
+
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case response := <-responses:
+			unresolved, ok := response.Unresolved[ticker]
+			require.True(t, ok, "response without %s: %v", ticker, response)
+			require.Equal(t, types.ErrorWebSocketGeneral, unresolved.Code())
+			if strings.Contains(unresolved.Error(), basewebsocket.ErrWrite.Error()) {
+				require.ErrorContains(t, unresolved, errWriteRefused.Error())
+				return
+			}
+			require.ErrorContains(t, unresolved, basewebsocket.ErrRead.Error())
+		case err := <-serverErrs:
+			t.Fatalf("server: %v", err)
+		case <-deadline:
+			t.Fatal("timed out waiting for the write failure")
+		}
+	}
+}
+
+func receiveSignals(t *testing.T, ch <-chan struct{}, n int) {
+	t.Helper()
+
+	for i := range n {
+		select {
+		case <-ch:
+		case <-time.After(5 * time.Second):
+			t.Fatalf("timed out waiting for signal %d of %d", i+1, n)
+		}
+	}
+}
+
+func receiveConn(t *testing.T, conns <-chan *failableConn) *failableConn {
+	t.Helper()
+
+	select {
+	case conn := <-conns:
+		return conn
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for a dial")
+		return nil
+	}
+}
+
+var errWriteRefused = errors.New("write refused by test")
+
+// failableConn is a client connection whose writes can be made to fail while
+// its reads continue.
+type failableConn struct {
+	net.Conn
+
+	fail atomic.Bool
+}
+
+func (c *failableConn) failWrites() {
+	c.fail.Store(true)
+}
+
+func (c *failableConn) Write(p []byte) (int, error) {
+	if c.fail.Load() {
+		return 0, errWriteRefused
+	}
+	return c.Conn.Write(p)
+}
+
+// failableClient dials server through failableConns, handing each to conns in
+// dial order.
+func failableClient(server *httptest.Server, conns chan<- *failableConn) *http.Client {
+	transport := server.Client().Transport.(*http.Transport).Clone()
+	var dialer net.Dialer
+	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+		conn, err := dialer.DialContext(ctx, network, address)
+		if err != nil {
+			return nil, err
+		}
+		failable := &failableConn{Conn: conn}
+		conns <- failable
+		return failable, nil
+	}
+	return &http.Client{Transport: transport}
 }
 
 func runUntilResponse(fetcher *basewebsocket.Fetcher, tickers []types.Ticker) (types.Response, error) {
@@ -536,22 +1040,32 @@ func websocketConfigWithEndpoints(endpoints []types.Endpoint) basewebsocket.Conf
 	return config
 }
 
-func websocketServer(t *testing.T, handle func(*coderwebsocket.Conn)) *httptest.Server {
+// websocketServer serves handle on each accepted connection. Handlers run off
+// the test goroutine, so their failures arrive on the returned channel.
+func websocketServer(t *testing.T, handle func(*coderwebsocket.Conn) error) (*httptest.Server, <-chan error) {
 	t.Helper()
 
+	errs := make(chan error, 16)
+	report := func(err error) {
+		select {
+		case errs <- err:
+		default:
+		}
+	}
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := coderwebsocket.Accept(w, r, nil)
 		if err != nil {
+			report(fmt.Errorf("accept: %w", err))
 			return
 		}
-		defer func() {
-			if err := conn.CloseNow(); err != nil && !errors.Is(err, net.ErrClosed) {
-				t.Errorf("CloseNow() error = %v", err)
-			}
-		}()
-		handle(conn)
+		if err := handle(conn); err != nil {
+			report(err)
+		}
+		if err := conn.CloseNow(); err != nil && !errors.Is(err, net.ErrClosed) {
+			report(fmt.Errorf("close: %w", err))
+		}
 	}))
 	t.Cleanup(server.Close)
 
-	return server
+	return server, errs
 }

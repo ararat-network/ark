@@ -23,8 +23,11 @@ const (
 	// one lost pong does not reconnect.
 	DefaultReadTimeout = 40 * time.Second
 
-	// DefaultMaxTickersPerConnection keeps each connection under MEXC's
-	// limit of 30 subscriptions.
+	// MaxSubscriptionsPerConnection is MEXC's limit; it ignores streams past it.
+	MaxSubscriptionsPerConnection = 30
+
+	// DefaultMaxTickersPerConnection keeps each connection under
+	// MaxSubscriptionsPerConnection.
 	DefaultMaxTickersPerConnection = 20
 )
 

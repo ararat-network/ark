@@ -13,11 +13,11 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// MsgSwapFactory generates random MsgSwap transactions by picking a denom pair and a funded sender.
-func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
+// MsgSellFactory generates random MsgSell transactions by picking a denom pair and a funded sender.
+func MsgSellFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSell] {
 	querier := keeper.NewQueryServerImpl(k)
 
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwap) {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSell) {
 		r := testData.Rand()
 
 		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
@@ -40,7 +40,7 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{sender}, &types.MsgSwap{
+		return []simsx.SimAccount{sender}, &types.MsgSell{
 			Trader:         sender.AddressBech32,
 			OfferCoin:      sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
 			AskDenom:       askDenom,
@@ -49,11 +49,12 @@ func MsgSwapFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwap] {
 	}
 }
 
-// MsgSwapSendFactory generates random MsgSwapSend transactions, picking a denom pair, funded sender, and distinct receiver.
-func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSend] {
+// MsgBuyFactory generates random MsgBuy transactions: a funded sender buys what a random subset of
+// its offer balance quotes, with that subset as the cap.
+func MsgBuyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgBuy] {
 	querier := keeper.NewQueryServerImpl(k)
 
-	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgSwapSend) {
+	return func(ctx context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgBuy) {
 		r := testData.Rand()
 
 		offerDenom, askDenom := randomDenomPairX(ctx, r, reporter, k)
@@ -61,17 +62,7 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 			return nil, nil
 		}
 
-		if !testData.IsSendEnabledDenom(offerDenom) {
-			reporter.Skip("offer denom send not enabled")
-			return nil, nil
-		}
-
 		sender := testData.AnyAccount(reporter, simsx.WithDenomBalance(offerDenom))
-		if reporter.IsSkipped() {
-			return nil, nil
-		}
-
-		receiver := testData.AnyAccount(reporter, simsx.ExcludeAccounts(sender))
 		if reporter.IsSkipped() {
 			return nil, nil
 		}
@@ -81,17 +72,21 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 			return nil, nil
 		}
 
-		quotable(ctx, querier, reporter, offerCoin, askDenom)
-		if reporter.IsSkipped() {
+		quote, err := querier.Sell(ctx, &types.QuerySellRequest{OfferCoin: offerCoin.String(), AskDenom: askDenom})
+		if err != nil {
+			reporter.Skip(err.Error())
+			return nil, nil
+		}
+		if !quote.SwapCoin.IsPositive() {
+			reporter.Skip("offer buys nothing")
 			return nil, nil
 		}
 
-		return []simsx.SimAccount{sender}, &types.MsgSwapSend{
-			FromAddress:    sender.AddressBech32,
-			ToAddress:      receiver.AddressBech32,
-			OfferCoin:      sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
-			AskDenom:       askDenom,
-			MinimumReceive: sdk.NewInt64Coin(askDenom, 1),
+		return []simsx.SimAccount{sender}, &types.MsgBuy{
+			Trader:       sender.AddressBech32,
+			AskCoin:      quote.SwapCoin,
+			OfferDenom:   offerDenom,
+			MaximumOffer: sdk.NewCoin(offerCoin.Denom, offerCoin.Amount),
 		}
 	}
 }
@@ -100,7 +95,9 @@ func MsgSwapSendFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgSwapSe
 func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		params := types.Params{
-			DefaultTobinTax: types.DefaultTobinTax,
+			// Basis points below a hundredth: under every positive cap MsgSetConversionMandateFactory
+			// draws, so a drawn default never empties a committee's Tobin band.
+			DefaultTobinTax: math.LegacyNewDecWithPrec(int64(testData.Rand().Intn(100)), 4),
 		}
 
 		return nil, &types.MsgUpdateParams{
@@ -138,7 +135,7 @@ func quotable(
 	offerCoin sdk.Coin,
 	askDenom string,
 ) {
-	_, err := querier.Swap(ctx, &types.QuerySwapRequest{
+	_, err := querier.Sell(ctx, &types.QuerySellRequest{
 		OfferCoin: offerCoin.String(),
 		AskDenom:  askDenom,
 	})
@@ -236,7 +233,7 @@ func MsgRemoveTobinTaxOverrideFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*t
 // freedom, which only the committee messages exercise.
 func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConversionMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetConversionMandate) {
@@ -254,7 +251,8 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activation := now + r.Uint64InRange(1, 1_000)
 		bounds := types.ConversionPolicy{
 			BasePool:           GenBasePool(r.Rand),
 			PoolRecoveryPeriod: GenPoolRecoveryPeriod(r.Rand),
@@ -262,11 +260,12 @@ func MsgSetConversionMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetConvers
 		}
 
 		return nil, &types.MsgSetConversionMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activation,
-			// Validation demands activation strictly precede expiry.
-			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activation,
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current block time.
+			ExpiryTime:    activation + r.Uint64InRange(1, 100_000),
 			MinimumPolicy: bounds,
 			MaximumPolicy: bounds,
 			MaxTobinTax:   math.LegacyNewDecWithPrec(int64(r.IntInRange(0, 100)), 2),

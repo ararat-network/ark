@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [delegator, ibc, validator, integrator]
+        package: [delegator, validator, integrator]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,6 +67,7 @@ jobs:
         with:
           context: .
           file: contrib/images/arkd-env/Dockerfile
+          target: local
           load: true
           tags: ark/arkd:latest
           build-args: |
@@ -89,8 +90,12 @@ jobs:
           old="$INPUT_OLD_VERSION"
           plan="$INPUT_UPGRADE_NAME"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            old=$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)
             plan=$(ls -d app/upgrade/v* 2>/dev/null | sed 's|.*/||' | sort -V | tail -1)
+            # The newest release without the plan; one carrying it halts once the plan is stored.
+            old=""
+            for tag in $(git tag --merged HEAD --list 'v[0-9]*' --sort=-creatordate); do
+              if [ -z "$plan" ] || ! git cat-file -e "$tag:app/upgrade/$plan" 2>/dev/null; then old=$tag; break; fi
+            done
           fi
           if [ -n "$old" ]; then
             docker pull "$REPOSITORY:$old"
@@ -113,6 +118,8 @@ jobs:
           TEST_IMAGE_VERSION: latest
           TEST_OLD_IMAGE_VERSION: ${{ steps.old.outputs.version }}
           TEST_UPGRADE_NAME: ${{ steps.old.outputs.plan }}
+          # Pull requests run on pinned prices; nightly runs reach the live venues.
+          TEST_PRICEFEED_LIVE: ${{ github.event_name == 'schedule' }}
         run: make test-e2e E2E_PACKAGES=./${{ matrix.package }}/...
 
       - name: Container logs

@@ -5,8 +5,6 @@ package ante
 import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
-	ibcante "github.com/cosmos/ibc-go/v11/modules/core/ante"
-	ibckeeper "github.com/cosmos/ibc-go/v11/modules/core/keeper"
 
 	"cosmossdk.io/core/store"
 
@@ -17,6 +15,7 @@ import (
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	feegrantkeeper "github.com/cosmos/cosmos-sdk/x/feegrant/keeper"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
 	"github.com/ararat-network/ark/app/mempool"
@@ -33,9 +32,9 @@ func NewAnteHandler(
 	bankKeeper bankkeeper.BaseKeeper,
 	feeGrantKeeper feegrantkeeper.Keeper,
 	stakingKeeper *stakingkeeper.Keeper,
+	govKeeper *govkeeper.Keeper,
 	treasuryKeeper *treasurykeeper.Keeper,
 	privileges mempool.Set,
-	ibcKeeper *ibckeeper.Keeper,
 	wasmGasRegister wasmtypes.GasRegister,
 	wasmNodeConfig wasmtypes.NodeConfig,
 	wasmTxCounterStore store.KVStoreService,
@@ -46,9 +45,8 @@ func NewAnteHandler(
 		// gas into an error.
 		sdkante.NewSetUpContextDecorator(),
 
-		// Wasm context decorators follow setup so later checks meter their reads. CountTXDecorator
-		// supplies the block transaction index used in contract addresses; another context setup
-		// would reset their gas charges.
+		// Wasm context decorators follow setup so later checks meter their reads; another context
+		// setup would reset their gas charges. CountTXDecorator supplies env.transaction.index.
 		wasmkeeper.NewLimitSimulationGasDecorator(wasmNodeConfig.SimulationGasLimit),
 		wasmkeeper.NewCountTXDecorator(wasmTxCounterStore),
 		wasmkeeper.NewGasRegisterDecorator(wasmGasRegister),
@@ -63,7 +61,7 @@ func NewAnteHandler(
 		// Consensus message policy stays before fee collection. The vote
 		// floor also covers authz; priority-only eligibility is evaluated
 		// separately after signature verification below.
-		NewGovVoteDecorator(cdc, stakingKeeper),
+		NewGovVoteDecorator(cdc, stakingKeeper, govKeeper),
 		NewMultiSendDecorator(cdc),
 
 		// FeeDecorator enforces Treasury's consensus base fee and the signed tax ceiling, then
@@ -75,14 +73,10 @@ func NewAnteHandler(
 		// SetPubKey must precede every signature-verification decorator.
 		sdkante.NewSetPubKeyDecorator(accountKeeper),
 		sdkante.NewValidateSigCountDecorator(accountKeeper),
-		sdkante.NewSigGasConsumeDecorator(accountKeeper, sdkante.DefaultSigVerificationGasConsumer),
+		NewSigGasConsumeDecorator(accountKeeper),
 		sdkante.NewSigVerificationDecorator(accountKeeper, txConfig.SignModeHandler()),
 		NewPrivilegeDecorator(privileges),
 		sdkante.NewIncrementSequenceDecorator(accountKeeper),
-
-		// Last, as it was when it wrapped the chain from outside: a redundant
-		// relay is only redundant once the transaction is otherwise valid.
-		ibcante.NewRedundantRelayDecorator(ibcKeeper),
 	)
 }
 

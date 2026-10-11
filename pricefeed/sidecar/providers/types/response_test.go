@@ -88,6 +88,31 @@ func TestNewResultRecordsLastObserved(t *testing.T) {
 	require.False(t, result.Unchanged)
 }
 
+// NewObservedResult keeps a venue observation time no later than arrival, so
+// a venue clock running ahead cannot date a price into the future.
+func TestNewObservedResultBoundsTheObservation(t *testing.T) {
+	arrived := time.Unix(20, 0).UTC()
+	tests := []struct {
+		name     string
+		observed time.Time
+		want     time.Time
+	}{
+		{name: "before arrival", observed: time.Unix(15, 0).UTC(), want: time.Unix(15, 0).UTC()},
+		{name: "at arrival", observed: arrived, want: arrived},
+		{name: "after arrival", observed: time.Unix(25, 0).UTC(), want: arrived},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewObservedResult(big.NewFloat(2), arrived, tt.observed)
+
+			require.True(t, result.Timestamp.Equal(arrived))
+			require.True(t, result.LastObserved.Equal(tt.want))
+			require.False(t, result.Unchanged)
+		})
+	}
+}
+
 // An unchanged result carries no observation of its own: the LastObserved it
 // leaves zero is the current result's to keep.
 func TestNewUnchangedResultLeavesLastObservedZero(t *testing.T) {

@@ -2,15 +2,20 @@ package app
 
 import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
 	assettypes "github.com/ararat-network/ark/x/asset/types"
+	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
+	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
@@ -58,32 +63,54 @@ func acceptedQueries() wasmkeeper.AcceptedQueries {
 		"/cosmos.staking.v1beta1.Query/Redelegations":                 func() gogoproto.Message { return &stakingtypes.QueryRedelegationsResponse{} },
 		"/cosmos.staking.v1beta1.Query/HistoricalInfo":                func() gogoproto.Message { return &stakingtypes.QueryHistoricalInfoResponse{} },
 
-		"/ark.treasury.v1.Query/ComputeTax": func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },
-		"/ark.treasury.v1.Query/TaxCap":     func() gogoproto.Message { return &treasurytypes.QueryTaxCapResponse{} },
-		"/ark.treasury.v1.Query/TaxCaps":    func() gogoproto.Message { return &treasurytypes.QueryTaxCapsResponse{} },
-		"/ark.treasury.v1.Query/GasPrice":   func() gogoproto.Message { return &treasurytypes.QueryGasPriceResponse{} },
-		"/ark.treasury.v1.Query/GasPrices":  func() gogoproto.Message { return &treasurytypes.QueryGasPricesResponse{} },
+		"/ark.treasury.v1.Query/ComputeTax":     func() gogoproto.Message { return &treasurytypes.QueryComputeTaxResponse{} },
+		"/ark.treasury.v1.Query/TaxCap":         func() gogoproto.Message { return &treasurytypes.QueryTaxCapResponse{} },
+		"/ark.treasury.v1.Query/TaxCaps":        func() gogoproto.Message { return &treasurytypes.QueryTaxCapsResponse{} },
+		"/ark.treasury.v1.Query/GasPrice":       func() gogoproto.Message { return &treasurytypes.QueryGasPriceResponse{} },
+		"/ark.treasury.v1.Query/GasPrices":      func() gogoproto.Message { return &treasurytypes.QueryGasPricesResponse{} },
+		"/ark.treasury.v1.Query/FundStatus":     func() gogoproto.Message { return &treasurytypes.QueryFundStatusResponse{} },
+		"/ark.treasury.v1.Query/ExposureStatus": func() gogoproto.Message { return &treasurytypes.QueryExposureStatusResponse{} },
+		"/ark.treasury.v1.Query/RewardFunding":  func() gogoproto.Message { return &treasurytypes.QueryRewardFundingResponse{} },
 
 		"/ark.oracle.v1.Query/ExchangeRate":   func() gogoproto.Message { return &oracletypes.QueryExchangeRateResponse{} },
 		"/ark.oracle.v1.Query/ExchangeRates":  func() gogoproto.Message { return &oracletypes.QueryExchangeRatesResponse{} },
 		"/ark.oracle.v1.Query/ReferenceDenom": func() gogoproto.Message { return &oracletypes.QueryReferenceDenomResponse{} },
+		"/ark.oracle.v1.Query/Feeds":          func() gogoproto.Message { return &oracletypes.QueryFeedsResponse{} },
+		"/ark.oracle.v1.Query/Attendance":     func() gogoproto.Message { return &oracletypes.QueryAttendanceResponse{} },
+		"/ark.oracle.v1.Query/RewardWeight":   func() gogoproto.Message { return &oracletypes.QueryRewardWeightResponse{} },
 
-		"/ark.market.v1.Query/Swap":             func() gogoproto.Message { return &markettypes.QuerySwapResponse{} },
+		"/ark.market.v1.Query/Sell":             func() gogoproto.Message { return &markettypes.QuerySellResponse{} },
+		"/ark.market.v1.Query/Buy":              func() gogoproto.Message { return &markettypes.QueryBuyResponse{} },
 		"/ark.market.v1.Query/Pool":             func() gogoproto.Message { return &markettypes.QueryPoolResponse{} },
 		"/ark.market.v1.Query/ConversionPolicy": func() gogoproto.Message { return &markettypes.QueryConversionPolicyResponse{} },
 		"/ark.market.v1.Query/TobinTax":         func() gogoproto.Message { return &markettypes.QueryTobinTaxResponse{} },
 
-		"/ark.asset.v1.Query/Asset":  func() gogoproto.Message { return &assettypes.QueryAssetResponse{} },
-		"/ark.asset.v1.Query/Assets": func() gogoproto.Message { return &assettypes.QueryAssetsResponse{} },
+		"/ark.asset.v1.Query/Asset":          func() gogoproto.Message { return &assettypes.QueryAssetResponse{} },
+		"/ark.asset.v1.Query/Assets":         func() gogoproto.Message { return &assettypes.QueryAssetsResponse{} },
+		"/ark.asset.v1.Query/SettlementPlan": func() gogoproto.Message { return &assettypes.QuerySettlementPlanResponse{} },
+
+		"/ark.reserve.v1.Query/RecognisedCapital": func() gogoproto.Message { return &reservetypes.QueryRecognisedCapitalResponse{} },
+
+		"/ark.claims.v1.Query/Balance": func() gogoproto.Message { return &claimstypes.QueryBalanceResponse{} },
+		"/ark.claims.v1.Query/Claim":   func() gogoproto.Message { return &claimstypes.QueryClaimResponse{} },
+
+		"/ark.disbursement.v1.Query/Grant":       func() gogoproto.Message { return &disbursementtypes.QueryGrantResponse{} },
+		"/ark.disbursement.v1.Query/Beneficiary": func() gogoproto.Message { return &disbursementtypes.QueryBeneficiaryResponse{} },
+		"/ark.disbursement.v1.Query/Grants":      func() gogoproto.Message { return &disbursementtypes.QueryGrantsResponse{} },
+		"/ark.disbursement.v1.Query/Member":      func() gogoproto.Message { return &disbursementtypes.QueryMemberResponse{} },
 	}
 }
 
-// wasmQueryPlugins supplies the two queriers Wasmd refuses by default. Both
-// read through the accept list; every other plugin stays Wasmd's own, Custom
-// included, which refuses every request.
+// wasmQueryPlugins supplies the two queriers Wasmd refuses by default, both
+// reading through the accept list, and refuses IBC queries, which Wasmd's own
+// would answer from a channel keeper the chain does not have. Every other
+// plugin stays Wasmd's own, Custom included, which refuses every request.
 func (app *ArkApp) wasmQueryPlugins(accepted wasmkeeper.AcceptedQueries) *wasmkeeper.QueryPlugins {
 	return &wasmkeeper.QueryPlugins{
 		Stargate: wasmkeeper.AcceptListStargateQuerier(accepted, app.GRPCQueryRouter(), app.appCodec),
 		Grpc:     wasmkeeper.AcceptListGrpcQuerier(accepted, app.GRPCQueryRouter(), app.appCodec),
+		IBC: func(sdk.Context, sdk.AccAddress, *wasmvmtypes.IBCQuery) ([]byte, error) {
+			return nil, wasmvmtypes.UnsupportedRequest{Kind: "ibc"}
+		},
 	}
 }

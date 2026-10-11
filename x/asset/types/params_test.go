@@ -5,13 +5,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 )
 
 // Combining the delay bound into one condition means its lower and upper cases
 // assert the same message, so the string lives once.
-const delayOutOfRange = "SettlementActivationDelayBlocks must be between one and"
+const delayOutOfRange = "SettlementActivationDelay must be between one and"
 
 func TestParamsValidate(t *testing.T) {
 	tests := []struct {
@@ -24,34 +23,34 @@ func TestParamsValidate(t *testing.T) {
 			// Zero would read as "activate immediately", which silently removes
 			// the only window a mistaken plan can be withdrawn in.
 			name:      "zero settlement activation delay",
-			mutate:    func(p *assettypes.Params) { p.SettlementActivationDelayBlocks = 0 },
+			mutate:    func(p *assettypes.Params) { p.SettlementActivationDelay = 0 },
 			expectErr: delayOutOfRange,
 		},
 		{
 			name: "settlement activation delay above the ceiling",
 			mutate: func(p *assettypes.Params) {
-				p.SettlementActivationDelayBlocks = assettypes.MaxSettlementActivationDelayBlocks + 1
+				p.SettlementActivationDelay = assettypes.MaxSettlementActivationDelay + 1
 			},
 			expectErr: delayOutOfRange,
 		},
 		{
 			name: "settlement activation delay at the ceiling is valid",
 			mutate: func(p *assettypes.Params) {
-				p.SettlementActivationDelayBlocks = assettypes.MaxSettlementActivationDelayBlocks
+				p.SettlementActivationDelay = assettypes.MaxSettlementActivationDelay
 			},
 		},
 		{
-			// The ceiling exists so the keeper's widening to the int64 block
-			// height cannot overflow, which an unbounded uint64 would.
-			name: "settlement activation delay cannot overflow the block height",
+			// The ceiling exists so the keeper's addition to block time
+			// cannot overflow, which an unbounded uint64 would.
+			name: "settlement activation delay cannot overflow the block time",
 			mutate: func(p *assettypes.Params) {
-				p.SettlementActivationDelayBlocks = 1 << 63
+				p.SettlementActivationDelay = 1 << 63
 			},
 			expectErr: delayOutOfRange,
 		},
 		{
-			name:   "single-block settlement activation delay is valid",
-			mutate: func(p *assettypes.Params) { p.SettlementActivationDelayBlocks = 1 },
+			name:   "one-second settlement activation delay is valid",
+			mutate: func(p *assettypes.Params) { p.SettlementActivationDelay = 1 },
 		},
 	}
 
@@ -71,6 +70,6 @@ func TestParamsValidate(t *testing.T) {
 
 func TestDefaultParamsValues(t *testing.T) {
 	params := assettypes.DefaultParams()
-	require.Equal(t, 3*chain.BlocksPerDay, params.SettlementActivationDelayBlocks)
+	require.Equal(t, uint64(7*86_400), params.SettlementActivationDelay, "a week of block time")
 	require.NoError(t, params.Validate())
 }

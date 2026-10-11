@@ -73,7 +73,7 @@ var xxx_messageInfo_QuerySecurityMandateRequest proto.InternalMessageInfo
 // Query/SecurityMandate RPC method.
 type QuerySecurityMandateResponse struct {
 	Mandate SecurityMandate `protobuf:"bytes,1,opt,name=mandate,proto3" json:"mandate"`
-	// active reports whether the appointment may act at the current height.
+	// active reports whether the appointment may act at the current block time.
 	Active bool `protobuf:"varint,2,opt,name=active,proto3" json:"active,omitempty"`
 }
 

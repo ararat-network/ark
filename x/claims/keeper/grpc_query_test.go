@@ -3,8 +3,10 @@ package keeper_test
 import (
 	"cosmossdk.io/math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkquery "github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/claims/types"
 )
 
@@ -14,7 +16,7 @@ func (s *KeeperTestSuite) TestQueryParams() {
 
 	resp, err := s.queryClient.Params(s.ctx, &types.QueryParamsRequest{})
 	s.Require().NoError(err)
-	s.Require().Equal(uint64(42), resp.Params.ClaimCancellationPeriodBlocks)
+	s.Require().Equal(uint64(42), resp.Params.ClaimCancellationPeriod)
 }
 
 func (s *KeeperTestSuite) TestQueryClaimsMandate() {
@@ -22,51 +24,51 @@ func (s *KeeperTestSuite) TestQueryClaimsMandate() {
 
 	s.Run("disabled mandate reports inactive", func() {
 		s.SetupTest()
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
-		s.Require().Equal(noahCoin(0), resp.AllowanceUsed)
-		s.Require().Equal(noahCoin(0), resp.AllowanceRemaining)
+		s.Require().Equal("0", resp.AllowanceUsed.String())
+		s.Require().Equal("0", resp.AllowanceRemaining.String())
 	})
 
 	s.Run("active mandate reports remaining allowance", func() {
 		s.SetupTest()
 		s.appointCommittee(committee)
 		s.Require().NoError(s.keeper.ClaimsAllowanceUsed.Set(s.ctx, math.NewInt(400)))
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 		s.Require().Equal(committee, resp.Mandate.Committee)
-		s.Require().Equal(noahCoin(400), resp.AllowanceUsed)
-		s.Require().Equal(noahCoin(600), resp.AllowanceRemaining)
+		s.Require().Equal("400", resp.AllowanceUsed.String())
+		s.Require().Equal("600", resp.AllowanceRemaining.String())
 	})
 
-	s.Run("activity is derived from the current height", func() {
+	s.Run("activity is derived from the block time", func() {
 		s.SetupTest()
 		s.appointCommittee(committee)
 
-		// Half-open window: inactive one block before activation and again at
+		// Half-open window: inactive a second before activation and again at
 		// expiry itself.
-		s.setBlockHeight(9)
+		s.setBlockTime(9)
 		resp, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
 
-		s.setBlockHeight(10)
+		s.setBlockTime(10)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 
-		s.setBlockHeight(99)
+		s.setBlockTime(99)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().True(resp.Active)
 
-		s.setBlockHeight(100)
+		s.setBlockTime(100)
 		resp, err = s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
 		s.Require().False(resp.Active)
@@ -79,25 +81,37 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(0), resp.Balance)
-		s.Require().Equal(noahCoin(0), resp.Reserved)
+		s.Require().True(resp.Balance.Empty())
+		s.Require().True(resp.Reserved.Empty())
 	})
 
 	s.Run("reports custody and encumbrance", func() {
 		s.SetupTest()
 		s.fundInsurance(5_000)
-		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, math.NewInt(250)))
+		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.NoahBaseDenom, math.NewInt(250)))
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(5_000), resp.Balance)
-		s.Require().Equal(noahCoin(250), resp.Reserved)
+		s.Require().Equal(sdk.NewCoins(noahCoin(5_000)).String(), resp.Balance.String())
+		s.Require().Equal(sdk.NewCoins(noahCoin(250)).String(), resp.Reserved.String())
 
-		// The difference is what Treasury sizes against, so the two must agree
+		// The NOAH difference is what Treasury sizes against, so the two must agree
 		// with the operator interface rather than merely resemble it.
 		recognised, err := s.keeper.RecognisedCapital(s.ctx)
 		s.Require().NoError(err)
-		s.Require().Equal(resp.Balance.Amount.Sub(resp.Reserved.Amount), recognised)
+		s.Require().True(resp.Balance.AmountOf(chain.NoahBaseDenom).Sub(resp.Reserved.AmountOf(chain.NoahBaseDenom)).Equal(recognised))
+	})
+
+	s.Run("reports every denomination", func() {
+		s.SetupTest()
+		s.fundInsurance(5_000)
+		s.hold(sdk.NewInt64Coin(chain.USDBaseDenom, 700))
+		s.Require().NoError(s.keeper.InsuranceReserved.Set(s.ctx, chain.USDBaseDenom, math.NewInt(300)))
+
+		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
+		s.Require().NoError(err)
+		s.Require().Equal(sdk.NewCoins(noahCoin(5_000), sdk.NewInt64Coin(chain.USDBaseDenom, 700)).String(), resp.Balance.String())
+		s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 300)).String(), resp.Reserved.String())
 	})
 
 	// A replacement resets the committee allowance; the encumbrance it does not
@@ -106,7 +120,7 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
 		s.appointCommittee(testAddress(1))
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		_, err := s.msgServer.CommitteeSubmitClaim(s.ctx, &types.MsgCommitteeSubmitClaim{
@@ -121,19 +135,19 @@ func (s *KeeperTestSuite) TestQueryBalance() {
 		_, err = s.msgServer.SetClaimsMandate(s.ctx, &types.MsgSetClaimsMandate{
 			Authority:           s.authority,
 			Committee:           testAddress(2),
-			ActivationHeight:    10,
-			ExpiryHeight:        100,
-			CommitteeClaimLimit: noahCoin(1_000),
+			ActivationTime:      10,
+			ExpiryTime:          100,
+			CommitteeClaimLimit: math.NewInt(1_000),
 		})
 		s.Require().NoError(err)
 
 		mandate, err := s.queryServer.ClaimsMandate(s.ctx, &types.QueryClaimsMandateRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(0), mandate.AllowanceUsed)
+		s.Require().Equal("0", mandate.AllowanceUsed.String())
 
 		resp, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(100), resp.Reserved)
+		s.Require().Equal(sdk.NewCoins(noahCoin(100)).String(), resp.Reserved.String())
 	})
 }
 
@@ -141,7 +155,7 @@ func (s *KeeperTestSuite) TestQueryClaim() {
 	s.Run("returns a stored claim", func() {
 		s.SetupTest()
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(5_000)
 
 		submitted, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
@@ -174,7 +188,7 @@ func (s *KeeperTestSuite) TestQueryClaim() {
 func (s *KeeperTestSuite) TestQueryClaims() {
 	seed := func(count int) {
 		s.setCancellationPeriod(5)
-		s.setBlockHeight(20)
+		s.setBlockTime(20)
 		s.fundInsurance(50_000)
 		for range count {
 			_, err := s.msgServer.SubmitClaim(s.ctx, &types.MsgSubmitClaim{
@@ -211,14 +225,14 @@ func (s *KeeperTestSuite) TestQueryClaims() {
 		s.Require().NotNil(resp.Pagination.NextKey)
 	})
 
-	s.Run("key and offset together are rejected", func() {
+	s.Run("offsets and totals are refused", func() {
 		s.SetupTest()
 		seed(1)
 
-		_, err := s.queryClient.Claims(s.ctx, &types.QueryClaimsRequest{
-			Pagination: &sdkquery.PageRequest{Offset: 1, Key: []byte{0x01}},
-		})
-		s.Require().ErrorContains(err, "must not specify both key and offset")
+		for _, page := range []*sdkquery.PageRequest{{Offset: 1}, {CountTotal: true}} {
+			_, err := s.queryClient.Claims(s.ctx, &types.QueryClaimsRequest{Pagination: page})
+			s.Require().ErrorContains(err, "use key pagination")
+		}
 	})
 
 	s.Run("empty store lists nothing", func() {

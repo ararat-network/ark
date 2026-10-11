@@ -15,19 +15,13 @@ const (
 	// Name is the name of the Binance provider.
 	Name = "binance_api"
 
-	// URL is the base URL of the Binance API. This includes the base and quote
-	// currency pairs that need to be inserted into the URL. This URL should be utilised
-	// by Non-US users.
-	URL = "https://api.binance.com/api/v3/ticker/price?symbols=%s%s%s"
+	// URL is the Binance ticker price endpoint for non-US users. The
+	// requested symbols go in the symbols query parameter, so an override such
+	// as Binance.US's endpoint is a plain URL too.
+	URL = "https://api.binance.com/api/v3/ticker/price"
 
-	// Quotation is the percent-encoded quote used around symbols in the request URL.
-	Quotation = "%22"
-	// Separator separates symbols in the encoded request list.
-	Separator = ","
-	// LeftBracket opens the percent-encoded symbol list.
-	LeftBracket = "%5B"
-	// RightBracket closes the percent-encoded symbol list.
-	RightBracket = "%5D"
+	// SymbolsParameter carries the requested symbols as a JSON array.
+	SymbolsParameter = "symbols"
 )
 
 // DefaultNonUSAPIConfig is the default configuration for the Binance API.
@@ -38,7 +32,6 @@ var DefaultNonUSAPIConfig = api.Config{
 	RequestsPerSecond: 0,
 	Endpoints:         []types.Endpoint{{URL: URL}},
 	BatchSize:         0,
-	MaxBlockHeightAge: 30 * time.Second,
 }
 
 // DefaultMarkets defines the built-in Binance API pair mappings.

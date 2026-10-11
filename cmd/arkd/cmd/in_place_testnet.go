@@ -128,7 +128,7 @@ func renameGenesis(path, chainID string) error {
 	if err := genesis.ValidateAndComplete(); err != nil {
 		return err
 	}
-	return genesis.SaveAs(path)
+	return saveGenesis(genesis, path)
 }
 
 // createTestnetApp is createApp followed by the rewrite of application and

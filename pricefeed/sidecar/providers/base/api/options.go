@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"cosmossdk.io/log/v2"
 
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
@@ -34,5 +36,13 @@ func WithLogger(logger log.Logger) Option {
 func WithEndpointSelector(selector types.EndpointSelector) Option {
 	return func(f *Fetcher) {
 		f.endpointSelector = selector
+	}
+}
+
+// WithRefusedTickerRetry sets how long a batch waits before it isolates
+// refused tickers again or retries the ones it set aside.
+func WithRefusedTickerRetry(retry time.Duration) Option {
+	return func(f *Fetcher) {
+		f.refusedRetry = retry
 	}
 }

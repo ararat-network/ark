@@ -37,7 +37,7 @@ message QuerySecurityMandateResponse {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // active reports whether the appointment may act at the current height.
+  // active reports whether the appointment may act at the current block time.
   bool active = 2 [(amino.dont_omitempty) = true];
 }
 

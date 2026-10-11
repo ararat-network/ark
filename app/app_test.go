@@ -16,8 +16,6 @@ import (
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/gogoproto/proto"
-	icatypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +48,9 @@ import (
 	"github.com/ararat-network/ark/app/params"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
+	assettypes "github.com/ararat-network/ark/x/asset/types"
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
+	disbursementtypes "github.com/ararat-network/ark/x/disbursement/types"
 	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
@@ -64,7 +64,7 @@ func TestAppConstructs(t *testing.T) {
 	require.NotNil(t, arkApp.BaseApp)
 	require.NotNil(t, arkApp.LegacyAmino())
 	require.NotNil(t, arkApp.AppCodec())
-	require.NotNil(t, arkApp.GetTxConfig())
+	require.NotNil(t, arkApp.TxConfig())
 	require.NotNil(t, arkApp.InterfaceRegistry())
 	require.NotNil(t, arkApp.MsgServiceRouter())
 	require.NotNil(t, arkApp.GRPCQueryRouter())
@@ -141,7 +141,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 		)
 		tx, err := simtestutil.GenSignedMockTx(
 			rand.New(rand.NewSource(int64(i+1))),
-			arkApp.GetTxConfig(),
+			arkApp.TxConfig(),
 			[]sdk.Msg{msg},
 			sdk.NewCoins(sdk.NewInt64Coin(chain.XDRBaseDenom, 20_000_000_000_000_000)),
 			200_000,
@@ -151,7 +151,7 @@ func TestAppDoesNotMeterBlockGas(t *testing.T) {
 			funder.Key,
 		)
 		require.NoError(t, err)
-		txs[i], err = arkApp.GetTxConfig().TxEncoder()(tx)
+		txs[i], err = arkApp.TxConfig().TxEncoder()(tx)
 		require.NoError(t, err)
 	}
 
@@ -177,14 +177,9 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 		AppOpts: simtestutil.NewAppOptionsWithFlagHome(t.TempDir()),
 	})
 
-	// app.BlockedAddresses returns a map of addresses in app v1 and a map of modules name in app di.
 	for acc := range app.BlockedAddresses() {
-		var addr sdk.AccAddress
-		if modAddr, err := sdk.AccAddressFromBech32(acc); err == nil {
-			addr = modAddr
-		} else {
-			addr = arkApp.AccountKeeper.GetModuleAddress(acc)
-		}
+		addr, err := sdk.AccAddressFromBech32(acc)
+		require.NoError(t, err)
 
 		require.True(
 			t,
@@ -204,8 +199,25 @@ func TestArkAppExportAndBlockedAddrs(t *testing.T) {
 
 	// Making a new app object with the db, so that initchain hasn't been called
 	app2 := app.NewArkApp(logger.With("instance", "second"), db, true, simtestutil.NewAppOptionsWithFlagHome(t.TempDir()))
-	_, err = app2.ExportAppStateAndValidators(false, []string{}, []string{})
+	exported, err := app2.ExportAppStateAndValidators(false, []string{}, []string{})
 	require.NoError(t, err, "ExportAppStateAndValidators should not have an error")
+
+	// The reopened store exports what the first instance committed, to resume at the next height.
+	require.Equal(t, int64(2), exported.Height)
+	require.Len(t, exported.Validators, 1)
+	require.Equal(t, int64(1), exported.Validators[0].Power)
+	require.NotNil(t, exported.ConsensusParams.Block)
+	var appState map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(exported.AppState, &appState))
+	var stakingGenesis stakingtypes.GenesisState
+	app2.AppCodec().MustUnmarshalJSON(appState[stakingtypes.ModuleName], &stakingGenesis)
+	require.True(t, stakingGenesis.Exported)
+	require.Len(t, stakingGenesis.Validators, 1)
+	require.Equal(t, sdk.ValAddress(exported.Validators[0].Address).String(), stakingGenesis.Validators[0].OperatorAddress)
+	var bankGenesis banktypes.GenesisState
+	app2.AppCodec().MustUnmarshalJSON(appState[banktypes.ModuleName], &bankGenesis)
+	// The funded genesis account and the one validator's bond.
+	require.Equal(t, chain.NativeBaseAmount(100_000_001), bankGenesis.Supply.AmountOf(sdk.DefaultBondDenom))
 }
 
 func TestUpgradeStateOnGenesis(t *testing.T) {
@@ -310,28 +322,17 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 			minters = append(minters, moduleName)
 		}
 	}
-	require.ElementsMatch(
-		t,
-		[]string{markettypes.ModuleName, ibctransfertypes.ModuleName},
-		minters,
-		"Only Market and IBC transfer may mint",
-	)
+	require.Equal(t, []string{markettypes.ModuleName}, minters, "Only Market may mint")
 	require.ElementsMatch(
 		t,
 		[]string{authtypes.Minter, authtypes.Burner},
 		permissions[markettypes.ModuleName],
 		"Market must retain conversion mint and burn permissions",
 	)
-	require.ElementsMatch(
-		t,
-		[]string{authtypes.Minter, authtypes.Burner},
-		permissions[ibctransfertypes.ModuleName],
-		"IBC transfer must retain voucher mint and burn permissions",
-	)
 
 	blocked := app.BlockedAddresses()
 	for _, moduleName := range append([]string{govtypes.ModuleName}, treasurytypes.FundAccountNames()...) {
-		require.False(t, blocked[moduleName], "%s must remain reachable", moduleName)
+		require.False(t, blocked[authtypes.NewModuleAddress(moduleName).String()], "%s must remain reachable", moduleName)
 	}
 	for _, moduleName := range []string{
 		authtypes.FeeCollectorName,
@@ -339,12 +340,10 @@ func TestTreasuryAccountAndLifecycleWiring(t *testing.T) {
 		stakingtypes.BondedPoolName,
 		stakingtypes.NotBondedPoolName,
 		markettypes.ModuleName,
-		ibctransfertypes.ModuleName,
-		icatypes.ModuleName,
 		treasurytypes.TransferTaxCollectorName,
 		oracletypes.ModuleName,
 	} {
-		require.True(t, blocked[moduleName], "%s must remain blocked", moduleName)
+		require.True(t, blocked[authtypes.NewModuleAddress(moduleName).String()], "%s must remain blocked", moduleName)
 	}
 
 	arkApp := app.NewArkApp(
@@ -417,6 +416,17 @@ func TestDistributionLeadsSlashingInBeginBlockers(t *testing.T) {
 		distrtypes.ModuleName,
 		slashingtypes.ModuleName,
 	)
+}
+
+// TestAssetRegistryLoadsBeforeItsCustodians checks that the registry is in place when the modules
+// holding registered assets import: Claims and Disbursement refuse custody in a denomination the
+// registry does not know, so loading them first would refuse any genesis where they hold one.
+func TestAssetRegistryLoadsBeforeItsCustodians(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	order := arkApp.ModuleManager.OrderInitGenesis
+
+	requireOrderBefore(t, order, assettypes.ModuleName, claimstypes.ModuleName)
+	requireOrderBefore(t, order, assettypes.ModuleName, disbursementtypes.ModuleName)
 }
 
 // TestOracleJailsBeforeStakingEmitsValidatorUpdates checks that attendance jails affect this

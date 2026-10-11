@@ -11,10 +11,6 @@ import (
 	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	wasmvmtypes "github.com/CosmWasm/wasmvm/v3/types"
 	gogoproto "github.com/cosmos/gogoproto/proto"
-	icahostkeeper "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/keeper"
-	icahosttypes "github.com/cosmos/ibc-go/v11/modules/apps/27-interchain-accounts/host/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v11/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/v11/modules/core/02-client/types"
 	"github.com/stretchr/testify/require"
 	protov2 "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -34,14 +30,12 @@ import (
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
 	"github.com/ararat-network/ark/pkg/chain"
-	markettypes "github.com/ararat-network/ark/x/market/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
 )
 
-// arkModuleQuerySafePaths records all Ark RPCs annotated for consensus queries, including ICA host
-// access. Explicit expectations make annotation changes reviewable; the Wasm accept list is
-// separate.
+// arkModuleQuerySafePaths records all Ark RPCs annotated for consensus queries. Explicit
+// expectations make annotation changes reviewable; the Wasm accept list is separate.
 var arkModuleQuerySafePaths = []string{
 	"/ark.asset.v1.Query/Asset",
 	"/ark.asset.v1.Query/Assets",
@@ -56,21 +50,21 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.claims.v1.Query/Params",
 	"/ark.disbursement.v1.Query/Balance",
 	"/ark.disbursement.v1.Query/Beneficiary",
-	"/ark.disbursement.v1.Query/ConversionOrders",
+	"/ark.disbursement.v1.Query/BeneficiaryJournal",
 	"/ark.disbursement.v1.Query/Grant",
+	"/ark.disbursement.v1.Query/GrantJournal",
 	"/ark.disbursement.v1.Query/Grants",
 	"/ark.disbursement.v1.Query/GrantsMandate",
-	"/ark.disbursement.v1.Query/Issuance",
-	"/ark.disbursement.v1.Query/Journal",
 	"/ark.disbursement.v1.Query/Member",
+	"/ark.disbursement.v1.Query/Members",
 	"/ark.disbursement.v1.Query/Params",
-	"/ark.disbursement.v1.Query/Releasable",
-	"/ark.disbursement.v1.Query/Totals",
+	"/ark.disbursement.v1.Query/RegistrarMandate",
+	"/ark.market.v1.Query/Buy",
 	"/ark.market.v1.Query/ConversionMandate",
 	"/ark.market.v1.Query/ConversionPolicy",
 	"/ark.market.v1.Query/Params",
 	"/ark.market.v1.Query/Pool",
-	"/ark.market.v1.Query/Swap",
+	"/ark.market.v1.Query/Sell",
 	"/ark.market.v1.Query/TobinTax",
 	"/ark.market.v1.Query/TobinTaxOverrides",
 	"/ark.oracle.v1.Query/Attendance",
@@ -80,7 +74,9 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.oracle.v1.Query/Params",
 	"/ark.oracle.v1.Query/ReferenceDenom",
 	"/ark.oracle.v1.Query/RewardWeight",
+	"/ark.oracle.v1.Query/StoredRates",
 	"/ark.reserve.v1.Query/Balance",
+	"/ark.reserve.v1.Query/BurnableSurplus",
 	"/ark.reserve.v1.Query/ClosedPositions",
 	"/ark.reserve.v1.Query/Ledger",
 	"/ark.reserve.v1.Query/Mandate",
@@ -105,8 +101,8 @@ var arkModuleQuerySafePaths = []string{
 	"/ark.treasury.v1.Query/TaxCaps",
 }
 
-// moduleQuerySafePaths mirrors ibc-go's newModuleQuerySafeAllowList: every
-// method annotated module_query_safe on a non-Msg service, sorted.
+// moduleQuerySafePaths walks the registry for every method annotated
+// module_query_safe on a non-Msg service, sorted.
 func moduleQuerySafePaths() []string {
 	var paths []string
 	gogoproto.GogoResolver.RangeFiles(func(fd protoreflect.FileDescriptor) bool {
@@ -138,43 +134,22 @@ func arkPathsOnly(paths []string) []string {
 	return ark
 }
 
-func moduleQuerySafe(arkApp *app.ArkApp, path string) (*icahosttypes.MsgModuleQuerySafeResponse, error) {
-	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
-	return icahostkeeper.NewMsgServerImpl(arkApp.ICAHostKeeper).ModuleQuerySafe(ctx, &icahosttypes.MsgModuleQuerySafe{
-		Signer:   authtypes.NewModuleAddress("interchain-account").String(),
-		Requests: []icahosttypes.QueryRequest{{Path: path}},
-	})
-}
-
-// The annotated RPC set must exactly match the proto definitions, keeping the ICA-reachable query
-// surface explicit.
+// The annotated RPC set must exactly match the proto definitions, keeping the
+// surface the accept list may draw from explicit.
 func TestModuleQuerySafePathsMatchTheProtos(t *testing.T) {
 	require.Equal(t, arkModuleQuerySafePaths, arkPathsOnly(moduleQuerySafePaths()))
 }
 
 // FeedReferents is deterministic but deliberately unannotated: its claims are
 // operator prose, and exposing them would make rewording one a state-machine
-// change. This pins the exclusion against the walker and against the ICA host
-// itself, so it cannot be annotated back by reflex.
+// change. This pins the exclusion against the walker, so it cannot be
+// annotated back by reflex.
 func TestFeedReferentsStaysOutOfReach(t *testing.T) {
-	const path = "/ark.oracle.v1.Query/FeedReferents"
-	require.NotContains(t, moduleQuerySafePaths(), path)
-
-	_, err := moduleQuerySafe(apptestutil.Setup(t, false), path)
-	require.ErrorContains(t, err, "not module query safe")
+	require.NotContains(t, moduleQuerySafePaths(), "/ark.oracle.v1.Query/FeedReferents")
 }
 
-// The ICA host serves the annotated set with no list of Ark's own in between:
-// an annotated path answers through MsgModuleQuerySafe as it stands.
-func TestInterchainAccountReachesAnnotatedQueries(t *testing.T) {
-	response, err := moduleQuerySafe(apptestutil.Setup(t, false), "/ark.treasury.v1.Query/Params")
-	require.NoError(t, err)
-	require.Len(t, response.Responses, 1)
-	require.NotEmpty(t, response.Responses[0])
-}
-
-// Every annotated path must route, or the ICA host would fail it at call time
-// with a routing error rather than serve it.
+// Every annotated path must route, or the accept list would fail it at call
+// time with a routing error rather than serve it.
 func TestModuleQuerySafePathsRoute(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 
@@ -213,7 +188,7 @@ func TestModuleQuerySafePathsAnswerDeterministically(t *testing.T) {
 func TestAcceptedQueriesAreAnnotatedRouteAndConstruct(t *testing.T) {
 	arkApp := apptestutil.Setup(t, false)
 	annotated := moduleQuerySafePaths()
-	require.Len(t, app.AcceptedQueries(), 48, "fourteen Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
+	require.Len(t, app.AcceptedQueries(), 63, "twenty-nine Ark paths and the SDK's thirty-four annotated auth, bank, and staking paths; widening is a review")
 
 	for path, response := range app.AcceptedQueries() {
 		t.Run(path, func(t *testing.T) {
@@ -232,7 +207,7 @@ func TestUnlistedQueriesAreRefused(t *testing.T) {
 	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{})
 	plugins := arkApp.WasmQueryPlugins(app.AcceptedQueries())
 
-	const path = "/ark.treasury.v1.Query/FundStatus"
+	const path = "/ark.treasury.v1.Query/Params"
 	require.Contains(t, moduleQuerySafePaths(), path, "the case is an annotated, unlisted path")
 	require.NotContains(t, app.AcceptedQueries(), path)
 
@@ -314,12 +289,6 @@ func TestTaxQueryMatchesTheChargeForEveryShape(t *testing.T) {
 		"multisend with two inputs": &banktypes.MsgMultiSend{
 			Inputs:  []banktypes.Input{{Address: contract.String(), Coins: stable}, {Address: recipient, Coins: stable}},
 			Outputs: []banktypes.Output{{Address: recipient, Coins: stable.Add(stable...)}},
-		},
-		"ibc transfer": ibctransfertypes.NewMsgTransfer(ibctransfertypes.PortID, "channel-0", stable[0],
-			contract.String(), recipient, clienttypes.NewHeight(1, 1), 0, ""),
-		"market swap send": &markettypes.MsgSwapSend{
-			FromAddress: contract.String(), ToAddress: recipient, OfferCoin: stable[0], AskDenom: chain.NoahBaseDenom,
-			MinimumReceive: sdk.NewInt64Coin(chain.NoahBaseDenom, 1),
 		},
 		"execute with funds": &wasmtypes.MsgExecuteContract{
 			Sender: contract.String(), Contract: recipient, Msg: []byte("{}"), Funds: stable,
@@ -408,7 +377,7 @@ func TestContractReadsListedPathsOnly(t *testing.T) {
 		require.Equal(t, want, got, "the contract reads what the chain answers")
 	})
 
-	const unlisted = "/ark.treasury.v1.Query/FundStatus"
+	const unlisted = "/ark.treasury.v1.Query/Params"
 	for name, req := range map[string]wasmvmtypes.QueryRequest{
 		"grpc":     {Grpc: &wasmvmtypes.GrpcQuery{Path: unlisted, Data: []byte{}}},
 		"stargate": {Stargate: &wasmvmtypes.StargateQuery{Path: unlisted, Data: []byte{}}},

@@ -37,7 +37,7 @@ func NewFetcher(cfg Config, dataHandler DataHandler, opts ...Option) (*Fetcher, 
 		logger:           log.NewNopLogger(),
 		config:           cfg,
 		dial:             websocket.Dial,
-		endpointSelector: types.FirstEndpoint,
+		endpointSelector: types.RotateEndpoints,
 		dataHandler:      dataHandler,
 	}
 
@@ -141,7 +141,7 @@ func (f *Fetcher) runConnection(ctx context.Context, tickers []types.Ticker, res
 		}
 
 		handler := f.dataHandler.Copy()
-		if err := f.runOnce(ctx, tickers, handler, responseCh); err != nil {
+		if err := f.runOnce(ctx, restarts, tickers, handler, responseCh); err != nil {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
@@ -168,17 +168,20 @@ func (f *Fetcher) runConnection(ctx context.Context, tickers []types.Ticker, res
 
 // runOnce runs one websocket connection session: select an endpoint, dial,
 // subscribe, then receive messages until the session fails or ctx is cancelled.
+// attempt counts the sessions before it, each of which ended in a failure, so
+// every reconnect dials the next endpoint.
 func (f *Fetcher) runOnce(
 	ctx context.Context,
+	attempt int,
 	tickers []types.Ticker,
 	handler DataHandler,
 	responseCh chan<- types.Response,
 ) error {
 	dialCtx, cancel := context.WithTimeout(ctx, f.config.HandshakeTimeout)
 	defer cancel()
-	endpoint, err := f.endpointSelector(f.config.Endpoints)
+	endpoint, err := f.endpointSelector(f.config.Endpoints, attempt)
 	if err != nil {
-		return ErrSelectEndpointWithErr(err)
+		return f.failSession(ctx, tickers, responseCh, ErrSelectEndpointWithErr(err), metrics.ConnectionEventDialError)
 	}
 
 	conn, _, err := f.dial(dialCtx, endpoint.URL, f.dialOptions(endpoint))
@@ -187,20 +190,9 @@ func (f *Fetcher) runOnce(
 			return ctx.Err()
 		}
 
-		dialErr := ErrDialWithErr(err)
-		response := types.NewErrorResponse(
-			tickers,
-			types.NewErrorWithCode(dialErr, types.ErrorWebsocketStartFail),
-		)
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case responseCh <- response:
-			metrics.RecordConnectionEvent(ctx, f.config.Name, metrics.ConnectionEventDialError)
-			return reconnectWithErr(dialErr)
-		}
+		return f.failSession(ctx, tickers, responseCh, ErrDialWithErr(err), metrics.ConnectionEventDialError)
 	}
+	conn.SetReadLimit(MaxMessageBytes)
 	defer func() {
 		if err := conn.CloseNow(); err != nil {
 			f.logger.Debug("failed to close websocket connection", "error", err)
@@ -237,10 +229,29 @@ func (f *Fetcher) runOnce(
 	return group.Wait()
 }
 
-// subscribe sends the initial provider subscription messages for tickers.
-// Message-construction errors are returned as local handler errors. Subscription
-// write errors publish unresolved ticker responses because the provider session
-// failed after dialling.
+// failSession publishes tickers as unresolved for a session that could not start, records event,
+// and asks for a reconnect, so the shard retries after ReconnectionTimeout instead of ending its
+// provider.
+func (f *Fetcher) failSession(
+	ctx context.Context,
+	tickers []types.Ticker,
+	responseCh chan<- types.Response,
+	err error,
+	event string,
+) error {
+	response := types.NewErrorResponse(tickers, types.NewErrorWithCode(err, types.ErrorWebsocketStartFail))
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case responseCh <- response:
+		metrics.RecordConnectionEvent(ctx, f.config.Name, event)
+		return reconnectWithErr(err)
+	}
+}
+
+// subscribe sends the initial provider subscription messages for tickers. A message-construction
+// error and a subscription write error both publish unresolved ticker responses and ask for a
+// reconnect.
 func (f *Fetcher) subscribe(
 	ctx context.Context,
 	conn *websocket.Conn,
@@ -256,7 +267,7 @@ func (f *Fetcher) subscribe(
 	messages, err := handler.CreateMessages(tickers)
 	if err != nil {
 		f.logger.Debug("failed to create subscription messages", "error", err)
-		return ErrCreateMessageWithErr(err)
+		return f.failSession(ctx, tickers, responseCh, ErrCreateMessageWithErr(err), metrics.ConnectionEventSubscribeError)
 	}
 
 	for index, message := range messages {
@@ -268,21 +279,7 @@ func (f *Fetcher) subscribe(
 			writeErr := ErrWriteWithErr(err)
 			f.logger.Debug("failed to write subscription message", "error", writeErr)
 			metrics.RecordWriteError(ctx, f.config.Name, metrics.WriteOperationSubscribe)
-			response := types.NewErrorResponse(
-				tickers,
-				types.NewErrorWithCode(
-					writeErr,
-					types.ErrorWebsocketStartFail,
-				),
-			)
-
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case responseCh <- response:
-				metrics.RecordConnectionEvent(ctx, f.config.Name, metrics.ConnectionEventSubscribeError)
-				return reconnectWithErr(writeErr)
-			}
+			return f.failSession(ctx, tickers, responseCh, writeErr, metrics.ConnectionEventSubscribeError)
 		}
 
 		if index != len(messages)-1 {

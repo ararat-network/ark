@@ -1,6 +1,8 @@
 package metrics_test
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -51,6 +53,27 @@ func TestTypesString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, tt.got)
+		})
+	}
+}
+
+func TestStatusOf(t *testing.T) {
+	labelled := metrics.NewError(metrics.StatusCodec, "codec error")
+	tests := []struct {
+		name string
+		err  error
+		want metrics.Status
+	}{
+		{name: "nil is success", err: nil, want: metrics.StatusSuccess},
+		{name: "plain error is failure", err: errors.New("boom"), want: metrics.StatusFailure},
+		{name: "labelled error", err: labelled, want: metrics.StatusCodec},
+		{name: "label survives wrapping", err: fmt.Errorf("decoding: %w", labelled), want: metrics.StatusCodec},
+		// The outer error names the stage that failed, so it wins over the one it wraps.
+		{name: "outer label wins", err: fmt.Errorf("%w: %w", metrics.NewError(metrics.StatusWrappedHandler, "wrapped"), labelled), want: metrics.StatusWrappedHandler},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, metrics.StatusOf(tt.err))
 		})
 	}
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/ararat-network/ark/app"
 	apptestutil "github.com/ararat-network/ark/app/testutil"
+	"github.com/ararat-network/ark/pkg/chain"
 	securitykeeper "github.com/ararat-network/ark/x/security/keeper"
 	securitytypes "github.com/ararat-network/ark/x/security/types"
 )
@@ -50,10 +51,10 @@ func newSecurityFixture(t *testing.T) *securityFixture {
 	}
 
 	_, err := f.msgServer.SetSecurityMandate(ctx, &securitytypes.MsgSetSecurityMandate{
-		Authority:        f.authority,
-		Committee:        f.committee,
-		ActivationHeight: uint64(ctx.BlockHeight()),
-		ExpiryHeight:     uint64(ctx.BlockHeight()) + 1_000,
+		Authority:      f.authority,
+		Committee:      f.committee,
+		ActivationTime: chain.BlockSeconds(ctx),
+		ExpiryTime:     chain.BlockSeconds(ctx) + 1_000,
 	})
 	require.NoError(t, err)
 
@@ -78,7 +79,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 		Info:         "patched binaries",
 	})
 	require.NoError(t, err)
@@ -96,7 +97,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-b",
-		Height:       f.ctx.BlockHeight() + 600,
+		Height:       uint64(f.ctx.BlockHeight() + 600),
 	})
 	require.NoError(t, err)
 
@@ -121,7 +122,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-c",
-		Height:       f.ctx.BlockHeight() + 700,
+		Height:       uint64(f.ctx.BlockHeight() + 700),
 	})
 	require.ErrorContains(t, err, "only governance replaces it")
 
@@ -145,7 +146,7 @@ func TestSecurityCommitteeUpgradeSlot(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency-d",
-		Height:       f.ctx.BlockHeight() + 800,
+		Height:       uint64(f.ctx.BlockHeight() + 800),
 	})
 	require.NoError(t, err)
 
@@ -168,10 +169,10 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 
 	// Governance re-appoints the same account, which still advances the term.
 	_, err := f.msgServer.SetSecurityMandate(f.ctx, &securitytypes.MsgSetSecurityMandate{
-		Authority:        f.authority,
-		Committee:        f.committee,
-		ActivationHeight: uint64(f.ctx.BlockHeight()),
-		ExpiryHeight:     uint64(f.ctx.BlockHeight()) + 1_000,
+		Authority:      f.authority,
+		Committee:      f.committee,
+		ActivationTime: chain.BlockSeconds(f.ctx),
+		ExpiryTime:     chain.BlockSeconds(f.ctx) + 1_000,
 	})
 	require.NoError(t, err)
 
@@ -179,7 +180,7 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: staleTerm,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
 	require.ErrorContains(t, err, "term mismatch")
 
@@ -200,9 +201,9 @@ func TestSecurityCommitteeTermRotation(t *testing.T) {
 		Committee:    f.committee,
 		ExpectedTerm: appointment.Term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 }
 
 // TestSecurityCommitteeRefusesAStranger pins end to end that the envelope is
@@ -216,17 +217,15 @@ func TestSecurityCommitteeRefusesAStranger(t *testing.T) {
 		Committee:    stranger,
 		ExpectedTerm: f.term,
 		Name:         "v2-emergency",
-		Height:       f.ctx.BlockHeight() + 500,
+		Height:       uint64(f.ctx.BlockHeight() + 500),
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 
-	_, err = f.msgServer.CommitteeRecoverClient(f.ctx, &securitytypes.MsgCommitteeRecoverClient{
-		Committee:          stranger,
-		ExpectedTerm:       f.term,
-		SubjectClientId:    "07-tendermint-0",
-		SubstituteClientId: "07-tendermint-1",
+	_, err = f.msgServer.CommitteeCancelUpgrade(f.ctx, &securitytypes.MsgCommitteeCancelUpgrade{
+		Committee:    stranger,
+		ExpectedTerm: f.term,
 	})
-	require.ErrorContains(t, err, "signer is not the exact appointed committee")
+	require.ErrorContains(t, err, "signer is not the exact appointed account")
 
 	// Nothing reached x/upgrade: the envelope refuses before dispatch.
 	_, err = f.app.UpgradeKeeper.GetUpgradePlan(f.ctx)

@@ -4,7 +4,8 @@
 # Run from the repository root after protobuf generation.
 set -eu
 
-find ./api ./x -type f \( -name '*.pulsar.go' -o -name '*.pb.gw.go' \) -print |
+find . \( -path ./.git -o -path ./proto \) -prune -o \
+  -type f \( -name '*.pulsar.go' -o -name '*.pb.gw.go' \) -print |
 while IFS= read -r generated; do
   source=$(sed -n 's|^// source: |proto/|p' "$generated" | head -n 1)
   case "$source" in

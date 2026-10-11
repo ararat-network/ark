@@ -47,7 +47,10 @@ enabled = {{ .PriceFeed.Enabled }}
 sidecar_addresses = [{{ range $i, $a := .PriceFeed.SidecarAddresses }}{{ if $i }}, {{ end }}{{ printf "%q" $a }}{{ end }}]
 
 # Client Timeout is the time that the client is willing to wait for responses from
-# the sidecar before timing out. The recommended timeout is 3 seconds (3000ms).
+# the sidecar before timing out. The recommended timeout is 3 seconds (3000ms). It
+# must be less than price_ttl minus interval. Leave the sidecar's update_interval
+# spare as well: a snapshot is already up to that old when fetched, so only then
+# does a sweep that waits out one hung sidecar answer before the snapshot expires.
 client_timeout = "{{ .PriceFeed.ClientTimeout }}"
 
 # PriceTTL is the maximum age of the sidecar snapshot timestamp before it is considered stale.
@@ -174,6 +177,16 @@ func (c Config) Validate() error {
 
 	if c.Interval >= c.PriceTTL {
 		return errors.New("interval must be strictly less than price_ttl")
+	}
+
+	// A hung sidecar holds the next poll for a full timeout before the sweep
+	// moves on. The snapshot's own age at fetch, up to the sidecar's
+	// update_interval, is the sidecar's setting, so this bounds only the node's.
+	if c.ClientTimeout >= c.PriceTTL-c.Interval {
+		return fmt.Errorf(
+			"client_timeout %s must be less than price_ttl %s minus interval %s",
+			c.ClientTimeout, c.PriceTTL, c.Interval,
+		)
 	}
 
 	if err := c.TLS.Validate(); err != nil {

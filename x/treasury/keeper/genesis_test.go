@@ -1,8 +1,11 @@
 package keeper_test
 
 import (
+	"bytes"
+
 	"go.uber.org/mock/gomock"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,33 +30,87 @@ func (s *KeeperTestSuite) expectGenesisFundBalances(balances map[string]sdk.Coin
 	}
 }
 
+// TestInitAndExportGenesis round-trips a state with every field off the
+// suite's baseline, so an import that dropped any of them would export the
+// baseline instead.
 func (s *KeeperTestSuite) TestInitAndExportGenesis() {
-	genesis := types.DefaultGenesisState()
-	genesis.Params.ReferenceTaxCap = math.ZeroInt()
-	// The NOAH cross rides in the table and survives export on the same
-	// keep-last-value terms as the member factors, exempt from the registry
-	// membership rule the member entry beside it is held to.
-	genesis.ConversionFactors = []types.ConversionFactor{
-		{Denom: chain.NoahBaseDenom, Factor: math.LegacyMustNewDecFromStr("0.25"), DerivedHeight: 5},
-		{Denom: chain.XDRBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
+	s.reference = chain.USDBaseDenom
+	s.setAssets(chain.USDBaseDenom, chain.KRWBaseDenom)
+	minimum := types.EconomicPolicy{
+		ValidatorBlockRewardTarget:  math.NewInt(1),
+		OracleBlockRewardTarget:     math.NewInt(1),
+		RedemptionBufferTargetRatio: math.LegacyMustNewDecFromStr("0.1"),
+		StrategicReserveTargetRatio: math.LegacyMustNewDecFromStr("0.1"),
+		InsuranceTargetRatio:        math.LegacyMustNewDecFromStr("0.1"),
+		LiabilityRatioWeight:        math.LegacyMustNewDecFromStr("0.1"),
+		VolatilityWeight:            math.LegacyMustNewDecFromStr("0.1"),
+		FlowWeight:                  math.LegacyMustNewDecFromStr("0.1"),
 	}
-	// An export taken while an exposure update was owed carries the raised
-	// flag, and the import must keep the work owed rather than forgive it.
-	genesis.ExposureRefreshPending = true
-	// A non-default risk state, so the round trip proves the series survive
-	// rather than being re-derived from zero: restarting the EWMAs would hand
-	// the new chain a calm-market multiplier during whatever prompted the
-	// export.
-	genesis.ExposureState = types.ExposureState{
-		LastReferencePrice: math.LegacyNewDec(3),
-		VolatilityVariance: math.LegacyMustNewDecFromStr("0.25"),
-		FlowPressure:       math.LegacyNewDec(11),
-		LiabilityRatio:     math.LegacyMustNewDecFromStr("0.4"),
-		FlowRatio:          math.LegacyMustNewDecFromStr("0.05"),
-		Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
-		LastRefreshHeight:  7,
+	_, maximum := economicPolicyBounds()
+	genesis := &types.GenesisState{
+		Params: types.Params{
+			ReferenceDenom:              chain.USDBaseDenom,
+			ReferenceTaxCap:             math.NewInt(5),
+			RewardFundingWindow:         77,
+			VolatilityDecay:             math.LegacyMustNewDecFromStr("0.9"),
+			FlowDecay:                   math.LegacyMustNewDecFromStr("0.8"),
+			MultiplierCap:               math.LegacyNewDec(3),
+			MultiplierMaxStep:           math.LegacyMustNewDecFromStr("0.5"),
+			ExposureRefreshPeriodBlocks: 11,
+			BaseFeeTargetUtilisation:    math.LegacyMustNewDecFromStr("0.6"),
+			BaseFeeAdjustmentRate:       math.LegacyMustNewDecFromStr("0.05"),
+			MinBaseGasPrice:             math.LegacyMustNewDecFromStr("0.3"),
+			TransferTaxRate:             math.LegacyMustNewDecFromStr("0.002"),
+		},
+		// The NOAH cross rides in the table and survives export on the same
+		// keep-last-value terms as the member factors, exempt from the registry
+		// membership rule the member entries beside it are held to.
+		ConversionFactors: []types.ConversionFactor{
+			{Denom: chain.KRWBaseDenom, Factor: math.LegacyNewDec(1_300), DerivedHeight: 4},
+			{Denom: chain.NoahBaseDenom, Factor: math.LegacyMustNewDecFromStr("0.25"), DerivedHeight: 5},
+			{Denom: chain.USDBaseDenom, Factor: math.LegacyOneDec(), DerivedHeight: 3},
+		},
+		RewardFunding: types.RewardFundingState{
+			BlocksRemaining:   4,
+			ValidatorTarget:   math.NewInt(9),
+			OracleTarget:      math.NewInt(8),
+			ValidatorFeeValue: math.NewInt(6),
+		},
+		EconomicMandate: types.EconomicMandate{
+			Envelope: mandate.Envelope{
+				Term:           3,
+				Committee:      sdk.AccAddress(bytes.Repeat([]byte{9}, 20)).String(),
+				ActivationTime: 10,
+				ExpiryTime:     20,
+				CommitteeShape: mandate.CommitteeShape{
+					AccountType: "/cosmos.auth.v1beta1.BaseAccount",
+					KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG,
+					Threshold:   2,
+					MemberCount: 3,
+				},
+			},
+			MinimumPolicy: minimum,
+			MaximumPolicy: maximum,
+		},
+		EconomicPolicy: committeePolicyCandidate(),
+		// The series survive rather than being re-derived from zero: restarting
+		// the EWMAs would hand the new chain a calm-market multiplier during
+		// whatever prompted the export.
+		ExposureState: types.ExposureState{
+			LastReferencePrice: math.LegacyNewDec(3),
+			VolatilityVariance: math.LegacyMustNewDecFromStr("0.25"),
+			SampleInterval:     math.LegacyNewDec(6),
+			LastSampleTime:     42,
+			FlowPressure:       math.LegacyNewDec(11),
+			LiabilityRatio:     math.LegacyMustNewDecFromStr("0.4"),
+			FlowRatio:          math.LegacyMustNewDecFromStr("0.05"),
+			Multiplier:         math.LegacyMustNewDecFromStr("1.75"),
+			LastRefreshHeight:  7,
+		},
+		// An export taken while an exposure update was owed keeps it owed.
+		ExposureRefreshPending: true,
+		BaseGasPrice:           math.LegacyMustNewDecFromStr("0.7"),
 	}
-	s.setAssets(chain.XDRBaseDenom)
 	s.expectGenesisFundBalances(map[string]sdk.Coins{
 		types.SubsidyPoolName:             sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 3)),
 		types.RedemptionBufferName:        sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 5)),
@@ -63,13 +120,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
-	s.Require().Equal(genesis.Params, exported.Params)
-	s.Require().True(genesis.EconomicPolicy.Equal(exported.EconomicPolicy))
-	s.Require().Equal(genesis.ConversionFactors, exported.ConversionFactors)
-	s.Require().Equal(genesis.RewardFunding, exported.RewardFunding)
-	s.Require().Equal(genesis.EconomicMandate, exported.EconomicMandate)
-	s.Require().Equal(genesis.ExposureState, exported.ExposureState)
-	s.Require().Equal(genesis.ExposureRefreshPending, exported.ExposureRefreshPending)
+	s.Require().Equal(genesis, exported)
 }
 
 // TestInitGenesisSeedsFactorsAtOne checks default member factors require no Oracle reads and derive
@@ -144,7 +195,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.XDRBaseDenom)
 	s.Require().NoError(err)
 	_, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
-	s.Require().Error(err)
+	s.Require().ErrorIs(err, collections.ErrNotFound)
 
 	// The chain's own export round-trips: the gap survives import instead of
 	// refusing it.
@@ -154,7 +205,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsMembersWithoutFactors() {
 	s.expectGenesisFundBalances(nil)
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))
 	_, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
-	s.Require().Error(err)
+	s.Require().ErrorIs(err, collections.ErrNotFound)
 }
 
 // TestInitGenesisAcceptsFactorsBeyondOraclePricing checks factors remain importable after lifecycle
@@ -181,7 +232,7 @@ func (s *KeeperTestSuite) TestInitGenesisAcceptsFactorsBeyondOraclePricing() {
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(33), krwCap)
 	_, err = s.keeper.GetTaxCap(s.ctx, chain.XDRBaseDenom)
-	s.Require().Error(err)
+	s.Require().ErrorIs(err, collections.ErrNotFound)
 }
 
 // TestInitGenesisRefusesFactorsForNonMembers rejects factors that could tax unregistered
@@ -268,14 +319,14 @@ func (s *KeeperTestSuite) TestInitGenesisRejectsAuthorityCommittee() {
 	genesis := types.DefaultGenesisState()
 	genesis.EconomicMandate = types.EconomicMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        s.authority,
-			ActivationHeight: 1,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      s.authority,
+			ActivationTime: 1,
+			ExpiryTime:     100,
 		},
 		MinimumPolicy: minimum,
 		MaximumPolicy: maximum,
 	}
 	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().ErrorContains(err, "distinct from Treasury authority")
+	s.Require().ErrorContains(err, "distinct from the Treasury authority")
 }

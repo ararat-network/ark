@@ -71,7 +71,7 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	accounts, err := authtypes.UnpackAccounts(authState.Accounts)
 	require.NoError(t, err)
 	require.Len(t, accounts, 2)
-	grant := chain.NativeBaseAmount(chain.SeatGrantNoah)
+	grant := chain.SeatGrant
 	require.False(t, appGenesis.GenesisTime.IsZero(), "the testnet stamps its own time")
 	for _, account := range accounts {
 		vesting, ok := account.(*vestingtypes.ContinuousVestingAccount)
@@ -83,7 +83,7 @@ func TestTestnetInitFilesFromArtefact(t *testing.T) {
 	}
 
 	bankState := banktypes.GetGenesisStateFromAppState(cdc, state)
-	seat := chain.NativeBaseAmount(chain.SeatGrantNoah + chain.SeatFloatNoah)
+	seat := grant.Add(chain.NativeBaseAmount(chain.SeatFloatNoah))
 	pool := authtypes.NewModuleAddress(distrtypes.ModuleName).String()
 	for _, balance := range bankState.Balances {
 		if balance.Address == pool {

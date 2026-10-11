@@ -6,6 +6,7 @@ import "ark/claims/v1/claims.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/query/v1/query.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
@@ -68,11 +69,17 @@ message QueryClaimsMandateResponse {
     (amino.dont_omitempty) = true
   ];
   bool active = 2 [(amino.dont_omitempty) = true];
-  cosmos.base.v1beta1.Coin allowance_used = 3 [
+  // allowance_used sums the term's claim charges, cancelled claims included, in the reference unit.
+  string allowance_used = 3 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  cosmos.base.v1beta1.Coin allowance_remaining = 4 [
+  // allowance_remaining is the committee claim limit less allowance_used.
+  string allowance_remaining = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -81,18 +88,24 @@ message QueryClaimsMandateResponse {
 // QueryBalanceRequest is the request type for Query/Balance.
 message QueryBalanceRequest {}
 
-// QueryBalanceResponse is the response type for Query/Balance. Their
-// difference is the capital the fund recognises toward its Treasury target.
+// QueryBalanceResponse is the response type for Query/Balance. The NOAH
+// difference is the capital the fund recognises toward its Treasury target;
+// other custody counts for nothing.
 message QueryBalanceResponse {
-  cosmos.base.v1beta1.Coin balance = 1 [
+  // balance is every denomination Insurance holds.
+  repeated cosmos.base.v1beta1.Coin balance = 1 [
     (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
   // reserved spans the pending claims of every term. Mandate replacement resets
   // the committee allowance and never clears this.
-  cosmos.base.v1beta1.Coin reserved = 2 [
+  repeated cosmos.base.v1beta1.Coin reserved = 2 [
     (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
+    (amino.dont_omitempty) = true,
+    (amino.encoding) = "legacy_coins",
+    (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coins"
   ];
 }
 

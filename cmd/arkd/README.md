@@ -8,9 +8,10 @@ registers genesis, query, transaction, server, and export commands and construct
 | --- | --- |
 | `start` — [cmd/start.go](cmd/start.go) | The start command's hooks: app.toml validation, the metrics endpoint, and the price-feed client. |
 | `config migrate/diff/set/validate` — [cmd/config_command.go](cmd/config_command.go) | app.toml upkeep against this binary's template, and the validation start applies over a file alone. |
-| `export` — [cmd/export.go](cmd/export.go) | The continuation genesis. |
+| `export` — [cmd/export.go](cmd/export.go) | The continuation genesis; `--jail-allowed-addrs` keeps only the listed operators in the validator set, and the SDK's `--for-zero-height` is hidden and refused. |
 | `in-place-testnet` — [cmd/in_place_testnet.go](cmd/in_place_testnet.go) | A testnet forked from this node's committed state: the app's state change is [app/testnet.go](../../app/testnet.go); the command rewrites CometBFT's validator set, commits, and extended commit, which the SDK's own command leaves to the old set. |
-| `genesis add-validator-seats` — [cmd/add_validator_seats.go](cmd/add_validator_seats.go) | Every equal validator seat granted from the community pool in one write at assembly; the edit itself is [app/genesis](../../app/genesis/seat.go). |
+| `genesis add-validator-seats` — [cmd/add_validator_seats.go](cmd/add_validator_seats.go) | One seat per genesis validator from the community pool, the founder's (`--founder`) at half the others' sum, with the founder's grant and compensation stream as governance awards, in one write at assembly; 7–13 seats unless `--any-count`. The edit itself is [app/genesis](../../app/genesis/seat.go). |
+| `genesis dry-run` — [cmd/dry_run.go](cmd/dry_run.go) | A genesis booted in memory as CometBFT starts it, InitChain and the first block, then the bonded set: the gentx refusals collection and `genesis validate` cannot see. A launch file or a continuation export. |
 | `query vote-extensions` — [cmd/vote_extensions.go](cmd/vote_extensions.go) | The oracle votes retained in a committed block. |
 | `testnet start/init-files` — [cmd/testnet.go](cmd/testnet.go) | Testnet file generation, from code defaults or from a curated artefact with `--genesis`, each home with a client.toml naming its chain, keyring, key, and node, and the in-process testnet. Its flags carry names no app.toml key has: the root pre-run copies app.toml onto flags of the same name, and a flag's default into a fresh home's app.toml. |
 | [cmd/root.go](cmd/root.go), [cmd/commands.go](cmd/commands.go) | Root command, client context, AutoCLI tree, transaction-command dressing, command registration including the SDK's `module-hash-by-height`, and app construction. |
@@ -24,7 +25,9 @@ Its app logs to stderr, so a redirected stdout is the genesis alone. [Node opera
 
 ## CLI fee completion
 
-[app/client/fees.go](../../app/client/fees.go) implements completion for transaction commands.
+[app/client](../../app/client/) implements completion for transaction commands: [fees.go](../../app/client/fees.go)
+the headroom, margin, and denomination choice, [command.go](../../app/client/command.go) the gas adjustment and flag
+wiring.
 [Client fee construction](../../docs/clients/CLIENT_FEES.md) owns the external contract; these choices are CLI policy:
 
 - `DefaultFeeHeadroom` (1.1), `DefaultNoahFeeMargin` (1.05), and `DefaultGasAdjustment` (1.15) are **policy, not
@@ -35,7 +38,7 @@ Its app logs to stderr, so a redirected stdout is the genesis alone. [Node opera
   then the rest of the sheet — is a convenience for a CLI user who has not said which denomination to pay in. An
   integration that holds one denomination has no use for it.
 - `arkd` nets `tax_base` against the payer's spendable balance when ranking. `tax_base` is what was taxed, not what
-  leaves the payer: a `MsgSwap` spends its offer coin untaxed and is absent from it, and a `MsgExec` moves the
+  leaves the payer: a `MsgSell` spends its offer coin untaxed and is absent from it, and a `MsgExec` moves the
   granter's coins and is present. The chain is the arbiter either way; a wrong guess costs a refusal, not funds.
 
 The split to hold onto: the chain publishes what is true, the client decides what is prudent. Tax and gas price
@@ -57,7 +60,9 @@ meter provider is shadowed while the endpoint is enabled. Package-load initialis
 
 The node uses a private registry to avoid collisions with CometBFT's default registry and the SDK legacy sink.
 It registers baseapp instruments unless otel.yaml already requests them, plus the Wasm cache collectors. PostSetup
-installs the shared sanitising legacy bridge. SDK providers shut down in app cleanup; the application endpoint's
+installs the shared sanitising legacy bridge. Until then the SDK's own bridge, which telemetry start installs after
+app creation, gets a noop meter: it records raw names (genesis transactions, replayed blocks) that collide with
+baseapp's instruments, and it panics on query paths. SDK providers shut down in app cleanup; the application endpoint's
 provider shuts down with the server errgroup.
 
 ### Why configuration remains in two files

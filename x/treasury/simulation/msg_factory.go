@@ -31,7 +31,7 @@ func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 // factories exercise corridor width separately.
 func MsgSetEconomicMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEconomicMandate] {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		testData *simsx.ChainDataSource,
 		reporter simsx.SimulationReporter,
 	) ([]simsx.SimAccount, *types.MsgSetEconomicMandate) {
@@ -49,15 +49,17 @@ func MsgSetEconomicMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEconomicM
 		}
 
 		r := testData.Rand()
-		activation := r.Uint64InRange(1, 1_000)
+		now := chain.BlockSeconds(ctx)
+		activation := now + r.Uint64InRange(1, 1_000)
 		bounds := RandomisedEconomicPolicy(r.Rand)
 
 		return nil, &types.MsgSetEconomicMandate{
-			Authority:        authority,
-			Committee:        committee.AddressBech32,
-			ActivationHeight: activation,
-			// Validation demands activation strictly precede expiry.
-			ExpiryHeight:  activation + r.Uint64InRange(1, 100_000),
+			Authority:      authority,
+			Committee:      committee.AddressBech32,
+			ActivationTime: activation,
+			// Validation demands activation strictly precede expiry, and the
+			// handler demands expiry sit above the current block time.
+			ExpiryTime:    activation + r.Uint64InRange(1, 100_000),
 			MinimumPolicy: bounds,
 			MaximumPolicy: bounds,
 		}

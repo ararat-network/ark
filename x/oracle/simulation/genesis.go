@@ -49,9 +49,9 @@ func GenExchangeRates(r *rand.Rand, genTime time.Time) []types.ExchangeRate {
 			// Positive and spread over four orders of magnitude, so conversion
 			// arithmetic meets realistically dissimilar rates rather than a set
 			// clustered around one.
-			Rate:           math.LegacyNewDecWithPrec(int64(r.Intn(1_000_000)+1), 3),
-			BlockTimestamp: genTime,
-			BlockHeight:    0,
+			Rate:        math.LegacyNewDecWithPrec(int64(r.Intn(1_000_000)+1), 3),
+			BlockTime:   uint64(genTime.Unix()),
+			BlockHeight: 0,
 		})
 	}
 	return rates

@@ -14,6 +14,7 @@ import (
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"cosmossdk.io/log/v2"
+	"cosmossdk.io/math"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -40,6 +41,34 @@ func valuationComplete(status *treasurytypes.QueryFundStatusResponse) bool {
 // it. Everything registered later under this denomination prices through it
 // without naming anything.
 const goldDenom = "agold"
+
+// setRate stores denom's oracle rate as observed at ctx, standing in for an aggregated report.
+func setRate(t *testing.T, arkApp *app.ArkApp, ctx sdk.Context, denom string, rate math.LegacyDec) {
+	t.Helper()
+	require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
+		Denom:       denom,
+		Rate:        rate,
+		BlockTime:   chain.BlockSeconds(ctx),
+		BlockHeight: uint64(ctx.BlockHeight()),
+	}))
+}
+
+// attributesOf returns, for each event of eventType, its attributes by key. A missing key reads as
+// empty, so an assertion on a renamed attribute fails rather than passing unchecked.
+func attributesOf(events []cmtabci.Event, eventType string) []map[string]string {
+	var found []map[string]string
+	for _, event := range events {
+		if event.Type != eventType {
+			continue
+		}
+		attributes := make(map[string]string, len(event.Attributes))
+		for _, attribute := range event.Attributes {
+			attributes[attribute.Key] = attribute.Value
+		}
+		found = append(found, attributes)
+	}
+	return found
+}
 
 // activationFixture boots the real application with a single validator and
 // drives full blocks through it, injecting the vote extension the validator

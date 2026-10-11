@@ -22,8 +22,6 @@ var _ api.PriceFeedServer = (*Service)(nil)
 // Service owns sidecar lifecycle and implements the RPC interface. Runtime owns fetch/cache state;
 // the private server owns transports.
 type Service struct {
-	api.UnimplementedPriceFeedServer
-
 	// runtime owns providers, aggregation, updates, and cached price snapshots.
 	runtime *runtime.Runtime
 

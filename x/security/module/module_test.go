@@ -140,7 +140,6 @@ func TestAutoCLIOptionsCoverSecurityServices(t *testing.T) {
 	require.Equal(t, []string{
 		"CommitteeCancelUpgrade",
 		"CommitteePlanUpgrade",
-		"CommitteeRecoverClient",
 	}, committee)
 }
 

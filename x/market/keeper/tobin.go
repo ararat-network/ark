@@ -13,23 +13,29 @@ import (
 	"github.com/ararat-network/ark/x/market/types"
 )
 
-// GetTobinTax resolves a sparse override or the default, including explicit zero. It does not check
-// asset eligibility; callers enforce membership and lifecycle.
-func (k Keeper) GetTobinTax(ctx context.Context, denom string) (math.LegacyDec, error) {
-	override, err := k.TobinTaxOverrides.Get(ctx, denom)
-	if err == nil {
-		return override, nil
-	}
-	if !errors.Is(err, collections.ErrNotFound) {
-		return math.LegacyDec{}, fmt.Errorf("getting tobin tax override for %s: %w", denom, err)
-	}
-
+// GetTobinTaxes resolves each denomination's rate, keyed by denomination: its sparse override,
+// including an explicit zero, or the default. It does not check asset eligibility; callers enforce
+// membership and lifecycle.
+func (k Keeper) GetTobinTaxes(ctx context.Context, denoms ...string) (map[string]math.LegacyDec, error) {
 	params, err := k.Params.Get(ctx)
 	if err != nil {
-		return math.LegacyDec{}, fmt.Errorf("getting params: %w", err)
+		return nil, fmt.Errorf("getting params: %w", err)
 	}
 
-	return params.DefaultTobinTax, nil
+	taxes := make(map[string]math.LegacyDec, len(denoms))
+	for _, denom := range denoms {
+		override, err := k.TobinTaxOverrides.Get(ctx, denom)
+		if err != nil {
+			if !errors.Is(err, collections.ErrNotFound) {
+				return nil, fmt.Errorf("getting tobin tax override for %s: %w", denom, err)
+			}
+			override = params.DefaultTobinTax
+		}
+
+		taxes[denom] = override
+	}
+
+	return taxes, nil
 }
 
 // GetTobinTaxOverrides returns the sparse overrides in key order, which is the

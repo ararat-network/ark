@@ -73,7 +73,10 @@ func NewDialFunc(client *http.Client, tokenURL string, dial basews.DialFunc) bas
 
 		conn, resp, err := dial(ctx, parsedURL.String(), opts)
 		if err != nil {
-			return nil, resp, errors.New(strings.ReplaceAll(err.Error(), token, "<token>"))
+			// The URL in the error carries the token query-escaped, and a
+			// dialler may have decoded it, so both forms are redacted.
+			redacted := strings.ReplaceAll(err.Error(), url.QueryEscape(token), "<token>")
+			return nil, resp, errors.New(strings.ReplaceAll(redacted, token, "<token>"))
 		}
 		return conn, resp, nil
 	}

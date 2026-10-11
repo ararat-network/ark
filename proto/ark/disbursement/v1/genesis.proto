@@ -3,58 +3,66 @@ package ark.disbursement.v1;
 
 import "amino/amino.proto";
 import "ark/disbursement/v1/disbursement.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/ararat-network/ark/x/disbursement/types";
 
 // GenesisState exports grant obligations and their audit history; Bank exports custody balances.
 message GenesisState {
+  // Policy and appointment.
   Params params = 1 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  OwnershipPolicy ownership_policy = 2 [
+  GrantsMandate grants_mandate = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Beneficiary beneficiaries = 3 [
+  RegistrarMandate registrar_mandate = 3 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated Grant grants = 4 [
+  // compensation_used is the live term's charges against its allowance, cancelled awards
+  // included; an appointment resets it.
+  string compensation_used = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated DenomTotals totals = 5 [
+  // Records.
+  repeated Beneficiary beneficiaries = 5 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  Issuance issuance = 6 [
+  repeated Grant grants = 6 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  GrantsMandate grants_mandate = 7 [
+  // Accounting: each module account's reservations, contributors first, and the member NOAH
+  // governance has opened to registration.
+  repeated AccountBook books = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated JournalEntry journal = 8 [
+  string member_tranche = 8 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  uint64 next_grant_id = 9 [(amino.dont_omitempty) = true];
-  uint64 next_journal_id = 10 [(amino.dont_omitempty) = true];
-  // voided_terms lists replaced committee terms whose suspensions are not effective.
-  repeated uint64 voided_terms = 11;
-  PoolBalance member_pool = 12 [
+  // Ledgers.
+  repeated GrantEntry grant_journal = 9 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  PoolBalance contributor_pool = 13 [
+  repeated BeneficiaryEntry beneficiary_journal = 10 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  repeated ConversionOrder conversion_orders = 14 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  // Sequences.
+  uint64 next_grant_id = 11 [(amino.dont_omitempty) = true];
+  uint64 next_grant_entry_id = 12 [(amino.dont_omitempty) = true];
+  uint64 next_beneficiary_entry_id = 13 [(amino.dont_omitempty) = true];
 }

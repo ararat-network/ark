@@ -14,6 +14,7 @@ func DefaultExposureState() ExposureState {
 	return ExposureState{
 		LastReferencePrice: math.LegacyZeroDec(),
 		VolatilityVariance: math.LegacyZeroDec(),
+		SampleInterval:     math.LegacyZeroDec(),
 		FlowPressure:       math.LegacyZeroDec(),
 		LiabilityRatio:     math.LegacyZeroDec(),
 		FlowRatio:          math.LegacyZeroDec(),
@@ -21,9 +22,10 @@ func DefaultExposureState() ExposureState {
 	}
 }
 
-// Validate performs context-free validation of the stored risk state. The cap
-// is not checked here: it lives in Params, and a state imported beside a
-// lowered cap is clamped by the next update rather than refused at genesis.
+// Validate performs context-free validation of the stored risk state. The live cap is not checked
+// here: it lives in Params, and a state imported beside a lowered cap is clamped by the next
+// update rather than refused at genesis. The domain caps are: both figures feed checked arithmetic
+// in block hooks before that update runs, and a checked error there fails the block.
 func (s ExposureState) Validate() error {
 	// Price, NOAH flow, and the two ratios require non-negative values without field-specific
 	// ceilings. Variance has a [0, 1] range and is validated separately.
@@ -32,6 +34,7 @@ func (s ExposureState) Validate() error {
 		value math.LegacyDec
 	}{
 		{"LastReferencePrice", s.LastReferencePrice},
+		{"SampleInterval", s.SampleInterval},
 		{"FlowPressure", s.FlowPressure},
 		{"LiabilityRatio", s.LiabilityRatio},
 		{"FlowRatio", s.FlowRatio},
@@ -62,6 +65,16 @@ func (s ExposureState) Validate() error {
 			s.VolatilityVariance,
 		)
 	}
+	// Each sample pairs a squared return of at most one with an interval of at least a second, so
+	// the folded variance never exceeds the folded interval; above it, annualised volatility would
+	// pass the year-of-seconds bound.
+	if s.VolatilityVariance.GT(s.SampleInterval) {
+		return fmt.Errorf(
+			"treasury exposure state VolatilityVariance %s must not exceed SampleInterval %s",
+			s.VolatilityVariance,
+			s.SampleInterval,
+		)
+	}
 
 	if s.Multiplier.IsNil() {
 		return errors.New("treasury exposure state Multiplier must be set")
@@ -69,10 +82,18 @@ func (s ExposureState) Validate() error {
 	if !s.Multiplier.IsInValidRange() {
 		return errors.New("treasury exposure state Multiplier is not representable")
 	}
-	if s.Multiplier.LT(math.LegacyOneDec()) {
+	if s.Multiplier.LT(math.LegacyOneDec()) || s.Multiplier.GT(MaxExposureMultiplierCap) {
 		return fmt.Errorf(
-			"treasury exposure state Multiplier must be at least one: %s",
+			"treasury exposure state Multiplier must be between one and %s: %s",
+			MaxExposureMultiplierCap,
 			s.Multiplier,
+		)
+	}
+	if s.FlowPressure.GT(MaxExposureFlowPressure) {
+		return fmt.Errorf(
+			"treasury exposure state FlowPressure must be at most %s: %s",
+			MaxExposureFlowPressure,
+			s.FlowPressure,
 		)
 	}
 

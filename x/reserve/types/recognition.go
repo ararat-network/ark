@@ -3,8 +3,8 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"sort"
-	"time"
 
 	"cosmossdk.io/math"
 
@@ -15,10 +15,10 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// MaxRecognitionRateAge caps per-entry freshness windows with substantial headroom over publication
-// gaps. Recognition executes during block settlement, so valid inputs must keep its arithmetic
-// bounded.
-const MaxRecognitionRateAge = 30 * 24 * time.Hour
+// MaxRecognitionRateAge caps per-entry freshness windows, in seconds, with substantial headroom over
+// publication gaps. Recognition executes during block settlement, so valid inputs must keep its
+// arithmetic bounded.
+const MaxRecognitionRateAge = uint64(30 * 86_400)
 
 // Validate validates one eligibility entry.
 func (entry EligibilityEntry) Validate() error {
@@ -43,9 +43,9 @@ func (entry EligibilityEntry) Validate() error {
 	}
 	// Required rather than defaulted: an entry states its own tolerance rather
 	// than inheriting the Oracle's conversion-grade default.
-	if entry.MaxRateAge <= 0 || entry.MaxRateAge > MaxRecognitionRateAge {
+	if entry.MaxRateAge == 0 || entry.MaxRateAge > MaxRecognitionRateAge {
 		return fmt.Errorf(
-			"eligibility max rate age must be greater than zero and at most %s, is %s",
+			"eligibility max rate age must be greater than zero and at most %ds, is %ds",
 			MaxRecognitionRateAge,
 			entry.MaxRateAge,
 		)
@@ -160,21 +160,16 @@ func SolveRecognition(base math.Int, stakes []RecognitionStake) ([]RecognitionRe
 		return results, nil
 	}
 
-	// Ascending clip thresholds raw ÷ ratio, computed up front because checked
-	// division has an error to report and a sort comparator has nowhere to
-	// report it. The index tiebreak keeps equal thresholds deterministic.
-	thresholds := make(map[int]math.LegacyDec, len(solve))
-	for _, index := range solve {
-		threshold, err := decimal.Quo(stakes[index].Raw, stakes[index].Ratio)
-		if err != nil {
-			return nil, fmt.Errorf("sizing the clip threshold for stake %d: %w", index, err)
-		}
-		thresholds[index] = threshold
-	}
+	// Ascending clip thresholds raw ÷ ratio, compared cross-multiplied on the
+	// exact scaled integers: no stake divides, so a tiny ratio under a huge
+	// credit cannot push a quotient out of the decimal range, and the order
+	// is a total one. The index tiebreak keeps equal thresholds deterministic.
 	sort.Slice(solve, func(a, b int) bool {
-		left, right := thresholds[solve[a]], thresholds[solve[b]]
-		if !left.Equal(right) {
-			return left.LT(right)
+		left, right := stakes[solve[a]], stakes[solve[b]]
+		lhs := new(big.Int).Mul(left.Raw.BigInt(), right.Ratio.BigInt())
+		rhs := new(big.Int).Mul(right.Raw.BigInt(), left.Ratio.BigInt())
+		if cmp := lhs.Cmp(rhs); cmp != 0 {
+			return cmp < 0
 		}
 		return solve[a] < solve[b]
 	})

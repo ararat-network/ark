@@ -2,6 +2,7 @@ package types_test
 
 import (
 	"bytes"
+	"math/big"
 	"strings"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestClaimsMandateValidate(t *testing.T) {
 		{
 			name:      "partial sentinel",
 			mandate:   types.DefaultClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = noahCoin(1) },
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.NewInt(1) },
 			expectErr: "must be empty",
 		},
 		{
@@ -54,32 +55,41 @@ func TestClaimsMandateValidate(t *testing.T) {
 		{
 			name:      "invalid active heights",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.ActivationHeight = mandate.ExpiryHeight },
-			expectErr: "activation height must precede expiry height",
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.ActivationTime = mandate.ExpiryTime },
+			expectErr: "activation time must precede expiry time",
 		},
 		{
 			name:      "unset committee claim limit",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = sdk.Coin{} },
-			expectErr: "invalid Claims committee claim limit",
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.Int{} },
+			expectErr: "Claims committee claim limit: amount must be nonnegative",
 		},
 		{
 			name:      "zero committee claim limit",
 			mandate:   validClaimsMandate,
-			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = noahCoin(0) },
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.ZeroInt() },
 			expectErr: "claim limit must be positive",
 		},
 		{
-			name:    "negative committee claim limit",
+			name:      "negative committee claim limit",
+			mandate:   validClaimsMandate,
+			mutate:    func(mandate *types.ClaimsMandate) { mandate.CommitteeClaimLimit = math.NewInt(-1) },
+			expectErr: "amount must be nonnegative",
+		},
+		{
+			name:    "committee claim limit at 128 bits",
 			mandate: validClaimsMandate,
-			// Built by hand rather than through a constructor: sdk.NewInt64Coin
-			// panics on a negative amount, so the only way a negative limit
-			// reaches Validate is decoded off the wire, which is exactly the
-			// case worth pinning.
 			mutate: func(mandate *types.ClaimsMandate) {
-				mandate.CommitteeClaimLimit = sdk.Coin{Denom: chain.NoahBaseDenom, Amount: math.NewInt(-1)}
+				mandate.CommitteeClaimLimit = math.NewIntFromBigInt(new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 128), big.NewInt(1)))
 			},
-			expectErr: "negative coin amount",
+		},
+		{
+			name:    "committee claim limit past 128 bits",
+			mandate: validClaimsMandate,
+			mutate: func(mandate *types.ClaimsMandate) {
+				mandate.CommitteeClaimLimit = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
+			},
+			expectErr: "at most 128 bits",
 		},
 	}
 
@@ -99,8 +109,8 @@ func TestClaimsMandateValidate(t *testing.T) {
 
 func TestClaimsMandateIsActive(t *testing.T) {
 	claimsMandate := validClaimsMandate()
-	activation := claimsMandate.ActivationHeight
-	expiry := claimsMandate.ExpiryHeight
+	activation := claimsMandate.ActivationTime
+	expiry := claimsMandate.ExpiryTime
 	require.False(t, claimsMandate.IsActive(activation-1))
 	require.True(t, claimsMandate.IsActive(activation))
 	require.True(t, claimsMandate.IsActive(expiry-1))
@@ -148,7 +158,64 @@ func TestClaimValidate(t *testing.T) {
 			mutate: func(claim *types.Claim) {
 				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
 				claim.MandateTerm = 0
+				claim.Charge = math.ZeroInt()
 			},
+		},
+		{
+			name:      "committee claim without a charge",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Charge = math.ZeroInt() },
+			expectErr: "committee claim charge: amount must be positive",
+		},
+		{
+			name:      "committee claim with an unset charge",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Charge = math.Int{} },
+			expectErr: "committee claim charge",
+		},
+		{
+			name:  "committee claim charge past 128 bits",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Charge = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
+			},
+			expectErr: "at most 128 bits",
+		},
+		{
+			name:  "governance claim with a charge",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
+				claim.MandateTerm = 0
+			},
+			expectErr: "governance claim charges nothing",
+		},
+		{
+			name:  "governance claim with an unset charge",
+			claim: validPendingClaim,
+			mutate: func(claim *types.Claim) {
+				claim.Origin = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
+				claim.MandateTerm = 0
+				claim.Charge = math.Int{}
+			},
+			expectErr: "governance claim charges nothing",
+		},
+		{
+			name:   "stablecoin amount",
+			claim:  validPendingClaim,
+			mutate: func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 100) },
+		},
+		{
+			name:      "amount outside the Ark denomination shape",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin("uatom", 100) },
+			expectErr: "denom must be an Ark-native base denom",
+		},
+		{
+			name:      "zero amount",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.Amount = sdk.NewInt64Coin(chain.USDBaseDenom, 0) },
+			expectErr: "claim amount must be positive",
 		},
 		{
 			name:  "governance claim with mandate term",
@@ -170,26 +237,32 @@ func TestClaimValidate(t *testing.T) {
 		{
 			name:      "closes at submission",
 			claim:     validPendingClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
-			expectErr: "must follow its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
+			expectErr: "must follow its submission time",
 		},
 		{
-			name:      "paid at its submission height",
+			name:      "paid at its submission time",
 			claim:     validPaidClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
-			expectErr: "must follow its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
+			expectErr: "must follow its submission time",
 		},
 		{
 			// A veto may land in the very block that submitted the claim.
 			name:   "cancelled in its submission block",
 			claim:  validCancelledClaim,
-			mutate: func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight },
+			mutate: func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime },
 		},
 		{
 			name:      "closes before submission",
 			claim:     validCancelledClaim,
-			mutate:    func(claim *types.Claim) { claim.ClosingHeight = claim.SubmittedHeight - 1 },
-			expectErr: "cannot precede its submission height",
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = claim.SubmittedTime - 1 },
+			expectErr: "cannot precede its submission time",
+		},
+		{
+			name:      "closes past the header's int64",
+			claim:     validPendingClaim,
+			mutate:    func(claim *types.Claim) { claim.ClosingTime = chain.MaxBlockSeconds + 1 },
+			expectErr: "exceeds the header's int64",
 		},
 		{
 			name:  "pending with canceller",
@@ -233,14 +306,14 @@ func TestClaimValidate(t *testing.T) {
 			name:  "reference at maximum length",
 			claim: validPendingClaim,
 			mutate: func(claim *types.Claim) {
-				claim.Reference = strings.Repeat("r", types.MaxClaimReferenceLength)
+				claim.Reference = strings.Repeat("r", chain.MaxReferenceBytes)
 			},
 		},
 		{
 			name:  "reference over maximum length",
 			claim: validPendingClaim,
 			mutate: func(claim *types.Claim) {
-				claim.Reference = strings.Repeat("r", types.MaxClaimReferenceLength+1)
+				claim.Reference = strings.Repeat("r", chain.MaxReferenceBytes+1)
 			},
 			expectErr: "must not exceed",
 		},
@@ -263,12 +336,12 @@ func TestClaimValidate(t *testing.T) {
 func validClaimsMandate() types.ClaimsMandate {
 	return types.ClaimsMandate{
 		Envelope: mandate.Envelope{
-			Term:             1,
-			Committee:        testAddress(1),
-			ActivationHeight: 10,
-			ExpiryHeight:     100,
+			Term:           1,
+			Committee:      testAddress(1),
+			ActivationTime: 10,
+			ExpiryTime:     100,
 		},
-		CommitteeClaimLimit: noahCoin(1_000),
+		CommitteeClaimLimit: math.NewInt(1_000),
 	}
 }
 
@@ -283,7 +356,9 @@ func validPendingClaim() types.Claim {
 		Amount:          sdk.NewInt64Coin(chain.NoahBaseDenom, 100),
 		Status:          types.ClaimStatus_CLAIM_STATUS_PENDING,
 		SubmittedHeight: 20,
-		ClosingHeight:   25,
+		SubmittedTime:   20,
+		ClosingTime:     25,
+		Charge:          math.NewInt(100),
 	}
 }
 
@@ -291,7 +366,7 @@ func validPaidClaim() types.Claim {
 	claim := validPendingClaim()
 	claim.ClaimId = 2
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_PAID
-	claim.ClosingHeight = 25
+	claim.ClosingTime = 25
 	return claim
 }
 
@@ -299,9 +374,9 @@ func validCancelledClaim() types.Claim {
 	claim := validPendingClaim()
 	claim.ClaimId = 3
 	claim.Status = types.ClaimStatus_CLAIM_STATUS_CANCELLED
-	// A veto closes the claim early, so its closing height moves back from the
-	// 25 submission scheduled to the height the cancellation landed.
-	claim.ClosingHeight = 22
+	// A veto closes the claim early, so its closing time moves back from the
+	// 25 submission scheduled to the time the cancellation landed.
+	claim.ClosingTime = 22
 	claim.CancelledBy = types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE
 	return claim
 }

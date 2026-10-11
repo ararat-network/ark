@@ -8,6 +8,7 @@ import (
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,7 +20,6 @@ import (
 	claimstypes "github.com/ararat-network/ark/x/claims/types"
 	marketkeeper "github.com/ararat-network/ark/x/market/keeper"
 	markettypes "github.com/ararat-network/ark/x/market/types"
-	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 	reservetypes "github.com/ararat-network/ark/x/reserve/types"
 	treasurykeeper "github.com/ararat-network/ark/x/treasury/keeper"
 	treasurytypes "github.com/ararat-network/ark/x/treasury/types"
@@ -49,12 +49,7 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 	// One NOAH per unit of the traded stable keeps the arithmetic below exact,
 	// so a parity failure is a settlement bug and never a rounding artefact.
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	capacity := markettypes.DefaultConversionPolicy()
@@ -121,7 +116,7 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		offer := sdk.NewCoin(offerDenom, math.NewInt(conversion.amount))
 		noahBefore := balanceOf(marketAddress)
 
-		response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         trader.String(),
 			OfferCoin:      offer,
 			AskDenom:       askDenom,
@@ -176,8 +171,12 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		}
 		return target.Sub(balance)
 	}
-	insuranceReserved, err := arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx)
-	require.NoError(t, err)
+	insuranceReserved := math.ZeroInt()
+	if reserved, err := arkApp.ClaimsKeeper.InsuranceReserved.Get(ctx, chain.NoahBaseDenom); err == nil {
+		insuranceReserved = reserved
+	} else {
+		require.ErrorIs(t, err, collections.ErrNotFound)
+	}
 
 	remaining := gross
 	bufferCredit := math.MinInt(remaining, gap(target(policy.RedemptionBufferTargetRatio), bufferBefore))
@@ -242,12 +241,7 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 	trader := treasuryGovernanceVoter(t, arkApp, ctx)
 
 	for _, denom := range []string{chain.XDRBaseDenom, chain.USDBaseDenom, chain.KRWBaseDenom} {
-		require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           math.LegacyOneDec(),
-			BlockTimestamp: ctx.BlockTime(),
-			BlockHeight:    uint64(ctx.BlockHeight()),
-		}))
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 	}
 
 	capacity := markettypes.DefaultConversionPolicy()
@@ -281,7 +275,7 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 
 	msgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
 	swap := func(offer sdk.Coin, askDenom string) math.Int {
-		response, err := msgServer.Swap(ctx, &markettypes.MsgSwap{
+		response, err := msgServer.Sell(ctx, &markettypes.MsgSell{
 			Trader:         trader.String(),
 			OfferCoin:      offer,
 			AskDenom:       askDenom,
@@ -320,24 +314,17 @@ func TestBlockSettlementParksEveryConversionOnMidBlockDegradation(t *testing.T) 
 	require.True(t, drawn.IsPositive(), "coverage must survive a failure elsewhere")
 	require.True(t, drawn.LTE(redeemedOutput), "the draw is a share of the output")
 
-	var allocations, disclosures int
-	for _, event := range ctx.EventManager().Events()[eventsBefore:] {
-		switch event.Type {
-		case "ark.treasury.v1.EventExpansionAllocated":
-			allocations++
-		case "ark.treasury.v1.EventLiabilityIncomplete":
-			disclosures++
-			for _, attribute := range event.Attributes {
-				if attribute.Key == "stale_member_supply" {
-					require.Contains(t, attribute.Value, chain.KRWBaseDenom)
-				}
-			}
-		}
-	}
-	require.Equal(t, 1, allocations, "the block allocates once, however many conversions it held")
-	require.Equal(t, 1, disclosures, "one fold, one disclosure")
+	events := ctx.EventManager().ABCIEvents()[eventsBefore:]
+	require.Len(t, attributesOf(events, "ark.treasury.v1.EventExpansionAllocated"), 1,
+		"the block allocates once, however many conversions it held")
+	disclosures := attributesOf(events, "ark.treasury.v1.EventLiabilityIncomplete")
+	require.Len(t, disclosures, 1, "one fold, one disclosure")
+	require.Contains(t, disclosures[0]["stale_member_supply"], chain.KRWBaseDenom)
 }
 
+// TestMarketSettlementLateFailureRollsBackByDirection fails a conversion at its last step, after it
+// recorded what the block must settle. The failed message's writes go with its branch, so the block's
+// settlement afterwards finds nothing to place.
 func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -368,7 +355,10 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				Height: arkApp.LastBlockHeight(),
 				Time:   time.Unix(1_800_000_000, 0),
 			})
-			trader := treasuryGovernanceVoter(t, arkApp, ctx)
+			// A blocked module account trades, so the final send back to it fails
+			// after settlement has written: the latest point a swap can fail.
+			trader := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
+			require.True(t, arkApp.BankKeeper.BlockedAddr(trader))
 
 			// The reference unit is never traded here, but it denominates
 			// Market's base pool, so every quote still reads its rate.
@@ -377,15 +367,10 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 				chain.EURBaseDenom,
 				chain.USDBaseDenom,
 			} {
-				require.NoError(t, arkApp.OracleKeeper.ExchangeRate.Set(ctx, denom, oracletypes.ExchangeRate{
-					Denom:          denom,
-					Rate:           math.LegacyOneDec(),
-					BlockTimestamp: ctx.BlockTime(),
-					BlockHeight:    uint64(ctx.BlockHeight()),
-				}))
+				setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
 			}
 
-			apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(test.offerCoin))
+			apptestutil.FundModule(t, arkApp, ctx, authtypes.FeeCollectorName, sdk.NewCoins(test.offerCoin))
 			// The mint above stands in for supply that existed before this
 			// block. It bypasses Market and needs no priming: the block's
 			// valuation is folded at settlement, from final state.
@@ -393,12 +378,9 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 			before := captureMarketSettlementState(t, arkApp, ctx, trader, treasuryQuery)
 			beforeEventCount := len(ctx.EventManager().Events())
 
-			blockedRecipient := authtypes.NewModuleAddress(authtypes.FeeCollectorName)
-			require.True(t, arkApp.BankKeeper.BlockedAddr(blockedRecipient))
 			cacheCtx, _ := ctx.CacheContext()
-			_, err := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper).SwapSend(cacheCtx, &markettypes.MsgSwapSend{
-				FromAddress:    trader.String(),
-				ToAddress:      blockedRecipient.String(),
+			_, err := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper).Sell(cacheCtx, &markettypes.MsgSell{
+				Trader:         trader.String(),
 				OfferCoin:      test.offerCoin,
 				AskDenom:       test.askDenom,
 				MinimumReceive: sdk.NewInt64Coin(test.askDenom, 1),
@@ -412,6 +394,11 @@ func TestMarketSettlementLateFailureRollsBackByDirection(t *testing.T) {
 			after := captureMarketSettlementState(t, arkApp, ctx, trader, treasuryQuery)
 			require.Equal(t, before, after)
 			require.Len(t, ctx.EventManager().Events(), beforeEventCount)
+
+			// What the failed conversion recorded for settlement went with its branch.
+			require.NoError(t, arkApp.MarketKeeper.EndBlocker(ctx))
+			require.Equal(t, before, captureMarketSettlementState(t, arkApp, ctx, trader, treasuryQuery))
+			require.Empty(t, attributesOf(ctx.EventManager().ABCIEvents()[beforeEventCount:], "ark.treasury.v1.EventExpansionAllocated"))
 		})
 	}
 }

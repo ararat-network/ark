@@ -9,6 +9,7 @@ import (
 
 	oraclemetrics "github.com/ararat-network/ark/abci/oracle/metrics"
 	abcitypes "github.com/ararat-network/ark/abci/types"
+	"github.com/ararat-network/ark/pkg/chain"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
@@ -52,16 +53,17 @@ func ProcessVoteExtensions(
 	result := aggregateOracleVotes(votes, params, feeds.Denoms)
 	recordParticipationTelemetry(ctx, result)
 
+	now := chain.BlockSeconds(ctx)
 	for _, denom := range feeds.Denoms {
 		price, ok := result.prices[denom]
 		if !ok {
 			continue
 		}
 		exchangeRate := oracletypes.ExchangeRate{
-			Denom:          denom,
-			Rate:           price,
-			BlockTimestamp: ctx.BlockHeader().Time,
-			BlockHeight:    uint64(ctx.BlockHeight()),
+			Denom:       denom,
+			Rate:        price,
+			BlockTime:   now,
+			BlockHeight: chain.BlockHeight(ctx),
 		}
 		if err := oracleKeeper.SetExchangeRateWithEvent(ctx, exchangeRate); err != nil {
 			return fmt.Errorf(

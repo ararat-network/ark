@@ -12,7 +12,8 @@ gas charged, and when state writes occur, so edits must account for the surround
 | [transfer_tax.go](transfer_tax.go) | Transfer tax committed with successful message execution in the post handler. |
 | [gas_tally.go](gas_tally.go) | Per-block gas accounting consumed by Treasury's fee controller. |
 | [privilege.go](privilege.go) | Authenticated lane classification after signature verification. |
-| [gov.go](gov.go), [gov_vote.go](gov_vote.go) | Governance eligibility/validation and the vote fee floor. |
+| [sig_gas.go](sig_gas.go) | Signature gas; simulation prices the SDK client's multisig placeholder, which the SDK's consumer refuses. |
+| [gov.go](gov.go), [gov_vote.go](gov_vote.go) | Governance eligibility/validation and the vote stake floor. |
 | [authz.go](authz.go), [multisend.go](multisend.go) | Wrapped-message and multisend policy. |
 
 Ante validates signed message/fee policy before fee deduction. Signature checks precede privilege classification, so its
@@ -46,12 +47,16 @@ message branch rolled back; allowance usage records only charges that stand.
 Charging tax in ante and refunding in post was rejected because failed messages discard post writes. Charging signed
 messages in the router loses the outer fee granter. Recomputing in post duplicates metered work and weakens the
 identity between declaration and charge. This is deferred collection, with no escrow or refund.
-Execution-generated messages use the [policy router](../README.md#ibc-and-wasm-integration), whose tax and transfer
-share the dispatch cache. Later IBC timeouts retain the tax under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
+Execution-generated messages use the [policy router](../README.md#wasm-integration), whose tax and transfer
+share the dispatch cache under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
 
-Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
+A fee whose every coin is zero is fee-less, as in the SDK; it is what `--gas auto --gas-prices` estimates under. A zero
+coin beside a paying one is refused in every mode. Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
 the two-denomination stable-base-fee plus NOAH-tip path conservatively; a simulation with a payable fee meters its
-actual transfer. The tax post handler still runs during simulation so its transfer cost is included.
+actual transfer. The tax post handler still runs during simulation so its transfer cost is included. With no leg to
+price, the estimate reads NOAH's gas factor in place of the one the fee will name and charges the registry read a
+member leg adds, since only a member the Oracle still prices may pay gas: a suspended or written-off member keeps its
+factor for the tax cap and loses fee acceptance.
 
 ## Development
 
@@ -70,6 +75,19 @@ chain retains SDK decorator order while allowing this insertion.
 Signed messages and execution-generated dispatches share bounded authz leaf traversal, the one-NOAH explicit
 vote stake floor, and the MultiSend guard. Governance proposal execution uses the underlying router. Lane
 eligibility is separate from message validity; an ineligible governance transaction can still execute normally.
+At check and recheck only, the vote decorator also refuses a vote or deposit x/gov would refuse for its
+proposal's state, so a vote that arrives after a close is refused at submission and one that was pending leaves
+the pool at recheck instead of being included to fail. Check runs on committed state, and the refusal tracks what
+earlier signed messages and authz leaves in the same transaction change: a deposit may open voting for a later
+vote and a submission may create the proposal a later message names. A contract call may dispatch either, so
+everything after one is admitted. An earlier transaction in the same block can do the same, and a vote it would
+enable is refused until that transaction commits.
+
+A consensus-parameter update, signed or carried in a proposal, must leave `block.max_bytes` at least
+`MinBlockDataBytes` (8 MiB) above `evidence.max_bytes`: the proposer injects the previous block's extended
+commit as a transaction, and a block that cannot carry it is rejected by every validator with no proposer able
+to build another. The floor is a domain cap on the governance write, not a projection from the live validator
+set.
 
 MultiSend allows at most 500 outputs and charges `300 * outputs²` gas in addition to Bank's linear cost.
 At 500 outputs the surcharge is 75 million gas, roughly 84 million including Bank's output cost, beneath the

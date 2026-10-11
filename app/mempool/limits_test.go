@@ -21,11 +21,13 @@ func TestConfigValidate(t *testing.T) {
 		{"excess count", func(c *Config) { c.MaxTxs = MaxTxLimit + 1 }, "max-txs"},
 		{"zero pool bytes", func(c *Config) { c.MaxTxsBytes = 0 }, "max_txs_bytes"},
 		{"negative pool bytes", func(c *Config) { c.MaxTxsBytes = -1 }, "max_txs_bytes"},
-		{"minimum pool bytes", func(c *Config) { c.MaxTxsBytes = 1 }, ""},
+		{"minimum pool bytes", func(c *Config) { c.MaxTxsBytes, c.MaxTxBytes = 1, 1 }, ""},
 		{"maximum pool bytes", func(c *Config) { c.MaxTxsBytes = math.MaxInt64 }, ""},
 		{"zero transaction bytes", func(c *Config) { c.MaxTxBytes = 0 }, "max_tx_bytes"},
 		{"negative transaction bytes", func(c *Config) { c.MaxTxBytes = -1 }, "max_tx_bytes"},
 		{"minimum transaction bytes", func(c *Config) { c.MaxTxBytes = 1 }, ""},
+		{"transaction at the normal share", func(c *Config) { c.MaxTxsBytes, c.MaxTxBytes = 1000, 900 }, ""},
+		{"transaction above the normal share", func(c *Config) { c.MaxTxsBytes, c.MaxTxBytes = 1000, 901 }, "max_tx_bytes"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg := DefaultConfig()

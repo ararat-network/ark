@@ -14,11 +14,14 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 | [keeper/capital.go](keeper/capital.go) | Fund targets and capital requirements. |
 | [keeper/settlement.go](keeper/settlement.go) | Conversion allocation and settlement. |
 | [keeper/tax.go](keeper/tax.go) | Transfer-tax calculation. |
+| [keeper/tax_cap.go](keeper/tax_cap.go) | Tax-cap derivation and rescale, floored at one unit. |
 | [keeper/conversion_factors.go](keeper/conversion_factors.go) | Block-refreshed denomination factors. |
 | [keeper/gas_pricing.go](keeper/gas_pricing.go) | Base-fee control. |
 | [keeper/reward_funding.go](keeper/reward_funding.go) | Reward-funding window settlement. |
 | [keeper/reference_denom.go](keeper/reference_denom.go) | Reference-unit rebasing. |
 | [keeper/subsidy.go](keeper/subsidy.go) | Governance return of subsidy to the community pool. |
+| [keeper/send_restriction.go](keeper/send_restriction.go) | NOAH-only inbound fund guard. |
+| [keeper/mandate.go](keeper/mandate.go) | Committee authorisation. |
 
 [keeper/keeper.go](keeper/keeper.go) declares the collections and narrow keeper dependencies.
 [msg_server.go](keeper/msg_server.go) and [grpc_query.go](keeper/grpc_query.go) are the transaction/query boundaries;
@@ -27,15 +30,16 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 
 ## State and integration
 
-`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes conversion factors and exposure on its cadence. EndBlock advances reward funding and updates the base gas price. Conversion settlement values liability from final state; there is no preblock liability-priming call. The subsidy
+`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes exposure on its cadence. EndBlock advances reward funding, updates the base gas price, and then refreshes conversion factors, so a block's fee and tax prices are fixed when the block before it commits. Conversion settlement values liability from final state; there is no preblock liability-priming call. The subsidy
 pool's only outflows are the window settlement and `MsgReturnSubsidy`, a governance return into Distribution's
 community pool that fails if it would leave less than the minimum the proposal stated (D83). Follow the current ordering in `app/app_config.go` when editing these paths.
 
 ## Stored state and ownership
 
-`Params`, `ConversionFactors`, `RewardFunding`, `EconomicMandate`, `EconomicPolicy`, `ExposureState`, and
-`BaseGasPrice` are persistent state. Bank owns fund balances; targets and recognised liability are derived rather
-than mirrored. Claims and Reserve independently report their recognised capital. Their structurally identical Go
+`Params`, `ConversionFactors`, `RewardFunding`, `EconomicMandate`, `EconomicPolicy`, `ExposureState`,
+`ExposureRefreshPending`, and `BaseGasPrice` are persistent state. Bank owns fund balances; targets and recognised
+liability are derived rather than mirrored. Claims and Reserve independently report their recognised capital. Their
+structurally identical Go
 interfaces are explicitly bound to the intended keepers in app depinject configuration.
 
 Treasury's economic mandate carries minimum/maximum policies around the shared envelope. Governance replaces any
@@ -56,11 +60,10 @@ not a second reservation calculation. `RewardFunding` reads stored accounting wi
 No combined backing figure is exposed. There is no Treasury Reserve-transfer history: Bank and the authorising
 proposal already record those movements.
 
-Retired designs include the liability snapshot and flat 2,000-gas lookup, supply-change invalidators, and
-`PricedLiveVersion`/`TaxCapsEpoch` membership epochs. End-of-block conversion settlement has one final-state
-valuation consumer; per-block conversion factors have no membership-epoch consumer. A shared capital-accounting
-package was also rejected because the removed snapshot supplied its supposed common state and no duplicated
-arithmetic remained to extract.
+There is no liability snapshot, flat-gas liability lookup, supply-change invalidator, or membership epoch:
+end-of-block conversion settlement has one final-state valuation consumer, and per-block conversion factors have no
+epoch consumer. There is no shared capital-accounting package either, since without a snapshot there is no common
+state and no duplicated arithmetic to extract.
 
 ## Exposure sampling and refresh
 
@@ -74,17 +77,22 @@ The instrument updates are:
 
 ```text
 variance = volatility_decay * variance + (1 - volatility_decay) * clamped_return^2
+interval = volatility_decay * interval + (1 - volatility_decay) * max(1, seconds_since_last_sample)
 flow     = flow_decay * flow + (1 - flow_decay) * max(0, RedeemedValue - EligiblePrincipal)
 LR       = net_liability / circulating_NOAH
-sigma    = sqrt(variance * blocks_per_year)
+sigma    = sqrt(variance * seconds_per_year / interval)
 FR       = flow / net_liability
-raw      = (1 + liability_weight * LR) * (1 + volatility_weight * sigma) * (1 + flow_weight * FR)
-m        = clamp(step_limit(raw, previous_m, max_step), 1, multiplier_cap)
+raw      = (1 + liability_ratio_weight * LR) * (1 + volatility_weight * sigma) * (1 + flow_weight * FR)
+m        = clamp(step_limit(raw, previous_m, multiplier_max_step), 1, multiplier_cap)
 ```
 
 Circulating NOAH excludes the raw NOAH balances in the four custody accounts, not their haircut-valued recognised
 capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
-Returns are clamped before variance accumulation. Checked arithmetic and write-time caps bound the instrument;
+Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under the same
+weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and a return
+carried across a halt counts the time it spanned rather than reading as one block's move (D133). Each interval counts
+at least a second, which keeps the variance at or below the interval and sigma at most the square root of a year in
+seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
 The [economic model](../../docs/design/ECONOMIC_DESIGN.md#72-targets-and-the-exposure-multiplier) owns the indicator and target
 formulas. Requirements use the multiplier; payment denominators and the controller's own liability input do not.
@@ -97,10 +105,13 @@ a unit change would look like a market return. [Protocol monitoring](../../docs/
 
 ## Conversion factors and dynamic fees
 
-One `ConversionFactors` table serves fee prices and tax caps. BeginBlock refreshes a member with a servable rate,
-retains an existing factor through an outage, and seeds a new unpriceable member at one. The reference has an identity
-factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
-retains it until a live cross is available. A reference change atomically rebases the table,
+One `ConversionFactors` table serves fee prices and tax caps. EndBlock refreshes a member with a servable rate,
+retains an existing factor through an outage, and seeds a new unpriceable member at one. The pass runs last in
+EndBlock rather than at the next block's start, so the next block's proposal check, recheck, and execution read the
+same factors and a fee or tax that clears when proposed still clears when executed; fees price on rates one block old
+in exchange. The reference has an identity factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
+retains it until a live cross is available, and derives it from the reference alone, so it follows a live rate before
+any member is registered (D95). A reference change atomically rebases the table,
 cap, base-fee floor, and live price, so a cap update applies uniformly without a delayed per-member refresh.
 
 Storing FX factors rather than final fee prices lets an oracle outage freeze FX while the base-fee congestion
@@ -110,9 +121,12 @@ adjustment. The controller uses:
 
 ```text
 target_gas = target_utilisation * consensus_max_gas
-delta      = clamp(adjustment_rate * (paid_gas - target_gas) / target_gas, -adjustment_rate, adjustment_rate)
+delta      = clamp(adjustment_rate * (declared_gas - target_gas) / target_gas, -adjustment_rate, adjustment_rate)
 next_price = clamp(current_price * (1 + delta), min_base_gas_price, MaxBaseGasPrice)
 ```
+
+`declared_gas` is the ante's tally of declared gas limits after fee acceptance, not gas consumed; `target_utilisation`
+and `adjustment_rate` are the `base_fee_` parameters.
 
 An unbounded block or zero adjustment rate holds the price before applying its bounds. The signed-fee contract lives
 in [economic design](../../docs/design/ECONOMIC_DESIGN.md#85-the-fee-declaration-settlement-charge).
@@ -120,8 +134,10 @@ A separate fee-market dependency and refund escrow were rejected: Ark needs its 
 and standard SDK fee commitment semantics, without maintaining a fork of an incompatible fee module.
 
 `GasPrices` exposes the reference row separately from the denomination-sorted rows; clients must not infer the
-reference from list position. `ComputeTax` uses the consensus calculator and distinguishes malformed inputs,
-missing caps, unrepresentable totals, and internal failures. [Client fee construction](../../docs/clients/CLIENT_FEES.md)
+reference from list position. A member the Oracle no longer prices keeps its factor for the tax cap but is neither
+listed nor accepted for gas. `ComputeTax` uses the consensus calculator, treats a missing cap as untaxed, and
+distinguishes malformed inputs, unrepresentable totals, and internal failures; NotFound belongs to the cap and
+factor queries. [Client fee construction](../../docs/clients/CLIENT_FEES.md)
 owns the integration algorithm; [arkd](../../cmd/arkd/README.md#cli-fee-completion) owns its denomination preference.
 
 ## Reward funding and genesis
@@ -156,6 +172,12 @@ The `types/` package mixes handwritten domain code with generated Go; do not edi
 The authoritative service and event definitions are [transactions](../../proto/ark/treasury/v1/tx.proto),
 [queries](../../proto/ark/treasury/v1/query.proto), and [events](../../proto/ark/treasury/v1/event.proto).
 Keep exact fields and method inventories in those schemas; the sections above explain their behaviour and constraints.
+
+Errors are registered with their gRPC codes, so a query returns the keeper's error and the code follows it: a
+message the tax calculator cannot read is `InvalidArgument`, a tax total it cannot represent is `OutOfRange`, and a
+denomination with no conversion factor is `NotFound`. Handlers classify only the request itself.
+On a transaction path, wrap with `errorsmod.Wrapf` when the cause may carry a code: the SDK finds a transaction's
+ABCI code only through its own wrapper, so a standard-library wrap keeps the text but reports internal.
 
 ## Related documents
 

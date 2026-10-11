@@ -1,10 +1,12 @@
 package ante_test
 
 import (
+	"fmt"
 	"io"
 	"testing"
 	"time"
 
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/require"
 
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -17,6 +19,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/authz"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -76,6 +79,9 @@ func setupGovVoteTest(t *testing.T) (*app.ArkApp, sdk.Context, sdk.AccAddress, s
 	require.NoError(t, err)
 
 	poor := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+	// Proposal 1, which the fixture's votes name, is in its voting period.
+	end := ctx.BlockTime().Add(time.Hour)
+	require.NoError(t, arkApp.GovKeeper.SetProposal(ctx, govv1.Proposal{Id: 1, Status: govv1.StatusVotingPeriod, VotingEndTime: &end}))
 	return arkApp, ctx, rich, poor
 }
 
@@ -105,11 +111,6 @@ func TestGovVoteStakeFloor(t *testing.T) {
 		},
 		{
 			name:    "unstaked voter is refused",
-			msg:     vote(poor),
-			wantErr: "voting requires at least",
-		},
-		{
-			name:    "under-staked genesis bond is refused",
 			msg:     vote(poor),
 			wantErr: "voting requires at least",
 		},
@@ -160,7 +161,7 @@ func TestGovVoteStakeFloor(t *testing.T) {
 // for one who clears the floor.
 func TestGovVoteDecoratorSimulationMatchesExecution(t *testing.T) {
 	arkApp, ctx, rich, poor := setupGovVoteTest(t)
-	decorator := ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper)
+	decorator := ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper, arkApp.GovKeeper)
 	next := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
 
 	poorTx := treasuryFeeTx{msgs: []sdk.Msg{vote(poor)}}
@@ -170,10 +171,10 @@ func TestGovVoteDecoratorSimulationMatchesExecution(t *testing.T) {
 	require.ErrorContains(t, err, "voting requires at least")
 
 	richTx := treasuryFeeTx{msgs: []sdk.Msg{vote(rich)}}
-	simulated := ctx.WithGasMeter(storetypes.NewGasMeter(1_000_000))
+	simulated := ctx.WithExecMode(sdk.ExecModeSimulate).WithGasMeter(storetypes.NewGasMeter(1_000_000))
 	_, err = decorator.AnteHandle(simulated, richTx, true, next)
 	require.NoError(t, err)
-	executed := ctx.WithGasMeter(storetypes.NewGasMeter(1_000_000))
+	executed := ctx.WithExecMode(sdk.ExecModeFinalize).WithGasMeter(storetypes.NewGasMeter(1_000_000))
 	_, err = decorator.AnteHandle(executed, richTx, false, next)
 	require.NoError(t, err)
 	require.Positive(t, executed.GasMeter().GasConsumed())
@@ -246,7 +247,7 @@ func TestVoterStakeValidatorErrors(t *testing.T) {
 			}
 			err = ante.ValidateVoterStake(ctx, arkApp.StakingKeeper, voter)
 			end := ctx.BlockTime().Add(time.Hour)
-			require.NoError(t, arkApp.GovKeeper.Proposals.Set(ctx, 1, govv1.Proposal{
+			require.NoError(t, arkApp.GovKeeper.SetProposal(ctx, govv1.Proposal{
 				Id: 1, Status: govv1.StatusVotingPeriod, VotingEndTime: &end,
 			}))
 			eligible, priorityErr := arkApp.Privileges().Vouch(ctx, vote(voter))
@@ -264,6 +265,154 @@ func TestVoterStakeValidatorErrors(t *testing.T) {
 			} else {
 				require.ErrorContains(t, err, "decoding delegated validator address")
 			}
+		})
+	}
+}
+
+// TestGovVoteDecoratorRefusesClosedProposalsAtCheck pins the check-mode mirror of x/gov's status
+// rules: a vote or deposit the module would refuse is refused at check and recheck, so it leaves
+// the pool; execution and simulation pass it through to the module untouched.
+func TestGovVoteDecoratorRefusesClosedProposalsAtCheck(t *testing.T) {
+	arkApp, ctx, rich, _ := setupGovVoteTest(t)
+	decorator := ante.NewGovVoteDecorator(arkApp.AppCodec(), arkApp.StakingKeeper, arkApp.GovKeeper)
+	pass := func(ctx sdk.Context, _ sdk.Tx, _ bool) (sdk.Context, error) { return ctx, nil }
+	end := ctx.BlockTime().Add(time.Hour)
+	for id, status := range map[uint64]govv1.ProposalStatus{
+		1: govv1.StatusVotingPeriod, 2: govv1.StatusDepositPeriod, 3: govv1.StatusPassed,
+	} {
+		require.NoError(t, arkApp.GovKeeper.SetProposal(ctx, govv1.Proposal{Id: id, Status: status, VotingEndTime: &end}))
+	}
+	deposit := func(id uint64) sdk.Msg {
+		return govv1.NewMsgDeposit(rich, id, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.OneInt())))
+	}
+	voteOn := func(id uint64) sdk.Msg { return govv1.NewMsgVote(rich, id, govv1.OptionYes, "") }
+	wrapped := authz.NewMsgExec(rich, []sdk.Msg{voteOn(3)})
+	submit := &govv1.MsgSubmitProposal{Proposer: rich.String()}
+	execute := &wasmtypes.MsgExecuteContract{Sender: rich.String()}
+	wrappedExecute := authz.NewMsgExec(rich, []sdk.Msg{execute})
+	// The next proposal a submission would create is 10; 9 and 11 are missing.
+	require.NoError(t, arkApp.GovKeeper.ProposalID.Set(ctx, 10))
+
+	legacyDeposit := func(id uint64) sdk.Msg {
+		return govv1beta1.NewMsgDeposit(rich, id, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, math.OneInt())))
+	}
+	legacyWeighted := func(id uint64) sdk.Msg {
+		return govv1beta1.NewMsgVoteWeighted(rich, id, govv1beta1.NewNonSplitVoteOption(govv1beta1.OptionYes))
+	}
+	inactive, missing := govtypes.ErrInactiveProposal, errortypes.ErrNotFound
+
+	cases := []struct {
+		name    string
+		msgs    []sdk.Msg
+		refused error // the check-mode refusal; nil when the transaction is accepted
+	}{
+		{"vote in the voting period", []sdk.Msg{voteOn(1)}, nil},
+		{"vote before voting opens", []sdk.Msg{voteOn(2)}, inactive},
+		{"vote after the close", []sdk.Msg{voteOn(3)}, inactive},
+		{"vote on a missing proposal", []sdk.Msg{voteOn(9)}, inactive},
+		{"weighted vote after the close", []sdk.Msg{govv1.NewMsgVoteWeighted(rich, 3, govv1.NewNonSplitVoteOption(govv1.OptionYes), "")}, inactive},
+		{"legacy vote after the close", []sdk.Msg{govv1beta1.NewMsgVote(rich, 3, govv1beta1.OptionYes)}, inactive},
+		{"legacy weighted vote in the voting period", []sdk.Msg{legacyWeighted(1)}, nil},
+		{"legacy weighted vote after the close", []sdk.Msg{legacyWeighted(3)}, inactive},
+		{"deposit in the deposit period", []sdk.Msg{deposit(2)}, nil},
+		{"deposit in the voting period", []sdk.Msg{deposit(1)}, nil},
+		{"deposit after the close", []sdk.Msg{deposit(3)}, inactive},
+		{"deposit on a missing proposal", []sdk.Msg{deposit(9)}, missing},
+		{"legacy deposit in the deposit period", []sdk.Msg{legacyDeposit(2)}, nil},
+		{"legacy deposit after the close", []sdk.Msg{legacyDeposit(3)}, inactive},
+		{"legacy deposit on a missing proposal", []sdk.Msg{legacyDeposit(9)}, missing},
+		{"authz-wrapped vote after the close", []sdk.Msg{&wrapped}, inactive},
+		{"submission is untouched", []sdk.Msg{submit}, nil},
+		// Earlier messages in the transaction can change what a later one finds.
+		{"deposit then vote may open voting", []sdk.Msg{deposit(2), voteOn(2)}, nil},
+		{"legacy deposit then vote may open voting", []sdk.Msg{legacyDeposit(2), voteOn(2)}, nil},
+		{"vote then deposit executes the vote first", []sdk.Msg{voteOn(2), deposit(2)}, inactive},
+		{"deposit then vote on a closed proposal", []sdk.Msg{deposit(3), voteOn(3)}, inactive},
+		{"submission then vote on the proposal it creates", []sdk.Msg{submit, voteOn(10)}, nil},
+		{"submission then deposit on the proposal it creates", []sdk.Msg{submit, deposit(10)}, nil},
+		{"two submissions then a vote on the second", []sdk.Msg{submit, submit, voteOn(11)}, nil},
+		{"submission then vote on a proposal it does not create", []sdk.Msg{submit, voteOn(11)}, inactive},
+		{"vote on the next proposal without a submission", []sdk.Msg{voteOn(10)}, inactive},
+		// A contract may dispatch a deposit or a submission, so nothing after one is refused.
+		{"contract call then vote before voting opens", []sdk.Msg{execute, voteOn(2)}, nil},
+		{"contract call then vote on the next proposal", []sdk.Msg{execute, voteOn(10)}, nil},
+		{"contract call then deposit on a missing proposal", []sdk.Msg{execute, deposit(9)}, nil},
+		{"authz-wrapped contract call then vote after the close", []sdk.Msg{&wrappedExecute, voteOn(3)}, nil},
+		{"vote before voting opens then contract call", []sdk.Msg{voteOn(2), execute}, inactive},
+	}
+	for _, mode := range []sdk.ExecMode{sdk.ExecModeCheck, sdk.ExecModeReCheck, sdk.ExecModeFinalize, sdk.ExecModeSimulate, sdk.ExecModeProcessProposal} {
+		for _, tc := range cases {
+			t.Run(fmt.Sprintf("mode %d/%s", mode, tc.name), func(t *testing.T) {
+				_, err := decorator.AnteHandle(ctx.WithExecMode(mode), treasuryFeeTx{msgs: tc.msgs}, mode == sdk.ExecModeSimulate, pass)
+				if tc.refused == nil || (mode != sdk.ExecModeCheck && mode != sdk.ExecModeReCheck) {
+					require.NoError(t, err, "only check and recheck refuse; x/gov decides in a block")
+					return
+				}
+				require.ErrorIs(t, err, tc.refused)
+			})
+		}
+	}
+}
+
+// TestVoterStakeWalkStopsAtDelegationCap pins the walk's bound: stake behind the hundredth
+// delegation is not counted, whether the delegations ahead of it hold dust or name no validator.
+func TestVoterStakeWalkStopsAtDelegationCap(t *testing.T) {
+	arkApp, ctx, _, _ := setupGovVoteTest(t)
+	floor := chain.NativeBaseAmount(1)
+
+	// The walk visits a voter's delegations in validator address order: missing validators sort
+	// ahead of live ones, and a live validator's share is worth one base unit.
+	const missingPrefix, livePrefix = 0x08, 0x10
+	valAddr := func(prefix byte, i int) sdk.ValAddress {
+		addr := make([]byte, 20)
+		addr[0], addr[18], addr[19] = prefix, byte(i>>8), byte(i)
+		return addr
+	}
+	for i := range 101 {
+		require.NoError(t, arkApp.StakingKeeper.SetValidator(ctx, stakingtypes.Validator{
+			OperatorAddress: valAddr(livePrefix, i).String(),
+			Status:          stakingtypes.Bonded,
+			Tokens:          floor,
+			DelegatorShares: math.LegacyNewDecFromInt(floor),
+		}))
+	}
+
+	tests := []struct {
+		name    string
+		dust    int  // delegations ahead of the one holding the floor
+		missing bool // the dust delegations name no validator
+		wantErr error
+	}{
+		{name: "stake on the hundredth delegation counts", dust: 99},
+		{name: "stake past the hundredth delegation is not counted", dust: 100, wantErr: errortypes.ErrUnauthorized},
+		{name: "missing validators under the bound are skipped", dust: 99, missing: true},
+		{name: "missing validators count toward the bound", dust: 100, missing: true, wantErr: errortypes.ErrUnauthorized},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			voter := sdk.AccAddress(secp256k1.GenPrivKey().PubKey().Address())
+			delegate := func(val sdk.ValAddress, shares math.LegacyDec) {
+				require.NoError(t, arkApp.StakingKeeper.SetDelegation(ctx, stakingtypes.NewDelegation(voter.String(), val.String(), shares)))
+			}
+			staked := tc.dust
+			if tc.missing {
+				staked = 0
+			}
+			for i := range tc.dust {
+				prefix := byte(livePrefix)
+				if tc.missing {
+					prefix = missingPrefix
+				}
+				delegate(valAddr(prefix, i), math.LegacyOneDec())
+			}
+			delegate(valAddr(livePrefix, staked), math.LegacyNewDecFromInt(floor))
+
+			err := ante.ValidateVoterStake(ctx, arkApp.StakingKeeper, voter)
+			if tc.wantErr == nil {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorIs(t, err, tc.wantErr)
 		})
 	}
 }

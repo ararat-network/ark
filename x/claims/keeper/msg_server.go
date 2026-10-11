@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/claims/types"
 )
@@ -58,8 +59,8 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 	envelope, committeeAddress, err := mandate.Next(
 		current.Envelope,
 		msg.Committee,
-		msg.ActivationHeight,
-		msg.ExpiryHeight,
+		msg.ActivationTime,
+		msg.ExpiryTime,
 	)
 	if err != nil {
 		return nil, err
@@ -78,29 +79,31 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		if err := claimsMandate.Validate(); err != nil {
 			return nil, err
 		}
-	}
-	if claimsMandate.Committee == m.k.authority || claimsMandate.Committee == msg.Authority {
-		return nil, errors.New("Claims committee must be distinct from the Claims authority")
-	}
-	if msg.Committee != "" {
-		// Reject already-expired appointments: they cannot act and would only displace the
-		// incumbent, advance the term, and reset allowance.
-		if height := uint64(sdkCtx.BlockHeight()); msg.ExpiryHeight <= height {
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
+		if claimsMandate.Committee == m.k.authority || claimsMandate.Committee == msg.Authority {
+			return nil, errors.New("Claims committee must be distinct from the Claims authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		now := chain.BlockSeconds(ctx)
+		if claimsMandate.ExpiryTime <= now {
 			return nil, fmt.Errorf(
-				"Claims mandate expiry height %d is not after current height %d",
-				msg.ExpiryHeight,
-				height,
+				"%s expires at time %d, which is not after the current block time %d",
+				types.ClaimsMandateLabel,
+				claimsMandate.ExpiryTime,
+				now,
 			)
 		}
 		params, err := m.k.Params.Get(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("getting Claims params: %w", err)
 		}
-		// The envelope validated activation < expiry, so the span subtraction
-		// cannot underflow. A span shorter than the cancellation period would
-		// leave the committee unable to submit any claim for the whole
-		// appointment, because every closing height would land past expiry.
-		if msg.ExpiryHeight-msg.ActivationHeight < params.ClaimCancellationPeriodBlocks {
+		// The usable span runs from the later of activation and now to expiry: a past activation
+		// starts the window here, not then. The envelope validated activation < expiry and the
+		// check above now < expiry, so the subtraction cannot underflow. A span shorter than the
+		// cancellation period would leave the committee unable to submit any claim for the whole
+		// appointment, because every closing time would land past expiry.
+		if claimsMandate.ExpiryTime-max(claimsMandate.ActivationTime, now) < params.ClaimCancellationPeriod {
 			return nil, errors.New("Claims mandate active span cannot be shorter than the claim cancellation period")
 		}
 	}
@@ -111,11 +114,11 @@ func (m msgServer) SetClaimsMandate(ctx context.Context, msg *types.MsgSetClaims
 		return nil, fmt.Errorf("resetting Claims allowance usage: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventClaimsMandateSet{
-		Term:             claimsMandate.Term,
-		Committee:        claimsMandate.Committee,
-		ActivationHeight: claimsMandate.ActivationHeight,
-		ExpiryHeight:     claimsMandate.ExpiryHeight,
-		CommitteeShape:   claimsMandate.CommitteeShape,
+		Term:           claimsMandate.Term,
+		Committee:      claimsMandate.Committee,
+		ActivationTime: claimsMandate.ActivationTime,
+		ExpiryTime:     claimsMandate.ExpiryTime,
+		CommitteeShape: claimsMandate.CommitteeShape,
 	}); err != nil {
 		return nil, fmt.Errorf("emitting Claims mandate: %w", err)
 	}
@@ -134,10 +137,10 @@ func (m msgServer) SubmitClaim(ctx context.Context, msg *types.MsgSubmitClaim) (
 	}
 	claimID, err := m.k.submitClaim(ctx, claimSubmission{
 		Submitter: msg.Authority,
-		Origin:    types.ClaimAuthority_CLAIM_AUTHORITY_GOVERNANCE,
 		Reference: msg.Reference,
 		Recipient: msg.Recipient,
 		Amount:    msg.Amount,
+		MaxOffer:  msg.MaxOffer,
 	})
 	if err != nil {
 		return nil, err
@@ -156,14 +159,12 @@ func (m msgServer) CommitteeSubmitClaim(ctx context.Context, msg *types.MsgCommi
 		return nil, err
 	}
 	claimID, err := m.k.submitClaim(ctx, claimSubmission{
-		Submitter:           msg.Committee,
-		Origin:              types.ClaimAuthority_CLAIM_AUTHORITY_COMMITTEE,
-		MandateTerm:         claimsMandate.Term,
-		MandateExpiryHeight: claimsMandate.ExpiryHeight,
-		CommitteeClaimLimit: claimsMandate.CommitteeClaimLimit,
-		Reference:           msg.Reference,
-		Recipient:           msg.Recipient,
-		Amount:              msg.Amount,
+		Submitter: msg.Committee,
+		Mandate:   &claimsMandate,
+		Reference: msg.Reference,
+		Recipient: msg.Recipient,
+		Amount:    msg.Amount,
+		MaxOffer:  msg.MaxOffer,
 	})
 	if err != nil {
 		return nil, err

@@ -1,6 +1,6 @@
 # Ark: Stability and Capital
 
-Whitepaper · Draft for discussion · 11 September 2026
+Whitepaper · Draft for discussion
 
 ## Abstract
 
@@ -68,7 +68,7 @@ and a technically functioning chain can support a currency that has lost demand.
 rather than appearing only as qualifications to it.
 
 This paper develops the economic argument for technically literate readers without assuming knowledge of the underlying
-blockchain framework. It describes the current implementation and the launch policy settled on 11 September 2026. The
+blockchain framework. It describes the current implementation and launch policy. The
 repository's subsystem documentation owns the detailed execution contracts; this paper explains how those contracts fit
 together and what they can reasonably accomplish. Worked examples illustrate mechanics; launch allocations and settings
 are identified separately and are not forecasts.
@@ -174,8 +174,9 @@ delegation, and public decision records is to make the consequences visible when
 
 NOAH is Ark's native asset. It secures the chain through staking, can pay transaction fees, and is received or issued
 when users convert between NOAH and Ark currencies. There is no scheduled staking inflation or routine issuance to
-finance protocol expenses. After the initial allocation, new NOAH is created through currency conversion. Separate
-authorised Reserve burns can also reduce existing supply.
+finance protocol expenses. After the initial allocation, new NOAH is created only through currency conversion. Supply
+falls through conversion settlement's burns, authorised Reserve burns, slashing, vetoed governance deposits, and
+contracts burning coins they hold.
 
 The launch currency family comprises units tracking the Australian, Canadian, Singapore, and United States dollars; the
 Chinese yuan; the euro; sterling; the Japanese yen; the South Korean won; and the Mexican peso. A holder owns
@@ -312,7 +313,7 @@ flow. Opposing flow can relieve the imbalance. Each block also reduces it by a g
 capacity to recover over time. A minimum spread applies even when calculated price impact is small. Depth, recovery
 period, and minimum spread form one conversion policy.
 
-The launch policy sets the pool depth at 5,000,000 XDR, the minimum spread at 2%, and the recovery period at
+The launch policy sets the pool depth at 100,000 XDR, the minimum spread at 2%, and the recovery period at
 14,400 blocks, approximately one day. Direct currency exchanges retain a 0.25% default Tobin charge. These settings
 govern conversion cost; the fund seeds are separate real balances. [Ark: Launch genesis][ark-genesis]
 
@@ -420,9 +421,10 @@ Ark reports the funds separately rather than adding them into a single backing p
 ### 6.2 Measuring the obligation
 
 Fund requirements start with the currency liability. Supply in active or issuance-halted currencies is valued using
-fresh oracle rates. Suspended supply with an activated settlement plan is valued at the plan's committed rate. Supply
-whose ordinary feed is stale is recorded separately, with a last-known valuation retained where available. Untrusted
-suspended supply without an active settlement commitment is disclosed without assigning an invented rate. Written-off
+fresh oracle rates. Suspended supply with a settlement plan is valued at the plan's committed rate from the block the
+plan opens, before holders can settle at its activation. Supply whose ordinary feed is stale is recorded separately,
+with a last-known valuation retained where available. Untrusted suspended supply with no settlement plan is disclosed
+without assigning an invented rate. Written-off
 supply is separately disclosed while the asset remains written off, but no longer recognised as an obligation;
 retirement preserves the resolution record.
 
@@ -507,8 +509,8 @@ into the Reserve.
 
 An authorised Reserve committee has narrower powers. Deployments consume a gross term allowance, respect a remaining
 NOAH floor, and use approved destinations. Committee commitments to the other funds are limited by the receiving fund's
-gross-basis shortfall and the Reserve floor. Committee NOAH burns require recognised surplus, a complete liability
-valuation, and preservation of that floor. Governance can make broader decisions through its own messages, subject to
+gross-basis shortfall and the Reserve floor. Committee NOAH burns require recognised surplus that survives the burn
+itself, a complete liability valuation, and preservation of that floor. Governance can make broader decisions through its own messages, subject to
 the rules those messages enforce.
 
 A commitment reopens part of the Reserve's funding gap. Later expansion may refill that gap before reaching Insurance or
@@ -518,8 +520,8 @@ expansion towards rebuilding the Reserve.
 
 When the overall liability valuation is incomplete, the ordinary expansion waterfall cannot reliably determine surplus.
 Ark parks the whole block's gross expansion proceeds in the Reserve and burns none of them. Redemption funding continues
-against the recognised net basis, including last-known liability where available. Suspended untrusted supply without an
-active plan contributes no invented value to that denominator. These rules preserve resources without pretending that an
+against the recognised net basis, including last-known liability where available. Suspended untrusted supply with no
+plan contributes no invented value to that denominator. These rules preserve resources without pretending that an
 incomplete report is a complete measure of exposure. [Ark: Economic design][ark-economics]
 
 ## 7 Financing security
@@ -560,12 +562,12 @@ governance-set rate and a cap derived from an amount in the protocol reference u
 rate means no transfer tax. NOAH transfers are untaxed. Ordinary self-directed conversions have their own conversion
 charges and are outside this transfer-tax base.
 
-The launch rate is 0.5%, capped at the equivalent of 1,000 XDR per taxable input. At that rate, the proportional
-charge reaches the cap at 200,000 XDR of transferred value. The base gas-price floor is 0.02 XDR per 200,000 gas,
+The launch rate is 0.5%, capped at the equivalent of 100 XDR per taxable transfer. At that rate, the proportional
+charge reaches the cap at 20,000 XDR of transferred value. The base gas-price floor is 0.02 XDR per 200,000 gas,
 with a 50% utilisation target and a maximum adjustment of 2.5% per block. [Ark: Launch genesis][ark-genesis]
 
 The tax is part of the transaction's declared payment contract. Client-visible transfers and transfers generated during
-supported contract or interchain execution are assessed through the relevant execution paths. Successful taxable
+contract execution are assessed through the relevant execution paths. Successful taxable
 transfers pay their tax in addition to the principal; recipients do not silently receive less to fund it. Internal fund
 movements are not treated as user transfers. Failed message execution pays applicable gas but does not complete a
 transfer-tax payment for the reverted operation.
@@ -602,10 +604,10 @@ combined target of `v + o` NOAH per block, balance `S`, and no qualifying revenu
 `S / (v + o)` blocks. Actual payments occur at funding-window boundaries. Changing targets or revenue changes that
 runway; a larger launch seed extends it without creating a recurring source of income.
 
-The launch seed is 100,000,000 NOAH. At 0.025 NOAH per block per seat and 5,256,000 assumed blocks per year, each
+The launch seed is 50,000,000 NOAH. At 0.025 NOAH per block per seat and 5,256,000 assumed blocks per year, each
 seat adds 131,400 NOAH to the annual funding target. With no qualifying revenue, replenishment, target changes, or
-withdrawals, the seed covers approximately 50.7 years for fifteen seats or 7.6 years for one hundred. These examples
-do not fix the number of genesis seats. The opening-price assumption used for bootstrap pricing is one USD per NOAH;
+withdrawals, the seed covers approximately 38.1 years for ten seats or 3.8 years for one hundred. These examples
+do not fix the number of genesis seats. The opening-price assumption used for bootstrap pricing is one XDR per NOAH, about 1.371 USD;
 it is not a market-price guarantee or a dollar-denominated reward commitment.
 
 Governance can return subsidy NOAH to the community pool through a fixed-destination transfer stating an amount
@@ -627,30 +629,34 @@ Within the existing binary, governance can act through the messages it authorise
 when those rules need to change. It remains subject to current message validation and cannot make an otherwise invalid
 state transition valid merely by approving it.
 
-The launch distributes equal staking grants to the founding validator seats, locked for four years and vesting over
-the six after, holds the member and contributor distribution in the Disbursement module from genesis, and leaves the
+The launch distributes a 5,000,000 NOAH staking grant to each founding validator seat, the founder's at half the
+others' sum, a third of the founding stake, all locked for four years and vesting over the four after; it holds the
+member and contributor distribution in the Disbursement module from genesis, and leaves the
 remainder in the governance-controlled community pool. Entry after
 launch is open: a validator
 bonds NOAH it holds, and no proposal grants a seat. The initial trust model is therefore authority-based membership
-operating on proof-of-stake machinery until distributed NOAH is bonded; equal grants establish equal starting stake,
-while voting and rewards remain governed by the underlying stake-based rules. Section 10.2 sets out the grants and
+operating on proof-of-stake machinery until distributed NOAH is bonded; the founder spreads the larger seat across the
+other nodes so no node holds much more than a seat, while voting and rewards remain governed by the underlying
+stake-based rules. Section 10.2 sets out the grants and
 community allocation. [Ark: Threat model][ark-threat]
 
 Some decisions require a faster response than a full voting cycle. Governance may appoint committees to specific roles,
-each with its own address, term, activation height, and expiry height. A committee transaction must name the current
-term and execute within the appointment window. Replacement or disabling advances the term, making old prepared
+each with its own address, term, activation time, and expiry time, measured in block time. A committee transaction
+must name the current term and execute within the appointment window. Replacement or disabling advances the term, making old prepared
 transactions unusable even if the same members are appointed later.
 
-| Role            | Delegated authority                                                                |
-| --------------- | ---------------------------------------------------------------------------------- |
-| Economic policy | Adjust reward targets, fund ratios, and exposure weights within a corridor         |
-| Conversion      | Adjust pool policy and Tobin charges within a corridor                             |
-| Reserve         | Deploy, record positions, commit funds, and burn within specific bounds            |
-| Claims          | Submit covered claims within a term allowance and cancel eligible committee claims |
-| Asset emergency | Suspend an eligible currency once per currency per term                            |
-| Security        | Schedule or cancel its own upgrade plan and recover an IBC client                  |
+| Role            | Delegated authority                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Economic policy | Adjust reward targets, fund ratios, and exposure weights within a corridor                       |
+| Conversion      | Adjust pool policy and Tobin charges within a corridor                                           |
+| Reserve         | Deploy, record positions, commit funds, and burn within specific bounds                          |
+| Claims          | Submit covered claims within a term allowance and cancel eligible committee claims               |
+| Asset emergency | Suspend an eligible currency once per currency per term                                          |
+| Security        | Schedule or cancel its own upgrade plan                                                          |
+| Grants          | Appoint the registrar, suspend and reinstate members, award compensation within a term allowance |
 
-The oracle's feeds and protocol reference remain governance decisions. There is no delegated power to change every
+The grants committee's registrar is a single key that registers members within the tranche governance has opened; the
+committee appoints and rotates it without a vote, and every committee appointment clears it. The oracle's feeds and protocol reference remain governance decisions. There is no delegated power to change every
 parameter, spend every fund, or submit arbitrary messages with governance authority. Separate roles make it possible to
 replace a failed operator without reappointing all the others. [Ark: Authority model][ark-economics]
 
@@ -668,7 +674,7 @@ to existing claims. The accounting follows commitments independently of who curr
 
 The launch appointment policy uses separate 3-of-5 multisignature accounts for Security and Asset emergency, appointed
 in the first governance cycle, and 4-of-7 accounts for the deliberative committees when their work is needed. Terms
-last one chain year, with reappointment required. Committee keys are dedicated hardware-backed keys, and committee gas
+last a year of block time, with reappointment required. Committee keys are dedicated hardware-backed keys, and committee gas
 comes from members' liquid floats. The protocol authenticates the appointed address; governance chooses the members
 and enacts the appointments. Separate addresses do not prove that memberships or interests are independent.
 [Ark: Launch genesis][ark-genesis]
@@ -679,8 +685,8 @@ The asset emergency committee can suspend ordinary conversion for a currency. It
 off holders, restore issuance, change the reference unit, or transfer their balances. One suspension per asset per term
 prevents the same appointment from repeatedly undoing governance's recovery of that asset.
 
-The security committee deals with code and connectivity repair. It may schedule an upgrade when the slot is empty or
-contains its own plan, cancel its own plan, and invoke the specified client-recovery path. It cannot replace or cancel a
+The security committee deals with code repair. It may schedule an upgrade when the slot is empty or contains its own
+plan, and cancel its own plan; with no IBC on the chain there is no client to recover. It cannot replace or cancel a
 governance-scheduled upgrade. These powers do not give it arbitrary fund-transfer authority, but an upgrade schedule can
 still halt the whole chain. The mandate is therefore consequential even though it owns no money. [Ark:
 Security][ark-security]
@@ -765,9 +771,9 @@ market value. [Ark: Asset lifecycle][ark-asset]
 ### 9.4 Fixed-rate settlement
 
 Governance may open a settlement plan for a suspended currency, or reinstate a written-off currency into suspension with
-a plan. The plan specifies a fixed NOAH redemption rate and an earliest closing height. Activation follows a governed
+a plan. The plan specifies a fixed NOAH redemption rate and an earliest closing time. Activation follows a governed
 delay. Before activation the plan can be cancelled; after activation its terms cannot be amended and write-off cannot
-occur before the announced earliest closing height.
+occur before the announced earliest closing time.
 
 Holders settle by surrendering and burning currency for the committed NOAH amount, rounded to whole base units.
 Settlement does not use the suspended currency's oracle rate, the virtual pool, or an ordinary conversion spread. It
@@ -780,7 +786,7 @@ commit no more than 200,000 NOAH of gross output. Buffer use may reduce the net 
 require that amount to be pre-funded in escrow. Governance is accepting a bounded potential dilution cost.
 
 The fixed commitment is in NOAH. Its external purchasing power can change during the settlement window, and the rate may
-recognise only part of the currency's former reference value. An earliest closing height protects time to exercise the
+recognise only part of the currency's former reference value. An earliest closing time protects time to exercise the
 stated exit; it is not an automatic expiry. A later governance act is needed to write off the residual.
 
 Recovery is a separate route. Governance can restore an asset to ordinary redemption, initially with issuance still
@@ -802,64 +808,77 @@ governance decided to extinguish.
 
 Insurance provides another response to covered losses, but holding an Ark currency does not create automatic eligibility
 or a guaranteed payout. Governance or the authorised Claims committee decides which claims to submit. Each claim fixes a
-recipient and NOAH amount, reserves existing unencumbered Insurance funds, and enters a cancellation period. Committee
-submissions must also fit their remaining gross allowance and close within the term.
+recipient and an amount in NOAH or an Ark currency, reserves existing unencumbered Insurance funds, and enters a
+cancellation period; a currency claim converts what Insurance does not already hold when it is submitted. Committee
+submissions must also fit their remaining gross allowance, which counts what a claim's conversion spent, and close
+within the term.
 
-Before the closing height, governance can cancel a pending claim; the committee's cancellation power is narrower. At the
-closing height the chain pays automatically, without requiring the recipient to submit another transaction. A claim that
+Before the closing time, governance can cancel a pending claim; the committee's cancellation power is narrower. At the
+closing time the chain pays automatically, without requiring the recipient to submit another transaction. A claim that
 cannot be paid under the specified record and custody checks ends as failed and releases its reservation. Reservations
 prevent the same NOAH being promised twice, but they cannot make an adjudication fair or an unfunded loss disappear.
-Insurance payment in NOAH also retains exposure to NOAH's market value. [Ark: Claims][ark-claims]
+A claim paid in NOAH also retains exposure to NOAH's market value; one paid in an Ark currency fixes its amount when it
+is submitted, and its conversion stays spent if the claim is later cancelled. [Ark: Claims][ark-claims]
 
 ## 10 Network and launch
 
 ### 10.1 A monetary application on a sovereign chain
 
 Ark uses Cosmos SDK application modules, CometBFT consensus, and NOAH staking. The current implementation uses Cosmos
-SDK v0.54.3. Oracle vote extensions are part of the block-processing pipeline, and the transaction gas budget is finite.
+SDK v0.54.4. Oracle vote extensions are part of the block-processing pipeline, and the transaction gas budget is finite.
 Six-second blocks are the assumption used to translate many policy windows into hours or days; elapsed wall-clock time
 still depends on actual block production. [Ark: Application][ark-app]
 
-The chain supports CosmWasm contracts and IBC interoperability. Contracts can build services using the issued
-currencies, but their balances and promises do not become protocol liabilities merely because they run on Ark. Likewise,
-a bridged token is not an Ark-issued currency and does not automatically qualify for conversion or fund recognition.
-Contract-generated and supported interchain transfers must follow the applicable execution-tax rules.
+The chain supports CosmWasm contracts and has no IBC. Contracts can build services using the issued currencies, but
+their balances and promises do not become protocol liabilities merely because they run on Ark. Contract-generated
+transfers must follow the applicable execution-tax rules.
 
-The curated launch configuration allows contract upload and instantiation while keeping IBC closed through an empty
-client-type allowlist and disabled transfer and interchain-account settings. Opening external routes is a governance and
-operational sequence, including the intended rate limits. Installed interoperability code is not evidence that a live
-route is enabled or that its counterparty is safe.
+The curated launch configuration allows contract upload and instantiation. A contract's IBC messages, queries, and
+entry points are refused, since the chain can open no channel.
 
 ### 10.2 Launch allocation and validator seats
 
-Ark starts with 1,000,000,000 NOAH. Of this, 100,000,000 funds the subsidy pool, 50,000,000 the Reserve, 10,000,000
-the Buffer, and 5,000,000 Insurance. Of the remaining 835,000,000, the Disbursement module holds 732,000,000 as the
-member and contributor pools, 439,200,000 and 292,800,000, and 103,000,000 enters the community pool before
+Ark starts with 1,000,000,000 NOAH. Of this, 50,000,000 funds the subsidy pool, 50,000,000 the Reserve, 10,000,000
+the Buffer, and 5,000,000 Insurance. Of the remaining 885,000,000, the Disbursement module holds 782,000,000 as the
+member and contributor pools, 469,200,000 and 312,800,000, and 103,000,000 enters the community pool before
 validator-seat grants.
 There is no separate investor, backer, or public allocation at launch. The initial supply can subsequently change
 through conversion and authorised burns; it is not a permanent maximum supply.
 
-Each founding validator seat receives 5,000,000 NOAH in a staking grant that vests continuously from the fourth year
-after genesis to the tenth, and 300,000 NOAH of liquid float, both from the community pool. The grant is
-self-delegated at genesis and can participate in staking and governance and be slashed, but cannot be transferred
-until it vests. The float pays operating expenses and permits initial currency conversion.
-For `n` seats, the community pool retains `103,000,000 − 5,300,000n` NOAH, so it funds at most nineteen seats. Seat assembly transfers existing supply
-and raises both reward targets by the per-seat shares in Section 7.1; it creates no additional NOAH.
+Each founding seat is a 5,000,000 NOAH staking grant, whatever the count, vesting
+continuously from the fourth year after genesis to the eighth, with 50,000 NOAH of liquid float, both from the community pool. The
+founder's seat is half the other seats' sum, a third of the founding stake, 22,500,000 NOAH at ten seats, on the same
+account and schedule and from the same pool: consensus weight for the launch window, while the founder's work before
+launch is paid by a 15,000,000 NOAH grant at the ownership cap from the contributor pool, and the founder's work after
+launch by a compensation stream of 10,000,000 NOAH over ten years, the compensation cap's whole room at the opening
+price. Seat assembly writes both into genesis as governance awards, which every founding validator approves by signing
+against the file and governance may still cancel. Each seat grant can participate in staking and governance and be
+slashed, but cannot be transferred until it vests. Every gentx self-delegates one seat; the founder delegates the rest
+across the other seats in the first blocks, so no node holds a third of consensus power while one vote from the
+founder's account carries the whole seat. The float pays operating expenses.
+For `n` seats, between seven and thirteen, the community pool retains `103,000,000 − 5,050,000n − 2,500,000(n − 3)`
+NOAH, the founder's excess over one seat being the last term: the count sets the pool's cost, not each grant. Seat assembly
+transfers existing supply and raises both reward targets by the per-seat shares in Section 7.1; it creates no
+additional NOAH.
 
-The founder's work before launch is paid from the contributor pool rather than at genesis: one grant of 15,000,000
-NOAH, 20,000,000 with the founder's seat, 2% of initial supply. It is proposed only once public bonded stake exceeds
-100,000,000 NOAH, when the founders' own stake can neither pass nor block a proposal, and is paid under the ownership
-limits that bind every contributor grant: at each payment the founding validators together hold at most 30% of
-bonded stake, and with ten seats the founder under a tenth. [Ark: Disbursement plan][ark-disbursement]
+At genesis the founder can block any proposal alone and the other seats together cannot pass over the founder's no;
+the founder passes nothing alone, a third being under quorum, and passing takes the founder plus half the other seats.
+Public bonded stake dissolves this on a fixed schedule: the seat's sole block with the first few delegations, the
+founder with `m` other seats once the public has bonded `15,000,000m` NOAH, and the seat with the founder's grant
+and stream beside it once the public has bonded twice what they have paid. Every ownership payment from the pools is bound
+by a per-record cap of 15,000,000 NOAH over every grant, a governance parameter the seat sits outside, so no
+contributor is paid more ownership than the founder's grant. [Ark: Disbursement plan][ark-disbursement]
 
 The validator-set cap is one hundred, unbonding takes twenty-one days, and the minimum commission is 5%. Governance
 uses a 50% quorum, a 66.7% ordinary approval threshold, and a 75% expedited threshold, with the SDK's applicable
 tally rules. Ordinary voting lasts two days and expedited voting one day; deposits are 1,000 and 5,000 NOAH
-respectively. Evidence age is aligned with unbonding. The settlement activation delay is three days, allowing a
-normal governance vote to cancel a mistaken plan before activation; claims retain a one-week cancellation period.
+respectively. Evidence age is aligned with unbonding. The settlement activation delay and the claims cancellation
+period are both one week, long enough for a full deposit period and a normal vote to cancel a mistaken plan or veto a
+claim. Both are measured in block time, as the vote is, so a faster block pace cannot shorten them.
 
-The economic settings are settled. What remains at genesis assembly is to add the actual validator seats and their
-transactions, derive aggregate reward targets from the seat count, and set the start time. The zero aggregate targets
+The economic settings are settled. What remains at genesis assembly is to set the start time, add the actual validator
+seats with the founder's grant and stream, derive aggregate reward targets from the seat count, and collect the
+validators' transactions. The zero aggregate targets
 in the base artefact represent zero assembled seats. Empty mandates implement the decision to appoint committees
 after launch, following the schedule in Appendix B. [Ark: Launch genesis][ark-genesis]
 
@@ -915,8 +934,8 @@ arithmetic, price eligibility, and execution order. They are not a second normat
 
 ### A.2 Liability and targets
 
-Each included currency uses the rate assigned by its pricing branch: fresh oracle, active settlement, or separately
-identified last-known evidence. Unvalued exposures remain disclosure entries rather than terms with fabricated rates.
+Each included currency uses the rate assigned by its pricing branch: fresh oracle, an opened settlement plan, or
+separately identified last-known evidence. Unvalued exposures remain disclosure entries rather than terms with fabricated rates.
 
 ```text
 L_g = Σ_i s_i × r_i
@@ -1011,8 +1030,8 @@ rounding.
 
 ## Appendix B: Launch snapshot
 
-The launch policy was settled and checked against the curated genesis on 11 September 2026. **Decided** identifies
-an explicit launch choice; **Default** identifies a retained module or SDK default confirmed in that review.
+The snapshot matches the curated genesis. **Decided** identifies an explicit launch choice; **Default** identifies a
+retained module or SDK default.
 **Assembly** identifies values derived when the validator seats and final start time are added. No economic setting
 in this snapshot remains an open launch-policy decision. Block-to-time translations assume six-second blocks; the
 maintained [launch record][ark-genesis] owns the full configuration and assembly procedure.
@@ -1022,36 +1041,36 @@ maintained [launch record][ark-genesis] owns the full configuration and assembly
 | Area | Launch value | Status |
 | --- | --- | --- |
 | Initial supply | 1,000,000,000 NOAH | Decided |
-| Subsidy pool seed | 100,000,000 NOAH; 10% of initial supply | Decided |
+| Subsidy pool seed | 50,000,000 NOAH; 5% of initial supply | Decided |
 | Reserve seed | 50,000,000 NOAH; 5% | Decided |
 | Buffer seed | 10,000,000 NOAH; 1% | Decided |
 | Insurance seed | 5,000,000 NOAH; 0.5% | Decided |
-| Disbursement pools | 439,200,000 NOAH for members and 292,800,000 NOAH for contributors | Decided |
-| Community pool | 103,000,000 NOAH before seats; subtract 5,300,000 per seat | Decided |
-| Seat staking grant | 5,000,000 NOAH, self-delegated at genesis, vesting from year four to year ten | Decided |
-| Seat liquid float | 300,000 NOAH | Decided |
+| Disbursement pools | 469,200,000 NOAH for members and 312,800,000 NOAH for contributors | Decided |
+| Community pool | 103,000,000 NOAH before seats; subtract 5,050,000 per seat and the founder's excess, 2,500,000 × (seats − 3) | Decided |
+| Seat staking grant | 5,000,000 NOAH per seat, the founder's half the others' sum, 67,500,000 at ten; one seat self-delegated at genesis, vesting from year four to year eight | Decided |
+| Seat liquid float | 50,000 NOAH | Decided |
 | Validator funding target | 0.0175 NOAH per block per seat | Assembly |
 | Oracle funding target | 0.0075 NOAH per block per seat | Assembly |
-| Transfer-tax rate and cap | 0.5%; 1,000 XDR per taxable input | Decided |
+| Transfer-tax rate and cap | 0.5%; 100 XDR per taxable transfer | Decided |
 | Buffer, Reserve, Insurance target ratios | 30%, 15%, 5% | Decided |
 | Reward funding window | 100,800 blocks, approximately one week | Decided |
 | Distribution community tax | 0; the community pool is separately seeded | Decided |
 
-For fifteen seats, the allocations are 75,000,000 NOAH in seat grants, 4,500,000 liquid NOAH, and 23,500,000 NOAH
-remaining in the community pool, alongside the four fund seeds and the disbursement pools. This illustrates the fixed
-allocation rule, not an announced initial seat count; more than nineteen seats would need smaller disbursement pools.
-The subsidy's zero-revenue runway is approximately 50.7 years under the unchanged per-seat targets, before any subsidy
+For ten seats, the allocations are 67,500,000 NOAH in seat grants, the founder's 22,500,000 among them, 500,000
+liquid NOAH, and 35,000,000 NOAH remaining in the community pool, alongside the four fund seeds and the disbursement
+pools. This illustrates the per-seat rule, not an announced initial seat count.
+The subsidy's zero-revenue runway is approximately 38.1 years under the unchanged per-seat targets, before any subsidy
 return to the community pool.
 
 ### Currency, conversion, and pricing
 
 | Area | Launch value | Status |
 | --- | --- | --- |
-| Currency family | AUD, CAD, CNY, EUR, GBP, JPY, KRW, MXN, SGD, USD; eighteen decimals | Decided |
+| Currency family | AUD, CAD, CNY, EUR, GBP, JPY, KRW, MXN, SGD, USD; eighteen decimals; oracle feeds at genesis, registered together by governance when conversion opens | Decided |
 | Currency names and symbols | ArkAUD / arkAUD and the corresponding currency codes | Decided |
 | Protocol reference | XDR feed; no issued XDR currency | Decided |
 | Routine NOAH issuance | No mint module or staking inflation | Decided |
-| Conversion pool depth | 5,000,000 XDR; initially balanced | Decided |
+| Conversion pool depth | 100,000 XDR; initially balanced | Decided |
 | Conversion recovery | 14,400 blocks, approximately one day | Default |
 | Minimum conversion spread | 2% | Default |
 | Direct currency conversion charge | 0.25% default Tobin rate; no overrides | Decided |
@@ -1059,12 +1078,12 @@ return to the community pool.
 | Oracle reward band | 2% total width around the relevant median | Default |
 | Ordinary price freshness | 60 seconds | Default |
 | Oracle reward and attendance windows | 100,800 blocks, approximately one week | Default |
-| Oracle reward distribution horizon | 1,310,400 blocks, approximately one quarter | Decided |
+| Oracle reward distribution horizon | 403,200 blocks, approximately four weeks | Decided |
 | Oracle participation floor | 20% of targets; at least one positive rate | Default |
 | Functioning-block threshold | 50% of commit power participating | Default |
 | Minimum window attendance | 5% of eligible blocks | Default |
-| Claim cancellation period | 100,800 blocks, approximately one week | Decided |
-| Settlement activation delay | 43,200 blocks, approximately three days | Decided |
+| Claim cancellation period | 604,800 seconds of block time, one week | Decided |
+| Settlement activation delay | 604,800 seconds of block time, one week | Decided |
 | Exposure weights | All zero; initial multiplier one | Decided |
 | Exposure refresh | 600 blocks, approximately one hour | Default |
 | Exposure multiplier cap and maximum step | 2 and 0.1 per update | Decided |
@@ -1072,10 +1091,12 @@ return to the community pool.
 | External Reserve recognition | Empty policy; NOAH recognised at par | Decided |
 | Base gas-price floor | 0.02 XDR per 200,000 gas | Default |
 | Base-fee utilisation target and maximum adjustment | 50%; 2.5% per block | Default |
-| Initial NOAH fee-conversion factor | 1.371 NOAH per XDR, replaced by usable oracle observations | Decided |
+| Initial NOAH fee-conversion factor | 1 NOAH per XDR, replaced by usable oracle observations | Decided |
 
-The initial fee factor reflects the bootstrap assumption of one USD per NOAH and 1.371 USD per XDR. It supplies a
+The initial fee factor reflects the bootstrap assumption of one XDR per NOAH, about 1.371 USD at the bootstrap cross. It supplies a
 fee conversion before the first usable reference observation and is not a promise of either market exchange rate.
+No currency is issued at that assumption: the asset registry is empty at launch, so Market has nothing to mint, and
+governance opens conversion by registering the currencies once NOAH has a market price.
 The oracle distribution horizon smooths payments from the oracle reward account; it is separate from the weekly
 window that funds that account.
 
@@ -1101,8 +1122,7 @@ window that funds that account.
 | Consensus signing window and minimum attendance | 10,000 blocks; 5% signed | Decided |
 | Downtime jail and slash | 600 seconds; 0.01% | Decided |
 | Double-sign slash | 5% | Decided |
-| Transaction signature limit | Seven member keys | Decided |
-| IBC | No admitted client types; transfers and interchain accounts disabled | Decided |
+| Transaction signature limit | Ten keys | Decided |
 | Contract upload and instantiation | Open | Decided |
 
 Governance percentages retain the SDK's tally rules, including the treatment of abstentions; they do not replace
@@ -1120,8 +1140,9 @@ triggers; actual addresses, members, and mandate windows are enacted through lat
 | Asset emergency | First governance cycle; separate account and, where possible, separate members | 3-of-5 multisignature |
 | Economic policy | After the first expansions; exposure weights remain zero until calibration | 4-of-7 multisignature |
 | Claims | Once Insurance has a charter specifying covered perils | 4-of-7 multisignature |
-| Conversion | When governance chooses to delegate conversion policy | 4-of-7 multisignature |
+| Conversion | At or after the opening of conversion, when governance chooses to delegate conversion policy | 4-of-7 multisignature |
 | Reserve | When a deployment is approved | 4-of-7 multisignature |
+| Grants | Before the first member tranche; it appoints the registrar, a single hardware-backed key | 4-of-7 multisignature |
 
 Appointments use dedicated hardware-backed keys, accounts registered before appointment, gas funded from members'
 floats, and one-chain-year terms followed by reappointment. The initial economic corridor is to bound reward targets
@@ -1129,9 +1150,11 @@ between half and twice the seat-scaled launch values and fund ratios between hal
 launch values, with Insurance capped at 10%. Exposure weights stay at zero until calibration authorises their use.
 These are appointment instructions; an empty mandate grants no committee authority.
 
-The base artefact already holds all five seeded balances and the full initial supply. Assembly moves each seat's
-grant and float out of both the Distribution balance and its community-pool ledger, adds the seat's reward shares,
-collects validator transactions, and sets the genesis time. The start must be scheduled at least forty-eight hours
+The base artefact already holds all seven seeded balances, the four fund seeds, the community pool, and the two
+Disbursement pools, and the full initial supply. Assembly sets the genesis time first, since the seats vest from it;
+it then moves each seat's grant and float out of both the Distribution balance and its community-pool ledger, adds
+the seat's reward shares, writes the founder's grant and stream as governance grants 1 and 2, and collects validator
+transactions. The start must be scheduled at least forty-eight hours
 after publication of the final file. Supply remains 1,000,000,000 NOAH throughout assembly. Full procedures and final
 validation checks remain in [GENESIS.md][ark-genesis].
 
@@ -1170,10 +1193,10 @@ behaviour.
 - [Security][ark-security], [Application][ark-app], and [Mempool][ark-mempool]: emergency authority and execution.
 - [Threat model][ark-threat]: trust boundaries and their controls.
 - [Launch genesis][ark-genesis] and [curated genesis data](../../app/genesis/genesis.json): configuration and status.
-- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its ownership limits, and the
-  founder's grant.
+- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its ownership cap, and the
+  founder's seat and grant.
 - Direct source checks include [conversion settlement](../../x/treasury/keeper/settlement.go), [liability
-  valuation][ark-liability], [fixed-rate redemption](../../x/market/keeper/settle.go), and [asset settlement
+  valuation][ark-liability], [fixed-rate redemption](../../x/market/keeper/orders.go), and [asset settlement
   plans][ark-settlement].
 
 [terra-paper]: https://assets.website-files.com/611153e7af981472d8da199c/618b02d13e938ae1f8ad1e45_Terra_White_paper.pdf

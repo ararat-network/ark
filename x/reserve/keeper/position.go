@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/collections"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +32,7 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 		Deployed:       deployed,
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: venueReference,
-		OpenedHeight:   uint64(sdkCtx.BlockHeight()),
+		OpenedHeight:   chain.BlockHeight(ctx),
 	}
 	if err := position.Validate(); err != nil {
 		return types.Position{}, err
@@ -175,9 +176,9 @@ func (k *Keeper) resolveDeploymentPosition(ctx context.Context, msg *types.MsgCo
 			msg.PositionId,
 		)
 	}
-	position, err := k.OpenPositions.Get(ctx, msg.PositionId)
+	position, err := k.livePosition(ctx, msg.PositionId)
 	if err != nil {
-		return types.Position{}, fmt.Errorf("getting open position %d: %w", msg.PositionId, err)
+		return types.Position{}, err
 	}
 	if msg.Acquired.Denom != position.Quantity.Denom {
 		return types.Position{}, fmt.Errorf(
@@ -225,9 +226,9 @@ func (k *Keeper) attributeReturn(
 	reserveMandate types.ReserveMandate,
 	msg *types.MsgCommitteeAttributeReturn,
 ) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, msg.PositionId)
+	position, err := k.livePosition(ctx, msg.PositionId)
 	if err != nil {
-		return 0, fmt.Errorf("getting open position %d: %w", msg.PositionId, err)
+		return 0, err
 	}
 	if msg.RemainingQuantity.Denom != position.Quantity.Denom {
 		return 0, fmt.Errorf(
@@ -289,9 +290,9 @@ func (k *Keeper) restateQuantity(
 	reserveMandate types.ReserveMandate,
 	msg *types.MsgCommitteeRecordUpdate,
 ) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, msg.PositionId)
+	position, err := k.livePosition(ctx, msg.PositionId)
 	if err != nil {
-		return 0, fmt.Errorf("getting open position %d: %w", msg.PositionId, err)
+		return 0, err
 	}
 	if msg.Quantity.Denom != position.Quantity.Denom {
 		return 0, fmt.Errorf(
@@ -328,9 +329,9 @@ func (k *Keeper) setImpaired(
 	recordedBy string,
 	term uint64,
 ) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, positionID)
+	position, err := k.livePosition(ctx, positionID)
 	if err != nil {
-		return 0, fmt.Errorf("getting open position %d: %w", positionID, err)
+		return 0, err
 	}
 	if position.Impaired == impaired {
 		return 0, fmt.Errorf("position %d is already in the requested impairment state", positionID)
@@ -366,13 +367,9 @@ type positionCorrection struct {
 // correctPosition restates a position in its existing open or closed store and journals the
 // correction. The referenced entry must belong to that position; correction cannot change status.
 func (k *Keeper) correctPosition(ctx context.Context, correction positionCorrection) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, correction.PositionID)
-	closed := errors.Is(err, collections.ErrNotFound)
-	if closed {
-		position, err = k.ClosedPositions.Get(ctx, correction.PositionID)
-	}
+	position, closed, err := k.anyPosition(ctx, correction.PositionID)
 	if err != nil {
-		return 0, fmt.Errorf("getting position %d: %w", correction.PositionID, err)
+		return 0, err
 	}
 	corrected, err := k.Ledger.Get(ctx, correction.Corrects)
 	if err != nil {
@@ -436,13 +433,9 @@ type returnReversal struct {
 // original booked value, preventing rate movement from creating gains through reversal and
 // re-attribution.
 func (k *Keeper) reverseReturn(ctx context.Context, reversal returnReversal) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, reversal.PositionID)
-	closed := errors.Is(err, collections.ErrNotFound)
-	if closed {
-		position, err = k.ClosedPositions.Get(ctx, reversal.PositionID)
-	}
+	position, closed, err := k.anyPosition(ctx, reversal.PositionID)
 	if err != nil {
-		return 0, fmt.Errorf("getting position %d: %w", reversal.PositionID, err)
+		return 0, err
 	}
 	reversed, err := k.Ledger.Get(ctx, reversal.Reverses)
 	if err != nil {
@@ -524,12 +517,12 @@ func (k *Keeper) closePosition(
 	recordedBy string,
 	term uint64,
 ) (uint64, error) {
-	position, err := k.OpenPositions.Get(ctx, positionID)
+	position, err := k.livePosition(ctx, positionID)
 	if err != nil {
-		return 0, fmt.Errorf("getting open position %d: %w", positionID, err)
+		return 0, err
 	}
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	position.ClosedHeight = uint64(sdkCtx.BlockHeight())
+	position.ClosedHeight = chain.BlockHeight(ctx)
 	if err := position.Validate(); err != nil {
 		return 0, err
 	}
@@ -561,4 +554,34 @@ func (k *Keeper) closePosition(
 		return 0, fmt.Errorf("emitting Reserve closure event: %w", err)
 	}
 	return entryID, nil
+}
+
+// livePosition reads an open position, reporting absence as the module's not-found: a closed or
+// unknown identifier is the same refusal to every operation that needs a live one.
+func (k *Keeper) livePosition(ctx context.Context, id uint64) (types.Position, error) {
+	position, err := k.OpenPositions.Get(ctx, id)
+	if errors.Is(err, collections.ErrNotFound) {
+		return types.Position{}, errorsmod.Wrapf(types.ErrPositionNotFound, "position %d is not open", id)
+	}
+	if err != nil {
+		return types.Position{}, fmt.Errorf("getting open position %d: %w", id, err)
+	}
+	return position, nil
+}
+
+// anyPosition reads a position from whichever store holds it and reports whether that is the
+// closed one.
+func (k *Keeper) anyPosition(ctx context.Context, id uint64) (types.Position, bool, error) {
+	position, err := k.OpenPositions.Get(ctx, id)
+	closed := errors.Is(err, collections.ErrNotFound)
+	if closed {
+		position, err = k.ClosedPositions.Get(ctx, id)
+	}
+	if errors.Is(err, collections.ErrNotFound) {
+		return types.Position{}, false, errorsmod.Wrapf(types.ErrPositionNotFound, "%d", id)
+	}
+	if err != nil {
+		return types.Position{}, false, fmt.Errorf("getting position %d: %w", id, err)
+	}
+	return position, closed, nil
 }

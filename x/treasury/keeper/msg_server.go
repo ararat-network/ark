@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/treasury/types"
 )
@@ -70,7 +71,7 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 	if err != nil {
 		return nil, fmt.Errorf("getting economic mandate: %w", err)
 	}
-	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationHeight, msg.ExpiryHeight)
+	envelope, committeeAddress, err := mandate.Next(current.Envelope, msg.Committee, msg.ActivationTime, msg.ExpiryTime)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +90,19 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 		if err := updated.Validate(); err != nil {
 			return nil, err
 		}
+		// Governance already holds the unbounded path, so appointing itself delegates nothing.
 		if updated.Committee == m.k.authority || updated.Committee == msg.Authority {
-			return nil, errors.New("economic-policy committee must be distinct from Treasury authority")
+			return nil, errors.New("economic-policy committee must be distinct from the Treasury authority")
+		}
+		// An expired window authorises nothing and would only displace the incumbent and advance the
+		// term. Genesis skips this check, so an export taken after expiry round-trips.
+		if now := chain.BlockSeconds(ctx); updated.ExpiryTime <= now {
+			return nil, fmt.Errorf(
+				"%s expires at time %d, which is not after the current block time %d",
+				types.EconomicMandateLabel,
+				updated.ExpiryTime,
+				now,
+			)
 		}
 	}
 
@@ -98,13 +110,13 @@ func (m msgServer) SetEconomicMandate(ctx context.Context, msg *types.MsgSetEcon
 		return nil, fmt.Errorf("setting economic mandate: %w", err)
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventEconomicMandateSet{
-		Term:             updated.Term,
-		Committee:        updated.Committee,
-		ActivationHeight: updated.ActivationHeight,
-		ExpiryHeight:     updated.ExpiryHeight,
-		CommitteeShape:   updated.CommitteeShape,
+		Term:           updated.Term,
+		Committee:      updated.Committee,
+		ActivationTime: updated.ActivationTime,
+		ExpiryTime:     updated.ExpiryTime,
+		CommitteeShape: updated.CommitteeShape,
 	}); err != nil {
-		return nil, fmt.Errorf("emitting Treasury economic mandate: %w", err)
+		return nil, fmt.Errorf("emitting economic mandate: %w", err)
 	}
 	return &types.MsgSetEconomicMandateResponse{}, nil
 }
@@ -128,9 +140,6 @@ func (m msgServer) UpdatePolicy(ctx context.Context, msg *types.MsgUpdatePolicy)
 	return &types.MsgUpdatePolicyResponse{}, nil
 }
 
-// CommitteeUpdatePolicy applies one complete reversible policy update
-// as the exact appointed committee, during the active term and window, with
-// every field inside the mandate's bounds.
 // ReturnSubsidy moves idle subsidy NOAH into the community pool as governance.
 func (m msgServer) ReturnSubsidy(ctx context.Context, msg *types.MsgReturnSubsidy) (*types.MsgReturnSubsidyResponse, error) {
 	if msg == nil {
@@ -143,6 +152,9 @@ func (m msgServer) ReturnSubsidy(ctx context.Context, msg *types.MsgReturnSubsid
 	return &types.MsgReturnSubsidyResponse{}, nil
 }
 
+// CommitteeUpdatePolicy applies one complete reversible policy update
+// as the exact appointed committee, during the active term and window, with
+// every field inside the mandate's bounds.
 func (m msgServer) CommitteeUpdatePolicy(ctx context.Context, msg *types.MsgCommitteeUpdatePolicy) (*types.MsgCommitteeUpdatePolicyResponse, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("nil committee update economic-policy message")

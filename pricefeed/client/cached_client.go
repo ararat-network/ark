@@ -30,7 +30,7 @@ const pricesMethod = "/ark.pricefeed.v1.PriceFeed/Prices"
 
 // maxFutureSkew bounds how far ahead of this node's clock a snapshot may be
 // dated. A sidecar clock running fast would otherwise carry a stale snapshot
-// past the TTL for as long as it ran fast. Five seconds, as the validate
+// past the TTL for as long as it ran fast. Five seconds, as the check
 // command allows.
 const maxFutureSkew = 5 * time.Second
 

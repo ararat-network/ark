@@ -19,25 +19,24 @@ prices, with a governed capital structure standing behind the stablecoin liabili
 
 Ark is built using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk) and compiled to a binary called `arkd` (Ark
 Daemon). Validators also run `pricefeed`, a separate off-chain sidecar that supplies the prices their nodes report in
-vote extensions. Ark interacts with other sovereign chains through [IBC](https://github.com/cosmos/ibc) and runs
-[CosmWasm](https://github.com/CosmWasm/wasmd) contracts.
+vote extensions. Ark runs [CosmWasm](https://github.com/CosmWasm/wasmd) contracts and has no IBC.
 
 What sets Ark apart is its economic model. There is no routine NOAH issuance: no mint module, no staking inflation, and
 no seigniorage. NOAH is minted and burned only inside stablecoin conversion, and three funds stand behind the
 stablecoins: a Redemption Buffer that recycles retained NOAH into redemptions, a strategic Reserve that governance can
 commit and a committee can deploy under a bounded mandate, and Insurance that pays covered losses through recorded
 claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
-holds every unbounded power; committees hold bounded, height-scoped mandates. To understand how funds and authority
+holds every unbounded power; committees hold bounded, time-scoped mandates. To understand how funds and authority
 move, read the [economic design](docs/design/ECONOMIC_DESIGN.md).
 
 The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets out the purpose that design serves.
 
 ## Documentation
 
-Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides by
-reading path: understanding the chain, launching a network, operating and monitoring services, governing and responding,
-integrating clients, future direction, and the decision record. Each subsystem's README owns its own behaviour, design,
-and development guidance; the [repository map](#repository-map) links them.
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
+by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
+responding, integrating clients, future direction, and the decision register. Each subsystem's README owns its own
+behaviour, design, and development guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 
@@ -68,7 +67,7 @@ simulation, and failure handling for external transaction builders.
 
 | Directory                                                                | Entry point                                                                          |
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [app](app/README.md)                                                     | Application wiring, transaction hooks, mempool, IBC/Wasm, and upgrades.              |
+| [app](app/README.md)                                                     | Application wiring, transaction hooks, mempool, Wasm, and upgrades.                  |
 | [abci](abci/README.md)                                                   | Oracle vote extensions, proposal envelope, preblock, and aggregation implementation. |
 | [pricefeed](pricefeed/README.md)                                         | Node-side cached client and off-chain sidecar/provider pipeline.                     |
 | [cmd/arkd](cmd/arkd/README.md), [cmd/pricefeed](cmd/pricefeed/README.md) | Binary startup and CLI ownership.                                                    |
@@ -78,8 +77,8 @@ simulation, and failure handling for external transaction builders.
 | [contrib](contrib/README.md)                                             | Images, localnet, probes, and operational rehearsals.                                |
 
 On-chain modules: [Asset](x/asset/README.md), [Claims](x/claims/README.md), [Disbursement](x/disbursement/README.md),
-[Market](x/market/README.md), [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md), [Security](x/security/README.md), and
-[Treasury](x/treasury/README.md).
+[Market](x/market/README.md), [Oracle](x/oracle/README.md), [Reserve](x/reserve/README.md),
+[Security](x/security/README.md), and [Treasury](x/treasury/README.md).
 
 ## Build and run locally
 
@@ -139,37 +138,15 @@ images, localnet, probes, and rehearsals. Documentation follows the
 [placement rule](docs/README.md#documentation-placement-rule): one authoritative home per subject, linked from
 everywhere else.
 
-## Release builds
+## Licensing and releases
 
-Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links
-third-party code under LGPLv3 and the Business Source License 1.1, whose
-production-use terms operators should read.
-[Licensing and corresponding source](THIRD_PARTY_NOTICES.md) explains component
-licences, attribution, source downloads, and the release verification procedure.
+Ark-authored source is licensed under [Apache 2.0](LICENSE). The node also links third-party code under LGPL 2.1 and 3
+and the Business Source License 1.1, whose production-use terms operators should read.
+[Licensing and corresponding source](THIRD_PARTY_NOTICES.md) explains component licences, attribution, source downloads,
+and the release verification procedure.
 
 The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
-[The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags.
-A suffix such as `-rc1` marks the draft as a pre-release. Maintainers review and publish through GitHub;
-only stable chain releases should be marked latest.
-[Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review and consumer checks.
-
-`make release` packages locally without uploading or signing. It checks a clean tree and the chain tag on HEAD, selects it explicitly, and runs the
-[chain configuration](.goreleaser.yml), which builds static Linux binaries for amd64 and arm64. GoReleaser passes its
-build command to [the release adapter](contrib/scripts/release-build.py), which builds the committed source export with
-each architecture's compiler in the pinned base from the [image Dockerfile](contrib/images/arkd-env/Dockerfile).
-Docker must support running both Linux architectures, either natively or through emulation. The builder checks the
-wasmvm version and archive digests, records the linked system libraries and packages their corresponding runtime sources.
-The adapter verifies the binary, target, source revision and runtime-source pairing before returning it to GoReleaser.
-macOS node use remains a source build.
-
-`make release-pricefeed` also packages locally without uploading or signing. It checks a clean tree and the sidecar tag on HEAD, selects it explicitly, then skips GoReleaser's
-bare-semver validation. The [sidecar configuration](.goreleaser.pricefeed.yml) derives version strings from `.Tag` and
-cross-compiles without cgo. Both release configurations prepare a corresponding
-source bundle, verify builds from it, and generate per-archive SPDX inventories with pinned Syft.
-Checksums cover the archives, SPDX files and every attached source/notice asset. This requires Python
-3.12+, Docker with both Linux architectures, and the source-packaging prerequisites
-listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Published images carry
-their source bundle and notices inside `/usr/share/ark/`, including nightly builds.
-Standalone node releases attach both `arkd-source-<commit>` application sources and
-`arkd-runtime-source-<commit>-linux-<arch>` runtime sources. Retain both with the matching binaries.
-Neither release command is part of ordinary verification.
+[The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags. A suffix such as `-rc1`
+marks the draft as a pre-release. Maintainers review and publish through GitHub; only stable chain releases should be
+marked latest. [Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging,
+and consumer checks.
