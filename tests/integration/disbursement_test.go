@@ -1093,7 +1093,7 @@ func TestNativeDisbursementImportRefusals(t *testing.T) {
 				award := disbursementtypes.Grant{
 					Id: 2, Kind: disbursementtypes.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: b.String(), Payee: b.String(), CreatedBy: f.authority.String(),
 					Amount: sdk.NewInt64Coin("azzz", 10), Schedule: disbursementtypes.Schedule{FirstLength: period, FirstWeight: 1, PeriodLength: period, PeriodWeight: 1}, StartTime: created, CreatedTime: created,
-					CreatedHeight: gs.Grants[0].CreatedHeight, Paid: math.NewInt(10), Remaining: math.ZeroInt(), Reference: "work", AwardValue: math.NewInt(10),
+					CreatedHeight: gs.Grants[0].CreatedHeight, Paid: math.NewInt(10), Remaining: math.ZeroInt(), Reference: "work", AwardValue: math.NewInt(10), Charge: math.ZeroInt(),
 				}
 				gs.Grants, gs.NextGrantId = append(gs.Grants, award), 3
 				gs.Beneficiaries = append(gs.Beneficiaries, disbursementtypes.Beneficiary{Address: b.String(), Controller: b.String(), OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()})
@@ -1663,6 +1663,8 @@ func TestNativeDisbursementReferenceRepoint(t *testing.T) {
 	require.True(t, p.CompensationCap.Equal(disbursementtypes.DefaultParams().CompensationCap.MulRaw(3).QuoRaw(4)))
 	require.True(t, f.grant(t, governance).AwardValue.Equal(math.NewInt(226)))
 	require.True(t, f.grant(t, committee).AwardValue.Equal(math.NewInt(375)))
+	require.True(t, f.grant(t, committee).Charge.Equal(math.NewInt(375)))
+	require.True(t, f.grant(t, governance).Charge.IsZero())
 	used, err := f.app.DisbursementKeeper.CompensationUsed.Get(f.ctx)
 	require.NoError(t, err)
 	require.True(t, used.Equal(math.NewInt(375)))

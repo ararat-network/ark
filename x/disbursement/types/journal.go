@@ -48,7 +48,7 @@ func (e GrantEntry) Validate() error {
 			return err
 		}
 	}
-	if err := ValidateAmount(e.Offer, wantOffer); err != nil {
+	if err := chain.ValidateAmount(e.Offer, wantOffer); err != nil {
 		return fmt.Errorf("grant entry offer: %w", err)
 	}
 	if !wantOffer && !e.Offer.IsZero() {

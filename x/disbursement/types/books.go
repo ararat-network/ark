@@ -26,7 +26,7 @@ func (b *AccountBook) Reserve(c sdk.Coin) error {
 	if err != nil {
 		return fmt.Errorf("%s reservations: %w", c.Denom, err)
 	}
-	if err := ValidateAmount(sum, false); err != nil {
+	if err := chain.ValidateAmount(sum, false); err != nil {
 		return fmt.Errorf("%s reservations: %w", c.Denom, err)
 	}
 	b.Reserved = b.Reserved.Add(c)
@@ -63,7 +63,7 @@ func (b AccountBook) Validate() error {
 		return fmt.Errorf("reserved: %w", err)
 	}
 	for _, c := range b.Reserved {
-		if err := ValidateAmount(c.Amount, true); err != nil {
+		if err := chain.ValidateAmount(c.Amount, true); err != nil {
 			return fmt.Errorf("reserved %s: %w", c.Denom, err)
 		}
 		if b.Account == MembersName && c.Denom != chain.NoahBaseDenom {

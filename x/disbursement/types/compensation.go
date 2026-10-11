@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 const (
@@ -42,7 +44,7 @@ func CompensationSchedule(period uint64, count uint32) (Schedule, error) {
 // when it runs within span, otherwise the value spread over its duration, rounded up as a bound
 // (D119). Span is a window, and in an award's first window that window plus its backdate (D122).
 func CompensationCharge(value math.Int, duration, span uint64) (math.Int, error) {
-	if err := ValidateAmount(value, false); err != nil {
+	if err := chain.ValidateAmount(value, false); err != nil {
 		return math.Int{}, fmt.Errorf("compensation charge: %w", err)
 	}
 	if duration <= span || span == 0 {

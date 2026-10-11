@@ -113,9 +113,10 @@ fortnights, 364 days, the pay cadence's; no clock is tied to calendar dates (D13
   no exchange-rate guarantee afterwards.
 
 A reference re-point, Oracle's `MsgSetReferenceDenom`, re-expresses every compensation figure in the new unit in the
-same transaction or fails whole: `compensation_cap`, each compensation award's `award_value`, the live term's usage,
-and its allowance. Each rounds up, as the award-time valuation does; the usage is re-derived from the rebased awards,
-and the allowance is raised to the usage where the per-award ceilings outran it, by under a base unit an award (D123).
+same transaction or fails whole: `compensation_cap`, each compensation award's `award_value` and `charge`, the live
+term's usage, and its allowance. Each rounds up, as the award-time valuation does; the usage is re-derived from the
+rebased charges, and the allowance is raised to the usage where the per-award ceilings outran it, by under a base unit
+an award (D123).
 `EventCompensationRebased` carries the old and new figures and the count of awards moved. The module stores no copy of
 the unit: Oracle's reference is the unit by definition, as it is at award time.
 
@@ -163,18 +164,22 @@ journaled with the paying account as the actor; a deferral moves nothing and is 
 
 ## Committee awards
 
-The appointment sets the committee's award power: `compensation_allowance`, the most the term may award at reference
-value; a disabled mandate carries none, and the allowance and the term's usage follow a reference re-point. Every committee award is compensation and ownership is governance's alone (D113):
+The appointment sets the committee's award power: `compensation_allowance`, the most the term's awards may draw in the
+reference unit; a disabled mandate carries none, and the allowance and the term's usage follow a reference re-point. Every committee award is compensation and ownership is governance's alone (D113):
 import refuses ownership that carries a term and a member that carries none. `MsgCommitteeCompensate` creates a compensation
 award, funded like a governance award: NOAH from the contributor pool within the allowance, and stablecoins from
-uncommitted contributor custody first, converting NOAH for the rest within the award's `max_offer`. An award in NOAH or any active asset charges the reference value written on the grant, and a seat holder
-is awarded like anyone. Nothing pays before one period after an award, wherever its clock starts, and
+uncommitted contributor custody first, converting NOAH for the rest within the award's `max_offer`. An award in NOAH or
+any active asset charges the allowance with what it drew, its custody and the NOAH it converted, each valued at the
+award's rates and rounded up, written on the grant as `charge`; `award_value` stays the face value the cap charges. The
+allowance is checked at face value before the buy, which can only raise it, and charged what the award drew after, so a
+steep buy's spread, which cancelling the award would not undo, counts against the allowance (D140). A seat holder is
+awarded like anyone. Nothing pays before one period after an award, wherever its clock starts, and
 `compensation_period` is floored at two weeks like every first period, so a stolen key's awards pay nothing before governance can act.
 
 A grant records the term of the appointment that created it in `mandate_term`: a member the registrar's, an award the
 committee's. The live committee term's usage is one figure the module keeps, the charges against the allowance: an
 award grows it, a cancel restores nothing, and an appointment zeroes it. Genesis carries it, and import refuses a
-figure the term's awards do not add up to. The grants query by committee term lists a term's awards, by
+figure the term's charges do not add up to. The grants query by committee term lists a term's awards, by
 registrar term its registrations, and by kind one kind's grants, each through its own index, and governance cancels
 any by ID. A compromised registrar is one committee
 transaction: a reappointment advances its term, and governance cancels the fakes from the old term's list. Committee

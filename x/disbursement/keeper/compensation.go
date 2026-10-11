@@ -13,6 +13,7 @@ import (
 	"github.com/ararat-network/ark/pkg/chain"
 	assettypes "github.com/ararat-network/ark/x/asset/types"
 	"github.com/ararat-network/ark/x/disbursement/types"
+	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // validateCompensation admits NOAH and any active registry asset as a compensation denomination.
@@ -47,25 +48,95 @@ func (k *Keeper) compensationSchedule(ctx context.Context, startTime uint64, per
 	return types.CompensationSchedule(params.CompensationPeriod, periods)
 }
 
-// awardValue prices a compensation award in the reference unit at the fresh rates Market quotes
-// with, rounded up so the whole award counts against the cap.
-func (k *Keeper) awardValue(ctx context.Context, amount sdk.Coin) (math.Int, error) {
+// valuation prices an award in the reference unit at the fresh rates Market quotes with.
+type valuation struct {
+	reference string
+	rates     oracletypes.RateSet
+}
+
+// valuation reads the reference and the fresh rates for denom, refusing an award the oracle cannot
+// value.
+func (k *Keeper) valuation(ctx context.Context, denom string) (valuation, error) {
 	reference, err := k.oracleKeeper.GetReferenceDenom(ctx)
+	if err != nil {
+		return valuation{}, err
+	}
+	if reference == "" {
+		return valuation{}, errors.New("no reference denomination to value the award in")
+	}
+	rates, err := k.oracleKeeper.GetRateSet(ctx, denom, reference)
+	if err != nil {
+		return valuation{}, fmt.Errorf("valuing the award: %w", err)
+	}
+	return valuation{reference: reference, rates: rates}, nil
+}
+
+// value is what an award drew, custody in its denomination and the NOAH it converted, each rounded
+// up; with no conversion it is the award's face value.
+func (v valuation) value(custody sdk.Coin, offer math.Int) (math.Int, error) {
+	value, err := v.rates.ConvertCeilSum(v.reference, custody, chain.NoahCoin(offer))
+	if err != nil {
+		return math.Int{}, fmt.Errorf("valuing the award: %w", err)
+	}
+	return value, nil
+}
+
+// awardValue prices a compensation award at its face value, rounded up so the whole award counts
+// against the cap.
+func (k *Keeper) awardValue(ctx context.Context, amount sdk.Coin) (math.Int, error) {
+	v, err := k.valuation(ctx, amount.Denom)
 	if err != nil {
 		return math.Int{}, err
 	}
-	if reference == "" {
-		return math.Int{}, errors.New("no reference denomination to value the award in")
+	return v.value(amount, math.ZeroInt())
+}
+
+// chargeAllowance charges a committee award to its term's allowance and returns the charge: the
+// award's face value, or what it drew when it converted, its custody and the NOAH the buy cost. A
+// conversion's spread counts against the allowance as well as its face value, so a stolen key cannot
+// spend past the allowance through a steep buy that cancelling the award would not undo.
+func (k *Keeper) chargeAllowance(ctx context.Context, amount sdk.Coin, value math.Int, f funding) (math.Int, error) {
+	charge := value
+	if c := f.conversion; c != nil {
+		v, err := k.valuation(ctx, amount.Denom)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if charge, err = v.value(sdk.NewCoin(amount.Denom, f.custody), c.offer); err != nil {
+			return math.Int{}, err
+		}
 	}
-	rates, err := k.oracleKeeper.GetRateSet(ctx, amount.Denom, reference)
+	if err := chain.ValidateAmount(charge, true); err != nil {
+		return math.Int{}, fmt.Errorf("award charge: %w", err)
+	}
+	total, err := k.usageAfter(ctx, charge)
 	if err != nil {
-		return math.Int{}, fmt.Errorf("valuing the award: %w", err)
+		return math.Int{}, err
 	}
-	value, err := rates.Convert(sdk.NewDecCoinFromCoin(amount), reference)
+	if err := k.CompensationUsed.Set(ctx, total); err != nil {
+		return math.Int{}, err
+	}
+	return charge, nil
+}
+
+// usageAfter is the term's usage once charge is added, refused past the allowance.
+func (k *Keeper) usageAfter(ctx context.Context, charge math.Int) (math.Int, error) {
+	mandate, err := k.GrantsMandate.Get(ctx)
 	if err != nil {
-		return math.Int{}, fmt.Errorf("valuing the award: %w", err)
+		return math.Int{}, err
 	}
-	return value.Amount.Ceil().TruncateInt(), nil
+	used, err := k.CompensationUsed.Get(ctx)
+	if err != nil {
+		return math.Int{}, err
+	}
+	total, err := used.SafeAdd(charge)
+	if err != nil {
+		return math.Int{}, err
+	}
+	if total.GT(mandate.CompensationAllowance) {
+		return math.Int{}, fmt.Errorf("award charges %s, taking usage past the term's compensation allowance %s", charge, mandate.CompensationAllowance)
+	}
+	return total, nil
 }
 
 // checkCompensationCap bounds a record's compensation at the cap a window. It charges every

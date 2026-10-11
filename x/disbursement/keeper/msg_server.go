@@ -68,7 +68,7 @@ func (m msgServer) compensation(ctx context.Context, beneficiary string, amount 
 	if err := amount.Validate(); err != nil {
 		return nil, types.Grant{}, err
 	}
-	if err := types.ValidateAmount(amount.Amount, true); err != nil {
+	if err := chain.ValidateAmount(amount.Amount, true); err != nil {
 		return nil, types.Grant{}, err
 	}
 	if err := m.k.validateCompensation(ctx, amount.Denom); err != nil {
@@ -128,7 +128,7 @@ func (m msgServer) OpenTranche(ctx context.Context, msg *types.MsgOpenTranche) (
 	if err := sdk.ValidateAuthority(sdk.UnwrapSDKContext(ctx), m.k.authority, msg.Authority); err != nil {
 		return nil, err
 	}
-	if err := types.ValidateAmount(msg.Amount, true); err != nil {
+	if err := chain.ValidateAmount(msg.Amount, true); err != nil {
 		return nil, err
 	}
 	tranche, err := m.k.MemberTranche.Get(ctx)
@@ -167,7 +167,7 @@ func (m msgServer) ReturnUnallocated(ctx context.Context, msg *types.MsgReturnUn
 	if err := msg.Amount.Validate(); err != nil {
 		return nil, err
 	}
-	if err := types.ValidateAmount(msg.Amount.Amount, true); err != nil {
+	if err := chain.ValidateAmount(msg.Amount.Amount, true); err != nil {
 		return nil, err
 	}
 	// The member account has no exit; the contributor account returns what no grant holds.
@@ -201,7 +201,7 @@ func (m msgServer) GrantOwnership(ctx context.Context, msg *types.MsgGrantOwners
 	if err != nil {
 		return nil, err
 	}
-	if err := types.ValidateAmount(msg.Amount, true); err != nil {
+	if err := chain.ValidateAmount(msg.Amount, true); err != nil {
 		return nil, err
 	}
 	schedule, err := m.k.ownershipSchedule(ctx, msg.StartTime)
@@ -411,24 +411,15 @@ func (m msgServer) CommitteeCompensate(ctx context.Context, msg *types.MsgCommit
 	if err != nil {
 		return nil, err
 	}
-	charged, err := m.k.CompensationUsed.Get(ctx)
-	if err != nil {
+	// An award charges at least its value, so one past the allowance is refused here, before it can
+	// trade; create charges what it drew once the buy is known.
+	if _, err := m.k.usageAfter(ctx, g.AwardValue); err != nil {
 		return nil, err
-	}
-	total, err := charged.SafeAdd(g.AwardValue)
-	if err != nil {
-		return nil, err
-	}
-	if total.GT(appointment.CompensationAllowance) {
-		return nil, errors.New("award exceeds the term's compensation allowance")
 	}
 	g.CreatedBy = appointment.Committee
 	g.MandateTerm = appointment.Term
 	id, err := m.k.create(ctx, beneficiary, g, msg.MaxOffer)
 	if err != nil {
-		return nil, err
-	}
-	if err := m.k.CompensationUsed.Set(ctx, total); err != nil {
 		return nil, err
 	}
 	return &types.MsgCommitteeCompensateResponse{GrantId: id}, nil

@@ -71,6 +71,8 @@ type KeeperTestSuite struct {
 	assets    map[string]assettypes.Asset
 	reference string
 	rates     map[string]math.LegacyDec
+	// premium is the NOAH a buy costs past its ask's face value, the spread a steep pool charges.
+	premium int64
 	// moduleAccountsMissing makes the account keeper report no module account, which import refuses.
 	moduleAccountsMissing bool
 }
@@ -96,6 +98,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.assets = map[string]assettypes.Asset{"ausd": {Denom: "ausd", Status: assettypes.AssetStatus_ASSET_STATUS_ACTIVE}}
 	s.reference = chain.XDRBaseDenom
 	s.rates = map[string]math.LegacyDec{chain.XDRBaseDenom: math.LegacyOneDec(), "ausd": math.LegacyOneDec()}
+	s.premium = 0
 	s.moduleAccountsMissing = false
 
 	ctrl := gomock.NewController(s.T())
@@ -152,11 +155,11 @@ func (s *KeeperTestSuite) SetupTest() {
 		return nil
 	}).AnyTimes()
 
-	// Market fills one to one, as the fixture rates price every denomination: the offer is the
-	// ask's amount, taken from the contributor account as the ask lands in it.
+	// Market fills one to one, as the fixture rates price every denomination, plus the premium: the
+	// offer is the ask's amount, taken from the contributor account as the ask lands in it.
 	s.marketKeeper = testutil.NewMockMarketKeeper(ctrl)
 	s.marketKeeper.EXPECT().Buy(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, trader sdk.AccAddress, ask sdk.Coin, offerDenom string, maximumOffer sdk.Coin) (sdk.Coin, sdk.Coin, sdk.DecCoin, error) {
-		offer := sdk.NewCoin(offerDenom, ask.Amount)
+		offer := sdk.NewCoin(offerDenom, ask.Amount.AddRaw(s.premium))
 		if offer.Amount.GT(maximumOffer.Amount) {
 			return sdk.Coin{}, sdk.Coin{}, sdk.DecCoin{}, errorsmod.Wrapf(markettypes.ErrMaximumOfferExceeded, "maximum %s, needed %s", maximumOffer, offer)
 		}
@@ -436,10 +439,16 @@ func (s *KeeperTestSuite) compensate(beneficiary string, amount sdk.Coin, start 
 }
 
 func (s *KeeperTestSuite) committeeCompensate(beneficiary string, amount sdk.Coin, periods uint32) (uint64, error) {
+	return s.committeeConvert(beneficiary, amount, periods, math.ZeroInt())
+}
+
+// committeeConvert is a committee award that may convert NOAH for what custody lacks.
+func (s *KeeperTestSuite) committeeConvert(beneficiary string, amount sdk.Coin, periods uint32, maxOffer math.Int) (uint64, error) {
 	var id uint64
 	err := s.commit(func(ctx context.Context) error {
 		res, err := s.msgServer.CommitteeCompensate(ctx, &types.MsgCommitteeCompensate{
 			Committee: s.committee, ExpectedTerm: s.term, Beneficiary: beneficiary, Amount: amount, StartTime: s.now(), Periods: periods, Reference: "committee pay",
+			MaxOffer: maxOffer,
 		})
 		if err != nil {
 			return err

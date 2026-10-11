@@ -70,7 +70,8 @@ func (k *Keeper) ownershipRemaining(ctx context.Context, committed math.Int) (ma
 // tenth included (D126). The caller fills the kind, amount, schedule, start time, reference, grantor,
 // term, and award value; create stamps the rest. Every check runs before a stablecoin award buys
 // what custody lacks within maxOffer, so a refused award never trades, and the conversion is
-// journaled straight after the creation it funds.
+// journaled straight after the creation it funds. A committee award's charge depends on what the buy
+// cost, so its value stands in for it until then; only the allowance is checked after the buy.
 func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types.Grant, maxOffer math.Int) (uint64, error) {
 	// The beneficiary is the first payee. A disbursement account is not Bank-blocked, since it takes
 	// deposits, but paying one only returns custody to the module.
@@ -119,6 +120,12 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	g.Remaining = g.Amount.Amount
 	g.CreatedHeight = chain.BlockHeight(ctx)
 	g.CreatedTime = at
+	// The committee awards compensation alone (D113), so a term on compensation is the committee's.
+	committee := g.Kind == types.GrantKind_GRANT_KIND_COMPENSATION && g.MandateTerm != 0
+	g.Charge = math.ZeroInt()
+	if committee {
+		g.Charge = g.AwardValue
+	}
 	// Every grant waits for its first boundary or one period after the award, whichever is later, so
 	// next is never zero here.
 	_, next, err := g.Accrued(at)
@@ -132,9 +139,14 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 		return 0, err
 	}
 	// Only a stablecoin award converts, and only compensation can be one.
-	converted, err := k.fund(ctx, g.Amount, maxOffer)
+	funded, err := k.fund(ctx, g.Amount, maxOffer)
 	if err != nil {
 		return 0, err
+	}
+	if committee {
+		if g.Charge, err = k.chargeAllowance(ctx, g.Amount, g.AwardValue, funded); err != nil {
+			return 0, err
+		}
 	}
 	if err := k.draw(ctx, types.Account(g.Kind), g.Amount); err != nil {
 		return 0, err
@@ -161,7 +173,7 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	}); err != nil {
 		return 0, err
 	}
-	if err := k.recordConversion(ctx, id, g.CreatedBy, converted); err != nil {
+	if err := k.recordConversion(ctx, id, g.CreatedBy, funded.conversion); err != nil {
 		return 0, err
 	}
 	return id, nil

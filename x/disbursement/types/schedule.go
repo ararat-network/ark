@@ -6,6 +6,8 @@ import (
 	"math/bits"
 
 	"cosmossdk.io/math"
+
+	"github.com/ararat-network/ark/pkg/chain"
 )
 
 // MaxSchedulePeriods bounds a shape's further periods, MaxPeriodLength each period, and MaxWeight
@@ -52,7 +54,7 @@ func (s Schedule) TotalWeight() uint64 {
 // period takes the remainder, and every period must receive a positive base-unit amount. With no
 // further periods the first period is the last and takes the whole amount.
 func (s Schedule) Shares(amount math.Int) (first, each, last math.Int, err error) {
-	if err := ValidateAmount(amount, true); err != nil {
+	if err := chain.ValidateAmount(amount, true); err != nil {
 		return math.Int{}, math.Int{}, math.Int{}, err
 	}
 	if err := s.Validate(); err != nil {

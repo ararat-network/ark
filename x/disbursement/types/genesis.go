@@ -50,10 +50,10 @@ func (gs GenesisState) Validate() error {
 	if err != nil {
 		return err
 	}
-	if err := ValidateAmount(gs.CompensationUsed, false); err != nil {
+	if err := chain.ValidateAmount(gs.CompensationUsed, false); err != nil {
 		return fmt.Errorf("term usage: %w", err)
 	}
-	if err := ValidateAmount(gs.MemberTranche, false); err != nil {
+	if err := chain.ValidateAmount(gs.MemberTranche, false); err != nil {
 		return fmt.Errorf("member tranche: %w", err)
 	}
 	totals, err := foldGrants(gs, beneficiaries)
@@ -147,7 +147,7 @@ func foldGrants(gs GenesisState, beneficiaries map[string]bool) (grantTotals, er
 				return grantTotals{}, fmt.Errorf("grant %d carries committee term %d beyond the live term %d", g.Id, term, committee.Term)
 			}
 			if term == committee.Term {
-				t.liveCompensation = t.liveCompensation.Add(g.AwardValue)
+				t.liveCompensation = t.liveCompensation.Add(g.Charge)
 			}
 		}
 		if g.Kind == GrantKind_GRANT_KIND_MEMBER {
@@ -180,10 +180,10 @@ func foldGrants(gs GenesisState, beneficiaries map[string]bool) (grantTotals, er
 func (t grantTotals) reconcile(gs GenesisState, listed map[string]AccountBook) error {
 	// The usage figure is state an appointment resets and awards grow; the grants must agree.
 	if !gs.CompensationUsed.Equal(t.liveCompensation) {
-		return fmt.Errorf("term usage %s differs from the live term's awards %s", gs.CompensationUsed, t.liveCompensation)
+		return fmt.Errorf("term usage %s differs from the live term's charges %s", gs.CompensationUsed, t.liveCompensation)
 	}
 	if t.liveCompensation.GT(gs.GrantsMandate.CompensationAllowance) {
-		return fmt.Errorf("the live term's awards %s exceed its allowance %s", t.liveCompensation, gs.GrantsMandate.CompensationAllowance)
+		return fmt.Errorf("the live term's charges %s exceed its allowance %s", t.liveCompensation, gs.GrantsMandate.CompensationAllowance)
 	}
 	for _, b := range gs.Beneficiaries {
 		if committed := amountOf(t.ownership, b.Address); !committed.Equal(b.OwnershipCommitted) {

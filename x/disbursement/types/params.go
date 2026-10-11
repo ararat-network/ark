@@ -69,7 +69,7 @@ func (p Params) Validate() error {
 	if _, _, _, err := p.MemberSchedule.Shares(p.MemberAmount); err != nil {
 		return fmt.Errorf("member schedule: %w", err)
 	}
-	if err := ValidateAmount(p.CompensationCap, true); err != nil {
+	if err := chain.ValidateAmount(p.CompensationCap, true); err != nil {
 		return fmt.Errorf("compensation cap: %w", err)
 	}
 	if p.CompensationWindow == 0 || p.CompensationWindow > MaxPeriodLength {
@@ -81,7 +81,7 @@ func (p Params) Validate() error {
 	if p.MemberSchedule.FirstLength < MinFirstPeriod || p.OwnershipSchedule.FirstLength < MinFirstPeriod {
 		return errors.New("member and ownership first periods must be at least two weeks")
 	}
-	if err := ValidateAmount(p.OwnershipCap, true); err != nil {
+	if err := chain.ValidateAmount(p.OwnershipCap, true); err != nil {
 		return fmt.Errorf("ownership cap: %w", err)
 	}
 	if err := p.OwnershipSchedule.Validate(); err != nil {

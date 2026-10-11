@@ -61,17 +61,25 @@ func (g Grant) Validate() error {
 	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && g.Amount.Denom != chain.NoahBaseDenom {
 		return errors.New("distribution grants require NOAH")
 	}
-	if err := ValidateAmount(g.AwardValue, g.Kind == GrantKind_GRANT_KIND_COMPENSATION); err != nil {
+	if err := chain.ValidateAmount(g.AwardValue, g.Kind == GrantKind_GRANT_KIND_COMPENSATION); err != nil {
 		return fmt.Errorf("award value: %w", err)
 	}
 	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && !g.AwardValue.IsZero() {
 		return errors.New("only compensation carries an award value")
 	}
+	// The committee awards compensation alone (D113), so a term on compensation is the committee's.
+	committee := g.Kind == GrantKind_GRANT_KIND_COMPENSATION && g.MandateTerm != 0
+	if err := chain.ValidateAmount(g.Charge, committee); err != nil {
+		return fmt.Errorf("charge: %w", err)
+	}
+	if !committee && !g.Charge.IsZero() {
+		return errors.New("only a committee award carries a charge")
+	}
 	if err := chain.ValidateReference("grant reference", g.Reference, true); err != nil {
 		return err
 	}
 	for _, v := range []math.Int{g.Paid, g.Remaining} {
-		if err := ValidateAmount(v, false); err != nil {
+		if err := chain.ValidateAmount(v, false); err != nil {
 			return err
 		}
 	}

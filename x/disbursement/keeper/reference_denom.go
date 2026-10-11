@@ -9,17 +9,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/x/disbursement/types"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
 // RebaseReference re-expresses every compensation figure in the new reference unit: the cap, each
-// compensation award's value, the live term's usage, and its allowance. It implements the oracle
-// module's ReferenceRebaser, and MsgSetReferenceDenom is its only caller. Every figure is a quantity
-// (D76), rounded up as the award-time valuation is, so no award counts for less after a move. The
-// usage is re-derived from the rebased awards rather than converted, so the import equality holds
-// exactly; the allowance is raised to it where the per-award ceilings outran its own, by under one
-// base unit an award, since a bound a few units loose beats wedging the re-point (D123).
+// compensation award's value and charge, the live term's usage, and its allowance. It implements the
+// oracle module's ReferenceRebaser, and MsgSetReferenceDenom is its only caller. Every figure is a
+// quantity (D76), rounded up as the award-time valuation is, so no award counts for less after a
+// move. The usage is re-derived from the rebased charges rather than converted, so the import
+// equality holds exactly; the allowance is raised to it where the per-award ceilings outran its own,
+// by under one base unit an award, since a bound a few units loose beats wedging the re-point (D123).
 func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	if from == to {
 		return nil
@@ -58,8 +59,13 @@ func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, ra
 			return true, fmt.Errorf("rebasing the value of grant %d: %w", g.Id, err)
 		}
 		g.AwardValue = value
+		charge, err := rebaseAmount(rates, g.Charge, from, to)
+		if err != nil {
+			return true, fmt.Errorf("rebasing the charge of grant %d: %w", g.Id, err)
+		}
+		g.Charge = charge
 		if g.MandateTerm != 0 && g.MandateTerm == mandate.Term {
-			if used, err = used.SafeAdd(value); err != nil {
+			if used, err = used.SafeAdd(charge); err != nil {
 				return true, fmt.Errorf("rebasing the term's usage: %w", err)
 			}
 		}
@@ -68,7 +74,7 @@ func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, ra
 	}); err != nil {
 		return err
 	}
-	if err := types.ValidateAmount(used, false); err != nil {
+	if err := chain.ValidateAmount(used, false); err != nil {
 		return fmt.Errorf("rebasing the term's usage: %w", err)
 	}
 
@@ -109,19 +115,17 @@ func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, ra
 	})
 }
 
-// rebaseAmount re-expresses a reference-unit amount in the new unit, rounded up; zero carries, as
-// Convert refuses it. The result is held to the module's amount bound here, where a proposal can be
-// refused, rather than at the next export, which would refuse the figure instead.
+// rebaseAmount re-expresses a reference-unit amount in the new unit, rounded up. The result is held
+// to the module's amount bound here, where a proposal can be refused, rather than at the next
+// export, which would refuse the figure instead.
 func rebaseAmount(rates oracletypes.RateSet, amount math.Int, from, to string) (math.Int, error) {
-	if amount.IsZero() {
-		return amount, nil
-	}
-	converted, err := rates.Convert(sdk.NewDecCoinFromDec(from, math.LegacyNewDecFromInt(amount)), to)
+	value, err := rates.ConvertCeil(sdk.Coin{Denom: from, Amount: amount}, to)
 	if err != nil {
 		return math.Int{}, err
 	}
-	value := converted.Amount.Ceil().TruncateInt()
-	if err := types.ValidateAmount(value, true); err != nil {
+	// A positive figure must stay positive: one rounding to zero would leave a record its own
+	// validation refuses, so the re-point is refused instead.
+	if err := chain.ValidateAmount(value, amount.IsPositive()); err != nil {
 		return math.Int{}, err
 	}
 	return value, nil

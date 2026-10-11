@@ -157,7 +157,7 @@ func TestGrantValidation(t *testing.T) {
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: address, Payee: address, CreatedBy: address,
 			Amount: sdk.NewInt64Coin("anoah", 30), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: hold, PeriodWeight: 1, Periods: 2},
 			StartTime: 100, CreatedTime: 100, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", CreatedHeight: 1, DueTime: 100 + 2*hold,
-			AwardValue: math.NewInt(30),
+			AwardValue: math.NewInt(30), Charge: math.ZeroInt(),
 		}
 	}
 	member := func(g *types.Grant) {
@@ -236,7 +236,11 @@ func TestGrantValidation(t *testing.T) {
 			member(g)
 			g.SuspendedTime, g.DueTime, g.Paid, g.Remaining = 115, 0, math.NewInt(20), math.NewInt(10)
 		}, "suspended member paid past its suspension"},
-		{"committee compensation", func(g *types.Grant) { g.MandateTerm = 1 }, ""},
+		{"committee compensation", func(g *types.Grant) { g.MandateTerm, g.Charge = 1, math.NewInt(35) }, ""},
+		{"committee compensation without a charge", func(g *types.Grant) { g.MandateTerm = 1 }, "charge: amount must be positive"},
+		{"committee compensation with an unset charge", func(g *types.Grant) { g.MandateTerm, g.Charge = 1, math.Int{} }, "charge: amount must be nonnegative"},
+		{"governance compensation with a charge", func(g *types.Grant) { g.Charge = math.NewInt(35) }, "only a committee award carries a charge"},
+		{"member with a charge", func(g *types.Grant) { member(g); g.Charge = math.NewInt(35) }, "only a committee award carries a charge"},
 		{"member without a term", func(g *types.Grant) { member(g); g.MandateTerm = 0 }, terms},
 		{"governance ownership", ownership, ""},
 		{"ownership under a term", func(g *types.Grant) { ownership(g); g.MandateTerm = 1 }, terms},
@@ -337,7 +341,7 @@ func TestAccrualAtEveryBound(t *testing.T) {
 		return types.Grant{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: address, Payee: address, CreatedBy: address,
 			Amount: sdk.NewCoin("anoah", amount), Schedule: shape, StartTime: start, CreatedTime: created, CreatedHeight: 1,
-			Paid: math.ZeroInt(), Remaining: amount, Reference: "agreement", AwardValue: math.ZeroInt(),
+			Paid: math.ZeroInt(), Remaining: amount, Reference: "agreement", AwardValue: math.ZeroInt(), Charge: math.ZeroInt(),
 			DueTime: start + shape.FirstLength,
 		}
 	}

@@ -502,6 +502,36 @@ func (s *KeeperTestSuite) TestCommitteeCompensate() {
 	s.Require().NoError(err)
 }
 
+// TestCommitteeCompensateChargesWhatTheAwardDrew pins the allowance to what an award drew, its
+// custody and the NOAH it converted, rather than its face value: cancelling an award returns its
+// principal to custody but cannot undo a steep buy's spread.
+func (s *KeeperTestSuite) TestCommitteeCompensateChargesWhatTheAwardDrew() {
+	s.SetupTest()
+	s.appointCommittee(150)
+	s.fund(types.ContributorsName, noah(1_000), usd(30))
+	a := testAddress(3)
+	usage := func() math.Int {
+		used, err := s.keeper.CompensationUsed.Get(s.ctx)
+		s.Require().NoError(err)
+		return used
+	}
+
+	// Face value 100 fits; 30 of custody and a 130 NOAH buy of the other 70 do not.
+	s.premium = 60
+	_, err := s.committeeConvert(a, usd(100), 1, math.NewInt(1_000))
+	s.Require().ErrorContains(err, "award charges 160, taking usage past the term's compensation allowance 150")
+	s.Require().True(usage().IsZero())
+	s.Require().Equal(sdk.NewCoins(noah(1_000), usd(30)), s.balances[types.ContributorsName], "a refused award buys nothing")
+
+	s.premium = 10
+	id, err := s.committeeConvert(a, usd(100), 1, math.NewInt(1_000))
+	s.Require().NoError(err)
+	g := s.grant(id)
+	s.Require().Equal("100", g.AwardValue.String(), "the cap still charges the award's value")
+	s.Require().Equal("110", g.Charge.String())
+	s.Require().Equal("110", usage().String())
+}
+
 func (s *KeeperTestSuite) TestSetPayee() {
 	s.SetupTest()
 	s.appointCommittee(0)

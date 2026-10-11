@@ -74,6 +74,8 @@ func (s *KeeperTestSuite) TestRebaseReference() {
 	s.Require().True(s.compensationCap().Equal(oldCap.MulRaw(3).QuoRaw(4)))
 	s.requireInt(s.grant(governance).AwardValue, 226)
 	s.requireInt(s.grant(committee).AwardValue, 375)
+	s.requireInt(s.grant(committee).Charge, 375)
+	s.Require().True(s.grant(governance).Charge.IsZero())
 	s.Require().True(s.grant(member).AwardValue.IsZero())
 	used, err := s.keeper.CompensationUsed.Get(s.ctx)
 	s.Require().NoError(err)
@@ -146,6 +148,13 @@ func (s *KeeperTestSuite) TestRebaseReferenceFailuresPreserveState() {
 			name:  "unpriced incoming unit",
 			rates: oracletypes.NewRateSetFrom(map[string]math.LegacyDec{chain.XDRBaseDenom: math.LegacyOneDec()}),
 			want:  chain.USDBaseDenom,
+		},
+		{
+			// A tiny outgoing unit and a vast incoming one take the cap below a base unit, which a
+			// positive figure may not reach.
+			name:  "cap rounding to zero",
+			rates: rebaseRates(math.LegacyNewDecWithPrec(1, 18), math.LegacyNewDecFromInt(math.NewIntWithDecimal(1, 30))),
+			want:  "rebasing the compensation cap: amount must be positive",
 		},
 		{
 			name:  "cap past the amount bound",

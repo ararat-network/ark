@@ -65,7 +65,7 @@ func (s *KeeperTestSuite) TestInitGenesisRefusals() {
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: pool, Payee: pool, CreatedBy: s.authority,
 			Amount: noah(20), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 1},
 			StartTime: start, CreatedTime: start, CreatedHeight: 1, Paid: math.ZeroInt(), Remaining: math.NewInt(20),
-			Reference: "agreement", AwardValue: math.ZeroInt(), DueTime: start + hold,
+			Reference: "agreement", AwardValue: math.ZeroInt(), Charge: math.ZeroInt(), DueTime: start + hold,
 		}}
 		gs.NextGrantId = 2
 		book := types.EmptyBook(types.ContributorsName)
@@ -91,7 +91,7 @@ func (s *KeeperTestSuite) TestInitGenesisRefusals() {
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: a, Payee: a, CreatedBy: s.authority,
 			Amount: noah(20), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 1},
 			StartTime: start, CreatedTime: start, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(10),
-			Reference: "agreement", AwardValue: math.ZeroInt(), DueTime: start + hold + 10,
+			Reference: "agreement", AwardValue: math.ZeroInt(), Charge: math.ZeroInt(), DueTime: start + hold + 10,
 		}}
 		gs.NextGrantId = 2
 		book := types.EmptyBook(types.ContributorsName)

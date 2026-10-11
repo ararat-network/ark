@@ -5,6 +5,7 @@ import (
 
 	"cosmossdk.io/math"
 
+	"github.com/ararat-network/ark/pkg/chain"
 	"github.com/ararat-network/ark/pkg/mandate"
 )
 
@@ -27,7 +28,7 @@ func (m GrantsMandate) Validate() error {
 	if err := m.Envelope.Validate(); err != nil {
 		return fmt.Errorf("%s: %w", GrantsMandateLabel, err)
 	}
-	if err := ValidateAmount(m.CompensationAllowance, false); err != nil {
+	if err := chain.ValidateAmount(m.CompensationAllowance, false); err != nil {
 		return fmt.Errorf("%s: allowance: %w", GrantsMandateLabel, err)
 	}
 	if m.IsDisabled() && !m.CompensationAllowance.IsZero() {

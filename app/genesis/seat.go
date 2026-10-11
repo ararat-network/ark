@@ -303,7 +303,7 @@ func (s *seatStates) award(beneficiary sdk.AccAddress, g disbursementtypes.Grant
 	g.Id = d.NextGrantId
 	g.Beneficiary, g.Payee = beneficiary.String(), beneficiary.String()
 	g.StartTime, g.CreatedTime, g.CreatedHeight, g.CreatedBy = at, at, founderAwardHeight, authority
-	g.Paid, g.Remaining = math.ZeroInt(), g.Amount.Amount
+	g.Paid, g.Remaining, g.Charge = math.ZeroInt(), g.Amount.Amount, math.ZeroInt()
 	_, next, err := g.Accrued(at)
 	if err != nil {
 		return err

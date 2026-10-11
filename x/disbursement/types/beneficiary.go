@@ -19,10 +19,10 @@ func (b Beneficiary) Validate() error {
 	if _, err := chain.ParseCanonicalAccountAddress("beneficiary controller", b.Controller); err != nil {
 		return err
 	}
-	if err := ValidateAmount(b.OwnershipCommitted, false); err != nil {
+	if err := chain.ValidateAmount(b.OwnershipCommitted, false); err != nil {
 		return fmt.Errorf("ownership committed: %w", err)
 	}
-	if err := ValidateAmount(b.Seat, false); err != nil {
+	if err := chain.ValidateAmount(b.Seat, false); err != nil {
 		return fmt.Errorf("seat: %w", err)
 	}
 	return nil

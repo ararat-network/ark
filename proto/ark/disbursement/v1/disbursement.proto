@@ -76,8 +76,8 @@ message GrantsMandate {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // compensation_allowance caps the term's compensation awards at their reference value when
-  // awarded; a cancel does not restore it.
+  // compensation_allowance caps the term's award charges: what each drew, conversion included, in
+  // the reference unit; a cancel does not restore it.
   string compensation_allowance = 2 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -175,6 +175,14 @@ message Grant {
   // due_time is the block time at or after which the module next attempts a payment; zero while the
   // grant owes nothing or the member is suspended.
   uint64 due_time = 18 [(amino.dont_omitempty) = true];
+  // charge is what a committee award drew from the contributor account, its custody and the NOAH it
+  // converted, valued in the reference unit at the award and rounded up; zero otherwise.
+  string charge = 19 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
 
 // GrantAction names what a grant entry records.

@@ -50,13 +50,13 @@ func validGenesis() *types.GenesisState {
 		{
 			Id: 1, Kind: types.GrantKind_GRANT_KIND_MEMBER, Beneficiary: a, Payee: a, CreatedBy: authority,
 			Amount: chain.NoahCoin(math.NewInt(10_000)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 3, Periods: 3},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", AwardValue: math.ZeroInt(), DueTime: 110 + hold,
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(1_000), Remaining: math.NewInt(9_000), Reference: "admission batch", AwardValue: math.ZeroInt(), Charge: math.ZeroInt(), DueTime: 110 + hold,
 			MandateTerm: 1,
 		},
 		{
 			Id: 2, Kind: types.GrantKind_GRANT_KIND_COMPENSATION, Beneficiary: b, Payee: b, CreatedBy: authority,
 			Amount: chain.NoahCoin(math.NewInt(30)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: hold, PeriodWeight: 1, Periods: 2},
-			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", AwardValue: math.NewInt(30), DueTime: 100 + 2*hold,
+			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(20), Reference: "work", AwardValue: math.NewInt(30), Charge: math.ZeroInt(), DueTime: 100 + 2*hold,
 		},
 	}
 	gs.NextGrantId = 3
@@ -139,7 +139,7 @@ func TestGenesisValidation(t *testing.T) {
 			Id: 3, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: c, Payee: c, CreatedBy: testAddress(9),
 			Amount: chain.NoahCoin(math.NewInt(40)), Schedule: types.Schedule{FirstLength: hold, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 3},
 			StartTime: 100, CreatedTime: 100, CreatedHeight: 1, Paid: math.NewInt(10), Remaining: math.NewInt(10), Reference: "agreement",
-			AwardValue: math.ZeroInt(), CutoffTime: 115 + hold, DueTime: 115 + hold,
+			AwardValue: math.ZeroInt(), Charge: math.ZeroInt(), CutoffTime: 115 + hold, DueTime: 115 + hold,
 		})
 		g.NextGrantId = 4
 		g.Beneficiaries[1].OwnershipCommitted = math.NewInt(20)
@@ -209,7 +209,16 @@ func TestGenesisValidation(t *testing.T) {
 			g.Grants[1].Kind, g.Grants[1].Beneficiary, g.Grants[1].Payee = types.GrantKind_GRANT_KIND_MEMBER, a, a
 			g.Grants[1].AwardValue, g.Grants[1].MandateTerm = math.ZeroInt(), 1
 		}, "both register member"},
-		{"committee term beyond the live term", func(g *types.GenesisState) { g.Grants[1].MandateTerm = 2 }, "committee term 2 beyond"},
+		{"committee term beyond the live term", func(g *types.GenesisState) { g.Grants[1].MandateTerm, g.Grants[1].Charge = 2, math.NewInt(30) }, "committee term 2 beyond"},
+		// The live term charges what its awards drew, not their value.
+		{"term usage sums award values", func(g *types.GenesisState) {
+			g.Grants[1].MandateTerm, g.Grants[1].Charge = 1, math.NewInt(45)
+			g.CompensationUsed = math.NewInt(30)
+		}, "differs from the live term's charges 45"},
+		{"term usage sums charges", func(g *types.GenesisState) {
+			g.Grants[1].MandateTerm, g.Grants[1].Charge = 1, math.NewInt(45)
+			g.CompensationUsed, g.GrantsMandate.CompensationAllowance = math.NewInt(45), math.NewInt(45)
+		}, ""},
 		{"registrar term beyond the live term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 2 }, "registrar term 2 beyond"},
 		{"member without a term", func(g *types.GenesisState) { g.Grants[0].MandateTerm = 0 }, "registrar term"},
 		{"registrar under a disabled committee", func(g *types.GenesisState) { g.GrantsMandate = types.NewDisabledGrantsMandate(1) }, "disabled grants mandate"},
