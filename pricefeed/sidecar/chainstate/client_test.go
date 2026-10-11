@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
@@ -23,6 +22,7 @@ import (
 
 	"cosmossdk.io/log/v2"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	"github.com/ararat-network/ark/pkg/tlsconfig"
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
@@ -283,7 +283,7 @@ func TestRunRecordsChainStateRefreshMetrics(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, provider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(provider)
+	telemetrytest.SetMeterProvider(t, provider)
 
 	query := newFakeQueryServer(
 		feedResult([]string{"akrw", "ausd"}),
@@ -603,6 +603,99 @@ func TestUpdateConfigAllowsStaleFeedsFromPreviousAddressUntilNextPoll(t *testing
 
 	secondQuery.release()
 	requireEventuallyTargets(t, client, []string{"akrw"})
+}
+
+// A node that never answers costs one Timeout: the query carries its own
+// deadline, the sweep moves on, and the next node's feeds are cached.
+func TestRefreshTimesOutAnUnansweredQuery(t *testing.T) {
+	const timeout = 20 * time.Millisecond
+	silent := &silentQueryServer{deadlines: make(chan time.Duration, 8)}
+	serving := newFakeQueryServer(feedResult([]string{"ausd"}))
+	silentEndpoint := newTestQueryEndpoint(t, "silent", silent)
+	servingEndpoint := newTestQueryEndpoint(t, "serving", serving)
+	client, err := NewClient(
+		Config{
+			TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+			Addresses: []string{silentEndpoint.address, servingEndpoint.address},
+			Timeout:   timeout,
+			Interval:  time.Hour,
+		},
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(silentEndpoint, servingEndpoint))),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	select {
+	case remaining := <-silent.deadlines:
+		require.Positive(t, remaining, "feed query carried no deadline")
+		require.LessOrEqual(t, remaining, timeout)
+	case <-time.After(5 * time.Second):
+		t.Fatal("silent node was never queried")
+	}
+	serving.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"ausd"})
+}
+
+// A run that cannot open its connections is retried after Interval, on the
+// config current at the retry: an update to a usable address recovers it.
+func TestRunRetriesAFailedRunWithTheCurrentConfig(t *testing.T) {
+	logs := &lockedBuffer{}
+	query := newFakeQueryServer(feedResult([]string{"ausd"}))
+	endpoint := newTestQueryEndpoint(t, "bufnet", query)
+	cfg := Config{
+		TLS:       tlsconfig.Client{Mode: tlsconfig.Plaintext},
+		Addresses: []string{"%"},
+		Timeout:   time.Second,
+		Interval:  10 * time.Millisecond,
+	}
+	client, err := NewClient(
+		cfg,
+		withDialOptions(grpc.WithContextDialer(dialTestQueryEndpoints(endpoint))),
+		WithLogger(log.NewLogger(logs, log.ColorOption(false))),
+	)
+	require.NoError(t, err)
+
+	cancel := startClient(t, client)
+	defer stopClient(cancel, client)
+
+	require.Eventually(t, func() bool {
+		return strings.Count(logs.String(), "chain state client poll failed") >= 2
+	}, 5*time.Second, time.Millisecond, "the failed run was not retried")
+	require.Contains(t, logs.String(), "invalid URL escape")
+	_, err = client.Feeds()
+	require.EqualError(t, err, "no feeds fetched yet")
+
+	cfg.Addresses = []string{endpoint.address}
+	require.NoError(t, client.Update(cfg))
+
+	query.waitForCalls(t, 1)
+	requireEventuallyTargets(t, client, []string{"ausd"})
+}
+
+// silentQueryServer reports each query's remaining deadline and answers only
+// when the caller gives up.
+type silentQueryServer struct {
+	oracletypes.UnimplementedQueryServer
+
+	deadlines chan time.Duration
+}
+
+func (s *silentQueryServer) Feeds(
+	ctx context.Context,
+	_ *oracletypes.QueryFeedsRequest,
+) (*oracletypes.QueryFeedsResponse, error) {
+	remaining := time.Duration(-1)
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining = time.Until(deadline)
+	}
+	select {
+	case s.deadlines <- remaining:
+	default:
+	}
+	<-ctx.Done()
+	return nil, ctx.Err()
 }
 
 func TestConfigValidateRejectsInvalidAddresses(t *testing.T) {

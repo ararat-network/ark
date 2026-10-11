@@ -10,6 +10,105 @@ import (
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/types"
 )
 
+func TestConfigValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		mutate  func(*Config)
+		wantErr string
+	}{
+		{name: "valid"},
+		{
+			name: "zero optional durations and limits",
+			mutate: func(c *Config) {
+				c.PostConnectionTimeout, c.PingInterval, c.WriteInterval, c.MaxTickersPerConnection = 0, 0, 0, 0
+			},
+		},
+		{
+			name:    "zero max buffer size",
+			mutate:  func(c *Config) { c.MaxBufferSize = 0 },
+			wantErr: "websocket max buffer size must be greater than 0",
+		},
+		{
+			name:    "zero reconnection timeout",
+			mutate:  func(c *Config) { c.ReconnectionTimeout = 0 },
+			wantErr: "websocket reconnection timeout must be greater than 0",
+		},
+		{
+			name:    "negative post connection timeout",
+			mutate:  func(c *Config) { c.PostConnectionTimeout = -1 },
+			wantErr: "websocket post connection timeout cannot be negative",
+		},
+		{
+			name:    "no endpoints",
+			mutate:  func(c *Config) { c.Endpoints = nil },
+			wantErr: "websocket endpoints cannot be empty",
+		},
+		{
+			name: "https endpoint",
+			mutate: func(c *Config) {
+				c.Endpoints = append(c.Endpoints, types.Endpoint{URL: "https://example.invalid/stream"})
+			},
+			wantErr: "endpoint 1: provider endpoint requires wss",
+		},
+		{
+			name:    "empty name",
+			mutate:  func(c *Config) { c.Name = "" },
+			wantErr: "websocket name cannot be empty",
+		},
+		{
+			name:    "zero handshake timeout",
+			mutate:  func(c *Config) { c.HandshakeTimeout = 0 },
+			wantErr: "websocket handshake timeout must be greater than 0",
+		},
+		{
+			name:    "zero read timeout",
+			mutate:  func(c *Config) { c.ReadTimeout = 0 },
+			wantErr: "websocket read timeout must be greater than 0",
+		},
+		{
+			name:    "zero write timeout",
+			mutate:  func(c *Config) { c.WriteTimeout = 0 },
+			wantErr: "websocket write timeout must be greater than 0",
+		},
+		{
+			name:    "negative ping interval",
+			mutate:  func(c *Config) { c.PingInterval = -1 },
+			wantErr: "websocket ping interval cannot be negative",
+		},
+		{
+			name:    "negative write interval",
+			mutate:  func(c *Config) { c.WriteInterval = -1 },
+			wantErr: "websocket write interval cannot be negative",
+		},
+		{
+			name:    "negative max tickers per connection",
+			mutate:  func(c *Config) { c.MaxTickersPerConnection = -1 },
+			wantErr: "websocket max tickers per connection cannot be negative",
+		},
+		{
+			name:    "zero max subscriptions per batch",
+			mutate:  func(c *Config) { c.MaxSubscriptionsPerBatch = 0 },
+			wantErr: "websocket max subscriptions per batch must be greater than 0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := testConfig("test")
+			if tt.mutate != nil {
+				tt.mutate(&cfg)
+			}
+
+			err := cfg.Validate()
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.EqualError(t, err, tt.wantErr)
+		})
+	}
+}
+
 func TestConfigEqual(t *testing.T) {
 	testCases := []struct {
 		name   string

@@ -106,6 +106,126 @@ func TestConfigEqualComparesIdentityTypeAndTransportConfig(t *testing.T) {
 	}
 }
 
+func TestConfigValidate(t *testing.T) {
+	markets := types.Markets{{Pair: "USDT/USD", Symbol: "USDTUSD"}}
+
+	testCases := []struct {
+		name    string
+		cfg     func() Config
+		wantErr string
+	}{
+		{
+			name: "valid api",
+			cfg:  func() Config { return testAPIProviderConfig("test", markets) },
+		},
+		{
+			name: "valid websocket",
+			cfg:  func() Config { return testWebSocketProviderConfig("test", markets) },
+		},
+		{
+			name: "empty name",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.Name = ""
+				return cfg
+			},
+			wantErr: "provider name cannot be empty",
+		},
+		{
+			name: "empty transport type",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.TransportType = ""
+				return cfg
+			},
+			wantErr: "provider transport type cannot be empty",
+		},
+		{
+			name:    "no markets",
+			cfg:     func() Config { return testAPIProviderConfig("test", nil) },
+			wantErr: "markets is empty",
+		},
+		{
+			name: "duplicate market pair",
+			cfg: func() Config {
+				return testAPIProviderConfig("test", types.Markets{
+					{Pair: "USDT/USD", Symbol: "USDTUSD"},
+					{Pair: "USDT/USD", Symbol: "USDT-USD"},
+				})
+			},
+			wantErr: `duplicate pair "USDT/USD"`,
+		},
+		{
+			name: "api name mismatch",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.API.Name = "other"
+				return cfg
+			},
+			wantErr: "mismatched provider and API config name",
+		},
+		{
+			name: "invalid api config",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.API.Timeout = 0
+				return cfg
+			},
+			wantErr: "timeout must be greater than 0",
+		},
+		{
+			name: "websocket name mismatch",
+			cfg: func() Config {
+				cfg := testWebSocketProviderConfig("test", markets)
+				cfg.WebSocket.Name = "other"
+				return cfg
+			},
+			wantErr: "mismatched provider and websocket config name",
+		},
+		{
+			name: "invalid websocket config",
+			cfg: func() Config {
+				cfg := testWebSocketProviderConfig("test", markets)
+				cfg.WebSocket.ReadTimeout = 0
+				return cfg
+			},
+			wantErr: "websocket read timeout must be greater than 0",
+		},
+		{
+			name: "websocket transport validates the websocket config",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.TransportType = base.WebSocket
+				return cfg
+			},
+			wantErr: "mismatched provider and websocket config name",
+		},
+		{
+			name: "unknown transport type",
+			cfg: func() Config {
+				cfg := testAPIProviderConfig("test", markets)
+				cfg.TransportType = base.TransportType("grpc")
+				return cfg
+			},
+			wantErr: "invalid provider transport type",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := tc.cfg()
+
+			err := cfg.Validate()
+
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.EqualError(t, err, tc.wantErr)
+		})
+	}
+}
+
 func TestConfigValidateRejectsNonPositiveMaxPriceAge(t *testing.T) {
 	testCases := []struct {
 		name        string

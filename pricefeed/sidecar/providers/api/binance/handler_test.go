@@ -200,6 +200,17 @@ func TestParseResponse(t *testing.T) {
 				"ETHUSDT": types.ErrorFailedToDecode,
 			},
 		},
+		{
+			// Binance reports a refused request as a code/msg object, not
+			// the price array, so every ticker fails to decode.
+			name:    "venue error body fails every ticker",
+			tickers: []types.Ticker{"BTCUSDT", "ETHUSDT"},
+			body:    `{"code":-1121,"msg":"Invalid symbol."}`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"BTCUSDT": types.ErrorFailedToDecode,
+				"ETHUSDT": types.ErrorFailedToDecode,
+			},
+		},
 	}
 
 	for _, tt := range tests {

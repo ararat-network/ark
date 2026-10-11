@@ -2,6 +2,7 @@ package runtime_test
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -89,23 +90,107 @@ func TestNewRuntimeWithProviderRegistry(t *testing.T) {
 	})
 }
 
-func TestConfigValidateRejectsNonCanonicalFallbackDenom(t *testing.T) {
-	cfg := testRuntimeConfigWithUnknownProvider()
-	cfg.FallbackFeeds = []string{"aUSD"}
+func TestConfigValidate(t *testing.T) {
+	testCases := []struct {
+		name    string
+		mutate  func(*Config)
+		wantErr string
+	}{
+		{name: "valid"},
+		{
+			name:   "fallback feeds at the maximum",
+			mutate: func(c *Config) { c.FallbackFeeds = distinctFeeds(oracletypes.MaxFeeds) },
+		},
+		{
+			name:    "zero update interval",
+			mutate:  func(c *Config) { c.UpdateInterval = 0 },
+			wantErr: "oracle update interval must be greater than 0",
+		},
+		{
+			name:    "no providers",
+			mutate:  func(c *Config) { c.Providers = nil },
+			wantErr: "oracle needs at least one provider",
+		},
+		{
+			name: "provider map key differs from its name",
+			mutate: func(c *Config) {
+				c.Providers = map[string]providers.Config{"other": testUnknownAPIProviderConfig("unknown", testMarkets())}
+			},
+			wantErr: `provider map key "other" must match provider name "unknown"`,
+		},
+		{
+			name: "invalid provider",
+			mutate: func(c *Config) {
+				provider := testUnknownAPIProviderConfig("unknown", testMarkets())
+				provider.MaxPriceAge = 0
+				c.Providers = map[string]providers.Config{"unknown": provider}
+			},
+			wantErr: "provider config is invalid: provider max price age must be greater than 0",
+		},
+		{
+			name: "invalid resolver",
+			mutate: func(c *Config) {
+				c.Resolver = testResolverConfig("aUSD", "direct", "USD/NOAH")
+			},
+			wantErr: `resolver config is invalid: invalid resolver denom "aUSD"`,
+		},
+		{
+			name:    "invalid client",
+			mutate:  func(c *Config) { c.Client.Timeout = 0 },
+			wantErr: "client config is invalid: feed query timeout must be greater than 0",
+		},
+		{
+			name:    "no fallback feeds",
+			mutate:  func(c *Config) { c.FallbackFeeds = nil },
+			wantErr: "oracle feeds fallback cannot be empty",
+		},
+		{
+			name:    "too many fallback feeds",
+			mutate:  func(c *Config) { c.FallbackFeeds = distinctFeeds(oracletypes.MaxFeeds + 1) },
+			wantErr: fmt.Sprintf("oracle fallback feed count %d exceeds maximum feeds %d", oracletypes.MaxFeeds+1, oracletypes.MaxFeeds),
+		},
+		{
+			name:    "non-canonical fallback feed",
+			mutate:  func(c *Config) { c.FallbackFeeds = []string{"aUSD"} },
+			wantErr: `invalid fallback feed "aUSD": `,
+		},
+		{
+			name:    "numeraire fallback feed",
+			mutate:  func(c *Config) { c.FallbackFeeds = []string{"anoah"} },
+			wantErr: `invalid fallback feed "anoah": denom anoah is the numeraire and is never priced`,
+		},
+		{
+			name:    "duplicate fallback feed",
+			mutate:  func(c *Config) { c.FallbackFeeds = []string{"ausd", "akrw", "ausd"} },
+			wantErr: `duplicate fallback feed "ausd"`,
+		},
+	}
 
-	err := cfg.Validate()
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := testRuntimeConfigWithUnknownProvider()
+			if tc.mutate != nil {
+				tc.mutate(&cfg)
+			}
 
-	require.ErrorContains(t, err, "Ark-native base denom matching")
+			err := cfg.Validate()
+
+			if tc.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
 }
 
-func TestConfigValidateRejectsTooManyFallbackFeeds(t *testing.T) {
-	cfg := testRuntimeConfigWithUnknownProvider()
-	cfg.FallbackFeeds = make([]string, oracletypes.MaxFeeds+1)
-
-	err := cfg.Validate()
-
-	require.ErrorContains(t, err, "fallback feed count")
-	require.ErrorContains(t, err, "exceeds maximum")
+// distinctFeeds returns n distinct canonical feed denoms.
+func distinctFeeds(n int) []string {
+	feeds := make([]string, n)
+	for i := range feeds {
+		feeds[i] = fmt.Sprintf("af%03d", i)
+	}
+	return feeds
 }
 
 func TestGetPriceSnapshotReturnsCommittedDenoms(t *testing.T) {

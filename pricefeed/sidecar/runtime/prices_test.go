@@ -10,11 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.uber.org/mock/gomock"
 
+	"github.com/ararat-network/ark/pkg/telemetry/telemetrytest"
 	sidecarmetrics "github.com/ararat-network/ark/pricefeed/sidecar/metrics"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers"
 	"github.com/ararat-network/ark/pricefeed/sidecar/providers/base"
@@ -242,7 +242,7 @@ func TestRunRecordsMissingPriceMetricsFromFallbackFeeds(t *testing.T) {
 	t.Cleanup(func() {
 		require.NoError(t, meterProvider.Shutdown(context.Background()))
 	})
-	otel.SetMeterProvider(meterProvider)
+	telemetrytest.SetMeterProvider(t, meterProvider)
 
 	ctrl := gomock.NewController(t)
 	started := make(chan struct{})

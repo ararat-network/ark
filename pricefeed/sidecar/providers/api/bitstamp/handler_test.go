@@ -88,6 +88,17 @@ func TestParseResponse(t *testing.T) {
 			body:       `{`,
 			wantErrors: map[types.Ticker]types.ErrorCode{"USDT/USD": types.ErrorFailedToDecode},
 		},
+		{
+			// Bitstamp reports a refused request as a status/reason object,
+			// not the market array, so every ticker fails to decode.
+			name:    "venue error body fails every ticker",
+			tickers: []types.Ticker{"USDT/USD", "BTC/USD"},
+			body:    `{"status":"error","reason":"Rate limit exceeded","code":"API0001"}`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"USDT/USD": types.ErrorFailedToDecode,
+				"BTC/USD":  types.ErrorFailedToDecode,
+			},
+		},
 	}
 
 	for _, tt := range tests {

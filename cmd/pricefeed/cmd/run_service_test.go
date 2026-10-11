@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 
 	"cosmossdk.io/log/v2"
 
@@ -27,8 +29,8 @@ import (
 var updateGolden = flag.Bool("update-golden", false, "rewrite the exported-series golden file")
 
 // freeLoopbackAddress returns a loopback address nothing is listening on.
-// runService binds its own listeners, so the addresses have to be released
-// again before it starts.
+// runService binds its own listeners and reports no bound address, so an
+// endpoint a test must dial has its port chosen and released here first.
 func freeLoopbackAddress(t *testing.T) string {
 	t.Helper()
 
@@ -62,13 +64,13 @@ func requireHTTPOK(t *testing.T, url string) {
 	}
 }
 
-// quietStartOptions serves on ephemeral ports, so concurrent tests never
+// quietStartOptions serves on an ephemeral port, so concurrent tests never
 // contend for the command's fixed defaults. The admin transport stays off:
 // its own run wrapper is covered where it lives.
 func quietStartOptions(t *testing.T) startOptions {
 	t.Helper()
 
-	return startOptions{address: freeLoopbackAddress(t)}
+	return startOptions{address: "127.0.0.1:0"}
 }
 
 // quietLogger logs only failures.
@@ -113,16 +115,50 @@ func TestRunServiceRefusesUnsafeProcessAddresses(t *testing.T) {
 	}
 }
 
-func TestRunServiceReportsAnUnreadableConfig(t *testing.T) {
-	err := runService(context.Background(), quietLogger(t), filepath.Join(t.TempDir(), "absent.toml"), quietStartOptions(t))
+func TestRunServiceReportsAConfigItCannotUse(t *testing.T) {
+	tests := []struct {
+		name      string
+		path      func(*testing.T) string
+		wantErr   string
+		wantErrIs error
+	}{
+		{
+			name: "unreadable",
+			path: func(t *testing.T) string {
+				t.Helper()
+				return filepath.Join(t.TempDir(), "absent.toml")
+			},
+			wantErr:   "reading oracle config: ",
+			wantErrIs: fs.ErrNotExist,
+		},
+		{
+			name: "unknown key",
+			path: func(t *testing.T) string {
+				t.Helper()
+				return writeConfig(t, "misspelled_knob = 1\n"+offlineConfigTOML())
+			},
+			wantErr: "decoding oracle config: ",
+		},
+		{
+			name: "refused",
+			path: func(t *testing.T) string {
+				t.Helper()
+				return writeConfig(t, `update_interval = "0s"`)
+			},
+			wantErr: "oracle update interval must be greater than 0",
+		},
+	}
 
-	require.Error(t, err)
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := runService(context.Background(), quietLogger(t), tt.path(t), quietStartOptions(t))
 
-func TestRunServiceReportsAnInvalidConfig(t *testing.T) {
-	err := runService(context.Background(), quietLogger(t), writeConfig(t, `update_interval = "0s"`), quietStartOptions(t))
-
-	require.Error(t, err)
+			require.ErrorContains(t, err, tt.wantErr)
+			if tt.wantErrIs != nil {
+				require.ErrorIs(t, err, tt.wantErrIs)
+			}
+		})
+	}
 }
 
 // TestRunServiceServesItsProcessEndpointsUntilCancelled exercises production endpoint startup. It
@@ -138,6 +174,9 @@ func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 	options.pprof = true
 	options.pprofAddress = pprofAddress
 
+	// otel binds init-time meters to the first provider a process installs, so
+	// a repeated run reaches the provider runService installs through the relay.
+	telemetrytest.RelayMeters()
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
 	go func() {
@@ -146,10 +185,10 @@ func TestRunServiceServesItsProcessEndpointsUntilCancelled(t *testing.T) {
 
 	requireHTTPOK(t, "http://"+metricsAddress+"/metrics")
 	requireHTTPOK(t, "http://"+pprofAddress+"/debug/pprof/")
+	telemetrytest.SetMeterProvider(t, otel.GetMeterProvider())
 
 	// Every Ark series the sidecar exports, by name, type, and label keys: the
-	// contract dashboards and alert rules elsewhere are written to. Checked
-	// here because the meters are bound to this process's one provider.
+	// contract dashboards and alert rules elsewhere are written to.
 	recordEverySidecarSeries(ctx)
 	telemetrytest.RequireGolden(t, prometheus.DefaultGatherer, telemetrytest.ArkSeries, filepath.Join("testdata", "exported_series.txt"), *updateGolden)
 

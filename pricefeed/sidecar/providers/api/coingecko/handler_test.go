@@ -140,6 +140,17 @@ func TestParseResponse(t *testing.T) {
 			body:       `{"tether":{"usd":"x"}}`,
 			wantErrors: map[types.Ticker]types.ErrorCode{"tether/usd": types.ErrorFailedToDecode},
 		},
+		{
+			// The rate-limit status object has the price map's shape until
+			// its message, which is no number, so every ticker fails to decode.
+			name:    "venue error body fails every ticker",
+			tickers: []types.Ticker{"tether/usd", "bitcoin/usd"},
+			body:    `{"status":{"error_code":429,"error_message":"You've exceeded the Rate Limit."}}`,
+			wantErrors: map[types.Ticker]types.ErrorCode{
+				"tether/usd":  types.ErrorFailedToDecode,
+				"bitcoin/usd": types.ErrorFailedToDecode,
+			},
+		},
 	}
 
 	for _, tt := range tests {
