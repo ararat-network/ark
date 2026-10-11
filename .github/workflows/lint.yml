@@ -57,6 +57,12 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # The proto-builder image runs as uid 1000 and the runner checks out as
+      # another user, so the generator could neither format nor replace files.
+      # Git records no mode but the executable bit, which X leaves alone, so the
+      # drift check below is unaffected.
+      - run: chmod -R a+rwX .
+
       # Regenerating from the checked-in schemas must reproduce the checked-in
       # tree: stale, missing, or hand-edited generated code fails here.
       - run: make proto-gen
