@@ -95,7 +95,9 @@ func MsgBuyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgBuy] {
 func MsgUpdateParamsFactory() simsx.SimMsgFactoryFn[*types.MsgUpdateParams] {
 	return func(_ context.Context, testData *simsx.ChainDataSource, reporter simsx.SimulationReporter) ([]simsx.SimAccount, *types.MsgUpdateParams) {
 		params := types.Params{
-			DefaultTobinTax: types.DefaultTobinTax,
+			// Basis points below a hundredth: under every positive cap MsgSetConversionMandateFactory
+			// draws, so a drawn default never empties a committee's Tobin band.
+			DefaultTobinTax: math.LegacyNewDecWithPrec(int64(testData.Rand().Intn(100)), 4),
 		}
 
 		return nil, &types.MsgUpdateParams{

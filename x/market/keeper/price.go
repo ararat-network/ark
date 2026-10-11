@@ -275,7 +275,9 @@ func (s snapshot) buy(ask sdk.Coin) (quote, error) {
 			return q, nil
 		}
 
-		// The output is below the ask here, so the shortfall is bounded by the ask.
+		// Backstop, unreached in practice: the ceiling absorbs the closed form's 18-place rounding, so
+		// a confirmation falls short only when that rounding straddles a whole base unit. The output
+		// is below the ask here, so the shortfall is bounded by the ask.
 		short, err := amount.SafeMul(ask.Amount.Sub(q.output.Amount))
 		if err != nil {
 			return quote{}, err

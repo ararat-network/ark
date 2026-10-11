@@ -1,6 +1,10 @@
 package keeper_test
 
 import (
+	"context"
+	"fmt"
+	"math/rand"
+
 	"go.uber.org/mock/gomock"
 
 	"cosmossdk.io/math"
@@ -38,6 +42,67 @@ func (s *KeeperTestSuite) TestQueryBuyFindsTheLeastSufficientOffer() {
 	s.Require().ErrorContains(err, "out of range")
 	_, err = s.queryClient.Buy(s.ctx, &types.QueryBuyRequest{AskCoin: "1" + chain.NoahBaseDenom, OfferDenom: chain.NoahBaseDenom})
 	s.Require().Error(err)
+}
+
+// TestQueryBuyIsTheLeastSufficientOfferAtAnyRate checks the inverse against the forward quote at rates
+// and pools that do not divide: the sized offer buys the ask, and one base unit less does not.
+func (s *KeeperTestSuite) TestQueryBuyIsTheLeastSufficientOfferAtAnyRate() {
+	r := rand.New(rand.NewSource(7))
+	var rates oracletypes.RateSet
+	s.oracleKeeper.EXPECT().GetRateSet(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(context.Context, ...string) (oracletypes.RateSet, error) { return rates, nil }).
+		AnyTimes()
+	rate := func() math.LegacyDec {
+		return math.LegacyNewDecWithPrec(r.Int63n(999_999_999_999_999_999)+1, 18).MulInt64(r.Int63n(1_000) + 1)
+	}
+	sell := func(offer sdk.Coin, askDenom string) (math.Int, error) {
+		res, err := s.queryClient.Sell(s.ctx, &types.QuerySellRequest{OfferCoin: offer.String(), AskDenom: askDenom})
+		if err != nil {
+			return math.Int{}, err
+		}
+		return res.SwapCoin.Amount, nil
+	}
+	pairs := [][2]string{
+		{chain.NoahBaseDenom, chain.USDBaseDenom},
+		{chain.USDBaseDenom, chain.NoahBaseDenom},
+		{chain.USDBaseDenom, chain.KRWBaseDenom},
+	}
+
+	quoted := 0
+	for range 600 {
+		rates = oracletypes.RateSet{
+			chain.NoahBaseDenom: math.LegacyOneDec(),
+			chain.USDBaseDenom:  rate(),
+			chain.KRWBaseDenom:  rate(),
+			chain.XDRBaseDenom:  rate(),
+		}
+		depth := math.LegacyNewDec(r.Int63n(1_000_000_000) + 1_000)
+		capacity := types.DefaultConversionPolicy()
+		capacity.BasePool = xdrBasePool(depth)
+		capacity.MinStabilitySpread = math.LegacyNewDecWithPrec(r.Int63n(50), 3)
+		s.Require().NoError(s.keeper.ConversionPolicy.Set(s.ctx, capacity))
+		s.Require().NoError(s.keeper.ArkPoolDelta.Set(s.ctx, depth.MulInt64(r.Int63n(160)-80).QuoInt64(100)))
+		pair := pairs[r.Intn(len(pairs))]
+		ask := sdk.NewCoin(pair[1], math.NewInt(r.Int63n(1_000_000)+1))
+
+		res, err := s.queryClient.Buy(s.ctx, &types.QueryBuyRequest{AskCoin: ask.String(), OfferDenom: pair[0]})
+		if err != nil {
+			// An ask the pool cannot fill or a quote out of range is refused, not sized.
+			continue
+		}
+		quoted++
+		describe := fmt.Sprintf("%s for %s at %v", ask, res.OfferCoin, rates)
+		output, err := sell(res.OfferCoin, pair[1])
+		s.Require().NoError(err, describe)
+		s.Require().True(output.GTE(ask.Amount), "the offer falls short: %s", describe)
+		if res.OfferCoin.Amount.GT(math.OneInt()) {
+			less, err := sell(sdk.NewCoin(pair[0], res.OfferCoin.Amount.SubRaw(1)), pair[1])
+			if err == nil {
+				s.Require().True(less.LT(ask.Amount), "a smaller offer suffices: %s", describe)
+			}
+		}
+	}
+	s.Require().Greater(quoted, 500, "most draws must quote, or the property is vacuous")
 }
 
 // TestBuyTakesTheLeastSufficientOffer runs a buy on the same setup: the trader pays exactly the

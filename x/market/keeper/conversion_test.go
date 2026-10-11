@@ -1067,9 +1067,10 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 	tests := []struct {
 		name string
 		// tobinCap seeds the appointment; nil skips seeding entirely so the
-		// suite's default disabled mandate stays live.
+		// fresh store's disabled mandate stays live.
 		tobinCap math.LegacyDec
-		// setup runs after the seed, before the message.
+		// setup runs after the seed, before the message, which carries the
+		// term then current.
 		setup       func()
 		msg         func(term uint64) *types.MsgCommitteeSetTobinTax
 		expectErr   string
@@ -1090,6 +1091,25 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 		},
 		{
 			name: "disabled mandate",
+			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
+				return &types.MsgCommitteeSetTobinTax{
+					Committee:    capacityCommittee(),
+					ExpectedTerm: term,
+					Denom:        chain.USDBaseDenom,
+					TobinTax:     math.LegacyNewDecWithPrec(2, 2),
+				}
+			},
+			expectErr: "signer is not the exact appointed account",
+		},
+		{
+			// Governance withdraws a live appointment; the committee it named
+			// holds nothing at the term the withdrawal advanced to.
+			name:     "withdrawn appointment",
+			tobinCap: tobinCapForTest(),
+			setup: func() {
+				_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{Authority: authority})
+				s.Require().NoError(err)
+			},
 			msg: func(term uint64) *types.MsgCommitteeSetTobinTax {
 				return &types.MsgCommitteeSetTobinTax{
 					Committee:    capacityCommittee(),
@@ -1199,24 +1219,19 @@ func (s *KeeperTestSuite) TestCommitteeSetTobinTaxRejections() {
 
 	for _, tc := range tests {
 		s.Run(tc.name, func() {
-			var term uint64
-			if tc.tobinCap.IsNil() {
-				// Replace whatever the previous subtest appointed with the
-				// canonical disabled mandate.
-				_, err := s.msgServer.SetConversionMandate(s.ctx, &types.MsgSetConversionMandate{Authority: authority})
-				s.Require().NoError(err)
-				current, err := s.keeper.ConversionMandate.Get(s.ctx)
-				s.Require().NoError(err)
-				term = current.Term
-			} else {
-				term = s.seedLiveTobinMandate(tc.tobinCap).Term
+			// Each case starts from a fresh store, so none inherits the last
+			// case's appointment, height, or overrides.
+			s.SetupTest()
+			if !tc.tobinCap.IsNil() {
+				s.seedLiveTobinMandate(tc.tobinCap)
 			}
-			s.assetStatuses = map[string]assettypes.AssetStatus{}
 			if tc.setup != nil {
 				tc.setup()
 			}
+			current, err := s.keeper.ConversionMandate.Get(s.ctx)
+			s.Require().NoError(err)
 
-			_, err := s.msgServer.CommitteeSetTobinTax(s.ctx, tc.msg(term))
+			_, err = s.msgServer.CommitteeSetTobinTax(s.ctx, tc.msg(current.Term))
 			s.Require().Error(err)
 			if tc.expectErr != "" {
 				s.Require().ErrorContains(err, tc.expectErr)

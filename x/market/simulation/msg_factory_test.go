@@ -45,14 +45,23 @@ const factorySeeds = 200
 // handler applies. A factory that drifts out of the domain turns a run into a
 // stream of refused messages that still reports success.
 func TestMsgUpdateParamsFactoryProducesValidMessages(t *testing.T) {
-	f := newMarketFixture(t, 1)
+	// The smallest positive cap MsgSetConversionMandateFactory draws.
+	smallestCap := math.LegacyNewDecWithPrec(1, 2)
+	drawn := map[string]struct{}{}
+	for seed := int64(0); seed < factorySeeds; seed++ {
+		f := newMarketFixture(t, seed)
 
-	_, msg := simulation.MsgUpdateParamsFactory()(f.ctx, f.testData, f.reporter)
+		_, msg := simulation.MsgUpdateParamsFactory()(f.ctx, f.testData, f.reporter)
 
-	require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
-	require.NotNil(t, msg)
-	require.Equal(t, govAddress().String(), msg.Authority)
-	require.NoError(t, msg.Params.Validate())
+		require.False(t, f.reporter.IsSkipped(), "seed %d: %s", seed, f.reporter.Comment())
+		require.NotNil(t, msg)
+		require.Equal(t, govAddress().String(), msg.Authority)
+		require.NoError(t, msg.Params.Validate(), "seed %d", seed)
+		require.True(t, msg.Params.DefaultTobinTax.LT(smallestCap),
+			"seed %d: default Tobin tax %s would empty a drawn committee band", seed, msg.Params.DefaultTobinTax)
+		drawn[msg.Params.DefaultTobinTax.String()] = struct{}{}
+	}
+	require.Greater(t, len(drawn), 1, "every seed drew the same default Tobin tax")
 }
 
 // TestMsgUpdatePolicyFactoryProducesValidMessages exercises the three
@@ -114,7 +123,7 @@ func TestMsgSellFactorySkipsWhenNothingIsPriced(t *testing.T) {
 	}{
 		{
 			name:    "registry prices nothing",
-			option:  withPricedDenoms(),
+			option:  withNothingPriced(),
 			comment: "no available exchange rates",
 		},
 		{
@@ -148,6 +157,63 @@ func TestMsgSellFactorySkipsAnUnquotablePair(t *testing.T) {
 
 	require.True(t, f.reporter.IsSkipped())
 	require.Nil(t, msg)
+}
+
+// TestMsgBuyFactoryEmitsCoveredBuys checks every draw is a NOAH-pair buy whose least offer stays
+// within the cap the message states, so the handler's maximum-offer refusal never fires on one.
+func TestMsgBuyFactoryEmitsCoveredBuys(t *testing.T) {
+	for seed := int64(0); seed < factorySeeds; seed++ {
+		f := newMarketFixture(t, seed)
+
+		_, msg := simulation.MsgBuyFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+		require.False(t, f.reporter.IsSkipped(), "seed %d: %s", seed, f.reporter.Comment())
+		require.NotNil(t, msg, "seed %d", seed)
+		requireNoahOnOneSide(t, seed, msg.OfferDenom, msg.AskCoin.Denom)
+		require.True(t, msg.AskCoin.IsPositive(), "seed %d", seed)
+		require.Equal(t, msg.OfferDenom, msg.MaximumOffer.Denom, "seed %d", seed)
+
+		sized, err := keeper.NewQueryServerImpl(f.keeper).Buy(f.ctx, &types.QueryBuyRequest{
+			AskCoin:    msg.AskCoin.String(),
+			OfferDenom: msg.OfferDenom,
+		})
+		require.NoError(t, err, "seed %d", seed)
+		require.True(t, sized.OfferCoin.Amount.LTE(msg.MaximumOffer.Amount),
+			"seed %d: buy needs %s, cap is %s", seed, sized.OfferCoin, msg.MaximumOffer)
+	}
+}
+
+// TestMsgBuyFactorySkipsWhenNothingIsQuotable covers the two states a run reaches before or after
+// rates exist: an empty registry and rates aged out of their window.
+func TestMsgBuyFactorySkipsWhenNothingIsQuotable(t *testing.T) {
+	tests := []struct {
+		name    string
+		option  marketOption
+		comment string
+	}{
+		{
+			name:    "registry prices nothing",
+			option:  withNothingPriced(),
+			comment: "no available exchange rates",
+		},
+		{
+			name:    "rates are stale",
+			option:  withStaleRates(),
+			comment: oracletypes.ErrStaleExchangeRate.Error(),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newMarketFixture(t, 1, tc.option)
+
+			_, msg := simulation.MsgBuyFactory(f.keeper)(f.ctx, f.testData, f.reporter)
+
+			require.True(t, f.reporter.IsSkipped())
+			require.Contains(t, f.reporter.Comment(), tc.comment)
+			require.Nil(t, msg)
+		})
+	}
 }
 
 func requireNoahOnOneSide(t *testing.T, seed int64, offerDenom, askDenom string) {
@@ -188,10 +254,10 @@ func withoutGovAccount() marketOption {
 	return func(c *marketConfig) { c.govRegistered = false }
 }
 
-// withPricedDenoms replaces the priced set; called with no arguments it empties
-// it, which is the state a chain is in before the first oracle window closes.
-func withPricedDenoms(denoms ...string) marketOption {
-	return func(c *marketConfig) { c.pricedDenoms = denoms }
+// withNothingPriced empties the priced set, which is the state a chain is in
+// before the first oracle window closes.
+func withNothingPriced() marketOption {
+	return func(c *marketConfig) { c.pricedDenoms = nil }
 }
 
 func withRegistryError() marketOption {
@@ -347,7 +413,7 @@ func TestTobinOverrideFactories(t *testing.T) {
 	})
 
 	t.Run("set skips an empty registry", func(t *testing.T) {
-		f := newMarketFixture(t, 1, withPricedDenoms())
+		f := newMarketFixture(t, 1, withNothingPriced())
 
 		_, msg := simulation.MsgSetTobinTaxOverrideFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 

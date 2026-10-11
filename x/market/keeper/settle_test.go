@@ -167,3 +167,63 @@ func (s *KeeperTestSuite) TestSettleRejectsIneligibleStatus() {
 		})
 	}
 }
+
+// TestSettleRefusals covers the refusals Settle makes before booking. The bank mock carries no
+// expectation, so a refusal that moved a coin fails the test.
+func (s *KeeperTestSuite) TestSettleRefusals() {
+	trader := sdk.AccAddress([]byte("trader_______________"))
+
+	tests := []struct {
+		name  string
+		offer sdk.Coin
+		// planned arms the plan lookup, which only a valid offer reaches.
+		planned   bool
+		expectErr string
+		errorIs   error
+	}{
+		{
+			name:      "negative offer",
+			offer:     sdk.Coin{Denom: chain.USDBaseDenom, Amount: math.NewInt(-1)},
+			expectErr: "invalid settlement offer",
+			errorIs:   types.ErrInvalidOrder,
+		},
+		{
+			name:      "invalid offer denom",
+			offer:     sdk.Coin{Denom: "1usd", Amount: math.NewInt(1_000_000)},
+			expectErr: "invalid settlement offer",
+			errorIs:   types.ErrInvalidOrder,
+		},
+		{
+			name:      "zero offer",
+			offer:     sdk.NewInt64Coin(chain.USDBaseDenom, 0),
+			expectErr: "is not positive",
+			errorIs:   types.ErrInvalidOrder,
+		},
+		{
+			// Half a NOAH per unit pays one unit half an anoah, which truncates to nothing.
+			name:      "entitlement truncates to zero",
+			offer:     sdk.NewInt64Coin(chain.USDBaseDenom, 1),
+			planned:   true,
+			expectErr: "rounds to zero",
+			errorIs:   types.ErrZeroSwapCoin,
+		},
+	}
+
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			s.assetStatuses = map[string]assettypes.AssetStatus{
+				chain.USDBaseDenom: assettypes.AssetStatus_ASSET_STATUS_SUSPENDED,
+			}
+			if tc.planned {
+				s.assetKeeper.EXPECT().
+					ActiveSettlementPlan(s.ctx, chain.USDBaseDenom).
+					Return(settlementPlan(chain.USDBaseDenom), true, nil)
+			}
+
+			redeemed, err := s.keeper.Settle(s.ctx, trader, tc.offer)
+			s.Require().ErrorIs(err, tc.errorIs)
+			s.Require().ErrorContains(err, tc.expectErr)
+			s.Require().Equal(sdk.Coin{}, redeemed)
+		})
+	}
+}

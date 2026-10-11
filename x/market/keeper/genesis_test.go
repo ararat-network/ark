@@ -6,57 +6,58 @@ import (
 	"cosmossdk.io/math"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 
 	"github.com/ararat-network/ark/pkg/chain"
+	"github.com/ararat-network/ark/pkg/mandate"
 	"github.com/ararat-network/ark/x/market/types"
 )
 
 func (s *KeeperTestSuite) TestInitExportGenesis() {
-	genesis := types.DefaultGenesisState()
-	// The launch set carries no override, so the round trip seeds its own. What
-	// is under test is that genesis carries overrides across export and import,
-	// not that the launch values happen to hold one.
-	genesis.TobinTaxOverrides = []types.TobinTaxOverride{
-		{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
-		{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+	minimum, maximum := capacityCorridor()
+	genesis := &types.GenesisState{
+		Params:       types.Params{DefaultTobinTax: math.LegacyNewDecWithPrec(5, 3)},
+		ArkPoolDelta: math.LegacyNewDec(-7),
+		TobinTaxOverrides: []types.TobinTaxOverride{
+			{Denom: chain.KRWBaseDenom, TobinTax: math.LegacyNewDecWithPrec(2, 2)},
+			{Denom: chain.MXNBaseDenom, TobinTax: math.LegacyNewDecWithPrec(1, 2)},
+		},
+		ConversionPolicy: candidateInsideCorridor(),
+		ConversionMandate: types.ConversionMandate{
+			Envelope: mandate.Envelope{
+				Term:           3,
+				Committee:      capacityCommittee(),
+				ActivationTime: capacityActivation,
+				ExpiryTime:     capacityExpiry,
+				CommitteeShape: mandate.CommitteeShape{
+					AccountType: "/cosmos.auth.v1beta1.BaseAccount",
+					KeyKind:     mandate.CommitteeKeyKind_COMMITTEE_KEY_KIND_MULTISIG,
+					Threshold:   2,
+					MemberCount: 3,
+				},
+			},
+			MinimumPolicy: minimum,
+			MaximumPolicy: maximum,
+			MaxTobinTax:   tobinCapForTest(),
+		},
 	}
+	// Every field departs from the suite's seed, so one the import skipped cannot match by accident.
+	seeded, err := s.keeper.ExportGenesis(s.ctx)
+	s.Require().NoError(err)
+	s.Require().NotEqual(seeded.Params, genesis.Params)
+	s.Require().False(seeded.ArkPoolDelta.Equal(genesis.ArkPoolDelta))
+	s.Require().NotEqual(seeded.TobinTaxOverrides, genesis.TobinTaxOverrides)
+	s.Require().False(seeded.ConversionPolicy.Equal(genesis.ConversionPolicy))
+	s.Require().NotEqual(seeded.ConversionMandate, genesis.ConversionMandate)
 
 	s.accountKeeper.EXPECT().GetModuleAccount(s.ctx, types.ModuleName).Return(authtypes.NewEmptyModuleAccount(types.ModuleName))
 	s.oracleKeeper.EXPECT().GetReferenceDenom(s.ctx).
 		Return(chain.XDRBaseDenom, nil)
-	err := s.keeper.InitGenesis(s.ctx, genesis)
-	s.Require().NoError(err)
+	s.Require().NoError(s.keeper.InitGenesis(s.ctx, genesis))
 
-	// Verify params
-	params, err := s.keeper.Params.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().Equal(genesis.Params, params)
-
-	// Verify pool delta
-	delta, err := s.keeper.ArkPoolDelta.Get(s.ctx)
-	s.Require().NoError(err)
-	s.Require().True(delta.Equal(genesis.ArkPoolDelta))
-
-	// Overrides are governance judgment that cannot be re-derived, so genesis is
-	// the only thing carrying them across an export and import cycle.
-	s.Require().Len(genesis.TobinTaxOverrides, 2)
-	for _, override := range genesis.TobinTaxOverrides {
-		stored, getErr := s.keeper.TobinTaxOverrides.Get(s.ctx, override.Denom)
-		s.Require().NoError(getErr)
-		s.Require().True(override.TobinTax.Equal(stored),
-			"expected %s for %s, got %s", override.TobinTax, override.Denom, stored)
-	}
-
-	// Export and verify round-trip
 	exported, err := s.keeper.ExportGenesis(s.ctx)
 	s.Require().NoError(err)
-	s.Require().True(genesis.ArkPoolDelta.Equal(exported.ArkPoolDelta))
-	s.Require().Equal(genesis.Params, exported.Params)
-	s.Require().Len(exported.TobinTaxOverrides, len(genesis.TobinTaxOverrides))
-	for i, override := range genesis.TobinTaxOverrides {
-		s.Require().Equal(override.Denom, exported.TobinTaxOverrides[i].Denom)
-		s.Require().True(override.TobinTax.Equal(exported.TobinTaxOverrides[i].TobinTax))
-	}
+	s.Require().Equal(genesis, exported)
 }
 
 func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
@@ -68,17 +69,21 @@ func (s *KeeperTestSuite) TestInitGenesis_MissingModuleAccount() {
 	s.Require().ErrorContains(err, "module account has not been set")
 }
 
-// TestInitGenesis_ReferenceMismatchPreservesState checks the pool denomination matches the protocol
-// reference imported by Oracle before Market initialisation.
-func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
+// TestInitGenesis_RefusalPreservesState checks the refusals genesis makes against live state: the
+// pool denomination must match the protocol reference imported by Oracle before Market
+// initialisation, and the committee must not be the authority.
+func (s *KeeperTestSuite) TestInitGenesis_RefusalPreservesState() {
 	referenceErr := errors.New("asset reference unavailable")
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 	tests := []struct {
 		name          string
 		basePoolDenom string
 		reference     string
 		referenceErr  error
-		expectErr     string
-		errorIs       error
+		// committee, when set, appoints it over the standard corridor.
+		committee string
+		expectErr string
+		errorIs   error
 	}{
 		{
 			name:          "base pool disagrees with the reference",
@@ -99,6 +104,13 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 			expectErr:    "getting protocol reference",
 			errorIs:      referenceErr,
 		},
+		{
+			// The message path refuses this appointment too; genesis is the other way in.
+			name:      "committee is the authority",
+			reference: chain.XDRBaseDenom,
+			committee: authority,
+			expectErr: "conversion committee must be distinct from the Market authority",
+		},
 	}
 
 	for _, tc := range tests {
@@ -106,6 +118,20 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 			genesis := types.DefaultGenesisState()
 			if tc.basePoolDenom != "" {
 				genesis.ConversionPolicy.BasePool.Denom = tc.basePoolDenom
+			}
+			if tc.committee != "" {
+				minimum, maximum := capacityCorridor()
+				genesis.ConversionMandate = types.ConversionMandate{
+					Envelope: mandate.Envelope{
+						Term:           1,
+						Committee:      tc.committee,
+						ActivationTime: capacityActivation,
+						ExpiryTime:     capacityExpiry,
+					},
+					MinimumPolicy: minimum,
+					MaximumPolicy: maximum,
+					MaxTobinTax:   math.LegacyZeroDec(),
+				}
 			}
 			genesis.ArkPoolDelta = math.LegacyOneDec()
 
@@ -119,7 +145,7 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 				s.Require().ErrorIs(err, tc.errorIs)
 			}
 
-			// Genesis writes nothing until the reference agrees, so the state the
+			// Genesis writes nothing until every check passes, so the state the
 			// suite seeded is still intact.
 			params, getErr := s.keeper.Params.Get(s.ctx)
 			s.Require().NoError(getErr)
@@ -130,6 +156,9 @@ func (s *KeeperTestSuite) TestInitGenesis_ReferenceMismatchPreservesState() {
 			overrides, getErr := s.keeper.GetTobinTaxOverrides(s.ctx)
 			s.Require().NoError(getErr)
 			s.Require().Empty(overrides)
+			appointment, getErr := s.keeper.ConversionMandate.Get(s.ctx)
+			s.Require().NoError(getErr)
+			s.Require().Equal(types.DefaultConversionMandate(), appointment)
 		})
 	}
 }

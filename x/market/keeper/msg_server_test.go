@@ -624,6 +624,32 @@ func (s *KeeperTestSuite) TestMsgUpdateParams() {
 	}
 }
 
+// TestTobinOverrideHandlersRefuseAStranger pins the authority check on both override handlers: a
+// refusal leaves the stored overrides as they were.
+func (s *KeeperTestSuite) TestTobinOverrideHandlersRefuseAStranger() {
+	stranger := authtypes.NewModuleAddress("stranger").String()
+	s.Require().NoError(s.keeper.SetTobinTaxOverride(s.ctx, chain.USDBaseDenom, math.LegacyNewDecWithPrec(1, 2)))
+	before, err := s.keeper.GetTobinTaxOverrides(s.ctx)
+	s.Require().NoError(err)
+
+	_, err = s.msgServer.SetTobinTaxOverride(s.ctx, &types.MsgSetTobinTaxOverride{
+		Authority: stranger,
+		Denom:     chain.KRWBaseDenom,
+		TobinTax:  math.LegacyNewDecWithPrec(99, 2),
+	})
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+	_, err = s.msgServer.RemoveTobinTaxOverride(s.ctx, &types.MsgRemoveTobinTaxOverride{
+		Authority: stranger,
+		Denom:     chain.USDBaseDenom,
+	})
+	s.Require().ErrorIs(err, errortypes.ErrUnauthorized)
+
+	after, err := s.keeper.GetTobinTaxOverrides(s.ctx)
+	s.Require().NoError(err)
+	s.Require().Equal(before, after)
+}
+
 func (s *KeeperTestSuite) setupArkToArkSwapMocks(trader sdk.AccAddress, offerCoin sdk.Coin, swapCoin sdk.Coin) {
 	// One USD is 1300 NOAH and one KRW is one, so one USD is 1300 KRW.
 	s.expectStableToStableQuote(oracletypes.RateSet{
