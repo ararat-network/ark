@@ -304,10 +304,10 @@ func TestResolvePricesDropsNonPositiveSamples(t *testing.T) {
 	}
 }
 
-// Legs each inside the LegacyDec range can multiply past it. Such a route is
-// dropped, even when a later leg would bring the product back, and the feed
-// rests on its other routes.
-func TestResolvePricesDropsRouteWhoseProductLeavesRange(t *testing.T) {
+// Legs each inside the LegacyDec range can multiply past it. A route is judged by
+// its product: one that ends past the range is dropped and the feed rests on its
+// other routes, and one that passes beyond it and comes back resolves.
+func TestResolvePricesJudgesARouteByItsProduct(t *testing.T) {
 	pow2 := func(exp int) *big.Float {
 		return new(big.Float).SetPrec(types.PricePrecisionBits).SetMantExp(big.NewFloat(0.5), exp+1)
 	}
@@ -331,7 +331,7 @@ func TestResolvePricesDropsRouteWhoseProductLeavesRange(t *testing.T) {
 	}{
 		{name: "with another route", routes: []resolver.Route{twoLegs, fallback}, want: "6"},
 		{name: "alone", routes: []resolver.Route{twoLegs}},
-		{name: "past the range and back", routes: []resolver.Route{threeLegs}},
+		{name: "past the range and back", routes: []resolver.Route{threeLegs}, want: "1427247692705959881058285969449495136382746624"},
 	}
 
 	for _, tt := range tests {
