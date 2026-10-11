@@ -144,7 +144,9 @@ nodes and sidecars release independently.
 
 Preconfigure two sidecar endpoints in the node's `sidecar_addresses` and warm the replacement before stopping the old
 process. The node stays on its active endpoint until failure, then tries alternatives. Each attempt has its own
-`client_timeout`; the last successful snapshot remains usable only within `price_ttl`. Continuity therefore depends on
+`client_timeout`; the last successful snapshot remains usable only within `price_ttl`. The node refuses to start unless
+`client_timeout` is less than `price_ttl` minus `interval`, so a sweep that waits out one hung sidecar still lands in
+time; each further hung sidecar costs another `client_timeout`. Continuity therefore depends on
 replacement readiness, feed coverage, and the failover sweep completing before the usable snapshot expires.
 
 Changing the node's address list requires a node restart. Existing connections do not acquire new trust roots when a CA
