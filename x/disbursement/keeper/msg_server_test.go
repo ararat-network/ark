@@ -57,6 +57,83 @@ func (s *KeeperTestSuite) TestGovernanceMessagesRequireTheAuthority() {
 	}
 }
 
+// TestAppointedMessagesRequireTheLiveAppointment runs the guard every committee and registrar
+// message runs before its own preconditions, once per handler, on a message the live appointment
+// lands: a stranger, the other appointee, the authority, and the replaced term are refused, and a
+// refusal writes nothing.
+func (s *KeeperTestSuite) TestAppointedMessagesRequireTheLiveAppointment() {
+	a, b, c := testAddress(3), testAddress(4), testAddress(5)
+	const (
+		committeeSigner = "grants mandate: signer is not the exact appointed account"
+		committeeTerm   = "grants mandate: term mismatch: expected 2, got 1"
+		registrarSigner = "registrar mandate: signer is not the exact appointed account"
+		registrarTerm   = "registrar mandate: term mismatch: expected 2, got 1"
+	)
+	for _, tc := range []struct {
+		name               string
+		live, other        string
+		signerErr, termErr string
+		call               func(signer string, term uint64) error
+	}{
+		{"CommitteeRegistrar", s.committee, s.registrar, committeeSigner, committeeTerm, func(signer string, term uint64) error {
+			committee, err := s.keeper.GrantsMandate.Get(s.ctx)
+			s.Require().NoError(err)
+			_, err = s.msgServer.CommitteeRegistrar(s.ctx, &types.MsgCommitteeRegistrar{
+				Committee: signer, ExpectedTerm: term, Registrar: c, ActivationTime: committee.ActivationTime, ExpiryTime: committee.ExpiryTime,
+			})
+			return err
+		}},
+		{"RegisterMembers", s.registrar, s.committee, registrarSigner, registrarTerm, func(signer string, term uint64) error {
+			_, err := s.msgServer.RegisterMembers(s.ctx, &types.MsgRegisterMembers{Registrar: signer, ExpectedTerm: term, Addresses: []string{c}, Reference: "admission batch"})
+			return err
+		}},
+		{"CommitteeSuspend", s.committee, s.registrar, committeeSigner, committeeTerm, func(signer string, term uint64) error {
+			_, err := s.msgServer.CommitteeSuspend(s.ctx, &types.MsgCommitteeSuspend{Committee: signer, ExpectedTerm: term, Addresses: []string{a}})
+			return err
+		}},
+		{"CommitteeReinstate", s.committee, s.registrar, committeeSigner, committeeTerm, func(signer string, term uint64) error {
+			_, err := s.msgServer.CommitteeReinstate(s.ctx, &types.MsgCommitteeReinstate{Committee: signer, ExpectedTerm: term, Addresses: []string{b}})
+			return err
+		}},
+		{"CommitteeCompensate", s.committee, s.registrar, committeeSigner, committeeTerm, func(signer string, term uint64) error {
+			_, err := s.msgServer.CommitteeCompensate(s.ctx, &types.MsgCommitteeCompensate{
+				Committee: signer, ExpectedTerm: term, Beneficiary: c, Amount: noah(10), StartTime: s.now(), Periods: 1, Reference: "committee pay",
+			})
+			return err
+		}},
+	} {
+		s.Run(tc.name, func() {
+			// Both appointments are on their second term, so the first is a replaced one.
+			s.SetupTest()
+			s.appointCommittee(100)
+			s.appointCommittee(100)
+			s.appointRegistrar()
+			s.appointRegistrar()
+			s.openTranche(30_000)
+			s.fund(types.ContributorsName, noah(1_000))
+			s.register(a)
+			s.register(b)
+			s.Require().NoError(s.suspend(b))
+			before := s.export()
+			const term = 2
+			for _, refusal := range []struct {
+				name, signer string
+				term         uint64
+				err          string
+			}{
+				{"a stranger", testAddress(9), term, tc.signerErr},
+				{"the other appointee", tc.other, term, tc.signerErr},
+				{"the authority", s.authority, term, tc.signerErr},
+				{"a replaced term", tc.live, term - 1, tc.termErr},
+			} {
+				s.Require().ErrorContains(tc.call(refusal.signer, refusal.term), refusal.err, refusal.name)
+				s.Require().Equal(before, s.export(), "%s wrote state", refusal.name)
+			}
+			s.Require().NoError(tc.call(tc.live, term), "the live appointment lands the same message")
+		})
+	}
+}
+
 func (s *KeeperTestSuite) TestUpdateParams() {
 	s.SetupTest()
 	p := testParams()
@@ -190,6 +267,15 @@ func (s *KeeperTestSuite) TestCompensate() {
 		s.Require().Equal([]types.GrantAction{types.GrantAction_GRANT_ACTION_CREATED}, s.actions(id))
 		_, err = s.compensate(a, noah(41), s.now(), 1, math.ZeroInt())
 		s.Require().ErrorContains(err, "insufficient uncommitted")
+	})
+	s.Run("an award's value rounds up to a whole reference unit", func() {
+		s.SetupTest()
+		// A reference unit is three NOAH, so ten NOAH is 3⅓ units: the cap counts four.
+		s.rates[s.reference] = math.LegacyNewDec(3)
+		s.fund(types.ContributorsName, noah(100))
+		id, err := s.compensate(a, noah(10), s.now(), 1, math.ZeroInt())
+		s.Require().NoError(err)
+		s.Require().Equal(math.NewInt(4), s.grant(id).AwardValue)
 	})
 	s.Run("a stablecoin award uses custody first and buys the rest within its cap", func() {
 		s.SetupTest()

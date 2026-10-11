@@ -18,20 +18,20 @@ func TestScheduleShares(t *testing.T) {
 		amount            int64
 		shape             types.Schedule
 		first, each, last int64
-		bad               bool
+		err               string
 	}{
-		{"remainder", 23, types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 2}, 7, 7, 9, false},
-		{"exact", 40, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 20, PeriodWeight: 3, Periods: 1}, 10, 30, 30, false},
-		{"one period", 23, types.Schedule{FirstLength: 10, FirstWeight: 1}, 23, 0, 23, false},
-		{"too small", 1, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, true},
-		{"weight over the bound", 100, types.Schedule{FirstLength: 1, FirstWeight: types.MaxWeight + 1, PeriodLength: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, true},
-		{"periods over the bound", 100, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 1, PeriodWeight: 1, Periods: types.MaxSchedulePeriods + 1}, 0, 0, 0, true},
-		{"further periods without a length", 100, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, true},
+		{"remainder", 23, types.Schedule{FirstLength: 10, FirstWeight: 1, PeriodLength: 10, PeriodWeight: 1, Periods: 2}, 7, 7, 9, ""},
+		{"exact", 40, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 20, PeriodWeight: 3, Periods: 1}, 10, 30, 30, ""},
+		{"one period", 23, types.Schedule{FirstLength: 10, FirstWeight: 1}, 23, 0, 23, ""},
+		{"too small", 1, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, "every period must receive a positive amount"},
+		{"weight over the bound", 100, types.Schedule{FirstLength: 1, FirstWeight: types.MaxWeight + 1, PeriodLength: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, "first period requires a bounded positive length and weight"},
+		{"periods over the bound", 100, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodLength: 1, PeriodWeight: 1, Periods: types.MaxSchedulePeriods + 1}, 0, 0, 0, "schedule has at most 1200 further periods"},
+		{"further periods without a length", 100, types.Schedule{FirstLength: 1, FirstWeight: 1, PeriodWeight: 1, Periods: 1}, 0, 0, 0, "further periods require a bounded positive length and weight"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			first, each, last, err := tc.shape.Shares(math.NewInt(tc.amount))
-			if tc.bad {
-				require.Error(t, err)
+			if tc.err != "" {
+				require.ErrorContains(t, err, tc.err)
 				return
 			}
 			require.NoError(t, err)

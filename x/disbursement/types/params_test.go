@@ -12,43 +12,63 @@ import (
 )
 
 func TestParamsValidation(t *testing.T) {
+	const (
+		member       = "member schedule: "
+		ownership    = "ownership schedule: "
+		firstFloor   = "member and ownership first periods must be at least two weeks"
+		window       = "compensation window must be positive and at most a century"
+		period       = "compensation period must be at least two weeks and at most ten years"
+		firstBound   = "first period requires a bounded positive length and weight"
+		furtherBound = "further periods require a bounded positive length and weight"
+		amountBits   = "amount must be nonnegative and at most 128 bits"
+	)
+	bits128 := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.Params)
-		valid  bool
+		err    string
 	}{
-		{"defaults", func(*types.Params) {}, true},
-		{"zero amount", func(p *types.Params) { p.MemberAmount = math.ZeroInt() }, false},
-		{"nil amount", func(p *types.Params) { p.MemberAmount = math.Int{} }, false},
-		{"excess amount", func(p *types.Params) { p.MemberAmount = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128)) }, false},
-		{"dust period", func(p *types.Params) { p.MemberAmount = math.OneInt() }, false},
-		{"member shape past the period limit", func(p *types.Params) { p.MemberSchedule.Periods = types.MaxSchedulePeriods + 1 }, false},
-		{"zero length", func(p *types.Params) { p.MemberSchedule.FirstLength = 0 }, false},
-		{"zero weight", func(p *types.Params) { p.MemberSchedule.FirstWeight = 0 }, false},
-		{"zero cap", func(p *types.Params) { p.CompensationCap = math.ZeroInt() }, false},
-		{"excess cap", func(p *types.Params) { p.CompensationCap = math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128)) }, false},
-		{"zero window", func(p *types.Params) { p.CompensationWindow = 0 }, false},
-		{"century window", func(p *types.Params) { p.CompensationWindow = types.MaxPeriodLength }, true},
-		{"window over a century", func(p *types.Params) { p.CompensationWindow = types.MaxPeriodLength + 1 }, false},
-		{"period under two weeks", func(p *types.Params) { p.CompensationPeriod = types.MinFirstPeriod - 1 }, false},
-		{"member hold under two weeks", func(p *types.Params) { p.MemberSchedule.FirstLength = types.MinFirstPeriod - 1 }, false},
-		{"member hold past the floor", func(p *types.Params) { p.MemberSchedule.FirstLength = types.MinFirstPeriod + 1 }, true},
-		{"ownership cliff under two weeks", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MinFirstPeriod - 1 }, false},
-		{"ownership cliff at the floor", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MinFirstPeriod }, true},
-		{"ten-year period", func(p *types.Params) { p.CompensationPeriod = types.MaxCompensationDuration }, true},
-		{"period over ten years", func(p *types.Params) { p.CompensationPeriod = types.MaxCompensationDuration + 1 }, false},
-		{"zero ownership cap", func(p *types.Params) { p.OwnershipCap = math.ZeroInt() }, false},
-		{"ownership shape without a first length", func(p *types.Params) { p.OwnershipSchedule.FirstLength = 0 }, false},
+		{"defaults", func(*types.Params) {}, ""},
+		{"zero amount", func(p *types.Params) { p.MemberAmount = math.ZeroInt() }, member + "amount must be positive"},
+		{"nil amount", func(p *types.Params) { p.MemberAmount = math.Int{} }, member + amountBits},
+		{"excess amount", func(p *types.Params) { p.MemberAmount = bits128 }, member + amountBits},
+		{"dust period", func(p *types.Params) { p.MemberAmount = math.OneInt() }, member + "every period must receive a positive amount"},
+		{"member shape past the period limit", func(p *types.Params) { p.MemberSchedule.Periods = types.MaxSchedulePeriods + 1 }, member + "schedule has at most 1200 further periods"},
+		{"zero length", func(p *types.Params) { p.MemberSchedule.FirstLength = 0 }, member + firstBound},
+		{"zero weight", func(p *types.Params) { p.MemberSchedule.FirstWeight = 0 }, member + firstBound},
+		{"zero cap", func(p *types.Params) { p.CompensationCap = math.ZeroInt() }, "compensation cap: amount must be positive"},
+		{"excess cap", func(p *types.Params) { p.CompensationCap = bits128 }, "compensation cap: " + amountBits},
+		{"zero window", func(p *types.Params) { p.CompensationWindow = 0 }, window},
+		{"century window", func(p *types.Params) { p.CompensationWindow = types.MaxPeriodLength }, ""},
+		{"window over a century", func(p *types.Params) { p.CompensationWindow = types.MaxPeriodLength + 1 }, window},
+		{"period under two weeks", func(p *types.Params) { p.CompensationPeriod = types.MinFirstPeriod - 1 }, period},
+		{"member hold under two weeks", func(p *types.Params) { p.MemberSchedule.FirstLength = types.MinFirstPeriod - 1 }, firstFloor},
+		{"member hold past the floor", func(p *types.Params) { p.MemberSchedule.FirstLength = types.MinFirstPeriod + 1 }, ""},
+		{"ownership cliff under two weeks", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MinFirstPeriod - 1 }, firstFloor},
+		{"ownership cliff of zero", func(p *types.Params) { p.OwnershipSchedule.FirstLength = 0 }, firstFloor},
+		{"ownership cliff at the floor", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MinFirstPeriod }, ""},
+		{"ten-year period", func(p *types.Params) { p.CompensationPeriod = types.MaxCompensationDuration }, ""},
+		{"period over ten years", func(p *types.Params) { p.CompensationPeriod = types.MaxCompensationDuration + 1 }, period},
+		{"zero ownership cap", func(p *types.Params) { p.OwnershipCap = math.ZeroInt() }, "ownership cap: amount must be positive"},
+		// Past the two-week floor, the ownership shape is bounded by its own validation.
+		{"ownership cliff over a century", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MaxPeriodLength + 1 }, ownership + firstBound},
+		{"ownership cliff of a century", func(p *types.Params) { p.OwnershipSchedule.FirstLength = types.MaxPeriodLength }, ""},
+		{"ownership cliff without a weight", func(p *types.Params) { p.OwnershipSchedule.FirstWeight = 0 }, ownership + firstBound},
+		{"ownership shape past the period limit", func(p *types.Params) { p.OwnershipSchedule.Periods = types.MaxSchedulePeriods + 1 }, ownership + "schedule has at most 1200 further periods"},
+		{"ownership shape at the period limit", func(p *types.Params) { p.OwnershipSchedule.Periods = types.MaxSchedulePeriods }, ""},
+		{"ownership periods without a weight", func(p *types.Params) { p.OwnershipSchedule.PeriodWeight = 0 }, ownership + furtherBound},
+		{"ownership period weight past the bound", func(p *types.Params) { p.OwnershipSchedule.PeriodWeight = types.MaxWeight + 1 }, ownership + furtherBound},
+		{"ownership period weight at the bound", func(p *types.Params) { p.OwnershipSchedule.PeriodWeight = types.MaxWeight }, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			p := types.DefaultParams()
 			tc.mutate(&p)
 			err := p.Validate()
-			if tc.valid {
+			if tc.err == "" {
 				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
+				return
 			}
+			require.ErrorContains(t, err, tc.err)
 		})
 	}
 }

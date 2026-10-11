@@ -288,62 +288,63 @@ func TestGenesisBeneficiaryJournal(t *testing.T) {
 	entry := func(id uint64, controller string) types.BeneficiaryEntry {
 		return types.BeneficiaryEntry{Id: id, Beneficiary: a, Actor: a, Height: 1, Time: 1, Controller: controller}
 	}
+	const gap = "entry IDs must run from one without a gap"
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.GenesisState)
-		valid  bool
+		err    string
 	}{
-		{"no entries", func(*types.GenesisState) {}, true},
+		{"no entries", func(*types.GenesisState) {}, ""},
 		{"one entry", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = b
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b)}, 2
-		}, true},
+		}, ""},
 		{"two entries", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = c
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b), entry(2, c)}, 3
-		}, true},
+		}, ""},
 		{"entries out of order", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = c
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(2, c), entry(1, b)}, 3
-		}, false},
+		}, "sorted by unique beneficiary and entry ID"},
 		{"back to the address", func(g *types.GenesisState) {
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b), entry(2, a)}, 3
-		}, true},
-		{"controller without an entry", func(g *types.GenesisState) { g.Beneficiaries[0].Controller = b }, false},
+		}, ""},
+		{"controller without an entry", func(g *types.GenesisState) { g.Beneficiaries[0].Controller = b }, "its journal leads to " + a},
 		{"entry without the controller", func(g *types.GenesisState) {
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b)}, 2
-		}, false},
+		}, "its journal leads to " + b},
 		{"entry that changes nothing", func(g *types.GenesisState) {
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, a)}, 2
-		}, false},
+		}, "changes nothing"},
 		{"unknown beneficiary", func(g *types.GenesisState) {
 			e := entry(1, c)
 			e.Beneficiary = b
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{e}, 2
-		}, false},
+		}, "references unknown beneficiary"},
 		{"gap in IDs", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = b
-			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(2, b)}, 3
-		}, false},
+			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(2, b)}, 2
+		}, gap},
 		{"gap inside the history", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = c
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b), entry(3, c)}, 3
-		}, false},
+		}, gap},
 		{"next ID behind history", func(g *types.GenesisState) {
 			g.Beneficiaries[0].Controller = b
 			g.BeneficiaryJournal, g.NextBeneficiaryEntryId = []types.BeneficiaryEntry{entry(1, b)}, 1
-		}, false},
+		}, "next beneficiary entry ID 1 does not follow 1 entries"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			g := types.DefaultGenesisState()
 			g.Beneficiaries = []types.Beneficiary{{Address: a, Controller: a, OwnershipCommitted: math.ZeroInt(), Seat: math.ZeroInt()}}
 			tc.mutate(g)
 			err := g.Validate()
-			if tc.valid {
+			if tc.err == "" {
 				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
+				return
 			}
+			require.ErrorContains(t, err, tc.err)
 		})
 	}
 }

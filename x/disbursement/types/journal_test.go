@@ -44,26 +44,32 @@ func TestGrantEntryValidation(t *testing.T) {
 	} {
 		t.Run("valid "+action.String(), func(t *testing.T) { require.NoError(t, base(action).Validate()) })
 	}
+	const (
+		subject   = "grant entry subject does not match its action"
+		nothing   = "grant entry moves nothing"
+		offerBits = "grant entry offer: amount must be nonnegative and at most 128 bits"
+	)
 	for _, tc := range []struct {
 		name  string
 		entry types.GrantEntry
+		err   string
 	}{
-		{"unspecified action", base(types.GrantAction_GRANT_ACTION_UNSPECIFIED)},
-		{"zero ID", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Id = 0 })},
-		{"zero height", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Height = 0 })},
-		{"bad actor", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Actor = "nobody" })},
-		{"created moves nothing", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Amount = zero })},
-		{"created with a subject", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Subject = a })},
-		{"created without a grant", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.GrantId = 0 })},
-		{"converted without an offer", with(types.GrantAction_GRANT_ACTION_CONVERTED, func(e *types.GrantEntry) { e.Offer = math.ZeroInt() })},
-		{"converted with a negative offer", with(types.GrantAction_GRANT_ACTION_CONVERTED, func(e *types.GrantEntry) { e.Offer = math.NewInt(-1) })},
-		{"unset offer", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Offer = math.Int{} })},
-		{"paid without a payee", with(types.GrantAction_GRANT_ACTION_PAID, func(e *types.GrantEntry) { e.Subject = "" })},
-		{"paid moves nothing", with(types.GrantAction_GRANT_ACTION_PAID, func(e *types.GrantEntry) { e.Amount = zero })},
-		{"payee moves principal", with(types.GrantAction_GRANT_ACTION_PAYEE_CHANGED, func(e *types.GrantEntry) { e.Amount = noah })},
-		{"cancelled with an offer", with(types.GrantAction_GRANT_ACTION_CANCELLED, func(e *types.GrantEntry) { e.Offer = noah.Amount })},
+		{"unspecified action", base(types.GrantAction_GRANT_ACTION_UNSPECIFIED), "unknown grant action"},
+		{"zero ID", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Id = 0 }), "grant entry needs an ID"},
+		{"zero height", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Height = 0 }), "invalid grant entry time or height"},
+		{"bad actor", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Actor = "nobody" }), "grant entry actor is invalid"},
+		{"created moves nothing", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Amount = zero }), nothing},
+		{"created with a subject", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Subject = a }), subject},
+		{"created without a grant", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.GrantId = 0 }), "grant entry names no grant"},
+		{"converted without an offer", with(types.GrantAction_GRANT_ACTION_CONVERTED, func(e *types.GrantEntry) { e.Offer = math.ZeroInt() }), "grant entry offer: amount must be positive"},
+		{"converted with a negative offer", with(types.GrantAction_GRANT_ACTION_CONVERTED, func(e *types.GrantEntry) { e.Offer = math.NewInt(-1) }), offerBits},
+		{"unset offer", with(types.GrantAction_GRANT_ACTION_CREATED, func(e *types.GrantEntry) { e.Offer = math.Int{} }), offerBits},
+		{"paid without a payee", with(types.GrantAction_GRANT_ACTION_PAID, func(e *types.GrantEntry) { e.Subject = "" }), subject},
+		{"paid moves nothing", with(types.GrantAction_GRANT_ACTION_PAID, func(e *types.GrantEntry) { e.Amount = zero }), nothing},
+		{"payee moves principal", with(types.GrantAction_GRANT_ACTION_PAYEE_CHANGED, func(e *types.GrantEntry) { e.Amount = noah }), "nonpayment grant entry moves principal"},
+		{"cancelled with an offer", with(types.GrantAction_GRANT_ACTION_CANCELLED, func(e *types.GrantEntry) { e.Offer = noah.Amount }), "grant entry offer does not match its action"},
 	} {
-		t.Run(tc.name, func(t *testing.T) { require.Error(t, tc.entry.Validate()) })
+		t.Run(tc.name, func(t *testing.T) { require.ErrorContains(t, tc.entry.Validate(), tc.err) })
 	}
 }
 
@@ -74,16 +80,18 @@ func TestBeneficiaryEntryValidation(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.BeneficiaryEntry)
+		err    string
 	}{
-		{"zero ID", func(r *types.BeneficiaryEntry) { r.Id = 0 }},
-		{"zero height", func(r *types.BeneficiaryEntry) { r.Height = 0 }},
-		{"bad actor", func(r *types.BeneficiaryEntry) { r.Actor = "nobody" }},
-		{"bad controller", func(r *types.BeneficiaryEntry) { r.Controller = "" }},
+		{"zero ID", func(r *types.BeneficiaryEntry) { r.Id = 0 }, "beneficiary entry needs an ID"},
+		{"zero height", func(r *types.BeneficiaryEntry) { r.Height = 0 }, "invalid beneficiary entry time or height"},
+		{"bad beneficiary", func(r *types.BeneficiaryEntry) { r.Beneficiary = "nobody" }, "beneficiary entry address is invalid"},
+		{"bad actor", func(r *types.BeneficiaryEntry) { r.Actor = "nobody" }, "beneficiary entry address is invalid"},
+		{"bad controller", func(r *types.BeneficiaryEntry) { r.Controller = "" }, "beneficiary entry address is invalid"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := base
 			tc.mutate(&r)
-			require.Error(t, r.Validate())
+			require.ErrorContains(t, r.Validate(), tc.err)
 		})
 	}
 }

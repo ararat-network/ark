@@ -91,3 +91,53 @@ func (s *KeeperTestSuite) TestEndBlockerDropsAStrayDueKey() {
 	s.Require().NoError(err)
 	s.Require().True(own)
 }
+
+// TestEndBlockerPaysOldestDueFirst pins the order the per-block bound cuts in: due time, then grant
+// ID. The last ten awards fall due first, so a queue walked by ID or newest first pays the wrong
+// thousand.
+func (s *KeeperTestSuite) TestEndBlockerPaysOldestDueFirst() {
+	s.SetupTest()
+	const later, earlier = types.MaxPaymentsPerBlock, 10
+	a := testAddress(3)
+	s.fund(types.ContributorsName, noah(4*(later+earlier)))
+	start := s.now()
+	for range later {
+		_, err := s.grantOwnership(a, 4, start+10)
+		s.Require().NoError(err)
+	}
+	for range earlier {
+		_, err := s.grantOwnership(a, 4, start)
+		s.Require().NoError(err)
+	}
+	s.advance(int64(hold) + 10)
+	s.endBlock()
+	for id := uint64(1); id <= later+earlier; id++ {
+		g := s.grant(id)
+		switch {
+		case id > later:
+			s.Require().Equal(math.NewInt(4), g.Paid, "grant %d, due first, is paid whole", id)
+		case id <= later-earlier:
+			s.Require().Equal(math.NewInt(1), g.Paid, "grant %d is paid its first period", id)
+		default:
+			s.Require().True(g.Paid.IsZero(), "grant %d is past the bound", id)
+			s.Require().Equal(s.now(), g.DueTime, "grant %d stays due for the next block", id)
+		}
+	}
+}
+
+// TestEndBlockerFailsOnACustodyShortfall pins that custody below the book fails the block: a
+// shortfall is broken accounting, never a payee's refusal to defer.
+func (s *KeeperTestSuite) TestEndBlockerFailsOnACustodyShortfall() {
+	s.SetupTest()
+	s.appointCommittee(0)
+	s.appointRegistrar()
+	s.openTranche(10_000)
+	id := s.register(testAddress(3))
+	s.balances[types.MembersName] = sdk.NewCoins(noah(999))
+	s.advance(int64(hold))
+	err := s.keeper.EndBlocker(s.ctx)
+	s.Require().ErrorContains(err, "disbursement_members custody is below the 1000anoah payment")
+	s.Require().NotErrorIs(err, types.ErrPaymentRefused)
+	s.Require().Empty(s.deferrals())
+	s.Require().True(s.grant(id).Paid.IsZero())
+}

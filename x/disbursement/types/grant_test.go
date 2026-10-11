@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	stdmath "math"
 	"math/big"
 	"math/rand"
 	"testing"
@@ -169,128 +170,227 @@ func TestGrantValidation(t *testing.T) {
 			g.Schedule.FirstLength, g.Schedule.PeriodLength, g.DueTime = period, period, 100+2*period
 		}
 	}
+	const (
+		dueTime      = "invalid grant due time"
+		dueEarly     = "grant is due before one period after its award"
+		creation     = "invalid grant creation time or height"
+		suspension   = "invalid member suspension"
+		cutoff       = "invalid cancellation cutoff"
+		entitlement  = "grant exceeds its earned entitlement"
+		terms        = "a member carries its registrar term and ownership none"
+		clock        = "grant clock does not fit its kind"
+		floor        = "a grant's first period must be at least two weeks"
+		compensation = "compensation is equal periods of at least two weeks, at most ten years in all"
+	)
 	for _, tc := range []struct {
 		name   string
 		mutate func(*types.Grant)
-		valid  bool
+		err    string
 	}{
-		{"live and queued", func(*types.Grant) {}, true},
-		{"live and unqueued", func(g *types.Grant) { g.DueTime = 0 }, false},
-		{"zero ID", func(g *types.Grant) { g.Id = 0 }, false},
-		{"unknown kind", func(g *types.Grant) { g.Kind = types.GrantKind(7) }, false},
-		{"created at no height", func(g *types.Grant) { g.CreatedHeight = 0 }, false},
-		{"created at no time", func(g *types.Grant) { g.CreatedTime = 0 }, false},
-		{"suspended contributor", func(g *types.Grant) { g.SuspendedTime, g.DueTime = 115, 0 }, false},
-		{"member suspended before its registration", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 99, 0 }, false},
-		{"compensation without an award value", func(g *types.Grant) { g.AwardValue = math.ZeroInt() }, false},
-		{"member with an award value", func(g *types.Grant) { member(g); g.AwardValue = math.NewInt(30) }, false},
-		{"queued before it started", func(g *types.Grant) { g.DueTime = 99 }, false},
+		{"live and queued", func(*types.Grant) {}, ""},
+		{"live and unqueued", func(g *types.Grant) { g.DueTime = 0 }, dueTime},
+		{"zero ID", func(g *types.Grant) { g.Id = 0 }, "invalid grant ID"},
+		{"unknown kind", func(g *types.Grant) { g.Kind = types.GrantKind(7) }, "unknown grant kind"},
+		{"created at no height", func(g *types.Grant) { g.CreatedHeight = 0 }, creation},
+		{"created at no time", func(g *types.Grant) { g.CreatedTime = 0 }, creation},
+		{"suspended contributor", func(g *types.Grant) { g.SuspendedTime, g.DueTime = 115, 0 }, suspension},
+		{"member suspended before its registration", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 99, 0 }, suspension},
+		{"compensation without an award value", func(g *types.Grant) { g.AwardValue = math.ZeroInt() }, "award value: amount must be positive"},
+		{"member with an award value", func(g *types.Grant) { member(g); g.AwardValue = math.NewInt(30) }, "only compensation carries an award value"},
+		{"queued before it started", func(g *types.Grant) { g.DueTime = 99 }, dueTime},
 		// Nothing is due before one period after the award, wherever the clock starts.
-		{"queued at its gate", func(g *types.Grant) { g.DueTime = 100 + hold }, true},
-		{"queued inside its first period", func(g *types.Grant) { g.DueTime = 100 + hold - 1 }, false},
-		{"backdated clock queued at its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold }, true},
-		{"backdated clock queued before its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold-1 }, false},
-		{"finished and unqueued", func(g *types.Grant) { g.Paid, g.Remaining, g.DueTime = math.NewInt(30), math.ZeroInt(), 0 }, true},
-		{"finished and queued", func(g *types.Grant) { g.Paid, g.Remaining = math.NewInt(30), math.ZeroInt() }, false},
-		{"cancelled debt queued", func(g *types.Grant) { g.CutoffTime, g.Remaining = 100+2*hold, math.NewInt(10) }, true},
-		{"cancelled debt unqueued", func(g *types.Grant) { g.CutoffTime, g.Remaining, g.DueTime = 100+2*hold, math.NewInt(10), 0 }, false},
-		{"cancelled holding past its debt", func(g *types.Grant) { g.CutoffTime = 100 + 2*hold }, false},
+		{"queued at its gate", func(g *types.Grant) { g.DueTime = 100 + hold }, ""},
+		{"queued inside its first period", func(g *types.Grant) { g.DueTime = 100 + hold - 1 }, dueEarly},
+		{"backdated clock queued at its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold }, ""},
+		{"backdated clock queued before its gate", func(g *types.Grant) { g.StartTime, g.DueTime = 50, 100+hold-1 }, dueEarly},
+		{"finished and unqueued", func(g *types.Grant) { g.Paid, g.Remaining, g.DueTime = math.NewInt(30), math.ZeroInt(), 0 }, ""},
+		{"finished and queued", func(g *types.Grant) { g.Paid, g.Remaining = math.NewInt(30), math.ZeroInt() }, dueTime},
+		{"cancelled debt queued", func(g *types.Grant) { g.CutoffTime, g.Remaining = 100+2*hold, math.NewInt(10) }, ""},
+		{"cancelled debt unqueued", func(g *types.Grant) { g.CutoffTime, g.Remaining, g.DueTime = 100+2*hold, math.NewInt(10), 0 }, dueTime},
+		{"cancelled holding past its debt", func(g *types.Grant) { g.CutoffTime = 100 + 2*hold }, entitlement},
 		{"cancelled at its award", func(g *types.Grant) {
 			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 100, math.ZeroInt(), math.ZeroInt(), 0
-		}, true},
+		}, ""},
 		{"cancelled before its award", func(g *types.Grant) {
 			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 99, math.ZeroInt(), math.ZeroInt(), 0
-		}, false},
+		}, cutoff},
 		{"member cancelled inside its hold", func(g *types.Grant) {
 			member(g)
 			g.CutoffTime, g.Paid, g.Remaining, g.DueTime = 115, math.ZeroInt(), math.ZeroInt(), 0
-		}, true},
-		{"member cancelled after its tenth", func(g *types.Grant) { member(g); g.CutoffTime, g.Remaining, g.DueTime = 100+hold, math.ZeroInt(), 0 }, true},
+		}, ""},
+		{"member cancelled after its tenth", func(g *types.Grant) { member(g); g.CutoffTime, g.Remaining, g.DueTime = 100+hold, math.ZeroInt(), 0 }, ""},
 		{"cancelled while suspended", func(g *types.Grant) {
 			member(g)
 			g.CutoffTime, g.SuspendedTime, g.Remaining, g.DueTime = 115, 115, math.ZeroInt(), 0
-		}, false},
-		{"suspended member unqueued", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 100+hold, 0 }, true},
+		}, cutoff},
+		{"suspended member unqueued", func(g *types.Grant) { member(g); g.SuspendedTime, g.DueTime = 100+hold, 0 }, ""},
 		{"member suspended inside its hold", func(g *types.Grant) {
 			member(g)
 			g.SuspendedTime, g.DueTime, g.Paid, g.Remaining = 115, 0, math.ZeroInt(), math.NewInt(30)
-		}, true},
-		{"suspended member queued", func(g *types.Grant) { member(g); g.SuspendedTime = 115 }, false},
+		}, ""},
+		{"suspended member queued", func(g *types.Grant) {
+			member(g)
+			g.SuspendedTime, g.Paid, g.Remaining = 115, math.ZeroInt(), math.NewInt(30)
+		}, dueTime},
 		{"suspended member paid past its suspension", func(g *types.Grant) {
 			member(g)
 			g.SuspendedTime, g.DueTime, g.Paid, g.Remaining = 115, 0, math.NewInt(20), math.NewInt(10)
-		}, false},
-		{"committee compensation", func(g *types.Grant) { g.MandateTerm = 1 }, true},
-		{"member without a term", func(g *types.Grant) { member(g); g.MandateTerm = 0 }, false},
-		{"governance ownership", ownership, true},
-		{"ownership under a term", func(g *types.Grant) { ownership(g); g.MandateTerm = 1 }, false},
-		{"registered member", member, true},
+		}, "suspended member paid past its suspension"},
+		{"committee compensation", func(g *types.Grant) { g.MandateTerm = 1 }, ""},
+		{"member without a term", func(g *types.Grant) { member(g); g.MandateTerm = 0 }, terms},
+		{"governance ownership", ownership, ""},
+		{"ownership under a term", func(g *types.Grant) { ownership(g); g.MandateTerm = 1 }, terms},
+		{"registered member", member, ""},
 		// A member's tenth waits a period like every first payment (D126).
 		{"member registered and unpaid", func(g *types.Grant) {
 			member(g)
 			g.Paid, g.Remaining, g.DueTime = math.ZeroInt(), math.NewInt(30), 100+hold
-		}, true},
+		}, ""},
 		{"member queued inside its hold", func(g *types.Grant) {
 			member(g)
 			g.Paid, g.Remaining, g.DueTime = math.ZeroInt(), math.NewInt(30), 100+hold-1
-		}, false},
-		{"compensation in a stablecoin", func(g *types.Grant) { g.Amount = sdk.NewInt64Coin("ausd", 30) }, true},
-		{"ownership in a stablecoin", func(g *types.Grant) { ownership(g); g.Amount = sdk.NewInt64Coin("ausd", 30) }, false},
-		{"member without a reference", func(g *types.Grant) { member(g); g.Reference = " " }, false},
-		{"member clock after its registration", func(g *types.Grant) { member(g); g.StartTime = 101 }, false},
-		{"ownership clock after its award", func(g *types.Grant) { ownership(g); g.StartTime = 101 }, true},
-		{"backdated ownership clock", func(g *types.Grant) { ownership(g); g.StartTime = 99 }, false},
+		}, dueEarly},
+		{"compensation in a stablecoin", func(g *types.Grant) { g.Amount = sdk.NewInt64Coin("ausd", 30) }, ""},
+		{"ownership in a stablecoin", func(g *types.Grant) { ownership(g); g.Amount = sdk.NewInt64Coin("ausd", 30) }, "distribution grants require NOAH"},
+		{"member without a reference", func(g *types.Grant) { member(g); g.Reference = " " }, "grant reference must not be empty"},
+		{"member clock after its registration", func(g *types.Grant) { member(g); g.StartTime = 101 }, clock},
+		{"ownership clock after its award", func(g *types.Grant) { ownership(g); g.StartTime = 101 }, ""},
+		{"backdated ownership clock", func(g *types.Grant) { ownership(g); g.StartTime = 99 }, clock},
 		{"clock a century after its award", func(g *types.Grant) {
 			g.StartTime = 100 + types.MaxStartOffset
 			g.DueTime = g.StartTime + hold
-		}, true},
+		}, ""},
 		{"clock past a century after its award", func(g *types.Grant) {
 			g.StartTime = 101 + types.MaxStartOffset
 			g.DueTime = g.StartTime + hold
-		}, false},
-		{"compensation period under the floor", stretch(hold - 1), false},
-		{"ownership first period under the floor", func(g *types.Grant) { ownership(g); g.Schedule.FirstLength = hold - 1 }, false},
-		{"member first period under the floor", func(g *types.Grant) { member(g); g.Schedule.FirstLength = hold - 1 }, false},
-		{"compensation with unequal periods", func(g *types.Grant) { g.Schedule.PeriodLength = 2 * hold }, false},
-		{"compensation with unequal weights", func(g *types.Grant) { g.Schedule.FirstWeight = 2 }, false},
-		{"compensation of nine years", stretch(3 * 365 * 86_400), true},
-		{"compensation past ten years", stretch(4 * 365 * 86_400), false},
+		}, clock},
+		{"compensation period under the floor", stretch(hold - 1), floor},
+		{"ownership first period under the floor", func(g *types.Grant) { ownership(g); g.Schedule.FirstLength = hold - 1 }, floor},
+		{"member first period under the floor", func(g *types.Grant) { member(g); g.Schedule.FirstLength = hold - 1 }, floor},
+		{"compensation with unequal periods", func(g *types.Grant) { g.Schedule.PeriodLength = 2 * hold }, compensation},
+		{"compensation with unequal weights", func(g *types.Grant) { g.Schedule.FirstWeight = 2 }, compensation},
+		{"compensation of nine years", stretch(3 * 365 * 86_400), ""},
+		{"compensation past ten years", stretch(4 * 365 * 86_400), compensation},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			g := base()
 			tc.mutate(&g)
 			err := g.Validate()
-			if tc.valid {
+			if tc.err == "" {
 				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
+				return
 			}
+			require.ErrorContains(t, err, tc.err)
 		})
 	}
 }
 
 func TestValidateStartTime(t *testing.T) {
-	now := uint64(1_800_000_000)
+	// More than a century past the epoch, so a century back is still a positive time.
+	now := 2*types.MaxStartOffset + 1_800_000_000
+	const (
+		century  = "start time must be within a century of the block"
+		positive = "start time must be a positive Unix time"
+	)
 	for _, tc := range []struct {
 		name  string
 		start uint64
-		valid bool
+		now   uint64
+		err   string
 	}{
-		{"now", now, true},
-		{"a year back", now - 365*86_400, true},
-		{"a year ahead", now + 365*86_400, true},
-		{"a century ahead", now + types.MaxStartOffset, true},
-		{"past a century ahead", now + types.MaxStartOffset + 1, false},
-		{"past a century back", now - types.MaxStartOffset - 1, false},
-		{"zero", 0, false},
+		{"now", now, now, ""},
+		{"a year back", now - 365*86_400, now, ""},
+		{"a year ahead", now + 365*86_400, now, ""},
+		{"a century ahead", now + types.MaxStartOffset, now, ""},
+		{"past a century ahead", now + types.MaxStartOffset + 1, now, century},
+		{"a century back", now - types.MaxStartOffset, now, ""},
+		{"past a century back", now - types.MaxStartOffset - 1, now, century},
+		{"zero", 0, now, positive},
+		{"past the header's int64", uint64(stdmath.MaxInt64) + 1, now, positive},
+		{"a block past the header's int64", now, uint64(stdmath.MaxInt64) + 1, positive},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			err := types.ValidateStartTime(tc.start, now)
-			if tc.valid {
+			err := types.ValidateStartTime(tc.start, tc.now)
+			if tc.err == "" {
 				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
+				return
 			}
+			require.ErrorContains(t, err, tc.err)
+		})
+	}
+}
+
+// TestAccrualAtEveryBound builds a grant at every accepted maximum at once: the longest, heaviest
+// shape, a 128-bit amount, and a clock a century ahead of the latest award whose schedule still ends
+// within the header's int64. The shares conserve and accrual runs to the whole amount without error;
+// one past any bound is refused.
+func TestAccrualAtEveryBound(t *testing.T) {
+	address := sdk.AccAddress(make([]byte, 20)).String()
+	amount := math.NewIntFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128)).SubRaw(1)
+	shape := types.Schedule{
+		FirstLength: types.MaxPeriodLength, FirstWeight: types.MaxWeight,
+		PeriodLength: types.MaxPeriodLength, PeriodWeight: types.MaxWeight, Periods: types.MaxSchedulePeriods,
+	}
+	created := uint64(stdmath.MaxInt64) - types.MaxStartOffset - shape.Duration()
+	base := func() types.Grant {
+		start := created + types.MaxStartOffset
+		return types.Grant{
+			Id: 1, Kind: types.GrantKind_GRANT_KIND_OWNERSHIP, Beneficiary: address, Payee: address, CreatedBy: address,
+			Amount: sdk.NewCoin("anoah", amount), Schedule: shape, StartTime: start, CreatedTime: created, CreatedHeight: 1,
+			Paid: math.ZeroInt(), Remaining: amount, Reference: "agreement", AwardValue: math.ZeroInt(),
+			DueTime: start + shape.FirstLength,
+		}
+	}
+	g := base()
+	require.NoError(t, g.Validate())
+	first, each, last, err := shape.Shares(amount)
+	require.NoError(t, err)
+	require.Equal(t, amount, first.Add(each.MulRaw(types.MaxSchedulePeriods-1)).Add(last))
+	firstEnd, end := g.StartTime+shape.FirstLength, g.StartTime+shape.Duration()
+	require.Equal(t, uint64(stdmath.MaxInt64), end, "the schedule ends at the last valid time")
+	for _, tc := range []struct {
+		name string
+		at   uint64
+		want math.Int
+		next uint64
+	}{
+		{"before the first boundary", firstEnd - 1, math.ZeroInt(), firstEnd},
+		{"at the first boundary", firstEnd, first, firstEnd + shape.PeriodLength},
+		{"midway", firstEnd + 600*shape.PeriodLength, first.Add(each.MulRaw(600)), firstEnd + 601*shape.PeriodLength},
+		{"just before the end", end - 1, amount.Sub(last), end},
+		{"at the end", end, amount, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			earned, next, err := g.Accrued(tc.at)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, earned)
+			require.Equal(t, tc.next, next)
+		})
+	}
+	const (
+		firstBound   = "first period requires a bounded positive length and weight"
+		furtherBound = "further periods require a bounded positive length and weight"
+	)
+	for _, tc := range []struct {
+		name   string
+		mutate func(*types.Grant)
+		err    string
+	}{
+		{"a further period too many", func(g *types.Grant) { g.Schedule.Periods++ }, "schedule has at most 1200 further periods"},
+		{"a first period past a century", func(g *types.Grant) { g.Schedule.FirstLength++ }, firstBound},
+		{"a first weight past the bound", func(g *types.Grant) { g.Schedule.FirstWeight++ }, firstBound},
+		{"a further period past a century", func(g *types.Grant) { g.Schedule.PeriodLength++ }, furtherBound},
+		{"a further weight past the bound", func(g *types.Grant) { g.Schedule.PeriodWeight++ }, furtherBound},
+		{"an amount past 128 bits", func(g *types.Grant) {
+			g.Amount.Amount, g.Remaining = g.Amount.Amount.AddRaw(1), g.Remaining.AddRaw(1)
+		}, "amount must be nonnegative and at most 128 bits"},
+		{"a clock past a century ahead", func(g *types.Grant) { g.StartTime++; g.DueTime++ }, "grant clock does not fit its kind"},
+		{"an award a second later", func(g *types.Grant) { g.CreatedTime++; g.StartTime++; g.DueTime++ }, "schedule end overflows time"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			g := base()
+			tc.mutate(&g)
+			require.ErrorContains(t, g.Validate(), tc.err)
 		})
 	}
 }

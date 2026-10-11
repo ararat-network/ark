@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"fmt"
+	"math/bits"
 
 	"cosmossdk.io/math"
 )
@@ -27,8 +28,11 @@ func (s Schedule) Validate() error {
 	if s.Periods > 0 && (s.PeriodLength == 0 || s.PeriodLength > MaxPeriodLength || s.PeriodWeight == 0 || s.PeriodWeight > MaxWeight) {
 		return errors.New("further periods require a bounded positive length and weight")
 	}
-	// Unreachable: the bounds above hold the duration to at most 1,201 centuries.
-	if !fitsInt64(s.Duration()) {
+	// Unreachable: the bounds above hold the duration to at most 1,201 centuries. Formed checked, so
+	// the backstop still holds if they are raised.
+	hi, further := bits.Mul64(uint64(s.Periods), s.PeriodLength)
+	duration, carry := bits.Add64(s.FirstLength, further, 0)
+	if hi != 0 || carry != 0 || !fitsInt64(duration) {
 		return errors.New("schedule duration overflows time")
 	}
 	return nil
