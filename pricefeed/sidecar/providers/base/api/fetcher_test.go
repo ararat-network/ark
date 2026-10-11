@@ -92,7 +92,7 @@ func TestRunPublishesUnresolvedBatchWhenEndpointSelectionFails(t *testing.T) {
 		cfg,
 		&http.Client{},
 		newMockDataHandler(t),
-		WithEndpointSelector(func([]types.Endpoint) (types.Endpoint, error) {
+		WithEndpointSelector(func([]types.Endpoint, int) (types.Endpoint, error) {
 			return types.Endpoint{}, errors.New("no endpoint available")
 		}),
 	)
@@ -283,7 +283,7 @@ func TestRunAppliesSelectedEndpointAuthenticationAtRequestTime(t *testing.T) {
 		cfg,
 		&http.Client{Transport: recordingTransport(requests, `{"ok":true}`)},
 		handler,
-		WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+		WithEndpointSelector(func(endpoints []types.Endpoint, _ int) (types.Endpoint, error) {
 			return endpoints[1], nil
 		}),
 	)

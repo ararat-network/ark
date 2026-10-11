@@ -70,6 +70,10 @@ a different file for that process. Runtime prepares replacement providers and ch
 an update. Invalid replacements leave the active runtime intact. Public/admin listener addresses, process TLS selection,
 and process telemetry options are startup settings; use `pricefeed start --help` and restart to change them.
 
+A panic in a provider or the chain-state client, or a listener failing, stops the whole sidecar: the process exits
+non-zero rather than keep pricing from a component in an unknown state. Run it under a supervisor that restarts it, such
+as systemd with `Restart=on-failure`; a node listing a second sidecar in `sidecar_addresses` fails over to it meanwhile.
+
 ## Transport, identity rotation, and releases
 
 `pricefeed` is the off-chain price process each validator runs beside its node. `arkd` polls it for

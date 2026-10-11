@@ -76,8 +76,8 @@ type Config struct {
 	// messages.
 	PostConnectionTimeout time.Duration `mapstructure:"post_connection_timeout"`
 
-	// Endpoints are provider endpoints that may be selected for each connection
-	// attempt.
+	// Endpoints are dialled in turn: each reconnect, which follows a failed
+	// session, moves to the next, wrapping round.
 	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// HandshakeTimeout is the maximum duration allowed for websocket dial and

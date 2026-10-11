@@ -25,7 +25,8 @@ type Config struct {
 	// RequestsPerSecond limits request rate. If zero, requests are not rate limited.
 	RequestsPerSecond int `mapstructure:"requests_per_second"`
 
-	// Endpoints is a list of endpoints that the provider can query.
+	// Endpoints are tried in order: each batch stays on one until a request to
+	// it fails, then moves to the next, wrapping round.
 	Endpoints []types.Endpoint `mapstructure:"endpoints"`
 
 	// BatchSize is the maximum number of tickers in each provider-defined request

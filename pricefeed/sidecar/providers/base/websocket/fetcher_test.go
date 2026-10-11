@@ -202,7 +202,7 @@ func TestRunReconnectsAfterSessionStartFailure(t *testing.T) {
 			name: "endpoint selection",
 			setup: func(*testing.T, *wstestutil.MockDataHandler) (basewebsocket.Config, []basewebsocket.Option) {
 				return websocketConfig("wss://example.invalid"), []basewebsocket.Option{
-					basewebsocket.WithEndpointSelector(func([]types.Endpoint) (types.Endpoint, error) {
+					basewebsocket.WithEndpointSelector(func([]types.Endpoint, int) (types.Endpoint, error) {
 						return types.Endpoint{}, errors.New("no endpoint available")
 					}),
 				}
@@ -303,7 +303,7 @@ func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 		cfg,
 		handler,
 		basewebsocket.WithHeaders(staticHeaders),
-		basewebsocket.WithEndpointSelector(func(endpoints []types.Endpoint) (types.Endpoint, error) {
+		basewebsocket.WithEndpointSelector(func(endpoints []types.Endpoint, _ int) (types.Endpoint, error) {
 			return endpoints[1], nil
 		}),
 		basewebsocket.WithDialFunc(func(_ context.Context, url string, opts *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
@@ -322,6 +322,46 @@ func TestRunAppliesSelectedEndpointAuthenticationAtDialTime(t *testing.T) {
 	require.Equal(t, "second-secret", attempt.headers.Get("X-Second-Key"))
 	require.Equal(t, "static", attempt.headers.Get("X-Static"))
 	require.Equal(t, "stale-secret", staticHeaders.Get("X-Second-Key"))
+}
+
+// TestRunDialsTheNextEndpointOnEachReconnect pins failover: every reconnect
+// follows a failed session, so it dials the next endpoint, wrapping round.
+func TestRunDialsTheNextEndpointOnEachReconnect(t *testing.T) {
+	cfg := websocketConfigWithEndpoints([]types.Endpoint{
+		{URL: "wss://first.example.invalid"},
+		{URL: "wss://second.example.invalid"},
+	})
+	cfg.ReconnectionTimeout = time.Millisecond
+	ctrl := gomock.NewController(t)
+	handler := wstestutil.NewMockDataHandler(ctrl)
+	handler.EXPECT().Copy().Return(handler).AnyTimes()
+
+	dials := make(chan string, 3)
+	fetcher, err := basewebsocket.NewFetcher(
+		cfg,
+		handler,
+		basewebsocket.WithDialFunc(func(_ context.Context, url string, _ *coderwebsocket.DialOptions) (*coderwebsocket.Conn, *http.Response, error) {
+			select {
+			case dials <- url:
+			default:
+			}
+			return nil, nil, errors.New("dial failed")
+		}),
+	)
+	require.NoError(t, err)
+
+	responses, stop := runFetcher(t, fetcher, []types.Ticker{"ATOMUSD"})
+	for range 3 {
+		select {
+		case <-responses:
+		case <-time.After(5 * time.Second):
+			require.FailNow(t, "no failed session was published")
+		}
+	}
+	require.ErrorIs(t, stop(), context.Canceled)
+	require.Equal(t, "wss://first.example.invalid", <-dials)
+	require.Equal(t, "wss://second.example.invalid", <-dials)
+	require.Equal(t, "wss://first.example.invalid", <-dials)
 }
 
 func TestRunPublishesSubscribeWriteErrorResponse(t *testing.T) {

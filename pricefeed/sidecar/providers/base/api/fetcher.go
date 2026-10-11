@@ -27,6 +27,10 @@ import (
 // 512-ticker Binance and Frankfurter response shapes.
 const MaxResponseBodyBytes int64 = 1 << 20
 
+// RefusedTickerRetry is how often a batch that set refused tickers aside asks
+// for each of them alone again, and the least time between isolations.
+const RefusedTickerRetry = 5 * time.Minute
+
 // Fetcher polls an HTTP API for provider ticker prices and publishes responses
 // to the provider receive loop.
 type Fetcher struct {
@@ -37,6 +41,9 @@ type Fetcher struct {
 	method           string
 	headers          map[string]string
 	endpointSelector types.EndpointSelector
+	// refusedRetry is how long a batch waits before it isolates refused
+	// tickers again or retries the ones it set aside.
+	refusedRetry time.Duration
 
 	dataHandler DataHandler
 	limiter     *rate.Limiter
@@ -50,7 +57,8 @@ func NewFetcher(cfg Config, client *http.Client, dataHandler DataHandler, opts .
 		config:           cfg,
 		dataHandler:      dataHandler,
 		client:           client,
-		endpointSelector: types.FirstEndpoint,
+		endpointSelector: types.RotateEndpoints,
+		refusedRetry:     RefusedTickerRetry,
 		method:           http.MethodGet,
 	}
 
@@ -72,6 +80,9 @@ func NewFetcher(cfg Config, client *http.Client, dataHandler DataHandler, opts .
 	}
 	if f.endpointSelector == nil {
 		return nil, errors.New("endpoint selector is nil")
+	}
+	if f.refusedRetry <= 0 {
+		return nil, errors.New("refused ticker retry must be greater than 0")
 	}
 	if err := cfg.Validate(); err != nil {
 		return nil, err
@@ -154,28 +165,15 @@ func (f *Fetcher) ResponseBufferSize(tickers []types.Ticker) int {
 // queried stays unresolved and is retried next interval, so the provider's other batches keep
 // running and a cause that clears lets this one recover.
 func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, responseCh chan<- types.Response) error {
+	b := &batch{active: tickers}
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
-		response, err := f.query(ctx, tickers)
-		if err != nil {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-
-			f.logger.Error(
-				"API batch query failed",
-				"error", err,
-				"tickers", len(tickers),
-			)
-
-			code := types.ErrorAPIGeneral
-			if errors.Is(err, ErrCreateURL) {
-				code = types.ErrorUnableToCreateURL
-			}
-			response = types.NewErrorResponse(tickers, types.NewErrorWithCode(err, code))
+		response := f.poll(ctx, b)
+		if ctx.Err() != nil {
+			return ctx.Err()
 		}
 
 		select {
@@ -200,27 +198,189 @@ func (f *Fetcher) runBatchLoop(ctx context.Context, tickers []types.Ticker, resp
 	}
 }
 
-// query performs one HTTP polling attempt for tickers. Provider request failures are returned as
-// unresolved responses; cancellation and local setup failures are returned as errors.
-func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Response, error) {
-	endpoint, err := f.endpointSelector(f.config.Endpoints)
+// batch is one batch loop's polling state.
+type batch struct {
+	// active is what each interval requests together.
+	active []types.Ticker
+	// refused is what the venue refused alone while it answered the rest;
+	// it is published unresolved without being requested.
+	refused []types.Ticker
+	// failures counts requests the endpoint failed, which selects the
+	// endpoint: a batch stays on one until it fails.
+	failures int
+	// nextIsolation is the earliest time to isolate again or retry refused.
+	nextIsolation time.Time
+}
+
+// poll requests the active tickers. When a venue refuses a whole batch, as
+// Binance and Kraken do over one unknown symbol, each ticker is asked for
+// alone, and those refused alone are set aside so the rest resolve. Set-aside
+// tickers are retried alone every refusedRetry and rejoin once answered.
+func (f *Fetcher) poll(ctx context.Context, b *batch) types.Response {
+	now := time.Now()
+	response := f.fetch(ctx, b, b.active)
+	isolate := !now.Before(b.nextIsolation)
+
+	switch {
+	case ctx.Err() != nil:
+		return response
+	case isolate && len(b.active) > 1 && refusedWhole(response, b.active):
+		b.nextIsolation = now.Add(f.refusedRetry)
+		kept, refused, isolated := f.isolate(ctx, b, b.active)
+		response = isolated
+		// Refused alone as well as together is not one symbol's doing.
+		if len(refused) > 0 && len(kept) > 0 {
+			b.active = kept
+			b.refused = append(b.refused, refused...)
+			f.logger.Warn("venue refused tickers alone; requesting the batch without them", "tickers", refused)
+		}
+	case isolate && len(b.refused) > 0:
+		b.nextIsolation = now.Add(f.refusedRetry)
+		answered, refused, retried := f.isolate(ctx, b, b.refused)
+		mergeResponse(response, retried)
+		b.refused = refused
+		if len(answered) > 0 {
+			b.active = append(b.active, answered...)
+			f.logger.Info("venue answers tickers it refused; requesting them again", "tickers", answered)
+		}
+	}
+
+	for _, ticker := range b.refused {
+		if _, ok := response.Unresolved[ticker]; !ok {
+			response.Unresolved[ticker] = types.NewErrorWithCode(
+				errors.New("refused by the venue; retried alone periodically"),
+				types.ErrorUnknownPair,
+			)
+		}
+	}
+
+	return response
+}
+
+// isolate requests each ticker alone. A ticker the venue refuses alone is
+// refused; any other outcome, a failure included, keeps it with the batch.
+func (f *Fetcher) isolate(
+	ctx context.Context,
+	b *batch,
+	tickers []types.Ticker,
+) (kept, refused []types.Ticker, response types.Response) {
+	response = types.NewResponse(nil, nil)
+	for _, ticker := range tickers {
+		if ctx.Err() != nil {
+			return kept, refused, response
+		}
+		alone := []types.Ticker{ticker}
+		single := f.fetch(ctx, b, alone)
+		mergeResponse(response, single)
+		if refusedWhole(single, alone) {
+			refused = append(refused, ticker)
+		} else {
+			kept = append(kept, ticker)
+		}
+	}
+
+	return kept, refused, response
+}
+
+// fetch performs one request for tickers and always returns a response: a
+// request that cannot be made, or that fails, publishes them unresolved. A
+// request the endpoint failed moves the batch to the next endpoint.
+func (f *Fetcher) fetch(ctx context.Context, b *batch, tickers []types.Ticker) types.Response {
+	response, endpointFailed, err := f.query(ctx, b.failures, tickers)
+	if endpointFailed {
+		b.failures++
+	}
+	if err == nil {
+		// poll adds to the maps, which a handler may have left nil.
+		return types.NewResponse(response.Resolved, response.Unresolved)
+	}
+	if ctx.Err() == nil {
+		f.logger.Error(
+			"API batch query failed",
+			"error", err,
+			"tickers", len(tickers),
+		)
+	}
+
+	code := types.ErrorAPIGeneral
+	if errors.Is(err, ErrCreateURL) {
+		code = types.ErrorUnableToCreateURL
+	}
+	return types.NewErrorResponse(tickers, types.NewErrorWithCode(err, code))
+}
+
+// refusedWhole reports whether the venue refused every ticker as a request it
+// will not answer, rather than failing to answer it: nothing resolved, and
+// every ticker carries a refusal.
+func refusedWhole(response types.Response, tickers []types.Ticker) bool {
+	if len(response.Resolved) != 0 || len(tickers) == 0 {
+		return false
+	}
+	for _, ticker := range tickers {
+		result, ok := response.Unresolved[ticker]
+		if !ok || !isRefusal(result.Code()) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// isRefusal reports whether code says the venue refused the request itself:
+// an unknown symbol reported in the body, or the HTTP statuses venues answer
+// one with. A failed endpoint is not a refusal.
+func isRefusal(code types.ErrorCode) bool {
+	switch code {
+	case types.ErrorUnknownPair,
+		types.ErrorCode(http.StatusBadRequest),
+		types.ErrorCode(http.StatusNotFound),
+		types.ErrorCode(http.StatusUnprocessableEntity):
+		return true
+	default:
+		return false
+	}
+}
+
+// mergeResponse adds from's results to into.
+func mergeResponse(into, from types.Response) {
+	for ticker, result := range from.Resolved {
+		into.Resolved[ticker] = result
+		delete(into.Unresolved, ticker)
+	}
+	for ticker, result := range from.Unresolved {
+		if _, ok := into.Resolved[ticker]; !ok {
+			into.Unresolved[ticker] = result
+		}
+	}
+}
+
+// query performs one HTTP polling attempt for tickers on the endpoint selected for attempt.
+// Provider request failures are returned as unresolved responses, with endpointFailed set when the
+// endpoint rather than the request was at fault; cancellation and local setup failures are
+// returned as errors.
+func (f *Fetcher) query(
+	ctx context.Context,
+	attempt int,
+	tickers []types.Ticker,
+) (_ types.Response, endpointFailed bool, _ error) {
+	endpoint, err := f.endpointSelector(f.config.Endpoints, attempt)
 	if err != nil {
-		return types.Response{}, ErrSelectEndpointWithErr(err)
+		return types.Response{}, false, ErrSelectEndpointWithErr(err)
 	}
 
 	// Create the URL for the request.
 	url, err := f.dataHandler.CreateURL(endpoint, tickers)
 	if err != nil {
-		return types.Response{}, ErrCreateURLWithErr(err)
+		return types.Response{}, false, ErrCreateURLWithErr(err)
 	}
 
 	if f.limiter != nil {
 		if err := f.limiter.Wait(ctx); err != nil {
 			if ctx.Err() != nil {
-				return types.Response{}, ctx.Err()
+				return types.Response{}, false, ctx.Err()
 			}
 
-			return types.Response{}, err
+			return types.Response{}, false, err
 		}
 	}
 
@@ -228,15 +388,15 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 	defer cancel()
 	req, err := http.NewRequestWithContext(requestCtx, f.method, url, nil)
 	if err != nil {
-		return types.Response{}, err
+		return types.Response{}, false, err
 	}
 
-	// A handler may add query parameters, but must not change the destination
-	// before endpoint credentials are attached.
+	// A handler may add path segments and query parameters, but must not
+	// change the destination before endpoint credentials are attached.
 	origin, err := neturl.Parse(endpoint.URL)
 	if err != nil || req.URL.Scheme != "https" || origin.Scheme != req.URL.Scheme ||
 		!strings.EqualFold(req.URL.Host, origin.Host) || req.URL.User != nil || req.URL.Fragment != "" {
-		return types.Response{}, errors.New("provider request must retain its configured HTTPS origin")
+		return types.Response{}, false, errors.New("provider request must retain its configured HTTPS origin")
 	}
 
 	for key, value := range f.headers {
@@ -252,7 +412,7 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 	apimetrics.RecordRequest(ctx, f.config.Name, time.Since(start), resp, err)
 	if err != nil {
 		if ctx.Err() != nil {
-			return types.Response{}, ctx.Err()
+			return types.Response{}, false, ctx.Err()
 		}
 
 		status := types.ErrorUnknown
@@ -271,7 +431,7 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 			types.NewErrorWithCode(
 				ErrDoRequestWithErr(err),
 				status,
-			)), nil
+			)), true, nil
 	}
 	responseBody := resp.Body
 	defer responseBody.Close()
@@ -335,12 +495,13 @@ func (f *Fetcher) query(ctx context.Context, tickers []types.Ticker) (types.Resp
 		}
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	failed := resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices
+	if failed {
 		f.logger.Error(
 			"received non-success API response",
 			"status_code", resp.StatusCode,
 			"tickers", len(tickers),
 		)
 	}
-	return response, nil
+	return response, failed && !isRefusal(types.ErrorCode(resp.StatusCode)), nil
 }

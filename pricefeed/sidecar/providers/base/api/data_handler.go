@@ -8,7 +8,8 @@ import (
 
 // DataHandler contains provider-specific API behaviour used by Fetcher.
 // It builds request URLs for ticker batches and parses successful HTTP
-// responses into provider responses.
+// responses into provider responses. Fetcher calls it from one goroutine per
+// batch, so an implementation must be safe for concurrent use.
 type DataHandler interface {
 	// BatchTickers groups provider tickers into independently fetched requests.
 	BatchTickers(tickers []types.Ticker, batchSize int) ([][]types.Ticker, error)

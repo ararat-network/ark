@@ -37,7 +37,7 @@ func NewFetcher(cfg Config, dataHandler DataHandler, opts ...Option) (*Fetcher, 
 		logger:           log.NewNopLogger(),
 		config:           cfg,
 		dial:             websocket.Dial,
-		endpointSelector: types.FirstEndpoint,
+		endpointSelector: types.RotateEndpoints,
 		dataHandler:      dataHandler,
 	}
 
@@ -141,7 +141,7 @@ func (f *Fetcher) runConnection(ctx context.Context, tickers []types.Ticker, res
 		}
 
 		handler := f.dataHandler.Copy()
-		if err := f.runOnce(ctx, tickers, handler, responseCh); err != nil {
+		if err := f.runOnce(ctx, restarts, tickers, handler, responseCh); err != nil {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
@@ -168,15 +168,18 @@ func (f *Fetcher) runConnection(ctx context.Context, tickers []types.Ticker, res
 
 // runOnce runs one websocket connection session: select an endpoint, dial,
 // subscribe, then receive messages until the session fails or ctx is cancelled.
+// attempt counts the sessions before it, each of which ended in a failure, so
+// every reconnect dials the next endpoint.
 func (f *Fetcher) runOnce(
 	ctx context.Context,
+	attempt int,
 	tickers []types.Ticker,
 	handler DataHandler,
 	responseCh chan<- types.Response,
 ) error {
 	dialCtx, cancel := context.WithTimeout(ctx, f.config.HandshakeTimeout)
 	defer cancel()
-	endpoint, err := f.endpointSelector(f.config.Endpoints)
+	endpoint, err := f.endpointSelector(f.config.Endpoints, attempt)
 	if err != nil {
 		return f.failSession(ctx, tickers, responseCh, ErrSelectEndpointWithErr(err), metrics.ConnectionEventDialError)
 	}

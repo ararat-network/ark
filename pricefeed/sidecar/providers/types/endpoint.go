@@ -70,14 +70,20 @@ func (a Authentication) Validate() error {
 	return nil
 }
 
-// EndpointSelector chooses one configured provider endpoint for an attempt.
-type EndpointSelector func(endpoints []Endpoint) (Endpoint, error)
+// EndpointSelector chooses the configured endpoint for an attempt. attempt
+// counts the failures behind it, so a selector can move past an endpoint that
+// failed.
+type EndpointSelector func(endpoints []Endpoint, attempt int) (Endpoint, error)
 
-// FirstEndpoint returns the first configured provider endpoint.
-func FirstEndpoint(endpoints []Endpoint) (Endpoint, error) {
+// RotateEndpoints returns the endpoints in configured order, one further on for
+// each failed attempt, wrapping round: the first until it fails, then the next.
+func RotateEndpoints(endpoints []Endpoint, attempt int) (Endpoint, error) {
 	if len(endpoints) == 0 {
 		return Endpoint{}, errors.New("endpoints cannot be empty")
 	}
+	if attempt < 0 {
+		attempt = 0
+	}
 
-	return endpoints[0], nil
+	return endpoints[attempt%len(endpoints)], nil
 }
