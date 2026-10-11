@@ -46,8 +46,10 @@ vote no validator signed.
 rejects non-canonical compact decimals; per-rate bytes are capped at `MaxEncodedVoteRateBytes`; rates must
 be positive and at most `MaxExchangeRate`; the feed set is capped at `MaxFeeds`. Aggregation is a
 stake-weighted median inside a reward band, and attendance is accounted, so one bad vote is outvoted and
-recorded. Fee validity is enforced in CheckTx and FinalizeBlock alike, so a proposer cannot include a
-transaction whose fee fails the ante; node-local admission rules, such as lane shares, `max_tx_bytes`, and the
+recorded. Fee validity is enforced in CheckTx and FinalizeBlock alike, and a block's fee and tax prices
+are fixed when the block before it commits, so a fee the proposal check accepts still clears at execution. A
+transaction can still fail its ante at execution when an earlier one in the block spent what its fee needed, the SDK's
+standing behaviour, and that earlier transaction paid its own fee; node-local admission rules, such as lane shares, `max_tx_bytes`, and the
 stale-vote refusal, are not re-checked in ProcessProposal (§2.6). A block's prices and time both date from the previous commit, so the first
 block after a stall or halt would trade on pre-outage prices its own age check reads as new; a proposer
 whose clock finds the proposal's time older than `max_exchange_rate_age` proposes commit-only instead. That

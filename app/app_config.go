@@ -146,7 +146,7 @@ var (
 					evidencetypes.ModuleName,
 					stakingtypes.ModuleName,
 					// These modules have no relative ordering requirement. Treasury
-					// refreshes factors and exposure from PreBlock-applied rates.
+					// refreshes exposure from PreBlock-applied rates.
 					authz.ModuleName,
 					treasurytypes.ModuleName,
 					// Security drops a committee plan record the upgrade slot no
@@ -164,8 +164,9 @@ var (
 					// because the module implements the hook; its slot carries no
 					// ordering intent.
 					banktypes.ModuleName,
-					// Treasury funds the next block's rewards and updates the base fee after Market
-					// settlement and any governance fee-parameter changes.
+					// Treasury funds the next block's rewards, then updates the base fee and the
+					// conversion factors after Market settlement and any governance fee-parameter
+					// changes, fixing the next block's fee and tax prices before it is proposed.
 					treasurytypes.ModuleName,
 					// Oracle jails ahead of staking so an attendance jail is in
 					// this block's validator-set update rather than the next

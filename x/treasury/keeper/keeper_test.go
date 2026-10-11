@@ -449,6 +449,13 @@ func (s *KeeperTestSuite) endBlock() error {
 	return s.keeper.EndBlocker(s.ctx)
 }
 
+// endBlockWithoutFees runs EndBlock over a block that collected no fees, for tests of the factor
+// pass it ends with.
+func (s *KeeperTestSuite) endBlockWithoutFees() error {
+	s.expectValidatorFees(sdk.NewCoins())
+	return s.endBlock()
+}
+
 // seedAsset registers or overwrites one asset in the mock registry. The
 // version is fixed at 1 unless a test overwrites the entry directly.
 func (s *KeeperTestSuite) seedAsset(denom string, status assettypes.AssetStatus) {

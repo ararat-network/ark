@@ -609,8 +609,9 @@ the policy router, and `Query/ComputeTax` call one implementation.
 
 ### 8.4 Caps and the reference denomination
 
-Each block Treasury derives a conversion factor for every member from the Oracle rate set, expressing one reference
-unit in that denomination, and both derived figures follow from it: the per-denomination tax cap is the reference cap
+At the end of each block Treasury derives a conversion factor for every member from the Oracle rate set, expressing
+one reference unit in that denomination, so the next block's fee and tax prices are fixed before it is proposed. Both
+derived figures follow from it: the per-denomination tax cap is the reference cap
 times the factor, and the per-denomination gas price is the base gas price times the factor. Caps are derived on every
 read, never stored. A factor persists through a feed outage, so a stale feed defers a cap rather than failing a block;
 a member arriving without a rate seeds at one. A member the Oracle no longer prices keeps its factor for the tax cap

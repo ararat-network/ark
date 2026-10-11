@@ -60,8 +60,8 @@ func (s *KeeperTestSuite) TestEndBlockerAccruesRewardFunding() {
 	}
 }
 
-// TestBeginBlockerValuesNoLiability checks that factor refresh never reads supply or folds
-// liability, even with values that would fail valuation.
+// TestBeginBlockerValuesNoLiability checks that BeginBlock off the exposure cadence never reads
+// supply or folds liability, even with values that would fail valuation.
 func (s *KeeperTestSuite) TestBeginBlockerValuesNoLiability() {
 	s.setBlockHeight(2)
 	s.setAssets(chain.USDBaseDenom)
@@ -73,11 +73,11 @@ func (s *KeeperTestSuite) TestBeginBlockerValuesNoLiability() {
 	s.requireNoTypedEvent(&types.EventLiabilityIncomplete{})
 }
 
-// TestBeginBlockerDerivesFactorsEveryBlock pins the per-block contract: a
+// TestEndBlockerDerivesFactorsEveryBlock pins the per-block contract: a
 // servable member's factor tracks this block's rate, the derived cap tracks
 // the factor, and the changed-only event stays quiet on a block that
 // re-derives every factor to the value it already held.
-func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
+func (s *KeeperTestSuite) TestEndBlockerDerivesFactorsEveryBlock() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.ReferenceTaxCap = math.NewInt(1_000_000)
@@ -89,7 +89,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 	})
 
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 
 	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -106,7 +106,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 
 	// An unchanged block writes nothing and says nothing.
 	s.ctx = sdk.UnwrapSDKContext(s.ctx).WithEventManager(sdk.NewEventManager())
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	s.requireNoTypedEvent(&types.EventConversionFactorsRefreshed{})
 	usd, err := s.keeper.ConversionFactors.Get(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -117,7 +117,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 	})
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	usdCap, err = s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.NewInt(4_000_000), usdCap)
@@ -126,10 +126,10 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactorsEveryBlock() {
 	}})
 }
 
-// TestBeginBlockerKeepsFactorThroughOutage proves a dark feed keeps its last
+// TestEndBlockerKeepsFactorThroughOutage proves a dark feed keeps its last
 // factor, the derived cap keeps clamping through the outage, and the pass
 // mends the factor the block the feed returns — every block is the retry.
-func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
+func (s *KeeperTestSuite) TestEndBlockerKeepsFactorThroughOutage() {
 	s.setBlockHeight(1)
 	params := types.DefaultParams()
 	params.TransferTaxRate = math.LegacyMustNewDecFromStr("0.1")
@@ -142,7 +142,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 	}))
 
 	// The outage block: no rate serves akrw, so its factor is kept untouched.
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	kept, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.000007"), kept.Factor)
@@ -163,7 +163,7 @@ func (s *KeeperTestSuite) TestBeginBlockerKeepsFactorThroughOutage() {
 		chain.KRWBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	mended, err := s.keeper.ConversionFactors.Get(s.ctx, chain.KRWBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyNewDec(2), mended.Factor)
@@ -179,10 +179,10 @@ func (s *KeeperTestSuite) conversionFactors() []types.ConversionFactor {
 	return factors
 }
 
-// TestBeginBlockerDerivesFactors pins one block's pass: the capture it reads,
+// TestEndBlockerDerivesFactors pins one block's pass: the capture it reads,
 // the table it leaves, the caps that table derives, and the changed-only
 // refresh event.
-func (s *KeeperTestSuite) TestBeginBlockerDerivesFactors() {
+func (s *KeeperTestSuite) TestEndBlockerDerivesFactors() {
 	huge := math.LegacyNewDec(10).Power(72)
 	factor := func(denom string, value math.LegacyDec, height uint64) types.ConversionFactor {
 		return types.ConversionFactor{Denom: denom, Factor: value, DerivedHeight: height}
@@ -312,7 +312,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesFactors() {
 			}
 			s.setRates(tc.rates)
 
-			s.Require().NoError(s.beginBlock())
+			s.Require().NoError(s.endBlockWithoutFees())
 
 			s.Require().Equal([][]string{tc.capture}, s.rateCaptures)
 			s.Require().Equal(tc.stored, s.conversionFactors())
@@ -346,7 +346,7 @@ func (s *KeeperTestSuite) TestTaxCapDerivationBounds() {
 		chain.USDBaseDenom: math.LegacyNewDec(2),
 	})
 
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 
 	usdCap, err := s.keeper.GetTaxCap(s.ctx, chain.USDBaseDenom)
 	s.Require().NoError(err)
@@ -384,13 +384,13 @@ func (s *KeeperTestSuite) TestReferenceTaxCapChangeRepricesInstantly() {
 	s.Require().Equal(math.NewInt(1_000_000), usdCap)
 }
 
-// TestBeginBlockerDerivesNoahCrossWithoutSeeding checks NOAH receives a fee factor only from a
+// TestEndBlockerDerivesNoahCrossWithoutSeeding checks NOAH receives a fee factor only from a
 // usable reference rate. GetTaxCap excludes it from taxation.
-func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
+func (s *KeeperTestSuite) TestEndBlockerDerivesNoahCrossWithoutSeeding() {
 	s.setBlockHeight(1)
 	s.setAssets(chain.USDBaseDenom)
 
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	_, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().ErrorIs(err, collections.ErrNotFound)
 
@@ -399,7 +399,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 		chain.XDRBaseDenom: math.LegacyNewDecWithPrec(25, 2),
 		chain.USDBaseDenom: math.LegacyNewDecWithPrec(5, 1),
 	})
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	cross, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), cross.Factor)
@@ -409,7 +409,7 @@ func (s *KeeperTestSuite) TestBeginBlockerDerivesNoahCrossWithoutSeeding() {
 
 	// A dark reference keeps the cross, like any member through an outage.
 	s.setRates(oracletypes.RateSet{})
-	s.Require().NoError(s.beginBlock())
+	s.Require().NoError(s.endBlockWithoutFees())
 	kept, err := s.keeper.ConversionFactors.Get(s.ctx, chain.NoahBaseDenom)
 	s.Require().NoError(err)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.25"), kept.Factor)

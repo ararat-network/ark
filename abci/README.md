@@ -63,7 +63,7 @@ explains ordinary transaction service and proposal-local lane budgets after this
 Consume-before-promote is required: promotion loses the earlier epoch needed to validate the previous height's reports.
 Hook timing/status metrics are recorded in finalisation mode separately from wrapped module preblock latency. The
 wrapper owns no asset completion or liability-priming call. Asset transitions execute through messages; Treasury owns
-its own BeginBlock refreshes and end-of-block valuation/settlement.
+its own refreshes and end-of-block valuation/settlement.
 
 ## Verification
 
