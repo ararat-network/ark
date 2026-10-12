@@ -146,7 +146,7 @@ proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#1-compone
 After launch a validator registers with create-validator, bonding NOAH it holds at a commission at or above the
 floor; no proposal is involved and nothing is drawn from the pool. The reward targets do not follow the set: they are
 the founding seats' shares at assembly, and raising them as validators join is a governance policy choice by
-`MsgUpdatePolicy` (§4), which the [disbursement plan](DISBURSEMENT_PLAN.md#6-if-the-public-does-not-stake) proposes
+`MsgUpdatePolicy` (§4), which the [disbursement plan](DISBURSEMENT_PLAN.md#2-validators) proposes
 how to use.
 
 ## 4. Treasury

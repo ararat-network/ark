@@ -294,8 +294,9 @@ advances the term, so transactions prepared under the old key expire. The linked
   the one deliberate case, counted as the founder's stake; it and the founder's 15M grant are genesis governance
   awards, approved by every founding validator's gentx and cancellable like any other.
 - A bought third of bonded stake blocks every proposal, stops each member step and committee re-appointment, and on
-  the buyer's own validators halts the chain. What it costs and what bounds it are in the
-  [disbursement plan](../governance/DISBURSEMENT_PLAN.md#3-consensus-safety-without-a-ballast).
+  the buyer's own validators halts the chain. It costs about half of what everyone else has bonded, 34M against the
+  founding stake at ten seats. A continuation export with `--jail-allowed-addrs` relaunches without the buyer
+  ([node operations](../operations/NODE_OPERATIONS.md#upgrades-and-relaunch)).
 
 **Review questions.** Does a new committee power have a bound the mandate states, and a row in the table above? Is its
 message in the lane and the gate? Does the runbook still describe how it reaches a block under congestion? Does a
