@@ -20,6 +20,10 @@ import (
 // own.
 const testRateAge = uint64(3_600)
 
+// testAttestationAge is the attestation window test entries state: a quarter,
+// the cadence a custodian statement typically arrives on.
+const testAttestationAge = uint64(90 * 86_400)
+
 // xdrExternal and usdExternal identify external claims; their prefixes identify the Oracle series.
 // Reserve lists and holds claims, while Oracle prices series.
 const (
@@ -36,10 +40,11 @@ func eligibility(denom, haircut, perNoah string) types.EligibilityEntry {
 
 func agedEligibility(denom, haircut, perNoah string, maxRateAge uint64) types.EligibilityEntry {
 	return types.EligibilityEntry{
-		Denom:            denom,
-		HaircutFactor:    math.LegacyMustNewDecFromStr(haircut),
-		MaxCreditPerNoah: math.LegacyMustNewDecFromStr(perNoah),
-		MaxRateAge:       maxRateAge,
+		Denom:             denom,
+		HaircutFactor:     math.LegacyMustNewDecFromStr(haircut),
+		MaxCreditPerNoah:  math.LegacyMustNewDecFromStr(perNoah),
+		MaxRateAge:        maxRateAge,
+		MaxAttestationAge: testAttestationAge,
 	}
 }
 
@@ -347,14 +352,16 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 		Eligible:         true,
 		AttestedQuantity: math.NewInt(80),
 		ImpairedQuantity: math.ZeroInt(),
+		StaleQuantity:    math.ZeroInt(),
 		Rate:             math.LegacyNewDecWithPrec(5, 1),
 		HaircutFactor:    math.LegacyMustNewDecFromStr("0.5"),
 		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.1"),
 		// A tenth of the 1_000 NOAH balance: the ceiling the credit was
 		// measured against, reported even when it does not bind.
-		Cap:        noahCoin(100),
-		Credit:     noahCoin(20),
-		MaxRateAge: testRateAge,
+		Cap:               noahCoin(100),
+		Credit:            noahCoin(20),
+		MaxRateAge:        testRateAge,
+		MaxAttestationAge: testAttestationAge,
 	}}, response.Assets)
 }
 
@@ -515,6 +522,120 @@ func (s *KeeperTestSuite) TestRecognitionCapsEachAssetIndependently() {
 	s.Require().Equal(noahCoin(40), row(xdrExternal).Credit)
 }
 
+// TestRecognitionLapsesUnattestedHoldings pins that a holding not re-attested
+// within its entry's window earns nothing until the committee states it again,
+// and that only a statement of the whole holding restarts the window.
+func (s *KeeperTestSuite) TestRecognitionLapsesUnattestedHoldings() {
+	committee := testAddress(1)
+	destination := testAddress(2)
+	const window = uint64(600)
+	row := func() types.AssetRecognition {
+		response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
+		s.Require().NoError(err)
+		for _, asset := range response.Assets {
+			if asset.Denom == testAsset {
+				return asset
+			}
+		}
+		s.T().Fatalf("no recognition row for %s", testAsset)
+		return types.AssetRecognition{}
+	}
+	// The stubbed balance is 10,000 NOAH whatever is deployed; 100 attested
+	// units worth one NOAH each earn the full 100, well under half of it.
+	setup := func() uint64 {
+		s.SetupTest()
+		s.appointCommittee(committee, 10_000, 0, destination)
+		s.setBlockHeight(20)
+		s.fundReserve(10_000)
+		positionID := s.deploy(committee, destination, 400, 100, 0)
+		entry := eligibility(testAsset, "1", "0.5")
+		entry.MaxAttestationAge = window
+		s.setPolicy(entry)
+		s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
+		return positionID
+	}
+	attested := blockTime(20)
+
+	s.Run("credit lapses past the window and returns on re-attestation", func() {
+		positionID := setup()
+		s.Require().Equal(math.NewInt(10_100), s.recognised())
+
+		// The window is inclusive: at exactly its age the holding still counts.
+		s.atClock(140, attested+window)
+		s.Require().Equal(math.NewInt(10_100), s.recognised())
+
+		s.atClock(141, attested+window+1)
+		s.Require().Equal(math.NewInt(10_000), s.recognised())
+		s.Require().Equal(math.ZeroInt(), row().AttestedQuantity)
+		s.Require().Equal(math.NewInt(100), row().StaleQuantity)
+		s.Require().Equal(noahCoin(0), row().Credit)
+		s.Require().Equal(window, row().MaxAttestationAge)
+
+		// Restating the same quantity is a re-attestation, and it must cite its
+		// evidence.
+		_, err := s.msgServer.CommitteeRecordUpdate(s.ctx, &types.MsgCommitteeRecordUpdate{
+			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
+			Quantity: assetCoin(100),
+		})
+		s.Require().ErrorContains(err, "entry reference must not be empty")
+		_, err = s.msgServer.CommitteeRecordUpdate(s.ctx, &types.MsgCommitteeRecordUpdate{
+			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
+			Quantity:  assetCoin(100),
+			Reference: "statement-2026-10",
+		})
+		s.Require().NoError(err)
+		s.Require().Equal(math.NewInt(10_100), s.recognised())
+		position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+		s.Require().NoError(err)
+		s.Require().Equal(attested+window+1, position.AttestedTime)
+	})
+
+	// Funding states only what was just acquired, not the holding already
+	// there, so it leaves the window where it was.
+	s.Run("funding an existing position does not re-attest it", func() {
+		positionID := setup()
+		s.atClock(141, attested+window+1)
+		s.deploy(committee, destination, 100, 50, positionID)
+
+		s.Require().Equal(math.NewInt(10_000), s.recognised())
+		s.Require().Equal(math.NewInt(150), row().StaleQuantity)
+		position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+		s.Require().NoError(err)
+		s.Require().Equal(attested, position.AttestedTime)
+	})
+
+	// A return attribution states the remaining quantity, which is the whole
+	// holding, so it restarts the window.
+	s.Run("a return attribution re-attests the remainder", func() {
+		positionID := setup()
+		s.atClock(141, attested+window+1)
+		_, err := s.msgServer.CommitteeAttributeReturn(s.ctx, &types.MsgCommitteeAttributeReturn{
+			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
+			ReturnedCoin:      noahCoin(250),
+			RemainingQuantity: assetCoin(60),
+			Reference:         "tx-0x02",
+		})
+		s.Require().NoError(err)
+
+		s.Require().Equal(math.NewInt(10_060), s.recognised())
+		s.Require().Equal(math.NewInt(60), row().AttestedQuantity)
+		s.Require().Equal(math.ZeroInt(), row().StaleQuantity)
+	})
+
+	// Only an edited genesis could carry a time ahead of the block; it earns
+	// nothing rather than a window that starts in the future.
+	s.Run("an attestation dated ahead of the block earns nothing", func() {
+		positionID := setup()
+		position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+		s.Require().NoError(err)
+		position.AttestedTime = attested + 1
+		s.Require().NoError(s.keeper.OpenPositions.Set(s.ctx, positionID, position))
+
+		s.Require().Equal(math.NewInt(10_000), s.recognised())
+		s.Require().Equal(math.NewInt(100), row().StaleQuantity)
+	})
+}
+
 // TestRecognitionDarkFeedZeroesOnlyItsOwnAsset checks that losing one feed
 // removes that asset's credit and leaves every other asset's untouched.
 func (s *KeeperTestSuite) TestRecognitionDarkFeedZeroesOnlyItsOwnAsset() {
@@ -673,6 +794,7 @@ func (s *KeeperTestSuite) TestRecognisedCapitalDecomposesAttestedCustodyOnly() {
 			Eligible:         false,
 			AttestedQuantity: math.NewInt(7),
 			ImpairedQuantity: math.ZeroInt(),
+			StaleQuantity:    math.ZeroInt(),
 			Rate:             math.LegacyZeroDec(),
 			HaircutFactor:    math.LegacyZeroDec(),
 			MaxCreditPerNoah: math.LegacyZeroDec(),

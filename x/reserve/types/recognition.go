@@ -18,6 +18,10 @@ import (
 // arithmetic bounded.
 const MaxRecognitionRateAge = uint64(30 * 86_400)
 
+// MaxAttestationAge caps per-entry attestation windows, in seconds, at a year: a holding not
+// re-attested within an annual audit cycle earns nothing.
+const MaxAttestationAge = uint64(365 * 86_400)
+
 // Validate validates one eligibility entry.
 func (entry EligibilityEntry) Validate() error {
 	// The external-symbol rule makes an Ark-issued denomination unlistable
@@ -46,6 +50,13 @@ func (entry EligibilityEntry) Validate() error {
 			"eligibility max rate age must be greater than zero and at most %ds, is %ds",
 			MaxRecognitionRateAge,
 			entry.MaxRateAge,
+		)
+	}
+	if entry.MaxAttestationAge == 0 || entry.MaxAttestationAge > MaxAttestationAge {
+		return fmt.Errorf(
+			"eligibility max attestation age must be greater than zero and at most %ds, is %ds",
+			MaxAttestationAge,
+			entry.MaxAttestationAge,
 		)
 	}
 	return nil

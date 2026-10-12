@@ -87,10 +87,11 @@ func MsgSetRecognitionPolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 		entries := make([]types.EligibilityEntry, 0, len(denoms))
 		for _, denom := range denoms {
 			entries = append(entries, types.EligibilityEntry{
-				Denom:            denom,
-				HaircutFactor:    math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 100)), 2),
-				MaxCreditPerNoah: share,
-				MaxRateAge:       uint64(r.IntInRange(1, int(types.MaxRecognitionRateAge))),
+				Denom:             denom,
+				HaircutFactor:     math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 100)), 2),
+				MaxCreditPerNoah:  share,
+				MaxRateAge:        uint64(r.IntInRange(1, int(types.MaxRecognitionRateAge))),
+				MaxAttestationAge: uint64(r.IntInRange(1, int(types.MaxAttestationAge))),
 			})
 		}
 

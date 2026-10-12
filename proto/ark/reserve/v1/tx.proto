@@ -338,11 +338,14 @@ message MsgCommitteeRecordUpdate {
   string committee = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 expected_term = 2 [(amino.dont_omitempty) = true];
   uint64 position_id = 3 [(amino.dont_omitempty) = true];
-  // quantity is the holding after this update, not a delta.
+  // quantity is the holding after this update, not a delta. Restating the
+  // same quantity re-attests the holding.
   cosmos.base.v1beta1.Coin quantity = 4 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // reference names the custodian evidence the attestation rests on and is
+  // required.
   string reference = 5;
 }
 

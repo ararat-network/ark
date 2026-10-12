@@ -619,16 +619,19 @@ Fund targets are risk-scaled. Every target is sized on `m ×` its liability basi
 gross for the bounds on committee acts ([D67](#d67)) — where `m` is a multiplier over three indicators the chain
 maintains: the liability ratio (net liability over circulating NOAH, the reflexivity term, which collapses to that
 quotient because liability is valued in NOAH under [D24](#d24)), annualised realised volatility of the protocol
-reference rate, and an EMA of per-block net redemption flow. Samples fold in `SettleConversions`, which Market's
-EndBlocker calls every block with the flow facts already NOAH-valued in `ConversionTotals`; volatility divides an EWMA
-of squared returns by an EWMA of the seconds each return spanned and annualises over a year of seconds ([D133](#d133)).
-The multiplier recomputes every `exposure_refresh_period_blocks`, step-limited by `multiplier_max_step` and clamped to
-`[1, multiplier_cap]`. The three indicator weights live in `EconomicPolicy` and the guardrails behind them in `Params`.
-Putting all eight fields in `Params` to keep the committee's mandate narrow would mistake the field count of [D36](#d36)
-for its principle; the criterion that sorts the two messages is stance against machinery ([D37](#d37)), and a weight
-stating how much extra capital a unit of leverage should demand is the same kind of lever as the target ratios it
-modifies — reversible within hours by zeroing it, and the most time-sensitive knob the module has, which is the
-committee's founding use case. What governance keeps is what makes the delegation safe: the decays define the measuring
+reference rate, and an EMA of each block's redemption value net of expansion, floored at zero after each fold so two-way
+churn cancels and an earlier inflow cannot hide a later run. Samples fold in `SettleConversions`, which Market's
+EndBlocker calls every block with the flow facts already NOAH-valued in `ConversionTotals`; volatility samples at most
+once per `volatility_sample_seconds`, so the oracle median's per-block jitter is never a sample of its own, and divides
+an EWMA of squared returns by an EWMA of the seconds each return spanned, annualised over a year of seconds
+([D133](#d133)). The multiplier recomputes every `exposure_refresh_period_blocks`, step-limited by `multiplier_max_step`
+and clamped to `[1, multiplier_cap]`. The three indicator weights live in `EconomicPolicy` and the guardrails behind
+them in `Params`. Putting all eight fields in `Params` to keep the committee's mandate narrow would mistake the field
+count of [D36](#d36) for its principle; the criterion that sorts the two messages is stance against machinery
+([D37](#d37)), and a weight stating how much extra capital a unit of leverage should demand is the same kind of lever as
+the target ratios it modifies — reversible within hours by zeroing it, and the most time-sensitive knob the module has,
+which is the committee's founding use case. What governance keeps is what makes the delegation safe: the decays and the
+volatility sample spacing define the measuring
 instrument and are not reversible in any useful sense, because a series folded under one memory is not recoverable by
 restoring the old value; the cap is the ceiling on how far the response may go; the step is the anti-gaming rate
 limiter, which a committee able to set it could raise to reach the cap in a single update; and the cadence is machinery.
@@ -1643,7 +1646,8 @@ per-block processes stay in blocks. The Claims cancellation period is `claim_can
 claims queued by closing time; the settlement activation delay is `settlement_activation_delay` ([D134](#d134)), with
 plans carrying activation, earliest closing, and opening times; and the shared committee envelope carries
 `activation_time` and `expiry_time`, Unix seconds, for all eight appointments. Treasury's annualised volatility divides
-its EWMA of squared per-block returns by an EWMA of the seconds each return spanned, under the same retention, and
+its EWMA of squared returns, sampled at least `volatility_sample_seconds` apart, by an EWMA of the seconds each return
+spanned, under the same retention, and
 scales by a 365-day year of seconds: variance per second over one window. In blocks, as per-block processes: the oracle
 reward and attendance windows, Treasury's per-block reward, funding window, and refresh cadence, Market's pool
 recovery, vote-extension activation heights, the Security committee's upgrade height, which `x/upgrade` counts in

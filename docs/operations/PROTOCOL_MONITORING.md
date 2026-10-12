@@ -50,8 +50,9 @@ user-facing symptom when it is working, and none when it is stuck either.
 ### 2.1 Two phases, and the first one is not alerting
 
 **Phase A — inert (now, until activation).** The weights are zero, so `m` is pinned at one and the composite
-carries no information. But the *indicators* are live from the first block: the volatility and flow series fold
-every block inside `SettleConversions`, and `ExposureStatus` reports both alongside the liability ratio at each
+carries no information. But the *indicators* are live from the first block: inside `SettleConversions` the flow series
+folds every block and the volatility series every `volatility_sample_seconds`, and `ExposureStatus` reports both
+alongside the liability ratio at each
 update. This is the calibration window, and it is the whole reason the design ships disabled.
 
 The work in Phase A is to learn the calm-state distribution of the three indicators on this chain — not to alert
@@ -76,7 +77,7 @@ whether or not anyone is reading it, and Phase A is precisely when that would go
 | `uncapped_multiplier` | `EventExposureRefreshed.uncapped_multiplier` | per refresh |
 | `liability_ratio` | `ExposureStatus`; `EventExposureRefreshed` | per refresh |
 | `annualised_volatility` | `ExposureStatus.annualised_volatility` (derived); `EventExposureRefreshed` | per refresh / on demand |
-| `flow_pressure` | `ExposureStatus.exposure_state.flow_pressure` (absolute NOAH); `EventExposureRefreshed.flow_ratio` (a share of net liability) | per block / per refresh |
+| `flow_pressure` | `ExposureStatus.exposure_state.flow_pressure` (NOAH net of expansion, floored at zero); `EventExposureRefreshed.flow_ratio` (a share of net liability) | per block / per refresh |
 | `refresh_pending` | `ExposureStatus.refresh_pending` | on demand |
 | `volatility_variance` | `ExposureStatus.exposure_state.volatility_variance` | on demand |
 | net and nominal liability, all six targets, fund balances | `treasury/FundStatus` | on demand |

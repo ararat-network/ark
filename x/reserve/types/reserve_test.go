@@ -389,8 +389,9 @@ func TestAccountingEntryValidateReference(t *testing.T) {
 			wantErr: missingEvidenceErr,
 		},
 		{
-			name: "quantity update is a judgment and may omit evidence",
-			kind: types.EntryKind_ENTRY_KIND_QUANTITY_UPDATE,
+			name:    "quantity update attests a holding and requires evidence",
+			kind:    types.EntryKind_ENTRY_KIND_QUANTITY_UPDATE,
+			wantErr: missingEvidenceErr,
 		},
 		{
 			name: "impairment is a judgment and may omit evidence",

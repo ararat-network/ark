@@ -65,14 +65,20 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		return nil, nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
 	}
 
-	// One walk of the open set serves every asset. Impaired positions are open,
-	// so they are tallied separately: excluded from credit but still reported.
+	// One walk of the open set serves every asset. Impaired positions and those
+	// past their attestation window are open, so they are tallied separately:
+	// excluded from credit but still reported.
 	attested := make(map[string]math.Int)
 	impaired := make(map[string]math.Int)
+	stale := make(map[string]math.Int)
+	now := chain.BlockSeconds(ctx)
 	if err := k.OpenPositions.Walk(ctx, nil, func(_ uint64, position types.Position) (bool, error) {
 		quantities := attested
-		if position.Impaired {
+		switch entry, listed := entries[position.Quantity.Denom]; {
+		case position.Impaired:
 			quantities = impaired
+		case listed && !attestationFresh(entry, position, now):
+			quantities = stale
 		}
 		sum := position.Quantity.Amount
 		if running, ok := quantities[position.Quantity.Denom]; ok {
@@ -88,7 +94,7 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		return nil, nil, fmt.Errorf("iterating positions: %w", err)
 	}
 
-	denomSet := make(map[string]struct{}, len(entries)+len(attested)+len(impaired))
+	denomSet := make(map[string]struct{}, len(entries)+len(attested)+len(impaired)+len(stale))
 	for denom := range entries {
 		denomSet[denom] = struct{}{}
 	}
@@ -96,6 +102,9 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		denomSet[denom] = struct{}{}
 	}
 	for denom := range impaired {
+		denomSet[denom] = struct{}{}
+	}
+	for denom := range stale {
 		denomSet[denom] = struct{}{}
 	}
 	if len(denomSet) == 0 {
@@ -134,6 +143,7 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 			Denom:            denom,
 			AttestedQuantity: math.ZeroInt(),
 			ImpairedQuantity: math.ZeroInt(),
+			StaleQuantity:    math.ZeroInt(),
 			Rate:             math.LegacyZeroDec(),
 			HaircutFactor:    math.LegacyZeroDec(),
 			MaxCreditPerNoah: math.LegacyZeroDec(),
@@ -146,12 +156,16 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		if quantity, ok := impaired[denom]; ok {
 			row.ImpairedQuantity = quantity
 		}
+		if quantity, ok := stale[denom]; ok {
+			row.StaleQuantity = quantity
+		}
 		stake := types.RecognitionStake{Ratio: math.LegacyZeroDec(), Raw: math.LegacyZeroDec()}
 		if entry, listed := entries[denom]; listed {
 			row.Eligible = true
 			row.HaircutFactor = entry.HaircutFactor
 			row.MaxCreditPerNoah = entry.MaxCreditPerNoah
 			row.MaxRateAge = entry.MaxRateAge
+			row.MaxAttestationAge = entry.MaxAttestationAge
 			stake.Ratio = entry.MaxCreditPerNoah
 			// An absent, non-positive, or over-age rate leaves the row at zero:
 			// there is no fallback source.
@@ -214,4 +228,10 @@ func sumRecognised(balance math.Int, assets []types.AssetRecognition) (math.Int,
 		}
 	}
 	return recognised, nil
+}
+
+// attestationFresh reports whether a position's last whole-holding attestation is within the
+// entry's window. A time ahead of the block, which only an edited genesis could carry, is not.
+func attestationFresh(entry types.EligibilityEntry, position types.Position, now uint64) bool {
+	return position.AttestedTime <= now && now-position.AttestedTime <= entry.MaxAttestationAge
 }

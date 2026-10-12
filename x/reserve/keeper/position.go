@@ -33,6 +33,7 @@ func (k *Keeper) openPosition(ctx context.Context, acquired sdk.Coin, deployed s
 		Returned:       chain.NoahCoin(math.ZeroInt()),
 		VenueReference: venueReference,
 		OpenedHeight:   chain.BlockHeight(ctx),
+		AttestedTime:   chain.BlockSeconds(ctx),
 	}
 	if err := position.Validate(); err != nil {
 		return types.Position{}, err
@@ -256,7 +257,9 @@ func (k *Keeper) attributeReturn(
 		return 0, fmt.Errorf("valuing attributed return: %w", err)
 	}
 
+	// The remaining quantity states the whole holding, so it re-attests it.
 	position.Quantity = msg.RemainingQuantity
+	position.AttestedTime = chain.BlockSeconds(ctx)
 	// Returned accumulates over the position's whole life: each inflow is
 	// bank-bounded, but the sum of them is not, so the addition is checked.
 	returned, err := position.Returned.Amount.SafeAdd(recovered)
@@ -303,6 +306,7 @@ func (k *Keeper) restateQuantity(
 		)
 	}
 	position.Quantity = msg.Quantity
+	position.AttestedTime = chain.BlockSeconds(ctx)
 	if err := position.Validate(); err != nil {
 		return 0, err
 	}

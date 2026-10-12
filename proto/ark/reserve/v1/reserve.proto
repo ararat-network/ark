@@ -18,8 +18,9 @@ enum EntryKind {
   // ENTRY_KIND_DEPLOYMENT records a proven outflow opening or funding a
   // position.
   ENTRY_KIND_DEPLOYMENT = 1;
-  // ENTRY_KIND_QUANTITY_UPDATE records an attested holding change: settlement
-  // confirmation, yield received, or an off-chain conversion.
+  // ENTRY_KIND_QUANTITY_UPDATE records an attestation of the whole holding:
+  // settlement confirmation, yield received, an off-chain conversion, or the
+  // same quantity re-attested.
   ENTRY_KIND_QUANTITY_UPDATE = 2;
   // ENTRY_KIND_RETURN_ATTRIBUTION records a proven inflow matched to a
   // position.
@@ -96,6 +97,10 @@ message EligibilityEntry {
   // claim's credit. Required and positive, and bounded by MaxRecognitionRateAge: a claim states
   // its own tolerance rather than inheriting the Oracle default.
   uint64 max_rate_age = 4 [(amino.dont_omitempty) = true];
+  // max_attestation_age is how old, in seconds, a position's last attestation of its whole
+  // holding may be and still back this claim's credit. Required and positive, and bounded by
+  // MaxAttestationAge.
+  uint64 max_attestation_age = 5 [(amino.dont_omitempty) = true];
 }
 
 // Position is the current view of one deployment: quantity is what the
@@ -130,6 +135,9 @@ message Position {
   // closed_height is zero while the position is open, and the height it closed
   // at once it is.
   uint64 closed_height = 8 [(amino.dont_omitempty) = true];
+  // attested_time is the block time, in Unix seconds, the committee last stated
+  // the whole holding: at opening, restatement, or return attribution.
+  uint64 attested_time = 9 [(amino.dont_omitempty) = true];
 }
 
 // AccountingEntry is one append-only ledger record. Every position mutation
@@ -167,7 +175,8 @@ message AssetRecognition {
   // eligible reports whether the asset has a policy entry. An ineligible row
   // is custody without credit.
   bool eligible = 2 [(amino.dont_omitempty) = true];
-  // attested_quantity sums the open, unimpaired positions in this asset.
+  // attested_quantity sums the open, unimpaired positions in this asset that
+  // were attested within the entry's window.
   string attested_quantity = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -177,6 +186,14 @@ message AssetRecognition {
   // impaired_quantity sums the open, impaired positions: attested holdings
   // excluded from credit without being erased.
   string impaired_quantity = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // stale_quantity sums the open, unimpaired positions whose last attestation
+  // is past the entry's window: held off credit until re-attested.
+  string stale_quantity = 11 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -218,4 +235,7 @@ message AssetRecognition {
   // max_rate_age is the entry's rate window in seconds; zero on an
   // ineligible row.
   uint64 max_rate_age = 10 [(amino.dont_omitempty) = true];
+  // max_attestation_age is the entry's attestation window in seconds; zero on
+  // an ineligible row.
+  uint64 max_attestation_age = 12 [(amino.dont_omitempty) = true];
 }

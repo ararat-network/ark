@@ -277,10 +277,11 @@ func TestReserveFeedGuardBlocksRemoval(t *testing.T) {
 		_, err := reserveMsgServer.SetRecognitionPolicy(ctx, &reservetypes.MsgSetRecognitionPolicy{
 			Authority: authority,
 			Entries: []reservetypes.EligibilityEntry{{
-				Denom:            goldExternal,
-				HaircutFactor:    math.LegacyMustNewDecFromStr("0.5"),
-				MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.25"),
-				MaxRateAge:       3_600,
+				Denom:             goldExternal,
+				HaircutFactor:     math.LegacyMustNewDecFromStr("0.5"),
+				MaxCreditPerNoah:  math.LegacyMustNewDecFromStr("0.25"),
+				MaxRateAge:        3_600,
+				MaxAttestationAge: 90 * 86_400,
 			}},
 		})
 		require.NoError(t, err)
@@ -448,10 +449,11 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	_, err = msgServer.SetRecognitionPolicy(ctx, &reservetypes.MsgSetRecognitionPolicy{
 		Authority: authority,
 		Entries: []reservetypes.EligibilityEntry{{
-			Denom:            externalAsset,
-			HaircutFactor:    math.LegacyOneDec(),
-			MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.9"),
-			MaxRateAge:       3_600,
+			Denom:             externalAsset,
+			HaircutFactor:     math.LegacyOneDec(),
+			MaxCreditPerNoah:  math.LegacyMustNewDecFromStr("0.9"),
+			MaxRateAge:        3_600,
+			MaxAttestationAge: 90 * 86_400,
 		}},
 	})
 	require.NoError(t, err)
@@ -470,6 +472,7 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 		Returned:       sdk.NewCoin(chain.NoahBaseDenom, math.ZeroInt()),
 		VenueReference: "custodian-alpha",
 		OpenedHeight:   1,
+		AttestedTime:   uint64(ctx.BlockTime().Unix()),
 	}))
 
 	recognised, err := arkApp.ReserveKeeper.RecognisedCapital(ctx)

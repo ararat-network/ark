@@ -9043,8 +9043,8 @@ func (*QueryRecognisedCapitalRequest) Descriptor() ([]byte, []int) {
 
 // QueryRecognisedCapitalResponse reports recognised capital and its complete
 // decomposition. Every zero credit has a visible cause in its row: no usable
-// rate, no unimpaired attested quantity, a zero cap, an asset outside
-// the policy, or a raw credit below one anoah.
+// rate, no unimpaired quantity attested within the window, a zero cap, an
+// asset outside the policy, or a raw credit below one anoah.
 type QueryRecognisedCapitalResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

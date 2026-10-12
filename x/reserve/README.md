@@ -34,13 +34,14 @@ went out. Every deployment sends only to those destinations. Recognition policy 
 separate guardian or pause state: governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
 rejected because the bounded on-chain outflow and the off-chain custody relationship have different evidence.
 
-A `Position` holds attested quantity and venue reference beside proven deployed/returned amounts, impairment, and
-opening/closing heights. Every mutation appends an `AccountingEntry`; corrections append a restatement rather than
-editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a Bank fact, but assigning
-it to a position is an accounting act. Return value is crystallised at attribution with a fresh rate; realised profit
-or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven movements or their dates.
-Venue and entry references are free-form evidence the chain never interprets, at most 2,048 bytes
-(`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value.
+A `Position` holds attested quantity, the time it was last attested, and venue reference beside proven deployed/returned
+amounts, impairment, and opening/closing heights. Every mutation appends an `AccountingEntry`; corrections append a
+restatement rather than editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a
+Bank fact, but assigning it to a position is an accounting act. Return value is crystallised at attribution with a fresh
+rate; realised profit or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven
+movements or their dates. Venue and entry references are free-form evidence the chain never interprets, at most 2,048
+bytes (`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value
+or attests a holding.
 
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
@@ -48,10 +49,19 @@ allowance again, and an in-kind reopening is booked at the live Oracle value. No
 governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#43-recognition)
 and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
 
+An attestation expires. `attested_time` is set when the committee states the whole holding: at opening, at a
+quantity restatement, and at a return attribution, which states the remainder. Funding an existing position states
+only the increment and corrections fix history, so neither moves it. Each entry's `max_attestation_age`, positive and
+at most `MaxAttestationAge` (a year), bounds how old that statement may be and still earn credit; past it the
+position's quantity reports as `stale_quantity` and counts for nothing until the committee restates it, which may
+repeat the same quantity. A time ahead of the block, which only an edited genesis could carry, also earns nothing. The
+window forces the diligence a quiet custodian failure would otherwise escape; it is no defence against a committee
+willing to re-attest falsely, which the journal and its references exist to expose.
+
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
-haircuts, caps, and fresh rates; outflows remain allowance-, floor-, and destination-bounded. The permanent journal
-makes the discrepancy inspectable and correctable. Committee attestation is the evidence model for off-chain custody;
-typed deployment adapters cannot prove a custodian's wire-transfer holdings.
+haircuts, caps, fresh rates, and fresh attestations; outflows remain allowance-, floor-, and destination-bounded. The
+permanent journal makes the discrepancy inspectable and correctable. Committee attestation is the evidence model for
+off-chain custody; typed deployment adapters cannot prove a custodian's wire-transfer holdings.
 
 ## Recognition algorithm
 
@@ -87,7 +97,9 @@ Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxR
 that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
 acceptable age is consumer risk policy. Oracle carries no per-denomination age override, because one series can serve
 conversion and reserve recognition with different tolerances. Each `RecognisedCapital` row reports its entry's
-window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses.
+window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses. The
+row reports `max_attestation_age` the same way; added to each position's `attested_time`, it gives when that
+position's credit lapses.
 
 Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
 external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
@@ -97,15 +109,15 @@ attested destinations, and no native mint path produces those symbols.
 ## Queries, events, and genesis
 
 The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, balances, positions, ledger, recognition
-policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound,
-sized as the burn handler sizes it. Bank transfer/burn events record custody movements;
-`EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
-Genesis preserves open and closed positions and their unpruned history, reconciles the stated position figures and
-term usage against the ledger, refusing a mismatch, and rebuilds the per-position and reversal indexes. IDs,
-correction references, position references, and closure rules must agree. Positions and entries are permanent: IDs
-run from one without a gap and each sequence sits one past its records, so an export
-that lost a record cannot import. Oracle imports first so recognition entries can validate their feeds. Non-NOAH Bank
-balances must be registry members.
+policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound, sized
+as the burn handler sizes it. Bank transfer/burn events record custody movements; `EventLedgerEntryRecorded` records
+accounting mutations. There is no redundant transfer-history query. Genesis preserves open and closed positions and
+their unpruned history, reconciles the proven position figures and term usage against the ledger, refusing a mismatch,
+and rebuilds the per-position and reversal indexes. IDs, correction references, position references, and closure rules
+must agree. Attested quantity and `attested_time` import as stated, since the journal records heights rather than times
+and attestations are not proven figures. Positions and entries are permanent: IDs run from one without a gap and each
+sequence sits one past its records, so an export that lost a record cannot import. Oracle imports first so recognition
+entries can validate their feeds. Non-NOAH Bank balances must be registry members.
 
 ## Development
 

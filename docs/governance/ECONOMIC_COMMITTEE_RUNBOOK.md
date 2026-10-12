@@ -38,7 +38,8 @@ independent fields, which is the number that matters when drafting a policy upda
 governance vote (D78, D80): it is part of the fee every wallet signs, so a raise refuses every in-flight
 transfer and must sit behind a voting period.
 
-Governance keeps the machinery behind the weights too — `volatility_decay`, `flow_decay`, `multiplier_cap`,
+Governance keeps the machinery behind the weights too — `volatility_decay`, `volatility_sample_seconds`, `flow_decay`,
+`multiplier_cap`,
 `multiplier_max_step`, `exposure_refresh_period_blocks`. A holder who could set the step could reach the cap in
 one update; a series folded under one memory is not recoverable by restoring the old decay. A committee at its
 maximum moves the multiplier by at most one step per period toward a governance-set cap, which is exactly what

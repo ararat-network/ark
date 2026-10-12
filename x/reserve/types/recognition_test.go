@@ -12,9 +12,12 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// The combined age bound asserts one message from both its lower and upper
-// cases, so the string lives once.
-const rateAgeOutOfRange = "max rate age must be greater than zero and at most"
+// Each combined age bound asserts one message from both its lower and upper
+// cases, so the strings live once.
+const (
+	rateAgeOutOfRange        = "max rate age must be greater than zero and at most"
+	attestationAgeOutOfRange = "max attestation age must be greater than zero and at most"
+)
 
 // creditDenom is the asset every credit case is written against.
 const creditDenom = "axdr"
@@ -34,10 +37,11 @@ func rateSet(rate string) oracletypes.RateSet {
 func TestEligibilityEntryValidate(t *testing.T) {
 	valid := func() types.EligibilityEntry {
 		return types.EligibilityEntry{
-			Denom:            "axau-lbma",
-			HaircutFactor:    math.LegacyMustNewDecFromStr("0.8"),
-			MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.2"),
-			MaxRateAge:       72 * 3_600,
+			Denom:             "axau-lbma",
+			HaircutFactor:     math.LegacyMustNewDecFromStr("0.8"),
+			MaxCreditPerNoah:  math.LegacyMustNewDecFromStr("0.2"),
+			MaxRateAge:        72 * 3_600,
+			MaxAttestationAge: 90 * 86_400,
 		}
 	}
 
@@ -120,6 +124,20 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			name:    "window past the domain cap",
 			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + 1 },
 			wantErr: rateAgeOutOfRange,
+		},
+		{
+			name:    "unset attestation window",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxAttestationAge = 0 },
+			wantErr: attestationAgeOutOfRange,
+		},
+		{
+			name:   "attestation window at the domain cap",
+			mutate: func(e *types.EligibilityEntry) { e.MaxAttestationAge = types.MaxAttestationAge },
+		},
+		{
+			name:    "attestation window past the domain cap",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxAttestationAge = types.MaxAttestationAge + 1 },
+			wantErr: attestationAgeOutOfRange,
 		},
 	}
 

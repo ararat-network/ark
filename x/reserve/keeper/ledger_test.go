@@ -1428,11 +1428,14 @@ func (s *KeeperTestSuite) TestGenesisRoundTripPreservesPositionStatus() {
 	recognisedBefore := s.recognised()
 	outstandingBefore, err := s.queryServer.Balance(s.ctx, &types.QueryBalanceRequest{})
 	s.Require().NoError(err)
+	exportedAt := sdk.UnwrapSDKContext(s.ctx)
 
 	// Reimport into a clean chain and ask the same questions. The custody
 	// balance is Bank genesis rather than this module's, so it is restored
-	// alongside rather than by the import.
+	// alongside rather than by the import. A continuation import resumes at
+	// the exported clock, which keeps every attestation inside its window.
 	s.SetupTest()
+	s.atClock(exportedAt.BlockHeight(), uint64(exportedAt.BlockTime().Unix()))
 	s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
 	s.fundReserve(10_000)
 	s.Require().NoError(s.keeper.InitGenesis(s.ctx, exported))

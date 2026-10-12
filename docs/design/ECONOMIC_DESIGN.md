@@ -279,7 +279,8 @@ that paper, so the bounds on committee acts size on gross. `FundStatus` reports 
 
 The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the chain
 already maintains, each weighted by a committee lever: the liability ratio, net liability over circulating NOAH; the
-annualised realised volatility of the reference rate, measured in block time (D133); and an EMA of net redemption flow
+annualised realised volatility of the reference rate, measured in block time over returns at least
+`volatility_sample_seconds` apart (D133); and an EMA of redemption net of expansion, floored at zero,
 as a share of net liability. Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so
 no spot price enters. It recomputes on a governed period, moves at most a governed step, and is clamped to `[1, cap]`;
 with zero weights it targets one, so a raised multiplier steps back down rather than resetting. Its own liability-ratio
@@ -573,7 +574,8 @@ reward windows ([Oracle](../../x/oracle/README.md#11-attendance-settlement)).
 ### 7.1 Treasury params and policy
 
 `Params` holds what governance owns: the reference unit and cap amount, the funding window, the transfer tax rate, the
-exposure instrument's decays, cap, step, and period, and the base-fee controller. `EconomicPolicy` holds the
+exposure instrument's decays, sample spacing, cap, step, and period, and the base-fee controller. `EconomicPolicy` holds
+the
 committee's levers: the two block reward targets, the three fund target ratios, and the three exposure weights. The
 boundary is stance against machinery: a lever stating how much of something the protocol wants, reversible and safe
 between a mandate's bounds, is the committee's; the instrument that computes it, its cadence, and its rails are

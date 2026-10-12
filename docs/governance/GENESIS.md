@@ -163,7 +163,8 @@ Params (governance-owned, `x/treasury/types/params.go`):
 | `transfer_tax_rate` | `0.005` | Decided | At the top of Terra Classic's operating band, under the 2% spread floor a swap round trip would otherwise beat (D81), and the safe direction to start from since cuts never refuse in-flight transfers (D80). Revenue starts only once conversion has created currency supply. |
 | `reward_funding_window` | `100800` | Decided | One chain week of settlement observations (D34); the first payment lands at block 100,800, which the floats cover. |
 | `exposure_refresh_period_blocks` | `600` | Default | Hourly recompute of the multiplier. |
-| `volatility_decay` | `0.99995` | Default | Variance half-life of 13,863 blocks, 23 hours: a regime, not an event. |
+| `volatility_decay` | `0.9975` | Default | Per-sample retention: a half-life of 277 samples, 23 hours at five-minute sampling: a regime, not an event. |
+| `volatility_sample_seconds` | `300` | Default | Each return spans at least five minutes, so per-block oracle jitter is never a sample of its own: one basis point of jitter reads as about 4.6% annualised volatility rather than 32%. |
 | `flow_decay` | `0.99885` | Default | Flow half-life of 603 blocks, an hour: the one signal an actor can manufacture, so it forgets fast. |
 | `multiplier_cap` | `2` | Decided | The defensive ratios sum to 0.5, so full retention is reached at 2; above that only the committee bounds widen. Inert until the weights are set. |
 | `multiplier_max_step` | `0.1` | Decided | With cap 2, a climb from one to the cap takes ten sustained hours. Inert until the weights are set. |
