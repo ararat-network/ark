@@ -96,7 +96,7 @@ paying them, deferral, cancellation, and committee recovery through the real app
 paid and remaining principal, the record's room under the ownership cap, and cancellation history; stablecoin compensation uses the same API.
 
 CosmWasm upload and instantiation remain permissionless from launch
-([genesis §11](../governance/GENESIS.md#11-cosmwasm)). General contract tooling remains a
+([genesis §12](../governance/GENESIS.md#12-cosmwasm)). General contract tooling remains a
 separate product decision; native grants do not need a Rust workspace, optimizer artifact, or contract deployment.
 
 ### 5. Offer a repeatable local Ark environment

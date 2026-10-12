@@ -300,7 +300,7 @@ func TestAddValidatorSeatsAtAnyCount(t *testing.T) {
 }
 
 // poolSeatCeiling is the most seats the artefacts' community pool funds, the
-// founder's included: the limit GENESIS.md §13 gives --any-count.
+// founder's included: the limit GENESIS.md §14 gives --any-count.
 const poolSeatCeiling = 14
 
 // TestArtefactPoolSeatCeiling seats the top of the launch range and the

@@ -32,7 +32,7 @@ genesis (§4).
   Unvested coins can be delegated, vote, and be slashed, but cannot be transferred.
 - **Spread.** Each validator self-delegates one seat in its gentx. In the first blocks the founder delegates the rest
   of the founder's seat across the other validators, so no node holds a third of consensus power
-  ([genesis §13](GENESIS.md#assembly-sequence)).
+  ([genesis §14](GENESIS.md#assembly-sequence)).
 - **No validator grants.** Seat holders receive no grant for validator work. Other work is granted as anyone's would
   be (§4). After launch, anyone can bond NOAH and register as a validator, up to 100 validators with a 5% minimum
   commission. Nothing comes from the pools.
@@ -119,7 +119,7 @@ All figures except the member amount and the gate are cumulative.
 ## 5. Handover
 
 Once the founder's seat is spread, the founder holds a third of the founding stake and the other seats hold two
-thirds. At the 66.7% threshold and 50% quorum ([genesis §10](GENESIS.md#10-cosmos-sdk-modules)), the founder can
+thirds. At the 66.7% threshold and 50% quorum ([genesis §11](GENESIS.md#11-cosmos-sdk-modules)), the founder can
 block a proposal alone but cannot pass one alone. Public bonded stake erodes that block:
 
 | Coalition                                  | Blocks until public bonded stake reaches              |

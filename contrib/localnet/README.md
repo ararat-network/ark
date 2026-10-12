@@ -20,7 +20,7 @@ existing homes without reinitialising them; `localnet-stop` stops all profiles w
 Homes live under `.testnets/` by default. `ARK_LOCALNET_DATA` selects another disposable directory; use the same value for
 subsequent targets. Init makes that directory writable for the image's uid 1025 and clears it from inside the container.
 The network runs the testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json), with every validator
-granted a seat from its community pool ([genesis §12](../../docs/governance/GENESIS.md#12-testnet-artefact)); the
+granted a seat from its community pool ([genesis §13](../../docs/governance/GENESIS.md#13-testnet-artefact)); the
 generated keys are development fixtures.
 
 ## Topology and ports

@@ -107,7 +107,7 @@ validator on the host without Docker, or a testnet assembled by several develope
 [disposable host testnet](docs/operations/NODE_OPERATIONS.md#disposable-host-testnet) and
 [manual assembly](docs/operations/NODE_OPERATIONS.md#manually-assembling-a-testnet) sections of node operations. A
 shared testnet starts from the curated artefact [app/genesis/testnet.json](app/genesis/testnet.json), the launch genesis
-with its windows compressed ([genesis §12](docs/governance/GENESIS.md#12-testnet-artefact)).
+with its windows compressed ([genesis §13](docs/governance/GENESIS.md#13-testnet-artefact)).
 
 ## Genesis and relaunch
 
