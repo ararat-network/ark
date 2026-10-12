@@ -84,12 +84,12 @@ is authenticated.
   with TLS files is refused.
 - TLS 1.3 with normal peer verification: files load through `pkg/tlsconfig` and connections through `pkg/grpcconn`;
   identities reload every minute, and an invalid replacement keeps the current one
-  ([transport and rotation](../operations/PRICEFEED_OPERATIONS.md#transport-identity-rotation-and-releases)).
+  ([transport and rotation](../operations/PRICEFEED_OPERATIONS.md#tls)).
 - A snapshot is bounded to twice `MaxFeeds` entries and the compact encoding's per-price limit, and refused past
   `price_ttl` or more than five seconds ahead of the node's clock
   ([price client](../../pricefeed/client/README.md#lifecycle-and-snapshots)).
 - The sidecar's build version is logged, never exported or gated on
-  ([compatibility](../operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility)).
+  ([compatibility](../operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility)).
 
 **Limits.** Without `--tls-client-ca-file` the sidecar accepts any client. Trust bundles are fixed per loaded
 transport, so changing one at the same path needs a restart, and rotation reaches new handshakes only, revoking no
@@ -136,7 +136,7 @@ which holds only while validators draw on different providers.
   format, such as to hex-encoded integers, goes unresolved instead of being read as a different number.
 - Endpoints must be HTTPS or WSS without URL user information or fragments. Both clients refuse every redirect, and an
   API handler keeps its configured origin before credentials attach
-  ([transport](../operations/PRICEFEED_OPERATIONS.md#transport-identity-rotation-and-releases)).
+  ([transport](../operations/PRICEFEED_OPERATIONS.md#tls)).
 - API keys travel in headers, never URLs, and the config file is written owner-only. KuCoin's connect token, a
   short-lived public value from a fixed HTTPS origin, rides the dial query because the protocol reads it there, and
   dial errors redact it.
@@ -293,7 +293,7 @@ advances the term, so transactions prepared under the old key expire. The linked
 - A bought third of bonded stake blocks every proposal, stops each member step and committee re-appointment, and on
   the buyer's own validators halts the chain. It costs about half of what everyone else has bonded, 34M against the
   founding stake at ten seats. A continuation export with `--jail-allowed-addrs` relaunches without the buyer
-  ([node operations](../operations/NODE_OPERATIONS.md#upgrades-and-relaunch)).
+  ([node operations](../operations/NODE_OPERATIONS.md#8-relaunch)).
 
 **Review questions.** Does a new committee power have a bound the mandate states, and a row in the table above? Is its
 message in the lane and the gate? Does the runbook still describe how it reaches a block under congestion? Does a

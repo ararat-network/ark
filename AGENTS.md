@@ -79,7 +79,7 @@ docs/           # Cross-subsystem design, operations, governance, and papers
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`,
   `pricefeed/client/metrics`, `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup
   wiring.
-- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
+- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility): additive changes only
   within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
   through `pkg/tlsconfig` and their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via `.goreleaser.pricefeed.yml`.
 

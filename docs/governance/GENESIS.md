@@ -59,7 +59,7 @@ balance survives, so the artefact and the code obey these rules rather than a mi
 - Bank supply equals the sum of balances at every step: the artefact carries the disbursement pools and the community
   pool before seats, and assembly moves each seat's grant out of the community pool rather than adding supply.
 - A relaunch takes a new chain ID and continues heights: `arkd export` refuses a zero-height export on purpose
-  ([node operations](../operations/NODE_OPERATIONS.md#upgrades-and-relaunch)).
+  ([node operations](../operations/NODE_OPERATIONS.md#8-relaunch)).
 
 ## 2. Chain and consensus
 

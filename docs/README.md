@@ -21,9 +21,9 @@ maintain that boundary.
 
 ## Operate services
 
-- [Node operations](operations/NODE_OPERATIONS.md): build, testnet setup, network joining, configuration, upgrades, and relaunch.
+- [Node operations](operations/NODE_OPERATIONS.md): roles and ports, install, configuration by role, joining, running a validator, keys, upgrades, relaunch, troubleshooting, and development networks.
 - [Release verification](operations/RELEASE_VERIFICATION.md): verify container origin, revision, digest and signed dependency inventory before use.
-- [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): two-way node/sidecar setup, TLS, reload, failover, and independent releases.
+- [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): deployment, configuration, providers, the node link and TLS, feed changes, checks, reload and failover, troubleshooting, and releases.
 
 ## Monitor the network
 
@@ -38,7 +38,7 @@ maintain that boundary.
 ## Integrate clients
 
 - [Client fee construction](clients/CLIENT_FEES.md): external transaction builders, signed fee declarations, simulation, and failure handling.
-- [Node–sidecar compatibility](operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): the independently released transport contract.
+- [Node–sidecar compatibility](operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility): the independently released transport contract.
 
 ## Use the logo
 

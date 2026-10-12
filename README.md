@@ -40,16 +40,16 @@ guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 
-**For node operators:** [Node operations](docs/operations/NODE_OPERATIONS.md) covers building `arkd`, configuring a
-home, joining an existing network, and upgrading. [Process monitoring](docs/operations/PROCESS_MONITORING.md) covers
-scraping the node and sidecar, and [protocol monitoring](docs/operations/PROTOCOL_MONITORING.md) covers chain-state
-signals and alert calibration.
+**For node operators:** [Node operations](docs/operations/NODE_OPERATIONS.md) covers deploying `arkd` by role,
+configuring it, joining a network, running a validator, keys and backups, upgrades, relaunch, and troubleshooting.
+[Process monitoring](docs/operations/PROCESS_MONITORING.md) covers scraping the node and sidecar, and [protocol
+monitoring](docs/operations/PROTOCOL_MONITORING.md) covers chain-state signals and alert calibration.
 
 **For validators:** Each validator reports prices through vote extensions, so it runs a `pricefeed` sidecar beside its
-node. [Pricefeed operations](docs/operations/PRICEFEED_OPERATIONS.md) covers the two-way node/sidecar setup, TLS,
-reload, and failover; the [oracle module](x/oracle/README.md) explains attendance and reward settlement. Every validator
-also follows the [upgrade binary policy](docs/operations/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never
-downloads binaries.
+node. [Pricefeed operations](docs/operations/PRICEFEED_OPERATIONS.md) covers deploying the sidecar, its providers and
+routes, linking it to the node, following feed changes, and troubleshooting; the [oracle module](x/oracle/README.md)
+explains attendance and reward settlement. Every validator also follows the [upgrade binary
+policy](docs/operations/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never downloads binaries.
 
 **For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
 read [validator and Oracle funding](docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
@@ -116,7 +116,7 @@ Ark launches from a clean genesis as `ark-1`. The curated launch artefact is
 status, and the decision behind it. Do not treat `arkd init` defaults as the launch policy. A relaunch takes a new chain
 ID and starts from `arkd export`, which is a continuation export: heights stay absolute and the exported genesis starts
 at the next height, so every height-anchored record resumes as it is. Zero-height export is refused on purpose. See
-[upgrades and relaunch](docs/operations/NODE_OPERATIONS.md#upgrades-and-relaunch).
+[relaunch](docs/operations/NODE_OPERATIONS.md#8-relaunch).
 
 ## Contact
 

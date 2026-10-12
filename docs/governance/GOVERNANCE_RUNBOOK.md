@@ -50,7 +50,7 @@ rehearsal](../../contrib/scripts/README.md#upgrade-rehearsal). Set the height to
 the binary and install it under the [upgrade binary policy](../operations/NODE_OPERATIONS.md#upgrade-binary-policy);
 `info` names the release and is never a download operators trust. A governance plan replaces any pending plan, the
 Security committee's included, and `MsgCancelUpgrade` withdraws it. [Node
-operations](../operations/NODE_OPERATIONS.md#upgrades-and-relaunch) owns the coordinated restart.
+operations](../operations/NODE_OPERATIONS.md#7-upgrades) owns the coordinated restart.
 
 **Consensus parameters.** `cosmos.consensus.v1.MsgUpdateParams` replaces the block, evidence, validator, ABCI, and
 authority parameters together. Keep `block.max_bytes` at least `MinBlockDataBytes` (8 MiB) above `evidence.max_bytes`,
