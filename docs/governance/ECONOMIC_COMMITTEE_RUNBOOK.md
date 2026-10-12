@@ -35,7 +35,7 @@ The mandate bounds all eight independently. A weight's minimum may sit above zer
 switching the exposure model off; a minimum of zero grants it that power for the appointment.
 
 **The transfer tax is not a committee lever.** `transfer_tax_rate` lives in `Params` and moves only by
-governance vote (D78, D80): it is part of the fee every wallet signs, so a raise refuses every in-flight
+governance vote: it is part of the fee every wallet signs, so a raise refuses every in-flight
 transfer and must sit behind a voting period.
 
 Governance keeps the machinery behind the weights too — `volatility_decay`, `volatility_sample_seconds`, `flow_decay`,
@@ -117,9 +117,9 @@ binding; both are diagnosed against `FundStatus` and the oracle, not decided by 
 
 ## Conversion depth
 
-Market's depth is the throttle on how fast NOAH mints and burns, and nothing raises it automatically (D95). The
+Market's depth is the throttle on how fast NOAH mints and burns, and nothing raises it automatically. The
 Market committee moves it with `MsgCommitteeUpdatePolicy` inside its corridor; governance moves it beyond with
-`MsgUpdatePolicy`. Both size it by one rule (D104), in the pool unit, valuing every currency at the oracle rate:
+`MsgUpdatePolicy`. Both size it by one rule, in the pool unit, valuing every currency at the oracle rate:
 
 ```text
 depth      = max(100 × daily net one-way flow, 50 × largest routine swap)

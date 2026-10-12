@@ -147,7 +147,7 @@ owns the member process, admission by a verified identity and a vouch together a
 the verifier's attestations and the vouch graph it reads for sybils; the registrar key, a single key the grants
 committee appoints, bounded by the open member tranche alone, that registers batches of up to a hundred addresses with
 the Disbursement module; a daily comparison of the chain's registrations against its admission records, inside the
-two-week hold before anything pays (D126); grant-tranche
+two-week hold before anything pays; grant-tranche
 funding requests to governance; and the committee's suspend, which stops a sybil's pay and moves
 nothing, for governance to cancel, and reaches a voucher whose vouchees are cancelled.
 

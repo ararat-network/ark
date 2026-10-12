@@ -38,7 +38,7 @@ func NewGenesisState(
 }
 
 // DefaultNoahConversionFactor seeds NOAH-per-reference gas pricing at the bootstrap price, one NOAH
-// a XDR (D128). Launch genesis may set the opening price; the first usable reference observation
+// a XDR. Launch genesis may set the opening price; the first usable reference observation
 // refreshes it.
 var DefaultNoahConversionFactor = math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerXDR)
 

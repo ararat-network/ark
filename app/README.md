@@ -63,11 +63,11 @@ and [Treasury](../x/treasury/README.md) each document their behaviour, rationale
 
 ## Wasm integration
 
-Ark runs upstream Wasmd `v0.70.x` on `wasmvm/v3` (D49), wired through the SDK runtime's manual registration hooks beside
+Ark runs upstream Wasmd `v0.70.x` on `wasmvm/v3`, wired through the SDK runtime's manual registration hooks beside
 the depinject-wired modules, in `app/wasm.go`. There is no Wasmd fork and no replace directive: either would be
 re-applied to every upstream security release and run code upstream neither tests nor audits, so an SDK move waits for a
 Wasmd release that compiles against it ([future
-changes](../docs/direction/FUTURE_CHANGES.md#1-upgrade-to-cosmos-sdk-v055)). The chain has no IBC (D118): the Wasm
+changes](../docs/direction/FUTURE_CHANGES.md#1-upgrade-to-cosmos-sdk-v055)). The chain has no IBC: the Wasm
 keeper takes no channel keepers, its default message handler and encoders are replaced by ones that refuse a contract's
 IBC and IBC v2 messages with an explicit error, its IBC query plugin refuses, no contract port is routed, and the `ibc2`
 capability is withheld so a contract requiring it fails at upload. Wasmd itself still depends on ibc-go, which is why
@@ -82,7 +82,7 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contrac
   exact SDK message Wasmd's canonical encoder produces, prices it, charges the dispatching account, and calls the
   handler, in one cached execution. Wasmd's custom message encoder is unused: a contract calls Ark's modules
   with `CosmosMsg::Any` carrying the proto type URL and bytes, so there is one schema instead of a JSON mirror that
-  nothing keeps in sync (D74). Impersonation is closed by Wasmd itself, which rejects a dispatched message whose signer
+  nothing keeps in sync. Impersonation is closed by Wasmd itself, which rejects a dispatched message whose signer
   is not the contract. No Rust bindings crate is committed: authors generate from the published protos. Adding a
   custom encoder later breaks nothing and removing one breaks every contract using it, so the proto surface is the
   reversible place to start.
@@ -91,7 +91,7 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contrac
   listed only if it is annotated `module_query_safe`, which a test enforces, and listing says something further: its
   response shape is frozen for the life of the chain, because a value a contract reads is an input to consensus.
   Widening the list is a coordinated binary upgrade, never a vote. It carries sixty-three paths: the thirty-four the SDK
-  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and
+  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review, and
   twenty-nine of Ark's own. Most are what a contract needs to price and route a conversion or a transfer: the tax
   estimate and the caps and gas prices behind it, the Oracle rates, reference unit, and feed schedule, Market's quotes,
   pool, policy, and Tobin tax, and the asset registry with its settlement terms. The rest let a contract read its own

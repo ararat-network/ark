@@ -22,7 +22,7 @@ import (
 // acceptedQueries lists the consensus-safe gRPC paths available to contracts and their response
 // types. Every entry requires module_query_safe. The SDK's own annotated set, auth, bank, and
 // staking, is admitted whole: the annotation is the review, and the hand-written entries are for
-// Ark's modules (D85). Adding a path expands the contract API; removing one can break deployed
+// Ark's modules. Adding a path expands the contract API; removing one can break deployed
 // contracts. See README.md for the accepted surface.
 func acceptedQueries() wasmkeeper.AcceptedQueries {
 	return wasmkeeper.AcceptedQueries{

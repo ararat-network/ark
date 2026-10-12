@@ -231,7 +231,7 @@ func (f *nativeDisbursementFixture) mirror(t *testing.T, fresh *nativeDisburseme
 	}
 }
 
-// hold is every first period in the fixture: the two-week floor nothing pays before (D126).
+// hold is every first period in the fixture: the two-week floor nothing pays before.
 const hold = disbursementtypes.MinFirstPeriod
 
 func (f *nativeDisbursementFixture) advance(seconds int64) {
@@ -409,7 +409,7 @@ func TestNativeDisbursementOwnershipAndFounders(t *testing.T) {
 			beneficiary := nativeAddress("owner")
 			// The founder sits among the launch ten with the founder's seat, 22.5M at
 			// ten, recorded on the beneficiary; the cap reads committed ownership alone,
-			// so nothing differs from anyone else's record (D115, D121).
+			// so nothing differs from anyone else's record.
 			var founders []sdk.AccAddress
 			seat := math.ZeroInt()
 			if founder {
@@ -1311,7 +1311,7 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		f.appointRegistrar(t, f.registrar)
 		return f
 	}
-	// award is a committee award, compensation by construction: ownership is governance's alone (D113).
+	// award is a committee award, compensation by construction: ownership is governance's alone.
 	// Two fixture periods paying half each, the clock starting now.
 	award := func(f *nativeDisbursementFixture, beneficiary sdk.AccAddress, coin sdk.Coin) error {
 		return f.exec(&disbursementtypes.MsgCommitteeCompensate{
@@ -1470,7 +1470,7 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		require.ErrorContains(t, award(f, worker, chain.NoahCoin(math.NewInt(2))), "compensation cap")
 		// A stream five windows long charges a fifth of its value a window: 10,000 of 50,000, which
 		// the 25,000 counted now refuses and a half-window later admits; it then counts at that rate
-		// for as long as it runs (D119).
+		// for as long as it runs.
 		stream := func() error {
 			return f.exec(&disbursementtypes.MsgCompensate{
 				Authority: f.authority.String(), Beneficiary: worker.String(),
@@ -1501,7 +1501,7 @@ func TestNativeDisbursementCommitteeAwards(t *testing.T) {
 		period, window := capOver(t, f)
 		// Eight periods, two windows long, starting a window back: the first look pays the backdated
 		// window at once and the rest follows inside the same window, so the award counts whole in it
-		// rather than at half its value a window (D122).
+		// rather than at half its value a window.
 		back := func(amount int64) error { return compensate(f, amount, f.now()-window, 8) }
 		require.ErrorContains(t, back(10_008), "compensation cap")
 		require.NoError(t, back(10_000))

@@ -128,7 +128,7 @@ func TestBlockSettlementMatchesSequentialPlacement(t *testing.T) {
 		if conversion.expansion {
 			// At one NOAH per unit the output values to itself, and the offer
 			// less that value is the spread, which settlement places with the
-			// principal rather than the conversion burning it (D6).
+			// principal rather than the conversion burning it.
 			eligible := response.SwapCoin.Amount
 			spread := offer.Amount.Sub(eligible)
 			require.True(t, spread.IsPositive(), "the fixture's spread must be observable")

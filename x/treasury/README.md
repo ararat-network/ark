@@ -30,9 +30,12 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 
 ## State and integration
 
-`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes exposure on its cadence. EndBlock advances reward funding, updates the base gas price, and then refreshes conversion factors, so a block's fee and tax prices are fixed when the block before it commits. Conversion settlement values liability from final state; there is no preblock liability-priming call. The subsidy
-pool's only outflows are the window settlement and `MsgReturnSubsidy`, a governance return into Distribution's
-community pool that fails if it would leave less than the minimum the proposal stated (D83). Follow the current ordering in `app/app_config.go` when editing these paths.
+`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes
+exposure on its cadence. EndBlock advances reward funding, updates the base gas price, and then refreshes conversion
+factors, so a block's fee and tax prices are fixed when the block before it commits. Conversion settlement values
+liability from final state; there is no preblock liability-priming call. The subsidy pool's only outflows are the window
+settlement and `MsgReturnSubsidy`, a governance return into Distribution's community pool that fails if it would leave
+less than the minimum the proposal stated. Follow the current ordering in `app/app_config.go` when editing these paths.
 
 ## Stored state and ownership
 
@@ -93,7 +96,7 @@ Volatility samples at most once per `volatility_sample_seconds`: the anchor pric
 passed, so each return spans at least the spacing and the oracle median's per-block jitter never becomes a sample of
 its own. Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under
 the same weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and
-a return carried across a halt counts the time it spanned rather than reading as one sample (D133). Each interval spans
+a return carried across a halt counts the time it spanned rather than reading as one sample. Each interval spans
 at least the spacing, validated at least a second, which keeps the variance at or below the interval and sigma at most
 the square root of a year in seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
@@ -114,7 +117,7 @@ EndBlock rather than at the next block's start, so the next block's proposal che
 same factors and a fee or tax that clears when proposed still clears when executed; fees price on rates one block old
 in exchange. The reference has an identity factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
 retains it until a live cross is available, and derives it from the reference alone, so it follows a live rate before
-any member is registered (D95). A reference change atomically rebases the table,
+any member is registered. A reference change atomically rebases the table,
 cap, base-fee floor, and live price, so a cap update applies uniformly without a delayed per-member refresh.
 
 Storing FX factors rather than final fee prices lets an oracle outage freeze FX while the base-fee congestion

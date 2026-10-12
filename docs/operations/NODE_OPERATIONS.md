@@ -122,7 +122,7 @@ Disbursement import refuse records dated after genesis. Records anchored in bloc
 outage counts against them: committee terms, pending claims' closing times, unactivated settlement plans, and grant
 schedules. Before the relaunch, decide whether to push pending claims' `closing_time` and unactivated plans'
 `activation_time` forward by the outage in the exported genesis, returning to governance the veto and cancel windows the
-outage ate, and whether any committee term lapsed during it (D133). Zero-height export is refused. `--jail-allowed-addrs` limits the
+outage ate, and whether any committee term lapsed during it. Zero-height export is refused. `--jail-allowed-addrs` limits the
 exported validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help`
 for height and output options, and validate the exported genesis before the coordinated relaunch.
 

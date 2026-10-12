@@ -21,7 +21,7 @@ message Params {
     (amino.dont_omitempty) = true
   ];
   // member_schedule is every member grant's shape, copied at registration: its first period, the
-  // tenth, pays when the two-week hold ends (D116, D126).
+  // tenth, pays when the two-week hold ends.
   Schedule member_schedule = 2 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -37,7 +37,7 @@ message Params {
   // compensation_window is the rolling window, in seconds, the cap counts awards over.
   uint64 compensation_window = 4 [(amino.dont_omitempty) = true];
   // compensation_period is one compensation period in seconds; an award is a number of them in
-  // equal shares, one for a lump, together at most ten years (D116).
+  // equal shares, one for a lump, together at most ten years.
   uint64 compensation_period = 5 [(amino.dont_omitempty) = true];
   // ownership_cap is the most ownership one record's grants commit from the pools, in NOAH, over
   // every grant: an award past it is refused, and existing grants keep their terms when it moves.
@@ -47,7 +47,7 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // ownership_schedule is every ownership grant's shape, copied at creation (D116).
+  // ownership_schedule is every ownership grant's shape, copied at creation.
   Schedule ownership_schedule = 7 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
@@ -150,7 +150,7 @@ message Grant {
   string created_by = 10 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 created_height = 11 [(amino.dont_omitempty) = true];
   // created_time is the block time the grant was awarded at, which the compensation window and the
-  // first-payment gate measure from; start_time is the grantor's clock (D116).
+  // first-payment gate measure from; start_time is the grantor's clock.
   uint64 created_time = 12 [(amino.dont_omitempty) = true];
   // mandate_term is the term of the appointment that created the grant: the registrar's for a
   // member, the committee's for compensation; zero for a governance award.
@@ -244,7 +244,7 @@ message Beneficiary {
     (amino.dont_omitempty) = true
   ];
   // seat is the founding seat principal, recorded at genesis for the record alone; zero for a
-  // non-founder, and nothing reads it (D115).
+  // non-founder, and nothing reads it.
   string seat = 4 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",

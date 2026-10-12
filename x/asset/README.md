@@ -105,7 +105,7 @@ but consensus receives one final NOAH-relative rate per feed.
 ## 4. Price contract
 
 An Oracle rate is NOAH per one unit of the feed's denomination, so valuing in NOAH multiplies
-([rate orientation](../oracle/README.md#14-rate-orientation-noah-per-unit), D75). Every Ark-native asset uses
+([rate orientation](../oracle/README.md#14-rate-orientation-noah-per-unit)). Every Ark-native asset uses
 exponent eighteen, so a provider price in
 display units has the same numeric value at the base-unit boundary and transport needs no exponent metadata. Rates are
 `LegacyDec` values inside the bounds `pkg/decimal` enforces, a finite, documented band; arithmetic fails closed outside
@@ -159,7 +159,7 @@ by `MsgAddFeed` and `MsgRemoveFeed`; a feed must be Active before an asset may r
 two registries are populated in that order and the feed set is always the larger.
 
 A `SettlementPlan` fixes a positive NOAH-per-asset rate, an activation time derived from the opening block time plus
-the governed delay, and a mandatory earliest closing time, all Unix seconds of block time (D133); it records the
+the governed delay, and a mandatory earliest closing time, all Unix seconds of block time; it records the
 opening height and time. Every term is set at opening and never amended, and the plan
 is authoritative only while attached to a `SUSPENDED` asset. `ResolutionRecords` are immutable, keyed by denomination
 and version, and carry a kind, `WRITE_OFF` or `RETIREMENT_RESIDUAL`, the supply outstanding at resolution, and the
@@ -196,7 +196,7 @@ feed addition and the registration against it never share a proposal: governance
 then registers. That cycle falls where it is cheapest, on the one admission path with no holders waiting and the least
 proven price data. The launch set follows it: the artefact registers the eleven feeds and no asset, and governance
 registers the [ten currencies](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion) once NOAH has a
-market price (D95).
+market price.
 
 - **`ACTIVE`.** Issuance, conversion, valuation, liability accounting, and redemption all run. The asset pins its feed
   against removal for as long as it stays Oracle-priced.
@@ -245,9 +245,9 @@ messages except the one committee message in §9.
   Activation is derived from the governed delay, because the delay is a correction window that benefits governance
   alone while holders wait unable to redeem, and a proposed absolute time would fall inside the delay if a vote ran
   long. The delay is a parameter because the window it must outlast, the voting period, moves without consulting the
-  module; it is measured in block time, as the voting period is, so a faster block pace cannot shorten it (D133). It
-  defaults to a week, the Claims cancellation period, so a full deposit period and a two-day vote fit with margin
-  (D134), is refused at zero, and is capped at a year, past which it is a standing ban.
+  module; it is measured in block time, as the voting period is, so a faster block pace cannot shorten it. It
+  defaults to a week, the Claims cancellation period, so a full deposit period and a two-day vote fit with margin,
+is refused at zero, and is capped at a year, past which it is a standing ban.
   It is read once, at opening, so changing it never reaches terms holders were shown. No term is ever amended: a
   mutable rate would make the maximum entitlement unknowable and redemption timing strategic.
 - **`CancelSettlement`** requires the plan not to have activated, removes it, and leaves the asset `SUSPENDED`. It is
@@ -354,7 +354,7 @@ treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a 
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
 suspension naming a registered asset. The launch artefact registers no asset, unlike `DefaultGenesisState` and the
 testnet artefact, which seed the ten `ACTIVE`; governance registers the ten currencies after
-launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)) (D95).
+launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow
@@ -381,7 +381,7 @@ These absences mark the module's boundaries; none is planned work.
 - **No Oracle-side Tobin-tax parameter.** Market owns Tobin policy, and the launch feed list is declared directly in
   `x/oracle`.
 - **No feed membership in Oracle params.** The consumer-side removal guard protects a feed.
-- **No live-chain upgrade path.** The chain launches from a clean genesis (D20).
+- **No live-chain upgrade path.** The chain launches from a clean genesis.
 
 ## Development
 

@@ -11,7 +11,7 @@ import (
 // valid for idle or one-sided blocks.
 type ConversionTotals struct {
 	// GrossOffer is the NOAH this block's expansions took in, spread included.
-	// It is what the waterfall places (D6): principal and premium alike go to
+	// It is what the waterfall places: principal and premium alike go to
 	// fund targets first, and only the overflow burns.
 	GrossOffer math.Int
 	// EligiblePrincipal is the NOAH value of the stable supply this block's

@@ -28,7 +28,7 @@ Oracle owns the feed registry, consensus exchange rates, protocol reference deno
 `max_exchange_rate_age` is the chain-default freshness window in seconds of block time; a stored rate older than it is
 stale to every consumer that names no window of its own. Governance may set it between 30 s and 7 d
 (`MinExchangeRateAge`, `MaxAllowedExchangeRateAge`); the default is a minute. The floor sits well above the gap between
-blocks because a proposer leaves user transactions out of a block whose prices are older than the window (D137), so a
+blocks because a proposer leaves user transactions out of a block whose prices are older than the window, so a
 window under the gap would empty every block, the vote to raise it included.
 
 `Query/ExchangeRate` and `Query/ExchangeRates`, which contracts may call, answer under this window. `Query/StoredRates`

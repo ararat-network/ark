@@ -131,7 +131,7 @@ depth. Each block returns one part in the recovery period of the imbalance, so s
 imbalance at one period's flow. The marginal spread is about twice the imbalance over the depth, so flow stays at the
 floor while one period's worth is within half the floor times the depth. The
 [committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) sizes depth from these two
-figures (D104).
+figures.
 
 A stranded corridor becomes usable again if the reference returns to its denomination while the original term and
 window remain valid. Genesis therefore accepts mismatched units. The Tobin band applies to the shared override map,

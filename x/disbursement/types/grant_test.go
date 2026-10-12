@@ -245,7 +245,7 @@ func TestGrantValidation(t *testing.T) {
 		{"governance ownership", ownership, ""},
 		{"ownership under a term", func(g *types.Grant) { ownership(g); g.MandateTerm = 1 }, terms},
 		{"registered member", member, ""},
-		// A member's tenth waits a period like every first payment (D126).
+		// A member's tenth waits a period like every first payment.
 		{"member registered and unpaid", func(g *types.Grant) {
 			member(g)
 			g.Paid, g.Remaining, g.DueTime = math.ZeroInt(), math.NewInt(30), 100+hold

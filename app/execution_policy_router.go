@@ -95,8 +95,8 @@ func (r executionPolicyRouter) collectTax(ctx sdk.Context, msg sdk.Msg) error {
 		return fmt.Errorf("expected exactly one signer for execution-generated tax, got %d", len(signers))
 	}
 
-	// Straight to the collector, in the same cache as the transfer that owes it
-	// (D42). No feegrant here: dispatch carries no granter, so the dispatching
+	// Straight to the collector, in the same cache as the transfer that owes it.
+	// No feegrant here: dispatch carries no granter, so the dispatching
 	// account always bears its own tax.
 	return r.bank.SendCoinsFromAccountToModule(
 		ctx,

@@ -20,7 +20,7 @@ import (
 // refreshConversionFactors updates derivable member cross-rates each block, retains unavailable
 // factors, and seeds uncovered members at one. This keeps outstanding member transfers taxable
 // during feed outages. The NOAH factor derives from the reference alone, so it follows a live
-// reference rate while the registry is still empty (D95).
+// reference rate while the registry is still empty.
 func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 	denoms, err := k.assetKeeper.OraclePricedDenoms(ctx)
 	if err != nil {
@@ -131,7 +131,7 @@ func (k Keeper) refreshConversionFactors(ctx context.Context) error {
 // recover on refresh, while dark entries retain their old-unit values. See x/treasury/README.md.
 func (k Keeper) rescaleConversionFactors(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	// A per-reference figure rebases like the exposure anchor, not like a
-	// quantity: the new unit is the offer (D76).
+	// quantity: the new unit is the offer.
 	cross, err := rates.Convert(sdk.NewDecCoin(to, math.OneInt()), from)
 	if err != nil {
 		k.Logger(ctx).Warn(

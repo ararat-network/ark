@@ -40,7 +40,7 @@ func (k *Keeper) getBeneficiary(ctx context.Context, address sdk.AccAddress) (ty
 }
 
 // ownershipSchedule is ownership's fixed shape from params. The clock never starts before its award,
-// since the cliff is the point and the amount credits the past (D116).
+// since the cliff is the point and the amount credits the past.
 func (k *Keeper) ownershipSchedule(ctx context.Context, startTime uint64) (types.Schedule, error) {
 	now := chain.BlockSeconds(ctx)
 	if err := types.ValidateStartTime(startTime, now); err != nil {
@@ -67,7 +67,7 @@ func (k *Keeper) ownershipRemaining(ctx context.Context, committed math.Int) (ma
 }
 
 // create reserves a grant and queues it for its first boundary; nothing pays in the call, a member's
-// tenth included (D126). The caller fills the kind, amount, schedule, start time, reference, grantor,
+// tenth included. The caller fills the kind, amount, schedule, start time, reference, grantor,
 // term, and award value; create stamps the rest. Every check runs before a stablecoin award buys
 // what custody lacks within maxOffer, so a refused award never trades, and the conversion is
 // journaled straight after the creation it funds. A committee award's charge depends on what the buy
@@ -100,7 +100,7 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 			return 0, err
 		}
 	case types.GrantKind_GRANT_KIND_OWNERSHIP:
-		// Committed ownership stays within the cap, so every ownership grant pays in full (D121).
+		// Committed ownership stays within the cap, so every ownership grant pays in full.
 		remaining, err := k.ownershipRemaining(ctx, p.OwnershipCommitted)
 		if err != nil {
 			return 0, err
@@ -120,7 +120,7 @@ func (k *Keeper) create(ctx context.Context, beneficiary sdk.AccAddress, g types
 	g.Remaining = g.Amount.Amount
 	g.CreatedHeight = chain.BlockHeight(ctx)
 	g.CreatedTime = at
-	// The committee awards compensation alone (D113), so a term on compensation is the committee's.
+	// The committee awards compensation alone, so a term on compensation is the committee's.
 	committee := g.Kind == types.GrantKind_GRANT_KIND_COMPENSATION && g.MandateTerm != 0
 	g.Charge = math.ZeroInt()
 	if committee {

@@ -24,7 +24,7 @@ const (
 	// memberGrantNoah keeps the tranche and its payments small against the artefact's pool.
 	memberGrantNoah = 100
 	// memberHoldSeconds is the two-week floor every grant's first period keeps, longer than any suite
-	// runs, so a chain here sees registration queue the tenth and never the block pay it (D126).
+	// runs, so a chain here sees registration queue the tenth and never the block pay it.
 	memberHoldSeconds = 14 * 24 * 3600
 )
 
@@ -84,7 +84,7 @@ func (s *DisbursementSuite) TestMemberGrantThroughTranche() {
 	s.Require().NoError(err)
 
 	// Registration pays nothing: the whole grant waits in module custody and the tenth is queued for
-	// the end of the two-week hold, into a fresh address or a dusted one alike (D126).
+	// the end of the two-week hold, into a fresh address or a dusted one alike.
 	s.Require().True(s.Balance(member.FormattedAddress()).IsZero(), "the tenth waits for the hold")
 	s.Require().Equal(chainsuite.NOAH(1), s.Balance(dusted.FormattedAddress()), "an address holding coins waits like any other")
 	status, err := s.Chain.QueryJSON(ctx, "grant", "disbursement", "member", member.FormattedAddress())

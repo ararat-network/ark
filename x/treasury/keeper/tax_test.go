@@ -60,7 +60,7 @@ func (s *KeeperTestSuite) TestComputeTaxSupportsMultiSendAndMarketSend() {
 	s.Require().Equal(sdk.NewCoins(sdk.NewInt64Coin(chain.USDBaseDenom, 30)), tax)
 }
 
-// The execution surfaces D41 assigns to the Wasm dispatcher — execute funds
+// The execution surfaces the policy router owns for a contract — execute funds
 // and instantiate funds — are taxed by this same calculator, and the cap
 // applies to each independently as it does to a Bank send.
 func (s *KeeperTestSuite) TestComputeTaxCoversContractFunds() {

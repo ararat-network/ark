@@ -476,7 +476,7 @@ func (s *KeeperTestSuite) TestSettleConversionsScalesEveryTargetTogether() {
 	})
 }
 
-// TestSettleConversionsPlacesSpreadWithPrincipal covers D6 as amended: the
+// TestSettleConversionsPlacesSpreadWithPrincipal covers spread travelling with principal: the
 // gross offer goes down the waterfall, so the spread fills a gap the principal
 // alone would have left, and only what overflows every target burns.
 func (s *KeeperTestSuite) TestSettleConversionsPlacesSpreadWithPrincipal() {

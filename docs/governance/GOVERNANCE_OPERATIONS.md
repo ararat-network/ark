@@ -42,14 +42,14 @@ widening it is a coordinated binary upgrade.
 | Operation | Message | Signer | Notes |
 | --- | --- | --- | --- |
 | Appoint or replace a committee | `ark.treasury.v1.MsgSetEconomicMandate`, `ark.claims.v1.MsgSetClaimsMandate`, `ark.market.v1.MsgSetConversionMandate`, `ark.reserve.v1.MsgSetReserveMandate`, `ark.asset.v1.MsgSetEmergencyMandate`, `ark.security.v1.MsgSetSecurityMandate`, `ark.disbursement.v1.MsgSetGrantsMandate` (see §5) | governance | The committee's shape is observed from the live account at appointment. The account must exist with its own NOAH for gas, never funded from a custody account. See §4 for account backing and appointment review. |
-| Appoint, rotate, or disable the registrar | `ark.disbursement.v1.MsgCommitteeRegistrar` under the committee's term | committee | One operational key, bounded by the open tranche alone, for a window inside the committee's; every appointment advances the registrar term its batches carry, and a committee appointment clears it (D120). See §5. |
-| Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` up to the Buffer's shortfall and inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. Governance's message has no global floor, cap, or trigger: each proposal states its own (D27). The committee's is sized in the [economic committee runbook](ECONOMIC_COMMITTEE_RUNBOOK.md#3-transfers-into-the-buffer-and-insurance). |
-| Return idle subsidy to the community pool | `ark.treasury.v1.MsgReturnSubsidy` with the exact amount and minimum remaining balance | governance | One-way from the subsidy pool into the community pool; changes no supply or target. The minimum is the proposal's stale-state guard, not a floor, and a return that would breach it fails at execution (D83). The community pool tops the subsidy pool up by an ordinary spend to its address. |
-| Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor (D81). The cap is denominated in the reference unit; zero means uncapped. |
-| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/operations/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing (D72). |
-| Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, maximum credit per NOAH, rate and attestation windows), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity (D59). The Reserve account never holds an external token (D70). |
-| Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeReverseReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClearImpairment`, `MsgCommitteeCorrectPosition`, `MsgCommitteeClosePosition`; governance's `MsgCorrectPosition`, `MsgClearImpairment`, `MsgReverseReturn`, `MsgMarkImpaired`, `MsgClosePosition` | committee; governance | The one-committee mandate (D56, D57). Governance's versions work with no mandate in force; governance alone owns the recognition policy. |
-| Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority (D61). The surplus bound is Treasury's required capital, which needs a complete valuation. |
+| Appoint, rotate, or disable the registrar | `ark.disbursement.v1.MsgCommitteeRegistrar` under the committee's term | committee | One operational key, bounded by the open tranche alone, for a window inside the committee's; every appointment advances the registrar term its batches carry, and a committee appointment clears it. See §5. |
+| Commit Reserve NOAH to the Buffer | `ark.reserve.v1.MsgFundBuffer` with the exact amount and minimum remaining balance; `MsgCommitteeFundBuffer` up to the Buffer's shortfall and inside the mandate floor | governance; committee | One-way; changes no supply, quote, or pool state. Governance's message has no global floor, cap, or trigger: each proposal states its own. The committee's is sized in the [economic committee runbook](ECONOMIC_COMMITTEE_RUNBOOK.md#3-transfers-into-the-buffer-and-insurance). |
+| Return idle subsidy to the community pool | `ark.treasury.v1.MsgReturnSubsidy` with the exact amount and minimum remaining balance | governance | One-way from the subsidy pool into the community pool; changes no supply or target. The minimum is the proposal's stale-state guard, not a floor, and a return that would breach it fails at execution. The community pool tops the subsidy pool up by an ordinary spend to its address. |
+| Move the tax | `ark.treasury.v1.MsgUpdateParams` with `transfer_tax_rate`, `reference_tax_cap` | governance | The rate stays at or below the spread floor. The cap is denominated in the reference unit; zero means uncapped. |
+| Switch the exposure multiplier on | `ark.treasury.v1.MsgUpdatePolicy`; `MsgCommitteeUpdatePolicy` inside the mandate bounds | governance; committee | Only after the observability calibration window has produced thresholds (`docs/operations/PROTOCOL_MONITORING.md` §2.1). `m` is floored at one, so zero weights are exactly the unscaled sizing. |
+| Onboard the first external asset | `ark.oracle.v1.MsgAddFeed`, then `ark.reserve.v1.MsgSetRecognitionPolicy` (haircut, maximum credit per NOAH, rate and attestation windows), then `ark.reserve.v1.MsgSetReserveMandate` naming the destination | governance | Price-feed sidecars must serve the symbol before the feed can be Active, which listing requires. Custody is attested: the asset sits at the destination and the committee attests the quantity. The Reserve account never holds an external token. |
+| Deploy, attest, impair, close | `ark.reserve.v1.MsgCommitteeDeploy`, `MsgCommitteeRecordUpdate`, `MsgCommitteeAttributeReturn`, `MsgCommitteeReverseReturn`, `MsgCommitteeMarkImpaired`, `MsgCommitteeClearImpairment`, `MsgCommitteeCorrectPosition`, `MsgCommitteeClosePosition`; governance's `MsgCorrectPosition`, `MsgClearImpairment`, `MsgReverseReturn`, `MsgMarkImpaired`, `MsgClosePosition` | committee; governance | The one-committee mandate. Governance's versions work with no mandate in force; governance alone owns the recognition policy. |
+| Burn Reserve holdings | `MsgCommitteeBurnPaper`, `MsgCommitteeBurnSurplus`; `ark.reserve.v1.MsgBurnReserveAssets` | committee; governance | Split burn authority. The surplus bound is Treasury's required capital, which needs a complete valuation. |
 
 ## 4. Committee appointments
 
@@ -64,7 +64,7 @@ integration tests exercise real ante authentication; no native committee module 
 
 1. Prepare the root account and its independent gas funding. Know what appointment will record: a key-backed
    account's kind and K-of-N, a contract only that it is one.
-2. Draft the domain's `MsgSet*Mandate` with its activation and expiry times, Unix seconds of block time (D133), and its
+2. Draft the domain's `MsgSet*Mandate` with its activation and expiry times, Unix seconds of block time, and its
    policy bounds, allowance, floor, or destinations. Write the dates the term should run between; block pace does not
    move them.
 3. After execution, verify the emitted appointment and query state, including term and shape. Construct actions for
@@ -73,10 +73,10 @@ integration tests exercise real ante authentication; no native committee module 
    replacing the charter does not erase their custody or history.
 
 One appointment is the committee's rather than governance's: the grants committee names the Disbursement registrar
-under its own term with `MsgCommitteeRegistrar`, for a window of block time inside its own (D120, D133). The registrar is an
+under its own term with `MsgCommitteeRegistrar`, for a window of block time inside its own. The registrar is an
 operational key, hardware-backed on the member platform's signing service, that registers batches as admissions
 clear; the committee may name itself. The open tranche is its only bound, and nothing it registers pays before the
-two-week hold ends (D126): open each step in quarters, compare the chain's registrations against the
+two-week hold ends: open each step in quarters, compare the chain's registrations against the
 platform's admission records daily, and the moment the key is suspect rotate it by reappointment, which advances the
 registrar term without a vote, and suspend what it registered before the hold ends. Every committee appointment clears the registrar, so a replaced or
 reappointed committee names its registrar again in its first transaction; governance reaches the registrar only
@@ -111,20 +111,21 @@ Other engineering follow-ups are tracked in [future changes](../direction/FUTURE
 
 ## 5. Grant tranches
 
-The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md) (D87,
-D88), which holds the member and contributor accounts from genesis. Inspect `arkd query disbursement params` and
+The [disbursement plan](DISBURSEMENT_PLAN.md) uses the native [Disbursement module](../../x/disbursement/README.md),
+which holds the member and contributor accounts from genesis. Inspect `arkd query disbursement params` and
 `arkd query disbursement balance anoah`, which shows each account's pool and the member tranche, before proposing. `GOV`
-below is the governance authority; a tranche opens the member pool alone, since the contributor pool has none (D117).
-No contract upload, instantiation, or sudo is involved. Amounts are denomination base units and timestamps are block time.
+below is the governance authority; a tranche opens the member pool alone, since the contributor pool has none. No
+contract upload, instantiation, or sudo is involved. Amounts are denomination base units and timestamps are block time.
 
 **A member tranche** is a `MsgOpenTranche` on the member account beside a `MsgUpdateParams` carrying the step's member
 amount; it moves no coins, and members already registered keep the terms they joined under. Appoint the grants committee
-with `/ark.disbursement.v1.MsgSetGrantsMandate`, naming the exact committee account, a half-open window of block time in Unix seconds, and
-its award power: a compensation allowance in the reference unit; nothing pays before one period after an award, a fortnight at launch
-in the example; an appointment that delegates no awards leaves the allowance zero. Ownership is awarded by proposal only (D113). The appointment is its own message, so
-operational params never travel with it; every appointment advances the term the committee's transactions must carry,
-shown by `query disbursement grants-mandate`. Launch artifacts set a 20,000 NOAH member amount and leave the
-mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and founding identities are not.
+with `/ark.disbursement.v1.MsgSetGrantsMandate`, naming the exact committee account, a half-open window of block time in
+Unix seconds, and its award power: a compensation allowance in the reference unit; nothing pays before one period after
+an award, a fortnight at launch in the example; an appointment that delegates no awards leaves the allowance zero.
+Ownership is awarded by proposal only. The appointment is its own message, so operational params never travel with it;
+every appointment advances the term the committee's transactions must carry, shown by
+`query disbursement grants-mandate`. Launch artifacts set a 20,000 NOAH member amount and leave the mandate disabled;
+the ownership cap is a param, 15,000,000 NOAH at launch, and founding identities are not.
 
 ```json
 {
@@ -175,18 +176,21 @@ mandate disabled; the ownership cap is a param, 15,000,000 NOAH at launch, and f
 `MsgUpdateParams` replaces the whole params object, so copy the current values from `arkd query disbursement params`
 and change only `member_amount`; the compensation and ownership terms stay unless one of them is the proposal. Step 1
 opens at the launch artefact's amount, so its proposals need only the tranche; each later step's first tranche carries
-both messages and its later ones the tranche alone, and the plan's schedule runs 20,000, 15,000, 10,000, 7,500, 5,000
-(D91). Open each step's member budget in quarters: 7.5M at step 1, 375 members, then 15M, 22.5M, 22.5M, and 49.8M, so
+both messages and its later ones the tranche alone, and the plan's schedule runs 20,000, 15,000, 10,000, 7,500, 5,000.
+Open each step's member budget in quarters: 7.5M at step 1, 375 members, then 15M, 22.5M, 22.5M, and 49.8M, so
 twenty tranche votes cover the distribution. The open tranche is all a stolen registrar key can commit, and the two-week
-hold is the time to suspend it; a step that fills fast may split a quarter in two (D126).
+hold is the time to suspend it; a step that fills fast may split a quarter in two.
 
 The committee appoints the registrar with
 `arkd tx disbursement committee-registrar --expected-term TERM --registrar REGISTRAR --activation-time ACTIVATION --expiry-time EXPIRY --from COMMITTEE`;
-`query disbursement registrar-mandate` shows the appointment, its term, and whether it is active. The registrar then signs
+`query disbursement registrar-mandate` shows the appointment, its term, and whether it is active. The registrar then
+signs
 `arkd tx disbursement register-members --expected-term REGISTRAR_TERM --addresses ADDRESS --addresses ADDRESS --reference REF --from REGISTRAR`,
-where the reference names the batch's admission record and carries no personal data; the member roll does not pass through a proposal. Registration reserves the whole grant and pays nothing; the block sends the tenth when the two-week hold ends (D126). Look up the permanent
-grant ID with `arkd query disbursement member ADDRESS`. The chain pays each later period at the end of the block its
-boundary falls in, to the recorded payee; nothing is signed to receive it, and `grant ID` shows `due_time`, the next look.
+where the reference names the batch's admission record and carries no personal data; the member roll does not pass
+through a proposal. Registration reserves the whole grant and pays nothing; the block sends the tenth when the two-week
+hold ends. Look up the permanent grant ID with `arkd query disbursement member ADDRESS`. The chain pays each later
+period at the end of the block its boundary falls in, to the recorded payee; nothing is signed to receive it, and
+`grant ID` shows `due_time`, the next look.
 
 **A faked member** can be paused with `arkd tx disbursement committee-suspend --expected-term TERM --addresses ADDRESS --from COMMITTEE`.
 Governance then cancels by permanent grant ID:
@@ -224,12 +228,12 @@ listed registrations in the first proposal. An empty committee disables the mand
 the same until the next appointment; disabling or replacing the committee clears its registrar, and the new committee
 names one again before registration resumes.
 
-**A contributor award** is a `MsgGrantOwnership` or `MsgCompensate` drawing on the contributor pool, which has no tranche (D117); the step's
-contributor budget is the plan's guideline, not a limit; an award past it states the overrun in the summary (D131). The award carries no schedule: ownership takes
-the shape in params, a one-year cliff then biweekly for three years, and `start_time` places the clock, no earlier
-than execution (D116). The proposal summary states the work, its period, and why this amount, against the founder's 15M
-grant and the grants already made (D127); `reference` identifies the approved work or agreement on
-the permanent grant itself. The pool must cover the whole amount before it starts.
+**A contributor award** is a `MsgGrantOwnership` or `MsgCompensate` drawing on the contributor pool, which has no
+tranche; the step's contributor budget is the plan's guideline, not a limit; an award past it states the overrun in the
+summary. The award carries no schedule: ownership takes the shape in params, a one-year cliff then biweekly for three
+years, and `start_time` places the clock, no earlier than execution. The proposal summary states the work, its period,
+and why this amount, against the founder's 15M grant and the grants already made; `reference` identifies the approved
+work or agreement on the permanent grant itself. The pool must cover the whole amount before it starts.
 
 ```json
 {
@@ -256,17 +260,17 @@ input. The beneficiary initially controls the contributor payee, and later award
 Use `arkd tx disbursement set-controller --beneficiary ADDRESS --controller NEW_CONTROLLER --from CURRENT_CONTROLLER` to
 rotate it. Governance can also submit `MsgSetController`, with `sender: GOV`, for recovery.
 
-**Compensation** is `MsgCompensate`, with the funded denomination and `periods`: that many fortnights in
-equal shares, one for a bounty, together at most ten years. Its clock may start up to a quarter back (D122), so a
-stream aligns to the day a hire started and pays the elapsed fortnights at the first look. Its denomination is NOAH or
-an active asset in the Asset registry; `max_offer` bounds the NOAH converted to fund a stablecoin award.
-Stablecoin compensation is fully funded in that denomination, untaxed, and outside NOAH ownership caps. It does not
-promise a conversion rate. A denomination's later suspension prevents new awards without
-erasing already funded entitlement. One record's compensation is at most `compensation_cap` in the reference unit a
-`compensation_window`, by proposal or committee alike, valued at the fresh oracle rates when awarded, a stream counting
-at its yearly rate while it runs and cancelled awards for a window after them (D119), so an award fails while the oracle has no rate for its denomination or the reference unit.
+**Compensation** is `MsgCompensate`, with the funded denomination and `periods`: that many fortnights in equal shares,
+one for a bounty, together at most ten years. Its clock may start up to a quarter back, so a stream aligns to the day a
+hire started and pays the elapsed fortnights at the first look. Its denomination is NOAH or an active asset in the Asset
+registry; `max_offer` bounds the NOAH converted to fund a stablecoin award. Stablecoin compensation is fully funded in
+that denomination, untaxed, and outside NOAH ownership caps. It does not promise a conversion rate. A denomination's
+later suspension prevents new awards without erasing already funded entitlement. One record's compensation is at most
+`compensation_cap` in the reference unit a `compensation_window`, by proposal or committee alike, valued at the fresh
+oracle rates when awarded, a stream counting at its yearly rate while it runs and cancelled awards for a window after
+them, so an award fails while the oracle has no rate for its denomination or the reference unit.
 
-**Committee awards** pay pay streams and bounties without a proposal; ownership is a proposal only (D113). Within its
+**Committee awards** pay pay streams and bounties without a proposal; ownership is a proposal only. Within its
 appointment the committee signs `MsgCommitteeCompensate` with the beneficiary, amount, `start_time`, `periods`, and a work
 reference; nothing pays before one period after the award, whatever the start time, and a stablecoin award draws on custody first and converts
 NOAH from the contributor pool for the rest, within the award's `max_offer`, like a governance award. The
@@ -320,7 +324,7 @@ account has no exit.
 ## 6. Opening conversion
 
 Conversion is closed at launch: the artefact registers the eleven price feeds and no asset, so Market has no `ACTIVE`
-ask to mint (D95). Until a provider samples a NOAH venue, every rate's NOAH leg is the configured placeholder of one
+ask to mint. Until a provider samples a NOAH venue, every rate's NOAH leg is the configured placeholder of one
 NOAH an XDR, and a stablecoin is a claim on NOAH at the oracle rate, so a currency minted at the placeholder is
 re-marked when the live price arrives: if NOAH trades at five cents, an XDR that cost one NOAH redeems for about 27, and
 every holder pays whoever minted early. The first live price also comes from the first venue to list NOAH, so a thin
@@ -335,8 +339,8 @@ order, once a venue trades NOAH with real depth.
    factor tracks the live rate and fees in NOAH move to their XDR-targeted level; clients that build fees from the gas
    price query follow on their own ([client fees](../clients/CLIENT_FEES.md)).
 2. **Confirm the depth.** The artefact sets `conversion_policy.base_pool` to 100,000 XDR. Run the
-   [depth rule](ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) with the live price and the liquid NOAH outstanding
-   (D104), and change the depth before opening, by `MsgUpdatePolicy`, only if the rule gives a reason: depth is the
+   [depth rule](ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) with the live price and the liquid NOAH outstanding,
+and change the depth before opening, by `MsgUpdatePolicy`, only if the rule gives a reason: depth is the
    throttle on how fast NOAH mints and burns, and nothing grows it automatically.
 3. **Register the currencies.** One proposal carrying ten `MsgRegisterAsset`, one per currency listed below.
    Registration requires each feed to be Active, which they have been since genesis; never bundle a feed change into

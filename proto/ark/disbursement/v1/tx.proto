@@ -43,7 +43,7 @@ service Msg {
   // CommitteeReinstate resumes suspended members under the live committee term.
   rpc CommitteeReinstate(MsgCommitteeReinstate) returns (MsgCommitteeReinstateResponse);
   // CommitteeCompensate awards compensation within the live term's allowance, converting NOAH for a
-  // stablecoin award. Ownership is governance's alone (D113).
+  // stablecoin award. Ownership is governance's alone.
   rpc CommitteeCompensate(MsgCommitteeCompensate) returns (MsgCommitteeCompensateResponse);
   // SetPayee changes a destination under member or contributor controller authority.
   rpc SetPayee(MsgSetPayee) returns (MsgSetPayeeResponse);
@@ -210,7 +210,7 @@ message MsgCommitteeRegistrar {
 // MsgCommitteeRegistrarResponse reports the result of CommitteeRegistrar.
 message MsgCommitteeRegistrarResponse {}
 
-// MsgRegisterMembers permanently registers members; nothing pays in the call (D126).
+// MsgRegisterMembers permanently registers members; nothing pays in the call.
 message MsgRegisterMembers {
   option (cosmos.msg.v1.signer) = "registrar";
   option (amino.name) = "ark/disbursement/MsgRegisterMembers";

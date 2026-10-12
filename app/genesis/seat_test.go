@@ -154,7 +154,7 @@ func TestAddValidatorSeats(t *testing.T) {
 // governance awards made in the first block: clocked from genesis on the
 // file's params, queued for their first boundaries, journaled, reserved from
 // the contributor pool without moving it, and the grant committed on the
-// founder's record (D136).
+// founder's record.
 func TestAddValidatorSeatsAwardsFounder(t *testing.T) {
 	cdc := seatCodec()
 	state := artefactState(t)

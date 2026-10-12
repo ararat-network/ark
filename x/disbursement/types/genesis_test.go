@@ -29,7 +29,7 @@ func TestDefaultGenesisState(t *testing.T) {
 
 func testAddress(b byte) string { return sdk.AccAddress(bytes.Repeat([]byte{b}, 20)).String() }
 
-// hold is the shortest first period, the two-hold floor every grant waits out (D126).
+// hold is the shortest first period, the two-hold floor every grant waits out.
 const hold = types.MinFirstPeriod
 
 // grantEntry is a grant journal entry the fixture's authority records at the fixture's creation.
@@ -132,7 +132,7 @@ func TestGenesisValidation(t *testing.T) {
 		}
 	}
 	// owned gives c an ownership award of four shares of 10, one paid as its first period ends, cancelled
-	// fifteen seconds later owing the second: the record commits the 20 it earned (D121).
+	// fifteen seconds later owing the second: the record commits the 20 it earned.
 	owned := func(g *types.GenesisState) {
 		c := testAddress(3)
 		g.Grants = append(g.Grants, types.Grant{

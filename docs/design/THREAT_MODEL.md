@@ -31,7 +31,7 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 The chain's safety assumption is CometBFT's: fewer than one third of voting power is faulty. Every control below keeps
 an honest validator honest under pressure; none survives a faulty supermajority. Until distributed NOAH is bonded the
 founding validators hold every vote, a proof-of-authority trust model on proof-of-stake machinery, which public stake
-erodes on the schedule in the [disbursement plan](../governance/DISBURSEMENT_PLAN.md#5-handover) (D84, D112).
+erodes on the schedule in the [disbursement plan](../governance/DISBURSEMENT_PLAN.md#5-handover).
 
 ## 2. Boundaries
 
@@ -56,7 +56,7 @@ the registry knows, and carries rates the chain can represent. A proposer cannot
 - Fee validity is checked in CheckTx and FinalizeBlock alike, and a block's fee and tax prices are fixed when the block
   before it commits, so a fee the proposal check accepts still clears at execution.
 - A proposer whose clock finds the proposal's time older than `max_exchange_rate_age` proposes commit-only, so the
-  first block after a stall or halt does not trade on pre-outage prices (D137).
+  first block after a stall or halt does not trade on pre-outage prices.
 
 **Limits.**
 
@@ -147,9 +147,9 @@ which holds only while validators draw on different providers.
 - Provider diversity is an operational duty, not a code property: a fleet on the same default providers has one point
   of failure.
 - The NOAH leg of every route is a bootstrap price until a provider reports a live NOAH sample, so the first venue to
-  list NOAH re-marks every rate. NOAH venues enter the configs together and only once a venue has depth, and
-  conversion is closed until then, so no currency exists to re-mark (D95,
-  [opening conversion](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
+  list NOAH re-marks every rate. NOAH venues enter the configs together and only once a venue has depth, and conversion
+  is closed until then, so no currency exists to re-mark ([opening
+  conversion](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
 
 **Review questions.** Does a new provider parse untrusted bytes with a bound? Does any error path log a request that
 carries a key? How many validators would a compromise of the default providers move?
@@ -205,12 +205,12 @@ during execution, like transfer affordability.
   spills to normal fee order ([mempool](../../app/mempool/README.md#admission-service-and-sdk-behaviour)).
 - Messages a contract dispatches never see the ante: the policy router in `app/execution_policy_router.go` taxes them
   at dispatch. A contract's queries go through the accept list in `app/wasm_query.go`, which admits only paths
-  annotated `module_query_safe` (D85) and freezes each listed response shape for the life of the chain, as Wasmd's
+  annotated `module_query_safe` and freezes each listed response shape for the life of the chain, as Wasmd's
   typed Bank, Staking, Distribution, and Wasm queriers freeze theirs
   ([Wasm integration](../../app/README.md#wasm-integration)).
 - Upload and instantiation are permissionless, so a contract is an untrusted input bounded by the router and that query
   surface. Its IBC messages and queries are refused and no contract port is routed, so there is no channel a contract
-  could open (D118).
+  could open.
 
 **Limits.**
 
@@ -236,7 +236,7 @@ annotation, and is its response shape one you will never change?
 
 **What crosses.** Governance appoints a committee to one module's mandate for a window of block time, and the
 committee acts inside that window under a term. Windows a vote must fit are block time, as the vote is, so validators
-running a faster block cannot shorten them (D133).
+running a faster block cannot shorten them.
 
 **Assumptions.** A committee is an ordinary account, so its multisig threshold lives at the account layer, and the
 chain records the shape it observed at appointment. A contract may hold a deliberative mandate: the chain records that
@@ -266,11 +266,11 @@ advances the term, so transactions prepared under the old key expire. The linked
 | [Treasury](../../x/treasury/README.md) economic policy | Set the reward targets, fund target ratios, and exposure weights anywhere inside the corridor | Replacement; governance resets the policy |
 | [Market](../../x/market/README.md#conversion-mandate) conversion | Set depth, recovery period, and spread floor inside the corridor, and the Tobin tax up to the mandate cap | Replacement; governance resets the policy |
 | [Asset](../../x/asset/README.md#9-the-emergency-mandate) emergency | Suspend each healthy asset once a term; a suspension moves no value | Governance recovers the asset |
-| [Reserve](../../x/reserve/README.md#mandate-custody-and-journal) | Deploy up to the term's allowance, only to governance's approved destinations and above the NOAH floor; burn NOAH within the surplus bound, and the Ark paper it holds, which earns no capital credit; attest inflated holdings, each adding at most its entry's `max_credit_per_noah` × the NOAH balance and moving no other asset's credit or any coin (D64), each restatement citing its evidence | Replacement; governance corrects the attestation |
-| [Claims](../../x/claims/README.md#stablecoin-funding-and-the-committee-limit) | Submit claims within the term's limit and cancel committee claims; a stablecoin claim's buy, which no cancel undoes, is charged against the limit (D140) | Nothing pays before the cancellation period, a week at launch; governance cancels |
+| [Reserve](../../x/reserve/README.md#mandate-custody-and-journal) | Deploy up to the term's allowance, only to governance's approved destinations and above the NOAH floor; burn NOAH within the surplus bound, and the Ark paper it holds, which earns no capital credit; attest inflated holdings, each adding at most its entry's `max_credit_per_noah` × the NOAH balance and moving no other asset's credit or any coin, each restatement citing its evidence | Replacement; governance corrects the attestation |
+| [Claims](../../x/claims/README.md#stablecoin-funding-and-the-committee-limit) | Submit claims within the term's limit and cancel committee claims; a stablecoin claim's buy, which no cancel undoes, is charged against the limit | Nothing pays before the cancellation period, a week at launch; governance cancels |
 | [Security](../../x/security/README.md) | Schedule an upgrade at a height it picks, halting the chain there; there is no lead time | A replacement leaves the plan standing: governance cancels it, or the new committee does, if either lands before the height; otherwise validators restart past it with `--unsafe-skip-upgrades` |
-| [Grants](../../x/disbursement/README.md#committee-awards) | Award compensation within the term's allowance, a stablecoin award's buy charged against it (D140); appoint its own registrar; suspend members, or reinstate them, which pays their arrears | Nothing pays before one period, at least two weeks. One proposal replaces the committee, clearing its registrar, cancels its term's awards, and reinstates members it suspended; a second, expedited, cancels what it made during the first vote |
-| [Registrar](../../x/disbursement/README.md#funding-and-authority) | Register members up to the open tranche; the runbook opens each step a quarter at a time | Nothing pays before the two-week hold (D126); the committee reappoints and suspends, and governance cancels from the term's list (D120) |
+| [Grants](../../x/disbursement/README.md#committee-awards) | Award compensation within the term's allowance, a stablecoin award's buy charged against it; appoint its own registrar; suspend members, or reinstate them, which pays their arrears | Nothing pays before one period, at least two weeks. One proposal replaces the committee, clearing its registrar, cancels its term's awards, and reinstates members it suspended; a second, expedited, cancels what it made during the first vote |
+| [Registrar](../../x/disbursement/README.md#funding-and-authority) | Register members up to the open tranche; the runbook opens each step a quarter at a time | Nothing pays before the two-week hold; the committee reappoints and suspends, and governance cancels from the term's list |
 
 **Limits.**
 
@@ -281,7 +281,7 @@ advances the term, so transactions prepared under the old key expire. The linked
   store, which links a person to an address, is the platform's second asset after the committee key
   ([member platform](../direction/TOOLING_DIRECTION.md#7-run-the-member-platform-without-custody)). Public references,
   registration batches included, carry no personal data.
-- A Reserve holding not re-attested within its entry's window earns nothing (D141), which catches a custodian that
+- A Reserve holding not re-attested within its entry's window earns nothing, which catches a custodian that
   fails while the committee stops attesting; a key that keeps re-attesting falsely is answered only by the evidence
   its references cite.
 - The ownership cap binds beneficiary records, not people; tying a record to a person is the proposal's case and the
@@ -291,11 +291,11 @@ advances the term, so transactions prepared under the old key expire. The linked
 - Disbursement custody holds the distribution from block 1, so a defect in its accounting or tranche checks is exposed
   from launch.
 - The module cannot stop governance labelling ownership-scale pay as compensation. The founder's 10M NOAH stream is
-  the one deliberate case, counted as the founder's stake (D129); it and the founder's 15M grant are genesis governance
-  awards, approved by every founding validator's gentx and cancellable like any other (D136).
+  the one deliberate case, counted as the founder's stake; it and the founder's 15M grant are genesis governance
+  awards, approved by every founding validator's gentx and cancellable like any other.
 - A bought third of bonded stake blocks every proposal, stops each member step and committee re-appointment, and on
   the buyer's own validators halts the chain. What it costs and what bounds it are in the
-  [disbursement plan](../governance/DISBURSEMENT_PLAN.md#3-consensus-safety-without-a-ballast) (D93).
+  [disbursement plan](../governance/DISBURSEMENT_PLAN.md#3-consensus-safety-without-a-ballast).
 
 **Review questions.** Does a new committee power have a bound the mandate states, and a row in the table above? Is its
 message in the lane and the gate? Does the runbook still describe how it reaches a block under congestion? Does a

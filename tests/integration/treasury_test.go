@@ -584,7 +584,7 @@ func TestTreasuryLaunchesWithExposureModelInert(t *testing.T) {
 		Time:   time.Now(),
 	})
 
-	// The weights are committee-owned policy (D72 as amended); the machinery
+	// The weights are committee-owned policy; the machinery
 	// bounding them is governance Params. Both halves have to be right for the
 	// model to be inert, so both are asserted.
 	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)

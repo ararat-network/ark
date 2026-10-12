@@ -8,23 +8,23 @@ import (
 )
 
 const (
-	// DefaultMemberAmount is the plan's step 1 grant, in whole NOAH (D91).
+	// DefaultMemberAmount is the plan's step 1 grant, in whole NOAH.
 	DefaultMemberAmount = int64(20_000)
 	// DefaultCompensationCap bounds one record's compensation awards per window, in the reference
 	// unit: about eight of the plan's skilled years.
 	DefaultCompensationCap = int64(1_000_000)
 	// DefaultCompensationWindow is a year of 26 fortnights, the pay cadence, so the longest stream, 260
-	// fortnights, charges a tenth of its value a window (D129).
+	// fortnights, charges a tenth of its value a window.
 	DefaultCompensationWindow = uint64(26 * 14 * 86_400)
-	// DefaultCompensationPeriod is a fortnight; an award counts them (D116).
+	// DefaultCompensationPeriod is a fortnight; an award counts them.
 	DefaultCompensationPeriod = uint64(14 * 86_400)
 	// DefaultOwnershipCap bounds the ownership one record's grants commit from the pools, in whole
-	// NOAH: the founder's grant (D115, D121).
+	// NOAH: the founder's grant.
 	DefaultOwnershipCap = int64(15_000_000)
 )
 
 // DefaultMemberSchedule holds a member's tenth for the two-week floor, the window to suspend what a
-// stolen registrar key registered, then pays the rest in thirteen four-week periods (D126, D130).
+// stolen registrar key registered, then pays the rest in thirteen four-week periods.
 func DefaultMemberSchedule() Schedule {
 	return Schedule{
 		FirstLength:  MinFirstPeriod,
@@ -36,7 +36,7 @@ func DefaultMemberSchedule() Schedule {
 }
 
 // DefaultOwnershipSchedule is a cliff of 26 fortnights paying a quarter, then biweekly for three years:
-// the cliff weighs 26 and each of the 78 fortnights after it one, 104 in all (D116, D130).
+// the cliff weighs 26 and each of the 78 fortnights after it one, 104 in all.
 func DefaultOwnershipSchedule() Schedule {
 	return Schedule{
 		FirstLength:  26 * 14 * 86_400,

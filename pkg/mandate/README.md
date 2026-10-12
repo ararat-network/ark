@@ -6,7 +6,7 @@ authorisation semantics that go with it.
 
 A mandate is one bounded, expiring delegation of a power governance already
 holds. Governance appoints an exact account for a half-open window of block
-time, in Unix seconds (D133);
+time, in Unix seconds;
 the committee acts faster than a voting period allows; the appointment
 expires on its own. Eight appointments exist today — Treasury's economic-policy
 mandate, Claims's, Market's conversion mandate, Asset's emergency mandate,
@@ -62,7 +62,7 @@ Building from the disabled constructor is what keeps a disablement's payload
 zeroed, so a stored disabled mandate is always the canonical one.
 
 An appointment is governance's unless a decision says otherwise. Disbursement's
-registrar (D120) is appointed by the grants committee under its own term, for a
+registrar is appointed by the grants committee under its own term, for a
 window inside the committee's, and a committee appointment clears it: the
 registrar is the committee's term-scoped state, as a usage figure is. The
 appointer differs, the envelope, its term rule, and its authorisation do not,

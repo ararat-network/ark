@@ -28,14 +28,14 @@ This module owns the Insurance custody account, claim records, reservations, and
 Claims owns the `claims_insurance` account, mandate, claim records, and cancellation period; Treasury computes fund
 targets and can credit Insurance but cannot debit it. `RecognisedCapital` reports the NOAH balance less NOAH
 reservations, so one approved claim cannot cover a second loss; registry paper in custody counts for nothing, since Ark
-paper is a liability until burned (D28). The reservation spans appointments; allowance usage resets with a
+paper is a liability until burned. The reservation spans appointments; allowance usage resets with a
 new term. Keeping them separate prevents appointment changes from freeing money still promised to pending claims.
 
 Submission records the origin, submitter, recipient, amount, reference, submission height and time, closing time, and a committee
 term and charge only for committee claims. The amount is NOAH or an active registry asset. A recipient that is the Insurance module account or that Bank blocks is refused at
 submission. The reference is a nonempty pointer to the off-chain case record, at most 2,048 bytes
 (`chain.MaxReferenceBytes`). Governance claims have term zero and do not require an active mandate. Both paths
-use the current `claim_cancellation_period`, in seconds of block time like the governance vote it must fit (D133);
+use the current `claim_cancellation_period`, in seconds of block time like the governance vote it must fit;
 putting the period in the mandate was rejected because it made
 governance claims depend on an enabled committee. Appointments must have a span at least as long as the current
 period, measured from the later of activation and the appointing block. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
@@ -79,7 +79,7 @@ it drew after; the spread counts because cancelling a claim cannot undo its buy.
 needs a fresh rate for its denomination and the reference, so through an oracle outage only governance submits.
 Governance claims charge nothing and read no rate. A reference re-point (Oracle's `MsgSetReferenceDenom`) rebases the
 limit and every committee claim's charge, rounded up, re-derives the live term's usage from the charges, and raises the
-limit to the usage where the per-claim ceilings outran it (D123, D140).
+limit to the usage where the per-claim ceilings outran it.
 
 ## Development
 

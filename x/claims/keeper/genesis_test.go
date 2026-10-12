@@ -236,7 +236,7 @@ func (s *KeeperTestSuite) TestRecognisedCapital() {
 }
 
 // TestRecognisedCapitalIgnoresOtherCustody pins that stablecoin custody, reserved or not, counts for
-// nothing: it is Ark paper, a liability until burned (D28).
+// nothing: it is Ark paper, a liability until burned.
 func (s *KeeperTestSuite) TestRecognisedCapitalIgnoresOtherCustody() {
 	s.SetupTest()
 	s.fundInsurance(500)

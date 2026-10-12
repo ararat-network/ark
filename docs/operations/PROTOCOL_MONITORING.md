@@ -40,7 +40,8 @@ example.
 
 ## 2. Exposure multiplier
 
-Covers D72 and D73, implemented in `x/treasury` ([local design](../../x/treasury/README.md#exposure-sampling-and-refresh)).
+Covers the exposure multiplier, implemented in `x/treasury` ([local
+design](../../x/treasury/README.md#exposure-sampling-and-refresh)).
 
 The multiplier is a controller nobody watches by default. It ships inert — every weight zero, `m = 1` — so
 nothing it does is visible until a weight is voted positive, and after that its whole effect is a number that

@@ -87,7 +87,7 @@ func (s *KeeperTestSuite) TestEndBlockerPropagatesSettlementFailure() {
 
 // recordExpansionForTest books one expansion through the ordinary swap path so
 // the accumulators hold a block's worth of flow. No burn is stubbed: an
-// expansion burns nothing inside the conversion (D6), and the bank mock fails
+// expansion burns nothing inside the conversion, and the bank mock fails
 // on any unexpected call.
 func (s *KeeperTestSuite) recordExpansionForTest(offer sdk.Coin, output sdk.Coin) {
 	trader := sdk.AccAddress([]byte("trader_______________"))

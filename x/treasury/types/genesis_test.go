@@ -25,7 +25,7 @@ func TestDefaultGenesisState(t *testing.T) {
 
 // TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR pins the seed to
 // the bootstrap price, one NOAH a XDR, so moving it is a deliberate edit
-// here too (D128).
+// here too.
 func TestDefaultNoahConversionFactorIsTheBootstrapPriceInXDR(t *testing.T) {
 	require.Equal(t, "1", chain.BootstrapNoahPerXDR)
 	require.Equal(t, math.LegacyOneDec(), types.DefaultNoahConversionFactor)

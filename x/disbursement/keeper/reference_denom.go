@@ -17,10 +17,10 @@ import (
 // RebaseReference re-expresses every compensation figure in the new reference unit: the cap, each
 // compensation award's value and charge, the live term's usage, and its allowance. It implements the
 // oracle module's ReferenceRebaser, and MsgSetReferenceDenom is its only caller. Every figure is a
-// quantity (D76), rounded up as the award-time valuation is, so no award counts for less after a
+// quantity, rounded up as the award-time valuation is, so no award counts for less after a
 // move. The usage is re-derived from the rebased charges rather than converted, so the import
 // equality holds exactly; the allowance is raised to it where the per-award ceilings outran its own,
-// by under one base unit an award, since a bound a few units loose beats wedging the re-point (D123).
+// by under one base unit an award, since a bound a few units loose beats wedging the re-point.
 func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	if from == to {
 		return nil

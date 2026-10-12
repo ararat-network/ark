@@ -218,8 +218,8 @@ func TestUnlistedQueriesAreRefused(t *testing.T) {
 	require.ErrorContains(t, err, "not allowed from the contract")
 }
 
-// ComputeTax is the estimate D43 asks for, reached through the accept list
-// rather than a custom querier (D74). Listed as the gate will list it, the gRPC
+// ComputeTax is the tax estimate a contract reads, reached through the accept list
+// rather than a custom querier. Listed as the gate will list it, the gRPC
 // querier must answer with Treasury's own figure for the message a contract
 // would dispatch.
 func TestComputeTaxThroughTheAcceptListMatchesTheCharge(t *testing.T) {

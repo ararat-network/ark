@@ -43,9 +43,9 @@ import (
 // holding an account or balance, and a pool that cannot fund the seats, and
 // changes appState only once every edited module passes its own validation.
 // The launch count bounds are the command's. Each seat is recorded on the
-// operator's Disbursement beneficiary, a record nothing reads (D115). The
+// operator's Disbursement beneficiary, a record nothing reads. The
 // founder's grant and stream are written beside the seats as governance
-// awards from the contributor pool (D136).
+// awards from the contributor pool.
 func AddValidatorSeats(cdc codec.Codec, appState map[string]json.RawMessage, operators []sdk.AccAddress, founder sdk.AccAddress, genesisTime time.Time) error {
 	if len(operators) == 0 {
 		return errors.New("at least one operator address must be set")
@@ -241,7 +241,7 @@ const founderAwardHeight = 1
 // awardFounder writes the founder's grant and stream as governance awards
 // made in the first block, clocked from genesisTime on the file's params,
 // reserved in the contributor book and journaled as the keeper's create
-// would (D136). Genesis validation reads neither cap nor Bank, so both caps
+// would. Genesis validation reads neither cap nor Bank, so both caps
 // and the contributor account's backing are checked here.
 func (s *seatStates) awardFounder(founder sdk.AccAddress, genesisTime time.Time) error {
 	start := genesisTime.Unix()

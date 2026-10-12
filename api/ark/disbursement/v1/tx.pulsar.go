@@ -15576,7 +15576,7 @@ func (*MsgCommitteeRegistrarResponse) Descriptor() ([]byte, []int) {
 	return file_ark_disbursement_v1_tx_proto_rawDescGZIP(), []int{17}
 }
 
-// MsgRegisterMembers permanently registers members; nothing pays in the call (D126).
+// MsgRegisterMembers permanently registers members; nothing pays in the call.
 type MsgRegisterMembers struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
