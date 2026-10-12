@@ -155,13 +155,14 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	)
 
 	// Every denomination is credited: haircut 0.8, ratios summing to 0.9 so
-	// the policy is one governance could set and the solve does real work.
+	// the policy is one governance could set and every cap does real work.
 	ratio := math.LegacyMustNewDecFromStr("0.9").QuoInt64(int64(denomCount))
 	for _, denom := range denoms {
 		if err := keeper.RecognitionPolicy.Set(ctx, denom, types.EligibilityEntry{
 			Denom:               denom,
 			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
 			RecognitionCapRatio: ratio,
+			MaxRateAge:          types.MaxRecognitionRateAge,
 		}); err != nil {
 			tb.Fatal(err)
 		}
@@ -197,7 +198,7 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 
 // BenchmarkRecognisedCapital measures expansion settlement's per-block recognition fold and gas,
 // varying eligibility count and open positions. It includes policy, position, balance, rate reads,
-// and the joint solve.
+// and the per-asset caps.
 func BenchmarkRecognisedCapital(b *testing.B) {
 	for _, bc := range []struct {
 		denoms    int

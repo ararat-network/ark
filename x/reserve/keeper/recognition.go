@@ -15,20 +15,20 @@ import (
 )
 
 // AssetRecognitions returns denomination-ordered rows over eligibility and attestations.
-// SolveRecognition jointly caps credits; unusable rates zero only their own rows.
+// RecognitionCredits caps each row against the NOAH balance; unusable rates zero only their own rows.
 func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition, error) {
 	assets, stakes, err := k.recognitionStakes(ctx)
 	if err != nil || assets == nil {
 		return nil, err
 	}
 
-	// The solve levers only the par-counted NOAH balance, the one
-	// bank-verifiable term.
-	solved, err := types.SolveRecognition(k.balance(ctx), stakes)
+	// Caps read only the par-counted NOAH balance, the one bank-verifiable
+	// term.
+	credits, err := types.RecognitionCredits(k.balance(ctx), stakes)
 	if err != nil {
-		return nil, fmt.Errorf("solving Reserve recognition: %w", err)
+		return nil, fmt.Errorf("capping Reserve recognition: %w", err)
 	}
-	for i, result := range solved {
+	for i, result := range credits {
 		assets[i].EffectiveCap = chain.NoahCoin(result.Ceiling)
 		assets[i].Credit = chain.NoahCoin(result.Credit)
 	}
@@ -36,15 +36,15 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 	return assets, nil
 }
 
-// recognisedAt solves recognised capital for a NOAH balance the caller names: the balance at par
-// plus the credits it levers. The burn bound asks it about the balance a burn would leave.
+// recognisedAt is recognised capital at a NOAH balance the caller names: the balance at par plus
+// the credits it caps. The burn bound asks it about the balance a burn would leave.
 func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, error) {
-	solved, err := types.SolveRecognition(balance, stakes)
+	credits, err := types.RecognitionCredits(balance, stakes)
 	if err != nil {
-		return math.Int{}, fmt.Errorf("solving Reserve recognition: %w", err)
+		return math.Int{}, fmt.Errorf("capping Reserve recognition: %w", err)
 	}
 	recognised := balance
-	for _, result := range solved {
+	for _, result := range credits {
 		if recognised, err = recognised.SafeAdd(result.Credit); err != nil {
 			return math.Int{}, fmt.Errorf("summing recognised capital: %w", err)
 		}
@@ -52,7 +52,7 @@ func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, 
 	return recognised, nil
 }
 
-// recognitionStakes walks policy, open positions, and rates once, returning the unsolved rows and
+// recognitionStakes walks policy, open positions, and rates once, returning the uncapped rows and
 // the stakes behind them in one denomination order. Nil rows mean nothing is listed or attested.
 func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition, []types.RecognitionStake, error) {
 	entries := make(map[string]types.EligibilityEntry)

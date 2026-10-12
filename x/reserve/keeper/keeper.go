@@ -147,9 +147,8 @@ func NewKeeper(
 	return k
 }
 
-// RecognisedCapital combines custody NOAH at par with jointly capped eligibility credits from
-// SolveRecognition. Missing, stale, impaired, zero-haircut, or unlisted assets contribute no
-// credit.
+// RecognisedCapital combines custody NOAH at par with eligibility credits, each capped at its ratio
+// of that NOAH. Missing, stale, impaired, zero-haircut, or unlisted assets contribute no credit.
 func (k Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	assets, err := k.AssetRecognitions(ctx)
 	if err != nil {

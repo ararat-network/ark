@@ -209,7 +209,22 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 		s.Require().ErrorContains(err, "never priced")
 	})
 
-	s.Run("rejects cap ratios summing to one", func() {
+	s.Run("rejects cap ratios summing above one", func() {
+		s.SetupTest()
+		_, err := s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
+			Authority: s.authority,
+			Entries: []types.EligibilityEntry{
+				eligibility(xdrExternal, "1", "0.6"),
+				eligibility(testAsset, "1", "0.5"),
+			},
+		})
+		s.Require().ErrorContains(err, "must sum to at most one")
+		s.Require().Empty(s.policyDenoms())
+	})
+
+	// At one, external credit may equal the NOAH balance: recognised capital
+	// doubles and goes no further.
+	s.Run("admits cap ratios summing to one", func() {
 		s.SetupTest()
 		_, err := s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
 			Authority: s.authority,
@@ -218,15 +233,13 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 				eligibility(testAsset, "1", "0.4"),
 			},
 		})
-		s.Require().ErrorContains(err, "must sum strictly below one")
-		s.Require().Empty(s.policyDenoms())
+		s.Require().NoError(err)
 
-		// A single entry claiming the whole certificate is the same refusal.
 		_, err = s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
 			Authority: s.authority,
 			Entries:   []types.EligibilityEntry{eligibility(testAsset, "1", "1")},
 		})
-		s.Require().ErrorContains(err, "must sum strictly below one")
+		s.Require().NoError(err)
 	})
 
 	s.Run("rejects invalid entries", func() {
@@ -337,9 +350,9 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 		Rate:                math.LegacyNewDecWithPrec(5, 1),
 		HaircutFactor:       math.LegacyMustNewDecFromStr("0.5"),
 		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.1"),
-		// A tenth of the solved certificate of 1_020: the ceiling the credit
-		// was measured against, reported even when it does not bind.
-		EffectiveCap: noahCoin(102),
+		// A tenth of the 1_000 NOAH balance: the ceiling the credit was
+		// measured against, reported even when it does not bind.
+		EffectiveCap: noahCoin(100),
 		Credit:       noahCoin(20),
 		MaxRateAge:   testRateAge,
 	}}, response.Assets)
@@ -451,12 +464,10 @@ func (s *KeeperTestSuite) TestRecognitionCapClipsHoldingsJointly() {
 	s.deploy(committee, destination, 400, 80, 0)
 	s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
 
-	// The cap clips the joint holding: 120 + 80 attested = 200 raw,
-	// but a tenth of the certificate solved over the 900 base is
-	// T = 900 ÷ (1 − 0.1) = 1_000, so the asset carries exactly 100 — its
-	// permitted share of the answer, to the anoah.
+	// The cap clips the joint holding: 120 + 80 attested = 200 raw, but a
+	// tenth of the 900 NOAH balance is 90, so the asset carries exactly that.
 	s.setPolicy(eligibility(testAsset, "1", "0.1"))
-	s.Require().Equal(math.NewInt(1_000), s.recognised())
+	s.Require().Equal(math.NewInt(990), s.recognised())
 
 	// Delisting removes the credit whole: there is no custody-only entry to
 	// step down to — a zero factor is refused at the policy write — so listed
@@ -465,24 +476,15 @@ func (s *KeeperTestSuite) TestRecognitionCapClipsHoldingsJointly() {
 	s.Require().Equal(math.NewInt(900), s.recognised())
 }
 
-// TestRecognitionSolvesSharesJointly pins the shrinking-denominator solve on
-// the worked fixtures from the design discussion: clipping one asset shrinks
-// the total every other share is measured against, so the clipped set and the
-// total are found together, not per asset.
-func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
-	policy := func() {
-		s.setPolicy(
-			eligibility(usdExternal, "1", "0.3"),
-			eligibility(xdrExternal, "1", "0.2"),
-		)
-	}
-	rates := func() {
-		s.stubRates(oracletypes.RateSet{
-			chain.USDBaseDenom: math.LegacyOneDec(),
-			chain.XDRBaseDenom: math.LegacyOneDec(),
-		})
-	}
-	row := func(response *types.QueryRecognisedCapitalResponse, denom string) types.AssetRecognition {
+// TestRecognitionCapsEachAssetIndependently pins the property the cap is
+// measured against the NOAH balance for: a misreported holding earns its own
+// cap and moves no other asset's credit. Capped against recognised capital
+// instead, the fake entry below would raise the honest asset's ceiling with
+// the total and carry 200 to 1,000.
+func (s *KeeperTestSuite) TestRecognitionCapsEachAssetIndependently() {
+	row := func(denom string) types.AssetRecognition {
+		response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
+		s.Require().NoError(err)
 		for _, asset := range response.Assets {
 			if asset.Denom == denom {
 				return asset
@@ -492,48 +494,30 @@ func (s *KeeperTestSuite) TestRecognitionSolvesSharesJointly() {
 		return types.AssetRecognition{}
 	}
 
-	s.Run("clips both assets to shares of the joint answer", func() {
-		s.SetupTest()
-		s.fundReserve(5_000_000)
-		s.attest(usdExternal, 4_000_000)
-		s.attest(xdrExternal, 3_000_000)
-		policy()
-		rates()
-
-		// T = 5_000_000 ÷ (1 − 0.3 − 0.2) = 10_000_000: both assets breach,
-		// and at the solved total each holds exactly its ratio.
-		s.Require().Equal(math.NewInt(10_000_000), s.recognised())
-		response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
-		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(3_000_000), row(response, usdExternal).Credit)
-		s.Require().Equal(noahCoin(3_000_000), row(response, usdExternal).EffectiveCap)
-		s.Require().Equal(noahCoin(2_000_000), row(response, xdrExternal).Credit)
-		s.Require().Equal(noahCoin(2_000_000), row(response, xdrExternal).EffectiveCap)
+	s.SetupTest()
+	s.fundReserve(100)
+	s.attest(usdExternal, 1_000)
+	s.stubRates(oracletypes.RateSet{
+		chain.USDBaseDenom: math.LegacyOneDec(),
+		chain.XDRBaseDenom: math.LegacyOneDec(),
 	})
+	s.setPolicy(eligibility(usdExternal, "1", "0.5"), eligibility(xdrExternal, "1", "0.4"))
 
-	s.Run("moves an unbreached asset to the unclipped side", func() {
-		s.SetupTest()
-		s.fundReserve(5_000_000)
-		s.attest(usdExternal, 4_000_000)
-		s.attest(xdrExternal, 1_000_000)
-		policy()
-		rates()
+	// Half the 100 NOAH balance caps the honest holding at 50.
+	s.Require().Equal(math.NewInt(150), s.recognised())
 
-		// Assuming both breach would put the smaller holding under its own
-		// ceiling, so it solves unclipped at raw value and only the larger is
-		// throttled: T = (5_000_000 + 1_000_000) ÷ (1 − 0.3) = 8_571_428.
-		s.Require().Equal(math.NewInt(8_571_428), s.recognised())
-		response, err := s.queryServer.RecognisedCapital(s.ctx, &types.QueryRecognisedCapitalRequest{})
-		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(2_571_428), row(response, usdExternal).Credit)
-		s.Require().Equal(noahCoin(1_000_000), row(response, xdrExternal).Credit)
-		s.Require().Equal(noahCoin(1_714_285), row(response, xdrExternal).EffectiveCap)
-	})
+	// A holding that does not exist is attested: it earns its own cap, 40,
+	// and the honest asset's ceiling and credit stay where they were.
+	s.attest(xdrExternal, 1_000_000_000)
+	s.Require().Equal(math.NewInt(190), s.recognised())
+	s.Require().Equal(noahCoin(50), row(usdExternal).Credit)
+	s.Require().Equal(noahCoin(50), row(usdExternal).EffectiveCap)
+	s.Require().Equal(noahCoin(40), row(xdrExternal).Credit)
 }
 
-// TestRecognitionCouplesCeilingsConservatively checks that loss of one feed reduces total
-// recognition and can tighten other assets' share ceilings even when their feeds remain healthy.
-func (s *KeeperTestSuite) TestRecognitionCouplesCeilingsConservatively() {
+// TestRecognitionDarkFeedZeroesOnlyItsOwnAsset checks that losing one feed
+// removes that asset's credit and leaves every other asset's untouched.
+func (s *KeeperTestSuite) TestRecognitionDarkFeedZeroesOnlyItsOwnAsset() {
 	s.SetupTest()
 	s.fundReserve(1_000)
 	s.attest(usdExternal, 10_000)
@@ -548,29 +532,28 @@ func (s *KeeperTestSuite) TestRecognitionCouplesCeilingsConservatively() {
 	}
 	s.stubRates(rates)
 
-	// Both clipped: T = 1_000 ÷ (1 − 0.5) = 2_000, credits 600 and 400.
-	s.Require().Equal(math.NewInt(2_000), s.recognised())
+	// Both clipped at their ratios of the balance: 300 and 200.
+	s.Require().Equal(math.NewInt(1_500), s.recognised())
 
-	// The larger share's feed goes dark: its credit vanishes, the certificate
-	// shrinks to 1_000 ÷ (1 − 0.2) = 1_250, and the survivor's ceiling falls
-	// from 400 to 250 with its own feed untouched.
+	// The larger asset's feed goes dark: its credit vanishes and the
+	// survivor keeps its 200.
 	delete(rates, chain.USDBaseDenom)
-	s.Require().Equal(math.NewInt(1_250), s.recognised())
+	s.Require().Equal(math.NewInt(1_200), s.recognised())
 }
 
-// TestRecognitionLeversOnlyTheProvableBase pins that asset credit levers the
-// bank-verifiable NOAH balance and nothing else: no corrupted rate or
-// attestation can push the certificate past honest ÷ (1 − ratio), and a fund
-// with no provable base counts no asset at all.
+// TestRecognitionLeversOnlyTheProvableBase pins that asset credit is capped
+// against the bank-verifiable NOAH balance and nothing else: no corrupted rate
+// or attestation earns more than its ratio of that balance, and a fund with no
+// provable base counts no asset at all.
 func (s *KeeperTestSuite) TestRecognitionLeversOnlyTheProvableBase() {
-	s.Run("an attested absurdity earns the share, never more", func() {
+	s.Run("an attested absurdity earns the cap, never more", func() {
 		s.SetupTest()
 		s.fundReserve(1_000)
 		s.attest(testAsset, 1_000_000_000_000_000)
 		s.setPolicy(eligibility(testAsset, "1", "0.5"))
 		s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
 
-		s.Require().Equal(math.NewInt(2_000), s.recognised())
+		s.Require().Equal(math.NewInt(1_500), s.recognised())
 	})
 
 	s.Run("no provable base, no asset credit", func() {
@@ -599,9 +582,9 @@ func (s *KeeperTestSuite) TestRecognitionSurvivesTheLargestAdmissibleAttestation
 	s.attestQuantity(testAsset, types.MaxAttestedQuantity)
 	s.fundReserve(1_000)
 
-	// The credit still levers only the provable base, so the answer is the
-	// same bound an ordinary absurdity earns: 1_000 ÷ (1 − 0.5).
-	s.Require().Equal(math.NewInt(2_000), s.recognised())
+	// The credit is still capped by the provable base, so the answer is the
+	// same bound an ordinary absurdity earns: 1_000 + 0.5 × 1_000.
+	s.Require().Equal(math.NewInt(1_500), s.recognised())
 }
 
 func (s *KeeperTestSuite) TestRecognitionExcludesImpairedAndClosedPositions() {

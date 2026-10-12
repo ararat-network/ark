@@ -3,7 +3,6 @@ package types_test
 import (
 	"encoding/binary"
 	"math/big"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,65 +20,25 @@ func ratFromDec(d math.LegacyDec) *big.Rat {
 	return new(big.Rat).SetFrac(new(big.Int).Set(d.BigInt()), decOne)
 }
 
-// solveRecognitionExactly mirrors SolveRecognition in exact rational
-// arithmetic: ascending clip thresholds with the index tiebreak, advance
-// while the first still-clipped stake fits its share, T = N ÷ D at the break.
-// It is the fuzz oracle, so it shares no code with the production solver.
-func solveRecognitionExactly(base *big.Rat, stakes []types.RecognitionStake) *big.Rat {
-	solve := []int{}
-	for i, stake := range stakes {
-		if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() {
-			continue
-		}
-		if !stake.Raw.IsNil() && stake.Raw.IsPositive() {
-			solve = append(solve, i)
-		}
+// exactCredit is the reference for one stake: floor(min(raw, ratio × base)) in rationals, sharing
+// no code with the production cap. A ratio of whole quanta times a whole balance is exact in
+// LegacyDec, so the production credit must match it to the anoah.
+func exactCredit(base *big.Rat, stake types.RecognitionStake) *big.Int {
+	if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() || stake.Raw.IsNil() || !stake.Raw.IsPositive() {
+		return new(big.Int)
 	}
-
-	thresholds := make(map[int]*big.Rat, len(solve))
-	for _, index := range solve {
-		thresholds[index] = new(big.Rat).Quo(ratFromDec(stakes[index].Raw), ratFromDec(stakes[index].Ratio))
+	credit := new(big.Rat).Mul(ratFromDec(stake.Ratio), base)
+	if raw := ratFromDec(stake.Raw); raw.Cmp(credit) < 0 {
+		credit = raw
 	}
-	sort.Slice(solve, func(a, b int) bool {
-		if cmp := thresholds[solve[a]].Cmp(thresholds[solve[b]]); cmp != 0 {
-			return cmp < 0
-		}
-		return solve[a] < solve[b]
-	})
-
-	numerator, denominator := new(big.Rat).Set(base), new(big.Rat).SetInt64(1)
-	for k := 0; k <= len(solve); k++ {
-		denominator = new(big.Rat).SetInt64(1)
-		numerator = new(big.Rat).Set(base)
-		for _, index := range solve[k:] {
-			denominator.Sub(denominator, ratFromDec(stakes[index].Ratio))
-		}
-		for _, index := range solve[:k] {
-			numerator.Add(numerator, ratFromDec(stakes[index].Raw))
-		}
-		if k < len(solve) {
-			index := solve[k]
-			held := new(big.Rat).Mul(ratFromDec(stakes[index].Raw), denominator)
-			permitted := new(big.Rat).Mul(ratFromDec(stakes[index].Ratio), numerator)
-			if held.Cmp(permitted) <= 0 {
-				continue
-			}
-		}
-		break
-	}
-
-	return new(big.Rat).Quo(numerator, denominator)
+	return new(big.Int).Quo(credit.Num(), credit.Denom())
 }
 
-// creditTolerance allows a decimal quantum for division or a split tie, plus whole-unit truncation
-// on both the solver and rational reference.
-var creditTolerance = math.NewInt(2)
-
-// FuzzSolveRecognition compares the solver with an exact big.Rat oracle. Rounding ties must not
-// select an all-unclipped split above base / (1 - sum of ratios).
-func FuzzSolveRecognition(f *testing.F) {
-	// A rounding-tie pair, a both-breach split, an unbreached correction, a
-	// zero base, and a lone breacher.
+// FuzzRecognitionCredits compares every credit with the exact rational cap and checks that no
+// stake's credit depends on another's: removing any one stake leaves every other credit unchanged.
+func FuzzRecognitionCredits(f *testing.F) {
+	// A sum at exactly one, a both-clipped pair, an unclipped stake, a zero
+	// base, and a lone clipped stake.
 	f.Add([]byte{2, 1, 1, 1, 1, 1, 1, 1, 1})
 	f.Add([]byte{2, 200, 3, 40, 7, 2, 30, 9, 11})
 	f.Add([]byte{3, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 255, 255})
@@ -92,64 +51,42 @@ func FuzzSolveRecognition(f *testing.F) {
 			t.Skip("not enough data for one stake")
 		}
 
-		results, err := types.SolveRecognition(base, stakes)
-		require.NoError(t, err, "bounded inputs must solve")
+		results, err := types.RecognitionCredits(base, stakes)
+		require.NoError(t, err, "bounded inputs must cap")
 		require.Len(t, results, len(stakes))
 
-		exactTotal := solveRecognitionExactly(
-			new(big.Rat).SetInt(base.BigInt()),
-			stakes,
-		)
-
-		ratioSum := new(big.Rat)
-		creditSum := new(big.Rat)
+		baseRat := new(big.Rat).SetInt(base.BigInt())
+		creditSum := new(big.Int)
 		for i, stake := range stakes {
-			result := results[i]
-			if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() {
-				require.True(t, result.Ceiling.IsZero(), "stake %d holds no share", i)
-				require.True(t, result.Credit.IsZero(), "stake %d earns no credit", i)
-				continue
-			}
-			ratioSum.Add(ratioSum, ratFromDec(stake.Ratio))
-
-			require.False(t, result.Credit.GT(result.Ceiling),
-				"stake %d: credit %s above ceiling %s", i, result.Credit, result.Ceiling)
-			if !stake.Raw.IsNil() {
-				require.False(t, result.Credit.GT(stake.Raw.TruncateInt()),
-					"stake %d: credit %s above raw %s", i, result.Credit, stake.Raw)
-			}
-
-			// Exact counterpart: min(raw, ratio × T) in rationals.
-			exactCredit := new(big.Rat).Mul(ratFromDec(stake.Ratio), exactTotal)
-			if !stake.Raw.IsNil() && !stake.Raw.IsNegative() {
-				if raw := ratFromDec(stake.Raw); raw.Cmp(exactCredit) < 0 {
-					exactCredit = raw
-				}
-			} else {
-				exactCredit = new(big.Rat)
-			}
-			gap := new(big.Rat).Sub(new(big.Rat).SetInt(result.Credit.BigInt()), exactCredit)
-			gap.Abs(gap)
-			require.True(t, gap.Cmp(new(big.Rat).SetInt(creditTolerance.BigInt())) <= 0,
-				"stake %d: credit %s is %s from the exact %s", i, result.Credit, gap.FloatString(6), exactCredit.FloatString(6))
-
-			creditSum.Add(creditSum, new(big.Rat).SetInt(result.Credit.BigInt()))
+			want := exactCredit(baseRat, stake)
+			require.Zero(t, want.Cmp(results[i].Credit.BigInt()),
+				"stake %d: credit %s, exact %s", i, results[i].Credit, want)
+			require.False(t, results[i].Credit.GT(results[i].Ceiling),
+				"stake %d: credit %s above ceiling %s", i, results[i].Credit, results[i].Ceiling)
+			creditSum.Add(creditSum, results[i].Credit.BigInt())
 		}
+		// The validated sum caps external credit at the balance itself.
+		require.True(t, creditSum.Cmp(base.BigInt()) <= 0,
+			"credits %s exceed the balance %s", creditSum, base)
 
-		// The base bound, the historical failure: base + Σcredits may not
-		// exceed base ÷ (1 − Σratios) beyond per-stake rounding slack.
-		bound := new(big.Rat).Sub(new(big.Rat).SetInt64(1), ratioSum)
-		require.True(t, bound.Sign() > 0, "generator holds the ratio sum below one")
-		bound.Quo(new(big.Rat).SetInt(base.BigInt()), bound)
-		recognised := new(big.Rat).Add(new(big.Rat).SetInt(base.BigInt()), creditSum)
-		slack := new(big.Rat).SetInt64(int64(len(stakes))*2 + 1)
-		require.True(t, recognised.Cmp(new(big.Rat).Add(bound, slack)) <= 0,
-			"recognised %s breaches the base bound %s", recognised.FloatString(6), bound.FloatString(6))
+		for skip := range stakes {
+			rest := append(append([]types.RecognitionStake{}, stakes[:skip]...), stakes[skip+1:]...)
+			without, err := types.RecognitionCredits(base, rest)
+			require.NoError(t, err)
+			for j, k := 0, 0; j < len(stakes); j++ {
+				if j == skip {
+					continue
+				}
+				require.True(t, results[j].Credit.Equal(without[k].Credit),
+					"removing stake %d moved stake %d from %s to %s", skip, j, results[j].Credit, without[k].Credit)
+				k++
+			}
+		}
 	})
 }
 
-// recognitionCase deterministically maps fuzz bytes to at most six stakes, with total ratios <=
-// 0.95 and bounded base/raw values. The denominator margin keeps rounding tolerance meaningful.
+// recognitionCase deterministically maps fuzz bytes to at most six stakes, with total ratios at most
+// one, the validated ceiling, and bounded base/raw values.
 func recognitionCase(data []byte) ([]types.RecognitionStake, math.Int) {
 	if len(data) < 9 {
 		return nil, math.Int{}
@@ -180,12 +117,11 @@ func recognitionCase(data []byte) ([]types.RecognitionStake, math.Int) {
 		ratioQuanta[i] = quanta
 		quantaSum.Add(quantaSum, quanta)
 	}
-	// Rescale to hold Σratios ≤ 0.95: ratio_i ← ratio_i × cap ÷ sum, floored,
-	// which cannot raise the sum back above the cap.
-	cap95 := new(big.Int).Mul(big.NewInt(95), new(big.Int).Div(decOne, big.NewInt(100)))
-	if quantaSum.Cmp(cap95) > 0 {
+	// Rescale to hold Σratios ≤ 1: ratio_i ← ratio_i × 1 ÷ sum, floored,
+	// which cannot raise the sum back above one.
+	if quantaSum.Cmp(decOne) > 0 {
 		for i, quanta := range ratioQuanta {
-			scaled := new(big.Int).Mul(quanta, cap95)
+			scaled := new(big.Int).Mul(quanta, decOne)
 			ratioQuanta[i] = scaled.Div(scaled, quantaSum)
 		}
 	}

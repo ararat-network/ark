@@ -81,8 +81,8 @@ func MsgSetRecognitionPolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 		}
 
 		r := testData.Rand()
-		// Cap ratios must sum strictly below one, so each entry takes an equal
-		// share of a budget that already leaves room.
+		// Cap ratios must sum to at most one, so each entry takes an equal share
+		// of a budget that already leaves room.
 		share := math.LegacyOneDec().QuoInt64(int64(len(denoms)) * 2)
 		entries := make([]types.EligibilityEntry, 0, len(denoms))
 		for _, denom := range denoms {

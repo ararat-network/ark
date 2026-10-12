@@ -457,7 +457,7 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	require.NoError(t, err)
 
 	// Enough NOAH that the cap ratio cannot bind: this test is about the
-	// valuation, and a clipped credit would measure the solve instead.
+	// valuation, and a clipped credit would measure the cap instead.
 	base := math.NewInt(1_000_000_000)
 	seed := sdk.NewCoins(sdk.NewCoin(chain.NoahBaseDenom, base))
 	apptestutil.FundModule(t, arkApp, ctx, reservetypes.StrategicReserveName, seed)

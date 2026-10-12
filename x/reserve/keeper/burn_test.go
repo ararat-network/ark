@@ -451,11 +451,11 @@ func (s *KeeperTestSuite) TestCommitteeBurnSurplus() {
 		}
 	})
 
-	// A clipped stake levers the balance: its credit is its ratio of the total,
-	// and the total shrinks by 1/(1 - ratio) per unit burned. With 800 attested
-	// against a 0.3 cap, 1,000 NOAH recognises 1,000/0.7 = 1,428 for a 228
-	// pre-burn surplus, yet only 160 can leave before the 1,200 requirement
-	// breaks: (1,000 - 160)/0.7 = 1,200 exactly, and one more unit leaves 1,198.
+	// A clipped stake levers the balance: its credit is its ratio of the
+	// balance, so recognised capital falls by 1.3 per unit burned. With 800
+	// attested against a 0.3 cap, 1,000 NOAH recognises 1,300 for a 100
+	// pre-burn surplus, yet only 76 can leave before the 1,200 requirement
+	// breaks: 924 + 277 = 1,201, and one more unit leaves 923 + 276 = 1,199.
 	s.Run("the bound is sized at the post-burn solve", func() {
 		activeCommittee(1_000, 0, 1_200)
 		s.attest(testAsset, 800)
@@ -464,16 +464,16 @@ func (s *KeeperTestSuite) TestCommitteeBurnSurplus() {
 
 		bound, err := s.queryServer.BurnableSurplus(s.ctx, &types.QueryBurnableSurplusRequest{})
 		s.Require().NoError(err)
-		s.Require().Equal(noahCoin(160), bound.Burnable)
+		s.Require().Equal(noahCoin(76), bound.Burnable)
 
 		_, err = s.msgServer.CommitteeBurnSurplus(s.ctx, &types.MsgCommitteeBurnSurplus{
-			Committee: committee, ExpectedTerm: 1, Amount: noahCoin(161),
+			Committee: committee, ExpectedTerm: 1, Amount: noahCoin(77),
 		})
-		s.Require().ErrorContains(err, "exceeds the burnable Reserve surplus 160anoah")
+		s.Require().ErrorContains(err, "exceeds the burnable Reserve surplus 76anoah")
 
-		s.expectBurn(sdk.NewCoins(noahCoin(160)))
+		s.expectBurn(sdk.NewCoins(noahCoin(76)))
 		resp, err := s.msgServer.CommitteeBurnSurplus(s.ctx, &types.MsgCommitteeBurnSurplus{
-			Committee: committee, ExpectedTerm: 1, Amount: noahCoin(160),
+			Committee: committee, ExpectedTerm: 1, Amount: noahCoin(76),
 		})
 		s.Require().NoError(err)
 		s.Require().True(resp.RemainingSurplus.Amount.IsZero())
@@ -488,7 +488,7 @@ func (s *KeeperTestSuite) TestCommitteeBurnSurplus() {
 		s.setPolicy(eligibility(testAsset, "1", "0.01"))
 		s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
 
-		// Recognised is 1,000 against a zero requirement, but only 100 NOAH is
+		// Recognised is 101 against a zero requirement, but only 100 NOAH is
 		// spendable.
 		bound, err := s.queryServer.BurnableSurplus(s.ctx, &types.QueryBurnableSurplusRequest{})
 		s.Require().NoError(err)

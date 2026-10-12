@@ -4375,11 +4375,9 @@ type EligibilityEntry struct {
 	// haircut_factor in (0, 1] scales the feed value. Strictly positive: an
 	// entry granting no credit is refused rather than stored.
 	HaircutFactor string `protobuf:"bytes,2,opt,name=haircut_factor,json=haircutFactor,proto3" json:"haircut_factor,omitempty"`
-	// recognition_cap_ratio is positive and bounds this asset's credit to ratio ×
-	// recognised capital itself, resolved per block by SolveRecognition's closed
-	// form. Clipping one asset shrinks the total and can tighten its neighbours,
-	// so ratios across the whole policy must sum strictly below one, which also
-	// keeps each ratio below one.
+	// recognition_cap_ratio in (0, 1] bounds this asset's credit to ratio × the
+	// Reserve's NOAH balance, so a misreported holding adds at most its own cap
+	// and moves no other asset's. Ratios across the policy sum to at most one.
 	RecognitionCapRatio string `protobuf:"bytes,3,opt,name=recognition_cap_ratio,json=recognitionCapRatio,proto3" json:"recognition_cap_ratio,omitempty"`
 	// max_rate_age is how old, in seconds, the derived feed's rate may be and still back this
 	// claim's credit. Required and positive, and bounded by MaxRecognitionRateAge: a claim states
@@ -4682,8 +4680,8 @@ type AssetRecognition struct {
 	Rate                string `protobuf:"bytes,5,opt,name=rate,proto3" json:"rate,omitempty"`
 	HaircutFactor       string `protobuf:"bytes,6,opt,name=haircut_factor,json=haircutFactor,proto3" json:"haircut_factor,omitempty"`
 	RecognitionCapRatio string `protobuf:"bytes,7,opt,name=recognition_cap_ratio,json=recognitionCapRatio,proto3" json:"recognition_cap_ratio,omitempty"`
-	// effective_cap is recognition_cap_ratio resolved against this block's
-	// recognised capital: the anoah ceiling this asset's credit was clipped at.
+	// effective_cap is recognition_cap_ratio × this block's Reserve NOAH balance:
+	// the anoah ceiling this asset's credit was clipped at.
 	EffectiveCap *v1beta1.Coin `protobuf:"bytes,8,opt,name=effective_cap,json=effectiveCap,proto3" json:"effective_cap,omitempty"`
 	// credit is the anoah this asset contributes: the gross quantity haircut,
 	// multiplied by the rate, truncated, then clipped by the cap.

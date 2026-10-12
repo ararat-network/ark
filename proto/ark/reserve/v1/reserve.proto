@@ -83,11 +83,9 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // recognition_cap_ratio is positive and bounds this asset's credit to ratio ×
-  // recognised capital itself, resolved per block by SolveRecognition's closed
-  // form. Clipping one asset shrinks the total and can tighten its neighbours,
-  // so ratios across the whole policy must sum strictly below one, which also
-  // keeps each ratio below one.
+  // recognition_cap_ratio in (0, 1] bounds this asset's credit to ratio × the
+  // Reserve's NOAH balance, so a misreported holding adds at most its own cap
+  // and moves no other asset's. Ratios across the policy sum to at most one.
   string recognition_cap_ratio = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
@@ -205,8 +203,8 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // effective_cap is recognition_cap_ratio resolved against this block's
-  // recognised capital: the anoah ceiling this asset's credit was clipped at.
+  // effective_cap is recognition_cap_ratio × this block's Reserve NOAH balance:
+  // the anoah ceiling this asset's credit was clipped at.
   cosmos.base.v1beta1.Coin effective_cap = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
