@@ -4899,8 +4899,8 @@ type AssetRecognition struct {
 	// eligible reports whether the asset has a policy entry. An ineligible row
 	// is custody without credit.
 	Eligible bool `protobuf:"varint,2,opt,name=eligible,proto3" json:"eligible,omitempty"`
-	// attested_quantity sums the open, unimpaired positions in this asset that
-	// were attested within the entry's window.
+	// attested_quantity sums the open, unimpaired positions in this asset attested
+	// within the entry's window; an ineligible row has no window and sums them all.
 	AttestedQuantity string `protobuf:"bytes,3,opt,name=attested_quantity,json=attestedQuantity,proto3" json:"attested_quantity,omitempty"`
 	// impaired_quantity sums the open, impaired positions: attested holdings
 	// excluded from credit without being erased.

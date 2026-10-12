@@ -175,8 +175,8 @@ message AssetRecognition {
   // eligible reports whether the asset has a policy entry. An ineligible row
   // is custody without credit.
   bool eligible = 2 [(amino.dont_omitempty) = true];
-  // attested_quantity sums the open, unimpaired positions in this asset that
-  // were attested within the entry's window.
+  // attested_quantity sums the open, unimpaired positions in this asset attested
+  // within the entry's window; an ineligible row has no window and sums them all.
   string attested_quantity = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",

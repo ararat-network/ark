@@ -604,6 +604,28 @@ func (s *KeeperTestSuite) TestRecognitionLapsesUnattestedHoldings() {
 		s.Require().Equal(attested, position.AttestedTime)
 	})
 
+	// A correction restates a recorded entry, not the custodian's current
+	// holding, so it leaves the window where it was too.
+	s.Run("a correction does not re-attest", func() {
+		positionID := setup()
+		entries := s.ledgerFor(positionID)
+		s.Require().Len(entries, 1)
+		s.atClock(141, attested+window+1)
+		_, err := s.msgServer.CommitteeCorrectPosition(s.ctx, &types.MsgCommitteeCorrectPosition{
+			Committee: committee, ExpectedTerm: 1, PositionId: positionID,
+			Corrects:  entries[0].EntryId,
+			Quantity:  assetCoin(90),
+			Reference: "decimal-error",
+		})
+		s.Require().NoError(err)
+
+		s.Require().Equal(math.NewInt(10_000), s.recognised())
+		s.Require().Equal(math.NewInt(90), row().StaleQuantity)
+		position, err := s.keeper.OpenPositions.Get(s.ctx, positionID)
+		s.Require().NoError(err)
+		s.Require().Equal(attested, position.AttestedTime)
+	})
+
 	// A return attribution states the remaining quantity, which is the whole
 	// holding, so it restarts the window.
 	s.Run("a return attribution re-attests the remainder", func() {

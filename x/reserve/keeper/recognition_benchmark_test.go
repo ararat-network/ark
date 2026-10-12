@@ -159,10 +159,11 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	ratio := math.LegacyMustNewDecFromStr("0.9").QuoInt64(int64(denomCount))
 	for _, denom := range denoms {
 		if err := keeper.RecognitionPolicy.Set(ctx, denom, types.EligibilityEntry{
-			Denom:            denom,
-			HaircutFactor:    math.LegacyMustNewDecFromStr("0.8"),
-			MaxCreditPerNoah: ratio,
-			MaxRateAge:       types.MaxRecognitionRateAge,
+			Denom:             denom,
+			HaircutFactor:     math.LegacyMustNewDecFromStr("0.8"),
+			MaxCreditPerNoah:  ratio,
+			MaxRateAge:        types.MaxRecognitionRateAge,
+			MaxAttestationAge: types.MaxAttestationAge,
 		}); err != nil {
 			tb.Fatal(err)
 		}
@@ -175,6 +176,7 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 			Returned:       chain.NoahCoin(math.ZeroInt()),
 			VenueReference: "bench",
 			OpenedHeight:   1,
+			AttestedTime:   chain.BlockSeconds(ctx),
 		}); err != nil {
 			tb.Fatal(err)
 		}
