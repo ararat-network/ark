@@ -575,8 +575,7 @@ reward windows ([Oracle](../../x/oracle/README.md#11-attendance-settlement)).
 
 `Params` holds what governance owns: the reference unit and cap amount, the funding window, the transfer tax rate, the
 exposure instrument's decays, sample spacing, cap, step, and period, and the base-fee controller. `EconomicPolicy` holds
-the
-committee's levers: the two block reward targets, the three fund target ratios, and the three exposure weights. The
+the committee's levers: the two block reward targets, the three fund target ratios, and the three exposure weights. The
 boundary is stance against machinery: a lever stating how much of something the protocol wants, reversible and safe
 between a mandate's bounds, is the committee's; the instrument that computes it, its cadence, and its rails are
 governance's (D37). The target ratios lie in `[0, 1]` and are independent stocks whose sum may exceed one, since the
