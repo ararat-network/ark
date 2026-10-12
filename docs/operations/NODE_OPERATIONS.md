@@ -58,7 +58,7 @@ The coordinator starts from the curated testnet artefact, [app/genesis/testnet.j
 copied over `config/genesis.json`, sets its `genesis_time`, which the seats vest from, and grants every validator's
 seat in one `arkd genesis add-validator-seats --founder <address> --any-count <address>... --home <home>`, the
 founder's at half the others' sum, with the founder's grant and stream written beside it, and the launch count bounds
-lifted for the testnet, up to what its community pool funds ([genesis §12](../governance/GENESIS.md#12-assembly-sequence)).
+lifted for the testnet, up to what its community pool funds ([genesis §13](../governance/GENESIS.md#assembly-sequence)).
 Faucet and test accounts are added with `arkd genesis add-genesis-account <address> <amount>anoah --home <home>`; amounts
 are base units in the chain's denomination, `anoah`. Each validator then creates its gentx with
 `arkd genesis gentx <name> 5000000000000000000000000anoah --commission-rate 0.05 --chain-id ark-testnet-1 --home <home>`,

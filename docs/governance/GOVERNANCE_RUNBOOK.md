@@ -84,7 +84,7 @@ widening it is a coordinated binary upgrade.
 Each committee has its own mandate message: `ark.security.v1.MsgSetSecurityMandate`,
 `ark.asset.v1.MsgSetEmergencyMandate`, `ark.treasury.v1.MsgSetEconomicMandate`, `ark.reserve.v1.MsgSetReserveMandate`,
 `ark.market.v1.MsgSetConversionMandate`, `ark.claims.v1.MsgSetClaimsMandate`, and
-`ark.disbursement.v1.MsgSetGrantsMandate`. [Genesis §13](GENESIS.md#13-committee-appointments) sets the first cycle's
+`ark.disbursement.v1.MsgSetGrantsMandate`. [Genesis §13](GENESIS.md#committee-appointments) sets the first cycle's
 order, shapes, and corridors.
 
 Default mandates are disabled. Governance can operate without a committee; appointment delegates a bounded faster
@@ -220,7 +220,7 @@ and change the depth before opening, by `MsgUpdatePolicy`, only if the rule give
    the same proposal ([asset lifecycle](../../x/asset/README.md#7-the-lifecycle)). Conversion opens when the proposal
    executes. Verify with the asset registry query and one small `MsgSell`.
 4. **Appoint the Market committee.** Its corridor should reach about ten times the genesis depth, so routine raises as
-   liquid NOAH is distributed need no vote (§3, [genesis §13](GENESIS.md#13-committee-appointments)). The committee
+   liquid NOAH is distributed need no vote (§3, [genesis §13](GENESIS.md#committee-appointments)). The committee
    sizes each raise by the depth rule; governance raises depth beyond the corridor by the same rule, and nobody
    shortens recovery to do it.
 

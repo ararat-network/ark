@@ -32,7 +32,7 @@ genesis (§4).
   Unvested coins can be delegated, vote, and be slashed, but cannot be transferred.
 - **Spread.** Each validator self-delegates one seat in its gentx. In the first blocks the founder delegates the rest
   of the founder's seat across the other validators, so no node holds a third of consensus power
-  ([genesis §12](GENESIS.md#12-assembly-sequence)).
+  ([genesis §13](GENESIS.md#assembly-sequence)).
 - **No validator grants.** Seat holders receive no grant for validator work. Other work is granted as anyone's would
   be (§4). After launch, anyone can bond NOAH and register as a validator, up to 100 validators with a 5% minimum
   commission. Nothing comes from the pools.

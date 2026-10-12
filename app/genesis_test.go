@@ -661,7 +661,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 // testnetOverrides is the whole difference between the testnet artefact and
 // the launch artefact: time compressed so a governance cycle, an unbonding, a
 // settlement, and an oracle payout each complete inside a test day, and
-// nothing else. Mirrored in docs/governance/GENESIS.md §15.
+// nothing else. Mirrored in docs/governance/GENESIS.md §12.
 // launchCurrencies is the launch currency set in the artefact's order, the
 // denominations the testnet registers from genesis and the launch chain
 // registers by vote.

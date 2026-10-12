@@ -106,7 +106,7 @@ three groups:
 
 The mandate bounds all eight independently. A weight's minimum may sit above zero, which keeps the committee from
 switching the exposure model off; a minimum of zero grants it that power for the appointment. Weights stay at zero
-until the calibration window has produced thresholds ([genesis §13](GENESIS.md#13-committee-appointments)).
+until the calibration window has produced thresholds ([genesis §13](GENESIS.md#committee-appointments)).
 
 **The transfer tax is not a committee lever.** `transfer_tax_rate` lives in `Params` and moves only by
 governance vote: it is part of the fee every wallet signs, so a raise refuses every in-flight
