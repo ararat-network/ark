@@ -52,11 +52,23 @@ func (k Keeper) sampleExposure(ctx context.Context, totals markettypes.Conversio
 	return nil
 }
 
-// sampleVolatility skips unavailable reference observations without changing the anchor or
-// recording false calm, and holds the anchor until volatility_sample_seconds have passed: sampled
-// every block, the oracle median's jitter would dominate the variance it measures. A returning feed
+// sampleVolatility holds the anchor until volatility_sample_seconds have passed, since sampled every
+// block the oracle median's jitter would dominate the variance it measures, and skips unavailable
+// reference observations without changing the anchor or recording false calm. A returning feed
 // measures the move across the gap.
 func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState, params types.Params) error {
+	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
+	now := chain.BlockSeconds(ctx)
+	anchored := !previous.IsNil() && previous.IsPositive()
+	elapsed := uint64(0)
+	if now > previousTime {
+		elapsed = now - previousTime
+	}
+	// Checked before the rate is read, so a block inside the spacing costs no Oracle read.
+	if anchored && elapsed < params.VolatilitySampleSeconds {
+		return nil
+	}
+
 	reference, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
 		return fmt.Errorf("getting protocol reference: %w", err)
@@ -73,16 +85,6 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 		return nil
 	}
 
-	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
-	now := chain.BlockSeconds(ctx)
-	anchored := !previous.IsNil() && previous.IsPositive()
-	elapsed := uint64(0)
-	if now > previousTime {
-		elapsed = now - previousTime
-	}
-	if anchored && elapsed < params.VolatilitySampleSeconds {
-		return nil
-	}
 	state.LastReferencePrice, state.LastSampleTime = price, now
 	// The first sample of a chain's life, or the first after a reference move
 	// that reset the anchor: a price with nothing to compare against yields no
