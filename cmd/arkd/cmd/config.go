@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/spf13/viper"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
@@ -25,7 +27,8 @@ import (
 
 // arkAppConfig is app.toml. The SDK's sections squash onto the file's
 // top-level keys; the tags name Ark's. initAppConfig renders it and
-// readAppConfig decodes it, so there is one shape of the file.
+// readAppConfig decodes it, so there is one shape of the file. [wasm] is
+// wasmd's: its snippet carries its defaults, and wasm.ReadNodeConfig reads it.
 type arkAppConfig struct {
 	serverconfig.Config `mapstructure:",squash"`
 
@@ -37,7 +40,7 @@ type arkAppConfig struct {
 	Prometheus telemetry.PrometheusConfig `mapstructure:"prometheus"`
 }
 
-// appConfigTemplate is app.toml: the SDK's sections plus Ark's own.
+// appConfigTemplate is app.toml: the SDK's sections, Ark's own, and wasmd's.
 var appConfigTemplate = strings.NewReplacer(
 	"# Setting max_txs to negative 1 (-1) will disable transactions from being inserted into the mempool (no-op mempool).",
 	"# Negative max-txs values are rejected: Ark requires the app pool for proposal verification.",
@@ -45,12 +48,20 @@ var appConfigTemplate = strings.NewReplacer(
 	`# Ark executes blocks sequentially; "block-stm" is refused until it is wired.`,
 ).Replace(serverconfig.DefaultConfigTemplate) +
 	pricefeedclient.DefaultConfigTemplate +
-	telemetry.PrometheusConfigTemplate
+	telemetry.PrometheusConfigTemplate +
+	wasmConfigBanner +
+	wasmtypes.DefaultConfigTemplate()
 
-// arkSections are the tables that are Ark's rather than the SDK's. The SDK
-// writes app.toml only when it is missing and confix knows only the SDK's
-// tables, so a file older than a section never gains it.
-var arkSections = []string{"pricefeed", "prometheus"}
+const wasmConfigBanner = `
+
+###############################################################################
+###                                  Wasm                                   ###
+###############################################################################`
+
+// arkSections are the tables beyond the SDK's. The SDK writes app.toml only
+// when it is missing and confix knows only the SDK's tables, so a file older
+// than a section never gains it.
+var arkSections = []string{"pricefeed", "prometheus", "wasm"}
 
 // otelSink is the legacy [telemetry] bridge's OpenTelemetry sink, the one
 // installGoMetricsSink replaces.
@@ -120,6 +131,11 @@ func readAppConfig(v *viper.Viper) (arkAppConfig, error) {
 		return arkAppConfig{}, errortypes.ErrAppConfig.Wrapf("%v", err)
 	}
 	cfg.Config = srvCfg
+	// The app reads [wasm] itself at construction; reading it here refuses a
+	// malformed value in config validate and set, not only at start.
+	if _, err := wasm.ReadNodeConfig(v); err != nil {
+		return arkAppConfig{}, errortypes.ErrAppConfig.Wrapf("[wasm]: %v", err)
+	}
 	return cfg, cfg.Validate()
 }
 

@@ -85,6 +85,8 @@ and `client.toml` CLI defaults. Use `arkd config diff` to compare app settings w
 `arkd config migrate --stdout` to inspect a migration before writing. `arkd config set <app|config|client> <key> <value>`
 changes an existing key in that file, app.toml against the validation start applies and config.toml against CometBFT's;
 it does not create missing keys. `migrate` adds missing app.toml keys and leaves config.toml and client.toml alone.
+`[wasm]` is wasmd's table: `query_gas_limit` caps the gas one smart query may spend and `memory_cache_size` sizes the
+contract cache in MiB; `arkd start --wasm.<key>` overrides either for one run.
 `arkd config validate [app|config|client]` runs those checks over a
 file alone. Both take a path to a `.toml` file in place of the name. Use `--help` for each command's options.
 [Mempool policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour) explains the coupled CometBFT/application admission configuration.

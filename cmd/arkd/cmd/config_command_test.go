@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -68,12 +70,16 @@ func TestConfigMigrateAddsArkTables(t *testing.T) {
 	require.Empty(t, stdout)
 	require.Contains(t, stderr, "add [pricefeed]")
 	require.Contains(t, stderr, "add [prometheus]")
+	require.Contains(t, stderr, "add [wasm]")
 
 	migrated := readFile(t, path)
 	require.Contains(t, migrated, "###                               Price Feed                                ###")
 	require.Contains(t, migrated, "# Address is the listen address of the scrape endpoint.")
+	require.Contains(t, migrated, "###                                  Wasm                                   ###")
+	require.Contains(t, migrated, "# Smart query gas limit is the max gas to be used in a smart query contract call")
 	require.Less(t, strings.Index(migrated, "[mempool]"), strings.Index(migrated, "[pricefeed]"))
 	require.Less(t, strings.Index(migrated, "[pricefeed]"), strings.Index(migrated, "[prometheus]"))
+	require.Less(t, strings.Index(migrated, "[prometheus]"), strings.Index(migrated, "[wasm]"))
 
 	info, err := os.Stat(path)
 	require.NoError(t, err)
@@ -112,6 +118,26 @@ func TestConfigMigrateFillsPartialTable(t *testing.T) {
 	expected.Enabled = true
 	require.Equal(t, expected, cfg.PriceFeed)
 	require.Equal(t, 1, strings.Count(readFile(t, path), "[pricefeed]"))
+}
+
+// A tuned [wasm] value survives migrate, which once removed the table as
+// unknown, and the table gains the keys it lacks.
+func TestConfigMigrateKeepsWasmTable(t *testing.T) {
+	home := t.TempDir()
+	path := writeHomeConfig(t, home, "app",
+		renderAppTOML(t, serverconfig.DefaultConfigTemplate)+"\n[wasm]\nquery_gas_limit = 5000000\n")
+
+	_, stderr, err := runConfig(t, home, "migrate", "--"+flagVerbose)
+	require.NoError(t, err)
+	require.NotContains(t, stderr, "add [wasm]")
+	require.NotContains(t, stderr, "remove [wasm]")
+	require.Contains(t, stderr, "add wasm.memory_cache_size = 100")
+
+	wasmCfg, err := wasm.ReadNodeConfig(viperFromTOML(t, readFile(t, path)))
+	require.NoError(t, err)
+	expected := wasmtypes.DefaultNodeConfig()
+	expected.SmartQueryGasLimit = 5_000_000
+	require.Equal(t, expected, wasmCfg)
 }
 
 // Keys and tables this binary has no use for go, a table's keys with it.
@@ -191,6 +217,7 @@ func TestConfigDiff(t *testing.T) {
 		"add [pricefeed]",
 		"add [pricefeed.tls]",
 		"add [prometheus]",
+		"add [wasm]",
 		"remove [legacy]",
 		`keep minimum-gas-prices = "0.1anoah" (default "0anoah")`,
 	}, "\n")+"\n", stdout)
