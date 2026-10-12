@@ -346,10 +346,9 @@ until burned. Custody is attested: the asset sits at a mandate destination and t
 quantity, citing its evidence, in an append-only journal
 ([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)).
 
-When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens, plus each
-capped asset's ratio of the 100. Zero credit would
-reopen all 100 and invite an acquisition-and-refill loop that captures expansion principal; full credit would close a
-gap that is not closed.
+When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens, plus each capped
+asset's ratio of the 100. Zero credit would reopen all 100 and invite an acquisition-and-refill loop that captures
+expansion principal; full credit would close a gap that is not closed.
 
 ### 4.4 Passive targets and public ratios
 

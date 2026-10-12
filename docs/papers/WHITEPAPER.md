@@ -486,13 +486,13 @@ the recipient holds afterwards requires separate evidence.
 
 Governance defines eligible holdings, valuation haircuts, acceptable price age, and maximum contributions. The credit
 given to an external holding is the smaller of its haircut-adjusted value and an allowed fraction of the Reserve's NOAH
-balance. The allowed fractions must sum to at most one. Because each limit is measured against NOAH the chain can verify,
-rather than against a total that includes other attested credits, one misreported holding cannot raise another's limit.
-External attestations can therefore at most double a provable NOAH base, and an empty NOAH base supports no external
-credit at all.
+balance. The allowed fractions must sum to at most one. Because each limit is measured against NOAH the chain can
+verify, rather than against a total that includes other attested credits, one misreported holding cannot raise another's
+limit. External attestations can therefore at most double a provable NOAH base, and an empty NOAH base supports no
+external credit at all.
 
-For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of its NOAH can recognise no
-more than 120 NOAH in total, even if an attestation claims a much larger external holding. The external credit is at
+For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of its NOAH can recognise
+no more than 120 NOAH in total, even if an attestation claims a much larger external holding. The external credit is at
 most 20. A haircut or a smaller attested position may reduce it further.
 
 An impaired or ineligible position receives no credit, a stale external price supplies no fallback credit, and a holding
@@ -1091,7 +1091,8 @@ return to the community pool.
 | Exposure weights | All zero; initial multiplier one | Decided |
 | Exposure refresh | 600 blocks, approximately one hour | Default |
 | Exposure multiplier cap and maximum step | 2 and 0.1 per update | Decided |
-| Volatility and flow decay | 0.99995 and 0.99885 per block | Default |
+| Volatility sample spacing | 300 seconds of block time, five minutes | Default |
+| Volatility and flow decay | 0.9975 per volatility sample and 0.99885 per block | Default |
 | External Reserve recognition | Empty policy; NOAH recognised at par | Decided |
 | Base gas-price floor | 0.02 XDR per 200,000 gas | Default |
 | Base-fee utilisation target and maximum adjustment | 50%; 2.5% per block | Default |
