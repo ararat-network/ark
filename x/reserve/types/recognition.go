@@ -34,10 +34,10 @@ func (entry EligibilityEntry) Validate() error {
 		entry.HaircutFactor.GT(math.LegacyOneDec()) {
 		return errors.New("eligibility haircut factor must be greater than zero and at most one")
 	}
-	if entry.RecognitionCapRatio.IsNil() ||
-		!entry.RecognitionCapRatio.IsPositive() ||
-		entry.RecognitionCapRatio.GT(math.LegacyOneDec()) {
-		return errors.New("eligibility recognition cap ratio must be greater than zero and at most one")
+	if entry.MaxCreditPerNoah.IsNil() ||
+		!entry.MaxCreditPerNoah.IsPositive() ||
+		entry.MaxCreditPerNoah.GT(math.LegacyOneDec()) {
+		return errors.New("eligibility max credit per NOAH must be greater than zero and at most one")
 	}
 	// Required rather than defaulted: an entry states its own tolerance rather
 	// than inheriting the Oracle's conversion-grade default.
@@ -55,11 +55,11 @@ func (entry EligibilityEntry) Validate() error {
 // positive haircut and cap; a stale feed does not grant the committee permission to burn credited
 // custody.
 func (entry EligibilityEntry) GrantsCredit() bool {
-	return entry.HaircutFactor.IsPositive() && entry.RecognitionCapRatio.IsPositive()
+	return entry.HaircutFactor.IsPositive() && entry.MaxCreditPerNoah.IsPositive()
 }
 
 // ValidateRecognitionPolicy validates a complete eligibility set: every entry
-// valid, one entry per asset, cap ratios summing to at most one. The entry
+// valid, one entry per asset, max credit per NOAH summing to at most one. The entry
 // count is deliberately unbounded — a cap would only ever bind on governance,
 // the sole writer, and would size nothing.
 func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
@@ -73,12 +73,12 @@ func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
 			return fmt.Errorf("duplicate eligibility entry for %s", entry.Denom)
 		}
 		seen[entry.Denom] = struct{}{}
-		ratioSum = ratioSum.Add(entry.RecognitionCapRatio)
+		ratioSum = ratioSum.Add(entry.MaxCreditPerNoah)
 	}
 	// External custody may add at most the NOAH balance itself, so recognised
 	// capital stays within twice the NOAH the Reserve holds.
 	if ratioSum.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("recognition cap ratios must sum to at most one, got %s", ratioSum)
+		return fmt.Errorf("max credit per NOAH across the policy must sum to at most one, got %s", ratioSum)
 	}
 	return nil
 }
@@ -102,8 +102,8 @@ func (entry EligibilityEntry) RawCredit(rates oracletypes.RateSet, gross math.In
 	return credit.Amount, nil
 }
 
-// RecognitionStake is one asset's input to RecognitionCredits: its cap ratio
-// and its uncapped credit.
+// RecognitionStake is one asset's input to RecognitionCredits: its max credit
+// per NOAH and its uncapped credit.
 type RecognitionStake struct {
 	Ratio math.LegacyDec
 	Raw   math.LegacyDec
@@ -112,8 +112,8 @@ type RecognitionStake struct {
 // RecognitionResult is one asset's capped credit: the anoah ceiling its ratio
 // of the NOAH balance allows, and the credit after clipping against it.
 type RecognitionResult struct {
-	Ceiling math.Int
-	Credit  math.Int
+	Cap    math.Int
+	Credit math.Int
 }
 
 // RecognitionCredits caps each stake at its ratio of the Reserve's NOAH balance and returns the
@@ -121,7 +121,7 @@ type RecognitionResult struct {
 func RecognitionCredits(base math.Int, stakes []RecognitionStake) ([]RecognitionResult, error) {
 	results := make([]RecognitionResult, len(stakes))
 	for i := range results {
-		results[i] = RecognitionResult{Ceiling: math.ZeroInt(), Credit: math.ZeroInt()}
+		results[i] = RecognitionResult{Cap: math.ZeroInt(), Credit: math.ZeroInt()}
 	}
 	if base.IsNil() || !base.IsPositive() {
 		return results, nil
@@ -134,7 +134,7 @@ func RecognitionCredits(base math.Int, stakes []RecognitionStake) ([]Recognition
 		}
 		var err error
 		if ratios, err = decimal.Add(ratios, stake.Ratio); err != nil {
-			return nil, fmt.Errorf("summing recognition cap ratios: %w", err)
+			return nil, fmt.Errorf("summing max credit per NOAH: %w", err)
 		}
 	}
 	// Unreachable: the policy write and genesis import hold the sum at or below one. Kept so a
@@ -152,11 +152,11 @@ func RecognitionCredits(base math.Int, stakes []RecognitionStake) ([]Recognition
 		if err != nil {
 			return nil, fmt.Errorf("sizing the recognition ceiling for stake %d: %w", i, err)
 		}
-		results[i].Ceiling = ceiling.TruncateInt()
+		results[i].Cap = ceiling.TruncateInt()
 		if stake.Raw.IsNil() || !stake.Raw.IsPositive() {
 			continue
 		}
-		results[i].Credit = math.MinInt(stake.Raw.TruncateInt(), results[i].Ceiling)
+		results[i].Credit = math.MinInt(stake.Raw.TruncateInt(), results[i].Cap)
 	}
 	return results, nil
 }

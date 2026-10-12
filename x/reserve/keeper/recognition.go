@@ -29,7 +29,7 @@ func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition
 		return nil, fmt.Errorf("capping Reserve recognition: %w", err)
 	}
 	for i, result := range credits {
-		assets[i].EffectiveCap = chain.NoahCoin(result.Ceiling)
+		assets[i].Cap = chain.NoahCoin(result.Cap)
 		assets[i].Credit = chain.NoahCoin(result.Credit)
 	}
 
@@ -131,14 +131,14 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 	stakes := make([]types.RecognitionStake, 0, len(denoms))
 	for _, denom := range denoms {
 		row := types.AssetRecognition{
-			Denom:               denom,
-			AttestedQuantity:    math.ZeroInt(),
-			ImpairedQuantity:    math.ZeroInt(),
-			Rate:                math.LegacyZeroDec(),
-			HaircutFactor:       math.LegacyZeroDec(),
-			RecognitionCapRatio: math.LegacyZeroDec(),
-			EffectiveCap:        chain.NoahCoin(math.ZeroInt()),
-			Credit:              chain.NoahCoin(math.ZeroInt()),
+			Denom:            denom,
+			AttestedQuantity: math.ZeroInt(),
+			ImpairedQuantity: math.ZeroInt(),
+			Rate:             math.LegacyZeroDec(),
+			HaircutFactor:    math.LegacyZeroDec(),
+			MaxCreditPerNoah: math.LegacyZeroDec(),
+			Cap:              chain.NoahCoin(math.ZeroInt()),
+			Credit:           chain.NoahCoin(math.ZeroInt()),
 		}
 		if quantity, ok := attested[denom]; ok {
 			row.AttestedQuantity = quantity
@@ -150,9 +150,9 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		if entry, listed := entries[denom]; listed {
 			row.Eligible = true
 			row.HaircutFactor = entry.HaircutFactor
-			row.RecognitionCapRatio = entry.RecognitionCapRatio
+			row.MaxCreditPerNoah = entry.MaxCreditPerNoah
 			row.MaxRateAge = entry.MaxRateAge
-			stake.Ratio = entry.RecognitionCapRatio
+			stake.Ratio = entry.MaxCreditPerNoah
 			// An absent, non-positive, or over-age rate leaves the row at zero:
 			// there is no fallback source.
 			if rate, usable := rates[denom]; usable {

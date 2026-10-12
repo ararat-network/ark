@@ -991,8 +991,8 @@ contract][ark-treasury]
 
 ### A.5 External Reserve recognition
 
-Let `B_R` be Reserve NOAH, `u_j` an attested eligible quantity, `d_j` its haircut factor, and `k_j` its share cap. Rates
-must satisfy the holding's freshness policy; ineligible or unusable evidence earns zero credit.
+Let `B_R` be Reserve NOAH, `u_j` an attested eligible quantity, `d_j` its haircut factor, and `k_j` its maximum credit
+per NOAH. Rates must satisfy the holding's freshness policy; ineligible or unusable evidence earns zero credit.
 
 ```text
 credit_j = min(d_j × u_j × r_j, k_j × B_R)

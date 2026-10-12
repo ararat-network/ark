@@ -34,10 +34,10 @@ func rateSet(rate string) oracletypes.RateSet {
 func TestEligibilityEntryValidate(t *testing.T) {
 	valid := func() types.EligibilityEntry {
 		return types.EligibilityEntry{
-			Denom:               "axau-lbma",
-			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
-			RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.2"),
-			MaxRateAge:          72 * 3_600,
+			Denom:            "axau-lbma",
+			HaircutFactor:    math.LegacyMustNewDecFromStr("0.8"),
+			MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.2"),
+			MaxRateAge:       72 * 3_600,
 		}
 	}
 
@@ -77,9 +77,9 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: "haircut factor must be greater than zero and at most one",
 		},
 		{
-			name:    "unset cap ratio",
-			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyDec{} },
-			wantErr: "recognition cap ratio must be greater than zero and at most one",
+			name:    "unset max credit per NOAH",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxCreditPerNoah = math.LegacyDec{} },
+			wantErr: "max credit per NOAH must be greater than zero and at most one",
 		},
 		{
 			// An entry granting no credit is indistinguishable from no entry at
@@ -91,9 +91,9 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: "haircut factor must be greater than zero and at most one",
 		},
 		{
-			name:    "zero cap ratio",
-			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyZeroDec() },
-			wantErr: "recognition cap ratio must be greater than zero and at most one",
+			name:    "zero max credit per NOAH",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxCreditPerNoah = math.LegacyZeroDec() },
+			wantErr: "max credit per NOAH must be greater than zero and at most one",
 		},
 		{
 			// The smallest representable factor is admissible on both: the rule
@@ -102,7 +102,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			name: "smallest positive factors",
 			mutate: func(e *types.EligibilityEntry) {
 				e.HaircutFactor = math.LegacySmallestDec()
-				e.RecognitionCapRatio = math.LegacySmallestDec()
+				e.MaxCreditPerNoah = math.LegacySmallestDec()
 			},
 		},
 		{
@@ -146,8 +146,8 @@ func stake(ratio string, raw int64) types.RecognitionStake {
 
 func result(ceiling, credit int64) types.RecognitionResult {
 	return types.RecognitionResult{
-		Ceiling: math.NewInt(ceiling),
-		Credit:  math.NewInt(credit),
+		Cap:    math.NewInt(ceiling),
+		Credit: math.NewInt(credit),
 	}
 }
 
@@ -249,8 +249,8 @@ func TestRecognitionCredits(t *testing.T) {
 			// representation than NewInt(0), and only the value is the claim.
 			require.Len(t, got, len(tc.want))
 			for i := range tc.want {
-				require.True(t, tc.want[i].Ceiling.Equal(got[i].Ceiling),
-					"stake %d ceiling: want %s, got %s", i, tc.want[i].Ceiling, got[i].Ceiling)
+				require.True(t, tc.want[i].Cap.Equal(got[i].Cap),
+					"stake %d ceiling: want %s, got %s", i, tc.want[i].Cap, got[i].Cap)
 				require.True(t, tc.want[i].Credit.Equal(got[i].Credit),
 					"stake %d credit: want %s, got %s", i, tc.want[i].Credit, got[i].Credit)
 			}
@@ -309,9 +309,9 @@ func TestRecognitionCreditsAreIndependent(t *testing.T) {
 
 func TestRawCredit(t *testing.T) {
 	entry := types.EligibilityEntry{
-		Denom:               creditDenom,
-		HaircutFactor:       math.LegacyMustNewDecFromStr("0.333333333333333333"),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.5"),
+		Denom:            creditDenom,
+		HaircutFactor:    math.LegacyMustNewDecFromStr("0.333333333333333333"),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.5"),
 	}
 
 	// The credit stays un-rounded and un-clipped: the cap plays no part here,
@@ -376,9 +376,9 @@ func TestRawCreditRefusesAnAbsentRate(t *testing.T) {
 // carried into the cap to neutralise.
 func TestRawCreditRefusesAnAbsurdAttestation(t *testing.T) {
 	entry := types.EligibilityEntry{
-		Denom:               creditDenom,
-		HaircutFactor:       math.LegacyOneDec(),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.5"),
+		Denom:            creditDenom,
+		HaircutFactor:    math.LegacyOneDec(),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.5"),
 	}
 
 	// A quantity alone cannot overflow — math.Int stops just where LegacyDec

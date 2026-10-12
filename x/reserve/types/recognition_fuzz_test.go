@@ -61,8 +61,8 @@ func FuzzRecognitionCredits(f *testing.F) {
 			want := exactCredit(baseRat, stake)
 			require.Zero(t, want.Cmp(results[i].Credit.BigInt()),
 				"stake %d: credit %s, exact %s", i, results[i].Credit, want)
-			require.False(t, results[i].Credit.GT(results[i].Ceiling),
-				"stake %d: credit %s above ceiling %s", i, results[i].Credit, results[i].Ceiling)
+			require.False(t, results[i].Credit.GT(results[i].Cap),
+				"stake %d: credit %s above ceiling %s", i, results[i].Credit, results[i].Cap)
 			creditSum.Add(creditSum, results[i].Credit.BigInt())
 		}
 		// The validated sum caps external credit at the balance itself.

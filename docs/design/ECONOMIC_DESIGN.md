@@ -301,13 +301,13 @@ registry paper it holds for stablecoin claims counts for nothing (D28). The Rese
 haircut credit for each listed asset's open, unimpaired attested quantity:
 
 ```text
-credit_a = min(haircut_a * attested_quantity_a * rate_a, cap_ratio_a * noah_balance)
+credit_a = min(haircut_a * attested_quantity_a * rate_a, max_credit_per_noah_a * noah_balance)
 ```
 
 where `rate_a` is the derived feed's rate within the entry's own staleness window and zero otherwise. The cap reads only
 the NOAH balance, which Bank proves, so every credit is independent: a misreported holding or a wrong price adds at most
-its own `cap_ratio × noah_balance` and moves no other asset's credit. The ratios sum to at most one, so recognised
-capital never exceeds twice the NOAH the Reserve holds, whatever is attested (D58, D64).
+its own `max_credit_per_noah × noah_balance` and moves no other asset's credit. The policy's values sum to at most one,
+so recognised capital never exceeds twice the NOAH the Reserve holds, whatever is attested (D58, D64).
 
 Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes its own asset's credit, there is
 no fallback price, and valuation is never stored (D57, D71). Ark-issued paper earns

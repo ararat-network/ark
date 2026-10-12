@@ -438,23 +438,23 @@ at closure is arithmetic over proven legs, which is why closure needs no governa
 
 ## D58
 
-Recognition policy is one governed list of `EligibilityEntry` rows — an external symbol ([D69](#d69)), a haircut
-factor in (0, 1], a recognition cap ratio in (0, 1] ([D64](#d64)), and a staleness window ([D71](#d71)) — which
+Recognition policy is one governed list of `EligibilityEntry` rows — an external symbol ([D69](#d69)), a haircut factor
+in (0, 1], a maximum credit per NOAH in (0, 1] ([D64](#d64)), and a staleness window ([D71](#d71)) — which
 `MsgSetRecognitionPolicy` sets whole. `RecognisedCapital` counts the Reserve's `anoah` balance at par and credits each
-listed asset `min(haircut × attested open unimpaired quantity × rate, cap_ratio × anoah_balance)` ([D64](#d64)). The
-multiplication is the chain's one rate orientation,
-NOAH per unit ([D75](#d75)), and the conversion goes through `RateSet.Convert` like every other valuation on the chain
-rather than being re-derived here. Every rate comes from the Oracle, so a dark or stale feed zeroes exactly one
-asset's credit and recognition degrades to zero rather than to a frozen number, without exception: there is no
-governance-supplied fallback price, and a slow-cadence feed is served by the entry's own window. Both factors are
-strictly positive, because an entry granting no credit would be indistinguishable from no entry while still occupying
-the policy and raising no feed-guard claim; refusing zero makes every stored entry a live claim and the guard
-([D63](#d63)) total over the policy. The list is credit policy alone: custody admission never reads it ([D65](#d65)).
-Cross-fund concentration caps are per-asset Reserve caps because Insurance recognises only NOAH. The `RecognisedCapital`
-query decomposes every row, attested-but-unlisted holdings included, so each zero credit shows its reason. Bank
-custody other than NOAH is not a subject of the decomposition and the fold reads no other balance: a listed name is an
-external symbol the account can never hold ([D70](#d70)), and the only other custody, registry-member paper, can never
-be recognised and is already published by Bank and by Treasury as self-held supply ([D66](#d66)).
+listed asset `min(haircut × attested open unimpaired quantity × rate, max_credit_per_noah × anoah_balance)`
+([D64](#d64)). The multiplication is the chain's one rate orientation, NOAH per unit ([D75](#d75)), and the conversion
+goes through `RateSet.Convert` like every other valuation on the chain rather than being re-derived here. Every rate
+comes from the Oracle, so a dark or stale feed zeroes exactly one asset's credit and recognition degrades to zero rather
+than to a frozen number, without exception: there is no governance-supplied fallback price, and a slow-cadence feed is
+served by the entry's own window. Both factors are strictly positive, because an entry granting no credit would be
+indistinguishable from no entry while still occupying the policy and raising no feed-guard claim; refusing zero makes
+every stored entry a live claim and the guard ([D63](#d63)) total over the policy. The list is credit policy alone:
+custody admission never reads it ([D65](#d65)). Cross-fund concentration caps are per-asset Reserve caps because
+Insurance recognises only NOAH. The `RecognisedCapital` query decomposes every row, attested-but-unlisted holdings
+included, so each zero credit shows its reason. Bank custody other than NOAH is not a subject of the decomposition and
+the fold reads no other balance: a listed name is an external symbol the account can never hold ([D70](#d70)), and the
+only other custody, registry-member paper, can never be recognised and is already published by Bank and by Treasury as
+self-held supply ([D66](#d66)).
 
 ## D59
 
@@ -517,9 +517,9 @@ closed.
 
 ## D64
 
-Recognition caps are each asset's share of the Reserve's NOAH balance: `EligibilityEntry.recognition_cap_ratio`, in
-(0, 1] with the policy's ratios summing to at most one, clips credit at `ratio × anoah_balance`. The denominator beats
-three alternatives. A flat `anoah` amount states a tolerance at one balance-sheet size and decays into a binding
+Recognition caps are each asset's share of the Reserve's NOAH balance: `EligibilityEntry.max_credit_per_noah`, in (0, 1]
+with the policy's values summing to at most one, clips credit at `max_credit_per_noah × anoah_balance`. The denominator
+beats three alternatives. A flat `anoah` amount states a tolerance at one balance-sheet size and decays into a binding
 constraint or a vacuous one — and a binding cap reopens the gap at full value, the acquisition-and-refill loop. A ratio
 of the capital requirement scales the ceiling with the size of the need rather than the fund's substance, so one
 corrupted attestation against an almost-empty fund could manufacture credit up to a share of a large target. A ratio of
@@ -535,8 +535,8 @@ them as multiples of Level 1, so no lower-tier holding can lift another's allowa
 a share of the reported total: governance sizes it as a multiple of the NOAH held, and sizes entries sharing a price
 series by their combined ratio ([D70](#d70)). The arithmetic is one checked multiplication per asset with no solve;
 `RecognisedCapital(ctx)` is a pure local read, nothing is threaded from Treasury, and the surplus a committee may burn
-is monotone in the requirement ([D61](#d61)). The query publishes each asset's resolved `effective_cap`, the absolute
-ceilings a debt-ceiling design would have governance push by hand.
+is monotone in the requirement ([D61](#d61)). The query publishes each asset's resolved `cap`, the absolute ceilings a
+debt-ceiling design would have governance push by hand.
 
 ## D65
 
@@ -584,20 +584,19 @@ members alone, and an off-chain NOAH holding is unnameable, since the prefix rul
 ## D70
 
 An external symbol's pricing feed derives from its prefix, unconditionally: `chain.ExternalFeed(symbol)` is a pure
-function, never derive-if-exists, which would silently re-point every external symbol on a series the moment a twin
-feed activates. The derivation is many-to-one — several tags share one series with per-entry haircut, cap, and window,
-so multi-custodian holdings need no aliasing machinery and no duplicate feed, and a holding honestly priced on a
-different series is a different prefix. Listing requires the derived feed Active — exactly, not merely scheduled: an
-entry's haircut and window are judgments about how a series behaves, voted blind if it has never printed a rate, and a
-series scheduled for removal has already passed its guard. This matches registration's rule, and Reserve genesis
-imports after `x/oracle` to check it. The feed guard maps entries to their series by a filtered pass over the policy
-and open positions through their resolved feed ([D63](#d63)). A deployment's acquired leg and any
-denomination-changing correction must name an external symbol or a registry member, closing the bare-issuable-name
-side door. The send restriction admits NOAH or members alone ([D65](#d65)), and the refusal is permanent: an
-external-shaped name is a class no mint path produces, genesis refuses, and movement valuation cannot price, and
-admitting it would open an on-chain external-custody lane [D59](#d59) forecloses, so on-chain custody of an external
-token will never be built. Governance sizes the combined cap ratio of the entries sharing a series rather than each
-row.
+function, never derive-if-exists, which would silently re-point every external symbol on a series the moment a twin feed
+activates. The derivation is many-to-one — several tags share one series with per-entry haircut, cap, and window, so
+multi-custodian holdings need no aliasing machinery and no duplicate feed, and a holding honestly priced on a different
+series is a different prefix. Listing requires the derived feed Active — exactly, not merely scheduled: an entry's
+haircut and window are judgments about how a series behaves, voted blind if it has never printed a rate, and a series
+scheduled for removal has already passed its guard. This matches registration's rule, and Reserve genesis imports after
+`x/oracle` to check it. The feed guard maps entries to their series by a filtered pass over the policy and open
+positions through their resolved feed ([D63](#d63)). A deployment's acquired leg and any denomination-changing
+correction must name an external symbol or a registry member, closing the bare-issuable-name side door. The send
+restriction admits NOAH or members alone ([D65](#d65)), and the refusal is permanent: an external-shaped name is a class
+no mint path produces, genesis refuses, and movement valuation cannot price, and admitting it would open an on-chain
+external-custody lane [D59](#d59) forecloses, so on-chain custody of an external token will never be built. Governance
+sizes the combined maximum credit per NOAH of the entries sharing a series rather than each row.
 
 ## D71
 

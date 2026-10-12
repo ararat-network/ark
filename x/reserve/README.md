@@ -59,10 +59,11 @@ typed deployment adapters cannot prove a custodian's wire-transfer holdings.
 eligibility policy, valuing quantity through Oracle and applying haircut and cap. The [economic recognition
 formula](../../docs/design/ECONOMIC_DESIGN.md#43-recognition) defines the financial meaning of those caps.
 
-Each asset's credit is the smaller of its haircut value and its cap ratio of the NOAH balance, floored to whole anoah.
-Caps read only the balance, so credits are independent: a misreported quantity or a wrong rate changes its own row and
-no other. The ratios sum to at most one, so recognised capital is at most twice the NOAH balance whatever is attested,
-and no NOAH means no asset credit. A missing or stale feed gives zero credit, never a fallback valuation.
+Each asset's credit is the smaller of its haircut value and its `max_credit_per_noah` × the NOAH balance, floored to
+whole anoah. Caps read only the balance, so credits are independent: a misreported quantity or a wrong rate changes its
+own row and no other. The policy's values sum to at most one, so recognised capital is at most twice the NOAH balance
+whatever is attested, and no NOAH means no asset credit. A missing or stale feed gives zero credit, never a fallback
+valuation.
 
 Treasury reads one capital number to size expansion gaps. Reserve reads Treasury's capital requirements through a
 reader installed after construction only where an action needs a bound. It does not acquire a second liability
@@ -78,8 +79,9 @@ no recognition credit. A cross-module registration guard would reintroduce tempo
 strings already guarantee.
 
 The feed always derives from the prefix: `abtc-cb` and `abtc-osl` use the same series with distinct custody policy.
-There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates.
-A different price series needs a different prefix. Governance sizes the combined cap ratios of entries sharing a series.
+There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates. A
+different price series needs a different prefix. Governance sizes the combined maximum credit per NOAH of entries
+sharing a series.
 
 Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
 that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;

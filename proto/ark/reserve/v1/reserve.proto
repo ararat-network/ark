@@ -83,10 +83,10 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // recognition_cap_ratio in (0, 1] bounds this asset's credit to ratio × the
-  // Reserve's NOAH balance, so a misreported holding adds at most its own cap
-  // and moves no other asset's. Ratios across the policy sum to at most one.
-  string recognition_cap_ratio = 3 [
+  // max_credit_per_noah in (0, 1] bounds this asset's credit to that many anoah
+  // per anoah the Reserve holds, so a misreported holding adds at most its own
+  // cap and moves no other asset's. The policy's values sum to at most one.
+  string max_credit_per_noah = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -197,15 +197,15 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string recognition_cap_ratio = 7 [
+  string max_credit_per_noah = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // effective_cap is recognition_cap_ratio × this block's Reserve NOAH balance:
-  // the anoah ceiling this asset's credit was clipped at.
-  cosmos.base.v1beta1.Coin effective_cap = 8 [
+  // cap is max_credit_per_noah × this block's Reserve NOAH balance: the anoah
+  // ceiling this asset's credit was clipped at.
+  cosmos.base.v1beta1.Coin cap = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];

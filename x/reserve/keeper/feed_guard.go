@@ -28,7 +28,7 @@ func (k Keeper) FeedReferents(ctx context.Context, denom string) ([]oracletypes.
 					"the Reserve's NOAH, on rates at most %ds old",
 				symbol,
 				entry.HaircutFactor,
-				entry.RecognitionCapRatio,
+				entry.MaxCreditPerNoah,
 				entry.MaxRateAge,
 			),
 		})

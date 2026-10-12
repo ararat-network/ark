@@ -81,16 +81,16 @@ func MsgSetRecognitionPolicyFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*typ
 		}
 
 		r := testData.Rand()
-		// Cap ratios must sum to at most one, so each entry takes an equal share
+		// Max credit per NOAH must sum to at most one, so each entry takes an equal share
 		// of a budget that already leaves room.
 		share := math.LegacyOneDec().QuoInt64(int64(len(denoms)) * 2)
 		entries := make([]types.EligibilityEntry, 0, len(denoms))
 		for _, denom := range denoms {
 			entries = append(entries, types.EligibilityEntry{
-				Denom:               denom,
-				HaircutFactor:       math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 100)), 2),
-				RecognitionCapRatio: share,
-				MaxRateAge:          uint64(r.IntInRange(1, int(types.MaxRecognitionRateAge))),
+				Denom:            denom,
+				HaircutFactor:    math.LegacyNewDecWithPrec(int64(r.IntInRange(1, 100)), 2),
+				MaxCreditPerNoah: share,
+				MaxRateAge:       uint64(r.IntInRange(1, int(types.MaxRecognitionRateAge))),
 			})
 		}
 

@@ -28,18 +28,18 @@ const (
 )
 
 // eligibility builds one policy entry. Both factors are ratios: the haircut
-// scales the holding's own value, the cap ratio its permitted share of
-// recognised capital itself.
-func eligibility(denom, haircut, capRatio string) types.EligibilityEntry {
-	return agedEligibility(denom, haircut, capRatio, testRateAge)
+// scales the holding's own value, max credit per NOAH caps the credit as a
+// multiple of the Reserve's NOAH balance.
+func eligibility(denom, haircut, perNoah string) types.EligibilityEntry {
+	return agedEligibility(denom, haircut, perNoah, testRateAge)
 }
 
-func agedEligibility(denom, haircut, capRatio string, maxRateAge uint64) types.EligibilityEntry {
+func agedEligibility(denom, haircut, perNoah string, maxRateAge uint64) types.EligibilityEntry {
 	return types.EligibilityEntry{
-		Denom:               denom,
-		HaircutFactor:       math.LegacyMustNewDecFromStr(haircut),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr(capRatio),
-		MaxRateAge:          maxRateAge,
+		Denom:            denom,
+		HaircutFactor:    math.LegacyMustNewDecFromStr(haircut),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr(perNoah),
+		MaxRateAge:       maxRateAge,
 	}
 }
 
@@ -209,7 +209,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 		s.Require().ErrorContains(err, "never priced")
 	})
 
-	s.Run("rejects cap ratios summing above one", func() {
+	s.Run("rejects max credit per NOAH summing above one", func() {
 		s.SetupTest()
 		_, err := s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
 			Authority: s.authority,
@@ -224,7 +224,7 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 
 	// At one, external credit may equal the NOAH balance: recognised capital
 	// doubles and goes no further.
-	s.Run("admits cap ratios summing to one", func() {
+	s.Run("admits max credit per NOAH summing to one", func() {
 		s.SetupTest()
 		_, err := s.msgServer.SetRecognitionPolicy(s.ctx, &types.MsgSetRecognitionPolicy{
 			Authority: s.authority,
@@ -247,8 +247,8 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 		// an entry exists to grant credit, so nothing short of positive is an
 		// entry at all.
 		const (
-			wantHaircut  = "haircut factor must be greater than zero and at most one"
-			wantCapRatio = "recognition cap ratio must be greater than zero and at most one"
+			wantHaircut = "haircut factor must be greater than zero and at most one"
+			wantPerNoah = "max credit per NOAH must be greater than zero and at most one"
 		)
 		tests := []struct {
 			name  string
@@ -258,8 +258,8 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 			{
 				name: "unset haircut",
 				entry: types.EligibilityEntry{
-					Denom:               testAsset,
-					RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.1"),
+					Denom:            testAsset,
+					MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.1"),
 				},
 				want: wantHaircut,
 			},
@@ -282,27 +282,27 @@ func (s *KeeperTestSuite) TestSetRecognitionPolicy() {
 				want:  "haircut factor must be greater than zero and at most one",
 			},
 			{
-				name: "unset cap ratio",
+				name: "unset max credit per NOAH",
 				entry: types.EligibilityEntry{
 					Denom:         testAsset,
 					HaircutFactor: math.LegacyOneDec(),
 				},
-				want: wantCapRatio,
+				want: wantPerNoah,
 			},
 			{
-				name:  "negative cap ratio",
+				name:  "negative max credit per NOAH",
 				entry: eligibility(testAsset, "1", "-0.000000000000000001"),
-				want:  wantCapRatio,
+				want:  wantPerNoah,
 			},
 			{
-				name:  "zero cap ratio",
+				name:  "zero max credit per NOAH",
 				entry: eligibility(testAsset, "1", "0"),
-				want:  wantCapRatio,
+				want:  wantPerNoah,
 			},
 			{
-				name:  "cap ratio above one",
+				name:  "max credit per NOAH above one",
 				entry: eligibility(testAsset, "1", "1.000000000000000001"),
-				want:  "recognition cap ratio must be greater than zero and at most one",
+				want:  wantPerNoah,
 			},
 		}
 
@@ -343,18 +343,18 @@ func (s *KeeperTestSuite) TestRecognisedCapitalPricesEligibleHoldings() {
 	s.Require().Equal(noahCoin(1_020), response.Recognised)
 	s.Require().Equal(noahCoin(1_000), response.NoahBalance)
 	s.Require().Equal([]types.AssetRecognition{{
-		Denom:               testAsset,
-		Eligible:            true,
-		AttestedQuantity:    math.NewInt(80),
-		ImpairedQuantity:    math.ZeroInt(),
-		Rate:                math.LegacyNewDecWithPrec(5, 1),
-		HaircutFactor:       math.LegacyMustNewDecFromStr("0.5"),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.1"),
+		Denom:            testAsset,
+		Eligible:         true,
+		AttestedQuantity: math.NewInt(80),
+		ImpairedQuantity: math.ZeroInt(),
+		Rate:             math.LegacyNewDecWithPrec(5, 1),
+		HaircutFactor:    math.LegacyMustNewDecFromStr("0.5"),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.1"),
 		// A tenth of the 1_000 NOAH balance: the ceiling the credit was
 		// measured against, reported even when it does not bind.
-		EffectiveCap: noahCoin(100),
-		Credit:       noahCoin(20),
-		MaxRateAge:   testRateAge,
+		Cap:        noahCoin(100),
+		Credit:     noahCoin(20),
+		MaxRateAge: testRateAge,
 	}}, response.Assets)
 }
 
@@ -511,7 +511,7 @@ func (s *KeeperTestSuite) TestRecognitionCapsEachAssetIndependently() {
 	s.attest(xdrExternal, 1_000_000_000)
 	s.Require().Equal(math.NewInt(190), s.recognised())
 	s.Require().Equal(noahCoin(50), row(usdExternal).Credit)
-	s.Require().Equal(noahCoin(50), row(usdExternal).EffectiveCap)
+	s.Require().Equal(noahCoin(50), row(usdExternal).Cap)
 	s.Require().Equal(noahCoin(40), row(xdrExternal).Credit)
 }
 
@@ -669,16 +669,16 @@ func (s *KeeperTestSuite) TestRecognisedCapitalDecomposesAttestedCustodyOnly() {
 	// not present at zero.
 	s.Require().Equal([]types.AssetRecognition{
 		{
-			Denom:               testAsset,
-			Eligible:            false,
-			AttestedQuantity:    math.NewInt(7),
-			ImpairedQuantity:    math.ZeroInt(),
-			Rate:                math.LegacyZeroDec(),
-			HaircutFactor:       math.LegacyZeroDec(),
-			RecognitionCapRatio: math.LegacyZeroDec(),
-			EffectiveCap:        noahCoin(0),
-			Credit:              noahCoin(0),
-			MaxRateAge:          0,
+			Denom:            testAsset,
+			Eligible:         false,
+			AttestedQuantity: math.NewInt(7),
+			ImpairedQuantity: math.ZeroInt(),
+			Rate:             math.LegacyZeroDec(),
+			HaircutFactor:    math.LegacyZeroDec(),
+			MaxCreditPerNoah: math.LegacyZeroDec(),
+			Cap:              noahCoin(0),
+			Credit:           noahCoin(0),
+			MaxRateAge:       0,
 		},
 	}, response.Assets)
 }

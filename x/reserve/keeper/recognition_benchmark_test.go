@@ -159,10 +159,10 @@ func newRecognitionBenchFixture(tb testing.TB, denomCount, positionCount int) *r
 	ratio := math.LegacyMustNewDecFromStr("0.9").QuoInt64(int64(denomCount))
 	for _, denom := range denoms {
 		if err := keeper.RecognitionPolicy.Set(ctx, denom, types.EligibilityEntry{
-			Denom:               denom,
-			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
-			RecognitionCapRatio: ratio,
-			MaxRateAge:          types.MaxRecognitionRateAge,
+			Denom:            denom,
+			HaircutFactor:    math.LegacyMustNewDecFromStr("0.8"),
+			MaxCreditPerNoah: ratio,
+			MaxRateAge:       types.MaxRecognitionRateAge,
 		}); err != nil {
 			tb.Fatal(err)
 		}
