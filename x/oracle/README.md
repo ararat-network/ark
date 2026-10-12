@@ -85,11 +85,12 @@ start height of 0 as well, since InitChain runs at height zero for a chain start
 
 The implementation is in `types/feeds.go`, `keeper/feeds.go`, and `keeper/feed_guards.go`.
 
-**Why feeds are not asset lifecycle.** A priced observation is not always an asset: a basket-indexed flagship
-currency needs component prices that are observations, not assets, and composite reporting in the sidecar would
-make every weight change a fleet coordination event; reserve holdings such as gold need prices and will never be
-lifecycle-managed assets; and once a basket component, a reserve position, and an asset can share one price,
-tying its existence to one asset's lifecycle is wrong by construction. The layering:
+**Why feeds are not asset lifecycle.** A priced observation is not always an asset: Orbis, the planned basket-indexed
+flagship currency ([Future changes §3](../../docs/direction/FUTURE_CHANGES.md#3-basket-index-assets)), needs component
+prices that are observations, not assets, and composite reporting in the sidecar would make every weight change a fleet
+coordination event; reserve holdings such as gold need prices and will never be lifecycle-managed assets; and once a
+basket component, a reserve position, and an asset can share one price, tying its existence to one asset's lifecycle is
+wrong by construction. The layering:
 
     x/oracle   observations: feed registry, reporting, aggregation, rates, freshness, pruning, and the
                protocol reference (it names a feed, and every rule it has is a feed rule)

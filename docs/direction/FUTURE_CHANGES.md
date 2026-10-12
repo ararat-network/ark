@@ -19,9 +19,9 @@ existing messages.
 - Current SDK: v0.54.4.
 - Trigger: an upstream Wasmd release that compiles against SDK v0.55 without a fork or replacement directives.
 
-The blocker is Wasmd's imports of the SDK's `x/params`, which v0.55 drops, in four files: Wasmd compiles against
-v0.54.4 but not v0.55.0, and Ark does not carry a fork. Recheck that dependency gate when revisiting the upgrade, then
-make the move against compatible upstream dependencies.
+The blocker is Wasmd's imports of the SDK's `x/params`, which v0.55 drops, in four files: Wasmd compiles against v0.54.4
+but not v0.55.0, and Ark does not carry a fork. Recheck that dependency gate when revisiting the upgrade, then make the
+move against compatible upstream dependencies.
 
 SDK v0.55 also introduces consensus-key rotation. Keep persistent validator state keyed by operator address; consensus
 addresses are rotatable credentials and belong at attribution boundaries. No Ark state is keyed by consensus address.
@@ -36,9 +36,9 @@ swap.
 - Trigger: block execution time is a measured bottleneck at the block gas limit. Then the prerequisites, audit, and
   benchmarks below.
 
-Enabling parallel execution is a separate step from any SDK bump, with the sequential executor as the default until
-the prerequisites in §2.4, the audit, and the benchmarks justify rollout. Recheck the upstream API described below and
-Ark's transaction paths against the versions selected for the upgrade.
+Enabling parallel execution is a separate step from any SDK bump, with the sequential executor as the default until the
+prerequisites in §2.4, the audit, and the benchmarks justify rollout. Recheck the upstream API described below and Ark's
+transaction paths against the versions selected for the upgrade.
 
 ### 2.1. Keep the block gas meter off
 
@@ -64,9 +64,9 @@ worker-count normalisation (#26591), and an `x/distribution` fix for recovered p
 (#26518). Only v0.55.0 carries the `CancelAll` fix (#25893), `ExecuteBlock` input validation (#26592), and two
 performance changes: `Has()` existence tracking (#26467) and pre-state caching (#25909).
 
-#25893 is the gate. Optimistic execution abandons a mismatched proposal by cancelling its context, and BaseApp waits
-for the abandoned run before executing the real block. Without the fix, a cancelled STM run can re-suspend on an
-ESTIMATE mark and never return, stalling that node. The performance changes matter only to the benchmark.
+#25893 is the gate. Optimistic execution abandons a mismatched proposal by cancelling its context, and BaseApp waits for
+the abandoned run before executing the real block. Without the fix, a cancelled STM run can re-suspend on an ESTIMATE
+mark and never return, stalling that node. The performance changes matter only to the benchmark.
 
 Selecting an executor is a per-node choice with identical state-transition results. It is not consensus-breaking on its
 own — the gas meter interaction in §2.1 is what makes it dangerous to leave half-decided.
@@ -82,10 +82,10 @@ blockexec.Apply(app.BaseApp, appOpts, app.GetStoreKeys(), app.txConfig.TxDecoder
 ```
 
 The list must be complete. The STM view finds each store's slot with a plain map read, so a key missing from the list
-silently reads and writes slot 0, the alphabetically first KV store. Treasury's gas tally and Market's accumulators
-are transient stores written inside transactions. Passing `kvStoreKeys()`, or simapp's KV-only `keys`, would commit
-their writes into another module's store and diverge the app hash from sequential nodes. The sequential executor
-ignores the list, so only the equivalence replay in §2.6 catches an omission.
+silently reads and writes slot 0, the alphabetically first KV store. Treasury's gas tally and Market's accumulators are
+transient stores written inside transactions. Passing `kvStoreKeys()`, or simapp's KV-only `keys`, would commit their
+writes into another module's store and diverge the app hash from sequential nodes. The sequential executor ignores the
+list, so only the equivalence replay in §2.6 catches an omission.
 
 The final argument resolves the fee denom from the multistore at runtime; it feeds the pre-estimate path, which
 speculates one `(fee payer, denom)` balance as each transaction's fee-payment write set before execution. Ark has no
@@ -114,20 +114,20 @@ an upgrade:
   already saturates rather than failing, so nothing halt-class moves into the EndBlocker.
 - **Fee and tax collectors.** Every fee-paying transaction credits the fee collector in the ante and, when taxed, the
   tax collector in the post handler. The finalisation-only tax collection amendment in
-  [tax commitment](../../app/ante/README.md#transfer-tax-commitment-and-rollback) leaves this unchanged. Upstream
-  bank's virtual accounts (`SendCoinsFromAccountToModuleVirtual`, credited by bank's EndBlocker from an object store)
-  remove both keys. Treasury's reward funding reads both collectors in its EndBlocker, so bank's EndBlocker must then
-  run ahead of Treasury's. `app/app_config.go` currently marks that order as carrying no intent.
+  [tax commitment](../../app/ante/README.md#transfer-tax-commitment-and-rollback) leaves this unchanged. Upstream bank's
+  virtual accounts (`SendCoinsFromAccountToModuleVirtual`, credited by bank's EndBlocker from an object store) remove
+  both keys. Treasury's reward funding reads both collectors in its EndBlocker, so bank's EndBlocker must then run ahead
+  of Treasury's. `app/app_config.go` currently marks that order as carrying no intent.
 
 One conflict is inherent and stays:
 
-- **Market orders.** Every `MsgSell` or `MsgBuy` with a NOAH leg writes the single `ArkPoolDelta` item and the
-  block's transient expansion or redemption accumulators, whatever the stablecoin, so those orders serialise against
-  each other. Only stablecoin-to-stablecoin crosses skip the pool. The accumulators keep their running totals: they
-  fail the contributing transaction on overflow rather than leaving it to EndBlock.
+- **Market orders.** Every `MsgSell` or `MsgBuy` with a NOAH leg writes the single `ArkPoolDelta` item and the block's
+  transient expansion or redemption accumulators, whatever the stablecoin, so those orders serialise against each other.
+  Only stablecoin-to-stablecoin crosses skip the pool. The accumulators keep their running totals: they fail the
+  contributing transaction on overflow rather than leaving it to EndBlock.
 
-Oracle prices arrive in vote extensions and are aggregated in the ABCI pipeline (`abci/oracle`), not in transactions,
-so they are unaffected either way.
+Oracle prices arrive in vote extensions and are aggregated in the ABCI pipeline (`abci/oracle`), not in transactions, so
+they are unaffected either way.
 
 ### 2.5. Speculative execution hygiene
 
@@ -152,19 +152,18 @@ handler must tolerate being executed more than once for one logical transaction:
    validation (`cmd/arkd/cmd/config.go`); lift that refusal only in this step.
 3. Land the §2.4 prerequisites at an upgrade.
 4. Audit msg-server paths against §2.5 — principally for panics on absent state.
-5. Replay a recorded block range under both executors, with pre-estimation on and off, and require identical app
-   hashes and transaction results. Exercise optimistic-execution aborts on a testnet with `block-stm` selected.
-6. Benchmark a representative transaction mix (Wasm, Market orders, transfers, governance votes) sequentially, then
-   with `block-executor = "block-stm"`, on a non-validator node.
-7. Roll out to validators only after the benchmark justifies it. Confirm no node anywhere re-enables the block gas
-   meter (§2.1).
+5. Replay a recorded block range under both executors, with pre-estimation on and off, and require identical app hashes
+   and transaction results. Exercise optimistic-execution aborts on a testnet with `block-stm` selected.
+6. Benchmark a representative transaction mix (Wasm, Market orders, transfers, governance votes) sequentially, then with
+   `block-executor = "block-stm"`, on a non-validator node.
+7. Roll out to validators only after the benchmark justifies it. Confirm no node anywhere re-enables the block gas meter
+   (§2.1).
 
 ## 3. Basket index assets
 
-- Status: designed, not built. Launch keeps `axdr`, a voted feed, as the protocol reference and lists no
-  basket asset.
-- Trigger: governance intends to list the flagship currency, a basket-priced asset that later becomes the protocol
-  reference. Build the whole feature then; nothing below is worth shipping inert.
+- Status: designed, not built. Launch keeps `axdr`, a voted feed, as the protocol reference and lists no basket asset.
+- Trigger: governance intends to list Orbis (`aorbis`), the flagship currency: a basket-priced asset that later becomes
+  the protocol reference. Build the whole feature then; nothing below is worth shipping inert.
 
 ### 3.1 The design
 
@@ -172,20 +171,20 @@ A basket is a derived feed owned by `x/oracle`: a denomination in the priced-den
 chain from voted component feeds and is never voted itself. Composition runs in the preblock after the tally writes
 component rates, as `Σ quantityᵢ × rate[componentᵢ]`, through the ordinary rate store, so every consumer reads it
 unchanged. The stored timestamp and height are the oldest input's, so under any consumer's window the basket is exactly
-as stale as its weakest component; a component with no stored rate skips the write. A sum above `MaxExchangeRate`
-omits the write rather than halting, as the tally omits a derived price above it. Domain caps cannot make that
-unreachable: quantities summing above one, as in any currency basket, let in-range component rates compose to an
-out-of-range sum. The caps on component count and quantity do keep every product and the sum representable, so the
-unrepresentable case is unreachable and its checked arithmetic is the backstop.
+as stale as its weakest component; a component with no stored rate skips the write. A sum above `MaxExchangeRate` omits
+the write rather than halting, as the tally omits a derived price above it. Domain caps cannot make that unreachable:
+quantities summing above one, as in any currency basket, let in-range component rates compose to an out-of-range sum.
+The caps on component count and quantity do keep every product and the sum representable, so the unrepresentable case is
+unreachable and its checked arithmetic is the backstop.
 
 A defined basket answers `FeedPhase` Active, so asset registration, the reference re-point, and Reserve eligibility
 entries accept it with no change to those modules. The basket pins its component feeds against removal, checked
 oracle-internally ahead of the registered guards as the reference denom is; the basket itself is removable only when
 `requireFeedUnreferenced` passes. Creation and rebalance require every component, kept or added, to answer
 `FeedPhaseActive`. A feed already `Removing` passed its removal check before the basket existed, and its rate is pruned
-when the removal activates, which the pin cannot stop. `MsgAddFeed` refuses a basket denom and basket creation refuses
-a voted feed denom: one namespace, two disjoint sets. The vote target set, the vote-extension codec, and the sidecar
-never see a basket.
+when the removal activates, which the pin cannot stop. `MsgAddFeed` refuses a basket denom and basket creation refuses a
+voted feed denom: one namespace, two disjoint sets. The vote target set, the vote-extension codec, and the sidecar never
+see a basket.
 
 Composition changes are in place and value-neutral. `MsgCreateBasket` takes literal quantities and requires the basket
 not to exist; nothing references a new basket, so its starting value is free. `MsgRebalanceBasket` takes value shares
@@ -208,9 +207,9 @@ part of the basket at par with what mints it, and the priced-denom rule already 
 
 ### 3.2 Identifiers
 
-Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 8, the next free numbers in `x/oracle`.
-Messages `MsgCreateBasket`, `MsgRebalanceBasket`, `MsgRemoveBasket`; queries `Basket`, `Baskets`; constants
-`MaxBaskets`, `MaxBasketComponents`, `MaxBasketQuantity`.
+Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 8, the next free numbers in `x/oracle`. Messages
+`MsgCreateBasket`, `MsgRebalanceBasket`, `MsgRemoveBasket`; queries `Basket`, `Baskets`; constants `MaxBaskets`,
+`MaxBasketComponents`, `MaxBasketQuantity`.
 
 ### 3.3 Delivery after launch
 
@@ -219,14 +218,14 @@ Additive: a consensus-version bump on `x/oracle` with a no-op migration, one new
 no sidecar release. Docs that move with it: `x/oracle/README.md`, `FUTURE_CHANGES.md`, `x/asset/README.md`,
 `ECONOMIC_DECISIONS.md` D22, `THREAT_MODEL.md` §2.1 and §2.7, both ABCI READMEs.
 
-### 3.4 Making the flagship the reference
+### 3.4 Making Orbis the reference
 
-Create the basket, let it print, register the asset, then `MsgSetReferenceDenom` re-points from `axdr` to it, running
-every wired rebaser at one fresh cross: Market's pool; Treasury's tax cap, base-fee floor and live price, factor
-table, and exposure anchor; Disbursement's compensation cap, award values and charges, term usage, and allowance; and Claims'
-committee claim limit, claim charges, and term usage. The asset's lifecycle stays
-independent of the reference, as it is for any denomination today. Once unreferenced, `axdr` may be removed as a feed.
-Later rebalances of the reference need no rebase, because the basket's NOAH value is continuous across them.
+Create the `aorb` basket, let it print, register the Orbis asset, then `MsgSetReferenceDenom` re-points from `axdr` to
+it, running every wired rebaser at one fresh cross: Market's pool; Treasury's tax cap, base-fee floor and live price,
+factor table, and exposure anchor; Disbursement's compensation cap, award values and charges, term usage, and allowance;
+and Claims' committee claim limit, claim charges, and term usage. The asset's lifecycle stays independent of the
+reference, as it is for any denomination today. Once unreferenced, `axdr` may be removed as a feed. Later rebalances of
+the reference need no rebase, because the basket's NOAH value is continuous across them.
 
 ## Protocol monitoring tooling
 
