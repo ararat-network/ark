@@ -2,7 +2,7 @@
 # Go version; Go-only workflows read go.mod directly.
 [tools]
 go = "1.27.2"
-golangci-lint = "2.13.2"
+golangci-lint = "2.14.0"
 # goreleaser reads one tag per run and its tag handling has shifted between
 # minors, so `make release-pricefeed` is pinned to what it was written against.
 goreleaser = "2.18.0"
