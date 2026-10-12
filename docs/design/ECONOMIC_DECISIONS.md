@@ -167,7 +167,7 @@ unit is the Oracle's protocol reference, which launches as `axdr`: `InitGenesis`
 refuses a denomination change, and only Oracle's `MsgSetReferenceDenom` moves it, rebasing the cap as a quantity in the
 same transaction ([D76](#d76)). Treasury's cap and Market's pool share the unit but not the amount, so changing either
 amount needs no update to the other, and a re-point needs no Treasury proposal. One owner of the unit keeps the two from
-drifting into different units ([current contract](ECONOMIC_DESIGN.md#84-caps-and-the-reference-denomination)).
+drifting into different units ([current contract](ECONOMIC_DESIGN.md#53-calculation-and-caps)).
 
 ## D22
 
@@ -178,7 +178,7 @@ Oracle's `MsgSetReferenceDenom`, which requires the successor's feed Active and 
 with every other wired `ReferenceRebaser`, Treasury's, Disbursement's, and Claims', in one transaction or fails whole. Treasury
 never drives or intermediates the pool transition. The delta never exists without its unit being observable, and the
 pool's unit decides no stablecoin's convertibility, so a re-denomination changes no eligibility ([current
-contract](ECONOMIC_DESIGN.md#310-live-pool-unit-transition)).
+contract](ECONOMIC_DESIGN.md#34-the-pool-unit)).
 
 ## D23
 
@@ -395,7 +395,7 @@ schema beside them.
 `claims_insurance` custody account. Treasury keeps liability valuation, all three fund target ratios, the expansion
 waterfall, tax, and reward funding, and reads Insurance through the one-way `ClaimsKeeper.RecognisedCapital`
 interface. The boundary is the capital accounting contract of
-[economic design §7.3](ECONOMIC_DESIGN.md#73-recognition): Treasury owns `required_capital`, the operating module owns
+[economic design §4.3](ECONOMIC_DESIGN.md#43-recognition): Treasury owns `required_capital`, the operating module owns
 `recognised_capital`, and held assets satisfy a requirement without defining it. `x/reserve` follows the same pattern
 ([D55](#d55)), so Treasury holds one mandate, the one-mandate-per-module convention `x/security`, `x/asset`, and
 `x/market` also follow.
@@ -1799,7 +1799,7 @@ fixed-price cycle, or split residual-mint amplification for one to bound.
 ## P3
 
 A reference re-point applies the pool amount derived from one fresh Oracle snapshot
-([economic design §3.10](ECONOMIC_DESIGN.md#310-live-pool-unit-transition)): `MsgSetReferenceDenom` carries no expected
+([economic design §3.4](ECONOMIC_DESIGN.md#34-the-pool-unit)): `MsgSetReferenceDenom` carries no expected
 amount and nothing compares one against a rejection threshold, and Market emits the old and applied pool state in
 `EventPoolUpdated` for audit.
 

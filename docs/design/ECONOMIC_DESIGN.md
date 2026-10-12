@@ -1,24 +1,22 @@
 # Economic design
 
-This reference explains Ark's current economic model: ownership, custody, conversion flows, liability, capital targets,
-fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds and authority move.
-[Decision history](ECONOMIC_DECISIONS.md) owns D/P records; [genesis](../governance/GENESIS.md) owns launch settings;
-[governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing them.
+This reference states Ark's economic contract between modules: ownership, custody, conversion flows, liability,
+capital targets, fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds
+and authority move. [Economic decisions](ECONOMIC_DECISIONS.md) holds each rule's reason under its D/P identifier; the
+[subsystem READMEs](../../app/README.md#module-entry-points) own each module's internals; [genesis](../governance/GENESIS.md)
+owns launch settings; [governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing
+them.
 
 ## Contents
 
 - [1. The design in one page](#1-the-design-in-one-page)
-- [2. Reading this design](#2-reading-this-design)
-- [3. Terminology](#3-terminology)
-- [4. Ownership boundaries](#4-ownership-boundaries)
-- [5. Accounts and custody](#5-accounts-and-custody)
-- [6. Conversion flows](#6-conversion-flows)
-- [7. Capital: liability, targets, recognition](#7-capital-liability-targets-recognition)
-- [8. Transfer tax](#8-transfer-tax)
-- [9. Validator and Oracle funding](#9-validator-and-oracle-funding)
-- [10. Authority and reporting](#10-authority-and-reporting)
-- [11. Transfer surfaces: Wasm](#11-transfer-surfaces-wasm)
-- [12. Related references](#12-related-references)
+- [2. Ownership and custody](#2-ownership-and-custody)
+- [3. Conversion](#3-conversion)
+- [4. Capital](#4-capital)
+- [5. Transfer tax and fees](#5-transfer-tax-and-fees)
+- [6. Validator and Oracle funding](#6-validator-and-oracle-funding)
+- [7. Authority](#7-authority)
+- [8. Related references](#8-related-references)
 
 ## 1. The design in one page
 
@@ -31,31 +29,28 @@ Three funds stand behind the stablecoins, each a module account holding NOAH and
 - **The Redemption Buffer** is conversion inventory. Each redemption draws the Buffer's coverage share of its quoted
   NOAH from inventory and mints the rest (D4), so the Buffer recycles NOAH retained from earlier expansions instead of
   letting every redemption dilute.
-- **The strategic Reserve** is governed emergency capacity. It is never debited by a redemption; governance may commit
-  NOAH from it to the Buffer, and a committee may deploy it under a bounded mandate (D16, D27, D56).
+- **The Strategic Reserve** is governed emergency capacity. It never pays a redeemer; governance may commit NOAH from
+  it to the Buffer, and a committee may deploy it under a bounded mandate (D16, D27, D56).
 - **Insurance** pays covered losses through recorded claims under a governance-owned mandate (D15, D30).
 
 The funds are filled by expansion. When NOAH converts to a stablecoin, Market escrows the gross offer and Treasury
 routes it once per block down a waterfall: Buffer gap, then Reserve gap, then Insurance gap, then the overflow is
-burned (D5, D33). Spread and dust travel with the principal (D6). Each fund's target is a governed ratio of the
-stablecoin liability, scaled by a bounded stress multiplier (D72), and targets only decide where new principal goes:
-they never trigger a mint, a trade, or a withdrawal (D7).
+burned (D5, D33). Each fund's target is a governed ratio of the stablecoin liability, scaled by a bounded stress
+multiplier (D72), and targets only decide where new principal goes: they never trigger a mint, a trade, or a
+withdrawal (D7).
 
 Security and the price feed are funded from a separate circuit. Gas fees flow through Distribution as usual. A fixed
 transfer tax on every user-facing stablecoin transfer (D18) accumulates for one funding window, then meets the Oracle
 reward target first and any validator gap second, with a genesis-seeded, non-minting subsidy pool covering what
 remains (D9 to D12). No controller adapts the tax rate, the targets, or the Buffer share to prices or revenue.
 
-Authority is split by role. Governance holds every unbounded power. One threshold-multisig committee per module holds
-a bounded, time-scoped mandate: the economic-policy committee moves the reversible levers between governance-set
-bounds; the Claims committee submits claims within a term allowance; the Reserve committee deploys and keeps the
-books; Market's conversion committee moves spread and Tobin policy inside a corridor; the grants committee
-appoints the registrar and awards compensation within a term allowance; the registrar, a single key the grants
-committee appoints under its mandate, registers members within the open tranche (D120). Every role has its own address
-and its own messages, and none holds general Bank authority (D31, D36).
+Authority is split by role. Governance holds every unbounded power. Each module's committee holds a bounded,
+time-scoped mandate on its own address with its own messages, and none holds general Bank authority (D31, D36); §7.2
+tabulates them.
 
 Market's virtual pool is denomination-bearing and launches in `axdr`; one governance message can re-denominate it live
-to a future basket without changing which stablecoins may be converted (D22, D23).
+to Orbis, the planned basket currency ([Future changes §3](../direction/FUTURE_CHANGES.md#3-basket-index-assets)),
+without changing which stablecoins may be converted (D22, D23).
 
 ### 1.1 What the feedback loop is, and is not
 
@@ -65,131 +60,28 @@ The design keeps a bounded endogenous response to conversion flow and removes ev
   the share the Buffer's coverage does not fund. The coverage draw recycles retained NOAH without a first-come
   depletion cliff.
 - The response is block-granular (D33). Every expansion in a block allocates under one liability valuation and every
-  redemption draws at one coverage ratio, settled once from Market's EndBlocker. Nothing about a quote, payout, or
-  spread changes with it; what it removes is intra-block path dependence, so there is no within-block ordering to
-  compete for.
+  redemption draws at one coverage ratio, so there is no within-block ordering to compete for. No quote, payout, or
+  spread changes with it.
 - The Reserve is never an automatic Market source. Governance commits NOAH to the Buffer by proposal; Market cannot
-  request, size, or trigger it, and no redeemer is paid from the Reserve directly.
+  request, size, or trigger it.
 - Virtual-pool pricing penalises sustained one-way flow and remembers imbalance; time-based recovery limits how fast
   cheap capacity returns.
 - No adaptive reward target, tax-rate controller, price-reactive Buffer share, or automatic Reserve trigger exists. The
-  reward waterfall allocates only tax already collected and subsidy already issued, inside hard balance bounds.
-- The exposure multiplier (D72) is a bounded target controller and leaves every claim above intact. It moves one
-  number, the liability basis the three targets are sized on, which decides how much expansion principal is retained
-  rather than burned and how much capital a committee may move or destroy. It mints nothing, triggers no trade, and
-  changes no quote, spread, payout, or draw, since the draw's basis stays raw by D73. It is floored at one, so its
-  inert state is exactly the unscaled sizing, capped by governance, and rate-limited per update.
+  reward waterfall allocates only tax already collected and subsidy already issued.
+- The exposure multiplier (D72) is the one controller, and a bounded one. It moves only the liability basis the three
+  targets are sized on: how much expansion principal is retained rather than burned, and how much capital a committee
+  may move or destroy. It mints nothing, triggers no trade, and changes no quote, spread, payout, or draw (D73). It is
+  floored at one, capped by governance, and rate-limited per update.
 
-A Reserve-to-Buffer commitment is a reclassification of NOAH that already exists, not a controller: the Reserve falls
-by the amount, the Buffer rises by it, and supply, liabilities, quotes, spreads, and pool state do not move. The lower
-Reserve balance reopens its passive gap, so later expansion principal can rebuild it under the ordinary waterfall.
-That refill cannot cause expansion or mint NOAH, but repeated commitments delay Insurance funding and overflow burn,
-which each proposal states.
+The Buffer and the virtual pool therefore dampen and rate-limit Terra-style supply feedback; they do not remove it.
+Buffer-funded redemption releases dormant NOAH into circulation, and residual minting raises supply. The Buffer reduces
+dilution; it is not collateral, backing, or solvency capital, and the protocol never presents it as one (D19).
+Removing the feedback outright would mean refusing any uncovered output, a redemption gate with a strong first-mover
+incentive; Ark keeps unconditional settlement instead.
 
-The Buffer and the virtual pool therefore buffer, dampen, and rate-limit Terra-style supply feedback. They do not
-remove it. Buffer-funded redemption releases dormant NOAH into circulation, while residual minting raises both
-circulating and total supply. The Buffer reduces dilution; it is not collateral, backing, or solvency capital, and the
-protocol never presents it as one (D19). Eliminating the feedback outright would mean retaining enough NOAH to fund
-every redemption and refusing any uncovered output, which is a redemption gate and a strong first-mover incentive. Ark
-keeps unconditional settlement with a continuous proportional minting response instead.
+## 2. Ownership and custody
 
-## 2. Reading this design
-
-Read terminology, ownership, and custody before the conversion and funding flows. The sections below describe the
-current economic contract. [Economic decisions](ECONOMIC_DECISIONS.md) holds each rule's reason under its D/P identifier;
-[genesis](../governance/GENESIS.md) owns the launch values. Local implementation and rationale live in the
-[subsystem READMEs](../../app/README.md#module-entry-points).
-
-## 3. Terminology
-
-### 3.1 Routine issuance
-
-NOAH minted independently of a user conversion: staking inflation, block rewards, Oracle rewards, seigniorage, a
-fund topping itself up to target, deficit funding. None exists on Ark.
-
-### 3.2 Conversion issuance
-
-NOAH or a stablecoin minted as the output of an atomic Market conversion. A redemption burns the offered stablecoin at
-once; an expansion holds its NOAH offer for the block's waterfall, which burns only the overflow (§6.1). This is the
-only issuance path, and only Market has it.
-
-### 3.3 Expansion principal
-
-For a NOAH-to-stablecoin conversion, the NOAH value of the final integer stablecoin output after spread, converted at
-the quote's own rates and rounded down. Market derives it in the conversion, because the conversion already holds
-those rates to charge the spread, and refuses a conversion whose principal exceeds the gross offer: the stablecoin
-minted is never worth more than the NOAH offered (D33). The waterfall runs on the gross offer rather than on this
-figure (D6), so the principal is the eligibility bound, not the allocation input.
-
-### 3.4 Spread and dust
-
-The gross NOAH offered less the expansion principal: the spread the quote charged plus integer dust. It enters the
-waterfall with the principal, fund targets first and overflow burned (D6). With the funds at target it burns exactly as
-an unconditional burn would have; with a fund short it is capital arriving as the requirement rises. Redemption spread
-is NOAH never issued and stays unissued.
-
-### 3.5 Subsidy pool
-
-The `treasury_subsidy_pool` account's NOAH. Seeded at genesis, it has no mint permission and covers only the aggregate
-gap between organic validator and Oracle funding and the accumulated per-block targets at each completed funding
-window. Anyone may extend it by sending `anoah`; a deposit changes neither total supply nor the targets, only how long
-coverage lasts. There is no refill, target balance, refund, or conversion path (D9, D25). Governance alone may return
-idle balance to the community pool through `MsgReturnSubsidy`, which names an amount and a minimum remaining balance
-and fails if the return would leave less; there is no floor parameter, automatic sweep, or committee power over it
-(D83).
-
-### 3.6 Redemption Buffer
-
-The `treasury_redemption_buffer` account's NOAH: inventory retained from earlier expansions. Each redemption receives
-the Buffer's pre-trade coverage share of its quoted output, measured against the claimable liability: every
-obligation the chain can value. That is fresh-priced supply, suspended supply under a settlement plan from the block
-the plan opens, and a stale member at its last known rate. Only supply the chain cannot value, a member never priced
-or suspended supply without a plan, is excluded and disclosed, so a suspension elsewhere never switches the Buffer off
-for the healthy exits it exists to dampen, and an outage never pays an absent member's share away to whoever happens to
-be redeeming (D4). It is conversion inventory, not collateral, solvency capital, or a first-come
-pool. Anyone may deposit `anoah`; a deposit raises inventory under the same formula and may reduce later minting, but
-changes no quote, spread, minimum receive, or eligibility and creates no claim on the fund.
-
-### 3.7 Strategic Reserve
-
-The `strategic_reserve` account, owned by `x/reserve`. It is never debited by a redemption and never pays a redeemer,
-a reward, or a claim (D16). Its outbound paths are the governed commitments to the Buffer and to Insurance, the
-committee's deployments and bookkeeping under a bounded mandate, and burns split by what they can destroy (D27, D56,
-D61). The account admits NOAH and asset-registry members by membership alone (D65, D70): Ark paper is protocol
-liability wherever it sits and the Reserve is the one account whose committee can retire it. External symbols are
-refused at the restriction, permanently; an external holding is attested at its destination and never sits in the
-account. Derecognised transfer tax routed here at settlement is inert custody: it earns no credit and waits for a
-governed burn.
-
-### 3.8 Insurance
-
-The `claims_insurance` account, owned by `x/claims`, used only for covered-loss payments through recorded claims. It
-is never a redemption source. It is funded in `anoah`, pays claims in NOAH or any active registry asset, and holds the
-registry paper a stablecoin claim buys through Market when it is submitted (D140). The Claims committee is an ordinary
-threshold multisig appointed for one termed, half-open window of block time with a fixed gross claim limit in the
-reference unit; it signs typed submissions and cancellations and holds no custody, module permission, or generic send. Governance owns the mandate,
-submits without consuming the committee's allowance, and may cancel any pending claim during the shared cancellation
-period, which is an `x/claims` parameter (D30, D38, D54).
-
-### 3.9 Market pool denomination
-
-Market's `BasePool` is a denomination-bearing `sdk.DecCoin` and `ArkPoolDelta` is a signed decimal in that unit; the
-delta never exists without its unit being observable. The pool unit is the protocol reference denomination, which
-`x/oracle` owns and which launches as `axdr`. It is not Treasury's liability numeraire, which is NOAH throughout
-(D24); a stablecoin's convertibility does not depend on it; and Treasury's tax-cap reference shares the unit but not
-the amount (D21, D22).
-
-### 3.10 Live pool-unit transition
-
-Re-pointing the reference is one Oracle message, `MsgSetReferenceDenom`, which runs every wired consumer's rebase,
-Market's, Treasury's, and Disbursement's, in the same transaction or fails whole. Market converts the stored `BasePool` into the new unit at one fresh Oracle
-snapshot and rescales `ArkPoolDelta` by the same factor, so `delta / BasePool.Amount` is preserved and no unit change
-resets imbalance or reprices without flow (D23). Market's own policy messages move the amount, the spread, and the
-recovery period, and refuse a denomination change, so the two units cannot drift apart. A depth change rescales the
-delta the same way. There is one virtual pool, no transition object, and no parallel state; the transition changes no
-stablecoin's eligibility, and `axdr`, a feed with no asset, is never converted either side of it.
-
-## 4. Ownership boundaries
+### 2.1 Ownership boundaries
 
 | Component | Owns | Never owns |
 | --- | --- | --- |
@@ -206,56 +98,60 @@ stablecoin's eligibility, and `axdr`, a feed with no asset, is never converted e
 | Committees | One bounded, expiring power each, on a distinct address | Anything another role holds; general Bank authority |
 
 Two rules keep the boundaries one-way. Market depends on Treasury and Treasury receives no Market keeper: Market's
-EndBlocker hands Treasury the block's conversion totals and receives a burn amount back, and that return value is how
-Market finishes settlement (D33). Treasury exposes no operation on Market state, so it cannot initiate or intermediate
-a pool change. Treasury sizes every fund's requirement and each fund's module reports what it recognises through one
-number-or-refuse interface, `RecognisedCapital`; the Reserve reads Treasury's requirement and shortfalls back only to
-bound its own burns and commitments (D54, D55). No module holds debit authority over another's account.
+EndBlocker hands Treasury the block's conversion totals and receives a burn amount back (D33), so Treasury cannot
+initiate or intermediate a pool change. Treasury sizes every fund's requirement and each fund's module reports what it
+recognises through one number-or-refuse interface, `RecognisedCapital`; the Reserve reads Treasury's requirement back
+only to bound its own burns and commitments (D54, D55). No module holds debit authority over another's account.
 
-## 5. Accounts and custody
+### 2.2 Custody
 
-The module accounts, their permissions, and their inbound rules are tabulated in `docs/governance/GENESIS.md` §3. The rules that
-produce that table:
+[Genesis §3](../governance/GENESIS.md#3-accounts-supply-and-validator-seats) tabulates every module account's
+permissions and inbound rule. What may debit the four custody accounts:
+
+| Account | Owner | Debited only by |
+| --- | --- | --- |
+| `treasury_redemption_buffer` | Treasury | the coverage draw (§3.2) |
+| `strategic_reserve` | Reserve | commitments to the Buffer and Insurance (§3.5), the committee's bounded deployments, and burns (D27, D56, D61) |
+| `claims_insurance` | Claims | claim settlement, and the NOAH a stablecoin claim converts when it is submitted (§4.6) |
+| `treasury_subsidy_pool` | Treasury | window settlement and `MsgReturnSubsidy` (§6.3) |
 
 - Only Market holds `Minter`, and it also holds `Burner` for settlement. `strategic_reserve` holds `Burner`, never
-  `Minter`, because governance and the committee may destroy custody but nothing on the chain may create it there
-  (D2, D61).
+  `Minter`: governance and the committee may destroy custody there, but nothing may create it (D2, D61).
 - The blocked-address list is replaced, not augmented, so every blocked account is named and the four custody accounts
-  are deliberately left reachable by ordinary sends.
-- Each custody owner provides a recipient-aware Bank send restriction over its own accounts: Treasury over the subsidy
-  pool and the Buffer, `x/claims` over Insurance, `x/reserve` over the Reserve. Bank collects them in a named order,
-  and a module providing one must appear in that order or the app fails to construct. Owning the restriction beside
-  the account is why the Reserve's rule could diverge from the other three without touching them.
-- The subsidy pool and the Buffer admit only a positive, `anoah`-only credit; a mixed or non-NOAH credit fails
-  atomically after the whole restriction chain, whatever surface it came through (D25, D26). The Reserve and Insurance
-  admit NOAH and registry members by membership and refuse everything else (D65, D70, D140); that membership rule is
-  what admits the derecognised transfer tax settlement routes to the Reserve and the paper a stablecoin claim buys into
-  Insurance, with no sender exemption.
+  stay reachable by ordinary sends.
+- Each custody owner installs a recipient-aware Bank send restriction over its own accounts. The Buffer and the subsidy
+  pool admit only a positive `anoah` credit, and anything else fails atomically whatever surface it came through (D25,
+  D26). The Reserve and Insurance admit NOAH and registry members by membership, with no sender exemption (D65, D70,
+  D140): that is what admits derecognised transfer tax into the Reserve, where it is inert custody awaiting a governed
+  burn, and the paper a stablecoin claim buys into Insurance. External symbols are refused at the Reserve's
+  restriction; an external holding is attested at its destination and never sits in the account.
 - Deposits ride ordinary Bank rails. They need no module message, receipt, or ledger, are accepted above target, and
   grant no refund, ownership, withdrawal, coverage, priority, governance, or deployment right. A taxable stablecoin
-  deposit is taxed like the same transfer to any other account; the recipient creates no exemption.
+  deposit is taxed like any other transfer.
 - Bank balances are the source of truth for every fund. No module stores a fund balance, a target, or a deposit
-  record; Claims stores encumbrance and authorisation, and the Reserve stores quantities, never values.
+  record; Claims stores encumbrance and authorisation, and the Reserve stores quantities, never values. Deposits,
+  commitments, and burns emit no module event, since Bank's transfer and burn events already record them and the
+  signed message is the authorisation.
 
-## 6. Conversion flows
+## 3. Conversion
 
 Every conversion settles in two moments. The transaction does what depends only on its own quote: escrow, mint, burn,
-payout. The block's EndBlocker does what depends on liability or fund state: one liability valuation, one waterfall
-over the block's expansion, one coverage draw over the block's redemptions (D33). Market owns custody, mint, and burn
-throughout; Treasury owns valuation and allocation; and the burn Treasury returns is how Market finishes. A settlement
-error fails the block, which is the deliberate trade: per-transaction allocation against a mid-block snapshot would
+payout. Market's EndBlocker does what depends on liability or fund state: one liability valuation, one waterfall over
+the block's expansion, one coverage draw over the block's redemptions (D33). Market owns custody, mint, and burn
+throughout; Treasury owns valuation and allocation, and the burn it returns is how Market finishes. A settlement error
+fails the block, which is the deliberate trade: per-transaction allocation against a mid-block snapshot would
 mis-allocate silently.
 
-### 6.1 NOAH to stablecoin
+### 3.1 NOAH to stablecoin
 
 In the transaction, Market quotes the output at the block's Oracle rates with spread, enforces the trader's minimum
-receive, applies the virtual-pool transition, moves the gross NOAH offer into its own account, derives the expansion
-principal (§3.3) and refuses the conversion if it exceeds the offer, mints and pays the stablecoin output, and adds the
-gross offer and the NOAH value of the output to the block's transient conversion totals. No Treasury call is made.
+receive, applies the virtual-pool transition, escrows the gross NOAH offer, mints and pays the stablecoin output, and
+adds the gross offer and the expansion principal to the block's totals. The expansion principal is the NOAH value of
+the final integer output at the quote's own rates, rounded down; Market refuses a conversion whose principal exceeds
+the gross offer, so the stablecoin minted is never worth more than the NOAH offered (D33).
 
-At EndBlock, Market hands Treasury the totals. Treasury values the liability partition once (§7.1), sizes the three
-targets on the net basis (§7.2), takes each fund's gap against what it recognises (§7.3), and runs the waterfall over
-the block's gross total `G`:
+At EndBlock, Treasury values the liability once (§4.1), sizes the targets on the net basis (§4.2), takes each fund's
+gap against what it recognises (§4.3), and runs the waterfall over the block's gross total `G`:
 
 ```text
 buffer_credit    = min(G, redemption_buffer_gap)
@@ -269,159 +165,86 @@ Delta NOAH supply   = -overflow_burn
 Delta stable supply = +sum(stable_output)
 ```
 
-Treasury moves each positive credit from Market's account to the fund and returns `overflow_burn`; Market burns it
-from what remains of its escrow (D5, D6). When the valuation is incomplete, the whole gross total parks in the Reserve
-and nothing burns: an incomplete aggregate can land either side of the truth, and parking is revisable where a burn is
-not. `EventExpansionAllocated` carries the denomination, the three credits, and the overflow; `EventLiabilityIncomplete`
-carries the claimable liability the block could value when it parked.
+The waterfall runs on the gross offer, so spread and dust travel with the principal: with the funds at target they
+burn exactly as an unconditional burn would, and with a fund short they are capital arriving as the requirement rises
+(D6). Treasury moves each positive credit from Market's account to its fund and returns `overflow_burn`, which Market
+burns from its escrow (D5). When the valuation is incomplete, the whole gross total parks in the Reserve and nothing
+burns: an incomplete aggregate can land either side of the truth, and parking is revisable where a burn is not.
 
-Market never revalues the output, recomputes a target, or sees the credit split; it burns what it is told. The gross
-offer never passes through a Treasury account, and Treasury never mints or burns.
+### 3.2 Stablecoin to NOAH
 
-### 6.2 Stablecoin to NOAH
+In the transaction, Market quotes the NOAH output with spread, applies the pool transition, burns the whole stablecoin
+offer, mints the whole quoted output to the redeemer, and adds the output and the redeemed liability to the totals.
+Redemption spread is NOAH never issued. `MsgSettle` redeems a suspended asset the same way at its plan's committed
+rate, with no spread and no pool transition.
 
-In the transaction, Market quotes the NOAH output with spread, applies the pool transition, moves the stablecoin offer
-into its account, burns the whole offer, mints the whole quoted output to the redeemer, and adds the output and the
-redeemed liability to the totals at the fresh Oracle set. A `MsgSettle` conversion of a suspended asset does the same
-at the plan's committed rate, with no spread and no pool transition.
-
-At EndBlock, after the waterfall, the Buffer's share of the block's summed output moves into Market and is burned
-there. The end state is what a per-conversion draw would have produced, reached by mint-then-burn instead of minting
-only the residual: the redeemer holds the quoted output, the Buffer is down by what it paid, and net new supply is the
-difference. Let `B` be the Buffer after the block's expansion credits, `L` the claimable liability before the block's
-burns, reconstructed as the freshly scanned net liability plus the block's redeemed value, and `Q` the summed output:
+At EndBlock, after the waterfall, the Buffer's share of the block's summed output moves into Market and is burned. The
+redeemer holds the quoted output, the Buffer is down by what it paid, and net new supply is the difference. With `B`
+the Buffer after the block's expansion credits, `L` the claimable liability before the block's burns, and `Q` the
+summed output:
 
 ```text
 buffer_paid   = min(Q, floor(Q * B / L))
 residual_mint = Q - buffer_paid
 ```
 
-The product is formed before the division. Forming `B / L` first rounds an intermediate against its own bound of one
-and `Q` then amplifies the error past `B`; multiplying first leaves one rounding on a whole-unit quantity, so
-`buffer_paid <= B` and `buffer_paid <= Q` are theorems rather than checks. Two properties of the basis are decisions:
-it is net, because no claim can arrive from paper the Reserve holds (D67), and it is raw, never scaled by the exposure
-multiplier, because rationing the run's opening phase guards against an exhaustion proportional coverage cannot
-produce while multiplying coverage front-loads finite inventory on a bet about run depth (D73).
+`L` is net, because no claim can arrive from paper the Reserve holds (D67), and raw, never scaled by the exposure
+multiplier (D73). It counts every obligation the chain can value (§4.1): a stale member at its last known rate and a
+suspended asset at its plan rate stay in, so their share of the Buffer is held for them rather than paid to whoever
+exits during the outage. Only supply the chain cannot value, a member never priced or suspended supply without a plan,
+leaves the denominator and is disclosed, so a suspension elsewhere never switches the Buffer off for the exits it
+exists to dampen (D4).
 
-The draw always runs. Supply the chain cannot value, a member never priced or suspended supply without a plan,
-leaves the denominator and is disclosed, so a suspension elsewhere never retires the Buffer during the contagion exits
-it exists to dampen (D4). A stale member stays in at its last known rate, and a suspended asset counts at its plan
-rate from the block the plan opens, though neither can redeem until its feed returns or its plan activates: their
-share of the Buffer is held for them rather than spent on whoever exits during the outage. Only planless suspended
-supply exerts no drag on coverage, so the Buffer spends proportionally faster during that freeze, bounded by the
-frozen fraction.
+Within a fixed claimable set coverage cannot fall ([whitepaper A.4](../papers/WHITEPAPER.md#a4-conditional-coverage-property));
+where the set changes, the ratio steps while the balance stays continuous, and no step changes a quote or output. An
+empty Buffer mints everything; a Buffer at or above the liability pays the whole output; retiring the last stablecoin
+leaves any excess in the Buffer. There is no residual-mint limiter: a visible quota would create the first-mover
+pressure the draw avoids (P2).
 
-Within a fixed claimable set, coverage cannot fall. With `c = B / L` and every redemption satisfying `0 < Q <= R <= L`
-for its redeemed liability `R`, the Buffer after the draw against the liability after the burn is `c(R - Q) >= 0`
-above proportional, and flooring the payment only retains more. At a boundary where the claimable set changes the
-ratio steps while the balance stays continuous: a suspension steps coverage up, opening a plan steps it down, a feed
-going stale or returning only reprices its member, and none changes any quote or output, so a step creates no
-first-mover entitlement. An empty Buffer
-mints everything; a Buffer at or above the liability pays the whole output; retiring the last stablecoin leaves any
-excess in the Buffer rather than gifting it to the last redeemer.
+### 3.3 Stablecoin to stablecoin
 
-There is no residual-mint limiter. The capacity analysis found no recipient-output, fixed-price cycle, or split-path
-amplification under coverage-based funding, and a visible quota would create exactly the first-mover pressure the
-draw avoids (P2). `EventRedemptionBufferDrawn` carries the denomination and the payment.
+One fresh offer and ask snapshot; the offer converts directly to the ask denomination after the larger of the two
+Tobin taxes. The path reads no virtual-pool state, burns the whole offer, mints the integer ask, and touches no fund
+and no NOAH, so its result is independent of the pool unit.
 
-### 6.3 Stablecoin to stablecoin
+### 3.4 The pool unit
 
-One fresh offer and ask snapshot; the offer converts directly to the ask denomination. The path loads neither
-`BasePool` nor `ArkPoolDelta`, burns the whole offer, mints the integer ask after the larger of the two Tobin taxes and
-dust, and touches no fund and no NOAH. Its result is therefore independent of which unit labels the virtual pool, so a
-registered basket is valid in both directions; `axdr` has no asset and is never an offer or ask.
+Market's `BasePool` is a denomination-bearing `sdk.DecCoin` and `ArkPoolDelta` a signed decimal in that unit. The unit
+is the protocol reference denomination, which `x/oracle` owns and which launches as `axdr`, a feed with no asset that is
+never converted. It is not Treasury's liability numeraire, which is NOAH throughout (D24), and no stablecoin's
+convertibility depends on it (D22).
 
-### 6.4 Public ratios and the no-cliff rule
+Re-pointing the reference is one Oracle message, `MsgSetReferenceDenom`, which runs every wired consumer's rebase,
+Market's pool, Treasury's tax cap, and Disbursement's and Claims' reference-unit figures, in the same transaction or
+fails whole (D123). Market converts `BasePool` at one fresh Oracle snapshot and rescales `ArkPoolDelta` by the same
+factor, so no unit change resets imbalance or reprices without flow (D23). Market's own policy messages refuse a unit
+change, so the two cannot drift; there is one virtual pool and no transition object or parallel state.
 
-Every balance and supply is public, so anyone can compute the three funds' ratios; the protocol makes their meanings
-explicit instead of hiding them (D19). The Buffer ratio measures how much existing NOAH is recycled per unit of
-liability, not backing. The Reserve ratio measures what the Reserve still holds against its target; NOAH committed to
-the Buffer counts there and nowhere else. The Insurance ratio measures unencumbered balance against covered-loss
-capacity, with the raw balance and the reservation reported apart. No ratio crossing zero, target, or any threshold
-changes a quote, spread, minimum receive, or eligibility; queries report the three balances separately and publish no
-combined health figure. The goal is to remove the first-come exhaustion rule and make each signal correspond to one
-honest mandate.
+### 3.5 Commitments out of the Reserve
 
-### 6.5 Commitments out of the Reserve
+Governance may commit Reserve NOAH to the Buffer with `MsgFundBuffer` and to Insurance with `MsgFundInsurance` (D27).
+Source, destination, and denomination are fixed in code, and the handler reads only the live Reserve balance, never a
+target, price, or Market state. Each carries a minimum remaining balance, a per-proposal stale-state guard rather than
+a protocol floor: stating zero commits everything, and checking what remains rather than an expected starting balance
+means a permissionless deposit cannot fail the proposal. The amount is not capped by the target gap, since targets
+route principal and do not cap custody.
 
-Governance may commit Reserve NOAH to the Buffer with `ark.reserve.v1.MsgFundBuffer`, carrying the amount and a
-minimum remaining balance, and to Insurance with `MsgFundInsurance` (D27). Source, destination, and denomination are
-fixed in code; the handler reads only the live Reserve balance, never a target, price, or Market state, and refuses if
-the transfer would leave less than the stated minimum. That minimum is a per-proposal stale-state guard, not a
-protocol floor: governance may commit everything by stating zero, and the check is against the remaining balance
-rather than an expected pre-transfer figure so a harmless permissionless deposit cannot fail the proposal. The action
-is not capped by the target gap, since targets are routing thresholds rather than custody caps.
+The committee's `MsgCommitteeFundBuffer` and `MsgCommitteeFundInsurance` are bounded by the receiving fund's gross
+shortfall and the mandate's NOAH floor (§4.5). Governance executes proposals before Market settles the block, so a
+commitment lands ahead of that block's settlement.
 
-The committee has the same two transfers, `MsgCommitteeFundBuffer` and `MsgCommitteeFundInsurance`, bounded by the
-receiving fund's shortfall on the gross basis and by the mandate's NOAH floor (§7.5). Governance executes its proposal
-messages in EndBlock before Market settles the block, so a commitment lands ahead of that block's settlement, which
-reads the moved balances; no lock or queue is needed.
+A commitment of `a` lowers the Reserve by `a` and raises the receiving fund by `a`; supply, liability, quotes, spread,
+pool state, and every other fund are unchanged. The Reserve's reopened gap is refilled later by the ordinary
+waterfall, which delays Insurance funding and overflow burn, and each proposal states that cost. Commitment is
+one-way: there is no Buffer-to-Reserve path (D16). It succeeds under an incomplete valuation.
 
-For an amount `a`: the Reserve falls by `a`, the receiving fund rises by `a`, and total supply, liability, quotes,
-spread, pool state, and every other fund are unchanged. Commitment is one-way. There is no Buffer-to-Reserve path,
-because a public removal path would make committed inventory reversible and create pressure to redeem ahead of it, and
-no transfer-history collection, because the passed proposal is the authorisation record and Bank's event is the audit
-(D16). A commitment succeeds under an incomplete valuation; the enlarged Buffer is then spent by the ordinary draw.
+## 4. Capital
 
-### 6.6 Insurance claims
-
-Governance stores one Claims mandate: the shared envelope (chain-derived term, exact committee, half-open activation
-and expiry times) and a fixed gross claim limit for the term in the reference unit (D30, D38, D140). The window and the cancellation period
-are seconds of block time, as the governance vote the period must fit is, so a faster block pace cannot shorten
-either (D133). An empty committee is the disabled
-mandate; replacing or disabling advances the term, resets the allowance used, and never touches an existing claim or
-the reservation. Appointment requires an active span no shorter than the cancellation period, an `x/claims` parameter.
-
-A claim is submitted, encumbered, then paid by the chain:
-
-- **Submission.** A claim pays a positive amount of NOAH or an active registry asset. The committee submits with its
-  expected term during the active window; the claim charges the limit with what it draws, its custody and any NOAH it
-  converts, in the reference unit at the fresh rates, consumes it permanently, stores the term and the charge, and must
-  close before the mandate expires. Governance submits at any time with no term and charges nothing. Both derive the
-  closing time from the cancellation period, name a recipient Bank can pay, and must be covered by what Insurance holds
-  in the claim's denomination beyond what is already reserved. A stablecoin claim custody cannot cover buys the rest
-  through Market with uncommitted Insurance NOAH, inside the submitting message and within the claim's `max_offer`;
-  every other check runs first. The keeper assigns a monotonic claim ID, reserves the amount in its denomination, and
-  emits `EventClaimSubmitted`, with `EventClaimConverted` when it bought.
-- **Cancellation.** Before the closing time, governance may cancel any pending claim without reading the mandate, and
-  the current committee may cancel a non-governance claim with its exact term. Cancellation releases the reservation,
-  records which authority vetoed, and restores no allowance, so approve-and-cancel cycles cannot redirect expansion
-  funding (D32). It never reaches Market: a converted claim's paper stays uncommitted for the next claim in its
-  denomination, and the spread it cost stays spent, which is why the limit charges it.
-- **Settlement.** At the closing time cancellation closes for everyone and the `x/claims` EndBlocker pays the
-  immutable recipient and amount. Payment needs no signer because nothing about it is discretionary, and the recipient,
-  who has just suffered the covered loss, is the party least able to send a transaction; an unsettled claim would
-  encumber Insurance for as long as it stood. The sweep settles at most 1,000 claims a block, oldest first, and leaves
-  the rest due for the next: one settling block normally answers one submitting block at comparable cost, but a block
-  time that jumps after an outage brings due at once every claim that closed during it. A claim the chain cannot pay,
-  a payment Bank refuses included, ends `failed` and releases its reservation, because nothing about a due claim
-  changes with height and a retry would repeat an identical computation; `EventClaimFailed` carries no reason, since
-  the cause is chain-generated text and a consensus-visible field cannot carry it.
-
-The reservation is an encumbrance, not a movement: submission lowers the unencumbered balance and opens only the
-passive target gap, execution lowers balance and reservation together and creates no second gap shock, and the
-reservation never exceeds the balance in its denomination. A stablecoin claim's conversion spends Insurance NOAH at
-submission instead, which opens the same passive gap, and the paper it buys is never recognised (D28, D140). There is no guardian, pause, category, per-claim cap, or clawback of a paid
-claim (D32).
-
-The record is one closing time, two enums, and a reference. `closing_time` is scheduled while pending and actual once not:
-cancellation ends at the scheduled time whether settlement runs that block or waits behind the per-block bound, and a
-cancelled claim records its veto time, never reaching the scheduled one; the live handler, not stored-record
-validation, enforces the window. `origin` and `cancelled_by` share the
-`ClaimAuthority` enum, so a committee withdrawing its own claim is a meaningful comparison; the cancelling address is
-recoverable from the appointment history and the governance authority is a constant. `submitter` stays an address
-beside `mandate_term`, because submission moves value and the pair pins the accountable party without a lookup.
-`reference` is a required, uninterpreted pointer to the off-chain case record, at most 2,048 bytes. Beyond it no
-free-text reason is stored: a required reason nobody verifies adds a field without a fact, and where one exists it is
-in the governance proposal.
-
-## 7. Capital: liability, targets, recognition
-
-### 7.1 The liability partition
+### 4.1 The liability partition
 
 Treasury values the stablecoin liability directly in NOAH (D24), once per block that converts and on every read of
-`FundStatus`, never from a cache (D33). The registry decides what counts and how (`x/asset/README.md`,
-[Treasury valuation](../../x/treasury/README.md#liability-and-capital-reads)):
+`FundStatus`, never from a cache (D33). The registry decides what counts and how
+([Asset](../../x/asset/README.md), [Treasury valuation](../../x/treasury/README.md#liability-and-capital-reads)):
 
 | Bucket | Supply | Valued at |
 | --- | --- | --- |
@@ -430,55 +253,41 @@ Treasury values the stablecoin liability directly in NOAH (D24), once per block 
 | `stale_priced_liability` | members whose feed is stale or absent | the last known rate, kept apart because it failed the freshness gate |
 | excluded, disclosed | suspended supply with no plan (`untrusted_suspended_supply`); written-off supply (`written_off_exposure`) | nothing: a write-off extinguishes the obligation, and untrusted supply cannot be valued |
 
-Gross liability is the three valued buckets. Self-held liability is the Reserve's balance of each counted member, valued
-through the same branch that counted it, so the two sides of the subtraction never price on different bases and
-`net = gross - self_held` is non-negative by construction (D66). `FundStatus` reports gross, self-held, and net side by
-side.
+Gross liability is the three valued buckets. Self-held liability is the Reserve's balance of each counted member,
+valued through the same branch that counted it, so `net = gross - self_held` is non-negative by construction (D66).
 
 Completeness is read off the disclosure lists, not a flag: a non-empty `stale_member_supply` or
 `untrusted_suspended_supply` means a recognised exposure went unvalued, and every target then reports zero, while a
-non-empty `written_off_exposure` does not. Incompleteness means exactly one thing, an exposure no honest rate could
-value; arithmetic that leaves the representable domain is fatal instead, because it is state the protocol does not
-support and would otherwise retire the Buffer behind a signal that fires for benign reasons.
+non-empty `written_off_exposure` does not. It depends on outstanding liabilities, never on a policy denomination: a
+missing `axdr` rate is irrelevant while `axdr` supply is zero. Arithmetic that leaves the representable domain is not
+incompleteness; it fails the block.
 
-Completeness is defined by outstanding liabilities, never by a policy denomination. A missing `axdr` rate is irrelevant
-while `axdr` supply is zero, a stale reference rate affects only cap derivation, and a stale pool-unit rate may block a
-Market quote without touching this valuation.
+### 4.2 Targets and the exposure multiplier
 
-### 7.2 Targets and the exposure multiplier
-
-Each fund's target is its governed ratio times the liability basis times the multiplier `m`, rounded up, because a
-requirement ceils (D72, and the arithmetic rules in `CLAUDE.md`):
+Each fund's target is its governed ratio times the liability basis times the multiplier `m`, rounded up because a
+requirement ceils (D72):
 
 ```text
 target_f = ceil(ratio_f * m * basis)
 ```
 
 Two bases, assigned by one principle (D67). A flow serves claims that can arrive, and none arrives from paper the
-Reserve holds, so the expansion waterfall's gaps size on net. A bound serves discretion, and the discretion-holder can
-re-issue that paper, so the bounds on committee acts size on gross: the Reserve's required capital, hence its burnable
-surplus, and the Buffer and Insurance shortfalls that bound committee commitments. `FundStatus` reports both families,
-`*_target` on gross and `*_net_target` on net, beside the multiplier.
+Reserve holds, so the waterfall's gaps size on net. A bound serves discretion, and the discretion-holder can re-issue
+that paper, so the bounds on committee acts size on gross. `FundStatus` reports both families, `*_target` on gross and
+`*_net_target` on net, beside the multiplier.
 
 The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the
-chain already maintains, each weighted by a committee lever in `EconomicPolicy`: the liability ratio, net liability
-over circulating NOAH, which is the dilution term and collapses to a quotient because liability is already in NOAH;
-the annualised realised volatility of the reference rate, an EWMA of squared per-block returns over an EWMA of the
-seconds they spanned, so block pace does not move it and a return carried across a halt counts its time (D133); and
-flow pressure, an
-EMA of per-block net redemption value taken from the conversion totals. Samples fold in every block's settlement; the
-multiplier recomputes on a governed period, moves at most a governed step per recompute, and is clamped to `[1, cap]`.
-The decays, cap, step, and period are governance `Params`, because they define the measuring instrument and the rails
-on how far and how fast the response may move; the weights are the committee's, because a weight is the same kind of
-stance as the ratio it modifies and reversible within hours (D37, D72). Every input is a vote-median rate, a Bank
-supply, or flow that cost spread to produce, so no spot price enters. Zero weights pin `m` at one. The multiplier's own
-liability-ratio input reads raw liability, since a controller fed its own output would compound, and the redemption
-draw reads raw liability by D73.
+chain already maintains, each weighted by a committee lever: the liability ratio, net liability over circulating NOAH;
+the annualised realised volatility of the reference rate, measured in block time (D133); and an EMA of net redemption
+flow. Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so no spot price enters.
+It recomputes on a governed period, moves at most a governed step, and is clamped to `[1, cap]`; zero weights pin it
+at one. Its own liability-ratio input reads raw liability, since a controller fed its own output would compound.
+[Treasury](../../x/treasury/README.md#exposure-sampling-and-refresh) owns the instrument.
 
-### 7.3 Recognition
+### 4.3 Recognition
 
-Treasury computes what each fund needs; each fund's module computes what it has, and returns one number through
-`RecognisedCapital` (D54, D55):
+Treasury computes what each fund needs; each fund's module certifies what it has through `RecognisedCapital` (D54,
+D55):
 
 ```text
 required_capital   = target_f
@@ -486,97 +295,109 @@ recognised_capital = what the fund's owner certifies
 capital_gap        = max(required_capital - recognised_capital, 0)
 ```
 
-The Buffer counts its `anoah` balance at par; Treasury reads it directly, since the Buffer has no operator. Insurance
-counts its `anoah` balance less the NOAH reserved against pending claims, because an approved claim cannot cover a
-second loss; the registry paper it holds for stablecoin claims counts for nothing (D28). The Reserve counts its `anoah`
-at par plus a haircut credit for each attested position:
+The Buffer counts its `anoah` at par; Treasury reads it directly, since the Buffer has no operator. Insurance counts its
+`anoah` less the NOAH reserved against pending claims, because an approved claim cannot cover a second loss; the
+registry paper it holds for stablecoin claims counts for nothing (D28). The Reserve counts its `anoah` at par plus a
+haircut credit for each attested position:
 
 ```text
 credit_a = min(haircut_a * attested_quantity_a * rate_a, cap_ratio_a * recognised_capital)
 ```
 
 where `rate_a` is the derived feed's rate within the entry's own staleness window and zero otherwise. The cap is a
-share of recognised capital itself, the self-reference solved per block in closed form: a flat amount decays into a
-binding or a vacuous constraint as the balance sheet moves, and a share of the requirement would let one corrupted
-attestation against an empty fund manufacture credit up to a share of a large target, whereas against the certificate
-itself credit levers only the provable NOAH base and a lone bad input can never push the total past `honest ÷ (1 −
-ratio)` (D58, D64). Ratios sum strictly below one per policy, checked at the write and at genesis.
+share of recognised capital itself, solved per block in closed form, so a lone bad attestation can never push the total
+past `honest ÷ (1 − ratio)`; ratios sum strictly below one (D58, D64).
 
-Everything about recognition degrades to zero, never to a stale number. A dark or over-age feed zeroes exactly one
-asset's credit and tightens every neighbour's ceiling; there is no governance-supplied fallback price; valuation is
-never stored (D57, D71). Ark-issued paper earns nothing wherever it sits: it is a liability until burned, and the
-external-symbol shape of eligibility entries makes a member entry unrepresentable rather than merely refused (D28,
-D62, D69). An external holding is named `<feed>-<tag>` and priced on the feed its prefix derives, so several custodians
-share one series with their own haircut, cap, and window and no aliasing exists (D70). Custody is attested: the asset
-sits at a mandate destination and the committee books its quantity in an append-only journal that keeps errors beside
-their corrections; the account itself never holds an external token (D57, D59, D70). The `RecognisedCapital` query
-decomposes every row so each zero credit shows its reason, and the Reserve registers as an Oracle feed-removal guard so
-a feed that backs a credited entry or an open position cannot be removed before governance delists it (D63).
+Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes one asset's credit and tightens
+every neighbour's ceiling, there is no fallback price, and valuation is never stored (D57, D71). Ark-issued paper earns
+nothing wherever it sits, since it is a liability until burned (D28, D62, D69). Custody is attested: the asset sits at
+a mandate destination and the committee books its quantity in an append-only journal
+([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)).
 
 When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens. Zero credit would
 reopen all 100 and invite an acquisition-and-refill loop that captures expansion principal; full credit would close a
-gap that is not closed. The rule is part of the anti-feedback policy, not only reporting.
+gap that is not closed.
 
-### 7.4 Passive-target rules
+### 4.4 Passive targets and public ratios
 
 - Targets decide only where new expansion principal goes (D7). They are not custody caps: deposits are valid above
-  target, and a falling target releases, burns, or moves nothing.
-- The Buffer spends below target through the draw, which the target never triggers. The Reserve's only debits are the
-  governed commitments, the committee's mandate, and burns; no target, price, or Market request sizes them. Insurance
-  is encumbered by submission and spent by settlement; the target authorises neither.
-- Expansion fills the Buffer, then the Reserve, then Insurance, and burns only what remains. A Reserve-to-Buffer
-  commitment changes two balances and reopens the Reserve's gap for the same waterfall to fill later.
-- An incomplete valuation parks the block's whole gross expansion in the Reserve and fails no priceable conversion;
-  failure to value an output itself fails the conversion before any transfer.
+  target, and a falling target releases, burns, or moves nothing. No target triggers a debit (§2.2).
 - `FundStatus` always answers and never presents a partial target as complete: incomplete valuation zeroes every target
-  and lists what it excluded. Refusing to answer during exactly the stress that makes valuation incomplete would blind
-  operators when they most need the report.
+  and lists what it excluded. Refusing to answer during exactly that stress would blind operators. Every liability
+  figure it reports is an `anoah` value built from the whole decimal aggregate, never truncated for display.
+- Every balance and supply is public, so the protocol states what each ratio means rather than hiding it (D19). The
+  Buffer ratio measures recycled NOAH per unit of liability, not backing; the Reserve ratio what it still holds against
+  its target; the Insurance ratio unencumbered balance against covered-loss capacity. No ratio crossing any threshold
+  changes a quote, spread, minimum receive, or eligibility, and no query publishes a combined health figure.
 
-### 7.5 Bounds on committee acts
+### 4.5 Bounds on committee acts
 
-The same targets bound what a committee may move or destroy, always in the conservative direction. The Reserve
-committee may burn NOAH surplus up to the largest amount whose post-burn recognition solve still covers the
-requirement, and never more than `balance - mandate_floor`; clipped credits lever the balance, so the bound is read at
-the balance a burn leaves rather than off the pre-burn surplus, and the power exhausts itself at the target line
-and leaves the committee timing rather than size; that bound requires a
-complete valuation, since an incomplete aggregate can understate the requirement and overstate the surplus (D61). The
-committee may commit to the Buffer or Insurance up to the receiving fund's shortfall on the gross basis and above the
-mandate's floor; those bounds size on whatever the block could value, because their error runs only in the direction
-where the money stays protocol capital. The exposure multiplier tightens all of them: a higher requirement shrinks the
-burnable surplus and widens the shortfalls, and `m` is protocol-computed state no committee can move (D72).
+The same targets bound what a committee may move or destroy, always in the conservative direction, and `m`, which no
+committee can move, tightens all of them (D72):
 
-What each ratio literally sets, and what to choose it from, is tabulated in `docs/governance/GENESIS.md` §12. Under NOAH-only
+- The Reserve committee may burn NOAH surplus up to the largest amount whose post-burn recognition still covers the
+  requirement, and never below the mandate floor. Clipped credits lever the balance, so the bound is solved at the
+  balance a burn leaves; it exhausts itself at the target line, leaving the committee timing rather than size. It
+  requires a complete valuation, since an incomplete aggregate can understate the requirement (D61).
+- The committee may commit to the Buffer or Insurance up to the receiving fund's gross shortfall and above the
+  mandate's floor. These bounds use whatever the block could value, because their error only keeps money as protocol
+  capital.
+
+What each ratio sets, and how to choose it, is in [genesis §4](../governance/GENESIS.md#4-treasury). Under NOAH-only
 custody every fund's exposure has liability as its only base, which is why the ratios are the exposure model and no
 per-fund model exists (D8).
 
-## 8. Transfer tax
+### 4.6 Insurance claims
 
-### 8.1 Settings
+Governance stores one Claims mandate: the shared envelope and a fixed gross claim limit for the term in the reference
+unit (D30, D38, D140). Its window and the `x/claims` cancellation period are block time (D133). Replacing or disabling
+the mandate advances the term and resets the allowance used, and never touches an existing claim or the reservation.
+
+- **Submission.** A claim pays a positive amount of NOAH or an active registry asset, and must be covered by what
+  Insurance holds in that denomination beyond what is already reserved. A stablecoin claim custody cannot cover buys
+  the rest through Market with uncommitted Insurance NOAH, inside the submitting message and within the claim's
+  `max_offer`. A committee claim permanently charges the limit with what it drew, custody and converted NOAH, in the
+  reference unit; a governance claim charges nothing. Submission reserves the amount and sets the closing time from
+  the cancellation period.
+- **Cancellation.** Before the closing time, governance may cancel any pending claim, and the current committee,
+  signing with its exact term, any claim governance did not submit. Cancellation releases the reservation and restores no allowance, so
+  approve-and-cancel cycles cannot redirect expansion funding (D32). It never reaches Market: bought paper stays for
+  the next claim in its denomination, and the spread stays spent, which is why the limit charges it.
+- **Settlement.** At the closing time the `x/claims` EndBlocker pays the immutable recipient and amount, with no
+  signer. A claim the chain cannot pay ends `failed` and releases its reservation.
+
+The reservation is an encumbrance, not a movement: submission lowers the unencumbered balance and opens only the
+passive target gap, settlement lowers balance and reservation together, and the reservation never exceeds the balance
+in its denomination. A stablecoin claim's conversion spends Insurance NOAH at submission, opening the same passive gap
+(D28, D140). There is no guardian, pause, category, per-claim cap, or clawback of a paid claim (D32). The
+[Claims README](../../x/claims/README.md) owns the record, settlement bounds, and failure handling.
+
+## 5. Transfer tax and fees
+
+### 5.1 Settings
 
 - `Params.transfer_tax_rate`, governance-owned, in `[0, 1]`. Zero disables the tax without deleting anything (D44). It
-  is governance's rather than the committee's because it is part of the fee every wallet signs: a raise refuses every
-  in-flight transfer until clients re-query, and the voting period is the notice that needs (D80).
-- `Params.reference_denom` and `Params.reference_tax_cap`: the reference unit, which is the Oracle's protocol reference
-  and launches as `axdr`, and a cap amount in it. Zero means uncapped; a positive amount derives a cap of at least one
-  base unit for every taxable denomination through the conversion-factor table (§8.4). Changing the amount moves no fund, pool,
-  quote, or coverage figure (D21, D37).
+  is governance's because it is part of the fee every wallet signs: a raise refuses every in-flight transfer until
+  clients re-query, and the voting period is the notice that needs (D80).
+- `Params.reference_denom` and `Params.reference_tax_cap`: the reference unit, which always equals the Oracle's, and a
+  cap amount in it (D21, D37). Zero means uncapped. Changing the amount moves no fund, pool, quote, or coverage figure.
 - No tax-rate controller, revenue target, change-rate limit, or rolling indicator exists (D79).
 
-The rate is held at or below the conversion spread floor a conversion committee can reach, because NOAH is untaxed and
-`MsgSell` is exempt, so a swap to NOAH, a NOAH send, and a swap back delivers the same value for spread instead of tax
-whenever the rate exceeds the floor, at every principal. Nothing enforces this in code, since Market depends on
-Treasury and neither module's stateless validation sees the other's state; it is a governance-time constraint on the
-rate and on every conversion appointment (D81).
+The rate is held at or below the lowest conversion spread floor a conversion committee can reach: NOAH is untaxed and
+`MsgSell` is exempt, so above that floor a swap to NOAH, a NOAH send, and a swap back would deliver the same value for
+spread instead of tax. Nothing enforces this in code; it is a governance-time constraint on the rate and on every
+conversion appointment (D81).
 
-### 8.2 Taxable denominations and operations
+### 5.2 Taxable denominations and operations
 
-Every registered stablecoin with a conversion factor is taxable; NOAH never is (D44). A member with no factor yet, before
-its first refresh, is untaxed rather than refused, so missing pricing never blocks a transfer; a zero reference cap is
-uncapped, and a denomination outside the registry is untaxed. What is
-taxed is the transfer, so a suspended or written-off denomination stays taxable while it moves.
+Every registered stablecoin with a conversion factor is taxable; NOAH never is (D44). A member awaiting its first
+factor is untaxed rather than refused, so missing pricing never blocks a transfer, and a denomination outside the
+registry is untaxed. What is taxed is the transfer, so a suspended or written-off denomination stays taxable while it
+moves.
 
 One calculator prices every user-facing transfer surface, and internal Bank movements are never taxed (D18): a global
-Bank hook would tax settlement, draws, claims, grants, reward funding, and commitments unless it recreated an exemption system.
+Bank hook would tax settlement, draws, claims, grants, reward funding, and commitments unless it recreated an
+exemption system.
 
 | Input | Tax principal |
 | --- | --- |
@@ -587,21 +408,18 @@ Bank hook would tax settlement, draws, claims, grants, reward funding, and commi
 | `authz.MsgExec` | every nested message, recursively, to a bounded depth |
 | vesting account creation | the stablecoin funding |
 | Wasm instantiate and execute | attached stablecoin funds |
-| contract dispatches | each Bank send, execute funds, and instantiate funds at dispatch (§8.6) |
+| contract dispatches | each Bank send, execute funds, and instantiate funds at dispatch (§5.5) |
 
-Escrow, Market settlement, fund movements, claims, and reward
-distribution receive no tax (D42). Native Disbursement module payments, including stablecoin compensation, are
-untaxed protocol disbursements (D87), and its conversions of contributor NOAH are Market settlement (D88); their denomination, schedule, and public accounting are defined in the
-[Disbursement README](../../x/disbursement/README.md).
+Escrow, Market settlement, fund movements, claims, and reward distribution are never taxable inputs (D42). Native
+Disbursement payments, stablecoin compensation included, are untaxed protocol disbursements (D87), and its conversions
+of contributor NOAH are Market settlement (D88).
 
-The tax sees the Bank ledger and nothing built on it. A contract keeping its own balances, an exchange, or a custodian
-moves value between its users without a Bank send, so a currency deposited into one is taxed on the way in and on the
-way out and never in between. No calculator change sees those transfers, and refusing currencies to contracts would
-take them out of the open runtime, so the cap is the defence: it bounds what a large mover saves by leaving the rail,
-against a contract's risk or an exchange's custody. The share of each currency held by contract addresses, readable
-from Bank state, is the signal that movers are leaving (D138).
+The tax sees the Bank ledger and nothing built on it: value moving inside a contract's own balances, an exchange, or a
+custodian is taxed on the way in and out and never in between. The cap is the defence, bounding what a large mover
+saves by leaving the rail; the share of each currency held by contract addresses is the signal that movers are leaving
+(D138).
 
-### 8.3 Calculation
+### 5.3 Calculation and caps
 
 ```text
 uncapped[input][denom] = floor(principal[input][denom] * transfer_tax_rate)
@@ -611,108 +429,93 @@ total[denom]           = checked sum over every taxable input
 ```
 
 Each input receives its own cap; two sends from one source, two `MultiSend` outputs, and a signed input beside an
-execution-generated one are never combined (D17). Malformed or undecodable nested messages fail closed. Totals use
-checked addition and return an out-of-range error rather than panic. The ante's checker, the post decorator's charge,
-the policy router, and `Query/ComputeTax` call one implementation.
+execution-generated one are never combined (D17). Malformed or undecodable nested messages fail closed, and totals use
+checked addition. The ante's checker, the post decorator's charge, the policy router, and `Query/ComputeTax` call one
+implementation.
 
-### 8.4 Caps and the reference denomination
+At the end of each block Treasury derives a conversion factor for every member, one reference unit in that
+denomination, so the next block's prices are fixed before it is proposed. The per-denomination tax cap is the reference
+cap times the factor, and the per-denomination gas price is the base gas price times the factor; caps are derived on
+every read, never stored. A factor persists through a feed outage, so a stale feed defers a cap rather than failing a
+block. A positive cap that truncates to zero is clamped to one base unit, never the uncapped sentinel; a product too
+large to represent reads as uncapped (D44). [Treasury](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)
+owns the factor table.
 
-At the end of each block Treasury derives a conversion factor for every member from the Oracle rate set, expressing
-one reference unit in that denomination, so the next block's fee and tax prices are fixed before it is proposed. Both
-derived figures follow from it: the per-denomination tax cap is the reference cap
-times the factor, and the per-denomination gas price is the base gas price times the factor. Caps are derived on every
-read, never stored. A factor persists through a feed outage, so a stale feed defers a cap rather than failing a block;
-a member arriving without a rate seeds at one. A member the Oracle no longer prices keeps its factor for the tax cap
-but is no longer an accepted fee denomination, since block space is sold only for what the chain can still value. A
-positive cap whose product truncates to zero is clamped to one base unit, so it can never become the uncapped sentinel;
-a product too large to represent reads as uncapped, its true ceiling being past the supported range (D44).
-`EventConversionFactorsRefreshed` carries each pass's table.
+`Params.reference_denom` equals the Oracle's reference at every height, guarded at the writes: `InitGenesis` refuses a
+mismatch, `MsgUpdateParams` refuses a denomination change, and `MsgSetReferenceDenom` is the one path that moves it,
+rebasing the cap with every other consumer (§3.4).
 
-`Params.reference_denom` equals the Oracle's reference at every height, and every guard sits at a write, never at a
-read: `InitGenesis` refuses a mismatch, `MsgUpdateParams` rejects any denomination change so governance moves the
-amount alone, and the Oracle's `MsgSetReferenceDenom` is the one denomination-moving path, running every wired
-consumer's rebase, Treasury's cap, Market's pool, Disbursement's compensation figures, and Claims' limit and charges, before storing the new
-reference and failing whole if any fails (`EventReferenceTaxCapRebased`). Nothing re-checks the pair at runtime: a
-derive-time guard would fire only when a rebuild was owed and make the derivation depend on state it never uses. The obligation is on any future writer of
-`Params`: an upgrade that touches either side repeats the genesis check and tests the pair rather than each side alone.
+### 5.4 The fee: declaration, settlement, charge
 
-### 8.5 The fee: declaration, settlement, charge
-
-The signed fee declares the tax (D78). A transaction's fee is gas plus the exact tax its messages owe, and Ark's own
-`FeeDecorator` in `app/ante/fee.go` holds the declaration to the computed tax before anything is deducted, so a signer
-sees the whole charge in the fee they sign and is never taxed past it. The fee field carries it because it is the one
-slot every wallet builds and every sign mode renders, amino included. A wallet that omits the tax is refused with an
-error naming it, the deliberate cost of the declaration; `arkd` prices every transaction command through
-`Query/ComputeTax` and `Query/GasPrices`, and a front end does the same.
+The signed fee declares the tax (D78). A transaction's fee is gas plus the exact tax its messages owe, and Ark's
+`FeeDecorator` holds the declaration to the computed tax before anything is deducted, so a signer sees the whole charge
+in the fee they sign and is never taxed past it. The fee field carries it because it is the one slot every wallet
+builds and every sign mode renders, amino included. A wallet that omits the tax is refused with an error naming it;
+`arkd` and front ends price every transaction through `Query/ComputeTax` and `Query/GasPrices`
+([client fees](../clients/CLIENT_FEES.md)).
 
 The fee is a ceiling and the tip is NOAH (D80). Each stablecoin leg is charged at most what it owes, the exact tax plus
-the base fee if it is the first leg, in the order the payer encoded the fee, whose slack covers it, and the rest never leaves the payer,
-so a wallet pads a stable leg for rate drift at no cost. The NOAH leg is charged whole: base fee if no stable leg paid
-it, remainder tip, and only the tip ranks for priority. NOAH is the one denomination the tax is never owed in, which is
+the base fee if it is the first leg, in the order the payer encoded the fee, and the rest never leaves the payer, so a
+wallet pads a stable leg for rate drift at no cost. The NOAH leg is charged whole: base fee if no stable leg paid it,
+remainder tip, and only the tip ranks for priority. NOAH is the one denomination the tax is never owed in, which is
 what lets the chain tell a tip from a padded tax.
 
-The tax is charged after the messages, on success only (D82). The ante deducts the gas fee and tip and hands the
-priced tax on through the context; `TransferTaxDecorator` in `app/ante/transfer_tax.go` runs on the messages' branch,
-charges that figure to `transfer_tax_collector`, and draws a granter's allowance for it. A transaction whose messages
-fail pays gas and no tax; a payer the messages leave short of the tax fails at the charge with gas kept and principal
-unmoved; a payer who acquires the taxed denomination from an earlier message in the same transaction is taxed and
-succeeds. Admission, recheck, and proposal verification check the signed tax declaration and upfront gas fee
-but skip tax collection and tax allowance draws. Finalisation and simulation check affordability after messages;
-a tax failure reverts those messages and keeps the gas fee. Nothing is escrowed or returned. Feegrant draws the gas fee at the ante and the tax at the charge, so
-an allowance is never charged for a tax a failed transaction did not pay.
+The tax is charged after the messages, on success only (D82). The ante deducts the gas fee and tip and carries the
+priced tax through the context; `TransferTaxDecorator` charges it to `transfer_tax_collector` after the messages and
+draws a granter's allowance for it. A transaction whose messages fail pays gas and no tax; a payer the messages leave
+short fails at the charge with gas kept and principal unmoved; a payer who acquires the taxed denomination from an
+earlier message in the same transaction is taxed and succeeds. Admission, recheck, and proposal verification check the
+declaration and upfront gas fee but never collect tax.
+[Ante handling](../../app/ante/README.md#transfer-tax-commitment-and-rollback) owns the outcome table.
 
-Gas is priced by Treasury's base-fee controller, not by node-local minimum gas prices ([Treasury fee controller](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
-The base gas price, held in the reference unit and floored at `min_base_gas_price`, moves each block toward a target
-block utilisation by at most `base_fee_adjustment_rate`, and each accepted fee denomination, NOAH or a member the
-Oracle still prices, prices through its conversion factor. The ante chain itself is assembled in `app/ante/ante.go` rather than by the SDK's constructor,
-because the Wasm decorators must sit immediately after context setup and the SDK admits no insertion point; an SDK
-release that adds a decorator is mirrored by hand, and a test pins the order. Under simulation the gate's reads are
-made and not enforced, so an estimate tracks execution to within about a percent.
+Gas is priced by Treasury's base-fee controller, not by node-local minimum gas prices. The base gas price, held in the
+reference unit and floored at `min_base_gas_price`, moves each block toward a target utilisation by at most
+`base_fee_adjustment_rate`, and each accepted fee denomination, NOAH or a member the Oracle still prices, pays through
+its factor ([Treasury fee controller](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
 
-### 8.6 Execution-generated tax
+### 5.5 Execution-generated tax
 
-A transfer a contract creates while it runs is absent from the signed
-message list, so the ante cannot see it. Ownership by call path gives exactly-once assessment without a transfer ID or
-context marker (D41): the ante owns signed top-level inputs, and the execution policy router in
-`app/execution_policy_router.go` owns everything dispatched. At dispatch the router prices the message with the same
-calculator, charges the dispatching account in addition to the complete principal, sends the tax straight to
-`transfer_tax_collector`, and runs the dispatch, all inside the same cached execution, so a synchronous or caught
-failure rolls both back and a recipient's amount is never reduced to fund tax (D42). The outer fee payer and any
-feegrant granter never sponsor it. The router also enforces the message policies the ante enforces for signed
-transactions, the MultiSend fan-out guard, the vote stake floor, and the consensus-params block-data floor, so the two
-seams agree.
+A transfer a contract creates while it runs is absent from the signed message list, so the ante cannot see it.
+Ownership by call path gives exactly-once assessment with no transfer ID, context marker, or global Bank hook (D40,
+D41):
 
-A contract estimates tax through `Query/ComputeTax`, reached through the query accept list (§11.3), by pricing the
-proto form of the message it will dispatch; the estimate reserves nothing and never replaces recomputation at dispatch
+- The ante owns signed top-level inputs, Wasm attached funds included; the fee payer or feegrant granter pays that tax
+  as part of the declared fee.
+- The execution policy router in `app/execution_policy_router.go` owns everything dispatched. It prices each dispatch
+  with the same calculator and charges the dispatching contract on top of the complete principal, sending the tax to
+  `transfer_tax_collector` inside the same cached execution, so a failure rolls both back and a recipient's amount is
+  never reduced to fund tax (D42). An insufficient balance fails that dispatch.
+- Neither the outer fee payer nor feegrant sponsors execution-generated tax.
+
+The router also enforces the policies the ante enforces for signed transactions, the MultiSend fan-out guard, the vote
+stake floor, and the consensus-params block-data floor, so the two seams agree. A contract estimates tax through
+`Query/ComputeTax` on the query accept list; the estimate reserves nothing and never replaces recomputation at dispatch
 (D43, D74).
 
-## 9. Validator and Oracle funding
+The contract runtime ships open: anyone may upload and instantiate from height one, and a generated message must name
+the calling contract as signer. The accept list's response shapes are consensus inputs, so widening it is a
+coordinated binary upgrade, not a parameter vote. There is no IBC (D118).
+[Application integration](../../app/README.md#wasm-integration) owns runtime wiring and the accept list;
+[governance operations](../governance/GOVERNANCE_OPERATIONS.md#2-the-contract-runtime) owns permissions.
 
-### 9.1 Two lanes and one window
+## 6. Validator and Oracle funding
+
+### 6.1 Window and accrual
 
 Gas fees reach `fee_collector` and pass to Distribution every block. Transfer tax accumulates in
 `transfer_tax_collector` until Treasury settles the funding window. Validator and Oracle funding have separate
-per-block NOAH-value targets in `EconomicPolicy`, but Treasury adds the applicable target once per observed block and
+per-block NOAH-value targets in `EconomicPolicy`, but Treasury adds the applicable targets once per observed block and
 compares only the window's aggregates, so a quiet block does not spend subsidy that a busy block in the same window
 would have covered (D10). Expansion principal funds the three capital funds, never rewards.
 
-`reward_funding_window` is a governance parameter defaulting to one chain week and bounded at `2^32` observations so
-the accrual cannot overflow (D34). It is a separate clock from the Oracle's reward window. When an empty window records
-its first observation it initialises the countdown from the parameter; a parameter change never rewrites a positive
-countdown and takes effect at the next empty window. Beginning with the first block, Treasury EndBlock observes the block just executed.
+`reward_funding_window` is a governance parameter, one chain week by default and capped at `2^32` observations (D34),
+and a separate clock from the Oracle's reward window. Each block Treasury adds the then-current targets and values the
+non-empty `fee_collector` balance before Distribution empties it, at that block's Oracle rates; a denomination the
+registry cannot price counts as zero for that observation. An accumulated figure that leaves the representable domain
+fails the block, since a window valued from a partial sum would misallocate real coins
+([Treasury](../../x/treasury/README.md#reward-funding-and-genesis)).
 
-### 9.2 Accrual
-
-Treasury persists one `RewardFundingState`: the countdown, the accumulated validator and Oracle targets, the accumulated
-NOAH value of eligible fees. For each completed block it adds the then-current targets with
-checked addition and values the non-empty `fee_collector` balance before Distribution empties it, at that block's
-accepted Oracle rates, without retaining or moving the coins. NOAH has identity value; registered stablecoins receive
-target credit; a denomination the registry cannot price counts as zero for that observation while the priced
-remainder still accrues. An accumulated figure that leaves the representable domain fails the EndBlock, because a
-window valued from a partial sum would misallocate real coins rather than degrade safely, which is why this lane has
-no conservative branch.
-
-### 9.3 Settlement
+### 6.2 Settlement
 
 With the window's accumulated validator target `V`, Oracle target `O`, eligible fee value `G`, the NOAH value `T` of
 the collector's priced tax, and the subsidy pool balance `B`:
@@ -738,69 +541,51 @@ else:
   validator_paid = B - oracle_paid
 ```
 
-Scarce subsidy is shared by shortfall with the integer remainder to validators (D12). The transfers run in Treasury's
-EndBlock: validator tax and subsidy into `fee_collector` for Distribution at the next block's start, Oracle tax and subsidy
-straight to the Oracle account, so an Oracle top-up never passes through Distribution. Gas at or above `V` sends all
-tax to the Oracle; tax at or below `O` does the same; only tax above the protected Oracle floor may replace subsidy on
-a validator gap, and every residual returns to the Oracle. Depletion of the subsidy pool never mints, borrows from a
-fund, or stops block production; a deposit extends coverage without touching `V` or `O`.
+Scarce subsidy is shared by shortfall with the integer remainder to validators (D12). Validator tax and subsidy go to
+`fee_collector` for Distribution at the next block's start; Oracle tax and subsidy go straight to the Oracle account.
+In effect, gas at or above `V` or tax at or below `O` sends all tax to the Oracle, and only tax above the protected
+Oracle floor may replace subsidy on a validator gap.
 
-Before valuing the pot, Treasury partitions the collector's unpriced coins: tax in a written-off or retired
-denomination routes to the Reserve as inert custody (`EventUnpricedTransferTaxRouted`), and tax in a denomination
-still awaiting a feed stays in the collector for a later window, so no unvalued coin reaches an allocation. A
-successful settlement resets the state to canonical zero atomically with its transfers; `EventBlockRewardsToppedUp`
-carries the targets, organic funding, and payments.
+Before valuing the pot, tax in a written-off or retired denomination routes to the Reserve as inert custody, and tax in
+a denomination still awaiting a feed waits for a later window, so no unvalued coin reaches an allocation.
 
-### 9.4 Distribution and the Oracle
+### 6.3 Subsidy and distribution
+
+The `treasury_subsidy_pool` is seeded at genesis, has no mint permission, and covers only the window's aggregate
+shortfall. Anyone may extend it by sending `anoah`, which lengthens coverage without changing supply or the targets;
+there is no refill, target balance, refund, or conversion path (D9, D25). Depletion never mints, borrows from a fund, or
+stops block production. Governance alone may return idle balance to the community pool with `MsgReturnSubsidy`, which
+names an amount and a minimum remaining balance; there is no floor parameter, automatic sweep, or committee power over
+it (D83).
 
 Distribution's `community_tax` is zero in the launch and testnet genesis artefacts, so nothing skims validator income
-(D13); `arkd init` still writes the SDK default. The community-pool ledger stays inside Distribution and
-receives only rounding residue; Treasury never funds it, `x/protocolpool` is not wired, and governance may sweep it
-(D14). The Oracle pays each reward window its share of a distribution period, `reward_window /
-reward_distribution_window` of every positive denomination its account holds, across validator reward weights,
-truncating per validator per denomination and leaving dust in place; its reward and distribution windows remain the
-smoothing horizon for scores.
+(D13); `arkd init` still writes the SDK default. The community pool receives only rounding residue, Treasury never funds
+it, `x/protocolpool` is not wired, and governance may sweep it (D14). The Oracle pays out its account over its own
+reward windows ([Oracle](../../x/oracle/README.md#11-attendance-settlement)).
 
-### 9.5 Lifecycle order
+## 7. Authority
 
-Governance executes first, so a proposal's conversions are part of the block's flow; conversion settlement then
-precedes every later fund movement. Reward funding values each
-block's earned fees before Distribution consumes them at the next block's start; Oracle funding bypasses Distribution.
-The [application lifecycle](../../app/README.md#block-lifecycle) owns hook ordering, and
-[Treasury](../../x/treasury/README.md#reward-funding-and-genesis) owns funding-window mechanics.
+### 7.1 Treasury params and policy
 
-## 10. Authority and reporting
-
-### 10.1 Treasury params and policy
-
-`Params` holds what governance owns: the reference denomination and cap amount; the funding window; the transfer tax
-rate; the exposure instrument, `volatility_decay`, `flow_decay`, `multiplier_cap`, `multiplier_max_step`, and
-`exposure_refresh_period_blocks`; and the base-fee controller, `base_fee_target_utilisation`,
-`base_fee_adjustment_rate`, and `min_base_gas_price`. Each is domain-capped in its own validation with orders of
-magnitude of headroom, so a governance value feeding halt-class arithmetic is refused at the write rather than
-discovered in a block: the window at `2^32`, the refresh period at a year of blocks, the multiplier cap at a million,
-the base gas price at `10^18`, the adjustment rate at one.
-
-`EconomicPolicy` holds the committee's levers: the two block reward targets, the three fund target ratios, and the
-three exposure weights. The boundary between the two messages is stance against machinery: a lever stating how much of
-something the protocol wants, reversible and safe to hold between a mandate's bounds, is the committee's; the
-instrument that computes it, its cadence, and its rails are governance's (D37). Ratios lie in `[0, 1]` and weights in
-`[0, 10^6]`;
-the three target ratios are independent stocks whose sum may exceed one, since the waterfall rather than their sum
-rations scarce principal.
+`Params` holds what governance owns: the reference unit and cap amount, the funding window, the transfer tax rate, the
+exposure instrument's decays, cap, step, and period, and the base-fee controller. `EconomicPolicy` holds the
+committee's levers: the two block reward targets, the three fund target ratios, and the three exposure weights. The
+boundary is stance against machinery: a lever stating how much of something the protocol wants, reversible and safe
+between a mandate's bounds, is the committee's; the instrument that computes it, its cadence, and its rails are
+governance's (D37). The target ratios lie in `[0, 1]` and are independent stocks whose sum may exceed one, since the
+waterfall rations scarce principal. Every governance number feeding halt-class arithmetic is domain-capped in its own
+validation, so it is refused at the write rather than discovered in a block.
 
 `EconomicMandate` is the shared envelope, term, committee, and half-open window, plus a minimum and maximum policy. Its
 empty-committee form is the disabled state.
 
-### 10.2 Role separation
+### 7.2 Role separation
 
 One principle sorts every message: roles with disjoint powers or different execution semantics get separate messages,
-and one message serves several roles only when they are the same action under the same rules. No committee passes
-that test against governance, since each differs in staleness guard, allowance metering, or cancellable set, so every
-role has its own message and every committee power is enumerable from the proto service. Each handler is one
-authorisation assertion followed by a shared keeper core, so effect logic cannot drift between roles. Governance
-messages carry no expected term, because no governance authorisation depends on a mandate; a committee message naming
-the wrong signer is rejected before any term reasoning.
+and one message serves several roles only when they are the same action under the same rules. Every committee differs
+from governance in staleness guard, allowance metering, or cancellable set, so every role has its own message and
+every committee power is enumerable from the proto service. Each handler is one authorisation assertion followed by a
+shared keeper core, so effect logic cannot drift between roles.
 
 | Owner | Governance authority | Delegated committee authority |
 | --- | --- | --- |
@@ -813,81 +598,25 @@ the wrong signer is rejected before any term reasoning.
 | Asset | Registry, lifecycle, settlement terms, and appointment | One suspension per asset per term |
 | Security | Appointment and standard-module authority | Own upgrade planning and cancellation |
 
-The grants committee holds a committee mandate like the others: it can appoint the registrar, suspend payments,
-reinstate members, and award compensation within its term allowance, under the per-record cap in the reference unit,
-with nothing paying before one period after the award, all under its exact term and active window. It awards no
-ownership, which is governance's alone (D113), and cannot redirect or cancel an award. The registrar is the module's
-second appointment, by the committee under its term for a window inside its own, cleared by a committee appointment:
-it registers members within the open tranche and nothing else; every appointment advances its term (D120).
-A stablecoin award converts its own funding when it is created, within the cap it carries. The block pays the recorded payee as each period falls due (D105); beneficiary and controller
-authority over destinations is specified in the [Disbursement README](../../x/disbursement/README.md) (D87).
+The grants committee awards compensation only; ownership is governance's alone (D113). Its registrar, a single key it
+appoints for a window inside its own, registers members within the open tranche and nothing else (D120). The
+[Disbursement README](../../x/disbursement/README.md) owns the rest.
 
-Market's `MsgSell` and `MsgBuy` are the trader's, and `MsgSettle` converts suspended supply under a plan. Four
-absences are decisions: no Market message carries a recipient, since a payment in another denomination is a buy and
-a Bank send in one transaction, taxed on the send; no fund has a deposit message, since Bank rails and the recipient restriction suffice; no
-message settles a claim, since the chain does it; and no message withdraws from the Reserve to an arbitrary recipient,
-since every Reserve debit is a fixed commitment, a bounded deployment, or a burn.
+Four absences are decisions: no Market message carries a recipient, since a payment in another denomination is a buy
+and a Bank send in one transaction, taxed on the send; no fund has a deposit message, since Bank rails and the
+recipient restriction suffice; no message settles a claim, since the chain does it; and no message withdraws from the
+Reserve to an arbitrary recipient, since every Reserve debit is a fixed commitment, a bounded deployment, or a burn.
 
-Appointment, staleness, and module-specific bounds are documented by the [module READMEs](../../app/README.md#module-entry-points)
-and the [shared mandate package](../../pkg/mandate/doc.go). The claim and Reserve flows are specified in §6.6 and §7.3;
-their financial bounds remain in §7.5.
+Appointment, staleness, and module-specific bounds are documented by the
+[module READMEs](../../app/README.md#module-entry-points) and the [shared mandate package](../../pkg/mandate/doc.go).
 
-### 10.3 Reporting
-
-`FundStatus` reports gross, self-held, and net liability, disclosures, both target families, and the multiplier; it
-never combines distinct funds into a single backing figure (D19). Insurance capital is balance less reservation.
-Funding accounting remains readable without current Oracle prices. Module query schemas and their READMEs define the
-exact API; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) defines the operational interpretation of those surfaces.
-
-Fund deposits, Reserve commitments, and burns emit no module event: Bank's canonical transfer and burn events already record
-sender, recipient, and coins, and the signed message is the authorisation. Every Treasury liability figure in a query
-or event is an `anoah` value constructed from the whole decimal aggregate, never truncated for display.
-
-Disbursement records each award, payment, cancellation, and administrative change in a permanent journal and typed events.
-Its queries expose original terms, payments and remaining principal, each record's room under the ownership cap, and
-per-denomination reservations and custody; the [Disbursement README](../../x/disbursement/README.md) defines this accounting surface.
-
-## 11. Transfer surfaces: Wasm
-
-### 11.1 The execution-tax contract
-
-Every transfer adapter on the chain implements one contract (D40 to D42):
-
-- The fee payer or feegrant granter pays every ante-visible tax as part of the declared fee.
-- The dispatching contract pays every execution-generated tax in addition to the complete requested principal; an
-  insufficient balance fails that dispatch without reducing the recipient's amount.
-- The ante owns signed top-level inputs, including Wasm attached funds; the policy router owns only what execution
-  generates. This structural ownership is exactly-once assessment, with no persistent transfer ID, context marker, or
-  global Bank hook.
-- Execution-generated tax goes straight to `transfer_tax_collector` inside the same cached execution as its transfer,
-  so synchronous, caught, and uncaught failures roll both back.
-- Neither feegrant nor the outer fee payer sponsors execution-generated tax.
-- Escrow, Market settlement, fund movements, claims, and reward distribution are never new inputs.
-
-### 11.2 No hub
-
-The chain has no IBC (D118). The contract runtime is wired with no channel keepers, so a contract's IBC messages and
-queries are refused and its IBC entry points are unreachable; the
-[application README](../../app/README.md#wasm-integration) owns the exact wiring.
-
-### 11.3 The contract runtime
-
-The runtime ships open: anyone may upload and instantiate from height one. Contracts use the execution-tax contract
-above; generated messages must name the calling
-contract as signer. The query accept list exposes a deliberately bounded deterministic API whose admitted response
-shapes are consensus inputs. Widening it requires a coordinated binary upgrade, not a parameter vote.
-
-[Application integration](../../app/README.md#wasm-integration) owns runtime wiring, query registration, and address
-handling; [governance operations](../governance/GOVERNANCE_OPERATIONS.md#2-the-contract-runtime) owns permissions.
-
-Under `Nobody`, governance could still upload, since Wasmd hands the authority its own permission policy; the choice
-to open the runtime removes a lock on everyone else, not on governance.
-
-## 12. Related references
+## 8. Related references
 
 - [Economic decisions](ECONOMIC_DECISIONS.md): each rule's reason, under stable D/P identifiers.
+- [Whitepaper](../papers/WHITEPAPER.md): why the design is what it is, and its proofs.
 - [Genesis](../governance/GENESIS.md): launch settings, open values, and validation.
 - [Governance operations](../governance/GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.
 - [Future changes](../direction/FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
 - [Application module map](../../app/README.md#module-entry-points): state, API schemas, and subsystem development.
-- [Ante/post handling](../../app/ante/README.md) and [Wasm integration](../../app/README.md#wasm-integration): execution enforcement.
+- [Ante/post handling](../../app/ante/README.md), [client fees](../clients/CLIENT_FEES.md), and
+  [Wasm integration](../../app/README.md#wasm-integration): execution enforcement.

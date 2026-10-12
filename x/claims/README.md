@@ -44,7 +44,7 @@ remain the backstop.
 The due-claim index drives EndBlock settlement without an execute message. A block settles at most 1,000 due claims
 (`MaxSettlementsPerBlock`), oldest first; the rest stay pending and due for the next block, already past the reach of
 cancellation, which ends at the closing time whenever settlement runs. Records preserve paid, cancelled, and
-failed outcomes plus cancelling authority. [Economic design](../../docs/design/ECONOMIC_DESIGN.md#66-insurance-claims) owns
+failed outcomes plus cancelling authority. [Economic design](../../docs/design/ECONOMIC_DESIGN.md#46-insurance-claims) owns
 fund-flow and authorisation policy. `ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports
 custody/reservation across all terms. The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
 

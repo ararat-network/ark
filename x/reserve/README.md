@@ -45,8 +45,8 @@ Venue and entry references are free-form evidence the chain never interprets, at
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
 allowance again, and an in-kind reopening is booked at the live Oracle value. No deployment veto window exists;
-governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
-and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
+governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#43-recognition)
+and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
 haircuts, caps, and fresh rates; outflows remain allowance-, floor-, and destination-bounded. The permanent journal
@@ -57,7 +57,7 @@ typed deployment adapters cannot prove a custodian's wire-transfer holdings.
 
 `RecognisedCapital` is a local read, not a stored valuation. It folds open, unimpaired positions under governance's
 eligibility policy, valuing quantity through Oracle and applying haircut and share caps. The [economic recognition
-formula](../../docs/design/ECONOMIC_DESIGN.md#73-recognition) defines the financial meaning of those caps.
+formula](../../docs/design/ECONOMIC_DESIGN.md#43-recognition) defines the financial meaning of those caps.
 
 The self-referential cap has a unique fixed point because the sum of policy ratios is strictly below one.
 Sort each asset's raw-credit-to-cap-ratio threshold; the clipped assets form a suffix. For each candidate suffix,

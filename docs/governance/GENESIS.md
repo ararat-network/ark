@@ -159,7 +159,7 @@ Params (governance-owned, `x/treasury/types/params.go`):
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `reference_denom` | `axdr` | Decided | The reference unit for the tax cap and gas pricing, independent of Market's pool unit (D21); it needs a feed, not registry membership. |
-| `reference_tax_cap` | 100 XDR, `100000000000000000000` | Decided | Tax is the smaller of rate times amount and the cap, so the cap sets the crossover: at 0.5% every transfer up to 20,000 XDR pays proportionally and larger ones pay a flat 100 XDR. The chain mints nothing, so after the subsidy tax and gas are the validators' pay and the cap cannot fall far; above 100 the extra comes only from movers able to leave the rail through a contract ledger or an exchange ([economic design §8.2](../design/ECONOMIC_DESIGN.md#82-taxable-denominations-and-operations), D138). Revisit once conversion opens, from the share of each currency held by contracts. Lowering the cap later refuses nothing; raising it refuses in-flight large transfers (D80). |
+| `reference_tax_cap` | 100 XDR, `100000000000000000000` | Decided | Tax is the smaller of rate times amount and the cap, so the cap sets the crossover: at 0.5% every transfer up to 20,000 XDR pays proportionally and larger ones pay a flat 100 XDR. The chain mints nothing, so after the subsidy tax and gas are the validators' pay and the cap cannot fall far; above 100 the extra comes only from movers able to leave the rail through a contract ledger or an exchange ([economic design §5.2](../design/ECONOMIC_DESIGN.md#52-taxable-denominations-and-operations), D138). Revisit once conversion opens, from the share of each currency held by contracts. Lowering the cap later refuses nothing; raising it refuses in-flight large transfers (D80). |
 | `transfer_tax_rate` | `0.005` | Decided | At the top of Terra Classic's operating band, under the 2% spread floor a swap round trip would otherwise beat (D81), and the safe direction to start from since cuts never refuse in-flight transfers (D80). Revenue starts only once conversion has created currency supply. |
 | `reward_funding_window` | `100800` | Decided | One chain week of settlement observations (D34); the first payment lands at block 100,800, which the floats cover. |
 | `exposure_refresh_period_blocks` | `600` | Default | Hourly recompute of the multiplier. |
@@ -306,7 +306,7 @@ entry points are refused, so no contract channel can exist.
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open: the tax seams are in place and the accept list is populated (`docs/design/ECONOMIC_DESIGN.md` §11.3). |
+| `wasm.params` | upload `Everybody`, instantiate `Everybody` | Decided | The contract runtime ships open: the tax seams are in place and the accept list is populated (`docs/design/ECONOMIC_DESIGN.md` §5.5). |
 
 ## 12. Assembly sequence
 

@@ -48,7 +48,7 @@ Charging tax in ante and refunding in post was rejected because failed messages 
 messages in the router loses the outer fee granter. Recomputing in post duplicates metered work and weakens the
 identity between declaration and charge. This is deferred collection, with no escrow or refund.
 Execution-generated messages use the [policy router](../README.md#wasm-integration), whose tax and transfer
-share the dispatch cache under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract).
+share the dispatch cache under the [economic transfer contract](../../docs/design/ECONOMIC_DESIGN.md#55-execution-generated-tax).
 
 A fee whose every coin is zero is fee-less, as in the SDK; it is what `--gas auto --gas-prices` estimates under. A zero
 coin beside a paying one is refused in every mode. Fee-less simulation charges `SimulatedFeeTransferGas` (38,000) for the gas-fee transfer it cannot execute. This covers
@@ -70,7 +70,8 @@ relevant tests under `./app`. Keep local rollback and ordering reasoning beside 
 
 Wasm decorators immediately follow SDK context setup. The transaction counter supplies the per-block index used
 in contract address derivation. Wrapping another SDK setup around them would reset their gas meter; the explicit
-chain retains SDK decorator order while allowing this insertion.
+chain retains SDK decorator order while allowing this insertion, so an SDK release that adds a decorator is
+mirrored here by hand.
 
 Signed messages and execution-generated dispatches share bounded authz leaf traversal, the one-NOAH explicit
 vote stake floor, and the MultiSend guard. Governance proposal execution uses the underlying router. Lane

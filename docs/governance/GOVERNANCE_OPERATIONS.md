@@ -13,7 +13,7 @@ fails, re-read state and correct the proposal; do not enable a dependent service
 ## 1. Launch defaults and ongoing changes
 
 Initial permissions are launch choices that later governance can change. The launch artefact ships the contract
-runtime open (`docs/design/ECONOMIC_DESIGN.md` §11.3). The following procedures apply when those services or
+runtime open (`docs/design/ECONOMIC_DESIGN.md` §5.5). The following procedures apply when those services or
 appointments are needed.
 
 Initial economic values and permissions are fixed in [genesis](GENESIS.md); committee appointments follow its

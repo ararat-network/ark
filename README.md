@@ -52,7 +52,7 @@ also follows the [upgrade binary policy](docs/operations/NODE_OPERATIONS.md#upgr
 downloads binaries.
 
 **For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
-read [validator and Oracle funding](docs/design/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding) before delegating.
+read [validator and Oracle funding](docs/design/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
 
 **For governance participants and committees:** [Governance operations](docs/governance/GOVERNANCE_OPERATIONS.md) covers
 proposals, service permissions, and appointments. The

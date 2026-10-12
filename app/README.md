@@ -97,7 +97,7 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contrac
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
-The [economic transfer contract](../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract) owns who pays tax and when
+The [economic transfer contract](../docs/design/ECONOMIC_DESIGN.md#55-execution-generated-tax) owns who pays tax and when
 it remains payable. These adapters enforce that contract at distinct signed-message and generated-message boundaries.
 
 ## Verification
