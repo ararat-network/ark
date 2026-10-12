@@ -10,7 +10,7 @@ rewritten in place when its rule changes; a number with no entry has no rule.
 - D1–D40: [D1](#d1), [D2](#d2), [D3](#d3), [D4](#d4), [D5](#d5), [D6](#d6), [D7](#d7), [D8](#d8), [D9](#d9), [D10](#d10), [D11](#d11), [D12](#d12), [D13](#d13), [D14](#d14), [D15](#d15), [D16](#d16), [D17](#d17), [D18](#d18), [D19](#d19), [D20](#d20), [D21](#d21), [D22](#d22), [D23](#d23), [D24](#d24), [D25](#d25), [D26](#d26), [D27](#d27), [D28](#d28), [D30](#d30), [D31](#d31), [D32](#d32), [D33](#d33), [D34](#d34), [D35](#d35), [D36](#d36), [D37](#d37), [D38](#d38), [D40](#d40).
 - D41–D83: [D41](#d41), [D42](#d42), [D43](#d43), [D44](#d44), [D49](#d49), [D53](#d53), [D54](#d54), [D55](#d55), [D56](#d56), [D57](#d57), [D58](#d58), [D59](#d59), [D61](#d61), [D62](#d62), [D63](#d63), [D64](#d64), [D65](#d65), [D66](#d66), [D67](#d67), [D69](#d69), [D70](#d70), [D71](#d71), [D72](#d72), [D73](#d73), [D74](#d74), [D75](#d75), [D76](#d76), [D77](#d77), [D78](#d78), [D79](#d79), [D80](#d80), [D81](#d81), [D82](#d82), [D83](#d83).
 - D84–D111: [D84](#d84), [D85](#d85), [D87](#d87), [D88](#d88), [D89](#d89), [D91](#d91), [D92](#d92), [D93](#d93), [D95](#d95), [D96](#d96), [D101](#d101), [D102](#d102), [D103](#d103), [D104](#d104), [D105](#d105), [D106](#d106), [D107](#d107), [D108](#d108), [D109](#d109), [D110](#d110), [D111](#d111).
-- D112–D140: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123), [D124](#d124), [D125](#d125), [D126](#d126), [D127](#d127), [D128](#d128), [D129](#d129), [D130](#d130), [D131](#d131), [D132](#d132), [D133](#d133), [D134](#d134), [D135](#d135), [D136](#d136), [D137](#d137), [D138](#d138), [D139](#d139), [D140](#d140).
+- D112–D141: [D112](#d112), [D113](#d113), [D114](#d114), [D115](#d115), [D116](#d116), [D117](#d117), [D118](#d118), [D119](#d119), [D120](#d120), [D121](#d121), [D122](#d122), [D123](#d123), [D124](#d124), [D125](#d125), [D126](#d126), [D127](#d127), [D128](#d128), [D129](#d129), [D130](#d130), [D131](#d131), [D132](#d132), [D133](#d133), [D134](#d134), [D135](#d135), [D136](#d136), [D137](#d137), [D138](#d138), [D139](#d139), [D140](#d140), [D141](#d141).
 - Launch and analysis: [P1](#p1), [P2](#p2), [P3](#p3), [P4](#p4).
 
 ## D1
@@ -442,19 +442,19 @@ Recognition policy is one governed list of `EligibilityEntry` rows — an extern
 in (0, 1], a maximum credit per NOAH in (0, 1] ([D64](#d64)), and a staleness window ([D71](#d71)) — which
 `MsgSetRecognitionPolicy` sets whole. `RecognisedCapital` counts the Reserve's `anoah` balance at par and credits each
 listed asset `min(haircut × attested open unimpaired quantity × rate, max_credit_per_noah × anoah_balance)`
-([D64](#d64)). The multiplication is the chain's one rate orientation, NOAH per unit ([D75](#d75)), and the conversion
-goes through `RateSet.Convert` like every other valuation on the chain rather than being re-derived here. Every rate
-comes from the Oracle, so a dark or stale feed zeroes exactly one asset's credit and recognition degrades to zero rather
-than to a frozen number, without exception: there is no governance-supplied fallback price, and a slow-cadence feed is
-served by the entry's own window. Both factors are strictly positive, because an entry granting no credit would be
-indistinguishable from no entry while still occupying the policy and raising no feed-guard claim; refusing zero makes
-every stored entry a live claim and the guard ([D63](#d63)) total over the policy. The list is credit policy alone:
-custody admission never reads it ([D65](#d65)). Cross-fund concentration caps are per-asset Reserve caps because
-Insurance recognises only NOAH. The `RecognisedCapital` query decomposes every row, attested-but-unlisted holdings
-included, so each zero credit shows its reason. Bank custody other than NOAH is not a subject of the decomposition and
-the fold reads no other balance: a listed name is an external symbol the account can never hold ([D70](#d70)), and the
-only other custody, registry-member paper, can never be recognised and is already published by Bank and by Treasury as
-self-held supply ([D66](#d66)).
+([D64](#d64)), counting only positions attested within the entry's window ([D141](#d141)). The multiplication is the
+chain's one rate orientation, NOAH per unit ([D75](#d75)), and the conversion goes through `RateSet.Convert` like every
+other valuation on the chain rather than being re-derived here. Every rate comes from the Oracle, so a dark or stale
+feed zeroes exactly one asset's credit and recognition degrades to zero rather than to a frozen number, without
+exception: there is no governance-supplied fallback price, and a slow-cadence feed is served by the entry's own window.
+Both factors are strictly positive, because an entry granting no credit would be indistinguishable from no entry while
+still occupying the policy and raising no feed-guard claim; refusing zero makes every stored entry a live claim and the
+guard ([D63](#d63)) total over the policy. The list is credit policy alone: custody admission never reads it
+([D65](#d65)). Cross-fund concentration caps are per-asset Reserve caps because Insurance recognises only NOAH. The
+`RecognisedCapital` query decomposes every row, attested-but-unlisted holdings included, so each zero credit shows its
+reason. Bank custody other than NOAH is not a subject of the decomposition and the fold reads no other balance: a listed
+name is an external symbol the account can never hold ([D70](#d70)), and the only other custody, registry-member paper,
+can never be recognised and is already published by Bank and by Treasury as self-held supply ([D66](#d66)).
 
 ## D59
 
@@ -602,16 +602,16 @@ sizes the combined maximum credit per NOAH of the entries sharing a series rathe
 
 Staleness tolerance is entry policy, not feed state: `EligibilityEntry.max_rate_age` — seconds, required positive, at
 most `MaxRecognitionRateAge` (30 days) — states how old the derived feed's rate may be and still back this entry's
-recognition credit, never inherited from the Oracle default, which answers for conversion-grade reads. Cadence is a
-feed fact and tolerance consumer policy, and one series can serve conversion and Reserve recognition with different
-tolerances, so the window never enters Oracle state and the Oracle carries no per-denomination age override. The
-Oracle judges per request: `GetRateSetWithin` takes one request per entry — the entry's symbol and window — derives
-the series from the name itself, and answers under the name, so two tags on one series may state different windows and
-receive different verdicts, keyed apart rather than colliding on the shared feed, and no request can route a name to
-any series but its own. Nothing unjudged crosses the module boundary. `Params.max_exchange_rate_age` is the single
-default behind every gate-enforcing read, including `valueMovement`'s conversion-grade pricing of proven movements;
+recognition credit, never inherited from the Oracle default, which answers for conversion-grade reads. Cadence is a feed
+fact and tolerance consumer policy, and one series can serve conversion and Reserve recognition with different
+tolerances, so the window never enters Oracle state and the Oracle carries no per-denomination age override. The Oracle
+judges per request: `GetRateSetWithin` takes one request per entry — the entry's symbol and window — derives the series
+from the name itself, and answers under the name, so two tags on one series may state different windows and receive
+different verdicts, keyed apart rather than colliding on the shared feed, and no request can route a name to any series
+but its own. Nothing unjudged crosses the module boundary. `Params.max_exchange_rate_age` is the single default behind
+every gate-enforcing read, including `valueMovement`'s conversion-grade pricing of proven movements;
 `GetLastKnownRateSet` ignores freshness and serves accounting for outstanding supply only, never quotes, minting, or
-payments.
+payments. Attested quantities expire on the same principle under their own window ([D141](#d141)).
 
 ## D72
 
@@ -1783,6 +1783,24 @@ refuses. What it costs: a committee claim, a NOAH one included, needs a fresh re
 outage only governance submits claims, which Insurance does not cover; a cancelled conversion's spread stays spent; a
 claim near the pool's depth is ruinous or refused until the pool is resized; and paper in Insurance custody earns no
 credit, so Treasury refills NOAH behind it until a claim in its denomination draws it.
+
+## D141
+
+An attested holding expires. `EligibilityEntry.max_attestation_age` — seconds, required positive, at most
+`MaxAttestationAge` (a year) — bounds how old a position's last statement of its whole holding may be and still back
+credit, and `Position.attested_time` records when that statement was made: at opening, at a quantity restatement, and at
+a return attribution, which states the remainder. Funding an existing position states only the increment and a
+correction fixes history, so neither moves it; a restatement may repeat the same quantity, which is how the committee
+re-attests, and every restatement names its evidence, as the movement kinds already did. Past the window the position
+counts for nothing and reports as `stale_quantity` until restated, and a time ahead of the block, which only an edited
+genesis could carry, earns nothing either. The rule is [D71](#d71)'s applied to quantities: a stale price zeroes credit,
+while a quantity booked once would otherwise earn credit until someone impaired or closed the position, so a custodian
+that failed quietly would keep the Reserve overstated up to its cap for as long as nobody noticed. A lapse is
+conservative — the Reserve's gap reopens and expansion principal flows back to it — and the window forces periodic
+diligence rather than defending against a committee willing to re-attest falsely, which the journal and its references
+exist to expose. The window is per entry because custodians report on different cadences. Genesis imports
+`attested_time` as stated, like the quantity itself: the journal records heights, not times, and only proven figures
+reconcile against it.
 
 ## P1
 

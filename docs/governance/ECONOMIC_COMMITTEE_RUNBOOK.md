@@ -76,12 +76,20 @@ Two things still bind:
 Unlike the burn bound, these shortfalls size on whatever the block could value, however incomplete — because the
 coverage draw spends the Buffer against that same aggregate.
 
-## 4. Deployment is unaffected
+## 4. Deployment and attestation
 
 Deployment honours the static NOAH floor, the term `deployment_allowance`, and the `destinations` list, and is
 deliberately **not** surplus-bounded. The multiplier does not gate converting NOAH into external assets:
 deployment keeps haircut recognition credit and is the fund's mandate, so bounding it by the requirement would
 penalise the fund for doing the thing it exists to do.
+
+**Re-attest every position inside its window.** Each eligibility entry states a `max_attestation_age`. A position
+whose whole holding the committee has not stated within it earns no credit, which reopens the Reserve's gap and pulls
+expansion principal back in. Before the window closes, obtain the custodian's statement and send
+`MsgCommitteeRecordUpdate` with the holding it shows, the same quantity if nothing changed, citing the statement as
+`reference`, which is required. A return attribution re-attests the remainder too; funding a position does not.
+`reserve/RecognisedCapital` reports lapsed holdings as `stale_quantity`, and each position's `attested_time` plus the
+entry's window is when its credit lapses.
 
 ## 5. Answering the alerts
 

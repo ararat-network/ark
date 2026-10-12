@@ -495,11 +495,12 @@ For example, a Reserve holding 100 NOAH with one eligible position capped at twe
 more than 120 NOAH in total, even if an attestation claims a much larger external holding. The external credit is at
 most 20. A haircut or a smaller attested position may reduce it further.
 
-An impaired or ineligible position receives no credit, and a stale external price supplies no fallback credit. This
-treatment differs from stale liabilities because the prudential direction differs: uncertain assets must not inflate
-available resources, while an uncertain obligation must not silently disappear. Recognition is recomputed from current
-evidence and policy. It remains an accounting allowance, not a guarantee that an external custodian can return funds
-immediately or that an asset can be sold at its reported value. [Ark: Reserve][ark-reserve]
+An impaired or ineligible position receives no credit, a stale external price supplies no fallback credit, and a holding
+the committee has not re-attested within its policy's window counts for nothing until it is restated. This treatment
+differs from stale liabilities because the prudential direction differs: uncertain assets must not inflate available
+resources, while an uncertain obligation must not silently disappear. Recognition is recomputed from current evidence
+and policy. It remains an accounting allowance, not a guarantee that an external custodian can return funds immediately
+or that an asset can be sold at its reported value. [Ark: Reserve][ark-reserve]
 
 ### 6.5 Committing resources and accepting losses
 
@@ -991,8 +992,9 @@ contract][ark-treasury]
 
 ### A.5 External Reserve recognition
 
-Let `B_R` be Reserve NOAH, `u_j` an attested eligible quantity, `d_j` its haircut factor, and `k_j` its maximum credit
-per NOAH. Rates must satisfy the holding's freshness policy; ineligible or unusable evidence earns zero credit.
+Let `B_R` be Reserve NOAH, `u_j` an eligible quantity attested within its window, `d_j` its haircut factor, and `k_j`
+its maximum credit per NOAH. Rates must satisfy the holding's freshness policy; ineligible or unusable evidence earns
+zero credit.
 
 ```text
 credit_j = min(d_j × u_j × r_j, k_j × B_R)

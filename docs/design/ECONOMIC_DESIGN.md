@@ -312,10 +312,11 @@ the NOAH balance, which Bank proves, so every credit is independent: a misreport
 its own `max_credit_per_noah × noah_balance` and moves no other asset's credit. The policy's values sum to at most one,
 so recognised capital never exceeds twice the NOAH the Reserve holds, whatever is attested (D58, D64).
 
-Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes its own asset's credit, there is
-no fallback price, and valuation is never stored (D57, D71). Ark-issued paper earns
-nothing wherever it sits, since it is a liability until burned (D28, D62, D69). Custody is attested: the asset sits at
-a mandate destination and the committee books its quantity in an append-only journal
+Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes its own asset's credit, a position
+not re-attested within its entry's window earns nothing until the committee restates it, there is no fallback price, and
+valuation is never stored (D57, D71, D141). Ark-issued paper earns nothing wherever it sits, since it is a liability
+until burned (D28, D62, D69). Custody is attested: the asset sits at a mandate destination and the committee books its
+quantity, citing its evidence, in an append-only journal
 ([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)).
 
 When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens, plus each
