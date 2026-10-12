@@ -114,17 +114,19 @@ Independent RPC nodes can be upgraded in rotation to preserve service availabili
 interrupt its signing; a coordinated consensus upgrade requires the network to reach the upgrade boundary and restart on
 compatible code. Do not run the same validator signing key concurrently in old and replacement processes.
 
-`arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis resumes
-at the next height. The export keeps the original `chain_id` and `genesis_time`. Set `chain_id` to the relaunch's new ID,
-and `genesis_time` to the coordinated restart time, at or after the export height's block time and identical in every
-validator's file, because Oracle and
-Disbursement import refuse records dated after genesis. Records anchored in block time keep their absolute times, so the
-outage counts against them: committee terms, pending claims' closing times, unactivated settlement plans, and grant
-schedules. Before the relaunch, decide whether to push pending claims' `closing_time` and unactivated plans'
-`activation_time` forward by the outage in the exported genesis, returning to governance the veto and cancel windows the
-outage ate, and whether any committee term lapsed during it. Zero-height export is refused. `--jail-allowed-addrs` limits the
-exported validator set to listed operators for a relaunch that lost more than a third of its power. Use `arkd export --help`
-for height and output options, and validate the exported genesis before the coordinated relaunch.
+`arkd export` is a continuation export: absolute heights and height-anchored records remain meaningful, and genesis
+resumes at the next height. The export keeps the original `chain_id` and `genesis_time`. Set `chain_id` to the
+relaunch's new ID, and `genesis_time` to the coordinated restart time, at or after the export height's block time and
+identical in every validator's file, because Oracle and Disbursement import refuse records dated after genesis. Records
+anchored in block time keep their absolute times, so the outage counts against them: committee terms, pending claims'
+closing times, unactivated settlement plans, grant schedules, and the attestation windows of open Reserve positions.
+Before the relaunch, decide whether to push pending claims' `closing_time`, unactivated plans' `activation_time`, and
+open positions' `attested_time` forward by the outage in the exported genesis, returning to governance the veto and
+cancel windows the outage ate and to the committee the attestation time it ate, and whether any committee term lapsed
+during it; a position left to lapse earns nothing until the committee restates it. Zero-height export is refused.
+`--jail-allowed-addrs` limits the exported validator set to listed operators for a relaunch that lost more than a third
+of its power. Use `arkd export --help` for height and output options, and validate the exported genesis before the
+coordinated relaunch.
 
 A node that stops on an app-hash mismatch reports which module store differs with `arkd module-hash-by-height <height>
 --home <home>`, run against the stopped node's data; compare the hashes with those from a node that stayed in

@@ -227,7 +227,7 @@ string field_name = N [
 
 - `arkd export` is a continuation export: heights and block times stay absolute and the genesis starts at the next
   height, so every anchored record resumes as is. Height-anchored records (oracle windows, reward windows) pause through
-  an outage; time-anchored ones (mandate windows, claim closing times, settlement plans, grant schedules) lose it, which
+  an outage; time-anchored ones (mandate windows, claim closing times, settlement plans, grant schedules, attestation windows) lose it, which
   the relaunch runbook in `docs/operations/NODE_OPERATIONS.md` handles. A relaunch takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
   simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that
   lost more than a third of its power.
