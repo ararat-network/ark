@@ -441,8 +441,8 @@ at closure is arithmetic over proven legs, which is why closure needs no governa
 Recognition policy is one governed list of `EligibilityEntry` rows — an external symbol ([D69](#d69)), a haircut
 factor in (0, 1], a recognition cap ratio in (0, 1] ([D64](#d64)), and a staleness window ([D71](#d71)) — which
 `MsgSetRecognitionPolicy` sets whole. `RecognisedCapital` counts the Reserve's `anoah` balance at par and credits each
-listed asset `min(haircut × attested open unimpaired quantity × rate, cap_ratio × recognised_capital)`, the
-self-reference solved per block in closed form ([D64](#d64)). The multiplication is the chain's one rate orientation,
+listed asset `min(haircut × attested open unimpaired quantity × rate, cap_ratio × anoah_balance)` ([D64](#d64)). The
+multiplication is the chain's one rate orientation,
 NOAH per unit ([D75](#d75)), and the conversion goes through `RateSet.Convert` like every other valuation on the chain
 rather than being re-derived here. Every rate comes from the Oracle, so a dark or stale feed zeroes exactly one
 asset's credit and recognition degrades to zero rather than to a frozen number, without exception: there is no
@@ -477,11 +477,11 @@ committee chooses the size of a supply move. The committee may burn registry-mem
 credit (`MsgCommitteeBurnPaper`), because destroying what the capital system counts at nothing cannot reduce
 recognised capital, and destroying Ark paper reduces consolidated liability; NOAH and non-member custody are refused,
 and the credit check is a provably unreachable backstop under [D69](#d69). The committee may also burn NOAH surplus
-(`MsgCommitteeBurnSurplus`), bounded by the keeper at the largest amount after which the recognition solve still
-covers `RequiredReserveCapital`, and never more than `balance - minimum_noah_balance`; the handler re-checks the
+(`MsgCommitteeBurnSurplus`), bounded by the keeper at the largest amount after which recognition at the remaining
+balance still covers `RequiredReserveCapital`, and never more than `balance - minimum_noah_balance`; the handler re-checks the
 amount at the balance it leaves (`CheckSurplusBurn`). The bound is read at the post-burn balance because clipped
-credits lever the balance: a clipped stake's credit is its ratio of the total, so a unit burned lowers recognised
-capital by `1 / (1 - Σ clipped ratios)` and the pre-burn surplus would overstate the power. Sized this way the power
+credits lever the balance: a clipped stake's credit is its ratio of the balance, so a unit burned lowers recognised
+capital by `1 + Σ clipped ratios` and the pre-burn surplus would overstate the power. Sized this way the power
 exhausts itself at the target line and cannot reach through it, leaving the committee timing rather than size. That
 burn refuses while valuation is incomplete, since the requirement is then unavailable — the same condition that parks
 the block's gross expansion in the Reserve freezes disposal out of it. Burns open no position and append no journal
@@ -517,29 +517,26 @@ closed.
 
 ## D64
 
-Recognition caps are each asset's share of recognised capital itself: `EligibilityEntry.recognition_cap_ratio`, in
-(0, 1] with the policy's ratios summing strictly below one, clips credit at `ratio × recognised_capital`, the
-self-reference resolved per block in closed form. The denominator beats two alternatives. A flat `anoah` amount states
-a tolerance at one balance-sheet size and decays into a binding constraint or a vacuous one — and a binding cap
-reopens the gap at full value, the acquisition-and-refill loop. A ratio of the capital requirement scales the ceiling
-with the size of the need rather than the fund's substance, so one corrupted attestation against an almost-empty fund
-could manufacture credit up to a share of a large target. Against the certificate itself, credit levers only the
-provable NOAH base: a lone corrupted input can never push the total past honest ÷ (1 − ratio), a fund holding no NOAH
-counts no asset at all, and the invariant is checkable against the answer — no clipped asset exceeds its ratio of the
-reported figure, and a clipped asset holds exactly it. Clipping one asset shrinks the total every other share is
-measured against (the shrinking-denominator effect), so the clipped set and the total are found together: sorting
-assets by `raw ÷ ratio` makes the clipped set a suffix, and the consistent split gives
-`T = (base + Σ unclipped raw) ÷ (1 − Σ clipped ratios)` — cross-multiplied comparisons in checked decimal arithmetic
-and one final division, no iteration, no stored valuation, totality by `T ≤ base ÷ (1 − Σ ratios)` with no attested
-figure in the bound. Existence requires the policy-wide ratio sum strictly below one, enforced at the policy write and
-genesis import: at one the denominator dies and the caps admit everything. The couplings the self-reference introduces
-all point conservatively — a dark feed zeroes its own asset and tightens every neighbour's ceiling — and
-`RecognisedCapital(ctx)` is a pure local read: nothing is threaded from Treasury, and the surplus a committee may burn
-is monotone in the requirement ([D61](#d61)). The EVM warning against on-chain waterfall caps (float nondeterminism,
-gas-bounded recursion) does not govern a Cosmos keeper fold: the arithmetic is integer, the policy is
-governance-written rather than attacker-supplied, and the closed form needs no iteration — while the query still
-publishes each block's resolved `effective_cap` per asset, the absolute ceilings a debt-ceiling design would have
-governance push by hand.
+Recognition caps are each asset's share of the Reserve's NOAH balance: `EligibilityEntry.recognition_cap_ratio`, in
+(0, 1] with the policy's ratios summing to at most one, clips credit at `ratio × anoah_balance`. The denominator beats
+three alternatives. A flat `anoah` amount states a tolerance at one balance-sheet size and decays into a binding
+constraint or a vacuous one — and a binding cap reopens the gap at full value, the acquisition-and-refill loop. A ratio
+of the capital requirement scales the ceiling with the size of the need rather than the fund's substance, so one
+corrupted attestation against an almost-empty fund could manufacture credit up to a share of a large target. A ratio of
+recognised capital itself measures each cap against a total that includes the credits being capped, so one asset's
+credit raises every other asset's ceiling: beside honest holdings held back by their caps, a single misreported entry
+carries the total to `base ÷ (1 − Σ ratios)`. With 100 NOAH and gold capped at a half that design recognises 200, and
+one fictitious entry capped at 0.4 takes it to 1,000. Against the NOAH balance, which Bank proves, every credit is
+independent: a misreported holding or a wrong price adds at most its own `ratio × balance` and moves no other asset's
+credit, a dark feed zeroes its own asset and nothing else, a fund holding no NOAH counts no asset at all, and with the
+ratios summing to at most one recognised capital never exceeds twice the NOAH held, whatever is attested. This is the
+structure of the Basel III liquidity coverage ratio, which states its Level 2 limits as shares of the total but computes
+them as multiples of Level 1, so no lower-tier holding can lift another's allowance. A ratio therefore does not read as
+a share of the reported total: governance sizes it as a multiple of the NOAH held, and sizes entries sharing a price
+series by their combined ratio ([D70](#d70)). The arithmetic is one checked multiplication per asset with no solve;
+`RecognisedCapital(ctx)` is a pure local read, nothing is threaded from Treasury, and the surplus a committee may burn
+is monotone in the requirement ([D61](#d61)). The query publishes each asset's resolved `effective_cap`, the absolute
+ceilings a debt-ceiling design would have governance push by hand.
 
 ## D65
 

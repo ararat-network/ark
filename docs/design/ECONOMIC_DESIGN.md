@@ -298,23 +298,25 @@ capital_gap        = max(required_capital - recognised_capital, 0)
 The Buffer counts its `anoah` at par; Treasury reads it directly, since the Buffer has no operator. Insurance counts its
 `anoah` less the NOAH reserved against pending claims, because an approved claim cannot cover a second loss; the
 registry paper it holds for stablecoin claims counts for nothing (D28). The Reserve counts its `anoah` at par plus a
-haircut credit for each attested position:
+haircut credit for each listed asset's open, unimpaired attested quantity:
 
 ```text
-credit_a = min(haircut_a * attested_quantity_a * rate_a, cap_ratio_a * recognised_capital)
+credit_a = min(haircut_a * attested_quantity_a * rate_a, cap_ratio_a * noah_balance)
 ```
 
-where `rate_a` is the derived feed's rate within the entry's own staleness window and zero otherwise. The cap is a
-share of recognised capital itself, solved per block in closed form, so a lone bad attestation can never push the total
-past `honest ÷ (1 − ratio)`; ratios sum strictly below one (D58, D64).
+where `rate_a` is the derived feed's rate within the entry's own staleness window and zero otherwise. The cap reads only
+the NOAH balance, which Bank proves, so every credit is independent: a misreported holding or a wrong price adds at most
+its own `cap_ratio × noah_balance` and moves no other asset's credit. The ratios sum to at most one, so recognised
+capital never exceeds twice the NOAH the Reserve holds, whatever is attested (D58, D64).
 
-Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes one asset's credit and tightens
-every neighbour's ceiling, there is no fallback price, and valuation is never stored (D57, D71). Ark-issued paper earns
+Recognition degrades to zero, never to a stale number: a dark or over-age feed zeroes its own asset's credit, there is
+no fallback price, and valuation is never stored (D57, D71). Ark-issued paper earns
 nothing wherever it sits, since it is a liability until burned (D28, D62, D69). Custody is attested: the asset sits at
 a mandate destination and the committee books its quantity in an append-only journal
 ([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)).
 
-When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens. Zero credit would
+When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens, plus each
+capped asset's ratio of the 100. Zero credit would
 reopen all 100 and invite an acquisition-and-refill loop that captures expansion principal; full credit would close a
 gap that is not closed.
 
@@ -336,7 +338,7 @@ The same targets bound what a committee may move or destroy, always in the conse
 committee can move, tightens all of them (D72):
 
 - The Reserve committee may burn NOAH surplus up to the largest amount whose post-burn recognition still covers the
-  requirement, and never below the mandate floor. Clipped credits lever the balance, so the bound is solved at the
+  requirement, and never below the mandate floor. Clipped credits lever the balance, so the bound is read at the
   balance a burn leaves; it exhausts itself at the target line, leaving the committee timing rather than size. It
   requires a complete valuation, since an incomplete aggregate can understate the requirement (D61).
 - The committee may commit to the Buffer or Insurance up to the receiving fund's gross shortfall and above the

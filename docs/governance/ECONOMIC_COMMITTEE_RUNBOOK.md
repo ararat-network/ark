@@ -50,11 +50,11 @@ organic stress already produces.
 multiplier *then* — not against the one that held when the proposal was written. A surplus sized last week can
 be zero today with no change to the Reserve's own holdings.
 
-**Read the bound with `reserve/BurnableSurplus`** (`arkd query reserve burnable-surplus`). It runs the handler's
-own solve: the largest burn after which recognised capital, re-solved at the balance the burn leaves, still covers
-the requirement, and never more than the balance above the mandate's NOAH floor. Clipped stakes and the floor are
-both included, so the figure is exact at the queried height. The handler solves again at execution, so leave
-margin for the multiplier and prices to move between the query and inclusion.
+**Read the bound with `reserve/BurnableSurplus`** (`arkd query reserve burnable-surplus`). It computes the
+handler's own bound: the largest burn after which recognised capital, recomputed at the balance the burn leaves,
+still covers the requirement, and never more than the balance above the mandate's NOAH floor. Clipped stakes and the
+floor are both included, so the figure is exact at the queried height. The handler recomputes it at execution, so
+leave margin for the multiplier and prices to move between the query and inclusion.
 
 **A refused burn is not necessarily an error.** If `RequiredReserveCapital` errors rather than returning a
 number, the liability valuation is incomplete and the refusal is deliberate: a fund that cannot size its

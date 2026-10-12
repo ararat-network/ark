@@ -484,15 +484,16 @@ Reserve can recognise NOAH plus a constrained contribution from eligible externa
 and recorded in a permanent position journal; sending NOAH to an approved destination is an on-chain fact, while what
 the recipient holds afterwards requires separate evidence.
 
-Governance defines eligible holdings, valuation haircuts, acceptable price age, and maximum contribution shares. The
-credit given to an external holding is the smaller of its haircut-adjusted value and its allowed share of total
-recognised Reserve capital. The combined share limits must sum to less than one. As a result, external attestations can
-only extend a provable NOAH base by a bounded amount. An empty NOAH base cannot support a positive recognised total
-solely through self-referential attestations.
+Governance defines eligible holdings, valuation haircuts, acceptable price age, and maximum contributions. The credit
+given to an external holding is the smaller of its haircut-adjusted value and an allowed fraction of the Reserve's NOAH
+balance. The allowed fractions must sum to at most one. Because each limit is measured against NOAH the chain can verify,
+rather than against a total that includes other attested credits, one misreported holding cannot raise another's limit.
+External attestations can therefore at most double a provable NOAH base, and an empty NOAH base supports no external
+credit at all.
 
-For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of recognised capital can
-recognise no more than 125 NOAH in total, even if an attestation claims a much larger external holding. The external
-credit is at most 25. A haircut or a smaller attested position may reduce it further.
+For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of its NOAH can recognise no
+more than 120 NOAH in total, even if an attestation claims a much larger external holding. The external credit is at
+most 20. A haircut or a smaller attested position may reduce it further.
 
 An impaired or ineligible position receives no credit, and a stale external price supplies no fallback credit. This
 treatment differs from stale liabilities because the prudential direction differs: uncertain assets must not inflate
@@ -994,14 +995,15 @@ Let `B_R` be Reserve NOAH, `u_j` an attested eligible quantity, `d_j` its haircu
 must satisfy the holding's freshness policy; ineligible or unusable evidence earns zero credit.
 
 ```text
-credit_j = min(d_j × u_j × r_j, k_j × C_R)
+credit_j = min(d_j × u_j × r_j, k_j × B_R)
 C_R = B_R + Σ_j credit_j
 
-Σ_j k_j < 1
-C_R ≤ B_R / (1 − Σ_j k_j)
+Σ_j k_j ≤ 1
+C_R ≤ B_R × (1 + Σ_j k_j) ≤ 2 × B_R
 ```
 
-The cap restricts recognised credit even if reported quantities are arbitrarily large within their allowed domain. It
+The cap restricts recognised credit even if reported quantities are arbitrarily large within their allowed domain, and
+each credit depends only on its own holding and `B_R`, so one misreported holding cannot raise another's. It
 cannot prove custody or ensure liquidation proceeds. Ark-issued currency contributes no such credit.
 
 ### A.6 Reward funding
