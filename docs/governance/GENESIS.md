@@ -7,12 +7,9 @@
 - Artefact: `app/genesis/genesis.json`, data rather than a generator. `app/genesis_test.go` is its build check: it
   validates the file with the manager `arkd genesis validate` uses, boots a chain from it two ways, and pins the
   values §14 lists.
-- Decisions: the `Dnn` references below are entries in [economic decisions](../design/ECONOMIC_DECISIONS.md); the
-  register holds each rule's reason, this document what each setting is.
 
-Every table reads Setting, Value, Status, Why. Status is one of **Decided** (an explicit launch choice, often a register
-entry), **Default** (the module or SDK default, kept deliberately), or **Assembly** (set when the final file is built,
-§12).
+Every table reads Setting, Value, Status, Why. Status is one of **Decided** (an explicit launch choice), **Default**
+(the module or SDK default, kept deliberately), or **Assembly** (set when the final file is built, §12).
 
 Block counts assume the chain's six-second block: 600 blocks an hour, 14,400 a day, 100,800 a week, 5,256,000 a year
 (`pkg/chain/blocks.go`, and the 5 s commit timeout in `cmd/arkd/cmd/config.go`). Windows a governance vote must fit,
@@ -43,8 +40,8 @@ of every `arkd init` default.
 
 ## 1. Rules the artefact follows
 
-Ark launches from a clean genesis (D20). No legacy state, wire compatibility, or historical module-account balance
-survives, so the artefact and the code obey these rules rather than a migration:
+Ark launches from a clean genesis (D20). No Terra Classic state, wire compatibility, or historical module-account
+balance survives, so the artefact and the code obey these rules rather than a migration:
 
 - No module registers a state migrator for launch; Treasury's consensus version is 1. No frozen legacy types,
   converters, reserved tags, store-prefix shims, or upgrade handler exist, and any that appear are removed.

@@ -121,7 +121,14 @@ lapse. What bounds it is the purchase itself, on an open market from tens of tho
 unbonding; delegations visible on chain; validators voting the delegations they carry; and the relaunch above, which
 answers a bought vote as it answers a halt, with the buyer's balance left out, which is what makes the purchase a bad
 trade. Nothing today delays an upgrade or a pool spend past its vote, and nothing opens a step without one; both are
-open under D93.
+open (§9).
+
+**Why the seats do not grow.** No step moves pool NOAH into the seats, and no rule weights a seat above its stake.
+Founder stake barely moves the bar a buyer faces: each NOAH moved from the member pool into the seats raises it by less
+than half a NOAH, and to keep a veto once a buyer holds one the founders would need more than the whole public bonded
+stake, the chain the plan hands over. Larger seats also enlarge the cheaper route: four nodes at ten seats can halt the
+chain from block one, so a hostile actor pressures a few known people rather than buying a tenth of the supply, and
+seats transfer from year four, so a larger seat is a larger block for the same buyer.
 
 ---
 
@@ -328,13 +335,14 @@ holders are bound the same way, each by its own record under the cap, and none d
 
 The founder's work after launch is paid by a **compensation stream at the cap**: 10M NOAH over 260 fortnights, ten
 years, about 38,460 a fortnight and 1M a year. That is the whole room the compensation cap, 1M in the reference unit a
-year of 26 fortnights, leaves one record at NOAH's opening price of one XDR, and never more NOAH. It is written at genesis beside the grant as
-grant 2, valued at that bootstrap price (D128), so the cap admits exactly 10M, and its first fortnight pays two weeks
-after genesis (D136). It pays for that work and never the hours the seat income pays, and it fills the founder's record's compensation cap for its ten years,
-so no other compensation reaches that record. It is pay and sits outside the ownership cap, but it is NOAH the founder
-may stake, so the handover figures in §5 count it as the founder's (D129). With the grant it takes step 1's contributor
-spend to 25M against its 20M guideline, an overrun the plan states here; later steps carry less, and the 60/40 split
-holds over the whole distribution (D131).
+year of 26 fortnights, leaves one record at NOAH's opening price of one XDR, and never more NOAH: sized to the cap at an
+award-day price, it would grow as NOAH fell. It is written at genesis beside the grant as grant 2, valued at that
+bootstrap price (D128), so the cap admits exactly 10M, and its first fortnight pays two weeks after genesis (D136). It
+pays for that work and never the hours the seat income pays, and it fills the founder's record's compensation cap for
+its ten years, so no other compensation reaches that record. It is pay and sits outside the ownership cap, but it is
+NOAH the founder may stake, so the handover figures in §5 count it as the founder's (D129). With the grant it takes step
+1's contributor spend to 25M against its 20M guideline, an overrun the plan states here; later steps carry less, and the
+60/40 split holds over the whole distribution (D131).
 
 **One schedule, with a capped total.** The whole ownership grant is escrowed in one proposal, from the contributor
 pool. The module escrows it and records its start time, schedule, and payee. Nothing
@@ -553,8 +561,9 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   cap; the seat is consensus weight sized by the threshold, not pay (D112, D115).
 - Seven to thirteen seats because the founding stake must clear the 40M a buyer of the first year's liquid NOAH could
   take a third against, which the founder's third does at seven, and the founder's seat reaches 3% of supply at
-  thirteen. Outside that range launching is a decision, not something assembly absorbs by resizing seats, which would
-  reverse D111 for D111's reason and make the dissolution schedule move with the review (D112).
+  thirteen. Outside that range launching is a decision, not something assembly absorbs by resizing seats: a seat is
+  sized per seat, so what a founder is promised at the review does not shrink because the review admitted another, and
+  resizing would break that and move the dissolution schedule with the review (D112).
 - Four years with a one-year cliff for contributors to spread ownership payments over the contribution horizon; ownership accrues and pays on that clock,
   the cap checked at award (D121). One year for
   members, a tenth after a two-week hold, because a member grant over four is thin and a tenth in the first fortnight
@@ -570,8 +579,7 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   float. The tail paces the exit: a one-year tail is a lump unlock above the member flow of that year, two or three
   leave founders half or more of what is sold, and four keeps them a minority while finishing about when public
   bonded stake passes the seats, near the step-5 gate, so the founding stake is fully for sale only once the public
-  outweighs it. The decade framing went with D101, which made the seat an allocation a leaver keeps rather than pay
-  for ten years of service.
+  outweighs it.
 - No group rule binds the seat holders together (D106). The seat holders are independent validators who may vote in
   different directions, and a cap that paid one founder less because another was paid would treat them as the bloc
   the handover exists to end; each seat holder's record is bound by the same cap as any contributor, the seat outside
@@ -657,6 +665,11 @@ slow distribution when that lags, which is the safe direction, and two levers ex
   and hands over later, a higher one stalls a weak year.
 - When, if at all, to pull the reward-target lever for organic validators or for a stalled handover, and the runway cost
   governance accepts for it.
+- Two levers against a bought third (§3), each its own change: a minimum lead time, fixed in code, between a vote and
+  an upgrade or a large pool spend, so a bought vote is visible before it executes; and opening the distribution
+  schedule once, with the on-chain gate releasing each step, since a third of the vote stops every `MsgOpenTranche`
+  and every committee re-appointment. A member tally over the irreversible message classes, the one electorate a buyer
+  cannot purchase, is the direction if those prove insufficient; it is not planned.
 - Vetting criteria for the founding set.
 - Membership obliges nothing (§4, D102), so what remains for counsel before the first tranche is how a grant with
   nothing owed is characterised, and what the identity attestations oblige the platform to protect; the plan answers

@@ -225,11 +225,10 @@ consumer rebases, and transient outages could repeatedly switch the unit. `Query
 
 ### 1.4 Rate orientation: NOAH per unit
 
-Rates are NOAH per one unit of the feed's denomination (D75–D77, entries in the [economic decision
-register](../../docs/design/ECONOMIC_DECISIONS.md)); the [repository arithmetic rules](../../AGENTS.md#arithmetic-rules)
+Rates are NOAH per one unit of the feed's denomination; the [repository arithmetic rules](../../AGENTS.md#arithmetic-rules)
 state the orientation beside rounding requirements.
 
-**D75.** `rate[feed]` is NOAH per one unit of the feed's denomination (`USD/NOAH`); `rate[anoah] = 1`;
+**Orientation.** `rate[feed]` is NOAH per one unit of the feed's denomination (`USD/NOAH`); `rate[anoah] = 1`;
 `value_in_NOAH(amount of X) = amount × rate[X]`. `RateSet.Convert` is `amount × rate[offer] / rate[ask]`, so "multiply
 before dividing" holds by representation for the protocol's dominant valuation. Every rate carried beside the store
 shares the orientation: `SettlementPlan.redemption_rate` is NOAH paid per unit of the settled asset, which reads as a
@@ -252,7 +251,7 @@ to it, since a plan enters the registry's rate sets beside oracle rates. Rejecte
 orientations in one codebase, and storing both, which doubles vote bytes to save a division consumers should not be
 doing. `RawCredit` on a zero rate credits nothing, since a multiplication has no division to fail.
 
-**D76.** Prices and quantities rebase differently. `Convert` re-expresses a quantity; a stored price whose unit is "per
+**Rebasing.** Prices and quantities rebase differently. `Convert` re-expresses a quantity; a stored price whose unit is "per
 one unit of the reference" takes the reciprocal factor, `p_new = p_old × rate[new] / rate[old]`, which is
 `Convert(p of new → old)`, the same call with the units in the opposite order. Every rebase site states which it holds:
 the base pool, the tax cap, and the base-fee price are quantities; the exposure anchor and the conversion-factor table
@@ -261,7 +260,7 @@ cross rate as a market move; the function's comment says the reversal is the ope
 equal to the live price produces no return after a move. One arithmetic path serves both, since a separate helper
 would duplicate it for the one figure the chain must not get wrong.
 
-**D77.** The [sidecar resolver](../../pricefeed/sidecar/resolver/README.md) publishes final rates in the same
+**The sidecar.** The [sidecar resolver](../../pricefeed/sidecar/resolver/README.md) publishes final rates in the same
 NOAH-per-unit orientation; providers retain their venue pair conventions.
 
 **Orientation-invariant parts.** The tally is orientation-invariant: cross rates and their medians land in the store's

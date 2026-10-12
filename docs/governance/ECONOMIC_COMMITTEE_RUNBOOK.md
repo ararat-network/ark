@@ -31,8 +31,8 @@ clamped. Eight fields, in three groups:
 | Fund ratios | `redemption_buffer_target_ratio`, `strategic_reserve_target_ratio`, `insurance_target_ratio` | how much capital it holds against liability |
 | Exposure weights | `liability_ratio_weight`, `volatility_weight`, `flow_weight` | how much extra a unit of measured risk demands |
 
-D79 counts these as six levers by taking the three weights as one; the mandate bounds them as eight
-independent fields, which is the number that matters when drafting a policy update.
+The mandate bounds all eight independently. A weight's minimum may sit above zero, which keeps the committee from
+switching the exposure model off; a minimum of zero grants it that power for the appointment.
 
 **The transfer tax is not a committee lever.** `transfer_tax_rate` lives in `Params` and moves only by
 governance vote (D78, D80): it is part of the fee every wallet signs, so a raise refuses every in-flight

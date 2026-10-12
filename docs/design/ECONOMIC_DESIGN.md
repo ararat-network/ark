@@ -1,11 +1,10 @@
 # Economic design
 
-This reference states Ark's economic contract between modules: ownership, custody, conversion flows, liability,
-capital targets, fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds
-and authority move. [Economic decisions](ECONOMIC_DECISIONS.md) holds each rule's reason under its D/P identifier; the
-[subsystem READMEs](../../app/README.md#module-entry-points) own each module's internals; [genesis](../governance/GENESIS.md)
-owns launch settings; [governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing
-them.
+This reference states Ark's economic contract between modules: ownership, custody, conversion flows, liability, capital
+targets, fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds and
+authority move. The [subsystem READMEs](../../app/README.md#module-entry-points) own each module's internals and the
+reasons for its local rules; [genesis](../governance/GENESIS.md) owns launch settings; [governance
+operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing them.
 
 ## Contents
 
@@ -165,11 +164,13 @@ Delta NOAH supply   = -overflow_burn
 Delta stable supply = +sum(stable_output)
 ```
 
-The waterfall runs on the gross offer, so spread and dust travel with the principal: with the funds at target they
-burn exactly as an unconditional burn would, and with a fund short they are capital arriving as the requirement rises
-(D6). Treasury moves each positive credit from Market's account to its fund and returns `overflow_burn`, which Market
-burns from its escrow (D5). When the valuation is incomplete, the whole gross total parks in the Reserve and nothing
-burns: an incomplete aggregate can land either side of the truth, and parking is revisable where a burn is not.
+The waterfall runs on the gross offer, so spread and dust travel with the principal: with the funds at target they burn
+exactly as an unconditional burn would, and with a fund short they are capital arriving as the requirement rises (D6).
+Spread is a premium against stale-oracle and adverse-selection risk, so it capitalises the funds that bear that risk,
+and nothing pays from a fund beyond its target, so no one gains from a wider spread. Treasury moves each positive credit
+from Market's account to its fund and returns `overflow_burn`, which Market burns from its escrow (D5). When the
+valuation is incomplete, the whole gross total parks in the Reserve and nothing burns: an incomplete aggregate can land
+either side of the truth, and parking is revisable where a burn is not.
 
 ### 3.2 Stablecoin to NOAH
 
@@ -235,9 +236,10 @@ shortfall and the mandate's NOAH floor (§4.5). Governance executes proposals be
 commitment lands ahead of that block's settlement.
 
 A commitment of `a` lowers the Reserve by `a` and raises the receiving fund by `a`; supply, liability, quotes, spread,
-pool state, and every other fund are unchanged. The Reserve's reopened gap is refilled later by the ordinary
-waterfall, which delays Insurance funding and overflow burn, and each proposal states that cost. Commitment is
-one-way: there is no Buffer-to-Reserve path (D16). It succeeds under an incomplete valuation.
+pool state, and every other fund are unchanged. The Reserve's reopened gap is refilled later by the ordinary waterfall,
+which delays Insurance funding and overflow burn, and each proposal states that cost. Commitment is one-way: there is no
+Buffer-to-Reserve path (D16), since a public removal path would make committed inventory reversible and invite redeeming
+ahead of it. It succeeds under an incomplete valuation.
 
 ## 4. Capital
 
@@ -410,7 +412,9 @@ in its denomination. A stablecoin claim's conversion spends Insurance NOAH at su
 
 - `Params.transfer_tax_rate`, governance-owned, in `[0, 1]`. Zero disables the tax without deleting anything (D44). It
   is governance's because it is part of the fee every wallet signs: a raise refuses every in-flight transfer until
-  clients re-query, and the voting period is the notice that needs (D80).
+  clients re-query, and the voting period is the notice that needs (D80). Market's committee band over the Tobin tax
+  is no precedent: a swap carries the trader's own bound, a minimum receive or a maximum offer, and a transfer carries
+  none.
 - `Params.reference_denom` and `Params.reference_tax_cap`: the reference unit, which always equals the Oracle's, and a
   cap amount in it (D21, D37). Zero means uncapped. Changing the amount moves no fund, pool, quote, or coverage figure.
 - No tax-rate controller, revenue target, change-rate limit, or rolling indicator exists (D79).
@@ -447,9 +451,10 @@ Disbursement payments, stablecoin compensation included, are untaxed protocol di
 of contributor NOAH are Market settlement (D88).
 
 The tax sees the Bank ledger and nothing built on it: value moving inside a contract's own balances, an exchange, or a
-custodian is taxed on the way in and out and never in between. The cap is the defence, bounding what a large mover
-saves by leaving the rail; the share of each currency held by contract addresses is the signal that movers are leaving
-(D138).
+custodian is taxed on the way in and out and never in between. The cap is the defence, bounding what a large mover saves
+by leaving the rail; the share of each currency held by contract addresses is the signal that movers are leaving (D138).
+Refusing currencies to contracts outside a code list was rejected: it would take them out of the open runtime and still
+need every listed contract's claims, LP and vault shares included, to be untransferable.
 
 ### 5.3 Calculation and caps
 
@@ -575,9 +580,10 @@ else:
 ```
 
 Scarce subsidy is shared by shortfall with the integer remainder to validators (D12). Validator tax and subsidy go to
-`fee_collector` for Distribution at the next block's start; Oracle tax and subsidy go straight to the Oracle account.
-In effect, gas at or above `V` or tax at or below `O` sends all tax to the Oracle, and only tax above the protected
-Oracle floor may replace subsidy on a validator gap.
+`fee_collector` for Distribution at the next block's start; Oracle tax and subsidy go straight to the Oracle account. In
+effect, gas at or above `V` or tax at or below `O` sends all tax to the Oracle, and only tax above the protected Oracle
+floor may replace subsidy on a validator gap. Validators also earn gas through Distribution, while the tax is the
+Oracle's only organic income, so tax reaches validators only to close a gap gas left.
 
 Before valuing the pot, tax in a written-off or retired denomination routes to the Reserve as inert custody, and tax in
 a denomination still awaiting a feed waits for a later window, so no unvalued coin reaches an allocation.
@@ -645,7 +651,6 @@ Appointment, staleness, and module-specific bounds are documented by the
 
 ## 8. Related references
 
-- [Economic decisions](ECONOMIC_DECISIONS.md): each rule's reason, under stable D/P identifiers.
 - [Whitepaper](../papers/WHITEPAPER.md): why the design is what it is, and its proofs.
 - [Genesis](../governance/GENESIS.md): launch settings, open values, and validation.
 - [Governance operations](../governance/GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.

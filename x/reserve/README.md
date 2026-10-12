@@ -29,10 +29,12 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 The mandate contains an exact committee, term window, gross deployment allowance, minimum NOAH balance, and approved
 destinations. A NOAH deployment consumes allowance permanently for the term and enforces the remaining balance floor;
-any other held denomination deploys in kind against the holding alone, since that capital was charged when it first
-went out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no
-separate guardian or pause state: governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
-rejected because the bounded on-chain outflow and the off-chain custody relationship have different evidence.
+any other held denomination deploys in kind against the holding alone, since that capital was charged when it first went
+out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no separate
+guardian or pause state: governance replaces or disables the mandate. There is no governance deployment message either,
+since deployment needs the off-chain counterparty relationship only a committee holds. Per-transaction/rolling caps,
+slippage limits, and adapter pins were rejected because the bounded on-chain outflow and the off-chain custody
+relationship have different evidence.
 
 A `Position` holds attested quantity, the time it was last attested, and venue reference beside proven deployed/returned
 amounts, impairment, and opening/closing heights. Every mutation appends an `AccountingEntry`; corrections append a
@@ -49,14 +51,23 @@ allowance again, and an in-kind reopening is booked at the live Oracle value. No
 governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#43-recognition)
 and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
 
-An attestation expires. `attested_time` is set when the committee states the whole holding: at opening, at a
-quantity restatement, and at a return attribution, which states the remainder. Funding an existing position states
-only the increment and corrections fix history, so neither moves it. Each entry's `max_attestation_age`, positive and
-at most `MaxAttestationAge` (a year), bounds how old that statement may be and still earn credit; past it the
-position's quantity reports as `stale_quantity` and counts for nothing until the committee restates it, which may
-repeat the same quantity. A time ahead of the block, which only an edited genesis could carry, also earns nothing. The
-window forces the diligence a quiet custodian failure would otherwise escape; it is no defence against a committee
-willing to re-attest falsely, which the journal and its references exist to expose.
+Burn authority splits by what a burn can destroy. Governance's `MsgBurnReserveAssets` may burn any custody, NOAH
+included, keeping the NOAH above a minimum the proposal states: a NOAH burn of chosen size is the protocol's one
+discretionary supply contraction. The committee burns registry paper that carries no credit with
+`MsgCommitteeBurnPaper`, which retires liability and cannot lower recognised capital, and NOAH surplus with
+`MsgCommitteeBurnSurplus`, within the action bound. Burns open no position and append no journal entry; the signed
+message and Bank's burn event are the record.
+
+An attestation expires. `attested_time` is set when the committee states the whole holding: at opening, at a quantity
+restatement, and at a return attribution, which states the remainder. Funding an existing position states only the
+increment and corrections fix history, so neither moves it. Each entry's `max_attestation_age`, positive and at most
+`MaxAttestationAge` (a year), bounds how old that statement may be and still earn credit; past it the position's
+quantity reports as `stale_quantity` and counts for nothing until the committee restates it, which may repeat the same
+quantity. A time ahead of the block, which only an edited genesis could carry, also earns nothing. The window forces the
+diligence a quiet custodian failure would otherwise escape; it is no defence against a committee willing to re-attest
+falsely, which the journal and its references exist to expose. Governance has no restatement message, and its correction
+fixes a record without stating custody, so credit that lapses while no committee is seated stays lapsed until one is
+appointed and restates each position.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
 haircuts, caps, fresh rates, and fresh attestations; outflows remain allowance-, floor-, and destination-bounded. The
@@ -75,6 +86,13 @@ own row and no other. The policy's values sum to at most one, so recognised capi
 whatever is attested, and no NOAH means no asset credit. A missing or stale feed gives zero credit, never a fallback
 valuation.
 
+Caps read the balance rather than recognised capital on purpose. A cap measured against a total that includes the
+credits it caps lets one asset's credit raise every other asset's ceiling: with 100 NOAH and gold capped at a half,
+honest recognition is 200, and one fictitious entry capped at 0.4 takes it to 1,000. A flat amount decays into a binding
+or vacuous bound as the balance sheet moves, and a share of the requirement lets a corrupted attestation against an
+empty fund manufacture credit up to a share of a large target. Basel III's liquidity coverage ratio anchors its Level 2
+limits to Level 1 the same way.
+
 Treasury reads one capital number to size expansion gaps. Reserve reads Treasury's capital requirements through a
 reader installed after construction only where an action needs a bound. It does not acquire a second liability
 calculator. A total/liquid pair was rejected: the Buffer is already the liability-scaled liquid tranche, and the
@@ -91,7 +109,8 @@ strings already guarantee.
 The feed always derives from the prefix: `abtc-cb` and `abtc-osl` use the same series with distinct custody policy.
 There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates. A
 different price series needs a different prefix. Governance sizes the combined maximum credit per NOAH of entries
-sharing a series.
+sharing a series. Listing requires the derived feed Active, not merely scheduled, as registration does: an entry's
+haircut and window judge how a series behaves, and a series scheduled for removal has already passed its guard.
 
 Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
 that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
@@ -102,9 +121,12 @@ row reports `max_attestation_age` the same way; added to each position's `attest
 position's credit lapses.
 
 Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
-external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
-Bank custody admits NOAH and registered protocol paper, never external-shaped tokens: external holdings remain at
-attested destinations, and no native mint path produces those symbols.
+external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear
+when the corresponding policy or position stops needing the feed; no mirrored index exists. Bank custody admits NOAH and
+registered protocol paper, never external-shaped tokens: external holdings remain at attested destinations, and no
+native mint path produces those symbols. Paper is admitted from any sender because the Reserve is the one account whose
+committee can retire it; refusing it would only push it where the chain cannot see it. Anyone may push member dust in,
+which the committee can burn.
 
 ## Queries, events, and genesis
 

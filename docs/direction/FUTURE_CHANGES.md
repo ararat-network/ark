@@ -216,7 +216,7 @@ Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 8, the next 
 Additive: a consensus-version bump on `x/oracle` with a no-op migration, one new `OracleKeeper` method,
 `ComposeBaskets`, called in the preblock between `ProcessVoteExtensions` and `AdvanceFeeds`, no vote-extension change,
 no sidecar release. Docs that move with it: `x/oracle/README.md`, `FUTURE_CHANGES.md`, `x/asset/README.md`,
-`ECONOMIC_DECISIONS.md` D22, `THREAT_MODEL.md` §2.1 and §2.7, both ABCI READMEs.
+`ECONOMIC_DESIGN.md` §3.4, `THREAT_MODEL.md` §2.1 and §2.7, both ABCI READMEs.
 
 ### 3.4 Making Orbis the reference
 
@@ -237,13 +237,14 @@ consensus state in keeper metrics. Hosting, on-call ownership, and page threshol
 
 ## Closed items
 
-Work considered and decided against. Each entry links to where the decision lives and names the condition that alone
-would reopen it; a re-proposal starts by showing that condition holds.
+Work considered and decided against. Each entry gives the reason and names the condition that alone would reopen it; a
+re-proposal starts by showing that condition holds.
 
-| Item                                    | Decided in                                                         | Reopens only if                                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Vote-extension-carried emergency orders | [D139](../design/ECONOMIC_DECISIONS.md#d139)                       | A mandate is expected to suspend ahead of public information.                                          |
-| Per-fund exposure model                 | [D8](../design/ECONOMIC_DECISIONS.md#d8)                           | A fund carries material risk that does not scale with liability.                                       |
-| Machine-authored Reserve evidence       | [D59](../design/ECONOMIC_DECISIONS.md#d59)                         | A chain-verifiable venue becomes real; it then needs its own spec and the first-asset governance gate. |
-| Shared capital-accounting package       | [Treasury](../../x/treasury/README.md#liability-and-capital-reads) | A second independent consumer computes fund targets.                                                   |
-| Ethereum light clients                  | [D118](../design/ECONOMIC_DECISIONS.md#d118)                       | Interoperability is decided again, starting from a store migration rather than a switch.               |
+| Item | Why not | Reopens only if |
+| --- | --- | --- |
+| Vote-extension-carried emergency orders | Suspension answers a failure the market can already see, the virtual pool caps what leaves each block however many race for it, and the wait a hidden order would shorten, a carrier's proposer slot, is small beside hours of detection and signing; the order travels as an ordinary committee transaction ([emergency submission](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md)). | A mandate is expected to suspend ahead of public information. |
+| Per-fund exposure model | Every fund counts NOAH against the one liability, and Reserve deployment risk is priced by recognition haircuts and caps, so a per-fund model collapses to the ratios and the multiplier ([economic design §4.5](../design/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts)). | A fund carries material risk that does not scale with liability. |
+| Machine-authored Reserve evidence | Evidence upgrades see only chain-visible value, and the Reserve's holdings are custodian-held off chain, so committee attestation is the evidence model ([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)). | A chain-verifiable venue becomes real; it then needs its own spec and the first-asset governance gate. |
+| Shared capital-accounting package | Without a liability snapshot there is no common state and no duplicated arithmetic to extract ([Treasury](../../x/treasury/README.md#liability-and-capital-reads)). | A second independent consumer computes fund targets. |
+| IBC, Ethereum light clients included | No counterparty route is planned, and a dormant stack would still be carried by the tax calculator, the policy router, the launch artefact, the threat model, and a two-chain e2e tier ([Wasm integration](../../app/README.md#wasm-integration)). | Interoperability is decided again, starting from a store migration rather than a switch. |
+| NFT module | A non-fungible token is a contract protocol: CW721 contracts on the open runtime serve it with no new chain state, messages, or tax surface, and a native module would put a second schema beside them. | A token standard needs state or authority a contract cannot hold. |

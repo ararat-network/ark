@@ -49,7 +49,8 @@ with nothing trading on them, and waiting transactions trade in the next block o
 Ordinary blocks run about one block, roughly six seconds, behind the clock, and the parameter's 30-second floor keeps
 the rule off them.
 The rule binds honest proposers only: `ProcessProposal` does not re-check it, which would make acceptance depend on
-validator clocks (D137).
+validator clocks (D137). Settling orders on the next block's prices would close the gap deterministically, but it would
+end single-transaction swaps, buy-and-send payments, contract use of a fill, and award-time funding.
 
 [Mempool policy](../app/mempool/README.md#admission-service-and-sdk-behaviour)
 explains ordinary transaction service and proposal-local lane budgets after this envelope is reserved.

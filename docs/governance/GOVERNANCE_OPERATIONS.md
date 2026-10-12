@@ -2,8 +2,7 @@
 
 For governance proposal authors and committee appointers. This guide covers contract permissions, appointments, and
 economic operations throughout the network's life.
-[Genesis](GENESIS.md) owns launch values; [economic design](../design/ECONOMIC_DESIGN.md) owns financial rules;
-[economic decisions](../design/ECONOMIC_DECISIONS.md) owns the D/P history.
+[Genesis](GENESIS.md) owns launch values; [economic design](../design/ECONOMIC_DESIGN.md) owns financial rules.
 
 Governance signs each message unless its row names another signer. Before submission, query current parameters and
 authority, preserve fields a whole-object update retains, and check the stated dependencies. After execution, query
@@ -321,7 +320,14 @@ account has no exit.
 ## 6. Opening conversion
 
 Conversion is closed at launch: the artefact registers the eleven price feeds and no asset, so Market has no `ACTIVE`
-ask to mint (D95). It opens in this order, once a venue trades NOAH with real depth.
+ask to mint (D95). Until a provider samples a NOAH venue, every rate's NOAH leg is the configured placeholder of one
+NOAH an XDR, and a stablecoin is a claim on NOAH at the oracle rate, so a currency minted at the placeholder is
+re-marked when the live price arrives: if NOAH trades at five cents, an XDR that cost one NOAH redeems for about 27, and
+every holder pays whoever minted early. The first live price also comes from the first venue to list NOAH, so a thin
+venue would set the redemption rate of everything minted before it. Registering the currencies and relying on the
+missing rate was rejected because conversion would open by itself the moment any provider sampled NOAH, without a vote,
+and `ISSUANCE_HALTED` at genesis because it is a wind-down status that admits redemption. Conversion opens in this
+order, once a venue trades NOAH with real depth.
 
 1. **Sidecars read the venue.** Operators add NOAH markets to their provider configs in one coordinated window, not as
    each notices a listing. A live sample replaces the bootstrap NOAH price on every sidecar that carries the venue, and

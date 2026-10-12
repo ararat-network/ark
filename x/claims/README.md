@@ -41,12 +41,14 @@ governance claims depend on an enabled committee. Appointments must have a span 
 period, measured from the later of activation and the appointing block. Raising the period later does not make param validation depend on mandate state; runtime expiry bounds
 remain the backstop.
 
-The due-claim index drives EndBlock settlement without an execute message. A block settles at most 1,000 due claims
-(`MaxSettlementsPerBlock`), oldest first; the rest stay pending and due for the next block, already past the reach of
-cancellation, which ends at the closing time whenever settlement runs. Records preserve paid, cancelled, and
-failed outcomes plus cancelling authority. [Economic design](../../docs/design/ECONOMIC_DESIGN.md#46-insurance-claims) owns
-fund-flow and authorisation policy. `ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports
-custody/reservation across all terms. The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
+The due-claim index drives EndBlock settlement without an execute message: payment needs no signer because nothing about
+it is discretionary, and the recipient of a covered loss is the party least able to send a transaction. A block settles
+at most 1,000 due claims (`MaxSettlementsPerBlock`), oldest first; the rest stay pending and due for the next block,
+already past the reach of cancellation, which ends at the closing time whenever settlement runs. Records preserve paid,
+cancelled, and failed outcomes plus cancelling authority. [Economic
+design](../../docs/design/ECONOMIC_DESIGN.md#46-insurance-claims) owns fund-flow and authorisation policy.
+`ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports custody/reservation across all terms.
+The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
 
 The module restricts deposits through `pkg/chain.ValidateRegisteredDeposit`: positive NOAH or registry members from any
 sender, with no collector exemption. A deposit in a registry member waits uncommitted for the next claim in it. App Bank

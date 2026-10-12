@@ -33,10 +33,10 @@ The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets
 
 ## Documentation
 
-Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
-by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
-responding, integrating clients, future direction, and the decision register. Each subsystem's README owns its own
-behaviour, design, and development guidance; the [repository map](#repository-map) links them.
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides by
+reading path: understanding the chain, launching a network, operating and monitoring services, governing and responding,
+integrating clients, and future direction. Each subsystem's README owns its own behaviour, design, and development
+guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 

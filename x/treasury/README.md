@@ -145,10 +145,13 @@ owns the integration algorithm; [arkd](../../cmd/arkd/README.md#cli-fee-completi
 
 ## Reward funding and genesis
 
-`advanceRewardFunding` owns the countdown, accrual, due-window settlement, and atomic reset in EndBlock.
-The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
-at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding contract](../../docs/design/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding)
-owns the split, rounding, and depletion behaviour.
+`advanceRewardFunding` owns the countdown, accrual, due-window settlement, and atomic reset in EndBlock. An empty
+window's first observation initialises the countdown from `reward_funding_window`; a parameter change never rewrites a
+positive countdown and takes effect at the next empty window, so a window in flight settles over the length it began
+with. The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
+at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding
+contract](../../docs/design/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) owns the split, rounding, and depletion
+behaviour.
 
 Genesis imports the stored state listed above; Bank genesis supplies custody. Treasury validates NOAH-only fund
 balances because genesis bypasses runtime send restrictions, and validates its reference unit against Oracle.

@@ -74,20 +74,22 @@ signer for a lost original member key.
 ## Schedules and cancellation
 
 Each kind has one shape, held in params and copied onto the grant at creation, so a later parameter change never
-rewrites a live grant (D116). A shape is five integers: a first period's length and weight, each further period's length and weight, and how many
-further periods follow, at most 1,200, each length within a century and each weight at most 2^32. The first share is
-`amount × first_weight / total_weight`, each further share `amount × period_weight / total_weight`, both floored, the
-last period takes the remainder, and every period must receive a positive base-unit amount; a shape with no further
-periods pays everything in its first. Accrual is one division, so its cost does not grow with the schedule. The grantor sets `start_time`, up to a century ahead: an ownership clock no earlier than
-the award, a compensation clock at most a quarter back (`MaxCompensationBackdate`, 13 weeks), by proposal or
-committee alike (D122). The clock runs from it and
-never restarts. The grant also records `created_time`, the block it was awarded in, and **nothing accrues
-before one period after it**, wherever the clock starts: a backdated clock pays its elapsed periods at that first look,
-a clock already run out is due then, and a cancel before it returns everything. Every first period is at least
-`MinFirstPeriod`, two weeks, on every grant and every shape in params, so nothing pays before two weeks after any award:
-the window to cancel what a stolen committee or registrar key made (D126). The compensation window measures from
-the same time. Period boundaries are inclusive. Every default duration and bound is whole weeks, a year being 26
-fortnights, 364 days, the pay cadence's; no clock is tied to calendar dates (D130).
+rewrites a live grant (D116). A shape is five integers: a first period's length and weight, each further period's length
+and weight, and how many further periods follow, at most 1,200, each length within a century and each weight at most
+2^32. The first share is `amount × first_weight / total_weight`, each further share
+`amount × period_weight / total_weight`, both floored, the last period takes the remainder, and every period must
+receive a positive base-unit amount; a shape with no further periods pays everything in its first. Accrual is one
+division, so its cost does not grow with the schedule. The grantor sets `start_time`, up to a century ahead: an
+ownership clock no earlier than the award, since its cliff is the point and a backdated clock would let the founding set
+pass itself grants already run out, and a compensation clock at most a quarter back (`MaxCompensationBackdate`, 13
+weeks), by proposal or committee alike (D122). The clock runs from it and never restarts. The grant also records
+`created_time`, the block it was awarded in, and **nothing accrues before one period after it**, wherever the clock
+starts: a backdated clock pays its elapsed periods at that first look, a clock already run out is due then, and a cancel
+before it returns everything. Every first period is at least `MinFirstPeriod`, two weeks, on every grant and every shape
+in params, so nothing pays before two weeks after any award: the window to cancel what a stolen committee or registrar
+key made (D126). The compensation window measures from the same time. Period boundaries are inclusive. Every default
+duration and bound is whole weeks, a year being 26 fortnights, 364 days, the pay cadence's; no clock is tied to calendar
+dates (D130).
 
 - **Members** take `member_schedule`, a first period then equal periods like ownership's; their clock is the
   registration, and like every grant they are paid nothing before one period after it. The first period is the hold, the
@@ -138,6 +140,10 @@ be registered again as a member. Cancelling a grant already cancelled or paid in
 nothing, so recovery proposals that overlap may list the same IDs.
 
 ## Payment
+
+The block pays: no transaction collects a grant, so every member is paid in full by doing nothing, and the chain has no
+any-sender payment message. Lockup accounts in the payee's own account were rejected, since they would delegate and
+vote unpaid principal and leave nothing to claw back on a suspension or cancellation.
 
 Every grant that owes principal and is not suspended carries `due_time`, the block time at or after which the module
 next looks at it, and the due queue indexes those times. At the end of each block the module takes the queued grants
@@ -200,10 +206,12 @@ forward, the offer raised by any shortfall until the smallest sufficient one is 
 stays uncommitted for the next award,
 as does the unearned stablecoin of a cancelled award, so cancelled pay funds later pay before anything converts.
 
-The denomination must be an active asset. A NOAH award carries no `max_offer`. Market's `buy` query sizes the cap
-for a prospective award by the same reverse quote; quoting the whole pay is always enough, since custody only lowers
-what converts. Governance awards convert inside their proposal as it executes, at governance's EndBlock, and Market's
-block settlement of that buy follows in the same block, since Market's EndBlocker runs after governance's.
+The denomination must be an active asset. A NOAH award carries no `max_offer`. Market's `buy` query sizes the cap for a
+prospective award by the same reverse quote; quoting the whole pay is always enough, since custody only lowers what
+converts. Governance awards convert inside their proposal as it executes, at governance's EndBlock, and Market's block
+settlement of that buy follows in the same block, since Market's EndBlocker runs after governance's. Standing conversion
+orders with an executor and a spread cap were rejected: sized days ahead of their fills they pay for timing nobody owns,
+and a proposal cannot use one.
 
 ## Ownership and founding seats
 

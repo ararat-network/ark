@@ -51,11 +51,6 @@ maintain that boundary.
 - [Future changes](direction/FUTURE_CHANGES.md): deferred engineering, prerequisites, and revisit triggers; not shipped behaviour.
 - [Tooling direction](direction/TOOLING_DIRECTION.md): proposed product boundaries and sequencing for clients, wallets, indexing, and explorers.
 
-## Trace decisions
-
-- [Economic decisions](design/ECONOMIC_DECISIONS.md): the register of economic rules in force, each with its reason, under
-  stable D/P identifiers. Use economic design for how the rules compose and genesis for launch values.
-
 ## Find subsystem documentation
 
 - [Application](../app/README.md), [ante/post handling](../app/ante/README.md), and [mempool](../app/mempool/README.md).
@@ -89,7 +84,7 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | Directory | Audience and content |
 | --- | --- |
 | `papers/` | Everyone. The manifesto and the whitepaper. |
-| `design/` | Protocol contributors and reviewers. The economic contract, its decision register, the threat model. |
+| `design/` | Protocol contributors and reviewers. The economic contract and the threat model. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
 | `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |

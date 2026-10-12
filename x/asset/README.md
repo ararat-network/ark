@@ -26,8 +26,6 @@ This module owns the registry and lifecycle of governance-managed Bank assets ot
 
 `Assets`, `SettlementPlans`, `ResolutionRecords`, `EmergencyMandate`, and `EmergencySuspensions` are declared with the schema in `keeper/keeper.go`. The module has no block hook: transitions execute through messages. Oracle feed promotion does not complete asset transitions.
 
-D-numbers refer to the [economic decision register](../../docs/design/ECONOMIC_DECISIONS.md).
-
 ## 1. The registry in one page
 
 `x/asset` is the authoritative registry and lifecycle owner for every governance-managed Bank asset other than NOAH.

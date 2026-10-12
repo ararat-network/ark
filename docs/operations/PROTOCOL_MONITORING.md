@@ -55,11 +55,11 @@ folds every block and the volatility series every `volatility_sample_seconds`, a
 alongside the liability ratio at each
 update. This is the calibration window, and it is the whole reason the design ships disabled.
 
-The work in Phase A is to learn the calm-state distribution of the three indicators on this chain — not to alert
-on them. Collect at least a few weeks of `ExposureStatus`, then choose weights so that a calm reading composes
-to roughly 1.0–1.1 and a genuinely stressed one approaches the cap. Weights chosen from priors rather than from
-this data are guesses; [P1](../design/ECONOMIC_DECISIONS.md#p1) treats them as a launch calibration decision for exactly
-this reason, and `docs/governance/GOVERNANCE_OPERATIONS.md` §3 gates the activation message on this window having produced numbers.
+The work in Phase A is to learn the calm-state distribution of the three indicators on this chain — not to alert on
+them. Collect at least a few weeks of `ExposureStatus`, then choose weights so that a calm reading composes to roughly
+1.0–1.1 and a genuinely stressed one approaches the cap. Weights chosen from priors rather than from this data are
+guesses, which is why [genesis](../governance/GENESIS.md#4-treasury) launches them at zero, and
+`docs/governance/GOVERNANCE_OPERATIONS.md` §3 gates the activation message on this window having produced numbers.
 
 Panel 2 of the dashboard (§2.6) is the instrument. Building it is not preparation for calibration; it is the
 calibration.
