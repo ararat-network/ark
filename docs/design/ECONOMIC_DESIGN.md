@@ -68,10 +68,10 @@ The design keeps a bounded endogenous response to conversion flow and removes ev
   cheap capacity returns.
 - No adaptive reward target, tax-rate controller, price-reactive Buffer share, or automatic Reserve trigger exists. The
   reward waterfall allocates only tax already collected and subsidy already issued.
-- The exposure multiplier (D72) is the one controller, and a bounded one. It moves only the liability basis the three
-  targets are sized on: how much expansion principal is retained rather than burned, and how much capital a committee
-  may move or destroy. It mints nothing, triggers no trade, and changes no quote, spread, payout, or draw (D73). It is
-  floored at one, capped by governance, and rate-limited per update.
+- The exposure multiplier (D72, §4.2) is the one controller, and a bounded one. It moves only the liability basis the
+  three targets are sized on: how much expansion principal is retained rather than burned, and how much capital a
+  committee may move or destroy. It mints nothing, triggers no trade, and changes no quote, spread, payout, or draw
+  (D73). It is floored at one, capped by governance, and rate-limited per update.
 
 The Buffer and the virtual pool therefore dampen and rate-limit Terra-style supply feedback; they do not remove it.
 Buffer-funded redemption releases dormant NOAH into circulation, and residual minting raises supply. The Buffer reduces
@@ -277,15 +277,41 @@ Reserve holds, so the waterfall's gaps size on net. A bound serves discretion, a
 that paper, so the bounds on committee acts size on gross. `FundStatus` reports both families, `*_target` on gross and
 `*_net_target` on net, beside the multiplier.
 
-The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the chain
-already maintains, each weighted by a committee lever: the liability ratio, net liability over circulating NOAH; the
-annualised realised volatility of the reference rate, measured in block time over returns at least
-`volatility_sample_seconds` apart (D133); and an EMA of redemption net of expansion, floored at zero,
-as a share of net liability. Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so
-no spot price enters. It recomputes on a governed period, moves at most a governed step, and is clamped to `[1, cap]`;
-with zero weights it targets one, so a raised multiplier steps back down rather than resetting. Its own liability-ratio
-input reads raw liability, since a controller fed its own output would compound.
-[Treasury](../../x/treasury/README.md#exposure-sampling-and-refresh) owns the instrument.
+The multiplier says the same nominal liability is a larger exposure under stress. It multiplies three indicators the
+chain already maintains, each scaled by a committee weight:
+
+```text
+LR    = net_liability / circulating_noah
+sigma = annualised realised volatility of the reference rate
+FR    = flow_pressure / net_liability
+raw   = (1 + liability_ratio_weight * LR) * (1 + volatility_weight * sigma) * (1 + flow_weight * FR)
+m     = raw, moved at most multiplier_max_step from the previous m, then clamped to [1, multiplier_cap]
+```
+
+- **Liability ratio** is the dilution term: how much NOAH a redemption of the whole liability would mint against the
+  NOAH outside the four funds.
+- **Volatility** takes returns at least `volatility_sample_seconds` apart and divides their squares by the seconds they
+  spanned. Block pace does not move it, and per-block oracle jitter is never a sample of its own (D133).
+- **Flow pressure** nets each block's expansion against its redemption, floored at zero after each fold. Two-way
+  trading cancels, and an earlier inflow cannot hide a later run.
+
+Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so no spot price enters. Samples
+fold every block in Market's settlement call. `m` recomputes every `exposure_refresh_period_blocks` and moves at most
+one step per recompute: at the launch cap of 2 and step of 0.1, a climb from one to the cap takes ten refreshes, about
+ten hours. With zero weights it targets one, so a raised multiplier steps back down rather than resetting.
+
+It scales the target basis and nothing else. The redemption draw's denominator and the multiplier's own liability-ratio
+input read raw liability (D73): scaling a payment would ration exits, and a controller fed its own output would
+compound. The weights are the committee's levers in `EconomicPolicy`. The decays, sample spacing, cap, step, and period
+are governance `Params`, so a committee at the top of its mandate moves `m` no faster or further than organic stress
+can (D72, §7.1). Every weight is zero at launch, so `m` is one and the targets are unscaled while the indicators build
+a calibration record.
+
+The [Treasury README](../../x/treasury/README.md#exposure-sampling-and-refresh) owns the exact updates, sampling, and
+degraded-input handling; [genesis §4](../governance/GENESIS.md#4-treasury) the launch values;
+[protocol monitoring §2](../operations/PROTOCOL_MONITORING.md#2-exposure-multiplier) the signals, alerts, and
+calibration; and the [committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#1-the-levers) the weights as
+levers.
 
 ### 4.3 Recognition
 
