@@ -55,10 +55,8 @@ downloads binaries.
 read [validator and Oracle funding](docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
 
 **For governance participants and committees:** [Governance operations](docs/governance/GOVERNANCE_OPERATIONS.md) covers
-proposals, service permissions, and appointments. The
-[economic committee runbook](docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md) and
-[emergency submission runbook](docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md) cover bounded policy changes and
-emergency transactions.
+proposals, service permissions, appointments, and committee transactions. The
+[economic committee runbook](docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md) covers bounded policy changes.
 
 **For client integrators:** [Client fee construction](docs/clients/CLIENT_FEES.md) explains signed fee declarations,
 simulation, and failure handling for external transaction builders.

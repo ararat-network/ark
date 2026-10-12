@@ -99,5 +99,6 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 ## Related documents
 
 - [Authority and trust boundaries](../../docs/security/THREAT_MODEL.md).
-- [Submission and upgrade operations](../../docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md).
+- [Committee transactions](../../docs/governance/GOVERNANCE_OPERATIONS.md#4-committee-appointments) and the
+  [upgrade binary policy](../../docs/operations/NODE_OPERATIONS.md#upgrade-binary-policy).
 - [Application wiring](../../app/README.md).

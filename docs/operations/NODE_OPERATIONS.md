@@ -159,5 +159,4 @@ delegated executable-selection authority that the standing policy excludes.
 Before the halt, verify the plan name, height, expected build, and installed binary with the agreed release process.
 After restart, confirm the expected version, block progression, and the node's signing or RPC role. If the build or
 plan disagrees, keep the node stopped and resolve the mismatch with the network's upgrade coordination; do not enable
-automatic downloads as a recovery shortcut. Follow the [emergency runbook](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md) for private
-committee submission, not for deciding which executable to trust.
+automatic downloads as a recovery shortcut.

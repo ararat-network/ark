@@ -223,9 +223,6 @@ during execution, like transfer affordability.
   and block space and pays only gas; admission bounds and gas fees are the limit, and clients simulate to find such
   failures.
 - A node cannot shed spam by raising its local `minimum-gas-prices`: every node admits at Treasury's consensus fee.
-- Private carriers and isolated sentries are an optional pre-inclusion confidentiality path with their own operator
-  trust boundary, not a prerequisite for public governance admission
-  ([emergency submission](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md)).
 
 **Review questions.** Does a new privileged message join a privilege, with its module's own check as the vouch, and is
 that vouch a bounded number of reads rather than the handler? Does a new policy walk authz? Does an eligibility refusal
@@ -254,7 +251,7 @@ can replace or disable any committee.
   dispatching the committee message from a `MsgExecuteContract`: Wasmd checks the message names the contract, the
   policy router taxes it, the module re-validates term and window, and it rides the normal lane.
 - Committee messages ride the committee lane, so an incident's transactions reach a block under congestion
-  ([emergency submission](../governance/EMERGENCY_SUBMISSION_RUNBOOK.md)).
+  ([mempool policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour)).
 - Disbursement's journal, Claims' records, and the Reserve's ledger are permanent, so what a key did stays on the
   record for governance to undo.
 

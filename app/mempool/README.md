@@ -124,8 +124,7 @@ coordinated; it is not solely a local mempool update.
 The oracle wrapper reserves space for its authenticated extended commit before ordinary
 selection. The SDK default ProcessProposal verifies ordinary transactions and the
 block gas bound independently of local pool occupancy or preferred order. Consensus
-execution remains the same Ark ante/message/post path. Private carriers remain optional
-for pre-inclusion confidentiality; ordinary public nodes retain normal gossip.
+execution remains the same Ark ante/message/post path.
 
 CometBFT unconfirmed-transaction RPCs report its flood list. Ark's transaction and byte
 gauges report application storage by allocation; accepted/invalid/full counters observe

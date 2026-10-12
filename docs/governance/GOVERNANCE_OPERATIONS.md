@@ -82,9 +82,25 @@ registrar term without a vote, and suspend what it registered before the hold en
 reappointed committee names its registrar again in its first transaction; governance reaches the registrar only
 through the committee.
 
-For Security and Asset emergency mandates, use threshold signatures collected off-chain. A public voting contract
-would disclose the target during deliberation; ordinary public transaction propagation can still expose a signed act,
-so the [emergency submission runbook](EMERGENCY_SUBMISSION_RUNBOOK.md) remains relevant.
+For Security and Asset emergency mandates, use threshold signatures collected off-chain: a public voting contract
+would disclose the target during deliberation. A signed act is public once broadcast, so keep the time from decision
+to broadcast short. To submit a committee transaction:
+
+1. Preflight the unsigned transaction with `arkd tx simulate <unsigned-tx.json> --from <committee-key> --gas auto`;
+   for a multisig, `--dry-run` uses a single-key placeholder and is not a reliable preflight. Check the account
+   sequence and the current mandate term, and price gas from `arkd query treasury gas-price anoah`: local
+   `minimum-gas-prices` does not affect admission.
+2. Sign offline, `arkd tx sign` per member, and assemble with `arkd tx multi-sign`. Changing gas or fees means
+   rebuilding and signing again.
+3. Broadcast with `arkd tx broadcast <signed-tx.json> --broadcast-mode sync` and require `code: 0`; any other code
+   means the transaction is not queued.
+4. Confirm with `arkd query tx <hash>` and the module's event. Until it lands, resubmit the same signed bytes while
+   they remain valid: CometBFT's cache forgets rejected transactions, and an asynchronous response is not proof of
+   admission.
+
+Committee messages ride the committee lane, which reserves a share of pool storage and block space ([mempool
+policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour)), so an incident's transaction reaches a block
+under congestion.
 
 A CosmWasm contract can hold a deliberative mandate through the same message, for a committee that wants weighted
 membership, visible proposals and votes, and a root address that survives personnel changes; the candidate is a

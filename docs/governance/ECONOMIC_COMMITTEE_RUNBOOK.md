@@ -1,9 +1,9 @@
 # Economic committee runbook
 
 For Treasury, Reserve, and Market committees sizing bounded economic actions, and governance coordinating a
-conversion-mandate reference change. This guide owns action selection and preflight;
-[protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns
-alert conditions and diagnosis. Security incident delivery lives in the [emergency runbook](EMERGENCY_SUBMISSION_RUNBOOK.md).
+conversion-mandate reference change. This guide owns action selection and preflight; [protocol
+monitoring](../operations/PROTOCOL_MONITORING.md) owns alert conditions and diagnosis. [Governance
+operations](GOVERNANCE_OPERATIONS.md#4-committee-appointments) owns submitting the signed transaction.
 
 **Why this exists.** Three of the committee's bounds — what it may burn, what it may move into the Redemption
 Buffer, what it may move into Insurance — are not fixed by its mandate. They are computed at execution against
