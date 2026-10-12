@@ -57,7 +57,7 @@ verify-source:
 	@contrib/scripts/verify-source.sh $(SOURCE_BUNDLE) $(SOURCE_KIND)
 
 # Package the chain tag on HEAD without publishing. CI supplies the selected tag;
-# local callers default to an exact chain tag. See docs/operations/RELEASE_VERIFICATION.md, "Local packaging".
+# local callers default to an exact chain tag. See docs/releases/RELEASE_RUNBOOK.md, "Local packaging".
 release:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'v[0-9]*' 2>/dev/null)}; \
 	test -n "$$tag" || { echo "HEAD carries no vX.Y.Z tag" >&2; exit 1; }; \
@@ -67,7 +67,7 @@ release:
 	GORELEASER_CURRENT_TAG=$$tag goreleaser release --clean --skip=publish --parallelism=1 --timeout=5h
 
 # Package the sidecar tag on HEAD without publishing. Explicit tag selection and
-# validation skip support the pricefeed/vX.Y.Z prefix; see docs/operations/RELEASE_VERIFICATION.md,
+# validation skip support the pricefeed/vX.Y.Z prefix; see docs/releases/RELEASE_RUNBOOK.md,
 # "Local packaging".
 release-pricefeed:
 	@tag=$${GORELEASER_CURRENT_TAG:-$$(git describe --tags --exact-match --match 'pricefeed/v[0-9]*' 2>/dev/null)}; \

@@ -324,7 +324,7 @@ administrator account is trusted with `main`.
 - Images upload by digest with an SPDX SBOM and OIDC-signed provenance, verified against repository, workflow,
   revision, and ref before any tag moves. Standalone releases build in Actions from a tag on a reviewed `main`
   ancestor, sign every asset, verify the downloaded draft, and never overwrite a release or publish a draft themselves
-  ([release verification](../operations/RELEASE_VERIFICATION.md)).
+  ([release runbook](../releases/RELEASE_RUNBOOK.md), [release verification](../operations/RELEASE_VERIFICATION.md)).
 - Published releases are immutable: GitHub locks their assets and tag. The sidecar's standalone binaries release from
   their own `pricefeed/v*` tag line, so a chain binary release never carries an unreviewed sidecar change, or the
   reverse.

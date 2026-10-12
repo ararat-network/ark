@@ -22,8 +22,12 @@ maintain that boundary.
 ## Operate services
 
 - [Node operations](operations/NODE_OPERATIONS.md): roles and ports, install, configuration by role, joining, running a validator, keys, upgrades, relaunch, troubleshooting, and development networks.
-- [Release verification](operations/RELEASE_VERIFICATION.md): verify container origin, revision, digest and signed dependency inventory before use.
+- [Release verification](operations/RELEASE_VERIFICATION.md): check an image or standalone download's signed provenance, revision, and dependency inventory before running it.
 - [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): deployment, configuration, providers, the node link and TLS, feed changes, checks, reload and failover, troubleshooting, and releases.
+
+## Cut a release
+
+- [Release runbook](releases/RELEASE_RUNBOOK.md): dispatching the signed release workflow, reviewing and publishing the draft, image publication, failure handling, and local packaging.
 
 ## Monitor the network
 
@@ -86,6 +90,7 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | `economics/` | Protocol contributors. The cross-module economic contract. |
 | `security/` | Security reviewers. The threat model: trust boundaries, controls, and their limits. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
+| `releases/` | Maintainers. Cutting, reviewing, and publishing chain and sidecar releases. |
 | `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |
 | `brand/` | Anyone showing the Ark mark. The logo kit and its usage guidelines. |

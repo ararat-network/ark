@@ -146,5 +146,5 @@ and the release verification procedure.
 The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
 [The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags. A suffix such as `-rc1`
 marks the draft as a pre-release. Maintainers review and publish through GitHub; only stable chain releases should be
-marked latest. [Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging,
-and consumer checks.
+marked latest. The [release runbook](docs/releases/RELEASE_RUNBOOK.md) covers dispatch, review, and local packaging;
+[release verification](docs/operations/RELEASE_VERIFICATION.md) covers consumer checks.

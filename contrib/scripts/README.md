@@ -20,8 +20,9 @@ failed assertions.
 
 [release-assets.py](release-assets.py) stages the exact binary/source/SBOM asset matrix and checks
 its checksums before signing and after upload. It refuses missing, extra, tampered or symlinked
-assets and never publishes. [Release verification](../../docs/operations/RELEASE_VERIFICATION.md)
-owns the signed-draft workflow and consumer instructions.
+assets and never publishes. The [release runbook](../../docs/releases/RELEASE_RUNBOOK.md) owns the
+signed-draft workflow; [release verification](../../docs/operations/RELEASE_VERIFICATION.md) owns
+consumer checks.
 
 [Licensing and corresponding source](../../THIRD_PARTY_NOTICES.md) owns release source
 coverage, verification, download and retention procedures.
