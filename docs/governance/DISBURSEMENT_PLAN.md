@@ -110,6 +110,19 @@ Three things do that job:
 What the ballast would have bought beyond this, protection against one rogue founder backed by a whale, is not worth
 150M of custody, seven standing rules, and most of every seat's income for years.
 
+**A bought third.** Distributed NOAH is for sale, and a buyer who stakes it holds a vote the seats do not answer (D93).
+A third of the vote blocks every proposal and, on the buyer's own validators, halts the chain. It takes about half of
+what everyone else has bonded: 34M against the founding stake alone at ten seats, 45M to 70M through the middle
+distribution steps, and once the distribution is paid roughly 120M at a 20% public staking rate and 235M at 50%, from a
+float that is mostly liquid after the first year. Passing alone takes twice that, a third of supply or more. A bought
+third also stops the handover and the committees: each member step opens by its own `MsgOpenTranche` vote, every
+contributor grant is a proposal, and every mandate is a term, so a blocker freezes the pools and lets each committee
+lapse. What bounds it is the purchase itself, on an open market from tens of thousands of holders; the 21-day
+unbonding; delegations visible on chain; validators voting the delegations they carry; and the relaunch above, which
+answers a bought vote as it answers a halt, with the buyer's balance left out, which is what makes the purchase a bad
+trade. Nothing today delays an upgrade or a pool spend past its vote, and nothing opens a step without one; both are
+open under D93.
+
 ---
 
 ## 4. Distribution

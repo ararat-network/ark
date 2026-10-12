@@ -135,7 +135,7 @@ The founding validators, seven to thirteen of them, hold the same seat, granted 
 founder's seat is half the other seats' sum, a third of the founding stake, on the same account and schedule and from
 the same pool (D112, D115). Entry after launch is open: a validator bonds NOAH it holds, and no proposal grants a seat
 (D84). Until distributed NOAH is bonded the founders hold every vote, a proof-of-authority trust model on
-proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#27-governance-and-committees) records it.
+proof-of-stake machinery; the [threat model](../design/THREAT_MODEL.md#1-components-and-what-each-is-trusted-with) records it.
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |

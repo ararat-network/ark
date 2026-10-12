@@ -11,7 +11,7 @@ maintain that boundary.
 - [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
   the typeset PDF replaces it at this path when finished.
 - [Economic design](design/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
-- [Threat model](design/THREAT_MODEL.md): trust boundaries, assumptions, controls, and security review questions.
+- [Threat model](design/THREAT_MODEL.md): trust boundaries, assumptions, controls and their limits, and security review questions.
 
 ## Launch a network
 

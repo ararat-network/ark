@@ -965,8 +965,8 @@ buyer. Two levers stay open, each its own change: a minimum lead time, fixed in 
 large pool spend, so a bought vote is visible before it executes; and opening the distribution schedule once, with the
 on-chain gate releasing each step, since a third of the vote stops every `MsgOpenTranche` and every committee
 re-appointment. A member tally over the irreversible message classes, the one electorate a buyer cannot purchase, is the
-direction if those prove insufficient; it is not planned. The [threat
-model](THREAT_MODEL.md#27-governance-and-committees) carries the figures.
+direction if those prove insufficient; it is not planned. The [disbursement
+plan](../governance/DISBURSEMENT_PLAN.md#3-consensus-safety-without-a-ballast) carries the figures.
 
 ## D95
 
