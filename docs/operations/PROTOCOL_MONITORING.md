@@ -27,7 +27,7 @@ both is how the two drift apart.
 - [5. Conversion pool](#5-conversion-pool)
 - [6. Committees](#6-committees)
 - [7. Disbursement](#7-disbursement)
-- [8. Collection beyond the multiplier](#8-collection-beyond-the-multiplier)
+- [8. Source inventory](#8-source-inventory)
 
 ## 1. The rule: observability is off-chain
 
@@ -228,8 +228,7 @@ In Phase A the same page shows panel 1 flat at one.
   registry and reads stored state only, so it stays cheap and answers even when `FundStatus` is degraded, which
   is why A2 stays reliable during an A4 incident. `reserve/BurnableSurplus` on the same cadence feeds A5; it folds
   the registry like `FundStatus`, so read its error during an A4 incident as A4's state, never as a zero bound.
-- **Indexer.** `EventExposureRefreshed`, `EventLiabilityIncomplete`, `EventExpansionAllocated`,
-  `EventRedemptionBufferDrawn`. All four are typed events, so a generic ABCI event indexer suffices.
+- **Indexer.** The four Treasury events in [§8](#8-source-inventory).
 - **Retention.** At least 30 refresh periods of update history, for the "N consecutive" conditions and for A5's
   attribution.
 
@@ -441,15 +440,53 @@ keeps deferring.
 
 **Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants), a member tranche.
 
-## 8. Collection beyond the multiplier
+## 8. Source inventory
 
-- **Poller**, every few minutes: `reserve/RecognisedCapital` and `reserve/OpenPositions` (R1–R3),
-  `oracle/StoredRates` and `oracle/Params` (O1, O2, R3), `market/Pool` (M1, M2), every mandate query (C1, C4), and
-  `disbursement/Balance` (D3).
-- **Indexer:** `EventOracleJail`, `EventFeedTransitionScheduled`, `EventEmergencySuspended`, `EventClaimSubmitted`,
-  `EventGrantEntryRecorded`, `EventPaymentDeferred`, and `EventPoolUpdated`.
-- **Off-chain join:** D1 needs the member platform's admission records beside the chain's registrations.
-- **Thresholds:** every "suggest" above is a placeholder, set with the operators and committees that receive the alert.
+Every query and typed event the alerts above read, with the fields they read. It is the input contract for whatever
+collects them: a poller for the queries, an indexer for the events, which Prometheus then scrapes. The metric names
+those emit belong to that collector; this table pins only the chain's side. `TestProtocolSourceInventoryResolves`
+resolves every source and field against the registered protobuf descriptors, so renaming or removing anything listed
+fails the build here rather than blanking a dashboard elsewhere. Field paths descend with `.`; `[]` marks a repeated
+field.
+
+| Source | Kind | Fields read | Cadence | Alerts |
+| --- | --- | --- | --- | --- |
+| `ark.treasury.v1.Query/ExposureStatus` | query | `refresh_pending`, `exposure_state.multiplier`, `exposure_state.liability_ratio`, `exposure_state.flow_pressure`, `exposure_state.volatility_variance`, `annualised_volatility` | half a refresh period, 300 blocks (§2.7) | A2 |
+| `ark.treasury.v1.Query/FundStatus` | query | `net_liability`, `redemption_buffer_balance`, `strategic_reserve_target`, `stale_member_supply[]`, `untrusted_suspended_supply[]` | 300 blocks | A2, A4, A6 |
+| `ark.reserve.v1.Query/BurnableSurplus` | query | `burnable` | 300 blocks | A5 |
+| `ark.reserve.v1.Query/RecognisedCapital` | query | `recognised`, `assets[].denom`, `assets[].stale_quantity`, `assets[].max_attestation_age`, `assets[].max_rate_age` | minutes | A5, R1, R2, R3 |
+| `ark.reserve.v1.Query/OpenPositions` | query | `positions[].position_id`, `positions[].quantity`, `positions[].attested_time` | hourly | R1 |
+| `ark.oracle.v1.Query/StoredRates` | query | `rates[].denom`, `rates[].block_time` | a minute | O1, O2, R3 |
+| `ark.oracle.v1.Query/Params` | query | `params.max_exchange_rate_age` | hourly | O1, O2 |
+| `ark.oracle.v1.Query/ReferenceDenom` | query | `reference_denom` | hourly | O1 |
+| `ark.market.v1.Query/Pool` | query | `base_pool`, `ark_pool_delta` | minutes | M1, M2 |
+| `ark.security.v1.Query/SecurityMandate` | query | `active`, `mandate.envelope.expiry_time` | hourly | C1 |
+| `ark.asset.v1.Query/EmergencyMandate` | query | `active`, `mandate.envelope.expiry_time` | hourly | C1 |
+| `ark.treasury.v1.Query/EconomicMandate` | query | `active`, `mandate.envelope.expiry_time` | hourly | C1 |
+| `ark.reserve.v1.Query/Mandate` | query | `active`, `mandate.envelope.expiry_time`, `mandate.deployment_allowance`, `allowance_remaining` | hourly | C1, C4 |
+| `ark.market.v1.Query/ConversionMandate` | query | `active`, `mandate.envelope.expiry_time` | hourly | C1 |
+| `ark.claims.v1.Query/ClaimsMandate` | query | `active`, `mandate.envelope.expiry_time`, `mandate.committee_claim_limit`, `allowance_remaining` | hourly | C1, C4 |
+| `ark.disbursement.v1.Query/GrantsMandate` | query | `active`, `mandate.envelope.expiry_time`, `mandate.compensation_allowance`, `compensation_remaining` | hourly | C1, C4 |
+| `ark.disbursement.v1.Query/RegistrarMandate` | query | `active`, `mandate.envelope.expiry_time` | hourly | C1 |
+| `ark.claims.v1.Query/Claim` | query | `claim.origin`, `claim.closing_time` | on each claim submission | C2 |
+| `ark.disbursement.v1.Query/Balance` | query | `member_tranche` | hourly | D3 |
+| `ark.treasury.v1.EventExposureRefreshed` | event | `previous_multiplier`, `multiplier`, `uncapped_multiplier`, `liability_ratio`, `annualised_volatility`, `flow_ratio` | every block | A1, A3 |
+| `ark.treasury.v1.EventLiabilityIncomplete` | event | `stale_member_supply[]`, `untrusted_suspended_supply[]` | every block | A4 |
+| `ark.treasury.v1.EventExpansionAllocated` | event | `redemption_buffer_credit`, `strategic_reserve_credit`, `insurance_credit`, `overflow_burn` | every block | dashboard (§2.6) |
+| `ark.treasury.v1.EventRedemptionBufferDrawn` | event | `payment` | every block | dashboard (§2.6) |
+| `ark.oracle.v1.EventOracleJail` | event | `validator`, `eligible_blocks`, `attended_blocks` | every block | O3 |
+| `ark.oracle.v1.EventFeedTransitionScheduled` | event | `denom`, `direction`, `activation_vote_height` | every block | O4 |
+| `ark.asset.v1.EventEmergencySuspended` | event | `denom`, `term` | every block | C3 |
+| `ark.claims.v1.EventClaimSubmitted` | event | `claim_id` | every block | C2 |
+| `ark.disbursement.v1.EventGrantEntryRecorded` | event | `grant_id`, `action`, `actor` | every block | D1 |
+| `ark.disbursement.v1.EventPaymentDeferred` | event | `grant_id`, `payee`, `due_time` | every block | D2 |
+
+- **Events** are typed: each block's results carry them with the source's full name as the event type, so a generic
+  ABCI event indexer suffices.
+- **Off-chain join:** D1 also needs the member platform's admission records beside the registrar's grants.
+- **Retention:** at least 30 days, for the "N consecutive" and "held" conditions and for setting thresholds.
+- **Thresholds:** every "suggest" above is a placeholder, set with the operators, committees, and governance that
+  receive the alert.
 
 The process side of oracle attendance and price-feed liveness, what this node signs and what its sidecar serves, is
 [process monitoring §8](PROCESS_MONITORING.md#8-what-to-watch), read from the scrape endpoints rather than from state.
