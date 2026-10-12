@@ -2,7 +2,7 @@
 
 The node polls the sidecar for prices; the sidecar polls a chain node for oracle feed membership. Each connection has its
 own configuration. [Implementation map](../../pricefeed/README.md), [oracle protocol](../../x/oracle/README.md),
-[monitoring](PROCESS_MONITORING.md), and [trust boundaries](../design/THREAT_MODEL.md) cover the adjacent concerns.
+[monitoring](PROCESS_MONITORING.md), and [trust boundaries](../security/THREAT_MODEL.md) cover the adjacent concerns.
 
 ## Local setup
 

@@ -199,7 +199,7 @@ during execution, like transfer affordability.
   `ante.MinBlockDataBytes` (8 MiB) of `block.max_bytes − evidence.max_bytes` is refused, so no vote can price the
   injected extended commit out of every proposal.
 - No Market message carries a recipient, so a payment in another denomination is a buy and a Bank send, taxed on the
-  send ([role separation](ECONOMIC_DESIGN.md#72-role-separation)).
+  send ([role separation](../economics/ECONOMIC_DESIGN.md#72-role-separation)).
 - The committee and governance lanes each reserve 5% of pending count and bytes and 5% of a proposal's gas and bytes.
   Eligibility is a bounded read-only vouch after signature verification, and a privileged entry past its lane's room
   spills to normal fee order ([mempool](../../app/mempool/README.md#admission-service-and-sdk-behaviour)).
@@ -249,7 +249,7 @@ can replace or disable any committee.
 - `pkg/mandate` fixes the envelope: exact signer, exact term, half-open window, and the term retained on disablement,
   so stale transactions never revive ([mandate conventions](../../pkg/mandate/README.md)). Each module bounds its own
   payload, and every committee power is a message of its own
-  ([role separation](ECONOMIC_DESIGN.md#72-role-separation)).
+  ([role separation](../economics/ECONOMIC_DESIGN.md#72-role-separation)).
 - Committee actions dispatch through the module's own message router, so every target re-validates. A contract acts by
   dispatching the committee message from a `MsgExecuteContract`: Wasmd checks the message names the contract, the
   policy router taxes it, the module re-validates term and window, and it rides the normal lane.

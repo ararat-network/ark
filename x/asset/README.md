@@ -331,7 +331,7 @@ records to those verdicts; one unpriced asset leaves its own rate empty without 
 A settlement rate never enters ordinary `RateSet` conversion.
 
 Market applies asymmetric offer/ask eligibility; Treasury applies the liability partition. Their contracts live in
-[Market](../market/README.md#conversion-policy) and [economic design](../../docs/design/ECONOMIC_DESIGN.md#41-the-liability-partition).
+[Market](../market/README.md#conversion-policy) and [economic design](../../docs/economics/ECONOMIC_DESIGN.md#41-the-liability-partition).
 There is no bundled record-plus-rate API: consumers already own their admission rules and may need a reference feed
 that is not a registered asset. There is no consumer-written membership or lock index to keep in sync.
 
@@ -414,5 +414,5 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Liability and conversion policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Liability and conversion policy](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Application wiring](../../app/README.md).

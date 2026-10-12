@@ -1216,7 +1216,7 @@ behaviour.
   https://www.riksbank.se/globalassets/media/konferenser/2023/session-1-liu_makarov_schoar-anatomy_of_a_run-_the_terra_luna_crash.pdf
 [anchor-rate]: https://forum.anchorprotocol.com/t/dynamic-anchor-earn-rate/3042
 [revival-plan]: https://classic-agora.terra.money/t/terra-ecosystem-revival-plan-2-passed-gov/18498/1
-[ark-economics]: ../design/ECONOMIC_DESIGN.md
+[ark-economics]: ../economics/ECONOMIC_DESIGN.md
 [ark-asset]: ../../x/asset/README.md
 [ark-market]: ../../x/market/README.md
 [ark-oracle]: ../../x/oracle/README.md
@@ -1228,7 +1228,7 @@ behaviour.
 [ark-claims]: ../../x/claims/README.md
 [ark-security]: ../../x/security/README.md
 [ark-mempool]: ../../app/mempool/README.md
-[ark-threat]: ../design/THREAT_MODEL.md
+[ark-threat]: ../security/THREAT_MODEL.md
 [ark-settlement]: ../../x/asset/keeper/settlement.go
 [ark-app]: ../../app/README.md
 [ark-genesis]: ../governance/GENESIS.md

@@ -160,7 +160,7 @@ Keep the backstop even when it is provably unreachable, and say so in a comment 
   deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
-- `docs/design/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
+- `docs/security/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
   message type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation

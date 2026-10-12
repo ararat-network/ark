@@ -27,7 +27,7 @@ stablecoins: a Redemption Buffer that recycles retained NOAH into redemptions, a
 commit and a committee can deploy under a bounded mandate, and Insurance that pays covered losses through recorded
 claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
 holds every unbounded power; committees hold bounded, time-scoped mandates. To understand how funds and authority
-move, read the [economic design](docs/design/ECONOMIC_DESIGN.md).
+move, read the [economic design](docs/economics/ECONOMIC_DESIGN.md).
 
 The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets out the purpose that design serves.
 
@@ -52,7 +52,7 @@ also follows the [upgrade binary policy](docs/operations/NODE_OPERATIONS.md#upgr
 downloads binaries.
 
 **For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
-read [validator and Oracle funding](docs/design/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
+read [validator and Oracle funding](docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
 
 **For governance participants and committees:** [Governance operations](docs/governance/GOVERNANCE_OPERATIONS.md) covers
 proposals, service permissions, and appointments. The

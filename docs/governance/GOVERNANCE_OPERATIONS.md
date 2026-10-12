@@ -2,7 +2,7 @@
 
 For governance proposal authors and committee appointers. This guide covers contract permissions, appointments, and
 economic operations throughout the network's life.
-[Genesis](GENESIS.md) owns launch values; [economic design](../design/ECONOMIC_DESIGN.md) owns financial rules.
+[Genesis](GENESIS.md) owns launch values; [economic design](../economics/ECONOMIC_DESIGN.md) owns financial rules.
 
 Governance signs each message unless its row names another signer. Before submission, query current parameters and
 authority, preserve fields a whole-object update retains, and check the stated dependencies. After execution, query
@@ -12,7 +12,7 @@ fails, re-read state and correct the proposal; do not enable a dependent service
 ## 1. Launch defaults and ongoing changes
 
 Initial permissions are launch choices that later governance can change. The launch artefact ships the contract
-runtime open (`docs/design/ECONOMIC_DESIGN.md` §5.5). The following procedures apply when those services or
+runtime open (`docs/economics/ECONOMIC_DESIGN.md` §5.5). The following procedures apply when those services or
 appointments are needed.
 
 Initial economic values and permissions are fixed in [genesis](GENESIS.md); committee appointments follow its

@@ -67,7 +67,7 @@ upgrade to the working tree first, so a release-to-release migration is rehearse
 workflows file one issue per workflow on failure through [nightly-failure.yml](../.github/workflows/nightly-failure.yml).
 [CodeQL](../.github/workflows/codeql.yml) and [vulnerability scanning](../.github/workflows/vulncheck.yml) provide security
 checks; `make vulncheck` runs the reachable-call gate locally. Image publication is configured separately in
-[docker-push.yml](../.github/workflows/docker-push.yml); [THREAT_MODEL.md](../docs/design/THREAT_MODEL.md) owns release trust.
+[docker-push.yml](../.github/workflows/docker-push.yml); [THREAT_MODEL.md](../docs/security/THREAT_MODEL.md) owns release trust.
 
 ## Height-sensitive fixtures
 

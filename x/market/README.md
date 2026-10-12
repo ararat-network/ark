@@ -35,7 +35,7 @@ rather than making Asset write Market state. A new denomination cannot inherit a
 Ordinary conversion accepts `ACTIVE` or `ISSUANCE_HALTED` offers and only `ACTIVE` asks. Status gates precede rate
 reads. Settlement redemption is a separate holder-signed `MsgSettle`:
 `SUSPENDED`, an activated plan, asset-to-NOAH only. It uses the plan's committed rate, never the virtual pool or an
-ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/design/ECONOMIC_DESIGN.md#3-conversion).
+ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#3-conversion).
 
 ## Conversion mandate
 
@@ -112,7 +112,7 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Conversion and settlement policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Conversion and settlement policy](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Asset eligibility](../asset/README.md).
 - [Application wiring](../../app/README.md).
 

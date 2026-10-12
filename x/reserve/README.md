@@ -48,8 +48,8 @@ or attests a holding.
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
 allowance again, and an in-kind reopening is booked at the live Oracle value. No deployment veto window exists;
-governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#43-recognition)
-and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
+governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/economics/ECONOMIC_DESIGN.md#43-recognition)
+and [action bounds](../../docs/economics/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
 
 Burn authority splits by what a burn can destroy. Governance's `MsgBurnReserveAssets` may burn any custody, NOAH
 included, keeping the NOAH above a minimum the proposal states: a NOAH burn of chosen size is the protocol's one
@@ -78,7 +78,7 @@ off-chain custody; typed deployment adapters cannot prove a custodian's wire-tra
 
 `RecognisedCapital` is a local read, not a stored valuation. It folds open, unimpaired positions under governance's
 eligibility policy, valuing quantity through Oracle and applying haircut and cap. The [economic recognition
-formula](../../docs/design/ECONOMIC_DESIGN.md#43-recognition) defines the financial meaning of those caps.
+formula](../../docs/economics/ECONOMIC_DESIGN.md#43-recognition) defines the financial meaning of those caps.
 
 Each asset's credit is the smaller of its haircut value and its `max_credit_per_noah` × the NOAH balance, floored to
 whole anoah. Caps read only the balance, so credits are independent: a misreported quantity or a wrong rate changes its
@@ -172,7 +172,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Reserve custody and recognition policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Reserve custody and recognition policy](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).
 

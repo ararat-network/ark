@@ -10,8 +10,8 @@ maintain that boundary.
   the self, intelligence, God, and the institutions we build.
 - [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
   the typeset PDF replaces it at this path when finished.
-- [Economic design](design/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
-- [Threat model](design/THREAT_MODEL.md): trust boundaries, assumptions, controls and their limits, and security review questions.
+- [Economic design](economics/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
+- [Threat model](security/THREAT_MODEL.md): trust boundaries, assumptions, controls and their limits, and security review questions.
 
 ## Launch a network
 
@@ -84,7 +84,8 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | Directory | Audience and content |
 | --- | --- |
 | `papers/` | Everyone. The manifesto and the whitepaper. |
-| `design/` | Protocol contributors and reviewers. The economic contract and the threat model. |
+| `economics/` | Protocol contributors. The cross-module economic contract. |
+| `security/` | Security reviewers. The threat model: trust boundaries, controls, and their limits. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
 | `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |

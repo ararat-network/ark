@@ -46,7 +46,7 @@ it is discretionary, and the recipient of a covered loss is the party least able
 at most 1,000 due claims (`MaxSettlementsPerBlock`), oldest first; the rest stay pending and due for the next block,
 already past the reach of cancellation, which ends at the closing time whenever settlement runs. Records preserve paid,
 cancelled, and failed outcomes plus cancelling authority. [Economic
-design](../../docs/design/ECONOMIC_DESIGN.md#46-insurance-claims) owns fund-flow and authorisation policy.
+design](../../docs/economics/ECONOMIC_DESIGN.md#46-insurance-claims) owns fund-flow and authorisation policy.
 `ClaimsMandate` reports term-scoped appointment/allowance, while `Balance` reports custody/reservation across all terms.
 The [query schema](../../proto/ark/claims/v1/query.proto) defines their exact shape.
 
@@ -111,7 +111,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Insurance custody and claims policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Insurance custody and claims policy](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
 - [Application wiring](../../app/README.md).
 

@@ -35,7 +35,7 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
    Disbursement pays last, from custody it already holds, so a cancellation executed in the block governs its payments.
 
 Asset lifecycle transitions are message-driven. The ABCI wrapper does not complete asset transitions or prime Treasury
-liability. [Economic design](../docs/design/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
+liability. [Economic design](../docs/economics/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
 
 ## Block gas-meter policy
 
@@ -104,7 +104,7 @@ The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contrac
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
-The [economic transfer contract](../docs/design/ECONOMIC_DESIGN.md#55-execution-generated-tax) owns who pays tax and when
+The [economic transfer contract](../docs/economics/ECONOMIC_DESIGN.md#55-execution-generated-tax) owns who pays tax and when
 it remains payable. These adapters enforce that contract at distinct signed-message and generated-message boundaries.
 
 ## Verification

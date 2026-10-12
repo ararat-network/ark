@@ -301,5 +301,5 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Reward funding](../../docs/design/ECONOMIC_DESIGN.md).
+- [Reward funding](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Application wiring](../../app/README.md).

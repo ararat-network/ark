@@ -48,13 +48,13 @@ interfaces are explicitly bound to the intended keepers in app depinject configu
 Treasury's economic mandate carries minimum/maximum policies around the shared envelope. Governance replaces any
 structurally valid policy independently of the mandate; the committee replaces the whole lever set only inside its
 active term and corridor. Stance belongs in `EconomicPolicy`; controller machinery and domain caps belong in
-`Params`. The cross-module authority rules remain in [economic design](../../docs/design/ECONOMIC_DESIGN.md#72-role-separation).
+`Params`. The cross-module authority rules remain in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#72-role-separation).
 
 ## Liability and capital reads
 
 The asset registry supplies lifecycle membership and pricing verdicts. Treasury has no enrolment set or
 stable-versus-commodity classifier. Each member's gross and Reserve-held supply use the same valuation branch, so
-netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/design/ECONOMIC_DESIGN.md#41-the-liability-partition)
+netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/economics/ECONOMIC_DESIGN.md#41-the-liability-partition)
 owns the status treatment and gross-versus-net basis rule.
 
 `FundStatus` reports that partition, disclosures, both target families, and the multiplier; incomplete valuation
@@ -100,7 +100,7 @@ a return carried across a halt counts the time it spanned rather than reading as
 at least the spacing, validated at least a second, which keeps the variance at or below the interval and sigma at most
 the square root of a year in seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
-The [economic model](../../docs/design/ECONOMIC_DESIGN.md#42-targets-and-the-exposure-multiplier) owns the target
+The [economic model](../../docs/economics/ECONOMIC_DESIGN.md#42-targets-and-the-exposure-multiplier) owns the target
 formula and what the multiplier may move. Requirements use the multiplier; payment denominators and the controller's own liability input do not.
 Scaling the draw would double-count a signal already reflected in Buffer retention and make payout depend on exit timing.
 
@@ -135,7 +135,7 @@ next_price = clamp(current_price * (1 + delta), min_base_gas_price, MaxBaseGasPr
 and `adjustment_rate` are the `base_fee_` parameters.
 
 An unbounded block or zero adjustment rate holds the price before applying its bounds. The signed-fee contract lives
-in [economic design](../../docs/design/ECONOMIC_DESIGN.md#54-the-fee-declaration-settlement-charge).
+in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#54-the-fee-declaration-settlement-charge).
 A separate fee-market dependency and refund escrow were rejected: Ark needs its multi-denomination price contract
 and standard SDK fee commitment semantics, without maintaining a fork of an incompatible fee module.
 
@@ -153,7 +153,7 @@ window's first observation initialises the countdown from `reward_funding_window
 positive countdown and takes effect at the next empty window, so a window in flight settles over the length it began
 with. The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
 at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding
-contract](../../docs/design/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) owns the split, rounding, and depletion
+contract](../../docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) owns the split, rounding, and depletion
 behaviour.
 
 Genesis imports the stored state listed above; Bank genesis supplies custody. Treasury validates NOAH-only fund
@@ -192,7 +192,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Economic policy and custody](../../docs/design/ECONOMIC_DESIGN.md).
+- [Economic policy and custody](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Client fee construction](../../docs/clients/CLIENT_FEES.md).
 - [Protocol-state monitoring](../../docs/operations/PROTOCOL_MONITORING.md).
 - [Application wiring](../../app/README.md).
