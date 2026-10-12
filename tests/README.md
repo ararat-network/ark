@@ -54,7 +54,7 @@ block counts, and timeouts; inspect the target before starting a long run. Modul
 corpus only.
 
 The [Docker localnet](../contrib/localnet/README.md) and [rehearsal scripts](../contrib/scripts/README.md) exercise
-process/network behaviour: rates and block liveness, private emergency submission, saturation, state sync, and upgrades.
+process/network behaviour: rates and block liveness, state sync, and upgrades.
 These are separate from in-memory Go tests and require their stated disposable environment.
 
 ## CI map

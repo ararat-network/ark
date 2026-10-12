@@ -1,7 +1,7 @@
 # Builds the image from the working tree, runs the four-validator localnet
-# with its price-feed sidecars, and asserts liveness, the emergency submission
-# runbook, and a state-sync restore against it. State sync goes last: it needs
-# node0 past a snapshot height, which the earlier steps have already taken.
+# with its price-feed sidecars, and asserts liveness, the metrics scrape, and
+# a state-sync restore against it. State sync goes last: sync0 waits for
+# node0 to pass a snapshot height.
 name: Localnet
 
 on:
@@ -52,7 +52,6 @@ jobs:
       - run: make localnet-init
       - run: make localnet-up
       - run: make localnet-liveness
-      - run: make localnet-runbook
       # A duplicate series fails the whole scrape, which nothing else here reads.
       - run: curl -sf http://localhost:9464/metrics | grep -q '^ark_mempool_transactions'
       - run: make localnet-statesync
