@@ -28,7 +28,7 @@ maintain that boundary.
 ## Monitor the network
 
 - [Process monitoring](operations/PROCESS_MONITORING.md): node and sidecar scrape/export configuration, process metrics, and alerts.
-- [Protocol monitoring](operations/PROTOCOL_MONITORING.md): chain-state queries/events, exposure and capital signals, and alert calibration.
+- [Protocol monitoring](operations/PROTOCOL_MONITORING.md): chain-state alerts for the exposure multiplier, Reserve recognition, Oracle rates and jails, the conversion pool, committees, and Disbursement.
 
 ## Govern and respond
 

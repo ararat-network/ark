@@ -1,7 +1,8 @@
 # Protocol monitoring
 
-For network operators and economic committees: collect protocol-state signals, calibrate alerts, and diagnose changes.
-Coverage currently centres on exposure and capital. This guide specifies monitoring requirements;
+For network operators, committees, and governance: collect protocol-state signals, calibrate alerts, and diagnose
+changes across the exposure multiplier, Reserve recognition, Oracle rates and attendance, the conversion pool,
+committees, and Disbursement. This guide specifies monitoring requirements;
 [future changes](../direction/FUTURE_CHANGES.md#protocol-monitoring-tooling) tracks delivery of the required tooling.
 
 This note says what to watch in Ark's own state: which query answers a question, which event carries it, what
@@ -11,9 +12,9 @@ It does not cover node or process health. `docs/operations/PROCESS_MONITORING.md
 endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the machine. This document is about
 what the chain believes.
 
-Responses are keyed by the alert IDs used here: governance's in [governance
-runbook](../governance/GOVERNANCE_RUNBOOK.md#exposure-alerts), the Reserve committee's in the [committee
-runbook](../governance/COMMITTEE_RUNBOOK.md#alerts). The split: an alert states a condition, why it matters, and the
+Responses are keyed by the alert IDs used here and live in the [governance
+runbook](../governance/GOVERNANCE_RUNBOOK.md) and the [committee runbook](../governance/COMMITTEE_RUNBOOK.md); each alert
+links its own. The split: an alert states a condition, why it matters, and the
 first thing to look at; the response states what a committee or governance then decides. Writing the decision into
 both is how the two drift apart.
 
@@ -21,7 +22,12 @@ both is how the two drift apart.
 
 - [1. The rule: observability is off-chain](#1-the-rule-observability-is-off-chain)
 - [2. Exposure multiplier](#2-exposure-multiplier)
-- [3. Other subsystems](#3-other-subsystems)
+- [3. Reserve recognition](#3-reserve-recognition)
+- [4. Oracle rates and attendance](#4-oracle-rates-and-attendance)
+- [5. Conversion pool](#5-conversion-pool)
+- [6. Committees](#6-committees)
+- [7. Disbursement](#7-disbursement)
+- [8. Collection beyond the multiplier](#8-collection-beyond-the-multiplier)
 
 ## 1. The rule: observability is off-chain
 
@@ -243,9 +249,207 @@ The collector must preserve these semantics regardless of its implementation. De
    [committee runbook](../governance/COMMITTEE_RUNBOOK.md#burns) leaves margin
    for that.
 
-## 3. Other subsystems
+## 3. Reserve recognition
 
-The process side of oracle attendance and price-feed liveness, what this node signs and what its sidecar serves,
-is `docs/operations/PROCESS_MONITORING.md` §8, read from the scrape endpoints rather than from state. The protocol side of both,
-and market conversion health, still have on-chain state and typed events that would fit the shape of §2; they get
-sections here when someone needs them, rather than a document each.
+The Reserve's recognised capital, which sizes its gap, its burn bound, and where expansion principal goes, rests on two
+clocks per position: the committee's attestation and the Oracle's rate. Either running out takes the position's credit
+to zero without anything moving ([mechanism](../../x/reserve/README.md#mandate-custody-and-journal)).
+
+**Signals.** `reserve/RecognisedCapital` (`arkd query reserve recognised-capital`) reports each eligibility entry's
+`attested_quantity`, `stale_quantity`, `credit`, `max_attestation_age`, and `max_rate_age`; `reserve/OpenPositions`
+gives each position's `attested_time`; Oracle's `StoredRates` gives each feed's `block_time`.
+`EventLedgerEntryRecorded` marks every attestation.
+
+#### R1 — Attestation lapsing · notify the committee
+
+**Condition:** for an open position, `attested_time + max_attestation_age` within a lead time of now (suggest 14 days).
+
+**Why:** past it the position's whole holding counts for nothing, the Reserve's gap reopens, and expansion principal
+is pulled back in. A custodian statement takes days to obtain, so the warning has to come before the window, not at it.
+
+**First look:** the position's venue and the reference its last attestation cited.
+
+**Response:** [committee runbook §5](../governance/COMMITTEE_RUNBOOK.md#deployment-and-attestation).
+
+#### R2 — Stale quantity · page
+
+**Condition:** any entry's `stale_quantity` positive.
+
+**Why:** credit has already lapsed. With no Reserve committee seated nobody can restate it, since governance has no
+restatement message.
+
+**First look:** which positions R1 warned about, and whether a committee is seated (C1).
+
+**Response:** [committee runbook §5](../governance/COMMITTEE_RUNBOOK.md#deployment-and-attestation); appointment in the
+[governance runbook](../governance/GOVERNANCE_RUNBOOK.md#3-committees) if none is seated.
+
+#### R3 — Recognition rate stale · warn
+
+**Condition:** an eligible entry's feed has a stored `block_time` older than the entry's `max_rate_age`.
+
+**Why:** the same lapse from the price side: the entry's credit is zero until the rate is fresh again.
+
+**First look:** O2 for the feed.
+
+## 4. Oracle rates and attendance
+
+Every consumer fails closed on a missing or stale rate, so a rate problem shows up as conversions refused, valuation
+incomplete, and credit lapsed, each looking like its own incident
+([mechanism](../../x/oracle/README.md#1-oracle-state-and-lifecycle)).
+
+**Signals.** `oracle/StoredRates` (`arkd query oracle stored-rates`) reports every rate with the `block_time` and
+`block_height` that set it; `oracle/Params` gives `max_exchange_rate_age`; `oracle/Feeds` the active set and scheduled
+transitions; `oracle/ReferenceDenom` the reference. Events: `EventOracleJail`, `EventFeedTransitionScheduled`,
+`EventFeedsActivated`, `EventReferenceDenomUpdated`.
+
+#### O1 — Reference rate stale · page
+
+**Condition:** now minus the reference feed's stored `block_time` exceeds `max_exchange_rate_age`.
+
+**Why:** a stale reference closes every NOAH conversion path that needs it, and Treasury's fee factors freeze at their
+last values until a live rate returns. No re-point restores pricing unless a successor feed is fresh.
+
+**First look:** process monitoring's N4 for fleet participation, and S3 on the sidecars for the reference's route legs.
+
+**Response:** [governance runbook §4](../governance/GOVERNANCE_RUNBOOK.md#4-oracle) if the reference itself must move.
+
+#### O2 — Active feed stale · warn
+
+**Condition:** any active feed's stored `block_time` older than `max_exchange_rate_age`, sustained (suggest five
+minutes).
+
+**Why:** that denomination stops converting; a registry member's stale feed also makes liability valuation incomplete,
+which is A4.
+
+**First look:** the feed's route legs on the sidecars (S1–S3).
+
+#### O3 — Validator jailed for oracle absence · notify
+
+**Condition:** `EventOracleJail`.
+
+**Why:** the validator is out of the set for `jail_duration`, a week at launch, and its power has left the oracle
+quorum. Several in one settlement point to a shared cause, such as a provider most operators use.
+
+**First look:** the event's `attended_blocks` against `eligible_blocks`, and N4.
+
+#### O4 — Feed scheduled · notify operators
+
+**Condition:** `EventFeedTransitionScheduled` adding a feed.
+
+**Why:** the feed activates two blocks after it is scheduled, and a sidecar without markets for it earns nothing for
+it from activation.
+
+**Response:** [pricefeed operations §6](PRICEFEED_OPERATIONS.md#6-feed-changes).
+
+## 5. Conversion pool
+
+**Signals.** `market/Pool` (`arkd query market pool`) reports `base_pool` and `ark_pool_delta`; `EventPoolUpdated` marks
+every depth change and `EventSwap` every conversion.
+
+#### M1 — Expansion flow above the floor · notify the conversion committee
+
+**Condition:** `ark_pool_delta` more negative than a hundredth of `base_pool`, held (suggest a day).
+
+**Why:** expansion is converting faster than the pool recovers, so it pays above the spread floor: the depth rule's
+trigger.
+
+**Response:** [committee runbook §6](../governance/COMMITTEE_RUNBOOK.md#sizing-depth).
+
+#### M2 — Redemption pressure · warn
+
+**Condition:** `ark_pool_delta` positive and rising, held (suggest a day).
+
+**Why:** redemptions are outrunning recovery. Depth must not be raised into it, and the Buffer pays part of every
+redemption from inventory.
+
+**First look:** A6 for Buffer coverage, and asset statuses for a failing member.
+
+## 6. Committees
+
+**Signals.** Each mandate query reports `active`, the term, and the window's `expiry_time`; those with allowances report
+what the term has used: `security-mandate`, `asset emergency-mandate`, `treasury economic-mandate`, `reserve mandate`,
+`market conversion-mandate`, `claims mandate`, `disbursement grants-mandate` and `registrar-mandate`. Events:
+`EventClaimSubmitted`, `EventEmergencySuspended`, and each module's `Event*MandateSet`.
+
+#### C1 — Term expiring · notify governance
+
+**Condition:** an active mandate's `expiry_time` within a lead time of now (suggest 30 days).
+
+**Why:** a lapsed window disables the committee with no event, and reappointment takes a deposit period and a vote. A
+lapsed grants window also stops registration, and a lapsed Reserve window leaves positions unattested (R1).
+
+**Response:** [governance runbook §3](../governance/GOVERNANCE_RUNBOOK.md#3-committees).
+
+#### C2 — Committee claim submitted · notify governance
+
+**Condition:** `EventClaimSubmitted` for a claim whose record shows committee origin.
+
+**Why:** the cancellation period is governance's veto over the payout, a week at launch, and a vote needs about four
+days of it. Review starts at submission or the veto is theoretical.
+
+**Response:** [governance runbook §9](../governance/GOVERNANCE_RUNBOOK.md#9-claims).
+
+#### C3 — Emergency suspension · page governance
+
+**Condition:** `EventEmergencySuspended`.
+
+**Why:** the asset's holders cannot redeem, and until a settlement plan opens its supply makes valuation incomplete (A4).
+The committee's act only contains; every decision after it is governance's.
+
+**Response:** [governance runbook §5](../governance/GOVERNANCE_RUNBOOK.md#5-asset-registry).
+
+#### C4 — Allowance nearly used · notify governance
+
+**Condition:** a term's remaining allowance (claims limit, grants compensation allowance, Reserve deployment allowance)
+under a share of the whole (suggest a tenth).
+
+**Why:** the committee's next act is refused, which during an incident is when it matters.
+
+**Response:** [governance runbook §3](../governance/GOVERNANCE_RUNBOOK.md#3-committees).
+
+## 7. Disbursement
+
+**Signals.** `disbursement/Grants` (`arkd query disbursement grants`) filters by `--registrar-term` and
+`--committee-term`; `disbursement/Balance` reports the open member tranche. `EventGrantEntryRecorded` carries every
+grant's creation, payment, suspension, and cancellation with its `actor`, and `EventPaymentDeferred` every refused
+payment.
+
+#### D1 — Registrations unreconciled · page the grants committee
+
+**Condition:** a grant created by the registrar that the member platform's admission records do not match within a day.
+
+**Why:** a stolen registrar key can commit the whole open tranche, and the two-week hold before any member pays is
+the only window to suspend fakes for nothing. This alert is a join against off-chain records: the chain cannot know
+who was admitted.
+
+**Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants).
+
+#### D2 — Payment deferred · warn
+
+**Condition:** `EventPaymentDeferred`.
+
+**Why:** the payee refused the payment, so the chain holds it and retries a day later. Until the payee changes, the grant
+keeps deferring.
+
+**Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants), destination recovery.
+
+#### D3 — Member tranche nearly committed · notify governance
+
+**Condition:** the open member tranche under a share of what was opened (suggest a tenth).
+
+**Why:** registration stops when it runs out, and the next quarter takes a proposal and a vote.
+
+**Response:** [committee runbook §8](../governance/COMMITTEE_RUNBOOK.md#8-grants), a member tranche.
+
+## 8. Collection beyond the multiplier
+
+- **Poller**, every few minutes: `reserve/RecognisedCapital` and `reserve/OpenPositions` (R1–R3),
+  `oracle/StoredRates` and `oracle/Params` (O1, O2, R3), `market/Pool` (M1, M2), every mandate query (C1, C4), and
+  `disbursement/Balance` (D3).
+- **Indexer:** `EventOracleJail`, `EventFeedTransitionScheduled`, `EventEmergencySuspended`, `EventClaimSubmitted`,
+  `EventGrantEntryRecorded`, `EventPaymentDeferred`, and `EventPoolUpdated`.
+- **Off-chain join:** D1 needs the member platform's admission records beside the chain's registrations.
+- **Thresholds:** every "suggest" above is a placeholder, set with the operators and committees that receive the alert.
+
+The process side of oracle attendance and price-feed liveness, what this node signs and what its sidecar serves, is
+[process monitoring §8](PROCESS_MONITORING.md#8-what-to-watch), read from the scrape endpoints rather than from state.
