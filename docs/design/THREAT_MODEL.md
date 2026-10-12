@@ -266,7 +266,7 @@ advances the term, so transactions prepared under the old key expire. The linked
 | [Treasury](../../x/treasury/README.md) economic policy | Set the reward targets, fund target ratios, and exposure weights anywhere inside the corridor | Replacement; governance resets the policy |
 | [Market](../../x/market/README.md#conversion-mandate) conversion | Set depth, recovery period, and spread floor inside the corridor, and the Tobin tax up to the mandate cap | Replacement; governance resets the policy |
 | [Asset](../../x/asset/README.md#9-the-emergency-mandate) emergency | Suspend each healthy asset once a term; a suspension moves no value | Governance recovers the asset |
-| [Reserve](../../x/reserve/README.md#mandate-custody-and-journal) | Deploy up to the term's allowance, only to governance's approved destinations and above the NOAH floor; burn NOAH within the solved surplus bound, and the Ark paper it holds, which earns no capital credit; attest inflated holdings, which raise recognised credit within haircuts and caps but move no coin | Replacement; governance corrects the attestation |
+| [Reserve](../../x/reserve/README.md#mandate-custody-and-journal) | Deploy up to the term's allowance, only to governance's approved destinations and above the NOAH floor; burn NOAH within the surplus bound, and the Ark paper it holds, which earns no capital credit; attest inflated holdings, each adding at most its entry's `max_credit_per_noah` × the NOAH balance and moving no other asset's credit or any coin (D64), each restatement citing its evidence | Replacement; governance corrects the attestation |
 | [Claims](../../x/claims/README.md#stablecoin-funding-and-the-committee-limit) | Submit claims within the term's limit and cancel committee claims; a stablecoin claim's buy, which no cancel undoes, is charged against the limit (D140) | Nothing pays before the cancellation period, a week at launch; governance cancels |
 | [Security](../../x/security/README.md) | Schedule an upgrade at a height it picks, halting the chain there; there is no lead time | A replacement leaves the plan standing: governance cancels it, or the new committee does, if either lands before the height; otherwise validators restart past it with `--unsafe-skip-upgrades` |
 | [Grants](../../x/disbursement/README.md#committee-awards) | Award compensation within the term's allowance, a stablecoin award's buy charged against it (D140); appoint its own registrar; suspend members, or reinstate them, which pays their arrears | Nothing pays before one period, at least two weeks. One proposal replaces the committee, clearing its registrar, cancels its term's awards, and reinstates members it suspended; a second, expedited, cancels what it made during the first vote |
@@ -281,6 +281,9 @@ advances the term, so transactions prepared under the old key expire. The linked
   store, which links a person to an address, is the platform's second asset after the committee key
   ([member platform](../direction/TOOLING_DIRECTION.md#7-run-the-member-platform-without-custody)). Public references,
   registration batches included, carry no personal data.
+- A Reserve holding not re-attested within its entry's window earns nothing (D141), which catches a custodian that
+  fails while the committee stops attesting; a key that keeps re-attesting falsely is answered only by the evidence
+  its references cite.
 - The ownership cap binds beneficiary records, not people; tying a record to a person is the proposal's case and the
   admission process's.
 - The compensation cap and allowance and the Claims limit value an act at the fresh oracle rates, so a committee act is
