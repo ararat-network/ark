@@ -8,9 +8,9 @@ committees, and Disbursement. This guide specifies monitoring requirements;
 This note says what to watch in Ark's own state: which query answers a question, which event carries it, what
 should wake someone, and what should not.
 
-It does not cover node or process health. `docs/operations/PROCESS_MONITORING.md` owns that seam — the `[prometheus]` scrape
-endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the machine. This document is about
-what the chain believes.
+It does not cover node or process health. [Process monitoring](PROCESS_MONITORING.md) owns that seam: the
+`[prometheus]` scrape endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the machine. This
+document is about what the chain believes.
 
 Responses are keyed by the alert IDs used here and live in the [governance
 runbook](../governance/GOVERNANCE_RUNBOOK.md) and the [committee runbook](../governance/COMMITTEE_RUNBOOK.md); each alert
@@ -77,29 +77,18 @@ calibration.
 One alert is worth having even in Phase A: **A2, refresh stalled**. A multiplier that cannot recompute is broken
 whether or not anyone is reading it, and Phase A is precisely when that would go unnoticed.
 
-**Phase B — activated.** The full alert set applies.
+**Phase B — activated.** The full A-series applies. The alerts in §3–§7 apply from launch in either phase.
 
-### 2.2 Signal inventory
+### 2.2 Reading the signals
 
-| Signal | Source | Cadence |
-| --- | --- | --- |
-| `multiplier` | `ExposureStatus.exposure_state.multiplier`; `EventExposureRefreshed.multiplier` | per refresh |
-| `uncapped_multiplier` | `EventExposureRefreshed.uncapped_multiplier` | per refresh |
-| `liability_ratio` | `ExposureStatus`; `EventExposureRefreshed` | per refresh |
-| `annualised_volatility` | `ExposureStatus.annualised_volatility` (derived); `EventExposureRefreshed` | per refresh / on demand |
-| `flow_pressure` | `ExposureStatus.exposure_state.flow_pressure` (NOAH net of expansion, floored at zero); `EventExposureRefreshed.flow_ratio` (a share of net liability) | per block / per refresh |
-| `refresh_pending` | `ExposureStatus.refresh_pending` | on demand |
-| `volatility_variance` | `ExposureStatus.exposure_state.volatility_variance` | on demand |
-| net and nominal liability, all six targets, fund balances | `treasury/FundStatus` | on demand |
-| valuation incompleteness | `EventLiabilityIncomplete` (and the two supply lists it carries) | per settling block, when degraded |
-| retained vs burned | `EventExpansionAllocated` | per settling block with expansions |
-| buffer payout | `EventRedemptionBufferDrawn` | per settling block with redemptions |
-| Reserve burnable surplus | `reserve/BurnableSurplus` | on demand |
-| Reserve recognised capital | `reserve/RecognisedCapital` | on demand |
-| Reserve capital requirement | `treasury/FundStatus.strategic_reserve_target` | on demand |
+[§8](#8-source-inventory) lists every source and the fields read from it. Three readings need care:
 
-Note the last two. `RequiredReserveCapital` is a keeper function reading the **gross** Reserve target, so
-`strategic_reserve_target` is the field that matches it — not `strategic_reserve_net_target`.
+- `annualised_volatility` is derived when queried from `exposure_state.volatility_variance`; the refresh event carries
+  the value the refresh used.
+- `exposure_state.flow_pressure` is NOAH net of expansion, floored at zero, and moves every block;
+  `EventExposureRefreshed.flow_ratio` is that pressure as a share of net liability at the refresh.
+- `RequiredReserveCapital` reads the **gross** Reserve target, so `FundStatus.strategic_reserve_target` is the field
+  that matches it, not `strategic_reserve_net_target`.
 
 ### 2.3 The event/query split, and why the poller is not optional
 
@@ -409,9 +398,9 @@ under a share of the whole (suggest a tenth).
 ## 7. Disbursement
 
 **Signals.** `disbursement/Grants` (`arkd query disbursement grants`) filters by `--registrar-term` and
-`--committee-term`; `disbursement/Balance` reports the open member tranche. `EventGrantEntryRecorded` carries every
-grant's creation, payment, suspension, and cancellation with its `actor`, and `EventPaymentDeferred` every refused
-payment.
+`--committee-term`; `disbursement/Balance` reports the open member tranche, and `EventTrancheOpened` what each opening
+added. `EventGrantEntryRecorded` carries every grant's creation, payment, suspension, and cancellation with its `actor`,
+and `EventPaymentDeferred` every refused payment.
 
 #### D1 — Registrations unreconciled · page the grants committee
 
@@ -434,7 +423,7 @@ keeps deferring.
 
 #### D3 — Member tranche nearly committed · notify governance
 
-**Condition:** the open member tranche under a share of what was opened (suggest a tenth).
+**Condition:** the open member tranche under a share of the last opening's `amount` (suggest a tenth).
 
 **Why:** registration stops when it runs out, and the next quarter takes a proposal and a vote.
 
@@ -480,6 +469,7 @@ field.
 | `ark.claims.v1.EventClaimSubmitted` | event | `claim_id` | every block | C2 |
 | `ark.disbursement.v1.EventGrantEntryRecorded` | event | `grant_id`, `action`, `actor` | every block | D1 |
 | `ark.disbursement.v1.EventPaymentDeferred` | event | `grant_id`, `payee`, `due_time` | every block | D2 |
+| `ark.disbursement.v1.EventTrancheOpened` | event | `amount`, `member_tranche` | every block | D3 |
 
 - **Events** are typed: each block's results carry them with the source's full name as the event type, so a generic
   ABCI event indexer suffices.
@@ -489,4 +479,4 @@ field.
   receive the alert.
 
 The process side of oracle attendance and price-feed liveness, what this node signs and what its sidecar serves, is
-[process monitoring §8](PROCESS_MONITORING.md#8-what-to-watch), read from the scrape endpoints rather than from state.
+[process monitoring §3](PROCESS_MONITORING.md#3-what-to-watch), read from the scrape endpoints rather than from state.

@@ -3,23 +3,22 @@
 For node and sidecar operators: configure scrape/export surfaces, interpret process metrics, and diagnose alerts.
 Protocol-state signals live in [protocol monitoring](PROTOCOL_MONITORING.md).
 
-This note says which file owns which telemetry, what `arkd start` checks about them, and what an empty otel.yaml
-means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integration details;
-[shared telemetry](../../pkg/telemetry/README.md) owns exporter and bridge implementation.
+§2 sets monitoring up, §3 says what to alert on, and §4 inventories every series Ark exports; §5–§8 are reference for
+the configuration surfaces and what `arkd start` checks about them. [Node
+startup](../../cmd/arkd/README.md#telemetry-startup) owns integration details, including why the scrape endpoint and the
+SDK's export configuration have separate owners; [shared telemetry](../../pkg/telemetry/README.md) owns exporter and
+bridge implementation.
 
 ## Contents
 
 - [1. Three surfaces, one rule](#1-three-surfaces-one-rule)
-- [2. [prometheus]](#2-prometheus)
-- [3. otel.yaml](#3-otelyaml)
-- [4. The legacy [telemetry] bridge](#4-the-legacy-telemetry-bridge)
-- [5. The price-feed sidecar](#5-the-price-feed-sidecar)
-- [6. Configuration ownership](#6-configuration-ownership)
-- [7. Setting it up](#7-setting-it-up)
-- [8. What to watch](#8-what-to-watch)
-- [Series inventory](#series-inventory)
-- [Application mempool occupancy](#application-mempool-occupancy)
-- [Dependency series at the scraper](#dependency-series-at-the-scraper)
+- [2. Setting it up](#2-setting-it-up)
+- [3. What to watch](#3-what-to-watch)
+- [4. Series inventory](#4-series-inventory)
+- [5. [prometheus]](#5-prometheus)
+- [6. otel.yaml](#6-otelyaml)
+- [7. The legacy [telemetry] bridge](#7-the-legacy-telemetry-bridge)
+- [8. Dependency series at the scraper](#8-dependency-series-at-the-scraper)
 
 ## 1. Three surfaces, one rule
 
@@ -30,161 +29,41 @@ means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integrati
 | `[instrumentation]` | `config/config.toml` | CometBFT's consensus and p2p metrics, own registry, port `:26660` |
 
 **Metrics are scraped through `[prometheus]`; anything that pushes goes through otel.yaml.** The legacy `[telemetry]`
-section of app.toml is the SDK's deprecated go-metrics bridge and is covered in §4; with `metrics-sink = "otel"` its
+section of app.toml is the SDK's deprecated go-metrics bridge and is covered in §7; with `metrics-sink = "otel"` its
 series land on `[prometheus]` as well.
 
 Only `arkd start` reads either file for telemetry. `export`, `rollback`, `pruning`, and `snapshot` build the app but
 never the endpoint or the OpenTelemetry SDK.
 
-## 2. `[prometheus]`
+## 2. Setting it up
 
-```toml
-[prometheus]
-# Enabled serves the application's OpenTelemetry metrics for Prometheus to
-# scrape at /metrics on the address below.
-enabled = false
-
-# Address is the listen address of the scrape endpoint.
-address = "localhost:9464"
-```
-
-What the endpoint carries when enabled:
-
-- Ark's own meters: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`, `pricefeed/client/metrics`,
-  `pkg/metrics`.
-- Go runtime and process collectors.
-- The SDK's `baseapp` instrument: block and transaction counts, and the FinalizeBlock, PreBlock, BeginBlock, and
-  EndBlock timings. arkd starts it on the endpoint itself, so it needs no otel.yaml. If otel.yaml names it under
-  `extensions.instruments`, the SDK starts it instead, on the same endpoint, and arkd does not start it twice.
-- The legacy go-metrics series, when `[telemetry]` selects the `otel` sink (§4).
-- The contract runtime's cache counters, `wasmvm_cache_*`, which start registers on the endpoint's registry the
-  way Gaia registers them on the default one. The upstream per-contract pinned-cache metrics are also exposed;
-  optional retention exclusions belong in Prometheus scrape configuration.
-
-**Exported series are a contract.** Names and label keys are consumed by external dashboards and alerts.
-Intentional renames require query migration. The [telemetry development guide](../../pkg/telemetry/README.md#exported-series-contract)
-owns fixture verification and regeneration; operators should review the series diff when adopting a release.
-
-The endpoint's `target_info` series carries `service_name="arkd"`, `service_version="<build>"`,
-`service_instance_id="<chain-id>/<moniker>"`, and `ark_chain_id="<chain-id>"`; other series carry their meter's own labels.
-A listener that cannot bind stops the node, as the SDK's
-API and gRPC listeners do.
-
-An app.toml older than the section reads on its defaults, endpoint off, and `start` logs the absence at Info. The SDK
-writes app.toml only when it is missing and never rewrites it, so the section has to be added by hand to an existing
-file.
-
-## 3. otel.yaml
-
-otel.yaml is the OpenTelemetry declarative configuration file, the cross-vendor spec the SDK reads through the
-`otelconf` library. `arkd start` reads it right after validating app.toml and before the app is built.
-
-**Empty is the supported default.** `arkd init`, `arkd testnet`, and the upgrade rehearsal all write an empty file.
-Empty or missing means the tracer, meter, and logger globals are noop, and `[prometheus]` alone decides whether the
-node has metrics.
-
-A non-empty file switches on, per block:
-
-- `tracer_provider`: the SDK's spans around ABCI calls and module block hooks. Ark emits no spans of its own. This is
-  the only way to get traces.
-- `logger_provider`: the SDK fans the node logger out to OpenTelemetry as well as the console. Only here.
-- `meter_provider`: push readers for every meter in the process, **only while `[prometheus]` is off**. See the rules
-  below.
-- `extensions.instruments`: the SDK's optional `host`, `runtime`, `diskio`, and `baseapp` instruments.
-- `extensions.propagators`. The file-exporter keys the SDK declares beside it are not wired in this release.
-
-Values accept `${VAR}` and `${VAR:-default}` substitution. `file_format` is required. A traces-only file, the usual
-collector case, is:
-
-```yaml
-file_format: "1.0-rc.3"
-tracer_provider:
-  processors:
-    - batch:
-        exporter:
-          otlp_grpc:
-            endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
-```
-
-Rules `arkd start` applies:
-
-- **A `pull` reader is refused.** The otelconf release this build carries constructs none, so the SDK would fail the
-  node one step later with a generic error. arkd fails first and names `[prometheus]` as the replacement.
-- **A `meter_provider` with `[prometheus]` enabled is shadowed, and start warns.** Its readers export no metrics.
-  Turn `[prometheus]` off to push metrics instead.
-- **A malformed file fails start.** A file that is not YAML fails arkd's own read; one that parses but breaks the
-  schema fails through the SDK's parse. arkd reads only the fields it acts on and leaves schema validation to the SDK.
-- **`OTEL_EXPERIMENTAL_CONFIG_FILE` with `[prometheus]` enabled is refused.** The SDK initialises OpenTelemetry
-  from that file at package load, before arkd installs the endpoint's provider, so Ark's package-level meters bind
-  to that file's provider, or to noop when it is empty, and the endpoint would serve without them. With
-  `[prometheus]` off the variable is fine, but arkd reads only `config/otel.yaml`, so the checks above do not see
-  that file.
-
-## 4. The legacy `[telemetry]` bridge
-
-`[telemetry]` in app.toml is the SDK's deprecated go-metrics configuration, which upstream is removing. What Ark does
-with it:
-
-- `enabled = true` with `metrics-sink = "otel"` routes the SDK's remaining go-metrics calls to an OpenTelemetry meter.
-  The series land on `[prometheus]`; Ark's adapter normalises query routes to the bounded series described below.
-- The same sink with `[prometheus]` off leaves those series with nowhere to go but otel.yaml's `meter_provider`.
-  `start` warns.
-- `prometheus-retention-time` has no effect: `[prometheus]` serves the endpoint in place of the SDK's go-metrics
-  Prometheus fan-out, and setting it beside the otel sink makes `start` warn.
-
-**Bridged series.** The bridge starts in PostSetup; go-metrics calls before it (server info, genesis transactions,
-startup block replay) record nowhere. Query paths never become instrument names. Completed ABCI queries export
-`ark_sdk_query_duration_milliseconds{route}`; its `_count` series counts requests. The route is a registered
-gRPC method, `app`, `store`, `p2p`, or `unknown`; even malformed paths without a leading slash use this bounded
-classification. The histogram records from the SDK's deferred query timer, so each completed query counts once.
-
-Other go-metrics series export under `sdk_legacy_<kind>_<readable-key>_<digest>`, where kind is `counter`, `gauge`,
-or `histogram`. The readable key joins components with underscores and replaces punctuation with underscores;
-it is limited to 120 characters. The digest is the SHA-256 hex of the original key components joined with NUL.
-This distinguishes names that Prometheus sanitises identically and separates generated histogram suffixes from
-other instrument types. Counter and histogram suffixes follow Prometheus conventions. `ark_*` names are a separate,
-stable contract. The bridge admits at most 1,024 other go-metrics instruments; registered entries keep recording at
-the limit and additional names are dropped. Query
-paths do not consume that allowance.
-
-`arkd testnet` writes `enabled = true` and `metrics-sink = "otel"` beside an enabled `[prometheus]`, which is the
-recommended pairing.
-
-## 5. The price-feed sidecar
-
-The sidecar is a separate process with its own flags: `--metrics` and `--metrics-address` (default
-`127.0.0.1:9091`) serve its scrape endpoint, and `--pprof` its profiler. Nothing in app.toml or otel.yaml reaches it.
-The node-side client that polls it is part of the node, and its meters appear on `[prometheus]`.
-
-## 6. Configuration ownership
-
-[Node telemetry startup](../../cmd/arkd/README.md#telemetry-startup) explains why the application scrape endpoint and the
-SDK's declarative export configuration have separate owners. Use the configuration rules above when operating them.
-
-## 7. Setting it up
-
-Both processes already serve everything §8 reads, so monitoring is configuration on the operator's side: turn on the
+Both processes already serve everything §3 reads, so monitoring is configuration on the operator's side: turn on the
 endpoints, scrape them with Prometheus, load a rule for each alert, route the alerts with Alertmanager, and graph them
 in Grafana. The scraper, rules, and dashboards are operator tooling kept outside this repository; this section is what
 they connect to.
 
-### 7.1 Turn on the endpoints
+### 2.1 Turn on the endpoints
 
 | Process | Setting | Default | Serves |
 | --- | --- | --- | --- |
-| `arkd` application | `app.toml [prometheus] enabled`, `address` | off, `localhost:9464` | Ark's meters, the SDK's baseapp timings, Wasm cache, Go runtime (§2) |
+| `arkd` application | `app.toml [prometheus] enabled`, `address` | off, `localhost:9464` | Ark's meters, the SDK's baseapp timings, Wasm cache, Go runtime (§5) |
 | `arkd` consensus | `config.toml [instrumentation] prometheus`, `prometheus_listen_addr` | off, `:26660` | CometBFT's consensus, P2P, and mempool metrics |
-| `pricefeed` | `start --metrics`, `--metrics-address` | off, `127.0.0.1:9091` | The sidecar's meters (§5) |
+| `pricefeed` | `start --metrics`, `--metrics-address` | off, `127.0.0.1:9091` | The sidecar's meters; nothing in `app.toml` or otel.yaml reaches it |
 
 On each node, then restart it:
 
 ```sh
 arkd config set app prometheus.enabled true
 arkd config set app prometheus.address 0.0.0.0:9464
+arkd config set app telemetry.enabled true
+arkd config set app telemetry.metrics-sink otel
 arkd config set config instrumentation.prometheus true
 ```
 
-An `app.toml` older than the `[prometheus]` section needs the section added by hand first (§2). For the sidecar, add
+The two `telemetry` lines route the SDK's remaining go-metrics calls onto the same endpoint (§7), including ABCI query
+timings; the node's sidecar client is part of the node, so its meters appear there too.
+
+An `app.toml` older than the `[prometheus]` section needs the section added by hand first (§5). For the sidecar, add
 `--metrics --metrics-address 0.0.0.0:9091` to its start command, in its service unit ([pricefeed
 operations](PRICEFEED_OPERATIONS.md#2-install-and-run)), and restart it.
 
@@ -203,7 +82,7 @@ curl -s localhost:9091/metrics | grep '^target_info'
 The node's `target_info` carries `service_name="arkd"`, its build as `service_version`, `ark_chain_id`, and
 `service_instance_id="<chain-id>/<moniker>"`; the sidecar's carries `service_name="pricefeed"` and its own build.
 
-### 7.2 Scrape
+### 2.2 Scrape
 
 One job per endpoint kind, with a `node` label on every target so a node's three endpoints read together:
 
@@ -239,13 +118,13 @@ alerting:
         - targets: ["alertmanager.internal:9093"]
 ```
 
-Add the dependency-series exclusions from [below](#dependency-series-at-the-scraper) under the `arkd` job. A
-15-second interval samples every two or three blocks, which §8's per-block gauges assume. Keep at least 30 days of
-history (`--storage.tsdb.retention.time=30d`): §8.4 sets the thresholds from the first weeks of data.
+Add the dependency-series exclusions from [below](#8-dependency-series-at-the-scraper) under the `arkd` job. A
+15-second interval samples every two or three blocks, which §3's per-block gauges assume. Keep at least 30 days of
+history (`--storage.tsdb.retention.time=30d`): §3.4 sets the thresholds from the first weeks of data.
 
-### 7.3 Alert rules
+### 2.3 Alert rules
 
-Each §8 alert becomes one rule. Carry its severity from the heading into a `severity` label and its ID into `ark_alert`,
+Each §3 alert becomes one rule. Carry its severity from the heading into a `severity` label and its ID into `ark_alert`,
 so routing and dashboards can cite it. N2, on the node, and S6, on the sidecar:
 
 ```yaml
@@ -267,18 +146,23 @@ groups:
 ```
 
 The rest follow the same pattern from their conditions; the `for:` durations and every threshold are the placeholders
-§8.4 describes. Pair them with the generic process rules §8 leaves out because nothing about them is Ark's:
+§3.4 describes. Pair them with the generic process rules §3 leaves out because nothing about them is Ark's:
 
 | Rule | Expression | Severity |
 | --- | --- | --- |
 | Endpoint down | `up == 0` for any job | page |
 | Chain stalled | `increase(cometbft_consensus_height[2m]) == 0` | page |
-| This validator not signing | `cometbft_consensus_latest_block_height - cometbft_consensus_validator_last_signed_height > 10` | page |
-| Few peers | `cometbft_p2p_peers < 3` | warn |
+| This validator not signing | `cometbft_consensus_latest_block_height - ignoring(validator_address) cometbft_consensus_validator_last_signed_height > 10` | page |
+| Validator lost a sentry | `cometbft_p2p_peers{role="validator"} < 2`, or fewer than its sentries | warn |
+| Few peers | `cometbft_p2p_peers{role!="validator"} < 3` | warn |
+| Never peered | `up{job="cometbft"} == 1 unless on(instance) cometbft_p2p_peers` | warn |
 
-Check the file with `promtool check rules rules/ark.yml` before loading it.
+The validator-signing rule ignores `validator_address`, the one label the last-signed series carries that the height
+does not. `cometbft_p2p_peers` exists only once a node has had a peer, which the never-peered rule covers; the `role`
+label comes from the scrape configuration in §2.2. Check the file with `promtool check rules rules/ark.yml` before
+loading it.
 
-### 7.4 Route and graph
+### 2.4 Route and graph
 
 Route on `severity`: `page` to whoever is on call, `warn` to a channel. A minimal Alertmanager route:
 
@@ -301,17 +185,17 @@ and last signed height (CometBFT); ExtendVote status, vote targets by status, sn
 share (N1–N4); mempool by lane (N6); and for its sidecar, ticks, missing prices, pair sample counts, and provider
 last success (S2–S6).
 
-### 7.5 Local example
+### 2.5 Local example
 
 [Localnet topology and ports](../../contrib/localnet/README.md#topology-and-ports) lists each validator's scrape endpoints
 and generated settings. Use the application endpoint for node metrics and the instrumentation endpoint for consensus.
 
-## 8. What to watch
+## 3. What to watch
 
-Conditions only; §7.3 shows how one becomes a rule. The full rule set, the thresholds, and who gets paged live with the
-dashboards outside this repository and cite these IDs. The A-series in `docs/operations/PROTOCOL_MONITORING.md` watches
+Conditions only; §2.3 shows how one becomes a rule. The full rule set, the thresholds, and who gets paged live with the
+dashboards outside this repository and cite these IDs. [Protocol monitoring](PROTOCOL_MONITORING.md) watches
 protocol state through queries and events; this section watches the node and its sidecar as processes, through the
-exported-series contract linked in §2. Names below are the exported form.
+exported-series contract §4 inventories. Names below are the exported form.
 
 Two rules carry over. Alert state is off-chain: "for N blocks" needs history only the scraper has. And a gauge is
 sampled once per scrape interval, which is many blocks, so the per-block gauges here (`ark_oracle_vote_targets`,
@@ -340,7 +224,7 @@ and the other handlers propagate their original panic unchanged. `status="Commit
 responses that carried the commit alone because the proposer's clock found the prices older than
 `max_exchange_rate_age` or could not read it; the proposal itself succeeded.
 
-### 8.1 Node
+### 3.1 Node
 
 **N1 — This validator is abstaining · page**
 
@@ -405,6 +289,14 @@ responses that carried the commit alone because the proposer's clock found the p
   `ark_mempool_admissions_total{status="full"}` counts reservation-partition refusals. It cannot identify a full
   reserved lane on its own: a privileged transaction overflows into normal storage before it is refused.
 
+**Reading the mempool gauges.** CometBFT's `cometbft_mempool_size` and unconfirmed-transaction RPCs report its flood
+list, while `ark_mempool_transactions` and `ark_mempool_bytes` report application storage by allocation. A governance
+transaction stored in ordinary capacity counts toward `normal`, and an allocation stays fixed at insertion.
+`ark_mempool_admissions_total` counts SDK CheckTx outcomes, rechecks included, so it is not incoming throughput; `full`
+is a reservation-partition refusal and the SDK's total-count error reads `invalid`. The app pool can hold an entry the
+flood list refused for up to two commits, and the list holds a replaced transaction's superseded version until a recheck
+fails it, so the two need not match at any instant. The gauges are per process, with no account or proposal labels.
+
 **N7 — Block hooks approaching block time · warn**
 
 - Condition: a high quantile of `ark_abci_method_duration_milliseconds{method="pre_blocker"}` or of
@@ -414,7 +306,7 @@ responses that carried the commit alone because the proposer's clock found the p
   taken from consensus.
 - First look: the `module` label, then the SDK's baseapp timings beside them.
 
-### 8.2 Sidecar
+### 3.2 Sidecar
 
 **S1 — Provider alive but contributing nothing · warn**
 
@@ -474,26 +366,26 @@ responses that carried the commit alone because the proposer's clock found the p
   says why.
 - First look: the addresses under `[client]`, and whether those nodes serve gRPC.
 
-### 8.3 What not to alert on
+### 3.3 What not to alert on
 
 - A single skipped sample, reconnect, or parse error. Rates, not events.
 - `ark_oracle_vote_reports_total{status="empty"}` on its own. Some abstention is normal; N4 is the version that
   matters.
 - A non-empty priority lane for one block. It empties when this node proposes.
 
-### 8.4 Thresholds
+### 3.4 Thresholds
 
 N1's grace, N5's trickle, N7's fraction of block time, and every window above are placeholders, to be set from the
-first weeks of data the way `docs/operations/PROTOCOL_MONITORING.md` §2.8 sets its own. The parameter names in the conditions are the
+first weeks of data the way [protocol monitoring §2.8](PROTOCOL_MONITORING.md#28-calibration-and-operational-ownership) sets its own. The parameter names in the conditions are the
 oracle module's, so a governance change to any of them moves the corresponding rule.
 
-## Series inventory
+## 4. Series inventory
 
 Every series Ark itself exports, one table per process. The [exported-series
 fixtures](../../pkg/telemetry/README.md#exported-series-contract) pin each name, type, and label set, and
 `TestSeriesInventoryMatchesFixtures` fails when a fixture series has no row here or a row names no fixture series.
 Upstream series are not listed: CometBFT's on the instrumentation endpoint, the SDK's baseapp timings and bridged
-`sdk_legacy_*` series (§4), `wasmvm_*`, and the Go runtime's. `curl <endpoint>/metrics` prints every series with its
+`sdk_legacy_*` series (§7), `wasmvm_*`, and the Go runtime's. `curl <endpoint>/metrics` prints every series with its
 `# HELP` description, and CometBFT documents its own.
 
 ### `arkd`
@@ -503,7 +395,7 @@ Served on `[prometheus]`, port 9464 by default.
 | Series | Type | Labels | Measures | Read by |
 | --- | --- | --- | --- | --- |
 | `ark_abci_requests_total` | counter | `method`: `prepare_proposal`, `process_proposal`, `extend_vote`, `verify_vote_extension`, `pre_blocker`; `status`: `Success`, `Rejected`, `CommitOnly`, `Panic`, or an error class such as `PriceFeedClientError`, `InvalidPricesError`, `CodecError`, `ExtendedCommitValidationError` | ABCI++ requests Ark's wrappers handled, by outcome | N2, N5, N6, N7 |
-| `ark_abci_method_duration_milliseconds` | histogram | `method` as above | Ark's own work in each ABCI++ call, excluding the handler it wraps (§8) | N7 |
+| `ark_abci_method_duration_milliseconds` | histogram | `method` as above | Ark's own work in each ABCI++ call, excluding the handler it wraps (§3) | N7 |
 | `ark_module_method_duration_milliseconds` | histogram | `module`; `method`: `begin_blocker`, `end_blocker` | Each module's block hooks | N7 |
 | `ark_oracle_vote_targets` | gauge | `status`: `priced`, `omitted`, `dropped` | Active targets in this node's last vote extension | N1 |
 | `ark_oracle_vote_dropped_targets_total` | counter | `denom` | Sidecar rates this node dropped from its vote extension as undecodable | N1 |
@@ -517,8 +409,8 @@ Served on `[prometheus]`, port 9464 by default.
 | `ark_mempool_transactions` | gauge | `lane`: `normal`, `governance`, `committee` | Pending transactions by admission allocation | N6 |
 | `ark_mempool_bytes` | gauge | `lane` as above | Pending transaction bytes by admission allocation | N6 |
 | `ark_mempool_admissions_total` | counter | `status`: `accepted`, `full`, `invalid` | CheckTx outcomes, rechecks included | N6 |
-| `ark_sdk_query_duration_milliseconds` | histogram | `route`: a registered gRPC method, `app`, `store`, `p2p`, or `unknown` | Completed ABCI queries (§4) | |
-| `target_info` | gauge | `service_name`, `service_version`, `service_instance_id`, `ark_chain_id` | The process's identity (§2) | N1 |
+| `ark_sdk_query_duration_milliseconds` | histogram | `route`: a registered gRPC method, `app`, `store`, `p2p`, or `unknown` | Completed ABCI queries; served only with the `[telemetry]` otel sink (§7) | |
+| `target_info` | gauge | `service_name`, `service_version`, `service_instance_id`, `ark_chain_id` | The process's identity (§5) | N1 |
 
 ### `pricefeed`
 
@@ -543,20 +435,121 @@ Served with `--metrics`, port 9091 by default.
 | `ark_pricefeed_rpc_requests_total` | counter | `method`; `code`: the gRPC status | RPCs the sidecar served | S6 |
 | `target_info` | gauge | `service_name`, `service_version` | The process's identity | N1 |
 
-## Application mempool occupancy
+## 5. `[prometheus]`
 
-CometBFT's `cometbft_mempool_size` and unconfirmed-transaction RPCs report its flood list.
-Scrape `ark_mempool_transactions` and `ark_mempool_bytes` by `lane` (`normal`, `governance`, `committee`)
-for application admission allocations, and `ark_mempool_admissions_total` by `status`
-(`accepted`, `full`, `invalid`). A governance transaction stored in ordinary capacity counts
-toward `normal`; surviving allocations remain fixed at insertion. Counts include SDK rechecks
-and are not incoming transaction throughput. `full` identifies reservation-partition refusals;
-the SDK's total-count error is reported as `invalid`. Gauges read pool occupancy at scrape
-time. The app pool can hold an entry the flood list refused after admission for up to two commits,
-and the list holds the superseded version of a replaced transaction until a recheck fails it, so the
-two need not match at every instant. These gauges are per process and use no account or proposal labels.
+```toml
+[prometheus]
+# Enabled serves the application's OpenTelemetry metrics for Prometheus to
+# scrape at /metrics on the address below.
+enabled = false
 
-## Dependency series at the scraper
+# Address is the listen address of the scrape endpoint.
+address = "localhost:9464"
+```
+
+What the endpoint carries when enabled:
+
+- Ark's own meters: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`, `pricefeed/client/metrics`,
+  `pkg/metrics`.
+- Go runtime and process collectors.
+- The SDK's `baseapp` instrument: block and transaction counts, and the FinalizeBlock, PreBlock, BeginBlock, and
+  EndBlock timings. arkd starts it on the endpoint itself, so it needs no otel.yaml. If otel.yaml names it under
+  `extensions.instruments`, the SDK starts it instead, on the same endpoint, and arkd does not start it twice.
+- The legacy go-metrics series, when `[telemetry]` selects the `otel` sink (§7).
+- The contract runtime's cache counters, `wasmvm_cache_*`, which start registers on the endpoint's registry the
+  way Gaia registers them on the default one. The upstream per-contract pinned-cache metrics are also exposed;
+  optional retention exclusions belong in Prometheus scrape configuration.
+
+**Exported series are a contract.** Names and label keys are consumed by external dashboards and alerts.
+Intentional renames require query migration. The [telemetry development guide](../../pkg/telemetry/README.md#exported-series-contract)
+owns fixture verification and regeneration; operators should review the series diff when adopting a release.
+
+The endpoint's `target_info` series carries `service_name="arkd"`, `service_version="<build>"`,
+`service_instance_id="<chain-id>/<moniker>"`, and `ark_chain_id="<chain-id>"`; other series carry their meter's own labels.
+A listener that cannot bind stops the node, as the SDK's
+API and gRPC listeners do.
+
+An app.toml older than the section reads on its defaults, endpoint off, and `start` logs the absence at Info. The SDK
+writes app.toml only when it is missing and never rewrites it, so the section has to be added by hand to an existing
+file.
+
+## 6. otel.yaml
+
+otel.yaml is the OpenTelemetry declarative configuration file, the cross-vendor spec the SDK reads through the
+`otelconf` library. `arkd start` reads it right after validating app.toml and before the app is built.
+
+**Empty is the supported default.** `arkd init`, `arkd testnet`, and the upgrade rehearsal all write an empty file.
+Empty or missing means the tracer, meter, and logger globals are noop, and `[prometheus]` alone decides whether the
+node has metrics.
+
+A non-empty file switches on, per block:
+
+- `tracer_provider`: the SDK's spans around ABCI calls and module block hooks. Ark emits no spans of its own. This is
+  the only way to get traces.
+- `logger_provider`: the SDK fans the node logger out to OpenTelemetry as well as the console. Only here.
+- `meter_provider`: push readers for every meter in the process, **only while `[prometheus]` is off**. See the rules
+  below.
+- `extensions.instruments`: the SDK's optional `host`, `runtime`, `diskio`, and `baseapp` instruments.
+- `extensions.propagators`. The file-exporter keys the SDK declares beside it are not wired in this release.
+
+Values accept `${VAR}` and `${VAR:-default}` substitution. `file_format` is required. A traces-only file, the usual
+collector case, is:
+
+```yaml
+file_format: "1.0-rc.3"
+tracer_provider:
+  processors:
+    - batch:
+        exporter:
+          otlp_grpc:
+            endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://localhost:4317}
+```
+
+Rules `arkd start` applies:
+
+- **A `pull` reader is refused.** The otelconf release this build carries constructs none, so the SDK would fail the
+  node one step later with a generic error. arkd fails first and names `[prometheus]` as the replacement.
+- **A `meter_provider` with `[prometheus]` enabled is shadowed, and start warns.** Its readers export no metrics.
+  Turn `[prometheus]` off to push metrics instead.
+- **A malformed file fails start.** A file that is not YAML fails arkd's own read; one that parses but breaks the
+  schema fails through the SDK's parse. arkd reads only the fields it acts on and leaves schema validation to the SDK.
+- **`OTEL_EXPERIMENTAL_CONFIG_FILE` with `[prometheus]` enabled is refused.** The SDK initialises OpenTelemetry
+  from that file at package load, before arkd installs the endpoint's provider, so Ark's package-level meters bind
+  to that file's provider, or to noop when it is empty, and the endpoint would serve without them. With
+  `[prometheus]` off the variable is fine, but arkd reads only `config/otel.yaml`, so the checks above do not see
+  that file.
+
+## 7. The legacy `[telemetry]` bridge
+
+`[telemetry]` in app.toml is the SDK's deprecated go-metrics configuration, which upstream is removing. What Ark does
+with it:
+
+- `enabled = true` with `metrics-sink = "otel"` routes the SDK's remaining go-metrics calls to an OpenTelemetry meter.
+  The series land on `[prometheus]`; Ark's adapter normalises query routes to the bounded series described below.
+- The same sink with `[prometheus]` off leaves those series with nowhere to go but otel.yaml's `meter_provider`.
+  `start` warns.
+- `prometheus-retention-time` has no effect: `[prometheus]` serves the endpoint in place of the SDK's go-metrics
+  Prometheus fan-out, and setting it beside the otel sink makes `start` warn.
+
+**Bridged series.** The bridge starts in PostSetup; go-metrics calls before it (server info, genesis transactions,
+startup block replay) record nowhere. Query paths never become instrument names. Completed ABCI queries export
+`ark_sdk_query_duration_milliseconds{route}`; its `_count` series counts requests. The route is a registered
+gRPC method, `app`, `store`, `p2p`, or `unknown`; even malformed paths without a leading slash use this bounded
+classification. The histogram records from the SDK's deferred query timer, so each completed query counts once.
+
+Other go-metrics series export under `sdk_legacy_<kind>_<readable-key>_<digest>`, where kind is `counter`, `gauge`,
+or `histogram`. The readable key joins components with underscores and replaces punctuation with underscores;
+it is limited to 120 characters. The digest is the SHA-256 hex of the original key components joined with NUL.
+This distinguishes names that Prometheus sanitises identically and separates generated histogram suffixes from
+other instrument types. Counter and histogram suffixes follow Prometheus conventions. `ark_*` names are a separate,
+stable contract. The bridge admits at most 1,024 other go-metrics instruments; registered entries keep recording at
+the limit and additional names are dropped. Query
+paths do not consume that allowance.
+
+`arkd testnet` writes `enabled = true` and `metrics-sink = "otel"` beside an enabled `[prometheus]`, which is the
+recommended pairing.
+
+## 8. Dependency series at the scraper
 
 Ark exports upstream SDK BaseApp, Wasm and Go/process metrics without custom filters. Keeping an exclusion policy
 in Prometheus avoids maintaining dependency metric-name lists and collector wrappers in production Ark code.

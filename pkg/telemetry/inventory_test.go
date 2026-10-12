@@ -10,8 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// inventoryRow matches a table row's first cell, a backticked series name.
-var inventoryRow = regexp.MustCompile("^\\| `([a-z_]+)` \\|")
+var (
+	// inventoryHeading matches the inventory section's heading, numbered or not.
+	inventoryHeading = regexp.MustCompile(`(?m)^## (\d+\. )?Series inventory$`)
+	// inventoryRow matches a table row's first cell, a backticked series name.
+	inventoryRow = regexp.MustCompile("^\\| `([a-z_]+)` \\|")
+)
 
 // The process monitoring inventory names exactly the series each process's golden fixture pins, so a new
 // series cannot ship undocumented and a removed one cannot linger in the table.
@@ -43,9 +47,9 @@ func TestSeriesInventoryMatchesFixtures(t *testing.T) {
 // inventoryTables reads the series names under each process heading of the Series inventory section.
 func inventoryTables(t *testing.T, doc string) map[string][]string {
 	t.Helper()
-	start := strings.Index(doc, "\n## Series inventory\n")
-	require.NotEqual(t, -1, start, "process monitoring has no Series inventory section")
-	section := doc[start+1:]
+	loc := inventoryHeading.FindStringIndex(doc)
+	require.NotNil(t, loc, "process monitoring has no Series inventory section")
+	section := doc[loc[0]:]
 	if end := strings.Index(section[1:], "\n## "); end != -1 {
 		section = section[:end+1]
 	}

@@ -3,7 +3,7 @@
 For validator operators running `pricefeed`, the off-chain process that prices the oracle's feeds: deploying it,
 configuring its providers and routes, linking it to the node, following feed changes, and diagnosing problems.
 [Implementation map](../../pricefeed/README.md), [oracle protocol](../../x/oracle/README.md),
-[monitoring](PROCESS_MONITORING.md#82-sidecar), and [trust boundaries](../security/THREAT_MODEL.md) cover the adjacent
+[monitoring](PROCESS_MONITORING.md#32-sidecar), and [trust boundaries](../security/THREAT_MODEL.md) cover the adjacent
 concerns. Commands run from the repository root unless another working directory is stated.
 
 ## Contents
@@ -52,7 +52,7 @@ does not prove that every feed can be priced; `pricefeed check` does (§7).
 | --- | --- | --- | --- |
 | Public gRPC and HTTP gateway | `--address` | `127.0.0.1:8080` | Serves the node its prices |
 | Admin gRPC | `--admin-address` | `127.0.0.1:8081`, loopback only | Runtime config reload; empty disables it |
-| Prometheus metrics | `--metrics`, `--metrics-address` | off, `127.0.0.1:9091` | [Sidecar metrics](PROCESS_MONITORING.md#82-sidecar) |
+| Prometheus metrics | `--metrics`, `--metrics-address` | off, `127.0.0.1:9091` | [Sidecar metrics](PROCESS_MONITORING.md#32-sidecar) |
 | pprof | `--pprof`, `--pprof-address` | off, `127.0.0.1:6060`, loopback only | Profiling |
 
 In the default `--tls-mode local` the public listener binds loopback only; §5 covers serving another host. Listener,
@@ -287,7 +287,7 @@ On chain, what matters is whether the validator's reports count:
   `reward_band` around the chain's median earns nothing for that feed.
 - `arkd query oracle exchange-rates` shows the fresh consensus rates; `stored-rates` shows every rate with its age.
 
-[Process monitoring](PROCESS_MONITORING.md#82-sidecar) defines the sidecar alerts S1–S7 and the node's N1–N3.
+[Process monitoring](PROCESS_MONITORING.md#32-sidecar) defines the sidecar alerts S1–S7 and the node's N1–N3.
 
 ## 8. Reload and replacement
 

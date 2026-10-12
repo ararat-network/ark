@@ -170,11 +170,11 @@ moniker. None of it is secret; all of it helps someone timing an attack on one v
 - Both metrics listeners are off by default and default to loopback when on. Only `arkd start` opens the node's, and a
   listener that cannot bind stops the node rather than leaving it running unobserved.
 - The node's registry is its own, so its scrape carries exactly what
-  [process monitoring §2](../operations/PROCESS_MONITORING.md#2-prometheus) lists and nothing CometBFT or the legacy
+  [process monitoring §5](../operations/PROCESS_MONITORING.md#5-prometheus) lists and nothing CometBFT or the legacy
   bridge registers.
 - The legacy go-metrics bridge maps ABCI query paths, routed or not, to fixed route or category labels and collapses
   the rest to `unknown`; other legacy instruments are capped at 1,024, so no request grows the series set
-  ([legacy bridge](../operations/PROCESS_MONITORING.md#4-the-legacy-telemetry-bridge)).
+  ([legacy bridge](../operations/PROCESS_MONITORING.md#7-the-legacy-telemetry-bridge)).
 
 **Review questions.** Does a new endpoint default to loopback, and refuse to start off it if it controls the process?
 Can a request choose a label value on a new instrument?
