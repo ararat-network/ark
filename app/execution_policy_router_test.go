@@ -174,7 +174,7 @@ func (s *stubRouter) Handler(sdk.Msg) baseapp.MsgServiceHandler {
 }
 
 // A contract pays transfer tax on what it dispatches, on top of the principal
-// that message moves (D41), and the tax lands in the collector.
+// that message moves, and the tax lands in the collector.
 func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 	arkApp, ctx, contract := setupExecutionTaxFixture(t)
 
@@ -204,7 +204,7 @@ func TestExecutionGeneratedTaxChargesTheSendingContract(t *testing.T) {
 }
 
 // A failure below the wrapper takes the tax with it. Wasmd dispatches inside a
-// cached store, so returning the error is what makes both unwind (D42) — this
+// cached store, so returning the error is what makes both unwind — this
 // pins that the wrapper propagates rather than swallowing.
 func TestExecutionGeneratedTaxFailsWithTheDispatch(t *testing.T) {
 	arkApp, ctx, contract := setupExecutionTaxFixture(t)

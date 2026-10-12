@@ -55,9 +55,9 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 	}
 
 	// Contracts read through a hand-written accept list of query paths
-	// (app/wasm_query.go). No custom querier: the tax estimate D43
-	// asks for is Treasury's ComputeTax query, listed there like any other
-	// path (D74).
+	// (app/wasm_query.go). No custom querier: the tax estimate a contract
+	// needs is Treasury's ComputeTax query, listed there like any other
+	// path.
 	wasmOpts := []wasmkeeper.Option{
 		wasmkeeper.WithQueryPlugins(app.wasmQueryPlugins(acceptedQueries())),
 		wasmkeeper.WithMessageHandler(app.wasmMessageHandler()),
@@ -88,7 +88,7 @@ func (app *ArkApp) setupWasm(appOpts servertypes.AppOptions) (wasmtypes.NodeConf
 		nil,
 		// Every message a contract dispatches clears the execution policy
 		// gate — vote floor, MultiSend guard, transfer tax — on the way
-		// through (D41, D42). Signed top-level messages take BaseApp's own
+		// through. Signed top-level messages take BaseApp's own
 		// router and stay ante-owned.
 		app.executionPolicyRouter(),
 		app.GRPCQueryRouter(),

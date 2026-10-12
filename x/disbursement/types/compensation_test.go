@@ -67,7 +67,7 @@ func TestCompensationCharge(t *testing.T) {
 		{"two years count half a year each", n(262_000), 2 * year, year, n(131_000), ""},
 		{"ten years count a tenth", n(1_310_000), 10 * year, year, n(131_000), ""},
 		{"rounds up", n(10), 3 * year, year, n(4), ""},
-		// In its first window an award counts what it pays there: the window plus its backdate (D122).
+		// In its first window an award counts what it pays there: the window plus its backdate.
 		{"a two-year stream a year back counts whole at first", n(2_000_000), 2 * year, 2 * year, n(2_000_000), ""},
 		{"ten years a quarter back count an eighth at first", n(1_310_000), 10 * year, year + quarter, n(163_750), ""},
 		{"a 128-bit value spreads", bits128.SubRaw(1), 2 * year, year, bits128.QuoRaw(2), ""},
@@ -104,7 +104,7 @@ func TestCompensationBackdate(t *testing.T) {
 
 // TestLongestStreamChargesATenthOfItsValue pins what the founder's stream relies on: with the window at
 // 26 fortnights, the longest award, 260 fortnights, charges a tenth of its value a window, so ten times
-// the cap fits exactly and a base unit more does not (D129, D130).
+// the cap fits exactly and a base unit more does not.
 func TestLongestStreamChargesATenthOfItsValue(t *testing.T) {
 	p := types.DefaultParams()
 	shape, err := types.CompensationSchedule(p.CompensationPeriod, 260)

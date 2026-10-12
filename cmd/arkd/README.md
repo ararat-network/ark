@@ -6,7 +6,7 @@ registers genesis, query, transaction, server, and export commands and construct
 
 | Command / files | Owns |
 | --- | --- |
-| `start` — [cmd/start.go](cmd/start.go) | The start command's hooks: app.toml validation, the metrics endpoint, and the price-feed client. |
+| `start` — [cmd/start.go](cmd/start.go) | The start command's hooks: app.toml validation, the metrics endpoint, the price-feed client, and wasmd's `--wasm.*` flags and libwasmvm version check. |
 | `config migrate/diff/set/validate` — [cmd/config_command.go](cmd/config_command.go) | app.toml upkeep against this binary's template, and the validation start applies over a file alone. |
 | `export` — [cmd/export.go](cmd/export.go) | The continuation genesis; `--jail-allowed-addrs` keeps only the listed operators in the validator set, and the SDK's `--for-zero-height` is hidden and refused. |
 | `in-place-testnet` — [cmd/in_place_testnet.go](cmd/in_place_testnet.go) | A testnet forked from this node's committed state: the app's state change is [app/testnet.go](../../app/testnet.go); the command rewrites CometBFT's validator set, commits, and extended commit, which the SDK's own command leaves to the old set. |

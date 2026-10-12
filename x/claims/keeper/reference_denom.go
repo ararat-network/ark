@@ -18,7 +18,7 @@ import (
 // ReferenceRebaser, and MsgSetReferenceDenom is its only caller. Every figure rounds up, as the
 // submission valuation does. The usage is re-derived from the rebased charges so the import
 // equality holds exactly; the limit is raised to it where the per-claim ceilings outran its own,
-// since a bound a few units loose beats wedging the re-point (D123).
+// since a bound a few units loose beats wedging the re-point.
 func (k *Keeper) RebaseReference(ctx context.Context, from string, to string, rates oracletypes.RateSet) error {
 	if from == to {
 		return nil

@@ -10,8 +10,8 @@ maintain that boundary.
   the self, intelligence, God, and the institutions we build.
 - [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
   the typeset PDF replaces it at this path when finished.
-- [Economic design](design/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
-- [Threat model](design/THREAT_MODEL.md): trust boundaries, assumptions, controls, and security review questions.
+- [Economic design](economics/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
+- [Threat model](security/THREAT_MODEL.md): trust boundaries, assumptions, controls and their limits, and security review questions.
 
 ## Launch a network
 
@@ -21,25 +21,28 @@ maintain that boundary.
 
 ## Operate services
 
-- [Node operations](operations/NODE_OPERATIONS.md): build, testnet setup, network joining, configuration, upgrades, and relaunch.
-- [Release verification](operations/RELEASE_VERIFICATION.md): verify container origin, revision, digest and signed dependency inventory before use.
-- [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): two-way node/sidecar setup, TLS, reload, failover, and independent releases.
+- [Node operations](operations/NODE_OPERATIONS.md): roles and ports, install, configuration by role, joining, running a validator, keys, upgrades, relaunch, troubleshooting, and development networks.
+- [Release verification](operations/RELEASE_VERIFICATION.md): check an image or standalone download's signed provenance, revision, and dependency inventory before running it.
+- [Pricefeed operations](operations/PRICEFEED_OPERATIONS.md): deployment, configuration, providers, the node link and TLS, feed changes, checks, reload and failover, troubleshooting, and releases.
+
+## Cut a release
+
+- [Release runbook](releases/RELEASE_RUNBOOK.md): dispatching the signed release workflow, reviewing and publishing the draft, image publication, failure handling, and local packaging.
 
 ## Monitor the network
 
 - [Process monitoring](operations/PROCESS_MONITORING.md): node and sidecar scrape/export configuration, process metrics, and alerts.
-- [Protocol monitoring](operations/PROTOCOL_MONITORING.md): chain-state queries/events, exposure and capital signals, and alert calibration.
+- [Protocol monitoring](operations/PROTOCOL_MONITORING.md): chain-state alerts for the exposure multiplier, Reserve recognition, Oracle rates and jails, the conversion pool, committees, and Disbursement.
 
 ## Govern and respond
 
-- [Governance operations](governance/GOVERNANCE_OPERATIONS.md): proposals, service permissions, and appointments.
-- [Economic committee runbook](governance/ECONOMIC_COMMITTEE_RUNBOOK.md): bounded policy changes, fund actions, conversion depth, and responses to economic alerts.
-- [Emergency submission runbook](governance/EMERGENCY_SUBMISSION_RUNBOOK.md): signing, private carriers, submission, inclusion checks, and rehearsal.
+- [Governance runbook](governance/GOVERNANCE_RUNBOOK.md): proposals, upgrades, appointments, and governance's procedures for each module.
+- [Committee runbook](governance/COMMITTEE_RUNBOOK.md): each appointed committee's powers, preflight, and submission; Reserve alerts; conversion depth; the grants programme.
 
 ## Integrate clients
 
 - [Client fee construction](clients/CLIENT_FEES.md): external transaction builders, signed fee declarations, simulation, and failure handling.
-- [Node–sidecar compatibility](operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): the independently released transport contract.
+- [Node–sidecar compatibility](operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility): the independently released transport contract.
 
 ## Use the logo
 
@@ -50,11 +53,6 @@ maintain that boundary.
 
 - [Future changes](direction/FUTURE_CHANGES.md): deferred engineering, prerequisites, and revisit triggers; not shipped behaviour.
 - [Tooling direction](direction/TOOLING_DIRECTION.md): proposed product boundaries and sequencing for clients, wallets, indexing, and explorers.
-
-## Trace decisions
-
-- [Economic decisions](design/ECONOMIC_DECISIONS.md): the register of economic rules in force, each with its reason, under
-  stable D/P identifiers. Use economic design for how the rules compose and genesis for launch values.
 
 ## Find subsystem documentation
 
@@ -89,8 +87,10 @@ Each directory under `docs/` is a reader path; a new topic document goes with th
 | Directory | Audience and content |
 | --- | --- |
 | `papers/` | Everyone. The manifesto and the whitepaper. |
-| `design/` | Protocol contributors and reviewers. The economic contract, its decision register, the threat model. |
+| `economics/` | Protocol contributors. The cross-module economic contract. |
+| `security/` | Security reviewers. The threat model: trust boundaries, controls, and their limits. |
 | `operations/` | Node and sidecar operators. Running, connecting, and monitoring services. |
+| `releases/` | Maintainers. Cutting, reviewing, and publishing chain and sidecar releases. |
 | `governance/` | Governance and committees. Launch settings, proposals, and runbooks. |
 | `clients/` | External transaction builders. Fee construction and submission. |
 | `brand/` | Anyone showing the Ark mark. The logo kit and its usage guidelines. |
@@ -111,7 +111,7 @@ construction belongs beside provider code; deploying the node and sidecar togeth
    "replaced", "no longer", or "previously", and no record of what a rule used to be. When behaviour changes, rewrite
    the text to the new state; git keeps the history. Keep current behaviour and proposals distinguishable: deferred
    code and dependency changes belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md), post-launch governance
-   operations in [GOVERNANCE_OPERATIONS.md](governance/GOVERNANCE_OPERATIONS.md), and unimplemented proposals are
+   operations in [GOVERNANCE_RUNBOOK.md](governance/GOVERNANCE_RUNBOOK.md), and unimplemented proposals are
    labelled as such.
 4. Make documentation discoverable. The root README links here; this index links topic documents and subsystem entry
    points. Parent READMEs link their useful child READMEs, and local READMEs link the relevant topic documents.

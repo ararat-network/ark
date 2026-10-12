@@ -79,7 +79,7 @@ docs/           # Cross-subsystem design, operations, governance, and papers
 - Prefer subsystem-owned package-level metrics: `abci/metrics`, `abci/oracle/metrics`, `app/mempool/metrics`,
   `pricefeed/client/metrics`, `pricefeed/sidecar/metrics`; keep `pkg/metrics` minimal and `pkg/telemetry` for startup
   wiring.
-- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility): additive changes only
+- The node-to-sidecar compatibility rule lives in [PRICEFEED_OPERATIONS.md](docs/operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility): additive changes only
   within `ark.pricefeed.v1`, build versions are informational and never gated on. Both transports take their TLS files
   through `pkg/tlsconfig` and their gRPC transport through `pkg/grpcconn`; the sidecar releases from `pricefeed/vX.Y.Z` tags via `.goreleaser.pricefeed.yml`.
 
@@ -132,7 +132,7 @@ These are consensus rules, not style. All three were violated in reviewed code b
   multiplies and `RateSet.Convert` is `amount × rate[offer] / rate[ask]`. A stored figure that is a *price* of the
   reference unit (the exposure anchor) moves by the reciprocal of a quantity's factor, which is `Convert` with the
   two units passed in the opposite order; reversed arguments at such a site are the operation, not a bug. The store bounds a rate at `MaxExchangeRate` so the halt-class folds that multiply a 2^128-capped quantity
-  by it stay representable. (D75–D77, `x/oracle/README.md` §1.4.)
+  by it stay representable. (`x/oracle/README.md` §1.4.)
 
 The reason the third rule matters: **inside a BeginBlocker or EndBlocker a checked error and a panic are the same
 outcome — the block fails and the chain halts.** Checked arithmetic buys a diagnosable message, never liveness. The
@@ -160,7 +160,7 @@ Keep the backstop even when it is provably unreachable, and say so in a comment 
   deadlock, and both are hard to see in a diff.
 - When the user references a specific file path or directory (e.g., "look at classic-core/types"), navigate to exactly
   that path. Do not substitute a similarly-named path from a different part of the codebase.
-- `docs/design/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
+- `docs/security/THREAT_MODEL.md` names the trust boundaries and the controls at each. A change that adds a listener, a
   message type, an inbound parser, a credential, or a release step updates it in the same change.
 
 ## Protobuf Generation
@@ -227,7 +227,7 @@ string field_name = N [
 
 - `arkd export` is a continuation export: heights and block times stay absolute and the genesis starts at the next
   height, so every anchored record resumes as is. Height-anchored records (oracle windows, reward windows) pause through
-  an outage; time-anchored ones (mandate windows, claim closing times, settlement plans, grant schedules) lose it, which
+  an outage; time-anchored ones (mandate windows, claim closing times, settlement plans, grant schedules, attestation windows) lose it, which
   the relaunch runbook in `docs/operations/NODE_OPERATIONS.md` handles. A relaunch takes a new chain ID. Zero-height export is refused on purpose; do not port `prepForZeroHeightGenesis` back from
   simapp. `--jail-allowed-addrs` keeps only the listed operators in the exported validator set, for a relaunch that
   lost more than a third of its power.

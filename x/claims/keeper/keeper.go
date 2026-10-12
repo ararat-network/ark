@@ -140,7 +140,7 @@ func (k *Keeper) SetMarketKeeper(market types.MarketKeeper) {
 }
 
 // RecognisedCapital returns the Insurance NOAH balance less NOAH reservations. Other custody is Ark
-// paper, a liability until burned, and counts for nothing (D28). Submission, import, and settlement
+// paper, a liability until burned, and counts for nothing. Submission, import, and settlement
 // preserve reserved <= balance; the checked error rejects corrupt state before Treasury can fund a
 // false gap. See x/claims/README.md for the invariant.
 func (k *Keeper) RecognisedCapital(ctx context.Context) (math.Int, error) {

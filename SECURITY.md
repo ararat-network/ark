@@ -33,5 +33,5 @@ upstream dependency and version when the issue involves third-party code.
 
 Maintainers will assess the report and coordinate fixes and disclosure through the
 private channel. Keep follow-up details there while a vulnerability remains unresolved.
-The [threat model](docs/design/THREAT_MODEL.md) describes Ark's trust boundaries and
+The [threat model](docs/security/THREAT_MODEL.md) describes Ark's trust boundaries and
 controls.

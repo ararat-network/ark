@@ -160,7 +160,7 @@ func (s *KeeperTestSuite) TestMsgSellNativeSettlementUsesQuotedState() {
 	// No Treasury call appears in either case: a conversion records its own
 	// facts and settles at the end of the block. A redemption therefore mints
 	// its whole quoted output, and an expansion burns nothing, holding its
-	// whole offer for settlement to place (D6).
+	// whole offer for settlement to place.
 	tests := []struct {
 		name           string
 		offerCoin      sdk.Coin
@@ -401,7 +401,7 @@ func (s *KeeperTestSuite) TestMsgSellSettlementErrorsPropagate() {
 			},
 		},
 		{
-			// An expansion burns nothing inside the conversion (D6), so the
+			// An expansion burns nothing inside the conversion, so the
 			// output mint is what can fail there; the offer it retains is
 			// Treasury's to place at settlement.
 			name:      "expansion output mint",

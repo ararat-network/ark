@@ -157,6 +157,7 @@ func benchmarkTreasuryKeeper(b *testing.B, targetCount int, feeDenom string) (*t
 		oracletestutil.NewMockBankKeeper(ctrl),
 		oracletestutil.NewMockDistributionKeeper(ctrl),
 		oracletestutil.NewMockStakingKeeper(ctrl),
+		nil,
 	)
 	if err := oracleKeeper.Params.Set(ctx, oracletypes.DefaultParams()); err != nil {
 		b.Fatal(err)

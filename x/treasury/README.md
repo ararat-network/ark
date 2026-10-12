@@ -30,9 +30,12 @@ Treasury owns economic policy and the calculations behind transfer tax, liabilit
 
 ## State and integration
 
-`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes exposure on its cadence. EndBlock advances reward funding, updates the base gas price, and then refreshes conversion factors, so a block's fee and tax prices are fixed when the block before it commits. Conversion settlement values liability from final state; there is no preblock liability-priming call. The subsidy
-pool's only outflows are the window settlement and `MsgReturnSubsidy`, a governance return into Distribution's
-community pool that fails if it would leave less than the minimum the proposal stated (D83). Follow the current ordering in `app/app_config.go` when editing these paths.
+`keeper/keeper.go` declares policy, mandate, factor, exposure, and base-gas-price collections. BeginBlock refreshes
+exposure on its cadence. EndBlock advances reward funding, updates the base gas price, and then refreshes conversion
+factors, so a block's fee and tax prices are fixed when the block before it commits. Conversion settlement values
+liability from final state; there is no preblock liability-priming call. The subsidy pool's only outflows are the window
+settlement and `MsgReturnSubsidy`, a governance return into Distribution's community pool that fails if it would leave
+less than the minimum the proposal stated. Follow the current ordering in `app/app_config.go` when editing these paths.
 
 ## Stored state and ownership
 
@@ -45,13 +48,13 @@ interfaces are explicitly bound to the intended keepers in app depinject configu
 Treasury's economic mandate carries minimum/maximum policies around the shared envelope. Governance replaces any
 structurally valid policy independently of the mandate; the committee replaces the whole lever set only inside its
 active term and corridor. Stance belongs in `EconomicPolicy`; controller machinery and domain caps belong in
-`Params`. The cross-module authority rules remain in [economic design](../../docs/design/ECONOMIC_DESIGN.md#102-role-separation).
+`Params`. The cross-module authority rules remain in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#72-role-separation).
 
 ## Liability and capital reads
 
 The asset registry supplies lifecycle membership and pricing verdicts. Treasury has no enrolment set or
 stable-versus-commodity classifier. Each member's gross and Reserve-held supply use the same valuation branch, so
-netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/design/ECONOMIC_DESIGN.md#71-the-liability-partition)
+netting cannot credit a self-held amount whose gross liability was omitted. The [economic liability partition](../../docs/economics/ECONOMIC_DESIGN.md#41-the-liability-partition)
 owns the status treatment and gross-versus-net basis rule.
 
 `FundStatus` reports that partition, disclosures, both target families, and the multiplier; incomplete valuation
@@ -77,8 +80,8 @@ The instrument updates are:
 
 ```text
 variance = volatility_decay * variance + (1 - volatility_decay) * clamped_return^2
-interval = volatility_decay * interval + (1 - volatility_decay) * max(1, seconds_since_last_sample)
-flow     = flow_decay * flow + (1 - flow_decay) * max(0, RedeemedValue - EligiblePrincipal)
+interval = volatility_decay * interval + (1 - volatility_decay) * seconds_since_last_sample
+flow     = max(0, flow_decay * flow + (1 - flow_decay) * (RedeemedValue - EligiblePrincipal))
 LR       = net_liability / circulating_NOAH
 sigma    = sqrt(variance * seconds_per_year / interval)
 FR       = flow / net_liability
@@ -86,16 +89,19 @@ raw      = (1 + liability_ratio_weight * LR) * (1 + volatility_weight * sigma) *
 m        = clamp(step_limit(raw, previous_m, multiplier_max_step), 1, multiplier_cap)
 ```
 
-Circulating NOAH excludes the raw NOAH balances in the four custody accounts, not their haircut-valued recognised
-capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
-Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under the same
-weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and a return
-carried across a halt counts the time it spanned rather than reading as one block's move (D133). Each interval counts
-at least a second, which keeps the variance at or below the interval and sigma at most the square root of a year in
-seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
+Flow nets each block's expansion against its redemption and floors at zero after each fold, so two-way churn cancels
+and an earlier inflow cannot bank credit against a later run. Circulating NOAH excludes the raw NOAH balances in the
+four custody accounts, not their haircut-valued recognised capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
+Volatility samples at most once per `volatility_sample_seconds`: the anchor price holds until that many seconds have
+passed, so each return spans at least the spacing and the oracle median's per-block jitter never becomes a sample of
+its own. Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under
+the same weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and
+a return carried across a halt counts the time it spanned rather than reading as one sample. Each interval spans
+at least the spacing, validated at least a second, which keeps the variance at or below the interval and sigma at most
+the square root of a year in seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
-The [economic model](../../docs/design/ECONOMIC_DESIGN.md#72-targets-and-the-exposure-multiplier) owns the indicator and target
-formulas. Requirements use the multiplier; payment denominators and the controller's own liability input do not.
+The [economic model](../../docs/economics/ECONOMIC_DESIGN.md#42-targets-and-the-exposure-multiplier) owns the target
+formula and what the multiplier may move. Requirements use the multiplier; payment denominators and the controller's own liability input do not.
 Scaling the draw would double-count a signal already reflected in Buffer retention and make payout depend on exit timing.
 
 Peg deviation is absent because the feeds observe reference series against NOAH, not each issued token's market
@@ -111,7 +117,7 @@ EndBlock rather than at the next block's start, so the next block's proposal che
 same factors and a fee or tax that clears when proposed still clears when executed; fees price on rates one block old
 in exchange. The reference has an identity factor. Genesis requires a positive NOAH factor so fees are payable before the first reference rate; refresh
 retains it until a live cross is available, and derives it from the reference alone, so it follows a live rate before
-any member is registered (D95). A reference change atomically rebases the table,
+any member is registered. A reference change atomically rebases the table,
 cap, base-fee floor, and live price, so a cap update applies uniformly without a delayed per-member refresh.
 
 Storing FX factors rather than final fee prices lets an oracle outage freeze FX while the base-fee congestion
@@ -129,7 +135,7 @@ next_price = clamp(current_price * (1 + delta), min_base_gas_price, MaxBaseGasPr
 and `adjustment_rate` are the `base_fee_` parameters.
 
 An unbounded block or zero adjustment rate holds the price before applying its bounds. The signed-fee contract lives
-in [economic design](../../docs/design/ECONOMIC_DESIGN.md#85-the-fee-declaration-settlement-charge).
+in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#54-the-fee-declaration-settlement-charge).
 A separate fee-market dependency and refund escrow were rejected: Ark needs its multi-denomination price contract
 and standard SDK fee commitment semantics, without maintaining a fork of an incompatible fee module.
 
@@ -142,13 +148,18 @@ owns the integration algorithm; [arkd](../../cmd/arkd/README.md#cli-fee-completi
 
 ## Reward funding and genesis
 
-`advanceRewardFunding` owns the countdown, accrual, due-window settlement, and atomic reset in EndBlock.
-The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
-at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding contract](../../docs/design/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding)
-owns the split, rounding, and depletion behaviour.
+`advanceRewardFunding` owns the countdown, accrual, due-window settlement, and atomic reset in EndBlock. An empty
+window's first observation initialises the countdown from `reward_funding_window`; a parameter change never rewrites a
+positive countdown and takes effect at the next empty window, so a window in flight settles over the length it began
+with. The fee collector then contains this block's earned fees; Distribution consumes them and any validator allocation
+at the next BeginBlock. Oracle funding goes directly to Oracle. The [economic funding
+contract](../../docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) owns the split, rounding, and depletion
+behaviour.
 
 Genesis imports the stored state listed above; Bank genesis supplies custody. Treasury validates NOAH-only fund
 balances because genesis bypasses runtime send restrictions, and validates its reference unit against Oracle.
+Nothing re-checks that pair at runtime, so an upgrade that touches either side repeats the genesis check and tests
+the pair rather than each side alone.
 Factors may exist for members not yet priced. [Launch genesis](../../docs/governance/GENESIS.md) owns actual settings.
 
 ## Development
@@ -181,9 +192,10 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Economic policy and custody](../../docs/design/ECONOMIC_DESIGN.md).
+- [Economic policy and custody](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Client fee construction](../../docs/clients/CLIENT_FEES.md).
 - [Protocol-state monitoring](../../docs/operations/PROTOCOL_MONITORING.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#4-economic-policy).
 - [Application wiring](../../app/README.md).
 
 ## Arithmetic and degraded-state contracts

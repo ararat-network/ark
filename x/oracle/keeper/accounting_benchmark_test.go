@@ -152,6 +152,7 @@ func benchmarkRecordVoteAccounting(b *testing.B, benchmarkCase accountingBenchma
 		nil,
 		nil,
 		accountingBenchmarkStakingKeeper{validators: validators},
+		nil,
 	)
 
 	for _, voter := range voters {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -36,7 +37,7 @@ type startRun struct {
 	testnet *inPlaceTestnetArgs
 }
 
-// adjustStartCommand runs preRun after the SDK start command's own PreRunE.
+// adjustStartCommand wraps the SDK start command; see wrapPreRun.
 func adjustStartCommand(rootCmd *cobra.Command, run *startRun) {
 	startCmd, _, err := rootCmd.Find([]string{"start"})
 	if err != nil {
@@ -45,8 +46,10 @@ func adjustStartCommand(rootCmd *cobra.Command, run *startRun) {
 	run.wrapPreRun(startCmd)
 }
 
-// wrapPreRun runs preRun after cmd's own PreRunE.
+// wrapPreRun gives cmd wasmd's [wasm] flags and its libwasmvm version check,
+// then runs preRun after cmd's own PreRunE, so the check runs first.
 func (r *startRun) wrapPreRun(cmd *cobra.Command) {
+	wasm.AddModuleInitFlags(cmd)
 	prev := cmd.PreRunE
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		if prev != nil {

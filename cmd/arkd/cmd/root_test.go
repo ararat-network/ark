@@ -47,6 +47,19 @@ func TestStartValidatesBeforeRunning(t *testing.T) {
 	require.ErrorContains(t, svrcmd.Execute(rootCmd, "", app.DefaultNodeHome), "mempool.type flood")
 }
 
+// Both commands that start a node take wasmd's [wasm] flags, and its
+// libwasmvm check runs in their PreRunE.
+func TestStartCommandsTakeWasmFlags(t *testing.T) {
+	rootCmd := NewRootCmd()
+	for _, name := range []string{"start", "in-place-testnet"} {
+		cmd, _, err := rootCmd.Find([]string{name})
+		require.NoError(t, err)
+		for _, flag := range []string{"wasm.query_gas_limit", "wasm.memory_cache_size", "wasm.simulation_gas_limit", "wasm.skip_wasmvm_version_check"} {
+			require.NotNil(t, cmd.Flags().Lookup(flag), "%s --%s", name, flag)
+		}
+	}
+}
+
 func TestHomeFlagRegistration(t *testing.T) {
 	homeDir := "/tmp/foo"
 

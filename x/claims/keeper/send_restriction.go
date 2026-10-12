@@ -12,12 +12,7 @@ import (
 // custody address, from any sender: a stablecoin claim's buy lands there, and a deposit in a
 // registered asset waits uncommitted for the next claim in it. Other recipients pass unchanged.
 // Insurance has no transfer-tax-collector exemption.
-func (k *Keeper) SendRestriction(
-	ctx context.Context,
-	_ sdk.AccAddress,
-	toAddr sdk.AccAddress,
-	amount sdk.Coins,
-) (sdk.AccAddress, error) {
+func (k *Keeper) SendRestriction(ctx context.Context, _ sdk.AccAddress, toAddr sdk.AccAddress, amount sdk.Coins) (sdk.AccAddress, error) {
 	if !toAddr.Equals(k.insuranceAddress) {
 		return toAddr, nil
 	}

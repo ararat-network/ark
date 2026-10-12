@@ -235,6 +235,7 @@ func (s *KeeperTestSuite) attestQuantity(denom string, amount math.Int) uint64 {
 		Returned:       noahCoin(0),
 		VenueReference: "custodian-alpha",
 		OpenedHeight:   1,
+		AttestedTime:   chain.BlockSeconds(s.ctx),
 	}
 	s.Require().NoError(position.Validate())
 	s.Require().NoError(s.keeper.NextPositionID.Set(s.ctx, positionID+1))

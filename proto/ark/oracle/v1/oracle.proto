@@ -64,6 +64,9 @@ message Params {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // jail_duration is how long, in seconds of block time, an attendance jail holds before the
+  // validator may unjail.
+  uint64 jail_duration = 10 [(amino.dont_omitempty) = true];
 }
 
 // Feeds defines the materialised active feed set and any scheduled per-feed

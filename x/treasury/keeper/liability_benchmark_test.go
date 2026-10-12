@@ -77,6 +77,7 @@ func newLiabilityBenchFixture(tb testing.TB, denomCount int) *liabilityBenchFixt
 		oracletestutil.NewMockBankKeeper(ctrl),
 		oracletestutil.NewMockDistributionKeeper(ctrl),
 		oracletestutil.NewMockStakingKeeper(ctrl),
+		nil,
 	)
 
 	denoms := make([]string, denomCount)

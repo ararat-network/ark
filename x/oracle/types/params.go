@@ -32,6 +32,12 @@ const (
 	// above the gap between blocks: under it every block would be empty, the vote to raise it too.
 	MinExchangeRateAge        = uint64(30)
 	MaxAllowedExchangeRateAge = uint64(7 * 86_400)
+
+	// DefaultJailDuration holds an attendance jail for a week, the window it answers, in seconds of
+	// block time. Positive, so a jailed validator cannot unjail in the next block.
+	DefaultJailDuration = uint64(7 * 86_400)
+	// MaxJailDuration caps it at the launch unbonding period, past which a jail is an ejection.
+	MaxJailDuration = uint64(21 * 86_400)
 )
 
 // MaxOutgoingReferenceRate caps an explicit governance rebase rate at one trillion NOAH per
@@ -75,6 +81,7 @@ func DefaultParams() Params {
 		MaxExchangeRateAge:        DefaultMaxExchangeRateAge,
 		FunctioningBlockThreshold: DefaultFunctioningBlockThreshold,
 		ParticipationThreshold:    DefaultParticipationThreshold,
+		JailDuration:              DefaultJailDuration,
 	}
 }
 
@@ -155,6 +162,13 @@ func (p Params) Validate() error {
 			MinExchangeRateAge,
 			MaxAllowedExchangeRateAge,
 			p.MaxExchangeRateAge,
+		)
+	}
+	if p.JailDuration == 0 || p.JailDuration > MaxJailDuration {
+		return fmt.Errorf(
+			"oracle parameter JailDuration must be between 1s and %ds, is %ds",
+			MaxJailDuration,
+			p.JailDuration,
 		)
 	}
 

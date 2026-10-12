@@ -23614,9 +23614,12 @@ type MsgCommitteeRecordUpdate struct {
 	Committee    string `protobuf:"bytes,1,opt,name=committee,proto3" json:"committee,omitempty"`
 	ExpectedTerm uint64 `protobuf:"varint,2,opt,name=expected_term,json=expectedTerm,proto3" json:"expected_term,omitempty"`
 	PositionId   uint64 `protobuf:"varint,3,opt,name=position_id,json=positionId,proto3" json:"position_id,omitempty"`
-	// quantity is the holding after this update, not a delta.
-	Quantity  *v1beta1.Coin `protobuf:"bytes,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	Reference string        `protobuf:"bytes,5,opt,name=reference,proto3" json:"reference,omitempty"`
+	// quantity is the holding after this update, not a delta. Restating the
+	// same quantity re-attests the holding.
+	Quantity *v1beta1.Coin `protobuf:"bytes,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	// reference names the custodian evidence the attestation rests on and is
+	// required.
+	Reference string `protobuf:"bytes,5,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
 func (x *MsgCommitteeRecordUpdate) Reset() {

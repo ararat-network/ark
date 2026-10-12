@@ -263,6 +263,25 @@ func TestExposureMachineryValidate(t *testing.T) {
 			expectErr: stepOutOfRange,
 		},
 		{
+			name:      "zero volatility sample spacing",
+			mutate:    func(p *types.Params) { p.VolatilitySampleSeconds = 0 },
+			expectErr: "VolatilitySampleSeconds must be between one and",
+		},
+		{
+			// One second samples every block: valid, if noisy.
+			name:   "volatility sample spacing of one second",
+			mutate: func(p *types.Params) { p.VolatilitySampleSeconds = 1 },
+		},
+		{
+			name:   "volatility sample spacing at the domain cap",
+			mutate: func(p *types.Params) { p.VolatilitySampleSeconds = types.MaxVolatilitySampleSeconds },
+		},
+		{
+			name:      "volatility sample spacing above the domain cap",
+			mutate:    func(p *types.Params) { p.VolatilitySampleSeconds = types.MaxVolatilitySampleSeconds + 1 },
+			expectErr: "VolatilitySampleSeconds must be between one and",
+		},
+		{
 			name:      "zero refresh period",
 			mutate:    func(p *types.Params) { p.ExposureRefreshPeriodBlocks = 0 },
 			expectErr: "ExposureRefreshPeriodBlocks must be between one and",

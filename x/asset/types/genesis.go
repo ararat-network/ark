@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultGenesisState seeds the ten currencies ACTIVE for tests and testnets; the launch artefact
-// registers none (D95).
+// registers none.
 func DefaultGenesisState() *GenesisState {
 	denoms := []string{
 		chain.AUDBaseDenom,

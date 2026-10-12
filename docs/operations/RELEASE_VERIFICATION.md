@@ -2,7 +2,8 @@
 
 Use this procedure before running an Ark image or installing a standalone binary
 produced by the signed release workflows; an artifact without attestations fails it.
-[Third-party notices](../../THIRD_PARTY_NOTICES.md)
+The [release runbook](../releases/RELEASE_RUNBOOK.md) owns how releases are cut and
+published. [Third-party notices](../../THIRD_PARTY_NOTICES.md)
 owns corresponding-source availability and licence instructions.
 
 ## Verify an image
@@ -40,101 +41,14 @@ the signer to Ark's publishing workflow and the selected source commit and ref.
 Pull and run that exact digest after verification, using the
 [node operations guide](NODE_OPERATIONS.md) for configuration.
 
+If either command fails, do not run the image, and do not fall back to an older
+unsigned one. A failed publication run can leave tags partially promoted; use only
+the verified digest.
+
 To inspect the verified SBOM, repeat the second command with `--format json`.
-The SPDX document is under `verificationResult.statement.predicate`. This is a
+The SPDX document is under `verificationResult.statement.predicate`. It is a
 scanner inventory of the shipped distribution image, including its bundled source
-material where detected. It is not a guarantee that every statically linked native
-component was discovered. Keep the application and system-runtime source manifests
-inside `/usr/share/ark/` with the image when investigating dependencies. An attestation
-is evidence of origin and integrity, not a security audit or proof of reproducibility.
-
-## Publication and failure handling
-
-The workflow builds from the verified committed source export and uploads the image
-by digest, with explicit BuildKit provenance. Pinned Syft scans that registry digest;
-GitHub Actions signs provenance and SBOM claims and stores them in GHCR. Registry
-verification must pass before the workflow moves its release, branch or nightly tags.
-The tag-promotion result must retain the verified digest.
-
-The workflow publishes only from a public repository, since GitHub attestations are
-unavailable to private repositories on the Free plan. Validate one complete run
-before relying on this path; the GHCR package's visibility is set separately from
-the repository's.
-
-A failure before tag promotion leaves existing tags unchanged, but the uploaded digest
-and any completed attestations can remain accessible in the registry. Promotion of
-multiple tags is not atomic; a registry failure can leave only some tags updated.
-Treat the run as failed, inspect the tag digests, and rerun from the intended revision.
-Consumers should always use the verified digest. Do not bypass attestation verification
-to compensate for a failed run or an older unsigned image.
-
-No manual signing key or personal email identity is required. Public attestations
-record workflow and source metadata; review that metadata during the first public run.
-
-## Prepare a standalone release
-
-Complete CI and review the intended `main` revision before tagging it. The supported
-tag forms are `vX.Y.Z` and `pricefeed/vX.Y.Z`, optionally with a SemVer prerelease
-suffix such as `-rc.1`. The tag must already exist remotely, include the release
-workflow, and point to a commit reachable from `main`. The workflow must also exist
-on the default branch for manual dispatch. Invoke it against the tag itself:
-
-```bash
-gh workflow run release.yml --repo ararat-network/ark --ref vX.Y.Z
-# Independent sidecar release:
-gh workflow run release.yml --repo ararat-network/ark --ref pricefeed/vX.Y.Z
-```
-
-These commands start a release build; they are not ordinary verification commands.
-The workflow runs only from a public repository: GitHub attestations need one on the Free plan.
-`make release` and `make release-pricefeed` only package locally, without signing or
-uploading. CI selects its exact tag explicitly. Build/source verification, per-archive
-SPDX generation and checksums complete before the workflow stages assets for signing.
-The node builds Linux amd64/arm64; the sidecar also builds macOS amd64/arm64.
-
-The workflow creates one signed provenance bundle covering every binary archive,
-SPDX file, checksum file and application/runtime source or notice asset. It uploads
-a draft, downloads the complete asset set, verifies every attestation and checksum,
-and compares the downloads with the staged bytes. It leaves the draft unpublished.
-It refuses an existing draft or published release rather than replacing its assets.
-A failed upload or check can leave an incomplete draft marked verification pending;
-inspect it before removing it and retrying. Do not publish a failed run's draft.
-
-The native source rebuilds are substantial. Rehearse the complete workflow with a
-prerelease tag before the first supported release; available runner disk, memory and
-the six-hour job limit may require adjustment. QEMU is build support for the arm64
-node, not native-hardware runtime validation. Require runtime smoke tests on both
-native architectures separately before recommending the node binaries.
-
-After a successful run, review the draft's tag, source revision, CI, notices, source
-assets and verification result. Publish through GitHub Releases using your account;
-that user-generated publication event triggers the existing Docker workflow for
-chain tags. Do not mark sidecar releases latest. Mark a stable chain release latest
-only when it is the intended recommended version. Do not replace assets after review;
-consumers must still verify the files they actually download.
-
-### Local packaging
-
-`make release` packages locally without uploading or signing. It checks a clean tree and the chain tag on HEAD,
-selects it explicitly, and runs the [chain configuration](../../.goreleaser.yml), which builds static Linux binaries
-for amd64 and arm64. GoReleaser passes its build command to
-[the release adapter](../../contrib/scripts/release-build.py), which builds the committed source export with each
-architecture's compiler in the pinned base from the [image Dockerfile](../../contrib/images/arkd-env/Dockerfile).
-Docker must support running both Linux architectures, either natively or through emulation. The builder checks the
-wasmvm version and archive digests, records the linked system libraries and packages their corresponding runtime
-sources. The adapter verifies the binary, target, source revision and runtime-source pairing before returning it to
-GoReleaser. macOS node use remains a source build.
-
-`make release-pricefeed` also packages locally without uploading or signing. It checks a clean tree and the sidecar
-tag on HEAD, selects it explicitly, then skips GoReleaser's bare-semver validation. The
-[sidecar configuration](../../.goreleaser.pricefeed.yml) derives version strings from `.Tag` and cross-compiles
-without cgo. Both release configurations prepare a corresponding source bundle, verify builds from it, and generate
-per-archive SPDX inventories with pinned Syft. Checksums cover the archives, SPDX files and every attached
-source/notice asset. This requires Python 3.12+, Docker with both Linux architectures, and the source-packaging
-prerequisites listed in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md). Published images carry their source
-bundle and notices inside `/usr/share/ark/`, including nightly builds. Standalone node releases attach both
-`arkd-source-<commit>` application sources and `arkd-runtime-source-<commit>-linux-<arch>` runtime sources. Retain
-both with the matching binaries. Neither release command is part of ordinary verification.
+material where detected.
 
 ## Verify a standalone download
 
@@ -161,19 +75,29 @@ gh attestation verify "$ARK_ASSET" "${ARK_POLICY[@]}"
 Use the same command on the matching `.spdx.json` file, the checksum file and each
 source/notice asset you download. The bundle is untrusted input until verification
 succeeds. Each file has a signed build-provenance subject; SPDX files are signed as
-release assets rather than separate SPDX-predicate attestations. These inventories
-come from scanning each distribution archive and do not guarantee complete discovery
-of static native components; retain the matching source manifests as well.
+release assets rather than separate SPDX-predicate attestations, and come from
+scanning each distribution archive.
 
 To check a complete downloaded release, first verify its `SHA256SUMS-*.txt` file with
 the command above. Then run `sha256sum --check THE_VERIFIED_CHECKSUM_FILE` from the
-asset directory (`shasum -a 256 --check` on macOS). A checksum check by itself does not
-establish the publisher's identity. Keep both application and per-architecture runtime
-sources with standalone node archives as described in the third-party notices.
+asset directory (`shasum -a 256 --check` on macOS).
+
+## What a pass proves
+
+An attestation is evidence of origin and integrity: the artifact was signed by Ark's
+release or image workflow on a GitHub-hosted runner, from the selected commit and ref.
+It is not a security audit or proof of reproducibility. A checksum check by itself
+does not establish the publisher's identity; it extends a verified checksum file to
+the files it lists.
+
+The SPDX inventories do not guarantee that every statically linked native component
+was discovered. Keep the source manifests with the artifact when investigating
+dependencies: those inside `/usr/share/ark/` for an image, and the application and
+per-architecture runtime sources for a standalone node archive, as the
+[third-party notices](../../THIRD_PARTY_NOTICES.md#standalone-node-runtime-sources)
+describe.
 
 ## References
 
 - [GitHub artifact attestations](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)
 - [GitHub CLI verification flags](https://cli.github.com/manual/gh_attestation_verify)
-- [Docker image export by digest](https://docs.docker.com/build/exporters/image-registry/)
-- [Docker manifest promotion](https://docs.docker.com/reference/cli/docker/buildx/imagetools/create/)

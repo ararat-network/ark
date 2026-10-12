@@ -41,7 +41,7 @@ runs `make proto-gen` and fails if the tree changes, so commit regenerated outpu
 
 Run focused module/transport tests, `git diff --check`, and a build appropriate to the changed surface. Do not run
 generation for Markdown-only edits; regenerate when schema comments change so Go documentation stays in sync. `make proto-check-breaking` compares schemas against the configured main branch and
-requires access to that source. [Pricefeed compatibility](../docs/operations/PRICEFEED_OPERATIONS.md#nodesidecar-compatibility)
+requires access to that source. [Pricefeed compatibility](../docs/operations/PRICEFEED_OPERATIONS.md#10-releases-and-compatibility)
 constrains changes to the independently released node–sidecar service.
 
 Protocol semantics live in [docs/](../docs/README.md); fields and local contracts belong in schema comments. The

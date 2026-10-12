@@ -32,7 +32,7 @@ func (k *Keeper) validateCompensation(ctx context.Context, denom string) error {
 }
 
 // compensationSchedule is a count of compensation periods, one for a lump. The clock reaches back at
-// most a quarter, which the cap charges in the award's first window (D122).
+// most a quarter, which the cap charges in the award's first window.
 func (k *Keeper) compensationSchedule(ctx context.Context, startTime uint64, periods uint32) (types.Schedule, error) {
 	now := chain.BlockSeconds(ctx)
 	if err := types.ValidateStartTime(startTime, now); err != nil {
@@ -141,9 +141,9 @@ func (k *Keeper) usageAfter(ctx context.Context, charge math.Int) (math.Int, err
 
 // checkCompensationCap bounds a record's compensation at the cap a window. It charges every
 // compensation award to the record that is still running or was made inside the trailing window: in
-// its first window, what it pays there, a window of its schedule plus its backdate (D122); after that,
-// while it runs, its value spread over its duration (D119). A cancelled award counts for its first
-// window, so a cancel restores no room inside it, and then stops, as it stops paying (D109). A clock
+// its first window, what it pays there, a window of its schedule plus its backdate; after that,
+// while it runs, its value spread over its duration. A cancelled award counts for its first
+// window, so a cancel restores no room inside it, and then stops, as it stops paying. A clock
 // that has not started yet counts from the award.
 func (k *Keeper) checkCompensationCap(ctx context.Context, beneficiary sdk.AccAddress, value math.Int, schedule types.Schedule, start, at uint64) error {
 	p, err := k.Params.Get(ctx)

@@ -52,9 +52,23 @@ func (k Keeper) sampleExposure(ctx context.Context, totals markettypes.Conversio
 	return nil
 }
 
-// sampleVolatility skips unavailable reference observations without changing the anchor or
-// recording false calm. A returning feed measures the move across the gap.
+// sampleVolatility holds the anchor until volatility_sample_seconds have passed, since sampled every
+// block the oracle median's jitter would dominate the variance it measures, and skips unavailable
+// reference observations without changing the anchor or recording false calm. A returning feed
+// measures the move across the gap.
 func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState, params types.Params) error {
+	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
+	now := chain.BlockSeconds(ctx)
+	anchored := !previous.IsNil() && previous.IsPositive()
+	elapsed := uint64(0)
+	if now > previousTime {
+		elapsed = now - previousTime
+	}
+	// Checked before the rate is read, so a block inside the spacing costs no Oracle read.
+	if anchored && elapsed < params.VolatilitySampleSeconds {
+		return nil
+	}
+
 	reference, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
 		return fmt.Errorf("getting protocol reference: %w", err)
@@ -71,13 +85,11 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 		return nil
 	}
 
-	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
-	now := chain.BlockSeconds(ctx)
 	state.LastReferencePrice, state.LastSampleTime = price, now
 	// The first sample of a chain's life, or the first after a reference move
 	// that reset the anchor: a price with nothing to compare against yields no
-	// return, and the next block measures from here.
-	if previous.IsNil() || !previous.IsPositive() {
+	// return, and the next sample measures from here.
+	if !anchored {
 		return nil
 	}
 
@@ -101,12 +113,9 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 	}
 
 	// The return is paired with the seconds it spanned, so a gap counts as the time it was rather
-	// than as one block. An interval counts at least a second, which with every squared sample at
-	// most one keeps the variance at or below the interval under the shared weights.
-	elapsed := uint64(1)
-	if now > previousTime {
-		elapsed = now - previousTime
-	}
+	// than as one sample. The spacing holds each interval to at least volatility_sample_seconds,
+	// validated at least a second, which with every squared sample at most one keeps the variance at
+	// or below the interval under the shared weights.
 	variance, err := ewma(state.VolatilityVariance, squared, params.VolatilityDecay)
 	if err != nil {
 		return fmt.Errorf("folding the volatility series: %w", err)
@@ -119,27 +128,28 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 	return nil
 }
 
-// sampleFlow tracks positive redemption value net of expansion in absolute NOAH. Liability
-// normalisation occurs at refresh so the EWMA does not mix historical denominators.
+// sampleFlow folds each block's redemption value net of expansion, signed, in absolute NOAH, and
+// floors the series at zero: two-way churn cancels, and an earlier inflow cannot bank credit that
+// hides a later run. Liability normalisation occurs at refresh so the EWMA does not mix historical
+// denominators.
 func sampleFlow(state *types.ExposureState, params types.Params, totals markettypes.ConversionTotals) error {
 	sample := math.LegacyZeroDec()
-	if !totals.RedeemedValue.IsNil() && totals.RedeemedValue.IsPositive() {
-		principal := math.LegacyZeroDec()
-		if !totals.EligiblePrincipal.IsNil() {
-			principal = math.LegacyNewDecFromInt(totals.EligiblePrincipal)
-		}
-		net, err := decimal.Sub(totals.RedeemedValue, principal)
-		if err != nil {
+	if !totals.RedeemedValue.IsNil() {
+		sample = totals.RedeemedValue
+	}
+	if !totals.EligiblePrincipal.IsNil() {
+		var err error
+		if sample, err = decimal.Sub(sample, math.LegacyNewDecFromInt(totals.EligiblePrincipal)); err != nil {
 			return fmt.Errorf("valuing net redemption flow: %w", err)
-		}
-		if net.IsPositive() {
-			sample = net
 		}
 	}
 
 	flow, err := ewma(state.FlowPressure, sample, params.FlowDecay)
 	if err != nil {
 		return fmt.Errorf("folding the flow series: %w", err)
+	}
+	if flow.IsNegative() {
+		flow = math.LegacyZeroDec()
 	}
 	state.FlowPressure = flow
 	return nil

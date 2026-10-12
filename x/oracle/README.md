@@ -28,7 +28,7 @@ Oracle owns the feed registry, consensus exchange rates, protocol reference deno
 `max_exchange_rate_age` is the chain-default freshness window in seconds of block time; a stored rate older than it is
 stale to every consumer that names no window of its own. Governance may set it between 30 s and 7 d
 (`MinExchangeRateAge`, `MaxAllowedExchangeRateAge`); the default is a minute. The floor sits well above the gap between
-blocks because a proposer leaves user transactions out of a block whose prices are older than the window (D137), so a
+blocks because a proposer leaves user transactions out of a block whose prices are older than the window, so a
 window under the gap would empty every block, the vote to raise it included.
 
 `Query/ExchangeRate` and `Query/ExchangeRates`, which contracts may call, answer under this window. `Query/StoredRates`
@@ -46,6 +46,11 @@ weights; it never reconstructs participation from stored prices.
 Attendance drives only the oracle module's periodic settlement, which jails — never slashes — validators whose attended
 share of eligible blocks falls below `min_attendance_per_window`. Accuracy and coverage incentives come entirely from
 band-gated rewards, not from this counter.
+
+The jail holds for `jail_duration`, a week of block time by default: settlement sets slashing's `JailedUntil`, which
+`MsgUnjail` enforces. Staking's jail alone lifts in the next block, which would return the absent power to the quorum
+the jail removed it from and leave a validator that never reports a block's interruption a week. The duration is
+positive and capped at `MaxJailDuration`, three weeks, past which a jail is an ejection.
 
 Every record is judged at settlement, however few eligible blocks it holds. `min_attendance_per_window` is the whole
 grace: a ratio is scale-free, so a validator present for part of a window is held to the same share of the blocks it was
@@ -85,11 +90,12 @@ start height of 0 as well, since InitChain runs at height zero for a chain start
 
 The implementation is in `types/feeds.go`, `keeper/feeds.go`, and `keeper/feed_guards.go`.
 
-**Why feeds are not asset lifecycle.** A priced observation is not always an asset: a basket-indexed flagship
-currency needs component prices that are observations, not assets, and composite reporting in the sidecar would
-make every weight change a fleet coordination event; reserve holdings such as gold need prices and will never be
-lifecycle-managed assets; and once a basket component, a reserve position, and an asset can share one price,
-tying its existence to one asset's lifecycle is wrong by construction. The layering:
+**Why feeds are not asset lifecycle.** A priced observation is not always an asset: Orbis, the planned basket-indexed
+flagship currency ([Future changes §3](../../docs/direction/FUTURE_CHANGES.md#3-basket-index-assets)), needs component
+prices that are observations, not assets, and composite reporting in the sidecar would make every weight change a fleet
+coordination event; reserve holdings such as gold need prices and will never be lifecycle-managed assets; and once a
+basket component, a reserve position, and an asset can share one price, tying its existence to one asset's lifecycle is
+wrong by construction. The layering:
 
     x/oracle   observations: feed registry, reporting, aggregation, rates, freshness, pruning, and the
                protocol reference (it names a feed, and every rule it has is a feed rule)
@@ -224,11 +230,10 @@ consumer rebases, and transient outages could repeatedly switch the unit. `Query
 
 ### 1.4 Rate orientation: NOAH per unit
 
-Rates are NOAH per one unit of the feed's denomination (D75–D77, entries in the [economic decision
-register](../../docs/design/ECONOMIC_DECISIONS.md)); the [repository arithmetic rules](../../AGENTS.md#arithmetic-rules)
+Rates are NOAH per one unit of the feed's denomination; the [repository arithmetic rules](../../AGENTS.md#arithmetic-rules)
 state the orientation beside rounding requirements.
 
-**D75.** `rate[feed]` is NOAH per one unit of the feed's denomination (`USD/NOAH`); `rate[anoah] = 1`;
+**Orientation.** `rate[feed]` is NOAH per one unit of the feed's denomination (`USD/NOAH`); `rate[anoah] = 1`;
 `value_in_NOAH(amount of X) = amount × rate[X]`. `RateSet.Convert` is `amount × rate[offer] / rate[ask]`, so "multiply
 before dividing" holds by representation for the protocol's dominant valuation. Every rate carried beside the store
 shares the orientation: `SettlementPlan.redemption_rate` is NOAH paid per unit of the settled asset, which reads as a
@@ -251,7 +256,7 @@ to it, since a plan enters the registry's rate sets beside oracle rates. Rejecte
 orientations in one codebase, and storing both, which doubles vote bytes to save a division consumers should not be
 doing. `RawCredit` on a zero rate credits nothing, since a multiplication has no division to fail.
 
-**D76.** Prices and quantities rebase differently. `Convert` re-expresses a quantity; a stored price whose unit is "per
+**Rebasing.** Prices and quantities rebase differently. `Convert` re-expresses a quantity; a stored price whose unit is "per
 one unit of the reference" takes the reciprocal factor, `p_new = p_old × rate[new] / rate[old]`, which is
 `Convert(p of new → old)`, the same call with the units in the opposite order. Every rebase site states which it holds:
 the base pool, the tax cap, and the base-fee price are quantities; the exposure anchor and the conversion-factor table
@@ -260,7 +265,7 @@ cross rate as a market move; the function's comment says the reversal is the ope
 equal to the live price produces no return after a move. One arithmetic path serves both, since a separate helper
 would duplicate it for the one figure the chain must not get wrong.
 
-**D77.** The [sidecar resolver](../../pricefeed/sidecar/resolver/README.md) publishes final rates in the same
+**The sidecar.** The [sidecar resolver](../../pricefeed/sidecar/resolver/README.md) publishes final rates in the same
 NOAH-per-unit orientation; providers retain their venue pair conventions.
 
 **Orientation-invariant parts.** The tally is orientation-invariant: cross rates and their medians land in the store's
@@ -301,5 +306,5 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Reward funding](../../docs/design/ECONOMIC_DESIGN.md).
+- [Reward funding](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Application wiring](../../app/README.md).

@@ -7,6 +7,7 @@ package types
 
 import (
 	"context"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -17,6 +18,11 @@ type StakingKeeper interface {
 	Validator(ctx context.Context, address sdk.ValAddress) (stakingtypes.ValidatorI, error)
 	Jail(context.Context, sdk.ConsAddress) error
 	ValidatorByConsAddr(context.Context, sdk.ConsAddress) (stakingtypes.ValidatorI, error)
+}
+
+// SlashingKeeper holds an attendance jail until a time, which MsgUnjail enforces.
+type SlashingKeeper interface {
+	JailUntil(context.Context, sdk.ConsAddress, time.Time) error
 }
 
 // DistributionKeeper is expected keeper for distribution module

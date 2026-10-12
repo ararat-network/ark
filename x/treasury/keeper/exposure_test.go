@@ -87,19 +87,22 @@ func (s *KeeperTestSuite) TestExposureFirstSampleRecordsPriceWithoutReturn() {
 func (s *KeeperTestSuite) TestExposureFoldsSquaredReturnIntoVariance() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyMustNewDecFromStr("0.5")
+		p.VolatilitySampleSeconds = 1
 	})
+	s.atTime(1_000)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 
 	// Three over two is a return of one half; squared, one quarter; folded at
 	// half retention over a zero series, one eighth.
+	s.atTime(1_001)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(3)})
 	s.settleEmpty()
 
 	state := s.getExposureState()
 	s.Require().Equal(math.LegacyNewDec(3), state.LastReferencePrice)
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.125"), state.VolatilityVariance)
-	// Both samples share a second, which counts as one; folded at half retention, one half.
+	// The samples are a second apart; folded at half retention, one half.
 	s.Require().Equal(math.LegacyMustNewDecFromStr("0.5"), state.SampleInterval)
 }
 
@@ -119,6 +122,7 @@ func (s *KeeperTestSuite) annualisedVolatility() math.LegacyDec {
 func (s *KeeperTestSuite) TestExposureVolatilityPairsReturnsWithSeconds() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyZeroDec()
+		p.VolatilitySampleSeconds = 1
 	})
 	s.atTime(1_000)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
@@ -142,6 +146,7 @@ func (s *KeeperTestSuite) TestExposureVolatilityPairsReturnsWithSeconds() {
 func (s *KeeperTestSuite) TestExposureGapCountsTheTimeItSpanned() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyMustNewDecFromStr("0.5")
+		p.VolatilitySampleSeconds = 1
 	})
 	s.atTime(1_000)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
@@ -167,10 +172,13 @@ func (s *KeeperTestSuite) TestExposureGapCountsTheTimeItSpanned() {
 func (s *KeeperTestSuite) TestExposureClampsReturnSample() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyZeroDec()
+		p.VolatilitySampleSeconds = 1
 	})
+	s.atTime(1_000)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
 	s.settleEmpty()
 
+	s.atTime(1_001)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(100)})
 	s.settleEmpty()
 
@@ -185,20 +193,61 @@ func (s *KeeperTestSuite) TestExposureClampsReturnSample() {
 func (s *KeeperTestSuite) TestExposureSkipsSampleWithoutReferenceRate() {
 	s.setExposureParams(func(p *types.Params) {
 		p.VolatilityDecay = math.LegacyZeroDec()
+		p.VolatilitySampleSeconds = 1
 	})
+	s.atTime(1_000)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
 
 	// The feed goes dark. Nothing is folded and the anchor holds.
+	s.atTime(1_001)
 	s.setRates(oracletypes.RateSet{})
 	s.settleEmpty()
 	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().LastReferencePrice)
+	s.Require().Equal(uint64(1_000), s.getExposureState().LastSampleTime)
 	s.Require().True(s.getExposureState().VolatilityVariance.IsZero())
 
-	// It returns unchanged, so the resumed return is zero rather than a jump.
+	// It returns unchanged, so the resumed return is zero rather than a jump,
+	// and spans the gap.
+	s.atTime(1_002)
 	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
 	s.settleEmpty()
+	s.Require().Equal(uint64(1_002), s.getExposureState().LastSampleTime)
+	s.Require().Equal(math.LegacyNewDec(2), s.getExposureState().SampleInterval)
 	s.Require().True(s.getExposureState().VolatilityVariance.IsZero())
+}
+
+// TestExposureSpacesVolatilitySamples pins volatility_sample_seconds: a block
+// inside the spacing leaves the anchor where it was, and the first block past
+// it folds one return spanning the whole stretch, so per-block oracle jitter
+// never becomes a sample of its own.
+func (s *KeeperTestSuite) TestExposureSpacesVolatilitySamples() {
+	s.setExposureParams(func(p *types.Params) {
+		p.VolatilityDecay = math.LegacyZeroDec()
+		p.VolatilitySampleSeconds = 300
+	})
+	s.atTime(1_000)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyOneDec()})
+	s.settleEmpty()
+
+	// Six seconds on, a doubling is inside the spacing: nothing folds.
+	s.atTime(1_006)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyNewDec(2)})
+	s.settleEmpty()
+	state := s.getExposureState()
+	s.Require().Equal(math.LegacyOneDec(), state.LastReferencePrice)
+	s.Require().Equal(uint64(1_000), state.LastSampleTime)
+	s.Require().True(state.VolatilityVariance.IsZero())
+
+	// Three hundred seconds on, the return runs from the held anchor: ten
+	// percent, squared, over the full span.
+	s.atTime(1_300)
+	s.setRates(oracletypes.RateSet{chain.XDRBaseDenom: math.LegacyMustNewDecFromStr("1.1")})
+	s.settleEmpty()
+	state = s.getExposureState()
+	s.Require().Equal(uint64(1_300), state.LastSampleTime)
+	s.Require().Equal(math.LegacyMustNewDecFromStr("0.01"), state.VolatilityVariance)
+	s.Require().Equal(math.LegacyNewDec(300), state.SampleInterval)
 }
 
 // TestExposureFoldsNetRedemptionFlow pins the flow sample as the redemption
@@ -258,6 +307,69 @@ func (s *KeeperTestSuite) TestExposureIdleBlockDecaysFlow() {
 
 	s.settleEmpty()
 	s.Require().Equal(math.LegacyNewDec(10), s.getExposureState().FlowPressure)
+}
+
+// flowFixture prices one registry member at par so a settling block can value
+// liability, and answers the Buffer reads the given blocks will make in order.
+func (s *KeeperTestSuite) flowFixture(bufferReads ...int64) {
+	s.setExposureParams(func(p *types.Params) {
+		p.FlowDecay = math.LegacyMustNewDecFromStr("0.5")
+	})
+	s.setAssets(chain.USDBaseDenom)
+	s.setRates(oracletypes.RateSet{
+		chain.XDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyOneDec(),
+	})
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)).AnyTimes()
+	s.expectBufferBalances(bufferReads...)
+}
+
+// settleFlow runs one block that only redeems (positive) or only expands
+// (negative) the given NOAH value.
+func (s *KeeperTestSuite) settleFlow(value int64) {
+	totals := markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
+		EligiblePrincipal: math.ZeroInt(),
+		RedemptionOutput:  math.ZeroInt(),
+		RedeemedValue:     math.LegacyZeroDec(),
+	}
+	if value > 0 {
+		totals.RedemptionOutput = math.NewInt(value)
+		totals.RedeemedValue = math.LegacyNewDec(value)
+	} else {
+		totals.GrossOffer = math.NewInt(-value)
+		totals.EligiblePrincipal = math.NewInt(-value)
+	}
+	_, err := s.keeper.SettleConversions(s.ctx, totals)
+	s.Require().NoError(err)
+}
+
+// TestExposureFlowChurnCancels pins two-way trading as no pressure: a block
+// that redeems forty and one that expands forty net to nothing. Clipping each
+// block at zero before folding would have read the pair as ten.
+func (s *KeeperTestSuite) TestExposureFlowChurnCancels() {
+	s.flowFixture(0, 0)
+
+	s.settleFlow(40)
+	s.Require().Equal(math.LegacyNewDec(20), s.getExposureState().FlowPressure)
+
+	// Half of twenty less half of forty is minus ten, floored at zero.
+	s.settleFlow(-40)
+	s.Require().True(s.getExposureState().FlowPressure.IsZero())
+}
+
+// TestExposureFlowInflowCannotHideALaterRun pins the floor: an expansion folds
+// the series to zero and no further, so a redemption run that follows reads in
+// full rather than first repaying credit the inflow banked.
+func (s *KeeperTestSuite) TestExposureFlowInflowCannotHideALaterRun() {
+	s.flowFixture(0, 0)
+
+	s.settleFlow(-1_000)
+	s.Require().True(s.getExposureState().FlowPressure.IsZero())
+
+	s.settleFlow(40)
+	s.Require().Equal(math.LegacyNewDec(20), s.getExposureState().FlowPressure)
 }
 
 // TestExposureUpdateRaisesMultiplierByStep drives one full recomputation and

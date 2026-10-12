@@ -31,10 +31,11 @@ type Keeper struct {
 	distributionName string
 	moduleAddress    sdk.AccAddress
 
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
-	distrKeeper   types.DistributionKeeper
-	stakingKeeper types.StakingKeeper
+	accountKeeper  types.AccountKeeper
+	bankKeeper     types.BankKeeper
+	distrKeeper    types.DistributionKeeper
+	stakingKeeper  types.StakingKeeper
+	slashingKeeper types.SlashingKeeper
 
 	// referenceRebasers re-denominate consumer state atomically with a reference change. They are
 	// wired after construction because every consumer depends on Oracle.
@@ -65,6 +66,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	distrKeeper types.DistributionKeeper,
 	stakingKeeper types.StakingKeeper,
+	slashingKeeper types.SlashingKeeper,
 ) *Keeper {
 	// Ensure the oracle module account is configured.
 	moduleAddress := accountKeeper.GetModuleAddress(types.ModuleName)
@@ -86,6 +88,7 @@ func NewKeeper(
 		bankKeeper:       bankKeeper,
 		distrKeeper:      distrKeeper,
 		stakingKeeper:    stakingKeeper,
+		slashingKeeper:   slashingKeeper,
 		Params: collections.NewItem(
 			sb,
 			types.ParamsKey,

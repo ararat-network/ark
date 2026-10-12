@@ -123,7 +123,7 @@ type Params struct {
 	// member_amount is every member grant, in NOAH.
 	MemberAmount cosmossdk_io_math.Int `protobuf:"bytes,1,opt,name=member_amount,json=memberAmount,proto3,customtype=cosmossdk.io/math.Int" json:"member_amount"`
 	// member_schedule is every member grant's shape, copied at registration: its first period, the
-	// tenth, pays when the two-week hold ends (D116, D126).
+	// tenth, pays when the two-week hold ends.
 	MemberSchedule Schedule `protobuf:"bytes,2,opt,name=member_schedule,json=memberSchedule,proto3" json:"member_schedule"`
 	// compensation_cap is the most one record may be awarded in compensation inside the window,
 	// valued in the reference unit at award time.
@@ -131,12 +131,12 @@ type Params struct {
 	// compensation_window is the rolling window, in seconds, the cap counts awards over.
 	CompensationWindow uint64 `protobuf:"varint,4,opt,name=compensation_window,json=compensationWindow,proto3" json:"compensation_window,omitempty"`
 	// compensation_period is one compensation period in seconds; an award is a number of them in
-	// equal shares, one for a lump, together at most ten years (D116).
+	// equal shares, one for a lump, together at most ten years.
 	CompensationPeriod uint64 `protobuf:"varint,5,opt,name=compensation_period,json=compensationPeriod,proto3" json:"compensation_period,omitempty"`
 	// ownership_cap is the most ownership one record's grants commit from the pools, in NOAH, over
 	// every grant: an award past it is refused, and existing grants keep their terms when it moves.
 	OwnershipCap cosmossdk_io_math.Int `protobuf:"bytes,6,opt,name=ownership_cap,json=ownershipCap,proto3,customtype=cosmossdk.io/math.Int" json:"ownership_cap"`
-	// ownership_schedule is every ownership grant's shape, copied at creation (D116).
+	// ownership_schedule is every ownership grant's shape, copied at creation.
 	OwnershipSchedule Schedule `protobuf:"bytes,7,opt,name=ownership_schedule,json=ownershipSchedule,proto3" json:"ownership_schedule"`
 }
 
@@ -436,7 +436,7 @@ type Grant struct {
 	CreatedBy     string                `protobuf:"bytes,10,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	CreatedHeight uint64                `protobuf:"varint,11,opt,name=created_height,json=createdHeight,proto3" json:"created_height,omitempty"`
 	// created_time is the block time the grant was awarded at, which the compensation window and the
-	// first-payment gate measure from; start_time is the grantor's clock (D116).
+	// first-payment gate measure from; start_time is the grantor's clock.
 	CreatedTime uint64 `protobuf:"varint,12,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	// mandate_term is the term of the appointment that created the grant: the registrar's for a
 	// member, the committee's for compensation; zero for a governance award.
@@ -708,7 +708,7 @@ type Beneficiary struct {
 	// bounds at award; a cancel drops what the grant had not earned.
 	OwnershipCommitted cosmossdk_io_math.Int `protobuf:"bytes,3,opt,name=ownership_committed,json=ownershipCommitted,proto3,customtype=cosmossdk.io/math.Int" json:"ownership_committed"`
 	// seat is the founding seat principal, recorded at genesis for the record alone; zero for a
-	// non-founder, and nothing reads it (D115).
+	// non-founder, and nothing reads it.
 	Seat cosmossdk_io_math.Int `protobuf:"bytes,4,opt,name=seat,proto3,customtype=cosmossdk.io/math.Int" json:"seat"`
 }
 

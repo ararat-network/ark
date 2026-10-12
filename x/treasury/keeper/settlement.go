@@ -69,7 +69,7 @@ func (k Keeper) SettleConversions(ctx context.Context, totals markettypes.Conver
 }
 
 // allocateExpansionPrincipal places the block's gross expansion offer —
-// principal and spread alike (D6) — down the fund waterfall and returns what
+// principal and spread alike — down the fund waterfall and returns what
 // overflowed every funded target.
 func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, partition liabilityPartition) (math.Int, error) {
 	// Park the entire offer in Reserve when liability is incomplete. Governance can later redirect
@@ -96,14 +96,14 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, 
 		}
 		bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 		// The net basis, because this is a flow rather than a bound: no claim
-		// arrives from paper the Reserve holds (D67), so filling a gap against it
+		// arrives from paper the Reserve holds, so filling a gap against it
 		// would sequester principal that should overflow-burn.
 		net, err := partition.net()
 		if err != nil {
 			return math.Int{}, err
 		}
 		// The targets' basis scales; nothing else here does. The draw below
-		// divides by the raw partition on purpose (D73) — scaling a payment
+		// divides by the raw partition on purpose — scaling a payment
 		// denominator would ration the exits the Buffer exists to fund — so the
 		// multiplier is applied to this figure alone and never to the partition.
 		basis, err := k.exposureAdjusted(ctx, net)

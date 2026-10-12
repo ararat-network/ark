@@ -95,6 +95,7 @@ func benchmarkMarketKeeper(
 		oracletestutil.NewMockBankKeeper(ctrl),
 		oracletestutil.NewMockDistributionKeeper(ctrl),
 		oracletestutil.NewMockStakingKeeper(ctrl),
+		nil,
 	)
 
 	if err := oracleKeeper.Params.Set(ctx, oracletypes.DefaultParams()); err != nil {

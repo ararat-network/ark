@@ -121,7 +121,7 @@ func (s *AccumulatorTestSuite) TestExpansionAccumulates() {
 
 // TestExpansionRecordsASpreadOnlyConversion covers the conversion whose stable
 // output valued below one base unit: the whole offer is spread, so it leaves no
-// principal but still obliges the EndBlocker to place it (D6).
+// principal but still obliges the EndBlocker to place it.
 func (s *AccumulatorTestSuite) TestExpansionRecordsASpreadOnlyConversion() {
 	// Half a NOAH per unit: the one unit of output values below one anoah.
 	s.Require().NoError(s.keeper.recordExpansion(

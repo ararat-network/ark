@@ -32,6 +32,7 @@ const (
 
 	functioningBlockThresholdKey = "functioning_block_threshold"
 	participationThresholdKey    = "participation_threshold"
+	jailDurationKey              = "jail_duration"
 )
 
 // GenVoteThreshold randomised VoteThreshold
@@ -94,6 +95,11 @@ func GenParticipationThreshold(r *rand.Rand) math.LegacyDec {
 	return math.LegacyNewDecWithPrec(int64(r.Intn(501)), 3)
 }
 
+// GenJailDuration randomised JailDuration across its full legal range of [1s, MaxJailDuration].
+func GenJailDuration(r *rand.Rand) uint64 {
+	return 1 + uint64(r.Int63n(int64(types.MaxJailDuration)))
+}
+
 // RandomisedGenState generates a random GenesisState for oracle
 func RandomisedGenState(simState *module.SimulationState) {
 	var voteThreshold math.LegacyDec
@@ -144,6 +150,12 @@ func RandomisedGenState(simState *module.SimulationState) {
 		func(r *rand.Rand) { participationThreshold = GenParticipationThreshold(r) },
 	)
 
+	var jailDuration uint64
+	simState.AppParams.GetOrGenerate(
+		jailDurationKey, &jailDuration, simState.Rand,
+		func(r *rand.Rand) { jailDuration = GenJailDuration(r) },
+	)
+
 	params := types.Params{
 		VoteThreshold:            voteThreshold,
 		RewardBand:               rewardBand,
@@ -158,6 +170,7 @@ func RandomisedGenState(simState *module.SimulationState) {
 		MaxExchangeRateAge:        types.MaxAllowedExchangeRateAge,
 		FunctioningBlockThreshold: functioningBlockThreshold,
 		ParticipationThreshold:    participationThreshold,
+		JailDuration:              jailDuration,
 	}
 	oracleGenesis := types.NewGenesisState(
 		params,

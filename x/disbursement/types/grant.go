@@ -46,7 +46,7 @@ func (g Grant) Validate() error {
 		return err
 	}
 	// Nothing pays before one period after an award, so every first period holds the two-week window
-	// to cancel what a stolen key made (D126).
+	// to cancel what a stolen key made.
 	if g.Schedule.FirstLength < MinFirstPeriod {
 		return errors.New("a grant's first period must be at least two weeks")
 	}
@@ -67,7 +67,7 @@ func (g Grant) Validate() error {
 	if g.Kind != GrantKind_GRANT_KIND_COMPENSATION && !g.AwardValue.IsZero() {
 		return errors.New("only compensation carries an award value")
 	}
-	// The committee awards compensation alone (D113), so a term on compensation is the committee's.
+	// The committee awards compensation alone, so a term on compensation is the committee's.
 	committee := g.Kind == GrantKind_GRANT_KIND_COMPENSATION && g.MandateTerm != 0
 	if err := chain.ValidateAmount(g.Charge, committee); err != nil {
 		return fmt.Errorf("charge: %w", err)
@@ -86,7 +86,7 @@ func (g Grant) Validate() error {
 	if !positiveInt64(g.StartTime) || !positiveInt64(g.CreatedTime) || !positiveInt64(g.CreatedHeight) {
 		return errors.New("invalid grant creation time or height")
 	}
-	// A member's clock is its registration; an ownership clock never starts before its award (D116).
+	// A member's clock is its registration; an ownership clock never starts before its award.
 	if ValidateStartTime(g.StartTime, g.CreatedTime) != nil ||
 		(g.Kind == GrantKind_GRANT_KIND_MEMBER && g.StartTime != g.CreatedTime) ||
 		(g.Kind == GrantKind_GRANT_KIND_OWNERSHIP && g.StartTime < g.CreatedTime) {
@@ -121,7 +121,7 @@ func (g Grant) Validate() error {
 		}
 	}
 	// Appointed grants carry their term: every member the registrar's, compensation the committee
-	// awarded the committee's; ownership is governance's alone (D113).
+	// awarded the committee's; ownership is governance's alone.
 	if (g.Kind == GrantKind_GRANT_KIND_MEMBER && g.MandateTerm == 0) || (g.Kind == GrantKind_GRANT_KIND_OWNERSHIP && g.MandateTerm != 0) {
 		return errors.New("a member carries its registrar term and ownership none")
 	}
@@ -148,8 +148,8 @@ func (g Grant) Cancelled() bool {
 
 // Accrued returns earned principal and the next accrual time. Cancellation freezes the original
 // clock; nothing accrues before one period after the award, whatever the kind and wherever the
-// clock starts, so a backdated grant or a member inside its hold can be cancelled whole until then
-// (D116, D126). Every time here is bounded, so the sums fit.
+// clock starts, so a backdated grant or a member inside its hold can be cancelled whole until then.
+// Every time here is bounded, so the sums fit.
 func (g Grant) Accrued(now uint64) (math.Int, uint64, error) {
 	s := g.Schedule
 	first, each, _, err := s.Shares(g.Amount.Amount)

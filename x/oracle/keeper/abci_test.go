@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"errors"
 
+	"go.uber.org/mock/gomock"
+
 	"cosmossdk.io/collections"
 	"cosmossdk.io/math"
 
@@ -109,6 +111,7 @@ func (s *KeeperTestSuite) TestEndBlocker() {
 		// calls either for valAddr2 or valAddr3.
 		s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator, nil)
 		s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr).Return(nil)
+		s.slashingKeeper.EXPECT().JailUntil(s.ctx, consAddr, gomock.Any()).Return(nil)
 
 		s.Require().NoError(s.keeper.EndBlocker(s.ctx))
 

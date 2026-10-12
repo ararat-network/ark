@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/CosmWasm/wasmd/x/wasm"
+	wasmtypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
@@ -97,6 +99,11 @@ func TestAppConfigTemplateRoundTrip(t *testing.T) {
 	decoded, err := readAppConfig(v)
 	require.NoError(t, err)
 	requireDefaultAppConfig(t, decoded)
+
+	// The app reads [wasm] through wasmd; the rendered table is wasmd's defaults.
+	wasmCfg, err := wasm.ReadNodeConfig(v)
+	require.NoError(t, err)
+	require.Equal(t, wasmtypes.DefaultNodeConfig(), wasmCfg)
 
 	for _, enabled := range []bool{false, true} {
 		v.Set("pricefeed.enabled", enabled)
@@ -239,6 +246,11 @@ func TestReadAppConfig(t *testing.T) {
 			errorSubstr: "[pricefeed]: interval must be strictly less",
 		},
 		{
+			name:        "malformed wasm query gas limit",
+			mutate:      func(v *viper.Viper) { v.Set("wasm.query_gas_limit", "lots") },
+			errorSubstr: "[wasm]:",
+		},
+		{
 			name:        "prometheus address without port",
 			mutate:      func(v *viper.Viper) { v.Set("prometheus.address", "localhost") },
 			errorSubstr: "[prometheus]: address must be host:port",
@@ -320,13 +332,18 @@ func TestAbsentSections(t *testing.T) {
 		},
 		{
 			name: "pricefeed missing",
-			doc:  "[prometheus]\nenabled = false\n",
+			doc:  "[prometheus]\nenabled = false\n[wasm]\n",
 			want: []string{"pricefeed"},
 		},
 		{
-			name: "both missing",
+			name: "wasm missing",
+			doc:  "[pricefeed]\n[prometheus]\n",
+			want: []string{"wasm"},
+		},
+		{
+			name: "all missing",
 			doc:  "minimum-gas-prices = \"0anoah\"\n",
-			want: []string{"pricefeed", "prometheus"},
+			want: []string{"pricefeed", "prometheus", "wasm"},
 		},
 	}
 
@@ -405,9 +422,9 @@ func TestUnroutedGoMetrics(t *testing.T) {
 }
 
 // The SDK writes app.toml from the template only when the file is missing
-// and never rewrites it. Both Ark tables must land in a fresh file, and a
-// file from before they existed must still read, on their defaults, with
-// the absence reported.
+// and never rewrites it. Every table beyond the SDK's must land in a fresh
+// file, and a file from before they existed must still read, on their
+// defaults, with the absence reported.
 func TestInterceptConfigsWritesArkSections(t *testing.T) {
 	home := t.TempDir()
 	cmd := &cobra.Command{Use: "start"}
@@ -422,6 +439,7 @@ func TestInterceptConfigsWritesArkSections(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, string(written), "[pricefeed]\n")
 	require.Contains(t, string(written), "[prometheus]\n")
+	require.Contains(t, string(written), "[wasm]\n")
 	require.Empty(t, absentSections(svrCtx.Viper))
 
 	decoded, err := readAppConfig(svrCtx.Viper)

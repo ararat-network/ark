@@ -318,7 +318,7 @@ func TestLaunchGenesisBoots(t *testing.T) {
 }
 
 // The launch genesis carries no section for a module the app does not wire:
-// no mint (D1), and nothing of the IBC stack the chain removed.
+// no mint, and nothing of the IBC stack the chain removed.
 func TestLaunchGenesisCarriesNoForeignModules(t *testing.T) {
 	_, state := launchGenesis(t)
 	for _, name := range []string{
@@ -482,29 +482,30 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.15"), policy.StrategicReserveTargetRatio)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.05"), policy.InsuranceTargetRatio)
 	require.True(t, policy.LiabilityRatioWeight.IsZero() && policy.VolatilityWeight.IsZero() && policy.FlowWeight.IsZero(),
-		"weights stay zero until the calibration window (D72)")
+		"weights stay zero until the calibration window")
 
 	require.Len(t, treasuryGenesis.ConversionFactors, 1)
 	require.Equal(t, chain.NoahBaseDenom, treasuryGenesis.ConversionFactors[0].Denom)
 	require.Equal(t, math.LegacyOneDec(), treasuryGenesis.ConversionFactors[0].Factor,
-		"NOAH opens at one XDR (D128); the first axdr rate replaces it")
+		"NOAH opens at one XDR; the first axdr rate replaces it")
 
 	var marketGenesis markettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[markettypes.ModuleName], &marketGenesis)
 	conversion := marketGenesis.ConversionPolicy
 	require.Equal(t, sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDecFromInt(noah(100_000))), conversion.BasePool,
-		"opens small, with no NOAH market history behind it (D95)")
+		"opens small, with no NOAH market history behind it")
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.02"), conversion.MinStabilitySpread)
 	require.Equal(t, chain.BlocksPerDay, conversion.PoolRecoveryPeriod)
 	require.Equal(t, math.LegacyMustNewDecFromStr("0.0025"), marketGenesis.Params.DefaultTobinTax)
-	require.True(t, params.TransferTaxRate.LTE(conversion.MinStabilitySpread), "tax at or below the spread floor (D81)")
+	require.True(t, params.TransferTaxRate.LTE(conversion.MinStabilitySpread), "tax at or below the spread floor")
 
 	var oracleGenesis oracletypes.GenesisState
 	cdc.MustUnmarshalJSON(state[oracletypes.ModuleName], &oracleGenesis)
 	require.Equal(t, chain.BlocksPerWeek, oracleGenesis.Params.RewardWindow)
 	require.Equal(t, 4*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
-		"four weeks: the subsidy floors oracle income, so smoothing only spreads tax windfalls (D135)")
+		"four weeks: the subsidy floors oracle income, so smoothing only spreads tax windfalls")
 	require.Equal(t, oracleGenesis.Params.RewardDistributionWindow, oracleGenesis.Accounting.RewardDistributionWindow)
+	require.Equal(t, uint64(7*86_400), oracleGenesis.Params.JailDuration, "an attendance jail holds the week it answers")
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
@@ -513,7 +514,7 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	cdc.MustUnmarshalJSON(state[claimstypes.ModuleName], &claimsGenesis)
 	require.Equal(t, uint64(7*86_400), claimsGenesis.Params.ClaimCancellationPeriod, "a week of block time fits a deposit period and a vote")
 	require.Empty(t, assetGenesis.Assets,
-		"conversion is closed at launch: the currencies are registered by vote once NOAH has a market price (D95)")
+		"conversion is closed at launch: the currencies are registered by vote once NOAH has a market price")
 }
 
 // TestLaunchGenesisBootsVestingSeat boots the artefact the way assembly
@@ -625,7 +626,7 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 			require.Equal(t, chain.SeatOracleShare, policy.OracleBlockRewardTarget)
 
 			// The founder's grant and stream import as governance awards, and the stream's first
-			// period pays one period after genesis (D136).
+			// period pays one period after genesis.
 			ownership, err := arkApp.DisbursementKeeper.Grants.Get(ctx, 1)
 			require.NoError(t, err)
 			require.Equal(t, disbursementtypes.GrantKind_GRANT_KIND_OWNERSHIP, ownership.Kind)
@@ -661,10 +662,10 @@ func TestLaunchGenesisBootsVestingSeat(t *testing.T) {
 // testnetOverrides is the whole difference between the testnet artefact and
 // the launch artefact: time compressed so a governance cycle, an unbonding, a
 // settlement, and an oracle payout each complete inside a test day, and
-// nothing else. Mirrored in docs/governance/GENESIS.md §15.
+// nothing else. Mirrored in docs/governance/GENESIS.md §13.
 // launchCurrencies is the launch currency set in the artefact's order, the
 // denominations the testnet registers from genesis and the launch chain
-// registers by vote (D95).
+// registers by vote.
 var launchCurrencies = []string{
 	chain.AUDBaseDenom, chain.CADBaseDenom, chain.CNYBaseDenom, chain.EURBaseDenom, chain.GBPBaseDenom,
 	chain.JPYBaseDenom, chain.KRWBaseDenom, chain.MXNBaseDenom, chain.SGDBaseDenom, chain.USDBaseDenom,
@@ -687,7 +688,7 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
 	assetGenesis.Params.SettlementActivationDelay = 4 * 3_600
 	// The testnet opens conversion from genesis, as the launch chain does by
-	// vote (D95): the ten currencies as registration would store them, and the
+	// vote: the ten currencies as registration would store them, and the
 	// pre-D95 depth.
 	for _, denom := range launchCurrencies {
 		assetGenesis.Assets = append(assetGenesis.Assets, assettypes.Asset{
@@ -724,6 +725,7 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	oracleGenesis.Params.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Params.AttendanceWindow = chain.BlocksPerDay
 	oracleGenesis.Params.RewardDistributionWindow = 4 * chain.BlocksPerDay
+	oracleGenesis.Params.JailDuration = 86_400
 	oracleGenesis.Accounting.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.AttendanceWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.RewardDistributionWindow = 4 * chain.BlocksPerDay

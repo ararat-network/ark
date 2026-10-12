@@ -12,9 +12,12 @@ import (
 	"github.com/ararat-network/ark/x/reserve/types"
 )
 
-// The combined age bound asserts one message from both its lower and upper
-// cases, so the string lives once.
-const rateAgeOutOfRange = "max rate age must be greater than zero and at most"
+// Each combined age bound asserts one message from both its lower and upper
+// cases, so the strings live once.
+const (
+	rateAgeOutOfRange        = "max rate age must be greater than zero and at most"
+	attestationAgeOutOfRange = "max attestation age must be greater than zero and at most"
+)
 
 // creditDenom is the asset every credit case is written against.
 const creditDenom = "axdr"
@@ -34,10 +37,11 @@ func rateSet(rate string) oracletypes.RateSet {
 func TestEligibilityEntryValidate(t *testing.T) {
 	valid := func() types.EligibilityEntry {
 		return types.EligibilityEntry{
-			Denom:               "axau-lbma",
-			HaircutFactor:       math.LegacyMustNewDecFromStr("0.8"),
-			RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.2"),
-			MaxRateAge:          72 * 3_600,
+			Denom:             "axau-lbma",
+			HaircutFactor:     math.LegacyMustNewDecFromStr("0.8"),
+			MaxCreditPerNoah:  math.LegacyMustNewDecFromStr("0.2"),
+			MaxRateAge:        72 * 3_600,
+			MaxAttestationAge: 90 * 86_400,
 		}
 	}
 
@@ -77,9 +81,9 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: "haircut factor must be greater than zero and at most one",
 		},
 		{
-			name:    "unset cap ratio",
-			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyDec{} },
-			wantErr: "recognition cap ratio must be greater than zero and at most one",
+			name:    "unset max credit per NOAH",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxCreditPerNoah = math.LegacyDec{} },
+			wantErr: "max credit per NOAH must be greater than zero and at most one",
 		},
 		{
 			// An entry granting no credit is indistinguishable from no entry at
@@ -91,9 +95,9 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			wantErr: "haircut factor must be greater than zero and at most one",
 		},
 		{
-			name:    "zero cap ratio",
-			mutate:  func(e *types.EligibilityEntry) { e.RecognitionCapRatio = math.LegacyZeroDec() },
-			wantErr: "recognition cap ratio must be greater than zero and at most one",
+			name:    "zero max credit per NOAH",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxCreditPerNoah = math.LegacyZeroDec() },
+			wantErr: "max credit per NOAH must be greater than zero and at most one",
 		},
 		{
 			// The smallest representable factor is admissible on both: the rule
@@ -102,7 +106,7 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			name: "smallest positive factors",
 			mutate: func(e *types.EligibilityEntry) {
 				e.HaircutFactor = math.LegacySmallestDec()
-				e.RecognitionCapRatio = math.LegacySmallestDec()
+				e.MaxCreditPerNoah = math.LegacySmallestDec()
 			},
 		},
 		{
@@ -120,6 +124,20 @@ func TestEligibilityEntryValidate(t *testing.T) {
 			name:    "window past the domain cap",
 			mutate:  func(e *types.EligibilityEntry) { e.MaxRateAge = types.MaxRecognitionRateAge + 1 },
 			wantErr: rateAgeOutOfRange,
+		},
+		{
+			name:    "unset attestation window",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxAttestationAge = 0 },
+			wantErr: attestationAgeOutOfRange,
+		},
+		{
+			name:   "attestation window at the domain cap",
+			mutate: func(e *types.EligibilityEntry) { e.MaxAttestationAge = types.MaxAttestationAge },
+		},
+		{
+			name:    "attestation window past the domain cap",
+			mutate:  func(e *types.EligibilityEntry) { e.MaxAttestationAge = types.MaxAttestationAge + 1 },
+			wantErr: attestationAgeOutOfRange,
 		},
 	}
 
@@ -146,12 +164,12 @@ func stake(ratio string, raw int64) types.RecognitionStake {
 
 func result(ceiling, credit int64) types.RecognitionResult {
 	return types.RecognitionResult{
-		Ceiling: math.NewInt(ceiling),
-		Credit:  math.NewInt(credit),
+		Cap:    math.NewInt(ceiling),
+		Credit: math.NewInt(credit),
 	}
 }
 
-func TestSolveRecognition(t *testing.T) {
+func TestRecognitionCredits(t *testing.T) {
 	tests := []struct {
 		name   string
 		base   int64
@@ -159,72 +177,61 @@ func TestSolveRecognition(t *testing.T) {
 		want   []types.RecognitionResult
 	}{
 		{
-			// The both-breach fixture from the design discussion: T = 5M ÷
-			// (1 − 0.5) = 10M, and each clipped asset holds exactly its share.
-			name:   "clips both stakes to shares of the joint answer",
+			name:   "clips each stake at its ratio of the balance",
 			base:   5_000_000,
 			stakes: []types.RecognitionStake{stake("0.3", 4_000_000), stake("0.2", 3_000_000)},
-			want:   []types.RecognitionResult{result(3_000_000, 3_000_000), result(2_000_000, 2_000_000)},
+			want:   []types.RecognitionResult{result(1_500_000, 1_500_000), result(1_000_000, 1_000_000)},
 		},
 		{
-			// The waterfall-correction fixture: assuming both breach puts the
-			// smaller holding under its own ceiling, so it solves unclipped
-			// and T = (5M + 1M) ÷ (1 − 0.3) = 8_571_428.
-			name:   "moves an unbreached stake to the unclipped side",
-			base:   5_000_000,
-			stakes: []types.RecognitionStake{stake("0.3", 4_000_000), stake("0.2", 1_000_000)},
-			want:   []types.RecognitionResult{result(2_571_428, 2_571_428), result(1_714_285, 1_000_000)},
-		},
-		{
-			// Nothing breaches: T = 1_000 + 100 and the ceiling is reported
-			// even though it does not bind.
+			// The ceiling is reported even when it does not bind.
 			name:   "keeps raw credit below the ceiling",
 			base:   1_000,
 			stakes: []types.RecognitionStake{stake("0.5", 100)},
-			want:   []types.RecognitionResult{result(550, 100)},
+			want:   []types.RecognitionResult{result(500, 100)},
 		},
 		{
-			// raw = ratio × T exactly: both sides of the split agree, to the
-			// anoah, and the asset holds precisely its permitted share.
-			name:   "solves the threshold boundary consistently",
-			base:   900,
+			name:   "credits a raw value at the ceiling exactly",
+			base:   1_000,
 			stakes: []types.RecognitionStake{stake("0.1", 100)},
 			want:   []types.RecognitionResult{result(100, 100)},
 		},
 		{
-			// The property the denominator was chosen for: a corrupted input
-			// levers only the provable base, T = 1_000 ÷ (1 − 0.5) = 2_000.
-			name:   "bounds an absurd raw credit by the base",
+			// A corrupted input earns its cap and nothing more.
+			name:   "bounds an absurd raw credit by the balance",
 			base:   1_000,
 			stakes: []types.RecognitionStake{stake("0.5", 1_000_000_000_000_000)},
-			want:   []types.RecognitionResult{result(1_000, 1_000)},
+			want:   []types.RecognitionResult{result(500, 500)},
 		},
 		{
-			name:   "counts nothing without a base",
+			name:   "counts nothing without a balance",
 			base:   0,
 			stakes: []types.RecognitionStake{stake("0.5", 500)},
 			want:   []types.RecognitionResult{result(0, 0)},
 		},
 		{
-			// Order is the caller's: an unsorted input maps back untouched.
-			name: "preserves input order across the internal sort",
+			// 0.1 × 999 = 99.9: the ceiling floors, as recognition never rounds up.
+			name:   "floors a fractional ceiling",
+			base:   999,
+			stakes: []types.RecognitionStake{stake("0.1", 1_000)},
+			want:   []types.RecognitionResult{result(99, 99)},
+		},
+		{
+			name: "preserves input order",
 			base: 1_000,
 			stakes: []types.RecognitionStake{
 				stake("0.2", 10_000),
 				stake("0.1", 5),
 				stake("0.3", 10_000),
 			},
-			// The two large stakes clip against T = 1_005 ÷ (1 − 0.5) =
-			// 2_010; the small one keeps its raw 5.
 			want: []types.RecognitionResult{
-				result(402, 402),
-				result(201, 5),
-				result(603, 603),
+				result(200, 200),
+				result(100, 5),
+				result(300, 300),
 			},
 		},
 		{
-			// A zero ratio holds no share and reports no ceiling; a zero raw
-			// holds a share but occupies none of it.
+			// A zero ratio holds no cap and reports no ceiling; a zero raw
+			// holds a cap but uses none of it.
 			name: "passes custody-only and unpriced stakes through",
 			base: 1_000,
 			stakes: []types.RecognitionStake{
@@ -234,60 +241,34 @@ func TestSolveRecognition(t *testing.T) {
 			want: []types.RecognitionResult{result(0, 0), result(300, 0)},
 		},
 		{
-			// Unreachable under a validated policy; answered with zero credit
-			// rather than an unbounded certificate.
-			name:   "refuses ratios summing to one",
+			// The validated ceiling: external credit may equal the balance,
+			// doubling it and no more.
+			name:   "admits ratios summing to one",
 			base:   1_000,
 			stakes: []types.RecognitionStake{stake("0.6", 5_000), stake("0.4", 5_000)},
+			want:   []types.RecognitionResult{result(600, 600), result(400, 400)},
+		},
+		{
+			// Unreachable under a validated policy; answered with zero credit
+			// rather than more than twice the balance.
+			name:   "refuses ratios summing above one",
+			base:   1_000,
+			stakes: []types.RecognitionStake{stake("0.6", 5_000), stake("0.5", 5_000)},
 			want:   []types.RecognitionResult{result(0, 0), result(0, 0)},
-		},
-		{
-			// A one-quantum raw credit against a zero base puts the scan's
-			// products on the rounding boundary at consecutive splits. The
-			// honest total is zero, and the tie must not unclip its way past
-			// the larger stake's cap to the all-unclipped fallback.
-			name: "counts nothing without a base at a rounding tie",
-			base: 0,
-			stakes: []types.RecognitionStake{
-				stake("0.488779746583308052", 3_852_830),
-				{
-					Ratio: math.LegacyMustNewDecFromStr("0.103527094374366716"),
-					Raw:   math.LegacyNewDecWithPrec(1, 18),
-				},
-			},
-			want: []types.RecognitionResult{result(0, 0), result(0, 0)},
-		},
-		{
-			// This sub-quantum split tie must preserve the 10M base-derived bound. Rounded
-			// cross-products differ across adjacent splits; accepting the all-unclipped fallback
-			// would violate it.
-			name: "holds the base bound at a sub-quantum tie",
-			base: 1_000_000,
-			stakes: []types.RecognitionStake{
-				{
-					Ratio: math.LegacyMustNewDecFromStr("0.1"),
-					Raw:   math.LegacyMustNewDecFromStr("1000000.000000000000000004"),
-				},
-				stake("0.8", 1_000_000_000),
-			},
-			want: []types.RecognitionResult{
-				result(1_000_000, 1_000_000),
-				result(8_000_000, 8_000_000),
-			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := types.SolveRecognition(math.NewInt(tc.base), tc.stakes)
+			got, err := types.RecognitionCredits(math.NewInt(tc.base), tc.stakes)
 			require.NoError(t, err)
 			// Element-wise Int.Equal rather than require.Equal: a zero Int
 			// truncated out of a sub-anoah decimal carries a different big.Int
 			// representation than NewInt(0), and only the value is the claim.
 			require.Len(t, got, len(tc.want))
 			for i := range tc.want {
-				require.True(t, tc.want[i].Ceiling.Equal(got[i].Ceiling),
-					"stake %d ceiling: want %s, got %s", i, tc.want[i].Ceiling, got[i].Ceiling)
+				require.True(t, tc.want[i].Cap.Equal(got[i].Cap),
+					"stake %d ceiling: want %s, got %s", i, tc.want[i].Cap, got[i].Cap)
 				require.True(t, tc.want[i].Credit.Equal(got[i].Credit),
 					"stake %d credit: want %s, got %s", i, tc.want[i].Credit, got[i].Credit)
 			}
@@ -295,12 +276,10 @@ func TestSolveRecognition(t *testing.T) {
 	}
 }
 
-// TestSolveRecognitionClipsWithoutDividing pins that the split is found without
-// a quotient: a credit near the decimal ceiling, or a ratio at the decimal
-// floor, clips to its share of the total rather than failing to sort. Both
-// shapes once overflowed the threshold division and would have failed the
-// block that priced them.
-func TestSolveRecognitionClipsWithoutDividing(t *testing.T) {
+// TestRecognitionCreditsSurviveExtremeInputs pins that a credit near the
+// decimal ceiling, or a ratio at the decimal floor, caps cleanly rather than
+// failing the block that priced it.
+func TestRecognitionCreditsSurviveExtremeInputs(t *testing.T) {
 	absurd := math.LegacyNewDecFromBigInt(new(big.Int).Lsh(big.NewInt(1), 255))
 	tests := []struct {
 		name   string
@@ -310,7 +289,7 @@ func TestSolveRecognitionClipsWithoutDividing(t *testing.T) {
 		{
 			name:   "credit near the ceiling",
 			stakes: []types.RecognitionStake{{Ratio: math.LegacyMustNewDecFromStr("0.5"), Raw: absurd}},
-			credit: math.NewInt(1_000),
+			credit: math.NewInt(500),
 		},
 		{
 			name:   "ratio at the floor",
@@ -320,43 +299,41 @@ func TestSolveRecognitionClipsWithoutDividing(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			results, err := types.SolveRecognition(math.NewInt(1_000), tc.stakes)
+			results, err := types.RecognitionCredits(math.NewInt(1_000), tc.stakes)
 			require.NoError(t, err)
 			require.True(t, tc.credit.Equal(results[0].Credit), "credit %s", results[0].Credit)
 		})
 	}
 }
 
-// TestSolveRecognitionReportsSharesExactly pins the invariant the ratio
-// denotes: at the solved total, no credit exceeds its ratio of that very
-// total — the self-reference is what makes the statement checkable against
-// the answer itself.
-func TestSolveRecognitionReportsSharesExactly(t *testing.T) {
-	base := math.NewInt(5_000_000)
-	stakes := []types.RecognitionStake{stake("0.3", 4_000_000), stake("0.2", 3_000_000)}
+// TestRecognitionCreditsAreIndependent pins the property the cap exists for:
+// a misreported holding earns its own cap and moves no other asset's credit.
+// Measured against recognised capital instead, the fake entry below would
+// have raised gold's ceiling with the total and carried 200 to 1,000.
+func TestRecognitionCreditsAreIndependent(t *testing.T) {
+	gold := stake("0.5", 1_000)
+	fake := stake("0.4", 1_000_000_000)
+	base := math.NewInt(100)
 
-	results, err := types.SolveRecognition(base, stakes)
+	honest, err := types.RecognitionCredits(base, []types.RecognitionStake{gold})
 	require.NoError(t, err)
-	total := base
-	for _, res := range results {
-		total = total.Add(res.Credit)
-	}
-	require.Equal(t, math.NewInt(10_000_000), total)
-	for i, res := range results {
-		share := stakes[i].Ratio.MulInt(total).TruncateInt()
-		require.True(t, res.Credit.LTE(share), "stake %d exceeds its share", i)
-	}
+	attacked, err := types.RecognitionCredits(base, []types.RecognitionStake{gold, fake})
+	require.NoError(t, err)
+
+	require.Equal(t, math.NewInt(50), honest[0].Credit)
+	require.Equal(t, honest[0].Credit, attacked[0].Credit, "the fake entry moved gold's credit")
+	require.Equal(t, math.NewInt(40), attacked[1].Credit, "the fake entry earns exactly its cap")
 }
 
 func TestRawCredit(t *testing.T) {
 	entry := types.EligibilityEntry{
-		Denom:               creditDenom,
-		HaircutFactor:       math.LegacyMustNewDecFromStr("0.333333333333333333"),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.5"),
+		Denom:            creditDenom,
+		HaircutFactor:    math.LegacyMustNewDecFromStr("0.333333333333333333"),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.5"),
 	}
 
 	// The credit stays un-rounded and un-clipped: the cap plays no part here,
-	// and SolveRecognition truncates once at the end rather than at each row.
+	// and RecognitionCredits truncates once at the end rather than at each row.
 	credit, err := entry.RawCredit(rateSet("1"), math.NewInt(10))
 	require.NoError(t, err)
 	require.Equal(t, math.LegacyMustNewDecFromStr("3.33333333333333333"), credit)
@@ -414,12 +391,12 @@ func TestRawCreditRefusesAnAbsentRate(t *testing.T) {
 
 // TestRawCreditRefusesAnAbsurdAttestation pins where a clerical error is
 // answered: at the row that produced it, naming the asset, rather than being
-// carried into the solve for the cap to neutralise.
+// carried into the cap to neutralise.
 func TestRawCreditRefusesAnAbsurdAttestation(t *testing.T) {
 	entry := types.EligibilityEntry{
-		Denom:               creditDenom,
-		HaircutFactor:       math.LegacyOneDec(),
-		RecognitionCapRatio: math.LegacyMustNewDecFromStr("0.5"),
+		Denom:            creditDenom,
+		HaircutFactor:    math.LegacyOneDec(),
+		MaxCreditPerNoah: math.LegacyMustNewDecFromStr("0.5"),
 	}
 
 	// A quantity alone cannot overflow — math.Int stops just where LegacyDec

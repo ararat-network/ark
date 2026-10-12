@@ -20,8 +20,8 @@ existing homes without reinitialising them; `localnet-stop` stops all profiles w
 Homes live under `.testnets/` by default. `ARK_LOCALNET_DATA` selects another disposable directory; use the same value for
 subsequent targets. Init makes that directory writable for the image's uid 1025 and clears it from inside the container.
 The network runs the testnet artefact, [app/genesis/testnet.json](../../app/genesis/testnet.json), with every validator
-granted a seat from its community pool ([genesis §15](../../docs/governance/GENESIS.md#15-testnet-artefact)); the
-generated keys and the committee keyring are development fixtures.
+granted a seat from its community pool ([genesis §13](../../docs/governance/GENESIS.md#13-testnet-artefact)); the
+generated keys are development fixtures.
 
 ## Topology and ports
 
@@ -40,19 +40,12 @@ Node 0 therefore serves RPC at `localhost:26657`, REST at `localhost:1317`, appl
 bindings. Container links explicitly select plaintext transport; [pricefeed operations](../../docs/operations/PRICEFEED_OPERATIONS.md)
 explains deployment outside this network.
 
-The four-validator shape gives the last validator a separate carrier network and a sole P2P route through
-`carrier-sentry`. Both disable transaction broadcast and PEX; carrier host ports bind to loopback. The rehearsal service
-joins the necessary networks. Init seats a funded 3-of-4 emergency multisig in the asset mandate, with keys under
-`.testnets/committee`. This is the disposable topology for the [emergency runbook](../../docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md),
-whose production network uses operator-controlled private connectivity.
-
-## State sync and rehearsals
+## State sync
 
 Node 0 keeps snapshots every 20 blocks. On the four-validator network:
 
 ```sh
 make localnet-statesync
-make localnet-runbook
 ```
 
 The state-sync target starts `sync0` using the `statesync` profile and checks RPC at `localhost:26697`. Its entrypoint,
@@ -62,9 +55,7 @@ The state-sync target starts `sync0` using the `statesync` profile and checks RP
 an earliest block above 1 and progress beyond that restored height, not merely a node that caught up by replaying genesis.
 `localnet-stop` also stops this profile.
 
-For a bounded saturation rehearsal, create a fresh network with `PUBLIC_MEMPOOL_SIZE=32 make localnet-start`, wait for
-liveness, then run `make localnet-saturation`. It pauses validators and submits transactions. See the
-[script guide](../scripts/README.md) for its side effects, expected results, and upgrade rehearsal prerequisites.
+The [script guide](../scripts/README.md) covers the probes and the upgrade rehearsal.
 
 [localnet.yml](../../.github/workflows/localnet.yml) defines the automated localnet checks. The liveness probe requires
 both block progress and at least one oracle rate; block production alone can continue while sidecars fail.

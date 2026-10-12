@@ -27,38 +27,36 @@ stablecoins: a Redemption Buffer that recycles retained NOAH into redemptions, a
 commit and a committee can deploy under a bounded mandate, and Insurance that pays covered losses through recorded
 claims. Validators and the oracle are funded from a fixed transfer tax and a genesis-seeded subsidy pool. Governance
 holds every unbounded power; committees hold bounded, time-scoped mandates. To understand how funds and authority
-move, read the [economic design](docs/design/ECONOMIC_DESIGN.md).
+move, read the [economic design](docs/economics/ECONOMIC_DESIGN.md).
 
 The [manifesto](docs/papers/MANIFESTO.pdf), _The Revolution Begins Within_, sets out the purpose that design serves.
 
 ## Documentation
 
-Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides
-by reading path: understanding the chain, launching a network, operating and monitoring services, governing and
-responding, integrating clients, future direction, and the decision register. Each subsystem's README owns its own
-behaviour, design, and development guidance; the [repository map](#repository-map) links them.
+Documentation lives in this repository. Start at the [documentation index](docs/README.md), which arranges the guides by
+reading path: understanding the chain, launching a network, operating and monitoring services, governing and responding,
+integrating clients, and future direction. Each subsystem's README owns its own behaviour, design, and development
+guidance; the [repository map](#repository-map) links them.
 
 ### Additional resources
 
-**For node operators:** [Node operations](docs/operations/NODE_OPERATIONS.md) covers building `arkd`, configuring a
-home, joining an existing network, and upgrading. [Process monitoring](docs/operations/PROCESS_MONITORING.md) covers
-scraping the node and sidecar, and [protocol monitoring](docs/operations/PROTOCOL_MONITORING.md) covers chain-state
-signals and alert calibration.
+**For node operators:** [Node operations](docs/operations/NODE_OPERATIONS.md) covers deploying `arkd` by role,
+configuring it, joining a network, running a validator, keys and backups, upgrades, relaunch, and troubleshooting.
+[Process monitoring](docs/operations/PROCESS_MONITORING.md) covers scraping the node and sidecar, and [protocol
+monitoring](docs/operations/PROTOCOL_MONITORING.md) covers chain-state signals and alert calibration.
 
 **For validators:** Each validator reports prices through vote extensions, so it runs a `pricefeed` sidecar beside its
-node. [Pricefeed operations](docs/operations/PRICEFEED_OPERATIONS.md) covers the two-way node/sidecar setup, TLS,
-reload, and failover; the [oracle module](x/oracle/README.md) explains attendance and reward settlement. Every validator
-also follows the [upgrade binary policy](docs/operations/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never
-downloads binaries.
+node. [Pricefeed operations](docs/operations/PRICEFEED_OPERATIONS.md) covers deploying the sidecar, its providers and
+routes, linking it to the node, following feed changes, and troubleshooting; the [oracle module](x/oracle/README.md)
+explains attendance and reward settlement. Every validator also follows the [upgrade binary
+policy](docs/operations/NODE_OPERATIONS.md#upgrade-binary-policy): cosmovisor never downloads binaries.
 
 **For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
-read [validator and Oracle funding](docs/design/ECONOMIC_DESIGN.md#9-validator-and-oracle-funding) before delegating.
+read [validator and Oracle funding](docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
 
-**For governance participants and committees:** [Governance operations](docs/governance/GOVERNANCE_OPERATIONS.md) covers
-proposals, service permissions, and appointments. The
-[economic committee runbook](docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md) and
-[emergency submission runbook](docs/governance/EMERGENCY_SUBMISSION_RUNBOOK.md) cover bounded policy changes and
-emergency transactions.
+**For governance participants and committees:** [Governance runbook](docs/governance/GOVERNANCE_RUNBOOK.md) covers
+proposals, upgrades, appointments, and governance's procedures for each module. The [committee runbook](docs/governance/COMMITTEE_RUNBOOK.md) covers
+what each appointed committee does, how it submits, and the grants programme.
 
 **For client integrators:** [Client fee construction](docs/clients/CLIENT_FEES.md) explains signed fee declarations,
 simulation, and failure handling for external transaction builders.
@@ -109,7 +107,7 @@ validator on the host without Docker, or a testnet assembled by several develope
 [disposable host testnet](docs/operations/NODE_OPERATIONS.md#disposable-host-testnet) and
 [manual assembly](docs/operations/NODE_OPERATIONS.md#manually-assembling-a-testnet) sections of node operations. A
 shared testnet starts from the curated artefact [app/genesis/testnet.json](app/genesis/testnet.json), the launch genesis
-with its windows compressed ([genesis §15](docs/governance/GENESIS.md#15-testnet-artefact)).
+with its windows compressed ([genesis §13](docs/governance/GENESIS.md#13-testnet-artefact)).
 
 ## Genesis and relaunch
 
@@ -118,7 +116,7 @@ Ark launches from a clean genesis as `ark-1`. The curated launch artefact is
 status, and the decision behind it. Do not treat `arkd init` defaults as the launch policy. A relaunch takes a new chain
 ID and starts from `arkd export`, which is a continuation export: heights stay absolute and the exported genesis starts
 at the next height, so every height-anchored record resumes as it is. Zero-height export is refused on purpose. See
-[upgrades and relaunch](docs/operations/NODE_OPERATIONS.md#upgrades-and-relaunch).
+[relaunch](docs/operations/NODE_OPERATIONS.md#8-relaunch).
 
 ## Contact
 
@@ -148,5 +146,5 @@ and the release verification procedure.
 The chain releases from `vX.Y.Z`; the sidecar releases independently from `pricefeed/vX.Y.Z`.
 [The release workflow](.github/workflows/release.yml) prepares signed drafts from reviewed tags. A suffix such as `-rc1`
 marks the draft as a pre-release. Maintainers review and publish through GitHub; only stable chain releases should be
-marked latest. [Release verification](docs/operations/RELEASE_VERIFICATION.md) covers dispatch, review, local packaging,
-and consumer checks.
+marked latest. The [release runbook](docs/releases/RELEASE_RUNBOOK.md) covers dispatch, review, and local packaging;
+[release verification](docs/operations/RELEASE_VERIFICATION.md) covers consumer checks.

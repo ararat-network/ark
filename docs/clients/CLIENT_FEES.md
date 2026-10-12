@@ -12,12 +12,12 @@ Everything here describes `app/ante/fee.go`. Where the two disagree, the code is
 
 ## 1. The four rules
 
-**The fee is a ceiling, not a payment (D80).** You declare a maximum; the chain charges the exact transfer tax
+**The fee is a ceiling, not a payment.** You declare a maximum; the chain charges the exact transfer tax
 and exactly one base fee under it, and the remainder never leaves the account. Over-declaring a stable leg costs
 nothing. This is the single most important difference from Terra Classic, where the declared fee was deducted
 whole — habits ported from there will make you under-declare.
 
-**A fee short of the tax is refused outright (D78).** The check runs before anything moves and is per
+**A fee short of the tax is refused outright.** The check runs before anything moves and is per
 denomination: for every coin in the computed tax, the fee must carry at least that amount in that denomination.
 Miss one leg and the whole transaction is refused, however generous the rest of the fee is. The tax is a floor;
 everything above it is slack.

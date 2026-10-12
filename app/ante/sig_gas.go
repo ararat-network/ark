@@ -1,6 +1,9 @@
 package ante
 
 import (
+	"cmp"
+	"slices"
+
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/crypto/types/multisig"
 	storetypes "github.com/cosmos/cosmos-sdk/store/v2/types"
@@ -34,16 +37,42 @@ func (d SigGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 }
 
 // simulationSigGasConsumer charges a placeholder as though its signatures came
-// from the first keys, which prices a signed transaction of uniform key types.
+// from the costliest keys, so the estimate covers any set of signers.
 func simulationSigGasConsumer(meter storetypes.GasMeter, sig signing.SignatureV2, params authtypes.Params) error {
 	pubKey, isMultisig := sig.PubKey.(multisig.PubKey)
 	data, isMultiData := sig.Data.(*signing.MultiSignatureData)
-	if isMultisig && isMultiData && data.BitArray == nil && len(data.Signatures) <= len(pubKey.GetPubKeys()) {
-		bits := cryptotypes.NewCompactBitArray(len(pubKey.GetPubKeys()))
-		for i := range data.Signatures {
-			bits.SetIndex(i, true)
+	if isMultisig && isMultiData && data.BitArray == nil {
+		if bits := costliestKeys(pubKey.GetPubKeys(), len(data.Signatures), params); bits != nil {
+			sig.Data = &signing.MultiSignatureData{BitArray: bits, Signatures: data.Signatures}
 		}
-		sig.Data = &signing.MultiSignatureData{BitArray: bits, Signatures: data.Signatures}
 	}
 	return sdkante.DefaultSigVerificationGasConsumer(meter, sig, params)
+}
+
+// costliestKeys marks the n keys whose signatures cost most to verify. It
+// returns nil, leaving the SDK's refusal, when n exceeds the key set or a key
+// is not a single key, such as a nested multisig.
+func costliestKeys(keys []cryptotypes.PubKey, n int, params authtypes.Params) *cryptotypes.CompactBitArray {
+	if n > len(keys) {
+		return nil
+	}
+	costs := make([]storetypes.Gas, len(keys))
+	for i, key := range keys {
+		meter := storetypes.NewInfiniteGasMeter()
+		single := signing.SignatureV2{PubKey: key, Data: &signing.SingleSignatureData{}}
+		if err := sdkante.DefaultSigVerificationGasConsumer(meter, single, params); err != nil {
+			return nil
+		}
+		costs[i] = meter.GasConsumed()
+	}
+	order := make([]int, len(keys))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return cmp.Compare(costs[b], costs[a]) })
+	bits := cryptotypes.NewCompactBitArray(len(keys))
+	for _, i := range order[:n] {
+		bits.SetIndex(i, true)
+	}
+	return bits
 }

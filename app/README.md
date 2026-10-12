@@ -35,7 +35,7 @@ Read the lists in [app_config.go](app_config.go) for the exact order. The depend
    Disbursement pays last, from custody it already holds, so a cancellation executed in the block governs its payments.
 
 Asset lifecycle transitions are message-driven. The ABCI wrapper does not complete asset transitions or prime Treasury
-liability. [Economic design](../docs/design/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
+liability. [Economic design](../docs/economics/ECONOMIC_DESIGN.md) and the [on-chain oracle](../x/oracle/README.md) describe their shared protocol contracts.
 
 ## Block gas-meter policy
 
@@ -63,41 +63,48 @@ and [Treasury](../x/treasury/README.md) each document their behaviour, rationale
 
 ## Wasm integration
 
-Decision IDs below refer to the [economic decision register](../docs/design/ECONOMIC_DECISIONS.md).
-Ark runs upstream Wasmd `v0.70.x` on `wasmvm/v3` (D49), wired through the SDK runtime's manual registration hooks
-beside the depinject-wired modules, in `app/wasm.go`. The chain has no IBC (D118): the Wasm keeper takes no channel
-keepers, its default message handler and encoders are replaced by ones that refuse a contract's IBC and IBC v2
-messages with an explicit error, its IBC query plugin refuses, no contract port is routed, and the `ibc2` capability
-is withheld so a contract requiring it fails at upload. Wasmd itself still depends on ibc-go, which is why the
-dependency remains in `go.mod`.
+Ark runs upstream Wasmd `v0.70.x` on `wasmvm/v3`, wired through the SDK runtime's manual registration hooks beside
+the depinject-wired modules, in `app/wasm.go`. There is no Wasmd fork and no replace directive: either would be
+re-applied to every upstream security release and run code upstream neither tests nor audits, so an SDK move waits for a
+Wasmd release that compiles against it ([future
+changes](../docs/direction/FUTURE_CHANGES.md#1-upgrade-to-cosmos-sdk-v055)). The chain has no IBC: the Wasm
+keeper takes no channel keepers, its default message handler and encoders are replaced by ones that refuse a contract's
+IBC and IBC v2 messages with an explicit error, its IBC query plugin refuses, no contract port is routed, and the `ibc2`
+capability is withheld so a contract requiring it fails at upload. Wasmd itself still depends on ibc-go, which is why
+the dependency remains in `go.mod`.
 
 [wasm.go](wasm.go) constructs the contract runtime and registers the state-sync snapshot extension that carries contract
 code, which lives outside the IAVL tree; [app.go](app.go) re-warms the pinned-code cache after loading the store, since
 the pin list is state and the VM cache is per-process. Verify dependency versions in [go.mod](../go.mod).
-The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contract permissions.
+The [governance runbook](../docs/governance/GOVERNANCE_RUNBOOK.md#contract-runtime) owns contract permissions.
 
 - **The policy router**, which wraps the SDK message router handed to Wasmd. It receives the
   exact SDK message Wasmd's canonical encoder produces, prices it, charges the dispatching account, and calls the
   handler, in one cached execution. Wasmd's custom message encoder is unused: a contract calls Ark's modules
   with `CosmosMsg::Any` carrying the proto type URL and bytes, so there is one schema instead of a JSON mirror that
-  nothing keeps in sync (D74). Impersonation is closed by Wasmd itself, which rejects a dispatched message whose signer
-  is not the contract.
+  nothing keeps in sync. Impersonation is closed by Wasmd itself, which rejects a dispatched message whose signer
+  is not the contract. No Rust bindings crate is committed: authors generate from the published protos. Adding a
+  custom encoder later breaks nothing and removing one breaks every contract using it, so the proto surface is the
+  reversible place to start.
 - **The query accept list** in `app/wasm_query.go`, hand-written as Osmosis, Neutron, Juno, and Archway keep theirs,
   because Wasmd ships no permissive default and a permissive list leaks nondeterministic reads into consensus. A path is
   listed only if it is annotated `module_query_safe`, which a test enforces, and listing says something further: its
   response shape is frozen for the life of the chain, because a value a contract reads is an input to consensus.
   Widening the list is a coordinated binary upgrade, never a vote. It carries sixty-three paths: the thirty-four the SDK
-  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review (D85), and
+  annotates itself for auth, bank, and staking, admitted whole because the annotation is the review, and
   twenty-nine of Ark's own. Most are what a contract needs to price and route a conversion or a transfer: the tax
   estimate and the caps and gas prices behind it, the Oracle rates, reference unit, and feed schedule, Market's quotes,
   pool, policy, and Tobin tax, and the asset registry with its settlement terms. The rest let a contract read its own
   standing or the system's: grants and beneficiary records, membership, a validator's oracle attendance and reward
   weight, reward funding, fund status and exposure, the Reserve's recognised capital, the Insurance balance, and a
-  claim record. Params, mandates, and audit trails stay off the list.
+  claim record. Params, mandates, and audit trails stay off the list. A contract estimates its tax with
+  `Query/ComputeTax` over the proto form of the message it will dispatch; for a JSON-native `CosmosMsg` it builds that
+  proto itself and keeps it identical to what it returns. The estimate reserves nothing and never replaces the
+  recomputation at dispatch.
 - **Addresses.** Ark's address verifier admits 32-byte addresses beside 20-byte ones, because CosmWasm derives both
   contract address forms to 32 bytes and a verifier accepting 20 alone made every message naming a contract fail.
 
-The [economic transfer contract](../docs/design/ECONOMIC_DESIGN.md#111-the-execution-tax-contract) owns who pays tax and when
+The [economic transfer contract](../docs/economics/ECONOMIC_DESIGN.md#55-execution-generated-tax) owns who pays tax and when
 it remains payable. These adapters enforce that contract at distinct signed-message and generated-message boundaries.
 
 ## Verification

@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"errors"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 	"go.uber.org/mock/gomock"
@@ -484,8 +485,8 @@ func (s *KeeperTestSuite) TestSettleRewards() {
 	}
 }
 
-// TestSettleAttendance checks jail-only outcomes and wrapped lookup/jail errors. The mock has no
-// Slash method and unexpected staking calls fail the test.
+// TestSettleAttendance checks jail-only outcomes, the jail's hold of JailDuration, and wrapped
+// lookup/jail/hold errors. The mock has no Slash method and unexpected staking calls fail the test.
 func (s *KeeperTestSuite) TestSettleAttendance() {
 	tests := []struct {
 		name                   string
@@ -500,6 +501,8 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 		jailed                 bool
 		expectJail             bool // must not combine with missingValidator: consAddr would be nil
 		jailErr                error
+		jailDuration           uint64 // 0 => default
+		holdErr                error
 		expectErr              string
 	}{
 		{
@@ -609,6 +612,27 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 			expectErr:      "jailing validator",
 		},
 		{
+			name:           "jail holds for the configured duration",
+			eligibleBlocks: 20,
+			attendedBlocks: 0,
+			minAttendance:  math.LegacyNewDecWithPrec(90, 2),
+			callsValidator: true,
+			status:         stakingtypes.Bonded,
+			expectJail:     true,
+			jailDuration:   3600,
+		},
+		{
+			name:           "hold failure propagates",
+			eligibleBlocks: 20,
+			attendedBlocks: 0,
+			minAttendance:  math.LegacyNewDecWithPrec(90, 2),
+			callsValidator: true,
+			status:         stakingtypes.Bonded,
+			expectJail:     true,
+			holdErr:        errors.New("no signing info"),
+			expectErr:      "holding oracle jail",
+		},
+		{
 			name:           "full attendance passes at the maximum ratio",
 			eligibleBlocks: 20,
 			attendedBlocks: 20,
@@ -650,6 +674,9 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 			params.MinAttendancePerWindow = tc.minAttendance
 			// The highest threshold admits every minimum the table judges.
 			params.FunctioningBlockThreshold = math.LegacyOneDec()
+			if tc.jailDuration != 0 {
+				params.JailDuration = tc.jailDuration
+			}
 			s.Require().NoError(s.keeper.Params.Set(s.ctx, params))
 			s.Require().NoError(s.keeper.Attendance.Set(s.ctx, valAddr1, types.Attendance{
 				EligibleBlocks: tc.eligibleBlocks,
@@ -670,6 +697,10 @@ func (s *KeeperTestSuite) TestSettleAttendance() {
 			}
 			if tc.expectJail {
 				s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr).Return(tc.jailErr)
+				if tc.jailErr == nil {
+					until := sdk.UnwrapSDKContext(s.ctx).BlockTime().Add(time.Duration(params.JailDuration) * time.Second)
+					s.slashingKeeper.EXPECT().JailUntil(s.ctx, consAddr, until).Return(tc.holdErr)
+				}
 			}
 
 			err = s.keeper.SettleAttendance(s.ctx, attendanceWindowBlocks)
@@ -715,8 +746,10 @@ func (s *KeeperTestSuite) TestSettleAttendanceContinuesWalkAfterJailing() {
 	consAddr2, validator2 := s.newBondedValidator(valAddr2)
 	s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr1).Return(validator1, nil)
 	s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr1).Return(nil)
+	s.slashingKeeper.EXPECT().JailUntil(s.ctx, consAddr1, gomock.Any()).Return(nil)
 	s.stakingKeeper.EXPECT().Validator(s.ctx, valAddr2).Return(validator2, nil)
 	s.stakingKeeper.EXPECT().Jail(s.ctx, consAddr2).Return(nil)
+	s.slashingKeeper.EXPECT().JailUntil(s.ctx, consAddr2, gomock.Any()).Return(nil)
 
 	s.Require().NoError(s.keeper.SettleAttendance(s.ctx, 20))
 

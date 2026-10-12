@@ -32,6 +32,14 @@ const (
 	// reach would freeze the multiplier at its stored value with no way to
 	// observe that it had.
 	MaxExposureRefreshPeriodBlocks = chain.BlocksPerYear
+
+	// DefaultVolatilitySampleSeconds spaces volatility returns at least five minutes apart. Sampled
+	// every block, a per-block oracle jitter of one basis point alone reads as about 32% annualised
+	// volatility; at five minutes it reads as about 4.6%.
+	DefaultVolatilitySampleSeconds = 300
+	// MaxVolatilitySampleSeconds bounds the spacing at a day: past it the 23-hour series would hold
+	// fewer than one sample per half-life.
+	MaxVolatilitySampleSeconds = 86_400
 )
 
 var (
@@ -43,9 +51,10 @@ var (
 	// representable whatever a genesis carries.
 	MaxExposureFlowPressure = math.LegacyNewDecFromBigInt(new(big.Int).Lsh(big.NewInt(1), 128))
 
-	// DefaultExposureVolatilityDecay is per-block EWMA retention with a roughly 13,863-block
-	// half-life. The fold uses retention directly, avoiding on-chain logarithms.
-	DefaultExposureVolatilityDecay = math.LegacyMustNewDecFromStr("0.99995")
+	// DefaultExposureVolatilityDecay is per-sample EWMA retention with a roughly 277-sample
+	// half-life, 23 hours at DefaultVolatilitySampleSeconds. The fold uses retention directly,
+	// avoiding on-chain logarithms.
+	DefaultExposureVolatilityDecay = math.LegacyMustNewDecFromStr("0.9975")
 	// DefaultExposureFlowDecay retains flow pressure with a half-life of about
 	// 602 blocks — roughly an hour. Flow is the fastest of the three signals and
 	// the only one an actor can produce deliberately, so it forgets quickly: a
@@ -94,6 +103,7 @@ func DefaultParams() Params {
 		TransferTaxRate:             math.LegacyZeroDec(),
 		RewardFundingWindow:         DefaultRewardFundingWindow,
 		VolatilityDecay:             DefaultExposureVolatilityDecay,
+		VolatilitySampleSeconds:     DefaultVolatilitySampleSeconds,
 		FlowDecay:                   DefaultExposureFlowDecay,
 		MultiplierCap:               DefaultExposureMultiplierCap,
 		MultiplierMaxStep:           DefaultExposureMultiplierMaxStep,
@@ -197,6 +207,16 @@ func (p Params) Validate() error {
 			"treasury parameter ExposureMultiplierMaxStep must be greater than zero and at most %s: %s",
 			MaxExposureMultiplierCap,
 			p.MultiplierMaxStep,
+		)
+	}
+
+	// At least a second, which keeps every interval the variance divides by at least a second;
+	// at most a day.
+	if p.VolatilitySampleSeconds == 0 || p.VolatilitySampleSeconds > MaxVolatilitySampleSeconds {
+		return fmt.Errorf(
+			"treasury parameter VolatilitySampleSeconds must be between one and %d: %d",
+			MaxVolatilitySampleSeconds,
+			p.VolatilitySampleSeconds,
 		)
 	}
 

@@ -29,42 +29,69 @@ Reserve owns strategic custody, mandates, position records, the quantity journal
 
 The mandate contains an exact committee, term window, gross deployment allowance, minimum NOAH balance, and approved
 destinations. A NOAH deployment consumes allowance permanently for the term and enforces the remaining balance floor;
-any other held denomination deploys in kind against the holding alone, since that capital was charged when it first
-went out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no
-separate guardian or pause state: governance replaces or disables the mandate. Per-transaction/rolling caps, slippage limits, and adapter pins were
-rejected because the bounded on-chain outflow and the off-chain custody relationship have different evidence.
+any other held denomination deploys in kind against the holding alone, since that capital was charged when it first went
+out. Every deployment sends only to those destinations. Recognition policy outlives appointments. There is no separate
+guardian or pause state: governance replaces or disables the mandate. There is no governance deployment message either,
+since deployment needs the off-chain counterparty relationship only a committee holds. Per-transaction/rolling caps,
+slippage limits, and adapter pins were rejected because the bounded on-chain outflow and the off-chain custody
+relationship have different evidence.
 
-A `Position` holds attested quantity and venue reference beside proven deployed/returned amounts, impairment, and
-opening/closing heights. Every mutation appends an `AccountingEntry`; corrections append a restatement rather than
-editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a Bank fact, but assigning
-it to a position is an accounting act. Return value is crystallised at attribution with a fresh rate; realised profit
-or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven movements or their dates.
-Venue and entry references are free-form evidence the chain never interprets, at most 2,048 bytes
-(`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value.
+A `Position` holds attested quantity, the time it was last attested, and venue reference beside proven deployed/returned
+amounts, impairment, and opening/closing heights. Every mutation appends an `AccountingEntry`; corrections append a
+restatement rather than editing history. Outflow is a Bank fact. Holdings are attestations. An inbound transfer is a
+Bank fact, but assigning it to a position is an accounting act. Return value is crystallised at attribution with a fresh
+rate; realised profit or loss is returned minus deployed at closure. Governance corrections cannot rewrite proven
+movements or their dates. Venue and entry references are free-form evidence the chain never interprets, at most 2,048
+bytes (`chain.MaxReferenceBytes`); a venue reference is always required, an entry reference when the entry moves value
+or attests a holding.
 
 Closing a loss-making position is permitted: the loss was already visible, and closure removes credit. A rule blocking
 loss closure would encourage stale credit. Close-and-reopen is not a correction mechanism: a NOAH reopening consumes
 allowance again, and an in-kind reopening is booked at the live Oracle value. No deployment veto window exists;
-governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/design/ECONOMIC_DESIGN.md#73-recognition)
-and [action bounds](../../docs/design/ECONOMIC_DESIGN.md#75-bounds-on-committee-acts) own the shared financial contract.
+governance pre-approves payees and prices its veto budget through the term allowance. The [economic custody model](../../docs/economics/ECONOMIC_DESIGN.md#43-recognition)
+and [action bounds](../../docs/economics/ECONOMIC_DESIGN.md#45-bounds-on-committee-acts) own the shared financial contract.
+
+Burn authority splits by what a burn can destroy. Governance's `MsgBurnReserveAssets` may burn any custody, NOAH
+included, keeping the NOAH above a minimum the proposal states: a NOAH burn of chosen size is the protocol's one
+discretionary supply contraction. The committee burns registry paper that carries no credit with
+`MsgCommitteeBurnPaper`, which retires liability and cannot lower recognised capital, and NOAH surplus with
+`MsgCommitteeBurnSurplus`, within the action bound. Burns open no position and append no journal entry; the signed
+message and Bank's burn event are the record.
+
+An attestation expires. `attested_time` is set when the committee states the whole holding: at opening, at a quantity
+restatement, and at a return attribution, which states the remainder. Funding an existing position states only the
+increment and corrections fix history, so neither moves it. Each entry's `max_attestation_age`, positive and at most
+`MaxAttestationAge` (a year), bounds how old that statement may be and still earn credit; past it the position's
+quantity reports as `stale_quantity` and counts for nothing until the committee restates it, which may repeat the same
+quantity. A time ahead of the block, which only an edited genesis could carry, also earns nothing. The window forces the
+diligence a quiet custodian failure would otherwise escape; it is no defence against a committee willing to re-attest
+falsely, which the journal and its references exist to expose. Governance has no restatement message, and its correction
+fixes a record without stating custody, so credit that lapses while no committee is seated stays lapsed until one is
+appointed and restates each position.
 
 An inflated quantity can inflate recognised credit, but cannot itself transfer or mint coins. Credit is bounded by
-haircuts, caps, and fresh rates; outflows remain allowance-, floor-, and destination-bounded. The permanent journal
-makes the discrepancy inspectable and correctable. Committee attestation is the evidence model for off-chain custody;
-typed deployment adapters cannot prove a custodian's wire-transfer holdings.
+haircuts, caps, fresh rates, and fresh attestations; outflows remain allowance-, floor-, and destination-bounded. The
+permanent journal makes the discrepancy inspectable and correctable. Committee attestation is the evidence model for
+off-chain custody; typed deployment adapters cannot prove a custodian's wire-transfer holdings.
 
 ## Recognition algorithm
 
 `RecognisedCapital` is a local read, not a stored valuation. It folds open, unimpaired positions under governance's
-eligibility policy, valuing quantity through Oracle and applying haircut and share caps. The [economic recognition
-formula](../../docs/design/ECONOMIC_DESIGN.md#73-recognition) defines the financial meaning of those caps.
+eligibility policy, valuing quantity through Oracle and applying haircut and cap. The [economic recognition
+formula](../../docs/economics/ECONOMIC_DESIGN.md#43-recognition) defines the financial meaning of those caps.
 
-The self-referential cap has a unique fixed point because the sum of policy ratios is strictly below one.
-Sort each asset's raw-credit-to-cap-ratio threshold; the clipped assets form a suffix. For each candidate suffix,
-solve total capital from the NOAH balance plus unclipped credit divided by one minus the clipped ratios. Comparisons
-use checked cross-multiplied decimals, postponing division and flooring credits conservatively. The total is bounded by the
-NOAH balance divided by one minus all ratios; attested quantities cannot enlarge that bound. No NOAH means no asset
-credit. A missing or stale feed gives zero credit and tightens neighbouring share ceilings, never a fallback valuation.
+Each asset's credit is the smaller of its haircut value and its `max_credit_per_noah` × the NOAH balance, floored to
+whole anoah. Caps read only the balance, so credits are independent: a misreported quantity or a wrong rate changes its
+own row and no other. The policy's values sum to at most one, so recognised capital is at most twice the NOAH balance
+whatever is attested, and no NOAH means no asset credit. A missing or stale feed gives zero credit, never a fallback
+valuation.
+
+Caps read the balance rather than recognised capital on purpose. A cap measured against a total that includes the
+credits it caps lets one asset's credit raise every other asset's ceiling: with 100 NOAH and gold capped at a half,
+honest recognition is 200, and one fictitious entry capped at 0.4 takes it to 1,000. A flat amount decays into a binding
+or vacuous bound as the balance sheet moves, and a share of the requirement lets a corrupted attestation against an
+empty fund manufacture credit up to a share of a large target. Basel III's liquidity coverage ratio anchors its Level 2
+limits to Level 1 the same way.
 
 Treasury reads one capital number to size expansion gaps. Reserve reads Treasury's capital requirements through a
 reader installed after construction only where an action needs a bound. It does not acquire a second liability
@@ -80,32 +107,39 @@ no recognition credit. A cross-module registration guard would reintroduce tempo
 strings already guarantee.
 
 The feed always derives from the prefix: `abtc-cb` and `abtc-osl` use the same series with distinct custody policy.
-There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates.
-A different price series needs a different prefix. Governance sizes the combined cap ratios of entries sharing a series.
+There is no alias or derive-if-present fallback that could silently re-point a position when a feed activates. A
+different price series needs a different prefix. Governance sizes the combined maximum credit per NOAH of entries
+sharing a series. Listing requires the derived feed Active, not merely scheduled, as registration does: an entry's
+haircut and window judge how a series behaves, and a series scheduled for removal has already passed its guard.
 
 Each entry supplies its own positive `max_rate_age` in seconds, bounded by `MaxRecognitionRateAge`; Oracle evaluates
 that request through `GetRateSetWithin` and keys the answer by the requested symbol. Cadence is a feed property;
 acceptable age is consumer risk policy. Oracle carries no per-denomination age override, because one series can serve
 conversion and reserve recognition with different tolerances. Each `RecognisedCapital` row reports its entry's
-window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses.
+window; added to the feed's `block_time` from Oracle's `Query/StoredRates`, it gives the time the credit lapses. The
+row reports `max_attestation_age` the same way; added to each position's `attested_time`, it gives when that
+position's credit lapses.
 
 Feed guards derive two kinds of claims at read time: every eligibility entry, and every open position the feed prices,
-external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear when the corresponding policy or position stops needing the feed; no mirrored index exists.
-Bank custody admits NOAH and registered protocol paper, never external-shaped tokens: external holdings remain at
-attested destinations, and no native mint path produces those symbols.
+external custody and Ark paper alike. Open positions claim a feed even without an eligibility entry. Claims disappear
+when the corresponding policy or position stops needing the feed; no mirrored index exists. Bank custody admits NOAH and
+registered protocol paper, never external-shaped tokens: external holdings remain at attested destinations, and no
+native mint path produces those symbols. Paper is admitted from any sender because the Reserve is the one account whose
+committee can retire it; refusing it would only push it where the chain cannot see it. Anyone may push member dust in,
+which the committee can burn.
 
 ## Queries, events, and genesis
 
 The [query schema](../../proto/ark/reserve/v1/query.proto) exposes mandate, balances, positions, ledger, recognition
-policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound,
-solved as the burn handler solves it. Bank transfer/burn events record custody movements;
-`EventLedgerEntryRecorded` records accounting mutations. There is no redundant transfer-history query.
-Genesis preserves open and closed positions and their unpruned history, reconciles the stated position figures and
-term usage against the ledger, refusing a mismatch, and rebuilds the per-position and reversal indexes. IDs,
-correction references, position references, and closure rules must agree. Positions and entries are permanent: IDs
-run from one without a gap and each sequence sits one past its records, so an export
-that lost a record cannot import. Oracle imports first so recognition entries can validate their feeds. Non-NOAH Bank
-balances must be registry members.
+policy, and capital decomposition with the inputs that explain each row, and the committee's surplus burn bound, sized
+as the burn handler sizes it. Bank transfer/burn events record custody movements; `EventLedgerEntryRecorded` records
+accounting mutations. There is no redundant transfer-history query. Genesis preserves open and closed positions and
+their unpruned history, reconciles the proven position figures and term usage against the ledger, refusing a mismatch,
+and rebuilds the per-position and reversal indexes. IDs, correction references, position references, and closure rules
+must agree. Attested quantity and `attested_time` import as stated, since the journal records heights rather than times
+and attestations are not proven figures. Positions and entries are permanent: IDs run from one without a gap and each
+sequence sits one past its records, so an export that lost a record cannot import. Oracle imports first so recognition
+entries can validate their feeds. Non-NOAH Bank balances must be registry members.
 
 ## Development
 
@@ -138,18 +172,15 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 
 ## Related documents
 
-- [Reserve custody and recognition policy](../../docs/design/ECONOMIC_DESIGN.md).
-- [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
+- [Reserve custody and recognition policy](../../docs/economics/ECONOMIC_DESIGN.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#5-reserve).
 - [Application wiring](../../app/README.md).
 
 ## Recognition arithmetic and action bounds
 
-The solver uses checked `LegacyDec` arithmetic. For a candidate split, the total is
-`(base + sum(unclipped raw)) / (1 - sum(clipped ratios))`; candidate comparisons cross-multiply decimal values.
-The scan advances while the first clipped stake fits its share. Already certified unclipped stakes are not rechecked:
-sub-quantum rounding ties could otherwise skip the correct split and admit the all-unclipped result beyond the base
-bound. The terminal split always stops the scan. Rational-reference fuzz tests include decimal rounding and final
-whole-unit truncation in their tolerance.
+Each ceiling is one checked multiplication of a ratio by the whole NOAH balance, exact in `LegacyDec`, and both ceiling
+and credit truncate to whole anoah. The fuzz test matches every credit to the exact rational floor and checks that
+removing any asset leaves every other credit unchanged.
 
 `MaxAttestedQuantity` limits each position to 2^128 base units. NOAH valuation multiplies by the Oracle rate, bounded
 by `MaxExchangeRate`; it does not divide by a tiny rate. Per-denomination sums and products retain checked arithmetic

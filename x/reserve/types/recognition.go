@@ -3,8 +3,6 @@ package types
 import (
 	"errors"
 	"fmt"
-	"math/big"
-	"sort"
 
 	"cosmossdk.io/math"
 
@@ -19,6 +17,10 @@ import (
 // publication gaps. Recognition executes during block settlement, so valid inputs must keep its
 // arithmetic bounded.
 const MaxRecognitionRateAge = uint64(30 * 86_400)
+
+// MaxAttestationAge caps per-entry attestation windows, in seconds, at a year: a holding not
+// re-attested within an annual audit cycle earns nothing.
+const MaxAttestationAge = uint64(365 * 86_400)
 
 // Validate validates one eligibility entry.
 func (entry EligibilityEntry) Validate() error {
@@ -36,10 +38,10 @@ func (entry EligibilityEntry) Validate() error {
 		entry.HaircutFactor.GT(math.LegacyOneDec()) {
 		return errors.New("eligibility haircut factor must be greater than zero and at most one")
 	}
-	if entry.RecognitionCapRatio.IsNil() ||
-		!entry.RecognitionCapRatio.IsPositive() ||
-		entry.RecognitionCapRatio.GT(math.LegacyOneDec()) {
-		return errors.New("eligibility recognition cap ratio must be greater than zero and at most one")
+	if entry.MaxCreditPerNoah.IsNil() ||
+		!entry.MaxCreditPerNoah.IsPositive() ||
+		entry.MaxCreditPerNoah.GT(math.LegacyOneDec()) {
+		return errors.New("eligibility max credit per NOAH must be greater than zero and at most one")
 	}
 	// Required rather than defaulted: an entry states its own tolerance rather
 	// than inheriting the Oracle's conversion-grade default.
@@ -50,6 +52,13 @@ func (entry EligibilityEntry) Validate() error {
 			entry.MaxRateAge,
 		)
 	}
+	if entry.MaxAttestationAge == 0 || entry.MaxAttestationAge > MaxAttestationAge {
+		return fmt.Errorf(
+			"eligibility max attestation age must be greater than zero and at most %ds, is %ds",
+			MaxAttestationAge,
+			entry.MaxAttestationAge,
+		)
+	}
 	return nil
 }
 
@@ -57,13 +66,13 @@ func (entry EligibilityEntry) Validate() error {
 // positive haircut and cap; a stale feed does not grant the committee permission to burn credited
 // custody.
 func (entry EligibilityEntry) GrantsCredit() bool {
-	return entry.HaircutFactor.IsPositive() && entry.RecognitionCapRatio.IsPositive()
+	return entry.HaircutFactor.IsPositive() && entry.MaxCreditPerNoah.IsPositive()
 }
 
 // ValidateRecognitionPolicy validates a complete eligibility set: every entry
-// valid, one entry per asset, cap ratios summing strictly below one. The
-// entry count is deliberately unbounded — a cap would only ever bind on
-// governance, the sole writer, and would size nothing.
+// valid, one entry per asset, max credit per NOAH summing to at most one. The entry
+// count is deliberately unbounded — a cap would only ever bind on governance,
+// the sole writer, and would size nothing.
 func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
 	seen := make(map[string]struct{}, len(entries))
 	ratioSum := math.LegacyZeroDec()
@@ -75,23 +84,17 @@ func ValidateRecognitionPolicy(entries []EligibilityEntry) error {
 			return fmt.Errorf("duplicate eligibility entry for %s", entry.Denom)
 		}
 		seen[entry.Denom] = struct{}{}
-		ratioSum = ratioSum.Add(entry.RecognitionCapRatio)
+		ratioSum = ratioSum.Add(entry.MaxCreditPerNoah)
 	}
-	// The sum rule is existence, not taste: the total solves
-	// T = base + Σ min(raw, ratio × T), so were every capped asset to breach
-	// at once, T = base ÷ (1 − Σratios), and at a sum of one the caps admit
-	// everything.
-	if ratioSum.GTE(math.LegacyOneDec()) {
-		return fmt.Errorf(
-			"recognition cap ratios must sum strictly below one, got %s: "+
-				"at one the shrinking-denominator solve is unbounded and the caps admit everything",
-			ratioSum,
-		)
+	// External custody may add at most the NOAH balance itself, so recognised
+	// capital stays within twice the NOAH the Reserve holds.
+	if ratioSum.GT(math.LegacyOneDec()) {
+		return fmt.Errorf("max credit per NOAH across the policy must sum to at most one, got %s", ratioSum)
 	}
 	return nil
 }
 
-// RawCredit haircuts gross base units, then values them in NOAH before cap solving. Whole-unit
+// RawCredit haircuts gross base units, then values them in NOAH before the cap applies. Whole-unit
 // quantity bounds and MaxExchangeRate keep the checked product representable. Missing rates fail;
 // zero rates credit nothing.
 func (entry EligibilityEntry) RawCredit(rates oracletypes.RateSet, gross math.Int) (math.LegacyDec, error) {
@@ -110,156 +113,61 @@ func (entry EligibilityEntry) RawCredit(rates oracletypes.RateSet, gross math.In
 	return credit.Amount, nil
 }
 
-// RecognitionStake is one asset's input to SolveRecognition: its cap ratio
-// and its un-clipped credit.
+// RecognitionStake is one asset's input to RecognitionCredits: its max credit
+// per NOAH and its uncapped credit.
 type RecognitionStake struct {
 	Ratio math.LegacyDec
 	Raw   math.LegacyDec
 }
 
-// RecognitionResult is one asset's share of the solved certificate: the anoah
-// ceiling its ratio resolved to, and the credit after clipping against it.
+// RecognitionResult is one asset's capped credit: the anoah ceiling its ratio
+// of the NOAH balance allows, and the credit after clipping against it.
 type RecognitionResult struct {
-	Ceiling math.Int
-	Credit  math.Int
+	Cap    math.Int
+	Credit math.Int
 }
 
-// SolveRecognition solves T = base + sum(min(raw, ratio*T)) and returns credits in input order.
-// Checked decimal arithmetic and conservative flooring enforce the shared caps. See
-// x/reserve/README.md for the split algorithm and rounding invariant.
-func SolveRecognition(base math.Int, stakes []RecognitionStake) ([]RecognitionResult, error) {
+// RecognitionCredits caps each stake at its ratio of the Reserve's NOAH balance and returns the
+// credits in input order. Caps read only the balance, so no stake's credit moves another's.
+func RecognitionCredits(base math.Int, stakes []RecognitionStake) ([]RecognitionResult, error) {
 	results := make([]RecognitionResult, len(stakes))
 	for i := range results {
-		results[i] = RecognitionResult{Ceiling: math.ZeroInt(), Credit: math.ZeroInt()}
+		results[i] = RecognitionResult{Cap: math.ZeroInt(), Credit: math.ZeroInt()}
 	}
-	baseValue := math.LegacyZeroDec()
-	if !base.IsNil() && base.IsPositive() {
-		baseValue = math.LegacyNewDecFromInt(base)
-	}
-
-	// Only a positive ratio holds a share of the certificate, and only a
-	// positive raw credit occupies any of it.
-	solve := make([]int, 0, len(stakes))
-	allRatios := math.LegacyZeroDec()
-	for i, stake := range stakes {
-		if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() {
-			continue
-		}
-		var err error
-		if allRatios, err = decimal.Add(allRatios, stake.Ratio); err != nil {
-			return nil, fmt.Errorf("summing recognition cap ratios: %w", err)
-		}
-		if !stake.Raw.IsNil() && stake.Raw.IsPositive() {
-			solve = append(solve, i)
-		}
-	}
-	// Unreachable under a validated policy, whose ratios sum strictly below
-	// one; answered conservatively rather than trusted, because past one the
-	// fixed point stops existing and zero credit is the only bounded answer.
-	if allRatios.GTE(math.LegacyOneDec()) {
+	if base.IsNil() || !base.IsPositive() {
 		return results, nil
 	}
 
-	// Ascending clip thresholds raw ÷ ratio, compared cross-multiplied on the
-	// exact scaled integers: no stake divides, so a tiny ratio under a huge
-	// credit cannot push a quotient out of the decimal range, and the order
-	// is a total one. The index tiebreak keeps equal thresholds deterministic.
-	sort.Slice(solve, func(a, b int) bool {
-		left, right := stakes[solve[a]], stakes[solve[b]]
-		lhs := new(big.Int).Mul(left.Raw.BigInt(), right.Ratio.BigInt())
-		rhs := new(big.Int).Mul(right.Raw.BigInt(), left.Ratio.BigInt())
-		if cmp := lhs.Cmp(rhs); cmp != 0 {
-			return cmp < 0
+	ratios := math.LegacyZeroDec()
+	for _, stake := range stakes {
+		if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() {
+			continue
 		}
-		return solve[a] < solve[b]
-	})
-
-	// Prefix sums of raw credit and suffix sums of ratio: candidate split k
-	// keeps the first k assets unclipped and clips the rest.
-	unclipped := make([]math.LegacyDec, len(solve)+1)
-	unclipped[0] = math.LegacyZeroDec()
-	for k, index := range solve {
-		sum, err := decimal.Add(unclipped[k], stakes[index].Raw)
-		if err != nil {
-			return nil, fmt.Errorf("summing unclipped recognition credit: %w", err)
-		}
-		unclipped[k+1] = sum
-	}
-	clippedRatio := make([]math.LegacyDec, len(solve)+1)
-	clippedRatio[len(solve)] = math.LegacyZeroDec()
-	for k := len(solve) - 1; k >= 0; k-- {
-		sum, err := decimal.Add(clippedRatio[k+1], stakes[solve[k]].Ratio)
-		if err != nil {
-			return nil, fmt.Errorf("summing clipped recognition cap ratios: %w", err)
-		}
-		clippedRatio[k] = sum
-	}
-
-	// breaches reports whether a stake's raw credit exceeds its share of the
-	// total a candidate split implies, compared cross-multiplied so neither
-	// side divides.
-	breaches := func(index int, denominator, numerator math.LegacyDec) (bool, error) {
-		held, err := decimal.Mul(stakes[index].Raw, denominator)
-		if err != nil {
-			return false, fmt.Errorf("sizing stake %d against the split: %w", index, err)
-		}
-		permitted, err := decimal.Mul(stakes[index].Ratio, numerator)
-		if err != nil {
-			return false, fmt.Errorf("sizing stake %d's share of the split: %w", index, err)
-		}
-		return held.GT(permitted), nil
-	}
-
-	// Advance only while the first clipped stake fits. Do not recheck certified unclipped stakes:
-	// sub-quantum ties can bypass the correct split and violate the base bound. The final split
-	// terminates unconditionally.
-	denominator, numerator := math.LegacyOneDec(), baseValue
-	for k := 0; k <= len(solve); k++ {
 		var err error
-		if denominator, err = decimal.Sub(math.LegacyOneDec(), clippedRatio[k]); err != nil {
-			return nil, fmt.Errorf("sizing the recognition denominator: %w", err)
+		if ratios, err = decimal.Add(ratios, stake.Ratio); err != nil {
+			return nil, fmt.Errorf("summing max credit per NOAH: %w", err)
 		}
-		if numerator, err = decimal.Add(baseValue, unclipped[k]); err != nil {
-			return nil, fmt.Errorf("sizing the recognition numerator: %w", err)
-		}
-		if k < len(solve) {
-			over, err := breaches(solve[k], denominator, numerator)
-			if err != nil {
-				return nil, err
-			}
-			if !over {
-				continue
-			}
-		}
-		break
+	}
+	// Unreachable: the policy write and genesis import hold the sum at or below one. Kept so a
+	// corrupt policy answers zero credit rather than more than twice the balance.
+	if ratios.GT(math.LegacyOneDec()) {
+		return results, nil
 	}
 
-	// The denominator is positive: the clipped ratios are at most the full
-	// ratio sum, already held strictly below one above.
-	total, err := decimal.Quo(numerator, denominator)
-	if err != nil {
-		return nil, fmt.Errorf("solving recognised capital: %w", err)
-	}
-
-	// Ceilings and credits derive uniformly from the one solved T, and both
-	// truncate to whole anoah on the way out.
+	balance := math.LegacyNewDecFromInt(base)
 	for i, stake := range stakes {
 		if stake.Ratio.IsNil() || !stake.Ratio.IsPositive() {
 			continue
 		}
-		ceiling, err := decimal.Mul(stake.Ratio, total)
+		ceiling, err := decimal.Mul(stake.Ratio, balance)
 		if err != nil {
 			return nil, fmt.Errorf("sizing the recognition ceiling for stake %d: %w", i, err)
 		}
-		results[i].Ceiling = ceiling.TruncateInt()
+		results[i].Cap = ceiling.TruncateInt()
 		if stake.Raw.IsNil() || !stake.Raw.IsPositive() {
 			continue
 		}
-		if stake.Raw.LT(ceiling) {
-			results[i].Credit = stake.Raw.TruncateInt()
-		} else {
-			results[i].Credit = results[i].Ceiling
-		}
+		results[i].Credit = math.MinInt(stake.Raw.TruncateInt(), results[i].Cap)
 	}
 	return results, nil
 }

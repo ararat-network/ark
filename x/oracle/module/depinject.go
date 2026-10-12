@@ -38,6 +38,7 @@ type ModuleInputs struct {
 	BankKeeper         types.BankKeeper
 	DistributionKeeper types.DistributionKeeper
 	StakingKeeper      types.StakingKeeper
+	SlashingKeeper     types.SlashingKeeper
 }
 
 type ModuleOutputs struct {
@@ -62,6 +63,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.DistributionKeeper,
 		in.StakingKeeper,
+		in.SlashingKeeper,
 	)
 
 	m := NewAppModule(k)

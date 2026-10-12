@@ -35,7 +35,7 @@ rather than making Asset write Market state. A new denomination cannot inherit a
 Ordinary conversion accepts `ACTIVE` or `ISSUANCE_HALTED` offers and only `ACTIVE` asks. Status gates precede rate
 reads. Settlement redemption is a separate holder-signed `MsgSettle`:
 `SUSPENDED`, an activated plan, asset-to-NOAH only. It uses the plan's committed rate, never the virtual pool or an
-ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/design/ECONOMIC_DESIGN.md#6-conversion-flows).
+ordinary reverse-issuance path. Economic flows and rounding are specified in [economic design](../../docs/economics/ECONOMIC_DESIGN.md#3-conversion).
 
 ## Conversion mandate
 
@@ -51,10 +51,11 @@ a raise-only ratchet was rejected because a committee could not undo its own ove
 power; governance retains below-default overrides and removal. Policy stays with the module owning the pool, without
 a Treasury-to-Market write dependency.
 
-Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the
-unit. The mandate corridor is not rebased silently: its old denomination closes committee policy updates until
-reappointment; the dimensionless Tobin cap survives. The [committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#reference-change-and-conversion-mandate)
-owns the ordered reappointment procedure.
+Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the unit.
+The mandate corridor is not rebased silently: its old denomination closes committee policy updates until reappointment;
+the dimensionless Tobin cap survives. [Governance
+runbook](../../docs/governance/GOVERNANCE_RUNBOOK.md#3-committees) owns the ordered reappointment
+procedure.
 
 ## Block settlement and failure boundaries
 
@@ -112,7 +113,7 @@ Keep exact fields and method inventories in those schemas; the sections above ex
 
 ## Related documents
 
-- [Conversion and settlement policy](../../docs/design/ECONOMIC_DESIGN.md).
+- [Conversion and settlement policy](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Asset eligibility](../asset/README.md).
 - [Application wiring](../../app/README.md).
 
@@ -130,8 +131,8 @@ From a rested pool a swap of `x` pool units pays `x / (depth + x)`, which meets 
 depth. Each block returns one part in the recovery period of the imbalance, so steady one-way flow holds the
 imbalance at one period's flow. The marginal spread is about twice the imbalance over the depth, so flow stays at the
 floor while one period's worth is within half the floor times the depth. The
-[committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) sizes depth from these two
-figures (D104).
+[committee runbook](../../docs/governance/COMMITTEE_RUNBOOK.md#sizing-depth) sizes depth from these two
+figures.
 
 A stranded corridor becomes usable again if the reference returns to its denomination while the original term and
 window remain valid. Genesis therefore accepts mismatched units. The Tobin band applies to the shared override map,

@@ -11,7 +11,7 @@ import (
 )
 
 // TestBootstrapPricesNoahAtOneXDR pins the sidecar's USD/NOAH leg to one NOAH a XDR at the cross: the
-// leg times the cross, rounded up as Treasury rounds its factor, is exactly one (D128).
+// leg times the cross, rounded up as Treasury rounds its factor, is exactly one.
 func TestBootstrapPricesNoahAtOneXDR(t *testing.T) {
 	require.Equal(t, "0.729394602479941648", chain.BootstrapNoahPerUSD)
 	perUSD := math.LegacyMustNewDecFromStr(chain.BootstrapNoahPerUSD)

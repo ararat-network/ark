@@ -221,13 +221,15 @@ func (entry AccountingEntry) Validate() error {
 		)
 	}
 
-	// The kinds that assert or retract a coin movement must name their
-	// evidence; the judgment kinds stay exempt. A reversal is included: it
-	// contradicts a movement the ledger records, as the attribution asserted it.
-	carriesMovement := entry.Kind == EntryKind_ENTRY_KIND_DEPLOYMENT ||
+	// The kinds that assert or retract a coin movement, or attest a holding,
+	// must name their evidence; the judgment kinds stay exempt. A reversal is
+	// included: it contradicts a movement the ledger records, as the attribution
+	// asserted it.
+	needsEvidence := entry.Kind == EntryKind_ENTRY_KIND_DEPLOYMENT ||
+		entry.Kind == EntryKind_ENTRY_KIND_QUANTITY_UPDATE ||
 		entry.Kind == EntryKind_ENTRY_KIND_RETURN_ATTRIBUTION ||
 		entry.Kind == EntryKind_ENTRY_KIND_RETURN_REVERSAL
-	if err := chain.ValidateReference("entry reference", entry.Reference, carriesMovement); err != nil {
+	if err := chain.ValidateReference("entry reference", entry.Reference, needsEvidence); err != nil {
 		return err
 	}
 	if _, err := chain.ParseCanonicalAccountAddress("entry recorded by", entry.RecordedBy); err != nil {

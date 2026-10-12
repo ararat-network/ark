@@ -406,7 +406,7 @@ func (m msgServer) CommitteeCompensate(ctx context.Context, msg *types.MsgCommit
 	if err != nil {
 		return nil, err
 	}
-	// The committee awards compensation only; ownership is governance's alone (D113).
+	// The committee awards compensation only; ownership is governance's alone.
 	beneficiary, g, err := m.compensation(ctx, msg.Beneficiary, msg.Amount, msg.StartTime, msg.Periods, msg.Reference)
 	if err != nil {
 		return nil, err

@@ -219,8 +219,8 @@ and base gas pricing. NOAH remains the valuation unit for funds and obligations.
 Governance can replace the reference through a coordinated re-expression of the values that use it. The pool's imbalance
 changes units with its depth, preserving its economic meaning. A reference change requires a freshly priced successor
 and, if the outgoing feed is unusable, an explicit outgoing rate supplied by governance. There is no automatic change of
-unit in response to a price outage. A future basket reference is a development direction; the launch mechanism uses the
-voted XDR feed. [Ark: Oracle][ark-oracle]
+unit in response to a price outage. A basket reference, the planned Orbis currency, is a development direction; the
+launch mechanism uses the voted XDR feed. [Ark: Oracle][ark-oracle]
 
 ## 4 Price discovery
 
@@ -484,21 +484,23 @@ Reserve can recognise NOAH plus a constrained contribution from eligible externa
 and recorded in a permanent position journal; sending NOAH to an approved destination is an on-chain fact, while what
 the recipient holds afterwards requires separate evidence.
 
-Governance defines eligible holdings, valuation haircuts, acceptable price age, and maximum contribution shares. The
-credit given to an external holding is the smaller of its haircut-adjusted value and its allowed share of total
-recognised Reserve capital. The combined share limits must sum to less than one. As a result, external attestations can
-only extend a provable NOAH base by a bounded amount. An empty NOAH base cannot support a positive recognised total
-solely through self-referential attestations.
+Governance defines eligible holdings, valuation haircuts, acceptable price age, and maximum contributions. The credit
+given to an external holding is the smaller of its haircut-adjusted value and an allowed fraction of the Reserve's NOAH
+balance. The allowed fractions must sum to at most one. Because each limit is measured against NOAH the chain can
+verify, rather than against a total that includes other attested credits, one misreported holding cannot raise another's
+limit. External attestations can therefore at most double a provable NOAH base, and an empty NOAH base supports no
+external credit at all.
 
-For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of recognised capital can
-recognise no more than 125 NOAH in total, even if an attestation claims a much larger external holding. The external
-credit is at most 25. A haircut or a smaller attested position may reduce it further.
+For example, a Reserve holding 100 NOAH with one eligible position capped at twenty per cent of its NOAH can recognise
+no more than 120 NOAH in total, even if an attestation claims a much larger external holding. The external credit is at
+most 20. A haircut or a smaller attested position may reduce it further.
 
-An impaired or ineligible position receives no credit, and a stale external price supplies no fallback credit. This
-treatment differs from stale liabilities because the prudential direction differs: uncertain assets must not inflate
-available resources, while an uncertain obligation must not silently disappear. Recognition is recomputed from current
-evidence and policy. It remains an accounting allowance, not a guarantee that an external custodian can return funds
-immediately or that an asset can be sold at its reported value. [Ark: Reserve][ark-reserve]
+An impaired or ineligible position receives no credit, a stale external price supplies no fallback credit, and a holding
+the committee has not re-attested within its policy's window counts for nothing until it is restated. This treatment
+differs from stale liabilities because the prudential direction differs: uncertain assets must not inflate available
+resources, while an uncertain obligation must not silently disappear. Recognition is recomputed from current evidence
+and policy. It remains an accounting allowance, not a guarantee that an external custodian can return funds immediately
+or that an asset can be sold at its reported value. [Ark: Reserve][ark-reserve]
 
 ### 6.5 Committing resources and accepting losses
 
@@ -890,8 +892,8 @@ requires scenarios that combine falling NOAH prices, asymmetric conversion, prov
 reserve impairment, with explicit assumptions about external liquidity and participant behaviour.
 
 This paper supplies accounting relationships and conditional properties, not an empirical claim that Ark has survived
-those conditions in a live market. A derived basket currency and other deferred changes remain future work until
-implemented and deliberately adopted. Subsequent versions of the paper should distinguish evidence obtained from
+those conditions in a live market. Orbis, the derived basket currency, and other deferred changes remain future work
+until implemented and deliberately adopted. Subsequent versions of the paper should distinguish evidence obtained from
 operation from assumptions retained from design.
 
 ## 11 Conclusion
@@ -990,18 +992,20 @@ contract][ark-treasury]
 
 ### A.5 External Reserve recognition
 
-Let `B_R` be Reserve NOAH, `u_j` an attested eligible quantity, `d_j` its haircut factor, and `k_j` its share cap. Rates
-must satisfy the holding's freshness policy; ineligible or unusable evidence earns zero credit.
+Let `B_R` be Reserve NOAH, `u_j` an eligible quantity attested within its window, `d_j` its haircut factor, and `k_j`
+its maximum credit per NOAH. Rates must satisfy the holding's freshness policy; ineligible or unusable evidence earns
+zero credit.
 
 ```text
-credit_j = min(d_j × u_j × r_j, k_j × C_R)
+credit_j = min(d_j × u_j × r_j, k_j × B_R)
 C_R = B_R + Σ_j credit_j
 
-Σ_j k_j < 1
-C_R ≤ B_R / (1 − Σ_j k_j)
+Σ_j k_j ≤ 1
+C_R ≤ B_R × (1 + Σ_j k_j) ≤ 2 × B_R
 ```
 
-The cap restricts recognised credit even if reported quantities are arbitrarily large within their allowed domain. It
+The cap restricts recognised credit even if reported quantities are arbitrarily large within their allowed domain, and
+each credit depends only on its own holding and `B_R`, so one misreported holding cannot raise another's. It
 cannot prove custody or ensure liquidation proceeds. Ark-issued currency contributes no such credit.
 
 ### A.6 Reward funding
@@ -1087,7 +1091,8 @@ return to the community pool.
 | Exposure weights | All zero; initial multiplier one | Decided |
 | Exposure refresh | 600 blocks, approximately one hour | Default |
 | Exposure multiplier cap and maximum step | 2 and 0.1 per update | Decided |
-| Volatility and flow decay | 0.99995 and 0.99885 per block | Default |
+| Volatility sample spacing | 300 seconds of block time, five minutes | Default |
+| Volatility and flow decay | 0.9975 per volatility sample and 0.99885 per block | Default |
 | External Reserve recognition | Empty policy; NOAH recognised at par | Decided |
 | Base gas-price floor | 0.02 XDR per 200,000 gas | Default |
 | Base-fee utilisation target and maximum adjustment | 50%; 2.5% per block | Default |
@@ -1211,7 +1216,7 @@ behaviour.
   https://www.riksbank.se/globalassets/media/konferenser/2023/session-1-liu_makarov_schoar-anatomy_of_a_run-_the_terra_luna_crash.pdf
 [anchor-rate]: https://forum.anchorprotocol.com/t/dynamic-anchor-earn-rate/3042
 [revival-plan]: https://classic-agora.terra.money/t/terra-ecosystem-revival-plan-2-passed-gov/18498/1
-[ark-economics]: ../design/ECONOMIC_DESIGN.md
+[ark-economics]: ../economics/ECONOMIC_DESIGN.md
 [ark-asset]: ../../x/asset/README.md
 [ark-market]: ../../x/market/README.md
 [ark-oracle]: ../../x/oracle/README.md
@@ -1223,7 +1228,7 @@ behaviour.
 [ark-claims]: ../../x/claims/README.md
 [ark-security]: ../../x/security/README.md
 [ark-mempool]: ../../app/mempool/README.md
-[ark-threat]: ../design/THREAT_MODEL.md
+[ark-threat]: ../security/THREAT_MODEL.md
 [ark-settlement]: ../../x/asset/keeper/settlement.go
 [ark-app]: ../../app/README.md
 [ark-genesis]: ../governance/GENESIS.md

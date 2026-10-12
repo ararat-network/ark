@@ -956,7 +956,7 @@ func (m *MsgCommitteeRegistrarResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgCommitteeRegistrarResponse proto.InternalMessageInfo
 
-// MsgRegisterMembers permanently registers members; nothing pays in the call (D126).
+// MsgRegisterMembers permanently registers members; nothing pays in the call.
 type MsgRegisterMembers struct {
 	Registrar string `protobuf:"bytes,1,opt,name=registrar,proto3" json:"registrar,omitempty"`
 	// expected_term is the registrar term the batch was prepared under.
@@ -1784,7 +1784,7 @@ type MsgClient interface {
 	// CommitteeReinstate resumes suspended members under the live committee term.
 	CommitteeReinstate(ctx context.Context, in *MsgCommitteeReinstate, opts ...grpc.CallOption) (*MsgCommitteeReinstateResponse, error)
 	// CommitteeCompensate awards compensation within the live term's allowance, converting NOAH for a
-	// stablecoin award. Ownership is governance's alone (D113).
+	// stablecoin award. Ownership is governance's alone.
 	CommitteeCompensate(ctx context.Context, in *MsgCommitteeCompensate, opts ...grpc.CallOption) (*MsgCommitteeCompensateResponse, error)
 	// SetPayee changes a destination under member or contributor controller authority.
 	SetPayee(ctx context.Context, in *MsgSetPayee, opts ...grpc.CallOption) (*MsgSetPayeeResponse, error)
@@ -1967,7 +1967,7 @@ type MsgServer interface {
 	// CommitteeReinstate resumes suspended members under the live committee term.
 	CommitteeReinstate(context.Context, *MsgCommitteeReinstate) (*MsgCommitteeReinstateResponse, error)
 	// CommitteeCompensate awards compensation within the live term's allowance, converting NOAH for a
-	// stablecoin award. Ownership is governance's alone (D113).
+	// stablecoin award. Ownership is governance's alone.
 	CommitteeCompensate(context.Context, *MsgCommitteeCompensate) (*MsgCommitteeCompensateResponse, error)
 	// SetPayee changes a destination under member or contributor controller authority.
 	SetPayee(context.Context, *MsgSetPayee) (*MsgSetPayeeResponse, error)

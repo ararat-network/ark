@@ -235,7 +235,7 @@ func (s *KeeperTestSuite) newKeeper() (*keeper.Keeper, context.Context) {
 	return k, ctx
 }
 
-// hold is every first period in testParams: the two-week floor nothing pays before (D126).
+// hold is every first period in testParams: the two-week floor nothing pays before.
 const hold = types.MinFirstPeriod
 
 // testParams keeps every first period at the floor and shortens the rest, so a few seconds past the

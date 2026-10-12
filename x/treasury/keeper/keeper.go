@@ -97,7 +97,7 @@ func NewKeeper(
 		panic(fmt.Sprintf("%s module account has not been set", types.TransferTaxCollectorName))
 	}
 	// Not a Treasury account, but the liability fold reads its balances
-	// directly — the self-held netting is Treasury's own accounting (D66) — so
+	// directly — the self-held netting is Treasury's own accounting — so
 	// its registration is asserted where every other account this keeper reads
 	// is asserted.
 	if addr := accountKeeper.GetModuleAddress(reservetypes.StrategicReserveName); addr == nil {

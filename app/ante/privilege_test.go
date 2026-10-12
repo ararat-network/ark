@@ -474,7 +474,7 @@ func laneOf(ctx sdk.Context) int8 {
 
 // Each module's own mandate backs its vouch: the disbursement committee rides the lane under its
 // appointment, a stranger and a stale term are refused, and a registration batch is unprivileged
-// by design (D120).
+// by design.
 func TestCommitteeVouchDisbursement(t *testing.T) {
 	arkApp, ctx, _ := setupPrivilegeTest(t)
 	now := chain.BlockSeconds(ctx)

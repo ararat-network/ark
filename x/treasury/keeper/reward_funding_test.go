@@ -104,7 +104,7 @@ func (s *KeeperTestSuite) TestUpdateRewardFundingValuesFees() {
 	}
 }
 
-// TestUpdateRewardFundingSkipsParamsReadDuringActiveWindow pins D34: a window
+// TestUpdateRewardFundingSkipsParamsReadDuringActiveWindow pins the funding-window rule: a window
 // change applies only once the active countdown settles. The live window is
 // seeded far away from the configured one, so a countdown that re-read params
 // mid-window would jump to the configured value instead of ticking down.

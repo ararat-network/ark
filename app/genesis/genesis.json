@@ -378,6 +378,7 @@
       "params": {
         "attendance_window": "100800",
         "functioning_block_threshold": "0.500000000000000000",
+        "jail_duration": "604800",
         "max_exchange_rate_age": "60",
         "min_attendance_per_window": "0.050000000000000000",
         "participation_threshold": "0.200000000000000000",
@@ -554,7 +555,8 @@
         "reference_tax_cap": "100000000000000000000",
         "reward_funding_window": "100800",
         "transfer_tax_rate": "0.005000000000000000",
-        "volatility_decay": "0.999950000000000000"
+        "volatility_decay": "0.997500000000000000",
+        "volatility_sample_seconds": "300"
       },
       "reward_funding": {
         "blocks_remaining": "0",

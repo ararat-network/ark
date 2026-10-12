@@ -58,7 +58,7 @@ func (s *ExportSuite) TestExportAndRelaunch() {
 	memberAmount, err := s.Chain.QueryJSON(ctx, "params.member_amount", "disbursement", "params")
 	s.Require().NoError(err)
 	// Every grant waits out the two-week floor, longer than the suite runs, so a member's tenth is
-	// queued rather than paid on both sides of the export (D126).
+	// queued rather than paid on both sides of the export.
 	const hold = 14 * 24 * 3600
 	queued := func(grant gjson.Result) {
 		s.Require().Equal("0", grant.Get("paid").String(), "nothing pays inside the hold")

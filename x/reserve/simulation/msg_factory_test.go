@@ -263,10 +263,11 @@ func TestMsgSetRecognitionPolicyFactory(t *testing.T) {
 		standing := []string{"axau-lbma", "axag-lbma"}
 		for _, denom := range standing {
 			require.NoError(t, f.keeper.RecognitionPolicy.Set(f.ctx, denom, types.EligibilityEntry{
-				Denom:               denom,
-				HaircutFactor:       math.LegacyNewDecWithPrec(5, 1),
-				RecognitionCapRatio: math.LegacyNewDecWithPrec(1, 1),
-				MaxRateAge:          types.MaxRecognitionRateAge,
+				Denom:             denom,
+				HaircutFactor:     math.LegacyNewDecWithPrec(5, 1),
+				MaxCreditPerNoah:  math.LegacyNewDecWithPrec(1, 1),
+				MaxRateAge:        types.MaxRecognitionRateAge,
+				MaxAttestationAge: types.MaxAttestationAge,
 			}))
 		}
 

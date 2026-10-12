@@ -18,8 +18,9 @@ enum EntryKind {
   // ENTRY_KIND_DEPLOYMENT records a proven outflow opening or funding a
   // position.
   ENTRY_KIND_DEPLOYMENT = 1;
-  // ENTRY_KIND_QUANTITY_UPDATE records an attested holding change: settlement
-  // confirmation, yield received, or an off-chain conversion.
+  // ENTRY_KIND_QUANTITY_UPDATE records an attestation of the whole holding:
+  // settlement confirmation, yield received, an off-chain conversion, or the
+  // same quantity re-attested.
   ENTRY_KIND_QUANTITY_UPDATE = 2;
   // ENTRY_KIND_RETURN_ATTRIBUTION records a proven inflow matched to a
   // position.
@@ -83,12 +84,10 @@ message EligibilityEntry {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // recognition_cap_ratio is positive and bounds this asset's credit to ratio ×
-  // recognised capital itself, resolved per block by SolveRecognition's closed
-  // form. Clipping one asset shrinks the total and can tighten its neighbours,
-  // so ratios across the whole policy must sum strictly below one, which also
-  // keeps each ratio below one.
-  string recognition_cap_ratio = 3 [
+  // max_credit_per_noah in (0, 1] bounds this asset's credit to that many anoah
+  // per anoah the Reserve holds, so a misreported holding adds at most its own
+  // cap and moves no other asset's. The policy's values sum to at most one.
+  string max_credit_per_noah = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
@@ -98,6 +97,10 @@ message EligibilityEntry {
   // claim's credit. Required and positive, and bounded by MaxRecognitionRateAge: a claim states
   // its own tolerance rather than inheriting the Oracle default.
   uint64 max_rate_age = 4 [(amino.dont_omitempty) = true];
+  // max_attestation_age is how old, in seconds, a position's last attestation of its whole
+  // holding may be and still back this claim's credit. Required and positive, and bounded by
+  // MaxAttestationAge.
+  uint64 max_attestation_age = 5 [(amino.dont_omitempty) = true];
 }
 
 // Position is the current view of one deployment: quantity is what the
@@ -132,6 +135,9 @@ message Position {
   // closed_height is zero while the position is open, and the height it closed
   // at once it is.
   uint64 closed_height = 8 [(amino.dont_omitempty) = true];
+  // attested_time is the block time, in Unix seconds, the committee last stated
+  // the whole holding: at opening, restatement, or return attribution.
+  uint64 attested_time = 9 [(amino.dont_omitempty) = true];
 }
 
 // AccountingEntry is one append-only ledger record. Every position mutation
@@ -169,7 +175,8 @@ message AssetRecognition {
   // eligible reports whether the asset has a policy entry. An ineligible row
   // is custody without credit.
   bool eligible = 2 [(amino.dont_omitempty) = true];
-  // attested_quantity sums the open, unimpaired positions in this asset.
+  // attested_quantity sums the open, unimpaired positions in this asset attested
+  // within the entry's window; an ineligible row has no window and sums them all.
   string attested_quantity = 3 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
@@ -179,6 +186,14 @@ message AssetRecognition {
   // impaired_quantity sums the open, impaired positions: attested holdings
   // excluded from credit without being erased.
   string impaired_quantity = 4 [
+    (cosmos_proto.scalar) = "cosmos.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+  // stale_quantity sums the open, unimpaired positions whose last attestation
+  // is past the entry's window: held off credit until re-attested.
+  string stale_quantity = 11 [
     (cosmos_proto.scalar) = "cosmos.Int",
     (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable) = false,
@@ -199,15 +214,15 @@ message AssetRecognition {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  string recognition_cap_ratio = 7 [
+  string max_credit_per_noah = 7 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // effective_cap is recognition_cap_ratio resolved against this block's
-  // recognised capital: the anoah ceiling this asset's credit was clipped at.
-  cosmos.base.v1beta1.Coin effective_cap = 8 [
+  // cap is max_credit_per_noah × this block's Reserve NOAH balance: the anoah
+  // ceiling this asset's credit was clipped at.
+  cosmos.base.v1beta1.Coin cap = 8 [
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
@@ -220,4 +235,7 @@ message AssetRecognition {
   // max_rate_age is the entry's rate window in seconds; zero on an
   // ineligible row.
   uint64 max_rate_age = 10 [(amino.dont_omitempty) = true];
+  // max_attestation_age is the entry's attestation window in seconds; zero on
+  // an ineligible row.
+  uint64 max_attestation_age = 12 [(amino.dont_omitempty) = true];
 }

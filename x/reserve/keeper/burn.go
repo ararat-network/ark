@@ -62,7 +62,7 @@ func (k Keeper) BurnableSurplus(ctx context.Context) (math.Int, error) {
 	return burnableSurplus(k.balance(ctx), floor, required, stakes)
 }
 
-// CheckSurplusBurn admits one committee NOAH burn: within the bound, and certified by the solve at
+// CheckSurplusBurn admits one committee NOAH burn: within the bound, and certified by recognition at
 // the balance it leaves, so the requirement holds after the burn by construction rather than by
 // the search's monotonicity. It returns the bound for the caller's report.
 func (k Keeper) CheckSurplusBurn(ctx context.Context, amount math.Int) (math.Int, error) {
@@ -97,10 +97,10 @@ func (k Keeper) CheckSurplusBurn(ctx context.Context, amount math.Int) (math.Int
 	return surplus, nil
 }
 
-// burnableSurplus sizes the bound. Recognised capital levers the balance through every clipped
-// stake, T = (base + unclipped) / (1 - clipped ratios), so a burn lowers it by more than itself
-// and the pre-burn surplus overstates the power; the bound is searched on the post-burn solve
-// instead, whose verdict is monotone in the balance.
+// burnableSurplus sizes the bound. A clipped stake's credit is its ratio of the balance, so a unit
+// burned lowers recognised capital by 1 + Σ clipped ratios and the pre-burn surplus overstates the
+// power; the bound is searched on recognition at the post-burn balance instead, whose verdict is
+// monotone in the balance.
 func burnableSurplus(balance, floor, required math.Int, stakes []types.RecognitionStake) (math.Int, error) {
 	recognised, err := recognisedAt(balance, stakes)
 	if err != nil {

@@ -15,36 +15,36 @@ import (
 )
 
 // AssetRecognitions returns denomination-ordered rows over eligibility and attestations.
-// SolveRecognition jointly caps credits; unusable rates zero only their own rows.
+// RecognitionCredits caps each row against the NOAH balance; unusable rates zero only their own rows.
 func (k Keeper) AssetRecognitions(ctx context.Context) ([]types.AssetRecognition, error) {
 	assets, stakes, err := k.recognitionStakes(ctx)
 	if err != nil || assets == nil {
 		return nil, err
 	}
 
-	// The solve levers only the par-counted NOAH balance, the one
-	// bank-verifiable term.
-	solved, err := types.SolveRecognition(k.balance(ctx), stakes)
+	// Caps read only the par-counted NOAH balance, the one bank-verifiable
+	// term.
+	credits, err := types.RecognitionCredits(k.balance(ctx), stakes)
 	if err != nil {
-		return nil, fmt.Errorf("solving Reserve recognition: %w", err)
+		return nil, fmt.Errorf("capping Reserve recognition: %w", err)
 	}
-	for i, result := range solved {
-		assets[i].EffectiveCap = chain.NoahCoin(result.Ceiling)
+	for i, result := range credits {
+		assets[i].Cap = chain.NoahCoin(result.Cap)
 		assets[i].Credit = chain.NoahCoin(result.Credit)
 	}
 
 	return assets, nil
 }
 
-// recognisedAt solves recognised capital for a NOAH balance the caller names: the balance at par
-// plus the credits it levers. The burn bound asks it about the balance a burn would leave.
+// recognisedAt is recognised capital at a NOAH balance the caller names: the balance at par plus
+// the credits it caps. The burn bound asks it about the balance a burn would leave.
 func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, error) {
-	solved, err := types.SolveRecognition(balance, stakes)
+	credits, err := types.RecognitionCredits(balance, stakes)
 	if err != nil {
-		return math.Int{}, fmt.Errorf("solving Reserve recognition: %w", err)
+		return math.Int{}, fmt.Errorf("capping Reserve recognition: %w", err)
 	}
 	recognised := balance
-	for _, result := range solved {
+	for _, result := range credits {
 		if recognised, err = recognised.SafeAdd(result.Credit); err != nil {
 			return math.Int{}, fmt.Errorf("summing recognised capital: %w", err)
 		}
@@ -52,7 +52,7 @@ func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, 
 	return recognised, nil
 }
 
-// recognitionStakes walks policy, open positions, and rates once, returning the unsolved rows and
+// recognitionStakes walks policy, open positions, and rates once, returning the uncapped rows and
 // the stakes behind them in one denomination order. Nil rows mean nothing is listed or attested.
 func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition, []types.RecognitionStake, error) {
 	entries := make(map[string]types.EligibilityEntry)
@@ -65,14 +65,20 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		return nil, nil, fmt.Errorf("iterating Reserve recognition policy: %w", err)
 	}
 
-	// One walk of the open set serves every asset. Impaired positions are open,
-	// so they are tallied separately: excluded from credit but still reported.
+	// One walk of the open set serves every asset. Impaired positions and those
+	// past their attestation window are open, so they are tallied separately:
+	// excluded from credit but still reported.
 	attested := make(map[string]math.Int)
 	impaired := make(map[string]math.Int)
+	stale := make(map[string]math.Int)
+	now := chain.BlockSeconds(ctx)
 	if err := k.OpenPositions.Walk(ctx, nil, func(_ uint64, position types.Position) (bool, error) {
 		quantities := attested
-		if position.Impaired {
+		switch entry, listed := entries[position.Quantity.Denom]; {
+		case position.Impaired:
 			quantities = impaired
+		case listed && !attestationFresh(entry, position, now):
+			quantities = stale
 		}
 		sum := position.Quantity.Amount
 		if running, ok := quantities[position.Quantity.Denom]; ok {
@@ -88,7 +94,7 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		return nil, nil, fmt.Errorf("iterating positions: %w", err)
 	}
 
-	denomSet := make(map[string]struct{}, len(entries)+len(attested)+len(impaired))
+	denomSet := make(map[string]struct{}, len(entries)+len(attested)+len(impaired)+len(stale))
 	for denom := range entries {
 		denomSet[denom] = struct{}{}
 	}
@@ -96,6 +102,9 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		denomSet[denom] = struct{}{}
 	}
 	for denom := range impaired {
+		denomSet[denom] = struct{}{}
+	}
+	for denom := range stale {
 		denomSet[denom] = struct{}{}
 	}
 	if len(denomSet) == 0 {
@@ -131,14 +140,15 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 	stakes := make([]types.RecognitionStake, 0, len(denoms))
 	for _, denom := range denoms {
 		row := types.AssetRecognition{
-			Denom:               denom,
-			AttestedQuantity:    math.ZeroInt(),
-			ImpairedQuantity:    math.ZeroInt(),
-			Rate:                math.LegacyZeroDec(),
-			HaircutFactor:       math.LegacyZeroDec(),
-			RecognitionCapRatio: math.LegacyZeroDec(),
-			EffectiveCap:        chain.NoahCoin(math.ZeroInt()),
-			Credit:              chain.NoahCoin(math.ZeroInt()),
+			Denom:            denom,
+			AttestedQuantity: math.ZeroInt(),
+			ImpairedQuantity: math.ZeroInt(),
+			StaleQuantity:    math.ZeroInt(),
+			Rate:             math.LegacyZeroDec(),
+			HaircutFactor:    math.LegacyZeroDec(),
+			MaxCreditPerNoah: math.LegacyZeroDec(),
+			Cap:              chain.NoahCoin(math.ZeroInt()),
+			Credit:           chain.NoahCoin(math.ZeroInt()),
 		}
 		if quantity, ok := attested[denom]; ok {
 			row.AttestedQuantity = quantity
@@ -146,13 +156,17 @@ func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition
 		if quantity, ok := impaired[denom]; ok {
 			row.ImpairedQuantity = quantity
 		}
+		if quantity, ok := stale[denom]; ok {
+			row.StaleQuantity = quantity
+		}
 		stake := types.RecognitionStake{Ratio: math.LegacyZeroDec(), Raw: math.LegacyZeroDec()}
 		if entry, listed := entries[denom]; listed {
 			row.Eligible = true
 			row.HaircutFactor = entry.HaircutFactor
-			row.RecognitionCapRatio = entry.RecognitionCapRatio
+			row.MaxCreditPerNoah = entry.MaxCreditPerNoah
 			row.MaxRateAge = entry.MaxRateAge
-			stake.Ratio = entry.RecognitionCapRatio
+			row.MaxAttestationAge = entry.MaxAttestationAge
+			stake.Ratio = entry.MaxCreditPerNoah
 			// An absent, non-positive, or over-age rate leaves the row at zero:
 			// there is no fallback source.
 			if rate, usable := rates[denom]; usable {
@@ -214,4 +228,10 @@ func sumRecognised(balance math.Int, assets []types.AssetRecognition) (math.Int,
 		}
 	}
 	return recognised, nil
+}
+
+// attestationFresh reports whether a position's last whole-holding attestation is within the
+// entry's window. A time ahead of the block, which only an edited genesis could carry, is not.
+func attestationFresh(entry types.EligibilityEntry, position types.Position, now uint64) bool {
+	return position.AttestedTime <= now && now-position.AttestedTime <= entry.MaxAttestationAge
 }
