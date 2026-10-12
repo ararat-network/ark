@@ -11,7 +11,9 @@ three distinct funds: a Redemption Buffer that reduces the new NOAH required by 
 provides governed intervention capacity, and Insurance that pays approved claims. Expansion proceeds replenish these
 funds before any excess is burned. Validator and oracle funding follows a separate budget, using fees, a transfer tax,
 and a finite subsidy pool. Governance can delegate specified powers through bounded, expiring mandates. A currency
-lifecycle provides for suspension, fixed-rate settlement, write-off, and retirement.
+lifecycle provides for suspension, fixed-rate settlement, write-off, and retirement. Most of the initial supply is held
+in two pools that pay members and contributors on fixed schedules, and governance passes from the founding validators
+to those recipients as the NOAH they receive is bonded.
 
 Ark addresses weaknesses exposed by Terra's pursuit of growth and the subsequent abandonment of several mechanisms that
 its original stability argument relied upon. It retains the premise of elastic money while making resource allocation,
@@ -30,7 +32,7 @@ exposure when a currency fails.
 7. [Financing security](#7-financing-security)
 8. [Governance and authority](#8-governance-and-authority)
 9. [Stress and failure](#9-stress-and-failure)
-10. [Network and launch](#10-network-and-launch)
+10. [Network, launch, and distribution](#10-network-launch-and-distribution)
 11. [Conclusion](#11-conclusion)
 
 [Appendix A: Economic relationships](#appendix-a-economic-relationships) ·
@@ -214,10 +216,12 @@ reserve valuation without creating a currency. Registering a feed does not grant
 
 The protocol reference initially uses the IMF's Special Drawing Right, identified by XDR. Ark observes this unit but
 does not issue an XDR currency at launch. The reference denominates the virtual conversion pool, the transfer-tax cap,
-and base gas pricing. NOAH remains the valuation unit for funds and obligations.
+base gas pricing, the Claims committee's limit, and the compensation cap and allowance of the grants programme. NOAH
+remains the valuation unit for funds and obligations.
 
-Governance can replace the reference through a coordinated re-expression of the values that use it. The pool's imbalance
-changes units with its depth, preserving its economic meaning. A reference change requires a freshly priced successor
+Governance can replace the reference through a coordinated re-expression of the values that use it: every one of them
+is re-expressed in the same transaction, or the change fails. The pool's imbalance changes units with its depth,
+preserving its economic meaning. A reference change requires a freshly priced successor
 and, if the outgoing feed is unusable, an explicit outgoing rate supplied by governance. There is no automatic change of
 unit in response to a price outage. A basket reference, the planned Orbis currency, is a development direction; the
 launch mechanism uses the voted XDR feed. [Ark: Oracle][ark-oracle]
@@ -273,15 +277,22 @@ combines voting power with the number of targets rewarded. Reporting more usable
 Agreement with the median is an incentive for useful participation, not a proof of external truth.
 
 Attendance is assessed separately. A validator participates when it supplies enough valid positive rates, and a block
-counts towards attendance only when sufficient total power participates. Persistent absence while the oracle is
-functioning can result in jailing. The oracle attendance mechanism does not slash stake; ordinary consensus penalties
-remain separate. When the reporting fleet suffers a sufficiently broad outage, attendance grading stops rather than
-treating collective data failure as individual misconduct.
+counts towards attendance only when sufficient total power participates. A validator whose attendance over a weekly
+window falls below the governed minimum is jailed for a week, so its absent power stays out of the quorum through the
+following window. The oracle attendance mechanism does not slash stake; ordinary consensus penalties remain separate.
+When the reporting fleet suffers a sufficiently broad outage, attendance grading stops rather than treating collective
+data failure as individual misconduct.
 
 Prices have an explicit freshness limit. Ordinary conversion cannot use a rate that fails it, even when the last value
 remains in storage. Other consumers follow their own stated degraded-data rules: liability reporting retains last-known
 evidence with disclosure, while external reserve recognition refuses stale credit. Freshness therefore constrains what
 an observation may authorise, rather than erasing the history of the observation. [Ark: Oracle][ark-oracle]
+
+The same limit governs block proposal. A block applies the prices reported at the previous commit, so after a stall
+those prices predate the outage while the block's transactions are chosen after it. An honest proposer whose clock
+finds the prices older than the limit proposes a block that applies them with no user transactions, and trading
+resumes in the next block on prices observed after the outage. Other validators do not enforce this rule, since
+acceptance would then depend on their clocks. [Ark: ABCI][ark-abci]
 
 ## 5 Conversion and stability
 
@@ -322,7 +333,9 @@ slower recovery can moderate conversion pressure while also making arbitrage mor
 those costs together. The mechanism shapes the price of conversion; it does not impose a fixed daily issuance quota or
 guarantee that dilution stays below a chosen daily amount.
 
-Users may specify a minimum acceptable receive amount. If the executed quote falls below it, the conversion fails. Pool
+A conversion is one of two orders. A sell states the amount offered and may state a minimum acceptable output; a buy
+states the output required and must state the most it will offer. An order whose quote crosses its bound fails. Neither
+order names a recipient: paying someone in another currency is a buy followed by an ordinary, taxed transfer. Pool
 state still changes with transaction order, so earlier trades can affect later quotes within the same block. The
 block-level accounting described below removes a separate source of ordering dependence in fund allocation; it does not
 remove ordinary transaction-ordering effects. [Ark: Market][ark-market]
@@ -608,9 +621,9 @@ runway; a larger launch seed extends it without creating a recurring source of i
 
 The launch seed is 50,000,000 NOAH. At 0.025 NOAH per block per seat and 5,256,000 assumed blocks per year, each
 seat adds 131,400 NOAH to the annual funding target. With no qualifying revenue, replenishment, target changes, or
-withdrawals, the seed covers approximately 38.1 years for ten seats or 3.8 years for one hundred. These examples
-do not fix the number of genesis seats. The opening-price assumption used for bootstrap pricing is one XDR per NOAH, about 1.371 USD;
-it is not a market-price guarantee or a dollar-denominated reward commitment.
+withdrawals, the seed covers approximately 38.1 years at ten founding seats, or 3.8 years if governance funded a
+hundred validators at the seat rate. The opening-price assumption used for bootstrap pricing is one XDR per NOAH,
+about 1.371 USD; it is not a market-price guarantee or a dollar-denominated reward commitment.
 
 Governance can return subsidy NOAH to the community pool through a fixed-destination transfer stating an amount
 and a minimum remaining subsidy balance. The operation neither mints nor changes reward targets, but it shortens
@@ -631,16 +644,12 @@ Within the existing binary, governance can act through the messages it authorise
 when those rules need to change. It remains subject to current message validation and cannot make an otherwise invalid
 state transition valid merely by approving it.
 
-The launch distributes a 5,000,000 NOAH staking grant to each founding validator seat, the founder's at half the
-others' sum, a third of the founding stake, all locked for four years and vesting over the four after; it holds the
-member and contributor distribution in the Disbursement module from genesis, and leaves the
-remainder in the governance-controlled community pool. Entry after
-launch is open: a validator
-bonds NOAH it holds, and no proposal grants a seat. The initial trust model is therefore authority-based membership
-operating on proof-of-stake machinery until distributed NOAH is bonded; the founder spreads the larger seat across the
-other nodes so no node holds much more than a seat, while voting and rewards remain governed by the underlying
-stake-based rules. Section 10.2 sets out the grants and
-community allocation. [Ark: Threat model][ark-threat]
+Stake decides governance, and at launch the founding validators hold all of it. Each founding seat is a 5,000,000 NOAH
+staking grant and the founder's is half the other seats' sum, a third of the founding stake; every seat vests from the
+fourth year after genesis to the eighth. Entry after launch is open: a validator bonds NOAH it holds, and no proposal
+grants a seat. The initial trust model is therefore authority-based membership on proof-of-stake machinery, which
+public stake dilutes as the distribution is paid and bonded. Section 10 sets out the allocation, the grants, and the
+schedule on which control passes. [Ark: Threat model][ark-threat]
 
 Some decisions require a faster response than a full voting cycle. Governance may appoint committees to specific roles,
 each with its own address, term, activation time, and expiry time, measured in block time. A committee transaction
@@ -679,6 +688,8 @@ in the first governance cycle, and 4-of-7 accounts for the deliberative committe
 last a year of block time, with reappointment required. Committee keys are dedicated hardware-backed keys, and committee gas
 comes from members' liquid floats. The protocol authenticates the appointed address; governance chooses the members
 and enacts the appointments. Separate addresses do not prove that memberships or interests are independent.
+Governance may also appoint a contract to a deliberative role. The chain records the account form it observes at
+appointment, which for a contract is the kind alone, since a contract's signing rule can change within a term.
 [Ark: Launch genesis][ark-genesis]
 
 ### 8.3 Emergency powers and their limits
@@ -737,8 +748,9 @@ depend on it, while direct exchanges between freshly priced currencies can remai
 
 Liability reporting distinguishes fresh values, stale evidence, untrusted supply, and obligations already written off.
 Incomplete valuation prevents an ordinary surplus burn and parks expansion in the Reserve. External reserve credit
-vanishes when its evidence is unusable. These are explicit degraded-data states rather than a general rule that every
-unavailable input stops the chain.
+vanishes when its evidence is unusable. Committee claims and every compensation award are valued in the reference unit,
+so they are refused while no fresh rate exists; through an outage only governance can submit a claim.
+These are explicit degraded-data states rather than a general rule that every unavailable input stops the chain.
 
 Some failures must still stop execution. Corrupt custody, invalid state, or arithmetic outside the supported domain
 cannot safely be converted into a partial payment. Checked arithmetic makes such failures diagnosable; input bounds and
@@ -822,7 +834,7 @@ prevent the same NOAH being promised twice, but they cannot make an adjudication
 A claim paid in NOAH also retains exposure to NOAH's market value; one paid in an Ark currency fixes its amount when it
 is submitted, and its conversion stays spent if the claim is later cancelled. [Ark: Claims][ark-claims]
 
-## 10 Network and launch
+## 10 Network, launch, and distribution
 
 ### 10.1 A monetary application on a sovereign chain
 
@@ -843,33 +855,27 @@ entry points are refused, since the chain can open no channel.
 Ark starts with 1,000,000,000 NOAH. Of this, 50,000,000 funds the subsidy pool, 50,000,000 the Reserve, 10,000,000
 the Buffer, and 5,000,000 Insurance. Of the remaining 885,000,000, the Disbursement module holds 782,000,000 as the
 member and contributor pools, 469,200,000 and 312,800,000, and 103,000,000 enters the community pool before
-validator-seat grants.
-There is no separate investor, backer, or public allocation at launch. The initial supply can subsequently change
-through conversion and authorised burns; it is not a permanent maximum supply.
+validator-seat grants. There is no separate investor, backer, or public allocation at launch. The initial supply can
+subsequently change through conversion and authorised burns; it is not a permanent maximum supply.
 
-Each founding seat is a 5,000,000 NOAH staking grant, whatever the count, vesting
-continuously from the fourth year after genesis to the eighth, with 50,000 NOAH of liquid float, both from the community pool. The
+Each founding seat is a 5,000,000 NOAH staking grant, whatever the count, vesting continuously from the fourth year
+after genesis to the eighth, with 50,000 NOAH of liquid float, both from the community pool. A seat grant can be
+staked, vote, and be slashed, but cannot be transferred until it vests; the float pays operating expenses. The
 founder's seat is half the other seats' sum, a third of the founding stake, 22,500,000 NOAH at ten seats, on the same
-account and schedule and from the same pool: consensus weight for the launch window, while the founder's work before
-launch is paid by a 15,000,000 NOAH grant at the ownership cap from the contributor pool, and the founder's work after
-launch by a compensation stream of 10,000,000 NOAH over ten years, the compensation cap's whole room at the opening
-price. Seat assembly writes both into genesis as governance awards, which every founding validator approves by signing
-against the file and governance may still cancel. Each seat grant can participate in staking and governance and be
-slashed, but cannot be transferred until it vests. Every gentx self-delegates one seat; the founder delegates the rest
+account and schedule and from the same pool. Every gentx self-delegates one seat, and the founder delegates the rest
 across the other seats in the first blocks, so no node holds a third of consensus power while one vote from the
-founder's account carries the whole seat. The float pays operating expenses.
-For `n` seats, between seven and thirteen, the community pool retains `103,000,000 − 5,050,000n − 2,500,000(n − 3)`
-NOAH, the founder's excess over one seat being the last term: the count sets the pool's cost, not each grant. Seat assembly
-transfers existing supply and raises both reward targets by the per-seat shares in Section 7.1; it creates no
-additional NOAH.
+founder's account carries the whole seat.
 
-At genesis the founder can block any proposal alone and the other seats together cannot pass over the founder's no;
-the founder passes nothing alone, a third being under quorum, and passing takes the founder plus half the other seats.
-Public bonded stake dissolves this on a fixed schedule: the seat's sole block with the first few delegations, the
-founder with `m` other seats once the public has bonded `15,000,000m` NOAH, and the seat with the founder's grant
-and stream beside it once the public has bonded twice what they have paid. Every ownership payment from the pools is bound
-by a per-record cap of 15,000,000 NOAH over every grant, a governance parameter the seat sits outside, so no
-contributor is paid more ownership than the founder's grant. [Ark: Disbursement plan][ark-disbursement]
+The founder's seat is consensus weight for the launch window, not payment. The founder's work before launch is paid by
+a 15,000,000 NOAH ownership grant at the ownership cap, and the work after launch by a compensation stream of
+10,000,000 NOAH over ten years, the compensation cap's whole room at the opening price; both come from the contributor
+pool. Seat assembly writes them into genesis as governance awards, which every founding validator approves by signing
+against the file and governance may still cancel.
+
+For `n` seats, between seven and thirteen, the community pool retains `103,000,000 − 5,050,000n − 2,500,000(n − 3)`
+NOAH, the founder's excess over one seat being the last term: the count sets the pool's cost, not each grant. Seat
+assembly transfers existing supply and raises both reward targets by the per-seat shares in Section 7.1; it creates no
+additional NOAH.
 
 The validator-set cap is one hundred, unbonding takes twenty-one days, and the minimum commission is 5%. Governance
 uses a 50% quorum, a 66.7% ordinary approval threshold, and a 75% expedited threshold, with the SDK's applicable
@@ -880,16 +886,76 @@ claim. Both are measured in block time, as the vote is, so a faster block pace c
 
 The economic settings are settled. What remains at genesis assembly is to set the start time, add the actual validator
 seats with the founder's grant and stream, derive aggregate reward targets from the seat count, and collect the
-validators' transactions. The zero aggregate targets
-in the base artefact represent zero assembled seats. Empty mandates implement the decision to appoint committees
-after launch, following the schedule in Appendix B. [Ark: Launch genesis][ark-genesis]
+validators' transactions. The zero aggregate targets in the base artefact represent zero assembled seats. Empty
+mandates implement the decision to appoint committees after launch, following the schedule in Appendix B. [Ark: Launch
+genesis][ark-genesis]
 
-### 10.3 What remains to be established
+### 10.3 Distributing the pools
+
+The Disbursement module holds both pools from the first block and pays three kinds of grant. Every grant is escrowed
+in full when it is made, and the chain pays it at the end of a block as its schedule falls due; no recipient submits a
+transaction to collect it. Unpaid escrow cannot be staked or vote, so a grant gains governance weight only as it pays
+and its recipient chooses to bond.
+
+| Kind         | Pool         | Made by                                                  | Launch schedule                                                  | Bound                                       |
+| ------------ | ------------ | -------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------- |
+| Member       | Members      | The registrar, within a tranche governance has opened    | 20,000 NOAH: a tenth after a two-week hold, the rest over a year | The open tranche                            |
+| Ownership    | Contributors | A governance proposal                                    | A quarter after one year, the rest over three                    | 15,000,000 NOAH committed per record        |
+| Compensation | Contributors | A proposal, or the grants committee within its allowance | Fortnightly for up to ten years; a bounty is one period          | 1,000,000 reference units per record a year |
+
+Membership is decided off chain. An admission process checks that an applicant is one person not already admitted and
+takes a vouch from an existing member; the registrar then registers a batch against the open tranche, citing the
+admission record without personal data. Governance opens each step's member budget in quarters, so a stolen registrar
+key can commit at most what is open. Nothing pays before two weeks after any grant: the window in which the grants
+committee can suspend what a stolen key registered and governance can cancel it. The member pool has no other exit; it
+pays members or nobody.
+
+The ownership cap is checked when a grant is awarded, against everything the record's ownership grants have paid and
+still owe, so an admitted grant always pays in full. It binds a beneficiary record, not a person: the chain cannot tell
+that two records belong to one holder, and tying a record to a person is the proposal's case and the admission
+process's. The founder's grant fills the cap, so no contributor is granted more ownership than the founder.
+Compensation is valued in the reference unit when awarded and charged against its cap at its yearly rate while it runs.
+A stablecoin award converts contributor NOAH through ordinary Market conversion when it is made, so such awards wait
+until conversion opens.
+
+The steps that open the member pool are governance policy rather than chain rules. The first opens 30,000,000 NOAH to
+1,500 members at 20,000 each; each later step lowers the member amount, to 5,000 NOAH at the fifth, about 66,300
+members in all. A step after the first opens only once public bonded stake, which excludes the founding seats and what
+the founder's awards have paid, reaches fifteen per cent of what the earlier steps distributed, the founder's awards
+excluded. Contributor awards follow a guideline of forty per cent of each step, which a proposal may exceed if it says
+why. Membership obliges nothing: a recipient may sell, hold, or stake what it receives, and the programme distributes
+ownership and the governance weight that bonding it brings, not a duty to use it. [Ark: Disbursement
+plan][ark-disbursement] [Ark: Disbursement][ark-disbursement-module]
+
+### 10.4 Handing over governance
+
+Once the founder's seat is spread, the founder holds a third of the founding stake and the other seats two thirds. At
+the 66.7% threshold and 50% quorum, the founder can block any proposal alone, and the other seats together cannot pass
+over the founder's no. The founder passes nothing alone, a third being under quorum; passing takes the founder and half
+the other seats. The veto is deliberate, and nothing restores it once public stake has diluted it.
+
+Public bonded stake dissolves it on a fixed schedule. The founder alone, or half the other seats, stops blocking once
+the public has bonded about 0.3% of the founder's seat, roughly 68,000 NOAH at ten seats. The founder with `m` other
+seats blocks until the public has bonded `15,000,000m` NOAH. The founder's grant and stream extend the founder's block
+as they pay: it lasts while public bonded stake is under twice what they have paid. Delegated stake that does not vote
+follows its validator, so control passes only as recipients vote or delegate away from the founding set. Until it
+does, the chain is governed by its founders, whatever its staking machinery suggests.
+
+The same arithmetic applies to anyone else. A buyer who acquires a third of bonded stake, about 34,000,000 NOAH against
+the founding stake at ten seats, can block every proposal, stop each distribution step and committee reappointment, and
+halt the chain by stopping its validators. The remedy is a continuation export that keeps only the other validators,
+relaunched as a new chain. [Ark: Disbursement plan][ark-disbursement] [Ark: Threat model][ark-threat]
+
+### 10.5 What remains to be established
 
 Correct implementation establishes that state transitions follow the rules. It does not establish demand, liquidity,
 adequate validator compensation, reliable emergency response, or appropriate economic calibration. Evaluating a launch
 requires scenarios that combine falling NOAH prices, asymmetric conversion, provider outages, delayed governance, and
 reserve impairment, with explicit assumptions about external liquidity and participant behaviour.
+
+The distribution also depends on work outside the chain. The admission process must detect one person presenting
+several addresses, which the chain cannot; the application members use must exist before the first member tranche; and
+the module holding the pools from the first block needs an independent audit. None of these is complete.
 
 This paper supplies accounting relationships and conditional properties, not an empirical claim that Ark has survived
 those conditions in a live market. Orbis, the derived basket currency, and other deferred changes remain future work
@@ -902,7 +968,8 @@ Ark's monetary design connects issuance, retained resources, operating revenue, 
 Expansion builds designated inventory before reducing NOAH supply. Redemption uses that inventory proportionally and
 creates only the residual net supply. Security funding follows a separate budget whose subsidy can run out. Committees
 act through bounded terms, and a failing currency has explicit routes through suspension, settlement, write-off, and
-retirement.
+retirement. Most of the initial supply is paid to members and contributors on fixed schedules, and control of
+governance passes from the founders as that supply is bonded.
 
 These rules make commitments inspectable across expansion and contraction. They do not remove the market's role in
 valuing NOAH, restore resources already lost, or prevent governance from choosing a different course. Their value lies
@@ -1080,12 +1147,13 @@ return to the community pool.
 | Direct currency conversion charge | 0.25% default Tobin rate; no overrides | Decided |
 | Oracle price quorum | `0.666666666666666667` of total commit power | Default |
 | Oracle reward band | 2% total width around the relevant median | Default |
-| Ordinary price freshness | 60 seconds | Default |
+| Ordinary price freshness | 60 seconds; also the price age past which proposers leave user transactions out | Default |
 | Oracle reward and attendance windows | 100,800 blocks, approximately one week | Default |
 | Oracle reward distribution horizon | 403,200 blocks, approximately four weeks | Decided |
 | Oracle participation floor | 20% of targets; at least one positive rate | Default |
 | Functioning-block threshold | 50% of commit power participating | Default |
 | Minimum window attendance | 5% of eligible blocks | Default |
+| Oracle attendance jail | 604,800 seconds of block time, one week | Default |
 | Claim cancellation period | 604,800 seconds of block time, one week | Decided |
 | Settlement activation delay | 604,800 seconds of block time, one week | Decided |
 | Exposure weights | All zero; initial multiplier one | Decided |
@@ -1104,6 +1172,21 @@ No currency is issued at that assumption: the asset registry is empty at launch,
 governance opens conversion by registering the currencies once NOAH has a market price.
 The oracle distribution horizon smooths payments from the oracle reward account; it is separate from the weekly
 window that funds that account.
+
+### Distribution
+
+| Area | Launch value | Status |
+| --- | --- | --- |
+| Member grant | 20,000 NOAH: a tenth after a two-week hold, then thirteen payments four weeks apart | Decided |
+| Member tranche | Zero; each step opens by vote | Decided |
+| Ownership schedule | A quarter after 364 days, then 78 fortnightly payments | Decided |
+| Ownership cap | 15,000,000 NOAH committed per record, checked at award | Decided |
+| Compensation cap, window, and period | 1,000,000 reference units per record per 26 fortnights; fortnightly, at most 260 periods | Decided |
+| Founder's awards | 15,000,000 NOAH of ownership and 10,000,000 NOAH of compensation over 260 fortnights, governance grants 1 and 2 | Assembly |
+| Grants committee and registrar | Not appointed | Decided |
+
+Every grant's first period is at least two weeks, so nothing pays before two weeks after an award. The steps, gates,
+and contributor guideline in Section 10.3 are governance policy and appear nowhere in the genesis file.
 
 ### Consensus, governance, and access
 
@@ -1147,7 +1230,8 @@ triggers; actual addresses, members, and mandate windows are enacted through lat
 | Claims | Once Insurance has a charter specifying covered perils | 4-of-7 multisignature |
 | Conversion | At or after the opening of conversion, when governance chooses to delegate conversion policy | 4-of-7 multisignature |
 | Reserve | When a deployment is approved | 4-of-7 multisignature |
-| Grants | Before the first member tranche; it appoints the registrar, a single hardware-backed key | 4-of-7 multisignature |
+| Grants | Before the first member tranche | 4-of-7 multisignature |
+| Registrar | By the grants committee with the first tranche; cleared by every committee appointment | A single hardware-backed key |
 
 Appointments use dedicated hardware-backed keys, accounts registered before appointment, gas funded from members'
 floats, and one-chain-year terms followed by reappointment. The initial economic corridor is to bound reward targets
@@ -1159,9 +1243,9 @@ The base artefact already holds all seven seeded balances, the four fund seeds, 
 Disbursement pools, and the full initial supply. Assembly sets the genesis time first, since the seats vest from it;
 it then moves each seat's grant and float out of both the Distribution balance and its community-pool ledger, adds
 the seat's reward shares, writes the founder's grant and stream as governance grants 1 and 2, and collects validator
-transactions. The start must be scheduled at least forty-eight hours
-after publication of the final file. Supply remains 1,000,000,000 NOAH throughout assembly. Full procedures and final
-validation checks remain in [GENESIS.md][ark-genesis].
+transactions. The start must be scheduled at least forty-eight hours after publication of the final file. Supply
+remains 1,000,000,000 NOAH throughout assembly. Full procedures and final validation checks remain in
+[GENESIS.md][ark-genesis].
 
 ## References
 
@@ -1187,19 +1271,20 @@ validation checks remain in [GENESIS.md][ark-genesis].
 
 ### Ark design and implementation sources
 
-The current working checkout, including uncommitted development, is the implementation basis for this draft. The
-following maintained documents explain the contracts summarised here; their linked source files define the executable
-behaviour.
+The repository this draft accompanies is its implementation basis. The following maintained documents explain the
+contracts summarised here; their linked source files define the executable behaviour.
 
 - [Economic design][ark-economics]: conversion allocation, targets, fees, funding, and authority boundaries.
 - [Asset][ark-asset], [Market][ark-market], and [Oracle][ark-oracle]: currency lifecycle, conversion, and price state.
 - [Oracle aggregation][ark-aggregation] and [Pricefeed][ark-pricefeed]: consensus reports and external observations.
+- [ABCI][ark-abci]: proposal handling, including the stale-price proposal rule.
 - [Treasury][ark-treasury], [Reserve][ark-reserve], and [Claims][ark-claims]: financial calculations and custody.
 - [Security][ark-security], [Application][ark-app], and [Mempool][ark-mempool]: emergency authority and execution.
 - [Threat model][ark-threat]: trust boundaries and their controls.
 - [Launch genesis][ark-genesis] and [curated genesis data](../../app/genesis/genesis.json): configuration and status.
-- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its ownership cap, and the
-  founder's seat and grant.
+- [Disbursement plan][ark-disbursement]: the member and contributor distribution, its steps and gates, the founder's
+  seat and awards, and the handover of governance.
+- [Disbursement][ark-disbursement-module]: grants, schedules, caps, payment, and the grants committee and registrar.
 - Direct source checks include [conversion settlement](../../x/treasury/keeper/settlement.go), [liability
   valuation][ark-liability], [fixed-rate redemption](../../x/market/keeper/orders.go), and [asset settlement
   plans][ark-settlement].
@@ -1233,3 +1318,5 @@ behaviour.
 [ark-app]: ../../app/README.md
 [ark-genesis]: ../governance/GENESIS.md
 [ark-disbursement]: ../governance/DISBURSEMENT_PLAN.md
+[ark-disbursement-module]: ../../x/disbursement/README.md
+[ark-abci]: ../../abci/README.md
