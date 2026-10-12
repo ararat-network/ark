@@ -15,7 +15,7 @@ means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integrati
 - [4. The legacy [telemetry] bridge](#4-the-legacy-telemetry-bridge)
 - [5. The price-feed sidecar](#5-the-price-feed-sidecar)
 - [6. Configuration ownership](#6-configuration-ownership)
-- [7. Local example](#7-local-example)
+- [7. Setting it up](#7-setting-it-up)
 - [8. What to watch](#8-what-to-watch)
 - [Application mempool occupancy](#application-mempool-occupancy)
 - [Dependency series at the scraper](#dependency-series-at-the-scraper)
@@ -160,17 +160,157 @@ The node-side client that polls it is part of the node, and its meters appear on
 [Node telemetry startup](../../cmd/arkd/README.md#telemetry-startup) explains why the application scrape endpoint and the
 SDK's declarative export configuration have separate owners. Use the configuration rules above when operating them.
 
-## 7. Local example
+## 7. Setting it up
+
+Both processes already serve everything §8 reads, so monitoring is configuration on the operator's side: turn on the
+endpoints, scrape them with Prometheus, load a rule for each alert, route the alerts with Alertmanager, and graph them
+in Grafana. The scraper, rules, and dashboards are operator tooling kept outside this repository; this section is what
+they connect to.
+
+### 7.1 Turn on the endpoints
+
+| Process | Setting | Default | Serves |
+| --- | --- | --- | --- |
+| `arkd` application | `app.toml [prometheus] enabled`, `address` | off, `localhost:9464` | Ark's meters, the SDK's baseapp timings, Wasm cache, Go runtime (§2) |
+| `arkd` consensus | `config.toml [instrumentation] prometheus`, `prometheus_listen_addr` | off, `:26660` | CometBFT's consensus, P2P, and mempool metrics |
+| `pricefeed` | `start --metrics`, `--metrics-address` | off, `127.0.0.1:9091` | The sidecar's meters (§5) |
+
+On each node, then restart it:
+
+```sh
+arkd config set app prometheus.enabled true
+arkd config set app prometheus.address 0.0.0.0:9464
+arkd config set config instrumentation.prometheus true
+```
+
+An `app.toml` older than the `[prometheus]` section needs the section added by hand first (§2). For the sidecar, add
+`--metrics --metrics-address 0.0.0.0:9091` to its start command, in its service unit ([pricefeed
+operations](PRICEFEED_OPERATIONS.md#2-install-and-run)), and restart it.
+
+None of the three endpoints authenticates or encrypts. Bind them beyond loopback only on a private network the scraper
+shares, and firewall them from everything else; on a host the scraper cannot reach privately, keep them on loopback and
+run a Prometheus agent beside the node that forwards over an authenticated link. pprof stays on loopback.
+
+Check each answers:
+
+```sh
+curl -s localhost:9464/metrics | grep '^target_info'
+curl -s localhost:26660/metrics | grep '^cometbft_consensus_height'
+curl -s localhost:9091/metrics | grep '^target_info'
+```
+
+The node's `target_info` carries `service_name="arkd"`, its build as `service_version`, `ark_chain_id`, and
+`service_instance_id="<chain-id>/<moniker>"`; the sidecar's carries `service_name="pricefeed"` and its own build.
+
+### 7.2 Scrape
+
+One job per endpoint kind, with a `node` label on every target so a node's three endpoints read together:
+
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: arkd
+    static_configs:
+      - targets: ["validator-1.internal:9464"]
+        labels: {node: validator-1, role: validator}
+      - targets: ["sentry-1.internal:9464"]
+        labels: {node: sentry-1, role: sentry}
+  - job_name: cometbft
+    static_configs:
+      - targets: ["validator-1.internal:26660"]
+        labels: {node: validator-1, role: validator}
+      - targets: ["sentry-1.internal:26660"]
+        labels: {node: sentry-1, role: sentry}
+  - job_name: pricefeed
+    static_configs:
+      - targets: ["validator-1.internal:9091"]
+        labels: {node: validator-1}
+
+rule_files:
+  - rules/ark.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager.internal:9093"]
+```
+
+Add the dependency-series exclusions from [below](#dependency-series-at-the-scraper) under the `arkd` job. A
+15-second interval samples every two or three blocks, which §8's per-block gauges assume. Keep at least 30 days of
+history (`--storage.tsdb.retention.time=30d`): §8.4 sets the thresholds from the first weeks of data.
+
+### 7.3 Alert rules
+
+Each §8 alert becomes one rule. Carry its severity from the heading into a `severity` label and its ID into `ark_alert`,
+so routing and dashboards can cite it. N2, on the node, and S6, on the sidecar:
+
+```yaml
+groups:
+  - name: ark-process
+    rules:
+      - alert: ArkPriceFeedUnreachable
+        expr: increase(ark_abci_requests_total{method="extend_vote",status!="Success"}[5m]) > 0
+        for: 10m
+        labels: {severity: page, ark_alert: N2}
+        annotations:
+          summary: "{{ $labels.node }}: ExtendVote failing with {{ $labels.status }}"
+      - alert: ArkSidecarAggregationStalled
+        expr: rate(ark_pricefeed_ticks_total[2m]) == 0
+        for: 5m
+        labels: {severity: page, ark_alert: S6}
+        annotations:
+          summary: "{{ $labels.node }}: the sidecar's snapshot has stopped moving"
+```
+
+The rest follow the same pattern from their conditions; the `for:` durations and every threshold are the placeholders
+§8.4 describes. Pair them with the generic process rules §8 leaves out because nothing about them is Ark's:
+
+| Rule | Expression | Severity |
+| --- | --- | --- |
+| Endpoint down | `up == 0` for any job | page |
+| Chain stalled | `increase(cometbft_consensus_height[2m]) == 0` | page |
+| This validator not signing | `cometbft_consensus_latest_block_height - cometbft_consensus_validator_last_signed_height > 10` | page |
+| Few peers | `cometbft_p2p_peers < 3` | warn |
+
+Check the file with `promtool check rules rules/ark.yml` before loading it.
+
+### 7.4 Route and graph
+
+Route on `severity`: `page` to whoever is on call, `warn` to a channel. A minimal Alertmanager route:
+
+```yaml
+route:
+  receiver: channel
+  group_by: [alertname, node]
+  routes:
+    - matchers: [severity="page"]
+      receiver: on-call
+receivers:
+  - name: on-call
+    # pager integration
+  - name: channel
+    # chat integration
+```
+
+In Grafana, add the Prometheus server as a data source and build one row per node: block height and interval, peers,
+and last signed height (CometBFT); ExtendVote status, vote targets by status, snapshot age, and participating power
+share (N1–N4); mempool by lane (N6); and for its sidecar, ticks, missing prices, pair sample counts, and provider
+last success (S2–S6).
+
+### 7.5 Local example
 
 [Localnet topology and ports](../../contrib/localnet/README.md#topology-and-ports) lists each validator's scrape endpoints
 and generated settings. Use the application endpoint for node metrics and the instrumentation endpoint for consensus.
 
 ## 8. What to watch
 
-Conditions only. The PromQL, the thresholds, and who gets paged live with the dashboards outside this repository
-and cite these IDs. The A-series in `docs/operations/PROTOCOL_MONITORING.md` watches protocol state through queries and events;
-this section watches the node and its sidecar as processes, through the exported-series contract linked in §2.
-Names below are the exported form.
+Conditions only; §7.3 shows how one becomes a rule. The full rule set, the thresholds, and who gets paged live with the
+dashboards outside this repository and cite these IDs. The A-series in `docs/operations/PROTOCOL_MONITORING.md` watches
+protocol state through queries and events; this section watches the node and its sidecar as processes, through the
+exported-series contract linked in §2. Names below are the exported form.
 
 Two rules carry over. Alert state is off-chain: "for N blocks" needs history only the scraper has. And a gauge is
 sampled once per scrape interval, which is many blocks, so the per-block gauges here (`ark_oracle_vote_targets`,
