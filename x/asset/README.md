@@ -415,4 +415,5 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 ## Related documents
 
 - [Liability and conversion policy](../../docs/economics/ECONOMIC_DESIGN.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#3-asset-emergency).
 - [Application wiring](../../app/README.md).

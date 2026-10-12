@@ -112,7 +112,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 ## Related documents
 
 - [Insurance custody and claims policy](../../docs/economics/ECONOMIC_DESIGN.md).
-- [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#7-claims).
 - [Application wiring](../../app/README.md).
 
 ## Settlement failure and custody invariants

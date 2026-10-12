@@ -204,7 +204,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `conversion_policy.base_pool` | 100,000 XDR, `100000000000000000000000` | Decided | Conversion opens by vote with no NOAH market history behind it: a swap worth about 2,000 pool units pays the floor and about 1,000 a day flows at it, enough for members converting real amounts and small enough that a pushed thin price mints little at the wrong rate. Depth is raised by the Market committee inside its corridor and by governance beyond it, sized by the [depth rule](ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) from what liquid NOAH is expected to convert, never by shortening recovery and never automatically. |
+| `conversion_policy.base_pool` | 100,000 XDR, `100000000000000000000000` | Decided | Conversion opens by vote with no NOAH market history behind it: a swap worth about 2,000 pool units pays the floor and about 1,000 a day flows at it, enough for members converting real amounts and small enough that a pushed thin price mints little at the wrong rate. Depth is raised by the Market committee inside its corridor and by governance beyond it, sized by the [depth rule](COMMITTEE_RUNBOOK.md#sizing-depth) from what liquid NOAH is expected to convert, never by shortening recovery and never automatically. |
 | `conversion_policy.min_stability_spread` | `0.02` | Default | Terra Classic's default. The transfer tax may not exceed it. |
 | `conversion_policy.pool_recovery_period` | `14400` | Default | A day, Terra Classic's default; each block returns delta divided by period toward zero. |
 | `ark_pool_delta` | `0` | Decided | The launch pool starts balanced, in the pool unit. |

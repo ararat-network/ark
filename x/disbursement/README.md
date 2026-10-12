@@ -8,7 +8,7 @@ settles the conversion a stablecoin award asks for. The block pays each grant as
 transaction releases a payment.
 
 The [disbursement plan](../../docs/governance/DISBURSEMENT_PLAN.md) sets the launch allocation and review process;
-[governance operations](../../docs/governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches) describes proposals and recovery.
+the [committee runbook](../../docs/governance/COMMITTEE_RUNBOOK.md#8-grants) describes proposals and recovery.
 
 ## Funding and authority
 

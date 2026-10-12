@@ -11,9 +11,11 @@ It does not cover node or process health. `docs/operations/PROCESS_MONITORING.md
 endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the machine. This document is about
 what the chain believes.
 
-Responses live in `docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md`, keyed by the alert IDs used here. The split: an alert states a
-condition, why it matters, and the first thing to look at; the runbook states what a committee or governance
-then decides. Writing the decision into both is how the two drift apart.
+Responses are keyed by the alert IDs used here: governance's in [governance
+operations §5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts), the Reserve committee's in the [committee
+runbook](../governance/COMMITTEE_RUNBOOK.md#alerts). The split: an alert states a condition, why it matters, and the
+first thing to look at; the response states what a committee or governance then decides. Writing the decision into
+both is how the two drift apart.
 
 ## Contents
 
@@ -119,8 +121,9 @@ no longer tracking the indicators — they are tracking a constant. Everything d
 bounds alike, is capped with it. This is the signal the whole model exists to produce, and the only one that
 should page for its own sake.
 
-**First look:** `EventExposureRefreshed` carries all three indicators, so read which one is driving `uncapped`.
-The decision that follows is governance's — `ECONOMIC_COMMITTEE_RUNBOOK.md` §5.
+**First look:** `EventExposureRefreshed` carries all three indicators, so read which one is driving `uncapped`. The
+decision that follows is governance's ([governance operations
+§5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts)).
 
 #### A2 — Refresh stalled · page (and the one alert that applies in Phase A)
 
@@ -156,9 +159,9 @@ expansion principal parks in the Reserve rather than filling targets, `RequiredR
 at all — so no Reserve burn can be authorised — and the multiplier keeps refreshing from an aggregate that
 understates exposure.
 
-**First look:** the event carries `stale_member_supply` and `untrusted_suspended_supply`, which say precisely
-which members and why. A stale feed and a suspension-without-plan need different fixes. Expect a committee
-follow-up if the window was long; `ECONOMIC_COMMITTEE_RUNBOOK.md` §5.
+**First look:** the event carries `stale_member_supply` and `untrusted_suspended_supply`, which say precisely which
+members and why. A stale feed and a suspension-without-plan need different fixes. Expect a committee follow-up if the
+window was long ([governance operations §5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts)).
 
 #### A5 — Reserve burnable surplus collapsed · notify the committee
 
@@ -172,8 +175,7 @@ capital is when the risk model says it is needed — but it will look like a bug
 **While valuation is incomplete** the query errors rather than reporting zero. A4 pages on that condition, so A5
 stays silent through it.
 
-**Response:** none required. This alert exists so the committee learns it from a dashboard rather than from a
-rejected transaction.
+**Response:** [committee runbook](../governance/COMMITTEE_RUNBOOK.md#alerts).
 
 #### A6 — Buffer coverage falling · warn
 
@@ -185,7 +187,7 @@ exists to prepare for. Watching it beside `multiplier` is how you tell whether t
 rising multiplier with flat coverage means retention is not arriving, usually because there are no expansions to
 retain from.
 
-**Response:** the designed lever is a committee Reserve-to-Buffer transfer; `ECONOMIC_COMMITTEE_RUNBOOK.md` §3.
+**Response:** [committee runbook](../governance/COMMITTEE_RUNBOOK.md#alerts).
 
 ### 2.5 What not to alert on
 
@@ -238,7 +240,7 @@ The collector must preserve these semantics regardless of its implementation. De
    still learns what it needs to.
 4. **A5 reads the bound at poll time, not at execution.** The handler solves again when a burn executes, against
    the multiplier then; the
-   [economic committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#2-before-drafting-a-burn) leaves margin
+   [committee runbook](../governance/COMMITTEE_RUNBOOK.md#burns) leaves margin
    for that.
 
 ## 3. Other subsystems

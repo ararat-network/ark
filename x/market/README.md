@@ -51,10 +51,11 @@ a raise-only ratchet was rejected because a committee could not undo its own ove
 power; governance retains below-default overrides and removal. Policy stays with the module owning the pool, without
 a Treasury-to-Market write dependency.
 
-Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the
-unit. The mandate corridor is not rebased silently: its old denomination closes committee policy updates until
-reappointment; the dimensionless Tobin cap survives. The [committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#reference-change-and-conversion-mandate)
-owns the ordered reappointment procedure.
+Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the unit.
+The mandate corridor is not rebased silently: its old denomination closes committee policy updates until reappointment;
+the dimensionless Tobin cap survives. [Governance
+operations](../../docs/governance/GOVERNANCE_OPERATIONS.md#4-committee-appointments) owns the ordered reappointment
+procedure.
 
 ## Block settlement and failure boundaries
 
@@ -130,7 +131,7 @@ From a rested pool a swap of `x` pool units pays `x / (depth + x)`, which meets 
 depth. Each block returns one part in the recovery period of the imbalance, so steady one-way flow holds the
 imbalance at one period's flow. The marginal spread is about twice the imbalance over the depth, so flow stays at the
 floor while one period's worth is within half the floor times the depth. The
-[committee runbook](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md#conversion-depth) sizes depth from these two
+[committee runbook](../../docs/governance/COMMITTEE_RUNBOOK.md#sizing-depth) sizes depth from these two
 figures.
 
 A stranded corridor becomes usable again if the reference returns to its denomination while the original term and

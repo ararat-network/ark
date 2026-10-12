@@ -272,7 +272,7 @@ advances the term, so transactions prepared under the old key expire. The linked
 **Limits.**
 
 - The registrar hold protects only if someone compares the chain's registrations with the platform's admission records
-  inside it ([grant tranches](../governance/GOVERNANCE_OPERATIONS.md#5-grant-tranches)).
+  inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)).
 - Member admission runs off chain: a third-party identity verifier returns a uniqueness attestation, which the member
   platform keeps with a dedup token beside the vouch graph. The chain never sees the verifier, and the attestation
   store, which links a person to an address, is the platform's second asset after the committee key

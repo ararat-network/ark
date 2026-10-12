@@ -312,7 +312,7 @@ a calibration record.
 The [Treasury README](../../x/treasury/README.md#exposure-sampling-and-refresh) owns the exact updates, sampling, and
 degraded-input handling; [genesis §4](../governance/GENESIS.md#4-treasury) the launch values;
 [protocol monitoring §2](../operations/PROTOCOL_MONITORING.md#2-exposure-multiplier) the signals, alerts, and
-calibration; and the [committee runbook](../governance/ECONOMIC_COMMITTEE_RUNBOOK.md#1-the-levers) the weights as
+calibration; and the [committee runbook](../governance/COMMITTEE_RUNBOOK.md#4-economic-policy) the weights as
 levers.
 
 ### 4.3 Recognition

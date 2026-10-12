@@ -173,7 +173,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 ## Related documents
 
 - [Reserve custody and recognition policy](../../docs/economics/ECONOMIC_DESIGN.md).
-- [Committee operations](../../docs/governance/ECONOMIC_COMMITTEE_RUNBOOK.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#5-reserve).
 - [Application wiring](../../app/README.md).
 
 ## Recognition arithmetic and action bounds

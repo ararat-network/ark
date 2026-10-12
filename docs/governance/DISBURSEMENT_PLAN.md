@@ -70,7 +70,7 @@ kind's schedule is a governance parameter, copied onto the grant when it is made
   payee. Any committee appointment clears the registrar.
 - **Fake members.** A suspension stops a member's pay and moves nothing. A governance cancel keeps what accrued up to
   the suspension for the payee and returns the rest to the tranche. A fake found within the two-week hold costs
-  nothing. [Governance operations §5](GOVERNANCE_OPERATIONS.md#5-grant-tranches) covers recovering from a stolen key.
+  nothing. The [committee runbook](COMMITTEE_RUNBOOK.md#8-grants) covers recovering from a stolen key.
 
 ## 4. Distribution
 

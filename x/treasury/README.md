@@ -195,6 +195,7 @@ ABCI code only through its own wrapper, so a standard-library wrap keeps the tex
 - [Economic policy and custody](../../docs/economics/ECONOMIC_DESIGN.md).
 - [Client fee construction](../../docs/clients/CLIENT_FEES.md).
 - [Protocol-state monitoring](../../docs/operations/PROTOCOL_MONITORING.md).
+- [Committee operations](../../docs/governance/COMMITTEE_RUNBOOK.md#4-economic-policy).
 - [Application wiring](../../app/README.md).
 
 ## Arithmetic and degraded-state contracts
