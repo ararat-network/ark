@@ -1,0 +1,2 @@
+# Symlink to AGENTS.md; package-source.py refuses symlinks in the exported tree.
+CLAUDE.md export-ignore
