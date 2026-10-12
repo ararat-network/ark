@@ -209,11 +209,11 @@ ones.
 | --- | --- | --- |
 | Downtime | Signed under 5% of the last 10,000 blocks, about 16 hours | Jailed 600 s, 0.01% of stake slashed |
 | Double sign | Two different votes at one height | 5% slashed, tombstoned: never unjailed |
-| Oracle absence | Reported in under 5% of the eligible blocks in a weekly attendance window | Jailed, not slashed |
+| Oracle absence | Reported in under 5% of the eligible blocks in a weekly attendance window | Jailed a week, not slashed |
 
-A jailed validator earns nothing and leaves the active set. Fix the cause, then send `arkd tx slashing unjail --from
-<key>`; a downtime jail admits it after its 600 s, an oracle jail at once. Edit the description or commission with
-`arkd tx staking edit-validator`.
+A jailed validator earns nothing and leaves the active set. Fix the cause, then send
+`arkd tx slashing unjail --from <key>`; a downtime jail admits it after its 600 s, an oracle jail after its week
+(`jail_duration`). Edit the description or commission with `arkd tx staking edit-validator`.
 
 ## 6. Keys and backups
 

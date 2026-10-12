@@ -282,7 +282,7 @@ stages. `prices` and `check` accept `--tls-mode` and `--tls-*` files; `check` al
 On chain, what matters is whether the validator's reports count:
 
 - `arkd query oracle attendance <valoper>` shows attended blocks against eligible ones in the current window. Under
-  `min_attendance_per_window`, 5% at launch, at the weekly settlement, the validator is jailed.
+  `min_attendance_per_window`, 5% at launch, at the weekly settlement, the validator is jailed for a week.
 - `arkd query oracle reward-weight <valoper>` shows the weight its accurate reports have earned: a price outside the
   `reward_band` around the chain's median earns nothing for that feed.
 - `arkd query oracle exchange-rates` shows the fresh consensus rates; `stored-rates` shows every rate with its age.

@@ -235,6 +235,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | `params.min_attendance_per_window` | `0.05` | Default | Deliberately lenient; the reward lane, not jailing, is the accuracy incentive. Zero switches jailing off; at most `functioning_block_threshold`, so no window can jail the whole set. |
 | `params.functioning_block_threshold` | `0.5` | Default | A block grades attendance only once a majority of power priced it. Floored at a half. |
 | `params.participation_threshold` | `0.2` | Default | A report must price a fifth of the targets to count. Capped at a half. |
+| `params.jail_duration` | `604800` | Default | A week of block time, the attendance window the jail answers: a validator absent for a window sits out the next before it may unjail, and its power stays out of the quorum meanwhile. Positive, capped at three weeks. |
 | `params.max_exchange_rate_age` | `60` | Default | Seconds: ten blocks. Also the age past which proposers leave transactions out of a block, so floored at 30 seconds, well above the five-second gap between blocks, and capped at seven days. |
 | `accounting.reward_window_start_height`, `accounting.attendance_window_start_height` | `1` | Decided | Both windows open at the first block, the default `NewAccounting` writes, so each reward settlement lands on a Treasury funding block, after the funding in the same EndBlock. Zero names a block that never runs: the first windows would end a block early, before Treasury's first funding, and the settlement would find the account empty and clear the week's weights unpaid. Oracle's InitGenesis refuses a start after the genesis block, which it reads as height one though InitChain runs at height zero. |
 | `exchange_rates`, `attendance_records`, `reward_weights` | empty | Decided | State the chain builds. |
@@ -320,6 +321,7 @@ above a billion is acceptable. The Docker localnet and the e2e suites run every 
 | `consensus.evidence` age | `302400`, 21 d | `14400`, 1 d | Equals unbonding, the launch rule. |
 | `treasury.params.reward_funding_window` | `100800` | `14400` | Daily settlement, so subsidy and tax flows are observable. |
 | `oracle` `reward_window`, `attendance_window`, and their `accounting` copies | `100800` | `14400` | Daily. |
+| `oracle` `jail_duration` | `604800` | `86400`, 1 d | One daily attendance window out, as at launch a weekly one. |
 | `oracle` `reward_distribution_window`, and its `accounting` copy | `403200` | `57600` | Four daily windows: each settlement pays a quarter of the pool, as at launch. |
 | `asset.assets` | none | the ten launch currencies, `ACTIVE` | Conversion opens from genesis, as the launch chain opens it by vote. |
 | `market.conversion_policy.base_pool` | 100,000 XDR | 5,000,000 XDR | A deep pool, so test conversions do not move it far. |
@@ -376,7 +378,7 @@ boot from a seat the seat command's own function granted, whose gentx self-deleg
 by the grant, supply unchanged, and both targets at one share; the consensus authority and evidence bounds; the staking, slashing, and gov values in §11; the
 supply ledger, the disbursement pools with nothing open, and the community pool equalling the Distribution balance;
 the economic core of §4, §5, §8, and §9 (reference unit and tax, multiplier cap and step, zero reward targets, the
-three ratios and zero weights, the NOAH factor, the conversion policy and default Tobin tax, the oracle reward windows and their start heights,
+three ratios and zero weights, the NOAH factor, the conversion policy and default Tobin tax, the oracle reward windows and their start heights, the oracle jail duration,
 both one-week delays, and the empty registry); the open contract runtime; the absence of `mint` and of every IBC
 module section; and the vote-extension enable height. The rest of those sections, among them the feed list, the
 oracle thresholds and rate age, Treasury's decay and base-fee parameters, the Tobin overrides, and the empty mandates,
