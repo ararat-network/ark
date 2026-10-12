@@ -17,6 +17,7 @@ means. [Node startup](../../cmd/arkd/README.md#telemetry-startup) owns integrati
 - [6. Configuration ownership](#6-configuration-ownership)
 - [7. Setting it up](#7-setting-it-up)
 - [8. What to watch](#8-what-to-watch)
+- [Series inventory](#series-inventory)
 - [Application mempool occupancy](#application-mempool-occupancy)
 - [Dependency series at the scraper](#dependency-series-at-the-scraper)
 
@@ -485,6 +486,62 @@ responses that carried the commit alone because the proposer's clock found the p
 N1's grace, N5's trickle, N7's fraction of block time, and every window above are placeholders, to be set from the
 first weeks of data the way `docs/operations/PROTOCOL_MONITORING.md` §2.8 sets its own. The parameter names in the conditions are the
 oracle module's, so a governance change to any of them moves the corresponding rule.
+
+## Series inventory
+
+Every series Ark itself exports, one table per process. The [exported-series
+fixtures](../../pkg/telemetry/README.md#exported-series-contract) pin each name, type, and label set, and
+`TestSeriesInventoryMatchesFixtures` fails when a fixture series has no row here or a row names no fixture series.
+Upstream series are not listed: CometBFT's on the instrumentation endpoint, the SDK's baseapp timings and bridged
+`sdk_legacy_*` series (§4), `wasmvm_*`, and the Go runtime's. `curl <endpoint>/metrics` prints every series with its
+`# HELP` description, and CometBFT documents its own.
+
+### `arkd`
+
+Served on `[prometheus]`, port 9464 by default.
+
+| Series | Type | Labels | Measures | Read by |
+| --- | --- | --- | --- | --- |
+| `ark_abci_requests_total` | counter | `method`: `prepare_proposal`, `process_proposal`, `extend_vote`, `verify_vote_extension`, `pre_blocker`; `status`: `Success`, `Rejected`, `CommitOnly`, `Panic`, or an error class such as `PriceFeedClientError`, `InvalidPricesError`, `CodecError`, `ExtendedCommitValidationError` | ABCI++ requests Ark's wrappers handled, by outcome | N2, N5, N6, N7 |
+| `ark_abci_method_duration_milliseconds` | histogram | `method` as above | Ark's own work in each ABCI++ call, excluding the handler it wraps (§8) | N7 |
+| `ark_module_method_duration_milliseconds` | histogram | `module`; `method`: `begin_blocker`, `end_blocker` | Each module's block hooks | N7 |
+| `ark_oracle_vote_targets` | gauge | `status`: `priced`, `omitted`, `dropped` | Active targets in this node's last vote extension | N1 |
+| `ark_oracle_vote_dropped_targets_total` | counter | `denom` | Sidecar rates this node dropped from its vote extension as undecodable | N1 |
+| `ark_oracle_vote_reports_total` | counter | `status`: `valid`, `empty`, `invalid` | Validators' oracle reports processed in preblock | N4, N5 |
+| `ark_oracle_participating_power_share` | gauge | none | Share of commit power whose report met the participation floor, last block | N4 |
+| `ark_oracle_blocks_total` | counter | `functioning`: `true`, `false` | Blocks whose vote extensions were processed | N4 |
+| `ark_pricefeed_responses_total` | counter | `address`; `status`: `success`, `failure` | Sidecar answers to this node's polls | |
+| `ark_pricefeed_response_duration_milliseconds` | histogram | `address` | Sidecar response time | |
+| `ark_pricefeed_sidecar_last_success_seconds` | gauge | `address` | Unix time of the last valid answer from each sidecar | N2, N3 |
+| `ark_pricefeed_snapshot_timestamp_seconds` | gauge | `address` | Unix time the sidecar stamped on the last valid snapshot | N3 |
+| `ark_mempool_transactions` | gauge | `lane`: `normal`, `governance`, `committee` | Pending transactions by admission allocation | N6 |
+| `ark_mempool_bytes` | gauge | `lane` as above | Pending transaction bytes by admission allocation | N6 |
+| `ark_mempool_admissions_total` | counter | `status`: `accepted`, `full`, `invalid` | CheckTx outcomes, rechecks included | N6 |
+| `ark_sdk_query_duration_milliseconds` | histogram | `route`: a registered gRPC method, `app`, `store`, `p2p`, or `unknown` | Completed ABCI queries (§4) | |
+| `target_info` | gauge | `service_name`, `service_version`, `service_instance_id`, `ark_chain_id` | The process's identity (§2) | N1 |
+
+### `pricefeed`
+
+Served with `--metrics`, port 9091 by default.
+
+| Series | Type | Labels | Measures | Read by |
+| --- | --- | --- | --- | --- |
+| `ark_pricefeed_ticks_total` | counter | none | Aggregation ticks | S6 |
+| `ark_pricefeed_aggregate_price` | gauge | `pair` | Each pair's aggregate price, last resolution | S3 |
+| `ark_pricefeed_pair_sample_count` | gauge | `pair` | Provider samples the pair's aggregate used | S2, S3, S5 |
+| `ark_pricefeed_missing_prices_total` | counter | `denom` | Ticks that could not price an active feed | S3 |
+| `ark_pricefeed_bootstrap_price_uses_total` | counter | `pair` | Route legs resolved with a bootstrap price | S4 |
+| `ark_pricefeed_skipped_samples_total` | counter | `pair`, `provider`; `reason`: `stale`, `unchanged` | Cached samples left out of a tick | N1, S1 |
+| `ark_pricefeed_provider_responses_total` | counter | `provider`, `ticker`; `error_code`: `ok` or the failure class | Provider responses | S2 |
+| `ark_pricefeed_provider_last_success_seconds` | gauge | `provider`, `ticker` | Unix time of each ticker's last resolved response | S1, S2 |
+| `ark_pricefeed_provider_api_request_duration_milliseconds` | histogram | `provider`, `status_code` | HTTP request time for API providers | S2 |
+| `ark_pricefeed_provider_websocket_connection_events_total` | counter | `provider`; `event`: `healthy`, `dial_error`, `subscribe_error`, `read_error`, `reconnect` | WebSocket connection lifecycle | S2 |
+| `ark_pricefeed_provider_websocket_parse_errors_total` | counter | `provider` | WebSocket messages that failed to parse | |
+| `ark_pricefeed_provider_websocket_write_errors_total` | counter | `provider`; `operation`: `subscribe`, `update`, `heartbeat` | Failed WebSocket writes | |
+| `ark_pricefeed_chainstate_refreshes_total` | counter | `address`; `status`: `success`, `error` | Feed-registry refresh attempts per chain node | S7 |
+| `ark_pricefeed_chainstate_last_success_seconds` | gauge | `address` | Unix time of the last registry refresh from each node | S7 |
+| `ark_pricefeed_rpc_requests_total` | counter | `method`; `code`: the gRPC status | RPCs the sidecar served | S6 |
+| `target_info` | gauge | `service_name`, `service_version` | The process's identity | N1 |
 
 ## Application mempool occupancy
 

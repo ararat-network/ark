@@ -44,4 +44,7 @@ go test ./cmd/pricefeed/cmd -run TestRunServiceServesItsProcessEndpointsUntilCan
 
 For an intentional contract change, append `-args -update-golden` to the relevant command, review the fixture diff,
 update affected dashboard/alert queries and documentation, then rerun without the update flag. These endpoint tests bind
-local sockets. Do not regenerate the fixtures simply to make an unexplained rename pass.
+local sockets. Do not regenerate the fixtures simply to make an unexplained rename pass. Every fixture series also needs
+a row in [process monitoring's inventory](../../docs/operations/PROCESS_MONITORING.md#series-inventory), and
+`TestSeriesInventoryMatchesFixtures` in `go test ./pkg/telemetry/...` fails on a series without one or a row without a
+series.
