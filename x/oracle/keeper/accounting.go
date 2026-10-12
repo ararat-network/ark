@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/cosmos/gogoproto/proto"
 
@@ -221,7 +222,7 @@ func (k Keeper) SettleRewards(ctx context.Context, rewardWindow, rewardDistribut
 }
 
 // SettleAttendance jails, never slashes, validators below the configured attended share of eligible
-// blocks. Zero disables jailing. Every record is judged without an extra minimum-block floor; zero
+// blocks, for JailDuration of block time before they may unjail. Zero disables jailing. Every record is judged without an extra minimum-block floor; zero
 // eligible blocks require zero attendance. See x/oracle/README.md.
 func (k Keeper) SettleAttendance(ctx context.Context, attendanceWindowBlocks uint64) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -262,6 +263,12 @@ func (k Keeper) SettleAttendance(ctx context.Context, attendanceWindowBlocks uin
 		}
 		if err := k.stakingKeeper.Jail(ctx, consAddr); err != nil {
 			return true, fmt.Errorf("jailing validator %s for oracle attendance: %w", valAddr, err)
+		}
+		// Unreachable error: attendance accrues only to commit validators, and x/slashing's
+		// BeginBlocker already fails on a commit validator without signing info.
+		jailedUntil := sdkCtx.BlockTime().Add(time.Duration(params.JailDuration) * time.Second) //nolint:gosec // G115: Validate caps JailDuration at three weeks.
+		if err := k.slashingKeeper.JailUntil(ctx, consAddr, jailedUntil); err != nil {
+			return true, fmt.Errorf("holding oracle jail for validator %s: %w", valAddr, err)
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventOracleJail{
 			Validator:        valAddr.String(),

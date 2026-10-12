@@ -378,6 +378,7 @@
       "params": {
         "attendance_window": "100800",
         "functioning_block_threshold": "0.500000000000000000",
+        "jail_duration": "604800",
         "max_exchange_rate_age": "60",
         "min_attendance_per_window": "0.050000000000000000",
         "participation_threshold": "0.200000000000000000",

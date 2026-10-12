@@ -505,6 +505,7 @@ func TestLaunchGenesisPinsArkEconomics(t *testing.T) {
 	require.Equal(t, 4*chain.BlocksPerWeek, oracleGenesis.Params.RewardDistributionWindow,
 		"four weeks: the subsidy floors oracle income, so smoothing only spreads tax windfalls")
 	require.Equal(t, oracleGenesis.Params.RewardDistributionWindow, oracleGenesis.Accounting.RewardDistributionWindow)
+	require.Equal(t, uint64(7*86_400), oracleGenesis.Params.JailDuration, "an attendance jail holds the week it answers")
 
 	var assetGenesis assettypes.GenesisState
 	cdc.MustUnmarshalJSON(state[assettypes.ModuleName], &assetGenesis)
@@ -724,6 +725,7 @@ func testnetOverrides(cdc codec.Codec, launch *genutiltypes.AppGenesis, state ma
 	oracleGenesis.Params.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Params.AttendanceWindow = chain.BlocksPerDay
 	oracleGenesis.Params.RewardDistributionWindow = 4 * chain.BlocksPerDay
+	oracleGenesis.Params.JailDuration = 86_400
 	oracleGenesis.Accounting.RewardWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.AttendanceWindow = chain.BlocksPerDay
 	oracleGenesis.Accounting.RewardDistributionWindow = 4 * chain.BlocksPerDay

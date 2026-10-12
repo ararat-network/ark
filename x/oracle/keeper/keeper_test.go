@@ -35,14 +35,15 @@ import (
 type KeeperTestSuite struct {
 	suite.Suite
 
-	ctx           context.Context
-	keeper        *keeper.Keeper
-	msgServer     types.MsgServer
-	queryClient   types.QueryClient
-	accountKeeper *testutil.MockAccountKeeper
-	bankKeeper    *testutil.MockBankKeeper
-	distrKeeper   *testutil.MockDistributionKeeper
-	stakingKeeper *testutil.MockStakingKeeper
+	ctx            context.Context
+	keeper         *keeper.Keeper
+	msgServer      types.MsgServer
+	queryClient    types.QueryClient
+	accountKeeper  *testutil.MockAccountKeeper
+	bankKeeper     *testutil.MockBankKeeper
+	distrKeeper    *testutil.MockDistributionKeeper
+	stakingKeeper  *testutil.MockStakingKeeper
+	slashingKeeper *testutil.MockSlashingKeeper
 
 	marketRebaser   *testutil.MockReferenceRebaser
 	treasuryRebaser *testutil.MockReferenceRebaser
@@ -74,6 +75,7 @@ func TestNewKeeperRequiresDistributionModuleAccount(t *testing.T) {
 			nil,
 			nil,
 			nil,
+			nil,
 		)
 	}
 
@@ -99,6 +101,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.bankKeeper = testutil.NewMockBankKeeper(ctrl)
 	s.distrKeeper = testutil.NewMockDistributionKeeper(ctrl)
 	s.stakingKeeper = testutil.NewMockStakingKeeper(ctrl)
+	s.slashingKeeper = testutil.NewMockSlashingKeeper(ctrl)
 	s.marketRebaser = testutil.NewMockReferenceRebaser(ctrl)
 	s.treasuryRebaser = testutil.NewMockReferenceRebaser(ctrl)
 
@@ -114,6 +117,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.bankKeeper,
 		s.distrKeeper,
 		s.stakingKeeper,
+		s.slashingKeeper,
 	)
 
 	s.keeper.SetReferenceRebasers(s.marketRebaser, s.treasuryRebaser)

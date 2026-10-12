@@ -118,6 +118,7 @@ func newOracleSimulationKeeper(t *testing.T) (context.Context, *keeper.Keeper, *
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 
 	return ctx, oracleKeeper, accountKeeper

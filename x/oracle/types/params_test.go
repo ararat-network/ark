@@ -16,6 +16,7 @@ const (
 	voteThresholdOutOfRange        = "VoteThreshold must be between"
 	functioningThresholdOutOfRange = "FunctioningBlockThreshold must be between"
 	exchangeRateAgeOutOfRange      = "MaxExchangeRateAge must be between"
+	jailDurationOutOfRange         = "JailDuration must be between"
 )
 
 func TestParamsValidate(t *testing.T) {
@@ -32,6 +33,7 @@ func TestParamsValidate(t *testing.T) {
 				t.Helper()
 				require.Equal(t, math.LegacyMustNewDecFromStr("0.666666666666666667"), p.VoteThreshold)
 				require.Equal(t, uint64(60), p.MaxExchangeRateAge)
+				require.Equal(t, uint64(7*86_400), p.JailDuration)
 			},
 		},
 		// VoteThreshold
@@ -263,6 +265,26 @@ func TestParamsValidate(t *testing.T) {
 			name:      "max exchange rate age above the domain cap",
 			mutate:    func(p *types.Params) { p.MaxExchangeRateAge = types.MaxAllowedExchangeRateAge + 1 },
 			expectErr: exchangeRateAgeOutOfRange,
+		},
+		// JailDuration
+		{
+			// Zero would let an attendance jail lift in the next block.
+			name:      "jail duration zero",
+			mutate:    func(p *types.Params) { p.JailDuration = 0 },
+			expectErr: jailDurationOutOfRange,
+		},
+		{
+			name:   "jail duration of one second",
+			mutate: func(p *types.Params) { p.JailDuration = 1 },
+		},
+		{
+			name:   "jail duration at the domain cap",
+			mutate: func(p *types.Params) { p.JailDuration = types.MaxJailDuration },
+		},
+		{
+			name:      "jail duration above the domain cap",
+			mutate:    func(p *types.Params) { p.JailDuration = types.MaxJailDuration + 1 },
+			expectErr: jailDurationOutOfRange,
 		},
 	}
 

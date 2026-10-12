@@ -48,6 +48,7 @@ func TestAppModuleStandalone(t *testing.T) {
 	bankKeeper := testutil.NewMockBankKeeper(ctrl)
 	distributionKeeper := testutil.NewMockDistributionKeeper(ctrl)
 	stakingKeeper := testutil.NewMockStakingKeeper(ctrl)
+	slashingKeeper := testutil.NewMockSlashingKeeper(ctrl)
 
 	// The constructor asserts both its own account and the distribution
 	// account the reward pool pays into, so these answer before ProvideModule.
@@ -65,6 +66,7 @@ func TestAppModuleStandalone(t *testing.T) {
 		BankKeeper:         bankKeeper,
 		DistributionKeeper: distributionKeeper,
 		StakingKeeper:      stakingKeeper,
+		SlashingKeeper:     slashingKeeper,
 	})
 	require.NotNil(t, outputs.OracleKeeper)
 	require.IsType(t, oraclemodule.AppModule{}, outputs.Module)
@@ -79,6 +81,7 @@ func TestAppModuleStandalone(t *testing.T) {
 		BankKeeper:         bankKeeper,
 		DistributionKeeper: distributionKeeper,
 		StakingKeeper:      stakingKeeper,
+		SlashingKeeper:     slashingKeeper,
 	})
 	require.NotNil(t, named.OracleKeeper)
 

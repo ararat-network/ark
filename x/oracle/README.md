@@ -47,6 +47,11 @@ Attendance drives only the oracle module's periodic settlement, which jails — 
 share of eligible blocks falls below `min_attendance_per_window`. Accuracy and coverage incentives come entirely from
 band-gated rewards, not from this counter.
 
+The jail holds for `jail_duration`, a week of block time by default: settlement sets slashing's `JailedUntil`, which
+`MsgUnjail` enforces. Staking's jail alone lifts in the next block, which would return the absent power to the quorum
+the jail removed it from and leave a validator that never reports a block's interruption a week. The duration is
+positive and capped at `MaxJailDuration`, three weeks, past which a jail is an ejection.
+
 Every record is judged at settlement, however few eligible blocks it holds. `min_attendance_per_window` is the whole
 grace: a ratio is scale-free, so a validator present for part of a window is held to the same share of the blocks it was
 actually present for, and an eligible-block floor on top would silently soften the ratio governance set. Correlated

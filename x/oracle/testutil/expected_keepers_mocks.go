@@ -12,6 +12,7 @@ package testutil
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	types "github.com/ararat-network/ark/x/oracle/types"
 	types0 "github.com/cosmos/cosmos-sdk/types"
@@ -85,6 +86,44 @@ func (m *MockStakingKeeper) ValidatorByConsAddr(arg0 context.Context, arg1 types
 func (mr *MockStakingKeeperMockRecorder) ValidatorByConsAddr(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorByConsAddr", reflect.TypeOf((*MockStakingKeeper)(nil).ValidatorByConsAddr), arg0, arg1)
+}
+
+// MockSlashingKeeper is a mock of SlashingKeeper interface.
+type MockSlashingKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockSlashingKeeperMockRecorder
+	isgomock struct{}
+}
+
+// MockSlashingKeeperMockRecorder is the mock recorder for MockSlashingKeeper.
+type MockSlashingKeeperMockRecorder struct {
+	mock *MockSlashingKeeper
+}
+
+// NewMockSlashingKeeper creates a new mock instance.
+func NewMockSlashingKeeper(ctrl *gomock.Controller) *MockSlashingKeeper {
+	mock := &MockSlashingKeeper{ctrl: ctrl}
+	mock.recorder = &MockSlashingKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockSlashingKeeper) EXPECT() *MockSlashingKeeperMockRecorder {
+	return m.recorder
+}
+
+// JailUntil mocks base method.
+func (m *MockSlashingKeeper) JailUntil(arg0 context.Context, arg1 types0.ConsAddress, arg2 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "JailUntil", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// JailUntil indicates an expected call of JailUntil.
+func (mr *MockSlashingKeeperMockRecorder) JailUntil(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "JailUntil", reflect.TypeOf((*MockSlashingKeeper)(nil).JailUntil), arg0, arg1, arg2)
 }
 
 // MockDistributionKeeper is a mock of DistributionKeeper interface.
