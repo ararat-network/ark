@@ -32,7 +32,7 @@ maintain that boundary.
 
 ## Govern and respond
 
-- [Governance operations](governance/GOVERNANCE_OPERATIONS.md): proposals, service permissions, and appointments.
+- [Governance runbook](governance/GOVERNANCE_RUNBOOK.md): proposals, upgrades, appointments, and governance's procedures for each module.
 - [Committee runbook](governance/COMMITTEE_RUNBOOK.md): each appointed committee's powers, preflight, and submission; Reserve alerts; conversion depth; the grants programme.
 
 ## Integrate clients
@@ -106,7 +106,7 @@ construction belongs beside provider code; deploying the node and sidecar togeth
    "replaced", "no longer", or "previously", and no record of what a rule used to be. When behaviour changes, rewrite
    the text to the new state; git keeps the history. Keep current behaviour and proposals distinguishable: deferred
    code and dependency changes belong in [FUTURE_CHANGES.md](direction/FUTURE_CHANGES.md), post-launch governance
-   operations in [GOVERNANCE_OPERATIONS.md](governance/GOVERNANCE_OPERATIONS.md), and unimplemented proposals are
+   operations in [GOVERNANCE_RUNBOOK.md](governance/GOVERNANCE_RUNBOOK.md), and unimplemented proposals are
    labelled as such.
 4. Make documentation discoverable. The root README links here; this index links topic documents and subsystem entry
    points. Parent READMEs link their useful child READMEs, and local READMEs link the relevant topic documents.

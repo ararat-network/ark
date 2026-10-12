@@ -54,7 +54,7 @@ a Treasury-to-Market write dependency.
 Reference changes rebase the pool and delta together, preserving spread pressure. Policy updates cannot change the unit.
 The mandate corridor is not rebased silently: its old denomination closes committee policy updates until reappointment;
 the dimensionless Tobin cap survives. [Governance
-operations](../../docs/governance/GOVERNANCE_OPERATIONS.md#4-committee-appointments) owns the ordered reappointment
+runbook](../../docs/governance/GOVERNANCE_RUNBOOK.md#3-committees) owns the ordered reappointment
 procedure.
 
 ## Block settlement and failure boundaries

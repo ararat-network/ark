@@ -195,7 +195,7 @@ a rate is a state the chain reaches whenever a feed is young or stale, and every
 feed addition and the registration against it never share a proposal: governance proposes the feed, watches it print,
 then registers. That cycle falls where it is cheapest, on the one admission path with no holders waiting and the least
 proven price data. The launch set follows it: the artefact registers the eleven feeds and no asset, and governance
-registers the [ten currencies](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion) once NOAH has a
+registers the [ten currencies](../../docs/governance/GOVERNANCE_RUNBOOK.md#opening-conversion) once NOAH has a
 market price.
 
 - **`ACTIVE`.** Issuance, conversion, valuation, liability accounting, and redemption all run. The asset pins its feed
@@ -354,7 +354,7 @@ treasury; plans only on `SUSPENDED` assets; a matching `WRITE_OFF` record for a 
 a matching record for any `RETIRED` asset with positive supply; a coherent mandate window; and every recorded
 suspension naming a registered asset. The launch artefact registers no asset, unlike `DefaultGenesisState` and the
 testnet artefact, which seed the ten `ACTIVE`; governance registers the ten currencies after
-launch ([opening conversion](../../docs/governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
+launch ([opening conversion](../../docs/governance/GOVERNANCE_RUNBOOK.md#opening-conversion)).
 
 The module has no BeginBlocker, EndBlocker, or preblock hook. Every transition is a governance message that checks its
 own precondition and applies in its block, so no rate arrival and no elapsed height can move an asset. It needs narrow

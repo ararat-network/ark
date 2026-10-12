@@ -149,7 +149,7 @@ which holds only while validators draw on different providers.
 - The NOAH leg of every route is a bootstrap price until a provider reports a live NOAH sample, so the first venue to
   list NOAH re-marks every rate. NOAH venues enter the configs together and only once a venue has depth, and conversion
   is closed until then, so no currency exists to re-mark ([opening
-  conversion](../governance/GOVERNANCE_OPERATIONS.md#6-opening-conversion)).
+  conversion](../governance/GOVERNANCE_RUNBOOK.md#opening-conversion)).
 
 **Review questions.** Does a new provider parse untrusted bytes with a bound? Does any error path log a request that
 carries a key? How many validators would a compromise of the default providers move?

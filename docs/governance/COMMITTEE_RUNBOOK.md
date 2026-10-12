@@ -1,7 +1,7 @@
 # Committee runbook
 
 For the members of an appointed committee, and the governance steps their work interleaves with: what each committee
-may do, how to size and preflight it, and what to check afterwards. [Governance operations](GOVERNANCE_OPERATIONS.md)
+may do, how to size and preflight it, and what to check afterwards. [Governance runbook](GOVERNANCE_RUNBOOK.md)
 owns appointment and governance's own decisions; [protocol monitoring](../operations/PROTOCOL_MONITORING.md) owns alert
 conditions, which the sections below answer by ID; each module's README owns the mechanism behind its committee's power.
 
@@ -56,7 +56,7 @@ from decision to broadcast short.
 Committee messages ride the committee lane, which reserves a share of pool storage and block space ([mempool
 policy](../../app/mempool/README.md#admission-service-and-sdk-behaviour)), so an incident's transaction reaches a block
 under congestion. A contract root's transactions ride the normal lane instead
-([governance operations §4](GOVERNANCE_OPERATIONS.md#4-committee-appointments)).
+([governance runbook §3](GOVERNANCE_RUNBOOK.md#3-committees)).
 
 ## 2. Security
 
@@ -203,7 +203,7 @@ The committee moves Market's depth, recovery period, and spread floor inside its
 `arkd query market conversion-policy` first. It sets a denomination's Tobin tax between the default and the mandate's
 cap with `committee-set-tobin-tax`. Governance moves policy beyond the corridor with `MsgUpdatePolicy`. A reference
 change closes the corridor until governance reappoints the committee in the same proposal
-([governance operations §4](GOVERNANCE_OPERATIONS.md#4-committee-appointments)).
+([governance runbook §3](GOVERNANCE_RUNBOOK.md#3-committees)).
 
 ### Sizing depth
 
@@ -219,7 +219,7 @@ The factors hold at a 2% floor and a one-day recovery; in general they are `2 / 
 `1 / floor`. [Market's quote contract](../../x/market/README.md#local-quote-and-admission-contracts) derives them.
 
 **When to run it.** With a live NOAH price before conversion opens
-([opening conversion](GOVERNANCE_OPERATIONS.md#6-opening-conversion)), when a grant tranche adds liquid NOAH, and
+([opening conversion](GOVERNANCE_RUNBOOK.md#opening-conversion)), when a grant tranche adds liquid NOAH, and
 when `Query/Pool` shows `ark_pool_delta` held more negative than a hundredth of `base_pool`, which is expansion flow
 paying above the floor.
 

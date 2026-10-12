@@ -12,7 +12,7 @@ endpoint, otel.yaml, and CometBFT's own registry are how an operator watches the
 what the chain believes.
 
 Responses are keyed by the alert IDs used here: governance's in [governance
-operations §5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts), the Reserve committee's in the [committee
+runbook](../governance/GOVERNANCE_RUNBOOK.md#exposure-alerts), the Reserve committee's in the [committee
 runbook](../governance/COMMITTEE_RUNBOOK.md#alerts). The split: an alert states a condition, why it matters, and the
 first thing to look at; the response states what a committee or governance then decides. Writing the decision into
 both is how the two drift apart.
@@ -62,7 +62,8 @@ The work in Phase A is to learn the calm-state distribution of the three indicat
 them. Collect at least a few weeks of `ExposureStatus`, then choose weights so that a calm reading composes to roughly
 1.0–1.1 and a genuinely stressed one approaches the cap. Weights chosen from priors rather than from this data are
 guesses, which is why [genesis](../governance/GENESIS.md#4-treasury) launches them at zero, and
-`docs/governance/GOVERNANCE_OPERATIONS.md` §3 gates the activation message on this window having produced numbers.
+the [governance runbook](../governance/GOVERNANCE_RUNBOOK.md#6-treasury) gates switching them on on this window having
+produced numbers.
 
 Panel 2 of the dashboard (§2.6) is the instrument. Building it is not preparation for calibration; it is the
 calibration.
@@ -122,8 +123,7 @@ bounds alike, is capped with it. This is the signal the whole model exists to pr
 should page for its own sake.
 
 **First look:** `EventExposureRefreshed` carries all three indicators, so read which one is driving `uncapped`. The
-decision that follows is governance's ([governance operations
-§5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts)).
+decision that follows is governance's ([governance runbook](../governance/GOVERNANCE_RUNBOOK.md#exposure-alerts)).
 
 #### A2 — Refresh stalled · page (and the one alert that applies in Phase A)
 
@@ -161,7 +161,7 @@ understates exposure.
 
 **First look:** the event carries `stale_member_supply` and `untrusted_suspended_supply`, which say precisely which
 members and why. A stale feed and a suspension-without-plan need different fixes. Expect a committee follow-up if the
-window was long ([governance operations §5](../governance/GOVERNANCE_OPERATIONS.md#5-exposure-alerts)).
+window was long ([governance runbook](../governance/GOVERNANCE_RUNBOOK.md#exposure-alerts)).
 
 #### A5 — Reserve burnable surplus collapsed · notify the committee
 

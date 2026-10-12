@@ -232,7 +232,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
 | `reference_denom` | `axdr` | Decided | The protocol reference unit (`x/oracle/README.md` §1.3). |
-| `feeds.denoms` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, `axdr` | Decided | Registration needs the asset's feed Active, so the ten currencies [registered after launch](GOVERNANCE_OPERATIONS.md#6-opening-conversion) print from genesis; `axdr` is the reference and is never registered. |
+| `feeds.denoms` | `aaud`, `acad`, `acny`, `aeur`, `agbp`, `ajpy`, `akrw`, `amxn`, `asgd`, `ausd`, `axdr` | Decided | Registration needs the asset's feed Active, so the ten currencies [registered after launch](GOVERNANCE_RUNBOOK.md#opening-conversion) print from genesis; `axdr` is the reference and is never registered. |
 | `params.vote_threshold` | `0.666…7` | Default | More than two thirds of power must vote, above Terra's half. |
 | `params.reward_band` | `0.02` | Default | Terra Classic's default. |
 | `params.reward_window` | `100800` | Default | Weekly reward settlement. |
@@ -249,7 +249,7 @@ the depth, and sustained one-way flow at the floor is about 1% of the depth a da
 
 | Setting | Value | Status | Why |
 | --- | --- | --- | --- |
-| `assets` | none; the ten currencies are registered after launch, once NOAH has a market price | Decided | Registering an asset is what creates a liability and admits it to conversion, and Market mints only an `ACTIVE` ask, so an empty registry closes conversion while the feeds, the placeholder NOAH leg, and the seeded gas factor keep the oracle lane and fees working ([opening conversion](GOVERNANCE_OPERATIONS.md#6-opening-conversion)). |
+| `assets` | none; the ten currencies are registered after launch, once NOAH has a market price | Decided | Registering an asset is what creates a liability and admits it to conversion, and Market mints only an `ACTIVE` ask, so an empty registry closes conversion while the feeds, the placeholder NOAH leg, and the seeded gas factor keep the oracle lane and fees working ([opening conversion](GOVERNANCE_RUNBOOK.md#opening-conversion)). |
 | asset `description` | "An Ark currency tracking the Australian dollar." and so on | Decided | Named per currency from the table in `pkg/chain/metadata.go`. Stored metadata is checked against the derivation at every import, so a table entry is added only before its denomination is registered and never changed after; an unnamed denomination reads "An Ark currency." |
 | asset `name`, `symbol` | `ArkAUD`, `arkAUD` and so on | Decided | Derived from the denomination. |
 | `params.settlement_activation_delay` | `604800` | Decided | The window in which governance can cancel a mistaken settlement plan before its terms bind. One week of block time, the Claims cancellation period, so a cancel fits a full deposit period and vote with three days left to notice the mistake, whatever the block pace. The code default moved with it. |
@@ -348,7 +348,7 @@ shares, and the founder's two awards, and changes nothing else.
 
 No committee is appointed in genesis. The message path is what observes and records a committee's key shape, the
 multisig accounts must exist and hold their own gas first, and appointments follow incident exposure rather than chain
-age ([governance operations §4](GOVERNANCE_OPERATIONS.md#4-committee-appointments)). With half the set as quorum and a
+age ([governance runbook §3](GOVERNANCE_RUNBOOK.md#3-committees)). With half the set as quorum and a
 one-day expedited vote, the deliberative committees save at most a day or two over governance itself; the two
 emergency mandates buy real time.
 

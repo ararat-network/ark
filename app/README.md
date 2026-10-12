@@ -76,7 +76,7 @@ the dependency remains in `go.mod`.
 [wasm.go](wasm.go) constructs the contract runtime and registers the state-sync snapshot extension that carries contract
 code, which lives outside the IAVL tree; [app.go](app.go) re-warms the pinned-code cache after loading the store, since
 the pin list is state and the VM cache is per-process. Verify dependency versions in [go.mod](../go.mod).
-The [governance guide](../docs/governance/GOVERNANCE_OPERATIONS.md) owns contract permissions.
+The [governance runbook](../docs/governance/GOVERNANCE_RUNBOOK.md#contract-runtime) owns contract permissions.
 
 - **The policy router**, which wraps the SDK message router handed to Wasmd. It receives the
   exact SDK message Wasmd's canonical encoder produces, prices it, charges the dispatching account, and calls the

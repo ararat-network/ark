@@ -2,7 +2,7 @@
 
 For contributors considering deferred code and dependency changes. Each item distinguishes shipped foundations from
 unimplemented work and states its revisit trigger. [Closed items](#closed-items) records work decided against and what
-alone would reopen it. [Governance operations](../governance/GOVERNANCE_OPERATIONS.md) owns actions available through
+alone would reopen it. [Governance runbook](../governance/GOVERNANCE_RUNBOOK.md) owns actions available through
 existing messages.
 
 ## Contents

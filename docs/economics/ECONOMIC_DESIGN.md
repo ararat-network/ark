@@ -4,7 +4,7 @@ This reference states Ark's economic contract between modules: ownership, custod
 targets, fees, and reward funding. It is intended for protocol contributors and readers evaluating how funds and
 authority move. The [subsystem READMEs](../../app/README.md#module-entry-points) own each module's internals and the
 reasons for its local rules; [genesis](../governance/GENESIS.md) owns launch settings; [governance
-operations](../governance/GOVERNANCE_OPERATIONS.md) owns the procedures for changing them.
+runbook](../governance/GOVERNANCE_RUNBOOK.md) owns the procedures for changing them.
 
 ## Contents
 
@@ -530,7 +530,7 @@ The contract runtime ships open: anyone may upload and instantiate from height o
 the calling contract as signer. The accept list's response shapes are consensus inputs, so widening it is a
 coordinated binary upgrade, not a parameter vote. There is no IBC.
 [Application integration](../../app/README.md#wasm-integration) owns runtime wiring and the accept list;
-[governance operations](../governance/GOVERNANCE_OPERATIONS.md#2-the-contract-runtime) owns permissions.
+[governance runbook](../governance/GOVERNANCE_RUNBOOK.md#contract-runtime) owns permissions.
 
 ## 6. Validator and Oracle funding
 
@@ -649,7 +649,7 @@ Appointment, staleness, and module-specific bounds are documented by the
 
 - [Whitepaper](../papers/WHITEPAPER.md): why the design is what it is, and its proofs.
 - [Genesis](../governance/GENESIS.md): launch settings, open values, and validation.
-- [Governance operations](../governance/GOVERNANCE_OPERATIONS.md): appointments, calibration, and external-asset onboarding.
+- [Governance runbook](../governance/GOVERNANCE_RUNBOOK.md): appointments, calibration, and external-asset onboarding.
 - [Future changes](../direction/FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
 - [Application module map](../../app/README.md#module-entry-points): state, API schemas, and subsystem development.
 - [Ante/post handling](../../app/ante/README.md), [client fees](../clients/CLIENT_FEES.md), and

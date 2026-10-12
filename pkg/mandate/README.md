@@ -102,7 +102,8 @@ and tallies therefore need no native committee module: the mandate is the
 charter, while account backing and any delegation from it have lifecycles
 of their own. That cuts both ways: an authz grant or a role inside a
 contract outlives the term it was made under and lets one key act under a
-shape recorded for a quorum, which is why governance operations says not to
+shape recorded for a quorum, which is why the [governance
+runbook](../../docs/governance/GOVERNANCE_RUNBOOK.md#3-committees) says not to
 make one.
 
 Shape records what was provable at appointment, not a continuously observed

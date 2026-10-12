@@ -54,8 +54,8 @@ downloads binaries.
 **For delegators:** Ark pays no staking inflation. Validator rewards come from the transfer tax and the subsidy pool, so
 read [validator and Oracle funding](docs/economics/ECONOMIC_DESIGN.md#6-validator-and-oracle-funding) before delegating.
 
-**For governance participants and committees:** [Governance operations](docs/governance/GOVERNANCE_OPERATIONS.md) covers
-proposals, service permissions, and appointments. The [committee runbook](docs/governance/COMMITTEE_RUNBOOK.md) covers
+**For governance participants and committees:** [Governance runbook](docs/governance/GOVERNANCE_RUNBOOK.md) covers
+proposals, upgrades, appointments, and governance's procedures for each module. The [committee runbook](docs/governance/COMMITTEE_RUNBOOK.md) covers
 what each appointed committee does, how it submits, and the grants programme.
 
 **For client integrators:** [Client fee construction](docs/clients/CLIENT_FEES.md) explains signed fee declarations,
