@@ -260,6 +260,69 @@ func (s *KeeperTestSuite) TestExposureIdleBlockDecaysFlow() {
 	s.Require().Equal(math.LegacyNewDec(10), s.getExposureState().FlowPressure)
 }
 
+// flowFixture prices one registry member at par so a settling block can value
+// liability, and answers the Buffer reads the given blocks will make in order.
+func (s *KeeperTestSuite) flowFixture(bufferReads ...int64) {
+	s.setExposureParams(func(p *types.Params) {
+		p.FlowDecay = math.LegacyMustNewDecFromStr("0.5")
+	})
+	s.setAssets(chain.USDBaseDenom)
+	s.setRates(oracletypes.RateSet{
+		chain.XDRBaseDenom: math.LegacyOneDec(),
+		chain.USDBaseDenom: math.LegacyOneDec(),
+	})
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 10_000)).AnyTimes()
+	s.expectBufferBalances(bufferReads...)
+}
+
+// settleFlow runs one block that only redeems (positive) or only expands
+// (negative) the given NOAH value.
+func (s *KeeperTestSuite) settleFlow(value int64) {
+	totals := markettypes.ConversionTotals{
+		GrossOffer:        math.ZeroInt(),
+		EligiblePrincipal: math.ZeroInt(),
+		RedemptionOutput:  math.ZeroInt(),
+		RedeemedValue:     math.LegacyZeroDec(),
+	}
+	if value > 0 {
+		totals.RedemptionOutput = math.NewInt(value)
+		totals.RedeemedValue = math.LegacyNewDec(value)
+	} else {
+		totals.GrossOffer = math.NewInt(-value)
+		totals.EligiblePrincipal = math.NewInt(-value)
+	}
+	_, err := s.keeper.SettleConversions(s.ctx, totals)
+	s.Require().NoError(err)
+}
+
+// TestExposureFlowChurnCancels pins two-way trading as no pressure: a block
+// that redeems forty and one that expands forty net to nothing. Clipping each
+// block at zero before folding would have read the pair as ten.
+func (s *KeeperTestSuite) TestExposureFlowChurnCancels() {
+	s.flowFixture(0, 0)
+
+	s.settleFlow(40)
+	s.Require().Equal(math.LegacyNewDec(20), s.getExposureState().FlowPressure)
+
+	// Half of twenty less half of forty is minus ten, floored at zero.
+	s.settleFlow(-40)
+	s.Require().True(s.getExposureState().FlowPressure.IsZero())
+}
+
+// TestExposureFlowInflowCannotHideALaterRun pins the floor: an expansion folds
+// the series to zero and no further, so a redemption run that follows reads in
+// full rather than first repaying credit the inflow banked.
+func (s *KeeperTestSuite) TestExposureFlowInflowCannotHideALaterRun() {
+	s.flowFixture(0, 0)
+
+	s.settleFlow(-1_000)
+	s.Require().True(s.getExposureState().FlowPressure.IsZero())
+
+	s.settleFlow(40)
+	s.Require().Equal(math.LegacyNewDec(20), s.getExposureState().FlowPressure)
+}
+
 // TestExposureUpdateRaisesMultiplierByStep drives one full recomputation and
 // pins the step limit: the composite asks for far more than a quarter, and one
 // period delivers exactly a quarter.

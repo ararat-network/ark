@@ -6295,9 +6295,11 @@ type ExposureState struct {
 	// against sample_interval, bounds annualised volatility by the square root of
 	// a year in seconds.
 	VolatilityVariance string `protobuf:"bytes,2,opt,name=volatility_variance,json=volatilityVariance,proto3" json:"volatility_variance,omitempty"`
-	// flow_pressure is the EMA of per-block net redemption value in NOAH. It is
-	// an absolute quantity, divided by net liability only when the multiplier is
-	// applied, so a changing liability never restates the stored series.
+	// flow_pressure is the EMA of per-block redemption value net of expansion,
+	// in NOAH, floored at zero after each fold: two-way churn cancels, and an
+	// earlier inflow cannot bank credit that hides a later run. It is divided by
+	// net liability only when the multiplier is applied, so a changing liability
+	// never restates the stored series.
 	FlowPressure string `protobuf:"bytes,3,opt,name=flow_pressure,json=flowPressure,proto3" json:"flow_pressure,omitempty"`
 	// liability_ratio is the ratio behind the last applied update, kept so the
 	// multiplier's inputs are readable without recomputing the fold.

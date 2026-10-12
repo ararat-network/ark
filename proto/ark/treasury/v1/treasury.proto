@@ -144,9 +144,11 @@ message ExposureState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // flow_pressure is the EMA of per-block net redemption value in NOAH. It is
-  // an absolute quantity, divided by net liability only when the multiplier is
-  // applied, so a changing liability never restates the stored series.
+  // flow_pressure is the EMA of per-block redemption value net of expansion,
+  // in NOAH, floored at zero after each fold: two-way churn cancels, and an
+  // earlier inflow cannot bank credit that hides a later run. It is divided by
+  // net liability only when the multiplier is applied, so a changing liability
+  // never restates the stored series.
   string flow_pressure = 3 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",

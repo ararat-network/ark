@@ -78,7 +78,7 @@ The instrument updates are:
 ```text
 variance = volatility_decay * variance + (1 - volatility_decay) * clamped_return^2
 interval = volatility_decay * interval + (1 - volatility_decay) * max(1, seconds_since_last_sample)
-flow     = flow_decay * flow + (1 - flow_decay) * max(0, RedeemedValue - EligiblePrincipal)
+flow     = max(0, flow_decay * flow + (1 - flow_decay) * (RedeemedValue - EligiblePrincipal))
 LR       = net_liability / circulating_NOAH
 sigma    = sqrt(variance * seconds_per_year / interval)
 FR       = flow / net_liability
@@ -86,8 +86,9 @@ raw      = (1 + liability_ratio_weight * LR) * (1 + volatility_weight * sigma) *
 m        = clamp(step_limit(raw, previous_m, multiplier_max_step), 1, multiplier_cap)
 ```
 
-Circulating NOAH excludes the raw NOAH balances in the four custody accounts, not their haircut-valued recognised
-capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
+Flow nets each block's expansion against its redemption and floors at zero after each fold, so two-way churn cancels
+and an earlier inflow cannot bank credit against a later run. Circulating NOAH excludes the raw NOAH balances in the
+four custody accounts, not their haircut-valued recognised capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
 Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under the same
 weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and a return
 carried across a halt counts the time it spanned rather than reading as one block's move (D133). Each interval counts

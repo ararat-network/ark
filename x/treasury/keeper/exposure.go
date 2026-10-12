@@ -119,27 +119,28 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 	return nil
 }
 
-// sampleFlow tracks positive redemption value net of expansion in absolute NOAH. Liability
-// normalisation occurs at refresh so the EWMA does not mix historical denominators.
+// sampleFlow folds each block's redemption value net of expansion, signed, in absolute NOAH, and
+// floors the series at zero: two-way churn cancels, and an earlier inflow cannot bank credit that
+// hides a later run. Liability normalisation occurs at refresh so the EWMA does not mix historical
+// denominators.
 func sampleFlow(state *types.ExposureState, params types.Params, totals markettypes.ConversionTotals) error {
 	sample := math.LegacyZeroDec()
-	if !totals.RedeemedValue.IsNil() && totals.RedeemedValue.IsPositive() {
-		principal := math.LegacyZeroDec()
-		if !totals.EligiblePrincipal.IsNil() {
-			principal = math.LegacyNewDecFromInt(totals.EligiblePrincipal)
-		}
-		net, err := decimal.Sub(totals.RedeemedValue, principal)
-		if err != nil {
+	if !totals.RedeemedValue.IsNil() {
+		sample = totals.RedeemedValue
+	}
+	if !totals.EligiblePrincipal.IsNil() {
+		var err error
+		if sample, err = decimal.Sub(sample, math.LegacyNewDecFromInt(totals.EligiblePrincipal)); err != nil {
 			return fmt.Errorf("valuing net redemption flow: %w", err)
-		}
-		if net.IsPositive() {
-			sample = net
 		}
 	}
 
 	flow, err := ewma(state.FlowPressure, sample, params.FlowDecay)
 	if err != nil {
 		return fmt.Errorf("folding the flow series: %w", err)
+	}
+	if flow.IsNegative() {
+		flow = math.LegacyZeroDec()
 	}
 	state.FlowPressure = flow
 	return nil
