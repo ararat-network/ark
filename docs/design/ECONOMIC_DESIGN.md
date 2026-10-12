@@ -188,18 +188,19 @@ buffer_paid   = min(Q, floor(Q * B / L))
 residual_mint = Q - buffer_paid
 ```
 
-`L` is net, because no claim can arrive from paper the Reserve holds (D67), and raw, never scaled by the exposure
-multiplier (D73). It counts every obligation the chain can value (§4.1): a stale member at its last known rate and a
-suspended asset at its plan rate stay in, so their share of the Buffer is held for them rather than paid to whoever
-exits during the outage. Only supply the chain cannot value, a member never priced or suspended supply without a plan,
-leaves the denominator and is disclosed, so a suspension elsewhere never switches the Buffer off for the exits it
-exists to dampen (D4).
+The product is formed before the division, so the code's result can sit one base unit above this exact floor but never
+above `B` or `Q` ([Treasury](../../x/treasury/README.md#arithmetic-and-degraded-state-contracts)). `L` is net, because
+no claim can arrive from paper the Reserve holds (D67), and raw, never scaled by the exposure multiplier (D73). It
+counts every obligation the chain can value (§4.1): a stale member at its last known rate and a suspended asset at its
+plan rate stay in, so their share of the Buffer is held for them rather than paid to whoever exits during the outage.
+Only supply the chain cannot value, a member never priced or suspended supply without a plan, leaves the denominator and
+is disclosed, so a suspension elsewhere never switches the Buffer off for the exits it exists to dampen (D4).
 
-Within a fixed claimable set coverage cannot fall ([whitepaper A.4](../papers/WHITEPAPER.md#a4-conditional-coverage-property));
-where the set changes, the ratio steps while the balance stays continuous, and no step changes a quote or output. An
-empty Buffer mints everything; a Buffer at or above the liability pays the whole output; retiring the last stablecoin
-leaves any excess in the Buffer. There is no residual-mint limiter: a visible quota would create the first-mover
-pressure the draw avoids (P2).
+With fixed rates and a fixed claimable set, coverage cannot fall
+([whitepaper A.4](../papers/WHITEPAPER.md#a4-conditional-coverage-property)); where a rate or the set changes, the ratio
+steps while the balance stays continuous, and no step changes a quote or output. An empty Buffer mints everything; a
+Buffer at or above the liability pays the whole output; retiring the last stablecoin leaves any excess in the Buffer.
+There is no residual-mint limiter: a visible quota would create the first-mover pressure the draw avoids (P2).
 
 ### 3.3 Stablecoin to stablecoin
 
@@ -250,17 +251,17 @@ Treasury values the stablecoin liability directly in NOAH (D24), once per block 
 | --- | --- | --- |
 | `priced_liability` | ACTIVE and ISSUANCE_HALTED members with a fresh feed | the Oracle rate |
 | `settlement_liability` | SUSPENDED members under an open settlement plan | the plan's committed rate |
-| `stale_priced_liability` | members whose feed is stale or absent | the last known rate, kept apart because it failed the freshness gate |
-| excluded, disclosed | suspended supply with no plan (`untrusted_suspended_supply`); written-off supply (`written_off_exposure`) | nothing: a write-off extinguishes the obligation, and untrusted supply cannot be valued |
+| `stale_priced_liability` | members whose feed is stale or absent, once priced | the last known rate, kept apart because it failed the freshness gate |
+| excluded, disclosed | suspended supply with no plan (`untrusted_suspended_supply`); members never priced (listed in `stale_member_supply`); written-off supply (`written_off_exposure`) | nothing: a write-off extinguishes the obligation, and the others have no rate to value them at |
 
 Gross liability is the three valued buckets. Self-held liability is the Reserve's balance of each counted member,
 valued through the same branch that counted it, so `net = gross - self_held` is non-negative by construction (D66).
 
 Completeness is read off the disclosure lists, not a flag: a non-empty `stale_member_supply` or
-`untrusted_suspended_supply` means a recognised exposure went unvalued, and every target then reports zero, while a
-non-empty `written_off_exposure` does not. It depends on outstanding liabilities, never on a policy denomination: a
-missing `axdr` rate is irrelevant while `axdr` supply is zero. Arithmetic that leaves the representable domain is not
-incompleteness; it fails the block.
+`untrusted_suspended_supply` means part of the liability has no fresh or committed rate behind it, and every target then
+reports zero, while a non-empty `written_off_exposure` does not. It depends on outstanding liabilities, never on a
+policy denomination: a missing `axdr` rate is irrelevant while `axdr` supply is zero. Arithmetic that leaves the
+representable domain is not incompleteness; it fails the block.
 
 ### 4.2 Targets and the exposure multiplier
 
@@ -276,12 +277,13 @@ Reserve holds, so the waterfall's gaps size on net. A bound serves discretion, a
 that paper, so the bounds on committee acts size on gross. `FundStatus` reports both families, `*_target` on gross and
 `*_net_target` on net, beside the multiplier.
 
-The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the
-chain already maintains, each weighted by a committee lever: the liability ratio, net liability over circulating NOAH;
-the annualised realised volatility of the reference rate, measured in block time (D133); and an EMA of net redemption
-flow. Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so no spot price enters.
-It recomputes on a governed period, moves at most a governed step, and is clamped to `[1, cap]`; zero weights pin it
-at one. Its own liability-ratio input reads raw liability, since a controller fed its own output would compound.
+The multiplier says the same nominal liability is a larger exposure under stress. It combines three indicators the chain
+already maintains, each weighted by a committee lever: the liability ratio, net liability over circulating NOAH; the
+annualised realised volatility of the reference rate, measured in block time (D133); and an EMA of net redemption flow
+as a share of net liability. Every input is a vote-median rate, a Bank supply, or flow that cost spread to produce, so
+no spot price enters. It recomputes on a governed period, moves at most a governed step, and is clamped to `[1, cap]`;
+with zero weights it targets one, so a raised multiplier steps back down rather than resetting. Its own liability-ratio
+input reads raw liability, since a controller fed its own output would compound.
 [Treasury](../../x/treasury/README.md#exposure-sampling-and-refresh) owns the instrument.
 
 ### 4.3 Recognition
@@ -362,9 +364,9 @@ the mandate advances the term and resets the allowance used, and never touches a
   reference unit; a governance claim charges nothing. Submission reserves the amount and sets the closing time from
   the cancellation period.
 - **Cancellation.** Before the closing time, governance may cancel any pending claim, and the current committee,
-  signing with its exact term, any claim governance did not submit. Cancellation releases the reservation and restores no allowance, so
-  approve-and-cancel cycles cannot redirect expansion funding (D32). It never reaches Market: bought paper stays for
-  the next claim in its denomination, and the spread stays spent, which is why the limit charges it.
+  signing with its exact term, any claim governance did not submit. Cancellation releases the reservation and restores
+  no allowance, so approve-and-cancel cycles cannot redirect expansion funding (D32). It never reaches Market: bought
+  paper stays for the next claim in its denomination, and the spread stays spent, which is why the limit charges it.
 - **Settlement.** At the closing time the `x/claims` EndBlocker pays the immutable recipient and amount, with no
   signer. A claim the chain cannot pay ends `failed` and releases its reservation.
 
@@ -456,11 +458,11 @@ builds and every sign mode renders, amino included. A wallet that omits the tax 
 `arkd` and front ends price every transaction through `Query/ComputeTax` and `Query/GasPrices`
 ([client fees](../clients/CLIENT_FEES.md)).
 
-The fee is a ceiling and the tip is NOAH (D80). Each stablecoin leg is charged at most what it owes, the exact tax plus
-the base fee if it is the first leg, in the order the payer encoded the fee, and the rest never leaves the payer, so a
-wallet pads a stable leg for rate drift at no cost. The NOAH leg is charged whole: base fee if no stable leg paid it,
-remainder tip, and only the tip ranks for priority. NOAH is the one denomination the tax is never owed in, which is
-what lets the chain tell a tip from a padded tax.
+The fee is a ceiling and the tip is NOAH (D80). Each stablecoin leg is charged at most what it owes: its exact tax, plus
+the base fee if it is the first leg, in the order the payer encoded the fee, whose amount above its tax covers the base
+fee. The rest never leaves the payer, so a wallet pads a stable leg for rate drift at no cost. The NOAH leg is charged
+whole: base fee if no stable leg paid it, remainder tip, and only the tip ranks for priority. NOAH is the one
+denomination the tax is never owed in, which is what lets the chain tell a tip from a padded tax.
 
 The tax is charged after the messages, on success only (D82). The ante deducts the gas fee and tip and carries the
 priced tax through the context; `TransferTaxDecorator` charges it to `transfer_tax_collector` after the messages and
@@ -471,9 +473,10 @@ declaration and upfront gas fee but never collect tax.
 [Ante handling](../../app/ante/README.md#transfer-tax-commitment-and-rollback) owns the outcome table.
 
 Gas is priced by Treasury's base-fee controller, not by node-local minimum gas prices. The base gas price, held in the
-reference unit and floored at `min_base_gas_price`, moves each block toward a target utilisation by at most
-`base_fee_adjustment_rate`, and each accepted fee denomination, NOAH or a member the Oracle still prices, pays through
-its factor ([Treasury fee controller](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
+reference unit and floored at `min_base_gas_price`, moves each block toward a target utilisation by at most a
+`base_fee_adjustment_rate` fraction of itself, and each accepted fee denomination, NOAH or a member the Oracle still
+prices, pays through its factor
+([Treasury fee controller](../../x/treasury/README.md#conversion-factors-and-dynamic-fees)).
 
 ### 5.5 Execution-generated tax
 
