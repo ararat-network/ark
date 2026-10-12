@@ -77,7 +77,7 @@ The instrument updates are:
 
 ```text
 variance = volatility_decay * variance + (1 - volatility_decay) * clamped_return^2
-interval = volatility_decay * interval + (1 - volatility_decay) * max(1, seconds_since_last_sample)
+interval = volatility_decay * interval + (1 - volatility_decay) * seconds_since_last_sample
 flow     = max(0, flow_decay * flow + (1 - flow_decay) * (RedeemedValue - EligiblePrincipal))
 LR       = net_liability / circulating_NOAH
 sigma    = sqrt(variance * seconds_per_year / interval)
@@ -89,11 +89,13 @@ m        = clamp(step_limit(raw, previous_m, multiplier_max_step), 1, multiplier
 Flow nets each block's expansion against its redemption and floors at zero after each fold, so two-way churn cancels
 and an earlier inflow cannot bank credit against a later run. Circulating NOAH excludes the raw NOAH balances in the
 four custody accounts, not their haircut-valued recognised capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
-Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under the same
-weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and a return
-carried across a halt counts the time it spanned rather than reading as one block's move (D133). Each interval counts
-at least a second, which keeps the variance at or below the interval and sigma at most the square root of a year in
-seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
+Volatility samples at most once per `volatility_sample_seconds`: the anchor price holds until that many seconds have
+passed, so each return spans at least the spacing and the oracle median's per-block jitter never becomes a sample of
+its own. Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under
+the same weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and
+a return carried across a halt counts the time it spanned rather than reading as one sample (D133). Each interval spans
+at least the spacing, validated at least a second, which keeps the variance at or below the interval and sigma at most
+the square root of a year in seconds; genesis validation refuses state that breaks it. Checked arithmetic and write-time caps bound the instrument;
 a representable input whose combined raw stress exceeds the arithmetic range saturates at the multiplier cap.
 The [economic model](../../docs/design/ECONOMIC_DESIGN.md#42-targets-and-the-exposure-multiplier) owns the target
 formula and what the multiplier may move. Requirements use the multiplier; payment denominators and the controller's own liability input do not.

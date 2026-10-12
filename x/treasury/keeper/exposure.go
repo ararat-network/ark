@@ -53,7 +53,9 @@ func (k Keeper) sampleExposure(ctx context.Context, totals markettypes.Conversio
 }
 
 // sampleVolatility skips unavailable reference observations without changing the anchor or
-// recording false calm. A returning feed measures the move across the gap.
+// recording false calm, and holds the anchor until volatility_sample_seconds have passed: sampled
+// every block, the oracle median's jitter would dominate the variance it measures. A returning feed
+// measures the move across the gap.
 func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState, params types.Params) error {
 	reference, err := k.oracleKeeper.GetReferenceDenom(ctx)
 	if err != nil {
@@ -73,11 +75,19 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 
 	previous, previousTime := state.LastReferencePrice, state.LastSampleTime
 	now := chain.BlockSeconds(ctx)
+	anchored := !previous.IsNil() && previous.IsPositive()
+	elapsed := uint64(0)
+	if now > previousTime {
+		elapsed = now - previousTime
+	}
+	if anchored && elapsed < params.VolatilitySampleSeconds {
+		return nil
+	}
 	state.LastReferencePrice, state.LastSampleTime = price, now
 	// The first sample of a chain's life, or the first after a reference move
 	// that reset the anchor: a price with nothing to compare against yields no
-	// return, and the next block measures from here.
-	if previous.IsNil() || !previous.IsPositive() {
+	// return, and the next sample measures from here.
+	if !anchored {
 		return nil
 	}
 
@@ -101,12 +111,9 @@ func (k Keeper) sampleVolatility(ctx context.Context, state *types.ExposureState
 	}
 
 	// The return is paired with the seconds it spanned, so a gap counts as the time it was rather
-	// than as one block. An interval counts at least a second, which with every squared sample at
-	// most one keeps the variance at or below the interval under the shared weights.
-	elapsed := uint64(1)
-	if now > previousTime {
-		elapsed = now - previousTime
-	}
+	// than as one sample. The spacing holds each interval to at least volatility_sample_seconds,
+	// validated at least a second, which with every squared sample at most one keeps the variance at
+	// or below the interval under the shared weights.
 	variance, err := ewma(state.VolatilityVariance, squared, params.VolatilityDecay)
 	if err != nil {
 		return fmt.Errorf("folding the volatility series: %w", err)

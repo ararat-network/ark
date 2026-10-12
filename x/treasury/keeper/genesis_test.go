@@ -53,6 +53,7 @@ func (s *KeeperTestSuite) TestInitAndExportGenesis() {
 			ReferenceTaxCap:             math.NewInt(5),
 			RewardFundingWindow:         77,
 			VolatilityDecay:             math.LegacyMustNewDecFromStr("0.9"),
+			VolatilitySampleSeconds:     60,
 			FlowDecay:                   math.LegacyMustNewDecFromStr("0.8"),
 			MultiplierCap:               math.LegacyNewDec(3),
 			MultiplierMaxStep:           math.LegacyMustNewDecFromStr("0.5"),

@@ -38,14 +38,20 @@ message Params {
   // weights belong to EconomicPolicy. Domain validation bounds block-hook arithmetic and constrains
   // delegated policy.
 
-  // volatility_decay is the per-block EWMA retention for the variance
+  // volatility_decay is the per-sample EWMA retention for the variance
   // series, in [0, 1). A value at or above one would never forget a sample.
+  // Its memory in time is its half-life in samples times
+  // volatility_sample_seconds, so the two move together.
   string volatility_decay = 4 [
     (cosmos_proto.scalar) = "cosmos.Dec",
     (gogoproto.customtype) = "cosmossdk.io/math.LegacyDec",
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
+  // volatility_sample_seconds is the shortest span a volatility return may
+  // cover, in [1, 86,400]. Sampled every block, the oracle median's jitter
+  // would dominate the variance it measures.
+  uint64 volatility_sample_seconds = 13 [(amino.dont_omitempty) = true];
   // flow_decay is the per-block EMA retention for the flow series, in
   // [0, 1).
   string flow_decay = 5 [
@@ -74,8 +80,8 @@ message Params {
     (amino.dont_omitempty) = true
   ];
   // exposure_refresh_period_blocks is how often the multiplier is recomputed
-  // from the sampled series. Sampling itself is per block; only the
-  // recomputation waits.
+  // from the sampled series. Flow samples every block and volatility at
+  // volatility_sample_seconds; only the recomputation waits.
   uint64 exposure_refresh_period_blocks = 8 [(amino.dont_omitempty) = true];
 
   // The base-fee controller's rails. The live price is state the controller
@@ -134,7 +140,7 @@ message ExposureState {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // volatility_variance is the EWMA of squared per-block returns. Each sample
+  // volatility_variance is the EWMA of squared sampled returns. Each sample
   // is clamped to [-1, 1], which bounds this series to [0, 1] by induction and,
   // against sample_interval, bounds annualised volatility by the square root of
   // a year in seconds.

@@ -815,7 +815,8 @@
         "reference_tax_cap": "100000000000000000000",
         "reward_funding_window": "14400",
         "transfer_tax_rate": "0.005000000000000000",
-        "volatility_decay": "0.999950000000000000"
+        "volatility_decay": "0.997500000000000000",
+        "volatility_sample_seconds": "300"
       },
       "reward_funding": {
         "blocks_remaining": "0",
