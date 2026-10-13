@@ -206,21 +206,21 @@ func (s *KeeperTestSuite) TestAddFeed() {
 }
 
 // Referent fixtures shared by the removal-guard and query tests. The strings
-// mirror what x/asset actually reports, so the aggregation these exercise is
-// the shape operators see.
+// mirror what x/asset and x/reserve actually report, so the aggregation these
+// exercise is the shape operators see.
 const (
-	consumerAsset  = "asset"
-	consumerBasket = "basket"
+	consumerAsset   = "asset"
+	consumerReserve = "reserve"
 
 	referentReference = "protocol reference"
 	referentAssetUSD  = "asset ausd (ACTIVE)"
-	referentBasket    = "component of abasket"
+	referentReserve   = "1 open position(s) hold ausd"
 )
 
-// stubFeedReferentGuard stands in for a future consumer guard (asset, basket,
-// reserve) so the veto path keeps coverage while the wiring-owned set is
-// empty. One stub reports every claim it holds for a denom, matching a real
-// consumer that can pin a feed for more than one reason.
+// stubFeedReferentGuard stands in for a consumer guard (asset, reserve) so the
+// veto path keeps coverage while the wiring-owned set is empty. One stub
+// reports every claim it holds for a denom, matching a real consumer that can
+// pin a feed for more than one reason.
 type stubFeedReferentGuard struct {
 	consumer string
 	pinned   map[string][]string
@@ -275,8 +275,8 @@ func (s *KeeperTestSuite) TestRemoveFeed() {
 				}},
 			},
 			stubFeedReferentGuard{
-				consumer: consumerBasket,
-				pinned:   map[string][]string{chain.USDBaseDenom: {referentBasket}},
+				consumer: consumerReserve,
+				pinned:   map[string][]string{chain.USDBaseDenom: {referentReserve}},
 			},
 		)
 
@@ -287,7 +287,7 @@ func (s *KeeperTestSuite) TestRemoveFeed() {
 		s.Require().ErrorIs(err, types.ErrFeedReferenced)
 		s.Require().ErrorContains(err, consumerAsset+": "+referentReference)
 		s.Require().ErrorContains(err, consumerAsset+": "+referentAssetUSD)
-		s.Require().ErrorContains(err, consumerBasket+": "+referentBasket)
+		s.Require().ErrorContains(err, consumerReserve+": "+referentReserve)
 	})
 
 	s.Run("schedules removal once no guard pins the feed", func() {
