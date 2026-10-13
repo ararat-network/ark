@@ -52,7 +52,7 @@ maintain that boundary.
 ## Understand future direction
 
 - [Future changes](direction/FUTURE_CHANGES.md): deferred engineering, prerequisites, and revisit triggers; not shipped behaviour.
-- [Tooling direction](direction/TOOLING_DIRECTION.md): proposed product boundaries and sequencing for clients, wallets, indexing, and explorers.
+- [Tooling direction](direction/TOOLING_DIRECTION.md): proposed product boundaries, repositories, and sequencing for the app, its backend, clients, indexing, and explorers.
 
 ## Find subsystem documentation
 
