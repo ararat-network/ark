@@ -416,7 +416,7 @@ emergency mandates buy real time.
 | Conversion | Depth, recovery, and spread corridor, Tobin band | At or after the opening of conversion, with a depth corridor to about ten times the genesis depth so routine raises need no vote | 4-of-7 |
 | Reserve | Deploy under an allowance, floor, and destination list | When a deployment is approved | 4-of-7 |
 | Grants | Appoint the registrar, suspend members, award compensation under a term allowance | Before the first member tranche | 4-of-7 |
-| Registrar | Register members within the open tranche; one power | By the grants committee under its mandate, with the first tranche; cleared with the committee | A single hardware-backed key on the member platform's signing service |
+| Registrar | Register members within the open tranche; one power | By the grants committee under its mandate, with the first tranche; cleared with the committee | A single hardware-backed key in the registrar signer |
 
 Shape and hygiene: legacy amino threshold multisigs of at most ten keys, within `tx_sig_limit`; dedicated
 hardware-backed committee keys, not operator keys; each multisig registered on chain with one transaction before

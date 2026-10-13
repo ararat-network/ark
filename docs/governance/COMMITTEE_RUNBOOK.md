@@ -334,7 +334,7 @@ hold is the time to suspend it; a step that fills fast may split a quarter in tw
 
 **The registrar.** The grants committee names the Disbursement registrar under its own term with
 `MsgCommitteeRegistrar`, for a window of block time inside its own. The registrar is an operational key, hardware-backed
-on the member platform's signing service, that registers batches as admissions clear; the committee may name itself. The
+in the registrar signer, that registers batches as admissions clear; the committee may name itself. The
 open tranche is its only bound, and nothing it registers pays before the two-week hold ends: compare the chain's
 registrations against the platform's admission records daily, and the moment the key is suspect rotate it by
 reappointment, which advances the registrar term without a vote, and suspend what it registered before the hold ends.

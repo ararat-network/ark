@@ -23,8 +23,9 @@ links to explains the mechanism. It is not a claim of completeness: §3 lists wh
 | Price providers | the internet | nothing; every one is an untrusted input |
 | Contracts | on chain, uploaded by anyone | nothing; untrusted code bounded by the policy router and its query surface |
 | Committee accounts | off chain, usually multisigs | one bounded, expiring mandate per module, appointed by governance |
-| Registrar key | the member platform's signing service | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
-| Member platform | off chain, beside the member app | admission: the identity verifier's uniqueness attestations and dedup tokens, which link people to addresses |
+| Registrar key | the registrar signer, a service of its own | registering members within the open tranche; appointed and rotated by the grants committee without a vote |
+| Identity vault | off chain, a service of its own in the member backend | personal data and the person ↔ address links; every other service sees an opaque person ID |
+| Member platform | off chain, behind the Ark app | admission records and the vouch graph, keyed by person ID |
 | Governance | on chain | every unbounded power, including appointing committees |
 | Release pipeline | GitHub Actions; a maintainer reviews and publishes | the binaries and images validators run |
 
@@ -273,11 +274,11 @@ advances the term, so transactions prepared under the old key expire. The linked
 
 - The registrar hold protects only if someone compares the chain's registrations with the platform's admission records
   inside it ([grants](../governance/COMMITTEE_RUNBOOK.md#8-grants)).
-- Member admission runs off chain: a third-party identity verifier returns a uniqueness attestation, which the member
-  platform keeps with a dedup token beside the vouch graph. The chain never sees the verifier, and the attestation
-  store, which links a person to an address, is the platform's second asset after the committee key
-  ([member platform](../direction/TOOLING_DIRECTION.md#7-run-the-member-platform-without-custody)). Public references,
-  registration batches included, carry no personal data.
+- Member admission runs off chain: a third-party identity verifier checks the person, and the identity vault keeps its
+  result, the person's data, and the link to their address behind an opaque person ID that the member platform and
+  every other service use. The chain never sees the verifier, and the vault ranks with the committee and registrar keys
+  ([member backend](../direction/TOOLING_DIRECTION.md#7-run-the-member-backend-without-custody)). Public references,
+  registration batches and claim references included, carry no personal data.
 - A Reserve holding not re-attested within its entry's window earns nothing, which catches a custodian that
   fails while the committee stops attesting; a key that keeps re-attesting falsely is answered only by the evidence
   its references cite.
@@ -385,7 +386,7 @@ bounded number of entries without a page?
   the operator's.
 - Committee multisig custody and signer operational security.
 - CosmWasm internals beyond the ante and policy-router seams that route its messages.
-- Clients and wallets that build and sign transactions, such as the Ledger app, the member app, and the wallet kit
+- Clients and wallets that build and sign transactions, such as the Ledger app, the Ark app, and its signer interface
   ([tooling direction](../direction/TOOLING_DIRECTION.md)).
 - Economic attacks on the peg, the reserve, or the tax, which the module specs cover.
 
