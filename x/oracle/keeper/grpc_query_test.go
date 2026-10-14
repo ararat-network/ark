@@ -288,8 +288,8 @@ func (s *KeeperTestSuite) TestQueryFeedReferents() {
 						}},
 					},
 					stubFeedReferentGuard{
-						consumer: consumerBasket,
-						pinned:   map[string][]string{chain.USDBaseDenom: {referentBasket}},
+						consumer: consumerReserve,
+						pinned:   map[string][]string{chain.USDBaseDenom: {referentReserve}},
 					},
 				)
 			},
@@ -297,7 +297,7 @@ func (s *KeeperTestSuite) TestQueryFeedReferents() {
 			expect: []types.FeedReferent{
 				{Consumer: consumerAsset, Referent: referentReference},
 				{Consumer: consumerAsset, Referent: referentAssetUSD},
-				{Consumer: consumerBasket, Referent: referentBasket},
+				{Consumer: consumerReserve, Referent: referentReserve},
 			},
 		},
 	}

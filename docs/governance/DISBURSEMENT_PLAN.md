@@ -134,12 +134,14 @@ control passes only as grantees vote or delegate away from the founding set.
 ## 6. Open items
 
 - The member process: a third-party identity check that returns a uniqueness attestation, plus a vouch from an
-  existing member. Still open: who runs it, and who holds the committee and registrar keys
-  ([tooling direction §7](../direction/TOOLING_DIRECTION.md#7-run-the-member-platform-without-custody)).
-- The member app and the wallet it runs in
-  ([tooling direction §6](../direction/TOOLING_DIRECTION.md#6-make-a-first-party-ark-wallet-the-reference-experience)).
-  Both are needed for the first member tranche, and neither is built.
+  existing member. Still open: which verifier, who runs it, and who holds the committee and registrar keys
+  ([tooling direction §7](../direction/TOOLING_DIRECTION.md#7-run-the-member-backend-without-custody)).
+- Who vouches for the first members: a vouch comes from an existing member, and the first cohort has none.
+- The Ark app, which holds the wallet and the member features
+  ([tooling direction §6](../direction/TOOLING_DIRECTION.md#6-make-one-first-party-ark-app-the-reference-experience)).
+  It is needed for the first member tranche and is not built.
 - An audit of the Disbursement module before launch, since it holds the pools from block 1.
 - Vetting criteria for the founding set.
-- Counsel on how a member grant is characterised, and on what the identity attestations oblige the platform to
-  protect.
+- Counsel on how a member grant is characterised; on what the uniqueness attestations and dedup tokens oblige the
+  platform to protect; and, before the identity vault is built, on what holding identity data obliges the backend to
+  protect, retain, and report.

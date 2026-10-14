@@ -223,8 +223,7 @@ Governance can replace the reference through a coordinated re-expression of the 
 is re-expressed in the same transaction, or the change fails. The pool's imbalance changes units with its depth,
 preserving its economic meaning. A reference change requires a freshly priced successor
 and, if the outgoing feed is unusable, an explicit outgoing rate supplied by governance. There is no automatic change of
-unit in response to a price outage. A basket reference, the planned Orbis currency, is a development direction; the
-launch mechanism uses the voted XDR feed. [Ark: Oracle][ark-oracle]
+unit in response to a price outage. The launch mechanism uses the voted XDR feed. [Ark: Oracle][ark-oracle]
 
 ## 4 Price discovery
 
@@ -958,9 +957,9 @@ several addresses, which the chain cannot; the application members use must exis
 the module holding the pools from the first block needs an independent audit. None of these is complete.
 
 This paper supplies accounting relationships and conditional properties, not an empirical claim that Ark has survived
-those conditions in a live market. Orbis, the derived basket currency, and other deferred changes remain future work
-until implemented and deliberately adopted. Subsequent versions of the paper should distinguish evidence obtained from
-operation from assumptions retained from design.
+those conditions in a live market. Deferred changes remain future work until implemented and deliberately adopted.
+Subsequent versions of the paper should distinguish evidence obtained from operation from assumptions retained from
+design.
 
 ## 11 Conclusion
 

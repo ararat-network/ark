@@ -9,7 +9,7 @@ existing messages.
 
 - [1. Upgrade to Cosmos SDK v0.55](#1-upgrade-to-cosmos-sdk-v055)
 - [2. Enable Block-STM](#2-enable-block-stm)
-- [3. Basket index assets](#3-basket-index-assets)
+- [3. Orbis](#3-orbis)
 - [Protocol monitoring tooling](#protocol-monitoring-tooling)
 - [Closed items](#closed-items)
 
@@ -159,73 +159,53 @@ handler must tolerate being executed more than once for one logical transaction:
 7. Roll out to validators only after the benchmark justifies it. Confirm no node anywhere re-enables the block gas meter
    (§2.1).
 
-## 3. Basket index assets
+## 3. Orbis
 
-- Status: designed, not built. Launch keeps `axdr`, a voted feed, as the protocol reference and lists no basket asset.
-- Trigger: governance intends to list Orbis (`aorbis`), the flagship currency: a basket-priced asset that later becomes
-  the protocol reference. Build the whole feature then; nothing below is worth shipping inert.
+- Status: an objective, not a design. Launch issues no Orbis, and no code anticipates it.
+- Trigger: a monetary framework for Orbis is specified: what determines its supply, how it is first distributed, and the
+  risk controls around issuance. Design the chain changes against that framework; §3.3 is the brief.
 
-### 3.1 The design
+Orbis is an independent monetary unit with its own supply, its own market value, and eventually its own monetary policy.
+It is not a basket. A basket of national currencies spreads its dependence on their monetary policies without escaping
+it: the SDR behind `axdr` is five national currencies. Ark defines no value for Orbis and promises no rate against any
+currency; its rates emerge from trade, and its value from an economy that prices in it.
 
-A basket is a derived feed owned by `x/oracle`: a denomination in the priced-denom grammar whose rate is composed on
-chain from voted component feeds and is never voted itself. Composition runs in the preblock after the tally writes
-component rates, as `Σ quantityᵢ × rate[componentᵢ]`, through the ordinary rate store, so every consumer reads it
-unchanged. The stored timestamp and height are the oldest input's, so under any consumer's window the basket is exactly
-as stale as its weakest component; a component with no stored rate skips the write. A sum above `MaxExchangeRate` omits
-the write rather than halting, as the tally omits a derived price above it. Domain caps cannot make that unreachable:
-quantities summing above one, as in any currency basket, let in-range component rates compose to an out-of-range sum.
-The caps on component count and quantity do keep every product and the sum representable, so the unrepresentable case is
-unreachable and its checked arithmetic is the backstop.
+### 3.1 Four roles
 
-A defined basket answers `FeedPhase` Active, so asset registration, the reference re-point, and Reserve eligibility
-entries accept it with no change to those modules. The basket pins its component feeds against removal, checked
-oracle-internally ahead of the registered guards as the reference denom is; the basket itself is removable only when
-`requireFeedUnreferenced` passes. Creation and rebalance require every component, kept or added, to answer
-`FeedPhaseActive`. A feed already `Removing` passed its removal check before the basket existed, and its rate is pruned
-when the removal activates, which the pin cannot stop. `MsgAddFeed` refuses a basket denom and basket creation refuses a
-voted feed denom: one namespace, two disjoint sets. The vote target set, the vote-extension codec, and the sidecar never
-see a basket.
+| Unit | Role |
+| --- | --- |
+| NOAH | Staking asset and the risk-bearing capital behind the issued currencies. |
+| Issued currencies | Track national units through Market's oracle-priced conversion. |
+| Orbis | Independent, freely valued unit with its own supply. |
+| XDR (`axdr`) | The observed reference unit: a feed with no asset, denominating the pool, the tax cap, and base gas pricing. |
 
-Composition changes are in place and value-neutral. `MsgCreateBasket` takes literal quantities and requires the basket
-not to exist; nothing references a new basket, so its starting value is free. `MsgRebalanceBasket` takes value shares
-summing to one, may add or drop components, and derives quantities at proposal execution:
+NOAH cannot serve as the neutral unit: it has a market price, but its supply expands and contracts with conversion into
+and out of the issued currencies.
 
-    V        = Σ q_old[i] × r[i]
-    q_new[j] = floor(w[j] × V / r[j])
+### 3.2 Constraints on any design
 
-Every rate is fresh under the conversion window, except a governance-stated outgoing rate, accepted only for a dropped
-component the Oracle cannot currently price; an override for a fresh or continuing component is refused. The voting
-period is the notice window, a failure fails the proposal, the version advances, and one event carries the old
-quantities, the new quantities, and V. Holders act on nothing: at the switch a unit is worth what it was worth the block
-before, under the new composition. The successor path (new basket, new asset, halt the old, cross swap, retire) needs no
-code and stays the route for a deliberate revaluation. `MsgRemoveBasket` prunes the stored rate.
+- **Not issued through Market.** No Orbis rate reaches a mint or redemption path. An Orbis market price wired into
+  Market's conversion would let whoever moves that price authorise NOAH issuance; Orbis needs its own issuance rule and
+  risk controls.
+- **Traded, not converted.** Orbis changes hands against the issued currencies at market rates by exchanging existing
+  balances; no trade mints or burns NOAH. Market's virtual pool prices from the Oracle, so it cannot be the venue for a
+  unit whose price the venue must discover.
+- **A second monetary basis.** Market is today the only native mint path, and every registered asset is convertible by
+  invariant ([Asset §1](../../x/asset/README.md#1-the-registry-in-one-page)). Orbis needs its own issuance module and
+  either a place outside the `x/asset` registry or a non-convertible class the registry does not have. Its standing
+  under the transfer tax, fee payment, the liability, and Reserve eligibility is open.
+- **A settlement unit.** Balances, prices, and contract obligations can be held and stated in Orbis directly.
 
-Rejected: sidecar composition (every weight change becomes a fleet coordination event, `x/oracle/README.md` §1.2); a
-successor denom as the ordinary rebalance (the old exposure outlives the decision to leave it and pins a dying series);
-forced balance conversion (unbounded iteration in a halt-class path); nested baskets; and NOAH as a component (it prices
-part of the basket at par with what mints it, and the priced-denom rule already refuses it).
+### 3.3 The open problem
 
-### 3.2 Identifiers
+Independence does not bring stability. A fixed supply leaves value to swing with demand, which rules Orbis out for
+wages, debts, and long contracts. The question the design must answer is what determines how much Orbis exists.
+Candidate rules: a predictable issuance schedule under a floating price; supply steered towards stable purchasing power,
+measured from goods and services with no exchange-rate target; or a managed float such as RAI's adjusting redemption
+price, which depends on collateral and carries its limits. The policy is open; monetary independence is fixed.
 
-Store prefix 7 in `x/oracle/types/keys.go` and `GenesisState` field 8, the next free numbers in `x/oracle`. Messages
-`MsgCreateBasket`, `MsgRebalanceBasket`, `MsgRemoveBasket`; queries `Basket`, `Baskets`; constants `MaxBaskets`,
-`MaxBasketComponents`, `MaxBasketQuantity`.
-
-### 3.3 Delivery after launch
-
-Additive: a consensus-version bump on `x/oracle` with a no-op migration, one new `OracleKeeper` method,
-`ComposeBaskets`, called in the preblock between `ProcessVoteExtensions` and `AdvanceFeeds`, no vote-extension change,
-no sidecar release. Docs that move with it: `x/oracle/README.md`, `FUTURE_CHANGES.md`, `x/asset/README.md`,
-`ECONOMIC_DESIGN.md` §3.4, `THREAT_MODEL.md` §2.1 and §2.7, both ABCI READMEs.
-
-### 3.4 Making Orbis the reference
-
-Create the `aorb` basket, let it print, register the Orbis asset, then `MsgSetReferenceDenom` re-points from `axdr` to
-it, running every wired rebaser at one fresh cross: Market's pool; Treasury's tax cap, base-fee floor and live price,
-factor table, and exposure anchor; Disbursement's compensation cap, award values and charges, term usage, and allowance;
-and Claims' committee claim limit, claim charges, and term usage. The asset's lifecycle stays independent of the
-reference, as it is for any denomination today. Once unreferenced, `axdr` may be removed as a feed. Later rebalances of
-the reference need no rebase, because the basket's NOAH value is continuous across them.
+Adoption is voluntary. Users enter through the currencies they already use and may hold and spend Orbis alongside them;
+nothing on the network requires anyone to move to it.
 
 ## Protocol monitoring tooling
 

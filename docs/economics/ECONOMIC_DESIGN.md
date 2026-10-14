@@ -48,8 +48,7 @@ time-scoped mandate on its own address with its own messages, and none holds gen
 tabulates them.
 
 Market's virtual pool is denomination-bearing and launches in `axdr`; one governance message can re-denominate it live
-to Orbis, the planned basket currency ([Future changes §3](../direction/FUTURE_CHANGES.md#3-basket-index-assets)),
-without changing which stablecoins may be converted.
+to a successor reference ([§3.4](#34-the-pool-unit)), without changing which stablecoins may be converted.
 
 ### 1.1 What the feedback loop is, and is not
 

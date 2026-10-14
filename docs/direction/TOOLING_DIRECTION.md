@@ -14,16 +14,18 @@ and textual signing modes, the `ark` Bech32 prefix, and BIP-44 coin type `330`. 
 protocol capabilities into a dependable product surface.
 
 The [disbursement plan](../governance/DISBURSEMENT_PLAN.md) turned part of this direction into a dependency with a date:
-its first member tranche needs the member app, the platform behind it, and the tooling around the Disbursement module, and
-nothing else here. Sections 4, 6, and 7 record what that requires; the rest is unchanged in intent and later in order.
+its first member tranche needs the Ark app, the backend behind it, and the tooling around the Disbursement module, and
+nothing else here. Sections 4, 6, and 7 record what that requires and the [build order](#build-order) sequences it; the
+rest comes later.
 
 ## Contents
 
 - [Design precedent](#design-precedent)
 - [Recommended direction for Ark](#recommended-direction-for-ark)
 - [Ownership boundaries](#ownership-boundaries)
+- [Repositories](#repositories)
 - [Important considerations](#important-considerations)
-- [Directional sequencing](#directional-sequencing)
+- [Build order](#build-order)
 - [Decision checkpoints](#decision-checkpoints)
 - [Non-goals](#non-goals)
 
@@ -108,60 +110,81 @@ SDK conventions as public environments.
 The goal is not only convenience. A consistent local environment shortens integration feedback loops and gives wallet,
 indexer, explorer, contract, and application developers a common fixture for testing protocol upgrades.
 
-### 6. Make a first-party Ark wallet the reference experience
+### 6. Make one first-party Ark app the reference experience
 
-A first-party wallet gives Ark control over the workflows that define the chain, and its first user is fixed by the
-disbursement plan: a member who holds a grant the module pays out over a year, has never seen a key, and
-must be able to stake and vote it. That user decides the order of work, and splits it in two.
+A first-party app gives Ark control over the workflows that define the chain. It is one app: it holds the wallet and
+everything a member does, and grows past both. Its first user is fixed by the disbursement plan: a member who holds a
+grant the module pays out over a year, has never seen a key, and must be able to stake and vote it.
 
-**The wallet** owns custody and signing and nothing about membership: key generation on the device with backup and
-recovery, signing consent and transaction review, fee selection, broadcast, and reading the chain from any node. It is
-the audited, slow-moving component, and any wallet that speaks the wallet kit can stand in for it, including the ones
-crypto-native members already carry.
+**Custody** sits behind a signer interface inside the app: key generation on the device with backup and recovery,
+signing consent, transaction review built from decoded messages, fee selection, broadcast, and reading the chain from
+any node. It is the audited, slow-moving part, and it owns nothing about membership. Every feature asks it for a
+signature and never sees a key, and a Ledger device or a wallet a crypto-native member already carries can stand in for
+the device keystore behind the same interface.
 
-**The member app** is a layer on a wallet. It owns everything a member does that a wallet does not: signup with the
-member process in front of it, the identity check and the vouch, submitting the address with a proof of possession;
-the grant as the member sees it, what has been paid and what waits, the schedule and the next payment, and the member's
-status read from the Disbursement module; the delegation of each payment that arrived; the validator
-picker that shows how close each validator is to a third and defaults away from the founding set; every open proposal
-put in front of the member; and sending paid coins out. It asks the wallet for every signature through the kit and
-never sees a key, and it pays gas from the tenth the block sends two weeks after registration, so the member never has
-to fund it.
+**The features** own everything else a member does: signup with the member process in front of it, the identity check
+and the vouch, submitting the address with a proof of possession; the grant as the member sees it, what has been paid
+and what waits, the schedule and the next payment, and the member's status read from the Disbursement module; the
+delegation of each payment that arrived; the validator picker that shows how close each validator is to a third and
+defaults away from the founding set; every open proposal put in front of the member; and sending paid coins out. The app
+pays gas from the tenth the block sends two weeks after registration, so the member never has to fund it.
 
-The member app runs in-process inside the first-party wallet, so a member who has never seen a key sees one phone-first
-app, and the same component connects to any other wallet through the kit. The signup protocol, address, proof of
-possession, vouch reference, and identity attestation to the platform, is specified on its own so that any wallet
-hosting the member app can run it.
+The signup protocol, address, proof of possession, vouch reference, and identity attestation to the backend, is
+specified on its own so that a member signing with an external wallet can complete it. Proof of possession is an ADR-036
+off-chain signature over a challenge the backend issues, which common Cosmos wallets already produce; it signs no
+transaction and adds no legacy sign mode to transaction signing.
 
-The wallet's later scope covers simulation and comprehensible signing review,
-fee and tax presentation, Ark market operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as changing its destination or rotating its controller, and account
-recovery, hardware-wallet use, and multisignature flows where supported.
+The app's later scope covers simulation and comprehensible signing review, fee and tax presentation, Ark market
+operations with explicit pricing and slippage, a contributor's few interactions with the Disbursement module such as
+changing its destination or rotating its controller, and account recovery, hardware-wallet use, and multisignature flows
+where supported.
 
-The first-party wallet should define the quality bar for message decoding and user safety, while the wallet kit and SDK
-make it possible for other wallets to reach the same level of integration, and to host the member app.
+The app should define the quality bar for message decoding and user safety, while the signer interface and SDK make it
+possible for other wallets to reach the same level of integration.
 
-### 7. Run the member platform without custody
+### 7. Run the member backend without custody
 
-The platform behind the member app is a component of its own, and the plan bounds it with rules rather than norms. It
-owns the member process, admission by a verified identity and a vouch together and the registry of who is a member,
-the verifier's attestations and the vouch graph it reads for sybils; the registrar key, a single key the grants
-committee appoints, bounded by the open member tranche alone, that registers batches of up to a hundred addresses with
-the Disbursement module; a daily comparison of the chain's registrations against its admission records, inside the
-two-week hold before anything pays; grant-tranche
-funding requests to governance; and the committee's suspend, which stops a sybil's pay and moves
-nothing, for governance to cancel, and reaches a voucher whose vouchees are cancelled.
+The backend behind the app is split by what a breach of each part would expose, and the plan bounds it with rules rather
+than norms. On a public chain a leaked link between a person and an address exposes that person's whole history, past
+and future, so the link has one home. The first member tranche needs two parts, the registrar signer and the member
+platform; the others arrive with the uses that need them.
 
-Registration callers pay normal transaction gas; payments arrive without one. Disbursement custody reserves award principal and provides no
-fee allowance; members pay their own gas from the first payment, the tenth the block sends once the two-week hold ends.
+- **Registrar signer.** The registrar key, a single key the grants committee appoints, bounded by the open member
+  tranche alone, that registers batches of up to a hundred addresses with the Disbursement module. It signs the batches
+  the platform proposes and holds nothing else, so no one breach yields both the key and the link between people and
+  addresses.
+- **Member platform.** The member process: admission by a verified identity and a vouch together, and the admission
+  records and the vouch graph it reads for sybils; a daily comparison of the chain's registrations against its admission
+  records, inside the two-week hold before anything pays; grant-tranche funding requests to governance; and the
+  committee's suspend, which stops a sybil's pay and moves nothing, for governance to cancel, and reaches a voucher
+  whose vouchees are cancelled. Registration needs uniqueness, one grant per person, not identity: the identity
+  verifier, a third party that checks liveness and a document, returns a uniqueness attestation and a dedup token that
+  is the same each time the same person verifies, and the platform keeps those and the verifier's reference beside the
+  admission record; nothing it keeps names a person.
+- **Identity vault.** Arrives with insurance coverage or AML. Person records, the verified attributes the other services
+  need, the verifier's references, and the person ↔ address links, which it takes over from the platform. It is then the
+  only service that holds personal data: every other service sees an opaque person ID, and the vault logs every
+  resolution of one. Existing members are linked by retrieving their verification from the verifier by reference, with
+  their consent, rather than verifying again. Documents stay with the verifier unless counsel requires otherwise.
+- **Claims case service.** Arrives with insurance coverage of registered members. The off-chain case records a claim's
+  `reference` names. Coverage is a rule of the Claims committee's case process; the chain sees a recipient, an amount,
+  and a reference that carries no personal data.
+- **Risk and compliance.** Arrives with AML, or with the first tranche if counsel requires monitoring from it. Screening
+  and transaction monitoring over the indexer's history, resolving addresses through the vault. It acts through
+  admission, the committee's suspend, and the committee's choice not to submit a claim; nothing in it moves or freezes
+  coins.
 
-The platform holds no member coins and no authorisation over any member account, it is not a vote, and it keeps attestations,
-never documents: the identity verifier is a third party that checks liveness and a document and returns a uniqueness
-attestation, and the platform stores that and a dedup token. Its one key, the committee's, is a security component on
-a par with the wallet's key custody: through a registrar of its own it can commit the open tranche, which pays nothing
-for the two-week hold, pause every member's pay, and commit its term's allowance into awards that pay nothing for a
-period, and an expedited governance vote revokes it, reinstates the members it wrongly suspended, and cancels its
-awards and registrations. The attestation store is the second thing it must protect, since
-it links a person to an address. Where members delegate is their own choice, steered only by the app's defaults.
+Registration callers pay normal transaction gas; payments arrive without one. Disbursement custody reserves award
+principal and provides no fee allowance; members pay their own gas from the first payment, the tenth the block sends
+once the two-week hold ends.
+
+The backend holds no member coins and no authorisation over any member account, and it is not a vote. The committee's
+signature and the registrar key are security components on a par with the app's key custody: through its registrar the
+committee can commit the open tranche, which pays nothing for the two-week hold, pause every member's pay, and commit
+its term's allowance into awards that pay nothing for a period, and an expedited governance vote revokes it, reinstates
+the members it wrongly suspended, and cancels its awards and registrations. The platform's uniqueness store ranks with
+them, and so does the identity vault once it holds the link. Where members delegate is their own choice, steered only by
+the app's defaults.
 
 ### 8. Build an explorer around Ark semantics
 
@@ -178,19 +201,21 @@ The explorer is also an operational tool. It should make block production, valid
 activity, upgrades, and relevant network health visible without pretending that every off-chain observation
 is consensus state.
 
-Shared decoding libraries between the SDK, wallet, indexer, and explorer will help prevent each product from assigning
-different meanings to the same transaction.
+The SDK, app, indexer, explorer, and compliance service must give each transaction one meaning. What they share is the
+proto schemas and typed events, with a set of fixture transactions kept in `ark` that every decoder, in TypeScript or
+Go, must read the same way.
 
 ### 9. Treat indexing as a separate derived-data system
 
 A node API is suitable for current state and transaction submission, but it is not automatically an ergonomic historical
 database. Ark will likely need an indexer for account history, transaction search, validator activity, governance
-history, contract activity, and product analytics.
+history, contract activity, compliance monitoring, and product analytics.
 
 None of that is needed for the plan's first tranche. What the plan promises anyone can check is served by the Disbursement
 module's own queries, its totals, a grant's paid and remaining principal, a person's figures and live limit, a member's status, each account's
 balance and reservation, and the open member tranche, together with the staking pool and the governance proposals, all read from a node at a height. The indexer comes
-after.
+after, unless counsel requires transaction monitoring from the first tranche: risk and compliance follows funds
+across addresses, which node queries do not serve.
 
 The indexer should be replayable from canonical chain data and should record the block height from which every result is
 derived. It must tolerate restarts, delayed blocks, transaction failures, software upgrades, and schema evolution.
@@ -199,11 +224,13 @@ Indexed results should never silently override a conflicting chain query.
 Keeping this boundary honest makes it possible to scale and redesign search infrastructure without placing consensus or
 fund safety at risk.
 
-### 10. Provide a wallet integration kit
+### 10. Grow the signer interface into a wallet kit
 
-Dapps should integrate with a stable Ark wallet interface rather than couple themselves to one browser extension or
-transport mechanism. A wallet kit can provide account discovery, connection state, network switching, transaction
-requests, event subscriptions, and consistent errors.
+The app's signer interface is the first form of the wallet kit: features request accounts and signatures through it, and
+the device keystore, a Ledger device, or an external wallet answers. When third-party dapps arrive, the same interface
+extends into a dapp-to-wallet protocol, so dapps integrate with a stable Ark wallet interface rather than couple
+themselves to one browser extension or transport mechanism. That protocol can provide account discovery, connection
+state, network switching, transaction requests, event subscriptions, and consistent errors.
 
 The interface should be transport-neutral enough to support first-party web and extension wallets, hardware wallets,
 mobile handoff, and selected compatible Cosmos wallets over time. Application code should not need to understand
@@ -217,34 +244,76 @@ blanket session.
 
 The following boundaries should remain clear as the stack grows:
 
-| Component         | Owns                                                                                                        | Must not become                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `arkd`            | Canonical state, validation, policy, execution, and protocol queries                                        | A product-specific UI backend                                             |
-| Network registry  | Shared public configuration and asset metadata                                                              | A second source of chain state                                            |
-| Ark SDK           | Encoding, querying, transaction workflows, decoding, and formatting                                         | An independent implementation of economic or market policy                |
-| Wallet kit        | Dapp-to-wallet session and request protocol                                                                 | A key store or an Ark-specific policy engine                              |
-| Ark wallet        | Key custody on the member's device, signing consent, transaction review, hosting the member app             | The authority for balances, quotes, or transaction success                |
-| Member app        | Signup with identity and vouch, the grant view, staking each payment, the picker defaults, proposal prompts | A key store, or anything that works without a wallet                      |
-| Member platform   | Admission by identity and vouch, the committee signature, grant-tranche funding requests, suspend                | A custodian, a delegator, a vote, or a document store beyond attestations |
-| Disbursement module      | Custody of each tranche, member issuance, and the escrow paid out by the plan's rules                       | A policy engine beyond those rules, or a treasury                         |
-| Indexer           | Replayable historical and searchable derived data                                                           | Consensus state or an irreplaceable ledger                                |
-| Explorer          | Human-readable verification and network visibility                                                          | The only way to inspect chain activity                                    |
-| Local environment | Reproducible development and integration fixtures                                                           | A simulation with materially different protocol behavior                  |
+| Component           | Owns                                                                                                                                     | Must not become                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `arkd`              | Canonical state, validation, policy, execution, and protocol queries                                                                     | A product-specific UI backend                                                                |
+| Network registry    | Shared public configuration and asset metadata                                                                                           | A second source of chain state                                                               |
+| Ark SDK             | Encoding, querying, transaction workflows, decoding, and formatting                                                                      | An independent implementation of economic or market policy                                   |
+| Signer interface    | Key custody on the device, signing consent, transaction review; later the dapp-to-wallet protocol                                        | The authority for balances, quotes, or transaction success, or an Ark-specific policy engine |
+| Ark app             | Signup with identity and vouch, the grant view, staking each payment, the picker defaults, proposal prompts, and what the app later adds | A key store outside the signer interface, or a second source of chain state                  |
+| Identity vault      | Personal data, the verifier's references, and person ↔ address links, once insurance coverage or AML needs them                          | The source of any chain-visible reference, or readable without a logged request              |
+| Registrar signer    | The registrar key and the batches it signs                                                                                               | A holder of personal data or of any other key                                                |
+| Member platform     | Admission by identity and vouch, the uniqueness store, the vouch graph, the committee signature, grant-tranche funding requests, suspend | A custodian, a delegator, a vote, or a holder of anything that names a person                |
+| Claims case service | The case records claim references name, and the coverage rule for registered members                                                     | A reason to put personal data in a reference                                                 |
+| Risk and compliance | Screening, monitoring, alerts, and cases                                                                                                 | A way to move or freeze coins                                                                |
+| Disbursement module | Custody of each tranche, member issuance, and the escrow paid out by the plan's rules                                                    | A policy engine beyond those rules, or a treasury                                            |
+| Indexer             | Replayable historical and searchable derived data                                                                                        | Consensus state or an irreplaceable ledger                                                   |
+| Explorer            | Human-readable verification and network visibility                                                                                       | The only way to inspect chain activity                                                       |
+| Local environment   | Reproducible development and integration fixtures                                                                                        | A simulation with materially different protocol behavior                                     |
+
+## Repositories
+
+Each component is its own repository under `ararat-network`, so each has its own access list, release cadence, and CI.
+Two live inside another repository: the TypeScript decoder ships in `ark-sdk`, since the contract it shares with Go
+consumers is the schemas and fixtures in `ark`, and the local environment stays in `ark`, since it builds `arkd` from
+source and runs the testnet artefact.
+
+| Repository         | Holds                                                                          | Visibility | First tranche |
+| ------------------ | ------------------------------------------------------------------------------ | ---------- | ------------- |
+| `ark`              | The chain, protos, the local environment, and the decoding fixtures            | Public     | Yes           |
+| `ledger-ark`       | The Ledger app                                                                 | Public     | Later         |
+| `ark-app`          | The Ark app                                                                    | Public     | Yes           |
+| `ark-signer`       | The signer interface, device keystore, and Ledger and external-wallet adapters | Public     | Yes           |
+| `ark-sdk`          | The TypeScript SDK and its decoder                                             | Public     | Yes           |
+| `ark-registry`     | The network registry                                                           | Public     | Yes           |
+| `ark-indexer`      | The indexer                                                                    | Public     | Later         |
+| `ark-explorer`     | The explorer                                                                   | Public     | Thin view     |
+| `ark-backend-api`  | The backend services' internal APIs                                            | Private    | Yes           |
+| `ark-identity`     | The identity vault                                                             | Private    | Later         |
+| `ark-registrar`    | The registrar signer                                                           | Private    | Yes           |
+| `ark-platform`     | The member platform                                                            | Private    | Yes           |
+| `ark-claims-cases` | The claims case service                                                        | Private    | Later         |
+| `ark-compliance`   | Risk and compliance                                                            | Private    | Later         |
+
+The backend repositories are private: published monitoring rules are a guide to evading them, and the identity vault's
+code has the shortest access list in the organisation. The backend's internal APIs, the vault's included, live in
+`ark-backend-api`, so no service needs read access to another's repository to call it. The [build order](#build-order)
+says when each is built.
 
 ## Important considerations
 
 ### Security and key custody
 
-The wallet will be the highest-risk component in the user-facing stack. Key generation, encryption, recovery, session
+Key custody will be the highest-risk part of the user-facing stack. Key generation, encryption, recovery, session
 isolation, dependency updates, hardware-wallet support, signing-device displays, and release distribution need explicit
 security ownership. A polished interface cannot compensate for an ambiguous custody or update model.
 
-One further key ranks with the wallet's: the committee signature that issues member grants and compensation. Section 7
-bounds it.
+Two further keys rank with the app's: the committee signature that issues member grants and compensation, and the
+registrar key. Section 7 bounds them.
 
 Transaction review should be based on decoded, structured messages. Raw JSON or opaque bytes are not an acceptable
 default for common Ark operations. Unknown messages and unverified contract payloads should be presented as such rather
 than receiving a reassuring generic label.
+
+### Identity data
+
+Until the identity vault arrives nothing the backend holds names a person: the uniqueness store links a dedup token,
+which only the verifier can map to a person, to an address, and whether that is personal data in law is counsel's
+question. The vault makes the backend a holder of personal data, with the duties counsel sets for protecting, retaining,
+and reporting it. Nothing chain-visible carries either: registration batches, claim references, and grant records name
+admission and case records, never people. A breach of the vault would tie known people to public addresses permanently,
+which is why it is the only service holding the link and why no other service resolves a person ID without a logged
+request.
 
 ### Fees, taxes, quotes, and simulation
 
@@ -279,7 +348,7 @@ foundation of new tooling.
 ### Infrastructure reliability
 
 First-party tooling depends on public RPC, gRPC, REST, WebSocket, indexer, and asset-metadata services. These need
-redundancy, rate limits, observability, version reporting, and documented failure behavior. The wallet should be able to
+redundancy, rate limits, observability, version reporting, and documented failure behavior. The app should be able to
 distinguish node unavailability, indexer lag, transaction rejection, and an unconfirmed broadcast.
 
 Where possible, consumers should be able to select or operate alternative endpoints. Sovereign tooling should not mean
@@ -287,7 +356,7 @@ that one hosted API becomes an unavoidable central point of failure.
 
 ### Versioning and upgrades
 
-Chain, SDK, wallet, indexer, and explorer releases will not always move in lockstep. Compatibility ranges and feature
+Chain, SDK, app, indexer, and explorer releases will not always move in lockstep. Compatibility ranges and feature
 detection should be explicit. Tooling should degrade safely when it encounters an unknown module version or message
 type, and upgrades should be testable against captured or replayed chain data before activation.
 
@@ -300,27 +369,45 @@ wallets, explorers, exchanges, and dapps.
 The strongest identity comes from a recognisable Ark experience combined with open integration boundaries, not from
 requiring every user to depend on a single frontend.
 
-## Directional sequencing
+## Build order
 
-This is a dependency order, not an implementation schedule:
+This is a dependency order, not a schedule. Steps 0 to 3 put the app with member registration in front of the first
+member tranche, and nothing after them is needed for it. Later layers should not compensate for unresolved protocol or
+metadata contracts underneath them.
 
-1. **Stabilise the integration foundation.** Treat protocol schemas, network metadata, signing modes, transaction
-   decoding, and public endpoints as a coherent surface. The local environment is part of it: it exists, and
-   everything in the next step is proven on it.
-2. **Build the distribution's dependencies, in this order.** The Disbursement module's schemas and its e2e and app
-   test flows first, since they are what the rest is tested against; then the member process, its verifier, and the committee
-   multisig, since the platform is built around them; then the platform's registration and grant funding
-   flows; then the wallet and the member app on it, the last thing a member touches and the first thing they see. The module's audit
-   sits before the first tranche, not before the build. Transfers, simulation, and market operations follow.
-3. **Add the information layer.** A thin distribution view on node queries with round one; replayable indexing and the
-   full explorer once the meanings of messages, events, assets, and account activity are stable enough to share.
-4. **Make third-party development routine.** Provide the wallet kit, documented interfaces, fixtures, and
-   compatibility guidance needed to build without private knowledge.
-5. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
+### First member tranche
+
+0. **Settle what blocks code.** The identity verifier, chosen for a uniqueness attestation, a stable dedup token, and a
+   verification retrievable by reference; counsel on what those oblige the platform to protect; who vouches for the
+   first members, who have no member to vouch for them; and who runs the backend and holds the committee and registrar
+   keys. The [disbursement plan](../governance/DISBURSEMENT_PLAN.md#6-open-items) holds each as an open item.
+1. **Fix the contracts.** The signup protocol (§6); the backend's internal APIs in `ark-backend-api`; a minimal network
+   registry for the local environment and testnet in `ark-registry`; and a local environment in `ark` that sets the
+   grants mandate, opens a member tranche, and appoints a registrar, as the e2e tier already does, so both tracks below
+   register against a real chain. Protocol schemas, signing modes, decoding, and public endpoints are treated as one
+   surface from here on.
+2. **Build two tracks in parallel.** The backend: `ark-registrar` first, the smallest part and the only one that writes
+   to the chain, then `ark-platform` with its uniqueness store. The client: `ark-sdk` with the queries, transactions,
+   ADR-036 signature, and decoding the app needs, then `ark-signer` with the device keystore, then the signup flow in
+   `ark-app`. The tracks meet when the app's signup registers a member through the platform on the local environment.
+3. **Finish what a member needs before the first payment.** The grant view, staking, and voting in the app, since the
+   first tenth pays two weeks after registration; the thin distribution view on node queries, the first release of
+   `ark-explorer`; the Disbursement module's audit, which sits before the first tranche, not before the build; and a
+   testnet rehearsal of the whole flow with the daily comparison running.
+
+### After the first tranche
+
+4. **Add identity where a use needs it.** The identity vault, the claims case service, and risk and compliance with the
+   indexer under it, when insurance coverage of registered members or AML is adopted. If counsel requires monitoring
+   from the first tranche, the indexer and compliance move into step 3 and become its longest part.
+5. **Widen the app.** Transfers, simulation, market operations, and the contributor interactions of §6, and Ledger and
+   external-wallet signers behind the signer interface.
+6. **Add the information layer.** Replayable indexing, where step 4 has not built it, and the full explorer on it, once
+   the meanings of messages, events, assets, and account activity are stable enough to share.
+7. **Make third-party development routine.** Extend the signer interface into the wallet kit's dapp protocol, and
+   provide the documented interfaces, fixtures, and compatibility guidance needed to build without private knowledge.
+8. **Expand execution environments deliberately.** CosmWasm is on; a general contract product or an EVM-facing one is
    added when application demand and operational costs justify it.
-
-These areas can overlap in practice, but later layers should not compensate for unresolved protocol or metadata
-contracts underneath them.
 
 ## Decision checkpoints
 
@@ -331,7 +418,9 @@ The direction is working when:
 - a member with no technical background can receive, stake, and vote a grant from the app without a key, a CLI, or a
   fee;
 - every grant can be checked against the plan's rules from public interfaces;
-- the same transaction is decoded consistently by the wallet, explorer, and SDK;
+- no single backend service yields both the person ↔ address link and the registrar key, and nothing chain-visible
+  names a person;
+- the same transaction is decoded consistently by the app, explorer, SDK, and compliance service;
 - a user can understand the assets, fees, taxes, quotes, permissions, and likely outcome before signing;
 - historical views can be rebuilt from chain data and expose their synchronization height;
 - a developer can reproduce core workflows locally using the same conventions as a public network;
@@ -343,11 +432,12 @@ The direction is working when:
 
 This direction does not:
 
-- define a complete implementation plan, staffing model, timeline, or repository structure;
+- define a complete implementation plan, staffing model, or timeline;
 - require every component to be built before Ark can launch;
 - require Ark to reproduce Terra's historical code or service architecture;
-- make the wallet, indexer, or explorer authoritative for chain state;
-- give any platform component custody of member coins;
+- make the app, indexer, or explorer authoritative for chain state;
+- give any backend component custody of member coins or a way to freeze them;
+- put personal data on chain or in any public reference;
 - justify duplicating Ark's economic calculations in client libraries;
 - rule out compatibility with existing Cosmos wallets and infrastructure;
 - permanently rule out EVM support if a future application strategy needs it.
