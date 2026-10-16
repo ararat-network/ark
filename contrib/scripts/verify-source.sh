@@ -14,10 +14,10 @@ prepare() {
     docker build --platform "linux/$platform" --build-arg "GOLANG=$golang" -t "$image" - >&2 <<'DOCKERFILE'
 # check=skip=InvalidDefaultArgInFrom
 ARG GOLANG
-FROM rust:1.95.0-alpine@sha256:606fd313a0f49743ee2a7bd49a0914bab7deedb12791f3a846a34a4711db7ed2 AS rust
+FROM rust:1.96.0-alpine@sha256:f87aa870663e2b57ec8c69de82c7eedf7383bee987eef7612c0359635eaadb41 AS rust
 FROM ${GOLANG}
 RUN apk add --no-cache build-base git linux-headers eudev-dev clang22-dev clang22-static llvm22-dev llvm22-static python3 perl bash cmake nasm
-# Match wasmvm v3.0.8's builders/Dockerfile.alpine: Rust 1.95.0, its minimum
+# Match wasmvm v3.0.9's builders/Dockerfile.alpine: Rust 1.96.0, its minimum
 # compiler, with clang and LLVM headers and static libraries.
 COPY --from=rust /usr/local/cargo /usr/local/cargo
 COPY --from=rust /usr/local/rustup /usr/local/rustup
