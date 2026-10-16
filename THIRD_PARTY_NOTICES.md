@@ -354,7 +354,7 @@ need Cargo or Docker to vendor the locked Rust dependencies.
 
 Verification requires Docker, including support for Linux amd64 and arm64.
 Preparing the verifier images downloads general-purpose compiler and OS build
-tools. The verifier pins Rust 1.95.0, the minimum compiler of wasmvm v3.0.8's
+tools. The verifier pins Rust 1.96.0, the minimum compiler of wasmvm v3.0.9's
 Alpine builder. Compilation then runs with networking disabled and empty Go
 caches. Both node architectures rebuild wasmvm from source; sidecar verification
 cross-compiles its four published OS/architecture combinations. A successful
