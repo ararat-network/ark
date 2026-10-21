@@ -83,6 +83,21 @@ func (m *MockReserveKeeper) EXPECT() *MockReserveKeeperMockRecorder {
 	return m.recorder
 }
 
+// CreditToTarget mocks base method.
+func (m *MockReserveKeeper) CreditToTarget(ctx context.Context, target math.Int) (math.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreditToTarget", ctx, target)
+	ret0, _ := ret[0].(math.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreditToTarget indicates an expected call of CreditToTarget.
+func (mr *MockReserveKeeperMockRecorder) CreditToTarget(ctx, target any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreditToTarget", reflect.TypeOf((*MockReserveKeeper)(nil).CreditToTarget), ctx, target)
+}
+
 // RecognisedCapital mocks base method.
 func (m *MockReserveKeeper) RecognisedCapital(ctx context.Context) (math.Int, error) {
 	m.ctrl.T.Helper()

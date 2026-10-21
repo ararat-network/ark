@@ -83,18 +83,11 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, 
 		if err != nil {
 			return math.Int{}, fmt.Errorf("getting economic policy: %w", err)
 		}
-		// Each committee-operated fund is asked what it is worth rather than read
-		// behind its back; the Buffer has no operator to ask, so its balance is
-		// read directly.
+		// Insurance is asked what it is worth rather than read behind its back.
 		insuranceBalance, err := k.claimsKeeper.RecognisedCapital(ctx)
 		if err != nil {
 			return math.Int{}, fmt.Errorf("getting Insurance recognised capital: %w", err)
 		}
-		reserveBalance, err := k.reserveKeeper.RecognisedCapital(ctx)
-		if err != nil {
-			return math.Int{}, fmt.Errorf("getting Reserve recognised capital: %w", err)
-		}
-		bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 		// The net basis, because this is a flow rather than a bound: no claim
 		// arrives from paper the Reserve holds, so filling a gap against it
 		// would sequester principal that should overflow-burn.
@@ -111,11 +104,19 @@ func (k Keeper) allocateExpansionPrincipal(ctx context.Context, offer math.Int, 
 			return math.Int{}, err
 		}
 		targets := policy.FundTargets(basis)
+		// The Reserve sizes its own credit: capped credits rise with its
+		// balance, so its nominal shortfall would overshoot.
+		reserveNeed, err := k.reserveKeeper.CreditToTarget(ctx, targets.Reserve)
+		if err != nil {
+			return math.Int{}, fmt.Errorf("sizing the Reserve credit: %w", err)
+		}
+		// The Buffer has no operator to ask, so its balance is read directly.
+		bufferBalance := k.getBalance(ctx, types.RedemptionBufferName)
 
 		remaining := offer
 		bufferCredit = math.MinInt(remaining, shortfall(targets.Buffer, bufferBalance))
 		remaining = remaining.Sub(bufferCredit)
-		reserveCredit = math.MinInt(remaining, shortfall(targets.Reserve, reserveBalance))
+		reserveCredit = math.MinInt(remaining, reserveNeed)
 		remaining = remaining.Sub(reserveCredit)
 		insuranceCredit = math.MinInt(remaining, shortfall(targets.Insurance, insuranceBalance))
 		remaining = remaining.Sub(insuranceCredit)
@@ -174,6 +175,8 @@ func (k Keeper) drawRedemptionCoverage(ctx context.Context, totals markettypes.C
 	if err != nil {
 		return math.Int{}, fmt.Errorf("reconstructing the pre-burn coverage basis: %w", err)
 	}
+	// Unreachable: validated output <= retired value <= basis, so a positive output leaves a
+	// positive basis. Kept so a division by nothing fails loudly.
 	if !basis.IsPositive() {
 		return math.Int{}, fmt.Errorf(
 			"redeemed liability %s left no coverage basis",

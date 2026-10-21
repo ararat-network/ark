@@ -16,18 +16,20 @@ import (
 	oracletypes "github.com/ararat-network/ark/x/oracle/types"
 )
 
-// ClaimsKeeper reports Insurance capital while Treasury owns its requirement. Separate named
-// interfaces and app depinject bindings distinguish Claims from Reserve despite identical method
-// sets; Treasury neither reads nor pays claims.
+// ClaimsKeeper reports Insurance capital while Treasury owns its requirement. Its own named
+// interface keeps the depinject binding distinct from Reserve's; Treasury neither reads nor pays
+// claims.
 type ClaimsKeeper interface {
 	RecognisedCapital(ctx context.Context) (math.Int, error)
 }
 
-// ReserveKeeper reports recognised Reserve capital only. Treasury credits custody through Bank;
-// degraded allocation is disclosed by EventLiabilityIncomplete rather than a second Reserve-side
-// state record.
+// ReserveKeeper reports recognised Reserve capital and the NOAH that lifts it to a target, the
+// Reserve's own question because capped credits rise with its balance. Treasury credits custody
+// through Bank; degraded allocation is disclosed by EventLiabilityIncomplete rather than a second
+// Reserve-side state record.
 type ReserveKeeper interface {
 	RecognisedCapital(ctx context.Context) (math.Int, error)
+	CreditToTarget(ctx context.Context, target math.Int) (math.Int, error)
 }
 
 // AccountKeeper defines the auth functionality required by Treasury.

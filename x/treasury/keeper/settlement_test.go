@@ -174,9 +174,55 @@ func (s *KeeperTestSuite) TestSettleConversionsWaterfallsPrincipalOnce() {
 	})
 }
 
+// TestSettleConversionsCreditsTheReserveWhatReachesItsTarget pins the Reserve's
+// credit to what lands its recognition on the target rather than its nominal
+// shortfall: a capped holding's credit rises with the NOAH credited, so the
+// shortfall would overshoot, and the overshoot would come out of Insurance and
+// the burn.
+func (s *KeeperTestSuite) TestSettleConversionsCreditsTheReserveWhatReachesItsTarget() {
+	policy := types.DefaultEconomicPolicy()
+	policy.RedemptionBufferTargetRatio = math.LegacyZeroDec()
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.1")
+	s.Require().NoError(s.keeper.EconomicPolicy.Set(s.ctx, policy))
+	s.setAssets(chain.USDBaseDenom)
+	s.bankKeeper.EXPECT().GetSupply(gomock.Any(), chain.USDBaseDenom).
+		Return(sdk.NewInt64Coin(chain.USDBaseDenom, 100))
+	s.setRates(oracletypes.RateSet{chain.USDBaseDenom: math.LegacyOneDec()})
+	// Liability 100 implies targets 0 / 50 / 10. The Reserve recognises 20
+	// with a holding capped at its whole NOAH balance, so each NOAH credited
+	// counts twice: 15 reaches the 50, where the nominal shortfall of 30
+	// would land it at 80.
+	s.expectBufferBalances(0)
+	s.setReserveRecognised(20)
+	s.reserveCreditLever = math.LegacyOneDec()
+	s.setInsuranceRecognised(0)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, reservetypes.StrategicReserveName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 15)),
+	).Return(nil)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToModule(
+		gomock.Any(), markettypes.ModuleName, claimstypes.InsuranceName,
+		sdk.NewCoins(sdk.NewInt64Coin(chain.NoahBaseDenom, 10)),
+	).Return(nil)
+
+	burn, err := s.keeper.SettleConversions(s.ctx, expansionTotals(30))
+	s.Require().NoError(err)
+	// 15 lands the Reserve on its target, 10 fills Insurance, and the 5 the
+	// nominal shortfall would have kept overflows into the burn.
+	s.Require().Equal(math.NewInt(5), burn)
+	s.requireTypedEvent(&types.EventExpansionAllocated{
+		Denom:                  chain.NoahBaseDenom,
+		RedemptionBufferCredit: math.ZeroInt(),
+		StrategicReserveCredit: math.NewInt(15),
+		InsuranceCredit:        math.NewInt(10),
+		OverflowBurn:           math.NewInt(5),
+	})
+}
+
 // TestSettleConversionsPropagatesRecognisedCapitalFailure checks a fund that
-// cannot report its capital fails settlement before any Buffer read or
-// transfer, both of which the strict bank mock would refuse.
+// cannot report its capital, or size its credit, fails settlement before any
+// Buffer read or transfer, both of which the strict bank mock would refuse.
 func (s *KeeperTestSuite) TestSettleConversionsPropagatesRecognisedCapitalFailure() {
 	failure := errors.New("custody read failure")
 	tests := []struct {
@@ -192,7 +238,7 @@ func (s *KeeperTestSuite) TestSettleConversionsPropagatesRecognisedCapitalFailur
 		{
 			name:    "Reserve",
 			fail:    func() { s.reserveRecognisedErr = failure },
-			wantErr: "getting Reserve recognised capital",
+			wantErr: "sizing the Reserve credit",
 		},
 	}
 	for _, tc := range tests {
