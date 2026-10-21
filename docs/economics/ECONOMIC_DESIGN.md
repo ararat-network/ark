@@ -148,8 +148,9 @@ adds the gross offer and the expansion principal to the block's totals. The expa
 the final integer output at the quote's own rates, rounded down; Market refuses a conversion whose principal exceeds
 the gross offer, so the stablecoin minted is never worth more than the NOAH offered.
 
-At EndBlock, Treasury values the liability once (§4.1), sizes the targets on the net basis (§4.2), takes each fund's
-gap against what it recognises (§4.3), and runs the waterfall over the block's gross total `G`:
+At EndBlock, Treasury values the liability once (§4.1), sizes the targets on the net basis (§4.2), takes the Buffer's
+and Insurance's gaps against what they recognise and the Reserve's as the NOAH that lifts its recognition to its target
+(§4.3), and runs the waterfall over the block's gross total `G`:
 
 ```text
 buffer_credit    = min(G, redemption_buffer_gap)
@@ -345,9 +346,17 @@ until burned. Custody is attested: the asset sits at a mandate destination and t
 quantity, citing its evidence, in an append-only journal
 ([Reserve](../../x/reserve/README.md#mandate-custody-and-journal)).
 
-When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, a 30 NOAH gap reopens, plus each capped
-asset's ratio of the 100. Zero credit would reopen all 100 and invite an acquisition-and-refill loop that captures
-expansion principal; full credit would close a gap that is not closed.
+When the Reserve spends 100 NOAH on an asset recognised at 70 after haircut, recognised capital falls by 30 plus each
+capped asset's ratio of the 100, the gap that reopens for a Reserve that stood at its target. Zero credit would reopen
+all 100 and invite an acquisition-and-refill loop that captures expansion principal; full credit would close a gap that
+is not closed.
+
+The lever runs the other way on every credit: while a cap binds, each NOAH the Reserve receives recognises one plus the
+clipped ratios, so the waterfall credits the smallest amount whose post-credit recognition reaches the target, found by
+the same search as the burn bound (§4.5), never the nominal shortfall. Crediting the shortfall would carry the Reserve
+past its target by the clipped ratios' share of the credit, and that excess would come out of Insurance and the burn:
+with a cap at the whole balance, every deployment of `D` would be refilled with `2D`, and the fund would gain NOAH by
+acquiring.
 
 ### 4.4 Passive targets and public ratios
 

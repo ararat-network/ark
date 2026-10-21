@@ -128,8 +128,11 @@ block a proposal alone but cannot pass one alone. Public bonded stake erodes tha
 | The founder plus m other seats             | 15M × m                                               |
 
 As the founder's grant and stream pay out, they extend the founder's block: the founder can block alone while public
-bonded stake is under twice what they have paid. A delegation that doesn't vote follows its validator's vote, so
-control passes only as grantees vote or delegate away from the founding set.
+bonded stake is under twice what they have paid. They also lift the founder towards quorum: once the founder's bonded
+awards exceed the founder's seat plus public bonded stake, the founder alone meets quorum and passes proposals, which
+with all 25M paid and bonded takes public bonded stake under 2.5M. "Cannot pass one alone" holds at launch, not for the
+whole payout. A delegation that doesn't vote follows its validator's vote, so control passes only as grantees vote or
+delegate away from the founding set.
 
 ## 6. Open items
 
