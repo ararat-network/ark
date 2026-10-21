@@ -93,10 +93,12 @@ or vacuous bound as the balance sheet moves, and a share of the requirement lets
 empty fund manufacture credit up to a share of a large target. Basel III's liquidity coverage ratio anchors its Level 2
 limits to Level 1 the same way.
 
-Treasury reads one capital number to size expansion gaps. Reserve reads Treasury's capital requirements through a
-reader installed after construction only where an action needs a bound. It does not acquire a second liability
-calculator. A total/liquid pair was rejected: the Buffer is already the liability-scaled liquid tranche, and the
-appointment floor is Reserve's own operational liquidity rule.
+Treasury reads one capital number to report and asks `CreditToTarget` for the NOAH that lifts it to the expansion
+target, the burn bound's mirror: while a cap binds, each NOAH credited recognises one plus the clipped ratios, so the
+nominal shortfall would carry the fund past its target and that excess out of the funds behind it. Reserve reads
+Treasury's capital requirements through a reader installed after construction only where an action needs a bound. It
+does not acquire a second liability calculator. A total/liquid pair was rejected: the Buffer is already the
+liability-scaled liquid tranche, and the appointment floor is Reserve's own operational liquidity rule.
 
 ## External symbols and freshness
 

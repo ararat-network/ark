@@ -52,6 +52,48 @@ func recognisedAt(balance math.Int, stakes []types.RecognitionStake) (math.Int, 
 	return recognised, nil
 }
 
+// CreditToTarget is the smallest NOAH credit that lifts recognised capital to target, zero at or
+// above it. Treasury's expansion waterfall asks it so the fund lands on its target line from below
+// as a surplus burn lands it from above.
+func (k Keeper) CreditToTarget(ctx context.Context, target math.Int) (math.Int, error) {
+	_, stakes, err := k.recognitionStakes(ctx)
+	if err != nil {
+		return math.Int{}, err
+	}
+	return creditToTarget(k.balance(ctx), target, stakes)
+}
+
+// creditToTarget sizes the credit. A clipped stake's credit is its ratio of the balance, so a unit
+// credited raises recognised capital by 1 + Σ clipped ratios and the nominal shortfall overstates
+// the need; crediting it would carry the fund past its target and that excess out of the funds
+// behind it. Recognition rises at least one for one, so the shortfall bounds the search from above,
+// and the first balance that reaches the target is the answer.
+func creditToTarget(balance, target math.Int, stakes []types.RecognitionStake) (math.Int, error) {
+	recognised, err := recognisedAt(balance, stakes)
+	if err != nil {
+		return math.Int{}, err
+	}
+	shortfall := target.Sub(recognised)
+	if !shortfall.IsPositive() {
+		return math.ZeroInt(), nil
+	}
+
+	low, high := math.ZeroInt(), shortfall
+	for low.LT(high) {
+		mid := low.Add(high).QuoRaw(2)
+		reached, err := recognisedAt(balance.Add(mid), stakes)
+		if err != nil {
+			return math.Int{}, err
+		}
+		if reached.GTE(target) {
+			high = mid
+		} else {
+			low = mid.AddRaw(1)
+		}
+	}
+	return low, nil
+}
+
 // recognitionStakes walks policy, open positions, and rates once, returning the uncapped rows and
 // the stakes behind them in one denomination order. Nil rows mean nothing is listed or attested.
 func (k Keeper) recognitionStakes(ctx context.Context) ([]types.AssetRecognition, []types.RecognitionStake, error) {

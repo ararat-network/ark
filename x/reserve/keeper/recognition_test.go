@@ -896,3 +896,60 @@ func (s *KeeperTestSuite) TestGenesisRecognitionPolicyValidation() {
 		})
 	}
 }
+
+// TestCreditToTarget pins the expansion credit to the balance that reaches the
+// target: the mirror of the burn bound, searched on recognition at the
+// post-credit balance because a clipped stake's credit rises with it.
+func (s *KeeperTestSuite) TestCreditToTarget() {
+	credit := func(target int64) math.Int {
+		found, err := s.keeper.CreditToTarget(s.ctx, math.NewInt(target))
+		s.Require().NoError(err)
+		return found
+	}
+
+	s.Run("NOAH-only custody asks for its nominal shortfall", func() {
+		s.SetupTest()
+		s.fundReserve(1_000)
+		s.Require().Equal(math.NewInt(200), credit(1_200))
+	})
+
+	s.Run("nothing at or above the target", func() {
+		s.SetupTest()
+		s.fundReserve(1_000)
+		s.Require().True(credit(1_000).IsZero())
+		s.Require().True(credit(800).IsZero())
+	})
+
+	// With 800 attested against a 0.3 cap, 1,000 NOAH recognises 1,300 and
+	// every unit credited counts 1.3: 231 reaches 1,600 (1,231 + 369), where
+	// the nominal shortfall of 300 would land the fund at 1,690.
+	s.Run("a clipped stake lowers the credit", func() {
+		s.SetupTest()
+		s.fundReserve(1_000)
+		s.attest(testAsset, 800)
+		s.setPolicy(eligibility(testAsset, "1", "0.3"))
+		s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
+		s.Require().Equal(math.NewInt(231), credit(1_600))
+	})
+
+	// The cap releases once the balance passes the holding's value over its
+	// ratio, so the search crosses from the levered slope to one for one:
+	// 2,800 NOAH recognises 2,800 + 800, which no smaller balance does.
+	s.Run("the search crosses the cap's release", func() {
+		s.SetupTest()
+		s.fundReserve(1_000)
+		s.attest(testAsset, 800)
+		s.setPolicy(eligibility(testAsset, "1", "0.3"))
+		s.stubRates(oracletypes.RateSet{testAsset: math.LegacyOneDec()})
+		s.Require().Equal(math.NewInt(1_800), credit(3_600))
+	})
+
+	s.Run("a dark feed earns no lever", func() {
+		s.SetupTest()
+		s.fundReserve(1_000)
+		s.attest(testAsset, 800)
+		s.setPolicy(eligibility(testAsset, "1", "0.3"))
+		s.stubRates(oracletypes.RateSet{})
+		s.Require().Equal(math.NewInt(600), credit(1_600))
+	})
+}
