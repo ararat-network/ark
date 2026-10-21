@@ -244,7 +244,7 @@ func TestMsgCancelSettlementFactory(t *testing.T) {
 		_, opened := simulation.MsgOpenSettlementFactory(f.keeper)(f.ctx, f.testData, f.reporter)
 		require.False(t, f.reporter.IsSkipped(), f.reporter.Comment())
 		require.NoError(t, f.keeper.OpenSettlement(
-			f.ctx, opened.Denom, opened.ExpectedVersion, opened.RedemptionRate, opened.EarliestClosingTime,
+			f.ctx, opened.Denom, opened.ExpectedVersion, opened.RedemptionRate, opened.SettlementWindow,
 		))
 
 		_, msg := simulation.MsgCancelSettlementFactory(f.keeper)(f.ctx, f.testData, f.reporter)

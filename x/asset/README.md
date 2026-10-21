@@ -159,8 +159,8 @@ by `MsgAddFeed` and `MsgRemoveFeed`; a feed must be Active before an asset may r
 two registries are populated in that order and the feed set is always the larger.
 
 A `SettlementPlan` fixes a positive NOAH-per-asset rate, an activation time derived from the opening block time plus
-the governed delay, and a mandatory earliest closing time, all Unix seconds of block time; it records the
-opening height and time. Every term is set at opening and never amended, and the plan
+the governed delay, and an earliest closing time derived from activation plus the proposal's settlement window, all
+Unix seconds of block time; it records the opening height and time. Every term is set at opening and never amended, and the plan
 is authoritative only while attached to a `SUSPENDED` asset. `ResolutionRecords` are immutable, keyed by denomination
 and version, and carry a kind, `WRITE_OFF` or `RETIREMENT_RESIDUAL`, the supply outstanding at resolution, and the
 plan's final terms when one existed. A later recovery never erases or reinterprets a record.
@@ -241,7 +241,9 @@ messages except the one committee message in §9.
   ordinary redemption while preserving balances, transfers, metadata, and disclosure. It never touches the protocol
   reference, which names a feed, and it leaves the feed running.
 - **`OpenSettlement`** requires `SUSPENDED` or `WRITTEN_OFF`, positive supply, and no plan already open; a
-  written-off asset becomes `SUSPENDED` again. Governance states the rate and the earliest closing time only.
+  written-off asset becomes `SUSPENDED` again. Governance states the rate and the settlement window only, the
+  window positive and capped at five years; the closing time is activation plus the window, derived at execution
+  for the same reason activation is, so a vote that runs long can neither shorten the window nor fail the proposal.
   Activation is derived from the governed delay, because the delay is a correction window that benefits governance
   alone while holders wait unable to redeem, and a proposed absolute time would fall inside the delay if a vote ran
   long. The delay is a parameter because the window it must outlast, the voting period, moves without consulting the
@@ -338,7 +340,7 @@ that is not a registered asset. There is no consumer-written membership or lock 
 ## 12. Protocol surface
 
 Governance messages: `RegisterAsset` (the denomination alone), `HaltIssuance`, `ResumeIssuance`, `SuspendAsset`,
-`OpenSettlement` (rate and earliest closing time), `CancelSettlement`, `RecoverAsset`, `WriteOffAsset`,
+`OpenSettlement` (rate and settlement window), `CancelSettlement`, `RecoverAsset`, `WriteOffAsset`,
 `FinaliseRetirement` (`max_residual_supply`), `SetEmergencyMandate`, and `UpdateParams` for the activation delay. One
 committee message, `EmergencySuspendAsset`, term-checked. Queries: `Params`, `Asset`, `Assets` (returned whole, since
 the registry is governance-bounded), `SettlementPlan`, `ResolutionHistory` (paginated), `EmergencyMandate`; feeds and

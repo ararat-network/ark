@@ -122,11 +122,11 @@ func (s *KeeperTestSuite) TestMsgServerRejectsInvalidAuthority() {
 				_, err := server.OpenSettlement(
 					s.ctx,
 					&types.MsgOpenSettlement{
-						Authority:           invalidAuthority,
-						Denom:               asset.Denom,
-						ExpectedVersion:     asset.Version,
-						RedemptionRate:      math.LegacyOneDec(),
-						EarliestClosingTime: 10,
+						Authority:        invalidAuthority,
+						Denom:            asset.Denom,
+						ExpectedVersion:  asset.Version,
+						RedemptionRate:   math.LegacyOneDec(),
+						SettlementWindow: 10,
 					},
 				)
 				return err
@@ -201,11 +201,11 @@ func (s *KeeperTestSuite) TestMsgServerRoutesSettlementMutation() {
 		Return(sdk.NewInt64Coin(asset.Denom, 100))
 
 	response, err := server.OpenSettlement(s.ctx, &types.MsgOpenSettlement{
-		Authority:           authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Denom:               asset.Denom,
-		ExpectedVersion:     asset.Version,
-		RedemptionRate:      math.LegacyOneDec(),
-		EarliestClosingTime: testSettlementActivationTime() + 100,
+		Authority:        authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Denom:            asset.Denom,
+		ExpectedVersion:  asset.Version,
+		RedemptionRate:   math.LegacyOneDec(),
+		SettlementWindow: 100,
 	})
 	s.Require().NoError(err)
 	s.Require().NotNil(response)
@@ -530,7 +530,7 @@ func (s *KeeperTestSuite) TestMsgServerUpdateParamsLeavesOpenPlansAlone() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		activation+100,
+		100,
 	))
 
 	shortened := types.DefaultParams()

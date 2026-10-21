@@ -52,14 +52,15 @@ func (k Keeper) ActiveSettlementPlan(ctx context.Context, denom string) (types.S
 }
 
 // OpenSettlement establishes fixed asset-to-NOAH redemption. Activation is derived from the
-// execution time and governed delay; governance supplies a closing time after activation. See
+// execution time and governed delay, and the earliest closing time from activation and the
+// proposal's window, so the vote's timing cannot shorten what holders were promised. See
 // x/asset/README.md for the correction-window contract.
 func (k Keeper) OpenSettlement(
 	ctx context.Context,
 	denom string,
 	expectedVersion uint64,
 	redemptionRate math.LegacyDec,
-	earliestClosingTime uint64,
+	settlementWindow uint64,
 ) error {
 	asset, err := k.getAssetAtVersion(ctx, denom, expectedVersion)
 	if err != nil {
@@ -93,20 +94,29 @@ func (k Keeper) OpenSettlement(
 		)
 	}
 
+	if err := types.ValidateSettlementWindow(settlementWindow); err != nil {
+		return errorsmod.Wrapf(
+			types.ErrInvalidAssetTransition,
+			"opening settlement for asset %s: %v",
+			denom,
+			err,
+		)
+	}
 	params, err := k.Params.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("getting asset params: %w", err)
 	}
-	// Validation caps the delay at a year and block time fits the header's int64, so the addition
-	// cannot overflow for any stored value.
+	// Validation caps the delay at a year and the window at five years, and block time fits the
+	// header's int64, so the additions cannot overflow for any stored value.
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	now := chain.BlockSeconds(ctx)
+	activation := now + params.SettlementActivationDelay
 
 	plan := types.SettlementPlan{
 		Denom:               denom,
 		RedemptionRate:      redemptionRate,
-		ActivationTime:      now + params.SettlementActivationDelay,
-		EarliestClosingTime: earliestClosingTime,
+		ActivationTime:      activation,
+		EarliestClosingTime: activation + settlementWindow,
 		OpenedHeight:        chain.BlockHeight(ctx),
 		OpenedTime:          now,
 	}

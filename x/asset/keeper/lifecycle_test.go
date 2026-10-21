@@ -585,7 +585,7 @@ func (s *KeeperTestSuite) TestRetirementIsTerminal() {
 				asset.Denom,
 				asset.Version,
 				math.LegacyOneDec(),
-				chain.BlockSeconds(s.ctx)+1,
+				1,
 			)
 		}},
 		{"cancel a settlement", func() error {

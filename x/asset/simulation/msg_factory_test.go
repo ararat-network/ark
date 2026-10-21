@@ -173,12 +173,10 @@ func TestMsgOpenSettlementFactory(t *testing.T) {
 			require.Equal(t, asset.Version, msg.ExpectedVersion)
 			require.True(t, msg.RedemptionRate.IsPositive())
 			require.True(t, msg.RedemptionRate.LTE(math.LegacyOneDec()))
-			params, err := f.keeper.Params.Get(f.ctx)
-			require.NoError(t, err)
-			require.Greater(t, msg.EarliestClosingTime, 10+params.SettlementActivationDelay)
+			require.NoError(t, types.ValidateSettlementWindow(msg.SettlementWindow))
 			// The factory's whole job is to emit what the handler accepts.
 			require.NoError(t, f.keeper.OpenSettlement(
-				f.ctx, msg.Denom, msg.ExpectedVersion, msg.RedemptionRate, msg.EarliestClosingTime,
+				f.ctx, msg.Denom, msg.ExpectedVersion, msg.RedemptionRate, msg.SettlementWindow,
 			))
 		})
 	}

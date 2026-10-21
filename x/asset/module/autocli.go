@@ -126,12 +126,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				),
 				assetProposalCommand(
 					"OpenSettlement",
-					"open-settlement-proposal [denom] [expected-version] [redemption-rate] [earliest-closing-time]",
+					"open-settlement-proposal [denom] [expected-version] [redemption-rate] [settlement-window]",
 					"Submit a proposal to open asset settlement",
 					"denom",
 					"expected_version",
 					"redemption_rate",
-					"earliest_closing_time",
+					"settlement_window",
 				),
 				assetProposalCommand(
 					"CancelSettlement",
