@@ -920,10 +920,11 @@ until conversion opens.
 
 The steps that open the member pool are governance policy rather than chain rules. The first opens 30,000,000 NOAH to
 1,500 members at 20,000 each; each later step lowers the member amount, to 5,000 NOAH at the fifth, about 66,300
-members in all. A step after the first opens only once public bonded stake, which excludes the founding seats and what
-the founder's awards have paid, reaches fifteen per cent of what the earlier steps distributed, the founder's awards
-excluded. Contributor awards follow a guideline of forty per cent of each step, which a proposal may exceed if it says
-why. Membership obliges nothing: a recipient may sell, hold, or stake what it receives, and the programme distributes
+members in all. A step after the first opens only once public bonded stake, which excludes what the founding accounts
+have delegated, their seats and whatever of their income and the founder's paid awards they have bonded, reaches
+fifteen per cent of what the earlier steps distributed, the founder's awards excluded. Contributor awards follow a
+guideline of forty per cent of each step, which a proposal may exceed if it says why; the founder's awards are charged
+to the first step's contributor figure as such an overrun. Membership obliges nothing: a recipient may sell, hold, or stake what it receives, and the programme distributes
 ownership and the governance weight that bonding it brings, not a duty to use it. [Ark: Disbursement
 plan][ark-disbursement] [Ark: Disbursement][ark-disbursement-module]
 
@@ -933,8 +934,10 @@ Once the founder's seat is spread, the founder holds a third of the founding sta
 the 66.7% threshold and 50% quorum, the founder can block any proposal alone, and the other seats together cannot pass
 over the founder's no. At launch the founder passes nothing alone, a third being under quorum; passing takes the founder
 and half the other seats. That holds until the founder's bonded awards exceed the founder's seat plus public bonded
-stake, which with all 25,000,000 paid and bonded takes public bonded stake under 2,500,000. The veto is deliberate, and
-nothing restores it once public stake has diluted it.
+stake, which with all 25,000,000 paid and bonded takes public bonded stake under 2,500,000; from there the founder alone
+meets quorum and passes any proposal no other stake votes against, while against the other seats' no the founder's
+51.35% stays under the 66.7% threshold. The veto is deliberate, and nothing restores it once public stake has diluted
+it.
 
 Public bonded stake dissolves it on a fixed schedule. The founder alone, or half the other seats, stops blocking once
 the public has bonded about 0.3% of the founder's seat, roughly 68,000 NOAH at ten seats. The founder with `m` other
