@@ -27,7 +27,7 @@ func (s *KeeperTestSuite) TestOpenSettlement() {
 		asset.Denom,
 		asset.Version,
 		rate,
-		testSettlementActivationTime()+100,
+		100,
 	))
 	s.requireStoredAsset(
 		asset.Denom,
@@ -73,7 +73,7 @@ func (s *KeeperTestSuite) TestOpenSettlementReinstatesWrittenOffAsset() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		testSettlementActivationTime()+100,
+		100,
 	))
 	s.requireStoredAsset(
 		asset.Denom,
@@ -115,7 +115,7 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsUnsafeState() {
 		zeroSupply.Denom,
 		zeroSupply.Version,
 		math.LegacyOneDec(),
-		testSettlementActivationTime()+100,
+		100,
 	)
 	s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
 
@@ -130,29 +130,28 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsInvalidTerms() {
 	assets := types.DefaultGenesisState().Assets
 
 	for i, test := range []struct {
-		name        string
-		rate        math.LegacyDec
-		closingTime uint64
+		name   string
+		rate   math.LegacyDec
+		window uint64
 	}{
 		{
-			name:        "redemption rate is not positive",
-			rate:        math.LegacyZeroDec(),
-			closingTime: testSettlementActivationTime() + 100,
+			name:   "redemption rate is not positive",
+			rate:   math.LegacyZeroDec(),
+			window: 100,
 		},
 		{
-			// The window is mandatory: a plan with no announced closing time
-			// would be one WriteOffAsset could end the block after it activates.
-			name:        "no closing window announced",
-			rate:        math.LegacyOneDec(),
-			closingTime: 0,
+			// The window is mandatory: a plan with none would be one
+			// WriteOffAsset could end the block after it activates.
+			name:   "no window announced",
+			rate:   math.LegacyOneDec(),
+			window: 0,
 		},
 		{
-			// The derived activation time is the floor the announced window
-			// has to clear, so a closing time inside the correction window is
-			// the one timing mistake a proposal can still make.
-			name:        "closing window precedes activation",
-			rate:        math.LegacyOneDec(),
-			closingTime: testSettlementActivationTime(),
+			// The window is a domain-capped input, so the one timing mistake a
+			// proposal can still make is asking for more than the cap.
+			name:   "window past the cap",
+			rate:   math.LegacyOneDec(),
+			window: types.MaxSettlementWindow + 1,
 		},
 	} {
 		s.Run(test.name, func() {
@@ -172,7 +171,7 @@ func (s *KeeperTestSuite) TestOpenSettlementRejectsInvalidTerms() {
 				asset.Denom,
 				asset.Version,
 				test.rate,
-				test.closingTime,
+				test.window,
 			)
 			s.Require().ErrorIs(err, types.ErrInvalidAssetTransition)
 			hasPlan, hasErr := s.keeper.SettlementPlans.Has(s.ctx, asset.Denom)
@@ -595,7 +594,7 @@ func (s *KeeperTestSuite) TestRecoverAssetClosesSettlement() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		activation+100,
+		100,
 	))
 	plan, err := s.keeper.SettlementPlans.Get(s.ctx, asset.Denom)
 	s.Require().NoError(err)
@@ -696,7 +695,7 @@ func (s *KeeperTestSuite) TestOpenSettlementDelayFollowsParams() {
 		asset.Denom,
 		asset.Version,
 		math.LegacyOneDec(),
-		blockTime(openHeight)+200,
+		200,
 	))
 
 	plan, err := s.keeper.SettlementPlans.Get(s.ctx, asset.Denom)

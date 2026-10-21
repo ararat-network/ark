@@ -20,3 +20,15 @@ func (s stubFund) RecognisedCapital(context.Context) (math.Int, error) {
 	}
 	return s.recognised, nil
 }
+
+// CreditToTarget answers the nominal shortfall: the stub holds nothing capped.
+func (s stubFund) CreditToTarget(ctx context.Context, target math.Int) (math.Int, error) {
+	recognised, err := s.RecognisedCapital(ctx)
+	if err != nil {
+		return math.Int{}, err
+	}
+	if target.LTE(recognised) {
+		return math.ZeroInt(), nil
+	}
+	return target.Sub(recognised), nil
+}

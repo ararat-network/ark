@@ -102,11 +102,14 @@ All figures except the member amount and the gate are cumulative.
   step's member budget opens in quarters, starting with 7.5M at step 1. A member keeps the amount and schedule they
   registered under.
 - The chain records only the member tranche. The contributor figures are a guideline: a round can go over if its
-  proposal says why. Step 1 includes the founder's 25M against a 20M guideline.
+  proposal says why. The founder's 25M is charged to step 1's 20M contributor budget, the overrun the guideline
+  allows, and the gate base nets it out, so the first gate is 15% of the 25M the step distributes to others.
 - Anything either pool doesn't allocate rolls into the next step. The 60/40 split holds over the whole distribution.
 - **Gate:** public bonded stake must be at least 15% of the previous step's distribution, minus the founder's 25M.
-  Public bonded stake is the bonded total from `arkd query staking pool`, minus the genesis seats (67.5M at ten) and
-  minus what the founder's grant and stream have paid.
+  Public bonded stake is the bonded total from `arkd query staking pool` minus what the founding accounts have
+  delegated: their seats, and whatever of their income and the founder's paid awards they have bonded, which
+  `arkd query staking delegations <address>` gives per account. Subtracting what the awards have paid would count
+  unbonded NOAH against the public and could go negative.
 
 ### Contributor proposals
 
@@ -128,8 +131,12 @@ block a proposal alone but cannot pass one alone. Public bonded stake erodes tha
 | The founder plus m other seats             | 15M × m                                               |
 
 As the founder's grant and stream pay out, they extend the founder's block: the founder can block alone while public
-bonded stake is under twice what they have paid. A delegation that doesn't vote follows its validator's vote, so
-control passes only as grantees vote or delegate away from the founding set.
+bonded stake is under twice what they have paid. They also lift the founder towards quorum: once the founder's bonded
+awards exceed the founder's seat plus public bonded stake, which with all 25M paid and bonded takes public bonded stake
+under 2.5M, the founder alone meets quorum and passes any proposal no other stake votes against; with the other seats
+voting no, the founder's 51.35% stays under the 66.7% threshold. "Cannot pass one alone" holds at launch, not for the
+whole payout. A delegation that doesn't vote follows its validator's vote, so control passes only as grantees vote or
+delegate away from the founding set.
 
 ## 6. Open items
 

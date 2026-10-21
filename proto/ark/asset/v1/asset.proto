@@ -130,8 +130,9 @@ message SettlementPlan {
   // activation_time is the opening time plus SettlementActivationDelay, in Unix seconds. It is
   // stored so later parameter changes cannot alter the plan's terms.
   uint64 activation_time = 3 [(amino.dont_omitempty) = true];
-  // earliest_closing_time is the mandatory, immutable holder redemption deadline, in Unix seconds.
-  // WriteOffAsset is refused before it; reaching it does not close settlement automatically.
+  // earliest_closing_time is the immutable holder redemption deadline, in Unix seconds: the
+  // activation time plus the proposal's settlement window, derived at execution. WriteOffAsset is
+  // refused before it; reaching it does not close settlement automatically.
   uint64 earliest_closing_time = 4 [(amino.dont_omitempty) = true];
   // opened_height records the block height at which governance stored these
   // terms.

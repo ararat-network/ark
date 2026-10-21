@@ -291,8 +291,8 @@ func MsgSetEmergencyMandateFactory() simsx.SimMsgFactoryFn[*types.MsgSetEmergenc
 }
 
 // MsgOpenSettlementFactory selects suspended or written-off assets with supply and no plan. Rates
-// stay in (0, 1]; closing is far enough beyond the draw to follow activation at delayed proposal
-// execution.
+// stay in (0, 1]; the window is a duration the handler derives the closing time from, so delayed
+// proposal execution cannot invalidate it.
 func MsgOpenSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.MsgOpenSettlement] {
 	return func(
 		ctx context.Context,
@@ -331,23 +331,15 @@ func MsgOpenSettlementFactory(k *keeper.Keeper) simsx.SimMsgFactoryFn[*types.Msg
 
 			return nil, nil
 		}
-		params, err := k.Params.Get(ctx)
-		if err != nil {
-			reporter.Skip("get asset params: " + err.Error())
-
-			return nil, nil
-		}
-
 		r := testData.Rand()
 		asset := candidates[r.IntInRange(0, len(candidates))]
-		activation := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 
 		return nil, &types.MsgOpenSettlement{
-			Authority:           testData.ModuleAccountAddress(reporter, "gov"),
-			Denom:               asset.Denom,
-			ExpectedVersion:     asset.Version,
-			RedemptionRate:      math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
-			EarliestClosingTime: activation + r.Uint64InRange(1_000, 10_000),
+			Authority:        testData.ModuleAccountAddress(reporter, "gov"),
+			Denom:            asset.Denom,
+			ExpectedVersion:  asset.Version,
+			RedemptionRate:   math.LegacyNewDecWithPrec(int64(r.Uint64InRange(1, 1_000_000)), 6),
+			SettlementWindow: r.Uint64InRange(1_000, 10_000),
 		}
 	}
 }

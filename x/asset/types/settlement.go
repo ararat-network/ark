@@ -75,6 +75,23 @@ func (p SettlementPlan) IsActive(now uint64) bool {
 	return now >= p.ActivationTime
 }
 
+// MaxSettlementWindow caps a plan's redemption window at five years: a domain bound with no
+// policy meaning, so activation plus the window stays far inside the header's int64.
+const MaxSettlementWindow = uint64(5 * 365 * 86_400)
+
+// ValidateSettlementWindow requires a positive, bounded window: a plan with none would be one
+// WriteOffAsset could end the block after it activates.
+func ValidateSettlementWindow(window uint64) error {
+	if window == 0 || window > MaxSettlementWindow {
+		return fmt.Errorf(
+			"settlement window must be between one and %d seconds, is %d",
+			MaxSettlementWindow,
+			window,
+		)
+	}
+	return nil
+}
+
 // Validate checks an immutable resolution snapshot.
 func (r ResolutionRecord) Validate() error {
 	if err := chain.ValidatePricedDenom(r.Denom); err != nil {

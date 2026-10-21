@@ -120,7 +120,7 @@ func (m msgServer) OpenSettlement(ctx context.Context, msg *types.MsgOpenSettlem
 		msg.Denom,
 		msg.ExpectedVersion,
 		msg.RedemptionRate,
-		msg.EarliestClosingTime,
+		msg.SettlementWindow,
 	); err != nil {
 		return nil, err
 	}

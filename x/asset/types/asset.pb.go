@@ -341,8 +341,9 @@ type SettlementPlan struct {
 	// activation_time is the opening time plus SettlementActivationDelay, in Unix seconds. It is
 	// stored so later parameter changes cannot alter the plan's terms.
 	ActivationTime uint64 `protobuf:"varint,3,opt,name=activation_time,json=activationTime,proto3" json:"activation_time,omitempty"`
-	// earliest_closing_time is the mandatory, immutable holder redemption deadline, in Unix seconds.
-	// WriteOffAsset is refused before it; reaching it does not close settlement automatically.
+	// earliest_closing_time is the immutable holder redemption deadline, in Unix seconds: the
+	// activation time plus the proposal's settlement window, derived at execution. WriteOffAsset is
+	// refused before it; reaching it does not close settlement automatically.
 	EarliestClosingTime uint64 `protobuf:"varint,4,opt,name=earliest_closing_time,json=earliestClosingTime,proto3" json:"earliest_closing_time,omitempty"`
 	// opened_height records the block height at which governance stored these
 	// terms.

@@ -120,15 +120,12 @@ func TestSuspensionSettlementAndRecovery(t *testing.T) {
 	f.nextBlock(func(ctx sdk.Context) {
 		asset, err := f.app.AssetKeeper.Assets.Get(ctx, chain.USDBaseDenom)
 		require.NoError(t, err)
-		params, err := f.app.AssetKeeper.Params.Get(ctx)
-		require.NoError(t, err)
-		activationTime := chain.BlockSeconds(ctx) + params.SettlementActivationDelay
 		require.NoError(t, f.app.AssetKeeper.OpenSettlement(
 			ctx,
 			chain.USDBaseDenom,
 			asset.Version,
 			redemptionRate,
-			activationTime+1,
+			1,
 		))
 
 		status := fundStatus(ctx)

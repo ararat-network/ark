@@ -181,8 +181,9 @@ and one small `MsgSell`. The first ten registrations open conversion, below.
 2. **Decide**, by proposal:
    - **Recover** with `MsgRecoverAsset` once the feed is Active and governance is satisfied it is stable. The asset
      lands `ISSUANCE_HALTED` and any plan closes; `MsgResumeIssuance` restores issuance when wanted.
-   - **Settle** with `MsgOpenSettlement`, stating a fixed rate and the earliest closing time. The plan activates after
-     the `settlement_activation_delay` parameter, a week at launch, and holders then redeem one way with `MsgSettle`.
+   - **Settle** with `MsgOpenSettlement`, stating a fixed rate and a settlement window of up to five years. The plan
+     activates after the `settlement_activation_delay` parameter, a week at launch, its earliest closing time is
+     activation plus the window, and holders then redeem one way with `MsgSettle`.
      `MsgCancelSettlement` withdraws a plan before it activates, and nothing amends one.
    - **Write off** with `MsgWriteOffAsset`, which recognises no obligation and excludes the supply from liability.
      A plan's earliest closing time must have passed; with no plan, nothing waits.

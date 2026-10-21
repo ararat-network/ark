@@ -784,9 +784,10 @@ market value. [Ark: Asset lifecycle][ark-asset]
 ### 9.4 Fixed-rate settlement
 
 Governance may open a settlement plan for a suspended currency, or reinstate a written-off currency into suspension with
-a plan. The plan specifies a fixed NOAH redemption rate and an earliest closing time. Activation follows a governed
-delay. Before activation the plan can be cancelled; after activation its terms cannot be amended and write-off cannot
-occur before the announced earliest closing time.
+a plan. The plan specifies a fixed NOAH redemption rate and a settlement window. Activation follows a governed delay,
+and the earliest closing time is activation plus the window, so the timing of the vote cannot shorten it. Before
+activation the plan can be cancelled; after activation its terms cannot be amended and write-off cannot occur before
+the earliest closing time.
 
 Holders settle by surrendering and burning currency for the committed NOAH amount, rounded to whole base units.
 Settlement does not use the suspended currency's oracle rate, the virtual pool, or an ordinary conversion spread. It
@@ -919,10 +920,11 @@ until conversion opens.
 
 The steps that open the member pool are governance policy rather than chain rules. The first opens 30,000,000 NOAH to
 1,500 members at 20,000 each; each later step lowers the member amount, to 5,000 NOAH at the fifth, about 66,300
-members in all. A step after the first opens only once public bonded stake, which excludes the founding seats and what
-the founder's awards have paid, reaches fifteen per cent of what the earlier steps distributed, the founder's awards
-excluded. Contributor awards follow a guideline of forty per cent of each step, which a proposal may exceed if it says
-why. Membership obliges nothing: a recipient may sell, hold, or stake what it receives, and the programme distributes
+members in all. A step after the first opens only once public bonded stake, which excludes what the founding accounts
+have delegated, their seats and whatever of their income and the founder's paid awards they have bonded, reaches
+fifteen per cent of what the earlier steps distributed, the founder's awards excluded. Contributor awards follow a
+guideline of forty per cent of each step, which a proposal may exceed if it says why; the founder's awards are charged
+to the first step's contributor figure as such an overrun. Membership obliges nothing: a recipient may sell, hold, or stake what it receives, and the programme distributes
 ownership and the governance weight that bonding it brings, not a duty to use it. [Ark: Disbursement
 plan][ark-disbursement] [Ark: Disbursement][ark-disbursement-module]
 
@@ -930,8 +932,12 @@ plan][ark-disbursement] [Ark: Disbursement][ark-disbursement-module]
 
 Once the founder's seat is spread, the founder holds a third of the founding stake and the other seats two thirds. At
 the 66.7% threshold and 50% quorum, the founder can block any proposal alone, and the other seats together cannot pass
-over the founder's no. The founder passes nothing alone, a third being under quorum; passing takes the founder and half
-the other seats. The veto is deliberate, and nothing restores it once public stake has diluted it.
+over the founder's no. At launch the founder passes nothing alone, a third being under quorum; passing takes the founder
+and half the other seats. That holds until the founder's bonded awards exceed the founder's seat plus public bonded
+stake, which with all 25,000,000 paid and bonded takes public bonded stake under 2,500,000; from there the founder alone
+meets quorum and passes any proposal no other stake votes against, while against the other seats' no the founder's
+51.35% stays under the 66.7% threshold. The veto is deliberate, and nothing restores it once public stake has diluted
+it.
 
 Public bonded stake dissolves it on a fixed schedule. The founder alone, or half the other seats, stops blocking once
 the public has bonded about 0.3% of the founder's seat, roughly 68,000 NOAH at ten seats. The founder with `m` other
@@ -1023,15 +1029,23 @@ disclosure rather than presented as valid partial requirements; actual balances 
 
 ```text
 credit_Buffer    = min(G, gap_Buffer)
-credit_Reserve   = min(G − credit_Buffer, gap_Reserve)
+credit_Reserve   = min(G − credit_Buffer, need_Reserve)
 credit_Insurance = min(G − credit_Buffer − credit_Reserve, gap_Insurance)
 overflow         = G − credit_Buffer − credit_Reserve − credit_Insurance
+
+need_Reserve = min { x ≥ 0 : C_R(B_R + x) ≥ T_R }
 
 p = min(Q, floor(Q × B / L))
 N = Q − p
 
 change in total NOAH from conversion = N − overflow
 ```
+
+`need_Reserve` is the smallest credit whose post-credit recognised capital (A.5) reaches the target, and equals
+`gap_Reserve` under NOAH-only custody. While a holding's cap binds, each NOAH credited recognises `1 + Σ k_j`, so the
+credit stops at the first balance whose recognition reaches the target, as the burn bound in A.6 stops at the last
+whose recognition keeps it; crediting `gap_Reserve` would carry the fund past its target and that excess out of
+Insurance and the burn.
 
 The supply identity excludes separate Reserve burns and any change to protocol rules. During incomplete valuation,
 `credit_Reserve = G`, the other expansion credits and overflow are zero, and the draw still uses the available

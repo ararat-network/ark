@@ -59,7 +59,10 @@ owns the status treatment and gross-versus-net basis rule.
 
 `FundStatus` reports that partition, disclosures, both target families, and the multiplier; incomplete valuation
 zeroes targets without hiding the report. Insurance capital comes through Claims' recognised-capital interface,
-not a second reservation calculation. `RewardFunding` reads stored accounting without needing current prices.
+not a second reservation calculation. The Reserve's expansion credit comes through its `CreditToTarget`, the NOAH
+that lifts its recognition to the target rather than the nominal shortfall
+([economic recognition](../../docs/economics/ECONOMIC_DESIGN.md#43-recognition)). `RewardFunding` reads stored
+accounting without needing current prices.
 No combined backing figure is exposed. There is no Treasury Reserve-transfer history: Bank and the authorising
 proposal already record those movements.
 
@@ -94,7 +97,8 @@ and an earlier inflow cannot bank credit against a later run. Circulating NOAH e
 four custody accounts, not their haircut-valued recognised capital. [exposure.go](keeper/exposure.go) defines unavailable-input handling and fixed-precision operations.
 Volatility samples at most once per `volatility_sample_seconds`: the anchor price holds until that many seconds have
 passed, so each return spans at least the spacing and the oracle median's per-block jitter never becomes a sample of
-its own. Returns are clamped before variance accumulation. The interval folds each return's elapsed block time under
+its own. Returns are clamped before variance accumulation, which folds squared returns with no mean subtracted. The
+interval folds each return's elapsed block time under
 the same weights, so `variance / interval` is variance per second over one window: block pace does not move sigma, and
 a return carried across a halt counts the time it spanned rather than reading as one sample. Each interval spans
 at least the spacing, validated at least a second, which keeps the variance at or below the interval and sigma at most

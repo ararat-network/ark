@@ -137,9 +137,10 @@ message MsgOpenSettlement {
     (gogoproto.nullable) = false,
     (amino.dont_omitempty) = true
   ];
-  // earliest_closing_time, in Unix seconds, must follow the derived activation time and commits to
-  // a redemption window. WriteOffAsset is refused before this time.
-  uint64 earliest_closing_time = 5 [(amino.dont_omitempty) = true];
+  // settlement_window is the redemption window in seconds of block time, positive and capped. The
+  // plan's earliest closing time is its activation time plus this window, derived at execution so
+  // the vote's timing cannot shorten it. WriteOffAsset is refused before that time.
+  uint64 settlement_window = 5 [(amino.dont_omitempty) = true];
 }
 
 // MsgOpenSettlementResponse is the response type for MsgOpenSettlement.

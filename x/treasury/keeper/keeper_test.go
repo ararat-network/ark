@@ -68,6 +68,11 @@ type KeeperTestSuite struct {
 	// insuranceRecognisedErr and reserveRecognisedErr fail the matching report.
 	insuranceRecognisedErr error
 	reserveRecognisedErr   error
+	// reserveCreditLever is the sum of clipped ratios the stubbed Reserve
+	// carries: each NOAH credited raises its recognised capital by one plus
+	// this, so it asks for less than its nominal shortfall. Zero is NOAH-only
+	// custody.
+	reserveCreditLever math.LegacyDec
 	// reserveHoldings contains the strategic Reserve balances netted from flow liability. It is
 	// empty by default, so gross and net liability agree unless the test parks protocol paper.
 	reserveHoldings       sdk.Coins
@@ -157,6 +162,21 @@ func (s *KeeperTestSuite) SetupTest() {
 		RecognisedCapital(gomock.Any()).
 		DoAndReturn(func(context.Context) (math.Int, error) {
 			return s.reserveRecognised, s.reserveRecognisedErr
+		}).
+		AnyTimes()
+	s.reserveCreditLever = math.LegacyZeroDec()
+	s.reserveKeeper.EXPECT().
+		CreditToTarget(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, target math.Int) (math.Int, error) {
+			if s.reserveRecognisedErr != nil {
+				return math.Int{}, s.reserveRecognisedErr
+			}
+			shortfall := target.Sub(s.reserveRecognised)
+			if !shortfall.IsPositive() {
+				return math.ZeroInt(), nil
+			}
+			slope := math.LegacyOneDec().Add(s.reserveCreditLever)
+			return math.LegacyNewDecFromInt(shortfall).Quo(slope).Ceil().TruncateInt(), nil
 		}).
 		AnyTimes()
 	// The liability fold asks what the Reserve holds of every member it counts.

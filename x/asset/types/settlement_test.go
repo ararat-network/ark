@@ -248,3 +248,26 @@ func testResolutionRecord() assettypes.ResolutionRecord {
 		OutstandingSupply: sdk.NewInt64Coin("agold", 100),
 	}
 }
+
+func TestValidateSettlementWindow(t *testing.T) {
+	tests := []struct {
+		name      string
+		window    uint64
+		expectErr bool
+	}{
+		{name: "one second", window: 1},
+		{name: "the cap", window: assettypes.MaxSettlementWindow},
+		{name: "zero", window: 0, expectErr: true},
+		{name: "past the cap", window: assettypes.MaxSettlementWindow + 1, expectErr: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := assettypes.ValidateSettlementWindow(test.window)
+			if test.expectErr {
+				require.ErrorContains(t, err, "settlement window must be between one and")
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}

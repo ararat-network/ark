@@ -496,3 +496,123 @@ func TestReserveAndMarketValueARateIdentically(t *testing.T) {
 	// worth a quarter of a million anoah, not four million.
 	require.Equal(t, math.NewInt(250_000), credit)
 }
+
+// TestExpansionCreditsTheReserveToItsTargetLine checks the real waterfall asks the Reserve what
+// reaches its target rather than crediting its nominal shortfall: with a holding capped at half the
+// NOAH balance, each NOAH credited recognises one and a half, so the fund lands on its target with
+// less NOAH than the shortfall and the difference flows on to Insurance.
+func TestExpansionCreditsTheReserveToItsTargetLine(t *testing.T) {
+	arkApp := apptestutil.Setup(t, false)
+	ctx := arkApp.NewContextLegacy(false, cmtproto.Header{
+		Height: arkApp.LastBlockHeight(),
+		Time:   time.Unix(1_800_000_000, 0),
+	})
+	trader := treasuryGovernanceVoter(t, arkApp, ctx)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	reserveMsgServer := reservekeeper.NewMsgServerImpl(arkApp.ReserveKeeper)
+	marketMsgServer := marketkeeper.NewMsgServerImpl(arkApp.MarketKeeper)
+
+	// Listing a claim requires its series to be a live feed.
+	const (
+		externalFeed  = "aext"
+		externalAsset = externalFeed + "-x"
+	)
+	feeds, err := arkApp.OracleKeeper.Feeds.Get(ctx)
+	require.NoError(t, err)
+	feeds.Denoms = append(feeds.Denoms, externalFeed)
+	sort.Strings(feeds.Denoms)
+	require.NoError(t, arkApp.OracleKeeper.Feeds.Set(ctx, feeds))
+	// One NOAH per unit everywhere keeps the restatement exact.
+	for _, denom := range []string{externalFeed, chain.USDBaseDenom, chain.XDRBaseDenom} {
+		setRate(t, arkApp, ctx, denom, math.LegacyOneDec())
+	}
+
+	capacity := markettypes.DefaultConversionPolicy()
+	capacity.BasePool = sdk.NewDecCoinFromDec(chain.XDRBaseDenom, math.LegacyNewDec(1_000_000_000_000))
+	require.NoError(t, arkApp.MarketKeeper.ConversionPolicy.Set(ctx, capacity))
+	require.NoError(t, arkApp.MarketKeeper.ArkPoolDelta.Set(ctx, math.LegacyZeroDec()))
+
+	// No Buffer gap, so the offer reaches the Reserve first; Insurance is
+	// short enough to take what the Reserve leaves.
+	policy, err := arkApp.TreasuryKeeper.EconomicPolicy.Get(ctx)
+	require.NoError(t, err)
+	policy.RedemptionBufferTargetRatio = math.LegacyZeroDec()
+	policy.StrategicReserveTargetRatio = math.LegacyMustNewDecFromStr("0.5")
+	policy.InsuranceTargetRatio = math.LegacyMustNewDecFromStr("0.2")
+	require.NoError(t, arkApp.TreasuryKeeper.EconomicPolicy.Set(ctx, policy))
+
+	// A holding worth far more than its cap admits, so the cap binds through
+	// the whole search: its credit is half of whatever NOAH the Reserve holds.
+	_, err = reserveMsgServer.SetRecognitionPolicy(ctx, &reservetypes.MsgSetRecognitionPolicy{
+		Authority: authority,
+		Entries: []reservetypes.EligibilityEntry{{
+			Denom:             externalAsset,
+			HaircutFactor:     math.LegacyOneDec(),
+			MaxCreditPerNoah:  math.LegacyMustNewDecFromStr("0.5"),
+			MaxRateAge:        3_600,
+			MaxAttestationAge: 90 * 86_400,
+		}},
+	})
+	require.NoError(t, err)
+	reserveSeed := math.NewInt(100_000_000)
+	apptestutil.FundModule(t, arkApp, ctx, reservetypes.StrategicReserveName, chain.NoahCoins(reserveSeed))
+	require.NoError(t, arkApp.ReserveKeeper.OpenPositions.Set(ctx, 1, reservetypes.Position{
+		PositionId:     1,
+		Quantity:       sdk.NewCoin(externalAsset, math.NewInt(1_000_000_000_000)),
+		Deployed:       chain.NoahCoin(math.OneInt()),
+		Returned:       chain.NoahCoin(math.ZeroInt()),
+		VenueReference: "custodian-alpha",
+		OpenedHeight:   1,
+		AttestedTime:   chain.BlockSeconds(ctx),
+	}))
+
+	reserveAddress := authtypes.NewModuleAddress(reservetypes.StrategicReserveName)
+	insuranceAddress := authtypes.NewModuleAddress(claimstypes.InsuranceName)
+	balanceOf := func(addr sdk.AccAddress) math.Int {
+		return arkApp.BankKeeper.GetBalance(ctx, addr, chain.NoahBaseDenom).Amount
+	}
+	recognisedBefore, err := arkApp.ReserveKeeper.RecognisedCapital(ctx)
+	require.NoError(t, err)
+	require.Equal(t, reserveSeed.Add(reserveSeed.QuoRaw(2)), recognisedBefore)
+	insuranceBefore := balanceOf(insuranceAddress)
+	insuranceRecognisedBefore, err := arkApp.ClaimsKeeper.RecognisedCapital(ctx)
+	require.NoError(t, err)
+
+	// One expansion whose liability leaves the Reserve short and whose offer
+	// covers every gap.
+	offer := chain.NoahCoin(math.NewInt(400_000_000))
+	apptestutil.FundAccount(t, arkApp, ctx, trader, sdk.NewCoins(offer))
+	_, err = marketMsgServer.Sell(ctx, &markettypes.MsgSell{
+		Trader:         trader.String(),
+		OfferCoin:      offer,
+		AskDenom:       chain.USDBaseDenom,
+		MinimumReceive: sdk.NewCoin(chain.USDBaseDenom, math.OneInt()),
+	})
+	require.NoError(t, err)
+
+	// Restate the placement from end-of-block state. At half, recognition is
+	// floor(3b / 2), so the first balance reaching the target is ceil(2T / 3).
+	liability := math.LegacyNewDecFromInt(arkApp.BankKeeper.GetSupply(ctx, chain.USDBaseDenom).Amount)
+	targets := policy.FundTargets(liability)
+	nominalShortfall := targets.Reserve.Sub(recognisedBefore)
+	require.True(t, nominalShortfall.IsPositive(), "the fixture must leave the Reserve short")
+	firstReaching := targets.Reserve.MulRaw(2).AddRaw(2).QuoRaw(3)
+	expectedCredit := firstReaching.Sub(reserveSeed)
+	insuranceGap := math.MaxInt(math.ZeroInt(), targets.Insurance.Sub(insuranceRecognisedBefore))
+	expectedInsurance := math.MinInt(offer.Amount.Sub(expectedCredit), insuranceGap)
+	require.True(t, expectedInsurance.IsPositive(), "the fixture must leave Insurance something to take")
+
+	require.NoError(t, arkApp.MarketKeeper.EndBlocker(ctx))
+
+	reserveCredit := balanceOf(reserveAddress).Sub(reserveSeed)
+	require.Equal(t, expectedCredit, reserveCredit)
+	require.True(t, reserveCredit.LT(nominalShortfall),
+		"the credit %s must undercut the nominal shortfall %s", reserveCredit, nominalShortfall)
+	recognisedAfter, err := arkApp.ReserveKeeper.RecognisedCapital(ctx)
+	require.NoError(t, err)
+	require.True(t, recognisedAfter.GTE(targets.Reserve))
+	require.True(t, recognisedAfter.Sub(targets.Reserve).LTE(math.OneInt()),
+		"the credit lands on the target line, not past it: %s against %s", recognisedAfter, targets.Reserve)
+	// What the shortfall would have kept reached Insurance instead.
+	require.Equal(t, insuranceBefore.Add(expectedInsurance), balanceOf(insuranceAddress))
+}
