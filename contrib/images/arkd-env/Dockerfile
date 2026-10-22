@@ -4,7 +4,7 @@
 
 # Base images are pinned by digest; the tag beside each digest names what
 # the digest was resolved from. Dependabot bumps the pair together.
-FROM golang:1.27-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS builder-base
+FROM golang:1.27-alpine@sha256:d530cf60723abf1ffae0cd16bb546b379ec0550d2f3815e5b16ed69dbc00fba4 AS builder-base
 WORKDIR /work
 # Record actual static-library owners; installed build tools alone do not prove linkage.
 RUN apk add --no-cache build-base git file linux-headers eudev-dev python3

@@ -1,6 +1,6 @@
 module github.com/ararat-network/ark/tests/e2e
 
-go 1.27.2
+go 1.27.3
 
 // interchaintest pins these in its own module; a nested module has to
 // repeat them or the build resolves incompatible versions.

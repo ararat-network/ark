@@ -1,6 +1,6 @@
 module github.com/ararat-network/ark
 
-go 1.27.2
+go 1.27.3
 
 require (
 	cosmossdk.io/api v1.0.0
