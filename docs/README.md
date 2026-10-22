@@ -8,8 +8,7 @@ maintain that boundary.
 
 - [Manifesto](papers/MANIFESTO.pdf): "The Revolution Begins Within", the founding statement, a search for truth through
   the self, intelligence, God, and the institutions we build.
-- [Whitepaper](papers/WHITEPAPER.md): "Stability and Capital", why the design is what it is. A Markdown draft;
-  the typeset PDF replaces it at this path when finished.
+- [Whitepaper](papers/WHITEPAPER.pdf): "Money as Shared Infrastructure", why the design is what it is.
 - [Economic design](economics/ECONOMIC_DESIGN.md): current ownership, custody, conversion, capital, fee, and reward contracts.
 - [Threat model](security/THREAT_MODEL.md): trust boundaries, assumptions, controls and their limits, and security review questions.
 

@@ -198,7 +198,7 @@ Only supply the chain cannot value, a member never priced or suspended supply wi
 is disclosed, so a suspension elsewhere never switches the Buffer off for the exits it exists to dampen.
 
 With fixed rates and a fixed claimable set, coverage cannot fall
-([whitepaper A.4](../papers/WHITEPAPER.md#a4-conditional-coverage-property)); where a rate or the set changes, the ratio
+([whitepaper A.4](../papers/WHITEPAPER.pdf)); where a rate or the set changes, the ratio
 steps while the balance stays continuous, and no step changes a quote or output. An empty Buffer mints everything; a
 Buffer at or above the liability pays the whole output; retiring the last stablecoin leaves any excess in the Buffer.
 There is no residual-mint limiter: a visible quota would create the first-mover pressure the draw avoids.
@@ -655,7 +655,7 @@ Appointment, staleness, and module-specific bounds are documented by the
 
 ## 8. Related references
 
-- [Whitepaper](../papers/WHITEPAPER.md): why the design is what it is, and its proofs.
+- [Whitepaper](../papers/WHITEPAPER.pdf): why the design is what it is, and its proofs.
 - [Genesis](../governance/GENESIS.md): launch settings, open values, and validation.
 - [Governance runbook](../governance/GOVERNANCE_RUNBOOK.md): appointments, calibration, and external-asset onboarding.
 - [Future changes](../direction/FUTURE_CHANGES.md): deferred engineering and its revisit triggers.
